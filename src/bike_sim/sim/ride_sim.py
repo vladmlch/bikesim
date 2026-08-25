@@ -1,0 +1,285 @@
+"""
+Ride-Mode Simulation Orchestrator.
+
+Owns the compiled ride model, the track raster, and the five per-step writers, and drives
+them in a fixed order. Everything that computes a force lives in `sim/ride/`; this module
+resolves handles, sequences the writers, and exposes the run's state. It coordinates, it
+does not compute.
+
+**Track data is written before anything reads the model's geometry.** `model.hfield_data` is
+filled from the track raster immediately after compilation, ahead of the first
+`mj_forward`, the equilibrium solve and any viewer: a heightfield read before it is filled
+is a flat road, and every contact computed against it is wrong.
+"""
+
+from typing import Any, Dict, Optional, Tuple
+
+import mujoco
+
+from bike_sim.geometry.specs import BikeSpecs
+from bike_sim.kinematics.solver import HorstLinkageSolver
+from bike_sim.mujoco.builder import generate_mujoco_xml
+from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
+from bike_sim.physics.coil_shock import CoilShock
+from bike_sim.physics.damper import BikeSuspensionSystem
+from bike_sim.sim.controllers import SuspensionController
+from bike_sim.sim.equilibrium import solve_static_equilibrium
+from bike_sim.sim.ride.braking import BrakeController
+from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
+from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+from bike_sim.sim.ride.forces import SuspensionForceApplier
+from bike_sim.sim.ride.resistance import RollingResistance
+from bike_sim.sim.ride.virtual_rider import CrashDetector, CrashEvent, PitchStabilizer
+from bike_sim.terrain import (
+    DEFAULT_PRESET,
+    TrackSpec,
+    assert_track_fits,
+    build_field_data,
+    get_preset,
+)
+
+# World X for the chassis root at the start of a run. The heightfield's near edge is at
+# world x = 0, and starting at x = 0 hangs the rear contact patch off it.
+DEFAULT_START_X_M = 2.0
+
+
+class RideSimulation:
+    """
+    A ride-mode run: compiled model, track, controllers, and a single `step`.
+
+    The five per-step writers are applied in a fixed order -- suspension, rolling
+    resistance, cruise torque, brake torque, virtual rider -- against one contact snapshot
+    taken at the top of the step, so that cruise gating, rolling resistance, the virtual
+    rider and the crash detector all agree about which wheels are on the ground.
+    """
+
+    def __init__(
+        self,
+        track: Optional[TrackSpec] = None,
+        specs: Optional[BikeSpecs] = None,
+        target_speed_kmh: float = DEFAULT_TARGET_SPEED_KMH,
+        include_rider: bool = True,
+        start_x_m: float = DEFAULT_START_X_M,
+        controller: Optional[SuspensionController] = None,
+        coil_shock: Optional[CoilShock] = None,
+    ) -> None:
+        """
+        Compiles the model, rasterizes the track, and solves the starting equilibrium.
+
+        Args:
+            track: Track to ride. Defaults to the shipped default preset.
+            specs: Bicycle geometry. Defaults to the shipped `BikeSpecs`.
+            target_speed_kmh: Initial cruise target, inside the 15-45 km/h band.
+            include_rider: Whether the rider's mass and geometry are present.
+            start_x_m: World X for the chassis root at the start of the run.
+            controller: Fork and shock force calculator. Defaults to the shipped
+                suspension; supplied explicitly when a run overrides the fork pressure.
+            coil_shock: Rear coil and bumper model. Defaults to the shipped coil; supplied
+                explicitly when a run overrides the spring rate.
+
+        Raises:
+            ValueError: If the track does not fit the fixed heightfield envelope.
+            RuntimeError: If the starting equilibrium does not converge.
+        """
+        self.track = track if track is not None else get_preset(DEFAULT_PRESET)
+        assert_track_fits(self.track)
+
+        self.specs = specs if specs is not None else BikeSpecs()
+        self.solver = HorstLinkageSolver(self.specs)
+        self.start_x_m = float(start_x_m)
+
+        self.model = mujoco.MjModel.from_xml_string(
+            generate_mujoco_xml(
+                specs=self.specs,
+                solver=self.solver,
+                mode="ride",
+                include_rider=include_rider,
+            )
+        )
+        # Before the first forward pass, before the equilibrium solve, before any viewer.
+        self.model.hfield_data[:] = build_field_data(self.track).reshape(-1)
+        self.data = mujoco.MjData(self.model)
+
+        self.controller = controller if controller is not None else _default_controller(self.specs)
+        self.applier = SuspensionForceApplier(
+            self.model,
+            self.controller,
+            coil_shock if coil_shock is not None else CoilShock(),
+        )
+        self.contact_query = TerrainContactQuery(self.model)
+        self.resistance = RollingResistance(self.model)
+        self.cruise = CruiseController(self.model, target_speed_kmh=target_speed_kmh)
+        self.brakes = BrakeController(self.model)
+        self.stabilizer = PitchStabilizer(self.model)
+        self.crash_detector = CrashDetector(self.model)
+
+        self.drive_ctrl_adr = _actuator_id(self.model, "rear_drive")
+        self.front_brake_ctrl_adr = _actuator_id(self.model, "front_brake")
+        self.rear_brake_ctrl_adr = _actuator_id(self.model, "rear_brake")
+        self.root_x_qposadr, self.root_x_dofadr = _root_addresses(self.model, "root_x")
+        self.root_pitch_qposadr, _ = _root_addresses(self.model, "root_pitch")
+
+        self.contacts = TerrainContacts(front_load_n=0.0, rear_load_n=0.0, handlebar_load_n=0.0)
+        self.steps = 0
+        self.equilibrium: Dict[str, Any] = {}
+        self.reset()
+
+    def reset(self) -> None:
+        """
+        Returns the run to its starting equilibrium at the track start.
+
+        Raises:
+            RuntimeError: If the equilibrium solve does not converge.
+        """
+        self.equilibrium = solve_static_equilibrium(
+            self.model,
+            self.data,
+            self.applier,
+            self.solver,
+            start_x_m=self.start_x_m,
+        )
+        self.contact_query.reset()
+        self.cruise.reset()
+        self.brakes.reset()
+        self.resistance.reset()
+        self.stabilizer.reset()
+        self.crash_detector.reset()
+        self.data.time = 0.0
+        self.steps = 0
+        self.contacts = self.contact_query.query(self.model, self.data)
+
+    def step(self, front_brake_demand: float = 0.0, rear_brake_demand: float = 0.0) -> None:
+        """
+        Advances the simulation by one timestep.
+
+        The contact snapshot the five writers share is the one taken at the end of the
+        previous step, which holds the constraint forces of the last forward pass -- the same
+        numbers a fresh query at the top of this step would return, since nothing has touched
+        `data.contact` in between. Querying once per state rather than once per use keeps the
+        dropout counter advancing exactly one step per step.
+
+        Args:
+            front_brake_demand: Front brake lever position in [0, 1], not a torque.
+            rear_brake_demand: Rear brake lever position in [0, 1], not a torque.
+        """
+        self.applier.apply(self.model, self.data)
+        self.resistance.apply(self.model, self.data, self.contacts)
+        self.data.ctrl[self.drive_ctrl_adr] = self.cruise.compute(self.model, self.data, self.contacts)
+        front_torque, rear_torque = self.brakes.compute(
+            self.data, front_brake_demand, rear_brake_demand
+        )
+        self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
+        self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
+        self.stabilizer.apply(self.model, self.data, self.contacts)
+
+        # Checked against the same snapshot the writers saw, so a reported crash position is
+        # the state that produced it rather than the state one timestep later.
+        self.crash_detector.check(self.data, self.contacts)
+
+        mujoco.mj_step(self.model, self.data)
+        self.steps += 1
+        self.contacts = self.contact_query.query(self.model, self.data)
+
+    @property
+    def time_s(self) -> float:
+        """Simulation time since the start of the run, in seconds."""
+        return float(self.data.time)
+
+    @property
+    def position_m(self) -> float:
+        """Chassis position along the track, in metres."""
+        return float(self.data.qpos[self.root_x_qposadr])
+
+    @property
+    def speed_mps(self) -> float:
+        """Chassis longitudinal velocity, in m/s."""
+        return float(self.data.qvel[self.root_x_dofadr])
+
+    @property
+    def pitch_rad(self) -> float:
+        """Chassis pitch, in radians. Positive is nose-down about the bottom bracket."""
+        return float(self.data.qpos[self.root_pitch_qposadr])
+
+    @property
+    def fork_travel_mm(self) -> float:
+        """Fork compression, in millimetres of shaft travel."""
+        return float(self.data.qpos[self.applier.fork_qposadr]) * 1000.0
+
+    @property
+    def shock_stroke_mm(self) -> float:
+        """Rear shock compression, in millimetres of shaft stroke."""
+        return float(self.data.qpos[self.applier.shock_qposadr]) * 1000.0
+
+    @property
+    def rear_travel_mm(self) -> float:
+        """Rear wheel travel for the current shaft stroke, from the analytical solver."""
+        return float(self.solver.solve_state_from_shock_stroke(self.shock_stroke_mm)["wheel_travel"])
+
+    @property
+    def crash(self) -> Optional[CrashEvent]:
+        """The latched crash event, or None while the run is still upright."""
+        return self.crash_detector.event
+
+
+def _default_controller(specs: BikeSpecs) -> SuspensionController:
+    """
+    Builds the suspension force calculator from the shipped defaults.
+
+    Args:
+        specs: Bicycle geometry, supplying the fork travel, token count and pressure.
+
+    Returns:
+        A `SuspensionController` configured as the shipped bike.
+    """
+    return SuspensionController(
+        specs=specs,
+        air_spring=ForkAirSpring(
+            specs=AirSpringSpecs(total_travel_mm=specs.fork_travel),
+            num_tokens=specs.fork_air_tokens,
+            gauge_pressure_psi=specs.fork_initial_psi,
+        ),
+        suspension_system=BikeSuspensionSystem(),
+    )
+
+
+def _actuator_id(model: mujoco.MjModel, name: str) -> int:
+    """
+    Resolves a named actuator's index into `data.ctrl`.
+
+    Args:
+        model: Compiled ride-mode model.
+        name: Actuator name.
+
+    Returns:
+        The actuator's index.
+
+    Raises:
+        ValueError: If the model has no actuator of that name.
+    """
+    aid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
+    if aid < 0:
+        raise ValueError(f"model has no actuator '{name}'; the ride torque path needs it")
+    return int(aid)
+
+
+def _root_addresses(model: mujoco.MjModel, joint_name: str) -> Tuple[int, int]:
+    """
+    Resolves a chassis root joint's qpos and dof addresses.
+
+    Args:
+        model: Compiled ride-mode model.
+        joint_name: Name of the root joint.
+
+    Returns:
+        Tuple of (qpos address, dof address).
+
+    Raises:
+        ValueError: If the model has no joint of that name.
+    """
+    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+    if jid < 0:
+        raise ValueError(f"model has no joint '{joint_name}'; ride mode needs a planar root")
+    return int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid])
+
+
+__all__ = ["RideSimulation", "DEFAULT_START_X_M"]

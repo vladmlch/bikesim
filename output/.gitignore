@@ -1,0 +1,6 @@
+*
+!.gitignore
+!plots/
+!models/
+!plots/.gitkeep
+!models/.gitkeep

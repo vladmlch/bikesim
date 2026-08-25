@@ -1,0 +1,55 @@
+{
+  "source_image": "bulls_sonic_evo_side.jpg",
+  "calibration": {
+    "origin_px": [
+      587.375,
+      733.325
+    ],
+    "mm_per_px": 1.618557642107814,
+    "wheelbase_mm": 1280.55,
+    "bb_drop_selfcheck_mm": 22.214703637929784
+  },
+  "note": "Pivot targets are MEASURED from red bolt markers. Front-triangle tube shapes are NOT measurable from this photograph (white-on-white) and are authored styling elsewhere.",
+  "points_mm": {
+    "bb": [
+      0.0,
+      0.0
+    ],
+    "rear_axle": [
+      -468.2771,
+      8.2467
+    ],
+    "front_axle": [
+      812.1967,
+      22.2147
+    ],
+    "P0_candidate": [
+      -44.9778,
+      45.8122
+    ],
+    "P2_candidate": [
+      -400.1351,
+      -8.2483
+    ],
+    "P3": [
+      -71.191,
+      206.1015
+    ],
+    "P4": [
+      -39.2753,
+      191.5032
+    ],
+    "P5": [
+      41.9531,
+      184.6569
+    ],
+    "P6": [
+      29.7331,
+      261.336
+    ],
+    "P7": [
+      171.3179,
+      401.4342
+    ]
+  }
+}

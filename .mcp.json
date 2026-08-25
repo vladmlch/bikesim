@@ -1,0 +1,19 @@
+{
+    "mcpServers": {
+        "bike_kinematics": {
+            "type": "stdio",
+            "command": "uv",
+            "args": [
+                "run",
+                "python",
+                "-m",
+                "tools.mcp_server"
+            ],
+            "env": {}
+        },
+        "idea": {
+            "url": "http://127.0.0.1:64342/stream",
+            "type": "http"
+        }
+    }
+}

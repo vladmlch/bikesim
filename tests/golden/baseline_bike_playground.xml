@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mujoco model="enduro_bike_horst_yoke">
+  <compiler angle="degree" coordinate="local" inertiafromgeom="auto" autolimits="true"/>
+  <option gravity="0 0 -9.81" timestep="0.001" integrator="implicitfast" iterations="100" tolerance="1e-10"/>
+  <visual>
+    <global elevation="-20" azimuth="140" offwidth="1920" offheight="1080"/>
+    <quality shadowsize="4096"/>
+  </visual>
+  <asset>
+    <texture name="grid_tex" type="2d" builtin="checker" width="512" height="512" rgb1="0.85 0.85 0.88" rgb2="0.75 0.75 0.78"/>
+    <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.4 0.6 0.8" rgb2="0.1 0.15 0.25" width="512" height="512"/>
+    <material name="mat_floor" texture="grid_tex" texrepeat="25 25" reflectance="0.08"/>
+    <material name="mat_frame" rgba="0.14 0.18 0.22 1.0" specular="0.4" shininess="0.5"/>
+    <material name="mat_linkage" rgba="0.88 0.22 0.16 1.0" specular="0.7" shininess="0.8"/>
+    <material name="mat_yoke" rgba="0.55 0.22 0.75 1.0" specular="0.6" shininess="0.7"/>
+    <material name="mat_kashima" rgba="0.82 0.60 0.28 1.0" specular="0.95" shininess="0.95"/>
+    <material name="mat_damper_body" rgba="0.12 0.12 0.12 1.0" specular="0.8" shininess="0.85"/>
+    <material name="mat_fork_lower" rgba="0.16 0.16 0.18 1.0" specular="0.3" shininess="0.4"/>
+    <material name="mat_tire" rgba="0.08 0.08 0.08 1.0" specular="0.05" shininess="0.1"/>
+    <material name="mat_rim" rgba="0.22 0.24 0.26 1.0" specular="0.5" shininess="0.6"/>
+    <material name="mat_metal" rgba="0.75 0.78 0.82 1.0" specular="0.85" shininess="0.9"/>
+    <material name="mat_saddle" rgba="0.06 0.06 0.06 1.0" specular="0.1" shininess="0.2"/>
+    <material name="mat_handlebar" rgba="0.12 0.12 0.14 1.0" specular="0.4" shininess="0.5"/>
+    <material name="mat_pivot_yellow" rgba="0.98 0.85 0.12 1.0" specular="0.9" shininess="0.9"/>
+    <material name="mat_stand" rgba="0.22 0.25 0.30 1.0" specular="0.5" shininess="0.6"/>
+    <material name="mat_obstacle" rgba="0.85 0.50 0.15 1.0" specular="0.4" shininess="0.4"/>
+    <material name="mat_pit" rgba="0.22 0.35 0.55 1.0" specular="0.4" shininess="0.5"/>
+    <material name="mat_motor" rgba="0.10 0.11 0.13 1.0" specular="0.6" shininess="0.7"/>
+    <material name="mat_battery" rgba="0.08 0.08 0.10 1.0" specular="0.5" shininess="0.6"/>
+    <material name="mat_cg_marker" rgba="0.95 0.20 0.85 0.9" specular="0.9" shininess="0.9"/>
+    <material name="mat_rider" rgba="0.18 0.38 0.68 0.95" specular="0.4" shininess="0.5"/>
+  </asset>
+  <worldbody>
+    <light directional="true" diffuse="0.85 0.85 0.85" specular="0.25 0.25 0.25" pos="1.5 -2.5 3.5" dir="-0.3 0.6 -1.0"/>
+    <light directional="true" diffuse="0.45 0.45 0.45" specular="0.1 0.1 0.1" pos="-2.5 2.5 3.0" dir="0.6 -0.6 -1.0"/>
+    <geom name="floor" type="plane" pos="0 0 -0.349500" size="50 50 0.1" material="mat_floor" conaffinity="1" contype="1" friction="1.3 0.005 0.0001"/>
+    <geom name="geom_stand_base" type="box" pos="-0.060000 -0.35 -0.334500" size="0.25 0.20 0.015" material="mat_stand"/>
+    <geom name="geom_stand_post" type="cylinder" fromto="-0.060000 -0.35 -0.319500 -0.060000 -0.35 0.400000" size="0.026" material="mat_stand"/>
+    <geom name="geom_stand_arm" type="cylinder" fromto="-0.060000 -0.35 0.400000 -0.060000 -0.05 0.400000" size="0.022" material="mat_stand"/>
+    <geom name="geom_stand_clamp" type="cylinder" fromto="-0.060000 -0.055 0.400000 -0.060000 0.055 0.400000" size="0.028" material="mat_metal"/>
+    <body name="frame" pos="0 0 0">
+      <geom name="geom_rider_torso" type="capsule" fromto="0.10 0 0.48 0.22 0 0.82" size="0.0001" mass="0.0" rgba="0.5 0.5 0.5 0.0" material="mat_rider" contype="0" conaffinity="0"/>
+      <geom name="geom_rider_legs" type="capsule" fromto="0.0 0 0.0 0.10 0 0.48" size="0.0001" mass="0.0" rgba="0.5 0.5 0.5 0.0" material="mat_rider" contype="0" conaffinity="0"/>
+      <geom name="geom_rider_arms" type="capsule" fromto="0.22 0 0.78 0.45 0 0.66" size="0.0001" mass="0.0" rgba="0.5 0.5 0.5 0.0" material="mat_rider" contype="0" conaffinity="0"/>
+      <geom name="geom_bb_shell" type="cylinder" fromto="0 -0.0365 0 0 0.0365 0" size="0.024" mass="0.30" material="mat_metal"/>
+      <geom name="geom_motor_core" type="cylinder" fromto="0.015 -0.055 0.020 0.045 0.055 0.035" size="0.045" mass="2.90" material="mat_motor"/>
+      <geom name="geom_crank_arms" type="cylinder" fromto="0 -0.090 0 0 0.090 0" size="0.016" mass="0.85" material="mat_metal"/>
+      <geom name="geom_downtube" type="box" pos="0.239137 0.000000 0.295958" size="0.378572 0.038 0.037848" euler="0 -45.296452 0" mass="0.60" material="mat_frame"/>
+      <geom name="geom_battery_pack" type="capsule" fromto="0.052834 0.000000 0.106886 0.292834 0.000000 0.346886" size="0.032" mass="4.30" material="mat_battery"/>
+      <geom name="geom_headtube" type="cylinder" fromto="0.532605 0.000000 0.538145 0.480000 0.000000 0.646000" size="0.027" mass="0.40" material="mat_frame"/>
+      <geom name="geom_toptube_bridge" type="capsule" fromto="0.480000 0.000000 0.646000 0.410000 0.000000 0.635000" size="0.024" mass="0.25" material="mat_frame"/>
+      <geom name="geom_toptube_main" type="capsule" fromto="0.410000 0.000000 0.635000 -0.060000 0.000000 0.400000" size="0.023" mass="0.45" material="mat_frame"/>
+      <geom name="geom_seattube" type="capsule" fromto="-0.060000 0.000000 0.400000 -0.030000 0.000000 0.258000" size="0.020" mass="0.05" material="mat_frame"/>
+      <geom name="geom_frame_casting" type="box" pos="0.005661 0 0.129000" size="0.075 0.036 0.130" mass="0.60" material="mat_frame" contype="0" conaffinity="0"/>
+      <geom name="geom_seatpost" type="cylinder" fromto="-0.060000 0.000000 0.400000 -0.085000 0.000000 0.490000" size="0.016" mass="0.120129" material="mat_metal"/>
+      <geom name="geom_seatpost_upper" type="cylinder" fromto="-0.085000 0.000000 0.490000 -0.140206 0.000000 0.660000" size="0.016" mass="0.229871" material="mat_metal"/>
+      <geom name="geom_seat_gusset" type="capsule" fromto="-0.085000 0.000000 0.490000 0.043400 0.000000 0.451700" size="0.015" mass="0.10" material="mat_frame"/>
+      <geom name="geom_frame_junction" type="capsule" fromto="0.184400 0.000000 0.522200 0.173221 0.000000 0.403651" size="0.042" mass="0.10" material="mat_frame"/>
+      <geom name="geom_saddle" type="box" pos="-0.164206 0.000000 0.675000" size="0.13 0.065 0.015" mass="0.55" material="mat_saddle"/>
+      <geom name="geom_p0_mount" type="cylinder" fromto="-0.044902 -0.035 0.046393 -0.044902 0.035 0.046393" size="0.016" mass="0.10" material="mat_metal"/>
+      <geom name="geom_p5_mount" type="cylinder" fromto="0.041321 -0.048 0.184457 0.041321 0.048 0.184457" size="0.013" mass="0.10" material="mat_metal"/>
+      <geom name="geom_p7_mount" type="cylinder" fromto="0.173221 -0.020 0.403651 0.173221 0.020 0.403651" size="0.012" mass="0.10" material="mat_metal"/>
+      <site name="site_BB" pos="0.000000 0.000000 0.000000" size="0.008" rgba="0.9 0.6 0.1 1.0"/>
+      <site name="site_P0" pos="-0.044902 0.000000 0.046393" size="0.008" rgba="0.2 0.8 0.2 1.0"/>
+      <site name="site_P5" pos="0.041321 0.000000 0.184457" size="0.008" rgba="0.8 0.2 0.2 1.0"/>
+      <site name="site_P7" pos="0.173221 0.000000 0.403651" size="0.008" rgba="0.1 0.6 0.9 1.0"/>
+      <site name="site_P8" pos="0.410000 0.000000 0.635000" size="0.006" rgba="0.5 0.5 0.5 1.0"/>
+      <site name="site_P9" pos="-0.085000 0.000000 0.490000" size="0.006" rgba="0.5 0.5 0.5 1.0"/>
+      <site name="site_P10" pos="-0.060000 0.000000 0.400000" size="0.006" rgba="0.5 0.5 0.5 1.0"/>
+      <site name="site_P11" pos="0.480000 0.000000 0.646000" size="0.008" rgba="0.9 0.1 0.1 1.0"/>
+      <site name="site_HT_bot" pos="0.532605 0.000000 0.538145" size="0.008" rgba="0.9 0.1 0.1 1.0"/>
+      <site name="site_CG" pos="0.149767 0.000000 0.183505" size="0.012" rgba="0.95 0.20 0.85 0.9"/>
+      <site name="site_top_tube_kink" pos="0.410000 0.000000 0.635000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
+      <site name="site_seat_collar" pos="-0.085000 0.000000 0.490000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
+      <site name="site_seatpost_top" pos="-0.140206 0.000000 0.660000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
+      <site name="site_seat_tube_junction" pos="-0.060000 0.000000 0.400000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
+      <site name="site_headtube_top" pos="0.480000 0.000000 0.646000" size="0.006" rgba="0.9 0.1 0.1 0.8"/>
+      <site name="site_headtube_bottom" pos="0.532605 0.000000 0.538145" size="0.006" rgba="0.9 0.1 0.1 0.8"/>
+      <geom name="marker_bb" type="sphere" pos="0.000000 0.000000 0.000000" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_p0" type="sphere" pos="-0.044902 0.000000 0.046393" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_p5_l" type="sphere" pos="0.041321 0.048 0.184457" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_p5_r" type="sphere" pos="0.041321 -0.048 0.184457" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_p7" type="sphere" pos="0.173221 0.000000 0.403651" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_p8" type="sphere" pos="0.410000 0.000000 0.635000" size="0.011" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_p9" type="sphere" pos="-0.085000 0.000000 0.490000" size="0.011" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_p10" type="sphere" pos="-0.060000 0.000000 0.400000" size="0.011" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_p11" type="sphere" pos="0.480000 0.000000 0.646000" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+      <geom name="marker_cg" type="sphere" pos="0.149767 0.000000 0.183505" size="0.014" material="mat_cg_marker" contype="0" conaffinity="0" mass="0"/>
+      <body name="steer" pos="0.532605 0.000000 0.538145">
+        <joint name="steer_joint" type="hinge" pos="0 0 0" axis="-0.438371 0.000000 0.898794" range="-0.01 0.01" stiffness="50000" damping="1000"/>
+        <geom name="geom_steerer_tube" type="cylinder" fromto="0 0 0 -0.052605 0.000000 0.107855" size="0.014" mass="0.25" material="mat_metal"/>
+        <geom name="geom_stem" type="cylinder" fromto="-0.052605 0.000000 0.107855 -0.012605 0.000000 0.127855" size="0.016" mass="0.15" material="mat_handlebar"/>
+        <geom name="geom_handlebar" type="cylinder" fromto="-0.012605 -0.40 0.127855 -0.012605 0.40 0.127855" size="0.0155" mass="0.40" material="mat_handlebar"/>
+        <geom name="geom_fork_crown" type="box" pos="0 0 0" size="0.038 0.085 0.018" mass="0.30" material="mat_fork_lower"/>
+        <geom name="geom_stanchion_l" type="cylinder" fromto="0 0.065 0 0.140279 0.065 -0.287614" size="0.019" mass="0.425" material="mat_kashima"/>
+        <geom name="geom_stanchion_r" type="cylinder" fromto="0 -0.065 0 0.140279 -0.065 -0.287614" size="0.019" mass="0.425" material="mat_kashima"/>
+        <body name="fork_lower" pos="0 0 0">
+          <joint name="fork_travel" type="slide" pos="0 0 0" axis="-0.438371 0.000000 0.898794" range="0 0.180000" stiffness="0" damping="0" springref="0"/>
+          <geom name="geom_fork_lower_l" type="capsule" fromto="0.155789 0.065 -0.219043 0.300451 0.065 -0.515645" size="0.022" mass="0.55" material="mat_fork_lower"/>
+          <geom name="geom_fork_lower_r" type="capsule" fromto="0.155789 -0.065 -0.219043 0.300451 -0.065 -0.515645" size="0.022" mass="0.55" material="mat_fork_lower"/>
+          <geom name="geom_fork_arch" type="capsule" fromto="0.155789 -0.065 -0.219043 0.155789 0.065 -0.219043" size="0.016" mass="0.25" material="mat_fork_lower"/>
+          <geom name="geom_front_dropout" type="cylinder" fromto="0.300451 -0.065 -0.515645 0.300451 0.065 -0.515645" size="0.012" mass="0.15" material="mat_metal"/>
+          <site name="site_PFA" pos="0.300451 0.000000 -0.515645" size="0.008" rgba="0.1 0.7 0.9 1.0"/>
+          <geom name="marker_pfa" type="sphere" pos="0.300451 0.000000 -0.515645" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+          <body name="front_wheel" pos="0.300451 0.000000 -0.515645">
+            <joint name="front_wheel_spin" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.01"/>
+            <geom name="geom_front_hub" type="cylinder" fromto="0 -0.055 0 0 0.055 0" size="0.018" mass="0.35" material="mat_metal"/>
+            <geom name="geom_front_rim" type="cylinder" fromto="0 -0.015 0 0 0.015 0" size="0.320" mass="0.45" material="mat_rim" contype="0" conaffinity="0"/>
+            <geom name="geom_front_tire" type="cylinder" fromto="0 -0.030 0 0 0.030 0" size="0.372000" mass="1.35" material="mat_tire" contype="1" conaffinity="1" friction="1.2 0.005 0.0001"/>
+            <geom name="geom_front_rotor" type="cylinder" fromto="0 0.032 0 0 0.034 0" size="0.1015" mass="0.25" material="mat_metal" contype="0" conaffinity="0"/>
+          </body>
+        </body>
+      </body>
+      <body name="chainstay" pos="-0.044902 0.000000 0.046393">
+        <joint name="main_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.5"/>
+        <geom name="geom_cs_sleeve" type="cylinder" fromto="0 -0.040 0 0 0.040 0" size="0.018" mass="0.25" material="mat_metal"/>
+        <geom name="geom_cs_left" type="capsule" fromto="0 0.045 0 -0.334216 0.074 -0.054835" size="0.016" mass="0.40" material="mat_frame"/>
+        <geom name="geom_cs_right" type="capsule" fromto="0 -0.045 0 -0.334216 -0.074 -0.054835" size="0.016" mass="0.40" material="mat_frame"/>
+        <geom name="geom_cs_bridge" type="capsule" fromto="-0.133687 -0.055 -0.021934 -0.133687 0.055 -0.021934" size="0.014" mass="0.20" material="mat_frame"/>
+        <site name="site_P2_cs" pos="-0.334216 0.000000 -0.054835" size="0.008" rgba="0.1 0.9 0.1 1.0"/>
+        <geom name="marker_p2" type="sphere" pos="-0.334216 0.000000 -0.054835" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+        <body name="seatstay" pos="-0.334216 0.000000 -0.054835">
+          <joint name="horst_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.3"/>
+          <geom name="geom_horst_sleeve_l" type="cylinder" fromto="0 0.068 0 0 0.080 0" size="0.013" mass="0.075" material="mat_metal"/>
+          <geom name="geom_horst_sleeve_r" type="cylinder" fromto="0 -0.080 0 0 -0.068 0" size="0.013" mass="0.075" material="mat_metal"/>
+          <geom name="geom_ss_left" type="capsule" fromto="-0.034882 0.074 0.068429 0.307403 0.045 0.215041" size="0.015" mass="0.25" material="mat_frame"/>
+          <geom name="geom_ss_right" type="capsule" fromto="-0.034882 -0.074 0.068429 0.307403 -0.045 0.215041" size="0.015" mass="0.25" material="mat_frame"/>
+          <geom name="geom_dropout_bottom_l" type="capsule" fromto="0 0.074 0 -0.068376 0.074 0.010942" size="0.016" mass="0.045" material="mat_frame"/>
+          <geom name="geom_dropout_rear_l" type="capsule" fromto="-0.068376 0.074 0.010942 -0.034882 0.074 0.068429" size="0.016" mass="0.045" material="mat_frame"/>
+          <geom name="geom_dropout_front_l" type="capsule" fromto="0 0.074 0 -0.034882 0.074 0.068429" size="0.015" mass="0.045" material="mat_frame"/>
+          <geom name="geom_dropout_bottom_r" type="capsule" fromto="0 -0.074 0 -0.068376 -0.074 0.010942" size="0.016" mass="0.045" material="mat_frame"/>
+          <geom name="geom_dropout_rear_r" type="capsule" fromto="-0.068376 -0.074 0.010942 -0.034882 -0.074 0.068429" size="0.016" mass="0.045" material="mat_frame"/>
+          <geom name="geom_dropout_front_r" type="capsule" fromto="0 -0.074 0 -0.034882 -0.074 0.068429" size="0.015" mass="0.045" material="mat_frame"/>
+          <geom name="geom_ss_bridge" type="capsule" fromto="0.215182 -0.050 0.150528 0.215182 0.050 0.150528" size="0.013" mass="0.13" material="mat_frame"/>
+          <site name="site_P3_ss" pos="0.307403 0.000000 0.215041" size="0.008" rgba="0.9 0.5 0.1 1.0"/>
+          <site name="site_P12_ss" pos="-0.034882 0.000000 0.068429" size="0.007" rgba="0.9 0.6 0.1 1.0"/>
+          <geom name="marker_p12" type="sphere" pos="-0.034882 0.000000 0.068429" size="0.011" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+          <site name="site_PRA" pos="-0.068376 0.000000 0.010942" size="0.008" rgba="0.2 0.4 0.9 1.0"/>
+          <geom name="marker_pra" type="sphere" pos="-0.068376 0.000000 0.010942" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+          <body name="rear_wheel" pos="-0.068376 0.000000 0.010942">
+            <joint name="rear_wheel_spin" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.01"/>
+            <geom name="geom_rear_hub" type="cylinder" fromto="0 -0.074 0 0 0.074 0" size="0.020" mass="0.30" material="mat_metal"/>
+            <geom name="geom_rear_rim" type="cylinder" fromto="0 -0.015 0 0 0.015 0" size="0.300" mass="0.40" material="mat_rim" contype="0" conaffinity="0"/>
+            <geom name="geom_rear_tire" type="cylinder" fromto="0 -0.032 0 0 0.032 0" size="0.352000" mass="1.50" material="mat_tire" contype="1" conaffinity="1" friction="1.2 0.005 0.0001"/>
+            <geom name="geom_rear_cassette" type="cylinder" fromto="0 -0.055 0 0 -0.035 0" size="0.095" mass="0.40" material="mat_metal" contype="0" conaffinity="0"/>
+            <geom name="geom_rear_rotor" type="cylinder" fromto="0 0.038 0 0 0.040 0" size="0.1015" mass="0.20" material="mat_metal" contype="0" conaffinity="0"/>
+          </body>
+        </body>
+      </body>
+      <body name="rocker" pos="0.041321 0.000000 0.184457">
+        <joint name="rocker_frame_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.3"/>
+        <geom name="geom_rocker_sleeve" type="cylinder" fromto="0 -0.045 0 0 0.045 0" size="0.016" mass="0.16" material="mat_metal"/>
+        <geom name="geom_roc_arm_l1" type="capsule" fromto="0 0.045 0 -0.113037 0.045 0.022142" size="0.014" mass="0.04" material="mat_linkage"/>
+        <geom name="geom_roc_arm_r1" type="capsule" fromto="0 -0.045 0 -0.113037 -0.045 0.022142" size="0.014" mass="0.04" material="mat_linkage"/>
+        <geom name="geom_roc_arm_l2" type="capsule" fromto="0 0.045 0 -0.079867 0.045 0.007006" size="0.014" mass="0.04" material="mat_linkage"/>
+        <geom name="geom_roc_arm_r2" type="capsule" fromto="0 -0.045 0 -0.079867 -0.045 0.007006" size="0.014" mass="0.04" material="mat_linkage"/>
+        <geom name="geom_roc_arm_l3" type="capsule" fromto="-0.113037 0.045 0.022142 -0.079867 0.045 0.007006" size="0.012" mass="0.04" material="mat_linkage"/>
+        <geom name="geom_roc_arm_r3" type="capsule" fromto="-0.113037 -0.045 0.022142 -0.079867 -0.045 0.007006" size="0.012" mass="0.04" material="mat_linkage"/>
+        <site name="site_P3_rocker" pos="-0.113037 0.000000 0.022142" size="0.008" rgba="0.9 0.5 0.1 1.0"/>
+        <geom name="marker_p3_roc_l" type="sphere" pos="-0.113037 0.045 0.022142" size="0.011" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+        <geom name="marker_p3_roc_r" type="sphere" pos="-0.113037 -0.045 0.022142" size="0.011" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+        <site name="site_P4_rocker" pos="-0.079867 0.000000 0.007006" size="0.008" rgba="0.7 0.2 0.8 1.0"/>
+        <geom name="marker_p4_l" type="sphere" pos="-0.079867 0.045 0.007006" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+        <geom name="marker_p4_r" type="sphere" pos="-0.079867 -0.045 0.007006" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+        <body name="shock_yoke" pos="-0.079867 0.000000 0.007006">
+          <joint name="yoke_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.2"/>
+          <geom name="geom_yoke_pivot_p4" type="cylinder" fromto="0 -0.044 0 0 0.044 0" size="0.011" mass="0.06" material="mat_metal"/>
+          <geom name="geom_yoke_arm_l" type="capsule" fromto="0 0.040 0 0.066954 0.038 0.067087" size="0.011" mass="0.08" material="mat_yoke"/>
+          <geom name="geom_yoke_arm_r" type="capsule" fromto="0 -0.040 0 0.066954 -0.038 0.067087" size="0.011" mass="0.08" material="mat_yoke"/>
+          <geom name="geom_yoke_bridge" type="capsule" fromto="0.050215 -0.038 0.050315 0.050215 0.038 0.050315" size="0.009" mass="0.04" material="mat_yoke"/>
+          <geom name="geom_yoke_eyelet" type="cylinder" fromto="0.066954 -0.040 0.067087 0.066954 0.040 0.067087" size="0.011" mass="0.04" material="mat_metal"/>
+          <site name="site_P6_yoke" pos="0.066954 0.000000 0.067087" size="0.008" rgba="0.6 0.1 0.7 1.0"/>
+          <geom name="marker_p6_l" type="sphere" pos="0.066954 0.038 0.067087" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+          <geom name="marker_p6_r" type="sphere" pos="0.066954 -0.038 0.067087" size="0.013" material="mat_pivot_yellow" contype="0" conaffinity="0" mass="0"/>
+          <body name="shock_shaft" pos="0.066954 0.000000 0.067087">
+            <geom name="geom_shock_lower_eyelet" type="cylinder" fromto="0 -0.016 0 0 0.016 0" size="0.011" mass="0.06" material="mat_metal"/>
+            <geom name="geom_shock_shaft" type="cylinder" fromto="0 0 0 0.102428 0.000000 0.102632" size="0.014" mass="0.14" material="mat_kashima"/>
+            <geom name="geom_shock_travel_indicator" type="cylinder" fromto="0.011302 0.000000 0.011325 0.014834 0.000000 0.014864" size="0.0165" mass="0.0" material="mat_linkage" contype="0" conaffinity="0"/>
+            <body name="shock_body" pos="0.144813 0.000000 0.145101">
+              <inertial pos="-0.033395 0.011400 -0.028962" quat="-0.10166406 0.38183084 -0.06020627 0.91664870" mass="0.400000" diaginertia="0.00084836 0.00071226 0.00023249"/>
+              <joint name="shock_stroke" type="slide" pos="0 0 0" axis="-0.706403 -0.000000 -0.707810" range="0 0.065000" stiffness="0" damping="0" springref="0"/>
+              <geom name="geom_shock_trunnion_boss_l" type="cylinder" fromto="0 0.019 0 0 0.027000 0" size="0.013" mass="0.02" material="mat_metal"/>
+              <geom name="geom_shock_trunnion_boss_r" type="cylinder" fromto="0 -0.019 0 0 -0.027000 0" size="0.013" mass="0.02" material="mat_metal"/>
+              <geom name="geom_shock_trunnion_overhang" type="cylinder" fromto="0 0 0 0.009890 0.000000 0.009909" size="0.024" mass="0.04" material="mat_damper_body"/>
+              <geom name="geom_shock_body" type="cylinder" fromto="0 0 0 -0.097484 -0.000000 -0.097678" size="0.026" mass="0.18" material="mat_damper_body"/>
+              <geom name="geom_shock_piggyback" type="cylinder" fromto="0.011350 0.008000 -0.036758 -0.052226 0.008000 -0.100461" size="0.018" mass="0.10" material="mat_damper_body"/>
+              <geom name="geom_shock_piggy_bridge" type="cylinder" fromto="-0.021192 -0.000000 -0.021234 0.002873 0.008000 -0.045252" size="0.010" mass="0.04" material="mat_damper_body"/>
+              <site name="site_P7_shock" pos="0 0 0" size="0.008" rgba="0.1 0.6 0.9 1.0"/>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <equality>
+    <connect name="seatstay_rocker_joint" site1="site_P3_ss" site2="site_P3_rocker" solref="0.0005 1" solimp="0.99 0.999 0.0001 0.5 2"/>
+    <connect name="shock_frame_joint" site1="site_P7_shock" site2="site_P7" solref="0.0005 1" solimp="0.99 0.999 0.0001 0.5 2"/>
+    <weld name="stand_clamp" body1="world" body2="frame" active="true"/>
+  </equality>
+  <contact>
+    <exclude body1="frame" body2="steer"/>
+    <exclude body1="frame" body2="fork_lower"/>
+    <exclude body1="frame" body2="chainstay"/>
+    <exclude body1="frame" body2="seatstay"/>
+    <exclude body1="frame" body2="rocker"/>
+    <exclude body1="frame" body2="shock_yoke"/>
+    <exclude body1="frame" body2="shock_shaft"/>
+    <exclude body1="frame" body2="shock_body"/>
+    <exclude body1="frame" body2="front_wheel"/>
+    <exclude body1="frame" body2="rear_wheel"/>
+    <exclude body1="steer" body2="fork_lower"/>
+    <exclude body1="steer" body2="chainstay"/>
+    <exclude body1="steer" body2="seatstay"/>
+    <exclude body1="steer" body2="rocker"/>
+    <exclude body1="steer" body2="shock_yoke"/>
+    <exclude body1="steer" body2="shock_shaft"/>
+    <exclude body1="steer" body2="shock_body"/>
+    <exclude body1="steer" body2="front_wheel"/>
+    <exclude body1="steer" body2="rear_wheel"/>
+    <exclude body1="fork_lower" body2="chainstay"/>
+    <exclude body1="fork_lower" body2="seatstay"/>
+    <exclude body1="fork_lower" body2="rocker"/>
+    <exclude body1="fork_lower" body2="shock_yoke"/>
+    <exclude body1="fork_lower" body2="shock_shaft"/>
+    <exclude body1="fork_lower" body2="shock_body"/>
+    <exclude body1="fork_lower" body2="front_wheel"/>
+    <exclude body1="fork_lower" body2="rear_wheel"/>
+    <exclude body1="chainstay" body2="seatstay"/>
+    <exclude body1="chainstay" body2="rocker"/>
+    <exclude body1="chainstay" body2="shock_yoke"/>
+    <exclude body1="chainstay" body2="shock_shaft"/>
+    <exclude body1="chainstay" body2="shock_body"/>
+    <exclude body1="chainstay" body2="front_wheel"/>
+    <exclude body1="chainstay" body2="rear_wheel"/>
+    <exclude body1="seatstay" body2="rocker"/>
+    <exclude body1="seatstay" body2="shock_yoke"/>
+    <exclude body1="seatstay" body2="shock_shaft"/>
+    <exclude body1="seatstay" body2="shock_body"/>
+    <exclude body1="seatstay" body2="front_wheel"/>
+    <exclude body1="seatstay" body2="rear_wheel"/>
+    <exclude body1="rocker" body2="shock_yoke"/>
+    <exclude body1="rocker" body2="shock_shaft"/>
+    <exclude body1="rocker" body2="shock_body"/>
+    <exclude body1="rocker" body2="front_wheel"/>
+    <exclude body1="rocker" body2="rear_wheel"/>
+    <exclude body1="shock_yoke" body2="shock_shaft"/>
+    <exclude body1="shock_yoke" body2="shock_body"/>
+    <exclude body1="shock_yoke" body2="front_wheel"/>
+    <exclude body1="shock_yoke" body2="rear_wheel"/>
+    <exclude body1="shock_shaft" body2="shock_body"/>
+    <exclude body1="shock_shaft" body2="front_wheel"/>
+    <exclude body1="shock_shaft" body2="rear_wheel"/>
+    <exclude body1="shock_body" body2="front_wheel"/>
+    <exclude body1="shock_body" body2="rear_wheel"/>
+    <exclude body1="front_wheel" body2="rear_wheel"/>
+  </contact>
+  <actuator>
+    <position name="rear_travel_actuator" joint="main_pivot" kp="150000" kv="5000" ctrlrange="-0.60 0.60"/>
+    <position name="fork_travel_actuator" joint="fork_travel" kp="150000" kv="5000" ctrlrange="0 0.30"/>
+    <motor name="front_wheel_spin" joint="front_wheel_spin" gear="1" ctrlrange="-50 50"/>
+    <motor name="rear_wheel_spin" joint="rear_wheel_spin" gear="1" ctrlrange="-50 50"/>
+  </actuator>
+  <sensor>
+    <jointpos name="sensor_shock_stroke" joint="shock_stroke"/>
+    <jointvel name="sensor_shock_velocity" joint="shock_stroke"/>
+    <jointpos name="sensor_fork_travel" joint="fork_travel"/>
+    <jointvel name="sensor_fork_velocity" joint="fork_travel"/>
+    <jointpos name="sensor_steer_angle" joint="steer_joint"/>
+    <jointvel name="sensor_steer_velocity" joint="steer_joint"/>
+    <jointpos name="sensor_chainstay_angle" joint="main_pivot"/>
+    <jointpos name="sensor_horst_angle" joint="horst_pivot"/>
+    <jointpos name="sensor_rocker_angle" joint="rocker_frame_pivot"/>
+    <jointpos name="sensor_yoke_angle" joint="yoke_pivot"/>
+    <jointvel name="sensor_front_wheel_speed" joint="front_wheel_spin"/>
+    <jointvel name="sensor_rear_wheel_speed" joint="rear_wheel_spin"/>
+    <accelerometer name="sensor_frame_accel" site="site_BB"/>
+    <gyro name="sensor_frame_gyro" site="site_BB"/>
+    <framepos name="sensor_rear_axle_pos" objtype="site" objname="site_PRA"/>
+    <framepos name="sensor_front_axle_pos" objtype="site" objname="site_PFA"/>
+    <subtreecom name="sensor_subtree_com" body="frame"/>
+  </sensor>
+</mujoco>

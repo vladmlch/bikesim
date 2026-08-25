@@ -1,0 +1,26 @@
+# Generated outputs
+*.png
+output/plots/*.png
+output/models/*.xml
+MUJOCO_LOG.TXT
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+.pytest_cache/
+
+# MuJoCo generated legacy
+bike_model.xml
+bike_playground*.xml
+coordinates.json
+
+# Tooling / IDE
+.superpowers/
+.idea/
+.DS_Store
+.work/

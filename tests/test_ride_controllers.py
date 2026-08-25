@@ -8,11 +8,13 @@ Tests include:
 - Cruise control closing on chassis speed rather than wheel speed, its airborne gate, its
   anti-wind-up, and the adjustable speed band.
 - Brake torque opposing rotation for both signs of wheel speed, and vanishing at rest.
-- Rolling-resistance torque scaling with the instantaneous normal load.
+- Rolling-resistance torque scaling with the instantaneous normal load, reading the raw
+  vertical support channel rather than the bridged gate, and capped against solver spikes.
 - The pitch stabilizer's ceiling, its both-wheels-airborne gate, and that it does not leave a
   stale moment latched in `qfrc_applied` after touchdown.
 - The crash detector's two causes and its latching.
-- The contact query bridging MuJoCo's single-step sphere-heightfield collision dropouts.
+- The contact query bridging MuJoCo's single-step sphere-heightfield collision dropouts, and
+  its raw support channel summing to system weight on level road.
 """
 
 from typing import List, NamedTuple, Optional, Tuple
@@ -29,7 +31,12 @@ from bike_sim.sim.ride.cruise import (
     MIN_TARGET_SPEED_KMH,
     CruiseController,
 )
-from bike_sim.sim.ride.resistance import CRR, ROLLING_TAPER_RADPS, RollingResistance
+from bike_sim.sim.ride.resistance import (
+    CRR,
+    LOAD_CEILING_WEIGHTS,
+    ROLLING_TAPER_RADPS,
+    RollingResistance,
+)
 from bike_sim.sim.ride.virtual_rider import (
     CAUSE_HANDLEBAR_CONTACT,
     CAUSE_PITCH_OVER,
@@ -73,9 +80,13 @@ class Traverse(NamedTuple):
     shock_mm: np.ndarray
     front_load_n: np.ndarray
     rear_load_n: np.ndarray
+    front_support_n: np.ndarray
+    rear_support_n: np.ndarray
     front_in_contact: np.ndarray
     rear_in_contact: np.ndarray
     rider_moment_nm: np.ndarray
+    front_rolling_nm: np.ndarray
+    rear_rolling_nm: np.ndarray
 
     def window(self, lo_m: float, hi_m: float) -> np.ndarray:
         """Returns the boolean mask of samples with track position in [lo_m, hi_m]."""
@@ -109,9 +120,13 @@ def traverse(sim: RideSimulation) -> Traverse:
                 sim.shock_stroke_mm,
                 sim.contacts.front_load_n,
                 sim.contacts.rear_load_n,
+                sim.contacts.front_support_n,
+                sim.contacts.rear_support_n,
                 float(sim.contacts.front_in_contact),
                 float(sim.contacts.rear_in_contact),
                 sim.stabilizer.moment_nm,
+                sim.resistance.front_torque_nm,
+                sim.resistance.rear_torque_nm,
             )
         )
 
@@ -126,15 +141,37 @@ def traverse(sim: RideSimulation) -> Traverse:
         shock_mm=trace[:, 3],
         front_load_n=trace[:, 4],
         rear_load_n=trace[:, 5],
-        front_in_contact=trace[:, 6].astype(bool),
-        rear_in_contact=trace[:, 7].astype(bool),
-        rider_moment_nm=trace[:, 8],
+        front_support_n=trace[:, 6],
+        rear_support_n=trace[:, 7],
+        front_in_contact=trace[:, 8].astype(bool),
+        rear_in_contact=trace[:, 9].astype(bool),
+        rider_moment_nm=trace[:, 10],
+        front_rolling_nm=trace[:, 11],
+        rear_rolling_nm=trace[:, 12],
     )
 
 
-def _contacts(front_n: float, rear_n: float, handlebar_n: float = 0.0) -> TerrainContacts:
-    """Builds a synthetic contact snapshot, so a controller can be driven without a track."""
-    return TerrainContacts(front_load_n=front_n, rear_load_n=rear_n, handlebar_load_n=handlebar_n)
+def _contacts(
+    front_n: float,
+    rear_n: float,
+    handlebar_n: float = 0.0,
+    front_support_n: Optional[float] = None,
+    rear_support_n: Optional[float] = None,
+) -> TerrainContacts:
+    """
+    Builds a synthetic contact snapshot, so a controller can be driven without a track.
+
+    The support channels default to the gating loads, which is the flat-ground case where the
+    two are equal. Pass them explicitly to drive the two apart, as a collision dropout or a
+    square-edge face impact does.
+    """
+    return TerrainContacts(
+        front_load_n=front_n,
+        rear_load_n=rear_n,
+        front_support_n=front_n if front_support_n is None else front_support_n,
+        rear_support_n=rear_n if rear_support_n is None else rear_support_n,
+        handlebar_load_n=handlebar_n,
+    )
 
 
 def _dofadr(model: mujoco.MjModel, joint_name: str) -> int:
@@ -212,6 +249,48 @@ def test_contact_query_bridges_single_step_collision_dropouts(traverse: Traverse
     assert np.all(traverse.rear_in_contact[flat])
     assert traverse.front_load_n[flat].min() > 0.0
     assert traverse.rear_load_n[flat].min() > 0.0
+
+
+def test_raw_support_load_sums_to_system_weight_on_flat_ground(
+    sim: RideSimulation, traverse: Traverse
+):
+    """
+    The unbridged support channel adds up to the bike's weight on level road, the gate does not.
+
+    This is the whole reason the two channels exist. Bridging is right for the gate, where a
+    false airborne fires the rider and cuts the drive torque, and wrong for the load fed to
+    `Crr . N . r`, where holding a load across the 13 % of steps with no contact row adds a
+    load that was never there. Measured over this window: raw 100.2 % of weight, bridged
+    111.7 %. Rolling resistance is a sink docs/RIDE.md section 8 reports on its own line, so
+    that 11 % would be a systematic error in a spec-reported quantity on every run.
+    """
+    flat = traverse.window(*RUNUP_WINDOW_M)
+    weight_n = sim.resistance.system_weight_n
+    raw_mean_n = float((traverse.front_support_n[flat] + traverse.rear_support_n[flat]).mean())
+    bridged_mean_n = float((traverse.front_load_n[flat] + traverse.rear_load_n[flat]).mean())
+
+    assert raw_mean_n == pytest.approx(weight_n, rel=0.01)
+    assert bridged_mean_n > 1.10 * weight_n
+
+
+def test_traverse_rolling_resistance_stays_within_its_load_ceiling(
+    sim: RideSimulation, traverse: Traverse
+):
+    """
+    No step of the traverse charges rolling resistance above `Crr` times the capped load.
+
+    Uncapped, the square edge drives this channel to 66 N.m at the front and 87 N.m at the
+    rear off single-timestep solver impact spikes of 11.6 and 16.0 times system weight -- a third
+    of the *brake* ceiling, under the label "rolling resistance", in a channel task 5 plots
+    and uses in an energy-balance assertion.
+    """
+    front_ceiling_nm = CRR * sim.resistance.load_ceiling_n * sim.resistance.front_wheel.radius_m
+    rear_ceiling_nm = CRR * sim.resistance.load_ceiling_n * sim.resistance.rear_wheel.radius_m
+
+    assert np.abs(traverse.front_rolling_nm).max() <= front_ceiling_nm
+    assert np.abs(traverse.rear_rolling_nm).max() <= rear_ceiling_nm
+    # And the cap is low enough that the channel cannot be mistaken for a brake event.
+    assert max(front_ceiling_nm, rear_ceiling_nm) < 0.1 * BRAKE_TORQUE_CEILING_NM
 
 
 # --------------------------------------------------------------------------------------
@@ -387,6 +466,37 @@ def test_rolling_resistance_vanishes_on_an_unloaded_wheel(model: mujoco.MjModel)
     resistance.apply(model, data, _contacts(front_n=0.0, rear_n=0.0))
     assert resistance.front_torque_nm == 0.0
     assert data.qfrc_applied[front_dof] == 0.0
+
+
+def test_rolling_resistance_reads_the_raw_support_load_not_the_bridged_gate(model: mujoco.MjModel):
+    """
+    A wheel whose gate is still bridged but whose real support has gone gets no resistance.
+
+    That is exactly the first 5 ms of every genuine take-off. Consuming the bridged channel
+    there keeps charging `Crr . N_last . r` to a wheel that is already in the air.
+    """
+    data = mujoco.MjData(model)
+    resistance = RollingResistance(model)
+    data.qvel[_dofadr(model, "rear_wheel_spin")] = 20.0
+
+    resistance.apply(model, data, _contacts(front_n=0.0, rear_n=600.0, rear_support_n=0.0))
+    assert resistance.rear_torque_nm == 0.0
+
+
+def test_rolling_resistance_caps_the_load_at_a_multiple_of_system_weight(model: mujoco.MjModel):
+    """A solver impact spike is charged at the stated ceiling, not at the spike."""
+    data = mujoco.MjData(model)
+    resistance = RollingResistance(model)
+    data.qvel[_dofadr(model, "rear_wheel_spin")] = 20.0
+    spike_n = 20.0 * resistance.system_weight_n
+
+    resistance.apply(model, data, _contacts(front_n=0.0, rear_n=spike_n))
+    assert resistance.load_ceiling_n == pytest.approx(
+        LOAD_CEILING_WEIGHTS * resistance.system_weight_n
+    )
+    assert resistance.rear_torque_nm == pytest.approx(
+        -CRR * resistance.load_ceiling_n * resistance.rear_wheel.radius_m
+    )
 
 
 def test_rolling_resistance_tapers_through_the_low_speed_band(model: mujoco.MjModel):

@@ -119,7 +119,13 @@ class RideSimulation:
         self.root_x_qposadr, self.root_x_dofadr = _root_addresses(self.model, "root_x")
         self.root_pitch_qposadr, _ = _root_addresses(self.model, "root_pitch")
 
-        self.contacts = TerrainContacts(front_load_n=0.0, rear_load_n=0.0, handlebar_load_n=0.0)
+        self.contacts = TerrainContacts(
+            front_load_n=0.0,
+            rear_load_n=0.0,
+            front_support_n=0.0,
+            rear_support_n=0.0,
+            handlebar_load_n=0.0,
+        )
         self.steps = 0
         self.equilibrium: Dict[str, Any] = {}
         self.reset()

@@ -6,7 +6,7 @@ what normal load. Cruise gating, rolling resistance, the virtual rider and the c
 detector all need that answer, and all four must see the *same* answer within a step, so
 the query is made once per step and the snapshot is passed around.
 
-The normal load comes from `mj_contactForce`, not from a static axle-load estimate. Rolling
+Every load comes from `mj_contactForce`, never from a static axle-load estimate. Rolling
 resistance is proportional to the instantaneous load (docs/RIDE.md section 4), and the whole
 reason for modelling it that way is that the load is not static: a G-out roughly doubles it
 and a crest takes it to zero.
@@ -14,6 +14,26 @@ and a crest takes it to zero.
 The forces read here are those of the last `mj_forward`/`mj_step`, so within one control step
 they lag the state by a single 0.5 ms timestep. That is the normal cost of reading constraint
 forces from a controller and is negligible against every time constant in the model.
+
+**Each wheel gets two load channels, because two questions are being asked.**
+
+*Is this wheel on the ground, and can it be driven?* -- `front_load_n` / `rear_load_n`: the
+scalar sum of the normal-force magnitudes of every contact row the wheel owns against the
+terrain, **bridged** across a short collision dropout. Magnitudes are summed rather than
+vectors precisely so that rows with opposing normals cannot cancel and read as airborne; a
+wheel jammed against two faces is emphatically in contact.
+
+*How hard is this wheel pressed into the road?* -- `front_support_n` / `rear_support_n`: the
+vertical component of the vector sum of the same rows' normal forces, **unbridged**. This is
+the only channel `Crr . N . r` may use. It is vertical because a sphere on a square edge
+touches the ~87 degree face and the ledge top at once, and adding those magnitudes
+double-counts a load that is mostly horizontal -- an impact, not weight on a contact patch.
+It is unbridged because bridging inflates a spec-reported sink: measured over the flat
+`single_edge` run-up, the bridged pair averages 111.7 % of the 1023.7 N system weight while
+the raw pair averages 100.2 %. The 13 % of steps with no contact row carry near-zero load, so
+bridging *introduces* the error in this channel instead of removing it. Bridging the driving
+gate is still right, because a false airborne there fires the +/-80 N.m rider moment and gates
+150 N.m of drive torque off.
 
 **Single-step collision dropouts are bridged.** MuJoCo's sphere-heightfield collision
 intermittently reports no contact at all for a wheel that is demonstrably loaded: the sphere
@@ -61,16 +81,22 @@ class TerrainContacts:
     Snapshot of the bike's contact with the road at one instant.
 
     Attributes:
-        front_load_n: Normal force on the front contact sphere, in newtons, held across a
-            collision dropout shorter than `CONTACT_DROPOUT_STEPS`.
-        rear_load_n: Normal force on the rear contact sphere, in newtons, held the same way.
-        handlebar_load_n: Normal force on the handlebar geom, in newtons. Not held: a
-            handlebar contact lasts far longer than a dropout, and a missed step only delays
+        front_load_n: Total normal-force magnitude on the front contact sphere, in newtons,
+            held across a collision dropout shorter than `CONTACT_DROPOUT_STEPS`. The driving
+            and gating signal.
+        rear_load_n: The same for the rear contact sphere.
+        front_support_n: Vertical component of the front wheel's normal load this step, in
+            newtons, never held and never negative. The load `Crr . N . r` may use.
+        rear_support_n: The same for the rear wheel.
+        handlebar_load_n: Normal-force magnitude on the handlebar geom, in newtons. Not held:
+            a handlebar contact lasts far longer than a dropout, and a missed step only delays
             the crash detector by 0.5 ms.
     """
 
     front_load_n: float
     rear_load_n: float
+    front_support_n: float
+    rear_support_n: float
     handlebar_load_n: float
 
     @property
@@ -138,14 +164,17 @@ class TerrainContactQuery:
                 contacts and constraint forces.
 
         Returns:
-            The load on each tracked geom, with the two wheel loads held across a short
-            collision dropout.
+            Both load channels for each wheel -- the bridged magnitude that gates the drive
+            torque and the virtual rider, and the raw vertical support the rolling-resistance
+            model may use -- plus the handlebar's raw magnitude.
         """
-        raw = self._raw_loads(model, data)
+        magnitude_n, vertical_n = self._sum_normal_loads(model, data)
         return TerrainContacts(
-            front_load_n=self._front_load.update(raw[self.front_id]),
-            rear_load_n=self._rear_load.update(raw[self.rear_id]),
-            handlebar_load_n=raw[self.handlebar_id],
+            front_load_n=self._front_load.update(magnitude_n[self.front_id]),
+            rear_load_n=self._rear_load.update(magnitude_n[self.rear_id]),
+            front_support_n=max(0.0, vertical_n[self.front_id]),
+            rear_support_n=max(0.0, vertical_n[self.rear_id]),
+            handlebar_load_n=magnitude_n[self.handlebar_id],
         )
 
     def reset(self) -> None:
@@ -153,36 +182,53 @@ class TerrainContactQuery:
         self._front_load.reset()
         self._rear_load.reset()
 
-    def _raw_loads(self, model: mujoco.MjModel, data: mujoco.MjData) -> Dict[int, float]:
+    def _sum_normal_loads(
+        self, model: mujoco.MjModel, data: mujoco.MjData
+    ) -> Tuple[Dict[int, float], Dict[int, float]]:
         """
-        Sums the unfiltered normal load on each tracked geom for the current step.
+        Accumulates this step's normal contact load on each tracked geom, two ways.
+
+        A wheel routinely owns several contact rows at once -- adjacent heightfield prisms, of
+        which MuJoCo loads only one and leaves its coplanar siblings at exactly zero, and at a
+        square edge the near-vertical face and the ledge top together. Both sums pass over all
+        of them, but they combine them differently on purpose; see the module docstring.
 
         Args:
             model: Compiled ride-mode model.
             data: Simulation state with populated contacts.
 
         Returns:
-            Normal load in newtons keyed by geom id. A wheel with several contact rows
-            against adjacent heightfield prisms is summed over all of them: MuJoCo routinely
-            loads only one row of such a group and leaves its siblings at exactly zero.
+            Tuple of (magnitudes, verticals) in newtons, each keyed by geom id. `magnitudes`
+            adds the scalar normal force of every row, so opposing normals reinforce rather
+            than cancel. `verticals` adds the world-Z component of each row's normal force
+            vector, signed so that support on the tracked geom is positive, so a horizontal
+            face impact contributes almost nothing.
         """
-        loads: Dict[int, float] = {self.front_id: 0.0, self.rear_id: 0.0, self.handlebar_id: 0.0}
+        magnitude_n: Dict[int, float] = {self.front_id: 0.0, self.rear_id: 0.0, self.handlebar_id: 0.0}
+        vertical_n: Dict[int, float] = {self.front_id: 0.0, self.rear_id: 0.0, self.handlebar_id: 0.0}
 
         for i in range(data.ncon):
             contact = data.contact[i]
             geom1, geom2 = int(contact.geom1), int(contact.geom2)
+            # MuJoCo's contact normal is `frame[0:3]`, pointing from geom1 toward geom2, and
+            # `mj_contactForce` returns a non-negative force along it. The repulsive force on
+            # the tracked geom therefore follows the normal when the terrain is geom1 and
+            # opposes it when the terrain is geom2.
             if geom1 in self.terrain_ids:
-                tracked = geom2
+                tracked, normal_sign = geom2, 1.0
             elif geom2 in self.terrain_ids:
-                tracked = geom1
+                tracked, normal_sign = geom1, -1.0
             else:
                 continue
-            if tracked not in loads:
+            if tracked not in magnitude_n:
                 continue
-            mujoco.mj_contactForce(model, data, i, self._force)
-            loads[tracked] += abs(float(self._force[0]))
 
-        return loads
+            mujoco.mj_contactForce(model, data, i, self._force)
+            normal_force_n = float(self._force[0])
+            magnitude_n[tracked] += abs(normal_force_n)
+            vertical_n[tracked] += normal_sign * normal_force_n * float(contact.frame[2])
+
+        return magnitude_n, vertical_n
 
 
 class _BridgedLoad:

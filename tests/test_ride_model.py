@@ -86,6 +86,21 @@ def test_ride_mode_tyre_cylinders_noncolliding(ride_model, tire_geom):
     assert ride_model.geom_conaffinity[gid] == 0
 
 
+def test_ride_mode_contact_sphere_tracks_wheel_radius():
+    """Contact sphere radii follow BikeSpecs wheel radii, not a hardcoded constant."""
+    specs = BikeSpecs(front_wheel_radius=400.0, rear_wheel_radius=380.0)
+    xml_str = generate_mujoco_xml(specs=specs, mode="ride", include_rider=True)
+    model = mujoco.MjModel.from_xml_string(xml_str)
+
+    for contact_geom, radius_mm in [
+        ("geom_front_contact", specs.front_wheel_radius),
+        ("geom_rear_contact", specs.rear_wheel_radius),
+    ]:
+        gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, contact_geom)
+        assert gid >= 0, f"{contact_geom} not found in ride model"
+        assert model.geom_size[gid][0] == pytest.approx(radius_mm / 1000.0)
+
+
 def test_ride_mode_hfield_dimensions(ride_model):
     """The road hfield asset matches FIELD's fixed nrow/ncol grid dimensions."""
     hid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_HFIELD, "road")

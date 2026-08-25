@@ -99,7 +99,7 @@
             <geom name="geom_front_rim" type="cylinder" fromto="0 -0.015 0 0 0.015 0" size="0.320" mass="0.45" material="mat_rim" contype="0" conaffinity="0"/>
             <geom name="geom_front_tire" type="cylinder" fromto="0 -0.030 0 0 0.030 0" size="0.372000" mass="1.35" material="mat_tire" contype="0" conaffinity="0" friction="1.2 0.005 0.0001"/>
             <geom name="geom_front_rotor" type="cylinder" fromto="0 0.032 0 0 0.034 0" size="0.1015" mass="0.25" material="mat_metal" contype="0" conaffinity="0"/>
-            <geom name="geom_front_contact" type="sphere" pos="0 0 0" size="0.372" mass="0" rgba="0.08 0.08 0.08 0" contype="1" conaffinity="1" friction="1.2 0.005 0.0001" condim="3" solref="-130000 -800"/>
+            <geom name="geom_front_contact" type="sphere" pos="0 0 0" size="0.372000" mass="0" rgba="0.08 0.08 0.08 0" contype="1" conaffinity="1" friction="1.2 0.005 0.0001" condim="3" solref="-130000 -800"/>
           </body>
         </body>
       </body>
@@ -131,7 +131,7 @@
             <geom name="geom_rear_hub" type="cylinder" fromto="0 -0.074 0 0 0.074 0" size="0.020" mass="0.30" material="mat_metal"/>
             <geom name="geom_rear_rim" type="cylinder" fromto="0 -0.015 0 0 0.015 0" size="0.300" mass="0.40" material="mat_rim" contype="0" conaffinity="0"/>
             <geom name="geom_rear_tire" type="cylinder" fromto="0 -0.032 0 0 0.032 0" size="0.352000" mass="1.50" material="mat_tire" contype="0" conaffinity="0" friction="1.2 0.005 0.0001"/>
-            <geom name="geom_rear_contact" type="sphere" pos="0 0 0" size="0.352" mass="0" condim="3" friction="1.2 0.005 0.0001" solref="-130000 -800" contype="1" conaffinity="1" rgba="0.08 0.08 0.08 0"/>
+            <geom name="geom_rear_contact" type="sphere" pos="0 0 0" size="0.352000" mass="0" condim="3" friction="1.2 0.005 0.0001" solref="-130000 -800" contype="1" conaffinity="1" rgba="0.08 0.08 0.08 0"/>
             <geom name="geom_rear_cassette" type="cylinder" fromto="0 -0.055 0 0 -0.035 0" size="0.095" mass="0.40" material="mat_metal" contype="0" conaffinity="0"/>
             <geom name="geom_rear_rotor" type="cylinder" fromto="0 0.038 0 0 0.040 0" size="0.1015" mass="0.20" material="mat_metal" contype="0" conaffinity="0"/>
           </body>

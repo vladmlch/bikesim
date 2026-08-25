@@ -128,7 +128,7 @@ def _build_front_wheel(
             "geom_front_contact",
             "sphere",
             pos="0 0 0",
-            size="0.372",
+            size=f"{front_wheel_radius_m:.6f}",
             mass="0",
             condim="3",
             friction="1.2 0.005 0.0001",

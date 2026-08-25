@@ -131,7 +131,7 @@ def build_rear_wheel(
                 "name": "geom_rear_contact",
                 "type": "sphere",
                 "pos": "0 0 0",
-                "size": "0.352",
+                "size": f"{rear_wheel_radius_m:.6f}",
                 "mass": "0",
                 "condim": "3",
                 "friction": "1.2 0.005 0.0001",

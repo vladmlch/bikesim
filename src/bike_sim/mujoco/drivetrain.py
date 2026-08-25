@@ -61,6 +61,7 @@ def build_bb_and_motor(
 
 def build_rear_wheel(
     seatstay: ET.Element,
+    mode: str,
     p1_rel_p2: np.ndarray,
     rear_wheel_radius_m: float,
 ) -> ET.Element:
@@ -105,6 +106,7 @@ def build_rear_wheel(
             "conaffinity": "0",
         },
     )
+    tire_contype = "0" if mode == "ride" else "1"
     ET.SubElement(
         rear_wheel,
         "geom",
@@ -115,11 +117,30 @@ def build_rear_wheel(
             "size": f"{rear_wheel_radius_m:.6f}",
             "mass": "1.50",
             "material": "mat_tire",
-            "contype": "1",
-            "conaffinity": "1",
+            "contype": tire_contype,
+            "conaffinity": tire_contype,
             "friction": "1.2 0.005 0.0001",
         },
     )
+    if mode == "ride":
+        # Sphere contact patch: see geom_front_contact in steering_fork.py for rationale.
+        ET.SubElement(
+            rear_wheel,
+            "geom",
+            {
+                "name": "geom_rear_contact",
+                "type": "sphere",
+                "pos": "0 0 0",
+                "size": "0.352",
+                "mass": "0",
+                "condim": "3",
+                "friction": "1.2 0.005 0.0001",
+                "solref": "-130000 -800",
+                "contype": "1",
+                "conaffinity": "1",
+                "rgba": "0.08 0.08 0.08 0",
+            },
+        )
     ET.SubElement(
         rear_wheel,
         "geom",

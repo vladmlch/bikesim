@@ -18,6 +18,7 @@ from bike_sim.mujoco._xml_format import (
     _format_fromto,
     _format_vec,
     add_geom,
+    add_joint,
     add_site,
     add_marker,
 )
@@ -227,7 +228,13 @@ def build_frame_body(
     BB = np.array([0.0, 0.0, 0.0], dtype=float)
 
     frame = ET.SubElement(worldbody, "body", {"name": "frame", "pos": "0 0 0"})
-    if mode in ("stand", "playground"):
+    if mode == "ride":
+        # Planar chassis root: longitudinal, vertical, and pitch, in that order, before
+        # the rider and any geometry. See docs/RIDE.md sections 0-1.
+        add_joint(frame, "root_x", "slide", axis="1 0 0")
+        add_joint(frame, "root_z", "slide", axis="0 0 1")
+        add_joint(frame, "root_pitch", "hinge", axis="0 1 0")
+    if mode in ("stand", "playground", "ride"):
         build_rider(frame, include_rider=include_rider)
 
     build_bb_and_motor(frame, mass_specs)

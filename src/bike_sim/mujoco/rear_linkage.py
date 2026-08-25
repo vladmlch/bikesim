@@ -50,6 +50,7 @@ def _build_chainstay(
 
 def _build_seatstay(
     chainstay: ET.Element,
+    mode: str,
     p2_rel_p0: np.ndarray,
     p1_rel_p2: np.ndarray,
     p3_rel_p2: np.ndarray,
@@ -90,7 +91,7 @@ def _build_seatstay(
         add_marker(seatstay, "marker_pra", pos=p1_rel_p2, size="0.013")
 
     # Rear Wheel Assembly
-    build_rear_wheel(seatstay, p1_rel_p2, rear_wheel_radius_m)
+    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m)
     return seatstay
 
 
@@ -155,6 +156,7 @@ def _build_shock_yoke(
 
 def _build_shock_assembly(
     shock_yoke: ET.Element,
+    mode: str,
     p6_rel_p4: np.ndarray,
     p7_rel_p6: np.ndarray,
     specs: BikeSpecs,
@@ -227,6 +229,7 @@ def _build_shock_assembly(
         stiffness="0",
         damping="0",
         springref="0",
+        solreflimit="0.01 1" if mode == "ride" else None,
     )
 
     add_geom(shock_body, "geom_shock_trunnion_boss_l", "cylinder", fromto=f"0 0.019 0 0 {trunnion_half_width:.6f} 0", size="0.013", mass="0.02", material="mat_metal")
@@ -240,6 +243,7 @@ def _build_shock_assembly(
 
 def build_rear_linkage(
     frame: ET.Element,
+    mode: str,
     specs: BikeSpecs,
     fixed_points: Dict[str, np.ndarray],
     solved_points: Dict[str, np.ndarray],
@@ -275,7 +279,7 @@ def build_rear_linkage(
     chainstay = _build_chainstay(frame, P0, p2_rel_p0, debug_markers)
 
     # 2. Seatstay & Rear Wheel
-    _build_seatstay(chainstay, p2_rel_p0, p1_rel_p2, p3_rel_p2, p12_rel_p2, rear_wheel_radius_m, debug_markers)
+    _build_seatstay(chainstay, mode, p2_rel_p0, p1_rel_p2, p3_rel_p2, p12_rel_p2, rear_wheel_radius_m, debug_markers)
 
     # 3. Rocker Link
     rocker = _build_rocker(frame, P5, p3_rel_p5, p4_rel_p5, debug_markers)
@@ -284,7 +288,7 @@ def build_rear_linkage(
     shock_yoke = _build_shock_yoke(rocker, p4_rel_p5, p6_rel_p4, debug_markers)
 
     # 5. Shock Shaft & Shock Body
-    _build_shock_assembly(shock_yoke, p6_rel_p4, p7_rel_p6, specs)
+    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs)
 
 
 def build_equality_constraints(root: ET.Element, mode: str) -> None:

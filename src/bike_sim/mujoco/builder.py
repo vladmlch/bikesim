@@ -31,6 +31,7 @@ from bike_sim.mujoco.linkage import (
 )
 from bike_sim.mujoco.actuators import build_actuators
 from bike_sim.mujoco.sensors import build_sensors
+from bike_sim.mujoco.terrain import build_terrain
 
 
 def generate_mujoco_xml(
@@ -47,7 +48,7 @@ def generate_mujoco_xml(
     Args:
         specs: Bicycle geometric specifications.
         solver: Solved Horst-link kinematics solver instance.
-        mode: Simulation mode ("standard", "stand", "playground").
+        mode: Simulation mode ("standard", "stand", "playground", "ride").
         mass_specs: Physical component mass specifications.
         include_rider: Whether to include rider geometry and mass.
         debug_markers: Whether to include yellow debug joint markers.
@@ -88,7 +89,12 @@ def generate_mujoco_xml(
             "autolimits": "true",
         },
     )
-    timestep = "0.001" if mode in ("stand", "playground") else "0.002"
+    if mode == "ride":
+        timestep = "0.0005"
+    elif mode in ("stand", "playground"):
+        timestep = "0.001"
+    else:
+        timestep = "0.002"
     ET.SubElement(
         root,
         "option",
@@ -112,6 +118,8 @@ def generate_mujoco_xml(
         ground_z_m=ground_z_m,
         P10=P10,
     )
+    if mode == "ride":
+        build_terrain(root, worldbody, ground_z_m)
 
     # 4. Frame & Attached Bodies
     frame = build_frame_body(
@@ -139,6 +147,7 @@ def generate_mujoco_xml(
     # 6. Rear Linkage, Damper & Rear Wheel
     build_rear_linkage(
         frame=frame,
+        mode=mode,
         specs=specs,
         fixed_points=fixed,
         solved_points=st0,
@@ -151,7 +160,7 @@ def generate_mujoco_xml(
 
     # 8. Actuators & Sensors
     build_actuators(root, mode=mode)
-    build_sensors(root)
+    build_sensors(root, mode=mode)
 
     # Prettify XML
     xml_raw = ET.tostring(root, encoding="utf-8")

@@ -56,6 +56,40 @@ def build_actuators(root: ET.Element, mode: str) -> None:
                 "ctrlrange": "-50 50",
             },
         )
+    elif mode == "ride":
+        # Planar ride mode: propulsion and braking torque applied directly to the wheel
+        # spin joints. Brake ranges are two-sided because the controller computes the
+        # sign; the actuator does not. See docs/RIDE.md section 6.
+        ET.SubElement(
+            actuator,
+            "motor",
+            {
+                "name": "rear_drive",
+                "joint": "rear_wheel_spin",
+                "gear": "1",
+                "ctrlrange": "-150 150",
+            },
+        )
+        ET.SubElement(
+            actuator,
+            "motor",
+            {
+                "name": "front_brake",
+                "joint": "front_wheel_spin",
+                "gear": "1",
+                "ctrlrange": "-200 200",
+            },
+        )
+        ET.SubElement(
+            actuator,
+            "motor",
+            {
+                "name": "rear_brake",
+                "joint": "rear_wheel_spin",
+                "gear": "1",
+                "ctrlrange": "-200 200",
+            },
+        )
     else:
         ET.SubElement(
             actuator,

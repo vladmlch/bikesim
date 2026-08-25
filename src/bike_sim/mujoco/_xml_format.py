@@ -57,6 +57,8 @@ def add_geom(
     contype: Optional[str] = None,
     conaffinity: Optional[str] = None,
     friction: Optional[str] = None,
+    condim: Optional[str] = None,
+    solref: Optional[str] = None,
 ) -> ET.Element:
     """Creates and appends a <geom> element to parent with exact attribute preservation."""
     attrib = {"name": name, "type": geom_type}
@@ -80,6 +82,10 @@ def add_geom(
         attrib["conaffinity"] = str(conaffinity)
     if friction is not None:
         attrib["friction"] = friction
+    if condim is not None:
+        attrib["condim"] = str(condim)
+    if solref is not None:
+        attrib["solref"] = solref
     return ET.SubElement(parent, "geom", attrib)
 
 
@@ -95,6 +101,7 @@ def add_joint(
     stiffness: Optional[str] = None,
     damping: Optional[str] = None,
     springref: Optional[str] = None,
+    solreflimit: Optional[str] = None,
 ) -> ET.Element:
     """Creates and appends a <joint> element to parent."""
     attrib = {"name": name, "type": joint_type, "pos": pos}
@@ -108,6 +115,8 @@ def add_joint(
         attrib["damping"] = str(damping)
     if springref is not None:
         attrib["springref"] = str(springref)
+    if solreflimit is not None:
+        attrib["solreflimit"] = solreflimit
     return ET.SubElement(parent, "joint", attrib)
 
 

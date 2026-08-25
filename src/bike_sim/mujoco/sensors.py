@@ -7,9 +7,14 @@ Configures telemetry sensors: shock stroke, fork travel, joint angles, wheel vel
 import xml.etree.ElementTree as ET
 
 
-def build_sensors(root: ET.Element) -> None:
+def build_sensors(root: ET.Element, mode: str = "standard") -> None:
     """
     Appends sensor suite (<sensor>) to the root MJCF element.
+
+    Args:
+        root: Root <mujoco> XML element.
+        mode: Simulation mode. In "ride" mode, real accelerometers are added at the
+            handlebar and saddle sites, reporting the proper acceleration the rider feels.
     """
     sensor = ET.SubElement(root, "sensor")
 
@@ -37,3 +42,9 @@ def build_sensors(root: ET.Element) -> None:
     ET.SubElement(sensor, "framepos", {"name": "sensor_rear_axle_pos", "objtype": "site", "objname": "site_PRA"})
     ET.SubElement(sensor, "framepos", {"name": "sensor_front_axle_pos", "objtype": "site", "objname": "site_PFA"})
     ET.SubElement(sensor, "subtreecom", {"name": "sensor_subtree_com", "body": "frame"})
+
+    if mode == "ride":
+        # MuJoCo accelerometers report proper acceleration (0 in free fall, 9.81 at rest)
+        # -- what the rider feels -- rather than finite-differenced site positions.
+        ET.SubElement(sensor, "accelerometer", {"name": "sensor_bar_accel", "site": "site_handlebar"})
+        ET.SubElement(sensor, "accelerometer", {"name": "sensor_saddle_accel", "site": "site_seatpost_top"})

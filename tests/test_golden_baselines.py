@@ -68,6 +68,18 @@ class TestGoldenBaselines(unittest.TestCase):
         root = ET.fromstring(xml_content)
         self.assertEqual(root.tag, "mujoco")
 
+    def test_baseline_bike_ride_xml(self) -> None:
+        """Ride mode model XML matches baseline_bike_ride.xml."""
+        xml_content = generate_mujoco_xml(
+            specs=self.specs,
+            solver=self.solver,
+            mode="ride",
+            include_rider=True,
+        )
+        self._assert_text_equal(xml_content, "baseline_bike_ride.xml")
+        root = ET.fromstring(xml_content)
+        self.assertEqual(root.tag, "mujoco")
+
     def test_baseline_coordinates_json(self) -> None:
         """Exported hardpoints JSON matches baseline_coordinates.json."""
         baseline_path = self.golden_dir / "baseline_coordinates.json"
@@ -98,6 +110,7 @@ class TestGoldenBaselines(unittest.TestCase):
             "baseline_bike_model.xml",
             "baseline_bike_playground.xml",
             "baseline_bike_playground_stand.xml",
+            "baseline_bike_ride.xml",
         ]:
             path = self.golden_dir / baseline_name
             model = mujoco.MjModel.from_xml_path(str(path))

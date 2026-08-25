@@ -75,6 +75,7 @@ def export_playground_models(
     stand_file = out_path / "bike_playground_stand.xml"
     std_file = out_path / "bike_model.xml"
     playground_file = out_path / "bike_playground.xml"
+    ride_file = out_path / "bike_ride.xml"
 
     xml_stand = export_mujoco(output_path=stand_file, specs=specs, solver=solver, mode="stand", include_rider=include_rider)
     xml_std = export_mujoco(output_path=std_file, specs=specs, solver=solver, mode="standard")
@@ -86,7 +87,20 @@ def export_playground_models(
         include_rider=include_rider,
         debug_markers=True,
     )
-    return {"stand": xml_stand, "standard": xml_std, "playground": xml_playground, "dynamic": xml_playground}
+    xml_ride = export_mujoco(
+        output_path=ride_file,
+        specs=specs,
+        solver=solver,
+        mode="ride",
+        include_rider=True,
+    )
+    return {
+        "stand": xml_stand,
+        "standard": xml_std,
+        "playground": xml_playground,
+        "dynamic": xml_playground,
+        "ride": xml_ride,
+    }
 
 
 def _collect_hardpoint_dict(fixed: Dict[str, np.ndarray], state: Dict[str, Any], specs: BikeSpecs) -> Dict[str, np.ndarray]:

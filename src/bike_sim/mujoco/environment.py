@@ -1,12 +1,14 @@
 """
 MuJoCo Simulation Environment.
 
-Builds ground plane, lighting, and workshop test stand fixtures.
+Builds ground plane, lighting, workshop test stand fixtures, and the ride-mode catch plane.
 """
 
 from typing import Optional
 import xml.etree.ElementTree as ET
 import numpy as np
+
+from bike_sim.terrain.heightfield import FIELD
 
 
 def build_environment(
@@ -16,7 +18,7 @@ def build_environment(
     P10: np.ndarray,
 ) -> None:
     """
-    Builds lighting, ground plane, and workshop stand fixtures.
+    Builds lighting, ground plane, workshop stand fixtures, and (in ride mode) the catch plane.
     """
     # Lights
     ET.SubElement(
@@ -41,6 +43,24 @@ def build_environment(
             "dir": "0.6 -0.6 -1.0",
         },
     )
+
+    if mode == "ride":
+        # No floor plane at road level: a MuJoCo plane is an infinite half-space for
+        # collision and would bridge every pothole. Only a runaway catch plane, backed
+        # off below the heightfield's floor, closes out the world.
+        catch_plane_z_m = FIELD.catch_plane_z_m(ground_z_m)
+        ET.SubElement(
+            worldbody,
+            "geom",
+            {
+                "name": "catch_plane",
+                "type": "plane",
+                "pos": f"0 0 {catch_plane_z_m:.6f}",
+                "size": "50 50 0.1",
+                "material": "mat_floor",
+            },
+        )
+        return
 
     def _add_stand_fixtures() -> None:
         ET.SubElement(

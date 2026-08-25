@@ -10,6 +10,7 @@ from bike_sim.physics.mass import (
 )
 from bike_sim.physics.tuning import compute_suspension_tuning_for_sag
 from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
+from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
 from bike_sim.physics.damper import (
     BikeSuspensionSystem,
     Charger3Damper,
@@ -27,6 +28,8 @@ __all__ = [
     "compute_suspension_tuning_for_sag",
     "AirSpringSpecs",
     "ForkAirSpring",
+    "CoilShock",
+    "CoilShockSpecs",
     "BikeSuspensionSystem",
     "Charger3Damper",
     "DamperClickConfig",

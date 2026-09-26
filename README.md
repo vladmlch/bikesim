@@ -20,6 +20,7 @@ The suspension hardpoints are **derived from a reference photograph** of a Bulls
   - [Reference Photograph & Hardpoint Fit](#reference-photograph--hardpoint-fit)
   - [Chainstay Conflict: Published Table Beats the Photo](#chainstay-conflict-published-table-beats-the-photo)
   - [Measured vs. Authored Frame Elements](#measured-vs-authored-frame-elements)
+  - [Authored Assumptions of Ride Mode](#authored-assumptions-of-ride-mode)
   - [Render Comparison Tool](#render-comparison-tool)
 - [Mathematical Formulation & Kinematic Derivations](#mathematical-formulation--kinematic-derivations)
   - [Global Coordinate System](#global-coordinate-system)
@@ -40,6 +41,7 @@ The suspension hardpoints are **derived from a reference photograph** of a Bulls
   - [Environment Setup via `uv`](#environment-setup-via-uv)
   - [CLI Command Execution](#cli-command-execution)
 - [Interactive 2D Suspension Test Stand (`bike-playground`)](#interactive-2d-suspension-test-stand-bike-playground)
+- [Ride Mode: Rolling Over a Road (`bike-ride`)](#ride-mode-rolling-over-a-road-bike-ride)
 - [Automated Test Suite](#automated-test-suite)
 - [Known Limitations](#known-limitations)
 - [Repository Structure](#repository-structure)
@@ -206,6 +208,28 @@ Be precise about which is which — this is not a blanket claim about "the frame
 - the hardcoded frame reference points $P_8$ (top-tube kink) and $P_{10}$ (seat-tube
   junction);
 - the model's livery. It is intentionally not the real bike's paint scheme.
+
+### Authored Assumptions of Ride Mode
+
+Ride mode adds a layer that is **authored throughout** — nothing in it is measured from
+the reference bike, and `docs/RIDE.md` §11–§12 lists each item with its justification:
+
+- the track layouts: `enduro_aggressive` is a designed sequence of features, and the
+  `road_*` presets are procedurally generated from a fixed seed with authored densities
+  and size ranges (potholes 40–120 mm deep and 0.3–0.8 m long on `road_worn`, etc.);
+- rolling resistance `Crr = 0.015`, applied as `Crr·N·r` against the instantaneous
+  vertical contact load;
+- the tyre as a massless contact sphere with `solref = −130000 −800` (130 N/mm,
+  800 N·s/m) and friction `1.2`; there is no tyre slip model;
+- the virtual rider: a PD moment on chassis pitch capped at ±80 N·m, active only while
+  both wheels are airborne, with its angular impulse and work logged because it violates
+  conservation of angular momentum;
+- crash thresholds: pitch beyond 60° or handlebar–ground contact;
+- the 10-step (5 ms) contact debounce that bridges MuJoCo's sphere–heightfield dropouts;
+- omitted aerodynamic drag (wheel power reads ~90 W low at 25 km/h) and omitted
+  drivetrain (torque applied at the wheel);
+- the summary's 100 Hz low-pass on accelerations, chosen to remove 1–2 ms solver
+  transients while keeping every band the suspension works in.
 
 ### Render Comparison Tool
 
@@ -596,8 +620,9 @@ uv sync
 
 ### CLI Command Execution
 
-The package installs three commands: `bike-sim` for analysis and exports, `bike-export` for model/data exports, and
-`bike-playground` for the interactive test stand. With no flags, `bike-sim` prints geometry tables and generates plots.
+The package installs four commands: `bike-sim` for analysis and exports, `bike-export` for model/data exports,
+`bike-playground` for the interactive test stand, and `bike-ride` for ride mode (rolling over a road, interactive or
+headless with telemetry). With no flags, `bike-sim` prints geometry tables and generates plots.
 `--all` also exports JSON and MJCF models but does not open the viewer. Use `bike-sim --help` for options.
 
 ```bash
@@ -615,6 +640,10 @@ uv run bike-sim --export-mujoco
 
 # 5. Launch interactive MuJoCo suspension test stand
 uv run bike-playground
+
+# 6. Ride mode: interactive viewer on the default rough road, or a headless measured run
+uv run bike-ride
+uv run bike-ride --headless --track road_broken --speed 30
 
 # Run all analysis, plot, JSON, and model export tasks (does not open the viewer)
 uv run bike-sim --all
@@ -695,6 +724,46 @@ uv run bike-sim --playground
 
 ---
 
+## Ride Mode: Rolling Over a Road (`bike-ride`)
+
+The three modes above bolt the frame to the world. **Ride mode** frees it: a planar
+(sagittal-plane) whole-bike model rolls along a heightfield road with a PI cruise
+control, sign-aware brakes, load-proportional rolling resistance, force-based suspension
+(air fork, coil shock with bottom-out bumper, click-tuned dampers) and a bounded virtual
+rider that manages pitch only while both wheels are airborne. There is no lateral motion,
+no steering and no tyre slip model by design — the question it answers is what the
+suspension does, not whether the bike stays up.
+
+```bash
+uv run bike-ride                                   # viewer, default track road_worn, 25 km/h
+uv run bike-ride --track enduro_aggressive         # the trail preset: braking bumps, edges, rock gardens, drop, kicker
+uv run bike-ride --headless                        # telemetry.csv + summary.json + plots to output/ride/<track>_<speed>_s<seed>/
+uv run bike-ride --headless --track my_road.toml --seed 3 --sag 30
+uv run bike-ride --track my_road.toml --preview    # draw the road profile and effective pothole drops, no simulation
+uv run bike-ride --dump-track road_worn > my_road.toml
+```
+
+Tracks are **presets** (`enduro_aggressive`, `flat`, `single_edge`, `washboard_only`, and
+the procedurally generated roads `road_smooth` / `road_worn` / `road_broken`) or **TOML
+track files** in which every pothole and bump is placed and sized by hand (`sharp`,
+`sloped` or `bowl` potholes; `cosine` or `trapezoid` bumps; the trail catalogue too), with
+an optional `[generator]` block that fills the free road procedurally from a seed with
+configurable densities, size ranges, shape weights and background roughness. A track
+longer than the shipped 120 m heightfield gets a longer field automatically.
+
+A headless run records 27 channels per step (travel, shaft velocities, spring / damper /
+bumper forces, contact loads, drive torque, handlebar and saddle accelerometers, virtual
+rider work) and reduces them to a summary: travel usage and bottom-out / top-out counts
+per end, RMS and peak vertical acceleration at bar and saddle after a 100 Hz low-pass
+with the raw peak reported beside it, airborne events, mean speed, and for every pothole
+the declared depth against the **effective wheel drop** — a 372 mm wheel cannot reach the
+floor of a hole shorter than 0.74 m, and the summary says so.
+
+The physics contract, the measured sag figures, the track-file format, the key map and
+the channel reference are in [`docs/RIDE.md`](docs/RIDE.md).
+
+---
+
 ## Automated Test Suite
 
 Run the test suite with `uv`:
@@ -703,7 +772,7 @@ Run the test suite with `uv`:
 uv run pytest -v
 ```
 
-**93 tests, all passing.** No extra dependencies are needed — Pillow, which
+**390 tests, all passing** (about 50 s; the ride-mode traverses dominate). No extra dependencies are needed — Pillow, which
 `tools/photo_reference.py` and `tools/render_comparison.py` use, is already present
 transitively.
 
@@ -718,6 +787,19 @@ transitively.
 | `tests/test_fitted_hardpoints.py` | `6` | The committed fit constants: stroke, eye-to-eye, $P_6$ collinearity, residual bounds |
 | `tests/test_render_comparison.py` | `6` | Anchor registration onto the photograph, overlay differs from the bare photo, no debug markers in stand XML |
 | `tests/test_photo_reference.py` | `4` | Red-bolt segmentation, calibration, BB-drop self-check |
+| `tests/test_coil_shock.py` | `7` | Coil rate, preload, bottom-out bumper engagement and force |
+| `tests/test_terrain.py` | `45` | Obstacle catalogue geometry, grid independence, seed determinism, profile assembly, presets, heightfield rasterization |
+| `tests/test_road_shapes.py` | `23` | Road-scale shapes (bump, trapezoid, sloped / bowl pothole, roughness) and the rolling-wheel envelope |
+| `tests/test_road_generator.py` | `40` | Rough-road generator (determinism, rates, ranges, shape weights, clearance, roughness fill), `road_*` levels, TOML track files and their errors, dump→load round-trip |
+| `tests/test_ride_model.py` | `15` | Ride MJCF: planar root, loop closures, contact spheres, hfield dims, accelerometers, timestep |
+| `tests/test_ride_field_sizing.py` | `15` | Heightfield derived from track length; default XML byte-identical; 300 m road compiles and rolls |
+| `tests/test_ride_equilibrium.py` | `11` | Solved static equilibrium, sag, suspension force path |
+| `tests/test_ride_controllers.py` | `40` | Cruise, brakes, rolling resistance, virtual rider, crash detector; `single_edge` traverse |
+| `tests/test_ride_track.py` | `59` | Full `enduro_aggressive` traverse: termination, travel limits, kicker flight, contact debounce, session, pacer |
+| `tests/test_ride_telemetry.py` | `15` | Recorder rows / CSV / decimation / bit-identical repeat; summary metrics on synthetic and real channels |
+| `tests/test_ride_invariants.py` | `8` | `road_worn` at 25 km/h: solved sag, travel inside soft limits, speed tracking, no flight, repeatability |
+| `tests/test_ride_plots.py` | `6` | Telemetry figures and track preview render headless |
+| `tests/test_ride_cli.py` | `12` | `bike-ride` resolution, arguments, `--list-tracks`, `--dump-track`, `--preview`, a real `--headless` run with `--sag` |
 
 ---
 
@@ -742,6 +824,12 @@ One root cause produces both ends. Changing the convention is not a local fix: i
 re-deriving `fork_initial_psi` **and** `shock_stiffness` together against the model's own
 centre of mass, which is a ride-feel decision rather than a bug fix.
 
+Ride mode measures the consequence directly: at the shipped tune the solved start
+equilibrium is 40.6 % front / 22.7 % rear (the first-order figures are 42.0 / 25.3 %; the
+difference is unsprung mass and pitch at sag — see `docs/RIDE.md` §9). `bike-ride --sag 30`
+fits both ends against the model's own centre of mass for one run without changing the
+shipped defaults.
+
 ### 2. A 0.05 kg gap between the mass budget and the compiled model
 
 `BikeMassSpecs` budgets `24.40` kg; the compiled MJCF weighs `24.35` kg. Every body except
@@ -764,15 +852,23 @@ pins the gap so it cannot drift further.
 ├── src/bike_sim/                    # Modular Python package
 │   ├── geometry/                    # BikeSpecs, hardpoints, validation
 │   ├── kinematics/                  # Analytical Horst-link 4-bar solver, velocity Jacobian
-│   ├── physics/                     # Air spring, damper, mass profile
-│   ├── mujoco/                      # MJCF generator (standard, stand, playground, ride) + JSON exporter
-│   ├── sim/                         # Interactive Test Stand runner, camera manager, controllers
-│   ├── viz/                         # Kinematics & damper dyno curve plotting
-│   └── cli/                         # CLI entrypoints (bike-sim, bike-playground, bike-export)
+│   ├── physics/                     # Air spring, coil shock, damper, mass profile, sag tuning
+│   ├── terrain/                     # Ride road: obstacle catalogue, road-scale shapes, wheel envelope,
+│   │                                #   profile assembly, presets, rough-road generator, TOML track files, heightfield
+│   ├── mujoco/                      # MJCF generator (standard, stand, playground, ride) + terrain asset + JSON exporter
+│   ├── sim/                         # Test Stand runner, ride orchestrator (ride_sim.py), static equilibrium
+│   │   └── ride/                    #   cruise, brakes, rolling resistance, contacts, forces, virtual rider,
+│   │                                #   session/viewer/HUD/input, termination, telemetry recorder, summary metrics
+│   ├── viz/                         # Kinematics, damper dyno and ride telemetry plotting, track preview
+│   └── cli/                         # CLI entrypoints (bike-sim, bike-playground, bike-export, bike-ride)
 ├── tools/
 │   ├── photo_reference.py           # Red-bolt segmentation & calibration from the reference photo
 │   ├── fit_hardpoints.py            # Offline constrained hardpoint fit (uses SciPy)
 │   └── render_comparison.py         # Photo-registered side-by-side & overlay renders (Pillow)
+├── docs/
+│   ├── RIDE.md                      # Ride mode: physics contract, usage, track files, telemetry reference
+│   ├── ARCHITECTURE.md              # Package layout and subsystem map
+│   └── superpowers/plans/           # Implementation plans (ride mode, rough road)
 ├── docs/reference/
 │   ├── bulls_sonic_evo_side.jpg     # Reference photograph
 │   ├── bulls_reference_points.json  # Calibration + raw measured pivot positions
@@ -787,10 +883,16 @@ pins the gap so it cannot drift further.
 │   ├── test_golden_baselines.py     # Golden snapshot regression tests
 │   ├── test_fitted_hardpoints.py    # The committed fit constants
 │   ├── test_photo_reference.py      # Photo segmentation & calibration
-│   └── test_render_comparison.py    # Render registration onto the photograph
+│   ├── test_render_comparison.py    # Render registration onto the photograph
+│   ├── test_terrain.py              # Obstacle catalogue, presets, heightfield rasterization
+│   ├── test_road_shapes.py          # Road-scale shapes & rolling-wheel envelope
+│   ├── test_road_generator.py       # Rough-road generator & TOML track files
+│   └── test_ride_*.py               # Ride MJCF, field sizing, equilibrium, controllers, full traverse,
+│                                    #   telemetry, invariants, plots, CLI
 └── output/                          # Generated outputs (gitignored)
     ├── models/                      # coordinates.json, bike_model.xml, bike_playground_stand.xml, bike_playground.xml, bike_ride.xml
-    └── plots/                       # Publication PNG figures
+    ├── plots/                       # Publication PNG figures
+    └── ride/                        # bike-ride --headless artifacts: <track>_<speed>_s<seed>/{telemetry.csv, summary.json, *.png}
 ```
 
 Generated PNGs (`linkage_geometry.png`, `leverage_ratio.png`, `axle_path.png`,

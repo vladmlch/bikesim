@@ -32,10 +32,68 @@ def _ground_z_m() -> float:
     return compute_ground_z(BikeSpecs()) / 1000.0
 
 
+@pytest.fixture(scope="module")
+def seated_ride_model():
+    """Compiles the ride-mode MJCF model with the seated rider once for the module."""
+    return mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="ride", rider="seated"))
+
+
 def test_ride_mode_dof_count(ride_model):
-    """Ride mode has exactly 12 generalized coordinates and 12 velocity DOFs."""
+    """With the lumped rider, ride mode has exactly 12 generalized coordinates and 12 DOFs."""
     assert ride_model.nq == 12
     assert ride_model.nv == 12
+
+
+def test_seated_ride_mode_adds_one_slide_per_rider_mass(seated_ride_model):
+    """
+    The seated rider adds five vertical slides -- pelvis, torso, arms, two legs -- for 17.
+
+    docs/RIDE.md section 1 table: 12 coordinates for the bike, plus one per lumped rider mass.
+    """
+    assert seated_ride_model.nq == 17
+    assert seated_ride_model.nv == 17
+    for joint_name in ("rider_pelvis_z", "rider_torso_z", "rider_arms_z", "rider_leg_front_z", "rider_leg_rear_z"):
+        jid = mujoco.mj_name2id(seated_ride_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+        assert jid >= 0, joint_name
+        assert seated_ride_model.jnt_type[jid] == mujoco.mjtJoint.mjJNT_SLIDE
+        assert not seated_ride_model.jnt_limited[jid]
+        assert np.allclose(seated_ride_model.jnt_axis[jid], [0.0, 0.0, 1.0])
+    # The torso rides on the pelvis; every other rider body hangs off the frame.
+    body = lambda n: mujoco.mj_name2id(seated_ride_model, mujoco.mjtObj.mjOBJ_BODY, n)
+    assert seated_ride_model.body_parentid[body("rider_torso")] == body("rider_pelvis")
+    for name in ("rider_pelvis", "rider_arms", "rider_leg_front", "rider_leg_rear"):
+        assert seated_ride_model.body_parentid[body(name)] == body("frame")
+
+
+def test_seated_rider_geoms_do_not_collide(seated_ride_model):
+    """Every rider geom is visual and mass only: rider-ground contact is a crash, not a collision."""
+    for gid in range(seated_ride_model.ngeom):
+        name = mujoco.mj_id2name(seated_ride_model, mujoco.mjtObj.mjOBJ_GEOM, gid) or ""
+        if name.startswith("geom_rider_"):
+            assert seated_ride_model.geom_contype[gid] == 0 and seated_ride_model.geom_conaffinity[gid] == 0, name
+
+
+def test_seated_rider_accelerometers(seated_ride_model, ride_model):
+    """The seated rider carries torso and pelvis accelerometers; the lumped rider does not."""
+    for sensor in ("sensor_rider_torso_accel", "sensor_rider_pelvis_accel"):
+        assert mujoco.mj_name2id(seated_ride_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor) >= 0
+        assert mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor) < 0
+
+
+def test_cranks_and_pedals_are_present_and_visual_only(ride_model):
+    """165 mm horizontal cranks with a pedal on each end, welded to the frame and non-colliding."""
+    frame_id = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_BODY, "frame")
+    for name in ("geom_crank_spindle", "geom_crank_arm_front", "geom_crank_arm_rear", "geom_pedal_front", "geom_pedal_rear"):
+        gid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_GEOM, name)
+        assert gid >= 0, name
+        assert ride_model.geom_bodyid[gid] == frame_id
+        assert ride_model.geom_contype[gid] == 0 and ride_model.geom_conaffinity[gid] == 0
+    front = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_GEOM, "geom_pedal_front")
+    rear = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_GEOM, "geom_pedal_rear")
+    assert ride_model.geom_pos[front][0] == pytest.approx(0.165)
+    assert ride_model.geom_pos[rear][0] == pytest.approx(-0.165)
+    assert ride_model.geom_pos[front][2] == pytest.approx(0.0) and ride_model.geom_pos[rear][2] == pytest.approx(0.0)
+    assert mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_GEOM, "geom_crank_arms") < 0
 
 
 def test_ride_mode_root_joints(ride_model):

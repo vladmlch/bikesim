@@ -8,7 +8,7 @@ The suspension hardpoints are **derived from a reference photograph** of a Bulls
 [![Physics Engine](https://img.shields.io/badge/physics-MuJoCo%20MJCF-purple.svg)](https://mujoco.org/)
 [![Package Manager](https://img.shields.io/badge/manager-uv-green.svg)](https://github.com/astral-sh/uv)
 [![Kinematics Invariance](https://img.shields.io/badge/kinematic_error-%3C_10%5E%7B--12%7D_mm-brightgreen.svg)]()
-[![Tests](https://img.shields.io/badge/tests-95%20passed%20%7C%20100%25-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-425%20passed%20%7C%20100%25-brightgreen.svg)]()
 
 ---
 
@@ -207,7 +207,13 @@ Be precise about which is which — this is not a blanket claim about "the frame
   geoms were shaped by eye to a plausible silhouette;
 - the hardcoded frame reference points $P_8$ (top-tube kink) and $P_{10}$ (seat-tube
   junction);
-- the model's livery. It is intentionally not the real bike's paint scheme.
+- the model's livery. It is intentionally not the real bike's paint scheme;
+- the crankset: 165 mm arms at 3 and 9 o'clock with platform pedals, rigid with the frame,
+  splitting the `0.85` kg `crank_pedals_mass` as spindle 0.10, arms 2 × 0.20, pedals
+  2 × 0.175 kg;
+- the seated rider's saddle height: it leaves the photograph's 690 mm and follows the
+  rider's inseam (LeMond, `0.883 ×`), +36 mm for the default 1.80 m rider. The `none` and
+  `lumped` variants keep the photograph's saddle.
 
 ### Authored Assumptions of Ride Mode
 
@@ -221,9 +227,16 @@ the reference bike, and `docs/RIDE.md` §11–§12 lists each item with its just
   vertical contact load;
 - the tyre as a massless contact sphere with `solref = −130000 −800` (130 N/mm,
   800 N·s/m) and friction `1.2`; there is no tyre slip model;
-- the virtual rider: a PD moment on chassis pitch capped at ±80 N·m, active only while
-  both wheels are airborne, with its angular impulse and work logged because it violates
-  conservation of angular momentum;
+- the virtual rider moment: a PD moment on chassis pitch capped at ±80 N·m, active only
+  while both wheels are airborne, with its angular impulse and work logged because it
+  violates conservation of angular momentum;
+- the seated rider's authored parts: leg (5 Hz) and arm (4 Hz) path resonances, hip 60 mm
+  above the saddle, ankle 115 mm above the pedal, a 15° elbow, inseam = 0.47 × stature, a
+  0.4 kg helmet; its literature parts (de Leva 1996 segment masses and lengths, LeMond's
+  0.883 × inseam saddle height, Kumar & Saran 2019 saddle contact, the 4–6 Hz / ~1.5 ×
+  seated-body apparent-mass peak, the 55 / 33 / 12 % saddle / pedal / bar split
+  extrapolated from Carahalios 2015) are listed with sources in `docs/RIDE.md` §7;
+- the 165 mm horizontal cranks and platform pedals, rigid with the frame (no drivetrain);
 - crash thresholds: pitch beyond 60° or handlebar–ground contact;
 - the 10-step (5 ms) contact debounce that bridges MuJoCo's sphere–heightfield dropouts;
 - omitted aerodynamic drag (wheel power reads ~90 W low at 25 km/h) and omitted
@@ -698,7 +711,7 @@ uv run bike-sim --playground
 | `[Up]` / `[Down]` | **Compress / Extend Front Fork** | Moves the front fork lower legs along the 64° steering axis (0 to 180 mm travel). |
 | `[Space]` | **Auto-Sweep Toggle** | Toggles continuous sinusoidal travel auto-sweep (0 -> 180 mm). |
 | `[R]` | **Reset Simulation** | Restores initial uncompressed test stand state (0 mm travel). |
-| `[B]` | **Toggle Rider** | Toggles rider mass and geometry between bare bike (`24.35` kg) and full system (`104.35` kg). |
+| `[B]` | **Toggle Rider** | Test stand only: toggles the lumped rider between bare bike (`24.35` kg) and full system (`104.35` kg). Unbound in ride mode, where the rider is a `--rider` choice. |
 | `[C]` | **Cycle Camera View** | Toggles between **2D Side Profile** (azimuth 90°) and **3D Isometric** (azimuth 135°). |
 | `[1]` / `[2]` | **Direct Camera Select** | Instantly snap to `[1]` **2D Side View** or `[2]` **3D Isometric View**. |
 | `[P]` | **Cycle Damper Presets** | Cycles RockShox damper factory presets (Base -> Plush -> Enduro -> Park). |
@@ -729,16 +742,20 @@ uv run bike-sim --playground
 The three modes above bolt the frame to the world. **Ride mode** frees it: a planar
 (sagittal-plane) whole-bike model rolls along a heightfield road with a PI cruise
 control, sign-aware brakes, load-proportional rolling resistance, force-based suspension
-(air fork, coil shock with bottom-out bumper, click-tuned dampers) and a bounded virtual
-rider that manages pitch only while both wheels are airborne. There is no lateral motion,
-no steering and no tyre slip model by design — the question it answers is what the
-suspension does, not whether the bike stays up.
+(air fork, coil shock with bottom-out bumper, click-tuned dampers), a **seated
+biodynamic rider** — four lumped masses on preloaded, one-sided spring-dampers to the
+saddle, pedals and bar, with the saddle set for the rider's inseam — and a bounded
+virtual-rider moment that manages pitch only while both wheels are airborne. There is no
+lateral motion, no steering and no tyre slip model by design — the question it answers
+is what the suspension does, and what reaches the rider, not whether the bike stays up.
 
 ```bash
 uv run bike-ride                                   # viewer, default track road_worn, 25 km/h
 uv run bike-ride --track enduro_aggressive         # the trail preset: braking bumps, edges, rock gardens, drop, kicker
 uv run bike-ride --headless                        # telemetry.csv + summary.json + plots to output/ride/<track>_<speed>_s<seed>/
 uv run bike-ride --headless --track my_road.toml --seed 3 --sag 30
+uv run bike-ride --headless --rider lumped         # the original 80 kg rigid standing rider, for comparison
+uv run bike-ride --headless --rider-mass 92 --rider-height 1.88   # the seated rider is sized to the person
 uv run bike-ride --track my_road.toml --preview    # draw the road profile and effective pothole drops, no simulation
 uv run bike-ride --dump-track road_worn > my_road.toml
 ```
@@ -751,13 +768,28 @@ an optional `[generator]` block that fills the free road procedurally from a see
 configurable densities, size ranges, shape weights and background roughness. A track
 longer than the shipped 120 m heightfield gets a longer field automatically.
 
-A headless run records 27 channels per step (travel, shaft velocities, spring / damper /
+The rider is one of three variants (`--rider none|lumped|seated`, default `seated`). The
+seated rider is the whole-body-vibration literature's lumped-parameter model in the
+sagittal plane: de Leva segment masses allocated to the saddle, pedal and bar load paths
+for a 55 / 33 / 12 % static split, a measured pelvis-to-saddle contact (Kumar & Saran
+2019), a torso spring set so the body's apparent mass peaks at 4.8 Hz as shaker
+measurements of seated humans do, and a pose solved from the rider's stature: LeMond's
+saddle height from the inseam (+36 mm over the photograph for the default 1.80 m rider),
+knees by inverse kinematics onto 165 mm horizontal cranks, torso leaned until the arms
+reach the bar. The saddle and pedals push but cannot pull, so the rider can leave the
+saddle; the telemetry records when. Each parameter is tagged literature / derived /
+authored in `docs/RIDE.md` §7 and `physics/rider.py`.
+
+A headless run records 36 channels per step (travel, shaft velocities, spring / damper /
 bumper forces, contact loads, drive torque, handlebar and saddle accelerometers, virtual
-rider work) and reduces them to a summary: travel usage and bottom-out / top-out counts
-per end, RMS and peak vertical acceleration at bar and saddle after a 100 Hz low-pass
-with the raw peak reported beside it, airborne events, mean speed, and for every pothole
-the declared depth against the **effective wheel drop** — a 372 mm wheel cannot reach the
-floor of a hole shorter than 0.74 m, and the summary says so.
+rider work, and for the seated rider the saddle / pedal / bar loads, saddle gap and torso
+and pelvis accelerometers) and reduces them to a summary: travel usage and bottom-out /
+top-out counts per end, RMS and peak vertical acceleration at bar, saddle, torso and
+pelvis after a 100 Hz low-pass with the raw peak reported beside it, the rider's mean load
+split and saddle lift-offs, airborne events, mean speed, and for every pothole the
+declared depth against the **effective wheel drop** — a 372 mm wheel cannot reach the
+floor of a hole shorter than 0.74 m, and the summary says so. On `road_worn` at 25 km/h
+the default rider's torso sees 3.0 m/s² RMS against 4.6 at the saddle beneath it.
 
 The physics contract, the measured sag figures, the track-file format, the key map and
 the channel reference are in [`docs/RIDE.md`](docs/RIDE.md).
@@ -781,9 +813,9 @@ transitively.
 | `tests/test_kinematics.py` | `17` | Frame geometry, steering, rigid-link invariance, leverage progressivity, transmission angle, JSON/MJCF export validity, the immutable published geometry table |
 | `tests/test_frame_visuals.py` | `23` | Seat tube continuity into the casting, trunnion in frame material, seatpost/saddle construction, down-tube envelope, debug-marker gating, mass conservation across geom edits |
 | `tests/test_playground.py` | `14` | MJCF compilation in standard, stand, and playground modes, stand-mode actuators, travel sweep 0..180mm, telemetry, key handling, reset |
-| `tests/test_mass_distribution.py` | `11` | Mass budget, compiled body masses, CG, axle loads, wheel inertia, loop-closure tightness under mass, 30 % rear sag |
+| `tests/test_mass_distribution.py` | `17` | Mass budget, compiled body masses, CG, axle loads, wheel inertia, loop-closure tightness under mass, 30 % rear sag; seated rider bodies vs the analytic table, split and springs, saddle follows the rider |
 | `tests/test_air_spring.py` | `7` | Pneumatic fork spring curve and sag calibration |
-| `tests/test_golden_baselines.py` | `5` | Golden snapshot validation for XML models and JSON export |
+| `tests/test_golden_baselines.py` | `7` | Golden snapshot validation for XML models (ride: seated and lumped) and JSON export |
 | `tests/test_fitted_hardpoints.py` | `6` | The committed fit constants: stroke, eye-to-eye, $P_6$ collinearity, residual bounds |
 | `tests/test_render_comparison.py` | `6` | Anchor registration onto the photograph, overlay differs from the bare photo, no debug markers in stand XML |
 | `tests/test_photo_reference.py` | `4` | Red-bolt segmentation, calibration, BB-drop self-check |
@@ -791,15 +823,15 @@ transitively.
 | `tests/test_terrain.py` | `45` | Obstacle catalogue geometry, grid independence, seed determinism, profile assembly, presets, heightfield rasterization |
 | `tests/test_road_shapes.py` | `23` | Road-scale shapes (bump, trapezoid, sloped / bowl pothole, roughness) and the rolling-wheel envelope |
 | `tests/test_road_generator.py` | `50` | Rough-road generator (determinism, rates, ranges, shape weights, clearance, roughness fill), `road_*` levels, TOML track files and their errors, dump→load round-trip |
-| `tests/test_ride_model.py` | `15` | Ride MJCF: planar root, loop closures, contact spheres, hfield dims, accelerometers, timestep |
+| `tests/test_ride_model.py` | `20` | Ride MJCF: planar root, loop closures, contact spheres, hfield dims, accelerometers, timestep; seated rider bodies and slides, cranks |
 | `tests/test_ride_field_sizing.py` | `15` | Heightfield derived from track length; default XML byte-identical; 300 m road compiles and rolls |
-| `tests/test_ride_equilibrium.py` | `11` | Solved static equilibrium, sag, suspension force path |
+| `tests/test_ride_equilibrium.py` | `17` | Solved static equilibrium and sag for both riders, suspension force path, the seated rider's one-sided springs, designed split, apparent-mass peak against the literature |
 | `tests/test_ride_controllers.py` | `40` | Cruise, brakes, rolling resistance, virtual rider, crash detector; `single_edge` traverse |
-| `tests/test_ride_track.py` | `59` | Full `enduro_aggressive` traverse: termination, travel limits, kicker flight, contact debounce, session, pacer |
+| `tests/test_ride_track.py` | `59` | Full `enduro_aggressive` traverse with the lumped rider: termination, travel limits, kicker flight, contact debounce, session, pacer; `B` unbound |
 | `tests/test_ride_telemetry.py` | `15` | Recorder rows / CSV / decimation / bit-identical repeat; summary metrics on synthetic and real channels |
-| `tests/test_ride_invariants.py` | `8` | `road_worn` at 25 km/h: solved sag, travel inside soft limits, speed tracking, no flight, repeatability |
+| `tests/test_ride_invariants.py` | `10` | `road_worn` at 25 km/h with the seated rider: solved sag and split, travel inside soft limits, speed tracking, no flight, the rider stays seated, repeatability |
 | `tests/test_ride_plots.py` | `6` | Telemetry figures and track preview render headless |
-| `tests/test_ride_cli.py` | `15` | `bike-ride` resolution, arguments, `--list-tracks`, `--dump-track`, `--preview`, a real `--headless` run with `--sag` |
+| `tests/test_ride_cli.py` | `19` | `bike-ride` resolution, arguments incl. `--rider*`, `--list-tracks`, `--dump-track`, `--preview`, real `--headless` runs with `--sag` for both riders |
 
 ---
 
@@ -816,19 +848,22 @@ the seated rear-sag convention bike manufacturers publish. At that split the num
 internally consistent: the rear settles at `29.998 %` sag, and the fork PSI reproduces
 `ForkAirSpring.calibrate_psi_for_sag` to within `0.011 %`.
 
-The model itself does not produce that split. `compute_static_system_cg` puts **46.4 %** of
-static weight on the front for the 80 kg rider in `RiderSpecs`' standing attack pose. Springs
-calibrated for 35/65 but loaded at ~46/54 therefore do not sag 30/30 in the simulator.
+The model itself does not produce that split. `compute_static_system_cg` puts **46.7 %** of
+static weight on the front for the 80 kg lumped rider in its standing attack pose, and
+**40.4 %** for the default seated rider, whose centre of mass sits behind and above it.
+Springs calibrated for 35/65 but loaded at 47/53 or 40/60 therefore do not sag 30/30 in
+the simulator.
 
 One root cause produces both ends. Changing the convention is not a local fix: it means
 re-deriving `fork_initial_psi` **and** `shock_stiffness` together against the model's own
 centre of mass, which is a ride-feel decision rather than a bug fix.
 
 Ride mode measures the consequence directly: at the shipped tune the solved start
-equilibrium is 40.6 % front / 22.7 % rear (the first-order figures are 42.0 / 25.3 %; the
-difference is unsprung mass and pitch at sag — see `docs/RIDE.md` §9). `bike-ride --sag 30`
-fits both ends against the model's own centre of mass for one run without changing the
-shipped defaults.
+equilibrium is 40.6 % front / 22.7 % rear with the lumped rider (the first-order figures
+are 42.0 / 25.3 %; the difference is unsprung mass and pitch at sag — see `docs/RIDE.md`
+§9) and 33.2 % front / 25.6 % rear with the seated rider. `bike-ride --sag 30` fits both
+ends against the chosen rider's own centre of mass for one run without changing the
+shipped defaults (118.5 psi / 93 984 N/m lumped; 100.5 psi / 105 148 N/m seated).
 
 ### 2. A 0.05 kg gap between the mass budget and the compiled model
 
@@ -850,14 +885,14 @@ pins the gap so it cannot drift further.
 ├── pyproject.toml                   # Project configuration & dependencies
 ├── uv.lock                          # Deterministic dependency lockfile
 ├── src/bike_sim/                    # Modular Python package
-│   ├── geometry/                    # BikeSpecs, hardpoints, validation
+│   ├── geometry/                    # BikeSpecs, hardpoints, cockpit (saddle/post, grip, pedals), validation
 │   ├── kinematics/                  # Analytical Horst-link 4-bar solver, velocity Jacobian
-│   ├── physics/                     # Air spring, coil shock, damper, mass profile, sag tuning
+│   ├── physics/                     # Air spring, coil shock, damper, mass profile, rider (variants, anthropometry, seated pose), sag tuning
 │   ├── terrain/                     # Ride road: obstacle catalogue, road-scale shapes, wheel envelope,
 │   │                                #   profile assembly, presets, rough-road generator, TOML track files, heightfield
 │   ├── mujoco/                      # MJCF generator (standard, stand, playground, ride) + terrain asset + JSON exporter
 │   ├── sim/                         # Test Stand runner, ride orchestrator (ride_sim.py), static equilibrium
-│   │   └── ride/                    #   cruise, brakes, rolling resistance, contacts, forces, virtual rider,
+│   │   └── ride/                    #   cruise, brakes, rolling resistance, contacts, forces, seated rider forces, virtual rider,
 │   │                                #   session/viewer/HUD/input, termination, telemetry recorder, summary metrics
 │   ├── viz/                         # Kinematics, damper dyno and ride telemetry plotting, track preview
 │   └── cli/                         # CLI entrypoints (bike-sim, bike-playground, bike-export, bike-ride)

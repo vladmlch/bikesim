@@ -11,10 +11,15 @@ reason, so the viewer can hold the finishing state on screen and report why it e
 quietly continuing to integrate past the end of the track.
 
 **Keys are queued.** The passive viewer calls its key callback from its own thread, and the
-actions behind those keys write damper clicks, air pressure and body mass -- state `mj_step` is
-reading. Events are therefore enqueued and drained on the physics thread, exactly as the test
-stand does. With no viewer attached they are applied immediately, so a headless session behaves
+actions behind those keys write damper clicks and air pressure -- state `mj_step` is reading.
+Events are therefore enqueued and drained on the physics thread, exactly as the test stand
+does. With no viewer attached they are applied immediately, so a headless session behaves
 synchronously.
+
+**The rider is not a key.** The seated rider has its own bodies and joints, so switching rider
+variants changes the compiled model's coordinate count, which a passive viewer cannot follow
+in place. The rider is chosen on the command line (`bike-ride --rider`); comparing variants is
+two headless runs on the same seed.
 """
 
 import queue
@@ -29,7 +34,7 @@ from bike_sim.sim.camera import CameraManager
 from bike_sim.sim.ride.cruise import MAX_TARGET_SPEED_KMH, MIN_TARGET_SPEED_KMH
 from bike_sim.sim.ride.hud import RideHUD
 from bike_sim.sim.ride.input import RideInputHandler
-from bike_sim.sim.ride.livery import ModelLivery, body_id
+from bike_sim.sim.ride.livery import ModelLivery
 from bike_sim.sim.ride.termination import RunLimits, RunOutcome, RunTerminator
 
 if TYPE_CHECKING:
@@ -155,30 +160,6 @@ class RideSession:
         """
         self.brake_strength = max(0.0, min(1.0, self.brake_strength + float(delta)))
         return self.brake_strength
-
-    def toggle_rider(self) -> bool:
-        """
-        Toggles the rider's mass and geometry, and restarts the run.
-
-        The rider is 80 kg of the 104.4 kg system lumped into `frame`, so removing it changes
-        every static load in the model. The starting sag is therefore re-solved and the run
-        restarts rather than continuing from a state that is no longer an equilibrium.
-
-        Returns:
-            Whether the rider is now present.
-
-        Raises:
-            RuntimeError: If the equilibrium solve does not converge at the new mass.
-        """
-        self.sim.include_rider = not self.sim.include_rider
-        self.livery.set_rider(self.sim.data, self.sim.include_rider)
-        self.reset_run()
-        frame_mass_kg = float(self.sim.model.body_mass[body_id(self.sim.model, "frame")])
-        print(
-            f"\n[KEY B] Rider Toggle -> {'ON' if self.sim.include_rider else 'OFF'} "
-            f"(frame body {frame_mass_kg:.2f} kg); run restarted at the re-solved sag."
-        )
-        return self.sim.include_rider
 
     def toggle_debug_markers(self) -> bool:
         """

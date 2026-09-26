@@ -54,6 +54,9 @@ class BikeSpecs:
     rear_wheel_radius: float = 352.0
     wheel_radius: float = 372.0
 
+    # Drivetrain
+    crank_length: float = 165.0  # Crank arm length, BB spindle to pedal spindle (mm)
+
     # Suspension Hardware
     fork_travel: float = 180.0
     fork_offset: float = 44.0

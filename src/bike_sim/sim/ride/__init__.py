@@ -19,6 +19,7 @@ from bike_sim.sim.ride.hud import RideHUD
 from bike_sim.sim.ride.input import RideInputHandler
 from bike_sim.sim.ride.livery import ModelLivery
 from bike_sim.sim.ride.resistance import RollingResistance
+from bike_sim.sim.ride.rider_forces import RiderForceApplier
 from bike_sim.sim.ride.termination import (
     RunLimits,
     RunOutcome,
@@ -28,6 +29,7 @@ from bike_sim.sim.ride.virtual_rider import CrashDetector, CrashEvent, PitchStab
 
 __all__ = [
     "SuspensionForceApplier",
+    "RiderForceApplier",
     "TerrainContacts",
     "TerrainContactQuery",
     "RollingResistance",

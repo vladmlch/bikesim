@@ -10,12 +10,14 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 import numpy as np
 
+from bike_sim.geometry.cockpit import saddle_geometry, saddle_post_center_of_mass
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.geometry.hardpoints import (
     compute_front_axle,
     compute_rear_axle,
     get_fixed_frame_points,
 )
+from bike_sim.physics.rider import RiderSpecs
 
 
 @dataclass
@@ -87,30 +89,20 @@ class BikeMassSpecs:
         return float(i_yy)
 
 
-@dataclass
-class RiderSpecs:
-    """
-    Rider anatomy and mass breakdown in neutral attack standing position.
-    Total mass: 80.0 kg.
-    """
-    torso_helmet_mass: float = 55.0
-    legs_mass: float = 18.0
-    arms_mass: float = 7.0
+# `RiderSpecs` lives in `physics/rider.py` together with the anthropometry and the seated
+# pose solver; it is re-exported here because this is where callers historically found it.
 
-    @property
-    def total_rider_mass(self) -> float:
-        return self.torso_helmet_mass + self.legs_mass + self.arms_mass
 
-    def compute_rider_centers_of_mass(self) -> Dict[str, Tuple[np.ndarray, float]]:
-        """Returns CoM position (m) and mass (kg) for rider segments relative to BB origin."""
-        pos_torso = np.array([0.160, 0.0, 0.650])
-        pos_legs = np.array([0.050, 0.0, 0.240])
-        pos_arms = np.array([0.335, 0.0, 0.720])
-        return {
-            "rider_torso": (pos_torso, self.torso_helmet_mass),
-            "rider_legs": (pos_legs, self.legs_mass),
-            "rider_arms": (pos_arms, self.arms_mass),
-        }
+def saddle_top_z_for_rider(specs: BikeSpecs, rider_specs: Optional[RiderSpecs]) -> Optional[float]:
+    """
+    Saddle top height a rider needs, or None for the photograph's default saddle.
+
+    Only the seated rider moves the saddle: its height follows the rider's inseam. The
+    lumped rider stands and leaves the saddle where the photograph has it.
+    """
+    if rider_specs is not None and rider_specs.variant == "seated":
+        return rider_specs.seated_pose(specs).saddle.top_z_m
+    return None
 
 
 def compute_component_centers_of_mass(
@@ -146,13 +138,18 @@ def compute_component_centers_of_mass(
     p6 = np.array(st0["P6"]) / 1000.0
     p7 = np.array(fixed["P7"]) / 1000.0
     p9 = np.array(fixed["P9"]) / 1000.0
+    p10 = np.array(fixed["P10"]) / 1000.0
     p11 = np.array(fixed["P11"]) / 1000.0
     ht_bot = np.array(fixed["P_HT_bot"]) / 1000.0
 
     pos_motor = p_bb + np.array([0.030, 0.0, 0.0275])
     pos_battery = np.array([0.172834, 0.0, 0.226886])
     pos_frame = np.array([0.180925, 0.0, 0.335899])
-    pos_saddle = p9 + np.array([-0.053785, 0.0, 0.128759])
+    # The post and saddle follow the rider: a seated rider sets the saddle for their inseam,
+    # so the component's centre is read from the same cockpit geometry the builder emits.
+    saddle = saddle_geometry(p9, saddle_top_z_for_rider(specs, rider_specs))
+    pos_saddle = saddle_post_center_of_mass(mass_specs.saddle_post_mass, p10, p9, saddle)
+    # Horizontal cranks with a pedal on each end are symmetric about the spindle.
     pos_cranks = p_bb.copy()
     pos_steer = p11 + np.array([-0.015, 0.0, 0.025])
     pos_stanchions = 0.5 * (ht_bot + 0.5 * (ht_bot + p_fa))
@@ -184,7 +181,7 @@ def compute_component_centers_of_mass(
     }
 
     if rider_specs is not None:
-        components.update(rider_specs.compute_rider_centers_of_mass())
+        components.update(rider_specs.compute_rider_centers_of_mass(specs))
 
     return components
 

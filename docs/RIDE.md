@@ -24,7 +24,7 @@ rock gardens, a drop and a kicker. Complements the three existing modes
   - [4. Longitudinal friction and slip](#4-longitudinal-friction-and-slip)
   - [5. Suspension force path](#5-suspension-force-path)
   - [6. Propulsion and braking torque path](#6-propulsion-and-braking-torque-path)
-  - [7. Virtual rider](#7-virtual-rider)
+  - [7. The rider](#7-the-rider)
   - [8. Energy and momentum accounting](#8-energy-and-momentum-accounting)
   - [9. Static equilibrium and sag](#9-static-equilibrium-and-sag)
   - [10. Numerical settings](#10-numerical-settings)
@@ -88,8 +88,14 @@ is empty because every actuator used here is stateless (`position`, `motor`).
 | `shock_stroke` | slide, shock axis | 0 … 0.065 m | rear linkage, loaded via `qfrc_applied` |
 | `front_wheel_spin` | hinge Y | — | free, **dynamic** |
 | `rear_wheel_spin` | hinge Y | — | free, **dynamic** |
+| `rider_pelvis_z` | slide, frame Z | — | **seated rider only**, loaded via `qfrc_applied` |
+| `rider_torso_z` | slide, frame Z (on pelvis) | — | seated rider only, `qfrc_applied` |
+| `rider_arms_z` | slide, frame Z | — | seated rider only, `qfrc_applied` |
+| `rider_leg_front_z` | slide, frame Z | — | seated rider only, `qfrc_applied` |
+| `rider_leg_rear_z` | slide, frame Z | — | seated rider only, `qfrc_applied` |
 
-`nq = nv = 12`, `neq = 2`.
+`nq = nv = 12` with the bike alone or the lumped rider; **`nq = nv = 17`** with the seated
+rider (§7), one vertical slide per lumped rider mass. `neq = 2` in every case.
 
 **Rear linkage mobility.** Five coordinates (`main_pivot`, `horst_pivot`,
 `rocker_frame_pivot`, `yoke_pivot`, `shock_stroke`) are reduced by two `<connect>` loop
@@ -99,7 +105,8 @@ redundant, absorbed by the solver's regularization. Net rear suspension mobility
 therefore exactly **1 DOF**, as the analytical 4-bar solver assumes.
 
 **Total mobility: 7** — three chassis, one fork, one rear suspension, two wheel spins,
-plus the locked steer coordinate.
+plus the locked steer coordinate — **12 with the seated rider**, whose five slides are each
+a genuine degree of freedom carried by a preloaded spring-damper.
 
 **Wheel rotations are genuine dynamic degrees of freedom**, not auxiliary states. They
 carry rotational inertia, they are driven by actuator torque and by contact friction, and
@@ -254,10 +261,13 @@ depends on.
 friction as the element-wise maximum of the two geoms. Setting only one side silently
 inherits the other's value.
 
-**Contacts elsewhere on the bike are left enabled**, as in the existing modes. Pedal strike
-is a real consequence of 180 mm of travel and a −22.5 mm BB drop, and disabling frame and
-rider contact would render a crash as the model sinking through the ground while the crash
-detector (§7) flags it anyway.
+**Frame contacts are left enabled**, as in the existing modes, so a crash renders as a bike
+on the ground rather than one sinking through it while the crash detector (§7.4) flags it
+anyway. **The rider and the crankset do not collide** (`contype="0"`): the rider's capsules
+are mass and visuals, and a rider on the ground is a crash the detector has already called
+from the frame's attitude and the handlebar; the horizontal cranks and pedals sit 350 mm
+above the road and would only meet it in that same crash. (Earlier revisions of this
+section said rider contact was enabled; the builder never did that.)
 
 ---
 
@@ -379,9 +389,101 @@ represented faithfully.
 
 ---
 
-## 7. Virtual rider
+## 7. The rider
 
-The rider is lumped rigidly into the `frame` body (80.00 kg of the 104.40 kg system).
+Ride mode has three rider variants, chosen with `bike-ride --rider {none,lumped,seated}`
+(`seated` is the default). One source of truth describes all of them:
+`physics/rider.py::RiderSpecs` — mass, stature, inseam, the load split, the interface
+dynamics — and every number in it is tagged *literature*, *derived* or *authored*.
+
+### 7.1 `none` and `lumped`
+
+`none` is the 24.35 kg bike alone. `lumped` is the original rider: 80.00 kg in three
+capsules (torso + helmet 55, legs 18, arms 7) in a standing attack pose, **rigidly part of
+the `frame` body**. It is kept as the regression reference and as the rider for the
+flight-heavy presets (§7.4).
+
+### 7.2 `seated` — a biodynamic rider on the saddle
+
+The seated rider is the model for rough roads. A seated human is not a rigid mass: the
+body is a low-pass filter with a resonance near 5 Hz, and how the road reaches the rider
+depends on that as much as on the suspension. The model is the lumped-parameter class the
+whole-body-vibration literature uses (ISO 5982; Fairley & Griffin 1989; Wei & Griffin 1998;
+Kumar & Saran 2019; for bicycles Wang & Hull 1997), reduced to the sagittal plane:
+
+| Body (MJCF) | Mass, 80 kg rider | Carried by | Spring k / damper c | Sided |
+|---|---|---|---|---|
+| `rider_pelvis` | 14.11 kg | saddle → pelvis | 101 000 N/m / 2 762 N·s/m | one-sided |
+| `rider_torso` | 29.89 kg | pelvis → torso ("spine") | 57 800 N/m / 1 052 N·s/m | two-sided |
+| `rider_arms` | 9.60 kg | handlebar → arms | 6 064 N/m / 193 N·s/m | two-sided |
+| `rider_leg_front` | 13.20 kg | front pedal → leg | 13 028 N/m / 332 N·s/m | one-sided |
+| `rider_leg_rear` | 13.20 kg | rear pedal → leg | 13 028 N/m / 332 N·s/m | one-sided |
+
+Each body sits on a **vertical slide joint along the frame's Z** and is carried by a
+spring-damper written into `qfrc_applied` by `sim/ride/rider_forces.py`, the same path the
+fork and shock use (§5). The springs are preloaded to their static loads at zero travel, so
+the equilibrium pose is the drawn pose. The saddle and the flat pedals are **one-sided**: they
+push but cannot pull, so the rider can leave the saddle and come back under gravity, and the
+`saddle_gap_m` channel records it. The spine and the gripped bar are two-sided.
+
+**Reactions are internal.** A generalized force on a slide joint acts between the joint's
+child and its parent, so every newton lifting the pelvis presses the frame down through the
+saddle. Unlike the virtual rider moment (§7.4, §12) nothing here lacks a reaction body.
+
+**Mass allocation (de Leva 1996, males).** Segment masses are de Leva's fractions of body
+mass — head 6.94 %, trunk 43.46 % (upper 15.96 / middle 16.33 / lower 11.17), upper arm
+2.71, forearm 1.62, hand 0.61, thigh 14.16, shank 4.33, foot 1.37 % per limb — with a 0.4 kg
+helmet on the head. They are assigned to the three load paths so that the **static split is
+saddle 55 % / pedals 33 % / bar 12 %** of rider weight: the arms path is the arms plus the
+shoulder girdle it takes to reach 12 %; each leg is shank + foot plus the thigh it takes to
+reach 16.5 %; the saddle path is the rest, stacked as torso (upper + middle trunk, head,
+helmet) on pelvis (lower trunk, remaining thigh). The split itself is *extrapolated from
+literature*: Carahalios (2015) measured 44 / 41 / 15 % (saddle / bottom bracket / stem) at
+2 W/kg on the hoods, shifting 5.2 pp from the saddle and 3.3 pp from the bars to the pedals
+per W/kg, which at 0 W/kg — coasting — is about 54 / 34 / 12 %; Wilson et al. (2007) put
+49–52 % on the saddle at 125 W. Those are road postures; an upright MTB posture moves bar
+load to the saddle. The solved equilibrium reproduces the target to 0.1 pp
+(`tests/test_ride_equilibrium.py`).
+
+**Springs.** The pelvis-to-saddle contact is Kumar & Saran (2019) Table 2, K8 / C8, the
+path beneath the pelvis of a subject seated upright on a hard seat — *literature*. The torso
+spring is *derived*: its uncoupled resonance is 7.0 Hz so that, coupled with the saddle
+contact, the two-mass saddle path's **apparent mass peaks at 4.8 Hz at 1.6 × the static
+mass**, which is where shaker measurements of seated humans put it (Fairley & Griffin 1989:
+4–6 Hz, ~1.5 ×; Kumar & Saran 2019: 5 Hz). The damping ratio of every derived spring is
+0.40; fitted seated-body models give 0.3–0.45 (Wei & Griffin 1998: k₁ = 42.9 kN/m,
+c₁ = 721 N·s/m on 31 kg → ζ 0.31; Muksian & Nash via Turner 2024: 50 kN/m, 1 kN·s/m on
+66 kg → 0.28; Kumar & Saran's fits are heavier). The legs (5 Hz) and arms (4 Hz) are
+*authored*: the measured values are Wang & Hull (1997) Table 2, which this repository could
+not read; replace them when it can. `physics/rider.py::saddle_path_apparent_mass` computes
+the coupled response and `tests/test_ride_equilibrium.py` asserts the peak against the
+literature band, so a change to any of these numbers is caught.
+
+### 7.3 Pose and saddle height
+
+The pose is solved, not drawn (`physics/rider.py::solve_seated_pose`):
+
+- **Saddle height** follows the rider: inseam = 0.47 × stature (ANSUR II, approximate;
+  `--rider-inseam` overrides) and saddle height = 0.883 × inseam (LeMond), measured BB centre
+  to saddle top. For the default 1.80 m rider that is 0.747 m, **+36 mm over the
+  photograph's saddle**, which the `none` and `lumped` variants keep. The seatpost follows
+  along its measured axis and the analytic mass table reads the same geometry
+  (`geometry/cockpit.py`). Exposed post outside 50–250 mm is refused with a message.
+- **Hips** sit 60 mm above the saddle top; **feet** stand on the pedals of 165 mm horizontal
+  cranks (3 and 9 o'clock, coasting), ankle 115 mm above the spindle for a toe-down foot.
+  Knees follow by two-link inverse kinematics; the knee at bottom dead centre is checked to
+  lie within 20–60° of flexion (30° for the default rider — where fitters put it) and the
+  model refuses to build otherwise, naming the saddle height, inseam and crank length.
+- **Torso lean** is whatever lets an arm with a 15° elbow reach the handlebar centre:
+  42° from vertical for the default rider on this frame.
+- Segment lengths are de Leva's, scaled by stature; capsule radii are drawing choices. Every
+  rider geom is non-colliding: rider–ground contact is a crash the detector already calls.
+
+The bike keeps its own accelerometers at the bar and saddle; the seated rider adds two on
+the torso and pelvis, so the body's transmissibility is measured, not assumed.
+
+### 7.4 Pitch management in flight (all variants)
+
 Pitch management in flight is modelled as a **PD regulator applying a bounded moment to
 `root_pitch`**, capped at ±80 N·m, active only while both wheels are out of contact — as
 judged by the same debounced contact signal the drive gate uses (§6), so a one-step
@@ -393,7 +495,11 @@ pitch in the air, and ±80 N·m is the order of magnitude an 80 kg rider can gen
 rotating their torso.
 
 **This moment violates conservation of angular momentum.** See §12 — it is the single most
-significant non-physicality in the model, and it is instrumented rather than hidden.
+significant non-physicality in the model, and it is instrumented rather than hidden. It is
+unchanged for the seated rider, whose slides are vertical only: a seated rider is a
+rough-road model, and a rider does not sit through a 600 mm drop. `bike-ride` therefore
+**warns** when the seated rider is sent over a track with drops or kickers and points at
+`--rider lumped`, which is what `tests/test_ride_track.py` rides the aggressive preset with.
 
 **Crash detection** runs independently of the rider: pitch beyond 60° or handlebar–ground
 contact marks the run as failed, with the position and cause recorded. A stabilized run is
@@ -409,15 +515,19 @@ Tracked per step and reported per run:
 |---|---|
 | gravity (net −600 mm over the track) | fork and shock damping |
 | drive torque | contact dissipation |
-| **virtual rider moment** | rolling resistance (`Crr = 0.015`) |
+| **virtual rider moment** (flight, §7.4) | rolling resistance (`Crr = 0.015`) |
 | | brake torque |
 | | joint damping |
+| | **seated rider damping** (saddle, spine, arms, legs) |
 
-The virtual rider is accounted **as a source on its own line**, never folded into "the
-physics". Its injected angular impulse and work are separate telemetry channels, so a
-reader can judge how much of a given run it paid for. If that share turns out to be
-material, the honest fix is to make the rider a separate body on a hip joint so the
-reaction becomes internal — deferred deliberately, with the measurement as the trigger.
+The virtual rider moment is accounted **as a source on its own line**, never folded into
+"the physics". Its injected angular impulse and work are separate telemetry channels, so a
+reader can judge how much of a given run it paid for. The seated rider's spring-dampers are
+different in kind: they are internal forces with reactions on the frame, so they move no
+momentum; their dampers are a genuine sink — the energy a real rider's tissue absorbs from
+a rough road — and their loads are recorded per interface (`saddle_load_n`,
+`pedal_load_*_n`, `bar_hand_load_n`). Making the flight moment internal too would take a
+rider that stands and moves fore-aft; that remains deferred (§12, item 1).
 
 Aerodynamic drag is absent from the sink column by decision (§4).
 
@@ -429,16 +539,21 @@ A run starts from a **numerically solved static equilibrium**, written into `qpo
 than from a settling drop. This removes the first half-second of transient from the
 telemetry and makes headless runs reproducible from the first frame.
 
-Rider is on by default. Measured static state:
+The rider is on by default (`seated`; §7). Analytic static state, both rider variants:
 
-| Quantity | Value |
-|---|---|
-| System mass | 104.40 kg (24.40 bike + 80.00 rider) |
-| CoG from BB | (0.1504, 0.4750) m |
-| Static front load | 478.2 N (46.7 %) |
-| Static rear load | 546.0 N (53.3 %) |
-| Ground plane | −349.50 mm from BB |
-| Leverage ratio | 3.3495 (top) → 2.4118 (bottom) |
+| Quantity | `lumped` | `seated` (default) |
+|---|---|---|
+| System mass | 104.40 kg (24.40 bike + 80.00 rider) | 104.40 kg |
+| CoG from BB | (0.1504, 0.4750) m | (0.0693, 0.6841) m |
+| Static front load | 478.2 N (46.7 %) | 413.3 N (40.4 %) |
+| Static rear load | 546.0 N (53.3 %) | 610.9 N (59.6 %) |
+| Ground plane | −349.50 mm from BB | same |
+| Leverage ratio | 3.3495 (top) → 2.4118 (bottom) | same |
+
+The seated rider's centre of mass is 81 mm further back and 209 mm higher than the lumped
+rider's: seated, the weight goes to the saddle behind the BB rather than to the pedals and
+bar in front of it. The rider's own interfaces carry, at equilibrium, saddle 431 N / pedals
+259 N / bar 94 N — 55.0 / 33.0 / 12.0 % of rider weight, the designed split (§7.2).
 
 ### Sag at the shipped defaults
 
@@ -451,10 +566,14 @@ The model's own centre of mass does not produce a 35/65 split — it puts 46.7 %
 front for the 80 kg standing attack pose in `RiderSpecs`. What the shipped springs settle
 to under the model's own load depends on how the question is asked:
 
-| Method | Front sag | Rear sag |
+| Method (`lumped` rider) | Front sag | Rear sag |
 |---|---|---|
 | First-order analytic: whole axle load through the spring, evaluated at the undeflected CoG | 75.6 mm = 42.0 % | 45.5 mm = 25.3 % |
 | **Solved equilibrium — what the simulation produces** | **73.1 mm = 40.6 %** | **40.9 mm = 22.7 %** |
+| **Solved equilibrium, `seated` rider (the default run start)** | **59.7 mm = 33.2 %** | **46.1 mm = 25.6 %** |
+
+With the seated rider the same springs sag less at the fork and more at the shock, because
+40.4 % rather than 46.7 % of the weight is on the front axle (table above).
 
 The first row is what this document originally stated; the second is measured from
 `solve_static_equilibrium` and is the state every run starts in. They differ because the
@@ -485,14 +604,16 @@ re-derivation the README calls for, and defaults `front_weight_fraction` to the 
 CoG when it is not overridden. `--sag` therefore fits **both ends together** against the
 model's own centre of mass and prints the result:
 
-| Target 30 / 30 against the model's CoG | Value | Shipped default |
-|---|---|---|
-| Fork pressure | 118.5 psi | 85.2 psi |
-| Shock rate | 93 984 N/m = 537 lb/in | 114 600 N/m = 654 lb/in |
+| Target 30 / 30 against the model's CoG | `lumped` | `seated` (default) | Shipped default |
+|---|---|---|---|
+| Fork pressure | 118.5 psi | 100.5 psi | 85.2 psi |
+| Shock rate | 93 984 N/m = 537 lb/in | 105 148 N/m = 600 lb/in | 114 600 N/m = 654 lb/in |
 
-Both fitted values are physically ordinary: 118.5 psi is mid-range for a 38 mm-stanchion
-enduro fork, and 537 lb/in is a stock catalogue coil size. Bottom-out reserve is unchanged
-at 6.11 g front and 4.64 g rear.
+The fit uses the chosen rider's own centre of mass — `RiderSpecs.compute_rider_centers_of_mass`
+reads the solved seated pose, so `--sag` and the compiled model agree on where the rider is.
+Both fitted lumped values are physically ordinary: 118.5 psi is mid-range for a
+38 mm-stanchion enduro fork, and 537 lb/in is a stock catalogue coil size. Bottom-out
+reserve is unchanged at 6.11 g front and 4.64 g rear.
 
 Because the fit is first-order (see above), the **solved** equilibrium at `--sag 30` is
 not exactly 30/30: measured 49.6 mm = 27.6 % front and 49.6 mm = 27.5 % rear. The fit
@@ -551,20 +672,38 @@ authored** and carries no claim of correspondence to a specific real bike, tyre 
 | Crash thresholds | 60° pitch, handlebar contact |
 | Aerodynamic drag | omitted |
 | Default cruise speed | 25 km/h |
+| Seated rider: leg and arm path resonances | 5 Hz, 4 Hz (§7.2; Wang & Hull 1997 Table 2 would replace them) |
+| Seated rider: hip above saddle, ankle above pedal, elbow flexion | 60 mm, 115 mm, 15° (§7.3) |
+| Seated rider: inseam / stature | 0.47 (ANSUR II, rounded; `--rider-inseam` overrides) |
+| Seated rider: helmet | 0.4 kg inside the rider mass |
+| Cranks | 165 mm, horizontal, rigid; spindle 0.10 + arms 2 × 0.20 + pedals 2 × 0.175 kg |
+
+The seated rider's *literature* values — de Leva's segment fractions, Kumar & Saran's saddle
+contact, the 4–6 Hz / ~1.5 × apparent-mass peak, the 55 / 33 / 12 % split extrapolated from
+Carahalios — are listed with their sources in §7.2 and in `physics/rider.py`.
 
 ---
 
 ## 12. Known non-physicalities
 
-**1 — The virtual rider injects angular momentum.** A pure moment on `root_pitch` has no
-reaction body, because the rider is rigid mass inside `frame`. A real rider pitches the
-bike by counter-rotating their own body: an internal torque with a genuine reaction, and
-total angular momentum in flight is conserved. Ours is not. This is why the ±80 N·m cap
-is a damage limit rather than a realism parameter, and why §8 logs the moment's impulse and
-work separately. The physical alternative — rider as a separate body on a driven hip joint —
-was deferred because it removes the rider from the lumped `frame` mass and thereby moves
-`physics/mass.py`, the CoG computation, `test_mass_distribution` and all three golden
-baselines, for an effect confined to two or three seconds of flight in a sixteen-second run.
+**1 — The virtual rider moment injects angular momentum.** A pure moment on `root_pitch`
+has no reaction body. A real rider pitches the bike by counter-rotating their own body: an
+internal torque with a genuine reaction, and total angular momentum in flight is conserved.
+Ours is not. This is why the ±80 N·m cap is a damage limit rather than a realism parameter,
+and why §8 logs the moment's impulse and work separately. The seated rider (§7.2) did not
+close this: its bodies move only along the frame's vertical, so they can carry no pitch
+torque, and a seated rider is not the rider who flies a 600 mm drop anyway — `bike-ride`
+warns when the two are combined. The physical alternative remains a standing rider whose
+mass can shift fore-aft on a driven joint; it is deferred, with the flight share of the
+energy audit as the trigger, as before.
+
+**1b — The seated rider is vertical-only.** Every seated rider mass slides along the frame's
+Z. Under braking and pitch the rider does not shift fore-aft relative to the bike, and when
+the bike pitches, "vertical" tilts with it. The whole-body-vibration literature this model
+follows is vertical too, and the fore-aft parameters it would need are scarcely published;
+the restriction is documented rather than filled with invented numbers. Two sided-ness is
+also a simplification: hands are taken as gripping (two-sided), feet as resting on flat
+pedals (one-sided).
 
 **2 — The spring defaults are calibrated for a weight split the model does not produce**
 (§9). At the shipped settings the fork sags 40.6 % and the shock 22.7 % (solved; 42.0 /
@@ -577,7 +716,8 @@ defaults; it fits both ends behind `--sag` and reports what it used.
 **3 — Two independent representations of one linkage** (§5), agreeing to 0.039 mm
 quasi-statically, unverified under impact until the invariant test measures it.
 
-**4 — No lateral dynamics** (§0), by construction.
+**4 — No lateral dynamics** (§0), by construction. That includes the seated rider's
+lateral weight shift.
 
 **5 — No tyre slip model** (§4): regularized Coulomb friction only.
 
@@ -613,6 +753,8 @@ uv run bike-ride --track enduro_aggressive        # the trail preset in the view
 uv run bike-ride --headless                       # telemetry + summary + plots, no window
 uv run bike-ride --headless --track road_broken --speed 30 --seed 3
 uv run bike-ride --headless --track my_road.toml --sag 30
+uv run bike-ride --headless --rider lumped        # the original rigid standing rider
+uv run bike-ride --headless --rider-mass 92 --rider-height 1.88
 uv run bike-ride --track my_road.toml --preview   # draw the road, do not simulate
 uv run bike-ride --dump-track road_worn > my_road.toml
 uv run bike-ride --list-tracks
@@ -628,7 +770,11 @@ uv run bike-ride --list-tracks
 | `--sag PCT` | Fit fork pressure and coil rate to this static sag at both ends (§9) instead of the shipped tune; headless only. |
 | `--out DIR` | Artifact root. Default `output/ride`. |
 | `--decimate N` | Keep every N-th step in `telemetry.csv`. Default 1. |
-| `--no-rider` | Ride without the rider mass. |
+| `--rider {none,lumped,seated}` | Rider model (§7). Default `seated`. |
+| `--rider-mass KG` | Rider mass incl. helmet and kit. Default 80. |
+| `--rider-height M` | Stature; scales segments and, seated, sets the saddle via the inseam. Default 1.80. |
+| `--rider-inseam M` | Inseam override. Default 0.47 × height. |
+| `--no-rider` | Alias for `--rider none`. |
 | `--no-plots` | Headless: skip the PNG figures. |
 | `--preview` | Render the road profile with effective pothole drops to `<out>/preview_<track>_s<seed>.png` and exit. |
 | `--dump-track NAME` | Print a preset as a track file and exit. |
@@ -643,7 +789,7 @@ only when a generator seed applies):
 | `summary.json` | The [summary metrics](#summary-metrics); also printed as a table. |
 | `travel.png` | Fork travel and shock stroke / rear wheel travel against X with obstacle markers. |
 | `shaft_velocity.png` | Shaft-velocity histogram per end. |
-| `acceleration.png` | Low-passed bar and saddle vertical acceleration, raw peak annotated. |
+| `acceleration.png` | Low-passed bar and saddle vertical acceleration, raw peak annotated; the seated rider's torso overlaid on the saddle panel. |
 | `profile.png` | The road profile and effective pothole drops. |
 
 The run starts from the solved static equilibrium at *x* = 2 m and ends at the track's
@@ -762,12 +908,15 @@ Interactive mode (`bike-ride` without `--headless`) prints this on start and on 
 | `7` `8` / `9` `0` / `5` `6` / `3` `4` | Shock HSC / LSC / rebound / HBO clicks |
 | `X` | Shock lockout toggle; `P` cycle factory damper presets |
 | `C` / `1` / `2` | Camera cycle / 2D side / 3D isometric |
-| `B` | Toggle rider (re-solves sag); `G` pivot markers; `T` telemetry line |
+| `G` | Pivot markers; `T` telemetry line |
 | `Esc` | Quit |
 
-The track is chosen on the command line and cannot be changed from the viewer: a change
-of track means new `hfield_data` and a new equilibrium, which is a restart of the
-command. `--sag` is not applied in the viewer (use `-`/`=` and `P` there).
+The track and the rider are chosen on the command line and cannot be changed from the
+viewer: a change of track means new `hfield_data` and a new equilibrium, and a change of
+rider means a different set of bodies and coordinates (§1) — both are a restart of the
+command. The test stand's `B` rider toggle is therefore deliberately unbound here; compare
+riders with two headless runs on one seed. `--sag` is not applied in the viewer (use `-`/`=`
+and `P` there).
 
 ## Telemetry channels
 
@@ -791,6 +940,15 @@ per recorded step, the first row being the start state:
 | `bar_acc_vert_mps2`, `bar_acc_long_mps2` | m/s² | Handlebar **proper** acceleration in world Z / X: +9.81 at rest, 0 in free fall. Raw. |
 | `saddle_acc_vert_mps2`, `saddle_acc_long_mps2` | m/s² | Same at the seatpost top. |
 | `rider_moment_nm`, `rider_impulse_nms`, `rider_work_j` | N·m, N·m·s, J | Virtual rider moment, accumulated angular impulse and work (§8). |
+| `saddle_load_n` | N | Force the saddle exerts on the seated rider's pelvis; 0 when they have left it. |
+| `saddle_gap_m` | m | Pelvis-to-saddle separation; 0 while seated. |
+| `bar_hand_load_n` | N | Force the bar exerts on the arms; negative when the rider pulls up. |
+| `pedal_load_front_n`, `pedal_load_rear_n` | N | Force each pedal exerts on its leg; 0 when the foot unweights. |
+| `rider_torso_acc_vert_mps2`, `rider_torso_acc_long_mps2` | m/s² | Seated rider's torso proper acceleration, world Z / X. |
+| `rider_pelvis_acc_vert_mps2`, `rider_pelvis_acc_long_mps2` | m/s² | Same for the pelvis. |
+
+The last nine channels belong to the seated rider (§7.2) and read zero for `none` and
+`lumped`, so every telemetry file has the same 36 columns.
 
 ## Summary metrics
 
@@ -803,7 +961,15 @@ velocity. Counts are events — contiguous runs — not samples. Per contact poi
 zero-phase Butterworth low-pass at 100 Hz, **and** the raw peak beside it, labelled.
 Also: outcome and crash reason, steps, sim and wall time, mean speed, airborne events
 and time, a per-pothole table of declared depth versus effective front and rear wheel
-drop, and `extras` (seed, sag fit, start equilibrium).
+drop, `rider_variant`, and `extras` (seed, rider mass, sag fit, start equilibrium).
+
+With the seated rider a `rider` block is added: the same acceleration statistics for the
+rider's `torso` and `pelvis`; the mean saddle / pedal / bar load shares over the window,
+against the 55 / 33 / 12 % static split; the saddle load range; and saddle lift-offs as
+events, total time and maximum gap. On `road_worn` at 25 km/h the default rider's torso
+sees an RMS of 3.0 m/s² against 4.6 at the saddle beneath it — the body's own compliance is
+a third of the isolation — and leaves the saddle once, for 27 ms and 0.6 mm, at the 105 mm
+pothole.
 
 Why filter, and why keep the raw peak: the rigid contact sphere meeting a sharp
 heightfield edge produces solver transients of 12–16 system weights lasting 2–4 steps

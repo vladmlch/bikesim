@@ -6,13 +6,21 @@ headtube, toptube, seattube, casting, seatpost, saddle, motor, cranks, mount bos
 and hardpoint sites.
 """
 
-from typing import Dict
+from typing import Dict, Optional
 import xml.etree.ElementTree as ET
 import numpy as np
 
+from bike_sim.geometry.cockpit import (
+    SADDLE_HALF_LENGTH_M,
+    SADDLE_HALF_THICKNESS_M,
+    SADDLE_HALF_WIDTH_M,
+    saddle_geometry,
+    saddle_post_masses,
+)
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.mass import BikeMassSpecs
-from bike_sim.mujoco.rider import build_rider
+from bike_sim.physics.rider import RiderSpecs, SeatedPose
+from bike_sim.mujoco.rider import build_rider, build_seated_rider
 from bike_sim.mujoco.drivetrain import build_bb_and_motor
 from bike_sim.mujoco._xml_format import (
     _format_fromto,
@@ -91,8 +99,15 @@ def _build_seatpost_and_saddle(
     P7: np.ndarray,
     P5: np.ndarray,
     mass_specs: BikeMassSpecs,
+    saddle_top_z_m: Optional[float] = None,
 ) -> np.ndarray:
-    """Builds seat tube, bottom casting, seatpost, gusset, and saddle. Returns seatpost_top pos."""
+    """
+    Builds seat tube, bottom casting, seatpost, gusset, and saddle. Returns seatpost_top pos.
+
+    Args:
+        saddle_top_z_m: Saddle top surface height above the BB. None keeps the photograph's
+            saddle; a seated rider passes the height their inseam calls for.
+    """
     seattube_end = np.array([-0.030, 0.0, 0.258])
     SEATTUBE_CASTING_MASS_KG = 0.65
     seattube_mass_kg = 0.05
@@ -111,29 +126,14 @@ def _build_seatpost_and_saddle(
         conaffinity="0",
     )
 
-    PHOTO_SADDLE_TOP_Z_M = 0.690
-    SADDLE_HALF_THICKNESS_M = 0.015
-    SADDLE_SETBACK_FROM_POST_TOP_M = 0.024
-    SEATPOST_MASS_KG = 0.35
-
-    seatpost_axis = np.array([-146.0 - -83.0, 0.0, 624.0 - 430.0])
-    seatpost_axis = seatpost_axis / float(np.linalg.norm(seatpost_axis))
-    saddle_underside_z = PHOTO_SADDLE_TOP_Z_M - 2.0 * SADDLE_HALF_THICKNESS_M
-    seatpost_top = P9 + seatpost_axis * ((saddle_underside_z - P9[2]) / seatpost_axis[2])
-    saddle_pos = np.array(
-        [
-            seatpost_top[0] - SADDLE_SETBACK_FROM_POST_TOP_M,
-            0.0,
-            seatpost_top[2] + SADDLE_HALF_THICKNESS_M,
-        ]
+    # Seatpost axis, saddle box and mass split come from `geometry/cockpit.py`, which the
+    # analytic mass table and the seated rider's pose solver also read.
+    saddle = saddle_geometry(P9, saddle_top_z_m)
+    seatpost_top = saddle.seatpost_top
+    saddle_pos = saddle.saddle_pos
+    seatpost_lower_mass, seatpost_upper_mass, saddle_mass = saddle_post_masses(
+        mass_specs.saddle_post_mass, P10, P9, saddle
     )
-
-    seatpost_lower_len = float(np.linalg.norm(P9 - P10))
-    seatpost_upper_len = float(np.linalg.norm(seatpost_top - P9))
-    seatpost_lower_mass = round(
-        SEATPOST_MASS_KG * seatpost_lower_len / (seatpost_lower_len + seatpost_upper_len), 6
-    )
-    seatpost_upper_mass = SEATPOST_MASS_KG - seatpost_lower_mass
 
     add_geom(frame, "geom_seatpost", "cylinder", fromto=_format_fromto(P10, P9), size="0.016", mass=f"{seatpost_lower_mass:.6f}", material="mat_metal")
     add_geom(frame, "geom_seatpost_upper", "cylinder", fromto=_format_fromto(P9, seatpost_top), size="0.016", mass=f"{seatpost_upper_mass:.6f}", material="mat_metal")
@@ -144,13 +144,12 @@ def _build_seatpost_and_saddle(
     p_junction_top = P10 + (P8 - P10) * 0.52
     add_geom(frame, "geom_frame_junction", "capsule", fromto=_format_fromto(p_junction_top, P7), size="0.042", mass="0.10", material="mat_frame")
 
-    saddle_mass = max(0.20, mass_specs.saddle_post_mass - 0.35)
     add_geom(
         frame,
         "geom_saddle",
         "box",
         pos=_format_vec(saddle_pos),
-        size=f"0.13 0.065 {SADDLE_HALF_THICKNESS_M:.3f}",
+        size=f"{SADDLE_HALF_LENGTH_M:g} {SADDLE_HALF_WIDTH_M:g} {SADDLE_HALF_THICKNESS_M:.3f}",
         mass=f"{saddle_mass:.2f}",
         material="mat_saddle",
     )
@@ -218,14 +217,26 @@ def build_frame_body(
     mass_specs: BikeMassSpecs,
     fixed_points: Dict[str, np.ndarray],
     cg_pos: np.ndarray,
-    include_rider: bool = True,
+    rider: Optional[RiderSpecs] = None,
+    pose: Optional[SeatedPose] = None,
     debug_markers: bool = False,
 ) -> ET.Element:
     """
     Constructs the base frame body in worldbody and adds all frame geometry.
+
+    Args:
+        rider: The rider variant to build. None or ``none`` builds the bike alone (in stand,
+            playground and ride modes the lumped rider's capsules are still emitted at zero
+            mass, so the in-place toggle has stable geoms to write to). ``lumped`` fills those
+            capsules. ``seated`` -- ride mode only -- adds the rider bodies and sets the
+            saddle for the rider's inseam.
+        pose: The solved seated pose, required when ``rider`` is seated.
     """
     fixed_points_m = {k: np.array(v, dtype=float) / 1000.0 for k, v in fixed_points.items()}
     BB = np.array([0.0, 0.0, 0.0], dtype=float)
+    variant = rider.variant if rider is not None else "none"
+    if variant == "seated" and pose is None:
+        raise ValueError("a seated rider needs its solved pose to be built")
 
     frame = ET.SubElement(worldbody, "body", {"name": "frame", "pos": "0 0 0"})
     if mode == "ride":
@@ -234,10 +245,12 @@ def build_frame_body(
         add_joint(frame, "root_x", "slide", axis="1 0 0")
         add_joint(frame, "root_z", "slide", axis="0 0 1")
         add_joint(frame, "root_pitch", "hinge", axis="0 1 0")
-    if mode in ("stand", "playground", "ride"):
-        build_rider(frame, include_rider=include_rider)
+    if variant == "seated":
+        build_seated_rider(frame, pose)
+    elif mode in ("stand", "playground", "ride"):
+        build_rider(frame, include_rider=(variant == "lumped"), rider=rider)
 
-    build_bb_and_motor(frame, mass_specs)
+    build_bb_and_motor(frame, mass_specs, crank_length_m=specs.crank_length / 1000.0)
     _build_front_triangle_tubes(
         frame=frame,
         BB=BB,
@@ -255,6 +268,7 @@ def build_frame_body(
         P7=fixed_points_m["P7"],
         P5=fixed_points_m["P5"],
         mass_specs=mass_specs,
+        saddle_top_z_m=pose.saddle.top_z_m if pose is not None else None,
     )
     _build_mounts_and_sites(
         frame=frame,

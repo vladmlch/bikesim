@@ -185,11 +185,12 @@ class RideHUD:
 
   --- VISUALIZATION & VIEWPORT ---
     C / 1 / 2       : Camera Angle (Cycle / 2D Side View / 3D Isometric)
-    B               : Toggle Rider Mass & Model (restarts the run: sag is re-solved)
     G               : Toggle Pivot Markers (Yellow sphere debug indicators)
     T               : Toggle Live Telemetry Stream
     ? / /           : Show This Help Screen
     ESC             : Close Viewer & Exit Ride Mode
+
+  The rider (none / lumped / seated) is chosen with `bike-ride --rider`, not a key.
 ================================================================================
 """
 

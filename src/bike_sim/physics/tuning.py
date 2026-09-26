@@ -123,12 +123,11 @@ def compute_suspension_tuning_for_sag(
     if mass_specs is None:
         mass_specs = BikeMassSpecs()
     if rider_specs is None:
-        r_mass = rider_mass_kg if rider_mass_kg is not None else 80.0
-        scale = r_mass / 80.0
+        # The historical default of this calculator is the standing lumped rider, scaled to
+        # the requested mass; a seated rider is passed in explicitly as `rider_specs`.
         rider_specs = RiderSpecs(
-            torso_helmet_mass=55.0 * scale,
-            legs_mass=18.0 * scale,
-            arms_mass=7.0 * scale,
+            variant="lumped",
+            mass_kg=rider_mass_kg if rider_mass_kg is not None else 80.0,
         )
 
     solver = HorstLinkageSolver(specs)

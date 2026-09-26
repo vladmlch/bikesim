@@ -80,8 +80,8 @@ class RideInputHandler:
             ((46,), lambda: self._adjust_brake_strength(+BRAKE_STRENGTH_STEP, ".")),
             ((44,), lambda: self._adjust_brake_strength(-BRAKE_STRENGTH_STEP, ",")),
             ((82, 114), self._on_reset_run),
-            # System / rider / views
-            ((66, 98), s.toggle_rider),
+            # System / views. `B` is deliberately unbound in ride mode: the rider variant
+            # changes the compiled model's coordinates and is a command-line choice.
             ((67, 99), self._on_cycle_camera),
             ((49, 321), lambda: self._on_set_camera("2d", "2D SIDE VIEW")),
             ((50, 322), lambda: self._on_set_camera("3d", "3D ISOMETRIC VIEW")),

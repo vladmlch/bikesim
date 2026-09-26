@@ -44,7 +44,11 @@
       <geom name="geom_rider_arms" type="capsule" fromto="0.22 0 0.78 0.45 0 0.66" size="0.0001" mass="0.0" rgba="0.5 0.5 0.5 0.0" material="mat_rider" contype="0" conaffinity="0"/>
       <geom name="geom_bb_shell" type="cylinder" fromto="0 -0.0365 0 0 0.0365 0" size="0.024" mass="0.30" material="mat_metal"/>
       <geom name="geom_motor_core" type="cylinder" fromto="0.015 -0.055 0.020 0.045 0.055 0.035" size="0.045" mass="2.90" material="mat_motor"/>
-      <geom name="geom_crank_arms" type="cylinder" fromto="0 -0.090 0 0 0.090 0" size="0.016" mass="0.85" material="mat_metal"/>
+      <geom name="geom_crank_spindle" type="cylinder" fromto="0 -0.075000 0 0 0.075000 0" size="0.016" mass="0.100" material="mat_metal" contype="0" conaffinity="0"/>
+      <geom name="geom_crank_arm_front" type="capsule" fromto="0 -0.075000 0 0.165000 -0.075000 0.000000" size="0.012" mass="0.200" material="mat_metal" contype="0" conaffinity="0"/>
+      <geom name="geom_pedal_front" type="box" pos="0.165000 -0.115000 0.000000" size="0.050 0.040 0.008" mass="0.175" material="mat_metal" contype="0" conaffinity="0"/>
+      <geom name="geom_crank_arm_rear" type="capsule" fromto="0 0.075000 0 -0.165000 0.075000 0.000000" size="0.012" mass="0.200" material="mat_metal" contype="0" conaffinity="0"/>
+      <geom name="geom_pedal_rear" type="box" pos="-0.165000 0.115000 0.000000" size="0.050 0.040 0.008" mass="0.175" material="mat_metal" contype="0" conaffinity="0"/>
       <geom name="geom_downtube" type="box" pos="0.239137 0.000000 0.295958" size="0.378572 0.038 0.037848" euler="0 -45.296452 0" mass="0.60" material="mat_frame"/>
       <geom name="geom_battery_pack" type="capsule" fromto="0.052834 0.000000 0.106886 0.292834 0.000000 0.346886" size="0.032" mass="4.30" material="mat_battery"/>
       <geom name="geom_headtube" type="cylinder" fromto="0.532605 0.000000 0.538145 0.480000 0.000000 0.646000" size="0.027" mass="0.40" material="mat_frame"/>

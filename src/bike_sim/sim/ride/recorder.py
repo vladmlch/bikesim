@@ -15,6 +15,11 @@ Channel conventions:
   is the summary's job, not the recorder's.
 - The virtual rider's moment, accumulated angular impulse and accumulated work are
   recorded so an energy audit can account for what the rider injected.
+- The seated rider's interface loads (saddle, front and rear pedal, bar) are the forces the
+  bike exerts on the rider, in N; ``saddle_gap_m`` is the pelvis-to-saddle separation, zero
+  while seated. The ``rider_*_acc`` channels are the torso's and pelvis's proper
+  acceleration in world axes, like the bar and saddle ones. All read zero without a seated
+  rider, so a telemetry file has the same columns whichever rider rode.
 """
 
 import csv
@@ -57,7 +62,19 @@ CHANNELS: Sequence[str] = (
     "rider_moment_nm",
     "rider_impulse_nms",
     "rider_work_j",
+    "saddle_load_n",
+    "saddle_gap_m",
+    "bar_hand_load_n",
+    "pedal_load_front_n",
+    "pedal_load_rear_n",
+    "rider_torso_acc_vert_mps2",
+    "rider_torso_acc_long_mps2",
+    "rider_pelvis_acc_vert_mps2",
+    "rider_pelvis_acc_long_mps2",
 )
+
+# Channels the seated rider fills; every other rider variant records zeros here.
+SEATED_RIDER_CHANNELS: Sequence[str] = CHANNELS[CHANNELS.index("saddle_load_n"):]
 
 CSV_FLOAT_FORMAT = "%.10g"
 _CHUNK_ROWS = 4096
@@ -89,6 +106,11 @@ class RideRecorder:
         self._bar = _Accelerometer(sim.model, "sensor_bar_accel", "site_handlebar")
         self._saddle = _Accelerometer(sim.model, "sensor_saddle_accel", "site_seatpost_top")
         self._rear_wheel = resolve_wheel_spin(sim.model, "rear_wheel_spin", "geom_rear_contact")
+        # The rider's own accelerometers exist only on the seated rider's bodies.
+        self._seated = bool(sim.rider_forces.active)
+        if self._seated:
+            self._torso = _Accelerometer(sim.model, "sensor_rider_torso_accel", "site_rider_torso")
+            self._pelvis = _Accelerometer(sim.model, "sensor_rider_pelvis_accel", "site_rider_pelvis")
 
         # Rear wheel travel is a smooth function of shock stroke; tabulating the analytical
         # solver once at 0.1 mm and interpolating is ~30x cheaper per step than solving.
@@ -131,6 +153,12 @@ class RideRecorder:
         saddle_vert, saddle_long = self._saddle.world_components(data)
         drive_torque = float(sim.cruise.torque_nm)
         stroke_mm = sim.shock_stroke_mm
+        rider = sim.rider_forces
+        if self._seated:
+            torso_vert, torso_long = self._torso.world_components(data)
+            pelvis_vert, pelvis_long = self._pelvis.world_components(data)
+        else:
+            torso_vert = torso_long = pelvis_vert = pelvis_long = 0.0
         return np.array(
             [
                 float(data.time),
@@ -160,6 +188,15 @@ class RideRecorder:
                 float(sim.stabilizer.moment_nm),
                 float(sim.stabilizer.angular_impulse_nms),
                 float(sim.stabilizer.work_j),
+                float(rider.saddle_load_n),
+                float(rider.saddle_gap_m),
+                float(rider.bar_load_n),
+                float(rider.pedal_load_front_n),
+                float(rider.pedal_load_rear_n),
+                torso_vert,
+                torso_long,
+                pelvis_vert,
+                pelvis_long,
             ]
         )
 
@@ -278,4 +315,4 @@ def read_csv(path: Union[str, Path]) -> Dict[str, np.ndarray]:
     return {name: table[:, i] for i, name in enumerate(header)}
 
 
-__all__ = ["CHANNELS", "CSV_FLOAT_FORMAT", "RideRecorder", "read_csv"]
+__all__ = ["CHANNELS", "SEATED_RIDER_CHANNELS", "CSV_FLOAT_FORMAT", "RideRecorder", "read_csv"]

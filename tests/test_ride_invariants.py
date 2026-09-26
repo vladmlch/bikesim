@@ -57,13 +57,58 @@ def test_run_completes_without_crashing(ride):
 
 
 def test_start_equilibrium_matches_the_documented_solved_sag(ride):
-    """40.6 % front / 22.7 % rear (solved), see docs/RIDE.md section 9."""
+    """
+    Seated rider: 33.2 % front / 25.6 % rear (solved), see docs/RIDE.md section 9.
+
+    The seated rider's centre of mass sits 81 mm further back and 209 mm higher than the
+    lumped rider's, so the same springs sag less at the fork and more at the shock than the
+    lumped 40.6 / 22.7 % that `tests/test_ride_equilibrium.py` pins.
+    """
+    sim, _, _, _, _ = ride
+    assert sim.rider_variant == "seated"
+    eq = sim.equilibrium
+    assert eq["fork_travel_mm"] == pytest.approx(59.72, abs=0.5)
+    assert 100.0 * eq["fork_travel_mm"] / FORK_TRAVEL_MM == pytest.approx(33.2, abs=0.3)
+    assert eq["rear_travel_mm"] == pytest.approx(46.14, abs=0.5)
+    assert 100.0 * eq["rear_travel_mm"] / FORK_TRAVEL_MM == pytest.approx(25.6, abs=0.3)
+
+
+def test_start_equilibrium_carries_the_rider_at_the_designed_split(ride):
+    """The solved static load split is the 55 / 33 / 12 % the pose was built to, within 3 pp."""
     sim, _, _, _, _ = ride
     eq = sim.equilibrium
-    assert eq["fork_travel_mm"] == pytest.approx(73.14, abs=0.5)
-    assert 100.0 * eq["fork_travel_mm"] / FORK_TRAVEL_MM == pytest.approx(40.6, abs=0.3)
-    assert eq["rear_travel_mm"] == pytest.approx(40.89, abs=0.5)
-    assert 100.0 * eq["rear_travel_mm"] / FORK_TRAVEL_MM == pytest.approx(22.7, abs=0.3)
+    assert eq["rider_saddle_share"] == pytest.approx(0.55, abs=0.03)
+    assert eq["rider_pedals_share"] == pytest.approx(0.33, abs=0.03)
+    assert eq["rider_bar_share"] == pytest.approx(0.12, abs=0.03)
+    total = eq["rider_saddle_load_n"] + eq["rider_pedals_load_n"] + eq["rider_bar_load_n"]
+    assert total == pytest.approx(80.0 * 9.81, rel=1e-3)
+
+
+def test_seated_rider_stays_on_the_bike_over_the_worn_road(ride):
+    """
+    The rider stays seated bar a brief hop: measured, the 105 mm pothole at 42 m lifts the
+    pelvis 0.6 mm off the saddle for 27 ms, once. The mean split stays at the static one.
+    The saddle load itself swings from zero to ~1100 N -- that is the road.
+    """
+    _, rec, _, c, window = ride
+    w = {k: v[window] for k, v in c.items()}
+    from bike_sim.sim.ride.metrics import count_events
+
+    lifted = w["saddle_gap_m"] > 0.0
+    assert count_events(lifted) <= 2
+    assert lifted.sum() * rec.sample_interval_s <= 0.050
+    assert w["saddle_gap_m"].max() < 0.005
+    assert w["saddle_load_n"].min() >= 0.0
+    weight = 80.0 * 9.81
+    assert w["saddle_load_n"].mean() / weight == pytest.approx(0.55, abs=0.03)
+    assert (w["pedal_load_front_n"] + w["pedal_load_rear_n"]).mean() / weight == pytest.approx(0.33, abs=0.03)
+    assert w["bar_hand_load_n"].mean() / weight == pytest.approx(0.12, abs=0.03)
+    # The rider's own compliance attenuates: the torso sees less than the saddle it sits on.
+    from bike_sim.sim.ride.metrics import accel_stats
+
+    saddle = accel_stats("saddle", w["saddle_acc_vert_mps2"], rec.sample_interval_s)
+    torso = accel_stats("torso", w["rider_torso_acc_vert_mps2"], rec.sample_interval_s)
+    assert torso.rms_filtered_mps2 < saddle.rms_filtered_mps2
 
 
 def test_travel_stays_within_the_soft_joint_limits(ride):

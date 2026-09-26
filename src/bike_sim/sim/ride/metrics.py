@@ -74,6 +74,27 @@ class AccelStats:
 
 
 @dataclass
+class RiderStats:
+    """
+    What the seated rider's body felt and how their weight sat on the bike.
+
+    Loads are means over the measurement window, as fractions of the rider's weight, so
+    they read against the static split the pose was built to (docs/RIDE.md section 7).
+    """
+
+    torso: AccelStats
+    pelvis: AccelStats
+    saddle_lift_events: int
+    saddle_lift_time_s: float
+    saddle_gap_max_mm: float
+    mean_saddle_share: float
+    mean_pedal_share: float
+    mean_bar_share: float
+    min_saddle_load_n: float
+    max_saddle_load_n: float
+
+
+@dataclass
 class PotholeReport:
     """Declared versus effective size of one pothole on the track."""
 
@@ -114,6 +135,8 @@ class RideSummary:
     saddle: AccelStats
     potholes: List[PotholeReport] = field(default_factory=list)
     extras: Dict[str, float] = field(default_factory=dict)
+    rider_variant: str = "lumped"
+    rider: Optional[RiderStats] = None
 
     def to_dict(self) -> Dict:
         """Returns a JSON-ready dictionary."""
@@ -158,6 +181,20 @@ class RideSummary:
             lines.append(
                 f"  {a.point:6s} {a.rms_filtered_mps2:8.2f} {a.peak_filtered_mps2:8.2f} {a.peak_raw_mps2:9.1f}"
             )
+        if self.rider is not None:
+            r = self.rider
+            for a in (r.torso, r.pelvis):
+                lines.append(
+                    f"  {a.point:6s} {a.rms_filtered_mps2:8.2f} {a.peak_filtered_mps2:8.2f} {a.peak_raw_mps2:9.1f}"
+                )
+            lines += [
+                "",
+                f"  seated rider: mean load split saddle {100 * r.mean_saddle_share:.1f} % / pedals "
+                f"{100 * r.mean_pedal_share:.1f} % / bar {100 * r.mean_bar_share:.1f} % of rider weight; "
+                f"saddle load {r.min_saddle_load_n:.0f}-{r.max_saddle_load_n:.0f} N; "
+                f"left the saddle {r.saddle_lift_events} x, {r.saddle_lift_time_s * 1000:.0f} ms total, "
+                f"max gap {r.saddle_gap_max_mm:.1f} mm",
+            ]
         if self.potholes:
             lines += ["", f"  {'pothole':18s} {'x m':>7s} {'len m':>6s} {'depth mm':>9s} {'drop F mm':>10s} {'drop R mm':>10s}"]
             for p in self.potholes:
@@ -257,6 +294,34 @@ def accel_stats(point: str, acc_vert_mps2: np.ndarray, sample_interval_s: float)
     )
 
 
+def rider_stats(w: Dict[str, np.ndarray], sample_interval_s: float, rider_weight_n: float) -> RiderStats:
+    """
+    Summarises the seated rider's channels over the measurement window.
+
+    Args:
+        w: Windowed channels keyed by name.
+        sample_interval_s: Time between samples.
+        rider_weight_n: The rider's weight, for the load shares.
+    """
+    lifted = w["saddle_gap_m"] > 0.0
+    saddle = w["saddle_load_n"]
+    pedals = w["pedal_load_front_n"] + w["pedal_load_rear_n"]
+    bar = w["bar_hand_load_n"]
+    n = max(1, saddle.size)
+    return RiderStats(
+        torso=accel_stats("torso", w["rider_torso_acc_vert_mps2"], sample_interval_s),
+        pelvis=accel_stats("pelvis", w["rider_pelvis_acc_vert_mps2"], sample_interval_s),
+        saddle_lift_events=count_events(lifted),
+        saddle_lift_time_s=float(lifted.sum() * sample_interval_s),
+        saddle_gap_max_mm=float(np.max(w["saddle_gap_m"]) * 1000.0) if saddle.size else 0.0,
+        mean_saddle_share=float(saddle.sum() / n / rider_weight_n),
+        mean_pedal_share=float(pedals.sum() / n / rider_weight_n),
+        mean_bar_share=float(bar.sum() / n / rider_weight_n),
+        min_saddle_load_n=float(np.min(saddle)) if saddle.size else 0.0,
+        max_saddle_load_n=float(np.max(saddle)) if saddle.size else 0.0,
+    )
+
+
 def pothole_reports(track: TrackSpec) -> List[PotholeReport]:
     """Declared and effective sizes for every pothole-type obstacle on a track."""
     reports = []
@@ -295,6 +360,8 @@ def summarize_ride(
     shock_bumper_engage_mm: float,
     start_x_m: float,
     extras: Optional[Dict[str, float]] = None,
+    rider_variant: str = "lumped",
+    rider_mass_kg: float = 80.0,
 ) -> RideSummary:
     """
     Computes the ride summary from recorded channels.
@@ -310,6 +377,9 @@ def summarize_ride(
         shock_bumper_engage_mm: Stroke at which the shock's bottom-out bumper engages.
         start_x_m: Chassis start position; the window opens ``RAMP_EXCLUSION_M`` later.
         extras: Free-form numbers to carry into the summary (e.g. seed, sag).
+        rider_variant: Which rider rode: ``none``, ``lumped`` or ``seated``. The seated
+            rider's channels are summarised only for ``seated``.
+        rider_mass_kg: The rider's mass, for the seated load shares.
 
     Returns:
         The summary.
@@ -321,6 +391,9 @@ def summarize_ride(
 
     airborne = (w["front_contact"] < 0.5) & (w["rear_contact"] < 0.5) if window.any() else np.zeros(0, bool)
     n_potholes, n_bumps, n_annotated = count_kinds(track.obstacles)
+    rider = None
+    if rider_variant == "seated" and "saddle_load_n" in w:
+        rider = rider_stats(w, sample_interval_s, rider_mass_kg * GRAVITY_MPS2)
 
     return RideSummary(
         track=track.name,
@@ -349,6 +422,8 @@ def summarize_ride(
         saddle=accel_stats("saddle", w["saddle_acc_vert_mps2"], sample_interval_s),
         potholes=pothole_reports(track),
         extras=dict(extras or {}),
+        rider_variant=rider_variant,
+        rider=rider,
     )
 
 
@@ -359,12 +434,14 @@ __all__ = [
     "TOP_OUT_TOLERANCE_MM",
     "TravelStats",
     "AccelStats",
+    "RiderStats",
     "PotholeReport",
     "RideSummary",
     "count_events",
     "lowpass",
     "travel_stats",
     "accel_stats",
+    "rider_stats",
     "pothole_reports",
     "summarize_ride",
 ]

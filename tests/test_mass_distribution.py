@@ -397,12 +397,12 @@ def test_kinematic_hardpoints_consistency_with_solver(mass_setup):
 
 
 def test_rider_inclusion_in_static_cg(mass_setup):
-    """Verifies that RiderSpecs properly updates system mass, CG, and front load percentage."""
+    """Verifies that the lumped RiderSpecs updates system mass, CG, and front load percentage."""
     from bike_sim.physics.mass import RiderSpecs
 
     specs: BikeSpecs = mass_setup["specs"]
     mass_specs: BikeMassSpecs = mass_setup["mass_specs"]
-    rider = RiderSpecs()
+    rider = RiderSpecs(variant="lumped")
 
     cg_bike_only = compute_static_system_cg(specs, mass_specs, rider_specs=None)
     cg_with_rider = compute_static_system_cg(specs, mass_specs, rider_specs=rider)
@@ -416,11 +416,42 @@ def test_rider_inclusion_in_static_cg(mass_setup):
     assert 44.0 <= cg_with_rider["front_load_pct"] <= 49.0
 
 
+def test_seated_rider_static_cg_sits_back_and_high(mass_setup):
+    """
+    The seated rider is the default `RiderSpecs`; its centre of mass sits behind and above the
+    lumped rider's, so the static front load drops from 46.7 % to 40.4 %.
+    """
+    from bike_sim.physics.mass import RiderSpecs
+
+    specs: BikeSpecs = mass_setup["specs"]
+    mass_specs: BikeMassSpecs = mass_setup["mass_specs"]
+    assert RiderSpecs().variant == "seated"
+
+    cg_lumped = compute_static_system_cg(specs, mass_specs, rider_specs=RiderSpecs(variant="lumped"))
+    cg_seated = compute_static_system_cg(specs, mass_specs, rider_specs=RiderSpecs())
+
+    assert cg_seated["total_mass_kg"] == pytest.approx(mass_specs.total_bike_mass + 80.0, abs=1e-4)
+    assert cg_seated["rider_mass_kg"] == 80.0
+    assert cg_seated["cg_pos_m"][0] < cg_lumped["cg_pos_m"][0] - 0.05
+    assert cg_seated["cg_pos_m"][2] > cg_lumped["cg_pos_m"][2] + 0.15
+    assert cg_seated["front_load_pct"] == pytest.approx(40.4, abs=0.5)
+    # No rider at all: the two variants agree on the bike.
+    assert compute_static_system_cg(specs, mass_specs, rider_specs=RiderSpecs(variant="none"))[
+        "total_mass_kg"
+    ] == pytest.approx(mass_specs.total_bike_mass, abs=1e-6)
+
+
 
 COMPONENT_GEOMS = {
     "motor": ("geom_motor_core",),
     "battery": ("geom_battery_pack",),
-    "crank_pedals": ("geom_crank_arms",),
+    "crank_pedals": (
+        "geom_crank_spindle",
+        "geom_crank_arm_front",
+        "geom_crank_arm_rear",
+        "geom_pedal_front",
+        "geom_pedal_rear",
+    ),
     "saddle_post": ("geom_seatpost", "geom_seatpost_upper", "geom_saddle"),
     "frame_structure": (
         "geom_bb_shell",
@@ -499,3 +530,142 @@ def test_analytic_component_positions_match_the_built_model(mass_setup):
             f"{np.array2string(centre, precision=6)} "
             f"(off by {np.linalg.norm(analytic_pos - centre) * 1000.0:.1f} mm)"
         )
+
+
+# --------------------------------------------------------------------------------------
+# Seated rider: analytic table against the compiled ride model
+# --------------------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def seated_ride_model(mass_setup):
+    """Compiles the ride model with the default (seated) rider and runs one forward pass."""
+    specs: BikeSpecs = mass_setup["specs"]
+    solver: HorstLinkageSolver = mass_setup["solver"]
+    xml = generate_mujoco_xml(specs=specs, solver=solver, mode="ride", rider="seated")
+    model = mujoco.MjModel.from_xml_string(xml)
+    data = mujoco.MjData(model)
+    mujoco.mj_forward(model, data)
+    return model, data, ET.fromstring(xml)
+
+
+def test_seated_rider_bodies_carry_exactly_the_rider_mass(mass_setup, seated_ride_model):
+    """The five rider bodies weigh 80.00 kg together and nothing rider-shaped is left in `frame`."""
+    from bike_sim.physics.rider import RiderSpecs
+
+    model, _, _ = seated_ride_model
+    mass_specs: BikeMassSpecs = mass_setup["mass_specs"]
+    rider = RiderSpecs()
+
+    rider_bodies = {
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i): float(model.body_mass[i])
+        for i in range(model.nbody)
+        if (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i) or "").startswith("rider_")
+    }
+    assert set(rider_bodies) == {"rider_pelvis", "rider_torso", "rider_arms", "rider_leg_front", "rider_leg_rear"}
+    assert sum(rider_bodies.values()) == pytest.approx(rider.mass_kg, abs=1e-6)
+    assert float(model.body_mass.sum()) == pytest.approx(mass_specs.total_bike_mass - 0.05 + rider.mass_kg, abs=1e-6)
+
+    frame_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "frame")
+    assert 11.5 <= model.body_mass[frame_id] <= 13.0, "the rider must not be lumped into frame"
+    for geom in ("geom_rider_torso", "geom_rider_legs", "geom_rider_arms"):
+        gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, geom)
+        if gid >= 0:
+            assert model.geom_bodyid[gid] != frame_id
+
+
+def test_seated_rider_analytic_centres_match_the_compiled_bodies(mass_setup, seated_ride_model):
+    """
+    Every seated rider body's analytic centre of mass is where MuJoCo puts the compiled body.
+
+    Both sides read the same segment table (`SeatedPose.bodies`), so this is the check that
+    the MJCF builder re-expresses the capsules in each body's own frame correctly, and that the
+    analytic side sums the capsules the same way the compiler does.
+    """
+    from bike_sim.physics.rider import RiderSpecs
+
+    model, data, _ = seated_ride_model
+    specs: BikeSpecs = mass_setup["specs"]
+    analytic = RiderSpecs().compute_rider_centers_of_mass(specs)
+    assert sum(m for _, m in analytic.values()) == pytest.approx(80.0, abs=1e-9)
+
+    for name, (pos, mass) in analytic.items():
+        bid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
+        assert bid >= 0, name
+        assert float(model.body_mass[bid]) == pytest.approx(mass, abs=1e-6), name
+        # The frame root sits at the origin with zero travel, so world == BB frame here.
+        assert np.allclose(data.xipos[bid], pos, atol=1e-3), (
+            f"{name}: analytic CoM {np.array2string(pos, precision=4)} vs compiled "
+            f"{np.array2string(data.xipos[bid], precision=4)}"
+        )
+
+
+def test_seated_rider_moves_the_saddle_and_the_analytic_table_follows(mass_setup, seated_ride_model):
+    """
+    The saddle is set for the rider's inseam (+36 mm over the photograph) and the analytic
+    saddle-and-post centre is read from the same geometry the builder emitted.
+    """
+    from bike_sim.physics.rider import RiderSpecs
+
+    _, _, root = seated_ride_model
+    specs: BikeSpecs = mass_setup["specs"]
+    mass_specs: BikeMassSpecs = mass_setup["mass_specs"]
+    solver: HorstLinkageSolver = mass_setup["solver"]
+
+    built = {g.get("name"): g for g in root.iter("geom") if g.get("name")}
+    saddle = built["geom_saddle"]
+    top_z = float(saddle.get("pos").split()[2]) + float(saddle.get("size").split()[2])
+    assert top_z == pytest.approx(0.690 + 0.036, abs=0.001)
+
+    names = COMPONENT_GEOMS["saddle_post"]
+    mass = sum(float(built[n].get("mass")) for n in names)
+    centre = sum(float(built[n].get("mass")) * _geom_centre(built[n]) for n in names) / mass
+    analytic_pos, analytic_mass = compute_component_centers_of_mass(
+        specs, mass_specs, solver, rider_specs=RiderSpecs()
+    )["saddle_post"]
+    assert mass == pytest.approx(analytic_mass, abs=1e-9)
+    assert np.allclose(analytic_pos, centre, atol=0.002)
+
+
+def test_seated_split_and_springs_are_derived_from_the_rider(mass_setup):
+    """
+    The pose's static split is the rider's target to the newton, the springs put each path at
+    the rider's resonance with the rider's damping ratio, and the whole thing scales with mass.
+    """
+    from bike_sim.physics.rider import RiderSpecs
+
+    specs: BikeSpecs = mass_setup["specs"]
+    for mass_kg in (65.0, 80.0, 95.0):
+        pose = RiderSpecs(mass_kg=mass_kg).seated_pose(specs)
+        shares = pose.interface_shares()
+        assert shares["saddle"] == pytest.approx(0.55, abs=1e-9)
+        assert shares["pedals"] == pytest.approx(0.33, abs=1e-9)
+        assert shares["bar"] == pytest.approx(0.12, abs=1e-9)
+        assert pose.total_mass_kg == pytest.approx(mass_kg, abs=1e-9)
+        for body in pose.bodies:
+            if body.name == "rider_pelvis":
+                assert body.stiffness_n_m == 101_000.0 and body.damping_ns_m == 2_762.0
+                continue
+            f_hz = {"rider_arms": 4.0, "rider_torso": 7.0}.get(body.name, 5.0)
+            omega = np.sqrt(body.stiffness_n_m / body.mass)
+            assert omega / (2 * np.pi) == pytest.approx(f_hz, rel=1e-9)
+            assert body.damping_ns_m / (2 * np.sqrt(body.stiffness_n_m * body.mass)) == pytest.approx(0.40, rel=1e-9)
+        # The saddle path carries pelvis and torso together.
+        assert pose.body("rider_pelvis").supported_mass_kg == pytest.approx(
+            pose.body("rider_pelvis").mass + pose.body("rider_torso").mass
+        )
+
+
+def test_seated_pose_refuses_a_rider_the_frame_cannot_seat(mass_setup):
+    """Too tall runs out of seatpost; too short cannot reach the bar or drops the knee below range."""
+    from bike_sim.physics.rider import RiderSpecs
+
+    specs: BikeSpecs = mass_setup["specs"]
+    with pytest.raises(ValueError, match="seatpost"):
+        RiderSpecs(height_m=2.00).seated_pose(specs)
+    pose = RiderSpecs(height_m=1.60).seated_pose(specs)
+    assert 20.0 <= pose.knee_flexion_bdc_deg <= 60.0
+    with pytest.raises(ValueError):
+        RiderSpecs(height_m=1.30).seated_pose(specs)
+    with pytest.raises(ValueError, match="seated"):
+        generate_mujoco_xml(specs=specs, mode="stand", rider="seated")

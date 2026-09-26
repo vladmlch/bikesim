@@ -22,12 +22,13 @@ from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
 from bike_sim.physics.coil_shock import CoilShock
 from bike_sim.physics.damper import BikeSuspensionSystem
+from bike_sim.physics.rider import RiderSpecs, saddle_path_apparent_mass
 from bike_sim.sim.controllers import SuspensionController
 from bike_sim.sim.equilibrium import (
     START_CLEARANCE_M,
     solve_static_equilibrium,
 )
-from bike_sim.sim.ride import SuspensionForceApplier
+from bike_sim.sim.ride import RiderForceApplier, SuspensionForceApplier
 from bike_sim.terrain import build_field_data, get_preset
 
 # docs/RIDE.md section 9 tabulates the sag the shipped defaults produce: 42.0 % front
@@ -52,6 +53,12 @@ SPEC_FRONT_SAG_PCT = 42.0
 SPEC_REAR_SAG_PCT = 25.3
 SOLVED_FRONT_SAG_PCT = 40.7
 SOLVED_REAR_SAG_PCT = 22.7
+
+# The seated rider (docs/RIDE.md section 7) puts its 80 kg further back and higher -- the
+# system centre of mass moves from (0.150, 0.475) to (0.069, 0.684) m from the BB -- so the
+# same springs sag less at the fork and more at the shock. Solved on the flat preset.
+SEATED_FRONT_SAG_PCT = 33.2
+SEATED_REAR_SAG_PCT = 25.6
 
 # A minimal model whose fork coordinate runs the wrong way: increasing value means
 # extension, so a resisting force would need the opposite sign.
@@ -83,12 +90,12 @@ def _qposadr(model: mujoco.MjModel, joint_name: str) -> int:
     return int(model.jnt_qposadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)])
 
 
-def _build_rig() -> Rig:
+def _build_rig(rider: str = "lumped") -> Rig:
     """Compiles the ride model on the `flat` preset with the shipped suspension defaults."""
     specs = BikeSpecs()
     solver = HorstLinkageSolver(specs)
     model = mujoco.MjModel.from_xml_string(
-        generate_mujoco_xml(specs=specs, solver=solver, mode="ride", include_rider=True)
+        generate_mujoco_xml(specs=specs, solver=solver, mode="ride", rider=rider)
     )
     data = mujoco.MjData(model)
     model.hfield_data[:] = build_field_data(get_preset("flat")).reshape(-1)
@@ -256,3 +263,115 @@ def test_force_path_rejects_a_non_compression_range():
 
     with pytest.raises(ValueError, match="fork_travel"):
         SuspensionForceApplier(model, controller, CoilShock())
+
+
+# --------------------------------------------------------------------------------------
+# Seated rider
+# --------------------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def seated_rig() -> Rig:
+    """The same rig with the seated rider in place of the lumped one."""
+    return _build_rig(rider="seated")
+
+
+@pytest.fixture(scope="module")
+def seated_equilibrium(seated_rig: Rig) -> dict:
+    """Solves the seated rider's static equilibrium once, with its force path applied."""
+    rider_forces = RiderForceApplier(seated_rig.model, RiderSpecs().seated_pose(seated_rig.specs))
+    return solve_static_equilibrium(
+        seated_rig.model, seated_rig.data, seated_rig.applier, seated_rig.solver, rider_applier=rider_forces
+    )
+
+
+def test_seated_equilibrium_converges_and_reports_the_rider(seated_rig: Rig, seated_equilibrium: dict):
+    """The relaxation converges with the five rider slides in the state, and reports the split."""
+    eq = seated_equilibrium
+    assert eq["residual_qacc"] <= 0.05
+    assert 0 < eq["steps"] < 40000
+    assert 0.0 < eq["fork_travel_mm"] < seated_rig.specs.fork_travel
+    assert 0.0 < eq["shock_stroke_mm"] < seated_rig.specs.shock_stroke
+    assert eq["rider_saddle_share"] == pytest.approx(0.55, abs=0.03)
+    assert eq["rider_pedals_share"] == pytest.approx(0.33, abs=0.03)
+    assert eq["rider_bar_share"] == pytest.approx(0.12, abs=0.03)
+    assert eq["rider_saddle_load_n"] + eq["rider_pedals_load_n"] + eq["rider_bar_load_n"] == pytest.approx(
+        80.0 * 9.81, rel=1e-3
+    )
+
+
+def test_seated_sag_at_shipped_defaults(seated_rig: Rig, seated_equilibrium: dict):
+    """Seated: 33.2 % front / 25.6 % rear -- less nose weight and more on the shock than lumped."""
+    front_sag_pct = seated_equilibrium["fork_travel_mm"] / seated_rig.specs.fork_travel * 100.0
+    rear_sag_pct = seated_equilibrium["rear_travel_mm"] / seated_rig.specs.rear_wheel_travel * 100.0
+    assert front_sag_pct == pytest.approx(SEATED_FRONT_SAG_PCT, abs=1.0)
+    assert rear_sag_pct == pytest.approx(SEATED_REAR_SAG_PCT, abs=1.0)
+    assert front_sag_pct < SOLVED_FRONT_SAG_PCT
+    assert rear_sag_pct > SOLVED_REAR_SAG_PCT
+
+
+def test_seated_rider_sits_at_its_design_pose_in_equilibrium(seated_rig: Rig, seated_equilibrium: dict):
+    """
+    Every rider slide is within a millimetre of zero at equilibrium.
+
+    The springs are preloaded to carry their static loads at zero travel, which is where the
+    pose solver drew the capsules; a slide that settled elsewhere would mean the preload and
+    the mass it carries disagree.
+    """
+    model = seated_rig.model
+    for joint in ("rider_pelvis_z", "rider_torso_z", "rider_arms_z", "rider_leg_front_z", "rider_leg_rear_z"):
+        q = float(seated_rig.data.qpos[_qposadr(model, joint)])
+        assert abs(q) < 1e-3, f"{joint} settled at {q * 1000:.2f} mm"
+
+
+def test_seated_rider_force_path_is_one_sided_where_it_should_be(seated_rig: Rig):
+    """
+    Lifting the pelvis past its preload opens the saddle contact and the force drops to zero;
+    the torso spring, a spine, keeps pulling. Pushing down loads the saddle further.
+    """
+    pose = RiderSpecs().seated_pose(seated_rig.specs)
+    rider_forces = RiderForceApplier(seated_rig.model, pose)
+    pelvis = pose.body("rider_pelvis")
+    torso = pose.body("rider_torso")
+    mujoco.mj_resetData(seated_rig.model, seated_rig.data)
+
+    q_pelvis = _qposadr(seated_rig.model, "rider_pelvis_z")
+    q_torso = _qposadr(seated_rig.model, "rider_torso_z")
+
+    rider_forces.apply(seated_rig.model, seated_rig.data)
+    assert rider_forces.saddle_load_n == pytest.approx(pelvis.preload_n)
+    assert rider_forces.torso_spring_n == pytest.approx(torso.preload_n)
+    assert rider_forces.saddle_gap_m == 0.0
+
+    seated_rig.data.qpos[q_pelvis] = pelvis.preload_deflection_m + 0.010
+    rider_forces.apply(seated_rig.model, seated_rig.data)
+    assert rider_forces.saddle_load_n == 0.0
+    assert rider_forces.saddle_gap_m == pytest.approx(0.010)
+
+    seated_rig.data.qpos[q_pelvis] = -0.002
+    seated_rig.data.qpos[q_torso] = torso.preload_deflection_m + 0.010
+    rider_forces.apply(seated_rig.model, seated_rig.data)
+    assert rider_forces.saddle_load_n == pytest.approx(pelvis.preload_n + pelvis.stiffness_n_m * 0.002)
+    assert rider_forces.torso_spring_n == pytest.approx(-torso.stiffness_n_m * 0.010)
+    assert rider_forces.saddle_gap_m == 0.0
+
+
+def test_seated_body_apparent_mass_peaks_where_the_literature_measures_it():
+    """
+    The saddle path's normalized apparent mass peaks at 1.3-1.7 x within 4-6 Hz.
+
+    This is the check that makes the derived torso spring more than a restatement of its own
+    inputs: the pelvis-to-saddle contact is Kumar & Saran's measured K8 / C8, the torso spring
+    is set for the coupled two-mass system, and the resulting peak is compared with the
+    shaker measurements of seated humans (Fairley & Griffin 1989: peak ~1.5 at 4-6 Hz;
+    Kumar & Saran 2019: peak at 5 Hz). Static mass is recovered at low frequency.
+    """
+    pose = RiderSpecs().seated_pose(BikeSpecs())
+    f = np.linspace(0.5, 20.0, 3901)
+    norm = saddle_path_apparent_mass(pose, f)
+    i = int(np.argmax(norm))
+    assert norm[0] == pytest.approx(1.0, abs=0.02)
+    assert 4.0 <= f[i] <= 6.0, f"apparent-mass peak at {f[i]:.2f} Hz"
+    assert 1.3 <= norm[i] <= 1.7, f"apparent-mass peak {norm[i]:.2f} x static"
+    # Above the body's modes the seat carries less than the static mass: isolation.
+    assert norm[np.argmin(np.abs(f - 15.0))] < 0.6

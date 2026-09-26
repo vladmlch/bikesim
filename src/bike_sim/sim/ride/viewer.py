@@ -14,11 +14,12 @@ the arrears it will chase, so a stall in the window manager cannot make the simu
 """
 
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import mujoco
 
 from bike_sim.geometry.specs import BikeSpecs
+from bike_sim.physics.rider import RiderSpecs
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH
 from bike_sim.sim.ride.session import RideSession
 from bike_sim.sim.ride.termination import RunOutcome
@@ -97,6 +98,7 @@ def run_interactive_ride(
     specs: Optional[BikeSpecs] = None,
     target_speed_kmh: float = DEFAULT_TARGET_SPEED_KMH,
     include_rider: bool = True,
+    rider: Optional[Union[RiderSpecs, str]] = None,
 ) -> Optional[RunOutcome]:
     """
     Launches the live interactive ride viewer.
@@ -108,7 +110,8 @@ def run_interactive_ride(
         track: Track to ride. Defaults to the shipped default preset.
         specs: Bicycle geometry. Defaults to the shipped `BikeSpecs`.
         target_speed_kmh: Initial cruise target, inside the 15-45 km/h band.
-        include_rider: Whether the rider's mass and geometry start out present.
+        include_rider: Legacy switch; False rides the bike alone. Ignored when ``rider`` is given.
+        rider: The rider variant or `RiderSpecs`; fixed for the session (see `session.py`).
 
     Returns:
         The run's outcome if it terminated before the window was closed, else None.
@@ -127,6 +130,7 @@ def run_interactive_ride(
         specs=specs,
         target_speed_kmh=target_speed_kmh,
         include_rider=include_rider,
+        rider=rider,
         debug_markers=True,
     )
     session = RideSession(sim)

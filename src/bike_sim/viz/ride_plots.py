@@ -38,6 +38,7 @@ FORK = "#38bdf8"
 SHOCK = "#fbbf24"
 BAR = "#34d399"
 SADDLE = "#f97316"
+RIDER = "#c084fc"
 MARKER = "#a855f7"
 RAW = "#ef4444"
 
@@ -192,6 +193,15 @@ def plot_acceleration(channels: Dict[str, np.ndarray], sample_interval_s: float,
                 bbox=dict(facecolor="#161b22", edgecolor=SPINE),
             )
         _draw_markers(ax, track.markers)
+
+    # The seated rider's torso, downstream of the saddle and the rider's own compliance,
+    # goes on the saddle panel: the two together are the transmissibility of the body.
+    torso = channels.get("rider_torso_acc_vert_mps2")
+    if torso is not None and torso.size and np.any(torso != 0.0):
+        filtered = lowpass(torso - GRAVITY_MPS2, sample_interval_s)
+        axs[1].plot(x, filtered, color=RIDER, linewidth=0.8, alpha=0.9,
+                    label=f"rider torso, {ACCEL_FILTER_HZ:.0f} Hz low-pass")
+    for ax in axs:
         _legend(ax, loc="upper left")
 
     plt.tight_layout()

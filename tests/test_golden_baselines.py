@@ -69,14 +69,26 @@ class TestGoldenBaselines(unittest.TestCase):
         self.assertEqual(root.tag, "mujoco")
 
     def test_baseline_bike_ride_xml(self) -> None:
-        """Ride mode model XML matches baseline_bike_ride.xml."""
+        """Ride mode model XML with the default (seated) rider matches baseline_bike_ride.xml."""
+        xml_content = generate_mujoco_xml(
+            specs=self.specs,
+            solver=self.solver,
+            mode="ride",
+            rider="seated",
+        )
+        self._assert_text_equal(xml_content, "baseline_bike_ride.xml")
+        root = ET.fromstring(xml_content)
+        self.assertEqual(root.tag, "mujoco")
+
+    def test_baseline_bike_ride_lumped_xml(self) -> None:
+        """Ride mode model XML with the lumped rider matches baseline_bike_ride_lumped.xml."""
         xml_content = generate_mujoco_xml(
             specs=self.specs,
             solver=self.solver,
             mode="ride",
             include_rider=True,
         )
-        self._assert_text_equal(xml_content, "baseline_bike_ride.xml")
+        self._assert_text_equal(xml_content, "baseline_bike_ride_lumped.xml")
         root = ET.fromstring(xml_content)
         self.assertEqual(root.tag, "mujoco")
 
@@ -111,6 +123,7 @@ class TestGoldenBaselines(unittest.TestCase):
             "baseline_bike_playground.xml",
             "baseline_bike_playground_stand.xml",
             "baseline_bike_ride.xml",
+            "baseline_bike_ride_lumped.xml",
         ]:
             path = self.golden_dir / baseline_name
             model = mujoco.MjModel.from_xml_path(str(path))

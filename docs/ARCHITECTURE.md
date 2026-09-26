@@ -7,10 +7,10 @@
 - Closed-form 4-bar Horst-Link suspension kinematic solving with zero phantom stroke and strict link invariant conservation ($< 10^{-12}\text{ mm}$).
 - Non-linear thermodynamic pneumatic fork spring (DebonAir+ dual-chamber adiabatic air spring with volume token tuning).
 - Multi-circuit hydrodynamic dampers (RockShox Charger 3 RC2 fork damper & Super Deluxe Ultimate RC2T rear shock with Hydraulic Bottom-Out and Threshold Lockout).
-- Physical mass and inertia profiles (full-power eMTB 24.4 kg frame + rider 80 kg toggle).
+- Physical mass and inertia profiles (full-power eMTB 24.4 kg frame + an 80 kg rider: lumped standing rider on the test stand, seated biodynamic rider on the road).
 - MuJoCo MJCF XML procedural compiler across four simulation modes (Standard, Stand, Playground, Ride).
 - Live interactive 2D suspension test stand playground with position servo control, auto-sweep, multi-camera tracking, and live HUD telemetry.
-- **Ride mode**: a planar free-rolling whole-bike model over a heightfield road — obstacle catalogue at trail and road scale, procedural rough-road generator, TOML track files, force-based suspension (air fork, coil shock with bumper, click-tuned dampers), PI cruise control, brakes, rolling resistance, a bounded virtual rider, crash detection, and a headless telemetry / summary / plotting pipeline behind the `bike-ride` command (`docs/RIDE.md`).
+- **Ride mode**: a planar free-rolling whole-bike model over a heightfield road — obstacle catalogue at trail and road scale, procedural rough-road generator, TOML track files, force-based suspension (air fork, coil shock with bumper, click-tuned dampers), PI cruise control, brakes, rolling resistance, a seated biodynamic rider on preloaded one-sided spring-dampers (or the legacy lumped rider), a bounded virtual-rider flight moment, crash detection, and a headless telemetry / summary / plotting pipeline behind the `bike-ride` command (`docs/RIDE.md`).
 
 ---
 
@@ -41,7 +41,8 @@ mujoco_sim_new2/
 │       │   ├── air_spring.py   # ForkAirSpring thermodynamic pneumatic model
 │       │   ├── coil_shock.py   # CoilShock: linear coil + progressive bottom-out bumper
 │       │   ├── damper.py       # Charger3Damper, SuperDeluxeDamper, BikeSuspensionSystem, presets
-│       │   ├── mass.py         # BikeMassSpecs, RiderSpecs, CoM & static axle loads
+│       │   ├── mass.py         # BikeMassSpecs, CoM & static axle loads (re-exports RiderSpecs)
+│       │   ├── rider.py        # RiderSpecs (none/lumped/seated), de Leva anthropometry, seated pose solver, path masses & springs
 │       │   └── tuning.py       # compute_suspension_tuning_for_sag (fork psi / coil rate for a sag target)
 │       ├── terrain/            # Ride road geometry — pure NumPy/SciPy, imports no MuJoCo
 │       │   ├── __init__.py
@@ -67,8 +68,8 @@ mujoco_sim_new2/
 │       │   ├── rear_linkage.py # Chainstay, seatstay, rocker, yoke, shock bodies
 │       │   ├── steering_fork.py# Steerer, fork, front wheel; contact sphere in ride mode
 │       │   ├── drivetrain.py   # Wheels, spin joints, rear contact sphere
-│       │   ├── rider.py        # 3D Rider capsules XML builder
-│       │   └── sensors.py      # Telemetry sensors (+ bar/saddle accelerometers in ride mode)
+│       │   ├── rider.py        # Lumped rider capsules; seated rider bodies, slides, capsules and sites
+│       │   └── sensors.py      # Telemetry sensors (+ bar/saddle accelerometers in ride mode, + rider torso/pelvis when seated)
 │       ├── sim/                # Simulation runtime — the only layer that mutates mjData
 │       │   ├── __init__.py
 │       │   ├── camera.py       # CameraManager (2D tracking & 3D isometric chase)
@@ -79,6 +80,7 @@ mujoco_sim_new2/
 │       │   ├── ride_sim.py     # RideSimulation: compiles ride model, rasterizes track, sequences per-step writers
 │       │   └── ride/           # Ride-mode writers and tooling
 │       │       ├── forces.py         # SuspensionForceApplier (fork + coil shock into qfrc_applied)
+│       │       ├── rider_forces.py   # RiderForceApplier (seated rider springs into qfrc_applied; one-sided saddle/pedals)
 │       │       ├── contacts.py       # TerrainContactQuery / TerrainContacts (debounced gates, raw support)
 │       │       ├── resistance.py     # RollingResistance (Crr·N·r)
 │       │       ├── cruise.py         # CruiseController (PI on chassis velocity, contact-gated)
@@ -123,12 +125,12 @@ mujoco_sim_new2/
 
 | Subsystem | Modules | Description |
 |---|---|---|
-| **Geometry** | `specs.py`, `hardpoints.py`, `validation.py` | Defines bike specs and fixed hardpoints ($P_0, P_5, P_7, P_8, P_9, P_{10}, P_{11}, P_{\text{HT\_bot}}, P_{\text{FA}}, BB$) in MuJoCo coordinate frame (+X forward, +Z up). |
+| **Geometry** | `specs.py`, `hardpoints.py`, `cockpit.py`, `validation.py` | Defines bike specs, fixed hardpoints and the cockpit (seatpost/saddle placement for a saddle height, handlebar grip, pedal points) shared by the MJCF builder, the mass table and the rider pose; hardpoints ($P_0, P_5, P_7, P_8, P_9, P_{10}, P_{11}, P_{\text{HT\_bot}}, P_{\text{FA}}, BB$) in MuJoCo coordinate frame (+X forward, +Z up). |
 | **Kinematics** | `solver.py`, `curves.py` | Solves the 4-bar linkage ($P_0 \to P_2 \to P_3 \to P_5$) analytically for chainstay angle, rocker rotation, yoke displacement, rear axle path, and leverage ratio with zero phantom stroke at rest ($S_0 = 0$). |
-| **Physics** | `air_spring.py`, `coil_shock.py`, `damper.py`, `mass.py`, `tuning.py` | Pure calculators: thermodynamic air spring, linear coil with bottom-out bumper, dual-stage hydraulic dampers with blow-off and HBO, component masses / CG / axle loads, sag-target spring fitting. Never touch `mjModel`/`mjData`. |
+| **Physics** | `air_spring.py`, `coil_shock.py`, `damper.py`, `mass.py`, `rider.py`, `tuning.py` | Pure calculators: thermodynamic air spring, linear coil with bottom-out bumper, dual-stage hydraulic dampers with blow-off and HBO, component masses / CG / axle loads, the rider (variants, de Leva anthropometry, seated pose, load-path masses and springs), sag-target spring fitting. Never touch `mjModel`/`mjData`. |
 | **Terrain** | `obstacles.py`, `wheelpath.py`, `profile.py`, `road.py`, `trackfile.py`, `presets.py`, `heightfield.py` | Road geometry for ride mode: obstacle catalogue at trail and road scale, rolling-wheel envelope, `TrackSpec` assembly with datum carry and overlap rejection, seeded rough-road generator, TOML track files, preset registry, heightfield rasterization with a fixed default grid and length-derived larger grids. Imports no MuJoCo and no other `bike_sim` package. |
-| **MuJoCo** | `assets.py`, `frame.py`, `linkage.py`, `rear_linkage.py`, `steering_fork.py`, `drivetrain.py`, `environment.py`, `terrain.py`, `rider.py`, `actuators.py`, `sensors.py`, `builder.py`, `exporter.py` | Decomposed XML generator creating valid MJCF models for four modes; every ride-mode difference is gated on `mode == "ride"` so the three older golden baselines stay byte-identical. |
-| **Simulation** | `playground.py`, `camera.py`, `controllers.py`, `equilibrium.py`, `ride_sim.py`, `ride/*` | Test-stand runner; ride orchestrator sequencing suspension → rolling resistance → cruise → brakes → virtual rider → crash check → `mj_step` → contact query, with solved static equilibrium, interactive session/viewer, telemetry recorder and summary metrics. The only layer that writes `mjData`. |
+| **MuJoCo** | `assets.py`, `frame.py`, `linkage.py`, `rear_linkage.py`, `steering_fork.py`, `drivetrain.py`, `environment.py`, `terrain.py`, `rider.py`, `actuators.py`, `sensors.py`, `builder.py`, `exporter.py` | Decomposed XML generator creating valid MJCF models for four modes; every ride-mode difference is gated on `mode == "ride"`, and the seated rider is ride-only, so the three older golden baselines change only when the bike itself does (the 165 mm cranks did). Ride mode carries two baselines, seated (default) and lumped. |
+| **Simulation** | `playground.py`, `camera.py`, `controllers.py`, `equilibrium.py`, `ride_sim.py`, `ride/*` | Test-stand runner; ride orchestrator sequencing suspension → seated rider springs → rolling resistance → cruise → brakes → virtual rider → crash check → `mj_step` → contact query, with solved static equilibrium, interactive session/viewer, telemetry recorder and summary metrics. The only layer that writes `mjData`. |
 | **Visualization** | `plots.py`, `tables.py`, `dyno_plot.py`, `ride_plots.py` | Publication-ready matplotlib diagrams, dyno curves, ride telemetry figures, track preview, ASCII tables. Agg backend, headless-safe. |
 | **CLI** | `main.py`, `playground.py`, `export.py`, `ride.py` | `bike-sim`, `bike-playground`, `bike-export`, `bike-ride` console scripts wired in `pyproject.toml`. |
 

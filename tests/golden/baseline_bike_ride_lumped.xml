@@ -40,34 +40,9 @@
       <joint name="root_x" type="slide" pos="0 0 0" axis="1 0 0"/>
       <joint name="root_z" type="slide" pos="0 0 0" axis="0 0 1"/>
       <joint name="root_pitch" type="hinge" pos="0 0 0" axis="0 1 0"/>
-      <body name="rider_pelvis" pos="-0.175901 0.000000 0.786013">
-        <joint name="rider_pelvis_z" type="slide" pos="0 0 0" axis="0 0 1"/>
-        <geom name="geom_rider_pelvis" type="capsule" fromto="-0.070000 0.000000 0.040000 0.050000 0.000000 0.040000" size="0.085" mass="14.108440" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-        <body name="rider_torso" pos="0.000000 0.000000 0.000000">
-          <joint name="rider_torso_z" type="slide" pos="0 0 0" axis="0 0 1"/>
-          <geom name="geom_rider_torso" type="capsule" fromto="0.066878 0.000000 0.074346 0.356437 0.000000 0.396244" size="0.110" mass="23.967320" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-          <geom name="geom_rider_head" type="sphere" pos="0.463442 0.000000 0.515198" size="0.110" mass="5.924240" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-          <site name="site_rider_torso" pos="0.261559 0.000000 0.290769" size="0.008" rgba="0.9 0.6 0.1 1.0"/>
-        </body>
-        <site name="site_rider_pelvis" pos="-0.010000 0.000000 0.040000" size="0.008" rgba="0.9 0.6 0.1 1.0"/>
-      </body>
-      <body name="rider_arms" pos="0.520000 0.000000 0.666000">
-        <joint name="rider_arms_z" type="slide" pos="0 0 0" axis="0 0 1"/>
-        <geom name="geom_rider_upper_arm" type="capsule" fromto="-0.339464 0.000000 0.516256 -0.211780 0.000000 0.254491" size="0.045" mass="5.266397" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-        <geom name="geom_rider_forearm" type="capsule" fromto="-0.211780 0.000000 0.254491 0.000000 0.000000 0.000000" size="0.040" mass="4.333603" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-      </body>
-      <body name="rider_leg_front" pos="0.165000 0.000000 0.000000">
-        <joint name="rider_leg_front_z" type="slide" pos="0 0 0" axis="0 0 1"/>
-        <geom name="geom_rider_thigh_front" type="capsule" fromto="-0.340901 0.000000 0.786013 0.033992 0.000000 0.562418" size="0.070" mass="8.662800" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-        <geom name="geom_rider_shank_front" type="capsule" fromto="0.033992 0.000000 0.562418 0.000000 0.000000 0.115000" size="0.055" mass="4.537200" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-        <geom name="geom_rider_foot_front" type="capsule" fromto="0.000000 0.000000 0.115000 0.000000 0.000000 0.000000" size="0.035" mass="0.000000" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-      </body>
-      <body name="rider_leg_rear" pos="-0.165000 0.000000 0.000000">
-        <joint name="rider_leg_rear_z" type="slide" pos="0 0 0" axis="0 0 1"/>
-        <geom name="geom_rider_thigh_rear" type="capsule" fromto="-0.010901 0.000000 0.786013 0.282963 0.000000 0.463239" size="0.070" mass="8.662800" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-        <geom name="geom_rider_shank_rear" type="capsule" fromto="0.282963 0.000000 0.463239 0.000000 0.000000 0.115000" size="0.055" mass="4.537200" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-        <geom name="geom_rider_foot_rear" type="capsule" fromto="0.000000 0.000000 0.115000 0.000000 0.000000 0.000000" size="0.035" mass="0.000000" material="mat_rider" rgba="0.5 0.5 0.5 1.0" contype="0" conaffinity="0"/>
-      </body>
+      <geom name="geom_rider_torso" type="capsule" fromto="0.10 0 0.48 0.22 0 0.82" size="0.13" mass="55.0" rgba="0.5 0.5 0.5 1.0" material="mat_rider" contype="0" conaffinity="0"/>
+      <geom name="geom_rider_legs" type="capsule" fromto="0.0 0 0.0 0.10 0 0.48" size="0.075" mass="18.0" rgba="0.5 0.5 0.5 1.0" material="mat_rider" contype="0" conaffinity="0"/>
+      <geom name="geom_rider_arms" type="capsule" fromto="0.22 0 0.78 0.45 0 0.66" size="0.055" mass="7.0" rgba="0.5 0.5 0.5 1.0" material="mat_rider" contype="0" conaffinity="0"/>
       <geom name="geom_bb_shell" type="cylinder" fromto="0 -0.0365 0 0 0.0365 0" size="0.024" mass="0.30" material="mat_metal"/>
       <geom name="geom_motor_core" type="cylinder" fromto="0.015 -0.055 0.020 0.045 0.055 0.035" size="0.045" mass="2.90" material="mat_motor"/>
       <geom name="geom_crank_spindle" type="cylinder" fromto="0 -0.075000 0 0 0.075000 0" size="0.016" mass="0.100" material="mat_metal" contype="0" conaffinity="0"/>
@@ -82,11 +57,11 @@
       <geom name="geom_toptube_main" type="capsule" fromto="0.410000 0.000000 0.635000 -0.060000 0.000000 0.400000" size="0.023" mass="0.45" material="mat_frame"/>
       <geom name="geom_seattube" type="capsule" fromto="-0.060000 0.000000 0.400000 -0.030000 0.000000 0.258000" size="0.020" mass="0.05" material="mat_frame"/>
       <geom name="geom_frame_casting" type="box" pos="0.005661 0 0.129000" size="0.075 0.036 0.130" mass="0.60" material="mat_frame" contype="0" conaffinity="0"/>
-      <geom name="geom_seatpost" type="cylinder" fromto="-0.060000 0.000000 0.400000 -0.085000 0.000000 0.490000" size="0.016" mass="0.105457" material="mat_metal"/>
-      <geom name="geom_seatpost_upper" type="cylinder" fromto="-0.085000 0.000000 0.490000 -0.151901 0.000000 0.696013" size="0.016" mass="0.244543" material="mat_metal"/>
+      <geom name="geom_seatpost" type="cylinder" fromto="-0.060000 0.000000 0.400000 -0.085000 0.000000 0.490000" size="0.016" mass="0.120129" material="mat_metal"/>
+      <geom name="geom_seatpost_upper" type="cylinder" fromto="-0.085000 0.000000 0.490000 -0.140206 0.000000 0.660000" size="0.016" mass="0.229871" material="mat_metal"/>
       <geom name="geom_seat_gusset" type="capsule" fromto="-0.085000 0.000000 0.490000 0.043400 0.000000 0.451700" size="0.015" mass="0.10" material="mat_frame"/>
       <geom name="geom_frame_junction" type="capsule" fromto="0.184400 0.000000 0.522200 0.173221 0.000000 0.403651" size="0.042" mass="0.10" material="mat_frame"/>
-      <geom name="geom_saddle" type="box" pos="-0.175901 0.000000 0.711013" size="0.13 0.065 0.015" mass="0.55" material="mat_saddle"/>
+      <geom name="geom_saddle" type="box" pos="-0.164206 0.000000 0.675000" size="0.13 0.065 0.015" mass="0.55" material="mat_saddle"/>
       <geom name="geom_p0_mount" type="cylinder" fromto="-0.044902 -0.035 0.046393 -0.044902 0.035 0.046393" size="0.016" mass="0.10" material="mat_metal"/>
       <geom name="geom_p5_mount" type="cylinder" fromto="0.041321 -0.048 0.184457 0.041321 0.048 0.184457" size="0.013" mass="0.10" material="mat_metal"/>
       <geom name="geom_p7_mount" type="cylinder" fromto="0.173221 -0.020 0.403651 0.173221 0.020 0.403651" size="0.012" mass="0.10" material="mat_metal"/>
@@ -99,10 +74,10 @@
       <site name="site_P10" pos="-0.060000 0.000000 0.400000" size="0.006" rgba="0.5 0.5 0.5 1.0"/>
       <site name="site_P11" pos="0.480000 0.000000 0.646000" size="0.008" rgba="0.9 0.1 0.1 1.0"/>
       <site name="site_HT_bot" pos="0.532605 0.000000 0.538145" size="0.008" rgba="0.9 0.1 0.1 1.0"/>
-      <site name="site_CG" pos="0.069284 0.000000 0.684088" size="0.012" rgba="0.95 0.20 0.85 0.9"/>
+      <site name="site_CG" pos="0.150377 0.000000 0.474976" size="0.012" rgba="0.95 0.20 0.85 0.9"/>
       <site name="site_top_tube_kink" pos="0.410000 0.000000 0.635000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
       <site name="site_seat_collar" pos="-0.085000 0.000000 0.490000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
-      <site name="site_seatpost_top" pos="-0.151901 0.000000 0.696013" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
+      <site name="site_seatpost_top" pos="-0.140206 0.000000 0.660000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
       <site name="site_seat_tube_junction" pos="-0.060000 0.000000 0.400000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
       <site name="site_headtube_top" pos="0.480000 0.000000 0.646000" size="0.006" rgba="0.9 0.1 0.1 0.8"/>
       <site name="site_headtube_bottom" pos="0.532605 0.000000 0.538145" size="0.006" rgba="0.9 0.1 0.1 0.8"/>
@@ -291,7 +266,5 @@
     <subtreecom name="sensor_subtree_com" body="frame"/>
     <accelerometer name="sensor_bar_accel" site="site_handlebar"/>
     <accelerometer name="sensor_saddle_accel" site="site_seatpost_top"/>
-    <accelerometer name="sensor_rider_torso_accel" site="site_rider_torso"/>
-    <accelerometer name="sensor_rider_pelvis_accel" site="site_rider_pelvis"/>
   </sensor>
 </mujoco>

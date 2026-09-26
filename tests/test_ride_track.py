@@ -172,9 +172,16 @@ def _in_any_window(x_m: np.ndarray, windows: Tuple[Tuple[float, float], ...]) ->
 
 @pytest.fixture(scope="module")
 def sim() -> RideSimulation:
-    """Compiles the full 115 m default preset once: compilation and the sag solve are slow."""
+    """
+    Compiles the full 115 m default preset once: compilation and the sag solve are slow.
+
+    The aggressive preset is ridden by the **lumped** rider on purpose: it has a 600 mm drop
+    and a kicker, and everything this module pins about the flight -- the virtual rider's
+    moment, the touchdown pitch -- is the standing rigid rider's behaviour (docs/RIDE.md
+    section 7). The seated rider is a rough-road model and is exercised elsewhere.
+    """
     return RideSimulation(
-        track=get_preset("enduro_aggressive"), target_speed_kmh=TARGET_SPEED_KMH
+        track=get_preset("enduro_aggressive"), target_speed_kmh=TARGET_SPEED_KMH, rider="lumped"
     )
 
 
@@ -244,7 +251,7 @@ def traverse(sim: RideSimulation) -> Traverse:
 def flat_sim() -> RideSimulation:
     """A featureless-track simulation for the interactive units, with the marker geoms present."""
     return RideSimulation(
-        track=get_preset("flat"), target_speed_kmh=TARGET_SPEED_KMH, debug_markers=True
+        track=get_preset("flat"), target_speed_kmh=TARGET_SPEED_KMH, debug_markers=True, rider="lumped"
     )
 
 
@@ -890,16 +897,20 @@ def test_ride_keys_are_the_playground_keys_with_the_stand_only_ones_replaced(
     Ride mode inherits the whole test-stand key map bar the bindings a rolling bike cannot use.
 
     The stand's two arrow keys command fork and rear travel directly, which a free-rolling bike
-    has no equivalent of; the brake-strength pair takes their place. Everything else -- both
-    dampers, the air spring, the camera, the rider, the markers, the preset, the telemetry
-    stream, reset and help -- keeps its stand binding, and `W`/`S` and `Space` keep their keys
-    while changing meaning.
+    has no equivalent of; the brake-strength pair takes their place. The stand's rider toggle
+    goes too: the ride rider is a compile-time variant (`--rider`), not an in-place mass swap.
+    Everything else -- both dampers, the air spring, the camera, the markers, the preset, the
+    telemetry stream, reset and help -- keeps its stand binding, and `W`/`S` and `Space` keep
+    their keys while changing meaning.
     """
     playground_keys = set(PlaygroundInputHandler(_StubPlayground())._dispatch_map)
     arrow_keys = {264, 265}
+    rider_toggle_keys = {66, 98}
     brake_strength_keys = {44, 46}
 
-    assert set(session.input.bound_keycodes) == (playground_keys - arrow_keys) | brake_strength_keys
+    assert set(session.input.bound_keycodes) == (
+        (playground_keys - arrow_keys - rider_toggle_keys) | brake_strength_keys
+    )
 
 
 def test_unmapped_key_is_reported_as_unhandled(session: RideSession):
@@ -1034,28 +1045,24 @@ def test_g_toggles_the_marker_livery(session: RideSession):
     assert session.sim.model.geom_rgba[marker_ids[0], 3] == 0.0
 
 
-def test_b_toggles_the_rider_mass_and_restarts_the_run(session: RideSession):
+def test_b_is_unbound_in_ride_mode(session: RideSession):
     """
-    `B` removes and restores the 80 kg rider, re-solving the sag each time.
+    `B` does nothing on the track.
 
-    The rider is lumped into `frame`, so the toggle is a mass change and the starting state
-    stops being an equilibrium. The run therefore restarts at a freshly solved sag rather than
-    continuing, and the fork's sag confirms it: 73 mm loaded, 7 mm on the bike alone.
+    The test stand toggles its lumped rider in place by rewriting the `frame` body's mass. The
+    ride model's seated rider is its own bodies and joints, so a rider change is a recompile the
+    passive viewer cannot follow; the variant is a `bike-ride --rider` choice and the key is
+    deliberately left unbound rather than half-working for one variant.
     """
     frame_id = mujoco.mj_name2id(session.sim.model, mujoco.mjtObj.mjOBJ_BODY, "frame")
-    loaded_mass = float(session.sim.model.body_mass[frame_id])
-    loaded_sag_mm = session.sim.fork_travel_mm
+    mass_before = float(session.sim.model.body_mass[frame_id])
+    steps_before = session.sim.steps
 
-    session.handle_key(ord("B"))
-    assert session.sim.include_rider is False
-    assert float(session.sim.model.body_mass[frame_id]) == pytest.approx(loaded_mass - 80.0)
-    assert session.sim.fork_travel_mm < loaded_sag_mm - 40.0
-    assert session.sim.steps == 0
-
-    session.handle_key(ord("B"))
-    assert session.sim.include_rider is True
-    assert float(session.sim.model.body_mass[frame_id]) == pytest.approx(loaded_mass)
-    assert session.sim.fork_travel_mm == pytest.approx(loaded_sag_mm, abs=1.0)
+    assert session.input.handle_key(ord("B")) is False
+    assert session.input.handle_key(ord("b")) is False
+    assert float(session.sim.model.body_mass[frame_id]) == mass_before
+    assert session.sim.steps == steps_before
+    assert session.sim.rider_variant == "lumped"
 
 
 # --------------------------------------------------------------------------------------

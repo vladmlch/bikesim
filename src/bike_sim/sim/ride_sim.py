@@ -12,7 +12,7 @@ filled from the track raster immediately after compilation, ahead of the first
 is a flat road, and every contact computed against it is wrong.
 """
 
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import mujoco
 
@@ -22,6 +22,7 @@ from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
 from bike_sim.physics.coil_shock import CoilShock
 from bike_sim.physics.damper import BikeSuspensionSystem
+from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
 from bike_sim.sim.controllers import SuspensionController
 from bike_sim.sim.equilibrium import solve_static_equilibrium
 from bike_sim.sim.ride.braking import BrakeController
@@ -29,6 +30,7 @@ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
 from bike_sim.sim.ride.forces import SuspensionForceApplier
 from bike_sim.sim.ride.resistance import RollingResistance
+from bike_sim.sim.ride.rider_forces import RiderForceApplier
 from bike_sim.sim.ride.termination import (
     DEFAULT_MAX_WALL_CLOCK_S,
     RunLimits,
@@ -54,10 +56,10 @@ class RideSimulation:
     """
     A ride-mode run: compiled model, track, controllers, and a single `step`.
 
-    The five per-step writers are applied in a fixed order -- suspension, rolling
-    resistance, cruise torque, brake torque, virtual rider -- against one contact snapshot
-    taken at the top of the step, so that cruise gating, rolling resistance, the virtual
-    rider and the crash detector all agree about which wheels are on the ground.
+    The six per-step writers are applied in a fixed order -- suspension, seated rider,
+    rolling resistance, cruise torque, brake torque, virtual rider -- against one contact
+    snapshot taken at the top of the step, so that cruise gating, rolling resistance, the
+    virtual rider and the crash detector all agree about which wheels are on the ground.
     """
 
     def __init__(
@@ -71,6 +73,7 @@ class RideSimulation:
         coil_shock: Optional[CoilShock] = None,
         debug_markers: bool = False,
         field: Optional[HeightFieldSpec] = None,
+        rider: Optional[Union[RiderSpecs, str]] = None,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -79,7 +82,10 @@ class RideSimulation:
             track: Track to ride. Defaults to the shipped default preset.
             specs: Bicycle geometry. Defaults to the shipped `BikeSpecs`.
             target_speed_kmh: Initial cruise target, inside the 15-45 km/h band.
-            include_rider: Whether the rider's mass and geometry are present.
+            include_rider: Legacy switch: False rides the bike alone; True rides the default
+                rider variant. Ignored when ``rider`` is given.
+            rider: The rider -- a `RiderSpecs` or a variant name (``none``, ``lumped``,
+                ``seated``). Defaults to the seated rider (docs/RIDE.md section 7).
             start_x_m: World X for the chassis root at the start of the run.
             controller: Fork and shock force calculator. Defaults to the shipped
                 suspension; supplied explicitly when a run overrides the fork pressure.
@@ -104,14 +110,21 @@ class RideSimulation:
         self.specs = specs if specs is not None else BikeSpecs()
         self.solver = HorstLinkageSolver(self.specs)
         self.start_x_m = float(start_x_m)
-        self.include_rider = bool(include_rider)
+        self.rider: RiderSpecs = resolve_rider(
+            rider, include_rider=include_rider, default_variant=DEFAULT_RIDER_VARIANT
+        )
+        # The seated pose is solved once here; the builder solves the same pose from the
+        # same specs, so the force path and the compiled joints agree by construction.
+        self.pose: Optional[SeatedPose] = (
+            self.rider.seated_pose(self.specs) if self.rider.variant == "seated" else None
+        )
 
         self.model = mujoco.MjModel.from_xml_string(
             generate_mujoco_xml(
                 specs=self.specs,
                 solver=self.solver,
                 mode="ride",
-                include_rider=include_rider,
+                rider=self.rider,
                 debug_markers=debug_markers,
                 field=self.field,
             )
@@ -126,6 +139,7 @@ class RideSimulation:
             self.controller,
             coil_shock if coil_shock is not None else CoilShock(),
         )
+        self.rider_forces = RiderForceApplier(self.model, self.pose)
         self.contact_query = TerrainContactQuery(self.model)
         self.resistance = RollingResistance(self.model)
         self.cruise = CruiseController(self.model, target_speed_kmh=target_speed_kmh)
@@ -163,6 +177,7 @@ class RideSimulation:
             self.applier,
             self.solver,
             start_x_m=self.start_x_m,
+            rider_applier=self.rider_forces,
         )
         self.contact_query.reset()
         self.cruise.reset()
@@ -189,6 +204,7 @@ class RideSimulation:
             rear_brake_demand: Rear brake lever position in [0, 1], not a torque.
         """
         self.applier.apply(self.model, self.data)
+        self.rider_forces.apply(self.model, self.data)
         self.resistance.apply(self.model, self.data, self.contacts)
         self.data.ctrl[self.drive_ctrl_adr] = self.cruise.compute(self.model, self.data, self.contacts)
         front_torque, rear_torque = self.brakes.compute(
@@ -261,6 +277,16 @@ class RideSimulation:
             self.step(front_brake_demand, rear_brake_demand)
             if on_step is not None:
                 on_step(self)
+
+    @property
+    def include_rider(self) -> bool:
+        """Whether a rider with mass is present (legacy name)."""
+        return self.rider.present
+
+    @property
+    def rider_variant(self) -> str:
+        """The rider variant this run was compiled with: ``none``, ``lumped`` or ``seated``."""
+        return self.rider.variant
 
     @property
     def time_s(self) -> float:

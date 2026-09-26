@@ -22,6 +22,7 @@ from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.physics.air_spring import AirSpringSpecs
 from bike_sim.physics.damper import DamperClickConfig
 from bike_sim.physics.mass import BikeMassSpecs
+from bike_sim.physics.rider import RiderSpecs
 from bike_sim.mujoco.builder import generate_mujoco_xml
 
 
@@ -33,9 +34,13 @@ def export_mujoco(
     mass_specs: Optional[BikeMassSpecs] = None,
     include_rider: bool = False,
     debug_markers: bool = False,
+    rider: Optional[Union["RiderSpecs", str]] = None,
 ) -> str:
     """
     Exports the generated MuJoCo MJCF XML model to a file.
+
+    Args:
+        rider: Rider variant or `RiderSpecs` to build; overrides ``include_rider``.
     """
     xml_content = generate_mujoco_xml(
         specs=specs,
@@ -44,6 +49,7 @@ def export_mujoco(
         mass_specs=mass_specs,
         include_rider=include_rider,
         debug_markers=debug_markers,
+        rider=rider,
     )
 
     # Validate XML structure with ElementTree before writing
@@ -87,12 +93,14 @@ def export_playground_models(
         include_rider=include_rider,
         debug_markers=True,
     )
+    # The ride model ships with the default rider variant, the seated biodynamic rider
+    # (docs/RIDE.md section 7); `--rider lumped` reproduces the older 80 kg rigid rider.
     xml_ride = export_mujoco(
         output_path=ride_file,
         specs=specs,
         solver=solver,
         mode="ride",
-        include_rider=True,
+        rider=RiderSpecs(),
     )
     return {
         "stand": xml_stand,

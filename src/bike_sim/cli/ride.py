@@ -8,7 +8,7 @@ to edit.
 
 Geometry has one source of truth, the track (preset or file); the command line carries
 only run-level knobs: seed and length overrides for generated roads, speed, sag target,
-output directory and decimation.
+output directory, decimation, and the rider (variant, mass, height, inseam).
 """
 
 import argparse
@@ -17,11 +17,13 @@ import sys
 from typing import List, Optional, Sequence
 
 from bike_sim.geometry.specs import BikeSpecs
+from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RIDER_VARIANTS, RiderSpecs
 from bike_sim.sim.ride.cruise import (
     DEFAULT_TARGET_SPEED_KMH,
     MAX_TARGET_SPEED_KMH,
     MIN_TARGET_SPEED_KMH,
 )
+from bike_sim.terrain.obstacles import Drop, Kicker
 from bike_sim.terrain.trackfile import FILE_SUFFIX
 from bike_sim.terrain import (
     DEFAULT_ROAD_PRESET,
@@ -39,6 +41,10 @@ from bike_sim.terrain import (
 DEFAULT_OUT_DIR = "output/ride"
 LONG_TRACK_WARNING_M = 500.0
 PREFIX = "[bike-ride]"
+
+# Obstacles that put the bike in the air. The seated rider is a rough-road model; a rider
+# does not sit through a drop, so a seated run over these is flagged (docs/RIDE.md section 7).
+FLIGHT_OBSTACLE_TYPES = (Drop, Kicker)
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
@@ -76,7 +82,17 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
                         help=f"root directory for run artifacts (default {DEFAULT_OUT_DIR})")
     parser.add_argument("--decimate", type=int, default=1, metavar="N",
                         help="store every N-th step in telemetry.csv (default 1 = every step)")
-    parser.add_argument("--no-rider", action="store_true", help="ride without the rider mass")
+    parser.add_argument("--rider", choices=RIDER_VARIANTS, default=None,
+                        help=f"rider model: seated biodynamic rider (default), the lumped standing rider, "
+                             f"or none (default {DEFAULT_RIDER_VARIANT})")
+    parser.add_argument("--rider-mass", type=float, default=80.0, metavar="KG",
+                        help="rider mass including helmet and kit (default 80)")
+    parser.add_argument("--rider-height", type=float, default=1.80, metavar="M",
+                        help="rider stature; sets segment lengths and, for the seated rider, the saddle "
+                             "height via the inseam (default 1.80)")
+    parser.add_argument("--rider-inseam", type=float, default=None, metavar="M",
+                        help="rider inseam (crotch height); default 0.47 x height")
+    parser.add_argument("--no-rider", action="store_true", help="alias for --rider none")
     parser.add_argument("--preview", action="store_true",
                         help="render the track profile with effective pothole drops and exit")
     parser.add_argument("--dump-track", metavar="NAME", default=None,
@@ -175,6 +191,53 @@ def run_dir_name(track: TrackSpec, speed_kmh: float, seed: Optional[int]) -> str
 
 
 # --------------------------------------------------------------------------------------
+# Rider resolution
+# --------------------------------------------------------------------------------------
+
+
+def resolve_rider(args: argparse.Namespace) -> RiderSpecs:
+    """
+    Turns the rider arguments into a `RiderSpecs`.
+
+    Args:
+        args: Parsed command line.
+
+    Raises:
+        ValueError: On contradictory or out-of-range rider arguments.
+    """
+    if args.no_rider and args.rider not in (None, "none"):
+        raise ValueError(f"--no-rider contradicts --rider {args.rider}")
+    variant = "none" if args.no_rider else (args.rider or DEFAULT_RIDER_VARIANT)
+    return RiderSpecs(
+        variant=variant,
+        mass_kg=float(args.rider_mass),
+        height_m=float(args.rider_height),
+        inseam_m=float(args.rider_inseam) if args.rider_inseam is not None else None,
+    )
+
+
+def flight_obstacles(track: TrackSpec) -> List[str]:
+    """Labels of the track's drops and kickers, which a seated rider is not a model for."""
+    return [o.label for o in track.sorted_obstacles if isinstance(o, FLIGHT_OBSTACLE_TYPES)]
+
+
+def describe_rider(rider: RiderSpecs, specs: BikeSpecs) -> str:
+    """One line on the rider for the run log."""
+    if rider.variant == "none":
+        return "rider: none (bike alone)"
+    if rider.variant == "lumped":
+        return f"rider: lumped, {rider.mass_kg:g} kg standing attack pose (rigid in frame)"
+    pose = rider.seated_pose(specs)
+    return (
+        f"rider: seated, {rider.mass_kg:g} kg, {rider.height_m:.2f} m (inseam {rider.inseam:.3f} m); "
+        f"saddle {pose.saddle.height_m:.3f} m (top +{pose.saddle.top_z_m * 1000 - 690:.0f} mm vs photo), "
+        f"torso {pose.torso_lean_deg:.0f} deg from vertical, knee at BDC {pose.knee_flexion_bdc_deg:.0f} deg; "
+        f"static split saddle {100 * rider.saddle_share:.0f} / pedals {100 * rider.pedal_share:.0f} / "
+        f"bar {100 * rider.bar_share:.0f} %"
+    )
+
+
+# --------------------------------------------------------------------------------------
 # Modes
 # --------------------------------------------------------------------------------------
 
@@ -207,8 +270,8 @@ def _preview(track: TrackSpec, out_root: Path, seed: Optional[int]) -> int:
     return 0
 
 
-def _fit_sag(target_pct: float, specs: BikeSpecs):
-    """Fits both ends to ``target_pct`` against the model's own centre of mass."""
+def _fit_sag(target_pct: float, specs: BikeSpecs, rider: RiderSpecs):
+    """Fits both ends to ``target_pct`` against the model's own centre of mass, rider included."""
     from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
     from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
     from bike_sim.physics.damper import BikeSuspensionSystem
@@ -216,7 +279,7 @@ def _fit_sag(target_pct: float, specs: BikeSpecs):
     from bike_sim.sim.controllers import SuspensionController
 
     fit = compute_suspension_tuning_for_sag(
-        specs=specs, target_front_sag_pct=target_pct, target_rear_sag_pct=target_pct,
+        specs=specs, rider_specs=rider, target_front_sag_pct=target_pct, target_rear_sag_pct=target_pct,
         front_weight_fraction=None,
     )
     psi = float(fit["fork_calibrated_psi"])
@@ -235,32 +298,37 @@ def _fit_sag(target_pct: float, specs: BikeSpecs):
     return controller, coil, {"sag_target_pct": target_pct, "fork_psi": psi, "coil_rate_n_m": rate}
 
 
-def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int]) -> int:
+def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int], rider: RiderSpecs) -> int:
     from bike_sim.sim.ride.metrics import RAMP_EXCLUSION_M, summarize_ride
     from bike_sim.sim.ride.recorder import RideRecorder
     from bike_sim.sim.ride_sim import RideSimulation
 
     specs = BikeSpecs()
     controller = coil = None
-    extras = {}
+    extras = {"rider_mass_kg": float(rider.total_rider_mass)}
     if seed is not None:
         extras["seed"] = float(seed)
     if args.sag is not None:
-        controller, coil, extras_sag = _fit_sag(args.sag, specs)
+        controller, coil, extras_sag = _fit_sag(args.sag, specs, rider)
         extras.update(extras_sag)
 
     run_dir = Path(args.out) / run_dir_name(track, args.speed, seed)
     print(f"{PREFIX} {track.name}: {track.length_m:.0f} m, {len(track.markers)} marked obstacles, "
           f"target {args.speed:g} km/h -> {run_dir}")
+    print(f"{PREFIX} {describe_rider(rider, specs)}")
 
     sim = RideSimulation(
-        track=track, specs=specs, target_speed_kmh=args.speed, include_rider=not args.no_rider,
+        track=track, specs=specs, target_speed_kmh=args.speed, rider=rider,
         controller=controller, coil_shock=coil,
     )
     eq = sim.equilibrium
     print(f"{PREFIX} start equilibrium: fork {eq['fork_travel_mm']:.1f} mm "
           f"({100 * eq['fork_travel_mm'] / specs.fork_travel:.1f} %), shock {eq['shock_stroke_mm']:.1f} mm "
           f"({100 * eq['shock_stroke_mm'] / specs.shock_stroke:.1f} %)")
+    if "rider_saddle_share" in eq:
+        print(f"{PREFIX} solved rider load split: saddle {100 * eq['rider_saddle_share']:.1f} % / "
+              f"pedals {100 * eq['rider_pedals_share']:.1f} % / bar {100 * eq['rider_bar_share']:.1f} % "
+              f"({eq['rider_saddle_load_n']:.0f} / {eq['rider_pedals_load_n']:.0f} / {eq['rider_bar_load_n']:.0f} N)")
     extras["start_fork_travel_mm"] = float(eq["fork_travel_mm"])
     extras["start_shock_stroke_mm"] = float(eq["shock_stroke_mm"])
 
@@ -275,6 +343,7 @@ def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int]) -
         fork_travel_mm=specs.fork_travel, shock_stroke_mm=specs.shock_stroke,
         shock_bumper_engage_mm=sim.applier.coil_shock.specs.bumper_engage_mm,
         start_x_m=sim.start_x_m, extras=extras,
+        rider_variant=rider.variant, rider_mass_kg=rider.mass_kg,
     )
 
     written: List[Path] = [recorder.write_csv(run_dir / "telemetry.csv"), summary.write_json(run_dir / "summary.json")]
@@ -294,13 +363,14 @@ def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int]) -
     return 0
 
 
-def _interactive(track: TrackSpec, args: argparse.Namespace) -> int:
+def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs) -> int:
     if args.sag is not None:
         print(f"{PREFIX} --sag applies to headless runs only; the viewer uses the shipped tune "
               f"(P cycles damper presets, -/= change pressure)", file=sys.stderr)
     from bike_sim.sim.ride.viewer import run_interactive_ride
 
-    run_interactive_ride(track=track, target_speed_kmh=args.speed, include_rider=not args.no_rider)
+    print(f"{PREFIX} {describe_rider(rider, BikeSpecs())}")
+    run_interactive_ride(track=track, target_speed_kmh=args.speed, rider=rider)
     return 0
 
 
@@ -324,9 +394,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"{PREFIX} --speed must be within {MIN_TARGET_SPEED_KMH:.0f}-{MAX_TARGET_SPEED_KMH:.0f} km/h",
               file=sys.stderr)
         return 2
-    if args.sag is not None and args.no_rider:
-        print(f"{PREFIX} --sag fits the springs for the rider's weight; it cannot be combined with --no-rider",
-              file=sys.stderr)
+    try:
+        rider = resolve_rider(args)
+    except ValueError as exc:
+        print(f"{PREFIX} {exc}", file=sys.stderr)
+        return 2
+    if args.sag is not None and not rider.present:
+        print(f"{PREFIX} --sag fits the springs for the rider's weight; it cannot be combined with --no-rider "
+              f"or --rider none", file=sys.stderr)
         return 2
 
     try:
@@ -338,13 +413,26 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if track.length_m > LONG_TRACK_WARNING_M:
         print(f"{PREFIX} note: a {track.length_m:.0f} m track is a large heightfield for the interactive "
               f"viewer; headless runs are unaffected", file=sys.stderr)
+    if rider.variant == "seated":
+        flights = flight_obstacles(track)
+        if flights:
+            print(f"{PREFIX} warning: '{track.name}' has {len(flights)} drop/kicker obstacle(s) "
+                  f"({', '.join(flights)}). The seated rider is a rough-road model: a rider does not sit "
+                  f"through a drop, and in flight the pitch is held by the external virtual-rider moment "
+                  f"(docs/RIDE.md section 12). Use --rider lumped for the aggressive presets.", file=sys.stderr)
+    if rider.variant == "seated":
+        try:
+            rider.seated_pose(BikeSpecs())
+        except ValueError as exc:
+            print(f"{PREFIX} {exc}", file=sys.stderr)
+            return 2
 
     seed = track_seed(args.track, args.seed)
     if args.preview:
         return _preview(track, Path(args.out), seed)
     if args.headless:
-        return _headless(track, args, seed)
-    return _interactive(track, args)
+        return _headless(track, args, seed, rider)
+    return _interactive(track, args, rider)
 
 
 if __name__ == "__main__":

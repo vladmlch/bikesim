@@ -184,7 +184,9 @@ def test_headless_run_writes_every_artifact(capsys, tmp_path, short_road):
 
 
 def test_headless_no_plots_and_sag(capsys, tmp_path, short_road):
-    code = main(["--headless", "--track", str(short_road), "--out", str(tmp_path), "--no-plots", "--sag", "30"])
+    """`--sag` fits against the lumped rider's centre of mass when that rider is chosen."""
+    code = main(["--headless", "--track", str(short_road), "--out", str(tmp_path), "--no-plots", "--sag", "30",
+                 "--rider", "lumped"])
     out = capsys.readouterr().out
 
     assert code == 0
@@ -192,10 +194,36 @@ def test_headless_no_plots_and_sag(capsys, tmp_path, short_road):
     assert (run_dir / "telemetry.csv").exists() and (run_dir / "summary.json").exists()
     assert not (run_dir / "travel.png").exists()
     assert "--sag 30%" in out and "118.5 psi" in out and "93,984 N/m" in out
+    assert "rider: lumped" in out
 
     summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
     assert summary["extras"]["sag_target_pct"] == 30.0
     assert summary["extras"]["fork_psi"] == pytest.approx(118.5, abs=0.1)
+    assert summary["rider_variant"] == "lumped"
+    assert summary["rider"] is None
+
+
+def test_sag_fits_the_seated_rider_against_its_own_centre_of_mass(capsys, tmp_path, short_road):
+    """
+    The seated rider's centre of mass is further back than the lumped rider's, so `--sag 30`
+    wants a softer fork (100.5 vs 118.5 psi) and a stiffer coil (105,148 vs 93,984 N/m).
+    """
+    code = main(["--headless", "--track", str(short_road), "--out", str(tmp_path), "--no-plots", "--sag", "30"])
+    out = capsys.readouterr().out
+
+    assert code == 0
+    assert "--sag 30%" in out and "100.5 psi" in out and "105,148 N/m" in out
+    assert "rider: seated, 80 kg, 1.80 m" in out
+    assert "solved rider load split: saddle 5" in out and "/ pedals 33.0 % / bar 12.0 %" in out
+    assert "seated rider: mean load split" in out
+
+    summary = json.loads((tmp_path / "short_road_25_s1" / "summary.json").read_text(encoding="utf-8"))
+    assert summary["rider_variant"] == "seated"
+    assert summary["extras"]["rider_mass_kg"] == 80.0
+    rider = summary["rider"]
+    assert rider["mean_saddle_share"] == pytest.approx(0.55, abs=0.03)
+    assert rider["torso"]["point"] == "torso" and rider["pelvis"]["point"] == "pelvis"
+    assert rider["saddle_lift_events"] >= 0
 
 
 # --------------------------------------------------------------------------------------
@@ -206,6 +234,38 @@ def test_headless_no_plots_and_sag(capsys, tmp_path, short_road):
 def test_sag_requires_the_rider(capsys):
     assert main(["--headless", "--sag", "30", "--no-rider"]) == 2
     assert "--no-rider" in capsys.readouterr().err
+    assert main(["--headless", "--sag", "30", "--rider", "none"]) == 2
+    assert "--rider none" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------------------
+# Rider arguments
+# --------------------------------------------------------------------------------------
+
+
+def test_no_rider_and_a_rider_variant_contradict(capsys, tmp_path):
+    assert main(["--preview", "--out", str(tmp_path), "--no-rider", "--rider", "seated"]) == 2
+    assert "contradicts" in capsys.readouterr().err
+    # `--no-rider` with `--rider none` is redundant, not contradictory.
+    assert main(["--preview", "--out", str(tmp_path), "--no-rider", "--rider", "none"]) == 0
+
+
+def test_a_rider_the_frame_cannot_seat_is_refused(capsys, tmp_path):
+    """A 2.00 m rider needs more seatpost than the frame has; the run refuses before compiling."""
+    assert main(["--headless", "--out", str(tmp_path), "--rider-height", "2.0"]) == 2
+    err = capsys.readouterr().err
+    assert "seatpost" in err and "--rider-height" in err
+
+
+def test_seated_rider_on_a_flight_track_is_warned(capsys, tmp_path):
+    """The aggressive preset has a drop and a kicker; a seated run over it is flagged, not refused."""
+    assert main(["--preview", "--track", "enduro_aggressive", "--out", str(tmp_path)]) == 0
+    err = capsys.readouterr().err
+    assert "warning" in err and "drop/kicker" in err and "--rider lumped" in err
+    assert main(["--preview", "--track", "enduro_aggressive", "--out", str(tmp_path), "--rider", "lumped"]) == 0
+    assert "drop/kicker" not in capsys.readouterr().err
+    assert main(["--preview", "--track", "road_worn", "--out", str(tmp_path)]) == 0
+    assert "drop/kicker" not in capsys.readouterr().err
 
 
 def test_seed_on_a_file_without_generator_is_rejected(capsys, tmp_path):

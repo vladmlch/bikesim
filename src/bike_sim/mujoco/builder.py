@@ -5,7 +5,7 @@ Assembles the full bicycle simulation model from submodules and serializes clean
 prettified MuJoCo MJCF XML.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 import xml.dom.minidom as minidom
 import xml.etree.ElementTree as ET
 import numpy as np
@@ -19,6 +19,7 @@ from bike_sim.geometry.hardpoints import (
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.physics.mass import BikeMassSpecs, compute_static_system_cg
+from bike_sim.physics.rider import RiderSpecs, resolve_rider
 
 from bike_sim.mujoco.assets import build_visual_and_assets
 from bike_sim.mujoco.environment import build_environment
@@ -43,6 +44,7 @@ def generate_mujoco_xml(
     include_rider: bool = False,
     debug_markers: bool = False,
     field: Optional[HeightFieldSpec] = None,
+    rider: Optional[Union[RiderSpecs, str]] = None,
 ) -> str:
     """
     Generates a complete, valid, high-fidelity MuJoCo MJCF XML model string.
@@ -52,14 +54,21 @@ def generate_mujoco_xml(
         solver: Solved Horst-link kinematics solver instance.
         mode: Simulation mode ("standard", "stand", "playground", "ride").
         mass_specs: Physical component mass specifications.
-        include_rider: Whether to include rider geometry and mass.
+        include_rider: Legacy switch for the lumped rider: True builds the 80 kg standing
+            rider into `frame`, False builds the bike alone. Ignored when ``rider`` is given.
         debug_markers: Whether to include yellow debug joint markers.
         field: Ride-mode heightfield geometry. Defaults to the shipped field pinned by
             the golden baseline; a longer track passes a stretched field. Ignored
             outside ride mode.
+        rider: The rider to build -- a `RiderSpecs` or a variant name (``none``, ``lumped``,
+            ``seated``). The seated rider is ride-mode only. The centre-of-gravity site and
+            the saddle height follow whichever rider is present.
 
     Returns:
         Formatted MJCF XML string ready for MuJoCo simulation.
+
+    Raises:
+        ValueError: If a seated rider is requested outside ride mode, or does not fit the bike.
     """
     if specs is None:
         specs = BikeSpecs()
@@ -69,12 +78,20 @@ def generate_mujoco_xml(
         mass_specs = BikeMassSpecs()
     if field is None:
         field = FIELD
+    rider_specs = resolve_rider(rider, include_rider=include_rider, default_variant="lumped")
+    if rider_specs.variant == "seated" and mode != "ride":
+        raise ValueError(f"the seated rider is a ride-mode model; mode {mode!r} takes 'none' or 'lumped'")
+    pose = rider_specs.seated_pose(specs) if rider_specs.variant == "seated" else None
 
     # Compute uncompressed reference state (0 mm wheel travel)
     st0 = solver.solve_state_from_wheel_travel(0.0)
     fixed = get_fixed_frame_points(specs)
     trail_info = compute_trail(specs)
-    cg_info = compute_static_system_cg(specs, mass_specs, solver=solver)
+    # The CG site marks the static centre of the whole system, rider included when present.
+    cg_info = compute_static_system_cg(
+        specs, mass_specs, solver=solver,
+        rider_specs=rider_specs if rider_specs.present else None,
+    )
     cg_pos = cg_info["cg_pos_m"]
 
     # Hardpoints
@@ -137,7 +154,8 @@ def generate_mujoco_xml(
         mass_specs=mass_specs,
         fixed_points=fixed,
         cg_pos=cg_pos,
-        include_rider=include_rider,
+        rider=rider_specs,
+        pose=pose,
         debug_markers=debug_markers,
     )
 
@@ -168,7 +186,7 @@ def generate_mujoco_xml(
 
     # 8. Actuators & Sensors
     build_actuators(root, mode=mode)
-    build_sensors(root, mode=mode)
+    build_sensors(root, mode=mode, seated_rider=(rider_specs.variant == "seated"))
 
     # Prettify XML
     xml_raw = ET.tostring(root, encoding="utf-8")

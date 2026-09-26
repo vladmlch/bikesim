@@ -12,13 +12,14 @@ it. Convergence is measured on the accelerations of the zero-velocity state, whe
 dampers contribute nothing and the residual is a pure static force imbalance.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import mujoco
 import numpy as np
 
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.sim.ride.forces import SuspensionForceApplier
+from bike_sim.sim.ride.rider_forces import RiderForceApplier
 
 # Steps between velocity resets. At the ride timestep this is a 20 ms window: short against
 # the ~3 Hz suspension modes, so each cycle is a small downhill move rather than half an
@@ -38,6 +39,7 @@ def solve_static_equilibrium(
     start_x_m: float = 2.0,
     max_steps: int = 40000,
     tol: float = 0.05,
+    rider_applier: Optional[RiderForceApplier] = None,
 ) -> Dict[str, Any]:
     """
     Solves the static equilibrium the bike settles into on the road under gravity.
@@ -56,10 +58,15 @@ def solve_static_equilibrium(
         max_steps: Cap on simulation steps before the solve is declared failed.
         tol: Convergence threshold on the largest absolute generalized acceleration of the
             zero-velocity state, in m/s^2 and rad/s^2.
+        rider_applier: The seated rider's force path, applied alongside the suspension so
+            the rider's slide coordinates settle with everything else. None or an inert
+            applier for the bike alone or the lumped rider.
 
     Returns:
         Dict with the converged `fork_travel_mm`, `shock_stroke_mm`, `rear_travel_mm`,
-        `root_z_m`, `pitch_rad`, the `steps` taken and the final `residual_qacc`.
+        `root_z_m`, `pitch_rad`, the `steps` taken and the final `residual_qacc`. With a
+        seated rider also `rider_saddle_load_n`, `rider_pedal_load_n`, `rider_bar_load_n`
+        and the corresponding `rider_*_share` fractions of the rider's weight.
 
     Raises:
         RuntimeError: If the relaxation has not converged within `max_steps`. The
@@ -70,6 +77,11 @@ def solve_static_equilibrium(
     z_adr = _qposadr(model, "root_z")
     pitch_adr = _qposadr(model, "root_pitch")
 
+    def apply_forces() -> None:
+        applier.apply(model, data)
+        if rider_applier is not None:
+            rider_applier.apply(model, data)
+
     mujoco.mj_resetData(model, data)
     data.qpos[x_adr] = float(start_x_m)
     data.qpos[z_adr] = START_CLEARANCE_M
@@ -79,19 +91,19 @@ def solve_static_equilibrium(
     residual = float("inf")
     while steps < max_steps:
         for _ in range(min(RELAX_STEPS_PER_CYCLE, max_steps - steps)):
-            applier.apply(model, data)
+            apply_forces()
             mujoco.mj_step(model, data)
             steps += 1
 
         data.qvel[:] = 0.0
-        applier.apply(model, data)
+        apply_forces()
         mujoco.mj_forward(model, data)
         residual = float(np.max(np.abs(data.qacc)))
 
         if residual <= tol:
             shock_stroke_mm = float(data.qpos[applier.shock_qposadr]) * 1000.0
             rear_state = solver.solve_state_from_shock_stroke(shock_stroke_mm)
-            return {
+            result = {
                 "fork_travel_mm": float(data.qpos[applier.fork_qposadr]) * 1000.0,
                 "shock_stroke_mm": shock_stroke_mm,
                 "rear_travel_mm": float(rear_state["wheel_travel"]),
@@ -100,6 +112,13 @@ def solve_static_equilibrium(
                 "steps": steps,
                 "residual_qacc": residual,
             }
+            if rider_applier is not None and rider_applier.active:
+                loads = rider_applier.interface_loads_n()
+                weight = rider_applier.pose.total_mass_kg * 9.81
+                for name in ("saddle", "pedals", "bar"):
+                    result[f"rider_{name}_load_n"] = float(loads[name])
+                    result[f"rider_{name}_share"] = float(loads[name] / weight)
+            return result
 
     raise RuntimeError(
         f"static equilibrium did not converge in {steps} steps: residual "

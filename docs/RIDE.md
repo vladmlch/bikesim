@@ -443,14 +443,17 @@ element damping would make that moment grow linearly with speed.
 
 If an `η` inside the damping band leaves Crr more than 15 % short, the shortfall is closed
 by a **tread-loss term** on each patch, `F_roll = (Crr_target − Crr_η) · N_p`, opposing
-rolling and tapered through zero wheel speed like `opposing_torque`. This section will then
-record that the term was needed and how large it is. It is the only phenomenological term
-the model is allowed. A first estimate says it will be needed: with a near-elliptical load
-distribution, `η` = 0.07 moves the centre of pressure by about 0.4 `η·a` ≈ 2 mm, which is
-Crr ≈ 0.006. The current fits are `η` = 0.0662 front and 0.0690 rear. A pure-NumPy 44 kg
-sled dropped 10 mm onto the tyre gives mean log-decrement damping ratios of ≈3.75 % on both
-tyres over the first three rebound cycles. A small viscous element term is permitted
-only if the damping ratio falls below 2 % with `η` at the top of its band.
+rolling and tapered through zero wheel speed like `opposing_torque`. This is the model's one
+phenomenological term. On the 20 km/h, 490.5 N reference roll, the carcass alone gives Crr
+0.00514 front and 0.00549 rear, more than 15 % below the drum targets. The fitted
+`tread_loss_crr` values are 0.00586 front and 0.00481 rear at 1.5 bar; they scale with
+`p⁻⁰·³`. With that correction, the simulated Crr is 0.01100 front and 0.01030 rear at the
+reference pressure. Across 1.3–1.8 bar the fitted exponents are −0.335 and −0.340.
+
+The current hysteresis fits are `η` = 0.0662 front and 0.0690 rear. A pure-NumPy 44 kg sled
+dropped 10 mm onto the tyre gives mean log-decrement damping ratios of ≈3.75 % on both tyres
+over the first three rebound cycles. A small viscous element term is permitted only if the
+damping ratio falls below 2 % with `η` at the top of its band.
 
 **Rim.** For `δ_i > δ_rim` the element adds `k_rim·(δ_i − δ_rim)·Δs`, carrying the same
 hysteresis. `k_rim = 2.8×10⁷ N/m²` makes a 50 mm rim patch add ≈ 1 400 N/mm. This is stiff
@@ -1115,6 +1118,7 @@ says so:
 | Compressed casing and tread `t_c` | 6 mm | casing 1.9 mm + centre knobs 3.8–4.0 mm [T3] |
 | Hysteresis regularisation `δ̇_ε` | 0.01 m/s | numerical |
 | Rim stiffness `k_rim` | 2.8×10⁷ N/m² | stability cap with the compiled 2.40 kg front wheel (§3.1) |
+| Tread-loss Crr correction at 1.5 bar | 0.00586 front / 0.00481 rear | residual after carcass hysteresis, fit to T4 drum targets (§3.1) |
 | Relaxation length σ | 90 mm (60–120) | lateral 160 mm derived from [T1]; road tyres 79–141 mm |
 | Normalised slip stiffness C_κ/F_z | 15 / 12 / 7 / 10 by surface | MTB cornering stiffness as proxy [T1]; car and trekking data [T5] |
 | Surface μ peak / sliding | §4.1 table | car Burckhardt curves scaled to MTB data [T6] |

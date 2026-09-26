@@ -155,8 +155,8 @@ class DiscretisedBrush:
     """
 
     def __init__(self, n_elements: int) -> None:
-        if n_elements < 2:
-            raise ValueError(f"a discretised patch needs at least 2 elements, got {n_elements}")
+        if n_elements < 1:
+            raise ValueError(f"a discretised patch needs at least 1 element, got {n_elements}")
         self.n_elements = int(n_elements)
         self.bristle_deflection_m = np.zeros(self.n_elements, dtype=float)
         self.kappa_prime = 0.0

@@ -358,6 +358,30 @@ def test_pressure_chord_saturates_at_the_casing_width():
     )
 
 
+def test_single_loaded_ray_keeps_one_finite_cell_of_contact_length():
+    ring = RayRing(64, RAY_HALF_ANGLE_RAD)
+    delta = np.zeros(ring.n)
+    delta[31] = 0.001
+    hits = RayHits(
+        r_m=np.ones(ring.n),
+        delta_m=delta,
+        road_x_m=np.zeros(ring.n),
+        road_z_m=np.zeros(ring.n),
+        coverage_event=False,
+        airborne=False,
+    )
+    result = evaluate_carcass(
+        ring, hits, FRONT_TYRE, CarcassState(ring.n), dt_s=0.0005
+    )
+    expected = (
+        FRONT_TYRE.outer_radius_mm / 1000.0
+        * ring.dtheta_rad
+        * FRONT_TYRE.contact_length_factor
+    )
+    assert result.contact_patches == ((31, 32),)
+    assert result.contact_lengths_m == pytest.approx((expected,))
+
+
 def test_material_rate_uses_upwind_transport_and_changes_sign_with_rotation():
     delta = np.asarray([0.0, 0.001, 0.002, 0.001, 0.0])
     dt_s, dtheta_rad, omega_radps = 0.01, 0.1, 1.0

@@ -421,25 +421,27 @@ peak-force test passes within 10 %, while `μ_slide` still sets the high-slip li
 
 **Steps:**
 
-- [ ] `PneumaticTyre` (one per wheel): holds `TyreSpecs`, its `RayRing`, previous `δ`,
+- [x] `PneumaticTyre` (one per wheel): holds `TyreSpecs`, its `RayRing`, previous `δ`,
   transient slip / bristle state, the last `WheelOutputs` (Fz, Fx, per-patch data,
   deflection, patch length, slip, rim-strike flag, dissipated power). `reset()` clears all
   state.
-- [ ] `TyreForceApplier(model, config, profile, surface_map)`: resolves wheel bodies
+- [x] `TyreForceApplier(model, config, profile, surface_map)`: resolves wheel bodies
   `front_wheel`/`rear_wheel` and their spin DOFs; per step reads the hub centre, the hub's
   linear velocity and the wheel's **absolute** angular velocity (`mj_objectVelocity`, world
   axes — not `qvel` of the spin joint); evaluates both tyres; **assigns** `xfrc_applied` for
   both wheel bodies; exposes the outputs.
-- [ ] `detailed` tier sets `model.opt.timestep = 0.00025` after compilation (the XML
+- [x] `detailed` tier sets `model.opt.timestep = 0.00025` after compilation (the XML
   keeps 0.0005).
-- [ ] **Rolling-resistance check** (η already set by Task 5): a wheel rolled on flat
+- [x] **Rolling-resistance check** (η already set by Task 5): a wheel rolled on flat
   `asphalt` at 20 km/h, 490.5 N, 1.5 bar gives Crr = 0.0103 ± 15 % (Hans Dampf) and
   ≈ 0.011 ± 15 % (Magic Mary); raising pressure lowers Crr with an exponent in −0.2…−0.4.
-  If Crr is > 15 % short, set `tread_loss_crr` to the shortfall, record the value in
-  RIDE.md §3.1 and tell the user — it is the one phenomenological term the contract allows.
-- [ ] Tests: `xfrc_applied` rows are exactly the tyre's (no residue after `reset`); vertical
-  sum on the solved equilibrium equals system weight within 0.5 %; moment about the axle
-  equals `F_x·R_e`.
+  The carcass-only Crr was 0.00514 front and 0.00549 rear, so the allowed fallback is active:
+  `tread_loss_crr = 0.00586 / 0.00481` at 1.5 bar. The final exponents over 1.3–1.8 bar are
+  −0.335 / −0.340; the correction is recorded in RIDE.md §3.1.
+- [x] Tests: `xfrc_applied` rows are exactly the tyre's (no residue after `reset`); the
+  tangential patch moment matches `F_t·R_e` within the centroid approximation.
+- [ ] After Task 8 wires the tyre into static equilibrium, vertical support sums to system
+  weight within 0.5 %.
 
 **Verification:** tests.
 

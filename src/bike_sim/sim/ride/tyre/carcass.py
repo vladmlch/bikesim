@@ -151,13 +151,20 @@ def _advect_material(values: np.ndarray, omega_radps: float, dt_s: float,
 
 
 def _contact_lengths_m(hits: RayHits, contact_patches: Tuple[Tuple[int, int], ...],
-                       contact_length_factor: float) -> Tuple[float, ...]:
+                       contact_length_factor: float, one_ray_span_m: float) -> Tuple[float, ...]:
     """Scaled Euclidean span between the first and last road point of each patch."""
     lengths = []
     for start, stop in contact_patches:
-        dx = float(hits.road_x_m[stop - 1] - hits.road_x_m[start])
-        dz = float(hits.road_z_m[stop - 1] - hits.road_z_m[start])
-        lengths.append(contact_length_factor * float(np.hypot(dx, dz)))
+        if stop - start == 1:
+            # A single loaded ray represents one finite angular cell even though its first
+            # and last sampled point are the same.  Keep a nonzero brush length at sharp
+            # corners so the longitudinal stiffness remains finite.
+            length_m = one_ray_span_m
+        else:
+            dx = float(hits.road_x_m[stop - 1] - hits.road_x_m[start])
+            dz = float(hits.road_z_m[stop - 1] - hits.road_z_m[start])
+            length_m = float(np.hypot(dx, dz))
+        lengths.append(contact_length_factor * length_m)
     return tuple(lengths)
 
 
@@ -260,7 +267,9 @@ def evaluate_carcass(
     ))
 
     contact_patches = tuple(patches(delta))
-    contact_lengths_m = _contact_lengths_m(hits, contact_patches, tyre.contact_length_factor)
+    contact_lengths_m = _contact_lengths_m(
+        hits, contact_patches, tyre.contact_length_factor, radius_m * ring.dtheta_rad
+    )
     rim_active = bool(np.any(rim_overlap_m > 0.0))
     rim_event = _update_rim_event(
         state, rim_active, hits, rim_overlap_m, rim_force_n, force_z_n,

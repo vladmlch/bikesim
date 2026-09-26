@@ -57,7 +57,8 @@ class TyreSpecs:
         hysteresis_rate_eps_mps: Regularisation rate `delta_dot_eps` of the hysteresis sign.
         relaxation_length_mm: Longitudinal relaxation length `sigma`.
         rim_stiffness_n_mm2: Rim-contact stiffness `k_rim` per unit arc length.
-        tread_loss_crr: Tread-loss term, zero unless the section 3.1 fallback is needed.
+        tread_loss_crr: Crr shortfall at the 1.5 bar reference pressure, zero unless the
+            section 3.1 fallback is needed; the term follows the same pressure exponent.
     """
 
     name: str
@@ -141,6 +142,7 @@ FRONT_TYRE = TyreSpecs(
     contact_length_factor=0.8589,
     rate_stiffening=0.2484,
     loss_factor=0.0662,
+    tread_loss_crr=0.00586,
 )
 REAR_TYRE = TyreSpecs(
     name="Schwalbe Hans Dampf 27.5x2.4",
@@ -154,6 +156,7 @@ REAR_TYRE = TyreSpecs(
     contact_length_factor=0.8801,
     rate_stiffening=0.2498,
     loss_factor=0.0690,
+    tread_loss_crr=0.00481,
 )
 
 

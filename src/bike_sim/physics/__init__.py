@@ -19,6 +19,7 @@ from bike_sim.physics.damper import (
     SuperDeluxeDamper,
     DAMPER_PRESETS,
 )
+from bike_sim.physics.tyre import FRONT_TYRE, REAR_TYRE, TIERS, TierSpec, TyreConfig, TyreSpecs
 
 __all__ = [
     "BikeMassSpecs",
@@ -36,4 +37,10 @@ __all__ = [
     "DamperPreset",
     "SuperDeluxeDamper",
     "DAMPER_PRESETS",
+    "TyreSpecs",
+    "TyreConfig",
+    "TierSpec",
+    "TIERS",
+    "FRONT_TYRE",
+    "REAR_TYRE",
 ]

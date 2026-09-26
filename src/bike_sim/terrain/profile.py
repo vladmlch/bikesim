@@ -40,8 +40,11 @@ class TrackSpec:
 
     @property
     def markers(self) -> List[Tuple[float, str]]:
-        """(position, label) pairs for annotating telemetry plots."""
-        return [(o.start_m, o.label) for o in self.sorted_obstacles]
+        """(position, label) pairs for annotating telemetry plots.
+
+        Background texture (``annotate == False``) is left out.
+        """
+        return [(o.start_m, o.label) for o in self.sorted_obstacles if o.annotate]
 
     def validate(self) -> None:
         """

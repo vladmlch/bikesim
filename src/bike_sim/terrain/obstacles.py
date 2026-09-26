@@ -52,6 +52,15 @@ class Obstacle(ABC):
         """Short human-readable identifier used in plots and telemetry annotations."""
         return f"{type(self).__name__}@{self.start_m:.0f}m"
 
+    @property
+    def annotate(self) -> bool:
+        """Whether the obstacle earns a marker in plots and the HUD.
+
+        Background texture such as :class:`RoadRoughness` returns ``False`` so that a
+        road with a dozen roughness segments does not bury the real defects in labels.
+        """
+        return True
+
     @abstractmethod
     def elevation(self, s: np.ndarray) -> np.ndarray:
         """
@@ -319,6 +328,140 @@ class RockGarden(Obstacle):
         return np.interp(s, s_nodes, z_nodes)
 
 
+# --------------------------------------------------------------------------------------
+# Road-scale defects
+# --------------------------------------------------------------------------------------
+
+
+@dataclass
+class Bump(Obstacle):
+    """
+    Single raised-cosine hump: a road bump.
+
+    Tangent to the datum at both ends, highest at the midpoint. The smooth profile is what
+    a worn asphalt heave or a tree-root swell under tarmac looks like; for a sharp-edged
+    speed bump use :class:`TrapezoidBump`.
+    """
+
+    height_m: float = 0.050
+    bump_length_m: float = 0.400
+
+    @property
+    def length_m(self) -> float:
+        return self.bump_length_m
+
+    def elevation(self, s: np.ndarray) -> np.ndarray:
+        return self.height_m * 0.5 * (1.0 - np.cos(2.0 * np.pi * s / self.bump_length_m))
+
+
+@dataclass
+class TrapezoidBump(Obstacle):
+    """
+    Speed bump: linear ramp up, flat plateau, linear ramp down.
+
+    ``ramp_m`` is the horizontal length of each ramp; the total extent is
+    ``2 * ramp_m + plateau_m``. A zero plateau gives a triangular bump.
+    """
+
+    height_m: float = 0.050
+    ramp_m: float = 0.150
+    plateau_m: float = 0.300
+
+    @property
+    def length_m(self) -> float:
+        return 2.0 * self.ramp_m + self.plateau_m
+
+    def elevation(self, s: np.ndarray) -> np.ndarray:
+        z = np.full_like(s, self.height_m, dtype=float)
+        if self.ramp_m > 0.0:
+            rising = s < self.ramp_m
+            z[rising] = self.height_m * (s[rising] / self.ramp_m)
+            falling = s > self.ramp_m + self.plateau_m
+            z[falling] = self.height_m * ((self.length_m - s[falling]) / self.ramp_m)
+        return np.clip(z, 0.0, self.height_m)
+
+
+@dataclass
+class SlopedPothole(Obstacle):
+    """
+    Pothole with chamfered edges: linear descent, flat floor, linear ascent.
+
+    ``edge_m`` is the horizontal length of each chamfer. When the two chamfers would
+    meet (``2 * edge_m >= hole_length_m``) the floor vanishes and the hole is a V whose
+    apex still reaches ``depth_m``.
+    """
+
+    depth_m: float = 0.080
+    hole_length_m: float = 0.500
+    edge_m: float = 0.100
+
+    @property
+    def length_m(self) -> float:
+        return self.hole_length_m
+
+    @property
+    def effective_edge_m(self) -> float:
+        """Chamfer length actually used, clamped to half the hole length."""
+        return min(self.edge_m, self.hole_length_m / 2.0)
+
+    def elevation(self, s: np.ndarray) -> np.ndarray:
+        edge = self.effective_edge_m
+        z = np.full_like(s, -self.depth_m, dtype=float)
+        if edge > 0.0:
+            descending = s < edge
+            z[descending] = -self.depth_m * (s[descending] / edge)
+            ascending = s > self.hole_length_m - edge
+            z[ascending] = -self.depth_m * ((self.hole_length_m - s[ascending]) / edge)
+        return np.clip(z, -self.depth_m, 0.0)
+
+
+@dataclass
+class BowlPothole(Obstacle):
+    """
+    Bowl-shaped pothole: a raised-cosine dip tangent to the datum at both ends.
+
+    Geometrically a small :class:`GOut`; kept as its own type so a track file can name
+    what it means and the summary can report it as a pothole.
+    """
+
+    depth_m: float = 0.080
+    hole_length_m: float = 0.500
+
+    @property
+    def length_m(self) -> float:
+        return self.hole_length_m
+
+    def elevation(self, s: np.ndarray) -> np.ndarray:
+        return -self.depth_m * 0.5 * (1.0 - np.cos(2.0 * np.pi * s / self.hole_length_m))
+
+
+@dataclass
+class RoadRoughness(RockGarden):
+    """
+    Millimetre-scale correlated texture standing in for worn asphalt.
+
+    Identical in construction to :class:`RockGarden` -- seeded, grid-independent, tapered
+    to the datum at both ends -- but at road amplitudes and without a plot marker, so a
+    road built from many such segments annotates only its real defects.
+    """
+
+    section_length_m: float = 10.0
+    amplitude_m: float = 0.003
+    correlation_length_m: float = 0.200
+    seed: int = 0
+
+    @property
+    def annotate(self) -> bool:
+        return False
+
+
+POTHOLE_TYPES = (Pothole, SlopedPothole, BowlPothole)
+"""Obstacle classes the summary and preview treat as potholes."""
+
+BUMP_TYPES = (Bump, TrapezoidBump)
+"""Obstacle classes the summary and preview treat as single bumps."""
+
+
 __all__ = [
     "Obstacle",
     "SquareEdge",
@@ -329,4 +472,11 @@ __all__ = [
     "Kicker",
     "Roots",
     "RockGarden",
+    "Bump",
+    "TrapezoidBump",
+    "SlopedPothole",
+    "BowlPothole",
+    "RoadRoughness",
+    "POTHOLE_TYPES",
+    "BUMP_TYPES",
 ]

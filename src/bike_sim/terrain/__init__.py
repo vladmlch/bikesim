@@ -8,17 +8,30 @@ without compiling a simulation.
 """
 
 from bike_sim.terrain.obstacles import (
+    BUMP_TYPES,
+    POTHOLE_TYPES,
+    BowlPothole,
+    Bump,
     Drop,
     GOut,
     Kicker,
     Obstacle,
     Pothole,
+    RoadRoughness,
     RockGarden,
     Roots,
+    SlopedPothole,
     SquareEdge,
+    TrapezoidBump,
     Washboard,
 )
 from bike_sim.terrain.profile import TrackSpec, build_profile, profile_extent
+from bike_sim.terrain.wheelpath import (
+    bridged_drop_m,
+    effective_drop_m,
+    effective_rise_m,
+    wheel_centre_path,
+)
 from bike_sim.terrain.presets import (
     DEFAULT_PRESET,
     PRESETS,
@@ -42,6 +55,17 @@ __all__ = [
     "Kicker",
     "Roots",
     "RockGarden",
+    "Bump",
+    "TrapezoidBump",
+    "SlopedPothole",
+    "BowlPothole",
+    "RoadRoughness",
+    "POTHOLE_TYPES",
+    "BUMP_TYPES",
+    "wheel_centre_path",
+    "effective_drop_m",
+    "effective_rise_m",
+    "bridged_drop_m",
     "TrackSpec",
     "build_profile",
     "profile_extent",

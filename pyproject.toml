@@ -17,6 +17,7 @@ dependencies = [
 bike-sim = "bike_sim.cli.main:main"
 bike-playground = "bike_sim.cli.playground:main"
 bike-export = "bike_sim.cli.export:main"
+bike-ride = "bike_sim.cli.ride:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]

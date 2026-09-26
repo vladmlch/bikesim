@@ -46,7 +46,7 @@ def test_registered_surfaces_are_the_contract_table():
     for name, (mu_peak, mu_slide, c_kappa) in CONTRACT_TABLE.items():
         s = get_surface(name)
         assert (s.mu_peak, s.mu_slide, s.slip_stiffness_per_load) == (mu_peak, mu_slide, c_kappa)
-        assert s.stribeck_speed_mps == 1.0
+        assert s.stribeck_speed_mps == 4.5
 
 
 def test_defaults_by_kind_of_track():
@@ -58,14 +58,14 @@ def test_friction_falls_from_peak_to_sliding_with_sliding_speed():
     s = get_surface("asphalt")
     assert s.mu(0.0) == pytest.approx(s.mu_peak)
     assert s.mu(-0.0) == pytest.approx(s.mu_peak)
-    assert s.mu(50.0) == pytest.approx(s.mu_slide, abs=1e-12)
+    assert s.mu(200.0) == pytest.approx(s.mu_slide, abs=1e-12)
     speeds = np.linspace(0.0, 10.0, 101)
     mu = s.mu(speeds)
     assert mu.shape == speeds.shape
     assert np.all(np.diff(mu) < 0.0)
     # Symmetric in the sign of the sliding speed; one Stribeck speed is 1/e of the drop.
     assert s.mu(-2.0) == pytest.approx(s.mu(2.0))
-    assert s.mu(1.0) == pytest.approx(s.mu_slide + (s.mu_peak - s.mu_slide) / np.e)
+    assert s.mu(4.5) == pytest.approx(s.mu_slide + (s.mu_peak - s.mu_slide) / np.e)
 
 
 @pytest.mark.parametrize(

@@ -383,14 +383,14 @@ read.*
 
 **Steps:**
 
-- [ ] `relax(kappa_prime, v_x, v_s, sigma_m, dt)`: exact exponential update of
+- [x] `relax(kappa_prime, v_x, v_s, sigma_m, dt)`: exact exponential update of
   `σ·dκ'/dt + |V_x|·κ' = −V_s`, stable for any `dt`, finite at `V_x = 0`.
-- [ ] `lumped_brush(kappa, N, a, surface, tread_stiffness)`: steady-state brush with
+- [x] `lumped_brush(kappa, N, a, surface, tread_stiffness)`: steady-state brush with
   `μ(V_s)`; returns `F_t` and whether the patch is fully sliding.
-- [ ] `DiscretisedBrush(n_elements)`: bristle deflections on the ray grid, semi-Lagrangian
+- [x] `DiscretisedBrush(n_elements)`: bristle deflections on the ray grid, semi-Lagrangian
   advection, stick/slide per element against `μ·q_i` where `q_i` is that element's share of
   `N`.
-- [ ] Tests:
+- [x] Tests:
   - steady-state curves of the two implementations agree within 3 % of `μN` over
     κ ∈ [−1, 1] on a uniform patch;
   - initial slope equals the surface's `C_κ/F_z` within 5 %; the peak μ is within 10 % of
@@ -405,6 +405,10 @@ read.*
     lumped one's total relaxation within 10 %.
 
 **Verification:** tests; pure NumPy.
+
+**Calibration note:** the first Stribeck value (1.0 m/s) put the force peak 7–22 % below
+`μ_peak` over the accepted 15–45 km/h sweep. `V_str` is now 4.5 m/s on every surface; the
+peak-force test passes within 10 %, while `μ_slide` still sets the high-slip limit.
 
 ---
 

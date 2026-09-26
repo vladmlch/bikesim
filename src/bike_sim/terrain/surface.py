@@ -24,6 +24,8 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
+DEFAULT_STRIBECK_SPEED_MPS = 4.5
+
 
 @dataclass(frozen=True)
 class SurfaceSpec:
@@ -46,7 +48,7 @@ class SurfaceSpec:
     mu_peak: float
     mu_slide: float
     slip_stiffness_per_load: float
-    stribeck_speed_mps: float = 1.0
+    stribeck_speed_mps: float = DEFAULT_STRIBECK_SPEED_MPS
     description: str = ""
 
     def __post_init__(self) -> None:
@@ -90,12 +92,16 @@ SURFACES: Dict[str, SurfaceSpec] = {
     spec.name: spec
     for spec in (
         SurfaceSpec("asphalt", mu_peak=1.05, mu_slide=0.75, slip_stiffness_per_load=15.0,
+                    stribeck_speed_mps=DEFAULT_STRIBECK_SPEED_MPS,
                     description="dry asphalt"),
         SurfaceSpec("hardpack", mu_peak=0.80, mu_slide=0.60, slip_stiffness_per_load=12.0,
+                    stribeck_speed_mps=DEFAULT_STRIBECK_SPEED_MPS,
                     description="dry hard-packed dirt"),
         SurfaceSpec("loose", mu_peak=0.55, mu_slide=0.45, slip_stiffness_per_load=7.0,
+                    stribeck_speed_mps=DEFAULT_STRIBECK_SPEED_MPS,
                     description="loose gravel over hardpack"),
         SurfaceSpec("wet", mu_peak=0.50, mu_slide=0.40, slip_stiffness_per_load=10.0,
+                    stribeck_speed_mps=DEFAULT_STRIBECK_SPEED_MPS,
                     description="wet dirt"),
     )
 }
@@ -194,6 +200,7 @@ def slip_stiffness_n(surface: SurfaceSpec, normal_load_n: float) -> float:
 
 __all__ = [
     "SurfaceSpec",
+    "DEFAULT_STRIBECK_SPEED_MPS",
     "SURFACES",
     "ROAD_SURFACE",
     "TRAIL_SURFACE",

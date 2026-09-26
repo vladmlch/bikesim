@@ -553,13 +553,27 @@ everything else is `hardpack`. `--surface` overrides the default. All values are
 
 | Surface | μ peak | μ sliding | C_κ/F_z | Stribeck speed |
 |---|---|---|---|---|
-| `asphalt` | 1.05 | 0.75 | 15 | 1.0 m/s |
-| `hardpack` | 0.80 | 0.60 | 12 | 1.0 m/s |
-| `loose` | 0.55 | 0.45 | 7 | 1.0 m/s |
-| `wet` | 0.50 | 0.40 | 10 | 1.0 m/s |
+| `asphalt` | 1.05 | 0.75 | 15 | 4.5 m/s |
+| `hardpack` | 0.80 | 0.60 | 12 | 4.5 m/s |
+| `loose` | 0.55 | 0.45 | 7 | 4.5 m/s |
+| `wet` | 0.50 | 0.40 | 10 | 4.5 m/s |
+
+`V_str = 4.5 m/s` is an authored numerical choice: with the `lumped` curve it keeps peak
+force within 10 % of each surface's `μ_peak` from 15 to 45 km/h.
 
 Friction falls from static to sliding with the sliding speed:
 `μ(V_s) = μ_slide + (μ_peak − μ_slide) · exp(−|V_s| / V_str)`.
+
+The lumped curve's peak-slip estimates on the uniform reference patch (`N = 418 N`,
+`a = 61 mm`) are recorded below as **braking / drive** pairs. They are estimates from the
+authored curve, not acceptance limits; the test asserts peak force, not `κ_peak`.
+
+| Surface | 15 km/h | 30 km/h | 45 km/h |
+|---|---|---|---|
+| asphalt | −0.153 / 0.206 | −0.144 / 0.186 | −0.138 / 0.174 |
+| hardpack | −0.149 / 0.199 | −0.141 / 0.182 | −0.135 / 0.172 |
+| loose | −0.173 / 0.248 | −0.166 / 0.229 | −0.161 / 0.218 |
+| wet | −0.119 / 0.151 | −0.114 / 0.141 | −0.110 / 0.135 |
 
 **Slip, per patch.**
 
@@ -1104,7 +1118,7 @@ says so:
 | Relaxation length σ | 90 mm (60–120) | lateral 160 mm derived from [T1]; road tyres 79–141 mm |
 | Normalised slip stiffness C_κ/F_z | 15 / 12 / 7 / 10 by surface | MTB cornering stiffness as proxy [T1]; car and trekking data [T5] |
 | Surface μ peak / sliding | §4.1 table | car Burckhardt curves scaled to MTB data [T6] |
-| Stribeck speed | 1.0 m/s | numerical, all surfaces |
+| Stribeck speed | 4.5 m/s | numerical; preserves the 15–45 km/h peak-μ target on all surfaces |
 | Ray coverage and counts | ±75°; 64 / 256 | §3.1 coverage argument; tuned in plan task 10 |
 | Default pressures | 1.5 bar front / 1.7 bar rear | plan D5 |
 

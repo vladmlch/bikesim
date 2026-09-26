@@ -4,7 +4,7 @@ A high-precision analytical 3D kinematic modeling engine and physically consiste
 
 The suspension hardpoints are **derived from a reference photograph** of a Bulls Sonic EVO by calibrated pixel measurement and constrained refit — not hand-invented. See [Provenance](#provenance-what-is-measured-and-what-is-authored) for exactly which parts of the bike are measurement and which are styling.
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
 [![Physics Engine](https://img.shields.io/badge/physics-MuJoCo%20MJCF-purple.svg)](https://mujoco.org/)
 [![Package Manager](https://img.shields.io/badge/manager-uv-green.svg)](https://github.com/astral-sh/uv)
 [![Kinematics Invariance](https://img.shields.io/badge/kinematic_error-%3C_10%5E%7B--12%7D_mm-brightgreen.svg)]()
@@ -39,6 +39,7 @@ The suspension hardpoints are **derived from a reference photograph** of a Bulls
   - [Prerequisites](#prerequisites)
   - [Environment Setup via `uv`](#environment-setup-via-uv)
   - [CLI Command Execution](#cli-command-execution)
+- [Interactive 2D Suspension Test Stand (`bike-playground`)](#interactive-2d-suspension-test-stand-bike-playground)
 - [Automated Test Suite](#automated-test-suite)
 - [Known Limitations](#known-limitations)
 - [Repository Structure](#repository-structure)
@@ -65,35 +66,35 @@ Modern long-travel Enduro mountain bikes require precise kinematic balance betwe
 
 The bicycle model corresponds to an aggressive modern mullet Enduro eMTB geometry. Every
 figure below is read back from `coordinates.json` (regenerate with
-`uv run python main.py --export-json`) or from the compiled MJCF; none is hand-maintained.
+`uv run bike-sim --export-json`) or from the compiled MJCF; none is hand-maintained.
 
-| Parameter | Symbol / Variable | Value | Unit | Description / Engineering Rationale |
-|---|---|---|---|---|
-| **Reach** | $R$ | `480.0` | mm | Horizontal distance from Bottom Bracket (BB) to top center of head tube |
-| **Stack** | $S$ | `646.0` | mm | Vertical distance from Bottom Bracket (BB) to top center of head tube |
-| **Head Tube Angle** | $\theta_{\text{HT}}$ | `64.0` | deg | Slack steering axis inclination for high-speed stability |
-| **Effective Seat Angle** | $\theta_{\text{ST}}$ | `77.0` | deg | Published virtual BB → saddle-height angle. Not the drawn tube: the physical $P_{10} \to P_9$ seat tube sits at `74.476°` |
-| **Bottom Bracket Drop** | $\text{BB}_{\text{drop}}$ | `22.5` | mm | Vertical drop of BB below the **front** axle plane ($Z_{\text{FA}} = +22.5\text{ mm}$) |
-| **Wheelbase** | $\text{WB}$ | `1280.55` | mm | Horizontal distance between front and rear axles ($P_{\text{FA}}[X] - P_1[X]$). Chosen so the BB → rear-axle distance is exactly the published `447.50` mm chainstay |
-| **Chainstay Length** | $\|P_1 - \text{BB}\|$ | `447.501` | mm | Published table value; overrides the reference photograph — see [Provenance](#provenance-what-is-measured-and-what-is-authored) |
-| **Wheel Configuration** | — | `Mullet (MX)` | — | 29" Front Wheel ($R_f = 372\text{ mm}$) / 27.5" Rear Wheel ($R_r = 352\text{ mm}$) |
-| **Front Wheel Radius (29")** | $R_f$ | `372.0` | mm | Outer radius of 29" front wheel with 2.4"–2.5" enduro tire (diameter $744\text{ mm}$) |
-| **Rear Wheel Radius (27.5")** | $R_r$ | `352.0` | mm | Outer radius of 27.5" rear wheel with 2.5"–2.6" enduro tire (diameter $704\text{ mm}$) |
-| **Ground Plane Height** | $Z_{\text{ground}}$ | `-349.5` | mm | Flat ground contact plane in BB origin frame ($Z_{\text{FA}} - R_f = 22.5 - 372.0$) |
-| **Rear Axle Height** | $Z_{\text{RA}}$ | `+2.5` | mm | Rear axle height on flat ground ($Z_{\text{ground}} + R_r = -349.5 + 352.0$) |
-| **Fork Travel** | $s_{\text{fork}}$ | `180.0` | mm | Telescopic fork travel along 64° steering axis |
-| **Fork Offset (Rake)** | $k_{\text{offset}}$ | `44.0` | mm | Perpendicular forward offset from steering axis to front axle |
-| **Rear Wheel Travel** | $s_{\text{wheel}}$ | `180.0` | mm | Vertical displacement of rear axle ($P_1[Z]: 2.5\text{ mm} \to 182.5\text{ mm}$) |
-| **Shock Dimensions** | $L_{\text{shock}} \times s_{\text{shock}}$ | `trunnion 205 x 65` | mm | Trunnion-mount eye-to-eye length and full damper stroke (= `230 x 65` in standard-mount sizing) |
-| **Realised Shock Stroke** | $\Delta L_{\text{shock}}$ | `65.000040` | mm | Shock travel consumed over the full $0 \to 180$ mm rear stroke; the fit constrains it to `65.000` mm |
-| **Ground Trail** | $T_g$ | `132.482` | mm | Horizontal distance from steering axis ground intersection to contact patch |
-| **Mechanical Trail** | $T_m$ | `119.074` | mm | Perpendicular torque arm providing self-aligning stabilizing torque |
-| **Axle-to-Crown** | $\text{A2C}$ | `595.168` | mm | Rigid fork length from bottom head tube face to axle |
-| **Initial Leverage Ratio** | $\text{LR}_0$ | `3.349455` | ratio | Leverage ratio at uncompressed state (0 mm travel) |
-| **Final Leverage Ratio** | $\text{LR}_{180}$ | `2.411763` | ratio | Leverage ratio at bottom-out (180 mm travel) |
-| **Suspension Progressivity** | $(\text{LR}_0 - \text{LR}_{180}) / \text{LR}_0$ | `+27.995%` | % | Progressive leverage curve providing bottom-out ramp-up; $\text{LR}(x)$ is strictly monotonically decreasing over the whole stroke |
-| **Rear Spring Rate** | $k_{\text{shock}}$ | `114600` | N/m | Derived, not chosen: $k = F_{\text{rear}} \, \text{LR}(54\text{ mm}) / \text{stroke}(54\text{ mm})$ with $F_{\text{rear}} = 0.65 \times 104.4\text{ kg} \times 9.81 = 665.71\text{ N}$ gives $114\,589.6$ N/m; `114600` settles at `29.998%` rear sag |
-| **Total Model Mass** | $m_{\text{bike}}$ | `24.35` | kg | Sum of `body_mass` over the compiled `bike_model.xml` / `bike_playground_stand.xml` (the dynamic model additionally carries static terrain geometry). `BikeMassSpecs` budgets `24.40` kg; the pinned `0.05` kg gap is documented in [Known Limitations](#known-limitations) |
+| Parameter                     | Symbol / Variable                               | Value               | Unit  | Description / Engineering Rationale                                                                                                                                                                                                                   |
+|-------------------------------|-------------------------------------------------|---------------------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Reach**                     | $R$                                             | `480.0`             | mm    | Horizontal distance from Bottom Bracket (BB) to top center of head tube                                                                                                                                                                               |
+| **Stack**                     | $S$                                             | `646.0`             | mm    | Vertical distance from Bottom Bracket (BB) to top center of head tube                                                                                                                                                                                 |
+| **Head Tube Angle**           | $\theta_{\text{HT}}$                            | `64.0`              | deg   | Slack steering axis inclination for high-speed stability                                                                                                                                                                                              |
+| **Effective Seat Angle**      | $\theta_{\text{ST}}$                            | `77.0`              | deg   | Published virtual BB → saddle-height angle. Not the drawn tube: the physical $P_{10} \to P_9$ seat tube sits at `74.476°`                                                                                                                             |
+| **Bottom Bracket Drop**       | $\text{BB}_{\text{drop}}$                       | `22.5`              | mm    | Vertical drop of BB below the **front** axle plane ($Z_{\text{FA}} = +22.5\text{ mm}$)                                                                                                                                                                |
+| **Wheelbase**                 | $\text{WB}$                                     | `1280.55`           | mm    | Horizontal distance between front and rear axles ($P_{\text{FA}}[X] - P_1[X]$). Chosen so the BB → rear-axle distance is exactly the published `447.50` mm chainstay                                                                                  |
+| **Chainstay Length**          | $\|P_1 - \text{BB}\|$                           | `447.501`           | mm    | Published table value; overrides the reference photograph — see [Provenance](#provenance-what-is-measured-and-what-is-authored)                                                                                                                       |
+| **Wheel Configuration**       | —                                               | `Mullet (MX)`       | —     | 29" Front Wheel ($R_f = 372\text{ mm}$) / 27.5" Rear Wheel ($R_r = 352\text{ mm}$)                                                                                                                                                                    |
+| **Front Wheel Radius (29")**  | $R_f$                                           | `372.0`             | mm    | Outer radius of 29" front wheel with 2.4"–2.5" enduro tire (diameter $744\text{ mm}$)                                                                                                                                                                 |
+| **Rear Wheel Radius (27.5")** | $R_r$                                           | `352.0`             | mm    | Outer radius of 27.5" rear wheel with 2.5"–2.6" enduro tire (diameter $704\text{ mm}$)                                                                                                                                                                |
+| **Ground Plane Height**       | $Z_{\text{ground}}$                             | `-349.5`            | mm    | Flat ground contact plane in BB origin frame ($Z_{\text{FA}} - R_f = 22.5 - 372.0$)                                                                                                                                                                   |
+| **Rear Axle Height**          | $Z_{\text{RA}}$                                 | `+2.5`              | mm    | Rear axle height on flat ground ($Z_{\text{ground}} + R_r = -349.5 + 352.0$)                                                                                                                                                                          |
+| **Fork Travel**               | $s_{\text{fork}}$                               | `180.0`             | mm    | Telescopic fork travel along 64° steering axis                                                                                                                                                                                                        |
+| **Fork Offset (Rake)**        | $k_{\text{offset}}$                             | `44.0`              | mm    | Perpendicular forward offset from steering axis to front axle                                                                                                                                                                                         |
+| **Rear Wheel Travel**         | $s_{\text{wheel}}$                              | `180.0`             | mm    | Vertical displacement of rear axle ($P_1[Z]: 2.5\text{ mm} \to 182.5\text{ mm}$)                                                                                                                                                                      |
+| **Shock Dimensions**          | $L_{\text{shock}} \times s_{\text{shock}}$      | `trunnion 205 x 65` | mm    | Trunnion-mount eye-to-eye length and full damper stroke (= `230 x 65` in standard-mount sizing)                                                                                                                                                       |
+| **Realised Shock Stroke**     | $\Delta L_{\text{shock}}$                       | `65.000040`         | mm    | Shock travel consumed over the full $0 \to 180$ mm rear stroke; the fit constrains it to `65.000` mm                                                                                                                                                  |
+| **Ground Trail**              | $T_g$                                           | `132.482`           | mm    | Horizontal distance from steering axis ground intersection to contact patch                                                                                                                                                                           |
+| **Mechanical Trail**          | $T_m$                                           | `119.074`           | mm    | Perpendicular torque arm providing self-aligning stabilizing torque                                                                                                                                                                                   |
+| **Axle-to-Crown**             | $\text{A2C}$                                    | `595.168`           | mm    | Rigid fork length from bottom head tube face to axle                                                                                                                                                                                                  |
+| **Initial Leverage Ratio**    | $\text{LR}_0$                                   | `3.349455`          | ratio | Leverage ratio at uncompressed state (0 mm travel)                                                                                                                                                                                                    |
+| **Final Leverage Ratio**      | $\text{LR}_{180}$                               | `2.411763`          | ratio | Leverage ratio at bottom-out (180 mm travel)                                                                                                                                                                                                          |
+| **Suspension Progressivity**  | $(\text{LR}_0 - \text{LR}_{180}) / \text{LR}_0$ | `+27.995%`          | %     | Progressive leverage curve providing bottom-out ramp-up; $\text{LR}(x)$ is strictly monotonically decreasing over the whole stroke                                                                                                                    |
+| **Rear Spring Rate**          | $k_{\text{shock}}$                              | `114600`            | N/m   | Derived, not chosen: $k = F_{\text{rear}} \, \text{LR}(54\text{ mm}) / \text{stroke}(54\text{ mm})$ with $F_{\text{rear}} = 0.65 \times 104.4\text{ kg} \times 9.81 = 665.71\text{ N}$ gives $114\,589.6$ N/m; `114600` settles at `29.998%` rear sag |
+| **Total Model Mass**          | $m_{\text{bike}}$                               | `24.35`             | kg    | Compiled bare-bike mass in `bike_model.xml` and `bike_playground_stand.xml`. `BikeMassSpecs` budgets `24.40` kg; the pinned `0.05` kg gap is documented in [Known Limitations](#known-limitations)                                                    |
 
 ---
 
@@ -106,11 +107,11 @@ and which are styling, because the two do not carry the same authority.
 
 ### Reference Photograph & Hardpoint Fit
 
-| Stage | Artifact | What it holds |
-|---|---|---|
-| Extraction | `tools/photo_reference.py` → `docs/reference/bulls_reference_points.json` | Pixel-to-millimetre calibration and the raw measured pivot positions |
-| Constrained refit | `tools/fit_hardpoints.py` → `docs/reference/fitted_hardpoints.json` | The shipped hardpoint constants, fit residuals, and the resulting leverage curve |
-| Adoption | `bike_geometry.py`, `linkage_solver.py` | The fitted constants, hard-coded; the runtime library never re-runs the optimiser |
+| Stage             | Artifact                                                                   | What it holds                                                                     |
+|-------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| Extraction        | `tools/photo_reference.py` → `docs/reference/bulls_reference_points.json`  | Pixel-to-millimetre calibration and the raw measured pivot positions              |
+| Constrained refit | `tools/fit_hardpoints.py` → `docs/reference/fitted_hardpoints.json`        | The shipped hardpoint constants, fit residuals, and the resulting leverage curve  |
+| Adoption          | `src/bike_sim/geometry/hardpoints.py`, `src/bike_sim/kinematics/solver.py` | The fitted constants, hard-coded; the runtime library never re-runs the optimiser |
 
 Every pivot bolt on the reference bike is highlighted in red. `tools/photo_reference.py`
 segments those clusters ($R > 110$, $R - G > 55$, $R - B > 55$, components $\ge 25$ px) and
@@ -127,7 +128,7 @@ constraints that are never traded away:
 - shock eye-to-eye $\|P_7 - P_6\| = 205.0$ mm, with $P_6$ **collinear** on $P_4 \to P_7$;
 - the published `447.5` mm chainstay.
 
-Per-pivot residuals against the photograph (mm, from `fitted_hardpoints.json`):
+Per-pivot residuals against the photograph (mm, from `docs/reference/fitted_hardpoints.json`):
 
 | $P_0$ | $P_2$ | $P_3$ | $P_4$ | $P_5$ | $P_6$ | $P_7$ | $P_{12}$ |
 |---|---|---|---|---|---|---|---|
@@ -136,9 +137,9 @@ Per-pivot residuals against the photograph (mm, from `fitted_hardpoints.json`):
 $P_6$ and $P_7$ carry the largest residuals because they absorb the exact-stroke and
 exact-eye-to-eye constraints; the four-bar pivots proper land inside 0.75 mm.
 
-`scipy` is a *tooling-only* dependency of `fit_hardpoints.py`. The runtime library is
-numpy-only, and the test suite validates the committed constants rather than re-running
-the optimiser.
+`scipy` is used by the offline `tools/fit_hardpoints.py` command and is declared in `pyproject.toml`.
+The environment dependencies are installed with `uv sync`; the tests validate the committed
+constants rather than re-running the fit.
 
 ### Chainstay Conflict: Published Table Beats the Photo
 
@@ -209,15 +210,15 @@ Be precise about which is which — this is not a blanket claim about "the frame
 ### Render Comparison Tool
 
 ```bash
-PYTHONPATH=. uv run --with pillow python -m tools.render_comparison
+uv run --with pillow python -m tools.render_comparison
 ```
 
 Writes two files:
 
-| File | Purpose |
-|---|---|
-| `docs/reference/comparison.png` | Photograph left, render right, captioned |
-| `docs/reference/overlay.png` | **The diagnostic one.** Render composited over the photograph at 50 % opacity in the *same* pixel frame |
+| File                            | Purpose                                                                                                 |
+|---------------------------------|---------------------------------------------------------------------------------------------------------|
+| `docs/reference/comparison.png` | Photograph left, render right, captioned                                                                |
+| `docs/reference/overlay.png`    | **The diagnostic one.** Render composited over the photograph at 50 % opacity in the *same* pixel frame |
 
 Alignment is quantitative, not eyeballed. The camera is switched to orthographic, `fovy` is
 pinned so one rendered pixel spans exactly one photograph pixel, and `lookat` is the
@@ -229,10 +230,8 @@ Use `overlay.png` to judge fidelity. The side-by-side in `comparison.png` reads 
 *different bike* at a glance because the model's livery is deliberately not the real bike's
 — that is a paint difference, not a geometry difference.
 
-> **Note:** `.gitignore` carries a blanket `*.png`, so both files are deliberately
-> untracked and must be regenerated locally. The same rule keeps `coordinates.json` and
-> `bike_model.xml` out of version control; only `bike_playground_stand.xml` and
-> `bike_playground_dynamic.xml` are tracked.
+> **Note:** comparison and overlay PNGs are ignored by Git and must be regenerated with the command above.
+> CLI plots, JSON exports, and MJCF files are also ignored under `output/`.
 
 ---
 
@@ -472,7 +471,8 @@ Worst link error anywhere on the trajectory: $3.7 \times 10^{-13}\text{ mm}$.
 
 ### Multibody Tree Hierarchy
 
-The multibody kinematic tree generated by `export_mujoco.py` is configured as a forward kinematic tree with equality loop closures:
+The multibody kinematic tree generated by `src/bike_sim/mujoco/builder.py` is configured as a forward kinematic tree
+with equality loop closures:
 
 ```mermaid
 graph TD
@@ -519,15 +519,15 @@ material at $P_7$ — there is no floating standoff bracket.
 
 > **Suspension springs are not MJCF joint springs.** Both `fork_travel` and `shock_stroke`
 > are exported with `stiffness="0" damping="0" springref="0"`. The fork's pneumatic curve
-> (`air_spring.py`) and both dampers' click-configurable force curves
-> (`suspension_damper.py`) are applied as external forces by `run_playground.py` every
+> (`src/bike_sim/physics/air_spring.py`) and both dampers' click-configurable force curves
+> (`src/bike_sim/physics/damper.py`) are applied by `src/bike_sim/sim/playground.py` every
 > step. The published `shock_stiffness = 114600` N/m is the linear rear rate that tuning
 > chain is derived against, not an attribute in the XML.
 
-> **Timestep.** Stand mode compiles at `timestep = 0.001` s; standard and dynamic modes use
-> `0.002` s. The reason is specific to stand mode's very stiff position servos
-> ($k_p = 150000$, $k_v = 5000$) and is documented at the `timestep` line in
-> `export_mujoco.py`. Note that the instability there is a resonance, not a threshold —
+> **Timestep.** Stand and playground modes compile at `timestep = 0.001` s, ride mode at
+> `0.0005` s, and standard mode at `0.002` s. Stand mode uses very stiff position servos
+> ($k_p = 150000$, $k_v = 5000$); its per-mode timestep is set in
+> `src/bike_sim/mujoco/builder.py`. Note that the instability there is a resonance, not a threshold —
 > 1.75 ms fails where 1.50 ms and 2.00 ms pass.
 
 ---
@@ -548,7 +548,7 @@ MuJoCo evaluates closed kinematic chains using smooth bilateral equality constra
 </equality>
 ```
 
-- **Nominal Assembly Closure**: The hardpoints `linkage_solver.py` computes close the loops
+- **Nominal Assembly Closure**: The hardpoints `src/bike_sim/kinematics/solver.py` computes close the loops
   to $< 10^{-12}\text{ mm}$ analytically. The MJCF, however, writes coordinates at $10^{-6}$ m
   precision, so the *compiled* model's nominal residuals (measured with `mj_forward` at
   `qpos0`) are $1 \times 10^{-3}\text{ mm}$ at $P_3$ and exactly $0$ at $P_7$ — the quantisation
@@ -580,46 +580,47 @@ The MJCF XML model contains realistic actuators and state-feedback sensors for c
 ## Installation & Quick Start
 
 ### Prerequisites
-- Python $\ge$ 3.10
-- [`uv`](https://github.com/astral-sh/uv) (recommended) or standard `pip`
+
+- Python $\ge$ 3.12 (required by `pyproject.toml`)
+- [`uv`](https://github.com/astral-sh/uv)
 
 ### Environment Setup via `uv`
 
-Clone the repository and synchronize the environment:
+From the repository root, create/synchronize the virtual environment and install the project:
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/bike-kinematics-mujoco.git
-cd bike-kinematics-mujoco
-
-# Run all analysis tasks and generate all models/figures with uv
-uv run python main.py --all
+uv sync
 ```
 
 ---
 
 ### CLI Command Execution
 
-The CLI script `main.py` provides modular flags for generating tables, plots, JSON data, and MuJoCo models:
+The package installs three commands: `bike-sim` for analysis and exports, `bike-export` for model/data exports, and
+`bike-playground` for the interactive test stand. With no flags, `bike-sim` prints geometry tables and generates plots.
+`--all` also exports JSON and MJCF models but does not open the viewer. Use `bike-sim --help` for options.
 
 ```bash
 # 1. Print formatted ASCII coordinate and geometry tables to terminal
-uv run python main.py --print-table
+uv run bike-sim --print-table
 
 # 2. Generate publication-quality 2D geometry and leverage ratio plots
-uv run python main.py --plot
+uv run bike-sim --plot
 
 # 3. Export complete bike hardpoints and linkage dimensions to JSON
-uv run python main.py --export-json
+uv run bike-sim --export-json
 
-# 4. Generate high-fidelity MuJoCo MJCF XML models (bike_model.xml, bike_playground_stand.xml, bike_playground_dynamic.xml)
-uv run python main.py --export-mujoco
+# 4. Export all MJCF model variants under output/models/
+uv run bike-sim --export-mujoco
 
-# 5. Launch interactive 2D MuJoCo suspension playground
-uv run python run_playground.py
+# 5. Launch interactive MuJoCo suspension test stand
+uv run bike-playground
 
-# 6. Execute all export steps simultaneously
-uv run python main.py --all
+# Run all analysis, plot, JSON, and model export tasks (does not open the viewer)
+uv run bike-sim --all
+# Export coordinates.json and all MJCF models under output/models/
+# bike_model.xml, bike_playground_stand.xml, bike_playground.xml, bike_ride.xml
+uv run bike-export
 ```
 
 ### Reference & Fidelity Tooling
@@ -629,26 +630,28 @@ These live under `tools/` and are not part of the runtime library.
 ```bash
 # Re-extract pivot targets from the reference photograph
 #   -> docs/reference/bulls_reference_points.json
-PYTHONPATH=. uv run --with pillow python -m tools.photo_reference
+uv run --with pillow python -m tools.photo_reference
 
-# Re-run the offline constrained hardpoint fit (scipy, tooling-only dependency)
+# Re-run the offline constrained hardpoint fit (uses scipy)
 #   -> docs/reference/fitted_hardpoints.json
-PYTHONPATH=. uv run --with scipy --with pillow python -m tools.fit_hardpoints
+uv run --with scipy --with pillow python -m tools.fit_hardpoints
 
 # Render the model into the photograph's own pixel frame
 #   -> docs/reference/comparison.png, docs/reference/overlay.png
-PYTHONPATH=. uv run --with pillow python -m tools.render_comparison
+uv run --with pillow python -m tools.render_comparison
 ```
 
-`fit_hardpoints.py` writes constants, not runtime behaviour: its output is transcribed into
-`bike_geometry.py` and `linkage_solver.py`, and the test suite validates the transcribed
-constants rather than re-running the optimiser. The runtime library stays numpy-only.
+`tools/fit_hardpoints.py` writes constants, not runtime behaviour: its output is transcribed into
+`src/bike_sim/geometry/hardpoints.py` and `src/bike_sim/kinematics/solver.py`. The tests validate
+the committed constants rather than re-running the fit.
 
 ---
 
 ## Interactive 2D Suspension Test Stand (`bike-playground`)
 
-A native, interactive MuJoCo 2D test stand simulation environment specifically built to visualize and interact with front and rear suspension kinematics, damper click adjustments, and fork air tuning in real-time.
+A native, interactive MuJoCo 2D test stand for visualizing front and rear suspension kinematics, damper click
+adjustments, and fork air tuning in real time. It requires a desktop graphics session; on macOS, it re-launches under
+`mjpython` when that executable is available.
 
 ```bash
 # Launch interactive test stand playground
@@ -762,13 +765,13 @@ pins the gap so it cannot drift further.
 │   ├── geometry/                    # BikeSpecs, hardpoints, validation
 │   ├── kinematics/                  # Analytical Horst-link 4-bar solver, velocity Jacobian
 │   ├── physics/                     # Air spring, damper, mass profile
-│   ├── mujoco/                      # MJCF generator (standard, stand, playground) + JSON exporter
+│   ├── mujoco/                      # MJCF generator (standard, stand, playground, ride) + JSON exporter
 │   ├── sim/                         # Interactive Test Stand runner, camera manager, controllers
 │   ├── viz/                         # Kinematics & damper dyno curve plotting
 │   └── cli/                         # CLI entrypoints (bike-sim, bike-playground, bike-export)
 ├── tools/
 │   ├── photo_reference.py           # Red-bolt segmentation & calibration from the reference photo
-│   ├── fit_hardpoints.py            # Offline constrained hardpoint fit (scipy; tooling only)
+│   ├── fit_hardpoints.py            # Offline constrained hardpoint fit (uses SciPy)
 │   └── render_comparison.py         # Photo-registered side-by-side & overlay renders (Pillow)
 ├── docs/reference/
 │   ├── bulls_sonic_evo_side.jpg     # Reference photograph
@@ -786,7 +789,7 @@ pins the gap so it cannot drift further.
 │   ├── test_photo_reference.py      # Photo segmentation & calibration
 │   └── test_render_comparison.py    # Render registration onto the photograph
 └── output/                          # Generated outputs (gitignored)
-    ├── models/                      # bike_model.xml, bike_playground_stand.xml, coordinates.json
+    ├── models/                      # coordinates.json, bike_model.xml, bike_playground_stand.xml, bike_playground.xml, bike_ride.xml
     └── plots/                       # Publication PNG figures
 ```
 

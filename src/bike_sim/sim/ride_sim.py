@@ -12,7 +12,7 @@ filled from the track raster immediately after compilation, ahead of the first
 is a flat road, and every contact computed against it is wrong.
 """
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import mujoco
 
@@ -29,6 +29,12 @@ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
 from bike_sim.sim.ride.forces import SuspensionForceApplier
 from bike_sim.sim.ride.resistance import RollingResistance
+from bike_sim.sim.ride.termination import (
+    DEFAULT_MAX_WALL_CLOCK_S,
+    RunLimits,
+    RunOutcome,
+    RunTerminator,
+)
 from bike_sim.sim.ride.virtual_rider import CrashDetector, CrashEvent, PitchStabilizer
 from bike_sim.terrain import (
     DEFAULT_PRESET,
@@ -62,6 +68,7 @@ class RideSimulation:
         start_x_m: float = DEFAULT_START_X_M,
         controller: Optional[SuspensionController] = None,
         coil_shock: Optional[CoilShock] = None,
+        debug_markers: bool = False,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -76,6 +83,10 @@ class RideSimulation:
                 suspension; supplied explicitly when a run overrides the fork pressure.
             coil_shock: Rear coil and bumper model. Defaults to the shipped coil; supplied
                 explicitly when a run overrides the spring rate.
+            debug_markers: Whether to compile the yellow pivot-marker geoms, so the
+                interactive viewer's marker toggle has something to show. They carry
+                `mass="0"` and no collision, and a 4000-step traverse was verified to be
+                bit-identical with and without them, so the flag is visual only.
 
         Raises:
             ValueError: If the track does not fit the fixed heightfield envelope.
@@ -87,6 +98,7 @@ class RideSimulation:
         self.specs = specs if specs is not None else BikeSpecs()
         self.solver = HorstLinkageSolver(self.specs)
         self.start_x_m = float(start_x_m)
+        self.include_rider = bool(include_rider)
 
         self.model = mujoco.MjModel.from_xml_string(
             generate_mujoco_xml(
@@ -94,6 +106,7 @@ class RideSimulation:
                 solver=self.solver,
                 mode="ride",
                 include_rider=include_rider,
+                debug_markers=debug_markers,
             )
         )
         # Before the first forward pass, before the equilibrium solve, before any viewer.
@@ -185,6 +198,62 @@ class RideSimulation:
         mujoco.mj_step(self.model, self.data)
         self.steps += 1
         self.contacts = self.contact_query.query(self.model, self.data)
+
+    def default_limits(self, max_wall_clock_s: float = DEFAULT_MAX_WALL_CLOCK_S) -> RunLimits:
+        """
+        Builds the run limits for a traverse of this run's track.
+
+        Args:
+            max_wall_clock_s: Real seconds the run may take.
+
+        Returns:
+            Limits derived from the track length, the compiled timestep and the start position.
+        """
+        return RunLimits.for_track(
+            self.track,
+            timestep_s=float(self.model.opt.timestep),
+            start_x_m=self.start_x_m,
+            max_wall_clock_s=max_wall_clock_s,
+        )
+
+    def run(
+        self,
+        limits: Optional[RunLimits] = None,
+        on_step: Optional[Callable[["RideSimulation"], None]] = None,
+        front_brake_demand: float = 0.0,
+        rear_brake_demand: float = 0.0,
+    ) -> RunOutcome:
+        """
+        Rides until the run terminates, and reports why it did.
+
+        The run advances from the *current* state, so a caller that wants to start at the
+        track's beginning calls `reset` first. Termination is checked before the first step, so
+        a run whose limits are already met returns without stepping instead of overshooting by
+        one.
+
+        Args:
+            limits: Bounds the run is judged against. Defaults to `default_limits()`.
+            on_step: Called with this simulation after every step, for recording. Nothing here
+                stores a trace: a 115 m traverse is 34 710 steps and the caller decides which
+                channels are worth the memory.
+            front_brake_demand: Front brake lever position in [0, 1], held for the whole run.
+            rear_brake_demand: Rear brake lever position in [0, 1], held for the whole run.
+
+        Returns:
+            The reason the run ended, together with the state it ended in.
+        """
+        terminator = RunTerminator(limits if limits is not None else self.default_limits())
+        terminator.start()
+
+        while True:
+            reason = terminator.reason(self.position_m, self.steps, self.crash)
+            if reason is not None:
+                return terminator.outcome(
+                    reason, self.steps, self.time_s, self.position_m, self.crash
+                )
+            self.step(front_brake_demand, rear_brake_demand)
+            if on_step is not None:
+                on_step(self)
 
     @property
     def time_s(self) -> float:

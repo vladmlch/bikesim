@@ -24,3 +24,11 @@ coordinates.json
 .idea/
 .DS_Store
 .work/
+
+# AI agent configs (local)
+.agents/
+.ai/
+.codex/
+.junie/
+skills-lock.json
+.claude/settings.local.json

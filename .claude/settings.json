@@ -1,0 +1,32 @@
+{
+    "hooks": {
+        "SessionStart": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "jbcontext index --silent --only-incremental",
+                        "async": true
+                    }
+                ]
+            }
+        ],
+        "SessionEnd": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "jbcontext index --silent --only-incremental",
+                        "async": true
+                    }
+                ]
+            }
+        ]
+    },
+    "enabledPlugins": {
+        "superpowers@claude-plugins-official": true,
+        "mattpocock-skills@claude-plugins-official": true
+    }
+}

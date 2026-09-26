@@ -440,7 +440,7 @@ peak-force test passes within 10 %, while `μ_slide` still sets the high-slip li
   −0.335 / −0.340; the correction is recorded in RIDE.md §3.1.
 - [x] Tests: `xfrc_applied` rows are exactly the tyre's (no residue after `reset`); the
   tangential patch moment matches `F_t·R_e` within the centroid approximation.
-- [ ] After Task 8 wires the tyre into static equilibrium, vertical support sums to system
+- [x] After Task 8 wires the tyre into static equilibrium, vertical support sums to system
   weight within 0.5 %.
 
 **Verification:** tests.
@@ -461,27 +461,27 @@ peak-force test passes within 10 %, while `μ_slide` still sets the high-slip li
 
 **Steps:**
 
-- [ ] `generate_mujoco_xml(..., tyre_model="sphere")`: for `"pneumatic"` only, the two
+- [x] `generate_mujoco_xml(..., tyre_model="sphere")`: for `"pneumatic"` only, the two
   contact spheres get `contype="0" conaffinity="0"`. Nothing else in the XML changes. Add a
   **new** golden baseline for the pneumatic XML; the existing ones are not touched.
-- [ ] `RideSimulation(..., tyre: TyreConfig | None = None)`. With `pneumatic`:
+- [x] `RideSimulation(..., tyre: TyreConfig | None = None)`. With `pneumatic`:
   - the tyre applier runs **first** in `step()`, and its outputs build this step's
     `TerrainContacts` (wheel loads and vertical support from the tyre, handlebar from the
     MuJoCo query — D21). The other writers then see the same snapshot, as today;
   - `RollingResistance.apply` is not called (D15);
   - `reset()` resets the tyre state.
   With `sphere` the code path is exactly today's.
-- [ ] `TerrainContactQuery`: accept an optional wheel-load provider; when present, skip the
+- [x] `TerrainContactQuery`: accept an optional wheel-load provider; when present, skip the
   sphere rows and the bridging for the wheels, keep the handlebar row.
-- [ ] `solve_static_equilibrium`: take an optional tyre applier in `apply_forces`, reset its
+- [x] `solve_static_equilibrium`: take an optional tyre applier in `apply_forces`, reset its
   transient state at every velocity reset, and take `relax_steps_per_cycle` so the 20 ms
   cycle is preserved at 0.25 ms (defaults unchanged for `sphere`). Record the solved
   `pneumatic` sag and chassis height in RIDE.md §9 (it currently says *pending*).
-- [ ] `CruiseController`: when given a traction signal (rear tyre fully sliding in the
+- [x] `CruiseController`: when given a traction signal (rear tyre fully sliding in the
   direction of the error), suspend integration as it already does for saturation and for an
   airborne rear wheel (`cruise.py:153-169`). `sphere` passes no signal, so its behaviour is
   unchanged (D12).
-- [ ] `tests/test_ride_pneumatic.py`: model compiles; spheres do not collide; equilibrium
+- [x] `tests/test_ride_pneumatic.py`: model compiles; spheres do not collide; equilibrium
   converges on every preset; a `flat` traverse completes and holds speed; `single_edge`
   completes, shows two patches at the edge and a rearward force component; airborne flags
   over the kicker match the geometry; `sphere` runs remain bit-identical to a stored trace

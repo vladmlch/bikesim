@@ -18,6 +18,7 @@ from bike_sim.geometry.hardpoints import (
 )
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.kinematics.solver import HorstLinkageSolver
+from bike_sim.physics.tyre import TYRE_MODELS
 from bike_sim.physics.mass import BikeMassSpecs, compute_static_system_cg
 from bike_sim.physics.rider import RiderSpecs, resolve_rider
 
@@ -45,6 +46,7 @@ def generate_mujoco_xml(
     debug_markers: bool = False,
     field: Optional[HeightFieldSpec] = None,
     rider: Optional[Union[RiderSpecs, str]] = None,
+    tyre_model: str = "sphere",
 ) -> str:
     """
     Generates a complete, valid, high-fidelity MuJoCo MJCF XML model string.
@@ -63,13 +65,20 @@ def generate_mujoco_xml(
         rider: The rider to build -- a `RiderSpecs` or a variant name (``none``, ``lumped``,
             ``seated``). The seated rider is ride-mode only. The centre-of-gravity site and
             the saddle height follow whichever rider is present.
+        tyre_model: ``sphere`` keeps the existing wheel–road contacts; ``pneumatic`` disables
+            only the two contact spheres so the ride-mode force applier can carry the wheels.
 
     Returns:
         Formatted MJCF XML string ready for MuJoCo simulation.
 
     Raises:
-        ValueError: If a seated rider is requested outside ride mode, or does not fit the bike.
+        ValueError: If the tyre model is unknown, a non-sphere model is requested outside
+            ride mode, or a seated rider is requested outside ride mode or does not fit.
     """
+    if tyre_model not in TYRE_MODELS:
+        raise ValueError(f"unknown tyre model '{tyre_model}'; available: {', '.join(TYRE_MODELS)}")
+    if tyre_model != "sphere" and mode != "ride":
+        raise ValueError(f"tyre model {tyre_model!r} is ride-mode only")
     if specs is None:
         specs = BikeSpecs()
     if solver is None:
@@ -168,6 +177,7 @@ def generate_mujoco_xml(
         fixed_points=fixed,
         front_axle=P_FA_raw,
         debug_markers=debug_markers,
+        tyre_model=tyre_model,
     )
 
     # 6. Rear Linkage, Damper & Rear Wheel
@@ -178,6 +188,7 @@ def generate_mujoco_xml(
         fixed_points=fixed,
         solved_points=st0,
         debug_markers=debug_markers,
+        tyre_model=tyre_model,
     )
 
     # 7. Constraints & Collisions

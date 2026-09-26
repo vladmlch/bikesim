@@ -905,10 +905,13 @@ telemetry and makes headless runs reproducible from the first frame.
 forces, and its transient state (§1) is cleared at every velocity reset. The relaxation
 cycle is specified in time, 20 ms, which is 40 steps at 0.5 ms and 80 at `detailed`'s
 0.25 ms. The axle loads below do not depend on the tyre model, because they are set by the
-centre of mass. The tyres deflect more than the sphere does — about 7 mm front and 10 mm
-rear at the seated split, against 4–5 mm — so the chassis settles a few millimetres lower
-and pitches by a few hundredths of a degree. The sag figures in the tables below are
-`sphere`'s; `pneumatic`'s are *pending (plan task 8)*.
+centre of mass. With the default seated rider and `fast` tier on the flat preset, pneumatic
+equilibrium gives 59.4 mm (33.0 %) front sag and 46.2 mm (25.7 %) rear sag, nearly unchanged
+from `sphere` (59.7 / 46.1 mm). The tyre's mean loaded-ray deflection is 5.84 mm front and
+7.36 mm rear; fitted patch lengths are 118.4 and 140.1 mm. The solved root height is
+−57.91 mm, about 8.99 mm below the `sphere` result (−48.92 mm), while pitch is 0.00403 rad.
+The tyre outputs support 425.0 N front and 597.9 N rear, 1022.9 N total against 1023.7 N
+system weight (0.08 % residual). The sag tables below remain the `sphere` reference.
 
 The rider is on by default (`seated`; §7). Analytic static state, both rider variants:
 

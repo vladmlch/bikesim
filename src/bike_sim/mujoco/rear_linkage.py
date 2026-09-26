@@ -57,6 +57,7 @@ def _build_seatstay(
     p12_rel_p2: np.ndarray,
     rear_wheel_radius_m: float,
     debug_markers: bool = False,
+    tyre_model: str = "sphere",
 ) -> ET.Element:
     """Builds the seatstay body, Horst pivot joint, dropout truss, and rear wheel."""
     seatstay = ET.SubElement(chainstay, "body", {"name": "seatstay", "pos": _format_vec(p2_rel_p0)})
@@ -91,7 +92,7 @@ def _build_seatstay(
         add_marker(seatstay, "marker_pra", pos=p1_rel_p2, size="0.013")
 
     # Rear Wheel Assembly
-    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m)
+    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model)
     return seatstay
 
 
@@ -248,6 +249,7 @@ def build_rear_linkage(
     fixed_points: Dict[str, np.ndarray],
     solved_points: Dict[str, np.ndarray],
     debug_markers: bool = False,
+    tyre_model: str = "sphere",
 ) -> None:
     """
     Builds the 4-bar rear suspension linkage, shock yoke, shock shaft, shock body, and rear wheel.
@@ -279,7 +281,17 @@ def build_rear_linkage(
     chainstay = _build_chainstay(frame, P0, p2_rel_p0, debug_markers)
 
     # 2. Seatstay & Rear Wheel
-    _build_seatstay(chainstay, mode, p2_rel_p0, p1_rel_p2, p3_rel_p2, p12_rel_p2, rear_wheel_radius_m, debug_markers)
+    _build_seatstay(
+        chainstay,
+        mode,
+        p2_rel_p0,
+        p1_rel_p2,
+        p3_rel_p2,
+        p12_rel_p2,
+        rear_wheel_radius_m,
+        debug_markers,
+        tyre_model,
+    )
 
     # 3. Rocker Link
     rocker = _build_rocker(frame, P5, p3_rel_p5, p4_rel_p5, debug_markers)
@@ -352,4 +364,3 @@ def build_contact_exclusions(root: ET.Element) -> None:
     for i in range(len(link_bodies)):
         for j in range(i + 1, len(link_bodies)):
             ET.SubElement(contact, "exclude", {"body1": link_bodies[i], "body2": link_bodies[j]})
-

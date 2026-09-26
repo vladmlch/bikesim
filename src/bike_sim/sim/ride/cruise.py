@@ -134,6 +134,7 @@ class CruiseController:
         model: mujoco.MjModel,
         data: mujoco.MjData,
         contacts: TerrainContacts,
+        traction_limited: bool = False,
     ) -> float:
         """
         Computes the rear-wheel drive torque for the current state.
@@ -143,6 +144,8 @@ class CruiseController:
             data: Simulation state, read for the chassis longitudinal velocity.
             contacts: This step's contact snapshot; the torque is gated off while the rear
                 wheel carries no load.
+            traction_limited: The pneumatic rear patch is fully sliding in the direction of
+                the speed error; suspend integration even when the PI torque is not saturated.
 
         Returns:
             Drive torque in N.m for the `rear_drive` actuator, within +/- the ceiling.
@@ -161,7 +164,7 @@ class CruiseController:
         pushing_further_into_saturation = (
             abs(demand_nm) >= self.torque_ceiling_nm and (demand_nm > 0.0) == (error_mps > 0.0)
         )
-        if not pushing_further_into_saturation:
+        if not pushing_further_into_saturation and not traction_limited:
             self.integral_mps_s = _clamp(
                 self.integral_mps_s + error_mps * float(model.opt.timestep),
                 self.torque_ceiling_nm / self.ki_nm_per_mps_s,

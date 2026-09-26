@@ -17,14 +17,16 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 import mujoco
 
 from bike_sim.geometry.specs import BikeSpecs
+from bike_sim.geometry.hardpoints import compute_ground_z
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
 from bike_sim.physics.coil_shock import CoilShock
 from bike_sim.physics.damper import BikeSuspensionSystem
 from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
+from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.controllers import SuspensionController
-from bike_sim.sim.equilibrium import solve_static_equilibrium
+from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
 from bike_sim.sim.ride.braking import BrakeController
 from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
@@ -37,14 +39,18 @@ from bike_sim.sim.ride.termination import (
     RunOutcome,
     RunTerminator,
 )
+from bike_sim.sim.ride.tyre.applier import TyreForceApplier
+from bike_sim.sim.ride.tyre.geometry import RoadProfile
 from bike_sim.sim.ride.virtual_rider import CrashDetector, CrashEvent, PitchStabilizer
 from bike_sim.terrain import (
     DEFAULT_PRESET,
     HeightFieldSpec,
     TrackSpec,
     assert_track_fits,
+    build_profile,
     build_field_data,
     get_preset,
+    SurfaceMap,
 )
 
 # World X for the chassis root at the start of a run. The heightfield's near edge is at
@@ -56,10 +62,10 @@ class RideSimulation:
     """
     A ride-mode run: compiled model, track, controllers, and a single `step`.
 
-    The six per-step writers are applied in a fixed order -- suspension, seated rider,
-    rolling resistance, cruise torque, brake torque, virtual rider -- against one contact
-    snapshot taken at the top of the step, so that cruise gating, rolling resistance, the
-    virtual rider and the crash detector all agree about which wheels are on the ground.
+    The per-step writers are applied in a fixed order. `sphere` uses suspension, seated
+    rider, rolling resistance, cruise, brakes and the virtual rider. `pneumatic` evaluates
+    the tyre first, uses its loads for the shared contact snapshot, skips the explicit Crr
+    writer, then applies the other writers.
     """
 
     def __init__(
@@ -74,6 +80,7 @@ class RideSimulation:
         debug_markers: bool = False,
         field: Optional[HeightFieldSpec] = None,
         rider: Optional[Union[RiderSpecs, str]] = None,
+        tyre: Optional[TyreConfig] = None,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -98,6 +105,8 @@ class RideSimulation:
             field: Heightfield geometry to compile. Defaults to
                 `HeightFieldSpec.for_track(track)`: the shipped field for any track that
                 fits it, a longer field otherwise.
+            tyre: Wheel-contact model and fidelity tier. Defaults to the existing `sphere`
+                model; `pneumatic` uses the configured pressure and the track surface.
 
         Raises:
             ValueError: If the track does not fit the heightfield envelope.
@@ -108,6 +117,7 @@ class RideSimulation:
         assert_track_fits(self.track, self.field)
 
         self.specs = specs if specs is not None else BikeSpecs()
+        self.tyre_config = tyre if tyre is not None else TyreConfig()
         self.solver = HorstLinkageSolver(self.specs)
         self.start_x_m = float(start_x_m)
         self.rider: RiderSpecs = resolve_rider(
@@ -127,10 +137,25 @@ class RideSimulation:
                 rider=self.rider,
                 debug_markers=debug_markers,
                 field=self.field,
+                tyre_model=self.tyre_config.model,
             )
         )
         # Before the first forward pass, before the equilibrium solve, before any viewer.
         self.model.hfield_data[:] = build_field_data(self.track, self.field).reshape(-1)
+        self.tyre_applier: Optional[TyreForceApplier] = None
+        if self.tyre_config.pneumatic:
+            track_x = self.field.track_x()
+            road_z = (
+                compute_ground_z(self.specs) / 1000.0
+                + build_profile(self.track, track_x)
+            )
+            profile = RoadProfile.from_samples(track_x, road_z)
+            self.tyre_applier = TyreForceApplier(
+                self.model,
+                self.tyre_config,
+                profile,
+                SurfaceMap.uniform(self.track.surface),
+            )
         self.data = mujoco.MjData(self.model)
 
         self.controller = controller if controller is not None else _default_controller(self.specs)
@@ -171,14 +196,27 @@ class RideSimulation:
         Raises:
             RuntimeError: If the equilibrium solve does not converge.
         """
-        self.equilibrium = solve_static_equilibrium(
-            self.model,
-            self.data,
-            self.applier,
-            self.solver,
-            start_x_m=self.start_x_m,
-            rider_applier=self.rider_forces,
-        )
+        if self.tyre_applier is None:
+            self.equilibrium = solve_static_equilibrium(
+                self.model,
+                self.data,
+                self.applier,
+                self.solver,
+                start_x_m=self.start_x_m,
+                rider_applier=self.rider_forces,
+            )
+        else:
+            relax_steps = max(1, round(RELAX_CYCLE_S / float(self.model.opt.timestep)))
+            self.equilibrium = solve_static_equilibrium(
+                self.model,
+                self.data,
+                self.applier,
+                self.solver,
+                start_x_m=self.start_x_m,
+                rider_applier=self.rider_forces,
+                tyre_applier=self.tyre_applier,
+                relax_steps_per_cycle=relax_steps,
+            )
         self.contact_query.reset()
         self.cruise.reset()
         self.brakes.reset()
@@ -187,7 +225,12 @@ class RideSimulation:
         self.crash_detector.reset()
         self.data.time = 0.0
         self.steps = 0
-        self.contacts = self.contact_query.query(self.model, self.data)
+        if self.tyre_applier is None:
+            self.contacts = self.contact_query.query(self.model, self.data)
+        else:
+            self.contacts = self.contact_query.query(
+                self.model, self.data, wheel_load_provider=self.tyre_applier
+            )
 
     def step(self, front_brake_demand: float = 0.0, rear_brake_demand: float = 0.0) -> None:
         """
@@ -203,10 +246,28 @@ class RideSimulation:
             front_brake_demand: Front brake lever position in [0, 1], not a torque.
             rear_brake_demand: Rear brake lever position in [0, 1], not a torque.
         """
+        if self.tyre_applier is not None:
+            self.tyre_applier.apply(self.model, self.data)
+            self.contacts = self.contact_query.query(
+                self.model, self.data, wheel_load_provider=self.tyre_applier
+            )
+
         self.applier.apply(self.model, self.data)
         self.rider_forces.apply(self.model, self.data)
-        self.resistance.apply(self.model, self.data, self.contacts)
-        self.data.ctrl[self.drive_ctrl_adr] = self.cruise.compute(self.model, self.data, self.contacts)
+        if self.tyre_applier is None:
+            self.resistance.apply(self.model, self.data, self.contacts)
+            drive_torque = self.cruise.compute(self.model, self.data, self.contacts)
+        else:
+            error_mps = self.cruise.target_speed_mps - float(self.data.qvel[self.root_x_dofadr])
+            rear_outputs = self.tyre_applier.rear_outputs
+            traction_limited = any(
+                patch.fully_sliding and patch.slip_ratio * error_mps > 0.0
+                for patch in rear_outputs.patches
+            )
+            drive_torque = self.cruise.compute(
+                self.model, self.data, self.contacts, traction_limited=traction_limited
+            )
+        self.data.ctrl[self.drive_ctrl_adr] = drive_torque
         front_torque, rear_torque = self.brakes.compute(
             self.data, front_brake_demand, rear_brake_demand
         )
@@ -220,7 +281,8 @@ class RideSimulation:
 
         mujoco.mj_step(self.model, self.data)
         self.steps += 1
-        self.contacts = self.contact_query.query(self.model, self.data)
+        if self.tyre_applier is None:
+            self.contacts = self.contact_query.query(self.model, self.data)
 
     def default_limits(self, max_wall_clock_s: float = DEFAULT_MAX_WALL_CLOCK_S) -> RunLimits:
         """

@@ -210,9 +210,9 @@ def test_absolute_wheel_velocity_includes_carrier_pitch():
     )
     applier.apply(model, data)
 
-    assert applier.front_outputs.omega_forward_radps == pytest.approx(-velocity6[1])
+    assert applier.front_outputs.omega_forward_radps == pytest.approx(velocity6[1])
     assert applier.front_outputs.hub_velocity_world_mps == pytest.approx(velocity6[3:6])
-    assert applier.front_outputs.omega_forward_radps != pytest.approx(-data.qvel[spin_dof])
+    assert applier.front_outputs.omega_forward_radps != pytest.approx(data.qvel[spin_dof])
 
 
 def test_detailed_tier_sets_the_runtime_timestep_but_fast_keeps_the_compiled_step():

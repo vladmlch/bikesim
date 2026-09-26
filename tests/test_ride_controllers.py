@@ -355,6 +355,24 @@ def test_cruise_integrator_does_not_wind_up_while_saturated(model: mujoco.MjMode
     assert cruise.integral_mps_s == pytest.approx(10 * error_mps * model.opt.timestep)
 
 
+def test_cruise_suspends_integration_when_pneumatic_rear_tyre_slides_toward_error(
+    model: mujoco.MjModel,
+):
+    """A tyre-limited drive request holds the PI integral even below the torque ceiling."""
+    data = mujoco.MjData(model)
+    cruise = CruiseController(model, target_speed_kmh=TARGET_SPEED_KMH)
+    error_mps = 0.1
+    data.qvel[_dofadr(model, "root_x")] = cruise.target_speed_mps - error_mps
+    contacts = _contacts(400.0, 500.0)
+
+    torque = cruise.compute(model, data, contacts, traction_limited=True)
+    assert torque == pytest.approx(cruise.kp_nm_per_mps * error_mps)
+    assert cruise.integral_mps_s == 0.0
+
+    cruise.compute(model, data, contacts, traction_limited=False)
+    assert cruise.integral_mps_s == pytest.approx(error_mps * model.opt.timestep)
+
+
 @pytest.mark.parametrize("target_kmh", [MIN_TARGET_SPEED_KMH - 1.0, MAX_TARGET_SPEED_KMH + 1.0])
 def test_cruise_rejects_a_target_outside_the_adjustable_band(model: mujoco.MjModel, target_kmh: float):
     """A target outside 15-45 km/h is a mis-specified experiment, not a value to clamp."""

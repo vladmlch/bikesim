@@ -20,12 +20,14 @@ import numpy as np
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.sim.ride.forces import SuspensionForceApplier
 from bike_sim.sim.ride.rider_forces import RiderForceApplier
+from bike_sim.sim.ride.tyre.applier import TyreForceApplier
 
 # Steps between velocity resets. At the ride timestep this is a 20 ms window: short against
 # the ~3 Hz suspension modes, so each cycle is a small downhill move rather than half an
 # oscillation, and long enough that the state advances quadratically rather than one
 # timestep at a time.
 RELAX_STEPS_PER_CYCLE = 40
+RELAX_CYCLE_S = RELAX_STEPS_PER_CYCLE * 0.0005
 
 # Initial gap between the wheels and the road, so the solve starts with no penetration.
 START_CLEARANCE_M = 0.005
@@ -40,6 +42,8 @@ def solve_static_equilibrium(
     max_steps: int = 40000,
     tol: float = 0.05,
     rider_applier: Optional[RiderForceApplier] = None,
+    tyre_applier: Optional[TyreForceApplier] = None,
+    relax_steps_per_cycle: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Solves the static equilibrium the bike settles into on the road under gravity.
@@ -61,6 +65,11 @@ def solve_static_equilibrium(
         rider_applier: The seated rider's force path, applied alongside the suspension so
             the rider's slide coordinates settle with everything else. None or an inert
             applier for the bike alone or the lumped rider.
+        tyre_applier: Pneumatic tyre force path, applied before suspension and rider forces.
+            Its material and bristle state is reset whenever the velocity relaxation is reset.
+        relax_steps_per_cycle: Steps between velocity resets. ``None`` keeps the historical
+            40-step sphere cadence; pneumatic callers pass the count that preserves the
+            20 ms cycle at their selected timestep.
 
     Returns:
         Dict with the converged `fork_travel_mm`, `shock_stroke_mm`, `rear_travel_mm`,
@@ -77,12 +86,20 @@ def solve_static_equilibrium(
     z_adr = _qposadr(model, "root_z")
     pitch_adr = _qposadr(model, "root_pitch")
 
+    cycle_steps = RELAX_STEPS_PER_CYCLE if relax_steps_per_cycle is None else int(relax_steps_per_cycle)
+    if cycle_steps <= 0:
+        raise ValueError(f"relax_steps_per_cycle must be positive, got {cycle_steps}")
+
     def apply_forces() -> None:
+        if tyre_applier is not None:
+            tyre_applier.apply(model, data)
         applier.apply(model, data)
         if rider_applier is not None:
             rider_applier.apply(model, data)
 
     mujoco.mj_resetData(model, data)
+    if tyre_applier is not None:
+        tyre_applier.reset(data)
     data.qpos[x_adr] = float(start_x_m)
     data.qpos[z_adr] = START_CLEARANCE_M
     mujoco.mj_forward(model, data)
@@ -90,12 +107,17 @@ def solve_static_equilibrium(
     steps = 0
     residual = float("inf")
     while steps < max_steps:
-        for _ in range(min(RELAX_STEPS_PER_CYCLE, max_steps - steps)):
+        for _ in range(min(cycle_steps, max_steps - steps)):
             apply_forces()
             mujoco.mj_step(model, data)
             steps += 1
 
         data.qvel[:] = 0.0
+        if tyre_applier is not None:
+            tyre_applier.reset(data)
+            # Object velocities are cached by MuJoCo. Refresh them after zeroing qvel before
+            # the tyre reads `mj_objectVelocity`; the sphere path retains its old call order.
+            mujoco.mj_forward(model, data)
         apply_forces()
         mujoco.mj_forward(model, data)
         residual = float(np.max(np.abs(data.qacc)))
@@ -148,4 +170,9 @@ def _qposadr(model: mujoco.MjModel, joint_name: str) -> int:
     return int(model.jnt_qposadr[jid])
 
 
-__all__ = ["solve_static_equilibrium", "RELAX_STEPS_PER_CYCLE", "START_CLEARANCE_M"]
+__all__ = [
+    "solve_static_equilibrium",
+    "RELAX_STEPS_PER_CYCLE",
+    "RELAX_CYCLE_S",
+    "START_CLEARANCE_M",
+]

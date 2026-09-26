@@ -35,12 +35,14 @@ def export_mujoco(
     include_rider: bool = False,
     debug_markers: bool = False,
     rider: Optional[Union["RiderSpecs", str]] = None,
+    tyre_model: str = "sphere",
 ) -> str:
     """
     Exports the generated MuJoCo MJCF XML model to a file.
 
     Args:
         rider: Rider variant or `RiderSpecs` to build; overrides ``include_rider``.
+        tyre_model: Ride-mode tyre model to include in the MJCF.
     """
     xml_content = generate_mujoco_xml(
         specs=specs,
@@ -50,6 +52,7 @@ def export_mujoco(
         include_rider=include_rider,
         debug_markers=debug_markers,
         rider=rider,
+        tyre_model=tyre_model,
     )
 
     # Validate XML structure with ElementTree before writing
@@ -72,6 +75,7 @@ def export_playground_models(
     specs: Optional[BikeSpecs] = None,
     solver: Optional[HorstLinkageSolver] = None,
     include_rider: bool = False,
+    tyre_model: str = "sphere",
 ) -> Dict[str, str]:
     """
     Exports standard, test stand, and unified interactive playground MJCF models.
@@ -101,6 +105,7 @@ def export_playground_models(
         solver=solver,
         mode="ride",
         rider=RiderSpecs(),
+        tyre_model=tyre_model,
     )
     return {
         "stand": xml_stand,

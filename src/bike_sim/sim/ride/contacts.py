@@ -47,10 +47,12 @@ see `CONTACT_DROPOUT_STEPS`.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Tuple
+from typing import Dict, Optional, Protocol, Tuple
 
 import mujoco
 import numpy as np
+
+from bike_sim.sim.ride.tyre.model import WheelOutputs
 
 # Worldbody collision geoms that make up the ground: the road heightfield and the runaway
 # catch plane far below it.
@@ -73,6 +75,13 @@ CONTACT_LOAD_THRESHOLD_N = 1.0
 # is an order of magnitude clear of both, so it removes every dropout without blunting the
 # start of a real flight by more than 2 % of its duration.
 CONTACT_DROPOUT_STEPS = 10
+
+
+class WheelLoadProvider(Protocol):
+    """Per-wheel normal load and support supplied by a non-contact tyre model."""
+
+    front_outputs: WheelOutputs
+    rear_outputs: WheelOutputs
 
 
 @dataclass(frozen=True)
@@ -154,7 +163,12 @@ class TerrainContactQuery:
         self._front_load = _BridgedLoad(dropout_steps)
         self._rear_load = _BridgedLoad(dropout_steps)
 
-    def query(self, model: mujoco.MjModel, data: mujoco.MjData) -> TerrainContacts:
+    def query(
+        self,
+        model: mujoco.MjModel,
+        data: mujoco.MjData,
+        wheel_load_provider: Optional[WheelLoadProvider] = None,
+    ) -> TerrainContacts:
         """
         Reads the current contact normal load on each tracked geom.
 
@@ -162,13 +176,28 @@ class TerrainContactQuery:
             model: Compiled ride-mode model.
             data: Simulation state, after a `mj_forward` or `mj_step` has populated its
                 contacts and constraint forces.
+            wheel_load_provider: Optional pneumatic tyre applier. Its raw wheel loads and
+                vertical support replace the sphere contacts; the handlebar still uses
+                MuJoCo contact.
 
         Returns:
             Both load channels for each wheel -- the bridged magnitude that gates the drive
             torque and the virtual rider, and the raw vertical support the rolling-resistance
             model may use -- plus the handlebar's raw magnitude.
         """
-        magnitude_n, vertical_n = self._sum_normal_loads(model, data)
+        magnitude_n, vertical_n = self._sum_normal_loads(
+            model, data, include_wheel_contacts=wheel_load_provider is None
+        )
+        if wheel_load_provider is not None:
+            front = wheel_load_provider.front_outputs
+            rear = wheel_load_provider.rear_outputs
+            return TerrainContacts(
+                front_load_n=max(0.0, front.normal_load_n),
+                rear_load_n=max(0.0, rear.normal_load_n),
+                front_support_n=max(0.0, front.support_n),
+                rear_support_n=max(0.0, rear.support_n),
+                handlebar_load_n=magnitude_n[self.handlebar_id],
+            )
         return TerrainContacts(
             front_load_n=self._front_load.update(magnitude_n[self.front_id]),
             rear_load_n=self._rear_load.update(magnitude_n[self.rear_id]),
@@ -183,7 +212,10 @@ class TerrainContactQuery:
         self._rear_load.reset()
 
     def _sum_normal_loads(
-        self, model: mujoco.MjModel, data: mujoco.MjData
+        self,
+        model: mujoco.MjModel,
+        data: mujoco.MjData,
+        include_wheel_contacts: bool = True,
     ) -> Tuple[Dict[int, float], Dict[int, float]]:
         """
         Accumulates this step's normal contact load on each tracked geom, two ways.
@@ -221,6 +253,8 @@ class TerrainContactQuery:
             else:
                 continue
             if tracked not in magnitude_n:
+                continue
+            if not include_wheel_contacts and tracked in (self.front_id, self.rear_id):
                 continue
 
             mujoco.mj_contactForce(model, data, i, self._force)
@@ -301,4 +335,5 @@ __all__ = [
     "HANDLEBAR_GEOM",
     "CONTACT_LOAD_THRESHOLD_N",
     "CONTACT_DROPOUT_STEPS",
+    "WheelLoadProvider",
 ]

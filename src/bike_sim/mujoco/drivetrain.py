@@ -107,6 +107,7 @@ def build_rear_wheel(
     mode: str,
     p1_rel_p2: np.ndarray,
     rear_wheel_radius_m: float,
+    tyre_model: str = "sphere",
 ) -> ET.Element:
     """
     Builds the rear wheel body (hub, rim, tire, cassette, brake rotor) mounted on the seatstay at P1 (Rear Axle).
@@ -179,8 +180,8 @@ def build_rear_wheel(
                 "condim": "3",
                 "friction": "1.2 0.005 0.0001",
                 "solref": "-130000 -800",
-                "contype": "1",
-                "conaffinity": "1",
+                "contype": "0" if tyre_model == "pneumatic" else "1",
+                "conaffinity": "0" if tyre_model == "pneumatic" else "1",
                 "rgba": "0.08 0.08 0.08 0",
             },
         )

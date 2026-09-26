@@ -92,6 +92,27 @@ class TestGoldenBaselines(unittest.TestCase):
         root = ET.fromstring(xml_content)
         self.assertEqual(root.tag, "mujoco")
 
+    def test_baseline_bike_ride_pneumatic_xml(self) -> None:
+        """Pneumatic ride XML only disables the two sphere contact geoms."""
+        xml_content = generate_mujoco_xml(
+            specs=self.specs,
+            solver=self.solver,
+            mode="ride",
+            rider="seated",
+            tyre_model="pneumatic",
+        )
+        self._assert_text_equal(xml_content, "baseline_bike_ride_pneumatic.xml")
+        root = ET.fromstring(xml_content)
+        contacts = {
+            geom.attrib["name"]: geom
+            for geom in root.findall(".//geom")
+            if geom.attrib.get("name") in ("geom_front_contact", "geom_rear_contact")
+        }
+        self.assertEqual(set(contacts), {"geom_front_contact", "geom_rear_contact"})
+        for geom in contacts.values():
+            self.assertEqual(geom.attrib["contype"], "0")
+            self.assertEqual(geom.attrib["conaffinity"], "0")
+
     def test_baseline_coordinates_json(self) -> None:
         """Exported hardpoints JSON matches baseline_coordinates.json."""
         baseline_path = self.golden_dir / "baseline_coordinates.json"

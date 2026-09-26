@@ -110,6 +110,7 @@ def _build_front_wheel(
     mode: str,
     fa_rel_steer: np.ndarray,
     front_wheel_radius_m: float,
+    tyre_model: str = "sphere",
 ) -> ET.Element:
     """Builds front wheel assembly (hub, rim, tire, brake rotor)."""
     front_wheel = ET.SubElement(fork_lower, "body", {"name": "front_wheel", "pos": _format_vec(fa_rel_steer)})
@@ -133,8 +134,8 @@ def _build_front_wheel(
             condim="3",
             friction="1.2 0.005 0.0001",
             solref="-130000 -800",
-            contype="1",
-            conaffinity="1",
+            contype="0" if tyre_model == "pneumatic" else "1",
+            conaffinity="0" if tyre_model == "pneumatic" else "1",
             rgba="0.08 0.08 0.08 0",
         )
     return front_wheel
@@ -148,6 +149,7 @@ def build_steering_and_fork(
     fixed_points: Dict[str, np.ndarray],
     front_axle: np.ndarray,
     debug_markers: bool = False,
+    tyre_model: str = "sphere",
 ) -> Tuple[ET.Element, ET.Element, ET.Element]:
     """
     Builds the steering body, fork lower slider, and front wheel.
@@ -175,7 +177,8 @@ def build_steering_and_fork(
     fork_lower = _build_fork_lowers(steer, mode, fork_slide_axis, steer_axis_up, fa_rel_steer, fork_travel_m, debug_markers)
 
     # 4. Front Wheel
-    front_wheel = _build_front_wheel(fork_lower, mode, fa_rel_steer, front_wheel_radius_m)
+    front_wheel = _build_front_wheel(
+        fork_lower, mode, fa_rel_steer, front_wheel_radius_m, tyre_model
+    )
 
     return steer, fork_lower, front_wheel
-

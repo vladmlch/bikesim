@@ -79,7 +79,7 @@ class TyreForceApplier:
         """Evaluates both tyres and assigns both wheel-body `xfrc_applied` rows.
 
         `mj_objectVelocity` is queried in world axes. Its angular component includes the
-        carrier pitch; with the builder's +Y axle axis, `−ω_y` is the forward-positive spin
+        carrier pitch; with the builder's +Y axle axis, `+ω_y` is the forward-positive spin
         used by the tyre equations. The joint's `qvel` is intentionally not used here.
 
         Args:
@@ -111,7 +111,7 @@ class TyreForceApplier:
         )
         hub_position = data.xpos[binding.body_id].copy()
         hub_velocity = self._velocity6[3:6].copy()
-        omega_forward = -float(self._velocity6[1])
+        omega_forward = float(self._velocity6[1])
         outputs = tyre.evaluate(
             hub_position_world_m=hub_position,
             hub_velocity_world_mps=hub_velocity,

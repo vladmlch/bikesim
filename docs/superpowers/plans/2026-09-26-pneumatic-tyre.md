@@ -174,6 +174,15 @@ Points settled while writing the contract, which the tasks below rely on:
   already contributes ≈ `a_p` of lag. Both tiers then carry the same total relaxation.
 - `k_rim = 3.0×10⁷ N/m²`, which is ≈ 1 500 N/mm over a 50 mm rim patch, giving
   `ω·dt ≈ 0.38`.
+- *Added while starting Task 3 (RIDE.md §3.1 amended):* the element's rate of deflection is
+  the **material rate** `Dδ/Dt = ∂δ/∂t|ray − ω·∂δ/∂θ`. Without the transport term, steady
+  rolling on flat road has no hysteresis loss at all. Material states are advected along
+  the ray grid.
+- *Added:* a **Maxwell branch** per element (standard linear solid, `k_r` fitted, τ = 0.2 s)
+  reproduces the measured dynamic/static stiffness 1.16–1.35. Hysteresis alone gives only
+  ≈ 1.07.
+- *Added:* a **contact-length factor** `c_L`, because the circle–plane chord overstates the
+  measured footprint by ≈ 15 %.
 
 ---
 
@@ -285,7 +294,9 @@ read.*
   `area_factor` (`c_A`, fitted), `carcass_stiffness` (`k_c`, fitted), `loss_factor`
   (starting 0.07), `relaxation_length_mm` (90), `rim_stiffness_n_m2` (3.0×10⁷),
   `hysteresis_rate_eps_mps` (0.01), `tread_loss_crr` (0 unless RIDE.md §3.1's fallback is
-  needed). Derived: `rim_strike_deflection_mm = outer − rim − compressed_casing` (46 mm).
+  needed), `contact_length_factor` (`c_L`, fitted), `rate_stiffening` (`k_r`, fitted),
+  `rate_relaxation_s` (τ, 0.2). Derived: `rim_strike_deflection_mm = outer − rim −
+  compressed_casing` (46 mm).
   Tread stiffness is not a tyre field: it follows from the surface's `C_κ/F_z` (RIDE.md §4.1).
 - [ ] `FRONT_TYRE` (Magic Mary 29×2.4) and `REAR_TYRE` (Hans Dampf 27.5×2.4) from D5, radii
   taken from `BikeSpecs` and the builder's rim radii so they cannot drift (assert equality in
@@ -338,16 +349,19 @@ read.*
 
 **Steps:**
 
-- [ ] Element forces per RIDE.md §3.1: `c_A·p·w(δ)` with `w(δ) = 2·√(δ(2ρ − δ))`, carcass
-  term, hysteresis `η·f·tanh(δ̇/δ̇_ε)`, rim term. `δ̇` from the difference to the previous
-  step's `δ` for the same ray (the rays are world-fixed and do not spin, so this is the
-  material rate as the road passes).
+- [ ] Element forces per RIDE.md §3.1: elastic `c_A·p·w(δ) + k_c·δ` with
+  `w(δ) = 2·√(δ(2ρ − δ))`, Maxwell branch, hysteresis `η·f_e·tanh((Dδ/Dt)/δ̇_ε)`, rim
+  term, clamp at ≥ 0. `Dδ/Dt` is the **material rate**: the same-ray difference minus
+  `ω·∂δ/∂θ` (upwind). Material states (`f̃_e`, `f_m`) are advected by `−ω·dt`,
+  semi-Lagrangian, before the update.
 - [ ] **Calibration fits** (a small `scipy.optimize` routine in the test helpers, results
-  frozen as `TyreSpecs` defaults): `c_A` and `k_c` so that
+  frozen as `TyreSpecs` defaults): `c_A`, `k_c`, `c_L` and `k_r` so that
   - static stiffness follows `22 + 24·p` N/mm within ±15 % over 1.0–2.0 bar;
   - contact length at 418 N is 133 mm @ 1.38 bar and 122 mm @ 1.72 bar within ±15 %;
   - dynamic apparent stiffness in a 44 kg drop-sled simulation (1-DOF, pure NumPy) is
-    1.16–1.35 × static.
+    1.16–1.35 × static (this fits `k_r`);
+  - steady rolling on flat road shows a nonzero, forward-shifted centre of pressure (a guard
+    against losing the transport term).
 - [ ] Hysteresis: in the same sled, the settled free-oscillation damping ratio lands in
   2–5.5 %. **This sets η** (RIDE.md §3.1 calibration order: damping first). Task 7 then
   checks Crr with this η and applies the tread-loss fallback only if Crr is > 15 % short.

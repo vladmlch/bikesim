@@ -121,8 +121,8 @@ spin up freely when the wheel leaves the ground. Any control law that assumes wh
 tracks ground speed is invalid here — see §6.
 
 **The `pneumatic` tyre carries states outside MuJoCo** (§3.1, §4.1): each element's previous
-deflection, and the transient slip `κ'` of each contact patch (`fast`) or the bristle
-deflections of the tread (`detailed`). They are not generalized coordinates — they add no
+deflection, elastic force and Maxwell force, and the transient slip `κ'` of each contact
+patch (`fast`) or the bristle deflections of the tread (`detailed`). They are not generalized coordinates — they add no
 mass and no constraint — but they are state: they are reset with the run, and at every
 velocity reset of the equilibrium solve (§9), so a run is reproducible from `qpos` plus a
 cleared tyre.
@@ -350,9 +350,10 @@ first **visible** road point along the ray. Road hidden behind a nearer part of 
 along the same ray, such as the back face of a steep descent, is discarded, not clipped. The
 element deflection is `δ_i = max(0, R − r_i)`.
 
-**Element force.** Per ray, over its share of arc `Δs = R·Δθ`, directed along `−u_i`:
+**Element force.** Per ray, over its share of arc `Δs = R·Δθ`, directed along `−u_i`, the
+element's **elastic** force is
 
-`f_i = [ c_A · p · w(δ_i) + k_c · δ_i ] · Δs`
+`f_e,i = [ c_A · p · w(δ_i) + k_c · δ_i ] · Δs`
 
 - `p` is gauge pressure. It is read every step, so it can change mid-run (Usage, key map).
 - `w(δ) = 2·√(δ·(2ρ − δ))` is the chord of the casing cross-section, radius `ρ = W_c/2`, at
@@ -361,7 +362,17 @@ element deflection is `δ_i = max(0, R − r_i)`.
   make the real footprint smaller than the geometric one.
 - `k_c` is the carcass stiffness per unit arc length.
 
-`c_A` and `k_c` are fitted, per wheel, to three targets:
+The total element force adds rate stiffening and hysteresis (below) and is clamped at zero
+from below: a tyre pushes on the road but never pulls it.
+
+**Contact length.** A circle pressed into a plane has a chord of `2·√(2Rδ)`. At the
+measured deflections that chord is about 15 % longer than the measured footprint, because
+a real crown flattens and part of the deflection happens outside the footprint. The patch
+length the brush uses (§4.1) and the telemetry reports is therefore the geometric span of
+the loaded rays scaled by a fitted **contact-length factor** `c_L ≤ 1`. The element forces
+are not scaled.
+
+`c_A`, `k_c` and `c_L` are fitted, per wheel, to three targets:
 
 1. Static stiffness on flat road follows `k(p) ≈ 22 + 24·p[bar]` N/mm within ±15 % over
    1.0–2.0 bar.
@@ -371,19 +382,55 @@ element deflection is `δ_i = max(0, R − r_i)`.
 Fitted values: *pending (plan task 5)*. The law is mildly progressive by construction,
 because the loaded length and width both grow with deflection.
 
-**Hysteresis.** `f_h,i = η · f_i · tanh(δ̇_i / δ̇_ε)`, with `δ̇_i = (δ_i − δ_i,prev)/dt` and
-`δ̇_ε = 0.01 m/s`. It is **rate-independent**: the loss per load cycle does not depend on
-frequency, as for rubber, and the `tanh` only regularises the sign change through zero.
-This choice follows from the drum data. A rolling tyre's leading half is compressing and its
-trailing half is recovering, so hysteresis shifts the centre of pressure forward and
-produces a rolling-resistance moment that is nearly speed-independent, as drum tests show.
-Viscous element damping would make that moment grow linearly with speed.
+**Material rate.** The rays are fixed in space and the tyre rotates through them, so an
+element's rate of deflection is taken **along the material**, not at the ray:
+
+`Dδ_i/Dt = (δ_i − δ_i,prev)/dt − ω · ∂δ/∂θ |_i`
+
+Here θ is measured from −Z towards the front, material at the bottom of a forward-rolling
+wheel moves towards −θ, and `∂δ/∂θ` is an upwind difference along the ray grid. The second
+term is not a refinement. In steady rolling on flat road every ray's deflection is
+constant, so without it the leading half of the patch would never be seen compressing and
+rolling resistance could not arise.
+
+States that belong to the material rather than to a ray — the Maxwell force below, and the
+tread's bristles in §4.1 — are **advected** with it: shifted by `−ω·dt` along the ray grid
+semi-Lagrangian each step, before the step's update.
+
+**Rate stiffening.** Rubber is stiffer when loaded fast. The drop tests measure dynamic
+stiffness at 1.16–1.35 × static: 1.38 × on first impact, 1.19 × in the settled 6.5 Hz
+oscillation [T2]. Neither the elastic law nor hysteresis produces that: hysteresis adds
+only `η` ≈ 7 % while compressing. Each element therefore carries a **Maxwell branch** in
+parallel with its elastic force, which makes it a standard linear solid:
+
+`f_m,i ← e^(−dt/τ) · f̃_m,i + k_r · (f_e,i − f̃_e,i)`
+
+The tildes are last step's values advected with the material, so the branch is driven by
+the material increment of the element's own elastic force, and scales with its local
+tangent stiffness.
+
+| Parameter | Value | Role |
+|---|---|---|
+| `k_r` | fitted | high-frequency stiffness `(1 + k_r)` × static; fitted so the 44 kg drop sled shows 1.16–1.35 |
+| `τ` | 0.2 s [est] | fully stiff at wheel-hop frequencies and over the ~20 ms an element spends in a rolling footprint; relaxed within a second in a static load |
+
+Sag therefore still follows the static law, and the equilibrium solve (§9), which clears
+the tyre's states every 20 ms, converges onto it. Added damping at 6.5 Hz is about 1 % of
+critical, and it counts towards the damping band below.
+
+**Hysteresis.** `f_h,i = η · f_e,i · tanh((Dδ_i/Dt) / δ̇_ε)`, with `δ̇_ε = 0.01 m/s`. It is
+**rate-independent**: the loss per load cycle does not depend on frequency, as for rubber,
+and the `tanh` only regularises the sign change through zero. This choice follows from the
+drum data. A rolling tyre's leading half is compressing and its trailing half is
+recovering, so hysteresis shifts the centre of pressure forward and produces a
+rolling-resistance moment that is nearly speed-independent, as drum tests show. Viscous
+element damping would make that moment grow linearly with speed.
 
 `η` is calibrated in this order:
 
 1. **Vertical damping ratio** of the free oscillation of a 44 kg drop sled on the tyre must
-   land in 2–5.5 % (loss factor 0.05–0.09). This is the quantity that reaches the rider,
-   which is what ride mode exists to study (§0), so it has priority.
+   land in 2–5.5 % (loss factor 0.05–0.09), rate stiffening included. This is the quantity
+   that reaches the rider, which is what ride mode exists to study (§0), so it has priority.
 2. **Rolling resistance** on flat asphalt at 20 km/h, 490.5 N and 1.5 bar must match the drum
    targets within ±15 %: Crr 0.0103 rear, ≈ 0.011 front.
 
@@ -391,8 +438,10 @@ If an `η` inside the damping band leaves Crr more than 15 % short, the shortfal
 by a **tread-loss term** on each patch, `F_roll = (Crr_target − Crr_η) · N_p`, opposing
 rolling and tapered through zero wheel speed like `opposing_torque`. This section will then
 record that the term was needed and how large it is. It is the only phenomenological term
-the model is allowed. A small viscous element term is permitted only if the damping ratio
-falls below 2 % with `η` at the top of its band.
+the model is allowed. A first estimate says it will be needed: with a near-elliptical load
+distribution, `η` = 0.07 moves the centre of pressure by about 0.4 `η·a` ≈ 2 mm, which is
+Crr ≈ 0.006. A small viscous element term is permitted only if the damping ratio falls
+below 2 % with `η` at the top of its band.
 
 **Rim.** For `δ_i > δ_rim` the element adds `k_rim·(δ_i − δ_rim)·Δs`, carrying the same
 hysteresis. `k_rim = 3.0×10⁷ N/m²` makes a 50 mm rim patch add ≈ 1 500 N/mm, the stability

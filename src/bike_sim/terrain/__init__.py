@@ -25,6 +25,16 @@ from bike_sim.terrain.obstacles import (
     TrapezoidBump,
     Washboard,
 )
+from bike_sim.terrain.surface import (
+    DEFAULT_SURFACE,
+    ROAD_SURFACE,
+    SURFACES,
+    TRAIL_SURFACE,
+    SurfaceMap,
+    SurfaceSpec,
+    available_surfaces,
+    get_surface,
+)
 from bike_sim.terrain.profile import TrackSpec, build_profile, profile_extent
 from bike_sim.terrain.wheelpath import (
     bridged_drop_m,
@@ -81,6 +91,14 @@ __all__ = [
     "effective_drop_m",
     "effective_rise_m",
     "bridged_drop_m",
+    "SurfaceSpec",
+    "SurfaceMap",
+    "SURFACES",
+    "DEFAULT_SURFACE",
+    "ROAD_SURFACE",
+    "TRAIL_SURFACE",
+    "available_surfaces",
+    "get_surface",
     "TrackSpec",
     "build_profile",
     "profile_extent",

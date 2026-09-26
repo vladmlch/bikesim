@@ -30,6 +30,7 @@ from bike_sim.terrain.obstacles import (
     TrapezoidBump,
 )
 from bike_sim.terrain.profile import TrackSpec
+from bike_sim.terrain.surface import ROAD_SURFACE
 
 Range = Tuple[float, float]
 Interval = Tuple[float, float]
@@ -285,6 +286,7 @@ def build_road(
     length_m: float = DEFAULT_ROAD_LENGTH_M,
     hand_placed: Sequence[Obstacle] = (),
     description: str = "",
+    surface: str = ROAD_SURFACE,
 ) -> TrackSpec:
     """
     Builds a validated track from hand-placed obstacles plus generated fill.
@@ -295,6 +297,8 @@ def build_road(
         length_m: Track length in metres.
         hand_placed: Obstacles authored explicitly; kept verbatim.
         description: Free-text description for the track.
+        surface: Road surface the pneumatic tyre rides on. Generated roads are asphalt by
+            default (docs/RIDE.md section 4.1).
 
     Returns:
         A validated TrackSpec.
@@ -306,6 +310,7 @@ def build_road(
         length_m=length_m,
         description=description,
         obstacles=list(hand_placed) + generated,
+        surface=surface,
     )
     track.validate()
     return track

@@ -16,20 +16,14 @@ Format::
     name = "my_road"
     length_m = 150
     description = "optional"
+    surface = "asphalt"       # optional; default asphalt with [generator], else hardpack
 
     [[obstacles]]
-    type = "pothole"          # sharp | sloped | bowl via `edge`
+    type = "pothole"          # edge: sharp | sloped | bowl; type "bump": shape cosine | trapezoid
     start_m = 20.0
     depth_mm = 80
     length_m = 0.5
     edge = "sharp"
-
-    [[obstacles]]
-    type = "bump"             # cosine | trapezoid via `shape`
-    start_m = 35.0
-    height_mm = 50
-    length_m = 0.4
-    shape = "cosine"
 
     [generator]
     seed = 0
@@ -60,6 +54,7 @@ from bike_sim.terrain.obstacles import (
     Washboard,
 )
 from bike_sim.terrain.profile import TrackSpec
+from bike_sim.terrain.surface import ROAD_SURFACE, SURFACES, TRAIL_SURFACE
 from bike_sim.terrain.road import (
     BUMP_SHAPES,
     POTHOLE_EDGES,
@@ -298,6 +293,14 @@ def carve_roughness(obstacles: List[Obstacle]) -> List[Obstacle]:
     return sorted(defects + carved, key=lambda o: o.start_m)
 
 
+def _surface_from(data: Mapping[str, Any]) -> str:
+    """Reads ``surface``; absent, a road (``[generator]``) is asphalt, else hardpack (RIDE.md 4.1)."""
+    value = data.get("surface", ROAD_SURFACE if "generator" in data else TRAIL_SURFACE)
+    if not isinstance(value, str) or value not in SURFACES:
+        raise TrackFileError(f"unknown surface {value!r}; allowed: {list(SURFACES)}")
+    return value
+
+
 def track_from_dict(data: Mapping[str, Any], *, seed: Union[int, None] = None,
                     length_m: Union[float, None] = None) -> TrackSpec:
     """
@@ -344,6 +347,7 @@ def track_from_dict(data: Mapping[str, Any], *, seed: Union[int, None] = None,
         length_m=track_length,
         description=str(data.get("description", "")),
         obstacles=hand_placed + generated,
+        surface=_surface_from(data),
     )
     try:
         track.validate()
@@ -415,6 +419,7 @@ def track_to_dict(track: TrackSpec) -> Dict[str, Any]:
     out: Dict[str, Any] = {"name": track.name, "length_m": track.length_m}
     if track.description:
         out["description"] = track.description
+    out["surface"] = track.surface
     out["obstacles"] = [obstacle_to_dict(o) for o in track.sorted_obstacles]
     return out
 
@@ -452,7 +457,7 @@ def dump_track(track: TrackSpec) -> str:
         "# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.",
         "",
     ]
-    for key in ("name", "length_m", "description"):
+    for key in ("name", "length_m", "description", "surface"):
         if key in doc:
             lines.append(f"{key} = {_toml_value(doc[key])}")
     for entry in doc["obstacles"]:

@@ -17,16 +17,24 @@ from typing import List, Tuple
 import numpy as np
 
 from bike_sim.terrain.obstacles import Obstacle
+from bike_sim.terrain.surface import DEFAULT_SURFACE, SURFACES
 
 
 @dataclass
 class TrackSpec:
-    """A named track: an ordered set of obstacles laid out along a road of known length."""
+    """
+    A named track: an ordered set of obstacles laid out along a road of known length.
+
+    ``surface`` names the road surface the pneumatic tyre rides on (docs/RIDE.md section
+    4.1). It does not touch the geometry: the profile, the heightfield and every `sphere`
+    run are the same whatever it says.
+    """
 
     name: str
     length_m: float
     obstacles: List[Obstacle] = field(default_factory=list)
     description: str = ""
+    surface: str = DEFAULT_SURFACE
 
     @property
     def sorted_obstacles(self) -> List[Obstacle]:
@@ -51,11 +59,16 @@ class TrackSpec:
         Checks that the layout is well formed.
 
         Raises:
-            ValueError: If the track length is non-positive, an obstacle falls outside the
-                track, or two obstacles overlap.
+            ValueError: If the track length is non-positive, the surface is not registered,
+                an obstacle falls outside the track, or two obstacles overlap.
         """
         if self.length_m <= 0.0:
             raise ValueError(f"track '{self.name}' has non-positive length {self.length_m}")
+        if self.surface not in SURFACES:
+            raise ValueError(
+                f"track '{self.name}': unknown surface '{self.surface}'; "
+                f"available: {', '.join(SURFACES)}"
+            )
 
         ordered = self.sorted_obstacles
         for obs in ordered:

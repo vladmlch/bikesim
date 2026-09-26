@@ -349,12 +349,12 @@ read.*
 
 **Steps:**
 
-- [ ] Element forces per RIDE.md §3.1: elastic `c_A·p·w(δ) + k_c·δ` with
+- [x] Element forces per RIDE.md §3.1: elastic `c_A·p·w(δ) + k_c·δ` with
   `w(δ) = 2·√(δ(2ρ − δ))`, Maxwell branch, hysteresis `η·f_e·tanh((Dδ/Dt)/δ̇_ε)`, rim
   term, clamp at ≥ 0. `Dδ/Dt` is the **material rate**: the same-ray difference minus
   `ω·∂δ/∂θ` (upwind). Material states (`f̃_e`, `f_m`) are advected by `−ω·dt`,
   semi-Lagrangian, before the update.
-- [ ] **Calibration fits** (a small `scipy.optimize` routine in the test helpers, results
+- [x] **Calibration fits** (a small `scipy.optimize` routine in the test helpers, results
   frozen as `TyreSpecs` defaults): `c_A`, `k_c`, `c_L` and `k_r` so that
   - static stiffness follows `22 + 24·p` N/mm within ±15 % over 1.0–2.0 bar;
   - contact length at 418 N is 133 mm @ 1.38 bar and 122 mm @ 1.72 bar within ±15 %;
@@ -362,13 +362,14 @@ read.*
     1.16–1.35 × static (this fits `k_r`);
   - steady rolling on flat road shows a nonzero, forward-shifted centre of pressure (a guard
     against losing the transport term).
-- [ ] Hysteresis: in the same sled, the settled free-oscillation damping ratio lands in
-  2–5.5 %. **This sets η** (RIDE.md §3.1 calibration order: damping first). Task 7 then
-  checks Crr with this η and applies the tread-loss fallback only if Crr is > 15 % short.
-- [ ] Rim strike: onset deflection equals `rim_strike_deflection_mm` (≈ 46 mm) and lies in
+- [x] Hysteresis: in the same 44 kg sled, dropped 10 mm onto the tyre, the mean log-decrement
+  damping ratio over the first three rebound cycles lands in 2–5.5 %. **This sets η** (RIDE.md
+  §3.1 calibration order: damping first). Task 7 then checks Crr with this η and applies the
+  tread-loss fallback only if Crr is > 15 % short.
+- [x] Rim strike: onset deflection equals `rim_strike_deflection_mm` (≈ 46 mm) and lies in
   0.80–0.85 × section height; the event record carries peak load, speed, x and absorbed
   energy.
-- [ ] Stability test: `ω·dt ≤ 0.4` using the compiled wheel masses and the rim cap.
+- [x] Stability test: `ω·dt ≤ 0.4` using the compiled wheel masses and the 50 mm rim cap.
 
 **Verification:** tests; no MuJoCo import in `carcass.py`.
 

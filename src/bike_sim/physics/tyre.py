@@ -76,7 +76,7 @@ class TyreSpecs:
     loss_factor: float = 0.07
     hysteresis_rate_eps_mps: float = 0.01
     relaxation_length_mm: float = 90.0
-    rim_stiffness_n_mm2: float = 30.0
+    rim_stiffness_n_mm2: float = 28.0
     tread_loss_crr: float = 0.0
 
     def __post_init__(self) -> None:
@@ -136,6 +136,11 @@ FRONT_TYRE = TyreSpecs(
     section_height_mm=57.0,
     pressure_bar=1.5,
     crr_reference=0.011,
+    area_factor=0.4435,
+    carcass_stiffness_n_mm2=0.1194,
+    contact_length_factor=0.8589,
+    rate_stiffening=0.2484,
+    loss_factor=0.0662,
 )
 REAR_TYRE = TyreSpecs(
     name="Schwalbe Hans Dampf 27.5x2.4",
@@ -144,6 +149,11 @@ REAR_TYRE = TyreSpecs(
     section_height_mm=55.0,
     pressure_bar=1.7,
     crr_reference=0.0103,
+    area_factor=0.4576,
+    carcass_stiffness_n_mm2=0.1225,
+    contact_length_factor=0.8801,
+    rate_stiffening=0.2498,
+    loss_factor=0.0690,
 )
 
 

@@ -379,8 +379,15 @@ are not scaled.
 2. Contact length at 418 N is 133 mm at 1.38 bar and 122 mm at 1.72 bar, within ±15 %.
 3. The pressure term carries 70–100 % of the load at nominal pressure.
 
-Fitted values: *pending (plan task 5)*. The law is mildly progressive by construction,
-because the loaded length and width both grow with deflection.
+Fitted values (1024-ray flat-road fit; the 256-ray `detailed` tier also passes the targets):
+
+| Wheel | `c_A` | `k_c`, N/mm² | `c_L` | `k_r` | `η` |
+|---|---:|---:|---:|---:|---:|
+| Front, Magic Mary | 0.4435 | 0.1194 | 0.8589 | 0.2484 | 0.0662 |
+| Rear, Hans Dampf | 0.4576 | 0.1225 | 0.8801 | 0.2498 | 0.0690 |
+
+The law is mildly progressive by construction, because the loaded length and width both
+grow with deflection.
 
 **Material rate.** The rays are fixed in space and the tyre rotates through them, so an
 element's rate of deflection is taken **along the material**, not at the ray:
@@ -411,7 +418,7 @@ tangent stiffness.
 
 | Parameter | Value | Role |
 |---|---|---|
-| `k_r` | fitted | high-frequency stiffness `(1 + k_r)` × static; fitted so the 44 kg drop sled shows 1.16–1.35 |
+| `k_r` | 0.2484 front / 0.2498 rear | high-frequency stiffness `(1 + k_r)` × static; drop-sled ratios are 1.256 front / 1.255 rear |
 | `τ` | 0.2 s [est] | fully stiff at wheel-hop frequencies and over the ~20 ms an element spends in a rolling footprint; relaxed within a second in a static load |
 
 Sag therefore still follows the static law, and the equilibrium solve (§9), which clears
@@ -440,14 +447,18 @@ rolling and tapered through zero wheel speed like `opposing_torque`. This sectio
 record that the term was needed and how large it is. It is the only phenomenological term
 the model is allowed. A first estimate says it will be needed: with a near-elliptical load
 distribution, `η` = 0.07 moves the centre of pressure by about 0.4 `η·a` ≈ 2 mm, which is
-Crr ≈ 0.006. A small viscous element term is permitted only if the damping ratio falls
-below 2 % with `η` at the top of its band.
+Crr ≈ 0.006. The current fits are `η` = 0.0662 front and 0.0690 rear. A pure-NumPy 44 kg
+sled dropped 10 mm onto the tyre gives mean log-decrement damping ratios of ≈3.75 % on both
+tyres over the first three rebound cycles. A small viscous element term is permitted
+only if the damping ratio falls below 2 % with `η` at the top of its band.
 
 **Rim.** For `δ_i > δ_rim` the element adds `k_rim·(δ_i − δ_rim)·Δs`, carrying the same
-hysteresis. `k_rim = 3.0×10⁷ N/m²` makes a 50 mm rim patch add ≈ 1 500 N/mm, the stability
-cap below. A **rim-strike event** opens when any element first exceeds `δ_rim` and closes
-when none does. It records `x`, speed, peak wheel load, peak rim force and the energy the rim
-term absorbed. The tyre stays inflated: there is no puncture and no pressure loss (plan D11).
+hysteresis. `k_rim = 2.8×10⁷ N/m²` makes a 50 mm rim patch add ≈ 1 400 N/mm. This is stiff
+compared with the tyre and keeps the 0.5 ms explicit step stable for the compiled front-wheel
+mass (below). A **rim-strike event** opens when any element first exceeds `δ_rim` and closes
+when none does. It records `x`, speed, peak wheel load, peak rim force and the peak elastic
+energy stored in the rim term. The tyre stays inflated: there is no puncture and no pressure
+loss (plan D11).
 For scale, Schwalbe's edge-drop test damages a Super Trail casing at 61 J and a Super
 Gravity casing at 95 J (§11). The event energy can be read against those figures, but no
 threshold is enforced.
@@ -488,8 +499,11 @@ other writers run, so every writer sees one snapshot as before (§6).
 
 **Stability budget.** The tyre force is integrated explicitly, like the suspension (§10),
 so `ω·dt ≤ 0.4` must hold for the stiffest element set a wheel can see. The tyre alone gives
-`√(63 000 / 2.6) · 0.0005 ≈ 0.08`. With the rim engaged, capped at ≈ 1 500 N/mm, it gives
-`≈ 0.38`. A test asserts the bound from the compiled wheel masses.
+`√(63 000 / 2.6) · 0.0005 ≈ 0.08`. At 2 bar, the fitted high-frequency carcass stiffness is
+at most 87.5 N/mm. Together with the 50 mm rim patch (1 400 N/mm), this gives
+`ω·dt = 0.394` for the compiled 2.40 kg front wheel and `0.365` for the 2.80 kg rear wheel.
+The `detailed` tier halves those values with its 0.25 ms step. A test asserts the bound from
+the compiled wheel masses.
 
 **Tiers.** Resolution changes between tiers; the physics does not.
 
@@ -1086,7 +1100,7 @@ says so:
 | Casing width `W_c` | 60 mm | tyre width class |
 | Compressed casing and tread `t_c` | 6 mm | casing 1.9 mm + centre knobs 3.8–4.0 mm [T3] |
 | Hysteresis regularisation `δ̇_ε` | 0.01 m/s | numerical |
-| Rim stiffness `k_rim` | 3.0×10⁷ N/m² | stability cap (§3.1) |
+| Rim stiffness `k_rim` | 2.8×10⁷ N/m² | stability cap with the compiled 2.40 kg front wheel (§3.1) |
 | Relaxation length σ | 90 mm (60–120) | lateral 160 mm derived from [T1]; road tyres 79–141 mm |
 | Normalised slip stiffness C_κ/F_z | 15 / 12 / 7 / 10 by surface | MTB cornering stiffness as proxy [T1]; car and trekking data [T5] |
 | Surface μ peak / sliding | §4.1 table | car Burckhardt curves scaled to MTB data [T6] |

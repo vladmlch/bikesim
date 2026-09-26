@@ -38,6 +38,7 @@ from bike_sim.sim.ride.termination import (
 from bike_sim.sim.ride.virtual_rider import CrashDetector, CrashEvent, PitchStabilizer
 from bike_sim.terrain import (
     DEFAULT_PRESET,
+    HeightFieldSpec,
     TrackSpec,
     assert_track_fits,
     build_field_data,
@@ -69,6 +70,7 @@ class RideSimulation:
         controller: Optional[SuspensionController] = None,
         coil_shock: Optional[CoilShock] = None,
         debug_markers: bool = False,
+        field: Optional[HeightFieldSpec] = None,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -87,13 +89,17 @@ class RideSimulation:
                 interactive viewer's marker toggle has something to show. They carry
                 `mass="0"` and no collision, and a 4000-step traverse was verified to be
                 bit-identical with and without them, so the flag is visual only.
+            field: Heightfield geometry to compile. Defaults to
+                `HeightFieldSpec.for_track(track)`: the shipped field for any track that
+                fits it, a longer field otherwise.
 
         Raises:
-            ValueError: If the track does not fit the fixed heightfield envelope.
+            ValueError: If the track does not fit the heightfield envelope.
             RuntimeError: If the starting equilibrium does not converge.
         """
         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
-        assert_track_fits(self.track)
+        self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
+        assert_track_fits(self.track, self.field)
 
         self.specs = specs if specs is not None else BikeSpecs()
         self.solver = HorstLinkageSolver(self.specs)
@@ -107,10 +113,11 @@ class RideSimulation:
                 mode="ride",
                 include_rider=include_rider,
                 debug_markers=debug_markers,
+                field=self.field,
             )
         )
         # Before the first forward pass, before the equilibrium solve, before any viewer.
-        self.model.hfield_data[:] = build_field_data(self.track).reshape(-1)
+        self.model.hfield_data[:] = build_field_data(self.track, self.field).reshape(-1)
         self.data = mujoco.MjData(self.model)
 
         self.controller = controller if controller is not None else _default_controller(self.specs)

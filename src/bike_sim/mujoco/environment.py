@@ -8,7 +8,7 @@ from typing import Optional
 import xml.etree.ElementTree as ET
 import numpy as np
 
-from bike_sim.terrain.heightfield import FIELD
+from bike_sim.terrain.heightfield import FIELD, HeightFieldSpec
 
 
 def build_environment(
@@ -16,9 +16,17 @@ def build_environment(
     mode: str,
     ground_z_m: float,
     P10: np.ndarray,
+    field: HeightFieldSpec = FIELD,
 ) -> None:
     """
     Builds lighting, ground plane, workshop stand fixtures, and (in ride mode) the catch plane.
+
+    Args:
+        worldbody: <worldbody> element to append to.
+        mode: Simulation mode string.
+        ground_z_m: World height of the road surface at the track start, in metres.
+        P10: Rear axle hardpoint, used to place the stand fixtures.
+        field: Ride-mode heightfield geometry; the catch plane sits below its floor.
     """
     # Lights
     ET.SubElement(
@@ -48,7 +56,7 @@ def build_environment(
         # No floor plane at road level: a MuJoCo plane is an infinite half-space for
         # collision and would bridge every pothole. Only a runaway catch plane, backed
         # off below the heightfield's floor, closes out the world.
-        catch_plane_z_m = FIELD.catch_plane_z_m(ground_z_m)
+        catch_plane_z_m = field.catch_plane_z_m(ground_z_m)
         ET.SubElement(
             worldbody,
             "geom",

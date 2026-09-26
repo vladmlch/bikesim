@@ -8,18 +8,30 @@ Nothing here imports MuJoCo. The module produces a plain ``(nrow, ncol)`` array 
 plus the scalar placement values a caller needs; writing the array into
 ``model.hfield_data`` and emitting the MJCF asset belong to the MuJoCo layer.
 
-**The field geometry is deliberately fixed.** Every preset shares one grid, so ride mode
-compiles to exactly one XML with one golden baseline, and a track is purely a Python
-object. The price is an envelope every preset must fit: 120 m long, 5 mm resolution, and a
-profile confined to [-2.8, +0.6] m about the starting road level, which leaves the default
-preset roughly 290 mm of headroom below and 510 mm above.
+**The default field geometry is fixed.** Every shipped preset shares one grid, so ride
+mode compiles to exactly one XML with one golden baseline, and a track is purely a Python
+object. The envelope every preset must fit: 120 m long, 5 mm resolution, and a profile
+confined to [-2.8, +0.6] m about the starting road level, which leaves the default preset
+roughly 290 mm of headroom below and 510 mm above.
+
+A track longer than the default field gets a longer field derived from its length
+(:meth:`HeightFieldSpec.for_track`): same resolution, same vertical envelope, more
+columns. That produces a different in-memory XML, never a regenerated baseline; anything
+that fits the default field still uses the default field byte for byte.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+import math
 from typing import Tuple
 import numpy as np
 
 from bike_sim.terrain.profile import TrackSpec, build_profile, profile_extent
+
+DEFAULT_RESOLUTION_M = 0.005
+FIELD_RUNOUT_MARGIN_M = 5.0
+"""Flat road kept beyond the end of a track when the field is sized to it."""
+FIELD_LENGTH_STEP_M = 10.0
+"""Derived field lengths are rounded up to this step so the geometry stays legible."""
 
 
 @dataclass
@@ -146,6 +158,65 @@ class HeightFieldSpec:
 
         data = (profile_m + self.datum_z_m) / self.elevation_m
         return np.tile(data, (self.nrow, 1))
+
+    def with_length(self, field_length_m: float) -> "HeightFieldSpec":
+        """
+        Returns a copy of this field stretched to a new length at the same resolution.
+
+        Args:
+            field_length_m: Desired longitudinal extent in metres; must be a whole number
+                of resolution steps.
+
+        Returns:
+            A new spec with ``radius_x_m`` and ``ncol`` recomputed and every other
+            attribute unchanged.
+
+        Raises:
+            ValueError: If the length is not positive or not a multiple of the resolution.
+        """
+        if field_length_m <= 0.0:
+            raise ValueError(f"field length must be positive, got {field_length_m}")
+        steps = field_length_m / self.resolution_m
+        if abs(steps - round(steps)) > 1e-6:
+            raise ValueError(
+                f"field length {field_length_m} m is not a multiple of the "
+                f"{self.resolution_m * 1000:.1f} mm resolution"
+            )
+        return replace(self, radius_x_m=field_length_m / 2.0, ncol=int(round(steps)) + 1)
+
+    @classmethod
+    def for_track_length(cls, track_length_m: float) -> "HeightFieldSpec":
+        """
+        Chooses the field for a track of the given length.
+
+        A track that fits the default field with ``FIELD_RUNOUT_MARGIN_M`` of flat road
+        to spare gets the default field, unchanged. A longer one gets the default field
+        stretched to the track length plus that margin, rounded up to
+        ``FIELD_LENGTH_STEP_M``. The margin matters: the front wheel runs ahead of the
+        chassis root, and past the field's far edge there is nothing but the catch plane.
+
+        Args:
+            track_length_m: Track length in metres.
+
+        Returns:
+            The field spec to compile the ride model with.
+        """
+        default = cls()
+        needed = track_length_m + FIELD_RUNOUT_MARGIN_M
+        if needed <= default.track_length_m:
+            return default
+        field_length = math.ceil(needed / FIELD_LENGTH_STEP_M) * FIELD_LENGTH_STEP_M
+        return default.with_length(float(field_length))
+
+    @classmethod
+    def for_track(cls, track: TrackSpec) -> "HeightFieldSpec":
+        """Chooses the field for a track; see :meth:`for_track_length`."""
+        return cls.for_track_length(track.length_m)
+
+    @property
+    def is_default(self) -> bool:
+        """Whether this spec is the shipped default field pinned by the golden baseline."""
+        return self == HeightFieldSpec()
 
 
 FIELD = HeightFieldSpec()

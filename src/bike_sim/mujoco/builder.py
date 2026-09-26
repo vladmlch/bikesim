@@ -32,6 +32,7 @@ from bike_sim.mujoco.linkage import (
 from bike_sim.mujoco.actuators import build_actuators
 from bike_sim.mujoco.sensors import build_sensors
 from bike_sim.mujoco.terrain import build_terrain
+from bike_sim.terrain.heightfield import FIELD, HeightFieldSpec
 
 
 def generate_mujoco_xml(
@@ -41,6 +42,7 @@ def generate_mujoco_xml(
     mass_specs: Optional[BikeMassSpecs] = None,
     include_rider: bool = False,
     debug_markers: bool = False,
+    field: Optional[HeightFieldSpec] = None,
 ) -> str:
     """
     Generates a complete, valid, high-fidelity MuJoCo MJCF XML model string.
@@ -52,6 +54,9 @@ def generate_mujoco_xml(
         mass_specs: Physical component mass specifications.
         include_rider: Whether to include rider geometry and mass.
         debug_markers: Whether to include yellow debug joint markers.
+        field: Ride-mode heightfield geometry. Defaults to the shipped field pinned by
+            the golden baseline; a longer track passes a stretched field. Ignored
+            outside ride mode.
 
     Returns:
         Formatted MJCF XML string ready for MuJoCo simulation.
@@ -62,6 +67,8 @@ def generate_mujoco_xml(
         solver = HorstLinkageSolver(specs)
     if mass_specs is None:
         mass_specs = BikeMassSpecs()
+    if field is None:
+        field = FIELD
 
     # Compute uncompressed reference state (0 mm wheel travel)
     st0 = solver.solve_state_from_wheel_travel(0.0)
@@ -117,9 +124,10 @@ def generate_mujoco_xml(
         mode=mode,
         ground_z_m=ground_z_m,
         P10=P10,
+        field=field,
     )
     if mode == "ride":
-        build_terrain(root, worldbody, ground_z_m)
+        build_terrain(root, worldbody, ground_z_m, spec=field)
 
     # 4. Frame & Attached Bodies
     frame = build_frame_body(

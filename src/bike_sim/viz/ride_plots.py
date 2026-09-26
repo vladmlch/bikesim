@@ -23,6 +23,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 
 from bike_sim.sim.ride.metrics import ACCEL_FILTER_HZ, GRAVITY_MPS2, lowpass
+from bike_sim.physics.tyre import FRONT_TYRE, REAR_TYRE
 from bike_sim.terrain.obstacles import POTHOLE_TYPES
 from bike_sim.terrain.profile import TrackSpec, build_profile
 from bike_sim.terrain.wheelpath import FRONT_WHEEL_RADIUS_M, REAR_WHEEL_RADIUS_M, effective_drop_m
@@ -225,6 +226,57 @@ def plot_ride(channels: Dict[str, np.ndarray], sample_interval_s: float, track: 
     ]
 
 
+def plot_tyres(channels: Dict[str, np.ndarray], track: TrackSpec,
+               path: Union[str, Path]) -> Path:
+    """Plots pneumatic tyre load, deflection/rim strikes, slip and patch length."""
+    plt, _ = setup_matplotlib()
+    fig, axs = plt.subplots(2, 2, figsize=(16, 9), dpi=150, sharex=True)
+    fig.patch.set_facecolor(BG)
+    x = channels["x_m"]
+    wheel_data = (
+        ("front", FORK, FRONT_TYRE),
+        ("rear", SHOCK, REAR_TYRE),
+    )
+
+    def _event_x(wheel: str) -> np.ndarray:
+        flag = np.asarray(channels[f"{wheel}_rim_strike"], dtype=float) > 0.5
+        if not flag.size:
+            return np.zeros(0)
+        starts = flag & ~np.r_[False, flag[:-1]]
+        return x[starts]
+
+    _style_ax(axs[0, 0], "Tyre vertical load", "", "load (N)")
+    _style_ax(axs[0, 1], "Tyre deflection and rim strikes", "", "deflection (mm)")
+    _style_ax(axs[1, 0], "Longitudinal slip", "track x (m)", "slip ratio κ")
+    _style_ax(axs[1, 1], "Contact patch length", "track x (m)", "length (mm)")
+    axs[1, 0].axhline(0.0, color=MUTED, linewidth=0.7)
+    axs[1, 0].axhline(-1.0, color=RAW, linestyle="--", linewidth=0.8, label="locked wheel κ = −1")
+
+    for wheel, color, specs in wheel_data:
+        axs[0, 0].plot(x, channels[f"{wheel}_tyre_fz_n"], color=color, linewidth=0.8,
+                       label=f"{wheel} Fz")
+        axs[0, 1].plot(x, channels[f"{wheel}_tyre_deflection_mm"], color=color, linewidth=0.8,
+                       label=f"{wheel} deflection")
+        axs[0, 1].axhline(specs.rim_strike_deflection_mm, color=color, linestyle=":", linewidth=0.8,
+                           label=f"{wheel} rim threshold")
+        axs[1, 0].plot(x, channels[f"{wheel}_slip_ratio"], color=color, linewidth=0.8,
+                       label=f"{wheel} κ")
+        axs[1, 1].plot(x, channels[f"{wheel}_patch_length_mm"], color=color, linewidth=0.8,
+                       label=f"{wheel} patch")
+        for event_x in _event_x(wheel):
+            for ax in (axs[0, 0], axs[0, 1], axs[1, 1]):
+                ax.axvline(event_x, color=RAW, linestyle="--", linewidth=0.8, alpha=0.65)
+
+    _draw_markers(axs[0, 0], track.markers)
+    _draw_markers(axs[0, 1], track.markers)
+    _draw_markers(axs[1, 0], track.markers)
+    _draw_markers(axs[1, 1], track.markers)
+    for ax in axs.flat:
+        _legend(ax, loc="upper left")
+    plt.tight_layout()
+    return _save(plt, fig, Path(path))
+
+
 # --------------------------------------------------------------------------------------
 # Track preview
 # --------------------------------------------------------------------------------------
@@ -280,5 +332,6 @@ __all__ = [
     "plot_shaft_velocity",
     "plot_acceleration",
     "plot_ride",
+    "plot_tyres",
     "plot_track_profile",
 ]

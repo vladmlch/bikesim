@@ -15,6 +15,7 @@ Tests include:
 """
 
 from math import degrees
+from dataclasses import replace
 from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import mujoco
@@ -38,6 +39,7 @@ from bike_sim.sim.ride.hud import (
     pitch_label,
 )
 from bike_sim.sim.ride.input import BRAKE_STRENGTH_STEP, TARGET_SPEED_STEP_KMH
+from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.ride.termination import (
     REASON_CRASH,
     REASON_END_OF_TRACK,
@@ -841,6 +843,24 @@ def test_hud_line_reports_the_brake_toggle_state(flat_sim: RideSimulation):
     assert "Brake:off( 60%)" in hud.line(flat_sim, braking=False, brake_strength=0.6)
 
 
+def test_pneumatic_hud_shows_pressure_slip_and_a_rim_strike_flash():
+    sim = RideSimulation(
+        track=get_preset("flat"),
+        tyre=TyreConfig(model="pneumatic"),
+        rider="none",
+    )
+    hud = RideHUD(sim.model)
+    line = hud.line(sim)
+    assert "Tyre F/R 1.50/1.70bar" in line
+    assert "κ" in line
+    assert "RIM STRIKE" not in line
+
+    sim.tyre_applier.front_outputs = replace(
+        sim.tyre_applier.front_outputs, rim_strike_active=True
+    )
+    assert "RIM STRIKE" in hud.line(sim)
+
+
 @pytest.mark.parametrize(
     "pitch_rad,expected",
     [(0.2, PITCH_NOSE_DOWN), (-0.2, PITCH_NOSE_UP), (0.0, PITCH_LEVEL)],
@@ -871,7 +891,8 @@ def test_nearest_obstacle_is_none_on_a_featureless_track():
 def test_help_text_documents_the_new_ride_bindings():
     """The help screen names every binding that has no test-stand counterpart."""
     text = RideHUD.get_help_text()
-    for token in ("W / S", "SPACE", ", / .", "Cruise Target", "Brake Strength", "TOGGLE"):
+    for token in ("W / S", "SPACE", ", / .", "Cruise Target", "Brake Strength", "TOGGLE",
+                  "N / M", "; / '", "TYRES"):
         assert token in text
 
 
@@ -907,10 +928,43 @@ def test_ride_keys_are_the_playground_keys_with_the_stand_only_ones_replaced(
     arrow_keys = {264, 265}
     rider_toggle_keys = {66, 98}
     brake_strength_keys = {44, 46}
+    tyre_pressure_keys = {78, 110, 77, 109, 59, 39}
 
     assert set(session.input.bound_keycodes) == (
-        (playground_keys - arrow_keys - rider_toggle_keys) | brake_strength_keys
+        (playground_keys - arrow_keys - rider_toggle_keys)
+        | brake_strength_keys
+        | tyre_pressure_keys
     )
+
+
+def test_tyre_pressure_keys_explain_sphere_mode(capsys: pytest.CaptureFixture, session: RideSession):
+    assert session.sim.tyre_applier is None
+    assert session.input.handle_key(ord("N")) is True
+    assert "require --tyre-model pneumatic" in capsys.readouterr().out
+
+
+def test_tyre_pressure_keys_change_and_clamp_both_wheels(capsys: pytest.CaptureFixture):
+    sim = RideSimulation(
+        track=get_preset("flat"),
+        tyre=TyreConfig(model="pneumatic"),
+        rider="none",
+    )
+    session = RideSession(sim, show_telemetry=False)
+    front = sim.tyre_applier.front_tyre
+    rear = sim.tyre_applier.rear_tyre
+
+    session.handle_key(ord("N"))
+    session.handle_key(ord("M"))
+    session.handle_key(ord(";"))
+    session.handle_key(ord("'"))
+    assert (front.tyre.pressure_bar, rear.tyre.pressure_bar) == pytest.approx((1.50, 1.70))
+
+    front.set_pressure(0.8)
+    session.handle_key(ord("N"))
+    assert front.tyre.pressure_bar == pytest.approx(0.8)
+    session.handle_key(ord("M"))
+    assert front.tyre.pressure_bar == pytest.approx(0.85)
+    assert "0.85 bar" in capsys.readouterr().out
 
 
 def test_unmapped_key_is_reported_as_unhandled(session: RideSession):

@@ -18,6 +18,17 @@ from typing import List, Optional, Sequence
 
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RIDER_VARIANTS, RiderSpecs
+from bike_sim.physics.tyre import (
+    DEFAULT_TYRE_MODEL,
+    DEFAULT_TYRE_TIER,
+    FRONT_TYRE,
+    PRESSURE_MAX_BAR,
+    PRESSURE_MIN_BAR,
+    REAR_TYRE,
+    TYRE_MODELS,
+    TYRE_TIERS,
+    TyreConfig,
+)
 from bike_sim.sim.ride.cruise import (
     DEFAULT_TARGET_SPEED_KMH,
     MAX_TARGET_SPEED_KMH,
@@ -29,6 +40,7 @@ from bike_sim.terrain import (
     DEFAULT_ROAD_PRESET,
     PRESETS,
     ROAD_LEVEL_SPECS,
+    SURFACES,
     TrackFileError,
     TrackSpec,
     available_presets,
@@ -99,7 +111,51 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
                         help="print a preset as a TOML track file and exit")
     parser.add_argument("--list-tracks", action="store_true", help="list the built-in presets and exit")
     parser.add_argument("--no-plots", action="store_true", help="headless: skip the PNG figures")
+    parser.add_argument(
+        "--tyre-model", choices=TYRE_MODELS, default=DEFAULT_TYRE_MODEL,
+        help=f"wheel contact model: sphere or pneumatic (default {DEFAULT_TYRE_MODEL})",
+    )
+    parser.add_argument(
+        "--tyre-tier", choices=TYRE_TIERS, default=DEFAULT_TYRE_TIER,
+        help=f"pneumatic brush fidelity (default {DEFAULT_TYRE_TIER})",
+    )
+    parser.add_argument(
+        "--tyre-pressure", type=_parse_tyre_pressures, default=(FRONT_TYRE.pressure_bar, REAR_TYRE.pressure_bar),
+        metavar="FRONT/REAR", help="front/rear tyre pressure in bar (default 1.5/1.7)",
+    )
+    parser.add_argument(
+        "--surface", choices=tuple(SURFACES), default=None,
+        help="override the track surface friction preset (default: track surface)",
+    )
     return parser.parse_args(argv)
+
+
+def _parse_tyre_pressures(value: str) -> tuple[float, float]:
+    """Parses the CLI's ``FRONT/REAR`` bar pair and enforces the live pressure limits."""
+    parts = value.split("/")
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError("--tyre-pressure must be FRONT/REAR in bar")
+    try:
+        front, rear = (float(part) for part in parts)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("--tyre-pressure values must be numbers") from exc
+    if not all(PRESSURE_MIN_BAR <= pressure <= PRESSURE_MAX_BAR for pressure in (front, rear)):
+        raise argparse.ArgumentTypeError(
+            f"--tyre-pressure values must be in [{PRESSURE_MIN_BAR:.1f}, {PRESSURE_MAX_BAR:.1f}] bar"
+        )
+    return front, rear
+
+
+def _tyre_config(args: argparse.Namespace) -> TyreConfig:
+    """Builds the selected wheel model from parsed command-line values."""
+    front_bar, rear_bar = args.tyre_pressure
+    return TyreConfig(
+        model=args.tyre_model,
+        tier=args.tyre_tier,
+        front=FRONT_TYRE.with_pressure(front_bar),
+        rear=REAR_TYRE.with_pressure(rear_bar),
+        surface=args.surface,
+    )
 
 
 # --------------------------------------------------------------------------------------
@@ -184,10 +240,23 @@ def track_seed(name_or_path: str, seed: Optional[int]) -> Optional[int]:
     return None
 
 
-def run_dir_name(track: TrackSpec, speed_kmh: float, seed: Optional[int]) -> str:
-    """``<track>_<speed>_s<seed>`` (seed suffix only when one applies)."""
+def run_dir_name(
+    track: TrackSpec,
+    speed_kmh: float,
+    seed: Optional[int],
+    tyre: Optional[TyreConfig] = None,
+) -> str:
+    """Builds a unique artifact directory, adding tyre settings for pneumatic runs."""
     name = f"{track.name}_{speed_kmh:g}"
-    return f"{name}_s{seed}" if seed is not None else name
+    if seed is not None:
+        name = f"{name}_s{seed}"
+    if tyre is not None and tyre.pneumatic:
+        surface = tyre.surface or track.surface
+        name = (
+            f"{name}_pneumatic-{tyre.tier}_{tyre.front.pressure_bar:.2f}-"
+            f"{tyre.rear.pressure_bar:.2f}bar_{surface}"
+        )
+    return name
 
 
 # --------------------------------------------------------------------------------------
@@ -298,7 +367,13 @@ def _fit_sag(target_pct: float, specs: BikeSpecs, rider: RiderSpecs):
     return controller, coil, {"sag_target_pct": target_pct, "fork_psi": psi, "coil_rate_n_m": rate}
 
 
-def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int], rider: RiderSpecs) -> int:
+def _headless(
+    track: TrackSpec,
+    args: argparse.Namespace,
+    seed: Optional[int],
+    rider: RiderSpecs,
+    tyre: TyreConfig,
+) -> int:
     from bike_sim.sim.ride.metrics import RAMP_EXCLUSION_M, summarize_ride
     from bike_sim.sim.ride.recorder import RideRecorder
     from bike_sim.sim.ride_sim import RideSimulation
@@ -312,14 +387,19 @@ def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int], r
         controller, coil, extras_sag = _fit_sag(args.sag, specs, rider)
         extras.update(extras_sag)
 
-    run_dir = Path(args.out) / run_dir_name(track, args.speed, seed)
+    run_dir = Path(args.out) / run_dir_name(track, args.speed, seed, tyre)
     print(f"{PREFIX} {track.name}: {track.length_m:.0f} m, {len(track.markers)} marked obstacles, "
           f"target {args.speed:g} km/h -> {run_dir}")
     print(f"{PREFIX} {describe_rider(rider, specs)}")
+    tyre_surface = tyre.surface or track.surface
+    print(
+        f"{PREFIX} tyres: {tyre.model}/{tyre.tier}, pressure "
+        f"{tyre.front.pressure_bar:.2f}/{tyre.rear.pressure_bar:.2f} bar, surface {tyre_surface}"
+    )
 
     sim = RideSimulation(
         track=track, specs=specs, target_speed_kmh=args.speed, rider=rider,
-        controller=controller, coil_shock=coil,
+        controller=controller, coil_shock=coil, tyre=tyre,
     )
     eq = sim.equilibrium
     print(f"{PREFIX} start equilibrium: fork {eq['fork_travel_mm']:.1f} mm "
@@ -331,6 +411,13 @@ def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int], r
               f"({eq['rider_saddle_load_n']:.0f} / {eq['rider_pedals_load_n']:.0f} / {eq['rider_bar_load_n']:.0f} N)")
     extras["start_fork_travel_mm"] = float(eq["fork_travel_mm"])
     extras["start_shock_stroke_mm"] = float(eq["shock_stroke_mm"])
+    extras.update({
+        "tyre_model": tyre.model,
+        "tyre_tier": tyre.tier,
+        "tyre_pressure_front_bar": tyre.front.pressure_bar,
+        "tyre_pressure_rear_bar": tyre.rear.pressure_bar,
+        "surface": tyre_surface,
+    })
 
     recorder = RideRecorder(sim, decimate=args.decimate)
     recorder.record(sim)
@@ -344,15 +431,20 @@ def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int], r
         shock_bumper_engage_mm=sim.applier.coil_shock.specs.bumper_engage_mm,
         start_x_m=sim.start_x_m, extras=extras,
         rider_variant=rider.variant, rider_mass_kg=rider.mass_kg,
+        tyre_rim_events=recorder.tyre_rim_events,
+        tyre_rim_starts=recorder.tyre_rim_starts,
+        tyre_times_s=recorder.tyre_times_s,
     )
 
     written: List[Path] = [recorder.write_csv(run_dir / "telemetry.csv"), summary.write_json(run_dir / "summary.json")]
     if not args.no_plots:
-        from bike_sim.viz.ride_plots import plot_ride, plot_track_profile
+        from bike_sim.viz.ride_plots import plot_ride, plot_track_profile, plot_tyres
 
         window = channels["x_m"] >= sim.start_x_m + RAMP_EXCLUSION_M
         written += plot_ride(channels, recorder.sample_interval_s, track, specs.fork_travel,
                              specs.shock_stroke, run_dir, window=window)
+        if sim.tyre_applier is not None:
+            written.append(plot_tyres(channels, track, run_dir / "tyres.png"))
         written.append(plot_track_profile(track, run_dir / "profile.png"))
 
     print()
@@ -363,14 +455,19 @@ def _headless(track: TrackSpec, args: argparse.Namespace, seed: Optional[int], r
     return 0
 
 
-def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs) -> int:
+def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, tyre: TyreConfig) -> int:
     if args.sag is not None:
         print(f"{PREFIX} --sag applies to headless runs only; the viewer uses the shipped tune "
               f"(P cycles damper presets, -/= change pressure)", file=sys.stderr)
     from bike_sim.sim.ride.viewer import run_interactive_ride
 
     print(f"{PREFIX} {describe_rider(rider, BikeSpecs())}")
-    run_interactive_ride(track=track, target_speed_kmh=args.speed, rider=rider)
+    print(
+        f"{PREFIX} tyres: {tyre.model}/{tyre.tier}, pressure "
+        f"{tyre.front.pressure_bar:.2f}/{tyre.rear.pressure_bar:.2f} bar, "
+        f"surface {tyre.surface or track.surface}"
+    )
+    run_interactive_ride(track=track, target_speed_kmh=args.speed, rider=rider, tyre=tyre)
     return 0
 
 
@@ -428,11 +525,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 2
 
     seed = track_seed(args.track, args.seed)
+    try:
+        tyre = _tyre_config(args)
+    except ValueError as exc:
+        print(f"{PREFIX} {exc}", file=sys.stderr)
+        return 2
     if args.preview:
         return _preview(track, Path(args.out), seed)
     if args.headless:
-        return _headless(track, args, seed, rider)
-    return _interactive(track, args, rider)
+        return _headless(track, args, seed, rider, tyre)
+    return _interactive(track, args, rider, tyre)
 
 
 if __name__ == "__main__":

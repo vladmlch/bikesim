@@ -161,6 +161,20 @@ class RideSession:
         self.brake_strength = max(0.0, min(1.0, self.brake_strength + float(delta)))
         return self.brake_strength
 
+    def adjust_tyre_pressure(self, wheel: str, delta_bar: float) -> Optional[float]:
+        """Changes one pneumatic tyre's live pressure; returns None in `sphere` mode."""
+        applier = self.sim.tyre_applier
+        if applier is None:
+            return None
+        if wheel == "front":
+            tyre = applier.front_tyre
+        elif wheel == "rear":
+            tyre = applier.rear_tyre
+        else:
+            raise ValueError(f"unknown wheel '{wheel}'; expected 'front' or 'rear'")
+        tyre.set_pressure(tyre.tyre.pressure_bar + float(delta_bar))
+        return tyre.tyre.pressure_bar
+
     def toggle_debug_markers(self) -> bool:
         """
         Toggles the yellow pivot-marker livery.

@@ -6,9 +6,10 @@ shape as `sim/input_handler.py` does for the test stand.
 
 **Every damper and air-spring key keeps its playground binding**, deliberately: the two modes
 adjust the same two hardware models, and a rider who has learnt `J`/`H` on the stand should
-not have to relearn it on the track. Only keys with no counterpart on a static stand are new
--- `W`/`S` for the cruise target, `Space` for the brakes, `,`/`.` for brake strength -- and
-they take over the three stand-only bindings (travel up/down, auto-sweep).
+not have to relearn it on the track. The ride-only keys are `W`/`S` for cruise, `Space` for
+the brakes, `,`/`.` for brake strength, and `N`/`M`/`;`/`'` for pneumatic tyre pressure. The
+first three pairs take over the stand-only bindings (travel up/down, auto-sweep); tyre keys
+print a notice under the `sphere` model.
 
 **Braking is a toggle, not a hold.** MuJoCo's passive viewer delivers key *press* events, not
 key state (docs/RIDE.md section 6), so a held lever cannot be represented faithfully and
@@ -16,6 +17,8 @@ pretending otherwise would give a brake that releases itself on the next repeat 
 """
 
 from typing import Any, Callable, Dict, List, Tuple
+
+from bike_sim.physics.tyre import PRESSURE_STEP_BAR
 
 # Steps the new bindings take. One km/h spans the 15-45 km/h band in thirty presses, and 10 %
 # of the 200 N.m per-wheel brake ceiling is 20 N.m -- fine enough to trail the brakes through a
@@ -108,6 +111,11 @@ class RideInputHandler:
             ((93,), lambda: self._adjust_tokens(+1, "]", "More ramp-up / bottom-out resistance")),
             ((45,), lambda: self._adjust_psi(-2.0, "-")),
             ((61,), lambda: self._adjust_psi(+2.0, "=")),
+            # Pneumatic tyre pressures (unbound in the stand and read every simulation step).
+            ((78, 110), lambda: self._adjust_tyre_pressure("front", -PRESSURE_STEP_BAR, "N")),
+            ((77, 109), lambda: self._adjust_tyre_pressure("front", +PRESSURE_STEP_BAR, "M")),
+            ((59,), lambda: self._adjust_tyre_pressure("rear", -PRESSURE_STEP_BAR, ";")),
+            ((39,), lambda: self._adjust_tyre_pressure("rear", +PRESSURE_STEP_BAR, "'")),
             # Display
             ((84, 116), self._on_toggle_telemetry),
             ((71, 103), s.toggle_debug_markers),
@@ -197,6 +205,14 @@ class RideInputHandler:
         new_psi = max(10.0, min(200.0, air.gauge_pressure_psi + delta))
         air.set_pressure_psi(new_psi)
         print(f"\n[KEY {key}] Fork Air Pressure: {new_psi:.1f} PSI ({air.gauge_pressure_bar:.2f} bar)")
+
+    def _adjust_tyre_pressure(self, wheel: str, delta_bar: float, key: str) -> None:
+        """Changes a pneumatic tyre pressure, or explains why the key is inactive."""
+        pressure_bar = self.session.adjust_tyre_pressure(wheel, delta_bar)
+        if pressure_bar is None:
+            print(f"\n[KEY {key}] Tyre pressure keys require --tyre-model pneumatic.")
+            return
+        print(f"\n[KEY {key}] {wheel.title()} Tyre Pressure: {pressure_bar:.2f} bar")
 
     def _adjust_target_speed(self, delta_kmh: float, key: str) -> None:
         """

@@ -17,6 +17,7 @@ from bike_sim.viz.ride_plots import (
     plot_ride,
     plot_shaft_velocity,
     plot_track_profile,
+    plot_tyres,
     plot_travel,
 )
 
@@ -65,6 +66,19 @@ def test_plot_ride_writes_the_three_named_files(tmp_path):
 
     assert [p.name for p in paths] == ["travel.png", "shaft_velocity.png", "acceleration.png"]
     assert all(_is_png(p) for p in paths)
+
+
+def test_plot_tyres_renders_load_slip_patch_and_rim_strikes(tmp_path):
+    channels = _channels()
+    for wheel, offset in (("front", 0.0), ("rear", 10.0)):
+        channels[f"{wheel}_tyre_fz_n"] = 400.0 + 20.0 * np.sin(channels["x_m"] + offset)
+        channels[f"{wheel}_tyre_deflection_mm"] = 8.0 + 2.0 * np.sin(channels["x_m"] + offset)
+        channels[f"{wheel}_patch_length_mm"] = 120.0 + 10.0 * np.sin(channels["x_m"] + offset)
+        channels[f"{wheel}_slip_ratio"] = 0.2 * np.sin(channels["x_m"] + offset)
+    channels["front_rim_strike"][1500:1503] = 1.0
+
+    path = plot_tyres(channels, _track(), tmp_path / "tyres.png")
+    assert _is_png(path)
 
 
 def test_shaft_velocity_tolerates_an_empty_window(tmp_path):

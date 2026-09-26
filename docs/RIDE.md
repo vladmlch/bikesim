@@ -1241,6 +1241,7 @@ uv run bike-ride --headless --track road_broken --speed 30 --seed 3
 uv run bike-ride --headless --track my_road.toml --sag 30
 uv run bike-ride --headless --rider lumped        # the original rigid standing rider
 uv run bike-ride --headless --rider-mass 92 --rider-height 1.88
+uv run bike-ride --headless --tyre-model pneumatic --tyre-tier fast --tyre-pressure 1.5/1.7
 uv run bike-ride --track my_road.toml --preview   # draw the road, do not simulate
 uv run bike-ride --dump-track road_worn > my_road.toml
 uv run bike-ride --list-tracks
@@ -1261,22 +1262,19 @@ uv run bike-ride --list-tracks
 | `--rider-height M` | Stature; scales segments and, seated, sets the saddle via the inseam. Default 1.80. |
 | `--rider-inseam M` | Inseam override. Default 0.47 × height. |
 | `--no-rider` | Alias for `--rider none`. |
+| `--tyre-model {sphere,pneumatic}` | Wheel contact model. Default `sphere` (§3). |
+| `--tyre-tier {fast,detailed}` | Pneumatic brush resolution. Default `fast` (§3.1). |
+| `--tyre-pressure FRONT/REAR` | Front/rear pressures in bar, each 0.8–3.0. Default `1.5/1.7`. |
+| `--surface NAME` | Surface preset (`asphalt`, `hardpack`, `loose`, `wet`); default from the track (§4.1). |
 | `--no-plots` | Headless: skip the PNG figures. |
 | `--preview` | Render the road profile with effective pothole drops to `<out>/preview_<track>_s<seed>.png` and exit. |
 | `--dump-track NAME` | Print a preset as a track file and exit. |
 | `--list-tracks` | List presets and exit. |
 
-> *Pending (plan task 9), not yet implemented:*
->
-> - `--tyre-model {sphere,pneumatic}`, default `sphere` (§3);
-> - `--tyre-tier {fast,detailed}`, default `fast`;
-> - `--tyre-pressure FRONT/REAR` in bar, default `1.5/1.7`;
-> - `--surface {asphalt,hardpack,loose,wet}`, default from the track (§4.1).
->
-> The run header will print the model, tier, pressures and surface.
-
-A headless run writes to `output/ride/<track>_<speed>_s<seed>/` (the `_s<seed>` suffix
-only when a generator seed applies):
+A headless sphere run writes to `output/ride/<track>_<speed>_s<seed>/` (the `_s<seed>` suffix
+only when a generator seed applies). Pneumatic runs append the model, tier, both pressures and
+surface to the directory name, so a pressure sweep does not overwrite the sphere run:
+`<track>_<speed>_s<seed>_pneumatic-fast_1.50-1.70bar_asphalt/`.
 
 | File | Content |
 |---|---|
@@ -1285,6 +1283,7 @@ only when a generator seed applies):
 | `travel.png` | Fork travel and shock stroke / rear wheel travel against X with obstacle markers. |
 | `shaft_velocity.png` | Shaft-velocity histogram per end. |
 | `acceleration.png` | Low-passed bar and saddle vertical acceleration, raw peak annotated; the seated rider's torso overlaid on the saddle panel. |
+| `tyres.png` | Pneumatic only: per-wheel load, deflection/rim strikes, slip and patch length. |
 | `profile.png` | The road profile and effective pothole drops. |
 
 The run starts from the solved static equilibrium at *x* = 2 m and ends at the track's
@@ -1399,6 +1398,8 @@ Interactive mode (`bike-ride` without `--headless`) prints this on start and on 
 | `Space` | Brake toggle; `,` / `.` brake strength ∓ 10 % |
 | `R` | Restart from the solved equilibrium |
 | `[` / `]` | Fork air tokens −/+; `-` / `=` fork pressure ∓ 2 psi |
+| `N` / `M` | Pneumatic front tyre pressure −/+ 0.05 bar |
+| `;` / `'` | Pneumatic rear tyre pressure −/+ 0.05 bar |
 | `H` `J` / `K` `L` / `Y` `U` | Fork HSC / LSC / rebound clicks |
 | `7` `8` / `9` `0` / `5` `6` / `3` `4` | Shock HSC / LSC / rebound / HBO clicks |
 | `X` | Shock lockout toggle; `P` cycle factory damper presets |
@@ -1406,10 +1407,9 @@ Interactive mode (`bike-ride` without `--headless`) prints this on start and on 
 | `G` | Pivot markers; `T` telemetry line |
 | `Esc` | Quit |
 
-> *Pending (plan task 9):* with `pneumatic`, `N` / `M` change the front tyre pressure by
-> ∓ 0.05 bar and `;` / `'` the rear, clamped to 0.8–3.0 bar. The change applies on the next
-> step, with no restart, because pressure is read every step (§3.1). With `sphere` these
-> keys print a one-line notice.
+These pressure keys are clamped to 0.8–3.0 bar and take effect on the next step, without a
+restart, because the tyre reads pressure every step (§3.1). With `sphere`, they print a
+one-line notice.
 
 The track and the rider are chosen on the command line and cannot be changed from the
 viewer: a change of track means new `hfield_data` and a new equilibrium, and a change of
@@ -1447,13 +1447,20 @@ per recorded step, the first row being the start state:
 | `rider_torso_acc_vert_mps2`, `rider_torso_acc_long_mps2` | m/s² | Seated rider's torso proper acceleration, world Z / X. |
 | `rider_pelvis_acc_vert_mps2`, `rider_pelvis_acc_long_mps2` | m/s² | Same for the pelvis. |
 
-The last nine channels belong to the seated rider (§7.2) and read zero for `none` and
-`lumped`, so every telemetry file has the same 36 columns.
+The seated rider's nine channels (§7.2) read zero for `none` and `lumped`. The pneumatic
+channels also remain present under `sphere` and read zero, so every CSV has 54 columns.
 
-> *Pending (plan task 9):* eight channels per wheel, prefixed `front_` / `rear_`:
-> `tyre_fz_n`, `tyre_fx_n`, `tyre_deflection_mm`, `patch_length_mm`, `slip_ratio`,
-> `rim_strike` (0/1), `tyre_pressure_bar`, `tyre_loss_w`. They read zero under `sphere`, so
-> the file will have the same 52 columns whichever tyre rode.
+| Channel | Unit | Meaning |
+|---|---|---|
+| `{front,rear}_tyre_fz_n` | N | World-vertical tyre support force. |
+| `{front,rear}_tyre_fx_n` | N | Resultant longitudinal force, including radial hysteresis and brush force. |
+| `{front,rear}_tyre_deflection_mm` | mm | Load-weighted mean radial-element deflection. |
+| `{front,rear}_patch_length_mm` | mm | Sum of the scaled contact lengths of the wheel's patches. |
+| `{front,rear}_slip_ratio` | — | Longitudinal slip κ; positive is drive, −1 is a locked wheel. |
+| `{front,rear}_tyre_full_sliding` | 0/1 | At least one patch is fully sliding. |
+| `{front,rear}_rim_strike` | 0/1 | A rim-strike event is active or closes on this step. |
+| `{front,rear}_tyre_pressure_bar` | bar | Live pressure read by the tyre model. |
+| `{front,rear}_tyre_loss_w` | W | Carcass hysteresis and sliding power loss. |
 
 ## Summary metrics
 
@@ -1476,6 +1483,12 @@ sees an RMS of 3.0 m/s² against 4.6 at the saddle beneath it — the body's own
 a third of the isolation — and leaves the saddle once, for 27 ms and 0.6 mm, at the 105 mm
 pothole.
 
+With `pneumatic`, the summary adds a `tyres` block per wheel: peak normal load, maximum
+deflection, rim-strike count and event details (x, speed, peak load/force, stored energy),
+wheelspin and lock time, mean loss power and its Crr equivalent. Wheelspin means a fully
+sliding patch with positive κ; lock means a fully sliding patch with negative κ. `extras`
+carries tyre model, tier, front/rear pressures and surface.
+
 Why filter, and why keep the raw peak: the rigid contact sphere meeting a sharp
 heightfield edge produces solver transients of 12–16 system weights lasting 2–4 steps
 (1–2 ms) — a real tyre spreads that over 10–20 ms. Unfiltered, "peak acceleration" is a
@@ -1484,17 +1497,9 @@ suspension works in (fork 2–4 Hz, wheel hop 10–15 Hz) and spreads the transi
 over ~5 ms, which is the honest, tyre-like number; the raw peak is reported next to it so
 nothing is hidden. Compare *filtered* values between runs.
 
-> *Pending (plan task 9):* with `pneumatic`, a `tyres` block per wheel will carry:
->
-> - peak vertical load and maximum deflection;
-> - rim strikes, as a count and per event (x, speed, peak load, energy);
-> - time in wheelspin and time locked, both defined from the patch state (§4.1);
-> - mean tyre loss and its Crr equivalent.
->
-> `extras` will carry the tyre model, tier, pressures and surface. The gap between raw and
-> filtered peaks above is expected to shrink under `pneumatic`. A tyre that spreads an edge
-> hit over its footprint is the physical version of what the 100 Hz filter approximates;
-> plan task 11 reports the gap for both models.
+The gap between raw and filtered peaks above is expected to shrink under `pneumatic`. A
+tyre that spreads an edge hit over its footprint is the physical version of what the 100 Hz
+filter approximates; plan task 11 reports the gap for both models.
 
 ## Reading the plots
 

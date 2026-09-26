@@ -123,6 +123,19 @@ class RideHUD:
             f"{'R' if sim.contacts.rear_in_contact else '-'}"
         )
         power_w = sim.cruise.torque_nm * self.rear_wheel.omega_radps(sim.data)
+        tyre_str = ""
+        if sim.tyre_applier is not None:
+            front = sim.tyre_applier.front_outputs
+            rear = sim.tyre_applier.rear_outputs
+            rim_flash = (
+                " | RIM STRIKE"
+                if any(o.rim_strike_active or o.rim_event is not None for o in (front, rear))
+                else ""
+            )
+            tyre_str = (
+                f" | Tyre F/R {front.pressure_bar:.2f}/{rear.pressure_bar:.2f}bar "
+                f"κ {front.slip_ratio:+.2f}/{rear.slip_ratio:+.2f}{rim_flash}"
+            )
 
         return (
             f"[RIDE|{sim.track.name}] "
@@ -133,6 +146,7 @@ class RideHUD:
             f"{brake_str} | Grip:{grip_str} | "
             f"Pitch:{degrees(sim.pitch_rad):+6.2f}deg {pitch_label(sim.pitch_rad)} | "
             f"Pwr:{power_w:+7.1f}W"
+            f"{tyre_str}"
         )
 
     def print_line(
@@ -169,6 +183,10 @@ class RideHUD:
   --- PNEUMATIC AIR SPRING (FORK) ---
     [ / ]           : Bottomless Tokens DECREASE / INCREASE (Ramp-up)
     - / =           : Fork Air Pressure -/+ 2.0 PSI
+
+  --- PNEUMATIC TYRES (pneumatic model only) ---
+    N / M           : Front tyre pressure -/+ 0.05 bar
+    ; / '           : Rear tyre pressure -/+ 0.05 bar
 
   --- ROCKSHOX CHARGER 3 DAMPER (FORK) ---
     J / H           : Fork High-Speed Compression (HSC) + / - (0 to 4 clicks)

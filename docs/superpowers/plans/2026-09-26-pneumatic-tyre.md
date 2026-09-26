@@ -501,24 +501,25 @@ peak-force test passes within 10 %, while `μ_slide` still sets the high-slip li
 
 **Steps:**
 
-- [ ] Recorder: append per-wheel channels `{front,rear}_tyre_fz_n`, `_tyre_fx_n`,
+- [x] Recorder: append per-wheel channels `{front,rear}_tyre_fz_n`, `_tyre_fx_n`,
   `_tyre_deflection_mm`, `_patch_length_mm`, `_slip_ratio`, `_rim_strike`,
-  `_tyre_pressure_bar`, `_tyre_loss_w`. They read zero under `sphere`, so every CSV has the
-  same columns whichever model rode (the seated-rider convention, `recorder.py:18-22`).
-- [ ] Metrics: `TyreStats` per wheel — peak Fz, max deflection, rim strikes (count, and per
+  `_tyre_pressure_bar`, `_tyre_loss_w`, `_tyre_full_sliding`. These nine channels per wheel
+  read zero under `sphere`, so every CSV has the same columns whichever model rode (the
+  seated-rider convention, `recorder.py:18-22`).
+- [x] Metrics: `TyreStats` per wheel — peak Fz, max deflection, rim strikes (count, and per
   strike x, speed, peak load, energy), time in wheelspin, time locked, mean dissipated power
   and its Crr equivalent. Summary table and `summary.json` gain them; `extras` carries the
   model, tier, pressures and surface.
-- [ ] HUD: under `pneumatic`, a tyre line — pressures, slip front/rear, a rim-strike flash.
-- [ ] Keys (only under `pneumatic`; under `sphere` they print a one-line notice):
+- [x] HUD: under `pneumatic`, a tyre line — pressures, slip front/rear, a rim-strike flash.
+- [x] Keys (only under `pneumatic`; under `sphere` they print a one-line notice):
   `N` / `M` front pressure −/+ 0.05 bar, `;` / `'` rear −/+ 0.05 bar (GLFW 78/110, 77/109,
   59, 39; all currently unbound in `input.py:66-118`). Clamped to 0.8–3.0 bar. Pressure is
   read every step, so no recompilation is needed. Verify the passive viewer does not consume
   these keys; if it does, pick other unbound keys and update the help text.
-- [ ] Help text in `hud.py:156-196` gains a "TYRES" block.
-- [ ] CLI (`cli/ride.py:64-101`): `--tyre-model`, `--tyre-tier`, `--tyre-pressure F/R`,
+- [x] Help text in `hud.py:156-196` gains a "TYRES" block.
+- [x] CLI (`cli/ride.py:64-101`): `--tyre-model`, `--tyre-tier`, `--tyre-pressure F/R`,
   `--surface`; the run header prints model, tier, pressures and surface.
-- [ ] Plots: `plot_tyres` — deflection and Fz vs x per wheel with the rim-strike line and
+- [x] Plots: `plot_tyres` — deflection and Fz vs x per wheel with the rim-strike line and
   events, slip ratio vs x, patch length; written only for `pneumatic`.
 
 **Verification:** tests; a headless `road_worn` run on each model writes CSV, summary and

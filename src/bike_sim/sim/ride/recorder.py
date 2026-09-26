@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Dict, List, Sequence, Union
 import mujoco
 import numpy as np
 
+from bike_sim.sim.ride.metrics import RAMP_EXCLUSION_M
 from bike_sim.sim.ride.wheels import resolve_wheel_spin
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -71,10 +72,31 @@ CHANNELS: Sequence[str] = (
     "rider_torso_acc_long_mps2",
     "rider_pelvis_acc_vert_mps2",
     "rider_pelvis_acc_long_mps2",
+    "front_tyre_fz_n",
+    "front_tyre_fx_n",
+    "front_tyre_deflection_mm",
+    "front_patch_length_mm",
+    "front_slip_ratio",
+    "front_tyre_full_sliding",
+    "front_rim_strike",
+    "front_tyre_pressure_bar",
+    "front_tyre_loss_w",
+    "rear_tyre_fz_n",
+    "rear_tyre_fx_n",
+    "rear_tyre_deflection_mm",
+    "rear_patch_length_mm",
+    "rear_slip_ratio",
+    "rear_tyre_full_sliding",
+    "rear_rim_strike",
+    "rear_tyre_pressure_bar",
+    "rear_tyre_loss_w",
 )
 
 # Channels the seated rider fills; every other rider variant records zeros here.
-SEATED_RIDER_CHANNELS: Sequence[str] = CHANNELS[CHANNELS.index("saddle_load_n"):]
+SEATED_RIDER_CHANNELS: Sequence[str] = CHANNELS[
+    CHANNELS.index("saddle_load_n"):CHANNELS.index("rider_pelvis_acc_long_mps2") + 1
+]
+TYRE_CHANNELS: Sequence[str] = CHANNELS[CHANNELS.index("front_tyre_fz_n"):]
 
 CSV_FLOAT_FORMAT = "%.10g"
 _CHUNK_ROWS = 4096
@@ -124,6 +146,14 @@ class RideRecorder:
         self._current = np.empty((_CHUNK_ROWS, len(CHANNELS)))
         self._fill = 0
         self._calls = 0
+        self.tyre_rim_events: Dict[str, List[Dict[str, float]]] = {"front": [], "rear": []}
+        self.tyre_rim_strike_counts: Dict[str, int] = {"front": 0, "rear": 0}
+        self.tyre_rim_starts: Dict[str, List[float]] = {"front": [], "rear": []}
+        self.tyre_times_s: Dict[str, Dict[str, float]] = {
+            "front": {"wheelspin": 0.0, "locked": 0.0},
+            "rear": {"wheelspin": 0.0, "locked": 0.0},
+        }
+        self._previous_rim_active: Dict[str, bool] = {"front": False, "rear": False}
 
     # ------------------------------------------------------------------ recording
 
@@ -134,6 +164,7 @@ class RideRecorder:
         Args:
             sim: Simulation to read. Nothing is written to it.
         """
+        self._observe_tyre_events(sim)
         take = self._calls % self.decimate == 0
         self._calls += 1
         if not take:
@@ -144,6 +175,33 @@ class RideRecorder:
             self._fill = 0
         self._current[self._fill] = self._row(sim)
         self._fill += 1
+
+    def _observe_tyre_events(self, sim: "RideSimulation") -> None:
+        """Captures rim events on every callback, even when CSV rows are decimated."""
+        if sim.tyre_applier is None:
+            return
+        for wheel, outputs in (
+            ("front", sim.tyre_applier.front_outputs),
+            ("rear", sim.tyre_applier.rear_outputs),
+        ):
+            if outputs.rim_strike_active and not self._previous_rim_active[wheel]:
+                self.tyre_rim_strike_counts[wheel] += 1
+                self.tyre_rim_starts[wheel].append(float(outputs.hub_position_world_m[0]))
+            self._previous_rim_active[wheel] = outputs.rim_strike_active
+            if sim.position_m >= sim.start_x_m + RAMP_EXCLUSION_M:
+                if any(patch.fully_sliding and patch.slip_ratio > 0.0 for patch in outputs.patches):
+                    self.tyre_times_s[wheel]["wheelspin"] += float(sim.model.opt.timestep)
+                if any(patch.fully_sliding and patch.slip_ratio < 0.0 for patch in outputs.patches):
+                    self.tyre_times_s[wheel]["locked"] += float(sim.model.opt.timestep)
+            event = outputs.rim_event
+            if event is not None:
+                self.tyre_rim_events[wheel].append({
+                    "x_m": float(event.x_m),
+                    "speed_mps": float(event.speed_mps),
+                    "peak_load_n": float(event.peak_load_n),
+                    "peak_rim_force_n": float(event.peak_rim_force_n),
+                    "absorbed_energy_j": float(event.absorbed_energy_j),
+                })
 
     def _row(self, sim: "RideSimulation") -> np.ndarray:
         data = sim.data
@@ -159,6 +217,28 @@ class RideRecorder:
             pelvis_vert, pelvis_long = self._pelvis.world_components(data)
         else:
             torso_vert = torso_long = pelvis_vert = pelvis_long = 0.0
+        if sim.tyre_applier is None:
+            front_tyre = rear_tyre = None
+        else:
+            front_tyre = sim.tyre_applier.front_outputs
+            rear_tyre = sim.tyre_applier.rear_outputs
+
+        tyre_channels = []
+        for outputs in (front_tyre, rear_tyre):
+            if outputs is None:
+                tyre_channels.extend((0.0,) * 9)
+            else:
+                tyre_channels.extend((
+                    float(outputs.support_n),
+                    float(outputs.force_world_n[0]),
+                    float(outputs.mean_deflection_m * 1000.0),
+                    float(outputs.contact_length_m * 1000.0),
+                    float(outputs.slip_ratio),
+                    float(outputs.fully_sliding),
+                    float(outputs.rim_strike_active or outputs.rim_event is not None),
+                    float(outputs.pressure_bar),
+                    float(outputs.dissipated_power_w),
+                ))
         return np.array(
             [
                 float(data.time),
@@ -197,6 +277,7 @@ class RideRecorder:
                 torso_long,
                 pelvis_vert,
                 pelvis_long,
+                *tyre_channels,
             ]
         )
 
@@ -315,4 +396,12 @@ def read_csv(path: Union[str, Path]) -> Dict[str, np.ndarray]:
     return {name: table[:, i] for i, name in enumerate(header)}
 
 
-__all__ = ["CHANNELS", "SEATED_RIDER_CHANNELS", "CSV_FLOAT_FORMAT", "RideRecorder", "read_csv"]
+__all__ = [
+    "CHANNELS",
+    "SEATED_RIDER_CHANNELS",
+    "TYRE_CHANNELS",
+    "TYRE_CHANNELS",
+    "CSV_FLOAT_FORMAT",
+    "RideRecorder",
+    "read_csv",
+]

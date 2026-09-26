@@ -108,6 +108,32 @@ class PotholeReport:
 
 
 @dataclass
+class RimStrikeStats:
+    """One completed rim-strike event in the measurement window."""
+
+    x_m: float
+    speed_mps: float
+    peak_load_n: float
+    peak_rim_force_n: float
+    absorbed_energy_j: float
+
+
+@dataclass
+class TyreStats:
+    """Longitudinal and vertical tyre use for one wheel."""
+
+    wheel: str
+    peak_fz_n: float
+    max_deflection_mm: float
+    rim_strikes: int
+    rim_strike_events: List[RimStrikeStats]
+    wheelspin_time_s: float
+    locked_time_s: float
+    mean_dissipated_power_w: float
+    crr_equivalent: float
+
+
+@dataclass
 class RideSummary:
     """Everything ``summary.json`` carries."""
 
@@ -134,9 +160,10 @@ class RideSummary:
     bar: AccelStats
     saddle: AccelStats
     potholes: List[PotholeReport] = field(default_factory=list)
-    extras: Dict[str, float] = field(default_factory=dict)
+    extras: Dict[str, Union[str, float]] = field(default_factory=dict)
     rider_variant: str = "lumped"
     rider: Optional[RiderStats] = None
+    tyres: Dict[str, TyreStats] = field(default_factory=dict)
 
     def to_dict(self) -> Dict:
         """Returns a JSON-ready dictionary."""
@@ -201,6 +228,22 @@ class RideSummary:
                 lines.append(
                     f"  {p.label:18s} {p.start_m:7.2f} {p.length_m:6.2f} {p.declared_depth_mm:9.0f} "
                     f"{p.effective_drop_front_mm:10.0f} {p.effective_drop_rear_mm:10.0f}"
+                )
+        if self.tyres:
+            lines += [
+                "",
+                f"  {'tyre':6s} {'peak Fz':>9s} {'max defl':>10s} {'rim':>5s} "
+                f"{'wheelspin':>10s} {'locked':>8s} {'loss W':>9s} {'Crr eq':>8s}",
+            ]
+            for wheel in ("front", "rear"):
+                stats = self.tyres.get(wheel)
+                if stats is None:
+                    continue
+                lines.append(
+                    f"  {wheel:6s} {stats.peak_fz_n:9.1f} {stats.max_deflection_mm:10.1f} "
+                    f"{stats.rim_strikes:5d} {stats.wheelspin_time_s:10.3f} "
+                    f"{stats.locked_time_s:8.3f} {stats.mean_dissipated_power_w:9.2f} "
+                    f"{stats.crr_equivalent:8.4f}"
                 )
         return "\n".join(lines)
 
@@ -359,9 +402,12 @@ def summarize_ride(
     shock_stroke_mm: float,
     shock_bumper_engage_mm: float,
     start_x_m: float,
-    extras: Optional[Dict[str, float]] = None,
+    extras: Optional[Dict[str, Union[str, float]]] = None,
     rider_variant: str = "lumped",
     rider_mass_kg: float = 80.0,
+    tyre_rim_events: Optional[Dict[str, List[Dict[str, float]]]] = None,
+    tyre_rim_starts: Optional[Dict[str, List[float]]] = None,
+    tyre_times_s: Optional[Dict[str, Dict[str, float]]] = None,
 ) -> RideSummary:
     """
     Computes the ride summary from recorded channels.
@@ -376,10 +422,14 @@ def summarize_ride(
         shock_stroke_mm: Full shock stroke.
         shock_bumper_engage_mm: Stroke at which the shock's bottom-out bumper engages.
         start_x_m: Chassis start position; the window opens ``RAMP_EXCLUSION_M`` later.
-        extras: Free-form numbers to carry into the summary (e.g. seed, sag).
+        extras: Free-form metadata to carry into the summary (e.g. seed, sag and tyre config).
         rider_variant: Which rider rode: ``none``, ``lumped`` or ``seated``. The seated
             rider's channels are summarised only for ``seated``.
         rider_mass_kg: The rider's mass, for the seated load shares.
+        tyre_rim_events: Completed rim events captured by `RideRecorder` even when CSV rows
+            are decimated.
+        tyre_rim_starts: Rim-strike start X positions captured every step for the event count.
+        tyre_times_s: Exact wheelspin and lock durations accumulated by the recorder.
 
     Returns:
         The summary.
@@ -394,6 +444,18 @@ def summarize_ride(
     rider = None
     if rider_variant == "seated" and "saddle_load_n" in w:
         rider = rider_stats(w, sample_interval_s, rider_mass_kg * GRAVITY_MPS2)
+    tyres = {
+        wheel: _tyre_stats(
+            wheel,
+            w,
+            sample_interval_s,
+            window_start,
+            (tyre_rim_events or {}).get(wheel, []),
+            (tyre_rim_starts or {}).get(wheel),
+            (tyre_times_s or {}).get(wheel),
+        )
+        for wheel in ("front", "rear")
+    }
 
     return RideSummary(
         track=track.name,
@@ -424,6 +486,68 @@ def summarize_ride(
         extras=dict(extras or {}),
         rider_variant=rider_variant,
         rider=rider,
+        tyres=tyres,
+    )
+
+
+def _tyre_stats(
+    wheel: str,
+    channels: Dict[str, np.ndarray],
+    sample_interval_s: float,
+    window_start_m: float,
+    rim_events: List[Dict[str, float]],
+    rim_starts_m: Optional[List[float]],
+    tyre_times_s: Optional[Dict[str, float]],
+) -> TyreStats:
+    """Summarizes one wheel's tyre channels inside the post-runup window."""
+    fz = np.asarray(channels.get(f"{wheel}_tyre_fz_n", np.zeros(0)), dtype=float)
+    deflection = np.asarray(
+        channels.get(f"{wheel}_tyre_deflection_mm", np.zeros_like(fz)), dtype=float
+    )
+    loss = np.asarray(channels.get(f"{wheel}_tyre_loss_w", np.zeros_like(fz)), dtype=float)
+    slip = np.asarray(channels.get(f"{wheel}_slip_ratio", np.zeros_like(fz)), dtype=float)
+    sliding = np.asarray(
+        channels.get(f"{wheel}_tyre_full_sliding", np.zeros_like(fz)), dtype=float
+    ) > 0.5
+    rim_flag = np.asarray(channels.get(f"{wheel}_rim_strike", np.zeros_like(fz)), dtype=float) > 0.5
+    speed = np.asarray(channels.get("speed_mps", np.zeros_like(fz)), dtype=float)
+
+    events = [
+        RimStrikeStats(
+            x_m=float(event["x_m"]),
+            speed_mps=float(event["speed_mps"]),
+            peak_load_n=float(event["peak_load_n"]),
+            peak_rim_force_n=float(event["peak_rim_force_n"]),
+            absorbed_energy_j=float(event["absorbed_energy_j"]),
+        )
+        for event in rim_events
+        if float(event["x_m"]) >= window_start_m
+    ]
+    if rim_starts_m is None:
+        rim_strikes = max(count_events(rim_flag), len(events))
+    else:
+        rim_strikes = sum(float(x_m) >= window_start_m for x_m in rim_starts_m)
+    mean_loss_w = float(np.mean(loss)) if loss.size else 0.0
+    mean_load_speed = float(np.mean(fz * np.abs(speed))) if fz.size else 0.0
+    crr_equivalent = mean_loss_w / mean_load_speed if mean_load_speed > 1e-9 else 0.0
+    return TyreStats(
+        wheel=wheel,
+        peak_fz_n=float(np.max(fz)) if fz.size else 0.0,
+        max_deflection_mm=float(np.max(deflection)) if deflection.size else 0.0,
+        rim_strikes=int(rim_strikes),
+        rim_strike_events=events,
+        wheelspin_time_s=(
+            float(tyre_times_s.get("wheelspin", 0.0))
+            if tyre_times_s is not None
+            else float(np.sum(sliding & (slip > 0.0)) * sample_interval_s)
+        ),
+        locked_time_s=(
+            float(tyre_times_s.get("locked", 0.0))
+            if tyre_times_s is not None
+            else float(np.sum(sliding & (slip < 0.0)) * sample_interval_s)
+        ),
+        mean_dissipated_power_w=mean_loss_w,
+        crr_equivalent=crr_equivalent,
     )
 
 
@@ -436,6 +560,8 @@ __all__ = [
     "AccelStats",
     "RiderStats",
     "PotholeReport",
+    "RimStrikeStats",
+    "TyreStats",
     "RideSummary",
     "count_events",
     "lowpass",

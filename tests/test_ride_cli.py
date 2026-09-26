@@ -18,7 +18,8 @@ from pathlib import Path
 
 import pytest
 
-from bike_sim.cli.ride import main, resolve_track, run_dir_name, track_seed
+from bike_sim.cli.ride import _tyre_config, main, parse_args, resolve_track, run_dir_name, track_seed
+from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.ride.recorder import CHANNELS, read_csv
 from bike_sim.terrain import RoadRoughness, SquareEdge, TrackSpec, get_preset, load_track
 
@@ -105,6 +106,31 @@ def test_track_seed_and_run_dir_name():
     assert run_dir_name(get_preset("single_edge"), 32.5, None) == "single_edge_32.5"
 
 
+def test_tyre_cli_options_and_pressure_pair():
+    args = parse_args([
+        "--tyre-model", "pneumatic",
+        "--tyre-tier", "detailed",
+        "--tyre-pressure", "1.3/1.8",
+        "--surface", "wet",
+    ])
+    config = _tyre_config(args)
+    assert (config.model, config.tier, config.surface) == ("pneumatic", "detailed", "wet")
+    assert (config.front.pressure_bar, config.rear.pressure_bar) == pytest.approx((1.3, 1.8))
+    assert run_dir_name(get_preset("road_worn"), 25.0, 0, config) == (
+        "road_worn_25_s0_pneumatic-detailed_1.30-1.80bar_wet"
+    )
+    assert _tyre_config(parse_args([])).model == TyreConfig().model == "sphere"
+
+
+def test_tyre_pressure_cli_rejects_invalid_pair(capsys):
+    with pytest.raises(SystemExit):
+        parse_args(["--tyre-pressure", "1.2"])
+    assert "FRONT/REAR" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        parse_args(["--tyre-pressure", "0.5/1.7"])
+    assert "0.8, 3.0" in capsys.readouterr().err
+
+
 # --------------------------------------------------------------------------------------
 # Argument handling
 # --------------------------------------------------------------------------------------
@@ -161,6 +187,7 @@ def test_headless_run_writes_every_artifact(capsys, tmp_path, short_road):
     run_dir = tmp_path / "short_road_25_s1"
     for name in ("telemetry.csv", "summary.json", "travel.png", "shaft_velocity.png", "acceleration.png", "profile.png"):
         assert (run_dir / name).exists(), name
+    assert not (run_dir / "tyres.png").exists()
 
     summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
     assert summary["track"] == "short_road"
@@ -181,6 +208,32 @@ def test_headless_run_writes_every_artifact(capsys, tmp_path, short_road):
 
     assert "Ride summary -- short_road" in out
     assert "Pothole@28m" in out
+
+
+def test_headless_pneumatic_run_records_model_pressure_and_surface(capsys, tmp_path):
+    path = tmp_path / "flat_short.toml"
+    path.write_text('name = "flat_short"\nlength_m = 20\nsurface = "asphalt"\n', encoding="utf-8")
+    code = main([
+        "--headless", "--track", str(path), "--speed", "15", "--rider", "none",
+        "--tyre-model", "pneumatic", "--tyre-tier", "fast",
+        "--tyre-pressure", "1.4/1.8", "--surface", "wet",
+        "--out", str(tmp_path),
+    ])
+    out = capsys.readouterr().out
+    run_dir = tmp_path / "flat_short_15_pneumatic-fast_1.40-1.80bar_wet"
+    assert code == 0
+    assert "tyres: pneumatic/fast, pressure 1.40/1.80 bar, surface wet" in out
+    summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+    assert summary["extras"]["tyre_model"] == "pneumatic"
+    assert summary["extras"]["tyre_tier"] == "fast"
+    assert summary["extras"]["tyre_pressure_front_bar"] == pytest.approx(1.4)
+    assert summary["extras"]["tyre_pressure_rear_bar"] == pytest.approx(1.8)
+    assert summary["extras"]["surface"] == "wet"
+    channels = read_csv(run_dir / "telemetry.csv")
+    assert channels["front_tyre_pressure_bar"][0] == pytest.approx(1.4)
+    assert channels["rear_tyre_pressure_bar"][0] == pytest.approx(1.8)
+    assert set(summary["tyres"]) == {"front", "rear"}
+    assert (run_dir / "tyres.png").exists()
 
 
 def test_headless_no_plots_and_sag(capsys, tmp_path, short_road):

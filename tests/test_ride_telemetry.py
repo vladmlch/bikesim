@@ -16,6 +16,7 @@ module.
 """
 
 import json
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -33,8 +34,11 @@ from bike_sim.sim.ride.metrics import (
     travel_stats,
 )
 from bike_sim.sim.ride.recorder import CHANNELS, RideRecorder, read_csv
+from bike_sim.sim.ride.recorder import TYRE_CHANNELS
+from bike_sim.sim.ride.tyre.carcass import RimStrikeEvent
 from bike_sim.sim.ride.termination import REASON_END_OF_TRACK, RunOutcome
 from bike_sim.sim.ride_sim import RideSimulation
+from bike_sim.physics.tyre import TyreConfig
 from bike_sim.terrain import Pothole, TrackSpec, get_preset
 
 
@@ -100,6 +104,52 @@ def test_recorder_channels_are_physically_sane(edge_run):
     x = c["x_m"]
     near_edge = (x > 19.5) & (x < 23.0)
     assert np.max(c["fork_travel_mm"][near_edge]) > np.max(c["fork_travel_mm"][x < 15.0]) + 10.0
+    for name in TYRE_CHANNELS:
+        assert np.all(c[name] == 0.0), name
+
+
+def test_recorder_appends_live_tyre_channels_and_zeros_them_for_sphere():
+    sphere = RideSimulation(track=get_preset("flat"), tyre=TyreConfig(model="sphere"), rider="none")
+    sphere_recorder = RideRecorder(sphere)
+    sphere_recorder.record(sphere)
+    assert np.array_equal(sphere_recorder.array()[0, -len(TYRE_CHANNELS):], np.zeros(len(TYRE_CHANNELS)))
+
+    pneumatic = RideSimulation(
+        track=get_preset("flat"), tyre=TyreConfig(model="pneumatic"), rider="none"
+    )
+    recorder = RideRecorder(pneumatic)
+    recorder.record(pneumatic)
+    channels = recorder.columns()
+    assert channels["front_tyre_fz_n"][0] > 0.0
+    assert channels["rear_tyre_fz_n"][0] > 0.0
+    assert channels["front_tyre_deflection_mm"][0] > 0.0
+    assert channels["rear_patch_length_mm"][0] > 0.0
+    assert channels["front_tyre_pressure_bar"][0] == pytest.approx(1.5)
+    assert channels["rear_tyre_pressure_bar"][0] == pytest.approx(1.7)
+
+
+def test_rim_event_capture_does_not_drop_events_when_csv_is_decimated():
+    sim = RideSimulation(
+        track=get_preset("flat"), tyre=TyreConfig(model="pneumatic"), rider="none"
+    )
+    recorder = RideRecorder(sim, decimate=10)
+    recorder.record(sim)
+    outputs = sim.tyre_applier.front_outputs
+    sim.tyre_applier.front_outputs = replace(outputs, rim_strike_active=True)
+    recorder.record(sim)
+    assert recorder.rows == 1
+    assert recorder.tyre_rim_strike_counts["front"] == 1
+
+    event = RimStrikeEvent(
+        x_m=4.0, speed_mps=5.0, peak_load_n=900.0,
+        peak_rim_force_n=200.0, absorbed_energy_j=12.0,
+    )
+    sim.tyre_applier.front_outputs = replace(
+        outputs, rim_strike_active=False, rim_event=event
+    )
+    recorder.record(sim)
+    assert recorder.rows == 1
+    assert recorder.tyre_rim_events["front"][0]["absorbed_energy_j"] == pytest.approx(12.0)
 
 
 def test_recorder_rear_wheel_lookup_matches_the_solver(edge_run):
@@ -276,6 +326,62 @@ def test_summarize_ride_excludes_the_ramp_window():
     assert s.airborne_time_s == pytest.approx(10 * dt)
     assert s.bar.rms_filtered_mps2 == pytest.approx(0.0, abs=1e-9)
     assert s.completed and s.crash is None
+
+
+def test_summary_includes_tyre_use_and_rim_strike_events():
+    n = 400
+    sample_interval_s = 0.01
+    x = np.linspace(0.0, 20.0, n)
+    channels = {name: np.zeros(n) for name in CHANNELS}
+    channels["x_m"] = x
+    channels["speed_mps"] = np.full(n, 5.0)
+    for wheel in ("front", "rear"):
+        channels[f"{wheel}_tyre_fz_n"] = np.full(n, 500.0)
+        channels[f"{wheel}_tyre_loss_w"] = np.full(n, 25.0)
+    channels["front_tyre_deflection_mm"] = np.full(n, 9.0)
+    channels["front_rim_strike"][150:153] = 1.0
+    channels["front_tyre_full_sliding"][220:225] = 1.0
+    channels["front_slip_ratio"][220:225] = 0.2
+    channels["front_tyre_full_sliding"][230:232] = 1.0
+    channels["front_slip_ratio"][230:232] = -0.9
+    outcome = RunOutcome(REASON_END_OF_TRACK, n - 1, (n - 1) * sample_interval_s, 1.0, 20.0)
+    event = {
+        "x_m": 12.5,
+        "speed_mps": 6.0,
+        "peak_load_n": 900.0,
+        "peak_rim_force_n": 2000.0,
+        "absorbed_energy_j": 12.0,
+    }
+
+    summary = summarize_ride(
+        channels,
+        sample_interval_s,
+        TrackSpec(name="tyre_stats", length_m=20.0),
+        outcome,
+        18.0,
+        180.0,
+        65.0,
+        55.0,
+        start_x_m=2.0,
+        extras={"tyre_model": "pneumatic", "surface": "asphalt"},
+        tyre_rim_events={"front": [event, {**event, "x_m": 4.0}], "rear": []},
+        tyre_rim_starts={"front": [12.5, 4.0], "rear": []},
+    )
+
+    front = summary.tyres["front"]
+    assert front.peak_fz_n == pytest.approx(500.0)
+    assert front.max_deflection_mm == pytest.approx(9.0)
+    assert front.rim_strikes == 1
+    assert len(front.rim_strike_events) == 1
+    assert front.rim_strike_events[0].absorbed_energy_j == pytest.approx(12.0)
+    assert front.wheelspin_time_s == pytest.approx(5 * sample_interval_s)
+    assert front.locked_time_s == pytest.approx(2 * sample_interval_s)
+    assert front.mean_dissipated_power_w == pytest.approx(25.0)
+    assert front.crr_equivalent == pytest.approx(0.01)
+    assert summary.tyres["rear"].rim_strikes == 0
+    assert summary.extras["tyre_model"] == "pneumatic"
+    assert summary.to_dict()["tyres"]["front"]["rim_strike_events"][0]["x_m"] == 12.5
+    assert "wheelspin" in summary.format_table()
 
 
 # --------------------------------------------------------------------------------------

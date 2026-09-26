@@ -7,10 +7,11 @@ termination in `termination.py`, key dispatch in `input.py`, HUD formatting in `
 tracking in `sim/camera.py`, session state in `session.py` -- so this module is a loop that
 paces, syncs and prints, and the only untestable part of the mode is that loop.
 
-**The viewer must be paced, not stepped once per frame.** Ride mode integrates at 0.5 ms
-(docs/RIDE.md section 10), so a loop that took one step per rendered frame would run the track
-at a fortieth of real time. The pacer converts elapsed wall clock into whole timesteps and caps
-the arrears it will chase, so a stall in the window manager cannot make the simulation sprint.
+**The viewer must be paced, not stepped once per frame.** Ride mode integrates at 0.5 ms for
+`sphere`/`fast` and 0.25 ms for `pneumatic/detailed` (docs/RIDE.md sections 3.1 and 10), so a
+loop that took one step per rendered frame would run the track far below real time. The pacer
+converts elapsed wall clock into whole timesteps and caps the arrears it will chase, so a stall
+in the window manager cannot make the simulation sprint.
 """
 
 import time
@@ -20,6 +21,7 @@ import mujoco
 
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.rider import RiderSpecs
+from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH
 from bike_sim.sim.ride.session import RideSession
 from bike_sim.sim.ride.termination import RunOutcome
@@ -99,6 +101,7 @@ def run_interactive_ride(
     target_speed_kmh: float = DEFAULT_TARGET_SPEED_KMH,
     include_rider: bool = True,
     rider: Optional[Union[RiderSpecs, str]] = None,
+    tyre: Optional[TyreConfig] = None,
 ) -> Optional[RunOutcome]:
     """
     Launches the live interactive ride viewer.
@@ -112,6 +115,7 @@ def run_interactive_ride(
         target_speed_kmh: Initial cruise target, inside the 15-45 km/h band.
         include_rider: Legacy switch; False rides the bike alone. Ignored when ``rider`` is given.
         rider: The rider variant or `RiderSpecs`; fixed for the session (see `session.py`).
+        tyre: Wheel-contact model; defaults to the existing sphere model.
 
     Returns:
         The run's outcome if it terminated before the window was closed, else None.
@@ -131,6 +135,7 @@ def run_interactive_ride(
         target_speed_kmh=target_speed_kmh,
         include_rider=include_rider,
         rider=rider,
+        tyre=tyre,
         debug_markers=True,
     )
     session = RideSession(sim)

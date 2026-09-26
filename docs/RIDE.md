@@ -713,7 +713,10 @@ their own fields. Errors name the offending entry and the allowed keys.
 
 `--dump-track` writes the **materialised** layout — every generated obstacle listed,
 no `[generator]` block — so a dumped file pins exactly what was simulated and can be
-edited by hand.
+edited by hand. Roughness segments in a file **yield** to anything placed on top of
+them: add a pothole inside one and the loader splits the segment around it (the right
+remainder gets a derived seed; remainders under 0.5 m are dropped). Two real obstacles
+that overlap are still an error.
 
 ## Rough-road generator
 

@@ -231,6 +231,70 @@ def generator_from_dict(entry: Mapping[str, Any]) -> RoadGeneratorSpec:
     return spec
 
 
+ROUGHNESS_SPLIT_SEED_STEP = 1_000_003
+"""Seed offset given to the right-hand remainder when a roughness segment is split."""
+
+MIN_ROUGHNESS_REMAINDER_M = 0.5
+"""Roughness remainders shorter than this are dropped rather than kept as slivers."""
+
+
+def carve_roughness(obstacles: List[Obstacle]) -> List[Obstacle]:
+    """
+    Makes background roughness yield to everything placed on top of it.
+
+    A dumped generated road lists its roughness as explicit segments spanning the free
+    stretches, so the natural edit -- add a pothole to a dumped file -- would collide with
+    one. Roughness is texture, not a defect, so instead of rejecting the file each segment
+    is split around any other obstacle it overlaps. The left remainder keeps the segment's
+    seed; the right one gets ``seed + ROUGHNESS_SPLIT_SEED_STEP`` so it is deterministic
+    but not a repeat. Remainders shorter than ``MIN_ROUGHNESS_REMAINDER_M`` are dropped.
+
+    Two non-roughness obstacles that overlap are left for ``TrackSpec.validate`` to reject.
+
+    Args:
+        obstacles: Obstacles as listed in the file.
+
+    Returns:
+        The same obstacles with roughness segments split, sorted by start position.
+    """
+    defects = [o for o in obstacles if not isinstance(o, RoadRoughness)]
+    roughness = [o for o in obstacles if isinstance(o, RoadRoughness)]
+    if not roughness or not defects:
+        return sorted(obstacles, key=lambda o: o.start_m)
+
+    carved: List[RoadRoughness] = []
+    for seg in roughness:
+        pieces: List[Tuple[float, float, int]] = [(seg.start_m, seg.end_m, seg.seed)]
+        for d in sorted(defects, key=lambda o: o.start_m):
+            next_pieces: List[Tuple[float, float, int]] = []
+            for a, b, sd in pieces:
+                if d.end_m <= a or d.start_m >= b:
+                    next_pieces.append((a, b, sd))
+                    continue
+                if d.start_m > a:
+                    next_pieces.append((a, d.start_m, sd))
+                if d.end_m < b:
+                    next_pieces.append((d.end_m, b, sd + ROUGHNESS_SPLIT_SEED_STEP))
+            pieces = next_pieces
+        for a, b, sd in pieces:
+            if b - a >= MIN_ROUGHNESS_REMAINDER_M:
+                # Trim float noise without ever crossing into the neighbour (validate()
+                # rejects a one-ulp overlap).
+                seg_len = round(b - a, 6)
+                while a + seg_len > b:
+                    seg_len = round(seg_len - 1e-6, 6)
+                carved.append(
+                    RoadRoughness(
+                        start_m=a,
+                        section_length_m=seg_len,
+                        amplitude_m=seg.amplitude_m,
+                        correlation_length_m=seg.correlation_length_m,
+                        seed=sd,
+                    )
+                )
+    return sorted(defects + carved, key=lambda o: o.start_m)
+
+
 def track_from_dict(data: Mapping[str, Any], *, seed: Union[int, None] = None,
                     length_m: Union[float, None] = None) -> TrackSpec:
     """
@@ -257,7 +321,7 @@ def track_from_dict(data: Mapping[str, Any], *, seed: Union[int, None] = None,
     entries = data.get("obstacles", [])
     if not isinstance(entries, list):
         raise TrackFileError("'obstacles' must be an array of tables ([[obstacles]])")
-    hand_placed = [obstacle_from_dict(e, i) for i, e in enumerate(entries)]
+    hand_placed = carve_roughness([obstacle_from_dict(e, i) for i, e in enumerate(entries)])
 
     generated: List[Obstacle] = []
     if "generator" in data:
@@ -414,6 +478,7 @@ def save_track(track: TrackSpec, path: Union[str, Path]) -> Path:
 __all__ = [
     "FILE_SUFFIX",
     "TrackFileError",
+    "carve_roughness",
     "obstacle_from_dict",
     "generator_from_dict",
     "track_from_dict",

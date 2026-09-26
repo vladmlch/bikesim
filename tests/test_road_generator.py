@@ -384,3 +384,51 @@ def test_track_from_dict_accepts_a_single_shape_name_for_weights():
     holes = [o for o in track.obstacles if isinstance(o, POTHOLE_TYPES)]
 
     assert holes and all(isinstance(o, BowlPothole) for o in holes)
+
+
+# --------------------------------------------------------------------------------------
+# Editing a dumped road: roughness yields to whatever is placed on top of it
+# --------------------------------------------------------------------------------------
+
+
+def test_adding_a_defect_to_a_dumped_road_splits_the_roughness(tmp_path):
+    """The natural edit -- dump road_worn, add a pothole -- must load, not collide."""
+    path = save_track(get_preset("road_worn"), tmp_path / "edit.toml")
+    text = path.read_text(encoding="utf-8") + (
+        '\n[[obstacles]]\ntype = "pothole"\nstart_m = 20.0\ndepth_mm = 90\nlength_m = 0.45\nedge = "sloped"\n'
+    )
+    path.write_text(text, encoding="utf-8")
+
+    track = load_track(path)
+    added = [o for o in track.obstacles if isinstance(o, SlopedPothole)]
+    rough = sorted(_roughness(track.obstacles), key=lambda o: o.start_m)
+    original_rough = sorted(_roughness(get_preset("road_worn").obstacles), key=lambda o: o.start_m)
+
+    assert len(added) == 1 and added[0].start_m == 20.0
+    assert len(rough) == len(original_rough) + 1
+    left = [o for o in rough if o.end_m == pytest.approx(20.0)]
+    right = [o for o in rough if o.start_m == pytest.approx(20.45)]
+    assert len(left) == 1 and len(right) == 1
+    assert left[0].seed == original_rough[0].seed
+    assert right[0].seed == original_rough[0].seed + 1_000_003
+    assert left[0].start_m == original_rough[0].start_m
+    assert right[0].end_m == pytest.approx(original_rough[0].end_m)
+    # Everything else is untouched.
+    assert len(_defects(track.obstacles)) == len(_defects(get_preset("road_worn").obstacles)) + 1
+
+
+def test_carve_roughness_drops_slivers_and_leaves_real_overlaps_to_validate():
+    from bike_sim.terrain.trackfile import carve_roughness
+
+    seg = RoadRoughness(start_m=10.0, section_length_m=10.0, amplitude_m=0.003, seed=5)
+    near_start = Pothole(start_m=10.2, depth_m=0.05, hole_length_m=0.5)   # 0.2 m sliver on the left
+    carved = carve_roughness([seg, near_start])
+    rough = _roughness(carved)
+
+    assert len(rough) == 1
+    assert rough[0].start_m == pytest.approx(10.7) and rough[0].end_m == pytest.approx(20.0)
+
+    two_defects = carve_roughness([Pothole(start_m=5.0), Pothole(start_m=5.2)])
+    assert len(two_defects) == 2
+    with pytest.raises(ValueError, match="may not overlap"):
+        TrackSpec(name="t", length_m=30.0, obstacles=two_defects).validate()

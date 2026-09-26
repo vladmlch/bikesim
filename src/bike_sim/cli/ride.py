@@ -22,6 +22,7 @@ from bike_sim.sim.ride.cruise import (
     MAX_TARGET_SPEED_KMH,
     MIN_TARGET_SPEED_KMH,
 )
+from bike_sim.terrain.trackfile import FILE_SUFFIX
 from bike_sim.terrain import (
     DEFAULT_ROAD_PRESET,
     PRESETS,
@@ -107,8 +108,8 @@ def resolve_track(name_or_path: str, seed: Optional[int] = None, length_m: Optio
         TrackFileError: On a malformed file.
         ValueError: On an unknown preset, or an override that does not apply.
     """
-    path = Path(name_or_path)
-    if name_or_path.endswith(".toml") or path.is_file():
+    if _is_file_argument(name_or_path):
+        path = Path(name_or_path)
         if not path.is_file():
             raise ValueError(f"track file not found: {path}")
         return load_track(path, seed=seed, length_m=length_m)
@@ -129,6 +130,13 @@ def resolve_track(name_or_path: str, seed: Optional[int] = None, length_m: Optio
     return get_preset(name_or_path)
 
 
+def _is_file_argument(name_or_path: str) -> bool:
+    """A preset name is a preset even if a file of that name happens to exist in cwd."""
+    if name_or_path in PRESETS:
+        return False
+    return name_or_path.endswith(FILE_SUFFIX) or Path(name_or_path).is_file()
+
+
 def track_seed(name_or_path: str, seed: Optional[int]) -> Optional[int]:
     """
     The generator seed a run should be labelled with, or None when none applies.
@@ -146,7 +154,7 @@ def track_seed(name_or_path: str, seed: Optional[int]) -> Optional[int]:
     if name_or_path in ROAD_LEVEL_SPECS:
         return int(ROAD_LEVEL_SPECS[name_or_path]().seed)
     path = Path(name_or_path)
-    if path.is_file():
+    if _is_file_argument(name_or_path) and path.is_file():
         import tomllib
 
         try:
@@ -314,6 +322,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 2
     if not MIN_TARGET_SPEED_KMH <= args.speed <= MAX_TARGET_SPEED_KMH:
         print(f"{PREFIX} --speed must be within {MIN_TARGET_SPEED_KMH:.0f}-{MAX_TARGET_SPEED_KMH:.0f} km/h",
+              file=sys.stderr)
+        return 2
+    if args.sag is not None and args.no_rider:
+        print(f"{PREFIX} --sag fits the springs for the rider's weight; it cannot be combined with --no-rider",
               file=sys.stderr)
         return 2
 

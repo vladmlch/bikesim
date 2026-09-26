@@ -162,6 +162,8 @@ def _convert_keys(raw: Mapping[str, Any], names: List[str], length_field: str, w
             raise TrackFileError(f"{where}: unknown key '{key}'; allowed: {sorted(names)}")
         if target in out:
             raise TrackFileError(f"{where}: '{target}' given twice (metres and millimetres?)")
+        if target in ("seed", "n_bumps", "n_waves") and not (isinstance(value, int) and not isinstance(value, bool)):
+            raise TrackFileError(f"{where}: '{key}' must be an integer, got {value!r}")
         out[target] = value
     return out
 
@@ -187,7 +189,8 @@ def obstacle_from_dict(entry: Mapping[str, Any], index: int = 0) -> Obstacle:
         TrackFileError: On unknown type, shape or key.
     """
     cls = _resolve_class(entry, index)
-    raw = {k: v for k, v in entry.items() if k not in ("type", "edge", "shape")}
+    selector = {"pothole": "edge", "bump": "shape"}.get(entry["type"])
+    raw = {k: v for k, v in entry.items() if k != "type" and k != selector}
     where = f"obstacles[{index}] ({entry.get('type')})"
     kwargs = _convert_keys(raw, _field_names(cls), _LENGTH_FIELD.get(cls, ""), where)
     if "start_m" not in kwargs:
@@ -324,6 +327,8 @@ def track_from_dict(data: Mapping[str, Any], *, seed: Union[int, None] = None,
     hand_placed = carve_roughness([obstacle_from_dict(e, i) for i, e in enumerate(entries)])
 
     generated: List[Obstacle] = []
+    if seed is not None and "generator" not in data:
+        raise TrackFileError("a seed override was given but the track file has no [generator] block")
     if "generator" in data:
         gen = dict(data["generator"])
         if seed is not None:

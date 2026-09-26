@@ -16,6 +16,7 @@ where millimetres are accepted.
 """
 
 from dataclasses import dataclass, field
+import math
 from typing import Callable, Dict, List, Sequence, Tuple
 import numpy as np
 
@@ -128,8 +129,9 @@ def _free_intervals(span: Interval, occupied: Sequence[Interval], gap_m: float) 
     free: List[Interval] = []
     cursor = lo
     for start, end in sorted(occupied):
-        if start - gap_m > cursor:
-            free.append((cursor, start - gap_m))
+        right = min(start - gap_m, hi)
+        if right > cursor:
+            free.append((cursor, right))
         cursor = max(cursor, end + gap_m)
     if hi > cursor:
         free.append((cursor, hi))
@@ -140,24 +142,24 @@ def _place(
     rng: np.random.Generator,
     length_m: float,
     span: Interval,
-    occupied: List[Interval],
+    occupied: Sequence[Interval],
     gap_m: float,
     label: str,
 ) -> float:
-    """Draws a start position for an obstacle of ``length_m`` and records it as occupied."""
+    """Draws a start position for an obstacle of ``length_m``; the caller records it."""
     slots = [(a, b - length_m) for a, b in _free_intervals(span, occupied, gap_m) if b - a >= length_m]
     if not slots:
         raise ValueError(
             f"no room left for a {length_m:.2f} m {label}: lower the defect rates, "
             f"shorten the sizes or lengthen the track"
         )
-    widths = np.array([b - a for a, b in slots])
+    # Weight slots by how much choice they offer, but never zero: a slot the obstacle
+    # fits exactly is still a slot.
+    widths = np.array([b - a for a, b in slots]) + POSITION_ROUNDING_M
     a, b = slots[int(rng.choice(len(slots), p=widths / widths.sum()))]
     start = float(rng.uniform(a, b)) if b > a else float(a)
     # Round towards the inside of the slot so rounding can never breach the gap.
-    start = min(max(round(start / POSITION_ROUNDING_M) * POSITION_ROUNDING_M, a), b)
-    occupied.append((start, start + length_m))
-    return start
+    return min(max(round(start / POSITION_ROUNDING_M) * POSITION_ROUNDING_M, a), b)
 
 
 def _make_pothole(spec: RoadGeneratorSpec, rng: np.random.Generator) -> Tuple[str, float, float]:
@@ -208,8 +210,8 @@ def generate_road(
     occupied: List[Interval] = list(reserved)
     obstacles: List[Obstacle] = []
 
-    n_potholes = int(round(spec.potholes_per_100m * usable / 100.0))
-    n_bumps = int(round(spec.bumps_per_100m * usable / 100.0))
+    n_potholes = _count(spec.potholes_per_100m, usable)
+    n_bumps = _count(spec.bumps_per_100m, usable)
 
     # Sizes and shapes are drawn first, in a fixed order, so that changing the count of one
     # kind does not reshuffle the sizes of the other.
@@ -226,10 +228,14 @@ def generate_road(
         start = _place(rng, length, span, occupied, spec.min_gap_m, kind)
         if kind == "pothole":
             edge, depth, _ = potholes[index]
-            obstacles.append(_build_pothole(edge, start, depth, length, spec.pothole_edge_m))
+            obstacle = _build_pothole(edge, start, depth, length, spec.pothole_edge_m)
         else:
             shape, height, _ = bumps[index]
-            obstacles.append(_build_bump(shape, start, height, length, spec.bump_ramp_fraction))
+            obstacle = _build_bump(shape, start, height, length, spec.bump_ramp_fraction)
+        # Reserve the obstacle's *own* extent: a trapezoid rebuilt from ramp and plateau
+        # can differ from the drawn length by an ulp, and roughness is laid down flush.
+        occupied.append((obstacle.start_m, obstacle.end_m))
+        obstacles.append(obstacle)
 
     if spec.roughness_m > 0.0:
         min_len = MIN_ROUGHNESS_SEGMENT_CORRELATIONS * spec.roughness_correlation_m
@@ -251,6 +257,11 @@ def generate_road(
                 )
 
     return obstacles
+
+
+def _count(rate_per_100m: float, usable_m: float) -> int:
+    """Expected defect count over the usable length, rounded half up (not banker's)."""
+    return int(math.floor(rate_per_100m * usable_m / 100.0 + 0.5))
 
 
 def _build_pothole(edge: str, start: float, depth: float, length: float, edge_m: float) -> Obstacle:

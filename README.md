@@ -772,7 +772,7 @@ Run the test suite with `uv`:
 uv run pytest -v
 ```
 
-**390 tests, all passing** (about 50 s; the ride-mode traverses dominate). No extra dependencies are needed — Pillow, which
+**403 tests, all passing** (about 50 s; the ride-mode traverses dominate). No extra dependencies are needed — Pillow, which
 `tools/photo_reference.py` and `tools/render_comparison.py` use, is already present
 transitively.
 
@@ -790,7 +790,7 @@ transitively.
 | `tests/test_coil_shock.py` | `7` | Coil rate, preload, bottom-out bumper engagement and force |
 | `tests/test_terrain.py` | `45` | Obstacle catalogue geometry, grid independence, seed determinism, profile assembly, presets, heightfield rasterization |
 | `tests/test_road_shapes.py` | `23` | Road-scale shapes (bump, trapezoid, sloped / bowl pothole, roughness) and the rolling-wheel envelope |
-| `tests/test_road_generator.py` | `40` | Rough-road generator (determinism, rates, ranges, shape weights, clearance, roughness fill), `road_*` levels, TOML track files and their errors, dump→load round-trip |
+| `tests/test_road_generator.py` | `50` | Rough-road generator (determinism, rates, ranges, shape weights, clearance, roughness fill), `road_*` levels, TOML track files and their errors, dump→load round-trip |
 | `tests/test_ride_model.py` | `15` | Ride MJCF: planar root, loop closures, contact spheres, hfield dims, accelerometers, timestep |
 | `tests/test_ride_field_sizing.py` | `15` | Heightfield derived from track length; default XML byte-identical; 300 m road compiles and rolls |
 | `tests/test_ride_equilibrium.py` | `11` | Solved static equilibrium, sag, suspension force path |
@@ -799,7 +799,7 @@ transitively.
 | `tests/test_ride_telemetry.py` | `15` | Recorder rows / CSV / decimation / bit-identical repeat; summary metrics on synthetic and real channels |
 | `tests/test_ride_invariants.py` | `8` | `road_worn` at 25 km/h: solved sag, travel inside soft limits, speed tracking, no flight, repeatability |
 | `tests/test_ride_plots.py` | `6` | Telemetry figures and track preview render headless |
-| `tests/test_ride_cli.py` | `12` | `bike-ride` resolution, arguments, `--list-tracks`, `--dump-track`, `--preview`, a real `--headless` run with `--sag` |
+| `tests/test_ride_cli.py` | `15` | `bike-ride` resolution, arguments, `--list-tracks`, `--dump-track`, `--preview`, a real `--headless` run with `--sag` |
 
 ---
 

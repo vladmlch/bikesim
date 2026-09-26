@@ -432,3 +432,62 @@ def test_carve_roughness_drops_slivers_and_leaves_real_overlaps_to_validate():
     assert len(two_defects) == 2
     with pytest.raises(ValueError, match="may not overlap"):
         TrackSpec(name="t", length_m=30.0, obstacles=two_defects).validate()
+
+
+# --------------------------------------------------------------------------------------
+# Regressions from the 2026-09-26 review
+# --------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("ramp_fraction", [0.1, 0.15, 0.2])
+def test_trapezoid_roads_validate_for_many_seeds(ramp_fraction):
+    """A trapezoid rebuilt from ramp + plateau can differ from the drawn length by an ulp;
+    the reserved interval must be the obstacle's own extent or flush roughness overlaps."""
+    for seed in range(60):
+        spec = RoadGeneratorSpec(seed=seed, potholes_per_100m=0.0, bumps_per_100m=12.0,
+                                 bump_shape={"trapezoid": 1.0}, bump_ramp_fraction=ramp_fraction)
+        TrackSpec(name="t", length_m=100.0, obstacles=generate_road(spec, 100.0)).validate()
+
+
+def test_reserved_obstacle_in_the_runout_does_not_leak_defects_past_it():
+    spec = RoadGeneratorSpec(seed=3, runup_m=10.0, runout_m=5.0, potholes_per_100m=6.0, bumps_per_100m=6.0)
+    late = SquareEdge(start_m=97.0, height_m=0.09, ledge_length_m=0.25)
+    for s in range(20):
+        spec.seed = s
+        track = build_road("t", spec, 100.0, hand_placed=[late])
+        for o in track.obstacles:
+            if o is not late:
+                assert o.end_m <= 95.0 + 1e-9, f"seed {s}: {o.label} ends at {o.end_m}"
+
+
+def test_exact_fit_slot_is_usable():
+    """A single slot the obstacle fits exactly must be chosen, not weighted to zero."""
+    spec = RoadGeneratorSpec(seed=0, runup_m=10.0, runout_m=5.0, min_gap_m=1.0,
+                             potholes_per_100m=100.0 / 85.0, pothole_length_m=(0.5, 0.5),
+                             bumps_per_100m=0.0, roughness_m=0.0)
+    # Reserve everything except exactly 0.5 m (+ gaps) at 40.0 .. 40.5.
+    reserved = [(10.0, 39.0), (41.5, 95.0)]
+    obstacles = generate_road(spec, 100.0, reserved)
+
+    assert len(obstacles) == 1
+    assert obstacles[0].start_m == pytest.approx(40.0)
+
+
+def test_counts_round_half_up():
+    spec = RoadGeneratorSpec(seed=0, potholes_per_100m=0.0, bumps_per_100m=10.0, roughness_m=0.0)
+    # usable 85 m -> 8.5 -> 9, not banker's 8
+    assert len(generate_road(spec, 100.0)) == 9
+
+
+def test_track_file_rejects_float_seeds_and_stray_selectors(tmp_path):
+    with pytest.raises(TrackFileError, match="must be an integer"):
+        load_track(_write(tmp_path, 'name = "x"\nlength_m = 100\n[generator]\nseed = 1.0\n'))
+    with pytest.raises(TrackFileError, match="unknown key 'shape'"):
+        load_track(_write(tmp_path, 'name = "x"\nlength_m = 50\n[[obstacles]]\ntype = "roots"\nstart_m = 10\nshape = "cosine"\n'))
+
+
+def test_seed_override_without_generator_is_an_error(tmp_path):
+    path = _write(tmp_path, 'name = "x"\nlength_m = 50\n[[obstacles]]\ntype = "pothole"\nstart_m = 10\n')
+    assert load_track(path).length_m == 50.0
+    with pytest.raises(TrackFileError, match="no \\[generator\\] block"):
+        load_track(path, seed=3)

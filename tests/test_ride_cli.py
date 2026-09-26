@@ -196,3 +196,30 @@ def test_headless_no_plots_and_sag(capsys, tmp_path, short_road):
     summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
     assert summary["extras"]["sag_target_pct"] == 30.0
     assert summary["extras"]["fork_psi"] == pytest.approx(118.5, abs=0.1)
+
+
+# --------------------------------------------------------------------------------------
+# Regressions from the 2026-09-26 review
+# --------------------------------------------------------------------------------------
+
+
+def test_sag_requires_the_rider(capsys):
+    assert main(["--headless", "--sag", "30", "--no-rider"]) == 2
+    assert "--no-rider" in capsys.readouterr().err
+
+
+def test_seed_on_a_file_without_generator_is_rejected(capsys, tmp_path):
+    path = tmp_path / "authored.toml"
+    path.write_text('name = "authored"\nlength_m = 40\n[[obstacles]]\ntype = "pothole"\nstart_m = 20\n', encoding="utf-8")
+
+    assert main(["--track", str(path), "--seed", "4", "--preview", "--out", str(tmp_path)]) == 1
+    assert "[generator]" in capsys.readouterr().err
+    assert track_seed(str(path), None) is None
+
+
+def test_a_stray_file_named_like_a_preset_does_not_shadow_it(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "road_worn").write_text("not toml at all", encoding="utf-8")
+
+    assert resolve_track("road_worn") == get_preset("road_worn")
+    assert track_seed("road_worn", None) == 0

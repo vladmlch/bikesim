@@ -105,7 +105,7 @@ mujoco_sim_new2/
 │   ├── RIDE.md                 # Ride mode physics contract + usage / track file / telemetry reference
 │   ├── ARCHITECTURE.md         # This file
 │   └── superpowers/plans/      # Implementation plans
-├── tests/                      # Pytest Test Suite (390 tests)
+├── tests/                      # Pytest Test Suite (403 tests)
 │   ├── golden/                 # Baseline golden XML & JSON snapshots (incl. baseline_bike_ride.xml)
 │   ├── test_*.py               # Geometry, kinematics, physics, MJCF, playground, photo fit
 │   ├── test_terrain.py, test_road_shapes.py, test_road_generator.py      # terrain package

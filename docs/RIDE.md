@@ -11,6 +11,12 @@ rock gardens, a drop and a kicker. Complements the three existing modes
 > implementation later proved a contract figure wrong the section says so and gives both
 > numbers (§9). Part two, *Usage*, documents the `bike-ride` command, track files, the
 > telemetry channels and the summary metrics.
+>
+> **Pneumatic tyre (added 2026-09-26).** §3.1 and §4.1 specify a second, opt-in tyre model
+> the same way: written ahead of its implementation
+> ([plan](superpowers/plans/2026-09-26-pneumatic-tyre.md)). Figures marked *pending* are
+> filled in by measurement as the plan's tasks land. Until the plan's task 13, `sphere` (§3.0,
+> §4.0) is the default and everything else in this document describes it.
 
 ---
 
@@ -109,9 +115,17 @@ plus the locked steer coordinate — **12 with the seated rider**, whose five sl
 a genuine degree of freedom carried by a preloaded spring-damper.
 
 **Wheel rotations are genuine dynamic degrees of freedom**, not auxiliary states. They
-carry rotational inertia, they are driven by actuator torque and by contact friction, and
-they can spin up freely when the wheel leaves the ground. Any control law that assumes
-wheel speed tracks ground speed is invalid here — see §6.
+carry rotational inertia, they are driven by actuator torque and by the road — contact
+friction with `sphere`, the tyre model's tangential force with `pneumatic` — and they can
+spin up freely when the wheel leaves the ground. Any control law that assumes wheel speed
+tracks ground speed is invalid here — see §6.
+
+**The `pneumatic` tyre carries states outside MuJoCo** (§3.1, §4.1): each element's previous
+deflection, and the transient slip `κ'` of each contact patch (`fast`) or the bristle
+deflections of the tread (`detailed`). They are not generalized coordinates — they add no
+mass and no constraint — but they are state: they are reset with the run, and at every
+velocity reset of the equilibrium solve (§9), so a run is reproducible from `qpos` plus a
+cleared tyre.
 
 **Steer lock rationale.** A planar root cannot absorb steer rotation: turning the steerer
 moves the front contact patch out of the XZ plane, which the model has no coordinate for.
@@ -235,6 +249,17 @@ declared depth.
 
 ## 3. Wheel–ground contact
 
+Two tyre models, chosen per run (`TyreConfig.model`, `--tyre-model`):
+
+| Model | What carries the wheel on the road | Status |
+|---|---|---|
+| `sphere` | MuJoCo contact of a sphere against the heightfield — §3.0, §4.0 | **default** |
+| `pneumatic` | a Python tyre model against the road profile, applied through `xfrc_applied` — §3.1, §4.1 | opt-in until validated (plan D17) |
+
+Everything outside §3 and §4 is shared unless a paragraph names a model.
+
+### 3.0 `sphere` (default)
+
 | Property | Value |
 |---|---|
 | Contact geom | **sphere**, wheel radius, mass 0 |
@@ -257,6 +282,12 @@ and absorbs a meaningful fraction of a square-edge hit; a rigid contact would co
 into a numerical spike and contaminate the shaft-velocity histogram that the damper tuning
 depends on.
 
+*Correction (2026-09-26).* Measured 29″ MTB tyres are about half as stiff and a fifth as
+damped as these values: ≈ 62 N/mm static at 1.72 bar and 418 N, 100–190 N·s/m, 7–10 mm of
+static deflection at this bike's loads (§11, sources there). The values above stay as the
+`sphere` model's definition, because changing them would change every result recorded
+against it; the physically parameterised alternative is §3.1.
+
 **Friction must be set on both sides.** With equal geom priorities MuJoCo combines contact
 friction as the element-wise maximum of the two geoms. Setting only one side silently
 inherits the other's value.
@@ -267,11 +298,169 @@ anyway. **The rider and the crankset do not collide** (`contype="0"`): the rider
 are mass and visuals, and a rider on the ground is a crash the detector has already called
 from the frame's attitude and the handlebar; the horizontal cranks and pedals sit 350 mm
 above the road and would only meet it in that same crash. (Earlier revisions of this
-section said rider contact was enabled; the builder never did that.)
+section said rider contact was enabled; the builder never did that.) This paragraph holds
+for both tyre models.
+
+### 3.1 `pneumatic`
+
+**Why not MuJoCo contact.** A pressure-dependent, non-linear load–deflection law, a rim
+behind the carcass and a slip-dependent tangential force are not expressible in `solref`,
+`solimp` and a Coulomb cone. The road, on the other hand, is known in closed form (§2): the
+tyre does not need collision detection to find it. So in `pneumatic` the wheels do not
+collide at all, and a force model evaluates each wheel against `h(x)` once per step. The
+sphere–heightfield dropouts of §12 item 8 do not exist in this model.
+
+**What changes in the compiled model — only this.** The two contact spheres get
+`contype="0" conaffinity="0"`. They stay in the model, because `resolve_wheel_spin` reads
+the wheel radius from them. The tyre cylinders already do not collide (§3.0). The
+heightfield and the catch plane are unchanged: they render the road and carry the frame and
+handlebar collisions of the paragraph above. `detailed` (below) sets `model.opt.timestep`
+after compilation; the XML keeps 0.0005.
+
+**Road seen by the tyre.** The same profile the heightfield is rasterised from —
+`build_profile(track, field.track_x())`, metres, 5 mm — linearly interpolated. Physics and
+picture therefore cannot disagree. The road is rigid; its surface properties come from §4.1.
+
+**Geometry.**
+
+| Quantity | Front (Magic Mary 29×2.4) | Rear (Hans Dampf 27.5×2.4) |
+|---|---|---|
+| Outer radius `R` | 0.372 m (`BikeSpecs`) | 0.352 m |
+| Rim radius `R_rim` (builder's rim geom) | 0.320 m | 0.300 m |
+| Tyre height above the rim | 52 mm | 52 mm |
+| Casing width `W_c` | 60 mm [est] | 60 mm [est] |
+| Compressed casing and tread at rim strike `t_c` | 6 mm [est] | 6 mm [est] |
+| Rim-strike deflection `δ_rim = R − R_rim − t_c` | **46 mm** | **46 mm** |
+
+`δ_rim` is 0.84 of a 55 mm section, inside the 0.80–0.85 band derived from drop tests
+(§11). Tubeless, no insert (plan D5).
+
+**Radial elements.** Each wheel carries `N` rays from the hub centre, uniformly spaced over
+**±75°** about world −Z. The rays are fixed in the world frame: they neither spin with the
+wheel nor pitch with the bike. The tyre is axisymmetric, so any non-spinning frame gives the
+same forces, and the world frame keeps the coverage pointed at the road whatever the pitch.
+±75° sees an edge up to `R(1 − cos 75°)` ≈ 0.74 R = 275 / 261 mm above the wheel's lowest
+point. The far edge of a 150 mm pothole meets the tyre about 55° off vertical, and its
+patch extends several degrees beyond that, which is why ±60° is not enough. Road met
+outside the coverage is logged as a **coverage event**; a shipped preset that raises one is
+a bug in this section.
+
+For ray `i` with unit direction `u_i`, `r_i` is the distance from the hub centre to the
+first **visible** road point along the ray. Road hidden behind a nearer part of the profile
+along the same ray, such as the back face of a steep descent, is discarded, not clipped. The
+element deflection is `δ_i = max(0, R − r_i)`.
+
+**Element force.** Per ray, over its share of arc `Δs = R·Δθ`, directed along `−u_i`:
+
+`f_i = [ c_A · p · w(δ_i) + k_c · δ_i ] · Δs`
+
+- `p` is gauge pressure. It is read every step, so it can change mid-run (Usage, key map).
+- `w(δ) = 2·√(δ·(2ρ − δ))` is the chord of the casing cross-section, radius `ρ = W_c/2`, at
+  depth `δ`. It saturates at `2ρ` for `δ ≥ ρ`.
+- `c_A ≤ 1` is an effective-area factor. It stands for the knob voids and the bulge that
+  make the real footprint smaller than the geometric one.
+- `k_c` is the carcass stiffness per unit arc length.
+
+`c_A` and `k_c` are fitted, per wheel, to three targets:
+
+1. Static stiffness on flat road follows `k(p) ≈ 22 + 24·p[bar]` N/mm within ±15 % over
+   1.0–2.0 bar.
+2. Contact length at 418 N is 133 mm at 1.38 bar and 122 mm at 1.72 bar, within ±15 %.
+3. The pressure term carries 70–100 % of the load at nominal pressure.
+
+Fitted values: *pending (plan task 5)*. The law is mildly progressive by construction,
+because the loaded length and width both grow with deflection.
+
+**Hysteresis.** `f_h,i = η · f_i · tanh(δ̇_i / δ̇_ε)`, with `δ̇_i = (δ_i − δ_i,prev)/dt` and
+`δ̇_ε = 0.01 m/s`. It is **rate-independent**: the loss per load cycle does not depend on
+frequency, as for rubber, and the `tanh` only regularises the sign change through zero.
+This choice follows from the drum data. A rolling tyre's leading half is compressing and its
+trailing half is recovering, so hysteresis shifts the centre of pressure forward and
+produces a rolling-resistance moment that is nearly speed-independent, as drum tests show.
+Viscous element damping would make that moment grow linearly with speed.
+
+`η` is calibrated in this order:
+
+1. **Vertical damping ratio** of the free oscillation of a 44 kg drop sled on the tyre must
+   land in 2–5.5 % (loss factor 0.05–0.09). This is the quantity that reaches the rider,
+   which is what ride mode exists to study (§0), so it has priority.
+2. **Rolling resistance** on flat asphalt at 20 km/h, 490.5 N and 1.5 bar must match the drum
+   targets within ±15 %: Crr 0.0103 rear, ≈ 0.011 front.
+
+If an `η` inside the damping band leaves Crr more than 15 % short, the shortfall is closed
+by a **tread-loss term** on each patch, `F_roll = (Crr_target − Crr_η) · N_p`, opposing
+rolling and tapered through zero wheel speed like `opposing_torque`. This section will then
+record that the term was needed and how large it is. It is the only phenomenological term
+the model is allowed. A small viscous element term is permitted only if the damping ratio
+falls below 2 % with `η` at the top of its band.
+
+**Rim.** For `δ_i > δ_rim` the element adds `k_rim·(δ_i − δ_rim)·Δs`, carrying the same
+hysteresis. `k_rim = 3.0×10⁷ N/m²` makes a 50 mm rim patch add ≈ 1 500 N/mm, the stability
+cap below. A **rim-strike event** opens when any element first exceeds `δ_rim` and closes
+when none does. It records `x`, speed, peak wheel load, peak rim force and the energy the rim
+term absorbed. The tyre stays inflated: there is no puncture and no pressure loss (plan D11).
+For scale, Schwalbe's edge-drop test damages a Super Trail casing at 61 J and a Super
+Gravity casing at 95 J (§11). The event energy can be read against those figures, but no
+threshold is enforced.
+
+**Patches.** Each contiguous run of loaded rays is a patch `p`. Flat road gives one patch, a
+square edge two (the flat and the face), and the wheel is airborne when there are none. A
+patch has:
+
+- normal load `N_p`: the magnitude of the vector sum of its element forces;
+- direction `n_p`, and tangent `t_p ⟂ n_p` in the sagittal plane, pointing forward;
+- centroid `c_p`: the force-weighted mean of the element road points;
+- length `2a_p`: the distance between its first and last road points;
+- mean deflection `δ_p`.
+
+**Application.** The tangential force `F_t,p` comes from §4.1. Each patch force
+`F_p = N_p·n_p + F_t,p·t_p` acts at `c_p`. Per wheel, the tyre applier **assigns**
+
+`xfrc_applied[wheel] = [ Σ_p F_p ,  Σ_p (c_p − x_i) × F_p ]`
+
+where `x_i` is the wheel body's centre of mass (`data.xipos`). It does this on every step,
+zero included, because MuJoCo never clears `xfrc_applied`. The applier is the array's only
+writer. The moment about the axle is what drives and brakes the wheel against the road: no
+separate wheel torque is written. The drive and brake actuators act on the spin joints
+exactly as in §6, and their reaction reaches the road through `F_t`. Velocities used by the
+tyre come from `mj_objectVelocity` on the wheel body in world axes, so ω is the wheel's
+**absolute** spin. That differs from `qvel[*_wheel_spin]`, which is relative to a fork or
+swingarm that itself pitches.
+
+**Loads for gating.** In `pneumatic`, `TerrainContacts` takes its wheel channels from the
+tyre:
+
+- `*_load_n` is `Σ_p N_p`, unbridged, because nothing drops out;
+- `*_support_n` is the vertical component of `Σ_p N_p·n_p`;
+- the handlebar channel still comes from MuJoCo contact.
+
+The contact snapshot is built from the tyre evaluated at the top of the step, before the
+other writers run, so every writer sees one snapshot as before (§6).
+
+**Stability budget.** The tyre force is integrated explicitly, like the suspension (§10),
+so `ω·dt ≤ 0.4` must hold for the stiffest element set a wheel can see. The tyre alone gives
+`√(63 000 / 2.6) · 0.0005 ≈ 0.08`. With the rim engaged, capped at ≈ 1 500 N/mm, it gives
+`≈ 0.38`. A test asserts the bound from the compiled wheel masses.
+
+**Tiers.** Resolution changes between tiers; the physics does not.
+
+| Tier | Rays over ±75° | Spacing at the tread | Tread model (§4.1) | Timestep |
+|---|---|---|---|---|
+| `fast` | 64 | ≈ 15 mm | lumped (steady-state) brush | 0.0005 s |
+| `detailed` | 256 | ≈ 4 mm | discretised brush | 0.00025 s |
+
+`fast` must keep the interactive viewer at ≥ 1× real time. `detailed` may run 2–3× slower
+and exists as `fast`'s reference: a convergence test holds `fast`'s summary metrics to
+`detailed`'s. The final ray counts are *pending (plan task 10)*.
+
+**Tyre mass** stays on the wheel body. There is no separate belt or ring body, so the
+masses and inertias of §3.0 and `test_mass_distribution` are untouched.
 
 ---
 
 ## 4. Longitudinal friction and slip
+
+### 4.0 `sphere` (default)
 
 Contact is **regularized Coulomb friction**. There is no brush model, no Pacejka curve, no
 slip-ratio characteristic and no distinction between static and kinetic friction. Slip
@@ -285,10 +474,82 @@ the rear wheel unloads over a crest or lands.
 
 Rolling resistance is **not** left to the contact model. It is applied explicitly as a
 resistive torque proportional to the instantaneous normal load with `Crr = 0.015`. Joint
-damping on the wheel spin axes (0.05 and 0.01 N·m·s/rad) is a constant and does not scale
-with load, so it cannot represent a loss that doubles in a G-out.
+damping on the wheel spin axes (0.01 N·m·s/rad on both wheels; earlier revisions said
+"0.05 and 0.01", the builder has always emitted 0.01) is a constant and does not scale
+with load, so it cannot represent a loss that doubles in a G-out. It stays in both models
+as bearing loss.
 
-**Aerodynamic drag is not modelled.** At 25 km/h this omits roughly 13 N, about 90 W —
+### 4.1 `pneumatic`: brush slip
+
+**Surface.** One `SurfaceSpec` per run (`terrain/surface.py`). The tyre asks
+`SurfaceMap.at(x)` for it and never holds a surface itself, so per-zone surfaces in a track
+file can be added later without touching the tyre (plan D9). The default comes from the
+track: the `road_*` presets and track files with a `[generator]` block are `asphalt`,
+everything else is `hardpack`. `--surface` overrides the default. All values are authored
+(§11):
+
+| Surface | μ peak | μ sliding | C_κ/F_z | Stribeck speed |
+|---|---|---|---|---|
+| `asphalt` | 1.05 | 0.75 | 15 | 1.0 m/s |
+| `hardpack` | 0.80 | 0.60 | 12 | 1.0 m/s |
+| `loose` | 0.55 | 0.45 | 7 | 1.0 m/s |
+| `wet` | 0.50 | 0.40 | 10 | 1.0 m/s |
+
+Friction falls from static to sliding with the sliding speed:
+`μ(V_s) = μ_slide + (μ_peak − μ_slide) · exp(−|V_s| / V_str)`.
+
+**Slip, per patch.**
+
+- `V_x = v_hub · t_p` is the hub's speed along the patch tangent.
+- `R_e = R − δ_p/3` is the effective rolling radius of a loaded pneumatic tyre.
+- `V_s = V_x − ω · R_e` is the tread's sliding speed over the road, with ω the absolute spin
+  (§3.1).
+- `κ = −V_s / |V_x|` is the longitudinal slip: positive when driving, −1 for a locked wheel.
+
+**Transient slip.** `σ · dκ'/dt + |V_x| · κ' = −V_s`, with relaxation length σ = 90 mm
+[est]. It is integrated with its exact exponential solution, which is stable for any
+timestep and finite at `V_x = 0`. At rest with no torque, `κ'` holds its value like a
+deflected tread, so a parked bike does not creep. Under a torque at rest, the force builds
+over a distance rolled, not instantaneously. That is the property that makes a slip model
+well-posed near zero speed, where `κ` itself is 0/0.
+
+**Tread stiffness.** `c_px = (C_κ/F_z)_surface · N_p / (2·a_p²)`. The initial slope of the
+brush curve then equals the surface's normalised slip stiffness at every load, and the
+contact half-length `a_p` comes from §3.1. This is where pressure reaches traction: a softer
+tyre has a longer patch, and the curve changes with it.
+
+**Tangential force, by tier.**
+
+- *`fast`: lumped brush.* The steady-state brush with a parabolic pressure distribution,
+  evaluated at `κ'`: `σ_x = κ'/(1 + κ')`, `θ = 2·c_px·a_p² / (3·μ·N_p)`,
+  `F_t = 3μN_p·θσ_x·(1 − |θσ_x| + (θσ_x)²/3)` for `|θσ_x| < 1`, and `μN_p·sign(σ_x)`
+  beyond. `σ_x → −∞` as `κ' → −1`, which is the locked wheel, fully sliding. The patch is
+  **fully sliding** when `|θσ_x| ≥ 1`.
+- *`detailed`: discretised brush.* One bristle per ray inside the patch. Each bristle's load
+  share is that element's own carcass force, so on an edge the pressure distribution is the
+  real, lopsided one rather than a parabola. Bristle deflections are advected with the
+  rolling speed by a semi-Lagrangian shift, which stays stable at a Courant number above 1:
+  45 km/h at 4 mm and 0.25 ms is about 0.8, and the scheme does not rely on staying below 1.
+  They grow with the sliding speed while they stick, and slide when `c_px·q_j > μ·f_j`. The
+  patch is fully sliding when every bristle slides. Transporting bristles through the patch
+  already produces a lag of about `a_p`, so the slip input to the bristles is filtered with
+  `σ − a_p` (floored at 0) rather than σ. Both tiers therefore carry the same total
+  relaxation, and their steady-state curves coincide.
+
+**Consequences the rest of the contract relies on.**
+
+- **Wheelspin** is the rear patch fully sliding with drive torque applied. **Lock-up** is a
+  patch fully sliding under brake torque. Both are logged (Usage, summary metrics).
+- **Rolling resistance** in `pneumatic` is the hysteresis moment of §3.1, plus the tread-loss
+  term only if §3.1 found it necessary. `RollingResistance` (`Crr·N·r`) is not applied.
+- The traction limit is no longer a fixed `μN`. On `asphalt` at the static rear load of
+  610.9 N (seated rider, §9) it peaks near `1.05 · 610.9` ≈ 641 N, or ≈ 224 N·m at the rear
+  wheel's `R_e`, and falls to `μ_slide` once the tyre slides. The 150 N·m drive ceiling sits
+  inside it, and `hardpack` (≈ 170 N·m) still clears it. On `loose` (≈ 117 N·m) and `wet`
+  (≈ 107 N·m) full drive spins the rear wheel on flat ground. That is intended physics, and
+  it is logged, not suppressed (plan D12).
+
+**Both models.** **Aerodynamic drag is not modelled.** At 25 km/h this omits roughly 13 N, about 90 W —
 so the reported wheel power is systematically low by around a quarter and coast-down is
 optimistic. Comparisons *between* suspension settings are unaffected because the error is
 identical across runs; absolute wattage is not trustworthy.
@@ -364,7 +625,15 @@ contact. That gate reads a **debounced** contact signal: MuJoCo's sphere–heigh
 collision drops the contact row of a demonstrably loaded wheel on a speed-dependent share
 of steps (measured on flat ground: 2.0 / 14.7 / 27.2 / 43.2 % at 15 / 25 / 35 / 45 km/h),
 so `sim/ride/contacts.py` holds each wheel's last measured load for up to 10 steps (5 ms)
-before declaring it airborne. See §12 item 8.
+before declaring it airborne. See §12 item 8. With `pneumatic` the gate reads the tyre's own
+load (§3.1), which has no dropouts, so nothing is debounced.
+
+The integrator's anti-wind-up is unchanged for `sphere`: the accumulator is clamped, and
+integration pauses while the output is saturated in the direction of the error or the rear
+wheel is airborne. With `pneumatic` it also pauses while the rear patch is **fully sliding**
+in the drive direction (§4.1). Error accumulated against a spinning tyre would otherwise
+land as a torque spike when grip returns. There is no traction control and no ABS: a
+spinning or locked wheel is physics to be observed, not suppressed (plan D12).
 
 | Quantity | Value |
 |---|---|
@@ -382,6 +651,13 @@ slope. 25 km/h sits mid-band with 4.1 km/h of margin below and 5.6 km/h above.
 **Brakes are sign-aware**: the applied torque opposes the current wheel angular velocity
 and is zeroed near zero speed. A one-sided `ctrlrange` motor applied as a constant torque
 would otherwise drive the wheel backwards at a standstill.
+
+The fade is linear below `BRAKE_TAPER_RADPS = 1.0` rad/s, and it has a consequence under
+`pneumatic`. A wheel that the brake would lock settles with ω inside the taper band — at
+most 0.35 m/s of rim speed, against the 6.9 m/s of a 25 km/h run — rather than at exactly
+zero. The tyre sees `κ` of about −0.95 and a fully sliding patch, which is a lock-up in
+every sense §4.1 measures. Lock-up is therefore reported from the patch state, never from
+`ω = 0`. The brake taper stays: it is what keeps the torque from chattering in sign at rest.
 
 In the interactive viewer, braking is a **toggle** rather than a hold: MuJoCo's passive
 viewer delivers key press events, not key state, so a held-lever input cannot be
@@ -514,11 +790,17 @@ Tracked per step and reported per run:
 | Sources | Sinks |
 |---|---|
 | gravity (net −600 mm over the track) | fork and shock damping |
-| drive torque | contact dissipation |
-| **virtual rider moment** (flight, §7.4) | rolling resistance (`Crr = 0.015`) |
+| drive torque | contact dissipation (`sphere`) |
+| **virtual rider moment** (flight, §7.4) | rolling resistance (`sphere`: `Crr = 0.015`) |
+| | **tyre hysteresis** (`pneumatic`: carcass and rim elements, plus the tread-loss term if §3.1 needs it) |
+| | **tyre sliding** (`pneumatic`: `F_t · V_s` per patch) |
 | | brake torque |
 | | joint damping |
 | | **seated rider damping** (saddle, spine, arms, legs) |
+
+With `pneumatic`, the two tyre sinks replace contact dissipation and `Crr·N·r`. They are
+recorded per wheel as `*_tyre_loss_w`, and summed over rim-strike events as each event's
+energy (§3.1).
 
 The virtual rider moment is accounted **as a source on its own line**, never folded into
 "the physics". Its injected angular impulse and work are separate telemetry channels, so a
@@ -538,6 +820,15 @@ Aerodynamic drag is absent from the sink column by decision (§4).
 A run starts from a **numerically solved static equilibrium**, written into `qpos`, rather
 than from a settling drop. This removes the first half-second of transient from the
 telemetry and makes headless runs reproducible from the first frame.
+
+**With `pneumatic`** the tyre applier joins the relaxation beside the suspension and rider
+forces, and its transient state (§1) is cleared at every velocity reset. The relaxation
+cycle is specified in time, 20 ms, which is 40 steps at 0.5 ms and 80 at `detailed`'s
+0.25 ms. The axle loads below do not depend on the tyre model, because they are set by the
+centre of mass. The tyres deflect more than the sphere does — about 7 mm front and 10 mm
+rear at the seated split, against 4–5 mm — so the chassis settles a few millimetres lower
+and pitches by a few hundredths of a degree. The sag figures in the tables below are
+`sphere`'s; `pneumatic`'s are *pending (plan task 8)*.
 
 The rider is on by default (`seated`; §7). Analytic static state, both rider variants:
 
@@ -635,6 +926,7 @@ settable separately, because ride mode is precisely where that choice becomes vi
 | Setting | Value | Reason |
 |---|---|---|
 | `timestep` | 0.0005 | see below |
+| `timestep`, `pneumatic` / `detailed` | 0.00025, set after compilation | bristle transport and the reference role of the tier (§3.1) |
 | `integrator` | `implicitfast` | matches the other modes |
 | Joint limits | softened `solreflimit` | final barrier, not the bottom-out mechanism |
 
@@ -646,6 +938,30 @@ shorter step, hence 0.0005 rather than the 0.001 used by the stand modes.
 Cost is not a concern. Measured with a wheel-sized sphere rolling on a heightfield of this
 grid size at `timestep=0.0005`: **22.5× real time**. The interactive viewer runs at real
 time; the headless reference runs at 0.0005 regardless.
+
+That figure is for a bare sphere. The full ride loop — six Python writers and a contact
+query per step, around `mj_step` — is what the `pneumatic` tyre adds to, and it is the
+budget `fast` must fit (§3.1). Measured with `tools/bench_ride.py` on the development
+machine (Apple M4 Max, MuJoCo 3.12.0, Python 3.12.13, seated rider, every preset ridden
+end to end):
+
+| | Range over the seven presets |
+|---|---|
+| Real-time factor | **4.5–5.6×** (`flat` slowest, `road_broken` fastest) |
+| Cost per step | 89–110 µs |
+| `mj_step` | 66–87 µs |
+| Contact query | 9–10 µs |
+| All six writers together | ≈ 11 µs |
+
+So `mj_step` is three quarters of the step and the Python around it is cheap. The viewer
+spends part of each real second on `viewer.sync` at 120 Hz, the HUD and a 1 ms frame
+sleep. Reserving 30 % of each timestep for that leaves **240 µs per step** for the tyre,
+both wheels together, set by the slowest track. `pneumatic` also removes the wheels'
+collision rows from `mj_step`, which the budget does not count on. With the tyre: *pending
+(plan task 10)*.
+
+The tyre force, like the suspension forces, is external to MuJoCo and therefore integrated
+explicitly. Its stability bound is part of §3.1.
 
 MuJoCo's `accelerometer` sensor reports **proper acceleration**, verified directly: 0 in
 free fall, 9.81 m/s² at rest. Bar and saddle accelerations therefore come from real
@@ -664,9 +980,9 @@ authored** and carries no claim of correspondence to a specific real bike, tyre 
 | Assumption | Value |
 |---|---|
 | Track layout and obstacle dimensions | §2 |
-| Rolling resistance coefficient | 0.015 |
-| Tyre vertical stiffness / damping | 130 N/mm, 800 N·s/m |
-| Sliding friction | 1.2 |
+| Rolling resistance coefficient (`sphere`) | 0.015 |
+| Tyre vertical stiffness / damping (`sphere`) | 130 N/mm, 800 N·s/m |
+| Sliding friction (`sphere`) | 1.2 |
 | Virtual rider moment ceiling | ±80 N·m |
 | Coil preload and bumper characteristic | to be fixed with the implementation |
 | Crash thresholds | 60° pitch, handlebar contact |
@@ -681,6 +997,69 @@ authored** and carries no claim of correspondence to a specific real bike, tyre 
 The seated rider's *literature* values — de Leva's segment fractions, Kumar & Saran's saddle
 contact, the 4–6 Hz / ~1.5 × apparent-mass peak, the 55 / 33 / 12 % split extrapolated from
 Carahalios — are listed with their sources in §7.2 and in `physics/rider.py`.
+
+### 11.1 The `sphere` tyre against the literature
+
+The reason §3.1 exists:
+
+| Quantity | `sphere` | Measured, 29×2.3–2.4 MTB tyres |
+|---|---|---|
+| Vertical stiffness | 130 N/mm, linear, pressure-independent | ≈ 62 N/mm static at 1.72 bar / 418 N; 74–86 N/mm dynamic [T1][T2] |
+| Vertical damping | 800 N·s/m, viscous | ≈ 100–190 N·s/m, ζ ≈ 2–5.5 % [T2] |
+| Static deflection at this bike's loads | 3–5 mm | ≈ 7–10 mm [derived from T1] |
+| Rolling resistance | Crr 0.015 | 0.0103 (Hans Dampf, Addix Soft) / ≈ 0.011 (Magic Mary, Soft) at 1.5 bar [T4] |
+| Friction | μ 1.2 on every surface | asphalt peak ≈ 1.0–1.1, hardpack ≈ 0.7–0.85 [est, T5][T6] |
+
+### 11.2 `pneumatic` parameters
+
+**Literature-derived.** These are targets the model is fitted to or tested against, with
+their stated tolerances:
+
+| Parameter | Value | Source |
+|---|---|---|
+| Static stiffness law | `k(p) ≈ 22 + 24·p[bar]` N/mm, ±15 % | derived from [T1] (29×2.3 on a 25 mm rim) |
+| Pressure term's share of load | 70–100 % | [T1]: p·A of the bald tyre ≈ 107 % of the load |
+| Contact length at 418 N | 133 mm at 1.38 bar, 122 mm at 1.72 bar, ±15 % | [T1] Fig. 16 |
+| Dynamic / static stiffness | 1.16–1.35 | [T2] |
+| Vertical damping ratio | 2–5.5 % (loss factor 0.05–0.09) | [T2] |
+| Rim-strike deflection | 0.80–0.85 × section height | [T1]: 48.7 mm at 1.03 bar with no rim strike |
+| Section height, Hans Dampf 29×2.35 | 55 mm | [T3] |
+| Crr, Hans Dampf SG Addix Soft | 0.0103 at 1.5 bar, 490.5 N, 20 km/h | [T4] |
+| Crr vs pressure | ∝ p^−0.3 | derived from [T3] |
+| Casing damage energy, reference only | Super Trail 61 J, Super Gravity 95 J | [T4b] |
+
+**Authored.** These are estimates or choices, to be replaced by measurement where the plan
+says so:
+
+| Parameter | Value | Basis |
+|---|---|---|
+| Crr, Magic Mary Addix Soft | ≈ 0.011 | Ultra Soft measured at 0.0176; Soft ≈ Ultra Soft / 1.6 [T4] |
+| Casing width `W_c` | 60 mm | tyre width class |
+| Compressed casing and tread `t_c` | 6 mm | casing 1.9 mm + centre knobs 3.8–4.0 mm [T3] |
+| Hysteresis regularisation `δ̇_ε` | 0.01 m/s | numerical |
+| Rim stiffness `k_rim` | 3.0×10⁷ N/m² | stability cap (§3.1) |
+| Relaxation length σ | 90 mm (60–120) | lateral 160 mm derived from [T1]; road tyres 79–141 mm |
+| Normalised slip stiffness C_κ/F_z | 15 / 12 / 7 / 10 by surface | MTB cornering stiffness as proxy [T1]; car and trekking data [T5] |
+| Surface μ peak / sliding | §4.1 table | car Burckhardt curves scaled to MTB data [T6] |
+| Stribeck speed | 1.0 m/s | numerical, all surfaces |
+| Ray coverage and counts | ±75°; 64 / 256 | §3.1 coverage argument; tuned in plan task 10 |
+| Default pressures | 1.5 bar front / 1.7 bar rear | plan D5 |
+
+The user's own measurements (plan Appendix A: loaded deflection at two pressures per wheel)
+will replace the stiffness fit's literature anchor with this bike's tyres. When that
+happens, the rows affected move from "literature-derived" to "measured".
+
+Sources:
+
+- **[T1]** Dressel & Sadauckas, *Applied Sciences* 10(9):3156, 2020.
+- **[T2]** Sadauckas et al., *Vehicle System Dynamics*, 2024.
+- **[T3]** bicyclerollingresistance.com: Hans Dampf TrailStar 2017 review and test protocol.
+- **[T4]** ENDURO Mountainbike Magazine: Schwalbe tyre lab test, 2025.
+- **[T4b]** ENDURO Mountainbike Magazine: tyre insert test.
+- **[T5]** O. Maier, dissertation, KIT.
+- **[T6]** Burckhardt tyre–road friction parameters.
+
+Full URLs are in the plan's Appendix B.
 
 ---
 
@@ -719,13 +1098,14 @@ quasi-statically, unverified under impact until the invariant test measures it.
 **4 — No lateral dynamics** (§0), by construction. That includes the seated rider's
 lateral weight shift.
 
-**5 — No tyre slip model** (§4): regularized Coulomb friction only.
+**5 — No tyre slip model** (`sphere` only, §4.0): regularized Coulomb friction only.
+`pneumatic` has one (§4.1).
 
 **6 — No drivetrain** (§6): torque is applied at the wheel.
 
 **7 — No aerodynamic drag** (§4): wheel power reads ~90 W low at 25 km/h.
 
-**8 — Contact gates are debounced** (§6, §7). MuJoCo's sphere–heightfield collision drops
+**8 — Contact gates are debounced** (`sphere` only; §6, §7). MuJoCo's sphere–heightfield collision drops
 the contact row of a loaded wheel on a speed-dependent share of steps — 2.0 / 14.7 / 27.2 /
 43.2 % at 15 / 25 / 35 / 45 km/h on flat ground — and `sim/ride/contacts.py` holds the
 last measured load for up to 10 steps (5 ms) so a false airborne neither gates the drive
@@ -737,6 +1117,28 @@ track produces. Rolling resistance deliberately consumes the **raw** load rather
 debounced one, because there the artefact costs nothing (an unloaded step carries no
 `Crr·N·r`) and the hold would bias a §8 sink. The telemetry's `*_contact` flags are the
 debounced signal; `*_load_n` are the bridged magnitudes.
+
+Items 9–14 are what the `pneumatic` tyre (§3.1, §4.1) still does not do.
+
+**9 — No lateral tyre forces.** No cornering or camber force and no turn slip, which is
+implied by §0. Only the longitudinal half of the brush exists.
+
+**10 — Rigid road.** The surface presets change the friction curve and nothing else. `loose`
+does not sink, rut or shed material, and no surface deforms under the tyre.
+
+**11 — Independent radial elements.** The carcass is a set of radial springs with no shear
+between neighbouring elements and no belt inertia. Standing waves and carcass modes above
+the wheel-hop band are absent. The tyre's mass rides on the wheel body (§3.1).
+
+**12 — No tread-block, temperature, wear or sealant effects.** Rubber compound enters only
+through the rolling-resistance calibration and the surface μ.
+
+**13 — Finite coverage.** The rays see ±75° about the vertical. Road beyond that, an edge
+higher than about 0.74 R above the wheel's lowest point, is invisible to the tyre and raises
+a coverage event.
+
+**14 — Rim strikes do no damage.** A strike is a stiff element and a logged event. The tyre
+stays inflated and the rim stays true (plan D11).
 
 ---
 
@@ -779,6 +1181,15 @@ uv run bike-ride --list-tracks
 | `--preview` | Render the road profile with effective pothole drops to `<out>/preview_<track>_s<seed>.png` and exit. |
 | `--dump-track NAME` | Print a preset as a track file and exit. |
 | `--list-tracks` | List presets and exit. |
+
+> *Pending (plan task 9), not yet implemented:*
+>
+> - `--tyre-model {sphere,pneumatic}`, default `sphere` (§3);
+> - `--tyre-tier {fast,detailed}`, default `fast`;
+> - `--tyre-pressure FRONT/REAR` in bar, default `1.5/1.7`;
+> - `--surface {asphalt,hardpack,loose,wet}`, default from the track (§4.1).
+>
+> The run header will print the model, tier, pressures and surface.
 
 A headless run writes to `output/ride/<track>_<speed>_s<seed>/` (the `_s<seed>` suffix
 only when a generator seed applies):
@@ -911,6 +1322,11 @@ Interactive mode (`bike-ride` without `--headless`) prints this on start and on 
 | `G` | Pivot markers; `T` telemetry line |
 | `Esc` | Quit |
 
+> *Pending (plan task 9):* with `pneumatic`, `N` / `M` change the front tyre pressure by
+> ∓ 0.05 bar and `;` / `'` the rear, clamped to 0.8–3.0 bar. The change applies on the next
+> step, with no restart, because pressure is read every step (§3.1). With `sphere` these
+> keys print a one-line notice.
+
 The track and the rider are chosen on the command line and cannot be changed from the
 viewer: a change of track means new `hfield_data` and a new equilibrium, and a change of
 rider means a different set of bodies and coordinates (§1) — both are a restart of the
@@ -950,6 +1366,11 @@ per recorded step, the first row being the start state:
 The last nine channels belong to the seated rider (§7.2) and read zero for `none` and
 `lumped`, so every telemetry file has the same 36 columns.
 
+> *Pending (plan task 9):* eight channels per wheel, prefixed `front_` / `rear_`:
+> `tyre_fz_n`, `tyre_fx_n`, `tyre_deflection_mm`, `patch_length_mm`, `slip_ratio`,
+> `rim_strike` (0/1), `tyre_pressure_bar`, `tyre_loss_w`. They read zero under `sphere`, so
+> the file will have the same 52 columns whichever tyre rode.
+
 ## Summary metrics
 
 `summary.json` (`sim/ride/metrics.py`) is computed over the **window** `x ≥ start + 8 m`,
@@ -978,6 +1399,18 @@ property of the solver, not of the suspension. The 100 Hz low-pass keeps every b
 suspension works in (fork 2–4 Hz, wheel hop 10–15 Hz) and spreads the transient's impulse
 over ~5 ms, which is the honest, tyre-like number; the raw peak is reported next to it so
 nothing is hidden. Compare *filtered* values between runs.
+
+> *Pending (plan task 9):* with `pneumatic`, a `tyres` block per wheel will carry:
+>
+> - peak vertical load and maximum deflection;
+> - rim strikes, as a count and per event (x, speed, peak load, energy);
+> - time in wheelspin and time locked, both defined from the patch state (§4.1);
+> - mean tyre loss and its Crr equivalent.
+>
+> `extras` will carry the tyre model, tier, pressures and surface. The gap between raw and
+> filtered peaks above is expected to shrink under `pneumatic`. A tyre that spreads an edge
+> hit over its footprint is the physical version of what the 100 Hz filter approximates;
+> plan task 11 reports the gap for both models.
 
 ## Reading the plots
 

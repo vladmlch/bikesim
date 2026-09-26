@@ -34,9 +34,24 @@ from bike_sim.terrain.wheelpath import (
 )
 from bike_sim.terrain.presets import (
     DEFAULT_PRESET,
+    DEFAULT_ROAD_PRESET,
     PRESETS,
     available_presets,
     get_preset,
+)
+from bike_sim.terrain.road import (
+    ROAD_LEVEL_SPECS,
+    RoadGeneratorSpec,
+    build_road,
+    generate_road,
+)
+from bike_sim.terrain.trackfile import (
+    TrackFileError,
+    dump_track,
+    load_track,
+    save_track,
+    track_from_dict,
+    track_to_dict,
 )
 from bike_sim.terrain.heightfield import (
     FIELD,
@@ -71,8 +86,19 @@ __all__ = [
     "profile_extent",
     "PRESETS",
     "DEFAULT_PRESET",
+    "DEFAULT_ROAD_PRESET",
     "available_presets",
     "get_preset",
+    "RoadGeneratorSpec",
+    "ROAD_LEVEL_SPECS",
+    "generate_road",
+    "build_road",
+    "TrackFileError",
+    "load_track",
+    "dump_track",
+    "save_track",
+    "track_from_dict",
+    "track_to_dict",
     "HeightFieldSpec",
     "FIELD",
     "build_field_data",

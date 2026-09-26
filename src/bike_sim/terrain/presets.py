@@ -8,6 +8,11 @@ functions so that each caller receives a fresh, independent :class:`TrackSpec`.
 
 Pseudo-random sections carry fixed seeds and are therefore properties of the preset, not
 run-to-run noise.
+
+The three ``road_*`` presets are procedurally generated (see :mod:`bike_sim.terrain.road`)
+from a fixed seed, so they are just as pinned as the authored ones. A track loaded from a
+TOML file (:mod:`bike_sim.terrain.trackfile`) is the user's own experiment and is not
+registered here.
 """
 
 from typing import Callable, Dict, List
@@ -23,6 +28,7 @@ from bike_sim.terrain.obstacles import (
     Washboard,
 )
 from bike_sim.terrain.profile import TrackSpec
+from bike_sim.terrain.road import road_broken, road_smooth, road_worn
 
 
 def enduro_aggressive() -> TrackSpec:
@@ -145,9 +151,13 @@ PRESETS: Dict[str, Callable[[], TrackSpec]] = {
     "flat": flat,
     "single_edge": single_edge,
     "washboard_only": washboard_only,
+    "road_smooth": road_smooth,
+    "road_worn": road_worn,
+    "road_broken": road_broken,
 }
 
 DEFAULT_PRESET = "enduro_aggressive"
+DEFAULT_ROAD_PRESET = "road_worn"
 
 
 def available_presets() -> List[str]:
@@ -178,6 +188,7 @@ def get_preset(name: str) -> TrackSpec:
 __all__ = [
     "PRESETS",
     "DEFAULT_PRESET",
+    "DEFAULT_ROAD_PRESET",
     "available_presets",
     "get_preset",
     "enduro_aggressive",

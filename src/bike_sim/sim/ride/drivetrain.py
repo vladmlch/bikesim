@@ -110,6 +110,18 @@ class PedalDrivetrain:
         self.wheel_qposadr, self.wheel_dofadr = _joint_addresses(model, "rear_wheel_spin")
         self.ctrl_adr = _actuator_id(model, "crank_drive")
         self.eq_id = _equality_id(model, "chain_drive")
+        # `chain_drive` is a *position* constraint, not a velocity one: MuJoCo enforces
+        # `crank - crank0 = polycoef[0] + (wheel - wheel0) / ratio` against the model's
+        # `qpos0`. While the freewheel is open the wheel keeps turning and the crank is held
+        # still, so that residual grows without bound -- a quarter second of coasting at
+        # 20 km/h is 1.8 rad of crank. Re-closing the constraint over it asks the solver to
+        # spin the crank most of a turn inside one 0.5 ms step, which is not a jolt but an
+        # impulse large enough to throw the bike over the bars. `polycoef[0]` is therefore
+        # rewritten at every engagement to the angle the freehub actually re-engaged at, so
+        # the residual is zero when the chain closes. A real freehub has no fixed angular
+        # datum across a coast either: the pawls catch wherever they catch.
+        self.crank_qpos0 = float(model.qpos0[self.crank_qposadr])
+        self.wheel_qpos0 = float(model.qpos0[self.wheel_qposadr])
 
         self.start_phase_rad = radians(self.specs.crank_phase_deg)
         self.engaged = True
@@ -199,7 +211,7 @@ class PedalDrivetrain:
         pedalling = wheel_demand_nm > 0.0 and rear_in_contact
 
         if pedalling:
-            self._engage(data)
+            self._engage(model, data)
             mean_nm, limit = limited_rider_torque(
                 wheel_demand_nm / self.specs.gear_ratio, crank_radps, self.specs
             )
@@ -234,7 +246,10 @@ class PedalDrivetrain:
             phase_rad=phase,
             cadence_rpm=cadence_rpm,
             rider_power_w=rider_nm * crank_radps,
-            motor_power_w=self.assist_torque_nm * crank_radps,
+            # Reported at the crank, and only while the crank is connected to the road. A
+            # freewheeling crank spun by its own hold torque is not the motor doing work,
+            # and reporting it as such is how a solver blow-up reads as "motor -28 kW".
+            motor_power_w=self.assist_torque_nm * crank_radps if self.engaged else 0.0,
             support_factor=support,
             freewheel=not self.engaged,
             cutoff_active=self.nominal_support_factor > 0.0 and taper < 1.0,
@@ -252,11 +267,18 @@ class PedalDrivetrain:
         """
         data.ctrl[self.ctrl_adr] = self.command.crank_torque_nm
 
-    def reset(self, data: mujoco.MjData) -> None:
+    def reset(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
         """
         Returns the crank to its starting phase, re-engages the chain and clears the motor.
 
+        The datum is rewritten here too, and it has to be: `--crank-phase` moves the crank
+        away from the pose the model was compiled in while the wheel stays at its own
+        reference, which is the same position residual the freewheel produces. Without this
+        every run with a non-zero start phase began with a constraint violation of that many
+        radians and blew up on the first step.
+
         Args:
+            model: Compiled model; `eq_data` carries the chain datum.
             data: Simulation state, written at the crank coordinate.
         """
         data.qpos[self.crank_qposadr] = self.start_phase_rad
@@ -266,26 +288,63 @@ class PedalDrivetrain:
         self.hold_phase_rad = self.start_phase_rad
         self.engaged = True
         self.traction_limited = False
+        self._redatum(model, data)
         _set_equality(data, self.eq_id, True)
         self.command = _idle_command(self.start_phase_rad, self.nominal_support_factor)
 
     # --- internals -------------------------------------------------------------------
 
-    def _engage(self, data: mujoco.MjData) -> None:
+    def _engage(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
         """
-        Re-engages the freewheel, matching crank speed to the wheel first.
+        Re-engages the freewheel, matching both the crank's datum and its speed to the wheel.
+
+        Both halves are needed and they fix different things. Matching the velocity stops the
+        engagement reading as a jolt in the suspension channels. Matching the *datum* stops it
+        being a blow-up: the equality is a position constraint measured from `qpos0`, and the
+        angle the wheel turned through while the chain was open is a residual the solver would
+        otherwise close inside one step.
 
         Args:
-            data: Simulation state. The crank's velocity is set to the wheel's divided by the
-                ratio before the equality is activated: a freehub re-engages with a jolt, but
-                a constraint closing over a large velocity mismatch is a solver impulse, not
-                a jolt, and it lands in the suspension channels as a spike that never happened.
+            model: Compiled model; `eq_data` carries the chain datum.
+            data: Simulation state.
         """
         if self.engaged:
             return
         data.qvel[self.crank_dofadr] = float(data.qvel[self.wheel_dofadr]) / self.specs.gear_ratio
+        self._redatum(model, data)
         _set_equality(data, self.eq_id, True)
         self.engaged = True
+
+    def _redatum(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
+        """
+        Moves the chain equality's constant term to the angles the chain is closing at.
+
+        Args:
+            model: Compiled model; `eq_data[eq_id][0]` is the polynomial's constant term.
+            data: Simulation state, read for the current crank and wheel angles.
+        """
+        crank = float(data.qpos[self.crank_qposadr]) - self.crank_qpos0
+        wheel = float(data.qpos[self.wheel_qposadr]) - self.wheel_qpos0
+        model.eq_data[self.eq_id, 0] = crank - wheel / self.specs.gear_ratio
+
+    def chain_residual(self, model: mujoco.MjModel, data: mujoco.MjData) -> float:
+        """
+        The chain equality's position residual, in radians of crank.
+
+        Exposed because this is the quantity that silently grew while the freewheel was open
+        and then discharged into the rear wheel. A test that watches it fails loudly; a test
+        that watches only mean torques does not.
+
+        Args:
+            model: Compiled model.
+            data: Simulation state.
+
+        Returns:
+            Crank angle error, rad. Zero whenever the chain is engaged and correct.
+        """
+        crank = float(data.qpos[self.crank_qposadr]) - self.crank_qpos0
+        wheel = float(data.qpos[self.wheel_qposadr]) - self.wheel_qpos0
+        return crank - wheel / self.specs.gear_ratio - float(model.eq_data[self.eq_id, 0])
 
     def _disengage(self, data: mujoco.MjData, phase_rad: float) -> None:
         """

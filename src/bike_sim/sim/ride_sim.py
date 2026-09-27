@@ -257,7 +257,7 @@ class RideSimulation:
         self.contact_query.reset()
         self.cruise.reset()
         if self.drivetrain is not None:
-            self.drivetrain.reset(self.data)
+            self.drivetrain.reset(self.model, self.data)
             self.rider_forces.set_pedal_offsets(0.0, 0.0)
             mujoco.mj_forward(self.model, self.data)
         self.brake_source_cruise = False

@@ -25,6 +25,12 @@ applied twice, or a polycoef written the wrong way round, all of which otherwise
 revolution put the excitation at twice the cadence. The shock stroke must carry more
 amplitude at that frequency in a pedalled run than in the motor run, which has no such
 excitation at all.
+
+**Check 4 -- the freewheel re-engages without an impulse.** The chain equality is a position
+constraint, so every metre coasted with the chain open is angle the solver would have to
+recover at engagement. This check watches the residual directly and watches the run stay
+upright, because checks 1 to 3 average over a traverse and an averaged channel hides a
+one-step blow-up: a run that goes over the bars at the first bump still produces a mean.
 """
 
 import argparse
@@ -137,6 +143,81 @@ def _run(track, speed_kmh, drive_mode, assist, ripple_depth, steps):
     return recorder.columns(), recorder.sample_interval_s, sim
 
 
+def _assert_upright(label: str, sim) -> int:
+    """
+    Reports whether a traverse finished on its wheels.
+
+    Args:
+        label: Name of the run, for the log line.
+        sim: The simulation the run used.
+
+    Returns:
+        1 if the run crashed, 0 otherwise.
+    """
+    if sim.crash is None:
+        return 0
+    print(f"   FAIL: the {label} run crashed -- {sim.crash.cause} at "
+          f"x = {sim.crash.position_m:.2f} m; the means below are of a crash, not a ride")
+    return 1
+
+
+def check_reengagement(quick: bool) -> int:
+    """
+    Verifies that opening and re-closing the chain leaves no position residual behind.
+
+    Args:
+        quick: Whether to use the shorter traverse.
+
+    Returns:
+        Number of failures.
+    """
+    import numpy as np
+
+    from bike_sim.physics.drivetrain import DrivetrainSpecs
+    from bike_sim.sim.ride_sim import RideSimulation
+    from bike_sim.terrain import DEFAULT_PRESET, get_preset
+
+    sim = RideSimulation(
+        track=get_preset(DEFAULT_PRESET),
+        target_speed_kmh=20.0,
+        drive_mode="pedelec",
+        assist="tour",
+        drivetrain=DrivetrainSpecs(),
+    )
+    steps = 4000 if quick else 12000
+    residuals, speeds, engagements = [], [], 0
+    was_engaged = True
+    for _ in range(steps):
+        sim.step()
+        residuals.append(abs(sim.drivetrain.chain_residual(sim.model, sim.data)))
+        speeds.append(sim.speed_mps)
+        engaged = not sim.drivetrain.command.freewheel
+        engagements += engaged and not was_engaged
+        was_engaged = engaged
+        if sim.crash is not None:
+            break
+
+    failures = 0
+    worst = float(np.max(residuals))
+    # One step of crank rotation at 20 km/h in 32x14 is 0.004 rad. A residual an order of
+    # magnitude above that is the freewheel's accumulated angle, not integration error.
+    ok = worst < 0.04
+    failures += not ok
+    print(f"   {engagements} re-engagements, worst chain residual {worst:.2e} rad "
+          f"(limit 4.0e-02) {'OK' if ok else 'FAIL'}")
+
+    slowest = float(np.min(speeds))
+    ok = slowest > 0.0
+    failures += not ok
+    verdict = "OK" if ok else "FAIL: driven backwards, which is the engagement impulse"
+    print(f"   lowest forward speed {slowest:.3f} m/s {verdict}")
+
+    failures += _assert_upright("re-engagement", sim)
+    if sim.crash is None:
+        print("   run finished upright OK")
+    return failures
+
+
 def check_against_model(quick: bool) -> int:
     """
     Runs the three model-level checks.
@@ -166,8 +247,10 @@ def check_against_model(quick: bool) -> int:
     failures = 0
 
     print("\n-- check 1: ripple depth 0 reproduces the motor baseline -------------------")
-    motor, dt_s, _ = _run(track, speed, "motor", "off", 0.0, steps)
-    smooth, _, _ = _run(track, speed, "pedal", "off", 0.0, steps)
+    motor, dt_s, motor_sim = _run(track, speed, "motor", "off", 0.0, steps)
+    smooth, _, smooth_sim = _run(track, speed, "pedal", "off", 0.0, steps)
+    failures += _assert_upright("motor baseline", motor_sim)
+    failures += _assert_upright("smooth crank", smooth_sim)
     for name, tolerance in (("speed_mps", 0.02), ("drive_torque_nm", 0.10)):
         a, b = float(np.mean(motor[name])), float(np.mean(smooth[name]))
         rel = abs(b - a) / max(abs(a), 1e-9)
@@ -178,6 +261,7 @@ def check_against_model(quick: bool) -> int:
 
     print("\n-- check 2: the gearing is not inverted ------------------------------------")
     pedalled, _, sim = _run(track, speed, "pedal", "off", 0.85, steps)
+    failures += _assert_upright("pedalled", sim)
     stats = pedal_bob_stats(pedalled, dt_s)
     ratio = sim.drivetrain.specs.gear_ratio
     ok = stats is not None and abs(stats.gear_ratio_check - ratio) / ratio <= 0.05
@@ -193,6 +277,9 @@ def check_against_model(quick: bool) -> int:
     failures += not ok
     print(f"   cadence {stats.mean_cadence_rpm:.1f} rpm -> {bob_hz:.2f} Hz; shock amplitude "
           f"pedalled {pedalled_mm:.3f} mm vs motor {motor_mm:.3f} mm {'OK' if ok else 'FAIL'}")
+
+    print("\n-- check 4: the freewheel re-engages without an impulse --------------------")
+    failures += check_reengagement(quick)
 
     print("\n-- assist sweep: what the mid-drive does to the bob ------------------------")
     for mode in ("off", "eco", "tour", "sport", "turbo"):

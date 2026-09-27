@@ -65,6 +65,30 @@ class CarcassState:
         self.initialized = False
         self._clear_rim_event()
 
+    def advance_unloaded(
+        self,
+        *,
+        omega_radps: float,
+        dt_s: float,
+        dtheta_rad: float,
+        relaxation_s: float,
+    ) -> None:
+        """Advects and relaxes Maxwell memory while already fully unloaded.
+
+        The caller has established that every ray was unloaded on the previous step and
+        there is no rim event in progress. The elastic and deflection histories are then
+        zero, so the full carcass kernel can be skipped without retaining stale material
+        stress when the wheel later lands.
+        """
+        if not self.initialized:
+            return
+        if dt_s <= 0.0 or dtheta_rad <= 0.0 or relaxation_s <= 0.0:
+            raise ValueError("time, angular spacing and relaxation time must be positive")
+        if np.any(self.maxwell_force_n):
+            self.maxwell_force_n[:] = float(np.exp(-dt_s / relaxation_s)) * _advect_material(
+                self.maxwell_force_n, omega_radps, dt_s, dtheta_rad
+            )
+
     def _clear_rim_event(self) -> None:
         self.rim_strike_active = False
         self.rim_event_x_m = 0.0

@@ -17,7 +17,8 @@ resulting force and moment into `data.xfrc_applied` on the wheel body, in the sa
 writer phase as the suspension and rider forces. Everything that used to read wheel load
 from `mj_contactForce` (drive gating, virtual rider, crash detector's wheel channels,
 rolling resistance) reads it from the tyre model instead. The model has two fidelity
-tiers, `fast` and `detailed`, which share formulas and differ in resolution.
+tiers, `fast` and `detailed`, which share the carcass and surface laws and differ in
+resolution; Task 10 adds a small dashpot to the detailed bristle state for stability.
 
 **Tech Stack:** Python 3.12+, MuJoCo 3.12, NumPy, SciPy, Matplotlib, pytest, `uv`. No new
 dependencies.
@@ -43,13 +44,13 @@ HEAD is `7062381` (seated rider).
 | D5 | Modelled tyres: **Schwalbe Magic Mary 29×2.4 front, Hans Dampf 27.5×2.4 rear**, tubeless, no insert. Default pressures **1.5 bar front / 1.7 bar rear**. |
 | D6 | **Pressure is an input**: vertical load = pressure × contact area + carcass term; front and rear independent; set on the command line and adjustable live from the viewer keyboard, like the fork's psi. |
 | D7 | Validation: **literature curves for shape, the user's own measurements for calibration** (two points per wheel, Appendix A). Every acceptance criterion is a test. |
-| D8 | Longitudinal slip: **brush model** (static/sliding μ, tread stiffness), contact length taken from the vertical model, with a **relaxation length** so the model is well-posed at low speed and at rest. |
+| D8 | Longitudinal slip: **brush model** (static/sliding μ, tread stiffness), contact length taken from the vertical model, with a **relaxation length** so the model is well-posed at low speed and at rest. Task 10 calibrated the authored value to 60 mm, the lower end of the literature estimate. |
 | D9 | Surfaces: **one surface per run**, chosen from presets (asphalt, hardpack, loose, wet). The data structure must admit per-zone surfaces in the track file later without a redesign. |
 | D10 | Vertical model: **ring of radial elements** (Davis-type radial-spring model). Forces are summed vectorially, so a square edge produces a rearward force component. Tyre mass stays on the wheel body; no separate belt/ring body. |
 | D11 | Rim strike: a **stiff rim-contact element** engages when an element's deflection reaches the section height; every strike is logged (load, speed, position, energy). The tyre stays inflated — no puncture simulation. |
 | D12 | Controllers are **not** given ABS or traction control. Wheelspin and lock-up happen and are logged. The cruise integrator gets one extra anti-wind-up condition for a traction-saturated rear tyre. |
 | D13 | Telemetry: per-wheel tyre channels, HUD line, live pressure keys, a tyre figure, and a **comparison script** running every preset on both models. |
-| D14 | Tiers differ in resolution, not in physics: `fast` 64 elements, lumped (steady-state) brush, dt 0.5 ms; `detailed` 256 elements, discretised brush, dt 0.25 ms. A convergence test holds `fast` to `detailed`. Numbers are starting values, tuned by measurement (Task 10). *(Agreed as ≈ 50 / ≈ 250 over ±60°; the contract widened coverage to ±75° — see RIDE.md §3.1 — which at the same spacing is 64 / 256.)* |
+| D14 | `fast`: 64 rays, lumped brush, dt 0.5 ms. `detailed`: 256 rays, discretised brush, dt 0.25 ms. Task 10 measured a self-excited 33 Hz wheel-slip mode without local bristle damping; `detailed` therefore adds a 0.5 ms dashpot per bristle, documented and tested in RIDE.md §4.1. The authored relaxation length is 60 mm. *(Agreed as ≈ 50 / ≈ 250 over ±60°; the contract widened coverage to ±75° — see RIDE.md §3.1 — which at the same spacing is 64 / 256.)* |
 | D15 | Rolling resistance **emerges from carcass hysteresis**, calibrated against drum tests. `RollingResistance` (`Crr·N·r`) is not applied in `pneumatic`. Hysteresis is rate-independent, not viscous. |
 | D16 | Default surface is a **property of the track**: `road_*` presets → asphalt, all others → hardpack; the command line may override. |
 | D17 | `pneumatic` becomes the default only when (a) the full suite is green including calibration and convergence tests, **and** (b) the user has reviewed the comparison report and said yes. The existing ride golden baselines are regenerated in that same commit, and not before. |
@@ -140,7 +141,7 @@ The comparison below is the reason this work exists; it goes into RIDE.md §11 v
 | Crr vs pressure | Crr ∝ p^−0.3 | derived from [3] |
 | Longitudinal slip stiffness | C_κ/Fz ≈ 15 (10–20) hard surfaces, 5–10 loose [est] | [7], MTB cornering stiffness as proxy [1] |
 | Brush tread stiffness | c_px ≈ 8×10⁵ N/m² [est] | from C_κ and contact half-length |
-| Longitudinal relaxation length | σ ≈ **90 mm** (60–120) [est] | lateral 160 mm derived from [1]; road 79–141 mm |
+| Longitudinal relaxation length | σ = **60 mm** (60–120) [est] | lower end of literature estimate; lateral 160 mm derived from [1], road 79–141 mm |
 
 ### Surface presets (all [est]; car-tyre curves scaled to MTB data where it exists)
 
@@ -170,8 +171,9 @@ Points settled while writing the contract, which the tasks below rely on:
   ends up more than 15 % short, a tread-loss term `(Crr_target − Crr_η)·N_p` closes the gap,
   and the contract records it.
 - `c_px = (C_κ/F_z)_surface · N_p / (2a_p²)`, so the slip stiffness scales with load.
-- The discretised brush filters its slip input with `σ − a_p`, because bristle transport
-  already contributes ≈ `a_p` of lag. Both tiers then carry the same total relaxation.
+- The discretised brush filters its slip input with `max(0, σ − a_p)`, because bristle
+  transport already contributes ≈ `a_p` of lag. Task 10 adds a 0.5 ms local bristle dashpot
+  to suppress the measured 33 Hz mode while retaining tier convergence.
 - `k_rim = 3.0×10⁷ N/m²`, which is ≈ 1 500 N/mm over a 50 mm rim patch, giving
   `ω·dt ≈ 0.38`.
 - *Added while starting Task 3 (RIDE.md §3.1 amended):* the element's rate of deflection is
@@ -261,19 +263,19 @@ read.*
 
 **Steps:**
 
-- [ ] `surface.py`: frozen `SurfaceSpec(name, mu_peak, mu_slide, slip_stiffness_per_load,
+- [x] `surface.py`: frozen `SurfaceSpec(name, mu_peak, mu_slide, slip_stiffness_per_load,
   stribeck_speed_mps)`; `SURFACES` with the four presets from Key facts; `get_surface(name)`.
   A `SurfaceMap` with `at(x_m) -> SurfaceSpec` that today holds one surface: this is the
   seam for per-zone surfaces (D9), so the tyre model only ever asks the map.
-- [ ] `TrackSpec` gains `surface: str = "hardpack"`. The `road_*` generators set
+- [x] `TrackSpec` gains `surface: str = "hardpack"`. The `road_*` generators set
   `"asphalt"`; `enduro_aggressive`, `flat`, `single_edge`, `washboard_only` keep the default
   (D16). `TrackSpec.validate` rejects unknown names.
-- [ ] `trackfile.py`: optional top-level `surface = "…"` key, read next to `description`
+- [x] `trackfile.py`: optional top-level `surface = "…"` key, read next to `description`
   (`trackfile.py:342-347`) and validated against `SURFACES`; written by `track_to_dict`
   (`:413-418`) and the emitter's top-level loop (`:455`). A file without the key follows the
   preset rule (D16): a file with a `[generator]` block describes a road and gets `asphalt`,
   a hand-placed-only file gets `hardpack`.
-- [ ] Tests: presets, lookup errors, the per-track defaults, TOML round-trip, and that
+- [x] Tests: presets, lookup errors, the per-track defaults, TOML round-trip, and that
   `build_field_data` output is unchanged for every preset (surfaces must not touch geometry).
 
 **Verification:** `uv run python -m pytest -q`; all golden baselines untouched.
@@ -289,22 +291,22 @@ read.*
 
 **Steps:**
 
-- [ ] `TyreSpecs` (mm, bar): `name`, `outer_radius_mm`, `rim_radius_mm`,
+- [x] `TyreSpecs` (mm, bar): `name`, `outer_radius_mm`, `rim_radius_mm`,
   `section_height_mm`, `casing_width_mm` (60), `compressed_casing_mm` (6), `pressure_bar`,
-  `area_factor` (`c_A`, fitted), `carcass_stiffness` (`k_c`, fitted), `loss_factor`
-  (starting 0.07), `relaxation_length_mm` (90), `rim_stiffness_n_m2` (3.0×10⁷),
+  `area_factor` (`c_A`, fitted), `carcass_stiffness_n_mm2` (`k_c`, fitted), `loss_factor`
+  (starting 0.07), `relaxation_length_mm` (60), `rim_stiffness_n_mm2` (28),
   `hysteresis_rate_eps_mps` (0.01), `tread_loss_crr` (0 unless RIDE.md §3.1's fallback is
   needed), `contact_length_factor` (`c_L`, fitted), `rate_stiffening` (`k_r`, fitted),
   `rate_relaxation_s` (τ, 0.2). Derived: `rim_strike_deflection_mm = outer − rim −
   compressed_casing` (46 mm).
   Tread stiffness is not a tyre field: it follows from the surface's `C_κ/F_z` (RIDE.md §4.1).
-- [ ] `FRONT_TYRE` (Magic Mary 29×2.4) and `REAR_TYRE` (Hans Dampf 27.5×2.4) from D5, radii
+- [x] `FRONT_TYRE` (Magic Mary 29×2.4) and `REAR_TYRE` (Hans Dampf 27.5×2.4) from D5, radii
   taken from `BikeSpecs` and the builder's rim radii so they cannot drift (assert equality in
   a test).
-- [ ] Target functions used only by tests and calibration: `static_stiffness_target_n_mm(p)`,
+- [x] Target functions used only by tests and calibration: `static_stiffness_target_n_mm(p)`,
   `contact_length_target_mm(load_n, p)`, `crr_target(tyre, p)` with the p^−0.3 law.
-- [ ] `TyreConfig(model="sphere"|"pneumatic", tier="fast"|"detailed", front, rear,
-  surface_override=None)` — the single object that `RideSimulation` and the CLI pass around.
+- [x] `TyreConfig(model="sphere"|"pneumatic", tier="fast"|"detailed", front, rear,
+  surface=None)` — the single object that `RideSimulation` and the CLI pass around.
 
 **Verification:** pure-calculator tests, no MuJoCo import in `physics/tyre.py`.
 
@@ -319,22 +321,23 @@ read.*
 
 **Steps:**
 
-- [ ] `RayRing(n_rays, half_angle_rad=5π/12)`: precomputed **world-frame** unit directions
+- [x] `RayRing(n_rays, half_angle_rad=5π/12)`: precomputed **world-frame** unit directions
   over ±75° about −Z (RIDE.md §3.1); no per-step rotation.
-- [ ] `ProfileSampler(x_m, z_m)`: wraps the profile array (D18); `window(x_lo, x_hi)` returns
-  a view, no copy.
-- [ ] `intersect(ring, centre_xz, R, sampler) -> (r, visible)`: transform the profile samples
-  inside `[x_c − R, x_c + R]` to polar coordinates about the wheel centre, keep the visible
-  (nearest-radius) branch, and interpolate each ray's surface radius. Vectorised, no per-ray
-  Python loop, no allocation beyond preallocated buffers.
-- [ ] `patches(delta) -> list of (start, stop)` contiguous loaded runs.
-- [ ] **Oracle test:** a brute-force per-ray bisection on `h(x)`, compared on flat road,
+- [x] `RoadProfile.from_samples(x_m, z_m)`: wraps the uniformly sampled profile from D18;
+  `index_range(x_lo, x_hi)` slices the relevant source samples without copying.
+- [x] `intersect(ring, centre_x_m, centre_z_m, radius_m, road) -> RayHits`: transforms profile
+  samples inside `[x_c − R, x_c + R]` to polar coordinates about the wheel centre, keeps the
+  visible nearest-radius branch, and intersects each ray through vectorised NumPy operations.
+  Per-ray Python loops and full-profile copies are avoided; temporary arrays are allocated in
+  this kernel.
+- [x] `patches(delta) -> list of (start, stop)` contiguous loaded runs.
+- [x] **Oracle test:** a brute-force per-ray bisection on `h(x)`, compared on flat road,
   the `single_edge` step, a sharp pothole, a bowl pothole and a washboard, at several wheel
   heights: deflections agree to 0.1 mm. On a square edge there are exactly two patches; on
   flat road one; airborne none. A 150 mm pothole's far edge is fully inside the coverage;
   road beyond ±75° raises a coverage event, and no shipped preset raises one.
-- [ ] Cheap airborne cull: if the wheel's lowest point is above the window maximum, return
-  no contact without intersecting.
+- [x] Airborne cull: if no profile sample lies inside the wheel circle, return no contact;
+  Task 10 also skips repeated carcass work once the wheel is fully unloaded.
 
 **Verification:** tests; a micro-benchmark in the test docstring records µs per call for
 64 and 256 rays.
@@ -513,9 +516,10 @@ peak-force test passes within 10 %, while `μ_slide` still sets the high-slip li
 - [x] HUD: under `pneumatic`, a tyre line — pressures, slip front/rear, a rim-strike flash.
 - [x] Keys (only under `pneumatic`; under `sphere` they print a one-line notice):
   `N` / `M` front pressure −/+ 0.05 bar, `;` / `'` rear −/+ 0.05 bar (GLFW 78/110, 77/109,
-  59, 39; all currently unbound in `input.py:66-118`). Clamped to 0.8–3.0 bar. Pressure is
-  read every step, so no recompilation is needed. Verify the passive viewer does not consume
-  these keys; if it does, pick other unbound keys and update the help text.
+  59, 39; all were unbound in `input.py:66-118`). Clamped to 0.8–3.0 bar. Pressure is read
+  every step, so no recompilation is needed. Dispatch/state tests pass and the viewer supplies
+  `session.handle_key` as its callback. A live keypress was not verifiable in this session:
+  CUA enumerated no native app windows.
 - [x] Help text in `hud.py:156-196` gains a "TYRES" block.
 - [x] CLI (`cli/ride.py:64-101`): `--tyre-model`, `--tyre-tier`, `--tyre-pressure F/R`,
   `--surface`; the run header prints model, tier, pressures and surface.
@@ -531,19 +535,21 @@ figures.
 
 **Files:**
 - Modify: `tools/bench_ride.py`
-- Modify: `src/bike_sim/sim/ride/tyre/*` (optimisation only)
+- Modify: `src/bike_sim/physics/tyre.py`, `src/bike_sim/sim/ride/tyre/*`
+- Modify: `docs/RIDE.md`
+- Modify: `tests/test_ride_pneumatic.py`, `tests/test_tyre_brush.py`
 - Create: `tests/test_tyre_convergence.py`
 
 **Steps:**
 
-- [ ] Benchmark `sphere`, `pneumatic/fast`, `pneumatic/detailed` on every preset.
-- [ ] If `fast` misses the Task 0 budget, in this order: airborne cull, preallocated buffers,
-  fewer rays (never below the count at which the contact length error exceeds 10 %),
-  window slicing without copies. Record the final `N` and µs per step.
-- [ ] `detailed` must be within 2–3× of real time headless; record it.
-- [ ] Convergence test on `flat` and `single_edge`: bar/saddle RMS, fork/shock travel use,
-  traverse time and rim-strike count of `fast` within tolerances measured against
-  `detailed` and recorded in the docstring. Mark it slow if it exceeds 60 s.
+- [x] Benchmark `sphere`, `pneumatic/fast`, `pneumatic/detailed` on every preset.
+- [x] `fast` fits the refreshed Task 0 budget after an airborne carcass cull and reusable
+  wheel-wrench buffers. Keep `N=64`; no ray reduction was needed. Existing profile slicing
+  is a view. Worst `TyreForceApplier.apply` cost: 210.5 µs on `road_smooth` against 238.4 µs.
+- [x] `detailed` stays at 0.82–0.93× real time headless, inside the allowed 2–3× slowdown.
+- [x] Convergence test on `flat` and `single_edge`: bar/saddle RMS, fork/shock travel use,
+  traverse time and rim-strike count of `fast` meet measured tolerances against `detailed`.
+  The two full traverses take 58.59 s together, below the 60 s slow-test threshold.
 
 **Verification:** numbers recorded in RIDE.md §10 and in "Measured baseline" below.
 
@@ -677,3 +683,25 @@ end of the track. Test suite before this plan: **425 passed in 51 s**.
 **Tyre budget for `fast`: 240 µs per step for both wheels** — 500 µs × (1 − 30 %) minus the
 slowest track's 110 µs. That is about 120 µs per wheel. Removing the wheel collision rows
 from `mj_step` in `pneumatic` should add headroom that the budget does not count on.
+
+### Task 10 — fidelity tiers, 2026-09-27
+
+Re-run on the same development machine after Tasks 9–10, with `tools.bench_ride` timing the
+tyre applier separately. The refreshed sphere maximum is 111.6 µs/step, leaving a 238.4 µs
+fast-tyre budget at the 30 % viewer margin.
+
+| track | sphere RTF / µs | fast RTF / tyre µs | detailed RTF / tyre µs |
+|---|---:|---:|---:|
+| enduro_aggressive | 5.30× / 94.3 | 2.21× / 181.5 | 0.93× / 222.9 |
+| flat | 4.48× / 111.6 | 1.98× / 210.1 | 0.83× / 259.1 |
+| road_broken | 5.61× / 89.1 | 2.10× / 196.5 | 0.86× / 247.9 |
+| road_smooth | 5.39× / 92.8 | 1.97× / 210.5 | 0.82× / 260.0 |
+| road_worn | 5.50× / 90.9 | 2.02× / 205.2 | 0.83× / 256.6 |
+| single_edge | 4.61× / 108.4 | 2.01× / 206.8 | 0.83× / 257.1 |
+| washboard_only | 4.88× / 102.4 | 2.06× / 200.0 | 0.85× / 249.5 |
+
+`fast` has 27.9 µs of headroom at the worst preset. The convergence test measured maximum
+relative differences of 13.1 % in saddle RMS, 3.7 % in suspension p95 travel, and 0.064 % in
+traverse time on `single_edge`; each wheel's rim-strike count differs by at most one, with
+the same total count. On flat, the bar RMS differs by 0.025 m/s² and saddle RMS by 0.0009
+m/s². These values set the test tolerances in `tests/test_tyre_convergence.py`.

@@ -14,6 +14,9 @@ import numpy as np
 
 from bike_sim.terrain.surface import SurfaceSpec
 
+BRISTLE_DAMPING_S = 0.0005
+"""Bristle dashpot relaxation time, tuned by Task 10's full-ride convergence test."""
+
 
 @dataclass(frozen=True)
 class BrushResult:
@@ -224,7 +227,10 @@ class DiscretisedBrush:
             if v_x_mps != 0.0
             else float(v_s_mps)
         )
-        wheel_surface_speed_mps = float(v_x_mps) - filtered_v_s_mps
+        # The state moves at the wheel's measured tread speed, not the filtered slip-input
+        # speed. Filtering controls bristle growth; using it for advection lets the stored
+        # deflection drift away from the material when wheel spin changes quickly.
+        wheel_surface_speed_mps = float(v_x_mps) - float(v_s_mps)
         if wheel_surface_speed_mps != 0.0:
             source_index = (
                 np.arange(self.n_elements, dtype=float)
@@ -246,17 +252,24 @@ class DiscretisedBrush:
 
         c_px = surface.slip_stiffness_per_load * total_load_n / (2.0 * half_length_m ** 2)
         element_stiffness_n_m = c_px * dx_m
-        trial_force_n = element_stiffness_n_m * updated
+        bristle_damping_force_n = np.where(
+            active,
+            element_stiffness_n_m * BRISTLE_DAMPING_S * (-filtered_v_s_mps),
+            0.0,
+        )
+        trial_force_n = element_stiffness_n_m * updated + bristle_damping_force_n
         friction_limit_n = mu * loads
         force_n = np.clip(trial_force_n, -friction_limit_n, friction_limit_n)
         sliding = active & (np.abs(trial_force_n) >= friction_limit_n)
         fully_sliding = bool(active.any() and np.all(sliding[active]))
 
         if element_stiffness_n_m > 0.0 and sliding.any():
-            updated[sliding] = force_n[sliding] / element_stiffness_n_m
+            updated[sliding] = (
+                force_n[sliding] - bristle_damping_force_n[sliding]
+            ) / element_stiffness_n_m
         self.bristle_deflection_m[:] = updated
 
         return BrushResult(float(np.sum(force_n)), fully_sliding, mu)
 
 
-__all__ = ["BrushResult", "relax", "lumped_brush", "DiscretisedBrush"]
+__all__ = ["BRISTLE_DAMPING_S", "BrushResult", "relax", "lumped_brush", "DiscretisedBrush"]

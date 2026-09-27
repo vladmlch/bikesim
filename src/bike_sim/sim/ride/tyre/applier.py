@@ -67,6 +67,10 @@ class TyreForceApplier:
         self.front_tyre = PneumaticTyre(config.front, self.tier)
         self.rear_tyre = PneumaticTyre(config.rear, self.tier)
         self._velocity6 = np.zeros(6, dtype=float)
+        self._wrench_buffers = {
+            "front_wheel": np.zeros(6, dtype=float),
+            "rear_wheel": np.zeros(6, dtype=float),
+        }
         self.front_outputs = WheelOutputs.empty(config.front)
         self.rear_outputs = WheelOutputs.empty(config.rear)
 
@@ -109,8 +113,8 @@ class TyreForceApplier:
             self._velocity6,
             0,
         )
-        hub_position = data.xpos[binding.body_id].copy()
-        hub_velocity = self._velocity6[3:6].copy()
+        hub_position = data.xpos[binding.body_id]
+        hub_velocity = self._velocity6[3:6]
         omega_forward = float(self._velocity6[1])
         outputs = tyre.evaluate(
             hub_position_world_m=hub_position,
@@ -122,16 +126,23 @@ class TyreForceApplier:
         )
 
         force_world_n = outputs.force_world_n
-        torque_world_nm = np.zeros(3, dtype=float)
+        wrench = self._wrench_buffers[binding.name]
+        wrench[:3] = force_world_n
+        wrench[3:] = 0.0
+        torque_x_nm = torque_y_nm = torque_z_nm = 0.0
         body_com_world = data.xipos[binding.body_id]
         for patch in outputs.patches:
-            torque_world_nm += np.cross(
-                patch.centroid_world_m - body_com_world,
-                patch.force_world_n,
-            )
+            rx = float(patch.centroid_world_m[0] - body_com_world[0])
+            ry = float(patch.centroid_world_m[1] - body_com_world[1])
+            rz = float(patch.centroid_world_m[2] - body_com_world[2])
+            fx, fy, fz = (float(force) for force in patch.force_world_n)
+            torque_x_nm += ry * fz - rz * fy
+            torque_y_nm += rz * fx - rx * fz
+            torque_z_nm += rx * fy - ry * fx
+        wrench[3:] = (torque_x_nm, torque_y_nm, torque_z_nm)
         # MuJoCo does not clear this array. Assign zero rows too, so an airborne wheel cannot
         # retain the last contact wrench.
-        data.xfrc_applied[binding.body_id, :] = np.concatenate((force_world_n, torque_world_nm))
+        data.xfrc_applied[binding.body_id, :] = wrench
         return outputs
 
     def reset(self, data: mujoco.MjData | None = None) -> None:
@@ -140,6 +151,8 @@ class TyreForceApplier:
         self.rear_tyre.reset()
         self.front_outputs = WheelOutputs.empty(self.front_tyre.tyre)
         self.rear_outputs = WheelOutputs.empty(self.rear_tyre.tyre)
+        for wrench in self._wrench_buffers.values():
+            wrench.fill(0.0)
         if data is not None:
             data.xfrc_applied[self.front_wheel.body_id, :] = 0.0
             data.xfrc_applied[self.rear_wheel.body_id, :] = 0.0

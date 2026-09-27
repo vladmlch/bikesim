@@ -508,7 +508,11 @@ at most 87.5 N/mm. Together with the 50 mm rim patch (1 400 N/mm), this gives
 The `detailed` tier halves those values with its 0.25 ms step. A test asserts the bound from
 the compiled wheel masses.
 
-**Tiers.** Resolution changes between tiers; the physics does not.
+**Tiers.** The carcass and surface laws are shared. `detailed` also gives each bristle a
+0.5 ms dashpot; this regularizes a self-excited wheel-slip mode measured near 33 Hz when the
+per-bristle spring was coupled to wheel rotation. The dashpot is a numerical regularizer for
+the resolved brush, not a measured tyre property. The full-traverse convergence test covers
+the resulting ride metrics.
 
 | Tier | Rays over ±75° | Spacing at the tread | Tread model (§4.1) | Timestep |
 |---|---|---|---|---|
@@ -586,7 +590,7 @@ authored curve, not acceptance limits; the test asserts peak force, not `κ_peak
   (§3.1).
 - `κ = −V_s / |V_x|` is the longitudinal slip: positive when driving, −1 for a locked wheel.
 
-**Transient slip.** `σ · dκ'/dt + |V_x| · κ' = −V_s`, with relaxation length σ = 90 mm
+**Transient slip.** `σ · dκ'/dt + |V_x| · κ' = −V_s`, with relaxation length σ = 60 mm
 [est]. It is integrated with its exact exponential solution, which is stable for any
 timestep and finite at `V_x = 0`. At rest with no torque, `κ'` holds its value like a
 deflected tread, so a parked bike does not creep. Under a torque at rest, the force builds
@@ -607,14 +611,19 @@ tyre has a longer patch, and the curve changes with it.
   **fully sliding** when `|θσ_x| ≥ 1`.
 - *`detailed`: discretised brush.* One bristle per ray inside the patch. Each bristle's load
   share is that element's own carcass force, so on an edge the pressure distribution is the
-  real, lopsided one rather than a parabola. Bristle deflections are advected with the
-  rolling speed by a semi-Lagrangian shift, which stays stable at a Courant number above 1:
+  real, lopsided one rather than a parabola. Bristle deflections are advected at the measured
+  tread speed by a semi-Lagrangian shift, which stays stable at a Courant number above 1:
   45 km/h at 4 mm and 0.25 ms is about 0.8, and the scheme does not rely on staying below 1.
-  They grow with the sliding speed while they stick, and slide when `c_px·q_j > μ·f_j`. The
-  patch is fully sliding when every bristle slides. Transporting bristles through the patch
-  already produces a lag of about `a_p`, so the slip input to the bristles is filtered with
-  `σ − a_p` (floored at 0) rather than σ. Both tiers therefore carry the same total
-  relaxation, and their steady-state curves coincide.
+  The bristles grow with the filtered sliding speed. The trial force is
+  `c_px·Δx·(q_j + τ_b·(−V'_s))`, clipped to `±μ·f_j`; here `q_j` is bristle deflection,
+  `τ_b = 0.5 ms` is the dashpot time constant, and `V'_s` is the filtered sliding speed.
+  The patch is fully sliding when every bristle reaches its local Coulomb cap. Transporting
+  bristles through the patch supplies about `a_p` of relaxation, so the input filter uses
+  `max(0, σ − a_p)`.
+
+The 60 mm relaxation length is the lower end of the authored 60–120 mm estimate. The detailed
+dashpot removes the 33 Hz mode while the uniform-patch steady force remains within 4 % of the
+lumped brush; the full-ride convergence test checks both tiers on `flat` and `single_edge`.
 
 **Consequences the rest of the contract relies on.**
 
@@ -1030,18 +1039,29 @@ end to end):
 
 | | Range over the seven presets |
 |---|---|
-| Real-time factor | **4.5–5.6×** (`flat` slowest, `road_broken` fastest) |
-| Cost per step | 89–110 µs |
-| `mj_step` | 66–87 µs |
+| Real-time factor | **4.48–5.61×** (`flat` slowest, `road_broken` fastest) |
+| Cost per step | 89–112 µs |
+| `mj_step` | 67–88 µs |
 | Contact query | 9–10 µs |
 | All six writers together | ≈ 11 µs |
 
 So `mj_step` is three quarters of the step and the Python around it is cheap. The viewer
 spends part of each real second on `viewer.sync` at 120 Hz, the HUD and a 1 ms frame
-sleep. Reserving 30 % of each timestep for that leaves **240 µs per step** for the tyre,
+sleep. Reserving 30 % of each timestep for that leaves **238 µs per step** for the tyre,
 both wheels together, set by the slowest track. `pneumatic` also removes the wheels'
-collision rows from `mj_step`, which the budget does not count on. With the tyre: *pending
-(plan task 10)*.
+collision rows from `mj_step`, which the budget does not count on.
+
+Task 10 measured all three configurations on all seven presets with
+`uv run python -m tools.bench_ride`:
+
+| Tyre config | Real-time factor | Total step cost | Tyre writer per step | Result |
+|---|---:|---:|---:|---|
+| `sphere` | 4.48–5.61× | 89–112 µs | — | baseline |
+| `pneumatic/fast` | 1.97–2.21× | 227–254 µs | 181.5–210.5 µs | within the 238 µs budget; 28 µs headroom at the worst track |
+| `pneumatic/detailed` | 0.82–0.93× | 269–304 µs | 222.9–260.0 µs | 1.1–1.2× slower than real time, inside the 2–3× allowance |
+
+The slowest `fast` tyre writer is `road_smooth` at 210.5 µs; its full ride step is 253.6 µs.
+`detailed` is slowest on `road_smooth` at 0.82× real time. No ray-count reduction was needed.
 
 The tyre force, like the suspension forces, is external to MuJoCo and therefore integrated
 explicitly. Its stability bound is part of §3.1.
@@ -1122,7 +1142,8 @@ says so:
 | Hysteresis regularisation `δ̇_ε` | 0.01 m/s | numerical |
 | Rim stiffness `k_rim` | 2.8×10⁷ N/m² | stability cap with the compiled 2.40 kg front wheel (§3.1) |
 | Tread-loss Crr correction at 1.5 bar | 0.00586 front / 0.00481 rear | residual after carcass hysteresis, fit to T4 drum targets (§3.1) |
-| Relaxation length σ | 90 mm (60–120) | lateral 160 mm derived from [T1]; road tyres 79–141 mm |
+| Relaxation length σ | 60 mm (60–120) | lower end of the estimate; lateral 160 mm derived from [T1], road tyres 79–141 mm |
+| Detailed bristle dashpot τ_b | 0.5 ms | numerical regularizer; suppresses the measured 33 Hz wheel-slip mode (§4.1, Task 10) |
 | Normalised slip stiffness C_κ/F_z | 15 / 12 / 7 / 10 by surface | MTB cornering stiffness as proxy [T1]; car and trekking data [T5] |
 | Surface μ peak / sliding | §4.1 table | car Burckhardt curves scaled to MTB data [T6] |
 | Stribeck speed | 4.5 m/s | numerical; preserves the 15–45 km/h peak-μ target on all surfaces |

@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from bike_sim.sim.ride.tyre.brush import DiscretisedBrush, lumped_brush, relax
+from bike_sim.sim.ride.tyre.brush import BRISTLE_DAMPING_S, DiscretisedBrush, lumped_brush, relax
 from bike_sim.terrain.surface import SURFACES, SurfaceSpec
 
 
@@ -236,10 +236,91 @@ def test_detailed_input_filter_and_bristle_transport_match_lumped_total_relaxati
     lumped_force = np.asarray(lumped_force)
     detailed_steady = float(detailed_force[-1])
     lumped_steady = float(lumped_force[-1])
-    assert detailed_steady == pytest.approx(lumped_steady, rel=0.03)
+    # The 0.5 ms bristle dashpot adds a measured 3.27 % at this operating point.
+    assert detailed_steady == pytest.approx(lumped_steady, rel=0.04)
     detailed_crossing = int(np.flatnonzero(detailed_force >= 0.63 * detailed_steady)[0])
     lumped_crossing = int(np.flatnonzero(lumped_force >= 0.63 * lumped_steady)[0])
     assert abs(detailed_crossing - lumped_crossing) * dt_s <= 0.10 * (sigma_m / v_x_mps)
+
+
+def test_detailed_bristles_advect_at_measured_tread_speed_while_slip_filter_lags():
+    """Filtering changes bristle growth, not the material speed used to transport it."""
+    n_elements = 16
+    half_length_m = 0.06
+    dt_s = 0.0005
+    v_x_mps = 4.0
+    v_s_mps = -0.4
+    sigma_m = 0.09
+    surface = SURFACES["hardpack"]
+    loads = np.full(n_elements, 500.0 / n_elements)
+    brush = DiscretisedBrush(n_elements)
+    initial = np.linspace(0.0, 1e-5, n_elements)
+    brush.bristle_deflection_m[:] = initial
+
+    filtered_slip = relax(0.0, v_x_mps, v_s_mps, sigma_m - half_length_m, dt_s)
+    filtered_v_s_mps = -filtered_slip * abs(v_x_mps)
+    dx_m = 2.0 * half_length_m / n_elements
+    source_index = (
+        np.arange(n_elements, dtype=float)
+        + (v_x_mps - v_s_mps) * dt_s / dx_m
+    )
+    advected = np.interp(
+        source_index,
+        np.arange(n_elements, dtype=float),
+        initial,
+        left=0.0,
+        right=0.0,
+    )
+    expected = advected - filtered_v_s_mps * dt_s
+
+    brush.step(
+        loads,
+        half_length_m=half_length_m,
+        v_x_mps=v_x_mps,
+        v_s_mps=v_s_mps,
+        sigma_m=sigma_m,
+        surface=surface,
+        dt_s=dt_s,
+    )
+
+    assert np.allclose(brush.bristle_deflection_m, expected, rtol=0.0, atol=1e-15)
+
+
+def test_detailed_bristle_dashpot_is_passive_and_within_the_friction_limit():
+    n_elements = 16
+    half_length_m = 0.06
+    dt_s = 0.0005
+    v_x_mps = 4.0
+    v_s_mps = -0.1
+    sigma_m = 0.09
+    load_n = 500.0
+    surface = SURFACES["hardpack"]
+    loads = np.full(n_elements, load_n / n_elements)
+    brush = DiscretisedBrush(n_elements)
+    dx_m = 2.0 * half_length_m / n_elements
+
+    kappa_prime = relax(0.0, v_x_mps, v_s_mps, sigma_m - half_length_m, dt_s)
+    filtered_v_s_mps = -kappa_prime * abs(v_x_mps)
+    element_stiffness_n_m = (
+        surface.slip_stiffness_per_load * load_n / (2.0 * half_length_m ** 2) * dx_m
+    )
+    expected_force_n = n_elements * element_stiffness_n_m * (
+        -filtered_v_s_mps * dt_s + BRISTLE_DAMPING_S * -filtered_v_s_mps
+    )
+
+    result = brush.step(
+        loads,
+        half_length_m=half_length_m,
+        v_x_mps=v_x_mps,
+        v_s_mps=v_s_mps,
+        sigma_m=sigma_m,
+        surface=surface,
+        dt_s=dt_s,
+    )
+
+    assert result.force_n == pytest.approx(expected_force_n, rel=1e-12)
+    assert result.force_n * v_s_mps < 0.0
+    assert abs(result.force_n) <= result.friction_coefficient * load_n
 
 
 def test_brush_module_does_not_import_mujoco():

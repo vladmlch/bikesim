@@ -13,6 +13,7 @@ from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.tyre import FRONT_TYRE, TIERS, TyreConfig
 from bike_sim.sim.ride.tyre.geometry import RoadProfile
 from bike_sim.sim.ride.tyre.model import PneumaticTyre
+from bike_sim.sim.ride.tyre import model as tyre_model
 from bike_sim.sim.ride_sim import RideSimulation
 from bike_sim.terrain import (
     HeightFieldSpec,
@@ -130,6 +131,54 @@ def test_kicker_gap_has_a_geometric_airborne_state():
     )
     assert outputs.airborne
     assert outputs.patches == ()
+
+
+def test_repeated_airborne_steps_cull_the_carcass_kernel(monkeypatch):
+    track = get_preset("flat")
+    road = _road_profile(track)
+    wheel = PneumaticTyre(FRONT_TYRE, TIERS["fast"])
+    radius_m = FRONT_TYRE.outer_radius_mm / 1000.0
+    ground_z_m = compute_ground_z(BikeSpecs()) / 1000.0
+    dt_s = 0.0005
+
+    grounded = wheel.evaluate(
+        np.asarray([5.0, 0.0, ground_z_m + radius_m - 0.010]),
+        np.zeros(3),
+        0.0,
+        road,
+        SurfaceMap.uniform("hardpack"),
+        dt_s,
+    )
+    assert not grounded.airborne
+
+    airborne_position = np.asarray([5.0, 0.0, ground_z_m + radius_m + 0.050])
+    released = wheel.evaluate(
+        airborne_position,
+        np.zeros(3),
+        0.0,
+        road,
+        SurfaceMap.uniform("hardpack"),
+        dt_s,
+    )
+    assert released.airborne
+    assert not np.any(wheel.carcass_state.delta_prev_m)
+    assert np.any(wheel.carcass_state.maxwell_force_n)
+    memory_after_release = wheel.carcass_state.maxwell_force_n.copy()
+
+    def fail_if_called(*args, **kwargs):
+        pytest.fail("the fully-unloaded airborne path should skip evaluate_carcass")
+
+    monkeypatch.setattr(tyre_model, "evaluate_carcass", fail_if_called)
+    repeated = wheel.evaluate(
+        airborne_position,
+        np.zeros(3),
+        0.0,
+        road,
+        SurfaceMap.uniform("hardpack"),
+        dt_s,
+    )
+    assert repeated.airborne
+    assert np.linalg.norm(wheel.carcass_state.maxwell_force_n) < np.linalg.norm(memory_after_release)
 
 
 def test_kicker_traverse_reports_both_wheels_airborne_during_flight():

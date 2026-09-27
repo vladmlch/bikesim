@@ -17,7 +17,12 @@ from bike_sim.physics.tyre import (
     TyreSpecs,
     clamp_pressure_bar,
 )
-from bike_sim.sim.ride.tyre.brush import BrushResult, DiscretisedBrush, lumped_brush, relax
+from bike_sim.sim.ride.tyre.brush import (
+    BrushResult,
+    DiscretisedBrush,
+    lumped_brush,
+    relax,
+)
 from bike_sim.sim.ride.tyre.carcass import CarcassState, RimStrikeEvent, evaluate_carcass
 from bike_sim.sim.ride.tyre.geometry import RayRing, RoadProfile, intersect
 from bike_sim.terrain.surface import SurfaceMap, SurfaceSpec
@@ -110,6 +115,41 @@ class _PatchBrushState:
     detailed: Optional[DiscretisedBrush] = None
 
 
+def _unloaded_outputs(
+    tyre: TyreSpecs,
+    hub: np.ndarray,
+    velocity: np.ndarray,
+    omega_forward_radps: float,
+    *,
+    coverage_event: bool,
+    airborne: bool,
+    rim_strike_active: bool = False,
+    rim_event: Optional[RimStrikeEvent] = None,
+) -> WheelOutputs:
+    """Builds the zero-force result shared by the airborne and no-patch paths."""
+    return WheelOutputs(
+        tyre_name=tyre.name,
+        pressure_bar=tyre.pressure_bar,
+        hub_position_world_m=hub.copy(),
+        hub_velocity_world_mps=velocity.copy(),
+        omega_forward_radps=float(omega_forward_radps),
+        force_world_n=np.zeros(3, dtype=float),
+        normal_load_n=0.0,
+        support_n=0.0,
+        mean_deflection_m=0.0,
+        contact_length_m=0.0,
+        slip_ratio=0.0,
+        transient_slip_ratio=0.0,
+        fully_sliding=False,
+        rim_strike_active=rim_strike_active,
+        rim_event=rim_event,
+        dissipated_power_w=0.0,
+        coverage_event=coverage_event,
+        airborne=airborne,
+        patches=(),
+    )
+
+
 class PneumaticTyre:
     """Pure per-wheel pneumatic tyre model composed from the tested sub-kernels."""
 
@@ -169,6 +209,30 @@ class PneumaticTyre:
             self.tyre.outer_radius_mm / 1000.0,
             road,
         )
+        if (
+            hits.airborne
+            and not self.carcass_state.rim_strike_active
+            and not np.any(self.carcass_state.delta_prev_m)
+            and not np.any(self.carcass_state.elastic_prev_n)
+        ):
+            self.carcass_state.advance_unloaded(
+                omega_radps=omega_forward_radps,
+                dt_s=dt_s,
+                dtheta_rad=self.ring.dtheta_rad,
+                relaxation_s=self.tyre.rate_relaxation_s,
+            )
+            self._patch_states.clear()
+            outputs = _unloaded_outputs(
+                self.tyre,
+                hub,
+                velocity,
+                omega_forward_radps,
+                coverage_event=hits.coverage_event,
+                airborne=True,
+            )
+            self.last_outputs = outputs
+            return outputs
+
         speed_mps = float(np.hypot(velocity[0], velocity[2]))
         carcass = evaluate_carcass(
             self.ring,
@@ -182,26 +246,15 @@ class PneumaticTyre:
 
         if not carcass.contact_patches:
             self._patch_states.clear()
-            outputs = WheelOutputs(
-                tyre_name=self.tyre.name,
-                pressure_bar=self.tyre.pressure_bar,
-                hub_position_world_m=hub.copy(),
-                hub_velocity_world_mps=velocity.copy(),
-                omega_forward_radps=float(omega_forward_radps),
-                force_world_n=np.zeros(3, dtype=float),
-                normal_load_n=0.0,
-                support_n=0.0,
-                mean_deflection_m=0.0,
-                contact_length_m=0.0,
-                slip_ratio=0.0,
-                transient_slip_ratio=0.0,
-                fully_sliding=False,
-                rim_strike_active=carcass.rim_strike_active,
-                rim_event=carcass.rim_event,
-                dissipated_power_w=0.0,
+            outputs = _unloaded_outputs(
+                self.tyre,
+                hub,
+                velocity,
+                omega_forward_radps,
                 coverage_event=hits.coverage_event,
                 airborne=hits.airborne,
-                patches=(),
+                rim_strike_active=carcass.rim_strike_active,
+                rim_event=carcass.rim_event,
             )
             self.last_outputs = outputs
             return outputs

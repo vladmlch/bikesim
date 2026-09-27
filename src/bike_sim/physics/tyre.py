@@ -76,7 +76,7 @@ class TyreSpecs:
     rate_relaxation_s: float = 0.2
     loss_factor: float = 0.07
     hysteresis_rate_eps_mps: float = 0.01
-    relaxation_length_mm: float = 90.0
+    relaxation_length_mm: float = 60.0
     rim_stiffness_n_mm2: float = 28.0
     tread_loss_crr: float = 0.0
 

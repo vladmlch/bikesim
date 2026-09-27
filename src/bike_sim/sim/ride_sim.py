@@ -12,6 +12,7 @@ filled from the track raster immediately after compilation, ahead of the first
 is a flat road, and every contact computed against it is wrong.
 """
 
+from math import sin
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 import mujoco
@@ -23,6 +24,7 @@ from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
 from bike_sim.physics.coil_shock import CoilShock
 from bike_sim.physics.damper import BikeSuspensionSystem
+from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
 from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
 from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.controllers import SuspensionController
@@ -30,6 +32,7 @@ from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
 from bike_sim.sim.ride.braking import BrakeController
 from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
 from bike_sim.sim.ride.forces import SuspensionForceApplier
 from bike_sim.sim.ride.resistance import RollingResistance
 from bike_sim.sim.ride.rider_forces import RiderForceApplier
@@ -81,6 +84,9 @@ class RideSimulation:
         field: Optional[HeightFieldSpec] = None,
         rider: Optional[Union[RiderSpecs, str]] = None,
         tyre: Optional[TyreConfig] = None,
+        drive_mode: str = "motor",
+        assist: str = "tour",
+        drivetrain: Optional[DrivetrainSpecs] = None,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -107,11 +113,27 @@ class RideSimulation:
                 fits it, a longer field otherwise.
             tyre: Wheel-contact model and fidelity tier. Defaults to the existing `sphere`
                 model; `pneumatic` uses the configured pressure and the track surface.
+            drive_mode: Where propulsion comes from. ``motor`` is the original ideal torque
+                source at the rear wheel and stays the default, so every existing run is
+                unchanged. ``pedal`` builds the turning crankset and pedals it with the rider
+                alone; ``pedelec`` adds the mid-drive's assist on top.
+            assist: Assist level for ``pedelec``: ``off``, ``eco``, ``tour``, ``sport`` or
+                ``turbo``.
+            drivetrain: Gearing and the rider and motor ceilings. Defaults to the shipped
+                32x14 full-power eMTB.
 
         Raises:
             ValueError: If the track does not fit the heightfield envelope.
             RuntimeError: If the starting equilibrium does not converge.
         """
+        if drive_mode not in DRIVE_MODES:
+            raise ValueError(
+                f"unknown drive mode {drive_mode!r}; available: {', '.join(DRIVE_MODES)}"
+            )
+        self.drive_mode = drive_mode
+        self.drivetrain_specs = drivetrain if drivetrain is not None else DrivetrainSpecs()
+        pedalled = drive_mode != "motor"
+
         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
         assert_track_fits(self.track, self.field)
@@ -138,6 +160,8 @@ class RideSimulation:
                 debug_markers=debug_markers,
                 field=self.field,
                 tyre_model=self.tyre_config.model,
+                crank_joint=pedalled,
+                gear_ratio=self.drivetrain_specs.gear_ratio,
             )
         )
         # Before the first forward pass, before the equilibrium solve, before any viewer.
@@ -168,6 +192,19 @@ class RideSimulation:
         self.contact_query = TerrainContactQuery(self.model)
         self.resistance = RollingResistance(self.model)
         self.cruise = CruiseController(self.model, target_speed_kmh=target_speed_kmh)
+        self.drivetrain: Optional[PedalDrivetrain] = (
+            PedalDrivetrain(
+                self.model,
+                specs=self.drivetrain_specs,
+                drive_mode=drive_mode,
+                assist_mode=assist,
+            )
+            if pedalled
+            else None
+        )
+        # Crank arm length in metres, for the pedal positions the rider's legs follow.
+        self.crank_length_m = float(self.specs.crank_length) / 1000.0
+        self.brake_source_cruise = False
         self.brakes = BrakeController(self.model)
         self.stabilizer = PitchStabilizer(self.model)
         self.crash_detector = CrashDetector(self.model)
@@ -219,6 +256,11 @@ class RideSimulation:
             )
         self.contact_query.reset()
         self.cruise.reset()
+        if self.drivetrain is not None:
+            self.drivetrain.reset(self.data)
+            self.rider_forces.set_pedal_offsets(0.0, 0.0)
+            mujoco.mj_forward(self.model, self.data)
+        self.brake_source_cruise = False
         self.brakes.reset()
         self.resistance.reset()
         self.stabilizer.reset()
@@ -253,9 +295,12 @@ class RideSimulation:
             )
 
         self.applier.apply(self.model, self.data)
+        self._follow_cranks()
         self.rider_forces.apply(self.model, self.data)
+        self._compensate_cruise_gains()
         if self.tyre_applier is None:
             self.resistance.apply(self.model, self.data, self.contacts)
+            traction_limited = False
             drive_torque = self.cruise.compute(self.model, self.data, self.contacts)
         else:
             error_mps = self.cruise.target_speed_mps - float(self.data.qvel[self.root_x_dofadr])
@@ -267,7 +312,28 @@ class RideSimulation:
             drive_torque = self.cruise.compute(
                 self.model, self.data, self.contacts, traction_limited=traction_limited
             )
-        self.data.ctrl[self.drive_ctrl_adr] = drive_torque
+        if self.drivetrain is None:
+            self.data.ctrl[self.drive_ctrl_adr] = drive_torque
+        else:
+            # The wheel actuator is left idle: the crank drives, and the chain equality is
+            # what puts the torque on the wheel.
+            self.data.ctrl[self.drive_ctrl_adr] = 0.0
+            command = self.drivetrain.compute(
+                self.model,
+                self.data,
+                drive_torque,
+                speed_mps=self.speed_mps,
+                rear_in_contact=self.contacts.rear_in_contact,
+                traction_limited=traction_limited,
+            )
+            self.drivetrain.write(self.data)
+            # A freewheel cannot hold speed on a descent, so the controller's negative demand
+            # is braking, and telemetry is told who asked for it.
+            self.brake_source_cruise = command.brake_demand > max(
+                front_brake_demand, rear_brake_demand
+            )
+            front_brake_demand = max(front_brake_demand, command.brake_demand)
+            rear_brake_demand = max(rear_brake_demand, command.brake_demand)
         front_torque, rear_torque = self.brakes.compute(
             self.data, front_brake_demand, rear_brake_demand
         )
@@ -283,6 +349,59 @@ class RideSimulation:
         self.steps += 1
         if self.tyre_applier is None:
             self.contacts = self.contact_query.query(self.model, self.data)
+
+    def _follow_cranks(self) -> None:
+        """
+        Moves the seated rider's pedal interfaces to where the cranks now are.
+
+        The crank turns about +y, so the arm built at 3 o'clock sweeps to
+        `(L cos phi, 0, -L sin phi)`: the front pedal drops as the phase advances and the
+        rear pedal, 180 degrees away, rises by the same amount. Only the interface moves; the
+        leg masses stay on their slide coordinates, which is what makes this a bob source
+        rather than a kinematic chain.
+        """
+        if self.drivetrain is None or not self.rider_forces.active:
+            return
+        phase = float(self.data.qpos[self.drivetrain.crank_qposadr])
+        drop = self.crank_length_m * sin(phase)
+        self.rider_forces.set_pedal_offsets(-drop, drop)
+
+    def _compensate_cruise_gains(self) -> None:
+        """
+        Rescales the speed controller for the assist actually available this step.
+
+        The taper is evaluated at the current speed rather than reused from the last command,
+        so the gains and the support the drivetrain is about to apply belong to the same step.
+        """
+        if self.drivetrain is None:
+            self.cruise.gain_scale = 1.0
+            return
+        taper = cutoff_factor(self.speed_mps, self.drivetrain.specs)
+        self.cruise.set_assist_compensation(self.drivetrain.nominal_support_factor * taper)
+
+    @property
+    def pedal_command(self) -> Optional[CrankCommand]:
+        """The last drivetrain command, or None when the ideal motor is driving."""
+        return None if self.drivetrain is None else self.drivetrain.command
+
+    @property
+    def wheel_drive_torque_nm(self) -> float:
+        """
+        Drive torque arriving at the rear wheel, N.m.
+
+        In `motor` mode that is the controller's output. In the pedalled modes it is the
+        rider's torque plus the motor's, multiplied by the gearing -- which is why the wheel
+        sees more than the controller ever asks for.
+        """
+        if self.drivetrain is None:
+            return float(self.cruise.torque_nm)
+        command = self.drivetrain.command
+        if command.freewheel:
+            return 0.0
+        return (
+            (command.rider_torque_nm + command.assist_torque_nm)
+            * self.drivetrain.specs.gear_ratio
+        )
 
     def default_limits(self, max_wall_clock_s: float = DEFAULT_MAX_WALL_CLOCK_S) -> RunLimits:
         """

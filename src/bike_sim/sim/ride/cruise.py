@@ -95,6 +95,13 @@ class CruiseController:
         self.integral_mps_s = 0.0
         self.torque_nm = 0.0
         self.engaged = False
+        # Assist compensation: a mid-drive multiplies whatever the rider's legs do by
+        # (1 + support), which multiplies the loop gain by the same factor and would move
+        # Turbo from zeta = 1.21 to 0.57. Scaling the gains by 1 / (1 + support) keeps the
+        # closed loop identical across assist modes, so a mode comparison measures the
+        # drivetrain and not the regulator. Ride mode sets this every step, because the
+        # cutoff taper changes the support that is actually in force.
+        self.gain_scale = 1.0
 
         self._target_speed_mps = 0.0
         self.target_speed_kmh = target_speed_kmh
@@ -159,20 +166,36 @@ class CruiseController:
             self.torque_nm = 0.0
             return self.torque_nm
 
-        proportional_nm = self.kp_nm_per_mps * error_mps
-        demand_nm = proportional_nm + self.ki_nm_per_mps_s * self.integral_mps_s
+        kp = self.kp_nm_per_mps * self.gain_scale
+        ki = self.ki_nm_per_mps_s * self.gain_scale
+        proportional_nm = kp * error_mps
+        demand_nm = proportional_nm + ki * self.integral_mps_s
         pushing_further_into_saturation = (
             abs(demand_nm) >= self.torque_ceiling_nm and (demand_nm > 0.0) == (error_mps > 0.0)
         )
         if not pushing_further_into_saturation and not traction_limited:
             self.integral_mps_s = _clamp(
                 self.integral_mps_s + error_mps * float(model.opt.timestep),
-                self.torque_ceiling_nm / self.ki_nm_per_mps_s,
+                self.torque_ceiling_nm / ki,
             )
-            demand_nm = proportional_nm + self.ki_nm_per_mps_s * self.integral_mps_s
+            demand_nm = proportional_nm + ki * self.integral_mps_s
 
         self.torque_nm = _clamp(demand_nm, self.torque_ceiling_nm)
         return self.torque_nm
+
+    def set_assist_compensation(self, support_factor: float) -> float:
+        """
+        Scales the gains for the assist currently in force.
+
+        Args:
+            support_factor: Motor torque as a multiple of rider torque, after the cutoff
+                taper. Zero leaves the gains as authored.
+
+        Returns:
+            The scale now in force.
+        """
+        self.gain_scale = 1.0 / (1.0 + max(0.0, float(support_factor)))
+        return self.gain_scale
 
     def reset(self) -> None:
         """Clears the integrator and the last reported torque for a fresh run."""

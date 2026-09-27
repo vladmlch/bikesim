@@ -220,6 +220,7 @@ def build_frame_body(
     rider: Optional[RiderSpecs] = None,
     pose: Optional[SeatedPose] = None,
     debug_markers: bool = False,
+    crank_joint: bool = False,
 ) -> ET.Element:
     """
     Constructs the base frame body in worldbody and adds all frame geometry.
@@ -231,6 +232,8 @@ def build_frame_body(
             capsules. ``seated`` -- ride mode only -- adds the rider bodies and sets the
             saddle for the rider's inseam.
         pose: The solved seated pose, required when ``rider`` is seated.
+        crank_joint: Whether the crankset turns on its own `crank_spin` hinge, which the
+            pedalled drivetrain drives. False welds it to the frame, as before.
     """
     fixed_points_m = {k: np.array(v, dtype=float) / 1000.0 for k, v in fixed_points.items()}
     BB = np.array([0.0, 0.0, 0.0], dtype=float)
@@ -250,7 +253,12 @@ def build_frame_body(
     elif mode in ("stand", "playground", "ride"):
         build_rider(frame, include_rider=(variant == "lumped"), rider=rider)
 
-    build_bb_and_motor(frame, mass_specs, crank_length_m=specs.crank_length / 1000.0)
+    build_bb_and_motor(
+        frame,
+        mass_specs,
+        crank_length_m=specs.crank_length / 1000.0,
+        crank_joint=crank_joint,
+    )
     _build_front_triangle_tubes(
         frame=frame,
         BB=BB,

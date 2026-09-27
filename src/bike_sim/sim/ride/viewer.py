@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import mujoco
 
+from bike_sim.physics.drivetrain import DrivetrainSpecs
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.rider import RiderSpecs
 from bike_sim.physics.tyre import TyreConfig
@@ -102,6 +103,9 @@ def run_interactive_ride(
     include_rider: bool = True,
     rider: Optional[Union[RiderSpecs, str]] = None,
     tyre: Optional[TyreConfig] = None,
+    drive_mode: str = "motor",
+    assist: str = "tour",
+    drivetrain: Optional[DrivetrainSpecs] = None,
 ) -> Optional[RunOutcome]:
     """
     Launches the live interactive ride viewer.
@@ -116,6 +120,9 @@ def run_interactive_ride(
         include_rider: Legacy switch; False rides the bike alone. Ignored when ``rider`` is given.
         rider: The rider variant or `RiderSpecs`; fixed for the session (see `session.py`).
         tyre: Wheel-contact model; defaults to the existing sphere model.
+        drive_mode: ``motor``, ``pedal`` or ``pedelec``; see `RideSimulation`.
+        assist: Assist level the mid-drive starts in; `E` cycles it while riding.
+        drivetrain: Gearing and drivetrain ceilings. Defaults to the shipped 32x14 eMTB.
 
     Returns:
         The run's outcome if it terminated before the window was closed, else None.
@@ -137,6 +144,9 @@ def run_interactive_ride(
         rider=rider,
         tyre=tyre,
         debug_markers=True,
+        drive_mode=drive_mode,
+        assist=assist,
+        drivetrain=drivetrain,
     )
     session = RideSession(sim)
 

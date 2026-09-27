@@ -35,7 +35,7 @@ from bike_sim.physics.rider import RiderBody, SeatedPose
 class _JointPath:
     """One rider body's spring-damper, resolved onto its joint addresses."""
 
-    __slots__ = ("body", "qposadr", "dofadr", "force_n", "gap_m")
+    __slots__ = ("body", "qposadr", "dofadr", "force_n", "gap_m", "offset_m")
 
     def __init__(self, body: RiderBody, qposadr: int, dofadr: int) -> None:
         self.body = body
@@ -43,6 +43,9 @@ class _JointPath:
         self.dofadr = dofadr
         self.force_n = 0.0
         self.gap_m = 0.0
+        # Vertical displacement of the interface this body rests on, m, positive upward.
+        # Only the two legs use it: their pedals move with the cranks.
+        self.offset_m = 0.0
 
     def compute(self, q: float, qd: float) -> float:
         """
@@ -54,9 +57,11 @@ class _JointPath:
 
         Returns:
             The generalized force to apply, N. Records the contact gap for one-sided paths.
+            A raised interface -- a pedal on its way up -- compresses the spring exactly as
+            the body coming down onto it would.
         """
         b = self.body
-        deflection = b.preload_deflection_m - q
+        deflection = b.preload_deflection_m + self.offset_m - q
         if b.unilateral:
             if deflection <= 0.0:
                 self.gap_m = -deflection
@@ -113,6 +118,27 @@ class RiderForceApplier:
     def active(self) -> bool:
         """Whether a seated rider is present."""
         return bool(self._paths)
+
+    def set_pedal_offsets(self, front_m: float, rear_m: float) -> None:
+        """
+        Moves the two pedal interfaces to where the rotating cranks put them.
+
+        The leg masses stay lumped on their slide coordinates; only the point they rest on
+        moves, so each leg oscillates once per crank revolution and the ~12 kg on each pedal
+        becomes a second source of bob alongside the torque pulse. With a rigid crankset both
+        offsets stay zero and the force path is the one that was there before.
+
+        Args:
+            front_m: Vertical displacement of the front pedal from its built position, m,
+                positive upward.
+            rear_m: Same for the rear pedal.
+        """
+        front = self._by_name.get("rider_leg_front")
+        rear = self._by_name.get("rider_leg_rear")
+        if front is not None:
+            front.offset_m = float(front_m)
+        if rear is not None:
+            rear.offset_m = float(rear_m)
 
     def apply(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
         """

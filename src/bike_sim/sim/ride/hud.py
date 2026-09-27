@@ -122,7 +122,19 @@ class RideHUD:
             f"{'F' if sim.contacts.front_in_contact else '-'}"
             f"{'R' if sim.contacts.rear_in_contact else '-'}"
         )
-        power_w = sim.cruise.torque_nm * self.rear_wheel.omega_radps(sim.data)
+        power_w = sim.wheel_drive_torque_nm * self.rear_wheel.omega_radps(sim.data)
+        command = sim.pedal_command
+        if command is None:
+            drive_str = f"Pwr:{power_w:+7.1f}W"
+        else:
+            assist = sim.drivetrain.assist_mode.upper()
+            state = "FREEWHEEL" if command.freewheel else f"{command.cadence_rpm:5.1f}rpm"
+            cutoff = " CUT" if command.cutoff_active else ""
+            drive_str = (
+                f"Drive:{assist}{cutoff} {state} "
+                f"legs{command.rider_power_w:+6.1f}W motor{command.motor_power_w:+6.1f}W "
+                f"| Pwr:{power_w:+7.1f}W"
+            )
         tyre_str = ""
         if sim.tyre_applier is not None:
             front = sim.tyre_applier.front_outputs
@@ -145,7 +157,7 @@ class RideHUD:
             f"Shock:{sim.shock_stroke_mm:5.1f}mm {shock_pct:5.1f}% ({shock_shaft_mps:+6.3f}m/s) | "
             f"{brake_str} | Grip:{grip_str} | "
             f"Pitch:{degrees(sim.pitch_rad):+6.2f}deg {pitch_label(sim.pitch_rad)} | "
-            f"Pwr:{power_w:+7.1f}W"
+            f"{drive_str}"
             f"{tyre_str}"
         )
 

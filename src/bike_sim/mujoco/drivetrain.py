@@ -24,6 +24,9 @@ from bike_sim.mujoco._xml_format import _format_vec, add_geom
 CRANK_ARM_MASS_KG = 0.20
 PEDAL_MASS_KG = 0.175
 CRANK_ARM_RADIUS_M = 0.012
+# Bearing drag of the bottom bracket, N.m per rad/s. Small enough to be invisible against a
+# 30 N.m pedal stroke, large enough that a disengaged crank settles instead of ringing.
+CRANK_JOINT_DAMPING = 0.03
 CRANK_SPINDLE_RADIUS_M = 0.016
 
 
@@ -31,18 +34,23 @@ def build_bb_and_motor(
     frame: ET.Element,
     mass_specs: BikeMassSpecs,
     crank_length_m: float = 0.165,
+    crank_joint: bool = False,
 ) -> None:
     """
     Builds the bottom bracket shell, electric motor core, and crankset/pedals on the main frame.
 
-    The cranks are horizontal -- 3 and 9 o'clock, the coasting position -- and rigid with
-    the frame: there is no drivetrain in the model (docs/RIDE.md section 6), so a free
-    crank would be an unactuated pendulum. The pedals carry the seated rider's feet.
+    With `crank_joint` false the cranks are horizontal -- 3 and 9 o'clock, the coasting
+    position -- and rigid with the frame, because a free crank with nothing driving it is an
+    unactuated pendulum. With `crank_joint` true the spindle, arms and pedals move into a
+    `crank` body on a `crank_spin` hinge: the pedalled drivetrain drives that hinge, the chain
+    equality ties it to the rear wheel, and the drive torque's reaction lands on the frame
+    through the bottom bracket the way a mid-drive's does.
 
     Args:
         frame: The `frame` body element.
         mass_specs: Component masses; `crank_pedals_mass` is spread over spindle, arms and pedals.
         crank_length_m: Crank arm length, spindle to pedal spindle, in metres.
+        crank_joint: Whether to build the crankset on a rotating hinge.
     """
     ET.SubElement(
         frame,
@@ -74,8 +82,27 @@ def build_bb_and_motor(
             f"crank_pedals_mass {mass_specs.crank_pedals_mass:.3f} kg does not cover two "
             f"{CRANK_ARM_MASS_KG:.3f} kg arms and two {PEDAL_MASS_KG:.3f} kg pedals"
         )
+    # The crankset either stays welded to the frame, as it was before there was a
+    # drivetrain, or hangs off its own hinge at the bottom bracket. Every geom below keeps
+    # its coordinates either way: the bottom bracket is the frame's origin, so the crank
+    # body sits at 0 0 0 and its children need no re-referencing.
+    if crank_joint:
+        crankset = ET.SubElement(frame, "body", {"name": "crank", "pos": "0 0 0"})
+        ET.SubElement(
+            crankset,
+            "joint",
+            {
+                "name": "crank_spin",
+                "type": "hinge",
+                "pos": "0 0 0",
+                "axis": "0 1 0",
+                "damping": f"{CRANK_JOINT_DAMPING:.3f}",
+            },
+        )
+    else:
+        crankset = frame
     add_geom(
-        frame, "geom_crank_spindle", "cylinder",
+        crankset, "geom_crank_spindle", "cylinder",
         fromto=f"0 {-CRANK_ARM_LATERAL_OFFSET_M:.6f} 0 0 {CRANK_ARM_LATERAL_OFFSET_M:.6f} 0",
         size=f"{CRANK_SPINDLE_RADIUS_M:.3f}", mass=f"{spindle_mass:.3f}", material="mat_metal",
         contype="0", conaffinity="0",
@@ -88,18 +115,56 @@ def build_bb_and_motor(
         y_arm = lateral * CRANK_ARM_LATERAL_OFFSET_M
         y_pedal = lateral * PEDAL_LATERAL_OFFSET_M
         add_geom(
-            frame, f"geom_crank_arm_{side}", "capsule",
+            crankset, f"geom_crank_arm_{side}", "capsule",
             fromto=f"0 {y_arm:.6f} 0 {pedal[0]:.6f} {y_arm:.6f} {pedal[2]:.6f}",
             size=f"{CRANK_ARM_RADIUS_M:.3f}", mass=f"{CRANK_ARM_MASS_KG:.3f}", material="mat_metal",
             contype="0", conaffinity="0",
         )
         add_geom(
-            frame, f"geom_pedal_{side}", "box",
+            crankset, f"geom_pedal_{side}", "box",
             pos=f"{pedal[0]:.6f} {y_pedal:.6f} {pedal[2]:.6f}",
             size=" ".join(f"{s:.3f}" for s in PEDAL_HALF_SIZE_M),
             mass=f"{PEDAL_MASS_KG:.3f}", material="mat_metal",
             contype="0", conaffinity="0",
         )
+
+
+def build_chain_constraint(root: ET.Element, gear_ratio: float) -> None:
+    """
+    Ties the crank to the rear wheel with the chain, as a joint equality.
+
+    The constraint is written `crank = wheel / ratio`, so a positive crank torque arrives at
+    the wheel multiplied by the ratio and the power balance closes. It is emitted **active**;
+    the freewheel is expressed at runtime by clearing `eq_active`, which is what lets the
+    cranks stop while the wheel keeps turning.
+
+    This is deliberately not a chain *line*: the constraint transmits torque, not the tension
+    of a chain running from chainring to cog, so the anti-squat that tension would produce is
+    outside this model.
+
+    Args:
+        root: The MJCF root element.
+        gear_ratio: Wheel revolutions per crank revolution.
+
+    Raises:
+        ValueError: If the ratio is not positive.
+    """
+    if gear_ratio <= 0.0:
+        raise ValueError(f"gear_ratio must be positive, got {gear_ratio}")
+    equality = root.find("equality")
+    if equality is None:
+        equality = ET.SubElement(root, "equality")
+    ET.SubElement(
+        equality,
+        "joint",
+        {
+            "name": "chain_drive",
+            "joint1": "crank_spin",
+            "joint2": "rear_wheel_spin",
+            "polycoef": f"0 {1.0 / gear_ratio:.9f} 0 0 0",
+            "solref": "0.002 1",
+        },
+    )
 
 
 def build_rear_wheel(

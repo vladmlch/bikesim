@@ -12,6 +12,7 @@ from typing import Optional
 from bike_sim.geometry.specs import FrameGeometrySpecs, SuspensionHardwareSpecs
 from bike_sim.physics.air_spring import AirSpringSpecs
 from bike_sim.physics.damper import DamperClickConfig
+from bike_sim.physics.drivetrain import DrivetrainSpecs
 from bike_sim.physics.mass import BikeMassSpecs, RiderSpecs
 
 
@@ -27,3 +28,4 @@ class BikeConfig:
     damper_clicks: DamperClickConfig = field(default_factory=DamperClickConfig)
     mass: BikeMassSpecs = field(default_factory=BikeMassSpecs)
     rider: RiderSpecs = field(default_factory=RiderSpecs)
+    drivetrain: DrivetrainSpecs = field(default_factory=DrivetrainSpecs)

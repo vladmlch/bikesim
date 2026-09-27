@@ -16,6 +16,7 @@ from pathlib import Path
 import sys
 from typing import List, Optional, Sequence
 
+from bike_sim.physics.drivetrain import ASSIST_ORDER, DRIVE_MODES, DrivetrainSpecs
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RIDER_VARIANTS, RiderSpecs
 from bike_sim.physics.tyre import (
@@ -124,6 +125,29 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         metavar="FRONT/REAR", help="front/rear tyre pressure in bar (default 1.5/1.7)",
     )
     parser.add_argument(
+        "--drive-mode", choices=DRIVE_MODES, default="motor",
+        help="propulsion: motor (ideal wheel torque, the baseline), pedal (rider cranks), "
+             "pedelec (rider plus mid-drive) (default motor)",
+    )
+    parser.add_argument(
+        "--assist", choices=ASSIST_ORDER, default="tour",
+        help="mid-drive assist level for --drive-mode pedelec (default tour); E cycles it in the viewer",
+    )
+    parser.add_argument(
+        "--gearing", type=_parse_gearing, default=None, metavar="CHAINRINGxCOG",
+        help="single gear for the pedalled drivetrain (default 32x14, which is 82 rpm at 25 km/h)",
+    )
+    parser.add_argument(
+        "--ripple-depth", type=float, default=None, metavar="D",
+        help="depth of the crank torque pulse in [0, 1] (default 0.85); 0 is a smooth crank "
+             "and reproduces the motor baseline",
+    )
+    parser.add_argument(
+        "--crank-phase", type=float, default=0.0, metavar="DEG",
+        help="crank angle at the start of the run (default 0, the built 3/9 o'clock pose). "
+             "Deliberately not tied to --seed: the phase a jump is met in is its own variable",
+    )
+    parser.add_argument(
         "--surface", choices=tuple(SURFACES), default=None,
         help="override the track surface friction preset (default: track surface)",
     )
@@ -144,6 +168,36 @@ def _parse_tyre_pressures(value: str) -> tuple[float, float]:
             f"--tyre-pressure values must be in [{PRESSURE_MIN_BAR:.1f}, {PRESSURE_MAX_BAR:.1f}] bar"
         )
     return front, rear
+
+
+def _parse_gearing(value: str) -> tuple:
+    """Parses the CLI's ``CHAINRINGxCOG`` tooth pair."""
+    parts = value.lower().split("x")
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError("--gearing must be CHAINRINGxCOG, e.g. 32x14")
+    try:
+        chainring, cog = (int(part) for part in parts)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("--gearing teeth must be whole numbers") from exc
+    return chainring, cog
+
+
+def _drivetrain_config(args: argparse.Namespace) -> DrivetrainSpecs:
+    """
+    Builds the drivetrain specs from parsed command-line values.
+
+    Raises:
+        SystemExit: Via argparse, if a value is outside the physical range.
+    """
+    kwargs = {"crank_phase_deg": float(args.crank_phase)}
+    if args.gearing is not None:
+        kwargs["chainring_teeth"], kwargs["cog_teeth"] = args.gearing
+    if args.ripple_depth is not None:
+        kwargs["ripple_depth"] = float(args.ripple_depth)
+    try:
+        return DrivetrainSpecs(**kwargs)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
 def _tyre_config(args: argparse.Namespace) -> TyreConfig:
@@ -397,9 +451,20 @@ def _headless(
         f"{tyre.front.pressure_bar:.2f}/{tyre.rear.pressure_bar:.2f} bar, surface {tyre_surface}"
     )
 
+    drivetrain = _drivetrain_config(args)
+    if args.drive_mode != "motor":
+        cadence = drivetrain.cadence_rpm_at(args.speed / 3.6, specs.rear_wheel_radius / 1000.0)
+        assist = args.assist if args.drive_mode == "pedelec" else "off"
+        print(f"{PREFIX} drive: {args.drive_mode}, assist {assist}, "
+              f"{drivetrain.chainring_teeth}x{drivetrain.cog_teeth} "
+              f"({cadence:.0f} rpm at {args.speed:g} km/h), ripple depth {drivetrain.ripple_depth:g}")
+        if not 60.0 <= cadence <= 110.0:
+            print(f"{PREFIX} warning: {cadence:.0f} rpm is outside the 60-110 rpm band a rider "
+                  f"actually pedals in; change --gearing or --speed", file=sys.stderr)
     sim = RideSimulation(
         track=track, specs=specs, target_speed_kmh=args.speed, rider=rider,
         controller=controller, coil_shock=coil, tyre=tyre,
+        drive_mode=args.drive_mode, assist=args.assist, drivetrain=drivetrain,
     )
     eq = sim.equilibrium
     print(f"{PREFIX} start equilibrium: fork {eq['fork_travel_mm']:.1f} mm "
@@ -412,6 +477,10 @@ def _headless(
     extras["start_fork_travel_mm"] = float(eq["fork_travel_mm"])
     extras["start_shock_stroke_mm"] = float(eq["shock_stroke_mm"])
     extras.update({
+        "drive_mode": args.drive_mode,
+        "assist": args.assist if args.drive_mode == "pedelec" else "off",
+        "gear_ratio": float(drivetrain.gear_ratio),
+        "ripple_depth": float(drivetrain.ripple_depth),
         "tyre_model": tyre.model,
         "tyre_tier": tyre.tier,
         "tyre_pressure_front_bar": tyre.front.pressure_bar,
@@ -467,7 +536,10 @@ def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, 
         f"{tyre.front.pressure_bar:.2f}/{tyre.rear.pressure_bar:.2f} bar, "
         f"surface {tyre.surface or track.surface}"
     )
-    run_interactive_ride(track=track, target_speed_kmh=args.speed, rider=rider, tyre=tyre)
+    run_interactive_ride(
+        track=track, target_speed_kmh=args.speed, rider=rider, tyre=tyre,
+        drive_mode=args.drive_mode, assist=args.assist, drivetrain=_drivetrain_config(args),
+    )
     return 0
 
 

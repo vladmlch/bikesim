@@ -90,6 +90,20 @@ CHANNELS: Sequence[str] = (
     "rear_rim_strike",
     "rear_tyre_pressure_bar",
     "rear_tyre_loss_w",
+    # Pedalled drivetrain. Appended at the end and filled with NaN in `motor` mode: the
+    # loader keys channels by header name, so old runs, old parsers and old plots are
+    # untouched, and a NaN says "this run had no cranks" where a zero would have claimed a
+    # stationary crank instead.
+    "crank_phase_rad",
+    "cadence_rpm",
+    "crank_torque_nm",
+    "assist_torque_nm",
+    "motor_power_w",
+    "support_factor",
+    "freewheel",
+    "assist_cutoff_active",
+    "brake_source",
+    "drive_traction_limited",
 )
 
 # Channels the seated rider fills; every other rider variant records zeros here.
@@ -209,7 +223,23 @@ class RideRecorder:
         contacts = sim.contacts
         bar_vert, bar_long = self._bar.world_components(data)
         saddle_vert, saddle_long = self._saddle.world_components(data)
-        drive_torque = float(sim.cruise.torque_nm)
+        drive_torque = float(sim.wheel_drive_torque_nm)
+        command = sim.pedal_command
+        if command is None:
+            pedal_channels = (np.nan,) * 10
+        else:
+            pedal_channels = (
+                float(command.phase_rad),
+                float(command.cadence_rpm),
+                float(command.rider_torque_nm),
+                float(command.assist_torque_nm),
+                float(command.motor_power_w),
+                float(command.support_factor),
+                1.0 if command.freewheel else 0.0,
+                1.0 if command.cutoff_active else 0.0,
+                1.0 if sim.brake_source_cruise else 0.0,
+                1.0 if sim.drivetrain.traction_limited else 0.0,
+            )
         stroke_mm = sim.shock_stroke_mm
         rider = sim.rider_forces
         if self._seated:
@@ -278,6 +308,7 @@ class RideRecorder:
                 pelvis_vert,
                 pelvis_long,
                 *tyre_channels,
+                *pedal_channels,
             ]
         )
 

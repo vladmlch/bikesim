@@ -134,6 +134,144 @@ class TyreStats:
 
 
 @dataclass
+class PedalBobStats:
+    """
+    How hard the pedalling itself shakes the suspension.
+
+    The pedal stroke puts two torque pulses and two leg-mass swings into the bike per crank
+    revolution, so the bob it produces lives at **twice** the cadence -- 2.7 Hz at 82 rpm.
+    Fitting that one frequency, rather than reading a spectrum, keeps the metric a number:
+    it is the amplitude of the shock stroke at the pedalling frequency, separated from the
+    far larger stroke the terrain causes at every other frequency.
+
+    Attributes:
+        mean_cadence_rpm: Mean cadence over the window, counting only engaged (non-freewheel)
+            rows. Freewheeling rows carry no pedal excitation and would drag the mean down.
+        bob_frequency_hz: Twice the mean cadence, the frequency fitted.
+        shock_bob_amplitude_mm: Amplitude of the shock stroke at that frequency.
+        fork_bob_amplitude_mm: The same for the fork, which the pedal stroke reaches only
+            through the chassis.
+        crank_torque_mean_nm / crank_torque_peak_nm: Rider torque at the crank.
+        assist_torque_mean_nm: Mid-drive torque at the crank, zero without assist.
+        wheel_torque_mean_nm: Mean torque arriving at the rear wheel.
+        gear_ratio_check: `wheel_torque_mean / (crank_torque_mean + assist_torque_mean)`.
+            This must come out at the gearing; anything else means the ratio is inverted or
+            applied twice, which is the failure this whole metric is most likely to hide.
+        freewheel_fraction: Share of the window spent coasting.
+        cutoff_fraction: Share of the window with the assist tapered by the speed cutoff.
+        traction_limited_fraction: Share of the window with the rear patch fully sliding.
+        assist_switches: Number of assist-mode changes inside the window. Non-zero means the
+            frequency fit spans more than one experiment and the amplitude is not a
+            single-mode result.
+    """
+
+    mean_cadence_rpm: float
+    bob_frequency_hz: float
+    shock_bob_amplitude_mm: float
+    fork_bob_amplitude_mm: float
+    crank_torque_mean_nm: float
+    crank_torque_peak_nm: float
+    assist_torque_mean_nm: float
+    wheel_torque_mean_nm: float
+    gear_ratio_check: float
+    freewheel_fraction: float
+    cutoff_fraction: float
+    traction_limited_fraction: float
+    assist_switches: int
+
+
+def sine_amplitude(signal: np.ndarray, frequency_hz: float, sample_interval_s: float) -> float:
+    """
+    Amplitude of one frequency in a signal, by least squares.
+
+    A two-term sine/cosine fit against a detrended signal, which is a Goertzel filter written
+    as a projection. It is used instead of an FFT peak because the record is short, the
+    frequency is known exactly from the cadence, and an FFT bin at these lengths is wider
+    than the distance between the pedalling frequency and its neighbours.
+
+    Args:
+        signal: Samples.
+        frequency_hz: Frequency to measure.
+        sample_interval_s: Time between samples.
+
+    Returns:
+        Amplitude in the units of `signal`; zero if the record is too short to hold a cycle
+        or the frequency is not resolvable at this sample rate.
+    """
+    n = signal.size
+    if n < 8 or frequency_hz <= 0.0:
+        return 0.0
+    duration_s = n * sample_interval_s
+    nyquist_hz = 0.5 / sample_interval_s
+    if frequency_hz >= nyquist_hz or duration_s < 1.0 / frequency_hz:
+        return 0.0
+    t = np.arange(n, dtype=float) * sample_interval_s
+    centred = signal - float(np.mean(signal))
+    omega = 2.0 * np.pi * frequency_hz
+    basis = np.column_stack((np.cos(omega * t), np.sin(omega * t)))
+    coefficients, *_ = np.linalg.lstsq(basis, centred, rcond=None)
+    return float(np.hypot(coefficients[0], coefficients[1]))
+
+
+def pedal_bob_stats(
+    w: Dict[str, np.ndarray],
+    sample_interval_s: float,
+    assist_switches: int = 0,
+) -> Optional[PedalBobStats]:
+    """
+    Summarizes the pedalled drivetrain over an already-windowed set of channels.
+
+    Args:
+        w: Windowed recorder channels.
+        sample_interval_s: Time between rows.
+        assist_switches: Assist-mode changes inside the window, from the session's event log.
+
+    Returns:
+        The stats, or None when the run was not pedalled -- the drivetrain channels are NaN
+        in `motor` mode, which is exactly what distinguishes the two.
+    """
+    cadence = np.asarray(w.get("cadence_rpm", np.zeros(0)), dtype=float)
+    if cadence.size == 0 or not np.isfinite(cadence).any():
+        return None
+
+    freewheel = np.asarray(w["freewheel"], dtype=float) > 0.5
+    engaged = np.isfinite(cadence) & ~freewheel
+    crank = np.asarray(w["crank_torque_nm"], dtype=float)
+    assist = np.asarray(w["assist_torque_nm"], dtype=float)
+    wheel = np.asarray(w["drive_torque_nm"], dtype=float)
+
+    mean_cadence = float(np.mean(cadence[engaged])) if engaged.any() else 0.0
+    # Two power strokes per revolution: the excitation is at twice the cadence.
+    bob_hz = 2.0 * mean_cadence / 60.0
+    crank_mean = float(np.mean(crank[engaged])) if engaged.any() else 0.0
+    assist_mean = float(np.mean(assist[engaged])) if engaged.any() else 0.0
+    wheel_mean = float(np.mean(wheel[engaged])) if engaged.any() else 0.0
+    total_mean = crank_mean + assist_mean
+
+    return PedalBobStats(
+        mean_cadence_rpm=mean_cadence,
+        bob_frequency_hz=bob_hz,
+        shock_bob_amplitude_mm=sine_amplitude(
+            np.asarray(w["shock_stroke_mm"], dtype=float), bob_hz, sample_interval_s
+        ),
+        fork_bob_amplitude_mm=sine_amplitude(
+            np.asarray(w["fork_travel_mm"], dtype=float), bob_hz, sample_interval_s
+        ),
+        crank_torque_mean_nm=crank_mean,
+        crank_torque_peak_nm=float(np.max(crank[engaged])) if engaged.any() else 0.0,
+        assist_torque_mean_nm=assist_mean,
+        wheel_torque_mean_nm=wheel_mean,
+        gear_ratio_check=float(wheel_mean / total_mean) if abs(total_mean) > 1e-9 else 0.0,
+        freewheel_fraction=float(np.mean(freewheel)) if freewheel.size else 0.0,
+        cutoff_fraction=float(np.mean(np.asarray(w["assist_cutoff_active"], dtype=float) > 0.5)),
+        traction_limited_fraction=float(
+            np.mean(np.asarray(w["drive_traction_limited"], dtype=float) > 0.5)
+        ),
+        assist_switches=int(assist_switches),
+    )
+
+
+@dataclass
 class RideSummary:
     """Everything ``summary.json`` carries."""
 
@@ -164,6 +302,7 @@ class RideSummary:
     rider_variant: str = "lumped"
     rider: Optional[RiderStats] = None
     tyres: Dict[str, TyreStats] = field(default_factory=dict)
+    pedals: Optional[PedalBobStats] = None
 
     def to_dict(self) -> Dict:
         """Returns a JSON-ready dictionary."""
@@ -194,6 +333,17 @@ class RideSummary:
             f"  {'end':6s} {'max mm':>8s} {'max %':>6s} {'p95 mm':>8s} {'mean mm':>8s} "
             f"{'bottom':>7s} {'top':>5s} {'comp m/s':>9s} {'reb m/s':>8s}",
         ]
+        if self.pedals is not None:
+            p = self.pedals
+            lines.append(
+                f"  pedals: {p.mean_cadence_rpm:.0f} rpm, bob at {p.bob_frequency_hz:.2f} Hz "
+                f"-> shock {p.shock_bob_amplitude_mm:.2f} mm / fork {p.fork_bob_amplitude_mm:.2f} mm; "
+                f"crank {p.crank_torque_mean_nm:.1f} N.m mean ({p.crank_torque_peak_nm:.1f} peak) "
+                f"+ motor {p.assist_torque_mean_nm:.1f}; ratio check {p.gear_ratio_check:.3f}; "
+                f"freewheel {100 * p.freewheel_fraction:.0f} %"
+                + (f"; {p.assist_switches} assist switches in window" if p.assist_switches else "")
+            )
+            lines.append("")
         for t in (self.fork, self.shock):
             lines.append(
                 f"  {t.end:6s} {t.max_mm:8.1f} {t.max_pct:6.1f} {t.p95_mm:8.1f} {t.mean_mm:8.1f} "
@@ -408,6 +558,7 @@ def summarize_ride(
     tyre_rim_events: Optional[Dict[str, List[Dict[str, float]]]] = None,
     tyre_rim_starts: Optional[Dict[str, List[float]]] = None,
     tyre_times_s: Optional[Dict[str, Dict[str, float]]] = None,
+    assist_switches: int = 0,
 ) -> RideSummary:
     """
     Computes the ride summary from recorded channels.
@@ -430,6 +581,8 @@ def summarize_ride(
             are decimated.
         tyre_rim_starts: Rim-strike start X positions captured every step for the event count.
         tyre_times_s: Exact wheelspin and lock durations accumulated by the recorder.
+        assist_switches: Assist-mode changes made while riding, from the session's event log.
+            Recorded with the pedalling stats so a mixed-mode run cannot be read as one.
 
     Returns:
         The summary.
@@ -444,6 +597,7 @@ def summarize_ride(
     rider = None
     if rider_variant == "seated" and "saddle_load_n" in w:
         rider = rider_stats(w, sample_interval_s, rider_mass_kg * GRAVITY_MPS2)
+    pedals = pedal_bob_stats(w, sample_interval_s, assist_switches) if window.any() else None
     tyres = {
         wheel: _tyre_stats(
             wheel,
@@ -487,6 +641,7 @@ def summarize_ride(
         rider_variant=rider_variant,
         rider=rider,
         tyres=tyres,
+        pedals=pedals,
     )
 
 

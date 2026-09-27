@@ -89,6 +89,10 @@ class RideSession:
 
         self.braking = False
         self.brake_strength = DEFAULT_BRAKE_STRENGTH
+        # (time_s, x_m, mode) for every mid-drive switch made while riding. A run with
+        # entries here is several experiments in a trench coat: the pedalling spectrum is
+        # only meaningful over a stretch with one assist mode.
+        self.assist_events: list = []
         self.show_telemetry = show_telemetry
         self.debug_markers = False
         self.viewer: Optional["mujoco.viewer.Handle"] = None
@@ -137,6 +141,21 @@ class RideSession:
             MIN_TARGET_SPEED_KMH, min(MAX_TARGET_SPEED_KMH, target)
         )
         return self.sim.cruise.target_speed_kmh
+
+    def cycle_assist_mode(self) -> Optional[str]:
+        """
+        Steps the mid-drive to the next assist mode and records when it happened.
+
+        Returns:
+            The mode now in force, or None when the run has no mid-drive.
+        """
+        drivetrain = self.sim.drivetrain
+        if drivetrain is None or drivetrain.drive_mode == "pedal":
+            return None
+        with self._lock:
+            mode = drivetrain.cycle_assist_mode()
+            self.assist_events.append((float(self.sim.time_s), float(self.sim.position_m), mode))
+        return mode
 
     def toggle_braking(self) -> bool:
         """
@@ -214,6 +233,7 @@ class RideSession:
         self.terminator.start()
         self.outcome = None
         self.braking = False
+        self.assist_events = []
 
     def step(self) -> Optional[RunOutcome]:
         """

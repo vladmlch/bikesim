@@ -14,6 +14,7 @@ imports the orchestrator at runtime, and importing it from the package would mak
 from bike_sim.sim.ride.braking import BrakeController
 from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.cruise import CruiseController
+from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
 from bike_sim.sim.ride.forces import SuspensionForceApplier
 from bike_sim.sim.ride.hud import RideHUD
 from bike_sim.sim.ride.input import RideInputHandler
@@ -35,6 +36,8 @@ __all__ = [
     "RollingResistance",
     "CruiseController",
     "BrakeController",
+    "PedalDrivetrain",
+    "CrankCommand",
     "PitchStabilizer",
     "CrashDetector",
     "CrashEvent",

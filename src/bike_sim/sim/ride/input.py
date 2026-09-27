@@ -83,6 +83,7 @@ class RideInputHandler:
             ((46,), lambda: self._adjust_brake_strength(+BRAKE_STRENGTH_STEP, ".")),
             ((44,), lambda: self._adjust_brake_strength(-BRAKE_STRENGTH_STEP, ",")),
             ((82, 114), self._on_reset_run),
+            ((69, 101), self._on_cycle_assist),
             # System / views. `B` is deliberately unbound in ride mode: the rider variant
             # changes the compiled model's coordinates and is a command-line choice.
             ((67, 99), self._on_cycle_camera),
@@ -241,6 +242,20 @@ class RideInputHandler:
         braking = self.session.toggle_braking()
         strength = self.session.brake_strength
         print(f"\n[SPACE] Brakes: {'ON' if braking else 'OFF'} ({strength * 100.0:.0f} % demand)")
+
+    def _on_cycle_assist(self) -> None:
+        """
+        Steps the mid-drive to its next assist mode and logs the switch.
+
+        The switch is logged rather than merely applied: a run whose assist changed part way
+        is no longer one experiment, and both the recorder and the summary need to know
+        where the boundary is.
+        """
+        mode = self.session.cycle_assist_mode()
+        if mode is None:
+            print("\n[KEY E] No mid-drive on this run (--drive-mode pedelec adds one).")
+            return
+        print(f"\n[KEY E] Assist: {mode.upper()}")
 
     def _on_reset_run(self) -> None:
         """Restarts the run from the solved static equilibrium."""

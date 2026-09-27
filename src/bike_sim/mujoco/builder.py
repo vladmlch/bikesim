@@ -22,6 +22,8 @@ from bike_sim.physics.tyre import TYRE_MODELS
 from bike_sim.physics.mass import BikeMassSpecs, compute_static_system_cg
 from bike_sim.physics.rider import RiderSpecs, resolve_rider
 
+from bike_sim.mujoco.drivetrain import build_chain_constraint
+from bike_sim.physics.drivetrain import DrivetrainSpecs
 from bike_sim.mujoco.assets import build_visual_and_assets
 from bike_sim.mujoco.environment import build_environment
 from bike_sim.mujoco.frame import build_frame_body
@@ -37,6 +39,10 @@ from bike_sim.mujoco.terrain import build_terrain
 from bike_sim.terrain.heightfield import FIELD, HeightFieldSpec
 
 
+# Default single gear, 32x14: 25 km/h on the 352 mm rear wheel is 82 rpm at the cranks.
+DEFAULT_GEAR_RATIO = DrivetrainSpecs().gear_ratio
+
+
 def generate_mujoco_xml(
     specs: Optional[BikeSpecs] = None,
     solver: Optional[HorstLinkageSolver] = None,
@@ -47,6 +53,8 @@ def generate_mujoco_xml(
     field: Optional[HeightFieldSpec] = None,
     rider: Optional[Union[RiderSpecs, str]] = None,
     tyre_model: str = "sphere",
+    crank_joint: bool = False,
+    gear_ratio: float = DEFAULT_GEAR_RATIO,
 ) -> str:
     """
     Generates a complete, valid, high-fidelity MuJoCo MJCF XML model string.
@@ -67,6 +75,9 @@ def generate_mujoco_xml(
             the saddle height follow whichever rider is present.
         tyre_model: ``sphere`` keeps the existing wheel–road contacts; ``pneumatic`` disables
             only the two contact spheres so the ride-mode force applier can carry the wheels.
+        crank_joint: Ride-mode only. Builds the crankset on a `crank_spin` hinge, adds the
+            `crank_drive` motor and ties the crank to the rear wheel with the chain equality.
+        gear_ratio: Wheel revolutions per crank revolution for that chain equality.
 
     Returns:
         Formatted MJCF XML string ready for MuJoCo simulation.
@@ -75,6 +86,8 @@ def generate_mujoco_xml(
         ValueError: If the tyre model is unknown, a non-sphere model is requested outside
             ride mode, or a seated rider is requested outside ride mode or does not fit.
     """
+    if crank_joint and mode != "ride":
+        raise ValueError(f"the pedalled crankset is a ride-mode model; mode {mode!r} builds a rigid crankset")
     if tyre_model not in TYRE_MODELS:
         raise ValueError(f"unknown tyre model '{tyre_model}'; available: {', '.join(TYRE_MODELS)}")
     if tyre_model != "sphere" and mode != "ride":
@@ -166,6 +179,7 @@ def generate_mujoco_xml(
         rider=rider_specs,
         pose=pose,
         debug_markers=debug_markers,
+        crank_joint=crank_joint,
     )
 
     # 5. Steering, Fork & Front Wheel
@@ -193,10 +207,12 @@ def generate_mujoco_xml(
 
     # 7. Constraints & Collisions
     build_equality_constraints(root, mode=mode)
+    if crank_joint:
+        build_chain_constraint(root, gear_ratio=gear_ratio)
     build_contact_exclusions(root)
 
     # 8. Actuators & Sensors
-    build_actuators(root, mode=mode)
+    build_actuators(root, mode=mode, crank_joint=crank_joint)
     build_sensors(root, mode=mode, seated_rider=(rider_specs.variant == "seated"))
 
     # Prettify XML

@@ -1292,6 +1292,10 @@ uv run bike-ride --list-tracks
 | `--dump-track NAME` | Print a preset as a track file and exit. |
 | `--list-tracks` | List presets and exit. |
 
+To compare the sphere and pneumatic models on every preset, run
+`uv run python -m tools.compare_tyre_models`. Add `--detailed` to include the detailed brush
+tier. The script writes `output/tyre_compare/summary.json` and `table.md`.
+
 A headless sphere run writes to `output/ride/<track>_<speed>_s<seed>/` (the `_s<seed>` suffix
 only when a generator seed applies). Pneumatic runs append the model, tier, both pressures and
 surface to the directory name, so a pressure sweep does not overwrite the sphere run:

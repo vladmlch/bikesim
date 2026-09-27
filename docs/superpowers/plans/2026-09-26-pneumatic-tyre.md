@@ -563,12 +563,12 @@ figures.
 
 **Steps:**
 
-- [ ] Runs every preset on `sphere` and `pneumatic/fast` (and `detailed` with `--detailed`),
+- [x] Runs every preset on `sphere` and `pneumatic/fast` (and `detailed` with `--detailed`),
   same seed and speed, writing `output/tyre_compare/summary.json` and `table.md`: bar and
   saddle acceleration RMS and peaks (100 Hz low-pass, per D12 of the rough-road plan), fork
   and shock travel used, traverse time, time in wheelspin and lock, rim strikes, mean tyre
   loss, outcome.
-- [ ] One-paragraph reading of the differences at the top of `table.md` (what got softer,
+- [x] One-paragraph reading of the differences at the top of `table.md` (what got softer,
   where the rim was struck), generated from the numbers, no free text.
 
 **Verification:** the smoke test; the full report attached to the review for D17.
@@ -705,3 +705,12 @@ relative differences of 13.1 % in saddle RMS, 3.7 % in suspension p95 travel, an
 traverse time on `single_edge`; each wheel's rim-strike count differs by at most one, with
 the same total count. On flat, the bar RMS differs by 0.025 m/s² and saddle RMS by 0.0009
 m/s². These values set the test tolerances in `tests/test_tyre_convergence.py`.
+
+### Task 11 — comparison report, 2026-09-27
+
+Ran `uv run python -m tools.compare_tyre_models --detailed`. All 21 runs (seven presets ×
+three configurations) completed. The generated review artifacts are
+`output/tyre_compare/summary.json` and `output/tyre_compare/table.md`; the table contains
+the generated comparison paragraph, bar/saddle RMS and peaks, suspension travel, traverse
+time, slip/lock time, rim strikes, tyre losses and outcome. Total rim strikes were 0 for
+`sphere`, 43 for `pneumatic/fast` and 35 for `pneumatic/detailed`.

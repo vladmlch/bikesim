@@ -12,6 +12,7 @@ filled from the track raster immediately after compilation, ahead of the first
 is a flat road, and every contact computed against it is wrong.
 """
 
+import dataclasses
 from math import sin
 from typing import Any, Callable, Dict, Optional, Tuple, Union
 
@@ -34,6 +35,7 @@ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
 from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
 from bike_sim.sim.ride.forces import SuspensionForceApplier
+from bike_sim.sim.ride.leg_drive import LegDrive
 from bike_sim.sim.ride.resistance import RollingResistance
 from bike_sim.sim.ride.rider_forces import RiderForceApplier
 from bike_sim.sim.ride.termination import (
@@ -87,6 +89,8 @@ class RideSimulation:
         drive_mode: str = "motor",
         assist: str = "tour",
         drivetrain: Optional[DrivetrainSpecs] = None,
+        legs: Optional[str] = None,
+        visual_pedalling: bool = False,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -121,6 +125,15 @@ class RideSimulation:
                 ``turbo``.
             drivetrain: Gearing and the rider and motor ceilings. Defaults to the shipped
                 32x14 full-power eMTB.
+            legs: Which legs the seated rider gets -- ``rigid`` keeps the lumped leg
+                masses on their slide joints, ``articulated`` hangs hip/knee/ankle chains
+                off the pelvis and welds the feet to the pedals. ``None`` picks
+                ``articulated`` whenever the crankset turns (``pedal``/``pedelec``, or
+                ``visual_pedalling``) and ``rigid`` otherwise.
+            visual_pedalling: Build the turning crankset and articulated legs in
+                ``motor`` mode too, so the pedals and feet visibly spin while the ideal
+                wheel actuator drives; the legs are dragged, they deliver no torque.
+                Redundant in the pedalled modes, where the crankset turns anyway.
 
         Raises:
             ValueError: If the track does not fit the heightfield envelope.
@@ -133,6 +146,8 @@ class RideSimulation:
         self.drive_mode = drive_mode
         self.drivetrain_specs = drivetrain if drivetrain is not None else DrivetrainSpecs()
         pedalled = drive_mode != "motor"
+        self.visual_pedalling = bool(visual_pedalling)
+        crank_joint = pedalled or self.visual_pedalling
 
         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
@@ -142,8 +157,15 @@ class RideSimulation:
         self.tyre_config = tyre if tyre is not None else TyreConfig()
         self.solver = HorstLinkageSolver(self.specs)
         self.start_x_m = float(start_x_m)
-        self.rider: RiderSpecs = resolve_rider(
-            rider, include_rider=include_rider, default_variant=DEFAULT_RIDER_VARIANT
+        # The legs choice lands on the rider *before* the pose is solved: `seated_pose`
+        # reads `rider.legs` to decide between slide-mounted leg masses and the hip-knee-
+        # ankle chains, and the pose the builder compiles must be the same one this run's
+        # force path is configured from.
+        self.rider: RiderSpecs = dataclasses.replace(
+            resolve_rider(
+                rider, include_rider=include_rider, default_variant=DEFAULT_RIDER_VARIANT
+            ),
+            legs=legs or ("articulated" if crank_joint else "rigid"),
         )
         # The seated pose is solved once here; the builder solves the same pose from the
         # same specs, so the force path and the compiled joints agree by construction.
@@ -160,7 +182,7 @@ class RideSimulation:
                 debug_markers=debug_markers,
                 field=self.field,
                 tyre_model=self.tyre_config.model,
-                crank_joint=pedalled,
+                crank_joint=crank_joint,
                 gear_ratio=self.drivetrain_specs.gear_ratio,
             )
         )
@@ -192,18 +214,26 @@ class RideSimulation:
         self.contact_query = TerrainContactQuery(self.model)
         self.resistance = RollingResistance(self.model)
         self.cruise = CruiseController(self.model, target_speed_kmh=target_speed_kmh)
+        # Crank arm length in metres, for the pedal positions the rider's legs follow.
+        self.crank_length_m = float(self.specs.crank_length) / 1000.0
+        # Inert without articulated legs, so every caller can treat it as always present.
+        self.leg_drive = LegDrive(
+            self.model,
+            self.pose,
+            self.crank_length_m,
+            ripple_depth=self.drivetrain_specs.ripple_depth,
+        )
         self.drivetrain: Optional[PedalDrivetrain] = (
             PedalDrivetrain(
                 self.model,
                 specs=self.drivetrain_specs,
                 drive_mode=drive_mode,
                 assist_mode=assist,
+                legs_drive=self.leg_drive.active,
             )
             if pedalled
             else None
         )
-        # Crank arm length in metres, for the pedal positions the rider's legs follow.
-        self.crank_length_m = float(self.specs.crank_length) / 1000.0
         self.brake_source_cruise = False
         self.brakes = BrakeController(self.model)
         self.stabilizer = PitchStabilizer(self.model)
@@ -241,6 +271,7 @@ class RideSimulation:
                 self.solver,
                 start_x_m=self.start_x_m,
                 rider_applier=self.rider_forces,
+                leg_drive=self.leg_drive,
             )
         else:
             relax_steps = max(1, round(RELAX_CYCLE_S / float(self.model.opt.timestep)))
@@ -253,12 +284,29 @@ class RideSimulation:
                 rider_applier=self.rider_forces,
                 tyre_applier=self.tyre_applier,
                 relax_steps_per_cycle=relax_steps,
+                leg_drive=self.leg_drive,
             )
         self.contact_query.reset()
         self.cruise.reset()
         if self.drivetrain is not None:
             self.drivetrain.reset(self.model, self.data)
             self.rider_forces.set_pedal_offsets(0.0, 0.0)
+            if self.leg_drive.active:
+                # The drivetrain has just written the crank's start phase; pose the legs
+                # and pedal platforms to match it before the forward pass, so the foot
+                # welds begin residual-free at any `--crank-phase`.
+                self.leg_drive.initialize(
+                    self.model,
+                    self.data,
+                    float(self.data.qpos[self.drivetrain.crank_qposadr]),
+                )
+            mujoco.mj_forward(self.model, self.data)
+        elif self.leg_drive.active:
+            # Motor mode with visual pedalling: no drivetrain touches the crank, which
+            # stays wherever the equilibrium left it; pose the legs to match.
+            self.leg_drive.initialize(
+                self.model, self.data, float(self.data.qpos[self.leg_drive.crank_qposadr])
+            )
             mujoco.mj_forward(self.model, self.data)
         self.brake_source_cruise = False
         self.brakes.reset()
@@ -314,6 +362,10 @@ class RideSimulation:
             )
         if self.drivetrain is None:
             self.data.ctrl[self.drive_ctrl_adr] = drive_torque
+            # Motor mode with visual pedalling: the chain equality spins the crank off
+            # the driven wheel and the impedance drags the legs along; zero rider torque.
+            # With no leg chains at all this no-ops.
+            self.leg_drive.apply(self.model, self.data, 0.0)
         else:
             # The wheel actuator is left idle: the crank drives, and the chain equality is
             # what puts the torque on the wheel.
@@ -327,6 +379,10 @@ class RideSimulation:
                 traction_limited=traction_limited,
             )
             self.drivetrain.write(self.data)
+            # With articulated legs this is where the rider's torque actually enters --
+            # through the legs and the foot-pedal welds, not the crank actuator. With
+            # rigid legs it no-ops and the actuator carries the rider as before.
+            self.leg_drive.apply(self.model, self.data, command.rider_torque_nm)
             # A freewheel cannot hold speed on a descent, so the controller's negative demand
             # is braking, and telemetry is told who asked for it.
             self.brake_source_cruise = command.brake_demand > max(

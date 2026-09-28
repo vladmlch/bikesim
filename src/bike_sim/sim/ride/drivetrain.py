@@ -78,6 +78,10 @@ class PedalDrivetrain:
         specs: Gearing, rider ceilings and assist ceilings.
         drive_mode: ``pedal`` (rider alone) or ``pedelec`` (rider plus mid-drive).
         assist_mode: Selected support level; always ``off`` in ``pedal`` mode.
+        legs_drive: When true the articulated legs deliver the rider's torque to the
+            crank through the foot-pedal welds, so the crank actuator carries only the
+            motor's assist. `command.rider_torque_nm` still reports the rider's share --
+            telemetry is unchanged; only the path the torque takes is.
         command: The last computed command, for the HUD and the recorder.
     """
 
@@ -87,6 +91,7 @@ class PedalDrivetrain:
         specs: Optional[DrivetrainSpecs] = None,
         drive_mode: str = "pedelec",
         assist_mode: str = "tour",
+        legs_drive: bool = False,
     ) -> None:
         """
         Args:
@@ -95,6 +100,8 @@ class PedalDrivetrain:
             specs: Drivetrain limits. Defaults to the shipped 32x14 full-power eMTB.
             drive_mode: ``pedal`` or ``pedelec``.
             assist_mode: One of `ASSIST_MODES`; ignored in ``pedal`` mode.
+            legs_drive: Whether the leg drive owns the rider's crank torque. With rigid
+                legs the rider's torque stays on the `crank_drive` actuator, as before.
 
         Raises:
             ValueError: If the mode is unknown, or the model lacks the crank joint, the crank
@@ -110,6 +117,7 @@ class PedalDrivetrain:
         self.specs = specs if specs is not None else DrivetrainSpecs()
         self.drive_mode = drive_mode
         self.assist_mode = "off" if drive_mode == "pedal" else assist_mode
+        self.legs_drive = bool(legs_drive)
 
         self.crank_qposadr, self.crank_dofadr = _joint_addresses(model, "crank_spin")
         self.wheel_qposadr, self.wheel_dofadr = _joint_addresses(model, "rear_wheel_spin")
@@ -227,7 +235,11 @@ class PedalDrivetrain:
             self.assist_torque_nm = first_order_step(
                 self.assist_torque_nm, target, dt, self.specs.assist_response_s
             )
-            total = rider_nm + self.assist_torque_nm
+            # With articulated legs the rider's torque enters the crank through the legs
+            # and the foot-pedal welds; the actuator then carries the motor alone. The
+            # command still reports `rider_torque_nm` -- the rider is working exactly as
+            # hard, the torque just no longer travels this path.
+            total = self.assist_torque_nm + (0.0 if self.legs_drive else rider_nm)
             brake_demand = 0.0
         else:
             self._disengage(data, phase)

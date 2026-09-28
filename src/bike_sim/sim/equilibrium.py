@@ -19,6 +19,7 @@ import numpy as np
 
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.sim.ride.forces import SuspensionForceApplier
+from bike_sim.sim.ride.leg_drive import LegDrive
 from bike_sim.sim.ride.rider_forces import RiderForceApplier
 from bike_sim.sim.ride.tyre.applier import TyreForceApplier
 
@@ -44,6 +45,7 @@ def solve_static_equilibrium(
     rider_applier: Optional[RiderForceApplier] = None,
     tyre_applier: Optional[TyreForceApplier] = None,
     relax_steps_per_cycle: Optional[int] = None,
+    leg_drive: Optional[LegDrive] = None,
 ) -> Dict[str, Any]:
     """
     Solves the static equilibrium the bike settles into on the road under gravity.
@@ -70,6 +72,10 @@ def solve_static_equilibrium(
         relax_steps_per_cycle: Steps between velocity resets. ``None`` keeps the historical
             40-step sphere cadence; pneumatic callers pass the count that preserves the
             20 ms cycle at their selected timestep.
+        leg_drive: The articulated legs' writer, applied with zero rider torque so the
+            impedance holds the IK pose while everything settles. Without it the six leg
+            hinges and the pedal platforms are undamped free DOFs welded into a loop --
+            they never stop accelerating, and the solve cannot converge.
 
     Returns:
         Dict with the converged `fork_travel_mm`, `shock_stroke_mm`, `rear_travel_mm`,
@@ -96,12 +102,18 @@ def solve_static_equilibrium(
         applier.apply(model, data)
         if rider_applier is not None:
             rider_applier.apply(model, data)
+        if leg_drive is not None:
+            leg_drive.apply(model, data, 0.0)
 
     mujoco.mj_resetData(model, data)
     if tyre_applier is not None:
         tyre_applier.reset(data)
     data.qpos[x_adr] = float(start_x_m)
     data.qpos[z_adr] = START_CLEARANCE_M
+    if leg_drive is not None and leg_drive.active:
+        # Start the relaxation weld-consistent -- legs and pedal platforms at the IK pose
+        # for the crank's compiled phase -- and clear the tracked reference velocity.
+        leg_drive.initialize(model, data, float(data.qpos[leg_drive.crank_qposadr]))
     mujoco.mj_forward(model, data)
 
     steps = 0

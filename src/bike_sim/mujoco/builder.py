@@ -221,7 +221,10 @@ def generate_mujoco_xml(
             # design pose, which the pose solver makes self-consistent -- so the
             # constraints start residual-free. Pedal bodies only exist when
             # `crank_joint` builds them, so no welds are emitted without it; the
-            # articulated chains then just hang off the pelvis.
+            # articulated chains then just hang off the pelvis. The 5 ms solref is
+            # stiffer than the default 20 ms because this weld is the force path:
+            # the downstroke drives several hundred newtons through it, and a soft
+            # weld reads as millimetres of foot-pedal separation under load.
             equality = root.find("equality")
             for chain in pose.leg_chains:
                 ET.SubElement(
@@ -231,6 +234,7 @@ def generate_mujoco_xml(
                         "name": f"weld_foot_{chain.side}",
                         "body1": f"rider_foot_{chain.side}",
                         "body2": f"pedal_{chain.side}",
+                        "solref": "0.005 1",
                     },
                 )
     build_contact_exclusions(root)

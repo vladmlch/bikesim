@@ -14,9 +14,10 @@ is a flat road, and every contact computed against it is wrong.
 
 import dataclasses
 from math import sin
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Union
 
 import mujoco
+import numpy as np
 
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.geometry.hardpoints import compute_ground_z
@@ -35,6 +36,7 @@ from bike_sim.sim.ride.braking import BrakeController
 from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
 from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
+from bike_sim.sim.ride.force_accumulator import ForceAccumulator
 from bike_sim.sim.ride.forces import SuspensionForceApplier
 from bike_sim.sim.ride.leg_drive import LegDrive
 from bike_sim.sim.ride.resistance import RollingResistance
@@ -232,6 +234,10 @@ class RideSimulation:
                 SurfaceMap.uniform(self.track.surface),
             )
         self.data = mujoco.MjData(self.model)
+        self.force_accumulator = ForceAccumulator(self.model.nv)
+        self.last_force_snapshot: Optional[
+            Tuple[float, np.ndarray, np.ndarray, Mapping[str, np.ndarray]]
+        ] = None
 
         self.controller = controller if controller is not None else _default_controller(self.specs)
         self.applier = SuspensionForceApplier(
@@ -347,6 +353,8 @@ class RideSimulation:
         self.crash_detector.reset()
         self.data.time = 0.0
         self.steps = 0
+        self.force_accumulator.clear()
+        self.last_force_snapshot = None
         if self.tyre_applier is None:
             self.contacts = self.contact_query.query(self.model, self.data)
         else:
@@ -354,12 +362,20 @@ class RideSimulation:
                 self.model, self.data, wheel_load_provider=self.tyre_applier
             )
 
-    def step(self, front_brake_demand: float = 0.0, rear_brake_demand: float = 0.0) -> None:
+    def step(
+        self,
+        front_brake_demand: float = 0.0,
+        rear_brake_demand: float = 0.0,
+        *,
+        external_qfrc: Optional[np.ndarray] = None,
+    ) -> None:
         """Advance one timestep using the selected force and control path."""
         if self.physics_config.physics_mode == "legacy":
+            if external_qfrc is not None:
+                raise ValueError("external_qfrc is only supported in physical mode")
             self._step_legacy(front_brake_demand, rear_brake_demand)
         else:
-            self._step_physical(front_brake_demand, rear_brake_demand)
+            self._step_physical(front_brake_demand, rear_brake_demand, external_qfrc)
 
     def _step_legacy(self, front_brake_demand: float, rear_brake_demand: float) -> None:
         """
@@ -449,13 +465,42 @@ class RideSimulation:
         if self.tyre_applier is None:
             self.contacts = self.contact_query.query(self.model, self.data)
 
-    def _step_physical(self, front_brake_demand: float, rear_brake_demand: float) -> None:
+    def _collect_legacy_qfrc(self, name: str, writer: Callable[[], None]) -> None:
+        """Adapt an assigning legacy writer to one named, additive contribution."""
+        self.data.qfrc_applied.fill(0.0)
+        try:
+            writer()
+            self.force_accumulator.add(name, self.data.qfrc_applied)
+        finally:
+            self.data.qfrc_applied.fill(0.0)
+
+    def _step_physical(
+        self,
+        front_brake_demand: float,
+        rear_brake_demand: float,
+        external_qfrc: Optional[np.ndarray],
+    ) -> None:
         """Advance the physical model with forces read from current kinematics.
 
         ``contacts`` is the snapshot used by this step's force writers. It remains the
         pre-step snapshot until the next call refreshes MuJoCo's kinematics.
         """
+        external = None
+        if external_qfrc is not None:
+            # Copy before clearing: callers may explicitly pass a view of MuJoCo's array.
+            external = np.array(external_qfrc, dtype=float, copy=True)
+            if external.shape != (self.model.nv,) or not np.isfinite(external).all():
+                raise ValueError("invalid generalized force")
+            external.setflags(write=False)
+        # MuJoCo retains both arrays after a step. The current-state forward pass must
+        # not see force input from the previous interval; explicit input is kept apart.
+        self.stabilizer.disable(self.data)
+        self.data.qfrc_applied.fill(0.0)
+        self.data.xfrc_applied.fill(0.0)
         mujoco.mj_forward(self.model, self.data)
+        self.force_accumulator.clear()
+        if external is not None:
+            self.force_accumulator.add("external", external)
         if self.tyre_applier is not None:
             self.tyre_applier.apply(self.model, self.data)
             self.contacts = self.contact_query.query(
@@ -464,15 +509,24 @@ class RideSimulation:
         else:
             self.contacts = self.contact_query.query(self.model, self.data)
 
-        self.applier.apply(self.model, self.data)
-        self.rider_forces.apply(self.model, self.data)
+        self.force_accumulator.add("suspension", self.applier.compute_qfrc(self.model, self.data))
+        if self.rider_forces.active:
+            self._collect_legacy_qfrc(
+                "rider", lambda: self.rider_forces.apply(self.model, self.data)
+            )
         if self.tyre_applier is None:
-            self.resistance.apply(self.model, self.data, self.contacts)
+            self._collect_legacy_qfrc(
+                "rolling_resistance",
+                lambda: self.resistance.apply(self.model, self.data, self.contacts),
+            )
 
         self.data.ctrl[self.drive_ctrl_adr] = 0.0
         if self.crank_drive_ctrl_adr >= 0:
             self.data.ctrl[self.crank_drive_ctrl_adr] = 0.0
-        self.leg_drive.apply(self.model, self.data, 0.0)
+        if self.leg_drive.active:
+            self._collect_legacy_qfrc(
+                "leg_drive", lambda: self.leg_drive.apply(self.model, self.data, 0.0)
+            )
         if self.physics_config.drive_mode == "ideal_speed_control":
             traction_limited = False
             if self.tyre_applier is not None:
@@ -495,9 +549,16 @@ class RideSimulation:
         )
         self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
         self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
-        self.stabilizer.disable(self.data)
         self.crash_detector.check(self.data, self.contacts)
 
+        self.data.qfrc_applied[:] = self.force_accumulator.total()
+        qpos = self.data.qpos.copy()
+        qvel = self.data.qvel.copy()
+        qpos.setflags(write=False)
+        qvel.setflags(write=False)
+        self.last_force_snapshot = (
+            float(self.data.time), qpos, qvel, self.force_accumulator.components
+        )
         mujoco.mj_step(self.model, self.data)
         self.steps += 1
 

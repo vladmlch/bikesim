@@ -16,6 +16,7 @@ twice.
 from typing import Tuple
 
 import mujoco
+import numpy as np
 
 from bike_sim.physics.coil_shock import CoilShock
 from bike_sim.sim.controllers import SuspensionController
@@ -93,6 +94,13 @@ class SuspensionForceApplier:
                 `(model, data)` signature.
             data: Simulation state, written at the fork and shock DOFs of `qfrc_applied`.
         """
+        qfrc = self.compute_qfrc(model, data)
+        data.qfrc_applied[self.fork_dofadr] = qfrc[self.fork_dofadr]
+        data.qfrc_applied[self.shock_dofadr] = qfrc[self.shock_dofadr]
+
+    def compute_qfrc(self, model: mujoco.MjModel, data: mujoco.MjData) -> np.ndarray:
+        """Compute suspension's generalized forces without writing the MuJoCo input."""
+        qfrc = np.zeros(model.nv)
         travel_mm = float(data.qpos[self.fork_qposadr]) * 1000.0
         fork_velocity_mps = float(data.qvel[self.fork_dofadr])
         fork_total, fork_spring, fork_damper = self.controller.compute_fork_force(
@@ -113,8 +121,8 @@ class SuspensionForceApplier:
 
         # Both coordinates increase with compression, so a resisting force is a negative
         # generalized force. The construction-time range check guarantees that convention.
-        data.qfrc_applied[self.fork_dofadr] = -fork_total
-        data.qfrc_applied[self.shock_dofadr] = -shock_total
+        qfrc[self.fork_dofadr] = -fork_total
+        qfrc[self.shock_dofadr] = -shock_total
 
         self.fork_spring_n = fork_spring
         self.fork_damper_n = fork_damper
@@ -123,6 +131,7 @@ class SuspensionForceApplier:
         self.shock_bumper_n = shock_bumper
         self.shock_damper_n = shock_damper
         self.shock_total_n = shock_total
+        return qfrc
 
 
 __all__ = ["SuspensionForceApplier"]

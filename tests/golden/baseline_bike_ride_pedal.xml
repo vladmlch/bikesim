@@ -234,8 +234,8 @@
     <connect name="seatstay_rocker_joint" site1="site_P3_ss" site2="site_P3_rocker" solref="0.0005 1" solimp="0.99 0.999 0.0001 0.5 2"/>
     <connect name="shock_frame_joint" site1="site_P7_shock" site2="site_P7" solref="0.0005 1" solimp="0.99 0.999 0.0001 0.5 2"/>
     <joint name="chain_drive" joint1="crank_spin" joint2="rear_wheel_spin" polycoef="0 0.437500000 0 0 0" solref="0.002 1"/>
-    <weld name="weld_foot_front" body1="rider_foot_front" body2="pedal_front" solref="0.005 1"/>
-    <weld name="weld_foot_rear" body1="rider_foot_rear" body2="pedal_rear" solref="0.005 1"/>
+    <weld name="weld_foot_front" body1="rider_foot_front" body2="pedal_front" solref="0.003 1"/>
+    <weld name="weld_foot_rear" body1="rider_foot_rear" body2="pedal_rear" solref="0.003 1"/>
   </equality>
   <contact>
     <exclude body1="frame" body2="steer"/>

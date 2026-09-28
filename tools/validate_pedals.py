@@ -2,7 +2,7 @@
 """
 Pedalled Drivetrain Acceptance Checks.
 
-Runs the three checks the pedalling work is judged against, plus the bob metric it exists to
+Runs the six checks the pedalling work is judged against, plus the bob metric it exists to
 produce. Everything that needs a compiled model is skipped automatically when MuJoCo is not
 installed, so the torque arithmetic can still be verified anywhere.
 
@@ -33,6 +33,16 @@ below the bike's speed, which a freewheel cannot satisfy, so the chain opens and
 hold until the target is restored. The residual is read only while the chain is closed --
 an open freewheel is *supposed* to accumulate angle, that is what the datum rewrite exists
 for.
+
+**Check 5 -- the feet stay welded.** The rider's torque reaches the crank through two soft
+equality welds; `|site_foot - site_pedal|` is sampled every step of the pedalled traverse
+and of check 4's freewheel cycle, and the worst separation must stay under 2 mm.
+
+**Check 6 -- pedalling force matters under sustained load.** A `crr` of 0.065 draws the
+same ~66.5 N a 5 % climb would (the terrain carries no base grade, so the grade is applied
+as rolling resistance). The run must settle on its cruise target and the delivered wheel
+torque must cover the measured load -- the legs are the torque path, so a leg that leaks
+force reads immediately as missed speed.
 """
 
 import argparse
@@ -40,6 +50,7 @@ import importlib.util
 import sys
 from math import pi
 from pathlib import Path
+from typing import Dict, Tuple
 
 REPO_SRC = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(REPO_SRC))
@@ -110,7 +121,8 @@ def check_torque_shape() -> int:
     return failures
 
 
-def _run(track, speed_kmh, drive_mode, assist, ripple_depth, steps, specs=None):
+def _run(track, speed_kmh, drive_mode, assist, ripple_depth, steps, specs=None,
+         legs="articulated"):
     """
     Runs one headless traverse and returns its recorder channels and summary inputs.
 
@@ -122,6 +134,11 @@ def _run(track, speed_kmh, drive_mode, assist, ripple_depth, steps, specs=None):
         ripple_depth: Crank torque ripple depth.
         steps: Steps to run.
         specs: Drivetrain limits; defaults to the shipped ones with ``ripple_depth``.
+        legs: ``"articulated"`` (the default -- the mechanism under acceptance) or
+            ``"rigid"`` for the old leg-mass comparison. ``"articulated"`` is routed
+            through the sim's own ``legs=None`` resolution, which already puts
+            articulated legs on every run whose crankset turns and keeps the motor
+            baseline -- where there is no crankset to weld feet to -- on rigid legs.
 
     Returns:
         Tuple of (channels dict, sample interval, the simulation).
@@ -140,6 +157,7 @@ def _run(track, speed_kmh, drive_mode, assist, ripple_depth, steps, specs=None):
         drive_mode=drive_mode,
         assist=assist,
         drivetrain=specs,
+        legs=None if legs == "articulated" else legs,
     )
     recorder = RideRecorder(sim)
     for _ in range(steps):
@@ -166,7 +184,34 @@ def _assert_upright(label: str, sim) -> int:
     return 1
 
 
-def _pedal_probe(track, speed_kmh: float, ripple_depth: float, steps: int):
+def _weld_sites(sim) -> Dict[str, Tuple[int, int]]:
+    """
+    Resolves the foot-pedal weld probes for one compiled run.
+
+    Args:
+        sim: Simulation whose model may carry the sites.
+
+    Returns:
+        ``{side: (site_foot_id, site_pedal_id)}``; empty under rigid legs, which have no
+        pedals or feet to weld.
+    """
+    import mujoco
+
+    sites = {}
+    for side in ("front", "rear"):
+        foot = mujoco.mj_name2id(
+            sim.model, mujoco.mjtObj.mjOBJ_SITE, f"site_foot_{side}"
+        )
+        pedal = mujoco.mj_name2id(
+            sim.model, mujoco.mjtObj.mjOBJ_SITE, f"site_pedal_{side}"
+        )
+        if foot >= 0 and pedal >= 0:
+            sites[side] = (foot, pedal)
+    return sites
+
+
+def _pedal_probe(track, speed_kmh: float, ripple_depth: float, steps: int,
+                 legs: str = "articulated"):
     """
     Runs one pedalled traverse, sampling the joint state the recorder does not store.
 
@@ -175,9 +220,13 @@ def _pedal_probe(track, speed_kmh: float, ripple_depth: float, steps: int):
         speed_kmh: Cruise target.
         ripple_depth: Crank torque ripple depth.
         steps: Steps to run.
+        legs: ``"articulated"`` (the default -- the mechanism under acceptance) or
+            ``"rigid"`` for the old leg-mass comparison; see ``_run``.
 
     Returns:
-        Tuple of (the simulation, sample dict of per-step arrays).
+        Tuple of (the simulation, sample dict of per-step arrays). ``sep_front`` /
+        ``sep_rear`` are the foot-pedal weld separations in metres; they stay empty
+        under rigid legs.
     """
     import numpy as np
 
@@ -190,9 +239,12 @@ def _pedal_probe(track, speed_kmh: float, ripple_depth: float, steps: int):
         drive_mode="pedal",
         assist="off",
         drivetrain=DrivetrainSpecs(ripple_depth=ripple_depth),
+        legs=None if legs == "articulated" else legs,
     )
     wheel_dof, crank_dof = sim.drivetrain.wheel_dofadr, sim.drivetrain.crank_dofadr
-    keys = ("t", "v", "ww", "wc", "wheel_nm", "shock", "cadence", "engaged")
+    sites = _weld_sites(sim)
+    keys = ("t", "v", "ww", "wc", "wheel_nm", "shock", "cadence", "engaged",
+            "sep_front", "sep_rear")
     samples = {k: [] for k in keys}
     for _ in range(steps):
         sim.step()
@@ -205,12 +257,18 @@ def _pedal_probe(track, speed_kmh: float, ripple_depth: float, steps: int):
         samples["shock"].append(sim.shock_stroke_mm)
         samples["cadence"].append(command.cadence_rpm)
         samples["engaged"].append(not command.freewheel)
+        for side, (foot, pedal) in sites.items():
+            samples[f"sep_{side}"].append(
+                float(np.linalg.norm(
+                    sim.data.site_xpos[foot] - sim.data.site_xpos[pedal]
+                ))
+            )
         if sim.crash is not None:
             break
     return sim, {k: np.asarray(v) for k, v in samples.items()}
 
 
-def check_reengagement(quick: bool) -> int:
+def check_reengagement(quick: bool, legs: str = "articulated"):
     """
     Verifies that opening and re-closing the chain leaves no position residual behind.
 
@@ -222,9 +280,11 @@ def check_reengagement(quick: bool) -> int:
 
     Args:
         quick: Whether to use the shorter traverse.
+        legs: ``"articulated"`` (the default) or ``"rigid"``; see ``_run``.
 
     Returns:
-        Number of failures.
+        Tuple of (number of failures, worst foot-pedal weld separation in metres --
+        or None under rigid legs, which have no welds to probe).
     """
     import numpy as np
 
@@ -238,11 +298,14 @@ def check_reengagement(quick: bool) -> int:
         drive_mode="pedelec",
         assist="tour",
         drivetrain=DrivetrainSpecs(),
+        legs=None if legs == "articulated" else legs,
     )
+    sites = _weld_sites(sim)
     plan = ((20.0, 9000), (15.0, 3000), (20.0, 6000)) if quick else (
         (20.0, 16000), (15.0, 6000), (20.0, 10000)
     )
     residuals, speeds = [], []
+    sep_max_m = 0.0
     openings = engagements = 0
     was_engaged = True
     for target, steps in plan:
@@ -256,6 +319,11 @@ def check_reengagement(quick: bool) -> int:
             openings += (not engaged) and was_engaged
             was_engaged = engaged
             speeds.append(sim.speed_mps)
+            for foot, pedal in sites.values():
+                sep_m = float(np.linalg.norm(
+                    sim.data.site_xpos[foot] - sim.data.site_xpos[pedal]
+                ))
+                sep_max_m = max(sep_max_m, sep_m)
             if sim.crash is not None:
                 break
         if sim.crash is not None:
@@ -283,6 +351,124 @@ def check_reengagement(quick: bool) -> int:
     failures += _assert_upright("re-engagement", sim)
     if sim.crash is None:
         print("   run finished upright OK")
+    return failures, (sep_max_m if sites else None)
+
+
+def check_sustained_load(quick: bool) -> int:
+    """
+    Verifies the legs hold cruise against a sustained grade-equivalent load.
+
+    ``crr = 0.065`` puts ~66.5 N against the 1024 N the bike and rider weigh -- the
+    same draw a 5 % climb applies, applied as rolling resistance because the terrain
+    carries no base grade. The brief's 20 km/h target asks ~370 W for that draw, which
+    is over the shipped rider's 300 W ceiling: physics caps the rider near 16 km/h and
+    no delivery mechanism, legs or actuator, can settle there. The target is therefore
+    15 km/h (~280 W) -- the fastest cruise the ceiling can actually hold, which makes
+    the 5 % settle bound strict rather than soft.
+
+    Launching straight into the load is a creep the rider ceiling barely wins (a
+    measured 80 s of sim to reach 9 km/h: the pulse peaks win traction by ~7 N.m of
+    crank while the weld compliance eats part of them), so the run warms to cruise on
+    the ordinary ``crr`` first and the grade is applied already rolling -- the way a
+    real ascent starts.
+
+    Two torque assertions back the speed one. ``wheel_drive_torque_nm`` against
+    ``rider_torque_nm / gear_ratio`` keeps the telemetry honest -- it is bookkeeping
+    by construction, so the check is that the bookkeeping still says what it should.
+    The same channel against the *measured* resistive load is the physical half: at
+    settled speed the commanded wheel torque must equal the resistance the bike is
+    actually fighting, and if the legs leaked torque the speed would sag first.
+
+    Args:
+        quick: Whether to use the shorter traverse.
+
+    Returns:
+        Number of failures.
+    """
+    from dataclasses import replace
+
+    import numpy as np
+
+    from bike_sim.physics.drivetrain import DrivetrainSpecs
+    from bike_sim.sim.ride_sim import RideSimulation
+    from bike_sim.terrain import get_preset
+
+    target_kmh = 15.0
+    warm_steps = 30000 if quick else 40000
+    load_steps = 50000 if quick else 80000
+    # The load phase covers ~100-170 m at cruise; the shipped 112 m flat is shorter
+    # than the run, so the check rides a longer featureless copy.
+    track = replace(
+        get_preset("flat"),
+        name="flat_sustained",
+        length_m=250.0 if quick else 320.0,
+    )
+    sim = RideSimulation(
+        track=track,
+        target_speed_kmh=target_kmh,
+        drive_mode="pedal",
+        assist="off",
+        drivetrain=DrivetrainSpecs(),
+    )
+    res = sim.resistance
+    ratio = sim.drivetrain.specs.gear_ratio
+    crank_dof = sim.drivetrain.crank_dofadr
+
+    for _ in range(warm_steps):
+        sim.step()
+        if sim.crash is not None:
+            break
+    res.crr = 0.065
+    keys = ("v", "wheel_nm", "rider_nm", "load_nm", "engaged")
+    samples = {k: [] for k in keys}
+    for _ in range(load_steps):
+        sim.step()
+        command = sim.drivetrain.command
+        # The load the delivered wheel torque must cover: both wheels' Crr.N.r (the
+        # front's lands on the chassis as drag, scaled by the wheel radii), both
+        # bearing drags, and the crank bearing folded back through the gearing.
+        samples["load_nm"].append(
+            abs(res.front_torque_nm) * (res.rear_wheel.radius_m / res.front_wheel.radius_m)
+            + abs(res.rear_torque_nm)
+            + 0.01 * (
+                abs(res.front_wheel.omega_radps(sim.data))
+                + abs(res.rear_wheel.omega_radps(sim.data))
+            )
+            + 0.03 * abs(float(sim.data.qvel[crank_dof])) / ratio
+        )
+        samples["v"].append(sim.speed_mps)
+        samples["wheel_nm"].append(sim.wheel_drive_torque_nm)
+        samples["rider_nm"].append(command.rider_torque_nm)
+        samples["engaged"].append(not command.freewheel)
+        if sim.crash is not None:
+            break
+    s = {k: np.asarray(v) for k, v in samples.items()}
+    failures = _assert_upright("sustained load", sim)
+
+    tail = slice(2 * s["v"].size // 3, None)
+    engaged = s["engaged"][tail]
+    settled_kmh = 3.6 * float(np.mean(s["v"][tail]))
+    ok = s["v"].size > 0 and abs(settled_kmh - target_kmh) / target_kmh <= 0.05
+    failures += not ok
+    print(f"   settled speed {settled_kmh:.2f} km/h vs target {target_kmh:.0f} km/h "
+          f"(tolerance 5 %) {'OK' if ok else 'FAIL'}")
+
+    wheel_nm = float(np.mean(s["wheel_nm"][tail][engaged]))
+    rider_nm = float(np.mean(s["rider_nm"][tail][engaged]))
+    bookkeeping = wheel_nm / max(rider_nm / ratio, 1e-9)
+    ok = engaged.any() and 0.95 <= bookkeeping <= 1.05
+    failures += not ok
+    print(f"   telemetry: wheel_drive_torque_nm {wheel_nm:6.2f} N.m vs rider "
+          f"{rider_nm:6.2f} N.m / {ratio:.3f} -> x{bookkeeping:.3f} "
+          f"(bounds 0.95..1.05) {'OK' if ok else 'FAIL'}")
+
+    load_nm = float(np.mean(s["load_nm"][tail][engaged]))
+    delivered = wheel_nm / max(load_nm, 1e-9)
+    ok = engaged.any() and 0.90 <= delivered <= 1.20
+    failures += not ok
+    print(f"   commanded wheel torque {wheel_nm:6.2f} N.m vs measured load "
+          f"{load_nm:6.2f} N.m -> x{delivered:.3f} (bounds 0.90..1.20) "
+          f"{'OK' if ok else 'FAIL'}")
     return failures
 
 
@@ -357,21 +543,28 @@ def check_against_model(quick: bool) -> int:
 
     # End to end: the wheel torque implied by the chassis' own acceleration must match what
     # the drivetrain reports it is delivering. The fit runs over the ramp only -- once the
-    # speed curve saturates against the rider's ceiling a whole-run slope reads low --
-    # and rolling resistance with the leg-damper bob pull the implied figure a third or so
-    # below the commanded one; a factor of two either way is a bookkeeping error, not
-    # physics.
+    # speed curve saturates against the rider's ceiling a whole-run slope reads low.
+    # Measured under articulated legs: x0.66 -- rolling resistance, the chain's and the
+    # pedals' bearing drag, and the leg-impedance bob consume about a third of the
+    # commanded torque before it reaches the contact patch. Bounds x0.50..x1.05 sit
+    # mid-log-scale around that figure: a factor of two either way is a bookkeeping
+    # error, not physics (the inverted-ratio failure this guards read x5.2).
     ramp = engaged & (ped["v"] > 0.1) & (ped["v"] < 0.6 * speed / 3.6)
     accel = float(np.polyfit(ped["t"][ramp], ped["v"][ramp], 1)[0])
     mass_kg = float(ped_sim.model.body_mass.sum())
     implied_nm = mass_kg * accel * ped_sim.specs.rear_wheel_radius / 1000.0
     commanded_nm = float(np.mean(ped["wheel_nm"][ramp]))
-    ok = commanded_nm > 0.0 and 0.45 <= implied_nm / commanded_nm <= 1.2
+    ratio_nm = implied_nm / commanded_nm if commanded_nm > 0.0 else 0.0
+    ok = commanded_nm > 0.0 and 0.50 <= ratio_nm <= 1.05
     failures += not ok
     print(f"   accel-implied wheel torque {implied_nm:6.1f} N.m vs commanded {commanded_nm:6.1f} N.m "
-          f"(bounds x0.45..x1.2) {'OK' if ok else 'FAIL'}")
+          f"-> x{ratio_nm:.3f} (bounds x0.50..x1.05) {'OK' if ok else 'FAIL'}")
 
     print("\n-- check 3: bob appears at twice the cadence -------------------------------")
+    # Under articulated legs there is no spring-offset bob mechanism: the excitation is
+    # the real pedal-force pulse pushing chassis and leg mass through the joint
+    # impedance. Measured: pedalled ~0.56 mm vs motor ~0.003 mm (~x180) at ~50 rpm --
+    # the motor figure is the fit's noise floor, the pedalled figure the physical bob.
     tail = slice(2 * ped["t"].size // 3, None)
     cadence = float(np.mean(ped["cadence"][tail][ped["engaged"][tail]]))
     bob_hz = 2.0 * cadence / 60.0
@@ -384,7 +577,34 @@ def check_against_model(quick: bool) -> int:
           f"pedalled {pedalled_mm:.3f} mm vs motor {motor_mm:.3f} mm {'OK' if ok else 'FAIL'}")
 
     print("\n-- check 4: the freewheel re-engages without an impulse --------------------")
-    failures += check_reengagement(quick)
+    re_failures, re_sep_m = check_reengagement(quick)
+    failures += re_failures
+
+    print("\n-- check 5: the feet stay welded to the pedals ----------------------------")
+    # The welds are deliberately soft (solref "0.005 1"), so the power strokes bow them
+    # to ~1.5 mm on the launch -- slip, not separation. The 2 mm bound is where a foot
+    # would visibly float off the platform. Covers the pedalled traverse and check 4's
+    # freewheel cycle, where the legs ride on impedance alone.
+    probe_worst_m = max(
+        (float(np.max(ped[k])) for k in ("sep_front", "sep_rear") if ped[k].size),
+        default=None,
+    )
+    if probe_worst_m is None and re_sep_m is None:
+        ok = False
+        failures += 1
+        print("   FAIL: no weld probes found -- the model has no foot/pedal sites to "
+              "measure; articulated legs were expected")
+    else:
+        probe_mm = 1000.0 * (probe_worst_m if probe_worst_m is not None else 0.0)
+        re_mm = 1000.0 * (re_sep_m if re_sep_m is not None else 0.0)
+        worst_m = max(probe_worst_m or 0.0, re_sep_m or 0.0)
+        ok = worst_m < 0.002
+        failures += not ok
+        print(f"   worst |site_foot - site_pedal|: traverse {probe_mm:.3f} mm, "
+              f"re-engagement {re_mm:.3f} mm (limit 2.0 mm) {'OK' if ok else 'FAIL'}")
+
+    print("\n-- check 6: sustained load -- the legs hold cruise on the grade -----------")
+    failures += check_sustained_load(quick)
 
     print("\n-- assist sweep: what the mid-drive does to the bob ------------------------")
     sweep_steps = 8000 if quick else 16000

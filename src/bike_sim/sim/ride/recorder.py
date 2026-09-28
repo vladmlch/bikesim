@@ -20,6 +20,11 @@ Channel conventions:
   while seated. The ``rider_*_acc`` channels are the torso's and pelvis's proper
   acceleration in world axes, like the bar and saddle ones. All read zero without a seated
   rider, so a telemetry file has the same columns whichever rider rode.
+- ``pedal_load_*_n`` reports whoever is actually pushing: with articulated legs the
+  interface springs are gone (the feet are welded to the pedals), so the columns carry
+  ``LegDrive.pedal_force_*_n`` -- the tangential force each leg puts on its pedal, where
+  the pedalling load actually lives. With rigid legs the welded feet do not exist and the
+  channels keep reading the leg interface springs, as before.
 """
 
 import csv
@@ -245,6 +250,16 @@ class RideRecorder:
             )
         stroke_mm = sim.shock_stroke_mm
         rider = sim.rider_forces
+        # The pedal columns carry the real pedalling load whichever mechanism produces
+        # it: the leg drive's tangential pedal force under articulated legs (the spring
+        # interfaces do not exist there and would record a misleading zero), else the
+        # rigid rider's interface springs.
+        if sim.leg_drive.active:
+            pedal_front_n = float(sim.leg_drive.pedal_force_front_n)
+            pedal_rear_n = float(sim.leg_drive.pedal_force_rear_n)
+        else:
+            pedal_front_n = float(rider.pedal_load_front_n)
+            pedal_rear_n = float(rider.pedal_load_rear_n)
         if self._seated:
             torso_vert, torso_long = self._torso.world_components(data)
             pelvis_vert, pelvis_long = self._pelvis.world_components(data)
@@ -304,8 +319,8 @@ class RideRecorder:
                 float(rider.saddle_load_n),
                 float(rider.saddle_gap_m),
                 float(rider.bar_load_n),
-                float(rider.pedal_load_front_n),
-                float(rider.pedal_load_rear_n),
+                pedal_front_n,
+                pedal_rear_n,
                 torso_vert,
                 torso_long,
                 pelvis_vert,

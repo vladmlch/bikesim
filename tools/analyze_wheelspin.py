@@ -96,11 +96,14 @@ def run_wheelspin_analysis(
 
     dt = recorder.sample_interval_s
 
+    climb_obs = next((o for o in track_spec.obstacles if isinstance(o, SteppedClimb)), None)
+    climb_start_x = climb_obs.start_m if climb_obs is not None else 0.0
+
     # Wheel linear speed V_tread = Vx * (1 + kappa)
     tread_speed_mps = speed_mps * (1.0 + np.maximum(rear_slip, 0.0))
 
-    # Wheelspin detection: contact patch sliding while driving forward
-    wheelspin_mask = (rear_sliding > 0.5) & (rear_slip > 0.05)
+    # Wheelspin detection: contact patch sliding or exceeding slip threshold while driving forward on climb
+    wheelspin_mask = (x_m >= climb_start_x) & (speed_mps > 0.5) & ((rear_sliding > 0.5) | (rear_slip > 0.05))
     total_wheelspin_s = float(np.sum(wheelspin_mask) * dt)
     total_dissipated_j = float(np.sum(rear_loss_w) * dt)
 
@@ -115,7 +118,7 @@ def run_wheelspin_analysis(
         grade_pct[-1] = grade_pct[-2]
 
     # Critical gradient of first wheelspin onset
-    spin_indices = np.where(wheelspin_mask)[0]
+    spin_indices = np.where(wheelspin_mask & (grade_pct > 0.5))[0]
     if len(spin_indices) > 0:
         first_idx = spin_indices[0]
         critical_gradient_pct = float(round(float(grade_pct[first_idx]), 1))
@@ -124,7 +127,6 @@ def run_wheelspin_analysis(
 
     # Step wheelspin breakdown
     step_durations: Dict[str, float] = {}
-    climb_obs = next((o for o in track_spec.obstacles if isinstance(o, SteppedClimb)), None)
     if climb_obs is not None:
         curr_x = climb_obs.start_m
         for grade, length in climb_obs.steps:

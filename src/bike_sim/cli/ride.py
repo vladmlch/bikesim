@@ -223,6 +223,7 @@ def _drivetrain_config(args: argparse.Namespace) -> DrivetrainSpecs:
     kwargs = {"crank_phase_deg": float(args.crank_phase)}
     if args.gearing is not None:
         kwargs["chainring_teeth"], kwargs["cog_teeth"] = args.gearing
+        kwargs["auto_shift"] = False
     if args.ripple_depth is not None:
         kwargs["ripple_depth"] = float(args.ripple_depth)
     try:

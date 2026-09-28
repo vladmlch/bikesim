@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from bike_sim.cli.ride import (
+    _drivetrain_config,
     _tyre_config,
     main,
     parse_args,
@@ -111,6 +112,19 @@ def test_climb_steps_preset_defaults():
     assert args.tyre_model == "pneumatic"
     assert args.drive_mode == "pedelec"
     assert args.assist == "turbo"
+
+
+def test_gearing_flag_disables_autoshift():
+    args = parse_args(["--gearing", "32x16"])
+    specs = _drivetrain_config(args)
+    assert specs.chainring_teeth == 32
+    assert specs.cog_teeth == 16
+    assert specs.auto_shift is False
+
+    # Default without --gearing preserves auto_shift=True
+    args_default = parse_args([])
+    specs_default = _drivetrain_config(args_default)
+    assert specs_default.auto_shift is True
 
 
 @pytest.mark.parametrize(

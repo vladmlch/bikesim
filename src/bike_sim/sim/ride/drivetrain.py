@@ -252,10 +252,13 @@ class PedalDrivetrain:
         if self.shift_cut_timer_s > 0.0:
             self.shift_cut_timer_s = max(0.0, self.shift_cut_timer_s - dt)
 
+        pedalling = wheel_demand_nm > 0.0 and rear_in_contact
+        if pedalling:
+            self._engage(model, data)
+
         phase = float(data.qpos[self.crank_qposadr])
         crank_radps = float(data.qvel[self.crank_dofadr])
         cadence_rpm = crank_radps * RPM_PER_RADPS
-        pedalling = wheel_demand_nm > 0.0 and rear_in_contact
 
         if self.specs.auto_shift and self.shift_cooldown_timer_s <= 0.0:
             cogs = sorted(self.specs.cassette)
@@ -267,7 +270,7 @@ class PedalDrivetrain:
                     crank_radps = float(data.qvel[self.crank_dofadr])
                     cadence_rpm = crank_radps * RPM_PER_RADPS
             # Upshift if cadence is too high
-            elif cadence_rpm > self.specs.target_cadence_max_rpm:
+            elif pedalling and cadence_rpm > self.specs.target_cadence_max_rpm:
                 smaller_cogs = [c for c in cogs if c < self.current_cog]
                 if smaller_cogs:
                     self._shift_to(model, data, max(smaller_cogs))
@@ -275,7 +278,6 @@ class PedalDrivetrain:
                     cadence_rpm = crank_radps * RPM_PER_RADPS
 
         if pedalling:
-            self._engage(model, data)
             mean_nm, limit = limited_rider_torque(
                 wheel_demand_nm * self.current_gear_ratio, crank_radps, self.specs
             )

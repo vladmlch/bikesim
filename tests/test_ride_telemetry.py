@@ -212,6 +212,28 @@ def test_short_run_repeats_bit_identically(tmp_path):
     assert a.write_csv(tmp_path / "a.csv").read_bytes() == b.write_csv(tmp_path / "b.csv").read_bytes()
 
 
+def test_recorder_gear_teeth_channel():
+    # In motor mode (default), drivetrain channels including gear_teeth are NaN
+    sim_motor = RideSimulation(track=get_preset("flat"), drive_mode="motor")
+    rec_motor = RideRecorder(sim_motor)
+    rec_motor.record(sim_motor)
+    sim_motor.step()
+    rec_motor.record(sim_motor)
+    assert np.all(np.isnan(rec_motor.column("gear_teeth")))
+
+    # In pedelec mode, gear_teeth records active cog teeth
+    sim_pedelec = RideSimulation(track=get_preset("flat"), drive_mode="pedelec")
+    rec_pedelec = RideRecorder(sim_pedelec)
+    rec_pedelec.record(sim_pedelec)
+    sim_pedelec.step()
+    rec_pedelec.record(sim_pedelec)
+    gear_teeth = rec_pedelec.column("gear_teeth")
+    assert not np.any(np.isnan(gear_teeth))
+    assert np.all(gear_teeth >= 9.0)
+    assert gear_teeth[0] == 14.0
+    assert gear_teeth[-1] == float(sim_pedelec.drivetrain.current_cog)
+
+
 # --------------------------------------------------------------------------------------
 # Metrics, synthetic
 # --------------------------------------------------------------------------------------

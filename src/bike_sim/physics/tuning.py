@@ -5,11 +5,23 @@ Computes spring stiffness, air pressure (PSI), and damping coefficients
 required to achieve target static sag under rider weight.
 """
 
+from math import isfinite
 from typing import Any, Dict, Optional
 import numpy as np
 
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.mass import BikeMassSpecs, RiderSpecs, compute_static_system_cg
+
+
+def reflected_shock_mass(mass_kg: float, leverage_ratio: float) -> float:
+    """Reflect wheel-side mass to the shock coordinate by kinetic energy."""
+    if (
+        not all(isfinite(value) for value in (mass_kg, leverage_ratio))
+        or mass_kg <= 0
+        or leverage_ratio <= 0
+    ):
+        raise ValueError("mass and leverage ratio must be finite and positive")
+    return mass_kg * leverage_ratio**2
 
 
 def _compute_fork_tuning(
@@ -83,7 +95,7 @@ def _compute_shock_tuning(
     m_sprung_rear = total_mass * (1.0 - front_weight_fraction) - (
         mass_specs.chainstay_mass + mass_specs.seatstay_mass + mass_specs.rear_wheel_mass
     )
-    m_eff_shock = m_sprung_rear / (lr_at_sag ** 2)
+    m_eff_shock = reflected_shock_mass(m_sprung_rear, lr_at_sag)
     c_crit_shock = 2.0 * np.sqrt(k_shock * max(m_eff_shock, 1.0))
     c_shock = 0.65 * c_crit_shock
 

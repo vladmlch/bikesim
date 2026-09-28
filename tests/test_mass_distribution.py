@@ -246,7 +246,17 @@ def test_suspension_sag_tuning_and_balanced_bottom_out(mass_setup):
     assert tuning["fork_stiffness_n_m"] == pytest.approx(5966.3, rel=0.02)
     assert tuning["shock_stiffness_n_m"] == pytest.approx(114589.6, rel=0.02)
     assert tuning["fork_damping_n_s_m"] == pytest.approx(441.3, rel=0.03)
-    assert tuning["shock_damping_n_s_m"] == pytest.approx(1178.1, rel=0.03)
+    # From 1/2 m v_wheel^2 = 1/2 m_eff v_shock^2 and
+    # v_wheel = LR * v_shock, the shock sees m_eff = m_sprung * LR^2.
+    rear_sprung_mass = (
+        tuning["total_system_mass_kg"] * (1.0 - REAR_SAG_FRONT_WEIGHT_FRACTION)
+        - mass_specs.chainstay_mass - mass_specs.seatstay_mass - mass_specs.rear_wheel_mass
+    )
+    leverage = mass_setup["solver"].solve_state_from_wheel_travel(54.0)["leverage_ratio"]
+    expected_damping = 2.0 * 0.65 * np.sqrt(
+        tuning["shock_stiffness_n_m"] * rear_sprung_mass * leverage**2
+    )
+    assert tuning["shock_damping_n_s_m"] == pytest.approx(expected_damping, rel=0.03)
 
     # --- Quantities that are NOT tunable ---------------------------------------
     #

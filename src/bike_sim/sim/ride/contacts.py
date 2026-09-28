@@ -47,12 +47,14 @@ see `CONTACT_DROPOUT_STEPS`.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Protocol, Tuple
+from typing import Collection, Dict, Optional, Protocol, Tuple
 
 import mujoco
 import numpy as np
 
+from bike_sim.sim.ride.contact_state import ContactPatch, WheelContactSnapshot
 from bike_sim.sim.ride.tyre.model import WheelOutputs
+from bike_sim.sim.ride.wheel_kinematics import wheel_point_velocity
 
 # Worldbody collision geoms that make up the ground: the road heightfield and the runaway
 # catch plane far below it.
@@ -100,6 +102,8 @@ class TerrainContacts:
         handlebar_load_n: Normal-force magnitude on the handlebar geom, in newtons. Not held:
             a handlebar contact lasts far longer than a dropout, and a missed step only delays
             the crash detector by 0.5 ms.
+        front_snapshot: Raw, immutable physical contact state of the front wheel, when queried.
+        rear_snapshot: The corresponding raw state of the rear wheel.
     """
 
     front_load_n: float
@@ -107,6 +111,8 @@ class TerrainContacts:
     front_support_n: float
     rear_support_n: float
     handlebar_load_n: float
+    front_snapshot: WheelContactSnapshot | None = None
+    rear_snapshot: WheelContactSnapshot | None = None
 
     @property
     def front_in_contact(self) -> bool:
@@ -134,7 +140,7 @@ class TerrainContactQuery:
     Sums the normal contact load on each tracked geom against the terrain.
 
     Geom ids are resolved once at construction; the per-step query is a single pass over
-    `data.contact` with a reused force buffer, so it allocates nothing beyond the snapshot.
+    `data.contact` with a reused MuJoCo force buffer.
 
     The query is stateful, because bridging a collision dropout requires remembering the
     previous steps. Advance it once per simulation step -- querying the same state twice
@@ -185,9 +191,12 @@ class TerrainContactQuery:
             torque and the virtual rider, and the raw vertical support the rolling-resistance
             model may use -- plus the handlebar's raw magnitude.
         """
-        magnitude_n, vertical_n = self._sum_normal_loads(
+        magnitude_n, vertical_n, wheel_patches = self._sum_normal_loads(
             model, data, include_wheel_contacts=wheel_load_provider is None
         )
+        interval_id = round(float(data.time) / float(model.opt.timestep))
+        front_axis = data.geom_xpos[self.front_id]
+        rear_axis = data.geom_xpos[self.rear_id]
         if wheel_load_provider is not None:
             front = wheel_load_provider.front_outputs
             rear = wheel_load_provider.rear_outputs
@@ -197,13 +206,31 @@ class TerrainContactQuery:
                 front_support_n=max(0.0, front.support_n),
                 rear_support_n=max(0.0, rear.support_n),
                 handlebar_load_n=magnitude_n[self.handlebar_id],
+                front_snapshot=_legacy_tyre_snapshot(
+                    model, data, self.front_id, front, interval_id
+                ),
+                rear_snapshot=_legacy_tyre_snapshot(
+                    model, data, self.rear_id, rear, interval_id
+                ),
             )
+        front_snapshot = WheelContactSnapshot(
+            time_s=float(data.time), patches=wheel_patches[self.front_id],
+            geometric_contact=bool(wheel_patches[self.front_id]),
+            interval_id=interval_id, backend="native_reference", wheel_axis_m=front_axis,
+        )
+        rear_snapshot = WheelContactSnapshot(
+            time_s=float(data.time), patches=wheel_patches[self.rear_id],
+            geometric_contact=bool(wheel_patches[self.rear_id]),
+            interval_id=interval_id, backend="native_reference", wheel_axis_m=rear_axis,
+        )
         return TerrainContacts(
             front_load_n=self._front_load.update(magnitude_n[self.front_id]),
             rear_load_n=self._rear_load.update(magnitude_n[self.rear_id]),
             front_support_n=max(0.0, vertical_n[self.front_id]),
             rear_support_n=max(0.0, vertical_n[self.rear_id]),
             handlebar_load_n=magnitude_n[self.handlebar_id],
+            front_snapshot=front_snapshot,
+            rear_snapshot=rear_snapshot,
         )
 
     def reset(self) -> None:
@@ -216,7 +243,7 @@ class TerrainContactQuery:
         model: mujoco.MjModel,
         data: mujoco.MjData,
         include_wheel_contacts: bool = True,
-    ) -> Tuple[Dict[int, float], Dict[int, float]]:
+    ) -> Tuple[Dict[int, float], Dict[int, float], Dict[int, tuple[ContactPatch, ...]]]:
         """
         Accumulates this step's normal contact load on each tracked geom, two ways.
 
@@ -230,7 +257,7 @@ class TerrainContactQuery:
             data: Simulation state with populated contacts.
 
         Returns:
-            Tuple of (magnitudes, verticals) in newtons, each keyed by geom id. `magnitudes`
+            Tuple of (magnitudes, verticals, wheel patches), keyed by geom id. `magnitudes`
             adds the scalar normal force of every row, so opposing normals reinforce rather
             than cancel. `verticals` adds the world-Z component of each row's normal force
             vector, signed so that support on the tracked geom is positive, so a horizontal
@@ -238,31 +265,112 @@ class TerrainContactQuery:
         """
         magnitude_n: Dict[int, float] = {self.front_id: 0.0, self.rear_id: 0.0, self.handlebar_id: 0.0}
         vertical_n: Dict[int, float] = {self.front_id: 0.0, self.rear_id: 0.0, self.handlebar_id: 0.0}
+        wheel_patches: Dict[int, list[ContactPatch]] = {self.front_id: [], self.rear_id: []}
 
         for i in range(data.ncon):
             contact = data.contact[i]
             geom1, geom2 = int(contact.geom1), int(contact.geom2)
-            # MuJoCo's contact normal is `frame[0:3]`, pointing from geom1 toward geom2, and
-            # `mj_contactForce` returns a non-negative force along it. The repulsive force on
-            # the tracked geom therefore follows the normal when the terrain is geom1 and
-            # opposes it when the terrain is geom2.
-            if geom1 in self.terrain_ids:
-                tracked, normal_sign = geom2, 1.0
-            elif geom2 in self.terrain_ids:
-                tracked, normal_sign = geom1, -1.0
-            else:
+            if not (
+                (geom1 in self.terrain_ids and geom2 in magnitude_n)
+                or (geom2 in self.terrain_ids and geom1 in magnitude_n)
+            ):
                 continue
-            if tracked not in magnitude_n:
-                continue
-            if not include_wheel_contacts and tracked in (self.front_id, self.rear_id):
-                continue
-
             mujoco.mj_contactForce(model, data, i, self._force)
+            result = _tracked_wrench(
+                geom1, geom2, self.terrain_ids, magnitude_n.keys(),
+                contact.frame.reshape(3, 3), self._force,
+            )
+            if result is None:
+                continue
+            tracked, normal, force_world, couple_world = result
+            if not include_wheel_contacts and tracked in wheel_patches:
+                continue
             normal_force_n = float(self._force[0])
             magnitude_n[tracked] += abs(normal_force_n)
-            vertical_n[tracked] += normal_sign * normal_force_n * float(contact.frame[2])
+            vertical_n[tracked] += normal_force_n * float(normal[2])
+            if tracked in wheel_patches:
+                # MuJoCo's sphere/heightfield rows can tilt a few microradians out of
+                # the constrained X-Z bicycle plane. Project their direction into our
+                # planar contact contract while retaining the full world wrench above.
+                planar_normal = np.array([normal[0], 0.0, normal[2]])
+                planar_normal /= np.linalg.norm(planar_normal)
+                tangent = np.array([planar_normal[2], 0.0, -planar_normal[0]])
+                body_id = int(model.geom_bodyid[tracked])
+                point = np.asarray(contact.pos, dtype=float)
+                slip_mps = float(np.dot(
+                    wheel_point_velocity(model, data, body_id, point), tangent
+                ))
+                wheel_patches[tracked].append(ContactPatch(
+                    point_m=point,
+                    normal=planar_normal,
+                    normal_load_n=max(0.0, normal_force_n),
+                    tangent_force_n=float(np.dot(force_world, tangent)),
+                    slip_mps=slip_mps,
+                    couple_world_nm=couple_world,
+                    lateral_force_n=float(force_world[1]),
+                ))
 
-        return magnitude_n, vertical_n
+        return magnitude_n, vertical_n, {
+            geom_id: tuple(patches) for geom_id, patches in wheel_patches.items()
+        }
+
+
+def _tracked_wrench(
+    geom1: int,
+    geom2: int,
+    terrain_ids: frozenset[int],
+    tracked_ids: Collection[int],
+    frame: np.ndarray,
+    contact_force: np.ndarray,
+) -> tuple[int, np.ndarray, np.ndarray, np.ndarray] | None:
+    """Convert MuJoCo's contact-frame wrench to force on a tracked geom.
+
+    The normal points from geom1 to geom2. MuJoCo's reported wrench acts on
+    geom2; reversing the geom order reverses both force and contact couple.
+    """
+    if geom1 in terrain_ids and geom2 in tracked_ids:
+        tracked, sign = geom2, 1.0
+    elif geom2 in terrain_ids and geom1 in tracked_ids:
+        tracked, sign = geom1, -1.0
+    else:
+        return None
+    rotation = np.asarray(frame, dtype=float).reshape(3, 3).T
+    force = np.asarray(contact_force, dtype=float)
+    return (
+        tracked,
+        sign * rotation[:, 0],
+        sign * (rotation @ force[:3]),
+        sign * (rotation @ force[3:6]),
+    )
+
+
+def _legacy_tyre_snapshot(
+    model: mujoco.MjModel,
+    data: mujoco.MjData,
+    geom_id: int,
+    outputs: WheelOutputs,
+    interval_id: int,
+) -> WheelContactSnapshot:
+    """Copy the pre-existing pneumatic output into the physical snapshot contract."""
+    body_id = int(model.geom_bodyid[geom_id])
+    patches = []
+    for output in outputs.patches:
+        normal = output.normal_force_world_n / output.normal_load_n
+        tangent = np.array([normal[2], 0.0, -normal[0]])
+        point = output.centroid_world_m
+        patches.append(ContactPatch(
+            point_m=point,
+            normal=normal,
+            normal_load_n=output.normal_load_n,
+            tangent_force_n=output.tangential_force_n,
+            slip_mps=float(np.dot(wheel_point_velocity(model, data, body_id, point), tangent)),
+        ))
+    return WheelContactSnapshot(
+        time_s=float(data.time), patches=tuple(patches),
+        geometric_contact=not outputs.airborne,
+        interval_id=interval_id, backend="legacy_pneumatic",
+        wheel_axis_m=data.geom_xpos[geom_id],
+    )
 
 
 class _BridgedLoad:

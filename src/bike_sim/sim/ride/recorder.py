@@ -238,6 +238,14 @@ class RideRecorder:
         if interval_dt_s <= 0 or not np.isfinite(interval_dt_s):
             raise ValueError("invalid physical force interval")
         powers = component_powers(sample)
+        constraints = sim.last_constraint_snapshot
+        if constraints is not None:
+            if (
+                not np.isclose(constraints.interval_start_s, sample.time_s, rtol=0.0, atol=1e-12)
+                or not np.isclose(constraints.interval_end_s, sim.data.time, rtol=0.0, atol=1e-12)
+            ):
+                raise ValueError("constraint snapshot does not match physical force interval")
+            powers.update(constraints.powers_w())
         for name, power_w in powers.items():
             if name not in self.component_work_j:
                 self._add_component_channels(name)

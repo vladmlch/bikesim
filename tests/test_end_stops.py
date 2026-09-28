@@ -4,6 +4,7 @@ import mujoco
 import numpy as np
 import pytest
 
+from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
 from bike_sim.physics.model_config import EndStopConfig, SimulationPhysicsConfig
@@ -161,10 +162,58 @@ def test_stop_reference_deflection_must_precede_solver_limit():
         EndStopConfig(overtravel_m=0.008, reference_deflection_m=0.010)
 
 
-def test_legacy_simulation_routes_supplied_coil_to_legacy_law():
+def test_legacy_simulation_preserves_supplied_coil_mode():
+    coil = CoilShock()
     sim = RideSimulation(
-        track=get_preset("flat"), rider="none", coil_shock=CoilShock()
+        track=get_preset("flat"), rider="none", coil_shock=coil
     )
+    sim.data.qpos[sim.applier.shock_qposadr] = -0.004
+    sim.applier.compute_qfrc(sim.model, sim.data)
+    assert sim.applier.coil_shock is coil
+    assert coil.legacy_behavior is False
+    assert sim.applier.shock_spring_n == 0.0
+
+
+@pytest.mark.parametrize("mode", ["legacy", "physical"])
+def test_explicit_coil_stroke_must_match_compiled_bike_stroke(mode):
+    coil = CoilShock(CoilShockSpecs(stroke_mm=60.0))
+    with pytest.raises(ValueError, match=r"CoilShock.*60\.0.*BikeSpecs.*65\.0"):
+        RideSimulation(
+            track=get_preset("flat"), rider="none", coil_shock=coil,
+            physics_config=SimulationPhysicsConfig(physics_mode=mode),
+        )
+
+
+def test_default_coil_uses_active_bike_stroke_and_rate():
+    specs = BikeSpecs(shock_stroke=60.0, shock_stiffness=120000.0)
+    sim = RideSimulation(
+        track=get_preset("flat"), rider="none", specs=specs,
+        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
+    )
+    assert sim.applier.coil_shock.specs.stroke_mm == pytest.approx(60.0)
+    assert sim.applier.coil_shock.specs.rate_n_m == pytest.approx(120000.0)
+    jid = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT, "shock_stroke")
+    assert tuple(sim.model.jnt_range[jid]) == pytest.approx((-0.010, 0.070))
+
+
+def test_supplied_coil_subclass_keeps_identity_and_custom_force_method():
+    class OffsetCoil(CoilShock):
+        def compute_spring_force(self, stroke_mm):
+            return super().compute_spring_force(stroke_mm) + 123.0
+
+    coil = OffsetCoil(legacy_behavior=True)
+    sim = RideSimulation(track=get_preset("flat"), rider="none", coil_shock=coil)
+    assert sim.applier.coil_shock is coil
+    assert coil.legacy_behavior is True
+    sim.data.qpos[sim.applier.shock_qposadr] = -0.004
+    sim.applier.compute_qfrc(sim.model, sim.data)
+    assert sim.applier.shock_spring_n == pytest.approx(-458.4 + 123.0)
+
+
+def test_ordinary_legacy_simulation_keeps_compiled_range_and_signed_coil():
+    sim = RideSimulation(track=get_preset("flat"), rider="none")
+    jid = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT, "shock_stroke")
+    assert tuple(sim.model.jnt_range[jid]) == pytest.approx((0.0, 0.065))
     sim.data.qpos[sim.applier.shock_qposadr] = -0.004
     sim.applier.compute_qfrc(sim.model, sim.data)
     assert sim.applier.shock_spring_n == pytest.approx(-458.4)

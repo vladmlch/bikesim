@@ -24,7 +24,7 @@ from bike_sim.geometry.hardpoints import compute_ground_z
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
-from bike_sim.physics.coil_shock import CoilShock
+from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
 from bike_sim.physics.damper import BikeSuspensionSystem
 from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
 from bike_sim.physics.model_config import SimulationPhysicsConfig
@@ -35,6 +35,10 @@ from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
 from bike_sim.sim.ride.braking import BrakeController
 from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+from bike_sim.sim.ride.constraint_forces import (
+    ConstraintForceSnapshot,
+    shock_joint_limit_qfrc,
+)
 from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
 from bike_sim.sim.ride.force_accumulator import ForceAccumulator
 from bike_sim.sim.ride.forces import SuspensionForceApplier
@@ -174,6 +178,14 @@ class RideSimulation:
         assert_track_fits(self.track, self.field)
 
         self.specs = specs if specs is not None else BikeSpecs()
+        if (
+            coil_shock is not None
+            and abs(coil_shock.specs.stroke_mm - self.specs.shock_stroke) > 1e-6
+        ):
+            raise ValueError(
+                f"CoilShock stroke_mm {coil_shock.specs.stroke_mm} differs from "
+                f"BikeSpecs shock_stroke {self.specs.shock_stroke}"
+            )
         self.tyre_config = tyre if tyre is not None else TyreConfig()
         if (
             self.physics_config.physics_mode == "physical"
@@ -240,17 +252,22 @@ class RideSimulation:
             Tuple[float, np.ndarray, np.ndarray, Mapping[str, np.ndarray]]
         ] = None
         self.last_force_sample: Optional[ForceSample] = None
+        self.last_constraint_snapshot: Optional[ConstraintForceSnapshot] = None
 
         self.controller = controller if controller is not None else _default_controller(
             self.specs, legacy_behavior=self.physics_config.physics_mode == "legacy"
         )
+        resolved_coil = coil_shock if coil_shock is not None else CoilShock(
+            CoilShockSpecs(
+                rate_n_m=self.specs.shock_stiffness,
+                stroke_mm=self.specs.shock_stroke,
+            ),
+            legacy_behavior=self.physics_config.physics_mode == "legacy",
+        )
         self.applier = SuspensionForceApplier(
             self.model,
             self.controller,
-            CoilShock(
-                coil_shock.specs if coil_shock is not None else None,
-                legacy_behavior=self.physics_config.physics_mode == "legacy",
-            ),
+            resolved_coil,
             physics_config=self.physics_config,
         )
         self.rider_forces = RiderForceApplier(self.model, self.pose)
@@ -364,6 +381,7 @@ class RideSimulation:
         self.force_accumulator.clear()
         self.last_force_snapshot = None
         self.last_force_sample = None
+        self.last_constraint_snapshot = None
         if self.tyre_applier is None:
             self.contacts = self.contact_query.query(self.model, self.data)
         else:
@@ -573,6 +591,12 @@ class RideSimulation:
             self.last_force_sample.components,
         )
         mujoco.mj_step(self.model, self.data)
+        self.last_constraint_snapshot = ConstraintForceSnapshot(
+            self.last_force_sample.time_s,
+            float(self.data.time),
+            self.last_force_sample.qvel,
+            {"shock_solver_limit": shock_joint_limit_qfrc(self.model, self.data)},
+        )
         self.steps += 1
 
     def _follow_cranks(self) -> None:

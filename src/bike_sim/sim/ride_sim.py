@@ -172,6 +172,17 @@ class RideSimulation:
 
         self.specs = specs if specs is not None else BikeSpecs()
         self.tyre_config = tyre if tyre is not None else TyreConfig()
+        if (
+            self.physics_config.physics_mode == "physical"
+            and self.tyre_config.pneumatic
+            and self.tyre_config.tier == "detailed"
+            and self.physics_config.timestep_s != self.tyre_config.tier_spec.timestep_s
+        ):
+            raise ValueError(
+                "detailed pneumatic tyre requires timestep_s="
+                f"{self.tyre_config.tier_spec.timestep_s}; "
+                f"got {self.physics_config.timestep_s}"
+            )
         self.solver = HorstLinkageSolver(self.specs)
         self.start_x_m = float(start_x_m)
         # The legs choice lands on the rider *before* the pose is solved: `seated_pose`

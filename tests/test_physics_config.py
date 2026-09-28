@@ -104,3 +104,27 @@ def test_physical_pneumatic_reads_current_wheel_geometry():
     sim.step()
     assert sim.tyre_applier.front_outputs.normal_load_n == 0.0
     assert sim.tyre_applier.rear_outputs.normal_load_n == 0.0
+
+
+def test_physical_detailed_tyre_rejects_incompatible_explicit_timestep():
+    with pytest.raises(ValueError, match="detailed.*timestep_s"):
+        RideSimulation(
+            track=get_preset("flat"),
+            rider="none",
+            tyre=TyreConfig(model="pneumatic", tier="detailed"),
+            physics_config=SimulationPhysicsConfig(
+                physics_mode="physical", timestep_s=0.0005
+            ),
+        )
+
+
+def test_physical_detailed_tyre_keeps_matching_explicit_timestep():
+    sim = RideSimulation(
+        track=get_preset("flat"),
+        rider="none",
+        tyre=TyreConfig(model="pneumatic", tier="detailed"),
+        physics_config=SimulationPhysicsConfig(
+            physics_mode="physical", timestep_s=0.00025
+        ),
+    )
+    assert sim.model.opt.timestep == pytest.approx(0.00025)

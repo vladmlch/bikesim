@@ -20,6 +20,7 @@ from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.physics.tyre import TYRE_MODELS
 from bike_sim.physics.mass import BikeMassSpecs, compute_static_system_cg
+from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.physics.rider import RiderSpecs, resolve_rider
 
 from bike_sim.mujoco.drivetrain import build_chain_constraint
@@ -55,6 +56,8 @@ def generate_mujoco_xml(
     tyre_model: str = "sphere",
     crank_joint: bool = False,
     gear_ratio: float = DEFAULT_GEAR_RATIO,
+    *,
+    physics_config: Optional[SimulationPhysicsConfig] = None,
 ) -> str:
     """
     Generates a complete, valid, high-fidelity MuJoCo MJCF XML model string.
@@ -84,6 +87,7 @@ def generate_mujoco_xml(
             those welds do not exist (the pedals stay rigid frame geoms) and the leg
             chains just hang.
         gear_ratio: Wheel revolutions per crank revolution for that chain equality.
+        physics_config: Optional ride-mode physics settings, including the integration step.
 
     Returns:
         Formatted MJCF XML string ready for MuJoCo simulation.
@@ -142,7 +146,7 @@ def generate_mujoco_xml(
         },
     )
     if mode == "ride":
-        timestep = "0.0005"
+        timestep = "0.0005" if physics_config is None else str(physics_config.timestep_s)
     elif mode in ("stand", "playground"):
         timestep = "0.001"
     else:

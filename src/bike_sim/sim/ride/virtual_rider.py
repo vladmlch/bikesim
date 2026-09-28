@@ -128,6 +128,13 @@ class PitchStabilizer:
         self.work_j += self.moment_nm * pitch_rate_radps * dt
         return self.moment_nm
 
+    def disable(self, data: mujoco.MjData) -> None:
+        """Clear the unbalanced root moment when external pitch help is disabled."""
+        self.active = False
+        self.moment_nm = 0.0
+        # MuJoCo retains applied generalized forces between steps.
+        data.qfrc_applied[self.pitch_dofadr] = 0.0
+
     def reset(self) -> None:
         """Clears the moment and both accumulators for a fresh run."""
         self.moment_nm = 0.0

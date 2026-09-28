@@ -179,8 +179,12 @@ class RideSimulation:
         assert_track_fits(self.track, self.field)
 
         self.specs = specs if specs is not None else BikeSpecs()
+        if not isfinite(self.specs.shock_stroke):
+            raise ValueError(f"BikeSpecs shock_stroke {self.specs.shock_stroke} must be finite")
         if controller is not None:
             _validate_controller_geometry(self.specs, controller)
+        if coil_shock is not None and not isfinite(coil_shock.specs.stroke_mm):
+            raise ValueError(f"CoilShock stroke_mm {coil_shock.specs.stroke_mm} must be finite")
         if (
             coil_shock is not None
             and abs(coil_shock.specs.stroke_mm - self.specs.shock_stroke) > 1e-6

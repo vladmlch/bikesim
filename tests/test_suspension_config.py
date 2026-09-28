@@ -145,6 +145,30 @@ def test_nonfinite_controller_travel_is_rejected():
         RideSimulation(track=get_preset("flat"), rider="none", specs=specs, controller=controller)
 
 
+@pytest.mark.parametrize("stroke", [float("nan"), float("inf"), -float("inf")])
+def test_mutated_nonfinite_coil_stroke_is_rejected_before_model_build(monkeypatch, stroke):
+    coil = CoilShock()
+    coil.specs.stroke_mm = stroke
+    monkeypatch.setattr(
+        "bike_sim.sim.ride_sim.generate_mujoco_xml",
+        lambda **kwargs: pytest.fail("model generation reached before coil validation"),
+    )
+
+    with pytest.raises(ValueError, match=r"CoilShock stroke_mm.*finite"):
+        RideSimulation(track=get_preset("flat"), rider="none", coil_shock=coil)
+
+
+def test_nonfinite_bike_stroke_is_rejected_before_model_build(monkeypatch):
+    specs = BikeSpecs(shock_stroke=float("nan"))
+    monkeypatch.setattr(
+        "bike_sim.sim.ride_sim.generate_mujoco_xml",
+        lambda **kwargs: pytest.fail("model generation reached before BikeSpecs validation"),
+    )
+
+    with pytest.raises(ValueError, match=r"BikeSpecs shock_stroke.*finite"):
+        RideSimulation(track=get_preset("flat"), rider="none", specs=specs, coil_shock=CoilShock())
+
+
 def test_compatible_explicit_overrides_keep_their_identity_and_tuning():
     specs = BikeSpecs()
     controller, _ = build_suspension_components(specs)

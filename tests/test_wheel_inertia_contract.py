@@ -8,7 +8,13 @@ import pytest
 
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.mujoco.builder import generate_mujoco_xml
-from bike_sim.physics.inertia import add_body_inertial, parallel_axis, ring_inertia
+from bike_sim.physics.inertia import (
+    FRONT_WHEEL_PROFILE,
+    REAR_WHEEL_PROFILE,
+    add_body_inertial,
+    parallel_axis,
+    ring_inertia,
+)
 from bike_sim.physics.mass import BikeMassSpecs
 from bike_sim.physics.model_config import SimulationPhysicsConfig
 
@@ -92,20 +98,42 @@ def test_fixed_axis_acceleration_uses_declared_inertia():
     assert data.qacc[0] == pytest.approx(10.0, rel=1e-3)
 
 
-@pytest.mark.parametrize("name,mass,diagonal", [
-    ("front_wheel", 2.40, (0.10980155, 0.2173131, 0.10980155)),
-    ("rear_wheel", 2.80, (0.11464850833333334, 0.22530795, 0.11464850833333334)),
+@pytest.mark.parametrize("name,profile", [
+    ("front_wheel", FRONT_WHEEL_PROFILE),
+    ("rear_wheel", REAR_WHEEL_PROFILE),
 ])
-def test_compiled_wheel_tensor_matches_selected_synthetic_ring_model(name, mass, diagonal):
-    root = _wheel_xml()
+def test_compiled_wheel_mass_com_and_tensor_match_selected_synthetic_profile(name, profile):
+    mass_specs = BikeMassSpecs()
+    budget = getattr(mass_specs, f"{name}_mass")
+    component_masses = [budget * component.mass_fraction for component in profile]
+    expected_mass = sum(component_masses)
+    expected_com = sum(
+        (mass * np.asarray(component.offset_m) for mass, component in zip(component_masses, profile)),
+        np.zeros(3),
+    ) / expected_mass
+    expected_tensor = np.zeros((3, 3))
+    for mass, component in zip(component_masses, profile):
+        radial = component.inner_radius_m**2 + component.outer_radius_m**2
+        transverse = mass * (3 * radial + component.width_m**2) / 12
+        displacement = np.asarray(component.offset_m) - expected_com
+        expected_tensor += np.diag((transverse, mass * radial / 2, transverse))
+        expected_tensor += mass * (
+            float(displacement @ displacement) * np.eye(3) - np.outer(displacement, displacement)
+        )
+
+    root = _wheel_xml(mass_specs=mass_specs)
     wheel = root.find(f".//body[@name='{name}']")
     assert wheel is not None
     inertials = wheel.findall("inertial")
     assert len(inertials) == 1
-    assert float(inertials[0].get("mass")) == pytest.approx(mass)
+    assert expected_mass == pytest.approx(budget)
+    assert float(inertials[0].get("mass")) == pytest.approx(expected_mass)
     assert all(float(geom.get("mass")) == 0 for geom in wheel.findall("geom"))
     model = mujoco.MjModel.from_xml_string(ET.tostring(root, encoding="unicode"))
-    np.testing.assert_allclose(_body_tensor(model, name), np.diag(diagonal), rtol=0, atol=1e-10)
+    body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
+    assert model.body_mass[body_id] == pytest.approx(expected_mass)
+    np.testing.assert_allclose(model.body_ipos[body_id], expected_com, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(_body_tensor(model, name), expected_tensor, rtol=0, atol=1e-10)
 
 
 @pytest.mark.parametrize("name", ["front_wheel", "rear_wheel"])

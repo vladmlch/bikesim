@@ -87,6 +87,9 @@ def test_telemetry_metrics_and_forces(playground_models):
     pg = SuspensionPlayground(
         specs=playground_models["specs"],
     )
+    pg.suspension_system.shock_damper.set_clicks(lockout=True)
+    assert pg.suspension_system.shock_damper.compute_damping_force(0.03, 20.0) == pytest.approx(480.0)
+    pg.suspension_system.shock_damper.set_clicks(lockout=False)
 
     # Initial state
     tel0 = pg.get_telemetry()

@@ -241,7 +241,9 @@ class RideSimulation:
         ] = None
         self.last_force_sample: Optional[ForceSample] = None
 
-        self.controller = controller if controller is not None else _default_controller(self.specs)
+        self.controller = controller if controller is not None else _default_controller(
+            self.specs, legacy_behavior=self.physics_config.physics_mode == "legacy"
+        )
         self.applier = SuspensionForceApplier(
             self.model,
             self.controller,
@@ -728,7 +730,7 @@ class RideSimulation:
         return self.crash_detector.event
 
 
-def _default_controller(specs: BikeSpecs) -> SuspensionController:
+def _default_controller(specs: BikeSpecs, *, legacy_behavior: bool) -> SuspensionController:
     """
     Builds the suspension force calculator from the shipped defaults.
 
@@ -745,7 +747,7 @@ def _default_controller(specs: BikeSpecs) -> SuspensionController:
             num_tokens=specs.fork_air_tokens,
             gauge_pressure_psi=specs.fork_initial_psi,
         ),
-        suspension_system=BikeSuspensionSystem(),
+        suspension_system=BikeSuspensionSystem(legacy_behavior=legacy_behavior),
     )
 
 

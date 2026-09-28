@@ -21,6 +21,25 @@ def test_firm_force_is_continuous() -> None:
     assert abs(right - left) < 1e-3
 
 
+def test_firm_knee_is_exactly_continuous_at_450_n() -> None:
+    damper = SuperDeluxeDamper(lockout_firm=True)
+
+    assert damper.compute_damping_force(0.03, 20.0) == pytest.approx(450.0)
+
+
+def test_hbo_adds_the_same_force_in_open_and_firm() -> None:
+    increments = []
+    for firm in (False, True):
+        damper = SuperDeluxeDamper(lockout_firm=firm)
+        increments.append(
+            damper.compute_damping_force(1.0, 65.0)
+            - damper.compute_damping_force(1.0, 20.0)
+        )
+
+    assert increments[0] == pytest.approx(9685.766774493648)
+    assert increments[1] == pytest.approx(increments[0])
+
+
 @pytest.mark.parametrize("firm", [False, True])
 @pytest.mark.parametrize("stroke_mm", [0.0, 20.0, 52.0, 65.0])
 @pytest.mark.parametrize("velocity_mps", [-2.0, -0.2, -1e-6, 0.0, 1e-6, 0.03, 0.5, 2.0])

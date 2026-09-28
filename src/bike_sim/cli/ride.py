@@ -496,7 +496,7 @@ def _fit_sag(target_pct: float, specs: BikeSpecs, rider: RiderSpecs):
         air_spring=ForkAirSpring(
             specs=AirSpringSpecs(total_travel_mm=specs.fork_travel), num_tokens=tokens, gauge_pressure_psi=psi,
         ),
-        suspension_system=BikeSuspensionSystem(),
+        suspension_system=BikeSuspensionSystem(legacy_behavior=True),
     )
     coil = CoilShock(CoilShockSpecs(rate_n_m=rate))
     print(f"{PREFIX} --sag {target_pct:g}%: fork {psi:.1f} psi ({tokens} tokens) instead of "

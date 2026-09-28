@@ -374,7 +374,9 @@ class BikeSuspensionSystem:
     Combined suspension system holding both Fork (ZEB Ultimate) and Rear Shock (Super Deluxe Ultimate).
     """
 
-    def __init__(self, click_config: Optional[DamperClickConfig] = None) -> None:
+    def __init__(
+        self, click_config: Optional[DamperClickConfig] = None, *, legacy_behavior: bool = False
+    ) -> None:
         if click_config is None:
             click_config = DAMPER_PRESETS[DamperPreset.BASE]
 
@@ -391,6 +393,7 @@ class BikeSuspensionSystem:
             rebound_clicks=click_config.shock_rebound,
             hbo_clicks=click_config.shock_hbo,
             lockout_firm=click_config.shock_lockout,
+            legacy_behavior=legacy_behavior,
         )
 
     def apply_preset(self, preset: DamperPreset) -> None:

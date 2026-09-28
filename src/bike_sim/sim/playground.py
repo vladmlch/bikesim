@@ -65,7 +65,7 @@ class SuspensionPlayground:
             shock_lockout=self.specs.shock_lockout,
             preset_name=DamperPreset.BASE.value,
         )
-        self.suspension_system = BikeSuspensionSystem(click_config=damper_cfg)
+        self.suspension_system = BikeSuspensionSystem(click_config=damper_cfg, legacy_behavior=True)
 
         # Camera Perspective Manager
         self.camera_manager = CameraManager(default_mode="2d")

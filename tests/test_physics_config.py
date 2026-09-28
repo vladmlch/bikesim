@@ -74,6 +74,16 @@ def test_implicit_legacy_and_physical_have_distinct_revisions():
     )
     assert legacy.physics_config.physics_mode == "legacy"
     assert legacy.physics_revision != physical.physics_revision
+    legacy_shock = legacy.controller.suspension_system.shock_damper
+    physical_shock = physical.controller.suspension_system.shock_damper
+    legacy_shock.set_clicks(lockout=True)
+    physical_shock.set_clicks(lockout=True)
+    assert legacy_shock.compute_damping_force(0.03, 20.0) == pytest.approx(480.0)
+    assert legacy_shock.compute_damping_force(1.0, 65.0) == pytest.approx(
+        legacy_shock.compute_damping_force(1.0, 20.0)
+    )
+    assert physical_shock.compute_damping_force(0.03, 20.0) == pytest.approx(450.0)
+    assert physical_shock.compute_damping_force(1.0, 65.0) > physical_shock.compute_damping_force(1.0, 20.0)
 
 
 def test_explicit_legacy_coast_disables_cruise_and_pitch_help():

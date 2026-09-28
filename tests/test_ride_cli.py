@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from bike_sim.cli.ride import (
+    _fit_sag,
     _drivetrain_config,
     _tyre_config,
     main,
@@ -29,6 +30,8 @@ from bike_sim.cli.ride import (
     run_dir_name,
     track_seed,
 )
+from bike_sim.geometry.specs import BikeSpecs
+from bike_sim.physics.rider import RiderSpecs
 from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.ride.recorder import CHANNELS, read_csv
 from bike_sim.terrain import (
@@ -297,6 +300,14 @@ def test_headless_no_plots_and_sag(capsys, tmp_path, short_road):
     assert summary["extras"]["fork_psi"] == pytest.approx(118.5, abs=0.1)
     assert summary["rider_variant"] == "lumped"
     assert summary["rider"] is None
+
+
+def test_sag_fitting_keeps_legacy_damper_law() -> None:
+    controller, _, _ = _fit_sag(30.0, BikeSpecs(), RiderSpecs(variant="lumped"))
+    shock = controller.suspension_system.shock_damper
+    shock.set_clicks(lockout=True)
+
+    assert shock.compute_damping_force(0.03, 20.0) == pytest.approx(480.0)
 
 
 def test_sag_fits_the_seated_rider_against_its_own_centre_of_mass(capsys, tmp_path, short_road):

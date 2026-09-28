@@ -71,12 +71,18 @@ def generate_mujoco_xml(
             the golden baseline; a longer track passes a stretched field. Ignored
             outside ride mode.
         rider: The rider to build -- a `RiderSpecs` or a variant name (``none``, ``lumped``,
-            ``seated``). The seated rider is ride-mode only. The centre-of-gravity site and
-            the saddle height follow whichever rider is present.
+            ``seated``). The seated rider is ride-mode only; its ``legs`` field selects the
+            rigid slide-mounted legs or articulated hip/knee/ankle chains hung off the
+            pelvis. The centre-of-gravity site and the saddle height follow whichever
+            rider is present.
         tyre_model: ``sphere`` keeps the existing wheel–road contacts; ``pneumatic`` disables
             only the two contact spheres so the ride-mode force applier can carry the wheels.
-        crank_joint: Ride-mode only. Builds the crankset on a `crank_spin` hinge, adds the
-            `crank_drive` motor and ties the crank to the rear wheel with the chain equality.
+        crank_joint: Ride-mode only. Builds the crankset on a `crank_spin` hinge with a
+            `pedal_*` body on each arm end, adds the `crank_drive` motor and ties the crank
+            to the rear wheel with the chain equality. With an articulated-leg seated rider
+            the feet are additionally welded to the pedal bodies; without `crank_joint`
+            those welds do not exist (the pedals stay rigid frame geoms) and the leg
+            chains just hang.
         gear_ratio: Wheel revolutions per crank revolution for that chain equality.
 
     Returns:
@@ -209,6 +215,24 @@ def generate_mujoco_xml(
     build_equality_constraints(root, mode=mode)
     if crank_joint:
         build_chain_constraint(root, gear_ratio=gear_ratio)
+        if pose is not None and pose.leg_chains:
+            # Clipless-pedal welds: each foot body is fixed to its pedal body. No
+            # `relpose` means the weld datum is the relative pose at qpos0 -- the
+            # design pose, which the pose solver makes self-consistent -- so the
+            # constraints start residual-free. Pedal bodies only exist when
+            # `crank_joint` builds them, so no welds are emitted without it; the
+            # articulated chains then just hang off the pelvis.
+            equality = root.find("equality")
+            for chain in pose.leg_chains:
+                ET.SubElement(
+                    equality,
+                    "weld",
+                    {
+                        "name": f"weld_foot_{chain.side}",
+                        "body1": f"rider_foot_{chain.side}",
+                        "body2": f"pedal_{chain.side}",
+                    },
+                )
     build_contact_exclusions(root)
 
     # 8. Actuators & Sensors

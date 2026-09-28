@@ -204,3 +204,47 @@ def test_other_modes_still_compile(mode):
     assert model is not None
     data = mujoco.MjData(model)
     mujoco.mj_forward(model, data)
+
+
+@pytest.fixture(scope="module")
+def articulated_ride_model():
+    from bike_sim.physics.rider import RiderSpecs
+    rider = RiderSpecs(variant="seated", legs="articulated")
+    xml = generate_mujoco_xml(mode="ride", rider=rider, crank_joint=True)
+    return mujoco.MjModel.from_xml_string(xml)
+
+
+def test_articulated_leg_topology(articulated_ride_model):
+    m = articulated_ride_model
+    # 12 bike DOF + 3 rider slides + 6 leg hinges + 2 pedal hinges + crank_spin = 24
+    assert m.nq == 24 and m.nv == 24
+    for jname in ("rider_hip_front", "rider_knee_front", "rider_ankle_front",
+                  "rider_hip_rear", "rider_knee_rear", "rider_ankle_rear",
+                  "pedal_spin_front", "pedal_spin_rear", "crank_spin"):
+        jid = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, jname)
+        assert jid >= 0, jname
+        assert m.jnt_type[jid] == mujoco.mjtJoint.mjJNT_HINGE
+    body = lambda n: mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, n)
+    assert m.body_parentid[body("rider_thigh_front")] == body("rider_pelvis")
+    assert m.body_parentid[body("rider_shank_front")] == body("rider_thigh_front")
+    assert m.body_parentid[body("rider_foot_front")] == body("rider_shank_front")
+    assert m.body_parentid[body("pedal_front")] == body("crank")
+    # leg slide bodies are gone
+    for jname in ("rider_leg_front_z", "rider_leg_rear_z"):
+        assert mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, jname) < 0
+
+
+def test_foot_pedal_welds_present_and_satisfied(articulated_ride_model):
+    m = articulated_ride_model
+    welds = {mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_EQUALITY, i)
+             for i in range(m.neq) if m.eq_type[i] == mujoco.mjtEq.mjEQ_WELD}
+    assert {"weld_foot_front", "weld_foot_rear"} <= welds
+    # built pose is the weld datum: forward at qpos0 must put each foot's weld
+    # site on its pedal site (~zero separation)
+    d = mujoco.MjData(m)
+    mujoco.mj_forward(m, d)
+    for side in ("front", "rear"):
+        sf = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SITE, f"site_foot_{side}")
+        sp = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SITE, f"site_pedal_{side}")
+        sep = float(np.linalg.norm(d.site_xpos[sf] - d.site_xpos[sp]))
+        assert sep < 0.001, f"{side}: {sep * 1000:.2f} mm"

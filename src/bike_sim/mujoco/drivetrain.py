@@ -17,7 +17,7 @@ from bike_sim.geometry.cockpit import (
     pedal_points,
 )
 from bike_sim.physics.mass import BikeMassSpecs
-from bike_sim.mujoco._xml_format import _format_vec, add_geom
+from bike_sim.mujoco._xml_format import _format_vec, add_geom, add_joint, add_site
 
 # How `crank_pedals_mass` (0.85 kg) is split over the crankset. Authored: a 165 mm alloy arm
 # is ~200 g, a platform pedal ~175 g, and the spindle with the chainring makes up the rest.
@@ -120,13 +120,36 @@ def build_bb_and_motor(
             size=f"{CRANK_ARM_RADIUS_M:.3f}", mass=f"{CRANK_ARM_MASS_KG:.3f}", material="mat_metal",
             contype="0", conaffinity="0",
         )
-        add_geom(
-            crankset, f"geom_pedal_{side}", "box",
-            pos=f"{pedal[0]:.6f} {y_pedal:.6f} {pedal[2]:.6f}",
-            size=" ".join(f"{s:.3f}" for s in PEDAL_HALF_SIZE_M),
-            mass=f"{PEDAL_MASS_KG:.3f}", material="mat_metal",
-            contype="0", conaffinity="0",
-        )
+        if crank_joint:
+            # The pedal rides on its own body at the crank arm's spindle end: a passive,
+            # lightly damped hinge for the platform to level on (a real pedal bearing),
+            # and the body a clipped-in foot welds to. The hinge axis is the spindle line,
+            # so anchoring it at the arm end is the same rotation as anchoring it under the
+            # platform. The platform box keeps its place under the foot, 40 mm outboard,
+            # and `site_pedal` marks the platform centre -- the weld-datum probe the foot's
+            # `site_foot` is checked against.
+            pedal_body = ET.SubElement(
+                crankset,
+                "body",
+                {"name": f"pedal_{side}", "pos": f"{pedal[0]:.6f} {y_arm:.6f} {pedal[2]:.6f}"},
+            )
+            add_joint(pedal_body, f"pedal_spin_{side}", "hinge", axis="0 1 0", damping="0.005")
+            add_geom(
+                pedal_body, f"geom_pedal_{side}", "box",
+                pos=f"0 {y_pedal - y_arm:.6f} 0",
+                size=" ".join(f"{s:.3f}" for s in PEDAL_HALF_SIZE_M),
+                mass=f"{PEDAL_MASS_KG:.3f}", material="mat_metal",
+                contype="0", conaffinity="0",
+            )
+            add_site(pedal_body, f"site_pedal_{side}", pos=f"0 {y_pedal - y_arm:.6f} 0", size="0.006")
+        else:
+            add_geom(
+                crankset, f"geom_pedal_{side}", "box",
+                pos=f"{pedal[0]:.6f} {y_pedal:.6f} {pedal[2]:.6f}",
+                size=" ".join(f"{s:.3f}" for s in PEDAL_HALF_SIZE_M),
+                mass=f"{PEDAL_MASS_KG:.3f}", material="mat_metal",
+                contype="0", conaffinity="0",
+            )
 
 
 def build_chain_constraint(root: ET.Element, gear_ratio: float) -> None:

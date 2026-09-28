@@ -22,7 +22,7 @@ from typing import Optional
 import xml.etree.ElementTree as ET
 import numpy as np
 
-from bike_sim.physics.rider import RiderSpecs, SeatedPose
+from bike_sim.physics.rider import SEGMENT_RADII_M, RiderSpecs, SeatedPose
 from bike_sim.mujoco._xml_format import _format_fromto, _format_vec, add_geom, add_joint, add_site
 
 # Accelerometer sites the seated rider's telemetry reads: on the chest, and on the pelvis.
@@ -155,5 +155,78 @@ def build_seated_rider(frame: ET.Element, pose: SeatedPose) -> None:
         pos=pelvis.center_of_mass - pelvis.attach, size="0.008", rgba="0.9 0.6 0.1 1.0",
     )
 
+    if pose.leg_chains:
+        build_articulated_legs(elements["rider_pelvis"], pose)
 
-__all__ = ["build_rider", "build_seated_rider", "SITE_RIDER_TORSO", "SITE_RIDER_PELVIS"]
+
+def build_articulated_legs(pelvis_el: ET.Element, pose: SeatedPose) -> None:
+    """
+    Hangs a thigh-shank-foot hinge chain off the pelvis in each pedal's sagittal plane.
+
+    The articulated variant (`RiderSpecs.legs == "articulated"`) replaces the rigid
+    `rider_leg_*` slide bodies, which `pose.bodies` then no longer carries. The pelvis
+    body's attach point IS the hip centre (`solve_seated_pose` sets ``attach=hip``), so
+    the thigh body sits at the hip offset laterally into its pedal plane, and the shank
+    and foot bodies carry each segment's design-pose offset relative to their parent.
+    Every hinge turns about +y, so the chain flexes in the sagittal plane and
+    ``qpos = 0`` is the design pose (`solve_leg_qpos(chain, 0) == 0`) -- which is what
+    makes the foot-pedal weld datum self-consistent at build time.
+
+    `site_foot_*` marks the pedal-spindle point on the foot capsule's end -- the spot
+    the pedal body's `site_pedal_*` probes for the weld residual.
+
+    Args:
+        pelvis_el: The `rider_pelvis` body element the chains hang off.
+        pose: The solved seated pose carrying `leg_chains`.
+    """
+    r = SEGMENT_RADII_M
+    for c in pose.leg_chains:
+        thigh = ET.SubElement(
+            pelvis_el,
+            "body",
+            {"name": f"rider_thigh_{c.side}", "pos": _format_vec(np.array([0.0, c.lateral_y_m, 0.0]))},
+        )
+        add_joint(thigh, f"rider_hip_{c.side}", "hinge", axis="0 1 0")
+        add_geom(
+            thigh, f"geom_rider_thigh_{c.side}", "capsule",
+            fromto=_format_fromto(np.zeros(3), c.knee - c.hip),
+            size=f"{r['thigh']:.3f}", mass=f"{c.thigh_mass_kg:.6f}",
+            rgba=RIDER_RGBA_VISIBLE, material="mat_rider",
+            contype="0", conaffinity="0",
+        )
+        shank = ET.SubElement(
+            thigh,
+            "body",
+            {"name": f"rider_shank_{c.side}", "pos": _format_vec(c.knee - c.hip)},
+        )
+        add_joint(shank, f"rider_knee_{c.side}", "hinge", axis="0 1 0")
+        add_geom(
+            shank, f"geom_rider_shank_{c.side}", "capsule",
+            fromto=_format_fromto(np.zeros(3), c.ankle - c.knee),
+            size=f"{r['shank']:.3f}", mass=f"{c.shank_mass_kg:.6f}",
+            rgba=RIDER_RGBA_VISIBLE, material="mat_rider",
+            contype="0", conaffinity="0",
+        )
+        foot = ET.SubElement(
+            shank,
+            "body",
+            {"name": f"rider_foot_{c.side}", "pos": _format_vec(c.ankle - c.knee)},
+        )
+        add_joint(foot, f"rider_ankle_{c.side}", "hinge", axis="0 1 0")
+        add_geom(
+            foot, f"geom_rider_foot_{c.side}", "capsule",
+            fromto=_format_fromto(np.zeros(3), c.pedal - c.ankle),
+            size=f"{r['foot']:.3f}", mass=f"{c.foot_mass_kg:.6f}",
+            rgba=RIDER_RGBA_VISIBLE, material="mat_rider",
+            contype="0", conaffinity="0",
+        )
+        add_site(foot, f"site_foot_{c.side}", pos=_format_vec(c.pedal - c.ankle), size="0.006")
+
+
+__all__ = [
+    "build_rider",
+    "build_seated_rider",
+    "build_articulated_legs",
+    "SITE_RIDER_TORSO",
+    "SITE_RIDER_PELVIS",
+]

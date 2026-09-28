@@ -92,6 +92,20 @@ class TestGoldenBaselines(unittest.TestCase):
         root = ET.fromstring(xml_content)
         self.assertEqual(root.tag, "mujoco")
 
+    def test_baseline_bike_ride_pedal_xml(self) -> None:
+        """Ride mode with articulated legs and the pedalled crankset matches baseline."""
+        from bike_sim.physics.rider import RiderSpecs
+        xml_content = generate_mujoco_xml(
+            specs=self.specs,
+            solver=self.solver,
+            mode="ride",
+            rider=RiderSpecs(variant="seated", legs="articulated"),
+            crank_joint=True,
+        )
+        self._assert_text_equal(xml_content, "baseline_bike_ride_pedal.xml")
+        root = ET.fromstring(xml_content)
+        self.assertEqual(root.tag, "mujoco")
+
     def test_baseline_bike_ride_pneumatic_xml(self) -> None:
         """Pneumatic ride XML only disables the two sphere contact geoms."""
         xml_content = generate_mujoco_xml(
@@ -145,6 +159,7 @@ class TestGoldenBaselines(unittest.TestCase):
             "baseline_bike_playground_stand.xml",
             "baseline_bike_ride.xml",
             "baseline_bike_ride_lumped.xml",
+            "baseline_bike_ride_pedal.xml",
         ]:
             path = self.golden_dir / baseline_name
             model = mujoco.MjModel.from_xml_path(str(path))

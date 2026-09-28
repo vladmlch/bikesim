@@ -676,6 +676,8 @@ git commit -m "bike-ride: --legs and --visual-pedalling flags"
 
 - [ ] **Step 5: New check 6 — sustained load ("uphill").** In a pedal-mode flat run, set `sim.resistance.crr = 0.065` (≈5% grade load equivalent) and 20 km/h target; assert the run settles within 5% of target and `wheel_drive_torque_nm` settles ≈ `rider_torque_nm/gear_ratio` (legs delivering the torque, not bookkeeping). This is the literal "pedaling force matters under load" guarantee; a real sloped track is out of scope (terrain has no base grade).
 
+  *Adjudicated in implementation: the shipped check uses 15 km/h, not 20 — at `crr = 0.065` the 20 km/h ask is ~370 W, over the rider's 300 W ceiling, so nothing could settle there; 15 km/h (~280 W) is the fastest cruise the ceiling can hold (see `tools/validate_pedals.py::check_sustained_load`).*
+
 - [ ] **Step 6: Recorder channels.** `pedal_load_front_n`/`pedal_load_rear_n` currently read `rider_forces` (zero under articulated legs). Point them at `sim.leg_drive.pedal_force_*_n` when `leg_drive.active`, else the old path — same columns, honest values.
 
 - [ ] **Step 7: Run the harness**

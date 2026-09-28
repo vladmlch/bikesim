@@ -581,10 +581,11 @@ def check_against_model(quick: bool) -> int:
     failures += re_failures
 
     print("\n-- check 5: the feet stay welded to the pedals ----------------------------")
-    # The welds are deliberately soft (solref "0.005 1"), so the power strokes bow them
-    # to ~1.5 mm on the launch -- slip, not separation. The 2 mm bound is where a foot
-    # would visibly float off the platform. Covers the pedalled traverse and check 4's
-    # freewheel cycle, where the legs ride on impedance alone.
+    # The welds are deliberately soft (solref "0.003 1"), so the power strokes bow them
+    # -- measured worst ~0.77 mm over the pedalled traverse and ~1.68 mm through check
+    # 4's re-engagement kick: slip, not separation. The 2 mm bound is where a foot would
+    # visibly float off the platform. Covers the traverse and check 4's freewheel cycle,
+    # where the legs ride on impedance alone.
     probe_worst_m = max(
         (float(np.max(ped[k])) for k in ("sep_front", "sep_rear") if ped[k].size),
         default=None,

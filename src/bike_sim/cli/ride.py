@@ -414,7 +414,8 @@ def describe_rider(rider: RiderSpecs, specs: BikeSpecs) -> str:
         return f"rider: lumped, {rider.mass_kg:g} kg standing attack pose (rigid in frame)"
     pose = rider.seated_pose(specs)
     return (
-        f"rider: seated, {rider.mass_kg:g} kg, {rider.height_m:.2f} m (inseam {rider.inseam:.3f} m); "
+        f"rider: seated, {rider.mass_kg:g} kg, {rider.height_m:.2f} m (inseam {rider.inseam:.3f} m), "
+        f"{rider.legs} legs; "
         f"saddle {pose.saddle.height_m:.3f} m (top +{pose.saddle.top_z_m * 1000 - 690:.0f} mm vs photo), "
         f"torso {pose.torso_lean_deg:.0f} deg from vertical, knee at BDC {pose.knee_flexion_bdc_deg:.0f} deg; "
         f"static split saddle {100 * rider.saddle_share:.0f} / pedals {100 * rider.pedal_share:.0f} / "
@@ -543,6 +544,8 @@ def _headless(
     extras.update({
         "drive_mode": args.drive_mode,
         "assist": args.assist if args.drive_mode == "pedelec" else "off",
+        "legs": leg_config.legs,
+        "visual_pedalling": leg_config.visual_pedalling,
         "gear_ratio": float(drivetrain.gear_ratio),
         "ripple_depth": float(drivetrain.ripple_depth),
         "tyre_model": tyre.model,

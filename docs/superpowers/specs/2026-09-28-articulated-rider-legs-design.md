@@ -96,7 +96,7 @@ When `crank_joint=True`:
 Per leg, per step:
 
 1. **IK reference**: compute hip/knee/ankle angles for the current pedal position on the crank circle, reusing `physics/rider.py::_two_link_ik` (:422-450) and the `solve_seated_pose` geometry (:526-717 — saddle height LeMond 0.883, hip +60 mm over saddle top, ankle +115 mm over pedal spindle `ANKLE_ABOVE_PEDAL_M`). Solved in each leg's own sagittal plane at pedal y-offset. Hip anchor follows live `rider_pelvis` position.
-2. **Force component**: rider demand splits per leg by crank phase (downstroke leg produces the positive stroke; the existing `ripple_shape` already encodes the phase profile). Desired pedal force → joint torques via leg Jacobian transpose: `τ_leg = Jᵀ · F_pedal`. 3 joints / 2-D sagittal force → underdetermined; resolved by pseudoinverse + null-space impedance toward the IK pose.
+2. **Force component**: rider demand splits per leg by crank phase (downstroke leg produces the positive stroke; the existing `ripple_shape` already encodes the phase profile). Desired pedal force → joint torques via leg Jacobian transpose: `τ_leg = Jᵀ · F_pedal`. *As shipped:* `Jᵀ` is applied directly — a 3-joint leg mapping a 2-D sagittal force is injective in this direction (only torque → force would be underdetermined), so no pseudoinverse is needed; the full joint-space impedance of item 3 covers the drift the null-space term was meant to absorb.
 3. **Impedance component**: low-gain position servo (`kp`, `kd` on each hinge) toward the IK pose — holds pedaling shape, damps null-space drift, absorbs bump-induced relative motion, and returns legs to a clean pose after disturbances.
 4. `qfrc` written via actuators (`ctrl`), not `qfrc_applied` — the leg force physically drives `crank_spin`, and wheel resistance pushes back through `chain_drive`. Uphill = demand rises = pedal force rises = wheel torque rises.
 
@@ -126,9 +126,9 @@ Unchanged concept: on zero/negative demand `chain_drive` disengages (`_disengage
 | `bike-ride --drive-mode pedal` | articulated (physical) | `crank_spin` | legs only |
 | `bike-ride --drive-mode pedelec` | articulated (physical) | `crank_spin` | legs + `crank_drive` assist |
 | `bike-ride --drive-mode motor` (default) | rigid (unchanged physics) | welded | `crank_drive` n/a — wheel motor |
-| `motor` + `--visual-pedalling` | articulated, impedance-only | `crank_spin` driven by `crank_drive` | crank drags legs (coasting passenger) |
+| `motor` + `--visual-pedalling` | articulated, impedance-only | `crank_spin` dragged by `chain_drive` off the driven wheel (`crank_drive` emitted but idles at ctrl 0) | crank drags legs (coasting passenger) |
 
-Note: `--visual-pedalling` forces `crank_joint=True` and `crank_drive` emission at build time even though physics stays in motor mode (the wheel actuator remains the propulsion source; crank_drive spins the cranks purely for leg kinematics).
+Note: `--visual-pedalling` forces `crank_joint=True` and `crank_drive` emission at build time even though physics stays in motor mode (the wheel actuator remains the propulsion source; `crank_drive` stays at ctrl 0 and the `chain_drive` equality is what spins the cranks for the leg kinematics).
 | playground / test-stand / export | unchanged (lumped/rigid) | welded | — |
 
 - New flags: `--legs articulated|rigid` (default articulated in pedal modes, rigid elsewhere); `--visual-pedalling` (motor mode only).

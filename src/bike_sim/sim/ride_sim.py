@@ -129,7 +129,9 @@ class RideSimulation:
                 masses on their slide joints, ``articulated`` hangs hip/knee/ankle chains
                 off the pelvis and welds the feet to the pedals. ``None`` picks
                 ``articulated`` whenever the crankset turns (``pedal``/``pedelec``, or
-                ``visual_pedalling``) and ``rigid`` otherwise.
+                ``visual_pedalling``) and ``rigid`` otherwise. Supersedes ``rider.legs``:
+                a ``legs`` set inside the ``rider=`` spec is overwritten by this kwarg's
+                resolution.
             visual_pedalling: Build the turning crankset and articulated legs in
                 ``motor`` mode too, so the pedals and feet visibly spin while the ideal
                 wheel actuator drives; the legs are dragged, they deliver no torque.

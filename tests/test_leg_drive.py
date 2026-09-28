@@ -87,3 +87,37 @@ def test_rigid_legs_still_pedal():
     for _ in range(14000):
         sim.step()
     assert sim.speed_mps > 3.0  # today's behaviour preserved
+
+
+def test_visual_pedalling_drags_crank_and_legs():
+    """
+    `motor` + `visual_pedalling` is a shipped CLI mode with no `PedalDrivetrain`: the
+    wheel actuator drives, the `chain_drive` equality drags `crank_spin` off the driven
+    wheel, and the leg drive's zero-torque `apply` makes the welded feet follow the
+    pedals. Exercises the `elif self.leg_drive.active:` reset branch and the motor-mode
+    `leg_drive.apply(0.0)` path, which no other test touches.
+    """
+    sim = RideSimulation(
+        track=get_preset("flat"), target_speed_kmh=15.0,
+        drive_mode="motor", visual_pedalling=True,
+    )
+    m, d = sim.model, sim.data
+    assert sim.drivetrain is None  # motor mode: no pedalled drivetrain at all
+    assert sim.leg_drive.active
+    crank_dof = m.jnt_dofadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, "crank_spin")]
+    wheel_dof = m.jnt_dofadr[mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, "rear_wheel_spin")]
+    for _ in range(2000):  # 1 s
+        sim.step()
+    crank_radps = float(d.qvel[crank_dof])
+    wheel_radps = float(d.qvel[wheel_dof])
+    # The chain equality makes the crank run at wheel speed over the gear ratio; a
+    # nonzero crank qvel is the difference between "dragged" and "parked".
+    assert crank_radps > 0.5
+    assert crank_radps == pytest.approx(
+        wheel_radps / sim.drivetrain_specs.gear_ratio, rel=0.02
+    )
+    for side in ("front", "rear"):
+        sf = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SITE, f"site_foot_{side}")
+        sp = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_SITE, f"site_pedal_{side}")
+        sep = float(np.linalg.norm(d.site_xpos[sf] - d.site_xpos[sp]))
+        assert sep < 0.002, f"{side}: foot-pedal separation {sep * 1000:.1f} mm"

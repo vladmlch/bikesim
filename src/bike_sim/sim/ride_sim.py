@@ -39,6 +39,7 @@ from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
 from bike_sim.sim.ride.force_accumulator import ForceAccumulator
 from bike_sim.sim.ride.forces import SuspensionForceApplier
 from bike_sim.sim.ride.leg_drive import LegDrive
+from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.resistance import RollingResistance
 from bike_sim.sim.ride.rider_forces import RiderForceApplier
 from bike_sim.sim.ride.termination import (
@@ -238,6 +239,7 @@ class RideSimulation:
         self.last_force_snapshot: Optional[
             Tuple[float, np.ndarray, np.ndarray, Mapping[str, np.ndarray]]
         ] = None
+        self.last_force_sample: Optional[ForceSample] = None
 
         self.controller = controller if controller is not None else _default_controller(self.specs)
         self.applier = SuspensionForceApplier(
@@ -355,6 +357,7 @@ class RideSimulation:
         self.steps = 0
         self.force_accumulator.clear()
         self.last_force_snapshot = None
+        self.last_force_sample = None
         if self.tyre_applier is None:
             self.contacts = self.contact_query.query(self.model, self.data)
         else:
@@ -552,12 +555,15 @@ class RideSimulation:
         self.crash_detector.check(self.data, self.contacts)
 
         self.data.qfrc_applied[:] = self.force_accumulator.total()
-        qpos = self.data.qpos.copy()
-        qvel = self.data.qvel.copy()
-        qpos.setflags(write=False)
-        qvel.setflags(write=False)
+        self.last_force_sample = ForceSample(
+            float(self.data.time), self.data.qpos, self.data.qvel,
+            self.force_accumulator.components,
+        )
         self.last_force_snapshot = (
-            float(self.data.time), qpos, qvel, self.force_accumulator.components
+            self.last_force_sample.time_s,
+            self.last_force_sample.qpos,
+            self.last_force_sample.qvel,
+            self.last_force_sample.components,
         )
         mujoco.mj_step(self.model, self.data)
         self.steps += 1

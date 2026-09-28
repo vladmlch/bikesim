@@ -1,4 +1,4 @@
-# bike-sim — offline bundle, SLIM (Linux x86_64, Python 3.12)
+# bike-sim — offline bundle, SLIM (Linux x86_64, Python 3.13)
 
 Self-contained package: works without internet access.
 **Slim variant** — reuses packages already installed on the target machine.
@@ -12,7 +12,7 @@ Self-contained package: works without internet access.
 
 `install.sh` checks them up front and fails with a clear message if versions
 don't fit. If the target machine does not have them, use the full bundle
-(`bike-sim-offline-linux-x64.tar.gz`) instead.
+(`bike-sim-offline-py313-linux-x64.tar.gz`) instead.
 
 ## Contents
 
@@ -27,8 +27,8 @@ don't fit. If the target machine does not have them, use the full bundle
 ## Install
 
 ```bash
-tar -xzf bike-sim-offline-linux-x64-slim.tar.gz
-cd bike-sim-offline-linux-x64-slim
+tar -xzf bike-sim-offline-py313-linux-x64-slim.tar.gz
+cd bike-sim-offline-py313-linux-x64-slim
 ./install.sh            # creates ./.venv
 source .venv/bin/activate
 bike-sim --help
@@ -36,7 +36,7 @@ bike-sim --help
 
 Requirements on the target machine:
 
-- Python 3.12 (`python3` or `python3.12` in PATH) + the packages listed above
-- `python3.12-venv` (on Debian/Ubuntu)
+- Python 3.13 (`python3` or `python3.13` in PATH) + the packages listed above
+- `python3.13-venv` (on Debian/Ubuntu)
 - For the interactive MuJoCo viewer (`bike-playground`, `bike-ride`): OpenGL/X11
   system libraries; headless: `MUJOCO_GL=egl`/`osmesa` or non-viewer commands.

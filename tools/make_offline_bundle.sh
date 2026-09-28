@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Build offline bundles (full + slim) for Linux x86_64 / CPython 3.12.
-# Produces bike-sim-offline-linux-x64{,-slim}.tar.gz in the repo root.
+# Build offline bundles (full + slim) for Linux x86_64 / CPython 3.13.
+# Produces bike-sim-offline-py313-linux-x64{,-slim}.tar.gz in the repo root.
 # Run on any machine with internet access; the bundles then install with --no-index.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PYVER=3.12
+PYVER=3.13
 PLATFORMS=(
   manylinux_2_17_x86_64 manylinux2014_x86_64 manylinux_2_24_x86_64
   manylinux_2_26_x86_64 manylinux_2_27_x86_64 manylinux_2_28_x86_64
@@ -50,7 +50,7 @@ copy_project() {
 
 # ---------- full bundle ----------
 echo "==> assembling full bundle"
-FULL=bike-sim-offline-linux-x64
+FULL="bike-sim-offline-py${PYVER/./}-linux-x64"
 rm -rf "$FULL" "$FULL.tar.gz"
 mkdir -p "$FULL"
 copy_project "$FULL"
@@ -78,7 +78,7 @@ for ln in lines:
 open(dst, "w").write("\n".join(out) + "\n")
 EOF
 
-SLIM=bike-sim-offline-linux-x64-slim
+SLIM="$FULL-slim"
 rm -rf "$SLIM" "$SLIM.tar.gz"
 mkdir -p "$SLIM/wheelhouse"
 copy_project "$SLIM"

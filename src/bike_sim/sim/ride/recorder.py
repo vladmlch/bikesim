@@ -109,6 +109,7 @@ CHANNELS: Sequence[str] = (
     "assist_cutoff_active",
     "brake_source",
     "drive_traction_limited",
+    "gear_teeth",
 )
 
 # Channels the seated rider fills; every other rider variant records zeros here.
@@ -234,7 +235,7 @@ class RideRecorder:
         drive_torque = float(sim.wheel_drive_torque_nm)
         command = sim.pedal_command
         if command is None:
-            pedal_channels = (np.nan,) * 10
+            pedal_channels = (np.nan,) * 11
         else:
             pedal_channels = (
                 float(command.phase_rad),
@@ -247,6 +248,7 @@ class RideRecorder:
                 1.0 if command.cutoff_active else 0.0,
                 1.0 if sim.brake_source_cruise else 0.0,
                 1.0 if sim.drivetrain.traction_limited else 0.0,
+                float(command.gear_teeth),
             )
         stroke_mm = sim.shock_stroke_mm
         rider = sim.rider_forces

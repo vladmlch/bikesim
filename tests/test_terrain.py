@@ -306,7 +306,8 @@ def test_touching_obstacles_are_allowed():
 
 @pytest.mark.parametrize("name", sorted(PRESETS))
 def test_every_preset_validates_and_fits_the_field(name):
-    assert_track_fits(get_preset(name))
+    track = get_preset(name)
+    assert_track_fits(track, HeightFieldSpec.for_track(track))
 
 
 def test_preset_registry_is_complete():

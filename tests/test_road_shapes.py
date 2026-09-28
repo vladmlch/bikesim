@@ -23,6 +23,7 @@ from bike_sim.terrain.obstacles import (
     RoadRoughness,
     SlopedPothole,
     SquareEdge,
+    SteppedClimb,
     TrapezoidBump,
 )
 from bike_sim.terrain.profile import TrackSpec, build_profile
@@ -140,6 +141,45 @@ def test_bowl_pothole_is_a_raised_cosine_dip():
 def test_type_groups_cover_the_road_shapes():
     assert set(POTHOLE_TYPES) == {Pothole, SlopedPothole, BowlPothole}
     assert set(BUMP_TYPES) == {Bump, TrapezoidBump}
+
+
+def test_stepped_climb_endpoints_and_monotonicity():
+    climb = SteppedClimb(
+        start_m=0.0,
+        steps=((5.0, 15.0), (10.0, 15.0), (15.0, 15.0), (20.0, 15.0), (25.0, 15.0)),
+        transition_m=3.0,
+    )
+    assert climb.length_m == pytest.approx(90.0)
+    s = _local(climb, n=9001)
+    z = climb.elevation(s)
+
+    assert z[0] == pytest.approx(0.0, abs=1e-12)
+    assert z[-1] == pytest.approx(climb.datum_shift_m, abs=1e-9)
+    assert climb.datum_shift_m > 10.0
+    # Elevation is monotonically non-decreasing
+    assert np.all(np.diff(z) >= -1e-12)
+
+    # Derivative / slope is continuous and non-negative
+    slope = np.gradient(z, s)
+    assert np.all(slope >= -1e-6)
+    assert slope[0] == pytest.approx(0.0, abs=1e-3)
+
+
+def test_stepped_climb_in_build_profile():
+    climb = SteppedClimb(
+        start_m=10.0,
+        steps=((5.0, 10.0), (10.0, 10.0)),
+        transition_m=2.0,
+    )
+    track = TrackSpec(name="climb_profile_test", length_m=50.0, obstacles=[climb])
+    track.validate()
+    x = np.arange(0.0, 50.0, 0.01)
+    z = build_profile(track, x)
+
+    # Flat before climb
+    assert np.allclose(z[x < 10.0], 0.0)
+    # Flat runout after climb at datum_shift_m
+    assert np.allclose(z[x >= 10.0 + climb.length_m], climb.datum_shift_m)
 
 
 # --------------------------------------------------------------------------------------

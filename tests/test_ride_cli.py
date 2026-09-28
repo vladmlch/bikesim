@@ -30,7 +30,14 @@ from bike_sim.cli.ride import (
 )
 from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.ride.recorder import CHANNELS, read_csv
-from bike_sim.terrain import RoadRoughness, SquareEdge, TrackSpec, get_preset, load_track
+from bike_sim.terrain import (
+    RoadRoughness,
+    SquareEdge,
+    TrackSpec,
+    available_presets,
+    get_preset,
+    load_track,
+)
 
 SHORT_ROAD = """
 name = "short_road"
@@ -91,6 +98,19 @@ def test_resolve_track_file_with_overrides(short_road):
     longer = resolve_track(str(short_road), length_m=60.0, seed=3)
     assert longer.length_m == 60.0
     assert longer != track
+
+
+def test_climb_steps_preset_defaults():
+    assert "climb_steps" in available_presets()
+    track = resolve_track("climb_steps")
+    assert track.name == "climb_steps"
+    assert track.surface == "hardpack"
+
+    args = parse_args(["--track", "climb_steps"])
+    assert args.speed == 16.0
+    assert args.tyre_model == "pneumatic"
+    assert args.drive_mode == "pedelec"
+    assert args.assist == "turbo"
 
 
 @pytest.mark.parametrize(

@@ -68,6 +68,7 @@ class CrankCommand(NamedTuple):
     cutoff_active: bool
     rider_limit: str
     brake_demand: float
+    gear_teeth: int = 14
 
 
 class PedalDrivetrain:
@@ -136,12 +137,40 @@ class PedalDrivetrain:
         self.crank_qpos0 = float(model.qpos0[self.crank_qposadr])
         self.wheel_qpos0 = float(model.qpos0[self.wheel_qposadr])
 
+        self.current_cog = int(self.specs.cog_teeth)
+        self.shift_cooldown_timer_s = 0.0
+        self.shift_cut_timer_s = 0.0
+        model.eq_data[self.eq_id, 1] = 1.0 / self.current_gear_ratio
+
         self.start_phase_rad = radians(self.specs.crank_phase_deg)
         self.engaged = True
         self.hold_phase_rad = self.start_phase_rad
         self.assist_torque_nm = 0.0
         self.traction_limited = False
-        self.command = _idle_command(self.start_phase_rad, self.nominal_support_factor)
+        self.command = _idle_command(
+            self.start_phase_rad, self.nominal_support_factor, gear_teeth=self.current_cog
+        )
+
+    @property
+    def current_gear_ratio(self) -> float:
+        """Active gear ratio: wheel revolutions per crank revolution."""
+        return float(self.specs.chainring_teeth) / float(self.current_cog)
+
+    def _shift_to(self, model: mujoco.MjModel, data: mujoco.MjData, new_cog: int) -> None:
+        """
+        Shifts the derailleur to a new cog on the cassette.
+
+        Updates the active cog, resets shift cooldown and cut timers, updates the MuJoCo
+        joint equality ratio, re-datums the constraint to eliminate position error, and
+        rescales crank velocity to match the driven wheel through the new ratio.
+        """
+        self.current_cog = int(new_cog)
+        self.shift_cooldown_timer_s = self.specs.shift_cooldown_s
+        self.shift_cut_timer_s = self.specs.shift_cut_duration_s
+        new_ratio = self.current_gear_ratio
+        model.eq_data[self.eq_id, 1] = 1.0 / new_ratio
+        data.qvel[self.crank_dofadr] = float(data.qvel[self.wheel_dofadr]) / new_ratio
+        self._redatum(model, data)
 
     # --- assist selection ------------------------------------------------------------
 
@@ -218,15 +247,37 @@ class PedalDrivetrain:
             The command, also stored on `self.command`.
         """
         dt = float(model.opt.timestep)
+        if self.shift_cooldown_timer_s > 0.0:
+            self.shift_cooldown_timer_s = max(0.0, self.shift_cooldown_timer_s - dt)
+        if self.shift_cut_timer_s > 0.0:
+            self.shift_cut_timer_s = max(0.0, self.shift_cut_timer_s - dt)
+
         phase = float(data.qpos[self.crank_qposadr])
         crank_radps = float(data.qvel[self.crank_dofadr])
         cadence_rpm = crank_radps * RPM_PER_RADPS
         pedalling = wheel_demand_nm > 0.0 and rear_in_contact
 
+        if self.specs.auto_shift and self.shift_cooldown_timer_s <= 0.0:
+            cogs = sorted(self.specs.cassette)
+            # Downshift if cadence is too low and positive drive torque is demanded
+            if pedalling and cadence_rpm < self.specs.target_cadence_min_rpm:
+                larger_cogs = [c for c in cogs if c > self.current_cog]
+                if larger_cogs:
+                    self._shift_to(model, data, min(larger_cogs))
+                    crank_radps = float(data.qvel[self.crank_dofadr])
+                    cadence_rpm = crank_radps * RPM_PER_RADPS
+            # Upshift if cadence is too high
+            elif cadence_rpm > self.specs.target_cadence_max_rpm:
+                smaller_cogs = [c for c in cogs if c < self.current_cog]
+                if smaller_cogs:
+                    self._shift_to(model, data, max(smaller_cogs))
+                    crank_radps = float(data.qvel[self.crank_dofadr])
+                    cadence_rpm = crank_radps * RPM_PER_RADPS
+
         if pedalling:
             self._engage(model, data)
             mean_nm, limit = limited_rider_torque(
-                wheel_demand_nm * self.specs.gear_ratio, crank_radps, self.specs
+                wheel_demand_nm * self.current_gear_ratio, crank_radps, self.specs
             )
             rider_nm = mean_nm * ripple_shape(phase, self.specs.ripple_depth)
             taper = cutoff_factor(speed_mps, self.specs)
@@ -235,11 +286,17 @@ class PedalDrivetrain:
             self.assist_torque_nm = first_order_step(
                 self.assist_torque_nm, target, dt, self.specs.assist_response_s
             )
+            if self.shift_cut_timer_s > 0.0:
+                shift_attenuation = 0.30
+                rider_nm *= shift_attenuation
+                delivered_assist = self.assist_torque_nm * shift_attenuation
+            else:
+                delivered_assist = self.assist_torque_nm
             # With articulated legs the rider's torque enters the crank through the legs
             # and the foot-pedal welds; the actuator then carries the motor alone. The
             # command still reports `rider_torque_nm` -- the rider is working exactly as
             # hard, the torque just no longer travels this path.
-            total = self.assist_torque_nm + (0.0 if self.legs_drive else rider_nm)
+            total = delivered_assist + (0.0 if self.legs_drive else rider_nm)
             brake_demand = 0.0
         else:
             self._disengage(data, phase)
@@ -251,6 +308,7 @@ class PedalDrivetrain:
             self.assist_torque_nm = first_order_step(
                 self.assist_torque_nm, 0.0, dt, self.specs.assist_response_s
             )
+            delivered_assist = self.assist_torque_nm
             total = self.assist_torque_nm + self._hold_torque(phase, crank_radps)
             brake_demand = _cruise_brake_demand(wheel_demand_nm)
 
@@ -266,12 +324,13 @@ class PedalDrivetrain:
             # Reported at the crank, and only while the crank is connected to the road. A
             # freewheeling crank spun by its own hold torque is not the motor doing work,
             # and reporting it as such is how a solver blow-up reads as "motor -28 kW".
-            motor_power_w=self.assist_torque_nm * crank_radps if self.engaged else 0.0,
+            motor_power_w=delivered_assist * crank_radps if self.engaged else 0.0,
             support_factor=support,
             freewheel=not self.engaged,
             cutoff_active=self.nominal_support_factor > 0.0 and taper < 1.0,
             rider_limit=limit,
             brake_demand=brake_demand,
+            gear_teeth=self.current_cog,
         )
         return self.command
 
@@ -298,6 +357,10 @@ class PedalDrivetrain:
             model: Compiled model; `eq_data` carries the chain datum.
             data: Simulation state, written at the crank coordinate.
         """
+        self.current_cog = int(self.specs.cog_teeth)
+        self.shift_cooldown_timer_s = 0.0
+        self.shift_cut_timer_s = 0.0
+        model.eq_data[self.eq_id, 1] = 1.0 / self.current_gear_ratio
         data.qpos[self.crank_qposadr] = self.start_phase_rad
         data.qvel[self.crank_dofadr] = 0.0
         data.ctrl[self.ctrl_adr] = 0.0
@@ -307,7 +370,9 @@ class PedalDrivetrain:
         self.traction_limited = False
         self._redatum(model, data)
         _set_equality(data, self.eq_id, True)
-        self.command = _idle_command(self.start_phase_rad, self.nominal_support_factor)
+        self.command = _idle_command(
+            self.start_phase_rad, self.nominal_support_factor, gear_teeth=self.current_cog
+        )
 
     # --- internals -------------------------------------------------------------------
 
@@ -327,7 +392,7 @@ class PedalDrivetrain:
         """
         if self.engaged:
             return
-        data.qvel[self.crank_dofadr] = float(data.qvel[self.wheel_dofadr]) / self.specs.gear_ratio
+        data.qvel[self.crank_dofadr] = float(data.qvel[self.wheel_dofadr]) / self.current_gear_ratio
         self._redatum(model, data)
         _set_equality(data, self.eq_id, True)
         self.engaged = True
@@ -342,7 +407,7 @@ class PedalDrivetrain:
         """
         crank = float(data.qpos[self.crank_qposadr]) - self.crank_qpos0
         wheel = float(data.qpos[self.wheel_qposadr]) - self.wheel_qpos0
-        model.eq_data[self.eq_id, 0] = crank - wheel / self.specs.gear_ratio
+        model.eq_data[self.eq_id, 0] = crank - wheel / self.current_gear_ratio
 
     def chain_residual(self, model: mujoco.MjModel, data: mujoco.MjData) -> float:
         """
@@ -361,7 +426,7 @@ class PedalDrivetrain:
         """
         crank = float(data.qpos[self.crank_qposadr]) - self.crank_qpos0
         wheel = float(data.qpos[self.wheel_qposadr]) - self.wheel_qpos0
-        return crank - wheel / self.specs.gear_ratio - float(model.eq_data[self.eq_id, 0])
+        return crank - wheel / self.current_gear_ratio - float(model.eq_data[self.eq_id, 0])
 
     def _disengage(self, data: mujoco.MjData, phase_rad: float) -> None:
         """
@@ -409,7 +474,9 @@ def _cruise_brake_demand(wheel_demand_nm: float) -> float:
     return min(1.0, -wheel_demand_nm / (2.0 * BRAKE_TORQUE_CEILING_NM))
 
 
-def _idle_command(phase_rad: float, support_factor: float) -> CrankCommand:
+def _idle_command(
+    phase_rad: float, support_factor: float, gear_teeth: int = 14
+) -> CrankCommand:
     """A zero command at a given phase, for construction and reset."""
     return CrankCommand(
         crank_torque_nm=0.0,
@@ -424,6 +491,7 @@ def _idle_command(phase_rad: float, support_factor: float) -> CrankCommand:
         cutoff_active=False,
         rider_limit="none",
         brake_demand=0.0,
+        gear_teeth=gear_teeth,
     )
 
 

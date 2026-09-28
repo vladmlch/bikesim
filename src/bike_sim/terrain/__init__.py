@@ -22,6 +22,7 @@ from bike_sim.terrain.obstacles import (
     Roots,
     SlopedPothole,
     SquareEdge,
+    SteppedClimb,
     TrapezoidBump,
     Washboard,
 )
@@ -47,6 +48,7 @@ from bike_sim.terrain.presets import (
     DEFAULT_ROAD_PRESET,
     PRESETS,
     available_presets,
+    climb_steps,
     get_preset,
 )
 from bike_sim.terrain.road import (
@@ -85,6 +87,7 @@ __all__ = [
     "SlopedPothole",
     "BowlPothole",
     "RoadRoughness",
+    "SteppedClimb",
     "POTHOLE_TYPES",
     "BUMP_TYPES",
     "wheel_centre_path",
@@ -107,6 +110,7 @@ __all__ = [
     "DEFAULT_ROAD_PRESET",
     "available_presets",
     "get_preset",
+    "climb_steps",
     "RoadGeneratorSpec",
     "ROAD_LEVEL_SPECS",
     "generate_road",

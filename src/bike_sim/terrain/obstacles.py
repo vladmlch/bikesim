@@ -455,6 +455,78 @@ class RoadRoughness(RockGarden):
         return False
 
 
+@dataclass
+class SteppedClimb(Obstacle):
+    """
+    A continuous stepped climb with progressive grades and smoothed transitions.
+
+    Each step is a tuple of (grade_pct, length_m). Between steps (and entering the first step),
+    a transition zone of `transition_m` smoothly blends the slope using cubic Hermite interpolation.
+    """
+
+    steps: Tuple[Tuple[float, float], ...] = (
+        (5.0, 15.0),
+        (10.0, 15.0),
+        (15.0, 15.0),
+        (20.0, 15.0),
+        (25.0, 15.0),
+    )
+    transition_m: float = 3.0
+
+    @property
+    def length_m(self) -> float:
+        if not self.steps:
+            return 0.0
+        return float(sum(length for _, length in self.steps) + len(self.steps) * self.transition_m)
+
+    @property
+    def datum_shift_m(self) -> float:
+        total = 0.0
+        prev_g = 0.0
+        for grade_pct, length in self.steps:
+            g = grade_pct / 100.0
+            total += self.transition_m * (prev_g + g) * 0.5 + length * g
+            prev_g = g
+        return float(total)
+
+    def elevation(self, s: np.ndarray) -> np.ndarray:
+        s = np.asarray(s, dtype=float)
+        z = np.zeros_like(s)
+        if not self.steps or self.length_m <= 0.0:
+            return z
+
+        curr_s = 0.0
+        curr_z = 0.0
+        prev_g = 0.0
+        t_len = self.transition_m
+
+        for grade_pct, step_len in self.steps:
+            g = grade_pct / 100.0
+            # 1. Transition segment: from prev_g to g over t_len
+            if t_len > 0.0:
+                t_mask = (s >= curr_s) & (s < curr_s + t_len)
+                if np.any(t_mask):
+                    u = s[t_mask] - curr_s
+                    t = u / t_len
+                    z[t_mask] = curr_z + t_len * (prev_g * t + (g - prev_g) * (t**3 - 0.5 * t**4))
+                curr_s += t_len
+                curr_z += t_len * (prev_g + g) * 0.5
+
+            # 2. Constant grade segment: g over step_len
+            if step_len > 0.0:
+                c_mask = (s >= curr_s) & (s < curr_s + step_len)
+                if np.any(c_mask):
+                    u = s[c_mask] - curr_s
+                    z[c_mask] = curr_z + g * u
+                curr_s += step_len
+                curr_z += g * step_len
+
+            prev_g = g
+
+        z[s >= self.length_m] = curr_z
+        return z
+
+
 POTHOLE_TYPES = (Pothole, SlopedPothole, BowlPothole)
 """Obstacle classes the summary and preview treat as potholes."""
 
@@ -477,6 +549,7 @@ __all__ = [
     "SlopedPothole",
     "BowlPothole",
     "RoadRoughness",
+    "SteppedClimb",
     "POTHOLE_TYPES",
     "BUMP_TYPES",
 ]

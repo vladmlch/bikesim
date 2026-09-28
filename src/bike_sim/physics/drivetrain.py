@@ -53,6 +53,9 @@ DRIVE_MODES: Tuple[str, ...] = ("motor", "pedal", "pedelec")
 # cranks level while freewheeling.
 CRANK_TORQUE_CEILING_NM = 180.0
 
+# 12-speed wide-range cassette (e.g. 10-51T Shimano/SRAM standard)
+CASSETTE_12S_TEETH: Tuple[int, ...] = (10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51)
+
 RPM_PER_RADPS = 60.0 / (2.0 * pi)
 KMH_PER_MPS = 3.6
 
@@ -60,11 +63,16 @@ KMH_PER_MPS = 3.6
 @dataclass(frozen=True)
 class DrivetrainSpecs:
     """
-    Gearing, rider limits and assist limits of the pedalled drivetrain.
+    Gearing, rider limits, cassette and assist limits of the pedalled drivetrain.
 
     Attributes:
-        chainring_teeth / cog_teeth: The single gear. 32x14 is 2.286, which puts 25 km/h at
+        chainring_teeth / cog_teeth: The initial/active gear. 32x14 is 2.286, which puts 25 km/h at
             82 rpm on the 352 mm rear wheel -- the middle of a normal cadence.
+        cassette: Available cog teeth counts for multi-speed cassette shifting.
+        auto_shift: Whether adaptive cadence auto-shifting is active.
+        target_cadence_min_rpm / target_cadence_max_rpm: Preferred rider cadence band.
+        shift_cooldown_s: Minimum duration between consecutive shifts.
+        shift_cut_duration_s: Duration of shift torque reduction during derailment.
         ripple_depth: Depth of the |cos| pulse, in [0, 1]. 0 is a smooth crank.
         rider_torque_ceiling_nm: Sustained mean crank torque a rider holds. 60 N.m is a
             strong rider standing on it; the pulse peaks 1.48x higher.
@@ -82,6 +90,12 @@ class DrivetrainSpecs:
 
     chainring_teeth: int = 32
     cog_teeth: int = 14
+    cassette: Tuple[int, ...] = CASSETTE_12S_TEETH
+    auto_shift: bool = True
+    target_cadence_min_rpm: float = 65.0
+    target_cadence_max_rpm: float = 85.0
+    shift_cooldown_s: float = 0.40
+    shift_cut_duration_s: float = 0.20
     ripple_depth: float = 0.85
     rider_torque_ceiling_nm: float = 60.0
     rider_power_ceiling_w: float = 300.0
@@ -104,6 +118,17 @@ class DrivetrainSpecs:
                 f"implausible gearing {self.chainring_teeth}x{self.cog_teeth}; "
                 f"a chainring has at least 20 teeth and a cog at least 9"
             )
+        if self.auto_shift:
+            if not self.cassette:
+                raise ValueError("cassette cannot be empty when auto_shift is True")
+            if any(t < 9 for t in self.cassette):
+                raise ValueError(f"all cassette cogs must have at least 9 teeth, got {self.cassette}")
+            if self.target_cadence_min_rpm <= 0 or self.target_cadence_max_rpm <= self.target_cadence_min_rpm:
+                raise ValueError(
+                    f"invalid cadence band [{self.target_cadence_min_rpm}, {self.target_cadence_max_rpm}]"
+                )
+            if self.shift_cooldown_s < 0.0 or self.shift_cut_duration_s < 0.0:
+                raise ValueError("shift timings must be non-negative")
         if not 0.0 <= self.ripple_depth <= 1.0:
             raise ValueError(f"ripple_depth must be in [0, 1], got {self.ripple_depth}")
         for name in (
@@ -292,6 +317,8 @@ __all__ = [
     "ASSIST_ORDER",
     "DRIVE_MODES",
     "CRANK_TORQUE_CEILING_NM",
+    "CASSETTE_12S_TEETH",
+    "RPM_PER_RADPS",
     "DrivetrainSpecs",
     "assist_target_torque",
     "cutoff_factor",

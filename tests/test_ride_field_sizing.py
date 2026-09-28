@@ -24,9 +24,12 @@ from bike_sim.terrain import (
     FIELD,
     HeightFieldSpec,
     RoadGeneratorSpec,
+    SquareEdge,
+    TrackSpec,
     build_field_data,
     build_road,
     get_preset,
+    profile_extent,
 )
 from bike_sim.terrain.heightfield import FIELD_LENGTH_STEP_M, FIELD_RUNOUT_MARGIN_M
 
@@ -78,6 +81,20 @@ def test_field_data_for_a_long_track_has_the_new_width():
 
     assert data.shape == (field.nrow, field.ncol)
     assert np.all((data >= 0.0) & (data <= 1.0))
+
+
+def test_heightfield_sizes_vertical_extent_for_climb():
+    # A track that climbs 10 metres
+    track = TrackSpec(
+        name="climb_test",
+        length_m=100.0,
+        obstacles=[SquareEdge(start_m=10.0, height_m=10.0, ledge_length_m=80.0)],
+    )
+    spec = HeightFieldSpec.for_track(track)
+    assert not spec.is_default
+    extent = profile_extent(track)
+    assert spec.fits(extent)
+    assert spec.max_profile_m >= 10.0
 
 
 # --------------------------------------------------------------------------------------

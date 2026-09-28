@@ -83,9 +83,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
                         help="override the generator seed of a road preset or track file")
     parser.add_argument("--length", type=float, default=None, metavar="M",
                         help="override the track length in metres of a road preset or track file")
-    parser.add_argument("--speed", type=float, default=DEFAULT_TARGET_SPEED_KMH, metavar="KMH",
+    parser.add_argument("--speed", type=float, default=None, metavar="KMH",
                         help=f"cruise target in km/h, {MIN_TARGET_SPEED_KMH:.0f}-{MAX_TARGET_SPEED_KMH:.0f} "
-                             f"(default {DEFAULT_TARGET_SPEED_KMH:.0f})")
+                             f"(default {DEFAULT_TARGET_SPEED_KMH:.0f}, or 16 for climb_steps)")
     parser.add_argument("--headless", action="store_true",
                         help="run without a viewer and write telemetry, summary and plots")
     parser.add_argument("--sag", type=float, default=None, metavar="PCT",
@@ -119,8 +119,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--list-tracks", action="store_true", help="list the built-in presets and exit")
     parser.add_argument("--no-plots", action="store_true", help="headless: skip the PNG figures")
     parser.add_argument(
-        "--tyre-model", choices=TYRE_MODELS, default=DEFAULT_TYRE_MODEL,
-        help=f"wheel contact model: sphere or pneumatic (default {DEFAULT_TYRE_MODEL})",
+        "--tyre-model", choices=TYRE_MODELS, default=None,
+        help=f"wheel contact model: sphere or pneumatic (default {DEFAULT_TYRE_MODEL}, or pneumatic for climb_steps)",
     )
     parser.add_argument(
         "--tyre-tier", choices=TYRE_TIERS, default=DEFAULT_TYRE_TIER,
@@ -131,13 +131,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         metavar="FRONT/REAR", help="front/rear tyre pressure in bar (default 1.5/1.7)",
     )
     parser.add_argument(
-        "--drive-mode", choices=DRIVE_MODES, default="motor",
+        "--drive-mode", choices=DRIVE_MODES, default=None,
         help="propulsion: motor (ideal wheel torque, the baseline), pedal (rider cranks), "
-             "pedelec (rider plus mid-drive) (default motor)",
+             "pedelec (rider plus mid-drive) (default motor, or pedelec for climb_steps)",
     )
     parser.add_argument(
-        "--assist", choices=ASSIST_ORDER, default="tour",
-        help="mid-drive assist level for --drive-mode pedelec (default tour); E cycles it in the viewer",
+        "--assist", choices=ASSIST_ORDER, default=None,
+        help="mid-drive assist level for --drive-mode pedelec (default tour, or turbo for climb_steps); E cycles it in the viewer",
     )
     parser.add_argument(
         "--gearing", type=_parse_gearing, default=None, metavar="CHAINRINGxCOG",
@@ -163,7 +163,26 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--surface", choices=tuple(SURFACES), default=None,
         help="override the track surface friction preset (default: track surface)",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.track == "climb_steps":
+        if args.speed is None:
+            args.speed = 16.0
+        if args.tyre_model is None:
+            args.tyre_model = "pneumatic"
+        if args.drive_mode is None:
+            args.drive_mode = "pedelec"
+        if args.assist is None:
+            args.assist = "turbo"
+    else:
+        if args.speed is None:
+            args.speed = DEFAULT_TARGET_SPEED_KMH
+        if args.tyre_model is None:
+            args.tyre_model = DEFAULT_TYRE_MODEL
+        if args.drive_mode is None:
+            args.drive_mode = "motor"
+        if args.assist is None:
+            args.assist = "tour"
+    return args
 
 
 def _parse_tyre_pressures(value: str) -> tuple[float, float]:

@@ -22,7 +22,7 @@ that fits the default field still uses the default field byte for byte.
 
 from dataclasses import dataclass, replace
 import math
-from typing import Tuple
+from typing import Optional, Tuple
 import numpy as np
 
 from bike_sim.terrain.profile import TrackSpec, build_profile, profile_extent
@@ -210,8 +210,22 @@ class HeightFieldSpec:
 
     @classmethod
     def for_track(cls, track: TrackSpec) -> "HeightFieldSpec":
-        """Chooses the field for a track; see :meth:`for_track_length`."""
-        return cls.for_track_length(track.length_m)
+        """
+        Chooses the field for a track, sizing length and vertical extent as needed.
+
+        A track whose length and profile fit the default field gets the default field
+        unchanged. If the track is longer or its elevation changes exceed the default
+        vertical envelope, length and/or vertical envelope are resized with margins.
+        """
+        spec = cls.for_track_length(track.length_m)
+        extent = profile_extent(track, resolution_m=spec.resolution_m)
+        if extent[0] < spec.min_profile_m or extent[1] > spec.max_profile_m:
+            margin_below = 1.0
+            margin_above = 1.0
+            datum_z_m = max(spec.datum_z_m, math.ceil((-extent[0] + margin_below) * 10) / 10)
+            elevation_m = math.ceil((datum_z_m + extent[1] + margin_above) * 10) / 10
+            return replace(spec, datum_z_m=datum_z_m, elevation_m=elevation_m)
+        return spec
 
     @property
     def is_default(self) -> bool:
@@ -222,7 +236,7 @@ class HeightFieldSpec:
 FIELD = HeightFieldSpec()
 
 
-def build_field_data(track: TrackSpec, spec: HeightFieldSpec = FIELD) -> np.ndarray:
+def build_field_data(track: TrackSpec, spec: Optional[HeightFieldSpec] = None) -> np.ndarray:
     """
     Rasterizes a track onto the heightfield grid.
 
@@ -231,12 +245,14 @@ def build_field_data(track: TrackSpec, spec: HeightFieldSpec = FIELD) -> np.ndar
 
     Args:
         track: Track layout to rasterize.
-        spec: Field geometry to rasterize onto.
+        spec: Field geometry to rasterize onto. Defaults to ``HeightFieldSpec.for_track(track)``.
 
     Returns:
         Array of shape ``(nrow, ncol)`` with values in [0, 1], ready to be flattened into
         ``model.hfield_data``.
     """
+    if spec is None:
+        spec = HeightFieldSpec.for_track(track)
     profile = build_profile(track, spec.track_x())
     return spec.normalize(profile)
 

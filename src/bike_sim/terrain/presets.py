@@ -25,6 +25,7 @@ from bike_sim.terrain.obstacles import (
     RockGarden,
     Roots,
     SquareEdge,
+    SteppedClimb,
     Washboard,
 )
 from bike_sim.terrain.profile import TrackSpec
@@ -146,11 +147,41 @@ def washboard_only() -> TrackSpec:
     )
 
 
+def climb_steps() -> TrackSpec:
+    """
+    Stepped climb with progressive grades (5% to 25%) on hardpack surface.
+
+    Progressive 15 m steps separated by 3 m smooth transitions. Designed for
+    investigating traction limits, multi-speed cassette shifting, and
+    cadence-synchronized wheelspin.
+    """
+    return TrackSpec(
+        name="climb_steps",
+        length_m=115.0,
+        surface="hardpack",
+        description="Stepped climb: 5%, 10%, 15%, 20%, 25% grades with smooth transitions.",
+        obstacles=[
+            SteppedClimb(
+                start_m=15.0,
+                steps=(
+                    (5.0, 15.0),
+                    (10.0, 15.0),
+                    (15.0, 15.0),
+                    (20.0, 15.0),
+                    (25.0, 15.0),
+                ),
+                transition_m=3.0,
+            ),
+        ],
+    )
+
+
 PRESETS: Dict[str, Callable[[], TrackSpec]] = {
     "enduro_aggressive": enduro_aggressive,
     "flat": flat,
     "single_edge": single_edge,
     "washboard_only": washboard_only,
+    "climb_steps": climb_steps,
     "road_smooth": road_smooth,
     "road_worn": road_worn,
     "road_broken": road_broken,
@@ -195,4 +226,5 @@ __all__ = [
     "flat",
     "single_edge",
     "washboard_only",
+    "climb_steps",
 ]

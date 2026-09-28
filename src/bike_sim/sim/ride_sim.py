@@ -13,7 +13,7 @@ is a flat road, and every contact computed against it is wrong.
 """
 
 import dataclasses
-from math import sin
+from math import isfinite, sin
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Union
 
 import mujoco
@@ -29,6 +29,7 @@ from bike_sim.physics.damper import BikeSuspensionSystem
 from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
 from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
+from bike_sim.physics.suspension_config import build_suspension_components
 from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.controllers import SuspensionController
 from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
@@ -178,6 +179,8 @@ class RideSimulation:
         assert_track_fits(self.track, self.field)
 
         self.specs = specs if specs is not None else BikeSpecs()
+        if controller is not None:
+            _validate_controller_geometry(self.specs, controller)
         if (
             coil_shock is not None
             and abs(coil_shock.specs.stroke_mm - self.specs.shock_stroke) > 1e-6
@@ -186,6 +189,19 @@ class RideSimulation:
                 f"CoilShock stroke_mm {coil_shock.specs.stroke_mm} differs from "
                 f"BikeSpecs shock_stroke {self.specs.shock_stroke}"
             )
+        if self.physics_config.physics_mode == "physical":
+            default_controller, default_coil = build_suspension_components(self.specs)
+        else:
+            default_controller = _default_controller(self.specs, legacy_behavior=True)
+            default_coil = CoilShock(
+                CoilShockSpecs(
+                    rate_n_m=self.specs.shock_stiffness,
+                    stroke_mm=self.specs.shock_stroke,
+                ),
+                legacy_behavior=True,
+            )
+        resolved_controller = controller if controller is not None else default_controller
+        resolved_coil = coil_shock if coil_shock is not None else default_coil
         self.tyre_config = tyre if tyre is not None else TyreConfig()
         if (
             self.physics_config.physics_mode == "physical"
@@ -254,16 +270,7 @@ class RideSimulation:
         self.last_force_sample: Optional[ForceSample] = None
         self.last_constraint_snapshot: Optional[ConstraintForceSnapshot] = None
 
-        self.controller = controller if controller is not None else _default_controller(
-            self.specs, legacy_behavior=self.physics_config.physics_mode == "legacy"
-        )
-        resolved_coil = coil_shock if coil_shock is not None else CoilShock(
-            CoilShockSpecs(
-                rate_n_m=self.specs.shock_stiffness,
-                stroke_mm=self.specs.shock_stroke,
-            ),
-            legacy_behavior=self.physics_config.physics_mode == "legacy",
-        )
+        self.controller = resolved_controller
         self.applier = SuspensionForceApplier(
             self.model,
             self.controller,
@@ -757,6 +764,26 @@ class RideSimulation:
     def crash(self) -> Optional[CrashEvent]:
         """The latched crash event, or None while the run is still upright."""
         return self.crash_detector.event
+
+
+def _validate_controller_geometry(specs: BikeSpecs, controller: SuspensionController) -> None:
+    """Reject a force calculator built for geometry unlike the compiled bike."""
+    for field in (
+        "fork_travel", "shock_stroke", "shock_eye_to_eye", "rear_wheel_travel",
+        "front_wheel_radius", "rear_wheel_radius", "wheel_radius",
+    ):
+        expected = getattr(specs, field)
+        actual = getattr(controller.specs, field)
+        if not isfinite(expected) or not isfinite(actual) or abs(expected - actual) > 1e-6:
+            raise ValueError(f"BikeSpecs {field} {expected} differs from controller {field} {actual}")
+    for field, actual in (
+        ("fork_travel", controller.air_spring.specs.total_travel_mm),
+        ("fork_travel", controller.suspension_system.fork_damper.total_travel_mm),
+        ("shock_stroke", controller.suspension_system.shock_damper.total_stroke_mm),
+    ):
+        expected = getattr(specs, field)
+        if not isfinite(expected) or not isfinite(actual) or abs(expected - actual) > 1e-6:
+            raise ValueError(f"BikeSpecs {field} {expected} differs from component {field} {actual}")
 
 
 def _default_controller(specs: BikeSpecs, *, legacy_behavior: bool) -> SuspensionController:

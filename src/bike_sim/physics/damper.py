@@ -8,6 +8,7 @@ This module models high-performance mountain bike hydraulic dampers:
 
 from dataclasses import dataclass
 from enum import Enum
+from math import isfinite
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
@@ -160,7 +161,13 @@ class Charger3Damper(BaseDamper):
         lsc_clicks: int = 7,
         rebound_clicks: int = 9,
         total_travel_mm: float = 180.0,
+        *,
+        legacy_behavior: bool = False,
     ) -> None:
+        if not isfinite(total_travel_mm) or total_travel_mm <= 0.0:
+            raise ValueError("fork travel must be finite and positive")
+        if not legacy_behavior and total_travel_mm < 20.0:
+            raise ValueError("fork travel must contain the 20 mm HBO zone")
         super().__init__(
             max_hsc=4,
             max_lsc=14,
@@ -178,7 +185,9 @@ class Charger3Damper(BaseDamper):
             v_knee_comp=0.18,
             v_knee_reb=0.22,
         )
-        self.hbo_start_mm = 160.0
+        self.hbo_start_mm = 160.0 if legacy_behavior else total_travel_mm - 20.0
+        if not legacy_behavior and not 0.0 < total_travel_mm - self.hbo_start_mm <= total_travel_mm:
+            raise ValueError("fork HBO zone must be positive and no longer than travel")
         self.c_hbo_base = 3500.0
 
     def set_clicks(self, hsc: Optional[int] = None, lsc: Optional[int] = None, reb: Optional[int] = None) -> None:
@@ -242,6 +251,8 @@ class SuperDeluxeDamper(BaseDamper):
         total_stroke_mm: float = 65.0,
         legacy_behavior: bool = False,
     ) -> None:
+        if not isfinite(total_stroke_mm) or total_stroke_mm <= 0.0:
+            raise ValueError("shock stroke must be finite and positive")
         super().__init__(
             max_hsc=4,
             max_lsc=14,
@@ -265,7 +276,9 @@ class SuperDeluxeDamper(BaseDamper):
         self.lockout_firm = bool(lockout_firm)
         self.legacy_behavior = bool(legacy_behavior)
 
-        self.hbo_start_mm = 52.0
+        self.hbo_start_mm = 52.0 if legacy_behavior else 0.8 * total_stroke_mm
+        if not legacy_behavior and not 0.0 < total_stroke_mm - self.hbo_start_mm <= total_stroke_mm:
+            raise ValueError("shock HBO zone must be positive and no longer than stroke")
         self.c_hbo_min = 4000.0
         self.c_hbo_max = 18000.0
         self.lockout_preload_n = 480.0
@@ -375,7 +388,12 @@ class BikeSuspensionSystem:
     """
 
     def __init__(
-        self, click_config: Optional[DamperClickConfig] = None, *, legacy_behavior: bool = False
+        self,
+        click_config: Optional[DamperClickConfig] = None,
+        *,
+        fork_travel_mm: float = 180.0,
+        shock_stroke_mm: float = 65.0,
+        legacy_behavior: bool = False,
     ) -> None:
         if click_config is None:
             click_config = DAMPER_PRESETS[DamperPreset.BASE]
@@ -386,6 +404,8 @@ class BikeSuspensionSystem:
             hsc_clicks=click_config.fork_hsc,
             lsc_clicks=click_config.fork_lsc,
             rebound_clicks=click_config.fork_rebound,
+            total_travel_mm=fork_travel_mm,
+            legacy_behavior=legacy_behavior,
         )
         self.shock_damper = SuperDeluxeDamper(
             hsc_clicks=click_config.shock_hsc,
@@ -393,6 +413,7 @@ class BikeSuspensionSystem:
             rebound_clicks=click_config.shock_rebound,
             hbo_clicks=click_config.shock_hbo,
             lockout_firm=click_config.shock_lockout,
+            total_stroke_mm=shock_stroke_mm,
             legacy_behavior=legacy_behavior,
         )
 

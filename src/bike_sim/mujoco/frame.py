@@ -41,6 +41,7 @@ def _build_front_triangle_tubes(
     P8: np.ndarray,
     P10: np.ndarray,
     mass_specs: BikeMassSpecs,
+    physical_masses: bool = False,
 ) -> None:
     """Builds downtube, battery pack, headtube, and top tube sections."""
     downtube_mid = (BB + P_HT_bot) / 2.0
@@ -84,7 +85,7 @@ def _build_front_triangle_tubes(
         "capsule",
         fromto=_format_fromto(battery_axis_a, battery_axis_b),
         size="0.032",
-        mass=f"{mass_specs.battery_mass:.2f}",
+        mass="4.30" if physical_masses else f"{mass_specs.battery_mass:.2f}",
         material="mat_battery",
     )
     add_geom(frame, "geom_headtube", "cylinder", fromto=_format_fromto(P_HT_bot, P11), size="0.027", mass="0.40", material="mat_frame")
@@ -101,6 +102,7 @@ def _build_seatpost_and_saddle(
     P5: np.ndarray,
     mass_specs: BikeMassSpecs,
     saddle_top_z_m: Optional[float] = None,
+    physical_masses: bool = False,
 ) -> np.ndarray:
     """
     Builds seat tube, bottom casting, seatpost, gusset, and saddle. Returns seatpost_top pos.
@@ -132,8 +134,11 @@ def _build_seatpost_and_saddle(
     saddle = saddle_geometry(P9, saddle_top_z_m)
     seatpost_top = saddle.seatpost_top
     saddle_pos = saddle.saddle_pos
+    # In physical mode these remain authored relative weights as the budget changes.
+    # The component registry applies the requested total after geometry is built.
+    saddle_weight_budget = 0.90 if physical_masses else mass_specs.saddle_post_mass
     seatpost_lower_mass, seatpost_upper_mass, saddle_mass = saddle_post_masses(
-        mass_specs.saddle_post_mass, P10, P9, saddle
+        saddle_weight_budget, P10, P9, saddle
     )
 
     add_geom(frame, "geom_seatpost", "cylinder", fromto=_format_fromto(P10, P9), size="0.016", mass=f"{seatpost_lower_mass:.6f}", material="mat_metal")
@@ -270,6 +275,7 @@ def build_frame_body(
         P8=fixed_points_m["P8"],
         P10=fixed_points_m["P10"],
         mass_specs=mass_specs,
+        physical_masses=mass_registry is not None,
     )
     seatpost_top = _build_seatpost_and_saddle(
         frame=frame,
@@ -280,6 +286,7 @@ def build_frame_body(
         P5=fixed_points_m["P5"],
         mass_specs=mass_specs,
         saddle_top_z_m=pose.saddle.top_z_m if pose is not None else None,
+        physical_masses=mass_registry is not None,
     )
     _build_mounts_and_sites(
         frame=frame,

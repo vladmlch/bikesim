@@ -66,6 +66,18 @@ class BikeMassSpecs:
         }
 
     @property
+    def component_provenance(self) -> Dict[str, Dict[str, str]]:
+        """Source labels for each physical budget and its geom distribution.
+
+        These authored values and shapes have no measured component dataset yet.
+        The stable component IDs let release metadata preserve that distinction.
+        """
+        return {
+            component_id: {"mass": "synthetic", "distribution": "synthetic"}
+            for component_id in self.component_masses
+        }
+
+    @property
     def total_bike_mass(self) -> float:
         """Computes total mass of the bicycle in kg."""
         return sum(self.component_masses.values())

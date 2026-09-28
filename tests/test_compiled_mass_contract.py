@@ -53,6 +53,35 @@ def test_default_physical_total_matches_budget():
     assert _model().body_mass.sum() == pytest.approx(BikeMassSpecs().total_bike_mass, abs=1e-8)
 
 
+def test_tiny_positive_motor_budget_compiles_without_rounding_to_zero():
+    mass = BikeMassSpecs(motor_mass=0.001)
+    assert _geom_masses(mass)["geom_motor_core"] == pytest.approx(0.001, abs=1e-17)
+    assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
+
+
+@pytest.mark.parametrize("field", MASS_FIELDS)
+def test_tiny_positive_component_budget_keeps_authored_geom_weights(field):
+    mass = BikeMassSpecs()
+    baseline = _geom_masses(mass)
+    setattr(mass, field, 0.0001)
+    tiny = _geom_masses(mass)
+    assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
+    changed = [name for name in baseline if tiny[name] != baseline[name]]
+    assert changed
+    scale = 0.0001 / getattr(BikeMassSpecs(), field)
+    for name in changed:
+        assert tiny[name] == pytest.approx(baseline[name] * scale, abs=1e-12)
+
+
+def test_component_mass_and_distribution_provenance_is_synthetic():
+    mass = BikeMassSpecs()
+    assert mass.component_provenance == {
+        component_id: {"mass": "synthetic", "distribution": "synthetic"}
+        for component_id in mass.component_masses
+    }
+    assert len(mass.component_provenance) == 15
+
+
 def test_lumped_rider_is_not_absorbed_into_frame_budget():
     xml = generate_mujoco_xml(
         specs=BikeSpecs(), mode="ride", mass_specs=BikeMassSpecs(),

@@ -51,13 +51,14 @@ def _build_fork_crown_and_stanchions(
     steer: ET.Element,
     steer_axis_up: np.ndarray,
     mass_specs: BikeMassSpecs,
+    physical_masses: bool = False,
 ) -> None:
     """Builds fork crown box and dual stanchion tubes."""
     add_geom(steer, "geom_fork_crown", "box", pos="0 0 0", size="0.038 0.085 0.018", mass="0.30", material="mat_fork_lower")
 
     stanchion_len = 0.320
     stanchion_tip = -stanchion_len * steer_axis_up
-    stanchion_each_mass = mass_specs.stanchions_mass / 2.0
+    stanchion_each_mass = 0.425 if physical_masses else mass_specs.stanchions_mass / 2.0
     for side, y in [("l", 0.065), ("r", -0.065)]:
         add_geom(
             steer,
@@ -173,7 +174,7 @@ def build_steering_and_fork(
     steer, stem_top = _build_steerer_and_cockpit(frame, mode, P_HT_bot, steer_axis_up, ht_top_rel_steer)
 
     # 2. Fork Crown & Stanchions
-    _build_fork_crown_and_stanchions(steer, steer_axis_up, mass_specs)
+    _build_fork_crown_and_stanchions(steer, steer_axis_up, mass_specs, mass_registry is not None)
 
     # 3. Fork Lowers Slider
     fork_lower = _build_fork_lowers(steer, mode, fork_slide_axis, steer_axis_up, fa_rel_steer, fork_travel_m, debug_markers)

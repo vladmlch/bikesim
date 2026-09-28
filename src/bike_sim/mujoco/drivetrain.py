@@ -74,7 +74,9 @@ def build_bb_and_motor(
             "type": "cylinder",
             "fromto": "0.015 -0.055 0.020 0.045 0.055 0.035",
             "size": "0.045",
-            "mass": f"{mass_specs.motor_mass:.2f}",
+            # In physical mode this is only a positive relative weight. The
+            # component registry assigns the requested budget at full precision.
+            "mass": "2.90" if mass_registry is not None else f"{mass_specs.motor_mass:.2f}",
             "material": "mat_motor",
         },
     )

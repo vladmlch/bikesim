@@ -247,7 +247,11 @@ class RideSimulation:
         self.applier = SuspensionForceApplier(
             self.model,
             self.controller,
-            coil_shock if coil_shock is not None else CoilShock(),
+            CoilShock(
+                coil_shock.specs if coil_shock is not None else None,
+                legacy_behavior=self.physics_config.physics_mode == "legacy",
+            ),
+            physics_config=self.physics_config,
         )
         self.rider_forces = RiderForceApplier(self.model, self.pose)
         self.contact_query = TerrainContactQuery(self.model)
@@ -514,7 +518,8 @@ class RideSimulation:
         else:
             self.contacts = self.contact_query.query(self.model, self.data)
 
-        self.force_accumulator.add("suspension", self.applier.compute_qfrc(self.model, self.data))
+        for name, qfrc in self.applier.compute_qfrc_components(self.model, self.data).items():
+            self.force_accumulator.add(name, qfrc)
         if self.rider_forces.active:
             self._collect_legacy_qfrc(
                 "rider", lambda: self.rider_forces.apply(self.model, self.data)

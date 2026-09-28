@@ -1,7 +1,37 @@
 """Mode selection and shared integration settings for ride simulations."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import isfinite
+
+
+@dataclass(frozen=True)
+class EndStopConfig:
+    """Synthetic stop calibration shared by the ride model and force path."""
+
+    reference_force_n: float = 7000.0
+    reference_deflection_m: float = 0.010
+    damping_n_s_m: float = 500.0
+    overtravel_m: float = 0.010
+    provenance: str = "synthetic"
+
+    def __post_init__(self) -> None:
+        if (
+            not all(isfinite(x) for x in (
+                self.reference_force_n, self.reference_deflection_m,
+                self.damping_n_s_m, self.overtravel_m,
+            ))
+            or self.reference_force_n <= 0
+            or self.reference_deflection_m <= 0
+            or self.damping_n_s_m < 0
+            or self.overtravel_m <= 0
+        ):
+            raise ValueError("invalid end-stop calibration")
+        if self.overtravel_m < self.reference_deflection_m:
+            raise ValueError("end-stop overtravel must reach the reference deflection")
+
+    @property
+    def stiffness_n_m(self) -> float:
+        return self.reference_force_n / self.reference_deflection_m
 
 
 @dataclass(frozen=True)
@@ -12,6 +42,7 @@ class SimulationPhysicsConfig:
     drive_mode: str | None = None
     timestep_s: float = 0.0005
     pitch_assist: bool | None = None
+    end_stops: EndStopConfig = field(default_factory=EndStopConfig)
 
     def __post_init__(self) -> None:
         if self.physics_mode not in {"legacy", "physical"}:

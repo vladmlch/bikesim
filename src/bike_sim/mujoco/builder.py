@@ -213,6 +213,7 @@ def generate_mujoco_xml(
         solved_points=st0,
         debug_markers=debug_markers,
         tyre_model=tyre_model,
+        physics_config=physics_config,
     )
 
     # 7. Constraints & Collisions

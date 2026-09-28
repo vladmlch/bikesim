@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 
 from bike_sim.geometry.specs import BikeSpecs
+from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.mujoco._xml_format import (
     _format_vec,
     add_geom,
@@ -161,11 +162,17 @@ def _build_shock_assembly(
     p6_rel_p4: np.ndarray,
     p7_rel_p6: np.ndarray,
     specs: BikeSpecs,
+    physics_config: SimulationPhysicsConfig | None = None,
 ) -> None:
     """Builds the shock shaft and damper body with trunnion mount, canister, and piggyback."""
     shock_len_m = float(np.linalg.norm(p7_rel_p6))
     shock_slide_axis = -p7_rel_p6 / shock_len_m
     shock_stroke_m = specs.shock_stroke / 1000.0
+    if mode == "ride" and physics_config is not None and physics_config.physics_mode == "physical":
+        stop_travel_m = physics_config.end_stops.overtravel_m
+        joint_range = f"{-stop_travel_m:.6f} {shock_stroke_m + stop_travel_m:.6f}"
+    else:
+        joint_range = f"0 {shock_stroke_m:.6f}"
 
     u_shock = p7_rel_p6 / shock_len_m
     shaft_len = 0.145
@@ -226,7 +233,7 @@ def _build_shock_assembly(
         "shock_stroke",
         "slide",
         axis=_format_vec(shock_slide_axis),
-        range=f"0 {shock_stroke_m:.6f}",
+        range=joint_range,
         stiffness="0",
         damping="0",
         springref="0",
@@ -250,6 +257,7 @@ def build_rear_linkage(
     solved_points: Dict[str, np.ndarray],
     debug_markers: bool = False,
     tyre_model: str = "sphere",
+    physics_config: SimulationPhysicsConfig | None = None,
 ) -> None:
     """
     Builds the 4-bar rear suspension linkage, shock yoke, shock shaft, shock body, and rear wheel.
@@ -300,7 +308,7 @@ def build_rear_linkage(
     shock_yoke = _build_shock_yoke(rocker, p4_rel_p5, p6_rel_p4, debug_markers)
 
     # 5. Shock Shaft & Shock Body
-    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs)
+    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs, physics_config)
 
 
 def build_equality_constraints(root: ET.Element, mode: str) -> None:

@@ -59,7 +59,10 @@ def test_physical_step_adds_external_to_suspension_and_samples_pre_step_state():
     np.testing.assert_array_equal(qpos, qpos_before)
     np.testing.assert_array_equal(qvel, qvel_before)
     assert components["external"][sim.applier.fork_dofadr] == 7.0
-    assert components["suspension"][sim.applier.fork_dofadr] < 0.0
+    assert (
+        components["fork_spring"][sim.applier.fork_dofadr]
+        + components["fork_damper"][sim.applier.fork_dofadr]
+    ) < 0.0
     expected = sum(components.values(), np.zeros(sim.model.nv))
     np.testing.assert_allclose(sim.data.qfrc_applied, expected)
     external[sim.applier.fork_dofadr] = 1000.0

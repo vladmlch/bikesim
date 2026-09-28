@@ -17,6 +17,7 @@ it engages, and it reaches its peak exactly at full stroke.
 """
 
 from dataclasses import dataclass
+from math import isfinite
 from typing import Optional
 
 
@@ -54,8 +55,24 @@ class CoilShock:
     Linear coil spring with a progressive bottom-out bumper.
     """
 
-    def __init__(self, specs: Optional[CoilShockSpecs] = None) -> None:
+    def __init__(
+        self, specs: Optional[CoilShockSpecs] = None, *, legacy_behavior: bool = False
+    ) -> None:
         self.specs = specs if specs is not None else CoilShockSpecs()
+        self.legacy_behavior = legacy_behavior
+        s = self.specs
+        if (
+            not all(isfinite(x) for x in (
+                s.rate_n_m, s.preload_mm, s.stroke_mm,
+                s.bumper_length_mm, s.bumper_peak_n,
+            ))
+            or s.preload_mm < 0
+            or s.rate_n_m <= 0
+            or s.stroke_mm <= 0
+            or not 0 < s.bumper_length_mm <= s.stroke_mm
+            or s.bumper_peak_n <= 0
+        ):
+            raise ValueError("invalid coil shock specifications")
 
     def compute_spring_force(self, stroke_mm: float) -> float:
         """
@@ -67,7 +84,10 @@ class CoilShock:
         Returns:
             Coil force in N, including the preload offset.
         """
-        return float(self.specs.rate_n_m * (float(stroke_mm) + self.specs.preload_mm) / 1000.0)
+        compression_mm = float(stroke_mm) + self.specs.preload_mm
+        if not self.legacy_behavior:
+            compression_mm = max(0.0, compression_mm)
+        return float(self.specs.rate_n_m * compression_mm / 1000.0)
 
     def compute_bumper_force(self, stroke_mm: float) -> float:
         """

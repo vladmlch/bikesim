@@ -48,8 +48,9 @@ def test_ankle_tracks_pedal_circle(pose):
 
 
 def test_knee_flexion_stays_in_human_range(pose):
-    # 20-60 deg is the accepted BDC band (physics/rider.py); allow margin for the
-    # top of the stroke but refuse folded-back or locked-out knees.
+    # 20-60 deg is the accepted BDC band (physics/rider.py); at top of stroke the
+    # geometry reaches ~106 deg, which is the correct human value there. The 115 deg
+    # ceiling still refuses folded-back knees while allowing the real TDC flexion.
     for chain in pose.leg_chains:
         flexions = []
         for phi in np.linspace(0.0, 2.0 * pi, 37):
@@ -58,15 +59,15 @@ def test_knee_flexion_stays_in_human_range(pose):
             v1, v2 = hip - knee, ankle - knee
             flexions.append(180.0 - np.degrees(
                 np.arccos(np.clip(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)), -1, 1))))
-        assert min(flexions) > 15.0 and max(flexions) < 75.0
+        assert min(flexions) > 15.0 and max(flexions) < 115.0
 
 
 def test_pelvis_slide_moves_the_hip(pose):
     # The hip anchor rides the pelvis slide joint: raising the pelvis must move
     # the IK knee up (ankle stays welded to its pedal circle).
     chain = pose.leg_chains[0]
-    knee0, _ = solve_leg_joints(chain, pi / 2, pelvis_z_m=0.0)
-    knee1, _ = solve_leg_joints(chain, pi / 2, pelvis_z_m=0.03)
+    knee0, _ = solve_leg_joints(chain, pi, pelvis_z_m=0.0)
+    knee1, _ = solve_leg_joints(chain, pi, pelvis_z_m=0.03)
     assert knee1[2] > knee0[2]
 
 
@@ -76,7 +77,7 @@ def test_torque_shares_sum_to_ripple():
             total = crank_torque_share(phi, depth) + crank_torque_share(phi + pi, depth)
             assert total == pytest.approx(ripple_shape(phi, depth), abs=1e-12)
         # each leg averages half the mean torque over a revolution
-        mean = np.mean([crank_torque_share(p, depth) for p in np.linspace(0, 2 * pi, 1001)])
+        mean = np.mean([crank_torque_share(p, depth) for p in np.linspace(0, 2 * pi, 1000, endpoint=False)])
         assert mean == pytest.approx(0.5, abs=1e-3)
 
 

@@ -21,7 +21,7 @@ are this repository's own and are the first thing to replace when a measurement 
 """
 
 from dataclasses import dataclass, field
-from math import acos, cos, degrees, pi, radians, sqrt
+from math import acos, cos, degrees, pi, radians, sin, sqrt
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -29,6 +29,7 @@ import numpy as np
 from bike_sim.geometry.cockpit import (
     MAX_EXPOSED_SEATPOST_M,
     MIN_EXPOSED_SEATPOST_M,
+    PEDAL_LATERAL_OFFSET_M,
     SaddleGeometry,
     handlebar_grip_point,
     pedal_points,
@@ -141,6 +142,9 @@ class RiderSpecs:
 
     Attributes:
         variant: ``"none"``, ``"lumped"`` or ``"seated"``.
+        legs: ``"rigid"`` (default) keeps the seated rider's two rigid capsule clusters on
+            vertical slide joints; ``"articulated"`` replaces them with hip/knee/ankle
+            chains whose feet weld to the pedal bodies. Only read by the seated variant.
         mass_kg: Total rider mass including helmet and kit.
         height_m: Stature; scales every de Leva segment length.
         inseam_m: Crotch height. ``None`` derives it from stature.
@@ -172,6 +176,7 @@ class RiderSpecs:
     """
 
     variant: str = DEFAULT_RIDER_VARIANT
+    legs: str = "rigid"
     mass_kg: float = 80.0
     height_m: float = 1.80
     inseam_m: Optional[float] = None
@@ -191,6 +196,8 @@ class RiderSpecs:
     def __post_init__(self) -> None:
         if self.variant not in RIDER_VARIANTS:
             raise ValueError(f"rider variant must be one of {RIDER_VARIANTS}, got {self.variant!r}")
+        if self.legs not in ("rigid", "articulated"):
+            raise ValueError(f"legs must be 'rigid' or 'articulated', got {self.legs!r}")
         if self.mass_kg <= 0.0 and self.variant != "none":
             raise ValueError(f"rider mass must be positive, got {self.mass_kg}")
         if self.height_m <= 0.0:
@@ -287,7 +294,18 @@ class RiderSpecs:
                 "rider_arms": (LUMPED_COM_M["rider_arms"].copy(), self.arms_mass),
             }
         pose = self.seated_pose(specs)
-        return {body.name: (body.center_of_mass, body.mass) for body in pose.bodies}
+        components = {body.name: (body.center_of_mass, body.mass) for body in pose.bodies}
+        for chain in pose.leg_chains:
+            # Articulated legs are MJCF segment bodies, not RiderBodys; add one table entry
+            # per segment at its midpoint so the CG table still matches the compiled model.
+            offset = np.array([0.0, chain.lateral_y_m, 0.0])
+            components[f"rider_thigh_{chain.side}"] = (
+                0.5 * (chain.hip + chain.knee) + offset, chain.thigh_mass_kg)
+            components[f"rider_shank_{chain.side}"] = (
+                0.5 * (chain.knee + chain.ankle) + offset, chain.shank_mass_kg)
+            components[f"rider_foot_{chain.side}"] = (
+                0.5 * (chain.ankle + chain.pedal) + offset, chain.foot_mass_kg)
+        return components
 
 
 # --------------------------------------------------------------------------------------
@@ -391,6 +409,7 @@ class SeatedPose:
     knee_flexion_bdc_deg: float
     bodies: Tuple[RiderBody, ...]
     path_masses_kg: Dict[str, float] = field(default_factory=dict)
+    leg_chains: Tuple["LegChain", ...] = ()
 
     def body(self, name: str) -> RiderBody:
         """Returns the rider body of that name."""
@@ -523,6 +542,107 @@ def seated_path_masses(rider: RiderSpecs) -> Dict[str, float]:
     }
 
 
+@dataclass(frozen=True)
+class LegChain:
+    """One articulated leg: design-pose geometry, segment lengths and masses.
+
+    All points are in the BB frame at the design pose (cranks horizontal) on the
+    sagittal plane; the leg itself solves in a plane offset by ``lateral_y_m``.
+    ``crank_len_m`` is signed: ``+crank`` for the front leg (its crank arm points
+    forward at phase 0), ``-crank`` for the rear leg (arm back), so that
+    ``pedal_spindle_pos(phase, lateral_y_m, crank_len_m)`` tracks this leg's own
+    pedal through a crank revolution.
+    """
+
+    side: str
+    lateral_y_m: float
+    crank_len_m: float
+    hip: np.ndarray
+    knee: np.ndarray
+    ankle: np.ndarray
+    pedal: np.ndarray
+    thigh_len_m: float
+    shank_len_m: float
+    thigh_mass_kg: float
+    shank_mass_kg: float
+    foot_mass_kg: float
+    pitch0_thigh_rad: float
+    pitch0_shank_rad: float
+    pitch0_foot_rad: float
+
+
+def _pitch_xz(vec: np.ndarray) -> float:
+    """Pitch angle of a sagittal-plane direction about +y: +x forward is 0,
+    straight down is +pi/2 (R_y maps +x toward -z)."""
+    return float(np.arctan2(-vec[2], vec[0]))
+
+
+def pedal_spindle_pos(phase_rad: float, lateral_y_m: float, crank_len_m: float) -> np.ndarray:
+    """Pedal spindle centre in the frame's coordinates at a crank phase."""
+    return np.array([crank_len_m * cos(phase_rad), lateral_y_m, -crank_len_m * sin(phase_rad)])
+
+
+def solve_leg_joints(chain: LegChain, phase_rad: float, pelvis_z_m: float = 0.0) -> Tuple[np.ndarray, np.ndarray]:
+    """Knee and ankle points for one crank phase, in the leg's sagittal plane."""
+    ankle = pedal_spindle_pos(phase_rad, chain.lateral_y_m, chain.crank_len_m).copy()
+    ankle[2] += ANKLE_ABOVE_PEDAL_M
+    hip = chain.hip + np.array([0.0, 0.0, pelvis_z_m])
+    knee = _two_link_ik(hip, ankle, chain.thigh_len_m, chain.shank_len_m, prefer="+x")
+    return knee, ankle
+
+
+def solve_leg_qpos(chain: LegChain, phase_rad: float, pelvis_z_m: float = 0.0) -> np.ndarray:
+    """Hinge-angle targets (hip, knee, ankle) relative to the design pose."""
+    knee, ankle = solve_leg_joints(chain, phase_rad, pelvis_z_m)
+    hip = chain.hip + np.array([0.0, 0.0, pelvis_z_m])
+    pedal = pedal_spindle_pos(phase_rad, chain.lateral_y_m, chain.crank_len_m)
+    pitch = (_pitch_xz(knee - hip), _pitch_xz(ankle - knee), _pitch_xz(pedal - ankle))
+    pitch0 = (chain.pitch0_thigh_rad, chain.pitch0_shank_rad, chain.pitch0_foot_rad)
+    q = np.empty(3)
+    q[0] = pitch[0] - pitch0[0]
+    q[1] = (pitch[1] - pitch0[1]) - q[0]
+    q[2] = (pitch[2] - pitch0[2]) - (q[0] + q[1])
+    return q
+
+
+def fk_leg(chain: LegChain, qpos: np.ndarray, pelvis_z_m: float = 0.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Forward kinematics from hinge angles: (knee, ankle, pedal_point), sagittal plane.
+
+    Each hinge rotates its chain about +y relative to the design pose: the
+    absolute pitch of segment i is ``pitch0_i + sum(qpos[:i+1])`` (qpos adds onto
+    the design-pose pitch, since qpos=0 is the design pose).
+    """
+    hip = chain.hip + np.array([0.0, 0.0, pelvis_z_m])
+    p_t = chain.pitch0_thigh_rad + qpos[0]
+    knee = hip + chain.thigh_len_m * np.array([cos(p_t), 0.0, -sin(p_t)])
+    p_s = chain.pitch0_shank_rad + qpos[0] + qpos[1]
+    ankle = knee + chain.shank_len_m * np.array([cos(p_s), 0.0, -sin(p_s)])
+    p_f = chain.pitch0_foot_rad + float(qpos.sum())
+    foot_len = float(np.linalg.norm(chain.pedal - chain.ankle))
+    pedal_pt = ankle + foot_len * np.array([cos(p_f), 0.0, -sin(p_f)])
+    return knee, ankle, pedal_pt
+
+
+def leg_jacobian(chain: LegChain, qpos: np.ndarray, pelvis_z_m: float = 0.0) -> np.ndarray:
+    """(3, 2): pedal-spindle force (fx, fz) -> hinge torques about +y.
+
+    Torque about +y of a force F applied at point p relative to joint centre j is
+    tau = r_z * F_x - r_x * F_z for r = p - j. Joints in order: hip, knee, ankle.
+    """
+    hip = chain.hip + np.array([0.0, 0.0, pelvis_z_m])
+    knee, ankle, p = fk_leg(chain, qpos, pelvis_z_m)
+    J = np.empty((3, 2))
+    for i, j in enumerate((hip, knee, ankle)):
+        r = p - j
+        J[i] = (r[2], -r[0])   # tau_i = r_z * F_x - r_x * F_z
+    return J
+
+
+def crank_torque_share(phase_rad: float, depth: float) -> float:
+    """One leg's share of mean crank torque; front+rear sums to `ripple_shape`."""
+    return 0.5 * (1.0 - depth) + depth * (pi / 2.0) * max(0.0, cos(phase_rad))
+
+
 def solve_seated_pose(specs: BikeSpecs, rider: RiderSpecs) -> SeatedPose:
     """
     Places a seated rider on the bike.
@@ -610,6 +730,11 @@ def solve_seated_pose(specs: BikeSpecs, rider: RiderSpecs) -> SeatedPose:
     head_center = shoulder + (NECK_LENGTH_M + HEAD_RADIUS_M) * torso_axis
 
     masses = seated_path_masses(rider)
+    # Shank/foot split of each leg's shank_foot path mass, by de Leva fractions; only the
+    # articulated legs consume it.
+    shank_foot_fraction = DE_LEVA_MASS_FRACTIONS["shank"] + DE_LEVA_MASS_FRACTIONS["foot"]
+    shank_mass = masses["shank_foot"] * DE_LEVA_MASS_FRACTIONS["shank"] / shank_foot_fraction
+    foot_mass = masses["shank_foot"] * DE_LEVA_MASS_FRACTIONS["foot"] / shank_foot_fraction
     k_torso, c_torso = _spring(masses["torso"], rider.torso_resonance_hz, rider.damping_ratio)
     k_arms, c_arms = _spring(masses["arms"], rider.arm_resonance_hz, rider.damping_ratio)
     k_leg, c_leg = _spring(masses["leg"], rider.leg_resonance_hz, rider.damping_ratio)
@@ -687,13 +812,44 @@ def solve_seated_pose(specs: BikeSpecs, rider: RiderSpecs) -> SeatedPose:
             interface="pedals",
         )
 
-    bodies = (
-        pelvis,
-        torso,
-        arms,
-        leg("front", knee_front, ankle_front, pedal_front),
-        leg("rear", knee_rear, ankle_rear, pedal_rear),
-    )
+    def leg_chain(side: str, knee: np.ndarray, ankle: np.ndarray, pedal: np.ndarray,
+                  lateral_y_m: float, crank_len_m: float) -> LegChain:
+        return LegChain(
+            side=side,
+            lateral_y_m=lateral_y_m,
+            crank_len_m=crank_len_m,
+            hip=hip,
+            knee=knee,
+            ankle=ankle,
+            pedal=pedal,
+            thigh_len_m=float(l_thigh),
+            shank_len_m=float(l_shank),
+            thigh_mass_kg=masses["thigh_to_legs"],
+            shank_mass_kg=shank_mass,
+            foot_mass_kg=foot_mass,
+            pitch0_thigh_rad=_pitch_xz(knee - hip),
+            pitch0_shank_rad=_pitch_xz(ankle - knee),
+            pitch0_foot_rad=_pitch_xz(pedal - ankle),
+        )
+
+    # Front leg is the right one: its pedal sits at -y (`mujoco/drivetrain.py` pairs
+    # "front" with lateral -1). Its crank arm leads at phase 0; the rear arm is back,
+    # which a negative crank length expresses in `pedal_spindle_pos`.
+    if rider.legs == "articulated":
+        bodies = (pelvis, torso, arms)
+        leg_chains = (
+            leg_chain("front", knee_front, ankle_front, pedal_front, -PEDAL_LATERAL_OFFSET_M, crank_m),
+            leg_chain("rear", knee_rear, ankle_rear, pedal_rear, PEDAL_LATERAL_OFFSET_M, -crank_m),
+        )
+    else:
+        bodies = (
+            pelvis,
+            torso,
+            arms,
+            leg("front", knee_front, ankle_front, pedal_front),
+            leg("rear", knee_rear, ankle_rear, pedal_rear),
+        )
+        leg_chains = ()
     return SeatedPose(
         saddle=saddle,
         hip=hip,
@@ -714,6 +870,7 @@ def solve_seated_pose(specs: BikeSpecs, rider: RiderSpecs) -> SeatedPose:
         knee_flexion_bdc_deg=float(knee_flexion_bdc),
         bodies=bodies,
         path_masses_kg={k: masses[k] for k in ("torso", "pelvis", "arms", "leg")},
+        leg_chains=leg_chains,
     )
 
 
@@ -792,8 +949,15 @@ __all__ = [
     "RiderGeom",
     "RiderBody",
     "SeatedPose",
+    "LegChain",
     "seated_path_masses",
     "solve_seated_pose",
+    "pedal_spindle_pos",
+    "solve_leg_joints",
+    "solve_leg_qpos",
+    "fk_leg",
+    "leg_jacobian",
+    "crank_torque_share",
     "saddle_path_apparent_mass",
     "rider_from_args",
     "resolve_rider",

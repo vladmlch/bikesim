@@ -26,7 +26,8 @@ class ContactPatch:
     tangent_force_n: float
     slip_mps: float
     couple_world_nm: np.ndarray | None = None
-    lateral_force_n: float = 0.0
+    native_world_force_n: np.ndarray | None = None
+    source_geom: str = "terrain"
 
     def __post_init__(self) -> None:
         point = _frozen_vector(self.point_m, "contact point")
@@ -34,19 +35,26 @@ class ContactPatch:
         if abs(np.linalg.norm(normal) - 1.0) > 1e-8 or abs(normal[1]) > 1e-8:
             raise ValueError("expected a unit normal in the X-Z plane")
         scalars = tuple(float(value) for value in (
-            self.normal_load_n, self.tangent_force_n, self.slip_mps, self.lateral_force_n
+            self.normal_load_n, self.tangent_force_n, self.slip_mps
         ))
         if not all(isfinite(value) for value in scalars) or scalars[0] < 0.0:
             raise ValueError("invalid contact load, force or slip")
+        if self.source_geom not in ("terrain", "catch_plane"):
+            raise ValueError("contact source must be terrain or catch_plane")
         couple = _frozen_vector(
             np.zeros(3) if self.couple_world_nm is None else self.couple_world_nm,
             "contact couple",
         )
+        native_force = (
+            None if self.native_world_force_n is None
+            else _frozen_vector(self.native_world_force_n, "native world force")
+        )
         object.__setattr__(self, "point_m", point)
         object.__setattr__(self, "normal", normal)
         object.__setattr__(self, "couple_world_nm", couple)
+        object.__setattr__(self, "native_world_force_n", native_force)
         for name, value in zip(
-            ("normal_load_n", "tangent_force_n", "slip_mps", "lateral_force_n"), scalars
+            ("normal_load_n", "tangent_force_n", "slip_mps"), scalars
         ):
             object.__setattr__(self, name, value)
 
@@ -55,10 +63,17 @@ class ContactPatch:
         return _frozen_vector(np.array([self.normal[2], 0.0, -self.normal[0]]), "tangent")
 
     @property
+    def working_surface(self) -> bool:
+        return self.source_geom == "terrain"
+
+    @property
     def world_force_n(self) -> np.ndarray:
-        force = self.normal_load_n * self.normal + self.tangent_force_n * self.tangent
-        force = force + np.array([0.0, self.lateral_force_n, 0.0])
-        return _frozen_vector(force, "contact force")
+        if self.native_world_force_n is not None:
+            return self.native_world_force_n
+        return _frozen_vector(
+            self.normal_load_n * self.normal + self.tangent_force_n * self.tangent,
+            "contact force",
+        )
 
 
 @dataclass(frozen=True)
@@ -100,6 +115,14 @@ class WheelContactSnapshot:
     @property
     def loaded_contact(self) -> bool:
         return self.normal_load_n > 0.0
+
+    @property
+    def road_loaded_contact(self) -> bool:
+        """Only working-road load may re-enable a physical drive controller."""
+        return any(
+            patch.working_surface and patch.normal_load_n > 0.0
+            for patch in self.patches
+        )
 
     @property
     def normal_load_n(self) -> float:

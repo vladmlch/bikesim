@@ -160,7 +160,10 @@ class TerrainContactQuery:
         if dropout_steps < 0:
             raise ValueError(f"dropout_steps must be non-negative, got {dropout_steps}")
 
-        self.terrain_ids = frozenset(_geom_id(model, name) for name in TERRAIN_GEOMS)
+        self.terrain_geom_names = {
+            _geom_id(model, name): name for name in TERRAIN_GEOMS
+        }
+        self.terrain_ids = frozenset(self.terrain_geom_names)
         self.front_id = _geom_id(model, FRONT_CONTACT_GEOM)
         self.rear_id = _geom_id(model, REAR_CONTACT_GEOM)
         self.handlebar_id = _geom_id(model, HANDLEBAR_GEOM)
@@ -289,6 +292,7 @@ class TerrainContactQuery:
             magnitude_n[tracked] += abs(normal_force_n)
             vertical_n[tracked] += normal_force_n * float(normal[2])
             if tracked in wheel_patches:
+                source_id = geom1 if geom1 in self.terrain_ids else geom2
                 # MuJoCo's sphere/heightfield rows can tilt a few microradians out of
                 # the constrained X-Z bicycle plane. Project their direction into our
                 # planar contact contract while retaining the full world wrench above.
@@ -307,7 +311,8 @@ class TerrainContactQuery:
                     tangent_force_n=float(np.dot(force_world, tangent)),
                     slip_mps=slip_mps,
                     couple_world_nm=couple_world,
-                    lateral_force_n=float(force_world[1]),
+                    native_world_force_n=force_world,
+                    source_geom=self.terrain_geom_names[source_id],
                 ))
 
         return magnitude_n, vertical_n, {

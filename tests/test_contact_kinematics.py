@@ -36,6 +36,48 @@ def test_slope_keeps_normal_and_vertical_force_distinct():
     assert snapshot.vertical_force_n == pytest.approx(100 * np.sqrt(3) / 2 + 10)
 
 
+def test_native_world_resultant_is_exact_even_with_out_of_plane_contact_normal():
+    raw_normal = np.array([0., 0.6, 0.8])
+    frame = np.array([
+        raw_normal,
+        [1., 0., 0.],
+        [0., 0.8, -0.6],
+    ])
+    wrench = np.array([100., 20., 5., 0., 0., 0.])
+    transformed = _tracked_wrench(1, 2, frozenset({1}), frozenset({2}), frame, wrench)
+    assert transformed is not None
+    _, _, exact_force, _ = transformed
+    patch = ContactPatch(
+        np.zeros(3), np.array([0., 0., 1.]), 100., 20., 0.,
+        native_world_force_n=exact_force,
+    )
+    snapshot = WheelContactSnapshot(0., (patch,), True)
+    exact_force[:] = 999.
+    np.testing.assert_array_equal(patch.world_force_n, [20., 64., 77.])
+    np.testing.assert_array_equal(snapshot.world_force_n, [20., 64., 77.])
+    assert snapshot.vertical_force_n == 77.
+    assert snapshot.normal_vertical_n == 100.
+    with pytest.raises(ValueError):
+        patch.world_force_n.setflags(write=True)
+
+
+def test_catch_plane_load_does_not_count_as_working_road_contact():
+    catch_patch = ContactPatch(
+        np.zeros(3), np.array([0., 0., 1.]), 200., 0., 0.,
+        source_geom="catch_plane",
+    )
+    catch_only = WheelContactSnapshot(0., (catch_patch,), True)
+    assert catch_only.loaded_contact
+    assert not catch_only.road_loaded_contact
+    assert catch_only.normal_load_n == 200.
+    unloaded_road = ContactPatch(np.zeros(3), np.array([0., 0., 1.]), 0., 0., 0.)
+    assert not WheelContactSnapshot(0., (catch_patch, unloaded_road), True).road_loaded_contact
+    road_patch = ContactPatch(np.zeros(3), np.array([0., 0., 1.]), 50., 0., 0.)
+    mixed = WheelContactSnapshot(0., (catch_patch, road_patch), True)
+    assert mixed.road_loaded_contact
+    assert road_patch.source_geom == "terrain"
+
+
 def test_contact_patch_and_snapshot_detach_all_input_buffers():
     point = np.array([0., 0., -0.3])
     normal = np.array([0., 0., 1.])
@@ -177,7 +219,7 @@ def test_native_query_exposes_physical_snapshots_without_changing_legacy_channel
         mujoco.mj_contactForce(model, data, index, force6)
         sign = 1. if int(contact.geom2) == wheel_geom else -1.
         expected_force += sign * (contact.frame.reshape(3, 3).T @ force6[:3])
-    np.testing.assert_allclose(loaded.world_force_n, expected_force, atol=1e-5)
+    np.testing.assert_allclose(loaded.world_force_n, expected_force, rtol=0., atol=1e-12)
     old_point = loaded.patches[0].point_m.copy()
     pitch = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_pitch")
     spin_name = "front_wheel_spin" if front_loaded else "rear_wheel_spin"
@@ -196,3 +238,31 @@ def test_native_query_exposes_physical_snapshots_without_changing_legacy_channel
         mujoco.mj_jac(model, data, jacp, jacr, patch.point_m, body_id)
         assert patch.slip_mps == pytest.approx(float((jacp @ data.qvel) @ patch.tangent))
     np.testing.assert_array_equal(loaded.patches[0].point_m, old_point)
+
+
+def test_native_query_marks_catch_plane_rows_without_changing_legacy_loads():
+    sim = RideSimulation(track=get_preset("single_edge"), target_speed_kmh=25.)
+    model, data = sim.model, sim.data
+    query = TerrainContactQuery(model)
+    before = query.query(model, data)
+    assert before.front_snapshot.road_loaded_contact or before.rear_snapshot.road_loaded_contact
+    catch_plane = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "catch_plane")
+    for index in range(data.ncon):
+        contact = data.contact[index]
+        if int(contact.geom1) in query.terrain_ids:
+            contact.geom1 = catch_plane
+        elif int(contact.geom2) in query.terrain_ids:
+            contact.geom2 = catch_plane
+    after = query.query(model, data)
+    for old, new in (
+        (before.front_snapshot, after.front_snapshot),
+        (before.rear_snapshot, after.rear_snapshot),
+    ):
+        assert old.normal_load_n == pytest.approx(new.normal_load_n)
+        assert new.loaded_contact == old.loaded_contact
+        assert not new.road_loaded_contact
+        assert all(patch.source_geom == "catch_plane" for patch in new.patches)
+    assert after.front_load_n == pytest.approx(before.front_load_n)
+    assert after.rear_load_n == pytest.approx(before.rear_load_n)
+    assert after.front_support_n == pytest.approx(before.front_support_n)
+    assert after.rear_support_n == pytest.approx(before.rear_support_n)

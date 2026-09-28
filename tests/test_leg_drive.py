@@ -43,6 +43,39 @@ def test_reset_at_nonzero_phase_consistent():
         assert np.linalg.norm(d.site_xpos[sf] - d.site_xpos[sp]) < 0.002
 
 
+def test_pedal_forces_sum_to_commanded_torque(pedal_sim):
+    """
+    The two legs' tangential forces times the crank arm equal `rider_torque_nm` at
+    every crank phase: `rider_torque_nm` is already instantaneous (mean x
+    ripple_shape) and `crank_torque_share` is a share of the *mean*, so the force
+    map must divide the shape back out -- otherwise the legs deliver mean x shape^2,
+    applying the ripple twice.
+    """
+    m, d = pedal_sim.model, pedal_sim.data
+    drive = pedal_sim.leg_drive
+    crank_adr = drive.crank_qposadr
+    phase0 = float(d.qpos[crank_adr])
+    try:
+        for phase in (0.0, 0.6, 1.3, np.pi / 2, 2.2, np.pi, 4.0, 5.5):
+            d.qpos[crank_adr] = phase
+            drive.apply(m, d, 37.0)
+            delivered = pedal_sim.crank_length_m * (
+                drive.pedal_force_front_n + drive.pedal_force_rear_n
+            )
+            assert delivered == pytest.approx(37.0, rel=1e-6), (
+                f"phase {phase}: legs deliver {delivered:.2f} N.m for a 37.0 N.m command"
+            )
+        # Depth 1 reaches zero ripple shape at the dead centres: commanded torque there
+        # is 0 and the shares are 0 too -- the guard must produce 0, not NaN.
+        drive.ripple_depth = 1.0
+        d.qpos[crank_adr] = np.pi / 2
+        drive.apply(m, d, 0.0)
+        assert drive.pedal_force_front_n == 0.0 and drive.pedal_force_rear_n == 0.0
+    finally:
+        drive.ripple_depth = DrivetrainSpecs().ripple_depth
+        d.qpos[crank_adr] = phase0
+
+
 def test_rigid_legs_still_pedal():
     sim = RideSimulation(
         track=get_preset("flat"), target_speed_kmh=15.0, drive_mode="pedal", assist="off",

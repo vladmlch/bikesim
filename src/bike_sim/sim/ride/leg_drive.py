@@ -34,6 +34,7 @@ from typing import Dict, List, Optional, Tuple
 import mujoco
 import numpy as np
 
+from bike_sim.physics.drivetrain import ripple_shape
 from bike_sim.physics.rider import (
     LegChain,
     SeatedPose,
@@ -181,6 +182,13 @@ class LegDrive:
         dt = float(model.opt.timestep)
         phase = float(data.qpos[self._crank_qposadr])
         pelvis_z = float(data.qpos[self._pelvis_qposadr])
+        # `rider_torque_nm` is instantaneous -- mean·ripple_shape(phase) -- while
+        # `crank_torque_share` is a share of the *mean* whose two legs sum to
+        # ripple_shape(phase). Dividing the shape back out keeps the delivered crank
+        # torque equal to the command: f_t·L summed over legs = share_sum·mean·L/L
+        # = rider_torque_nm, not mean·shape². The floor only matters at depth 1,
+        # where shape reaches 0 at exactly the phases both shares are also 0.
+        mean_nm = rider_torque_nm / max(ripple_shape(phase, self.ripple_depth), 1e-6)
         for chain, qposadrs, dofadrs in self._legs:
             # The chain's own crank position for the force bookkeeping: the rear arm is
             # 180 degrees away even though `solve_leg_qpos` absorbs that via the signed
@@ -191,11 +199,11 @@ class LegDrive:
             q_ref = _solve_or_current(chain, phase, pelvis_z, q)
             qd_ref = (q_ref - self._prev_q_ref.get(chain.side, q_ref)) / dt
             self._prev_q_ref[chain.side] = q_ref
-            # Tangential pedal force: this leg's torque share over the crank arm.
-            # t_hat is d(pedal)/d(phase) normalized: (-sin, -cos) in (x, z) -- at
-            # phase 0 (front arm at 3 o'clock) it points straight down.
+            # Tangential pedal force: this leg's share of the *mean* torque over the
+            # crank arm. t_hat is d(pedal)/d(phase) normalized: (-sin, -cos) in (x, z)
+            # -- at phase 0 (front arm at 3 o'clock) it points straight down.
             share = crank_torque_share(side_phase, self.ripple_depth)
-            f_t = share * rider_torque_nm / self.crank_len_m
+            f_t = share * mean_nm / self.crank_len_m
             F = f_t * np.array([-sin(side_phase), -cos(side_phase)])
             tau = leg_jacobian(chain, q, pelvis_z) @ F  # (3,2) @ (2,)
             tau += np.multiply(self.IMPEDANCE_KP, q_ref - q) \

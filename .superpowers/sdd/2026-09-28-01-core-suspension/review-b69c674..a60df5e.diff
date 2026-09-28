@@ -1,0 +1,496 @@
+# Review package: b69c674..HEAD
+
+## Commits
+a60df5e refactor: accumulate named physical force contributions
+
+## Files changed
+ src/bike_sim/sim/ride/force_accumulator.py |  41 +++++++++++
+ src/bike_sim/sim/ride/forces.py            |  13 +++-
+ src/bike_sim/sim/ride_sim.py               |  79 ++++++++++++++++++---
+ tests/test_force_accumulator.py            | 110 +++++++++++++++++++++++++++++
+ 4 files changed, 232 insertions(+), 11 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/sim/ride/force_accumulator.py b/src/bike_sim/sim/ride/force_accumulator.py
+new file mode 100644
+index 0000000..bd6b8ee
+--- /dev/null
++++ b/src/bike_sim/sim/ride/force_accumulator.py
+@@ -0,0 +1,41 @@
++"""Named generalized-force contributions for one physical simulation step."""
++
++from types import MappingProxyType
++from typing import Mapping
++
++import numpy as np
++
++
++class ForceAccumulator:
++    """Keep independent force writers additive, with no input or output aliasing."""
++
++    def __init__(self, nv: int) -> None:
++        self.nv = nv
++        self._components: dict[str, np.ndarray] = {}
++
++    def clear(self) -> None:
++        self._components.clear()
++
++    def add(self, name: str, qfrc: np.ndarray) -> None:
++        value = np.asarray(qfrc, dtype=float)
++        if value.shape != (self.nv,) or not np.isfinite(value).all():
++            raise ValueError("invalid generalized force")
++        if name in self._components:
++            raise ValueError("duplicate force component")
++        self._components[name] = value.copy()
++
++    @property
++    def components(self) -> Mapping[str, np.ndarray]:
++        copied = {name: value.copy() for name, value in self._components.items()}
++        for value in copied.values():
++            value.setflags(write=False)
++        return MappingProxyType(copied)
++
++    def total(self) -> np.ndarray:
++        result = np.zeros(self.nv)
++        for value in self._components.values():
++            result += value
++        return result
++
++
++__all__ = ["ForceAccumulator"]
+diff --git a/src/bike_sim/sim/ride/forces.py b/src/bike_sim/sim/ride/forces.py
+index da21902..e1b54a5 100644
+--- a/src/bike_sim/sim/ride/forces.py
++++ b/src/bike_sim/sim/ride/forces.py
+@@ -9,20 +9,21 @@ calculators owned by `physics/` and `sim/controllers.py`.
+ **No leverage ratio appears here.** By virtual work the axial shock force *is* the
+ generalized force on `shock_stroke`; MuJoCo propagates it through the linkage's constraint
+ Jacobian, which applies the instantaneous leverage ratio exactly, at the current
+ configuration, every step. Multiplying by an analytically computed ratio would apply it
+ twice.
+ """
+ 
+ from typing import Tuple
+ 
+ import mujoco
++import numpy as np
+ 
+ from bike_sim.physics.coil_shock import CoilShock
+ from bike_sim.sim.controllers import SuspensionController
+ 
+ 
+ class SuspensionForceApplier:
+     """
+     Applies fork and rear shock forces to their slide coordinates in `qfrc_applied`.
+ 
+     The fork force is the existing `SuspensionController` air spring plus Charger 3
+@@ -86,43 +87,51 @@ class SuspensionForceApplier:
+     def apply(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
+         """
+         Computes both suspension forces from the current state and applies them.
+ 
+         Args:
+             model: Compiled MuJoCo model. Unused -- the joint addresses were cached at
+                 construction -- but kept so every ride-mode force writer shares one
+                 `(model, data)` signature.
+             data: Simulation state, written at the fork and shock DOFs of `qfrc_applied`.
+         """
++        qfrc = self.compute_qfrc(model, data)
++        data.qfrc_applied[self.fork_dofadr] = qfrc[self.fork_dofadr]
++        data.qfrc_applied[self.shock_dofadr] = qfrc[self.shock_dofadr]
++
++    def compute_qfrc(self, model: mujoco.MjModel, data: mujoco.MjData) -> np.ndarray:
++        """Compute suspension's generalized forces without writing the MuJoCo input."""
++        qfrc = np.zeros(model.nv)
+         travel_mm = float(data.qpos[self.fork_qposadr]) * 1000.0
+         fork_velocity_mps = float(data.qvel[self.fork_dofadr])
+         fork_total, fork_spring, fork_damper = self.controller.compute_fork_force(
+             travel_mm, fork_velocity_mps
+         )
+ 
+         stroke_mm = float(data.qpos[self.shock_qposadr]) * 1000.0
+         shock_velocity_mps = float(data.qvel[self.shock_dofadr])
+         # Coil and bumper are taken separately rather than through
+         # CoilShock.compute_axial_force, whose sum they are, because telemetry needs them
+         # apart: a bottom-out is a bumper event, not a stiffer spring.
+         shock_spring = self.coil_shock.compute_spring_force(stroke_mm)
+         shock_bumper = self.coil_shock.compute_bumper_force(stroke_mm)
+         shock_damper = self.controller.suspension_system.shock_damper.compute_damping_force(
+             shock_velocity_mps, stroke_mm
+         )
+         shock_total = shock_spring + shock_bumper + shock_damper
+ 
+         # Both coordinates increase with compression, so a resisting force is a negative
+         # generalized force. The construction-time range check guarantees that convention.
+-        data.qfrc_applied[self.fork_dofadr] = -fork_total
+-        data.qfrc_applied[self.shock_dofadr] = -shock_total
++        qfrc[self.fork_dofadr] = -fork_total
++        qfrc[self.shock_dofadr] = -shock_total
+ 
+         self.fork_spring_n = fork_spring
+         self.fork_damper_n = fork_damper
+         self.fork_total_n = fork_total
+         self.shock_spring_n = shock_spring
+         self.shock_bumper_n = shock_bumper
+         self.shock_damper_n = shock_damper
+         self.shock_total_n = shock_total
++        return qfrc
+ 
+ 
+ __all__ = ["SuspensionForceApplier"]
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index 4572020..708c8c1 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -7,41 +7,43 @@ resolves handles, sequences the writers, and exposes the run's state. It coordin
+ does not compute.
+ 
+ **Track data is written before anything reads the model's geometry.** `model.hfield_data` is
+ filled from the track raster immediately after compilation, ahead of the first
+ `mj_forward`, the equilibrium solve and any viewer: a heightfield read before it is filled
+ is a flat road, and every contact computed against it is wrong.
+ """
+ 
+ import dataclasses
+ from math import sin
+-from typing import Any, Callable, Dict, Optional, Tuple, Union
++from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Union
+ 
+ import mujoco
++import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.geometry.hardpoints import compute_ground_z
+ from bike_sim.kinematics.solver import HorstLinkageSolver
+ from bike_sim.mujoco.builder import generate_mujoco_xml
+ from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
+ from bike_sim.physics.coil_shock import CoilShock
+ from bike_sim.physics.damper import BikeSuspensionSystem
+ from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
+ from bike_sim.physics.model_config import SimulationPhysicsConfig
+ from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
+ from bike_sim.physics.tyre import TyreConfig
+ from bike_sim.sim.controllers import SuspensionController
+ from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
+ from bike_sim.sim.ride.braking import BrakeController
+ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
+ from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+ from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
++from bike_sim.sim.ride.force_accumulator import ForceAccumulator
+ from bike_sim.sim.ride.forces import SuspensionForceApplier
+ from bike_sim.sim.ride.leg_drive import LegDrive
+ from bike_sim.sim.ride.resistance import RollingResistance
+ from bike_sim.sim.ride.rider_forces import RiderForceApplier
+ from bike_sim.sim.ride.termination import (
+     DEFAULT_MAX_WALL_CLOCK_S,
+     RunLimits,
+     RunOutcome,
+     RunTerminator,
+ )
+@@ -225,20 +227,24 @@ class RideSimulation:
+                 + build_profile(self.track, track_x)
+             )
+             profile = RoadProfile.from_samples(track_x, road_z)
+             self.tyre_applier = TyreForceApplier(
+                 self.model,
+                 self.tyre_config,
+                 profile,
+                 SurfaceMap.uniform(self.track.surface),
+             )
+         self.data = mujoco.MjData(self.model)
++        self.force_accumulator = ForceAccumulator(self.model.nv)
++        self.last_force_snapshot: Optional[
++            Tuple[float, np.ndarray, np.ndarray, Mapping[str, np.ndarray]]
++        ] = None
+ 
+         self.controller = controller if controller is not None else _default_controller(self.specs)
+         self.applier = SuspensionForceApplier(
+             self.model,
+             self.controller,
+             coil_shock if coil_shock is not None else CoilShock(),
+         )
+         self.rider_forces = RiderForceApplier(self.model, self.pose)
+         self.contact_query = TerrainContactQuery(self.model)
+         self.resistance = RollingResistance(self.model)
+@@ -340,33 +346,43 @@ class RideSimulation:
+                 self.model, self.data, float(self.data.qpos[self.leg_drive.crank_qposadr])
+             )
+             mujoco.mj_forward(self.model, self.data)
+         self.brake_source_cruise = False
+         self.brakes.reset()
+         self.resistance.reset()
+         self.stabilizer.reset()
+         self.crash_detector.reset()
+         self.data.time = 0.0
+         self.steps = 0
++        self.force_accumulator.clear()
++        self.last_force_snapshot = None
+         if self.tyre_applier is None:
+             self.contacts = self.contact_query.query(self.model, self.data)
+         else:
+             self.contacts = self.contact_query.query(
+                 self.model, self.data, wheel_load_provider=self.tyre_applier
+             )
+ 
+-    def step(self, front_brake_demand: float = 0.0, rear_brake_demand: float = 0.0) -> None:
++    def step(
++        self,
++        front_brake_demand: float = 0.0,
++        rear_brake_demand: float = 0.0,
++        *,
++        external_qfrc: Optional[np.ndarray] = None,
++    ) -> None:
+         """Advance one timestep using the selected force and control path."""
+         if self.physics_config.physics_mode == "legacy":
++            if external_qfrc is not None:
++                raise ValueError("external_qfrc is only supported in physical mode")
+             self._step_legacy(front_brake_demand, rear_brake_demand)
+         else:
+-            self._step_physical(front_brake_demand, rear_brake_demand)
++            self._step_physical(front_brake_demand, rear_brake_demand, external_qfrc)
+ 
+     def _step_legacy(self, front_brake_demand: float, rear_brake_demand: float) -> None:
+         """
+         Advance the historical ride model by one timestep.
+ 
+         The contact snapshot the five writers share is the one taken at the end of the
+         previous step, which holds the constraint forces of the last forward pass -- the same
+         numbers a fresh query at the top of this step would return, since nothing has touched
+         `data.contact` in between. Querying once per state rather than once per use keeps the
+         dropout counter advancing exactly one step per step.
+@@ -442,44 +458,82 @@ class RideSimulation:
+ 
+         # Checked against the same snapshot the writers saw, so a reported crash position is
+         # the state that produced it rather than the state one timestep later.
+         self.crash_detector.check(self.data, self.contacts)
+ 
+         mujoco.mj_step(self.model, self.data)
+         self.steps += 1
+         if self.tyre_applier is None:
+             self.contacts = self.contact_query.query(self.model, self.data)
+ 
+-    def _step_physical(self, front_brake_demand: float, rear_brake_demand: float) -> None:
++    def _collect_legacy_qfrc(self, name: str, writer: Callable[[], None]) -> None:
++        """Adapt an assigning legacy writer to one named, additive contribution."""
++        self.data.qfrc_applied.fill(0.0)
++        try:
++            writer()
++            self.force_accumulator.add(name, self.data.qfrc_applied)
++        finally:
++            self.data.qfrc_applied.fill(0.0)
++
++    def _step_physical(
++        self,
++        front_brake_demand: float,
++        rear_brake_demand: float,
++        external_qfrc: Optional[np.ndarray],
++    ) -> None:
+         """Advance the physical model with forces read from current kinematics.
+ 
+         ``contacts`` is the snapshot used by this step's force writers. It remains the
+         pre-step snapshot until the next call refreshes MuJoCo's kinematics.
+         """
++        external = None
++        if external_qfrc is not None:
++            # Copy before clearing: callers may explicitly pass a view of MuJoCo's array.
++            external = np.array(external_qfrc, dtype=float, copy=True)
++            if external.shape != (self.model.nv,) or not np.isfinite(external).all():
++                raise ValueError("invalid generalized force")
++            external.setflags(write=False)
++        # MuJoCo retains both arrays after a step. The current-state forward pass must
++        # not see force input from the previous interval; explicit input is kept apart.
++        self.stabilizer.disable(self.data)
++        self.data.qfrc_applied.fill(0.0)
++        self.data.xfrc_applied.fill(0.0)
+         mujoco.mj_forward(self.model, self.data)
++        self.force_accumulator.clear()
++        if external is not None:
++            self.force_accumulator.add("external", external)
+         if self.tyre_applier is not None:
+             self.tyre_applier.apply(self.model, self.data)
+             self.contacts = self.contact_query.query(
+                 self.model, self.data, wheel_load_provider=self.tyre_applier
+             )
+         else:
+             self.contacts = self.contact_query.query(self.model, self.data)
+ 
+-        self.applier.apply(self.model, self.data)
+-        self.rider_forces.apply(self.model, self.data)
++        self.force_accumulator.add("suspension", self.applier.compute_qfrc(self.model, self.data))
++        if self.rider_forces.active:
++            self._collect_legacy_qfrc(
++                "rider", lambda: self.rider_forces.apply(self.model, self.data)
++            )
+         if self.tyre_applier is None:
+-            self.resistance.apply(self.model, self.data, self.contacts)
++            self._collect_legacy_qfrc(
++                "rolling_resistance",
++                lambda: self.resistance.apply(self.model, self.data, self.contacts),
++            )
+ 
+         self.data.ctrl[self.drive_ctrl_adr] = 0.0
+         if self.crank_drive_ctrl_adr >= 0:
+             self.data.ctrl[self.crank_drive_ctrl_adr] = 0.0
+-        self.leg_drive.apply(self.model, self.data, 0.0)
++        if self.leg_drive.active:
++            self._collect_legacy_qfrc(
++                "leg_drive", lambda: self.leg_drive.apply(self.model, self.data, 0.0)
++            )
+         if self.physics_config.drive_mode == "ideal_speed_control":
+             traction_limited = False
+             if self.tyre_applier is not None:
+                 error_mps = self.cruise.target_speed_mps - float(
+                     self.data.qvel[self.root_x_dofadr]
+                 )
+                 traction_limited = any(
+                     patch.fully_sliding and patch.slip_ratio * error_mps > 0.0
+                     for patch in self.tyre_applier.rear_outputs.patches
+                 )
+@@ -488,23 +542,30 @@ class RideSimulation:
+             )
+             if (front_brake_demand > 0.0 or rear_brake_demand > 0.0) and drive_torque > 0.0:
+                 drive_torque = 0.0
+             self.data.ctrl[self.drive_ctrl_adr] = drive_torque
+ 
+         front_torque, rear_torque = self.brakes.compute(
+             self.data, front_brake_demand, rear_brake_demand
+         )
+         self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
+         self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
+-        self.stabilizer.disable(self.data)
+         self.crash_detector.check(self.data, self.contacts)
+ 
++        self.data.qfrc_applied[:] = self.force_accumulator.total()
++        qpos = self.data.qpos.copy()
++        qvel = self.data.qvel.copy()
++        qpos.setflags(write=False)
++        qvel.setflags(write=False)
++        self.last_force_snapshot = (
++            float(self.data.time), qpos, qvel, self.force_accumulator.components
++        )
+         mujoco.mj_step(self.model, self.data)
+         self.steps += 1
+ 
+     def _follow_cranks(self) -> None:
+         """
+         Moves the seated rider's pedal interfaces to where the cranks now are.
+ 
+         The crank turns about +y, so the arm built at 3 o'clock sweeps to
+         `(L cos phi, 0, -L sin phi)`: the front pedal drops as the phase advances and the
+         rear pedal, 180 degrees away, rises by the same amount. Only the interface moves; the
+diff --git a/tests/test_force_accumulator.py b/tests/test_force_accumulator.py
+new file mode 100644
+index 0000000..ada0c93
+--- /dev/null
++++ b/tests/test_force_accumulator.py
+@@ -0,0 +1,110 @@
++"""Physical force ownership and pre-step sampling."""
++
++import numpy as np
++import pytest
++
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.sim.ride.force_accumulator import ForceAccumulator
++from bike_sim.sim.ride_sim import RideSimulation
++from bike_sim.terrain import get_preset
++
++
++def test_two_writers_on_one_dof_add_without_aliasing():
++    acc = ForceAccumulator(2)
++    source = np.array([3.0, 0.0])
++    acc.add("spring", source)
++    source[0] = 1000.0
++    acc.add("chain", np.array([-1.0, 2.0]))
++    np.testing.assert_array_equal(acc.total(), [2.0, 2.0])
++    with pytest.raises(ValueError, match="duplicate"):
++        acc.add("chain", np.zeros(2))
++    acc.clear()
++    np.testing.assert_array_equal(acc.total(), [0.0, 0.0])
++
++
++def test_component_views_and_totals_cannot_change_accumulated_force():
++    acc = ForceAccumulator(2)
++    acc.add("spring", np.array([3.0, 1.0]))
++    view = acc.components
++    with pytest.raises(TypeError):
++        view["chain"] = np.zeros(2)
++    with pytest.raises(ValueError):
++        view["spring"][0] = 100.0
++    total = acc.total()
++    total[0] = 100.0
++    np.testing.assert_array_equal(acc.total(), [3.0, 1.0])
++
++
++@pytest.mark.parametrize("invalid", [np.zeros(1), np.array([np.nan, 0.0])])
++def test_invalid_generalized_force_is_rejected(invalid):
++    acc = ForceAccumulator(2)
++    with pytest.raises(ValueError, match="invalid generalized force"):
++        acc.add("bad", invalid)
++
++
++def test_physical_step_adds_external_to_suspension_and_samples_pre_step_state():
++    sim = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    qpos_before = sim.data.qpos.copy()
++    qvel_before = sim.data.qvel.copy()
++    external = np.zeros(sim.model.nv)
++    external[sim.applier.fork_dofadr] = 7.0
++
++    sim.step(external_qfrc=external)
++    time_s, qpos, qvel, components = sim.last_force_snapshot
++    assert time_s == 0.0
++    np.testing.assert_array_equal(qpos, qpos_before)
++    np.testing.assert_array_equal(qvel, qvel_before)
++    assert components["external"][sim.applier.fork_dofadr] == 7.0
++    assert components["suspension"][sim.applier.fork_dofadr] < 0.0
++    expected = sum(components.values(), np.zeros(sim.model.nv))
++    np.testing.assert_allclose(sim.data.qfrc_applied, expected)
++    external[sim.applier.fork_dofadr] = 1000.0
++    assert components["external"][sim.applier.fork_dofadr] == 7.0
++
++
++def test_physical_steps_do_not_carry_old_generalized_or_body_forces():
++    sim = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    external = np.zeros(sim.model.nv)
++    external[sim.root_x_dofadr] = 9.0
++    sim.step(external_qfrc=external)
++    first_snapshot = sim.last_force_snapshot
++    sim.data.xfrc_applied[1, 0] = 100.0
++    sim.step()
++
++    assert "external" not in sim.last_force_snapshot[3]
++    assert sim.data.qfrc_applied[sim.root_x_dofadr] == 0.0
++    assert sim.data.xfrc_applied[1, 0] == 0.0
++    assert first_snapshot[3]["external"][sim.root_x_dofadr] == 9.0
++
++
++def test_physical_step_rejects_invalid_external_shape():
++    sim = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    with pytest.raises(ValueError, match="invalid generalized force"):
++        sim.step(external_qfrc=np.zeros(sim.model.nv - 1))
++
++
++def test_explicit_external_input_can_alias_mujoco_applied_force_array():
++    sim = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    external = sim.data.qfrc_applied
++    external.fill(0.0)
++    external[sim.root_x_dofadr] = 11.0
++
++    sim.step(external_qfrc=external)
++
++    assert sim.last_force_snapshot[3]["external"][sim.root_x_dofadr] == 11.0

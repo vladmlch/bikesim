@@ -1,0 +1,1428 @@
+# Review package: c79e1a19f8f11dc08926db6c55e6eea710e47720..65e327d
+
+## Commits
+65e327d feat(mujoco): add MJCF ride mode with heightfield road and free-rolling chassis
+
+## Files changed
+ src/bike_sim/mujoco/_xml_format.py   |   9 ++
+ src/bike_sim/mujoco/actuators.py     |  34 +++++
+ src/bike_sim/mujoco/builder.py       |  15 +-
+ src/bike_sim/mujoco/drivetrain.py    |  25 +++-
+ src/bike_sim/mujoco/environment.py   |  24 +++-
+ src/bike_sim/mujoco/exporter.py      |  16 ++-
+ src/bike_sim/mujoco/frame.py         |   9 +-
+ src/bike_sim/mujoco/rear_linkage.py  |  10 +-
+ src/bike_sim/mujoco/sensors.py       |  13 +-
+ src/bike_sim/mujoco/steering_fork.py |  32 ++++-
+ src/bike_sim/mujoco/terrain.py       |  54 +++++++
+ tests/golden/baseline_bike_ride.xml  | 266 +++++++++++++++++++++++++++++++++++
+ tests/test_golden_baselines.py       |  13 ++
+ tests/test_ride_model.py             | 133 ++++++++++++++++++
+ 14 files changed, 636 insertions(+), 17 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/mujoco/_xml_format.py b/src/bike_sim/mujoco/_xml_format.py
+index 332d6c9..85ad7bb 100644
+--- a/src/bike_sim/mujoco/_xml_format.py
++++ b/src/bike_sim/mujoco/_xml_format.py
+@@ -50,20 +50,22 @@ def add_geom(
+     fromto: Optional[str] = None,
+     pos: Optional[Union[str, np.ndarray, Sequence[float]]] = None,
+     size: Optional[str] = None,
+     euler: Optional[str] = None,
+     mass: Optional[Union[str, float]] = None,
+     material: Optional[str] = None,
+     rgba: Optional[str] = None,
+     contype: Optional[str] = None,
+     conaffinity: Optional[str] = None,
+     friction: Optional[str] = None,
++    condim: Optional[str] = None,
++    solref: Optional[str] = None,
+ ) -> ET.Element:
+     """Creates and appends a <geom> element to parent with exact attribute preservation."""
+     attrib = {"name": name, "type": geom_type}
+     if fromto is not None:
+         attrib["fromto"] = fromto
+     if pos is not None:
+         attrib["pos"] = pos if isinstance(pos, str) else _format_vec(pos)
+     if size is not None:
+         attrib["size"] = str(size)
+     if euler is not None:
+@@ -73,48 +75,55 @@ def add_geom(
+     if material is not None:
+         attrib["material"] = material
+     if rgba is not None:
+         attrib["rgba"] = rgba
+     if contype is not None:
+         attrib["contype"] = str(contype)
+     if conaffinity is not None:
+         attrib["conaffinity"] = str(conaffinity)
+     if friction is not None:
+         attrib["friction"] = friction
++    if condim is not None:
++        attrib["condim"] = str(condim)
++    if solref is not None:
++        attrib["solref"] = solref
+     return ET.SubElement(parent, "geom", attrib)
+ 
+ 
+ 
+ def add_joint(
+     parent: ET.Element,
+     name: str,
+     joint_type: str = "hinge",
+     *,
+     pos: str = "0 0 0",
+     axis: Optional[Union[str, np.ndarray, Sequence[float]]] = None,
+     range: Optional[str] = None,
+     stiffness: Optional[str] = None,
+     damping: Optional[str] = None,
+     springref: Optional[str] = None,
++    solreflimit: Optional[str] = None,
+ ) -> ET.Element:
+     """Creates and appends a <joint> element to parent."""
+     attrib = {"name": name, "type": joint_type, "pos": pos}
+     if axis is not None:
+         attrib["axis"] = axis if isinstance(axis, str) else _format_vec(axis)
+     if range is not None:
+         attrib["range"] = range
+     if stiffness is not None:
+         attrib["stiffness"] = str(stiffness)
+     if damping is not None:
+         attrib["damping"] = str(damping)
+     if springref is not None:
+         attrib["springref"] = str(springref)
++    if solreflimit is not None:
++        attrib["solreflimit"] = solreflimit
+     return ET.SubElement(parent, "joint", attrib)
+ 
+ 
+ def add_site(
+     parent: ET.Element,
+     name: str,
+     *,
+     pos: Optional[Union[str, np.ndarray, Sequence[float]]] = None,
+     size: Optional[str] = None,
+     rgba: Optional[str] = None,
+diff --git a/src/bike_sim/mujoco/actuators.py b/src/bike_sim/mujoco/actuators.py
+index 2da545f..be3d333 100644
+--- a/src/bike_sim/mujoco/actuators.py
++++ b/src/bike_sim/mujoco/actuators.py
+@@ -49,20 +49,54 @@ def build_actuators(root: ET.Element, mode: str) -> None:
+         ET.SubElement(
+             actuator,
+             "motor",
+             {
+                 "name": "rear_wheel_spin",
+                 "joint": "rear_wheel_spin",
+                 "gear": "1",
+                 "ctrlrange": "-50 50",
+             },
+         )
++    elif mode == "ride":
++        # Planar ride mode: propulsion and braking torque applied directly to the wheel
++        # spin joints. Brake ranges are two-sided because the controller computes the
++        # sign; the actuator does not. See docs/RIDE.md section 6.
++        ET.SubElement(
++            actuator,
++            "motor",
++            {
++                "name": "rear_drive",
++                "joint": "rear_wheel_spin",
++                "gear": "1",
++                "ctrlrange": "-150 150",
++            },
++        )
++        ET.SubElement(
++            actuator,
++            "motor",
++            {
++                "name": "front_brake",
++                "joint": "front_wheel_spin",
++                "gear": "1",
++                "ctrlrange": "-200 200",
++            },
++        )
++        ET.SubElement(
++            actuator,
++            "motor",
++            {
++                "name": "rear_brake",
++                "joint": "rear_wheel_spin",
++                "gear": "1",
++                "ctrlrange": "-200 200",
++            },
++        )
+     else:
+         ET.SubElement(
+             actuator,
+             "position",
+             {
+                 "name": "steer_servo",
+                 "joint": "steer_joint",
+                 "kp": "150",
+                 "kv": "15",
+                 "ctrlrange": "-45 45",
+diff --git a/src/bike_sim/mujoco/builder.py b/src/bike_sim/mujoco/builder.py
+index afb0d0b..92f1bd0 100644
+--- a/src/bike_sim/mujoco/builder.py
++++ b/src/bike_sim/mujoco/builder.py
+@@ -24,37 +24,38 @@ from bike_sim.mujoco.assets import build_visual_and_assets
+ from bike_sim.mujoco.environment import build_environment
+ from bike_sim.mujoco.frame import build_frame_body
+ from bike_sim.mujoco.linkage import (
+     build_contact_exclusions,
+     build_equality_constraints,
+     build_rear_linkage,
+     build_steering_and_fork,
+ )
+ from bike_sim.mujoco.actuators import build_actuators
+ from bike_sim.mujoco.sensors import build_sensors
++from bike_sim.mujoco.terrain import build_terrain
+ 
+ 
+ def generate_mujoco_xml(
+     specs: Optional[BikeSpecs] = None,
+     solver: Optional[HorstLinkageSolver] = None,
+     mode: str = "standard",
+     mass_specs: Optional[BikeMassSpecs] = None,
+     include_rider: bool = False,
+     debug_markers: bool = False,
+ ) -> str:
+     """
+     Generates a complete, valid, high-fidelity MuJoCo MJCF XML model string.
+ 
+     Args:
+         specs: Bicycle geometric specifications.
+         solver: Solved Horst-link kinematics solver instance.
+-        mode: Simulation mode ("standard", "stand", "playground").
++        mode: Simulation mode ("standard", "stand", "playground", "ride").
+         mass_specs: Physical component mass specifications.
+         include_rider: Whether to include rider geometry and mass.
+         debug_markers: Whether to include yellow debug joint markers.
+ 
+     Returns:
+         Formatted MJCF XML string ready for MuJoCo simulation.
+     """
+     if specs is None:
+         specs = BikeSpecs()
+     if solver is None:
+@@ -81,21 +82,26 @@ def generate_mujoco_xml(
+     ET.SubElement(
+         root,
+         "compiler",
+         {
+             "angle": "degree",
+             "coordinate": "local",
+             "inertiafromgeom": "auto",
+             "autolimits": "true",
+         },
+     )
+-    timestep = "0.001" if mode in ("stand", "playground") else "0.002"
++    if mode == "ride":
++        timestep = "0.0005"
++    elif mode in ("stand", "playground"):
++        timestep = "0.001"
++    else:
++        timestep = "0.002"
+     ET.SubElement(
+         root,
+         "option",
+         {
+             "gravity": "0 0 -9.81",
+             "timestep": timestep,
+             "integrator": "implicitfast",
+             "iterations": "100",
+             "tolerance": "1e-10",
+         },
+@@ -105,20 +111,22 @@ def generate_mujoco_xml(
+     build_visual_and_assets(root)
+ 
+     # 3. Worldbody & Environment
+     worldbody = ET.SubElement(root, "worldbody")
+     build_environment(
+         worldbody=worldbody,
+         mode=mode,
+         ground_z_m=ground_z_m,
+         P10=P10,
+     )
++    if mode == "ride":
++        build_terrain(root, worldbody, ground_z_m)
+ 
+     # 4. Frame & Attached Bodies
+     frame = build_frame_body(
+         worldbody=worldbody,
+         mode=mode,
+         specs=specs,
+         mass_specs=mass_specs,
+         fixed_points=fixed,
+         cg_pos=cg_pos,
+         include_rider=include_rider,
+@@ -132,31 +140,32 @@ def generate_mujoco_xml(
+         specs=specs,
+         mass_specs=mass_specs,
+         fixed_points=fixed,
+         front_axle=P_FA_raw,
+         debug_markers=debug_markers,
+     )
+ 
+     # 6. Rear Linkage, Damper & Rear Wheel
+     build_rear_linkage(
+         frame=frame,
++        mode=mode,
+         specs=specs,
+         fixed_points=fixed,
+         solved_points=st0,
+         debug_markers=debug_markers,
+     )
+ 
+     # 7. Constraints & Collisions
+     build_equality_constraints(root, mode=mode)
+     build_contact_exclusions(root)
+ 
+     # 8. Actuators & Sensors
+     build_actuators(root, mode=mode)
+-    build_sensors(root)
++    build_sensors(root, mode=mode)
+ 
+     # Prettify XML
+     xml_raw = ET.tostring(root, encoding="utf-8")
+     parsed_dom = minidom.parseString(xml_raw)
+     pretty_xml = parsed_dom.toprettyxml(indent="  ", encoding="utf-8").decode("utf-8")
+ 
+     cleaned_lines = [line for line in pretty_xml.split("\n") if line.strip() != ""]
+     return "\n".join(cleaned_lines) + "\n"
+diff --git a/src/bike_sim/mujoco/drivetrain.py b/src/bike_sim/mujoco/drivetrain.py
+index bea6ef7..3c8b861 100644
+--- a/src/bike_sim/mujoco/drivetrain.py
++++ b/src/bike_sim/mujoco/drivetrain.py
+@@ -54,20 +54,21 @@ def build_bb_and_motor(
+             "fromto": "0 -0.090 0 0 0.090 0",
+             "size": "0.016",
+             "mass": f"{mass_specs.crank_pedals_mass:.2f}",
+             "material": "mat_metal",
+         },
+     )
+ 
+ 
+ def build_rear_wheel(
+     seatstay: ET.Element,
++    mode: str,
+     p1_rel_p2: np.ndarray,
+     rear_wheel_radius_m: float,
+ ) -> ET.Element:
+     """
+     Builds the rear wheel body (hub, rim, tire, cassette, brake rotor) mounted on the seatstay at P1 (Rear Axle).
+     """
+     rear_wheel = ET.SubElement(seatstay, "body", {"name": "rear_wheel", "pos": _format_vec(p1_rel_p2)})
+     ET.SubElement(
+         rear_wheel,
+         "joint",
+@@ -98,35 +99,55 @@ def build_rear_wheel(
+             "name": "geom_rear_rim",
+             "type": "cylinder",
+             "fromto": "0 -0.015 0 0 0.015 0",
+             "size": "0.300",
+             "mass": "0.40",
+             "material": "mat_rim",
+             "contype": "0",
+             "conaffinity": "0",
+         },
+     )
++    tire_contype = "0" if mode == "ride" else "1"
+     ET.SubElement(
+         rear_wheel,
+         "geom",
+         {
+             "name": "geom_rear_tire",
+             "type": "cylinder",
+             "fromto": "0 -0.032 0 0 0.032 0",
+             "size": f"{rear_wheel_radius_m:.6f}",
+             "mass": "1.50",
+             "material": "mat_tire",
+-            "contype": "1",
+-            "conaffinity": "1",
++            "contype": tire_contype,
++            "conaffinity": tire_contype,
+             "friction": "1.2 0.005 0.0001",
+         },
+     )
++    if mode == "ride":
++        # Sphere contact patch: see geom_front_contact in steering_fork.py for rationale.
++        ET.SubElement(
++            rear_wheel,
++            "geom",
++            {
++                "name": "geom_rear_contact",
++                "type": "sphere",
++                "pos": "0 0 0",
++                "size": "0.352",
++                "mass": "0",
++                "condim": "3",
++                "friction": "1.2 0.005 0.0001",
++                "solref": "-130000 -800",
++                "contype": "1",
++                "conaffinity": "1",
++                "rgba": "0.08 0.08 0.08 0",
++            },
++        )
+     ET.SubElement(
+         rear_wheel,
+         "geom",
+         {
+             "name": "geom_rear_cassette",
+             "type": "cylinder",
+             "fromto": "0 -0.055 0 0 -0.035 0",
+             "size": "0.095",
+             "mass": "0.40",
+             "material": "mat_metal",
+diff --git a/src/bike_sim/mujoco/environment.py b/src/bike_sim/mujoco/environment.py
+index f03314a..14d159f 100644
+--- a/src/bike_sim/mujoco/environment.py
++++ b/src/bike_sim/mujoco/environment.py
+@@ -1,29 +1,31 @@
+ """
+ MuJoCo Simulation Environment.
+ 
+-Builds ground plane, lighting, and workshop test stand fixtures.
++Builds ground plane, lighting, workshop test stand fixtures, and the ride-mode catch plane.
+ """
+ 
+ from typing import Optional
+ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
++from bike_sim.terrain.heightfield import FIELD
++
+ 
+ def build_environment(
+     worldbody: ET.Element,
+     mode: str,
+     ground_z_m: float,
+     P10: np.ndarray,
+ ) -> None:
+     """
+-    Builds lighting, ground plane, and workshop stand fixtures.
++    Builds lighting, ground plane, workshop stand fixtures, and (in ride mode) the catch plane.
+     """
+     # Lights
+     ET.SubElement(
+         worldbody,
+         "light",
+         {
+             "directional": "true",
+             "diffuse": "0.85 0.85 0.85",
+             "specular": "0.25 0.25 0.25",
+             "pos": "1.5 -2.5 3.5",
+@@ -35,20 +37,38 @@ def build_environment(
+         "light",
+         {
+             "directional": "true",
+             "diffuse": "0.45 0.45 0.45",
+             "specular": "0.1 0.1 0.1",
+             "pos": "-2.5 2.5 3.0",
+             "dir": "0.6 -0.6 -1.0",
+         },
+     )
+ 
++    if mode == "ride":
++        # No floor plane at road level: a MuJoCo plane is an infinite half-space for
++        # collision and would bridge every pothole. Only a runaway catch plane, backed
++        # off below the heightfield's floor, closes out the world.
++        catch_plane_z_m = FIELD.catch_plane_z_m(ground_z_m)
++        ET.SubElement(
++            worldbody,
++            "geom",
++            {
++                "name": "catch_plane",
++                "type": "plane",
++                "pos": f"0 0 {catch_plane_z_m:.6f}",
++                "size": "50 50 0.1",
++                "material": "mat_floor",
++            },
++        )
++        return
++
+     def _add_stand_fixtures() -> None:
+         ET.SubElement(
+             worldbody,
+             "geom",
+             {
+                 "name": "geom_stand_base",
+                 "type": "box",
+                 "pos": f"{P10[0]:.6f} -0.35 {ground_z_m + 0.015:.6f}",
+                 "size": "0.25 0.20 0.015",
+                 "material": "mat_stand",
+diff --git a/src/bike_sim/mujoco/exporter.py b/src/bike_sim/mujoco/exporter.py
+index aafecff..da17555 100644
+--- a/src/bike_sim/mujoco/exporter.py
++++ b/src/bike_sim/mujoco/exporter.py
+@@ -68,32 +68,46 @@ def export_playground_models(
+     include_rider: bool = False,
+ ) -> Dict[str, str]:
+     """
+     Exports standard, test stand, and unified interactive playground MJCF models.
+     """
+     out_path = Path(output_dir)
+     out_path.mkdir(parents=True, exist_ok=True)
+     stand_file = out_path / "bike_playground_stand.xml"
+     std_file = out_path / "bike_model.xml"
+     playground_file = out_path / "bike_playground.xml"
++    ride_file = out_path / "bike_ride.xml"
+ 
+     xml_stand = export_mujoco(output_path=stand_file, specs=specs, solver=solver, mode="stand", include_rider=include_rider)
+     xml_std = export_mujoco(output_path=std_file, specs=specs, solver=solver, mode="standard")
+     xml_playground = export_mujoco(
+         output_path=playground_file,
+         specs=specs,
+         solver=solver,
+         mode="playground",
+         include_rider=include_rider,
+         debug_markers=True,
+     )
+-    return {"stand": xml_stand, "standard": xml_std, "playground": xml_playground, "dynamic": xml_playground}
++    xml_ride = export_mujoco(
++        output_path=ride_file,
++        specs=specs,
++        solver=solver,
++        mode="ride",
++        include_rider=True,
++    )
++    return {
++        "stand": xml_stand,
++        "standard": xml_std,
++        "playground": xml_playground,
++        "dynamic": xml_playground,
++        "ride": xml_ride,
++    }
+ 
+ 
+ def _collect_hardpoint_dict(fixed: Dict[str, np.ndarray], state: Dict[str, Any], specs: BikeSpecs) -> Dict[str, np.ndarray]:
+     """Assembles all moving and fixed hardpoints for a given kinematic state."""
+     return {
+         "P0": fixed["P0"],
+         "P1": state["P1"],
+         "P2": state["P2"],
+         "P3": state["P3"],
+         "P4": state["P4"],
+diff --git a/src/bike_sim/mujoco/frame.py b/src/bike_sim/mujoco/frame.py
+index 542a9b8..58af5a2 100644
+--- a/src/bike_sim/mujoco/frame.py
++++ b/src/bike_sim/mujoco/frame.py
+@@ -11,20 +11,21 @@ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.physics.mass import BikeMassSpecs
+ from bike_sim.mujoco.rider import build_rider
+ from bike_sim.mujoco.drivetrain import build_bb_and_motor
+ from bike_sim.mujoco._xml_format import (
+     _format_fromto,
+     _format_vec,
+     add_geom,
++    add_joint,
+     add_site,
+     add_marker,
+ )
+ 
+ 
+ def _build_front_triangle_tubes(
+     frame: ET.Element,
+     BB: np.ndarray,
+     P_HT_bot: np.ndarray,
+     P11: np.ndarray,
+@@ -220,21 +221,27 @@ def build_frame_body(
+     include_rider: bool = True,
+     debug_markers: bool = False,
+ ) -> ET.Element:
+     """
+     Constructs the base frame body in worldbody and adds all frame geometry.
+     """
+     fixed_points_m = {k: np.array(v, dtype=float) / 1000.0 for k, v in fixed_points.items()}
+     BB = np.array([0.0, 0.0, 0.0], dtype=float)
+ 
+     frame = ET.SubElement(worldbody, "body", {"name": "frame", "pos": "0 0 0"})
+-    if mode in ("stand", "playground"):
++    if mode == "ride":
++        # Planar chassis root: longitudinal, vertical, and pitch, in that order, before
++        # the rider and any geometry. See docs/RIDE.md sections 0-1.
++        add_joint(frame, "root_x", "slide", axis="1 0 0")
++        add_joint(frame, "root_z", "slide", axis="0 0 1")
++        add_joint(frame, "root_pitch", "hinge", axis="0 1 0")
++    if mode in ("stand", "playground", "ride"):
+         build_rider(frame, include_rider=include_rider)
+ 
+     build_bb_and_motor(frame, mass_specs)
+     _build_front_triangle_tubes(
+         frame=frame,
+         BB=BB,
+         P_HT_bot=fixed_points_m["P_HT_bot"],
+         P11=fixed_points_m["P11"],
+         P8=fixed_points_m["P8"],
+         P10=fixed_points_m["P10"],
+diff --git a/src/bike_sim/mujoco/rear_linkage.py b/src/bike_sim/mujoco/rear_linkage.py
+index 463c088..069dcd8 100644
+--- a/src/bike_sim/mujoco/rear_linkage.py
++++ b/src/bike_sim/mujoco/rear_linkage.py
+@@ -43,20 +43,21 @@ def _build_chainstay(
+     add_geom(chainstay, "geom_cs_bridge", "capsule", fromto=f"{cs_bridge_pos[0]:.6f} -0.055 {cs_bridge_pos[2]:.6f} {cs_bridge_pos[0]:.6f} 0.055 {cs_bridge_pos[2]:.6f}", size="0.014", mass="0.20", material="mat_frame")
+     add_site(chainstay, "site_P2_cs", pos=p2_rel_p0, size="0.008", rgba="0.1 0.9 0.1 1.0")
+ 
+     if debug_markers:
+         add_marker(chainstay, "marker_p2", pos=p2_rel_p0, size="0.013")
+     return chainstay
+ 
+ 
+ def _build_seatstay(
+     chainstay: ET.Element,
++    mode: str,
+     p2_rel_p0: np.ndarray,
+     p1_rel_p2: np.ndarray,
+     p3_rel_p2: np.ndarray,
+     p12_rel_p2: np.ndarray,
+     rear_wheel_radius_m: float,
+     debug_markers: bool = False,
+ ) -> ET.Element:
+     """Builds the seatstay body, Horst pivot joint, dropout truss, and rear wheel."""
+     seatstay = ET.SubElement(chainstay, "body", {"name": "seatstay", "pos": _format_vec(p2_rel_p0)})
+     add_joint(seatstay, "horst_pivot", "hinge", axis="0 1 0", damping="0.3")
+@@ -83,21 +84,21 @@ def _build_seatstay(
+     add_site(seatstay, "site_P3_ss", pos=p3_rel_p2, size="0.008", rgba="0.9 0.5 0.1 1.0")
+     add_site(seatstay, "site_P12_ss", pos=p12_rel_p2, size="0.007", rgba="0.9 0.6 0.1 1.0")
+     if debug_markers:
+         add_marker(seatstay, "marker_p12", pos=p12_rel_p2, size="0.011")
+ 
+     add_site(seatstay, "site_PRA", pos=p1_rel_p2, size="0.008", rgba="0.2 0.4 0.9 1.0")
+     if debug_markers:
+         add_marker(seatstay, "marker_pra", pos=p1_rel_p2, size="0.013")
+ 
+     # Rear Wheel Assembly
+-    build_rear_wheel(seatstay, p1_rel_p2, rear_wheel_radius_m)
++    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m)
+     return seatstay
+ 
+ 
+ def _build_rocker(
+     frame: ET.Element,
+     p5: np.ndarray,
+     p3_rel_p5: np.ndarray,
+     p4_rel_p5: np.ndarray,
+     debug_markers: bool = False,
+ ) -> ET.Element:
+@@ -148,20 +149,21 @@ def _build_shock_yoke(
+ 
+     if debug_markers:
+         add_marker(shock_yoke, "marker_p6_l", pos=f"{p6_rel_p4[0]:.6f} 0.038 {p6_rel_p4[2]:.6f}", size="0.013")
+         add_marker(shock_yoke, "marker_p6_r", pos=f"{p6_rel_p4[0]:.6f} -0.038 {p6_rel_p4[2]:.6f}", size="0.013")
+ 
+     return shock_yoke
+ 
+ 
+ def _build_shock_assembly(
+     shock_yoke: ET.Element,
++    mode: str,
+     p6_rel_p4: np.ndarray,
+     p7_rel_p6: np.ndarray,
+     specs: BikeSpecs,
+ ) -> None:
+     """Builds the shock shaft and damper body with trunnion mount, canister, and piggyback."""
+     shock_len_m = float(np.linalg.norm(p7_rel_p6))
+     shock_slide_axis = -p7_rel_p6 / shock_len_m
+     shock_stroke_m = specs.shock_stroke / 1000.0
+ 
+     u_shock = p7_rel_p6 / shock_len_m
+@@ -220,33 +222,35 @@ def _build_shock_assembly(
+     )
+     add_joint(
+         shock_body,
+         "shock_stroke",
+         "slide",
+         axis=_format_vec(shock_slide_axis),
+         range=f"0 {shock_stroke_m:.6f}",
+         stiffness="0",
+         damping="0",
+         springref="0",
++        solreflimit="0.01 1" if mode == "ride" else None,
+     )
+ 
+     add_geom(shock_body, "geom_shock_trunnion_boss_l", "cylinder", fromto=f"0 0.019 0 0 {trunnion_half_width:.6f} 0", size="0.013", mass="0.02", material="mat_metal")
+     add_geom(shock_body, "geom_shock_trunnion_boss_r", "cylinder", fromto=f"0 -0.019 0 0 {-trunnion_half_width:.6f} 0", size="0.013", mass="0.02", material="mat_metal")
+     add_geom(shock_body, "geom_shock_trunnion_overhang", "cylinder", fromto=f"0 0 0 {_format_vec(trunnion_cap_rel_p7)}", size="0.024", mass="0.04", material="mat_damper_body")
+     add_geom(shock_body, "geom_shock_body", "cylinder", fromto=f"0 0 0 {_format_vec(body_can_end_rel_p7)}", size="0.026", mass="0.18", material="mat_damper_body")
+     add_geom(shock_body, "geom_shock_piggyback", "cylinder", fromto=f"{_format_vec(piggy_start)} {_format_vec(piggy_end)}", size="0.018", mass="0.10", material="mat_damper_body")
+     add_geom(shock_body, "geom_shock_piggy_bridge", "cylinder", fromto=f"{_format_vec(piggy_bridge_1)} {_format_vec(piggy_bridge_2)}", size="0.010", mass="0.04", material="mat_damper_body")
+     add_site(shock_body, "site_P7_shock", pos="0 0 0", size="0.008", rgba="0.1 0.6 0.9 1.0")
+ 
+ 
+ def build_rear_linkage(
+     frame: ET.Element,
++    mode: str,
+     specs: BikeSpecs,
+     fixed_points: Dict[str, np.ndarray],
+     solved_points: Dict[str, np.ndarray],
+     debug_markers: bool = False,
+ ) -> None:
+     """
+     Builds the 4-bar rear suspension linkage, shock yoke, shock shaft, shock body, and rear wheel.
+     """
+     P0 = np.array(fixed_points["P0"], dtype=float) / 1000.0
+     P5 = np.array(fixed_points["P5"], dtype=float) / 1000.0
+@@ -268,30 +272,30 @@ def build_rear_linkage(
+ 
+     p3_rel_p5 = P3 - P5
+     p4_rel_p5 = P4 - P5
+     p6_rel_p4 = P6 - P4
+     p7_rel_p6 = P7 - P6
+ 
+     # 1. Chainstay
+     chainstay = _build_chainstay(frame, P0, p2_rel_p0, debug_markers)
+ 
+     # 2. Seatstay & Rear Wheel
+-    _build_seatstay(chainstay, p2_rel_p0, p1_rel_p2, p3_rel_p2, p12_rel_p2, rear_wheel_radius_m, debug_markers)
++    _build_seatstay(chainstay, mode, p2_rel_p0, p1_rel_p2, p3_rel_p2, p12_rel_p2, rear_wheel_radius_m, debug_markers)
+ 
+     # 3. Rocker Link
+     rocker = _build_rocker(frame, P5, p3_rel_p5, p4_rel_p5, debug_markers)
+ 
+     # 4. Shock Yoke
+     shock_yoke = _build_shock_yoke(rocker, p4_rel_p5, p6_rel_p4, debug_markers)
+ 
+     # 5. Shock Shaft & Shock Body
+-    _build_shock_assembly(shock_yoke, p6_rel_p4, p7_rel_p6, specs)
++    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs)
+ 
+ 
+ def build_equality_constraints(root: ET.Element, mode: str) -> None:
+     """
+     Appends loop closure equality constraints (<equality>) at P3 and P7, plus stand clamp if in playground mode.
+     """
+     equality = ET.SubElement(root, "equality")
+     ET.SubElement(
+         equality,
+         "connect",
+diff --git a/src/bike_sim/mujoco/sensors.py b/src/bike_sim/mujoco/sensors.py
+index e442d86..5def947 100644
+--- a/src/bike_sim/mujoco/sensors.py
++++ b/src/bike_sim/mujoco/sensors.py
+@@ -1,22 +1,27 @@
+ """
+ MuJoCo Sensor Suite Configuration.
+ 
+ Configures telemetry sensors: shock stroke, fork travel, joint angles, wheel velocities, IMU, and CoM.
+ """
+ 
+ import xml.etree.ElementTree as ET
+ 
+ 
+-def build_sensors(root: ET.Element) -> None:
++def build_sensors(root: ET.Element, mode: str = "standard") -> None:
+     """
+     Appends sensor suite (<sensor>) to the root MJCF element.
++
++    Args:
++        root: Root <mujoco> XML element.
++        mode: Simulation mode. In "ride" mode, real accelerometers are added at the
++            handlebar and saddle sites, reporting the proper acceleration the rider feels.
+     """
+     sensor = ET.SubElement(root, "sensor")
+ 
+     # Suspension Travel & Stroke
+     ET.SubElement(sensor, "jointpos", {"name": "sensor_shock_stroke", "joint": "shock_stroke"})
+     ET.SubElement(sensor, "jointvel", {"name": "sensor_shock_velocity", "joint": "shock_stroke"})
+     ET.SubElement(sensor, "jointpos", {"name": "sensor_fork_travel", "joint": "fork_travel"})
+     ET.SubElement(sensor, "jointvel", {"name": "sensor_fork_velocity", "joint": "fork_travel"})
+ 
+     # Steering & Linkage Angles
+@@ -30,10 +35,16 @@ def build_sensors(root: ET.Element) -> None:
+     # Wheel Speeds
+     ET.SubElement(sensor, "jointvel", {"name": "sensor_front_wheel_speed", "joint": "front_wheel_spin"})
+     ET.SubElement(sensor, "jointvel", {"name": "sensor_rear_wheel_speed", "joint": "rear_wheel_spin"})
+ 
+     # Frame Inertial Measurement Unit (IMU) & Subtree CoM Telemetry
+     ET.SubElement(sensor, "accelerometer", {"name": "sensor_frame_accel", "site": "site_BB"})
+     ET.SubElement(sensor, "gyro", {"name": "sensor_frame_gyro", "site": "site_BB"})
+     ET.SubElement(sensor, "framepos", {"name": "sensor_rear_axle_pos", "objtype": "site", "objname": "site_PRA"})
+     ET.SubElement(sensor, "framepos", {"name": "sensor_front_axle_pos", "objtype": "site", "objname": "site_PFA"})
+     ET.SubElement(sensor, "subtreecom", {"name": "sensor_subtree_com", "body": "frame"})
++
++    if mode == "ride":
++        # MuJoCo accelerometers report proper acceleration (0 in free fall, 9.81 at rest)
++        # -- what the rider feels -- rather than finite-differenced site positions.
++        ET.SubElement(sensor, "accelerometer", {"name": "sensor_bar_accel", "site": "site_handlebar"})
++        ET.SubElement(sensor, "accelerometer", {"name": "sensor_saddle_accel", "site": "site_seatpost_top"})
+diff --git a/src/bike_sim/mujoco/steering_fork.py b/src/bike_sim/mujoco/steering_fork.py
+index d47ced1..eb860c6 100644
+--- a/src/bike_sim/mujoco/steering_fork.py
++++ b/src/bike_sim/mujoco/steering_fork.py
+@@ -24,30 +24,32 @@ from bike_sim.mujoco._xml_format import (
+ 
+ def _build_steerer_and_cockpit(
+     frame: ET.Element,
+     mode: str,
+     p_ht_bot: np.ndarray,
+     steer_axis_up: np.ndarray,
+     ht_top_rel_steer: np.ndarray,
+ ) -> Tuple[ET.Element, np.ndarray]:
+     """Builds the steerer tube body, steering joint, stem, and handlebars."""
+     steer = ET.SubElement(frame, "body", {"name": "steer", "pos": _format_vec(p_ht_bot)})
+-    if mode in ("stand", "dynamic", "playground"):
++    if mode in ("stand", "dynamic", "playground", "ride"):
+         add_joint(steer, "steer_joint", "hinge", axis=steer_axis_up, range="-0.01 0.01", stiffness="50000", damping="1000")
+     else:
+         add_joint(steer, "steer_joint", "hinge", axis=steer_axis_up, range="-60 60", damping="1.5")
+ 
+     add_geom(steer, "geom_steerer_tube", "cylinder", fromto=f"0 0 0 {_format_vec(ht_top_rel_steer)}", size="0.014", mass="0.25", material="mat_metal")
+ 
+     stem_top = ht_top_rel_steer + np.array([0.04, 0.0, 0.02])
+     add_geom(steer, "geom_stem", "cylinder", fromto=f"{_format_vec(ht_top_rel_steer)} {_format_vec(stem_top)}", size="0.016", mass="0.15", material="mat_handlebar")
+     add_geom(steer, "geom_handlebar", "cylinder", fromto=f"{stem_top[0]:.6f} -0.40 {stem_top[2]:.6f} {stem_top[0]:.6f} 0.40 {stem_top[2]:.6f}", size="0.0155", mass="0.40", material="mat_handlebar")
++    if mode == "ride":
++        add_site(steer, "site_handlebar", pos=stem_top, size="0.008", rgba="0.9 0.6 0.1 1.0")
+     return steer, stem_top
+ 
+ 
+ def _build_fork_crown_and_stanchions(
+     steer: ET.Element,
+     steer_axis_up: np.ndarray,
+     mass_specs: BikeMassSpecs,
+ ) -> None:
+     """Builds fork crown box and dual stanchion tubes."""
+     add_geom(steer, "geom_fork_crown", "box", pos="0 0 0", size="0.038 0.085 0.018", mass="0.30", material="mat_fork_lower")
+@@ -62,64 +64,86 @@ def _build_fork_crown_and_stanchions(
+             "cylinder",
+             fromto=f"0 {y} 0 {stanchion_tip[0]:.6f} {y} {stanchion_tip[2]:.6f}",
+             size="0.019",
+             mass=f"{stanchion_each_mass:.3f}",
+             material="mat_kashima",
+         )
+ 
+ 
+ def _build_fork_lowers(
+     steer: ET.Element,
++    mode: str,
+     fork_slide_axis: np.ndarray,
+     steer_axis_up: np.ndarray,
+     fa_rel_steer: np.ndarray,
+     fork_travel_m: float,
+     debug_markers: bool = False,
+ ) -> ET.Element:
+     """Builds fork lower slider body, sliding joint, magnesium lowers, arch, and dropouts."""
+     fork_lower = ET.SubElement(steer, "body", {"name": "fork_lower", "pos": "0 0 0"})
+     add_joint(
+         fork_lower,
+         "fork_travel",
+         "slide",
+         axis=fork_slide_axis,
+         range=f"0 {fork_travel_m:.6f}",
+         stiffness="0",
+         damping="0",
+         springref="0",
++        solreflimit="0.01 1" if mode == "ride" else None,
+     )
+ 
+     lower_top = fa_rel_steer + (0.330 * steer_axis_up)
+     add_geom(fork_lower, "geom_fork_lower_l", "capsule", fromto=f"{lower_top[0]:.6f} 0.065 {lower_top[2]:.6f} {fa_rel_steer[0]:.6f} 0.065 {fa_rel_steer[2]:.6f}", size="0.022", mass="0.55", material="mat_fork_lower")
+     add_geom(fork_lower, "geom_fork_lower_r", "capsule", fromto=f"{lower_top[0]:.6f} -0.065 {lower_top[2]:.6f} {fa_rel_steer[0]:.6f} -0.065 {fa_rel_steer[2]:.6f}", size="0.022", mass="0.55", material="mat_fork_lower")
+     add_geom(fork_lower, "geom_fork_arch", "capsule", fromto=f"{lower_top[0]:.6f} -0.065 {lower_top[2]:.6f} {lower_top[0]:.6f} 0.065 {lower_top[2]:.6f}", size="0.016", mass="0.25", material="mat_fork_lower")
+     add_geom(fork_lower, "geom_front_dropout", "cylinder", fromto=f"{fa_rel_steer[0]:.6f} -0.065 {fa_rel_steer[2]:.6f} {fa_rel_steer[0]:.6f} 0.065 {fa_rel_steer[2]:.6f}", size="0.012", mass="0.15", material="mat_metal")
+     add_site(fork_lower, "site_PFA", pos=fa_rel_steer, size="0.008", rgba="0.1 0.7 0.9 1.0")
+ 
+     if debug_markers:
+         add_marker(fork_lower, "marker_pfa", pos=fa_rel_steer, size="0.013")
+ 
+     return fork_lower
+ 
+ 
+ def _build_front_wheel(
+     fork_lower: ET.Element,
++    mode: str,
+     fa_rel_steer: np.ndarray,
+     front_wheel_radius_m: float,
+ ) -> ET.Element:
+     """Builds front wheel assembly (hub, rim, tire, brake rotor)."""
+     front_wheel = ET.SubElement(fork_lower, "body", {"name": "front_wheel", "pos": _format_vec(fa_rel_steer)})
+     add_joint(front_wheel, "front_wheel_spin", "hinge", axis="0 1 0", damping="0.01")
+     add_geom(front_wheel, "geom_front_hub", "cylinder", fromto="0 -0.055 0 0 0.055 0", size="0.018", mass="0.35", material="mat_metal")
+     add_geom(front_wheel, "geom_front_rim", "cylinder", fromto="0 -0.015 0 0 0.015 0", size="0.320", mass="0.45", material="mat_rim", contype="0", conaffinity="0")
+-    add_geom(front_wheel, "geom_front_tire", "cylinder", fromto="0 -0.030 0 0 0.030 0", size=f"{front_wheel_radius_m:.6f}", mass="1.35", material="mat_tire", contype="1", conaffinity="1", friction="1.2 0.005 0.0001")
++    tire_contype = "0" if mode == "ride" else "1"
++    add_geom(front_wheel, "geom_front_tire", "cylinder", fromto="0 -0.030 0 0 0.030 0", size=f"{front_wheel_radius_m:.6f}", mass="1.35", material="mat_tire", contype=tire_contype, conaffinity=tire_contype, friction="1.2 0.005 0.0001")
+     add_geom(front_wheel, "geom_front_rotor", "cylinder", fromto="0 0.032 0 0 0.034 0", size="0.1015", mass="0.25", material="mat_metal", contype="0", conaffinity="0")
++    if mode == "ride":
++        # Sphere contact patch: geometrically identical to the cylinder in the sagittal
++        # plane, but with no flat end faces to catch on a heightfield prism edge. See
++        # docs/RIDE.md section 3. Alpha 0 so it does not render over the tyre.
++        add_geom(
++            front_wheel,
++            "geom_front_contact",
++            "sphere",
++            pos="0 0 0",
++            size="0.372",
++            mass="0",
++            condim="3",
++            friction="1.2 0.005 0.0001",
++            solref="-130000 -800",
++            contype="1",
++            conaffinity="1",
++            rgba="0.08 0.08 0.08 0",
++        )
+     return front_wheel
+ 
+ 
+ def build_steering_and_fork(
+     frame: ET.Element,
+     mode: str,
+     specs: BikeSpecs,
+     mass_specs: BikeMassSpecs,
+     fixed_points: Dict[str, np.ndarray],
+     front_axle: np.ndarray,
+@@ -141,17 +165,17 @@ def build_steering_and_fork(
+     fa_rel_steer = P_FA - P_HT_bot
+     ht_top_rel_steer = P11 - P_HT_bot
+ 
+     # 1. Steerer & Cockpit
+     steer, stem_top = _build_steerer_and_cockpit(frame, mode, P_HT_bot, steer_axis_up, ht_top_rel_steer)
+ 
+     # 2. Fork Crown & Stanchions
+     _build_fork_crown_and_stanchions(steer, steer_axis_up, mass_specs)
+ 
+     # 3. Fork Lowers Slider
+-    fork_lower = _build_fork_lowers(steer, fork_slide_axis, steer_axis_up, fa_rel_steer, fork_travel_m, debug_markers)
++    fork_lower = _build_fork_lowers(steer, mode, fork_slide_axis, steer_axis_up, fa_rel_steer, fork_travel_m, debug_markers)
+ 
+     # 4. Front Wheel
+-    front_wheel = _build_front_wheel(fork_lower, fa_rel_steer, front_wheel_radius_m)
++    front_wheel = _build_front_wheel(fork_lower, mode, fa_rel_steer, front_wheel_radius_m)
+ 
+     return steer, fork_lower, front_wheel
+ 
+diff --git a/src/bike_sim/mujoco/terrain.py b/src/bike_sim/mujoco/terrain.py
+new file mode 100644
+index 0000000..1f25c23
+--- /dev/null
++++ b/src/bike_sim/mujoco/terrain.py
+@@ -0,0 +1,54 @@
++"""
++MuJoCo Ride-Mode Terrain Builder.
++
++Emits the fixed road heightfield asset and its worldbody placement geom for `ride` mode.
++No elevation data goes into the XML: the hfield asset is declared with zeroed data and
++`model.hfield_data` is filled in from Python later, once per track preset.
++"""
++
++import xml.etree.ElementTree as ET
++
++from bike_sim.terrain.heightfield import FIELD, HeightFieldSpec
++
++
++def build_terrain(
++    root: ET.Element,
++    worldbody: ET.Element,
++    ground_z_m: float,
++    spec: HeightFieldSpec = FIELD,
++) -> None:
++    """
++    Appends the ride-mode road hfield asset and its collision/visual geom.
++
++    Args:
++        root: Root <mujoco> XML element, used to locate the <asset> section.
++        worldbody: <worldbody> element to append the terrain geom to.
++        ground_z_m: World height at which the road surface should start, in metres.
++        spec: Fixed heightfield geometry shared by every track preset.
++    """
++    asset = root.find("asset")
++    ET.SubElement(
++        asset,
++        "hfield",
++        {
++            "name": "road",
++            "nrow": str(spec.nrow),
++            "ncol": str(spec.ncol),
++            "size": spec.size_attr,
++        },
++    )
++
++    ET.SubElement(
++        worldbody,
++        "geom",
++        {
++            "name": "terrain",
++            "type": "hfield",
++            "hfield": "road",
++            "pos": f"{spec.geom_x_m():.6f} 0 {spec.geom_z_m(ground_z_m):.6f}",
++            "condim": "3",
++            "friction": "1.2 0.005 0.0001",
++            "solref": "-130000 -800",
++            "material": "mat_floor",
++        },
++    )
+diff --git a/tests/golden/baseline_bike_ride.xml b/tests/golden/baseline_bike_ride.xml
+new file mode 100644
+index 0000000..202e98a
+--- /dev/null
++++ b/tests/golden/baseline_bike_ride.xml
+@@ -0,0 +1,266 @@
++<?xml version="1.0" encoding="utf-8"?>
++<mujoco model="enduro_bike_horst_yoke">
++  <compiler angle="degree" coordinate="local" inertiafromgeom="auto" autolimits="true"/>
++  <option gravity="0 0 -9.81" timestep="0.0005" integrator="implicitfast" iterations="100" tolerance="1e-10"/>
++  <visual>
++    <global elevation="-20" azimuth="140" offwidth="1920" offheight="1080"/>
++    <quality shadowsize="4096"/>
++  </visual>
++  <asset>
++    <texture name="grid_tex" type="2d" builtin="checker" width="512" height="512" rgb1="0.85 0.85 0.88" rgb2="0.75 0.75 0.78"/>
++    <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.4 0.6 0.8" rgb2="0.1 0.15 0.25" width="512" height="512"/>
++    <material name="mat_floor" texture="grid_tex" texrepeat="25 25" reflectance="0.08"/>
++    <material name="mat_frame" rgba="0.14 0.18 0.22 1.0" specular="0.4" shininess="0.5"/>
++    <material name="mat_linkage" rgba="0.88 0.22 0.16 1.0" specular="0.7" shininess="0.8"/>
++    <material name="mat_yoke" rgba="0.55 0.22 0.75 1.0" specular="0.6" shininess="0.7"/>
++    <material name="mat_kashima" rgba="0.82 0.60 0.28 1.0" specular="0.95" shininess="0.95"/>
++    <material name="mat_damper_body" rgba="0.12 0.12 0.12 1.0" specular="0.8" shininess="0.85"/>
++    <material name="mat_fork_lower" rgba="0.16 0.16 0.18 1.0" specular="0.3" shininess="0.4"/>
++    <material name="mat_tire" rgba="0.08 0.08 0.08 1.0" specular="0.05" shininess="0.1"/>
++    <material name="mat_rim" rgba="0.22 0.24 0.26 1.0" specular="0.5" shininess="0.6"/>
++    <material name="mat_metal" rgba="0.75 0.78 0.82 1.0" specular="0.85" shininess="0.9"/>
++    <material name="mat_saddle" rgba="0.06 0.06 0.06 1.0" specular="0.1" shininess="0.2"/>
++    <material name="mat_handlebar" rgba="0.12 0.12 0.14 1.0" specular="0.4" shininess="0.5"/>
++    <material name="mat_pivot_yellow" rgba="0.98 0.85 0.12 1.0" specular="0.9" shininess="0.9"/>
++    <material name="mat_stand" rgba="0.22 0.25 0.30 1.0" specular="0.5" shininess="0.6"/>
++    <material name="mat_obstacle" rgba="0.85 0.50 0.15 1.0" specular="0.4" shininess="0.4"/>
++    <material name="mat_pit" rgba="0.22 0.35 0.55 1.0" specular="0.4" shininess="0.5"/>
++    <material name="mat_motor" rgba="0.10 0.11 0.13 1.0" specular="0.6" shininess="0.7"/>
++    <material name="mat_battery" rgba="0.08 0.08 0.10 1.0" specular="0.5" shininess="0.6"/>
++    <material name="mat_cg_marker" rgba="0.95 0.20 0.85 0.9" specular="0.9" shininess="0.9"/>
++    <material name="mat_rider" rgba="0.18 0.38 0.68 0.95" specular="0.4" shininess="0.5"/>
++    <hfield name="road" nrow="2" ncol="24001" size="60.000000 0.500000 3.400000 0.500000"/>
++  </asset>
++  <worldbody>
++    <light directional="true" diffuse="0.85 0.85 0.85" specular="0.25 0.25 0.25" pos="1.5 -2.5 3.5" dir="-0.3 0.6 -1.0"/>
++    <light directional="true" diffuse="0.45 0.45 0.45" specular="0.1 0.1 0.1" pos="-2.5 2.5 3.0" dir="0.6 -0.6 -1.0"/>
++    <geom name="catch_plane" type="plane" pos="0 0 -4.149500" size="50 50 0.1" material="mat_floor"/>
++    <geom name="terrain" type="hfield" hfield="road" pos="60.000000 0 -3.149500" condim="3" friction="1.2 0.005 0.0001" solref="-130000 -800" material="mat_floor"/>
++    <body name="frame" pos="0 0 0">
++      <joint name="root_x" type="slide" pos="0 0 0" axis="1 0 0"/>
++      <joint name="root_z" type="slide" pos="0 0 0" axis="0 0 1"/>
++      <joint name="root_pitch" type="hinge" pos="0 0 0" axis="0 1 0"/>
++      <geom name="geom_rider_torso" type="capsule" fromto="0.10 0 0.48 0.22 0 0.82" size="0.13" mass="55.0" rgba="0.5 0.5 0.5 1.0" material="mat_rider" contype="0" conaffinity="0"/>
++      <geom name="geom_rider_legs" type="capsule" fromto="0.0 0 0.0 0.10 0 0.48" size="0.075" mass="18.0" rgba="0.5 0.5 0.5 1.0" material="mat_rider" contype="0" conaffinity="0"/>
++      <geom name="geom_rider_arms" type="capsule" fromto="0.22 0 0.78 0.45 0 0.66" size="0.055" mass="7.0" rgba="0.5 0.5 0.5 1.0" material="mat_rider" contype="0" conaffinity="0"/>
++      <geom name="geom_bb_shell" type="cylinder" fromto="0 -0.0365 0 0 0.0365 0" size="0.024" mass="0.30" material="mat_metal"/>
++      <geom name="geom_motor_core" type="cylinder" fromto="0.015 -0.055 0.020 0.045 0.055 0.035" size="0.045" mass="2.90" material="mat_motor"/>
++      <geom name="geom_crank_arms" type="cylinder" fromto="0 -0.090 0 0 0.090 0" size="0.016" mass="0.85" material="mat_metal"/>
++      <geom name="geom_downtube" type="box" pos="0.239137 0.000000 0.295958" size="0.378572 0.038 0.037848" euler="0 -45.296452 0" mass="0.60" material="mat_frame"/>
++      <geom name="geom_battery_pack" type="capsule" fromto="0.052834 0.000000 0.106886 0.292834 0.000000 0.346886" size="0.032" mass="4.30" material="mat_battery"/>
++      <geom name="geom_headtube" type="cylinder" fromto="0.532605 0.000000 0.538145 0.480000 0.000000 0.646000" size="0.027" mass="0.40" material="mat_frame"/>
++      <geom name="geom_toptube_bridge" type="capsule" fromto="0.480000 0.000000 0.646000 0.410000 0.000000 0.635000" size="0.024" mass="0.25" material="mat_frame"/>
++      <geom name="geom_toptube_main" type="capsule" fromto="0.410000 0.000000 0.635000 -0.060000 0.000000 0.400000" size="0.023" mass="0.45" material="mat_frame"/>
++      <geom name="geom_seattube" type="capsule" fromto="-0.060000 0.000000 0.400000 -0.030000 0.000000 0.258000" size="0.020" mass="0.05" material="mat_frame"/>
++      <geom name="geom_frame_casting" type="box" pos="0.005661 0 0.129000" size="0.075 0.036 0.130" mass="0.60" material="mat_frame" contype="0" conaffinity="0"/>
++      <geom name="geom_seatpost" type="cylinder" fromto="-0.060000 0.000000 0.400000 -0.085000 0.000000 0.490000" size="0.016" mass="0.120129" material="mat_metal"/>
++      <geom name="geom_seatpost_upper" type="cylinder" fromto="-0.085000 0.000000 0.490000 -0.140206 0.000000 0.660000" size="0.016" mass="0.229871" material="mat_metal"/>
++      <geom name="geom_seat_gusset" type="capsule" fromto="-0.085000 0.000000 0.490000 0.043400 0.000000 0.451700" size="0.015" mass="0.10" material="mat_frame"/>
++      <geom name="geom_frame_junction" type="capsule" fromto="0.184400 0.000000 0.522200 0.173221 0.000000 0.403651" size="0.042" mass="0.10" material="mat_frame"/>
++      <geom name="geom_saddle" type="box" pos="-0.164206 0.000000 0.675000" size="0.13 0.065 0.015" mass="0.55" material="mat_saddle"/>
++      <geom name="geom_p0_mount" type="cylinder" fromto="-0.044902 -0.035 0.046393 -0.044902 0.035 0.046393" size="0.016" mass="0.10" material="mat_metal"/>
++      <geom name="geom_p5_mount" type="cylinder" fromto="0.041321 -0.048 0.184457 0.041321 0.048 0.184457" size="0.013" mass="0.10" material="mat_metal"/>
++      <geom name="geom_p7_mount" type="cylinder" fromto="0.173221 -0.020 0.403651 0.173221 0.020 0.403651" size="0.012" mass="0.10" material="mat_metal"/>
++      <site name="site_BB" pos="0.000000 0.000000 0.000000" size="0.008" rgba="0.9 0.6 0.1 1.0"/>
++      <site name="site_P0" pos="-0.044902 0.000000 0.046393" size="0.008" rgba="0.2 0.8 0.2 1.0"/>
++      <site name="site_P5" pos="0.041321 0.000000 0.184457" size="0.008" rgba="0.8 0.2 0.2 1.0"/>
++      <site name="site_P7" pos="0.173221 0.000000 0.403651" size="0.008" rgba="0.1 0.6 0.9 1.0"/>
++      <site name="site_P8" pos="0.410000 0.000000 0.635000" size="0.006" rgba="0.5 0.5 0.5 1.0"/>
++      <site name="site_P9" pos="-0.085000 0.000000 0.490000" size="0.006" rgba="0.5 0.5 0.5 1.0"/>
++      <site name="site_P10" pos="-0.060000 0.000000 0.400000" size="0.006" rgba="0.5 0.5 0.5 1.0"/>
++      <site name="site_P11" pos="0.480000 0.000000 0.646000" size="0.008" rgba="0.9 0.1 0.1 1.0"/>
++      <site name="site_HT_bot" pos="0.532605 0.000000 0.538145" size="0.008" rgba="0.9 0.1 0.1 1.0"/>
++      <site name="site_CG" pos="0.149767 0.000000 0.183505" size="0.012" rgba="0.95 0.20 0.85 0.9"/>
++      <site name="site_top_tube_kink" pos="0.410000 0.000000 0.635000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
++      <site name="site_seat_collar" pos="-0.085000 0.000000 0.490000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
++      <site name="site_seatpost_top" pos="-0.140206 0.000000 0.660000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
++      <site name="site_seat_tube_junction" pos="-0.060000 0.000000 0.400000" size="0.005" rgba="0.5 0.5 0.5 0.8"/>
++      <site name="site_headtube_top" pos="0.480000 0.000000 0.646000" size="0.006" rgba="0.9 0.1 0.1 0.8"/>
++      <site name="site_headtube_bottom" pos="0.532605 0.000000 0.538145" size="0.006" rgba="0.9 0.1 0.1 0.8"/>
++      <body name="steer" pos="0.532605 0.000000 0.538145">
++        <joint name="steer_joint" type="hinge" pos="0 0 0" axis="-0.438371 0.000000 0.898794" range="-0.01 0.01" stiffness="50000" damping="1000"/>
++        <geom name="geom_steerer_tube" type="cylinder" fromto="0 0 0 -0.052605 0.000000 0.107855" size="0.014" mass="0.25" material="mat_metal"/>
++        <geom name="geom_stem" type="cylinder" fromto="-0.052605 0.000000 0.107855 -0.012605 0.000000 0.127855" size="0.016" mass="0.15" material="mat_handlebar"/>
++        <geom name="geom_handlebar" type="cylinder" fromto="-0.012605 -0.40 0.127855 -0.012605 0.40 0.127855" size="0.0155" mass="0.40" material="mat_handlebar"/>
++        <site name="site_handlebar" pos="-0.012605 0.000000 0.127855" size="0.008" rgba="0.9 0.6 0.1 1.0"/>
++        <geom name="geom_fork_crown" type="box" pos="0 0 0" size="0.038 0.085 0.018" mass="0.30" material="mat_fork_lower"/>
++        <geom name="geom_stanchion_l" type="cylinder" fromto="0 0.065 0 0.140279 0.065 -0.287614" size="0.019" mass="0.425" material="mat_kashima"/>
++        <geom name="geom_stanchion_r" type="cylinder" fromto="0 -0.065 0 0.140279 -0.065 -0.287614" size="0.019" mass="0.425" material="mat_kashima"/>
++        <body name="fork_lower" pos="0 0 0">
++          <joint name="fork_travel" type="slide" pos="0 0 0" axis="-0.438371 0.000000 0.898794" range="0 0.180000" stiffness="0" damping="0" springref="0" solreflimit="0.01 1"/>
++          <geom name="geom_fork_lower_l" type="capsule" fromto="0.155789 0.065 -0.219043 0.300451 0.065 -0.515645" size="0.022" mass="0.55" material="mat_fork_lower"/>
++          <geom name="geom_fork_lower_r" type="capsule" fromto="0.155789 -0.065 -0.219043 0.300451 -0.065 -0.515645" size="0.022" mass="0.55" material="mat_fork_lower"/>
++          <geom name="geom_fork_arch" type="capsule" fromto="0.155789 -0.065 -0.219043 0.155789 0.065 -0.219043" size="0.016" mass="0.25" material="mat_fork_lower"/>
++          <geom name="geom_front_dropout" type="cylinder" fromto="0.300451 -0.065 -0.515645 0.300451 0.065 -0.515645" size="0.012" mass="0.15" material="mat_metal"/>
++          <site name="site_PFA" pos="0.300451 0.000000 -0.515645" size="0.008" rgba="0.1 0.7 0.9 1.0"/>
++          <body name="front_wheel" pos="0.300451 0.000000 -0.515645">
++            <joint name="front_wheel_spin" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.01"/>
++            <geom name="geom_front_hub" type="cylinder" fromto="0 -0.055 0 0 0.055 0" size="0.018" mass="0.35" material="mat_metal"/>
++            <geom name="geom_front_rim" type="cylinder" fromto="0 -0.015 0 0 0.015 0" size="0.320" mass="0.45" material="mat_rim" contype="0" conaffinity="0"/>
++            <geom name="geom_front_tire" type="cylinder" fromto="0 -0.030 0 0 0.030 0" size="0.372000" mass="1.35" material="mat_tire" contype="0" conaffinity="0" friction="1.2 0.005 0.0001"/>
++            <geom name="geom_front_rotor" type="cylinder" fromto="0 0.032 0 0 0.034 0" size="0.1015" mass="0.25" material="mat_metal" contype="0" conaffinity="0"/>
++            <geom name="geom_front_contact" type="sphere" pos="0 0 0" size="0.372" mass="0" rgba="0.08 0.08 0.08 0" contype="1" conaffinity="1" friction="1.2 0.005 0.0001" condim="3" solref="-130000 -800"/>
++          </body>
++        </body>
++      </body>
++      <body name="chainstay" pos="-0.044902 0.000000 0.046393">
++        <joint name="main_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.5"/>
++        <geom name="geom_cs_sleeve" type="cylinder" fromto="0 -0.040 0 0 0.040 0" size="0.018" mass="0.25" material="mat_metal"/>
++        <geom name="geom_cs_left" type="capsule" fromto="0 0.045 0 -0.334216 0.074 -0.054835" size="0.016" mass="0.40" material="mat_frame"/>
++        <geom name="geom_cs_right" type="capsule" fromto="0 -0.045 0 -0.334216 -0.074 -0.054835" size="0.016" mass="0.40" material="mat_frame"/>
++        <geom name="geom_cs_bridge" type="capsule" fromto="-0.133687 -0.055 -0.021934 -0.133687 0.055 -0.021934" size="0.014" mass="0.20" material="mat_frame"/>
++        <site name="site_P2_cs" pos="-0.334216 0.000000 -0.054835" size="0.008" rgba="0.1 0.9 0.1 1.0"/>
++        <body name="seatstay" pos="-0.334216 0.000000 -0.054835">
++          <joint name="horst_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.3"/>
++          <geom name="geom_horst_sleeve_l" type="cylinder" fromto="0 0.068 0 0 0.080 0" size="0.013" mass="0.075" material="mat_metal"/>
++          <geom name="geom_horst_sleeve_r" type="cylinder" fromto="0 -0.080 0 0 -0.068 0" size="0.013" mass="0.075" material="mat_metal"/>
++          <geom name="geom_ss_left" type="capsule" fromto="-0.034882 0.074 0.068429 0.307403 0.045 0.215041" size="0.015" mass="0.25" material="mat_frame"/>
++          <geom name="geom_ss_right" type="capsule" fromto="-0.034882 -0.074 0.068429 0.307403 -0.045 0.215041" size="0.015" mass="0.25" material="mat_frame"/>
++          <geom name="geom_dropout_bottom_l" type="capsule" fromto="0 0.074 0 -0.068376 0.074 0.010942" size="0.016" mass="0.045" material="mat_frame"/>
++          <geom name="geom_dropout_rear_l" type="capsule" fromto="-0.068376 0.074 0.010942 -0.034882 0.074 0.068429" size="0.016" mass="0.045" material="mat_frame"/>
++          <geom name="geom_dropout_front_l" type="capsule" fromto="0 0.074 0 -0.034882 0.074 0.068429" size="0.015" mass="0.045" material="mat_frame"/>
++          <geom name="geom_dropout_bottom_r" type="capsule" fromto="0 -0.074 0 -0.068376 -0.074 0.010942" size="0.016" mass="0.045" material="mat_frame"/>
++          <geom name="geom_dropout_rear_r" type="capsule" fromto="-0.068376 -0.074 0.010942 -0.034882 -0.074 0.068429" size="0.016" mass="0.045" material="mat_frame"/>
++          <geom name="geom_dropout_front_r" type="capsule" fromto="0 -0.074 0 -0.034882 -0.074 0.068429" size="0.015" mass="0.045" material="mat_frame"/>
++          <geom name="geom_ss_bridge" type="capsule" fromto="0.215182 -0.050 0.150528 0.215182 0.050 0.150528" size="0.013" mass="0.13" material="mat_frame"/>
++          <site name="site_P3_ss" pos="0.307403 0.000000 0.215041" size="0.008" rgba="0.9 0.5 0.1 1.0"/>
++          <site name="site_P12_ss" pos="-0.034882 0.000000 0.068429" size="0.007" rgba="0.9 0.6 0.1 1.0"/>
++          <site name="site_PRA" pos="-0.068376 0.000000 0.010942" size="0.008" rgba="0.2 0.4 0.9 1.0"/>
++          <body name="rear_wheel" pos="-0.068376 0.000000 0.010942">
++            <joint name="rear_wheel_spin" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.01"/>
++            <geom name="geom_rear_hub" type="cylinder" fromto="0 -0.074 0 0 0.074 0" size="0.020" mass="0.30" material="mat_metal"/>
++            <geom name="geom_rear_rim" type="cylinder" fromto="0 -0.015 0 0 0.015 0" size="0.300" mass="0.40" material="mat_rim" contype="0" conaffinity="0"/>
++            <geom name="geom_rear_tire" type="cylinder" fromto="0 -0.032 0 0 0.032 0" size="0.352000" mass="1.50" material="mat_tire" contype="0" conaffinity="0" friction="1.2 0.005 0.0001"/>
++            <geom name="geom_rear_contact" type="sphere" pos="0 0 0" size="0.352" mass="0" condim="3" friction="1.2 0.005 0.0001" solref="-130000 -800" contype="1" conaffinity="1" rgba="0.08 0.08 0.08 0"/>
++            <geom name="geom_rear_cassette" type="cylinder" fromto="0 -0.055 0 0 -0.035 0" size="0.095" mass="0.40" material="mat_metal" contype="0" conaffinity="0"/>
++            <geom name="geom_rear_rotor" type="cylinder" fromto="0 0.038 0 0 0.040 0" size="0.1015" mass="0.20" material="mat_metal" contype="0" conaffinity="0"/>
++          </body>
++        </body>
++      </body>
++      <body name="rocker" pos="0.041321 0.000000 0.184457">
++        <joint name="rocker_frame_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.3"/>
++        <geom name="geom_rocker_sleeve" type="cylinder" fromto="0 -0.045 0 0 0.045 0" size="0.016" mass="0.16" material="mat_metal"/>
++        <geom name="geom_roc_arm_l1" type="capsule" fromto="0 0.045 0 -0.113037 0.045 0.022142" size="0.014" mass="0.04" material="mat_linkage"/>
++        <geom name="geom_roc_arm_r1" type="capsule" fromto="0 -0.045 0 -0.113037 -0.045 0.022142" size="0.014" mass="0.04" material="mat_linkage"/>
++        <geom name="geom_roc_arm_l2" type="capsule" fromto="0 0.045 0 -0.079867 0.045 0.007006" size="0.014" mass="0.04" material="mat_linkage"/>
++        <geom name="geom_roc_arm_r2" type="capsule" fromto="0 -0.045 0 -0.079867 -0.045 0.007006" size="0.014" mass="0.04" material="mat_linkage"/>
++        <geom name="geom_roc_arm_l3" type="capsule" fromto="-0.113037 0.045 0.022142 -0.079867 0.045 0.007006" size="0.012" mass="0.04" material="mat_linkage"/>
++        <geom name="geom_roc_arm_r3" type="capsule" fromto="-0.113037 -0.045 0.022142 -0.079867 -0.045 0.007006" size="0.012" mass="0.04" material="mat_linkage"/>
++        <site name="site_P3_rocker" pos="-0.113037 0.000000 0.022142" size="0.008" rgba="0.9 0.5 0.1 1.0"/>
++        <site name="site_P4_rocker" pos="-0.079867 0.000000 0.007006" size="0.008" rgba="0.7 0.2 0.8 1.0"/>
++        <body name="shock_yoke" pos="-0.079867 0.000000 0.007006">
++          <joint name="yoke_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.2"/>
++          <geom name="geom_yoke_pivot_p4" type="cylinder" fromto="0 -0.044 0 0 0.044 0" size="0.011" mass="0.06" material="mat_metal"/>
++          <geom name="geom_yoke_arm_l" type="capsule" fromto="0 0.040 0 0.066954 0.038 0.067087" size="0.011" mass="0.08" material="mat_yoke"/>
++          <geom name="geom_yoke_arm_r" type="capsule" fromto="0 -0.040 0 0.066954 -0.038 0.067087" size="0.011" mass="0.08" material="mat_yoke"/>
++          <geom name="geom_yoke_bridge" type="capsule" fromto="0.050215 -0.038 0.050315 0.050215 0.038 0.050315" size="0.009" mass="0.04" material="mat_yoke"/>
++          <geom name="geom_yoke_eyelet" type="cylinder" fromto="0.066954 -0.040 0.067087 0.066954 0.040 0.067087" size="0.011" mass="0.04" material="mat_metal"/>
++          <site name="site_P6_yoke" pos="0.066954 0.000000 0.067087" size="0.008" rgba="0.6 0.1 0.7 1.0"/>
++          <body name="shock_shaft" pos="0.066954 0.000000 0.067087">
++            <geom name="geom_shock_lower_eyelet" type="cylinder" fromto="0 -0.016 0 0 0.016 0" size="0.011" mass="0.06" material="mat_metal"/>
++            <geom name="geom_shock_shaft" type="cylinder" fromto="0 0 0 0.102428 0.000000 0.102632" size="0.014" mass="0.14" material="mat_kashima"/>
++            <geom name="geom_shock_travel_indicator" type="cylinder" fromto="0.011302 0.000000 0.011325 0.014834 0.000000 0.014864" size="0.0165" mass="0.0" material="mat_linkage" contype="0" conaffinity="0"/>
++            <body name="shock_body" pos="0.144813 0.000000 0.145101">
++              <inertial pos="-0.033395 0.011400 -0.028962" quat="-0.10166406 0.38183084 -0.06020627 0.91664870" mass="0.400000" diaginertia="0.00084836 0.00071226 0.00023249"/>
++              <joint name="shock_stroke" type="slide" pos="0 0 0" axis="-0.706403 -0.000000 -0.707810" range="0 0.065000" stiffness="0" damping="0" springref="0" solreflimit="0.01 1"/>
++              <geom name="geom_shock_trunnion_boss_l" type="cylinder" fromto="0 0.019 0 0 0.027000 0" size="0.013" mass="0.02" material="mat_metal"/>
++              <geom name="geom_shock_trunnion_boss_r" type="cylinder" fromto="0 -0.019 0 0 -0.027000 0" size="0.013" mass="0.02" material="mat_metal"/>
++              <geom name="geom_shock_trunnion_overhang" type="cylinder" fromto="0 0 0 0.009890 0.000000 0.009909" size="0.024" mass="0.04" material="mat_damper_body"/>
++              <geom name="geom_shock_body" type="cylinder" fromto="0 0 0 -0.097484 -0.000000 -0.097678" size="0.026" mass="0.18" material="mat_damper_body"/>
++              <geom name="geom_shock_piggyback" type="cylinder" fromto="0.011350 0.008000 -0.036758 -0.052226 0.008000 -0.100461" size="0.018" mass="0.10" material="mat_damper_body"/>
++              <geom name="geom_shock_piggy_bridge" type="cylinder" fromto="-0.021192 -0.000000 -0.021234 0.002873 0.008000 -0.045252" size="0.010" mass="0.04" material="mat_damper_body"/>
++              <site name="site_P7_shock" pos="0 0 0" size="0.008" rgba="0.1 0.6 0.9 1.0"/>
++            </body>
++          </body>
++        </body>
++      </body>
++    </body>
++  </worldbody>
++  <equality>
++    <connect name="seatstay_rocker_joint" site1="site_P3_ss" site2="site_P3_rocker" solref="0.0005 1" solimp="0.99 0.999 0.0001 0.5 2"/>
++    <connect name="shock_frame_joint" site1="site_P7_shock" site2="site_P7" solref="0.0005 1" solimp="0.99 0.999 0.0001 0.5 2"/>
++  </equality>
++  <contact>
++    <exclude body1="frame" body2="steer"/>
++    <exclude body1="frame" body2="fork_lower"/>
++    <exclude body1="frame" body2="chainstay"/>
++    <exclude body1="frame" body2="seatstay"/>
++    <exclude body1="frame" body2="rocker"/>
++    <exclude body1="frame" body2="shock_yoke"/>
++    <exclude body1="frame" body2="shock_shaft"/>
++    <exclude body1="frame" body2="shock_body"/>
++    <exclude body1="frame" body2="front_wheel"/>
++    <exclude body1="frame" body2="rear_wheel"/>
++    <exclude body1="steer" body2="fork_lower"/>
++    <exclude body1="steer" body2="chainstay"/>
++    <exclude body1="steer" body2="seatstay"/>
++    <exclude body1="steer" body2="rocker"/>
++    <exclude body1="steer" body2="shock_yoke"/>
++    <exclude body1="steer" body2="shock_shaft"/>
++    <exclude body1="steer" body2="shock_body"/>
++    <exclude body1="steer" body2="front_wheel"/>
++    <exclude body1="steer" body2="rear_wheel"/>
++    <exclude body1="fork_lower" body2="chainstay"/>
++    <exclude body1="fork_lower" body2="seatstay"/>
++    <exclude body1="fork_lower" body2="rocker"/>
++    <exclude body1="fork_lower" body2="shock_yoke"/>
++    <exclude body1="fork_lower" body2="shock_shaft"/>
++    <exclude body1="fork_lower" body2="shock_body"/>
++    <exclude body1="fork_lower" body2="front_wheel"/>
++    <exclude body1="fork_lower" body2="rear_wheel"/>
++    <exclude body1="chainstay" body2="seatstay"/>
++    <exclude body1="chainstay" body2="rocker"/>
++    <exclude body1="chainstay" body2="shock_yoke"/>
++    <exclude body1="chainstay" body2="shock_shaft"/>
++    <exclude body1="chainstay" body2="shock_body"/>
++    <exclude body1="chainstay" body2="front_wheel"/>
++    <exclude body1="chainstay" body2="rear_wheel"/>
++    <exclude body1="seatstay" body2="rocker"/>
++    <exclude body1="seatstay" body2="shock_yoke"/>
++    <exclude body1="seatstay" body2="shock_shaft"/>
++    <exclude body1="seatstay" body2="shock_body"/>
++    <exclude body1="seatstay" body2="front_wheel"/>
++    <exclude body1="seatstay" body2="rear_wheel"/>
++    <exclude body1="rocker" body2="shock_yoke"/>
++    <exclude body1="rocker" body2="shock_shaft"/>
++    <exclude body1="rocker" body2="shock_body"/>
++    <exclude body1="rocker" body2="front_wheel"/>
++    <exclude body1="rocker" body2="rear_wheel"/>
++    <exclude body1="shock_yoke" body2="shock_shaft"/>
++    <exclude body1="shock_yoke" body2="shock_body"/>
++    <exclude body1="shock_yoke" body2="front_wheel"/>
++    <exclude body1="shock_yoke" body2="rear_wheel"/>
++    <exclude body1="shock_shaft" body2="shock_body"/>
++    <exclude body1="shock_shaft" body2="front_wheel"/>
++    <exclude body1="shock_shaft" body2="rear_wheel"/>
++    <exclude body1="shock_body" body2="front_wheel"/>
++    <exclude body1="shock_body" body2="rear_wheel"/>
++    <exclude body1="front_wheel" body2="rear_wheel"/>
++  </contact>
++  <actuator>
++    <motor name="rear_drive" joint="rear_wheel_spin" gear="1" ctrlrange="-150 150"/>
++    <motor name="front_brake" joint="front_wheel_spin" gear="1" ctrlrange="-200 200"/>
++    <motor name="rear_brake" joint="rear_wheel_spin" gear="1" ctrlrange="-200 200"/>
++  </actuator>
++  <sensor>
++    <jointpos name="sensor_shock_stroke" joint="shock_stroke"/>
++    <jointvel name="sensor_shock_velocity" joint="shock_stroke"/>
++    <jointpos name="sensor_fork_travel" joint="fork_travel"/>
++    <jointvel name="sensor_fork_velocity" joint="fork_travel"/>
++    <jointpos name="sensor_steer_angle" joint="steer_joint"/>
++    <jointvel name="sensor_steer_velocity" joint="steer_joint"/>
++    <jointpos name="sensor_chainstay_angle" joint="main_pivot"/>
++    <jointpos name="sensor_horst_angle" joint="horst_pivot"/>
++    <jointpos name="sensor_rocker_angle" joint="rocker_frame_pivot"/>
++    <jointpos name="sensor_yoke_angle" joint="yoke_pivot"/>
++    <jointvel name="sensor_front_wheel_speed" joint="front_wheel_spin"/>
++    <jointvel name="sensor_rear_wheel_speed" joint="rear_wheel_spin"/>
++    <accelerometer name="sensor_frame_accel" site="site_BB"/>
++    <gyro name="sensor_frame_gyro" site="site_BB"/>
++    <framepos name="sensor_rear_axle_pos" objtype="site" objname="site_PRA"/>
++    <framepos name="sensor_front_axle_pos" objtype="site" objname="site_PFA"/>
++    <subtreecom name="sensor_subtree_com" body="frame"/>
++    <accelerometer name="sensor_bar_accel" site="site_handlebar"/>
++    <accelerometer name="sensor_saddle_accel" site="site_seatpost_top"/>
++  </sensor>
++</mujoco>
+diff --git a/tests/test_golden_baselines.py b/tests/test_golden_baselines.py
+index 47b414f..1a275e9 100644
+--- a/tests/test_golden_baselines.py
++++ b/tests/test_golden_baselines.py
+@@ -61,20 +61,32 @@ class TestGoldenBaselines(unittest.TestCase):
+         root = ET.fromstring(xml_content)
+         self.assertEqual(root.tag, "mujoco")
+ 
+     def test_baseline_bike_playground_stand_xml(self) -> None:
+         """Test stand mode model XML matches baseline_bike_playground_stand.xml."""
+         xml_content = generate_mujoco_xml(specs=self.specs, solver=self.solver, mode="stand")
+         self._assert_text_equal(xml_content, "baseline_bike_playground_stand.xml")
+         root = ET.fromstring(xml_content)
+         self.assertEqual(root.tag, "mujoco")
+ 
++    def test_baseline_bike_ride_xml(self) -> None:
++        """Ride mode model XML matches baseline_bike_ride.xml."""
++        xml_content = generate_mujoco_xml(
++            specs=self.specs,
++            solver=self.solver,
++            mode="ride",
++            include_rider=True,
++        )
++        self._assert_text_equal(xml_content, "baseline_bike_ride.xml")
++        root = ET.fromstring(xml_content)
++        self.assertEqual(root.tag, "mujoco")
++
+     def test_baseline_coordinates_json(self) -> None:
+         """Exported hardpoints JSON matches baseline_coordinates.json."""
+         baseline_path = self.golden_dir / "baseline_coordinates.json"
+         self.assertTrue(baseline_path.exists())
+         expected_raw = baseline_path.read_text(encoding="utf-8")
+ 
+         # Use export_json directly to a temp location
+         import tempfile
+         with tempfile.TemporaryDirectory() as tmp_dir:
+             json_file = Path(tmp_dir) / "coordinates.json"
+@@ -91,20 +103,21 @@ class TestGoldenBaselines(unittest.TestCase):
+         """Verifies all golden baseline XMLs compile without warnings or errors in MuJoCo runtime."""
+         try:
+             import mujoco
+         except ImportError:
+             self.skipTest("mujoco not installed")
+ 
+         for baseline_name in [
+             "baseline_bike_model.xml",
+             "baseline_bike_playground.xml",
+             "baseline_bike_playground_stand.xml",
++            "baseline_bike_ride.xml",
+         ]:
+             path = self.golden_dir / baseline_name
+             model = mujoco.MjModel.from_xml_path(str(path))
+             self.assertIsNotNone(model)
+             data = mujoco.MjData(model)
+             self.assertIsNotNone(data)
+ 
+ 
+ if __name__ == "__main__":
+     unittest.main()
+diff --git a/tests/test_ride_model.py b/tests/test_ride_model.py
+new file mode 100644
+index 0000000..88d1ca7
+--- /dev/null
++++ b/tests/test_ride_model.py
+@@ -0,0 +1,133 @@
++"""
++Unit tests for the MJCF `ride` mode: free-rolling planar chassis over a heightfield road.
++
++Tests include:
++- Planar root joint DOF count and joint types.
++- Loop closure equality constraints, with no test-stand weld present.
++- Wheel contact geometry: sphere contact patches vs. non-colliding tyre cylinders.
++- Heightfield asset dimensions and terrain/catch-plane placement.
++- Ride-only accelerometer sensors.
++- Simulation timestep.
++- Continued compilation of the other three modes.
++"""
++
++import mujoco
++import numpy as np
++import pytest
++
++from bike_sim.geometry.hardpoints import compute_ground_z
++from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.mujoco.builder import generate_mujoco_xml
++from bike_sim.terrain.heightfield import FIELD
++
++
++@pytest.fixture(scope="module")
++def ride_model():
++    """Compiles the ride-mode MJCF model once for the whole test module."""
++    xml_str = generate_mujoco_xml(mode="ride", include_rider=True)
++    return mujoco.MjModel.from_xml_string(xml_str)
++
++
++def _ground_z_m() -> float:
++    return compute_ground_z(BikeSpecs()) / 1000.0
++
++
++def test_ride_mode_dof_count(ride_model):
++    """Ride mode has exactly 12 generalized coordinates and 12 velocity DOFs."""
++    assert ride_model.nq == 12
++    assert ride_model.nv == 12
++
++
++def test_ride_mode_root_joints(ride_model):
++    """The three planar chassis root joints exist with the expected joint types."""
++    expected_types = {
++        "root_x": mujoco.mjtJoint.mjJNT_SLIDE,
++        "root_z": mujoco.mjtJoint.mjJNT_SLIDE,
++        "root_pitch": mujoco.mjtJoint.mjJNT_HINGE,
++    }
++    for joint_name, expected_type in expected_types.items():
++        jid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
++        assert jid >= 0, f"joint {joint_name} not found in ride model"
++        assert ride_model.jnt_type[jid] == expected_type
++
++
++def test_ride_mode_equality_constraints(ride_model):
++    """Only the two loop-closure connects are present; no stand_clamp weld in ride mode."""
++    assert ride_model.neq == 2
++    eq_names = {
++        mujoco.mj_id2name(ride_model, mujoco.mjtObj.mjOBJ_EQUALITY, i)
++        for i in range(ride_model.neq)
++    }
++    assert "stand_clamp" not in eq_names
++    assert eq_names == {"seatstay_rocker_joint", "shock_frame_joint"}
++
++
++@pytest.mark.parametrize(
++    "contact_geom,radius_m",
++    [("geom_front_contact", 0.372), ("geom_rear_contact", 0.352)],
++)
++def test_ride_mode_wheel_contact_spheres(ride_model, contact_geom, radius_m):
++    """Each wheel has a colliding sphere contact patch of the specified radius."""
++    gid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_GEOM, contact_geom)
++    assert gid >= 0, f"{contact_geom} not found in ride model"
++    assert ride_model.geom_type[gid] == mujoco.mjtGeom.mjGEOM_SPHERE
++    assert ride_model.geom_size[gid][0] == pytest.approx(radius_m)
++    assert ride_model.geom_contype[gid] == 1
++    assert ride_model.geom_conaffinity[gid] == 1
++
++
++@pytest.mark.parametrize("tire_geom", ["geom_front_tire", "geom_rear_tire"])
++def test_ride_mode_tyre_cylinders_noncolliding(ride_model, tire_geom):
++    """The tyre cylinders are non-colliding in ride mode: only the contact spheres collide."""
++    gid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_GEOM, tire_geom)
++    assert gid >= 0, f"{tire_geom} not found in ride model"
++    assert ride_model.geom_type[gid] == mujoco.mjtGeom.mjGEOM_CYLINDER
++    assert ride_model.geom_contype[gid] == 0
++    assert ride_model.geom_conaffinity[gid] == 0
++
++
++def test_ride_mode_hfield_dimensions(ride_model):
++    """The road hfield asset matches FIELD's fixed nrow/ncol grid dimensions."""
++    hid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_HFIELD, "road")
++    assert hid >= 0, "road hfield asset not found in ride model"
++    assert ride_model.hfield_nrow[hid] == FIELD.nrow
++    assert ride_model.hfield_ncol[hid] == FIELD.ncol
++
++
++def test_ride_mode_timestep(ride_model):
++    """Ride mode uses the finer 0.0005 s timestep required for hard contact solving."""
++    assert ride_model.opt.timestep == pytest.approx(0.0005)
++
++
++def test_ride_mode_catch_plane_below_field_floor(ride_model):
++    """The runaway catch plane sits strictly below the heightfield's own floor."""
++    gid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_GEOM, "catch_plane")
++    assert gid >= 0, "catch_plane geom not found in ride model"
++    ground_z_m = _ground_z_m()
++    catch_plane_z = float(ride_model.geom_pos[gid][2])
++    assert catch_plane_z < FIELD.geom_z_m(ground_z_m)
++
++
++def test_ride_mode_accelerometers_resolve(ride_model):
++    """Both ride-only accelerometers exist and target the correct sites."""
++    for sensor_name, site_name in [
++        ("sensor_bar_accel", "site_handlebar"),
++        ("sensor_saddle_accel", "site_seatpost_top"),
++    ]:
++        sid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)
++        assert sid >= 0, f"{sensor_name} not found in ride model"
++        assert ride_model.sensor_type[sid] == mujoco.mjtSensor.mjSENS_ACCELEROMETER
++
++        site_id = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_SITE, site_name)
++        assert site_id >= 0, f"{site_name} site not found in ride model"
++        assert ride_model.sensor_objid[sid] == site_id
++
++
++@pytest.mark.parametrize("mode", ["standard", "stand", "playground"])
++def test_other_modes_still_compile(mode):
++    """The other three modes remain unaffected and continue to compile cleanly."""
++    xml_str = generate_mujoco_xml(mode=mode)
++    model = mujoco.MjModel.from_xml_string(xml_str)
++    assert model is not None
++    data = mujoco.MjData(model)
++    mujoco.mj_forward(model, data)

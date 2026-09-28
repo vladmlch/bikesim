@@ -1,0 +1,857 @@
+# Review package: fff698c..HEAD
+
+## Commits
+08466a4 fix: separate compression spring and end-stop forces
+
+## Files changed
+ src/bike_sim/mujoco/builder.py       |   1 +
+ src/bike_sim/mujoco/rear_linkage.py  |  12 ++-
+ src/bike_sim/physics/coil_shock.py   |  24 ++++-
+ src/bike_sim/physics/model_config.py |  33 ++++++-
+ src/bike_sim/physics/stops.py        |  49 ++++++++++
+ src/bike_sim/sim/ride/forces.py      | 110 ++++++++++++++++++++---
+ src/bike_sim/sim/ride_sim.py         |   9 +-
+ tests/test_end_stops.py              | 170 +++++++++++++++++++++++++++++++++++
+ tests/test_force_accumulator.py      |   5 +-
+ 9 files changed, 392 insertions(+), 21 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/mujoco/builder.py b/src/bike_sim/mujoco/builder.py
+index 2421109..279ef02 100644
+--- a/src/bike_sim/mujoco/builder.py
++++ b/src/bike_sim/mujoco/builder.py
+@@ -206,20 +206,21 @@ def generate_mujoco_xml(
+ 
+     # 6. Rear Linkage, Damper & Rear Wheel
+     build_rear_linkage(
+         frame=frame,
+         mode=mode,
+         specs=specs,
+         fixed_points=fixed,
+         solved_points=st0,
+         debug_markers=debug_markers,
+         tyre_model=tyre_model,
++        physics_config=physics_config,
+     )
+ 
+     # 7. Constraints & Collisions
+     build_equality_constraints(root, mode=mode)
+     if crank_joint:
+         build_chain_constraint(root, gear_ratio=gear_ratio)
+         if pose is not None and pose.leg_chains:
+             # Clipless-pedal welds: each foot body is fixed to its pedal body. No
+             # `relpose` means the weld datum is the relative pose at qpos0 -- the
+             # design pose, which the pose solver makes self-consistent -- so the
+diff --git a/src/bike_sim/mujoco/rear_linkage.py b/src/bike_sim/mujoco/rear_linkage.py
+index 26d9257..0bb0b85 100644
+--- a/src/bike_sim/mujoco/rear_linkage.py
++++ b/src/bike_sim/mujoco/rear_linkage.py
+@@ -9,20 +9,21 @@ Constructs:
+ 5. Shock yoke body (yoke pivot P4, yoke arms, bridge, P6 site)
+ 6. Shock shaft & shock body (shock lower eyelet, damper can, piggyback reservoir, P7 site)
+ 7. Equality constraints and Contact exclusions
+ """
+ 
+ from typing import Dict
+ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.physics.model_config import SimulationPhysicsConfig
+ from bike_sim.mujoco._xml_format import (
+     _format_vec,
+     add_geom,
+     add_joint,
+     add_site,
+     add_marker,
+ )
+ from bike_sim.mujoco.drivetrain import build_rear_wheel
+ 
+ 
+@@ -154,25 +155,31 @@ def _build_shock_yoke(
+ 
+     return shock_yoke
+ 
+ 
+ def _build_shock_assembly(
+     shock_yoke: ET.Element,
+     mode: str,
+     p6_rel_p4: np.ndarray,
+     p7_rel_p6: np.ndarray,
+     specs: BikeSpecs,
++    physics_config: SimulationPhysicsConfig | None = None,
+ ) -> None:
+     """Builds the shock shaft and damper body with trunnion mount, canister, and piggyback."""
+     shock_len_m = float(np.linalg.norm(p7_rel_p6))
+     shock_slide_axis = -p7_rel_p6 / shock_len_m
+     shock_stroke_m = specs.shock_stroke / 1000.0
++    if mode == "ride" and physics_config is not None and physics_config.physics_mode == "physical":
++        stop_travel_m = physics_config.end_stops.overtravel_m
++        joint_range = f"{-stop_travel_m:.6f} {shock_stroke_m + stop_travel_m:.6f}"
++    else:
++        joint_range = f"0 {shock_stroke_m:.6f}"
+ 
+     u_shock = p7_rel_p6 / shock_len_m
+     shaft_len = 0.145
+     shaft_tip_rel_p6 = u_shock * shaft_len
+     bottom_out_clearance_m = 0.002
+     body_can_len = (specs.shock_eye_to_eye - specs.shock_stroke) / 1000.0 - bottom_out_clearance_m
+     body_can_end_rel_p7 = shock_slide_axis * body_can_len
+     trunnion_overhang = 0.014
+     trunnion_cap_rel_p7 = -shock_slide_axis * trunnion_overhang
+     trunnion_half_width = 0.027
+@@ -219,21 +226,21 @@ def _build_shock_assembly(
+             "quat": "-0.10166406 0.38183084 -0.06020627 0.91664870",
+             "mass": f"{_shock_body_pinned_mass:.6f}",
+             "diaginertia": "0.00084836 0.00071226 0.00023249",
+         },
+     )
+     add_joint(
+         shock_body,
+         "shock_stroke",
+         "slide",
+         axis=_format_vec(shock_slide_axis),
+-        range=f"0 {shock_stroke_m:.6f}",
++        range=joint_range,
+         stiffness="0",
+         damping="0",
+         springref="0",
+         solreflimit="0.01 1" if mode == "ride" else None,
+     )
+ 
+     add_geom(shock_body, "geom_shock_trunnion_boss_l", "cylinder", fromto=f"0 0.019 0 0 {trunnion_half_width:.6f} 0", size="0.013", mass="0.02", material="mat_metal")
+     add_geom(shock_body, "geom_shock_trunnion_boss_r", "cylinder", fromto=f"0 -0.019 0 0 {-trunnion_half_width:.6f} 0", size="0.013", mass="0.02", material="mat_metal")
+     add_geom(shock_body, "geom_shock_trunnion_overhang", "cylinder", fromto=f"0 0 0 {_format_vec(trunnion_cap_rel_p7)}", size="0.024", mass="0.04", material="mat_damper_body")
+     add_geom(shock_body, "geom_shock_body", "cylinder", fromto=f"0 0 0 {_format_vec(body_can_end_rel_p7)}", size="0.026", mass="0.18", material="mat_damper_body")
+@@ -243,20 +250,21 @@ def _build_shock_assembly(
+ 
+ 
+ def build_rear_linkage(
+     frame: ET.Element,
+     mode: str,
+     specs: BikeSpecs,
+     fixed_points: Dict[str, np.ndarray],
+     solved_points: Dict[str, np.ndarray],
+     debug_markers: bool = False,
+     tyre_model: str = "sphere",
++    physics_config: SimulationPhysicsConfig | None = None,
+ ) -> None:
+     """
+     Builds the 4-bar rear suspension linkage, shock yoke, shock shaft, shock body, and rear wheel.
+     """
+     P0 = np.array(fixed_points["P0"], dtype=float) / 1000.0
+     P5 = np.array(fixed_points["P5"], dtype=float) / 1000.0
+     P7 = np.array(fixed_points["P7"], dtype=float) / 1000.0
+ 
+     P1 = np.array(solved_points["P1"], dtype=float) / 1000.0
+     P2 = np.array(solved_points["P2"], dtype=float) / 1000.0
+@@ -293,21 +301,21 @@ def build_rear_linkage(
+         tyre_model,
+     )
+ 
+     # 3. Rocker Link
+     rocker = _build_rocker(frame, P5, p3_rel_p5, p4_rel_p5, debug_markers)
+ 
+     # 4. Shock Yoke
+     shock_yoke = _build_shock_yoke(rocker, p4_rel_p5, p6_rel_p4, debug_markers)
+ 
+     # 5. Shock Shaft & Shock Body
+-    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs)
++    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs, physics_config)
+ 
+ 
+ def build_equality_constraints(root: ET.Element, mode: str) -> None:
+     """
+     Appends loop closure equality constraints (<equality>) at P3 and P7, plus stand clamp if in playground mode.
+     """
+     equality = ET.SubElement(root, "equality")
+     ET.SubElement(
+         equality,
+         "connect",
+diff --git a/src/bike_sim/physics/coil_shock.py b/src/bike_sim/physics/coil_shock.py
+index d892b78..7370007 100644
+--- a/src/bike_sim/physics/coil_shock.py
++++ b/src/bike_sim/physics/coil_shock.py
+@@ -10,20 +10,21 @@ coordinate by the ride-mode force path.
+ constant rate; all of the progression a Horst-link bike shows at the rear wheel comes from
+ the linkage, which MuJoCo applies exactly through the constraint Jacobian every step. See
+ docs/RIDE.md section 5 -- multiplying this force by an analytic leverage ratio would apply
+ the ratio twice.
+ 
+ The bumper is quadratic in engagement depth, so both force and slope are continuous where
+ it engages, and it reaches its peak exactly at full stroke.
+ """
+ 
+ from dataclasses import dataclass
++from math import isfinite
+ from typing import Optional
+ 
+ 
+ @dataclass
+ class CoilShockSpecs:
+     """
+     Dataclass holding the coil, preload and bumper specifications of a rear shock.
+ 
+     Attributes:
+         rate_n_m: Coil spring rate in N/m. The default is the repository's shipped
+@@ -47,34 +48,53 @@ class CoilShockSpecs:
+     def bumper_engage_mm(self) -> float:
+         """Shaft stroke at which the bumper first touches, in mm."""
+         return self.stroke_mm - self.bumper_length_mm
+ 
+ 
+ class CoilShock:
+     """
+     Linear coil spring with a progressive bottom-out bumper.
+     """
+ 
+-    def __init__(self, specs: Optional[CoilShockSpecs] = None) -> None:
++    def __init__(
++        self, specs: Optional[CoilShockSpecs] = None, *, legacy_behavior: bool = False
++    ) -> None:
+         self.specs = specs if specs is not None else CoilShockSpecs()
++        self.legacy_behavior = legacy_behavior
++        s = self.specs
++        if (
++            not all(isfinite(x) for x in (
++                s.rate_n_m, s.preload_mm, s.stroke_mm,
++                s.bumper_length_mm, s.bumper_peak_n,
++            ))
++            or s.preload_mm < 0
++            or s.rate_n_m <= 0
++            or s.stroke_mm <= 0
++            or not 0 < s.bumper_length_mm <= s.stroke_mm
++            or s.bumper_peak_n <= 0
++        ):
++            raise ValueError("invalid coil shock specifications")
+ 
+     def compute_spring_force(self, stroke_mm: float) -> float:
+         """
+         Computes the coil force at a given shaft stroke.
+ 
+         Args:
+             stroke_mm: Shaft stroke in mm, increasing with compression.
+ 
+         Returns:
+             Coil force in N, including the preload offset.
+         """
+-        return float(self.specs.rate_n_m * (float(stroke_mm) + self.specs.preload_mm) / 1000.0)
++        compression_mm = float(stroke_mm) + self.specs.preload_mm
++        if not self.legacy_behavior:
++            compression_mm = max(0.0, compression_mm)
++        return float(self.specs.rate_n_m * compression_mm / 1000.0)
+ 
+     def compute_bumper_force(self, stroke_mm: float) -> float:
+         """
+         Computes the bottom-out bumper force at a given shaft stroke.
+ 
+         Args:
+             stroke_mm: Shaft stroke in mm, increasing with compression.
+ 
+         Returns:
+             Bumper force in N: exactly zero until the bumper engages, then quadratic in
+diff --git a/src/bike_sim/physics/model_config.py b/src/bike_sim/physics/model_config.py
+index 16e6e2b..813cb55 100644
+--- a/src/bike_sim/physics/model_config.py
++++ b/src/bike_sim/physics/model_config.py
+@@ -1,24 +1,55 @@
+ """Mode selection and shared integration settings for ride simulations."""
+ 
+-from dataclasses import dataclass
++from dataclasses import dataclass, field
+ from math import isfinite
+ 
+ 
++@dataclass(frozen=True)
++class EndStopConfig:
++    """Synthetic stop calibration shared by the ride model and force path."""
++
++    reference_force_n: float = 7000.0
++    reference_deflection_m: float = 0.010
++    damping_n_s_m: float = 500.0
++    overtravel_m: float = 0.010
++    provenance: str = "synthetic"
++
++    def __post_init__(self) -> None:
++        if (
++            not all(isfinite(x) for x in (
++                self.reference_force_n, self.reference_deflection_m,
++                self.damping_n_s_m, self.overtravel_m,
++            ))
++            or self.reference_force_n <= 0
++            or self.reference_deflection_m <= 0
++            or self.damping_n_s_m < 0
++            or self.overtravel_m <= 0
++        ):
++            raise ValueError("invalid end-stop calibration")
++        if self.overtravel_m < self.reference_deflection_m:
++            raise ValueError("end-stop overtravel must reach the reference deflection")
++
++    @property
++    def stiffness_n_m(self) -> float:
++        return self.reference_force_n / self.reference_deflection_m
++
++
+ @dataclass(frozen=True)
+ class SimulationPhysicsConfig:
+     """Resolved physics mode and the source of forward drive torque."""
+ 
+     physics_mode: str = "legacy"
+     drive_mode: str | None = None
+     timestep_s: float = 0.0005
+     pitch_assist: bool | None = None
++    end_stops: EndStopConfig = field(default_factory=EndStopConfig)
+ 
+     def __post_init__(self) -> None:
+         if self.physics_mode not in {"legacy", "physical"}:
+             raise ValueError("unknown physics_mode")
+         if not isfinite(self.timestep_s) or self.timestep_s <= 0:
+             raise ValueError("timestep_s must be finite and positive")
+ 
+         legacy = self.physics_mode == "legacy"
+         if self.drive_mode is None:
+             object.__setattr__(
+diff --git a/src/bike_sim/physics/stops.py b/src/bike_sim/physics/stops.py
+new file mode 100644
+index 0000000..c3bc8f5
+--- /dev/null
++++ b/src/bike_sim/physics/stops.py
+@@ -0,0 +1,49 @@
++"""Unilateral suspension end stops in compression-positive coordinates."""
++
++from math import isfinite
++
++
++def end_stop(
++    q: float,
++    v: float,
++    lo: float,
++    hi: float,
++    k: float,
++    c: float,
++    *,
++    upper_boundary_force_n: float = 0.0,
++    upper_boundary_energy_j: float = 0.0,
++) -> tuple[float, float]:
++    """Return generalized stop force and stored energy for a bounded slide joint.
++
++    Optional upper boundary terms let an emergency stop continue a bumper's force
++    and potential at the working-stroke boundary without stacking both springs.
++    """
++    if (
++        not all(
++            isfinite(x)
++            for x in (q, v, lo, hi, k, c, upper_boundary_force_n, upper_boundary_energy_j)
++        )
++        or hi <= lo
++        or k <= 0
++        or c < 0
++        or upper_boundary_force_n < 0
++        or upper_boundary_energy_j < 0
++    ):
++        raise ValueError("invalid end-stop parameters")
++
++    low_depth = max(lo - q, 0.0)
++    if low_depth > 0.0:
++        return max(0.0, k * low_depth - c * v), 0.5 * k * low_depth**2
++
++    high_depth = max(q - hi, 0.0)
++    if high_depth > 0.0 or (q == hi and upper_boundary_force_n > 0.0):
++        elastic_force = upper_boundary_force_n + k * high_depth
++        force = -max(0.0, elastic_force + c * v)
++        energy = upper_boundary_energy_j + upper_boundary_force_n * high_depth + 0.5 * k * high_depth**2
++        return force, energy
++
++    return 0.0, 0.0
++
++
++__all__ = ["end_stop"]
+diff --git a/src/bike_sim/sim/ride/forces.py b/src/bike_sim/sim/ride/forces.py
+index e1b54a5..93f7b21 100644
+--- a/src/bike_sim/sim/ride/forces.py
++++ b/src/bike_sim/sim/ride/forces.py
+@@ -12,126 +12,210 @@ Jacobian, which applies the instantaneous leverage ratio exactly, at the current
+ configuration, every step. Multiplying by an analytically computed ratio would apply it
+ twice.
+ """
+ 
+ from typing import Tuple
+ 
+ import mujoco
+ import numpy as np
+ 
+ from bike_sim.physics.coil_shock import CoilShock
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.physics.stops import end_stop
+ from bike_sim.sim.controllers import SuspensionController
+ 
+ 
+ class SuspensionForceApplier:
+     """
+     Applies fork and rear shock forces to their slide coordinates in `qfrc_applied`.
+ 
+     The fork force is the existing `SuspensionController` air spring plus Charger 3
+     damping. The shock force is a `CoilShock` coil plus bumper -- which replaces the linear
+     spring term of `SuspensionController.compute_shock_force`, and must not be combined
+     with it -- plus Super Deluxe RC2T damping with HBO.
+     """
+ 
+     def __init__(
+         self,
+         model: mujoco.MjModel,
+         controller: SuspensionController,
+         coil_shock: CoilShock,
++        *,
++        physics_config: SimulationPhysicsConfig | None = None,
+     ) -> None:
+         self.controller = controller
+         self.coil_shock = coil_shock
++        self.physics_config = physics_config or SimulationPhysicsConfig()
+ 
+         self.fork_qposadr, self.fork_dofadr = self._resolve_compression_joint(model, "fork_travel")
+-        self.shock_qposadr, self.shock_dofadr = self._resolve_compression_joint(model, "shock_stroke")
++        self.shock_qposadr, self.shock_dofadr = self._resolve_compression_joint(
++            model, "shock_stroke", allow_negative_lower=self.physics_config.physics_mode == "physical"
++        )
+ 
+         # Last computed force components, so telemetry can report them without recomputing.
+         self.fork_spring_n = 0.0
+         self.fork_damper_n = 0.0
+         self.fork_total_n = 0.0
+         self.shock_spring_n = 0.0
+         self.shock_bumper_n = 0.0
+         self.shock_damper_n = 0.0
++        self.shock_top_out_n = 0.0
++        self.shock_upper_stop_n = 0.0
+         self.shock_total_n = 0.0
++        self.potential_energy_j: dict[str, float] = {}
+ 
+     @staticmethod
+-    def _resolve_compression_joint(model: mujoco.MjModel, joint_name: str) -> Tuple[int, int]:
++    def _resolve_compression_joint(
++        model: mujoco.MjModel, joint_name: str, *, allow_negative_lower: bool = False
++    ) -> Tuple[int, int]:
+         """
+         Resolves a suspension joint's addresses and verifies its sign convention.
+ 
+         Args:
+             model: Compiled MuJoCo model.
+             joint_name: Name of the suspension slide joint.
+ 
+         Returns:
+             Tuple of (qpos address, dof address).
+ 
+         Raises:
+-            ValueError: If the joint is missing, unlimited, or its range does not start at
+-                zero -- the force path writes a negative generalized force to resist
+-                compression, which is only correct if the coordinate increases with
+-                compression.
++            ValueError: If the joint is missing, unlimited, or has a range inconsistent
++                with compression increasing in the positive direction. Only the physical
++                shock may have a negative lower range for top-out travel.
+         """
+         jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+         if jid < 0:
+             raise ValueError(f"model has no joint '{joint_name}'; suspension forces cannot be applied")
+ 
+         lo, hi = float(model.jnt_range[jid][0]), float(model.jnt_range[jid][1])
+-        if not bool(model.jnt_limited[jid]) or abs(lo) > 1e-9 or hi <= 0.0:
++        lower_valid = abs(lo) <= 1e-9 or (
++            allow_negative_lower and joint_name == "shock_stroke" and lo < 0.0
++        )
++        if not bool(model.jnt_limited[jid]) or not lower_valid or hi <= 0.0:
+             raise ValueError(
+                 f"joint '{joint_name}' has range [{lo:.4f}, {hi:.4f}]; the suspension force path "
+-                f"requires a limited range starting at 0, so that increasing value means compression"
++                f"requires a compression-positive limited range"
+             )
+ 
+         return int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid])
+ 
+     def apply(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
+         """
+         Computes both suspension forces from the current state and applies them.
+ 
+         Args:
+             model: Compiled MuJoCo model. Unused -- the joint addresses were cached at
+                 construction -- but kept so every ride-mode force writer shares one
+                 `(model, data)` signature.
+             data: Simulation state, written at the fork and shock DOFs of `qfrc_applied`.
+         """
+         qfrc = self.compute_qfrc(model, data)
+         data.qfrc_applied[self.fork_dofadr] = qfrc[self.fork_dofadr]
+         data.qfrc_applied[self.shock_dofadr] = qfrc[self.shock_dofadr]
+ 
+     def compute_qfrc(self, model: mujoco.MjModel, data: mujoco.MjData) -> np.ndarray:
+         """Compute suspension's generalized forces without writing the MuJoCo input."""
++        components = self.compute_qfrc_components(model, data)
+         qfrc = np.zeros(model.nv)
++        for component in components.values():
++            qfrc += component
++        return qfrc
++
++    def compute_qfrc_components(
++        self, model: mujoco.MjModel, data: mujoco.MjData
++    ) -> dict[str, np.ndarray]:
++        """Compute each named spring, damper and stop contribution once."""
+         travel_mm = float(data.qpos[self.fork_qposadr]) * 1000.0
+         fork_velocity_mps = float(data.qvel[self.fork_dofadr])
+         fork_total, fork_spring, fork_damper = self.controller.compute_fork_force(
+             travel_mm, fork_velocity_mps
+         )
+ 
+         stroke_mm = float(data.qpos[self.shock_qposadr]) * 1000.0
+         shock_velocity_mps = float(data.qvel[self.shock_dofadr])
+         # Coil and bumper are taken separately rather than through
+         # CoilShock.compute_axial_force, whose sum they are, because telemetry needs them
+         # apart: a bottom-out is a bumper event, not a stiffer spring.
+         shock_spring = self.coil_shock.compute_spring_force(stroke_mm)
+-        shock_bumper = self.coil_shock.compute_bumper_force(stroke_mm)
++        physical = self.physics_config.physics_mode == "physical"
++        stroke_limit_mm = self.coil_shock.specs.stroke_mm
++        shock_bumper = (
++            0.0 if physical and stroke_mm > stroke_limit_mm
++            else self.coil_shock.compute_bumper_force(stroke_mm)
++        )
+         shock_damper = self.controller.suspension_system.shock_damper.compute_damping_force(
+             shock_velocity_mps, stroke_mm
+         )
+-        shock_total = shock_spring + shock_bumper + shock_damper
++        top_out_force = 0.0
++        top_out_energy = 0.0
++        upper_force = 0.0
++        upper_energy = 0.0
++        bumper_energy = 0.0
++        if physical:
++            stop = self.physics_config.end_stops
++            stroke_m = stroke_mm / 1000.0
++            limit_m = stroke_limit_mm / 1000.0
++            if stroke_m < 0.0:
++                top_out_force, top_out_energy = end_stop(
++                    stroke_m, shock_velocity_mps, 0.0, limit_m,
++                    stop.stiffness_n_m, stop.damping_n_s_m,
++                )
++            bumper_length_m = self.coil_shock.specs.bumper_length_mm / 1000.0
++            bumper_peak_n = self.coil_shock.specs.bumper_peak_n
++            bumper_full_energy = bumper_peak_n * bumper_length_m / 3.0
++            if stroke_m <= limit_m:
++                bumper_depth_m = max(0.0, stroke_m - (limit_m - bumper_length_m))
++                bumper_energy = bumper_peak_n * bumper_depth_m**3 / (3.0 * bumper_length_m**2)
++            else:
++                upper_force, upper_energy = end_stop(
++                    stroke_m, shock_velocity_mps, 0.0, limit_m,
++                    stop.stiffness_n_m, stop.damping_n_s_m,
++                    upper_boundary_force_n=bumper_peak_n,
++                    upper_boundary_energy_j=bumper_full_energy,
++                )
++            coil_compression_m = max(0.0, (stroke_mm + self.coil_shock.specs.preload_mm) / 1000.0)
++            coil_energy = 0.5 * self.coil_shock.specs.rate_n_m * coil_compression_m**2
++        else:
++            coil_energy = 0.0
++
++        shock_top_out = -top_out_force
++        shock_upper_stop = -upper_force
++        shock_total = (
++            shock_spring + shock_bumper + shock_damper + shock_top_out + shock_upper_stop
++        )
+ 
+         # Both coordinates increase with compression, so a resisting force is a negative
+         # generalized force. The construction-time range check guarantees that convention.
+-        qfrc[self.fork_dofadr] = -fork_total
+-        qfrc[self.shock_dofadr] = -shock_total
++        def vector(dofadr: int, force_n: float) -> np.ndarray:
++            qfrc = np.zeros(model.nv)
++            qfrc[dofadr] = -force_n
++            return qfrc
++
++        components = {
++            "fork_spring": vector(self.fork_dofadr, fork_spring),
++            "fork_damper": vector(self.fork_dofadr, fork_damper),
++            "shock_coil": vector(self.shock_dofadr, shock_spring),
++            "shock_bumper": vector(self.shock_dofadr, shock_bumper),
++            "shock_damper": vector(self.shock_dofadr, shock_damper),
++            "shock_top_out": vector(self.shock_dofadr, shock_top_out),
++            "shock_upper_stop": vector(self.shock_dofadr, shock_upper_stop),
++        }
+ 
+         self.fork_spring_n = fork_spring
+         self.fork_damper_n = fork_damper
+         self.fork_total_n = fork_total
+         self.shock_spring_n = shock_spring
+         self.shock_bumper_n = shock_bumper
+         self.shock_damper_n = shock_damper
++        self.shock_top_out_n = shock_top_out
++        self.shock_upper_stop_n = shock_upper_stop
+         self.shock_total_n = shock_total
+-        return qfrc
++        self.potential_energy_j = {
++            "shock_coil": coil_energy,
++            "shock_bumper": bumper_energy,
++            "shock_top_out": top_out_energy,
++            "shock_upper_stop": upper_energy,
++        }
++        return components
+ 
+ 
+ __all__ = ["SuspensionForceApplier"]
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index 03cac76..e110bf9 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -240,21 +240,25 @@ class RideSimulation:
+             Tuple[float, np.ndarray, np.ndarray, Mapping[str, np.ndarray]]
+         ] = None
+         self.last_force_sample: Optional[ForceSample] = None
+ 
+         self.controller = controller if controller is not None else _default_controller(
+             self.specs, legacy_behavior=self.physics_config.physics_mode == "legacy"
+         )
+         self.applier = SuspensionForceApplier(
+             self.model,
+             self.controller,
+-            coil_shock if coil_shock is not None else CoilShock(),
++            CoilShock(
++                coil_shock.specs if coil_shock is not None else None,
++                legacy_behavior=self.physics_config.physics_mode == "legacy",
++            ),
++            physics_config=self.physics_config,
+         )
+         self.rider_forces = RiderForceApplier(self.model, self.pose)
+         self.contact_query = TerrainContactQuery(self.model)
+         self.resistance = RollingResistance(self.model)
+         self.cruise = CruiseController(self.model, target_speed_kmh=target_speed_kmh)
+         # Crank arm length in metres, for the pedal positions the rider's legs follow.
+         self.crank_length_m = float(self.specs.crank_length) / 1000.0
+         # Inert without articulated legs, so every caller can treat it as always present.
+         self.leg_drive = LegDrive(
+             self.model,
+@@ -507,21 +511,22 @@ class RideSimulation:
+         if external is not None:
+             self.force_accumulator.add("external", external)
+         if self.tyre_applier is not None:
+             self.tyre_applier.apply(self.model, self.data)
+             self.contacts = self.contact_query.query(
+                 self.model, self.data, wheel_load_provider=self.tyre_applier
+             )
+         else:
+             self.contacts = self.contact_query.query(self.model, self.data)
+ 
+-        self.force_accumulator.add("suspension", self.applier.compute_qfrc(self.model, self.data))
++        for name, qfrc in self.applier.compute_qfrc_components(self.model, self.data).items():
++            self.force_accumulator.add(name, qfrc)
+         if self.rider_forces.active:
+             self._collect_legacy_qfrc(
+                 "rider", lambda: self.rider_forces.apply(self.model, self.data)
+             )
+         if self.tyre_applier is None:
+             self._collect_legacy_qfrc(
+                 "rolling_resistance",
+                 lambda: self.resistance.apply(self.model, self.data, self.contacts),
+             )
+ 
+diff --git a/tests/test_end_stops.py b/tests/test_end_stops.py
+new file mode 100644
+index 0000000..111f610
+--- /dev/null
++++ b/tests/test_end_stops.py
+@@ -0,0 +1,170 @@
++"""End-stop physics and its physical ride-mode integration."""
++
++import mujoco
++import numpy as np
++import pytest
++
++from bike_sim.mujoco.builder import generate_mujoco_xml
++from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
++from bike_sim.physics.model_config import EndStopConfig, SimulationPhysicsConfig
++from bike_sim.physics.stops import end_stop
++from bike_sim.sim.ride_sim import RideSimulation
++from bike_sim.terrain import get_preset
++
++
++def test_unloaded_compression_coil_does_not_pull_but_legacy_law_is_preserved():
++    assert CoilShock().compute_spring_force(-4.0) == 0.0
++    assert CoilShock(legacy_behavior=True).compute_spring_force(-4.0) == pytest.approx(-458.4)
++
++
++@pytest.mark.parametrize(
++    "specs",
++    [
++        CoilShockSpecs(preload_mm=-1.0),
++        CoilShockSpecs(rate_n_m=0.0),
++        CoilShockSpecs(stroke_mm=0.0),
++        CoilShockSpecs(bumper_length_mm=0.0),
++        CoilShockSpecs(bumper_length_mm=66.0),
++    ],
++)
++def test_invalid_coil_geometry_or_rate_is_rejected(specs):
++    with pytest.raises(ValueError):
++        CoilShock(specs)
++
++
++def test_top_out_pushes_into_range_and_stores_energy():
++    force, energy = end_stop(-0.002, -0.1, 0.0, 0.065, 200000.0, 500.0)
++    assert force == pytest.approx(450.0)
++    assert energy == pytest.approx(0.4)
++
++
++def test_releasing_top_out_dissipates_energy_without_tensile_contact():
++    force, energy = end_stop(-0.002, 0.1, 0.0, 0.065, 200000.0, 500.0)
++    assert force == pytest.approx(350.0)
++    assert energy == pytest.approx(0.4)
++    assert force * 0.1 + (-400.0) * 0.1 <= 0.0
++    force, _ = end_stop(-0.002, 2.0, 0.0, 0.065, 200000.0, 500.0)
++    assert force == 0.0
++
++
++def test_unloaded_upper_boundary_has_no_contact_force():
++    assert end_stop(0.065, 0.1, 0.0, 0.065, 200000.0, 500.0) == (0.0, 0.0)
++
++
++@pytest.mark.parametrize("k,c", [(0.0, 500.0), (200000.0, -1.0)])
++def test_invalid_end_stop_parameters_are_rejected(k, c):
++    with pytest.raises(ValueError, match="end-stop"):
++        end_stop(-0.002, 0.0, 0.0, 0.065, k, c)
++
++
++def test_upper_handoff_preserves_force_energy_and_passivity():
++    peak_n = 7000.0
++    bumper_length_m = 0.010
++    boundary_energy_j = peak_n * bumper_length_m / 3.0
++    at_boundary = end_stop(
++        0.065, 0.0, 0.0, 0.065, 700000.0, 500.0,
++        upper_boundary_force_n=peak_n,
++        upper_boundary_energy_j=boundary_energy_j,
++    )
++    just_above = end_stop(
++        0.065000001, 0.0, 0.0, 0.065, 700000.0, 500.0,
++        upper_boundary_force_n=peak_n,
++        upper_boundary_energy_j=boundary_energy_j,
++    )
++    assert at_boundary == pytest.approx((-peak_n, boundary_energy_j))
++    assert just_above == pytest.approx(at_boundary, abs=0.001)
++    force, energy = end_stop(
++        0.067, -0.1, 0.0, 0.065, 700000.0, 500.0,
++        upper_boundary_force_n=peak_n,
++        upper_boundary_energy_j=boundary_energy_j,
++    )
++    assert force == pytest.approx(-8350.0)
++    assert energy == pytest.approx(boundary_energy_j + 14.0 + 1.4)
++    assert force * -0.1 + 8400.0 * -0.1 <= 0.0
++
++
++def test_physical_joint_has_stop_deformation_behind_working_range():
++    for mode, expected in [
++        ("legacy", (0.0, 0.065)),
++        ("physical", (-0.010, 0.075)),
++    ]:
++        cfg = SimulationPhysicsConfig(physics_mode=mode)
++        model = mujoco.MjModel.from_xml_string(
++            generate_mujoco_xml(mode="ride", rider="none", physics_config=cfg)
++        )
++        jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "shock_stroke")
++        assert tuple(model.jnt_range[jid]) == pytest.approx(expected)
++
++
++def test_physical_force_channels_handoff_at_working_stroke():
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    dof = sim.applier.shock_dofadr
++    pos = sim.applier.shock_qposadr
++    sim.data.qpos[pos] = 0.065
++    sim.data.qvel[dof] = 0.0
++    boundary = sim.applier.compute_qfrc_components(sim.model, sim.data)
++    assert boundary["shock_bumper"][dof] == pytest.approx(-7000.0)
++    assert boundary["shock_upper_stop"][dof] == 0.0
++    assert sim.applier.potential_energy_j["shock_bumper"] == pytest.approx(7000.0 * 0.010 / 3.0)
++
++    sim.data.qpos[pos] = 0.067
++    above = sim.applier.compute_qfrc_components(sim.model, sim.data)
++    assert above["shock_bumper"][dof] == 0.0
++    assert above["shock_upper_stop"][dof] == pytest.approx(-8400.0)
++    assert sim.applier.potential_energy_j["shock_upper_stop"] == pytest.approx(
++        7000.0 * 0.010 / 3.0 + 14.0 + 1.4
++    )
++    np.testing.assert_allclose(
++        sim.applier.compute_qfrc(sim.model, sim.data),
++        sum(above.values(), np.zeros(sim.model.nv)),
++    )
++
++
++def test_physical_step_registers_separate_suspension_vectors():
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    sim.data.qpos[sim.applier.shock_qposadr] = -0.002
++    sim.data.qvel[sim.applier.shock_dofadr] = -0.1
++    sim.step()
++    channels = sim.last_force_snapshot[3]
++    assert {
++        "fork_spring", "fork_damper", "shock_coil", "shock_bumper",
++        "shock_damper", "shock_top_out", "shock_upper_stop",
++    } <= channels.keys()
++    assert "suspension" not in channels
++    assert channels["shock_top_out"][sim.applier.shock_dofadr] == pytest.approx(1450.0)
++    assert channels["shock_coil"][sim.applier.shock_dofadr] == 0.0
++    assert sim.applier.potential_energy_j["shock_top_out"] == pytest.approx(1.4)
++
++
++def test_stop_configuration_is_immutable_and_reaches_joint_range():
++    stop = EndStopConfig(overtravel_m=0.012)
++    cfg = SimulationPhysicsConfig(physics_mode="physical", end_stops=stop)
++    model = mujoco.MjModel.from_xml_string(
++        generate_mujoco_xml(mode="ride", rider="none", physics_config=cfg)
++    )
++    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "shock_stroke")
++    assert tuple(model.jnt_range[jid]) == pytest.approx((-0.012, 0.077))
++    assert stop.stiffness_n_m == pytest.approx(700000.0)
++    assert stop.provenance == "synthetic"
++    with pytest.raises((AttributeError, TypeError)):
++        stop.overtravel_m = 0.02
++
++
++def test_stop_reference_deflection_must_precede_solver_limit():
++    with pytest.raises(ValueError, match="overtravel"):
++        EndStopConfig(overtravel_m=0.008, reference_deflection_m=0.010)
++
++
++def test_legacy_simulation_routes_supplied_coil_to_legacy_law():
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none", coil_shock=CoilShock()
++    )
++    sim.data.qpos[sim.applier.shock_qposadr] = -0.004
++    sim.applier.compute_qfrc(sim.model, sim.data)
++    assert sim.applier.shock_spring_n == pytest.approx(-458.4)
+diff --git a/tests/test_force_accumulator.py b/tests/test_force_accumulator.py
+index ada0c93..771d5e2 100644
+--- a/tests/test_force_accumulator.py
++++ b/tests/test_force_accumulator.py
+@@ -52,21 +52,24 @@ def test_physical_step_adds_external_to_suspension_and_samples_pre_step_state():
+     qvel_before = sim.data.qvel.copy()
+     external = np.zeros(sim.model.nv)
+     external[sim.applier.fork_dofadr] = 7.0
+ 
+     sim.step(external_qfrc=external)
+     time_s, qpos, qvel, components = sim.last_force_snapshot
+     assert time_s == 0.0
+     np.testing.assert_array_equal(qpos, qpos_before)
+     np.testing.assert_array_equal(qvel, qvel_before)
+     assert components["external"][sim.applier.fork_dofadr] == 7.0
+-    assert components["suspension"][sim.applier.fork_dofadr] < 0.0
++    assert (
++        components["fork_spring"][sim.applier.fork_dofadr]
++        + components["fork_damper"][sim.applier.fork_dofadr]
++    ) < 0.0
+     expected = sum(components.values(), np.zeros(sim.model.nv))
+     np.testing.assert_allclose(sim.data.qfrc_applied, expected)
+     external[sim.applier.fork_dofadr] = 1000.0
+     assert components["external"][sim.applier.fork_dofadr] == 7.0
+ 
+ 
+ def test_physical_steps_do_not_carry_old_generalized_or_body_forces():
+     sim = RideSimulation(
+         track=get_preset("flat"),
+         rider="none",

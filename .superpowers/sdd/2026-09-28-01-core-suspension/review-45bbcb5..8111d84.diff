@@ -1,0 +1,91 @@
+# Review package: 45bbcb5..HEAD
+
+## Commits
+8111d84 fix: reject nonfinite shock stroke overrides
+
+## Files changed
+ src/bike_sim/sim/ride_sim.py    |  4 ++++
+ tests/test_suspension_config.py | 24 ++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+## Diff
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index e5b49f3..514f07a 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -172,22 +172,26 @@ class RideSimulation:
+         self.drivetrain_specs = drivetrain if drivetrain is not None else DrivetrainSpecs()
+         pedalled = drive_mode != "motor"
+         self.visual_pedalling = bool(visual_pedalling)
+         crank_joint = pedalled or self.visual_pedalling
+ 
+         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
+         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
+         assert_track_fits(self.track, self.field)
+ 
+         self.specs = specs if specs is not None else BikeSpecs()
++        if not isfinite(self.specs.shock_stroke):
++            raise ValueError(f"BikeSpecs shock_stroke {self.specs.shock_stroke} must be finite")
+         if controller is not None:
+             _validate_controller_geometry(self.specs, controller)
++        if coil_shock is not None and not isfinite(coil_shock.specs.stroke_mm):
++            raise ValueError(f"CoilShock stroke_mm {coil_shock.specs.stroke_mm} must be finite")
+         if (
+             coil_shock is not None
+             and abs(coil_shock.specs.stroke_mm - self.specs.shock_stroke) > 1e-6
+         ):
+             raise ValueError(
+                 f"CoilShock stroke_mm {coil_shock.specs.stroke_mm} differs from "
+                 f"BikeSpecs shock_stroke {self.specs.shock_stroke}"
+             )
+         if self.physics_config.physics_mode == "physical":
+             default_controller, default_coil = build_suspension_components(self.specs)
+diff --git a/tests/test_suspension_config.py b/tests/test_suspension_config.py
+index 11b75d9..556337b 100644
+--- a/tests/test_suspension_config.py
++++ b/tests/test_suspension_config.py
+@@ -138,20 +138,44 @@ def test_conflicting_damper_travel_is_rejected_even_with_matching_controller_spe
+ 
+ def test_nonfinite_controller_travel_is_rejected():
+     specs = BikeSpecs()
+     controller, _ = build_suspension_components(specs)
+     controller.air_spring.specs.total_travel_mm = float("nan")
+ 
+     with pytest.raises(ValueError, match="fork_travel"):
+         RideSimulation(track=get_preset("flat"), rider="none", specs=specs, controller=controller)
+ 
+ 
++@pytest.mark.parametrize("stroke", [float("nan"), float("inf"), -float("inf")])
++def test_mutated_nonfinite_coil_stroke_is_rejected_before_model_build(monkeypatch, stroke):
++    coil = CoilShock()
++    coil.specs.stroke_mm = stroke
++    monkeypatch.setattr(
++        "bike_sim.sim.ride_sim.generate_mujoco_xml",
++        lambda **kwargs: pytest.fail("model generation reached before coil validation"),
++    )
++
++    with pytest.raises(ValueError, match=r"CoilShock stroke_mm.*finite"):
++        RideSimulation(track=get_preset("flat"), rider="none", coil_shock=coil)
++
++
++def test_nonfinite_bike_stroke_is_rejected_before_model_build(monkeypatch):
++    specs = BikeSpecs(shock_stroke=float("nan"))
++    monkeypatch.setattr(
++        "bike_sim.sim.ride_sim.generate_mujoco_xml",
++        lambda **kwargs: pytest.fail("model generation reached before BikeSpecs validation"),
++    )
++
++    with pytest.raises(ValueError, match=r"BikeSpecs shock_stroke.*finite"):
++        RideSimulation(track=get_preset("flat"), rider="none", specs=specs, coil_shock=CoilShock())
++
++
+ def test_compatible_explicit_overrides_keep_their_identity_and_tuning():
+     specs = BikeSpecs()
+     controller, _ = build_suspension_components(specs)
+     controller.air_spring.set_pressure_psi(105.0)
+     coil = CoilShock(CoilShockSpecs(rate_n_m=100000.0, stroke_mm=specs.shock_stroke))
+ 
+     sim = RideSimulation(
+         track=get_preset("flat"), rider="none", specs=specs,
+         controller=controller, coil_shock=coil,
+         physics_config=SimulationPhysicsConfig(physics_mode="physical"),

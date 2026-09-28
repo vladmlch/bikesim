@@ -1,0 +1,157 @@
+# Review package: 65e327d..c5185c4
+
+## Commits
+c5185c4 fix(mujoco): derive ride-mode contact sphere radius from BikeSpecs
+
+## Files changed
+ src/bike_sim/mujoco/drivetrain.py    |  2 +-
+ src/bike_sim/mujoco/steering_fork.py |  2 +-
+ tests/golden/baseline_bike_ride.xml  |  4 ++--
+ tests/test_ride_model.py             | 15 +++++++++++++++
+ 4 files changed, 19 insertions(+), 4 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/mujoco/drivetrain.py b/src/bike_sim/mujoco/drivetrain.py
+index 3c8b861..35c9717 100644
+--- a/src/bike_sim/mujoco/drivetrain.py
++++ b/src/bike_sim/mujoco/drivetrain.py
+@@ -124,21 +124,21 @@ def build_rear_wheel(
+     )
+     if mode == "ride":
+         # Sphere contact patch: see geom_front_contact in steering_fork.py for rationale.
+         ET.SubElement(
+             rear_wheel,
+             "geom",
+             {
+                 "name": "geom_rear_contact",
+                 "type": "sphere",
+                 "pos": "0 0 0",
+-                "size": "0.352",
++                "size": f"{rear_wheel_radius_m:.6f}",
+                 "mass": "0",
+                 "condim": "3",
+                 "friction": "1.2 0.005 0.0001",
+                 "solref": "-130000 -800",
+                 "contype": "1",
+                 "conaffinity": "1",
+                 "rgba": "0.08 0.08 0.08 0",
+             },
+         )
+     ET.SubElement(
+diff --git a/src/bike_sim/mujoco/steering_fork.py b/src/bike_sim/mujoco/steering_fork.py
+index eb860c6..c92a937 100644
+--- a/src/bike_sim/mujoco/steering_fork.py
++++ b/src/bike_sim/mujoco/steering_fork.py
+@@ -121,21 +121,21 @@ def _build_front_wheel(
+     add_geom(front_wheel, "geom_front_rotor", "cylinder", fromto="0 0.032 0 0 0.034 0", size="0.1015", mass="0.25", material="mat_metal", contype="0", conaffinity="0")
+     if mode == "ride":
+         # Sphere contact patch: geometrically identical to the cylinder in the sagittal
+         # plane, but with no flat end faces to catch on a heightfield prism edge. See
+         # docs/RIDE.md section 3. Alpha 0 so it does not render over the tyre.
+         add_geom(
+             front_wheel,
+             "geom_front_contact",
+             "sphere",
+             pos="0 0 0",
+-            size="0.372",
++            size=f"{front_wheel_radius_m:.6f}",
+             mass="0",
+             condim="3",
+             friction="1.2 0.005 0.0001",
+             solref="-130000 -800",
+             contype="1",
+             conaffinity="1",
+             rgba="0.08 0.08 0.08 0",
+         )
+     return front_wheel
+ 
+diff --git a/tests/golden/baseline_bike_ride.xml b/tests/golden/baseline_bike_ride.xml
+index 202e98a..8360f9b 100644
+--- a/tests/golden/baseline_bike_ride.xml
++++ b/tests/golden/baseline_bike_ride.xml
+@@ -92,21 +92,21 @@
+           <geom name="geom_fork_lower_r" type="capsule" fromto="0.155789 -0.065 -0.219043 0.300451 -0.065 -0.515645" size="0.022" mass="0.55" material="mat_fork_lower"/>
+           <geom name="geom_fork_arch" type="capsule" fromto="0.155789 -0.065 -0.219043 0.155789 0.065 -0.219043" size="0.016" mass="0.25" material="mat_fork_lower"/>
+           <geom name="geom_front_dropout" type="cylinder" fromto="0.300451 -0.065 -0.515645 0.300451 0.065 -0.515645" size="0.012" mass="0.15" material="mat_metal"/>
+           <site name="site_PFA" pos="0.300451 0.000000 -0.515645" size="0.008" rgba="0.1 0.7 0.9 1.0"/>
+           <body name="front_wheel" pos="0.300451 0.000000 -0.515645">
+             <joint name="front_wheel_spin" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.01"/>
+             <geom name="geom_front_hub" type="cylinder" fromto="0 -0.055 0 0 0.055 0" size="0.018" mass="0.35" material="mat_metal"/>
+             <geom name="geom_front_rim" type="cylinder" fromto="0 -0.015 0 0 0.015 0" size="0.320" mass="0.45" material="mat_rim" contype="0" conaffinity="0"/>
+             <geom name="geom_front_tire" type="cylinder" fromto="0 -0.030 0 0 0.030 0" size="0.372000" mass="1.35" material="mat_tire" contype="0" conaffinity="0" friction="1.2 0.005 0.0001"/>
+             <geom name="geom_front_rotor" type="cylinder" fromto="0 0.032 0 0 0.034 0" size="0.1015" mass="0.25" material="mat_metal" contype="0" conaffinity="0"/>
+-            <geom name="geom_front_contact" type="sphere" pos="0 0 0" size="0.372" mass="0" rgba="0.08 0.08 0.08 0" contype="1" conaffinity="1" friction="1.2 0.005 0.0001" condim="3" solref="-130000 -800"/>
++            <geom name="geom_front_contact" type="sphere" pos="0 0 0" size="0.372000" mass="0" rgba="0.08 0.08 0.08 0" contype="1" conaffinity="1" friction="1.2 0.005 0.0001" condim="3" solref="-130000 -800"/>
+           </body>
+         </body>
+       </body>
+       <body name="chainstay" pos="-0.044902 0.000000 0.046393">
+         <joint name="main_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.5"/>
+         <geom name="geom_cs_sleeve" type="cylinder" fromto="0 -0.040 0 0 0.040 0" size="0.018" mass="0.25" material="mat_metal"/>
+         <geom name="geom_cs_left" type="capsule" fromto="0 0.045 0 -0.334216 0.074 -0.054835" size="0.016" mass="0.40" material="mat_frame"/>
+         <geom name="geom_cs_right" type="capsule" fromto="0 -0.045 0 -0.334216 -0.074 -0.054835" size="0.016" mass="0.40" material="mat_frame"/>
+         <geom name="geom_cs_bridge" type="capsule" fromto="-0.133687 -0.055 -0.021934 -0.133687 0.055 -0.021934" size="0.014" mass="0.20" material="mat_frame"/>
+         <site name="site_P2_cs" pos="-0.334216 0.000000 -0.054835" size="0.008" rgba="0.1 0.9 0.1 1.0"/>
+@@ -124,21 +124,21 @@
+           <geom name="geom_dropout_front_r" type="capsule" fromto="0 -0.074 0 -0.034882 -0.074 0.068429" size="0.015" mass="0.045" material="mat_frame"/>
+           <geom name="geom_ss_bridge" type="capsule" fromto="0.215182 -0.050 0.150528 0.215182 0.050 0.150528" size="0.013" mass="0.13" material="mat_frame"/>
+           <site name="site_P3_ss" pos="0.307403 0.000000 0.215041" size="0.008" rgba="0.9 0.5 0.1 1.0"/>
+           <site name="site_P12_ss" pos="-0.034882 0.000000 0.068429" size="0.007" rgba="0.9 0.6 0.1 1.0"/>
+           <site name="site_PRA" pos="-0.068376 0.000000 0.010942" size="0.008" rgba="0.2 0.4 0.9 1.0"/>
+           <body name="rear_wheel" pos="-0.068376 0.000000 0.010942">
+             <joint name="rear_wheel_spin" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.01"/>
+             <geom name="geom_rear_hub" type="cylinder" fromto="0 -0.074 0 0 0.074 0" size="0.020" mass="0.30" material="mat_metal"/>
+             <geom name="geom_rear_rim" type="cylinder" fromto="0 -0.015 0 0 0.015 0" size="0.300" mass="0.40" material="mat_rim" contype="0" conaffinity="0"/>
+             <geom name="geom_rear_tire" type="cylinder" fromto="0 -0.032 0 0 0.032 0" size="0.352000" mass="1.50" material="mat_tire" contype="0" conaffinity="0" friction="1.2 0.005 0.0001"/>
+-            <geom name="geom_rear_contact" type="sphere" pos="0 0 0" size="0.352" mass="0" condim="3" friction="1.2 0.005 0.0001" solref="-130000 -800" contype="1" conaffinity="1" rgba="0.08 0.08 0.08 0"/>
++            <geom name="geom_rear_contact" type="sphere" pos="0 0 0" size="0.352000" mass="0" condim="3" friction="1.2 0.005 0.0001" solref="-130000 -800" contype="1" conaffinity="1" rgba="0.08 0.08 0.08 0"/>
+             <geom name="geom_rear_cassette" type="cylinder" fromto="0 -0.055 0 0 -0.035 0" size="0.095" mass="0.40" material="mat_metal" contype="0" conaffinity="0"/>
+             <geom name="geom_rear_rotor" type="cylinder" fromto="0 0.038 0 0 0.040 0" size="0.1015" mass="0.20" material="mat_metal" contype="0" conaffinity="0"/>
+           </body>
+         </body>
+       </body>
+       <body name="rocker" pos="0.041321 0.000000 0.184457">
+         <joint name="rocker_frame_pivot" type="hinge" pos="0 0 0" axis="0 1 0" damping="0.3"/>
+         <geom name="geom_rocker_sleeve" type="cylinder" fromto="0 -0.045 0 0 0.045 0" size="0.016" mass="0.16" material="mat_metal"/>
+         <geom name="geom_roc_arm_l1" type="capsule" fromto="0 0.045 0 -0.113037 0.045 0.022142" size="0.014" mass="0.04" material="mat_linkage"/>
+         <geom name="geom_roc_arm_r1" type="capsule" fromto="0 -0.045 0 -0.113037 -0.045 0.022142" size="0.014" mass="0.04" material="mat_linkage"/>
+diff --git a/tests/test_ride_model.py b/tests/test_ride_model.py
+index 88d1ca7..a5bc7f0 100644
+--- a/tests/test_ride_model.py
++++ b/tests/test_ride_model.py
+@@ -79,20 +79,35 @@ def test_ride_mode_wheel_contact_spheres(ride_model, contact_geom, radius_m):
+ @pytest.mark.parametrize("tire_geom", ["geom_front_tire", "geom_rear_tire"])
+ def test_ride_mode_tyre_cylinders_noncolliding(ride_model, tire_geom):
+     """The tyre cylinders are non-colliding in ride mode: only the contact spheres collide."""
+     gid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_GEOM, tire_geom)
+     assert gid >= 0, f"{tire_geom} not found in ride model"
+     assert ride_model.geom_type[gid] == mujoco.mjtGeom.mjGEOM_CYLINDER
+     assert ride_model.geom_contype[gid] == 0
+     assert ride_model.geom_conaffinity[gid] == 0
+ 
+ 
++def test_ride_mode_contact_sphere_tracks_wheel_radius():
++    """Contact sphere radii follow BikeSpecs wheel radii, not a hardcoded constant."""
++    specs = BikeSpecs(front_wheel_radius=400.0, rear_wheel_radius=380.0)
++    xml_str = generate_mujoco_xml(specs=specs, mode="ride", include_rider=True)
++    model = mujoco.MjModel.from_xml_string(xml_str)
++
++    for contact_geom, radius_mm in [
++        ("geom_front_contact", specs.front_wheel_radius),
++        ("geom_rear_contact", specs.rear_wheel_radius),
++    ]:
++        gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, contact_geom)
++        assert gid >= 0, f"{contact_geom} not found in ride model"
++        assert model.geom_size[gid][0] == pytest.approx(radius_mm / 1000.0)
++
++
+ def test_ride_mode_hfield_dimensions(ride_model):
+     """The road hfield asset matches FIELD's fixed nrow/ncol grid dimensions."""
+     hid = mujoco.mj_name2id(ride_model, mujoco.mjtObj.mjOBJ_HFIELD, "road")
+     assert hid >= 0, "road hfield asset not found in ride model"
+     assert ride_model.hfield_nrow[hid] == FIELD.nrow
+     assert ride_model.hfield_ncol[hid] == FIELD.ncol
+ 
+ 
+ def test_ride_mode_timestep(ride_model):
+     """Ride mode uses the finer 0.0005 s timestep required for hard contact solving."""

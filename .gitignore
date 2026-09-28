@@ -20,7 +20,6 @@ bike_playground*.xml
 coordinates.json
 
 # Tooling / IDE
-.superpowers/
 .idea/
 .DS_Store
 .work/

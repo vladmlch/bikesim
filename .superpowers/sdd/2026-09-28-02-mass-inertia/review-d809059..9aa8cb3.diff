@@ -1,0 +1,317 @@
+# Review package: d809059..HEAD
+
+## Commits
+9aa8cb3 fix: keep physical component weights independent of budgets
+
+## Files changed
+ src/bike_sim/mujoco/drivetrain.py    |  4 +++-
+ src/bike_sim/mujoco/frame.py         | 11 +++++++++--
+ src/bike_sim/mujoco/steering_fork.py |  5 +++--
+ src/bike_sim/physics/mass.py         | 12 ++++++++++++
+ tests/test_compiled_mass_contract.py | 29 +++++++++++++++++++++++++++++
+ 5 files changed, 56 insertions(+), 5 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/mujoco/drivetrain.py b/src/bike_sim/mujoco/drivetrain.py
+index 75e2fd9..ce965a3 100644
+--- a/src/bike_sim/mujoco/drivetrain.py
++++ b/src/bike_sim/mujoco/drivetrain.py
+@@ -67,21 +67,23 @@ def build_bb_and_motor(
+         },
+     )
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_motor_core",
+             "type": "cylinder",
+             "fromto": "0.015 -0.055 0.020 0.045 0.055 0.035",
+             "size": "0.045",
+-            "mass": f"{mass_specs.motor_mass:.2f}",
++            # In physical mode this is only a positive relative weight. The
++            # component registry assigns the requested budget at full precision.
++            "mass": "2.90" if mass_registry is not None else f"{mass_specs.motor_mass:.2f}",
+             "material": "mat_motor",
+         },
+     )
+     spindle_mass = mass_specs.crank_pedals_mass - 2.0 * CRANK_ARM_MASS_KG - 2.0 * PEDAL_MASS_KG
+     if mass_registry is not None:
+         spindle_mass = 0.10  # authored relative weight; the budget is assigned below
+     if spindle_mass <= 0.0:
+         raise ValueError(
+             f"crank_pedals_mass {mass_specs.crank_pedals_mass:.3f} kg does not cover two "
+             f"{CRANK_ARM_MASS_KG:.3f} kg arms and two {PEDAL_MASS_KG:.3f} kg pedals"
+diff --git a/src/bike_sim/mujoco/frame.py b/src/bike_sim/mujoco/frame.py
+index 7ca3ef8..395f54d 100644
+--- a/src/bike_sim/mujoco/frame.py
++++ b/src/bike_sim/mujoco/frame.py
+@@ -34,20 +34,21 @@ from bike_sim.mujoco._xml_format import (
+ 
+ 
+ def _build_front_triangle_tubes(
+     frame: ET.Element,
+     BB: np.ndarray,
+     P_HT_bot: np.ndarray,
+     P11: np.ndarray,
+     P8: np.ndarray,
+     P10: np.ndarray,
+     mass_specs: BikeMassSpecs,
++    physical_masses: bool = False,
+ ) -> None:
+     """Builds downtube, battery pack, headtube, and top tube sections."""
+     downtube_mid = (BB + P_HT_bot) / 2.0
+     downtube_vec = P_HT_bot - BB
+     downtube_len = float(np.linalg.norm(downtube_vec))
+     downtube_angle_deg = float(np.degrees(np.arctan2(downtube_vec[2], downtube_vec[0])))
+ 
+     _dt_sin = downtube_vec[2] / downtube_len
+     _dt_cos = downtube_vec[0] / downtube_len
+     _dt_bands_mm = ((255.0, 150.0, 266.0), (323.0, 208.0, 305.0))
+@@ -77,37 +78,38 @@ def _build_front_triangle_tubes(
+     )
+ 
+     battery_axis_a = np.array([0.080, 0.0, 0.080]) + downtube_perp_offset * downtube_perp_axis
+     battery_axis_b = np.array([0.320, 0.0, 0.320]) + downtube_perp_offset * downtube_perp_axis
+     add_geom(
+         frame,
+         "geom_battery_pack",
+         "capsule",
+         fromto=_format_fromto(battery_axis_a, battery_axis_b),
+         size="0.032",
+-        mass=f"{mass_specs.battery_mass:.2f}",
++        mass="4.30" if physical_masses else f"{mass_specs.battery_mass:.2f}",
+         material="mat_battery",
+     )
+     add_geom(frame, "geom_headtube", "cylinder", fromto=_format_fromto(P_HT_bot, P11), size="0.027", mass="0.40", material="mat_frame")
+     add_geom(frame, "geom_toptube_bridge", "capsule", fromto=_format_fromto(P11, P8), size="0.024", mass="0.25", material="mat_frame")
+     add_geom(frame, "geom_toptube_main", "capsule", fromto=_format_fromto(P8, P10), size="0.023", mass="0.45", material="mat_frame")
+ 
+ 
+ def _build_seatpost_and_saddle(
+     frame: ET.Element,
+     P10: np.ndarray,
+     P9: np.ndarray,
+     P8: np.ndarray,
+     P7: np.ndarray,
+     P5: np.ndarray,
+     mass_specs: BikeMassSpecs,
+     saddle_top_z_m: Optional[float] = None,
++    physical_masses: bool = False,
+ ) -> np.ndarray:
+     """
+     Builds seat tube, bottom casting, seatpost, gusset, and saddle. Returns seatpost_top pos.
+ 
+     Args:
+         saddle_top_z_m: Saddle top surface height above the BB. None keeps the photograph's
+             saddle; a seated rider passes the height their inseam calls for.
+     """
+     seattube_end = np.array([-0.030, 0.0, 0.258])
+     SEATTUBE_CASTING_MASS_KG = 0.65
+@@ -125,22 +127,25 @@ def _build_seatpost_and_saddle(
+         material="mat_frame",
+         contype="0",
+         conaffinity="0",
+     )
+ 
+     # Seatpost axis, saddle box and mass split come from `geometry/cockpit.py`, which the
+     # analytic mass table and the seated rider's pose solver also read.
+     saddle = saddle_geometry(P9, saddle_top_z_m)
+     seatpost_top = saddle.seatpost_top
+     saddle_pos = saddle.saddle_pos
++    # In physical mode these remain authored relative weights as the budget changes.
++    # The component registry applies the requested total after geometry is built.
++    saddle_weight_budget = 0.90 if physical_masses else mass_specs.saddle_post_mass
+     seatpost_lower_mass, seatpost_upper_mass, saddle_mass = saddle_post_masses(
+-        mass_specs.saddle_post_mass, P10, P9, saddle
++        saddle_weight_budget, P10, P9, saddle
+     )
+ 
+     add_geom(frame, "geom_seatpost", "cylinder", fromto=_format_fromto(P10, P9), size="0.016", mass=f"{seatpost_lower_mass:.6f}", material="mat_metal")
+     add_geom(frame, "geom_seatpost_upper", "cylinder", fromto=_format_fromto(P9, seatpost_top), size="0.016", mass=f"{seatpost_upper_mass:.6f}", material="mat_metal")
+ 
+     p_gusset_mid = P10 + (P8 - P10) * 0.22
+     add_geom(frame, "geom_seat_gusset", "capsule", fromto=_format_fromto(P9, p_gusset_mid), size="0.015", mass="0.10", material="mat_frame")
+ 
+     p_junction_top = P10 + (P8 - P10) * 0.52
+     add_geom(frame, "geom_frame_junction", "capsule", fromto=_format_fromto(p_junction_top, P7), size="0.042", mass="0.10", material="mat_frame")
+@@ -263,30 +268,32 @@ def build_frame_body(
+         mass_registry=mass_registry,
+     )
+     _build_front_triangle_tubes(
+         frame=frame,
+         BB=BB,
+         P_HT_bot=fixed_points_m["P_HT_bot"],
+         P11=fixed_points_m["P11"],
+         P8=fixed_points_m["P8"],
+         P10=fixed_points_m["P10"],
+         mass_specs=mass_specs,
++        physical_masses=mass_registry is not None,
+     )
+     seatpost_top = _build_seatpost_and_saddle(
+         frame=frame,
+         P10=fixed_points_m["P10"],
+         P9=fixed_points_m["P9"],
+         P8=fixed_points_m["P8"],
+         P7=fixed_points_m["P7"],
+         P5=fixed_points_m["P5"],
+         mass_specs=mass_specs,
+         saddle_top_z_m=pose.saddle.top_z_m if pose is not None else None,
++        physical_masses=mass_registry is not None,
+     )
+     _build_mounts_and_sites(
+         frame=frame,
+         fixed_points_m=fixed_points_m,
+         BB=BB,
+         cg_pos=cg_pos,
+         seatpost_top=seatpost_top,
+         debug_markers=debug_markers,
+     )
+ 
+diff --git a/src/bike_sim/mujoco/steering_fork.py b/src/bike_sim/mujoco/steering_fork.py
+index b3c567e..ed57d9d 100644
+--- a/src/bike_sim/mujoco/steering_fork.py
++++ b/src/bike_sim/mujoco/steering_fork.py
+@@ -44,27 +44,28 @@ def _build_steerer_and_cockpit(
+     add_geom(steer, "geom_handlebar", "cylinder", fromto=f"{stem_top[0]:.6f} -0.40 {stem_top[2]:.6f} {stem_top[0]:.6f} 0.40 {stem_top[2]:.6f}", size="0.0155", mass="0.40", material="mat_handlebar")
+     if mode == "ride":
+         add_site(steer, "site_handlebar", pos=stem_top, size="0.008", rgba="0.9 0.6 0.1 1.0")
+     return steer, stem_top
+ 
+ 
+ def _build_fork_crown_and_stanchions(
+     steer: ET.Element,
+     steer_axis_up: np.ndarray,
+     mass_specs: BikeMassSpecs,
++    physical_masses: bool = False,
+ ) -> None:
+     """Builds fork crown box and dual stanchion tubes."""
+     add_geom(steer, "geom_fork_crown", "box", pos="0 0 0", size="0.038 0.085 0.018", mass="0.30", material="mat_fork_lower")
+ 
+     stanchion_len = 0.320
+     stanchion_tip = -stanchion_len * steer_axis_up
+-    stanchion_each_mass = mass_specs.stanchions_mass / 2.0
++    stanchion_each_mass = 0.425 if physical_masses else mass_specs.stanchions_mass / 2.0
+     for side, y in [("l", 0.065), ("r", -0.065)]:
+         add_geom(
+             steer,
+             f"geom_stanchion_{side}",
+             "cylinder",
+             fromto=f"0 {y} 0 {stanchion_tip[0]:.6f} {y} {stanchion_tip[2]:.6f}",
+             size="0.019",
+             mass=f"{stanchion_each_mass:.3f}",
+             material="mat_kashima",
+         )
+@@ -166,21 +167,21 @@ def build_steering_and_fork(
+     v_ht = P11 - P_HT_bot
+     steer_axis_up = v_ht / np.linalg.norm(v_ht)
+     fork_slide_axis = steer_axis_up
+     fa_rel_steer = P_FA - P_HT_bot
+     ht_top_rel_steer = P11 - P_HT_bot
+ 
+     # 1. Steerer & Cockpit
+     steer, stem_top = _build_steerer_and_cockpit(frame, mode, P_HT_bot, steer_axis_up, ht_top_rel_steer)
+ 
+     # 2. Fork Crown & Stanchions
+-    _build_fork_crown_and_stanchions(steer, steer_axis_up, mass_specs)
++    _build_fork_crown_and_stanchions(steer, steer_axis_up, mass_specs, mass_registry is not None)
+ 
+     # 3. Fork Lowers Slider
+     fork_lower = _build_fork_lowers(steer, mode, fork_slide_axis, steer_axis_up, fa_rel_steer, fork_travel_m, debug_markers)
+ 
+     # 4. Front Wheel
+     front_wheel = _build_front_wheel(
+         fork_lower, mode, fa_rel_steer, front_wheel_radius_m, tyre_model
+     )
+ 
+     if mass_registry is not None:
+diff --git a/src/bike_sim/physics/mass.py b/src/bike_sim/physics/mass.py
+index 87708ab..d291e5e 100644
+--- a/src/bike_sim/physics/mass.py
++++ b/src/bike_sim/physics/mass.py
+@@ -58,20 +58,32 @@ class BikeMassSpecs:
+ 
+     @property
+     def component_masses(self) -> Dict[str, float]:
+         """The fifteen physical component budgets, excluding wheel-shape fractions."""
+         return {
+             field.name.removesuffix("_mass"): getattr(self, field.name)
+             for field in fields(self)
+             if field.name.endswith("_mass")
+         }
+ 
++    @property
++    def component_provenance(self) -> Dict[str, Dict[str, str]]:
++        """Source labels for each physical budget and its geom distribution.
++
++        These authored values and shapes have no measured component dataset yet.
++        The stable component IDs let release metadata preserve that distinction.
++        """
++        return {
++            component_id: {"mass": "synthetic", "distribution": "synthetic"}
++            for component_id in self.component_masses
++        }
++
+     @property
+     def total_bike_mass(self) -> float:
+         """Computes total mass of the bicycle in kg."""
+         return sum(self.component_masses.values())
+ 
+     def compute_wheel_rotational_inertia(
+         self, wheel_mass: float, outer_radius: float, hub_radius: float = 0.045
+     ) -> float:
+         """
+         Computes accurate pitch rotational inertia I_yy (kg*m^2) for a bicycle wheel.
+diff --git a/tests/test_compiled_mass_contract.py b/tests/test_compiled_mass_contract.py
+index ab14fed..c36c4a7 100644
+--- a/tests/test_compiled_mass_contract.py
++++ b/tests/test_compiled_mass_contract.py
+@@ -46,20 +46,49 @@ def _geom_masses(mass, *, debug_markers=False):
+ def test_changing_component_mass_changes_compiled_total(field):
+     mass = BikeMassSpecs()
+     setattr(mass, field, getattr(mass, field) + 0.7)
+     assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
+ 
+ 
+ def test_default_physical_total_matches_budget():
+     assert _model().body_mass.sum() == pytest.approx(BikeMassSpecs().total_bike_mass, abs=1e-8)
+ 
+ 
++def test_tiny_positive_motor_budget_compiles_without_rounding_to_zero():
++    mass = BikeMassSpecs(motor_mass=0.001)
++    assert _geom_masses(mass)["geom_motor_core"] == pytest.approx(0.001, abs=1e-17)
++    assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
++
++
++@pytest.mark.parametrize("field", MASS_FIELDS)
++def test_tiny_positive_component_budget_keeps_authored_geom_weights(field):
++    mass = BikeMassSpecs()
++    baseline = _geom_masses(mass)
++    setattr(mass, field, 0.0001)
++    tiny = _geom_masses(mass)
++    assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
++    changed = [name for name in baseline if tiny[name] != baseline[name]]
++    assert changed
++    scale = 0.0001 / getattr(BikeMassSpecs(), field)
++    for name in changed:
++        assert tiny[name] == pytest.approx(baseline[name] * scale, abs=1e-12)
++
++
++def test_component_mass_and_distribution_provenance_is_synthetic():
++    mass = BikeMassSpecs()
++    assert mass.component_provenance == {
++        component_id: {"mass": "synthetic", "distribution": "synthetic"}
++        for component_id in mass.component_masses
++    }
++    assert len(mass.component_provenance) == 15
++
++
+ def test_lumped_rider_is_not_absorbed_into_frame_budget():
+     xml = generate_mujoco_xml(
+         specs=BikeSpecs(), mode="ride", mass_specs=BikeMassSpecs(),
+         rider="lumped", physics_config=PHYSICAL,
+     )
+     model = mujoco.MjModel.from_xml_string(xml)
+     assert model.body_mass.sum() == pytest.approx(BikeMassSpecs().total_bike_mass + 80.0, abs=1e-8)
+ 
+ 
+ def test_all_fifteen_mass_fields_are_budget_components():

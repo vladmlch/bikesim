@@ -1,0 +1,546 @@
+# Review package: 37f292d..HEAD
+
+## Commits
+ec648a3 fix: separate time-based grounded filter from physical loads
+
+## Files changed
+ src/bike_sim/sim/ride/contact_filter.py |  36 ++++++++
+ src/bike_sim/sim/ride/contacts.py       |  42 +++++++--
+ src/bike_sim/sim/ride/cruise.py         |   8 +-
+ src/bike_sim/sim/ride_sim.py            |   3 +-
+ tests/test_contact_filter_time.py       | 148 ++++++++++++++++++++++++++++++++
+ 5 files changed, 228 insertions(+), 9 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/sim/ride/contact_filter.py b/src/bike_sim/sim/ride/contact_filter.py
+new file mode 100644
+index 0000000..529c0cc
+--- /dev/null
++++ b/src/bike_sim/sim/ride/contact_filter.py
+@@ -0,0 +1,36 @@
++"""Time-based contact debounce for controller gating, independent of wheel load."""
++
++from math import isfinite
++
++
++class GroundedFilter:
++    """Hold a controller's grounded signal briefly after raw road contact ends."""
++
++    def __init__(self, hold_s: float) -> None:
++        if not isfinite(hold_s) or hold_s < 0.0:
++            raise ValueError("hold_s must be finite and nonnegative")
++        self.hold_s = float(hold_s)
++        self.reset()
++
++    def reset(self) -> None:
++        """Clear all history before a new simulation run."""
++        self.last_time: float | None = None
++        self.last_loaded: float | None = None
++        self.value = False
++
++    def update(self, raw_grounded: bool, time_s: float) -> bool:
++        """Return the controller gate at this timestamp without creating a load."""
++        if not isfinite(time_s):
++            raise ValueError("non-finite timestamp")
++        if self.last_time is not None and time_s < self.last_time:
++            raise ValueError("timestamp moved backwards; reset required")
++        if time_s == self.last_time:
++            return self.value
++        self.last_time = time_s
++        if raw_grounded:
++            self.last_loaded = time_s
++        self.value = bool(
++            raw_grounded
++            or (self.last_loaded is not None and time_s - self.last_loaded < self.hold_s)
++        )
++        return self.value
+diff --git a/src/bike_sim/sim/ride/contacts.py b/src/bike_sim/sim/ride/contacts.py
+index 9acf0b5..749065c 100644
+--- a/src/bike_sim/sim/ride/contacts.py
++++ b/src/bike_sim/sim/ride/contacts.py
+@@ -10,21 +10,21 @@ Every load comes from `mj_contactForce`, never from a static axle-load estimate.
+ resistance is proportional to the instantaneous load (docs/RIDE.md section 4), and the whole
+ reason for modelling it that way is that the load is not static: a G-out roughly doubles it
+ and a crest takes it to zero.
+ 
+ The forces read here are those of the last `mj_forward`/`mj_step`, so within one control step
+ they lag the state by a single 0.5 ms timestep. That is the normal cost of reading constraint
+ forces from a controller and is negligible against every time constant in the model.
+ 
+ **Each wheel gets two load channels, because two questions are being asked.**
+ 
+-*Is this wheel on the ground, and can it be driven?* -- `front_load_n` / `rear_load_n`: the
++*Did the legacy contact bridge report load?* -- `front_load_n` / `rear_load_n`: the
+ scalar sum of the normal-force magnitudes of every contact row the wheel owns against the
+ terrain, **bridged** across a short collision dropout. Magnitudes are summed rather than
+ vectors precisely so that rows with opposing normals cannot cancel and read as airborne; a
+ wheel jammed against two faces is emphatically in contact.
+ 
+ *How hard is this wheel pressed into the road?* -- `front_support_n` / `rear_support_n`: the
+ vertical component of the vector sum of the same rows' normal forces, **unbridged**. This is
+ the only channel `Crr . N . r` may use. It is vertical because a sphere on a square edge
+ touches the ~87 degree face and the ledge top at once, and adding those magnitudes
+ double-counts a load that is mostly horizontal -- an impact, not weight on a contact patch.
+@@ -45,20 +45,21 @@ that makes the bike briefly airborne on flat ground, which gates the drive torqu
+ fires the virtual rider. Each wheel's last known load is therefore held across a short gap;
+ see `CONTACT_DROPOUT_STEPS`.
+ """
+ 
+ from dataclasses import dataclass
+ from typing import Collection, Dict, Optional, Protocol, Tuple
+ 
+ import mujoco
+ import numpy as np
+ 
++from bike_sim.sim.ride.contact_filter import GroundedFilter
+ from bike_sim.sim.ride.contact_state import ContactPatch, WheelContactSnapshot
+ from bike_sim.sim.ride.tyre.model import WheelOutputs
+ from bike_sim.sim.ride.wheel_kinematics import wheel_point_velocity
+ 
+ # Worldbody collision geoms that make up the ground: the road heightfield and the runaway
+ # catch plane far below it.
+ TERRAIN_GEOMS: Tuple[str, ...] = ("terrain", "catch_plane")
+ 
+ # Contact sphere of each wheel, and the bar that a crash puts into the dirt.
+ FRONT_CONTACT_GEOM = "geom_front_contact"
+@@ -71,20 +72,23 @@ HANDLEBAR_GEOM = "geom_handlebar"
+ # below any load that transmits usable traction, far above solver noise.
+ CONTACT_LOAD_THRESHOLD_N = 1.0
+ 
+ # Consecutive unloaded steps a wheel is allowed before it counts as airborne. Measured
+ # dropouts are one step long on flat ground and at most four in the aftermath of the square
+ # edge; the genuine flight phase over that 90 mm edge lasts 220 steps. Ten steps -- 5 ms --
+ # is an order of magnitude clear of both, so it removes every dropout without blunting the
+ # start of a real flight by more than 2 % of its duration.
+ CONTACT_DROPOUT_STEPS = 10
+ 
++# Controller-only debounce duration. Physical load and force channels never use this value.
++CONTROLLER_GROUNDED_HOLD_S = 0.005
++
+ 
+ class WheelLoadProvider(Protocol):
+     """Per-wheel normal load and support supplied by a non-contact tyre model."""
+ 
+     front_outputs: WheelOutputs
+     rear_outputs: WheelOutputs
+ 
+ 
+ @dataclass(frozen=True)
+ class TerrainContacts:
+@@ -97,29 +101,35 @@ class TerrainContacts:
+             and gating signal.
+         rear_load_n: The same for the rear contact sphere.
+         front_support_n: Vertical component of the front wheel's normal load this step, in
+             newtons, never held and never negative. The load `Crr . N . r` may use.
+         rear_support_n: The same for the rear wheel.
+         handlebar_load_n: Normal-force magnitude on the handlebar geom, in newtons. Not held:
+             a handlebar contact lasts far longer than a dropout, and a missed step only delays
+             the crash detector by 0.5 ms.
+         front_snapshot: Raw, immutable physical contact state of the front wheel, when queried.
+         rear_snapshot: The corresponding raw state of the rear wheel.
++        front_controller_grounded: Time-filtered working-road load above the contact threshold
++            for the front controller.
++        rear_controller_grounded: The corresponding rear controller signal. Neither field is a
++            normal load; they are absent for legacy pneumatic outputs and synthetic snapshots.
+     """
+ 
+     front_load_n: float
+     rear_load_n: float
+     front_support_n: float
+     rear_support_n: float
+     handlebar_load_n: float
+     front_snapshot: WheelContactSnapshot | None = None
+     rear_snapshot: WheelContactSnapshot | None = None
++    front_controller_grounded: bool | None = None
++    rear_controller_grounded: bool | None = None
+ 
+     @property
+     def front_in_contact(self) -> bool:
+         """Whether the front wheel is carrying load."""
+         return self.front_load_n > CONTACT_LOAD_THRESHOLD_N
+ 
+     @property
+     def rear_in_contact(self) -> bool:
+         """Whether the rear wheel is carrying load."""
+         return self.rear_load_n > CONTACT_LOAD_THRESHOLD_N
+@@ -136,22 +146,23 @@ class TerrainContacts:
+ 
+ 
+ class TerrainContactQuery:
+     """
+     Sums the normal contact load on each tracked geom against the terrain.
+ 
+     Geom ids are resolved once at construction; the per-step query is a single pass over
+     `data.contact` with a reused MuJoCo force buffer.
+ 
+     The query is stateful, because bridging a collision dropout requires remembering the
+-    previous steps. Advance it once per simulation step -- querying the same state twice
+-    charges it twice against the dropout budget -- and `reset` it when the run restarts.
++    previous steps. The legacy load bridge advances per query; the separate controller
++    filter is idempotent at the same timestamp. Advance the query once per simulation step
++    and `reset` it when the run restarts.
+     """
+ 
+     def __init__(self, model: mujoco.MjModel, dropout_steps: int = CONTACT_DROPOUT_STEPS) -> None:
+         """
+         Args:
+             model: Compiled ride-mode model.
+             dropout_steps: Consecutive unloaded steps a wheel may have before it is reported
+                 as airborne.
+ 
+         Raises:
+@@ -164,42 +175,43 @@ class TerrainContactQuery:
+             _geom_id(model, name): name for name in TERRAIN_GEOMS
+         }
+         self.terrain_ids = frozenset(self.terrain_geom_names)
+         self.front_id = _geom_id(model, FRONT_CONTACT_GEOM)
+         self.rear_id = _geom_id(model, REAR_CONTACT_GEOM)
+         self.handlebar_id = _geom_id(model, HANDLEBAR_GEOM)
+ 
+         self._force = np.zeros(6, dtype=float)
+         self._front_load = _BridgedLoad(dropout_steps)
+         self._rear_load = _BridgedLoad(dropout_steps)
++        self._front_controller_grounded = GroundedFilter(CONTROLLER_GROUNDED_HOLD_S)
++        self._rear_controller_grounded = GroundedFilter(CONTROLLER_GROUNDED_HOLD_S)
+ 
+     def query(
+         self,
+         model: mujoco.MjModel,
+         data: mujoco.MjData,
+         wheel_load_provider: Optional[WheelLoadProvider] = None,
+     ) -> TerrainContacts:
+         """
+         Reads the current contact normal load on each tracked geom.
+ 
+         Args:
+             model: Compiled ride-mode model.
+             data: Simulation state, after a `mj_forward` or `mj_step` has populated its
+                 contacts and constraint forces.
+             wheel_load_provider: Optional pneumatic tyre applier. Its raw wheel loads and
+                 vertical support replace the sphere contacts; the handlebar still uses
+                 MuJoCo contact.
+ 
+         Returns:
+-            Both load channels for each wheel -- the bridged magnitude that gates the drive
+-            torque and the virtual rider, and the raw vertical support the rolling-resistance
+-            model may use -- plus the handlebar's raw magnitude.
++            Both legacy load channels for each wheel -- bridged magnitude and raw vertical
++            support -- plus the handlebar's raw magnitude and separate controller booleans.
+         """
+         magnitude_n, vertical_n, wheel_patches = self._sum_normal_loads(
+             model, data, include_wheel_contacts=wheel_load_provider is None
+         )
+         interval_id = round(float(data.time) / float(model.opt.timestep))
+         front_axis = data.geom_xpos[self.front_id]
+         rear_axis = data.geom_xpos[self.rear_id]
+         if wheel_load_provider is not None:
+             front = wheel_load_provider.front_outputs
+             rear = wheel_load_provider.rear_outputs
+@@ -227,26 +239,34 @@ class TerrainContactQuery:
+             interval_id=interval_id, backend="native_reference", wheel_axis_m=rear_axis,
+         )
+         return TerrainContacts(
+             front_load_n=self._front_load.update(magnitude_n[self.front_id]),
+             rear_load_n=self._rear_load.update(magnitude_n[self.rear_id]),
+             front_support_n=max(0.0, vertical_n[self.front_id]),
+             rear_support_n=max(0.0, vertical_n[self.rear_id]),
+             handlebar_load_n=magnitude_n[self.handlebar_id],
+             front_snapshot=front_snapshot,
+             rear_snapshot=rear_snapshot,
++            front_controller_grounded=self._front_controller_grounded.update(
++                _working_road_grounded(front_snapshot), float(data.time)
++            ),
++            rear_controller_grounded=self._rear_controller_grounded.update(
++                _working_road_grounded(rear_snapshot), float(data.time)
++            ),
+         )
+ 
+     def reset(self) -> None:
+-        """Discards the held loads, so a fresh run does not start off the previous one."""
++        """Discard legacy held loads and timestamp-filter history for a fresh run."""
+         self._front_load.reset()
+         self._rear_load.reset()
++        self._front_controller_grounded.reset()
++        self._rear_controller_grounded.reset()
+ 
+     def _sum_normal_loads(
+         self,
+         model: mujoco.MjModel,
+         data: mujoco.MjData,
+         include_wheel_contacts: bool = True,
+     ) -> Tuple[Dict[int, float], Dict[int, float], Dict[int, tuple[ContactPatch, ...]]]:
+         """
+         Accumulates this step's normal contact load on each tracked geom, two ways.
+ 
+@@ -313,20 +333,27 @@ class TerrainContactQuery:
+                     couple_world_nm=couple_world,
+                     native_world_force_n=force_world,
+                     source_geom=self.terrain_geom_names[source_id],
+                 ))
+ 
+         return magnitude_n, vertical_n, {
+             geom_id: tuple(patches) for geom_id, patches in wheel_patches.items()
+         }
+ 
+ 
++def _working_road_grounded(snapshot: WheelContactSnapshot) -> bool:
++    """Convert only current terrain normal load to the controller's raw boolean."""
++    return sum(
++        patch.normal_load_n for patch in snapshot.patches if patch.working_surface
++    ) > CONTACT_LOAD_THRESHOLD_N
++
++
+ def _tracked_wrench(
+     geom1: int,
+     geom2: int,
+     terrain_ids: frozenset[int],
+     tracked_ids: Collection[int],
+     frame: np.ndarray,
+     contact_force: np.ndarray,
+ ) -> tuple[int, np.ndarray, np.ndarray, np.ndarray] | None:
+     """Convert MuJoCo's contact-frame wrench to force on a tracked geom.
+ 
+@@ -441,12 +468,13 @@ def _geom_id(model: mujoco.MjModel, geom_name: str) -> int:
+ 
+ __all__ = [
+     "TerrainContacts",
+     "TerrainContactQuery",
+     "TERRAIN_GEOMS",
+     "FRONT_CONTACT_GEOM",
+     "REAR_CONTACT_GEOM",
+     "HANDLEBAR_GEOM",
+     "CONTACT_LOAD_THRESHOLD_N",
+     "CONTACT_DROPOUT_STEPS",
++    "CONTROLLER_GROUNDED_HOLD_S",
+     "WheelLoadProvider",
+ ]
+diff --git a/src/bike_sim/sim/ride/cruise.py b/src/bike_sim/sim/ride/cruise.py
+index f8dcdde..319ec9f 100644
+--- a/src/bike_sim/sim/ride/cruise.py
++++ b/src/bike_sim/sim/ride/cruise.py
+@@ -135,36 +135,42 @@ class CruiseController:
+     def target_speed_mps(self) -> float:
+         """Cruise target in m/s."""
+         return self._target_speed_mps
+ 
+     def compute(
+         self,
+         model: mujoco.MjModel,
+         data: mujoco.MjData,
+         contacts: TerrainContacts,
+         traction_limited: bool = False,
++        *,
++        controller_grounded: bool | None = None,
+     ) -> float:
+         """
+         Computes the rear-wheel drive torque for the current state.
+ 
+         Args:
+             model: Compiled ride-mode model, read for the integration timestep.
+             data: Simulation state, read for the chassis longitudinal velocity.
+             contacts: This step's contact snapshot; the torque is gated off while the rear
+                 wheel carries no load.
+             traction_limited: The pneumatic rear patch is fully sliding in the direction of
+                 the speed error; suspend integration even when the PI torque is not saturated.
++            controller_grounded: Physical native-reference gate. When absent, keep the
++                legacy contact gate for compatibility with existing callers.
+ 
+         Returns:
+             Drive torque in N.m for the `rear_drive` actuator, within +/- the ceiling.
+         """
+-        self.engaged = contacts.rear_in_contact
++        self.engaged = (
++            contacts.rear_in_contact if controller_grounded is None else controller_grounded
++        )
+         error_mps = self._target_speed_mps - float(data.qvel[self.root_x_dofadr])
+ 
+         if not self.engaged:
+             # A gated step contributes nothing to the integral: accumulating error while the
+             # torque cannot be delivered is precisely the wind-up that lands violently.
+             self.torque_nm = 0.0
+             return self.torque_nm
+ 
+         kp = self.kp_nm_per_mps * self.gain_scale
+         ki = self.ki_nm_per_mps_s * self.gain_scale
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index 2ab1fc3..fb9f45b 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -596,21 +596,22 @@ class RideSimulation:
+             traction_limited = False
+             if self.tyre_applier is not None:
+                 error_mps = self.cruise.target_speed_mps - float(
+                     self.data.qvel[self.root_x_dofadr]
+                 )
+                 traction_limited = any(
+                     patch.fully_sliding and patch.slip_ratio * error_mps > 0.0
+                     for patch in self.tyre_applier.rear_outputs.patches
+                 )
+             drive_torque = self.cruise.compute(
+-                self.model, self.data, self.contacts, traction_limited=traction_limited
++                self.model, self.data, self.contacts, traction_limited=traction_limited,
++                controller_grounded=self.contacts.rear_controller_grounded,
+             )
+             if (front_brake_demand > 0.0 or rear_brake_demand > 0.0) and drive_torque > 0.0:
+                 drive_torque = 0.0
+             self.data.ctrl[self.drive_ctrl_adr] = drive_torque
+ 
+         front_torque, rear_torque = self.brakes.compute(
+             self.data, front_brake_demand, rear_brake_demand
+         )
+         self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
+         self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
+diff --git a/tests/test_contact_filter_time.py b/tests/test_contact_filter_time.py
+new file mode 100644
+index 0000000..2fe6b62
+--- /dev/null
++++ b/tests/test_contact_filter_time.py
+@@ -0,0 +1,148 @@
++"""Timestamp-based controller contact gating stays separate from physical load."""
++
++import math
++
++import mujoco
++import pytest
++
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.sim.ride.contact_filter import GroundedFilter
++from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
++from bike_sim.sim.ride_sim import RideSimulation
++from bike_sim.terrain import get_preset
++
++
++def test_filter_does_not_advance_when_read_twice():
++    f = GroundedFilter(0.005)
++    assert f.update(True, 0.0)
++    assert f.update(False, 0.004)
++    assert f.update(False, 0.004)
++    assert not f.update(False, 0.006)
++
++
++@pytest.mark.parametrize("hold_s", [-0.001, math.inf, -math.inf, math.nan])
++def test_filter_rejects_invalid_hold(hold_s):
++    with pytest.raises(ValueError, match="hold_s"):
++        GroundedFilter(hold_s)
++
++
++def test_filter_rejects_invalid_or_backward_time_and_reset_clears_history():
++    f = GroundedFilter(0.005)
++    assert f.update(True, 1.0)
++    with pytest.raises(ValueError, match="non-finite timestamp"):
++        f.update(False, math.nan)
++    with pytest.raises(ValueError, match="backwards"):
++        f.update(False, 0.999)
++    assert f.update(False, 1.004)
++    f.reset()
++    assert not f.update(False, 0.0)
++    assert f.update(True, 0.001)
++
++
++@pytest.mark.parametrize("dt_s", [0.0005, 0.00025, 0.000125])
++def test_hold_duration_agrees_within_one_step_at_three_time_steps(dt_s):
++    f = GroundedFilter(0.005)
++    assert f.update(True, 0.0)
++    last_held_s = 0.0
++    first_released_s = None
++    for step in range(1, 42):
++        time_s = step * dt_s
++        if f.update(False, time_s):
++            last_held_s = time_s
++        else:
++            first_released_s = time_s
++            break
++    assert first_released_s is not None
++    assert 0.005 - dt_s <= last_held_s < 0.005
++    assert 0.005 <= first_released_s < 0.005 + dt_s
++
++
++def test_native_query_filters_only_working_road_contact_and_keeps_loads_raw():
++    sim = RideSimulation(track=get_preset("single_edge"), target_speed_kmh=25.0)
++    model, data = sim.model, sim.data
++    query = TerrainContactQuery(model)
++    road = query.query(model, data)
++    assert road.front_controller_grounded == road.front_snapshot.road_loaded_contact
++    assert road.rear_controller_grounded == road.rear_snapshot.road_loaded_contact
++    assert road.front_controller_grounded or road.rear_controller_grounded
++
++    catch_plane = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "catch_plane")
++    for index in range(data.ncon):
++        contact = data.contact[index]
++        if int(contact.geom1) in query.terrain_ids:
++            contact.geom1 = catch_plane
++        elif int(contact.geom2) in query.terrain_ids:
++            contact.geom2 = catch_plane
++
++    same_time = query.query(model, data)
++    assert same_time.front_controller_grounded == road.front_controller_grounded
++    assert same_time.rear_controller_grounded == road.rear_controller_grounded
++    data.time = 0.006
++    catch = query.query(model, data)
++    assert not catch.front_snapshot.road_loaded_contact
++    assert not catch.rear_snapshot.road_loaded_contact
++    assert not catch.front_controller_grounded
++    assert not catch.rear_controller_grounded
++    assert catch.front_load_n == pytest.approx(road.front_load_n)
++    assert catch.rear_load_n == pytest.approx(road.rear_load_n)
++    assert catch.front_support_n == pytest.approx(road.front_support_n)
++    assert catch.rear_support_n == pytest.approx(road.rear_support_n)
++
++    query.reset()
++    data.time = 0.0
++    after_reset = query.query(model, data)
++    assert not after_reset.front_controller_grounded
++    assert not after_reset.rear_controller_grounded
++
++
++def test_native_controller_gate_requires_more_than_one_newton_of_road_load():
++    sim = RideSimulation(track=get_preset("single_edge"), target_speed_kmh=25.0)
++    model, data = sim.model, sim.data
++    query = TerrainContactQuery(model)
++    rear_row = next(
++        data.contact[index] for index in range(data.ncon)
++        if query.rear_id in (int(data.contact[index].geom1), int(data.contact[index].geom2))
++        and (int(data.contact[index].geom1) in query.terrain_ids
++             or int(data.contact[index].geom2) in query.terrain_ids)
++    )
++    data.efc_force[:] = 0.0
++    data.efc_force[int(rear_row.efc_address)] = 0.5
++    below_threshold = query.query(model, data)
++    assert below_threshold.rear_snapshot.road_loaded_contact
++    assert below_threshold.rear_snapshot.normal_load_n == pytest.approx(0.5)
++    assert not below_threshold.rear_controller_grounded
++
++    data.efc_force[int(rear_row.efc_address)] = 1.5
++    data.time = 0.0005
++    above_threshold = query.query(model, data)
++    assert above_threshold.rear_snapshot.normal_load_n == pytest.approx(1.5)
++    assert above_threshold.rear_controller_grounded
++
++
++def test_physical_native_cruise_uses_controller_grounded_instead_of_held_load(monkeypatch):
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none",
++        physics_config=SimulationPhysicsConfig(
++            physics_mode="physical", drive_mode="ideal_speed_control"
++        ),
++    )
++    held_load = TerrainContacts(
++        front_load_n=0.0, rear_load_n=600.0,
++        front_support_n=0.0, rear_support_n=0.0,
++        handlebar_load_n=0.0, rear_controller_grounded=False,
++    )
++    assert held_load.rear_in_contact  # Compatibility bridge still reports load.
++    monkeypatch.setattr(sim.contact_query, "query", lambda model, data: held_load)
++    sim.step()
++    assert not sim.cruise.engaged
++    assert sim.data.ctrl[sim.drive_ctrl_adr] == 0.0
++
++    held_grounded = TerrainContacts(
++        front_load_n=0.0, rear_load_n=0.0,
++        front_support_n=0.0, rear_support_n=0.0,
++        handlebar_load_n=0.0, rear_controller_grounded=True,
++    )
++    monkeypatch.setattr(sim.contact_query, "query", lambda model, data: held_grounded)
++    sim.step()
++    assert sim.cruise.engaged
++    assert sim.data.ctrl[sim.drive_ctrl_adr] > 0.0

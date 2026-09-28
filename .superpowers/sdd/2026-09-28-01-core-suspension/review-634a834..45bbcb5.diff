@@ -1,0 +1,576 @@
+# Review package: 634a834..HEAD
+
+## Commits
+45bbcb5 fix: resolve suspension parameters into active components
+
+## Files changed
+ src/bike_sim/physics/damper.py            |  27 ++++-
+ src/bike_sim/physics/suspension_config.py |  41 +++++++
+ src/bike_sim/sim/ride_sim.py              |  49 ++++++--
+ tests/test_suspension_config.py           | 179 ++++++++++++++++++++++++++++++
+ 4 files changed, 282 insertions(+), 14 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/physics/damper.py b/src/bike_sim/physics/damper.py
+index 19cddee..2e2f1d9 100644
+--- a/src/bike_sim/physics/damper.py
++++ b/src/bike_sim/physics/damper.py
+@@ -1,20 +1,21 @@
+ """
+ Hydrodynamic Suspension Damper Simulation Module for Mountain Bike Suspensions.
+ 
+ This module models high-performance mountain bike hydraulic dampers:
+ 1. RockShox ZEB Ultimate Fork Damper (Charger 3 / 3.1 RC2)
+ 2. RockShox Super Deluxe Ultimate Rear Damper (RC2T)
+ """
+ 
+ from dataclasses import dataclass
+ from enum import Enum
++from math import isfinite
+ from typing import Any, Dict, List, Optional, Tuple
+ import numpy as np
+ 
+ 
+ class DamperPreset(Enum):
+     BASE = "Base Tune (Factory Neutral)"
+     PLUSH = "Plush / Wet Traction"
+     ENDURO = "Enduro Race (Supportive)"
+     PARK = "Bike Park / Jumps (Firm)"
+     CUSTOM = "Custom Rider Tune"
+@@ -153,39 +154,47 @@ class Charger3Damper(BaseDamper):
+     """
+     RockShox Charger 3 / 3.1 RC2 Damper Model for ZEB Ultimate Fork.
+     """
+ 
+     def __init__(
+         self,
+         hsc_clicks: int = 2,
+         lsc_clicks: int = 7,
+         rebound_clicks: int = 9,
+         total_travel_mm: float = 180.0,
++        *,
++        legacy_behavior: bool = False,
+     ) -> None:
++        if not isfinite(total_travel_mm) or total_travel_mm <= 0.0:
++            raise ValueError("fork travel must be finite and positive")
++        if not legacy_behavior and total_travel_mm < 20.0:
++            raise ValueError("fork travel must contain the 20 mm HBO zone")
+         super().__init__(
+             max_hsc=4,
+             max_lsc=14,
+             max_reb=17,
+             hsc_clicks=hsc_clicks,
+             lsc_clicks=lsc_clicks,
+             rebound_clicks=rebound_clicks,
+             total_travel_mm=total_travel_mm,
+             c_lsc_min=260.0,
+             c_lsc_max=1150.0,
+             c_hsc_min=180.0,
+             c_hsc_max=520.0,
+             c_reb_min=350.0,
+             c_reb_max=1550.0,
+             v_knee_comp=0.18,
+             v_knee_reb=0.22,
+         )
+-        self.hbo_start_mm = 160.0
++        self.hbo_start_mm = 160.0 if legacy_behavior else total_travel_mm - 20.0
++        if not legacy_behavior and not 0.0 < total_travel_mm - self.hbo_start_mm <= total_travel_mm:
++            raise ValueError("fork HBO zone must be positive and no longer than travel")
+         self.c_hbo_base = 3500.0
+ 
+     def set_clicks(self, hsc: Optional[int] = None, lsc: Optional[int] = None, reb: Optional[int] = None) -> None:
+         """Sets damper click adjustments."""
+         if hsc is not None:
+             self.hsc_clicks = max(0, min(self.max_hsc, int(hsc)))
+         if lsc is not None:
+             self.lsc_clicks = max(0, min(self.max_lsc, int(lsc)))
+         if reb is not None:
+             self.rebound_clicks = max(0, min(self.max_reb, int(reb)))
+@@ -235,20 +244,22 @@ class SuperDeluxeDamper(BaseDamper):
+     def __init__(
+         self,
+         hsc_clicks: int = 2,
+         lsc_clicks: int = 7,
+         rebound_clicks: int = 7,
+         hbo_clicks: int = 2,
+         lockout_firm: bool = False,
+         total_stroke_mm: float = 65.0,
+         legacy_behavior: bool = False,
+     ) -> None:
++        if not isfinite(total_stroke_mm) or total_stroke_mm <= 0.0:
++            raise ValueError("shock stroke must be finite and positive")
+         super().__init__(
+             max_hsc=4,
+             max_lsc=14,
+             max_reb=14,
+             hsc_clicks=hsc_clicks,
+             lsc_clicks=lsc_clicks,
+             rebound_clicks=rebound_clicks,
+             total_travel_mm=total_stroke_mm,
+             c_lsc_min=650.0,
+             c_lsc_max=2900.0,
+@@ -258,21 +269,23 @@ class SuperDeluxeDamper(BaseDamper):
+             c_reb_max=8000.0,
+             v_knee_comp=0.16,
+             v_knee_reb=0.20,
+         )
+         self.max_hbo = 4
+         self.total_stroke_mm = float(total_stroke_mm)
+         self.hbo_clicks = max(0, min(self.max_hbo, int(hbo_clicks)))
+         self.lockout_firm = bool(lockout_firm)
+         self.legacy_behavior = bool(legacy_behavior)
+ 
+-        self.hbo_start_mm = 52.0
++        self.hbo_start_mm = 52.0 if legacy_behavior else 0.8 * total_stroke_mm
++        if not legacy_behavior and not 0.0 < total_stroke_mm - self.hbo_start_mm <= total_stroke_mm:
++            raise ValueError("shock HBO zone must be positive and no longer than stroke")
+         self.c_hbo_min = 4000.0
+         self.c_hbo_max = 18000.0
+         self.lockout_preload_n = 480.0
+         self.lockout_stiffness = 15000.0
+ 
+     def set_clicks(
+         self,
+         hsc: Optional[int] = None,
+         lsc: Optional[int] = None,
+         reb: Optional[int] = None,
+@@ -368,38 +381,46 @@ class SuperDeluxeDamper(BaseDamper):
+         }
+ 
+ 
+ 
+ class BikeSuspensionSystem:
+     """
+     Combined suspension system holding both Fork (ZEB Ultimate) and Rear Shock (Super Deluxe Ultimate).
+     """
+ 
+     def __init__(
+-        self, click_config: Optional[DamperClickConfig] = None, *, legacy_behavior: bool = False
++        self,
++        click_config: Optional[DamperClickConfig] = None,
++        *,
++        fork_travel_mm: float = 180.0,
++        shock_stroke_mm: float = 65.0,
++        legacy_behavior: bool = False,
+     ) -> None:
+         if click_config is None:
+             click_config = DAMPER_PRESETS[DamperPreset.BASE]
+ 
+         self.current_preset = DamperPreset.BASE
+         self.config = click_config
+         self.fork_damper = Charger3Damper(
+             hsc_clicks=click_config.fork_hsc,
+             lsc_clicks=click_config.fork_lsc,
+             rebound_clicks=click_config.fork_rebound,
++            total_travel_mm=fork_travel_mm,
++            legacy_behavior=legacy_behavior,
+         )
+         self.shock_damper = SuperDeluxeDamper(
+             hsc_clicks=click_config.shock_hsc,
+             lsc_clicks=click_config.shock_lsc,
+             rebound_clicks=click_config.shock_rebound,
+             hbo_clicks=click_config.shock_hbo,
+             lockout_firm=click_config.shock_lockout,
++            total_stroke_mm=shock_stroke_mm,
+             legacy_behavior=legacy_behavior,
+         )
+ 
+     def apply_preset(self, preset: DamperPreset) -> None:
+         """Applies a factory preset configuration."""
+         if preset not in DAMPER_PRESETS:
+             return
+         self.current_preset = preset
+         cfg = DAMPER_PRESETS[preset]
+         self.config = cfg
+diff --git a/src/bike_sim/physics/suspension_config.py b/src/bike_sim/physics/suspension_config.py
+new file mode 100644
+index 0000000..9086fea
+--- /dev/null
++++ b/src/bike_sim/physics/suspension_config.py
+@@ -0,0 +1,41 @@
++"""Resolve bicycle suspension settings into active physical components."""
++
++from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
++from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
++from bike_sim.physics.damper import BikeSuspensionSystem, DamperClickConfig
++from bike_sim.sim.controllers import SuspensionController
++
++
++def build_suspension_components(
++    specs: BikeSpecs, *, preload_mm: float = 0.0
++) -> tuple[SuspensionController, CoilShock]:
++    """Build the fork, dampers and rear coil from one bicycle specification."""
++    clicks = DamperClickConfig(
++        fork_hsc=specs.fork_hsc,
++        fork_lsc=specs.fork_lsc,
++        fork_rebound=specs.fork_rebound,
++        shock_hsc=specs.shock_hsc,
++        shock_lsc=specs.shock_lsc,
++        shock_rebound=specs.shock_rebound,
++        shock_hbo=specs.shock_hbo,
++        shock_lockout=specs.shock_lockout,
++    )
++    dampers = BikeSuspensionSystem(
++        clicks,
++        fork_travel_mm=specs.fork_travel,
++        shock_stroke_mm=specs.shock_stroke,
++    )
++    air = ForkAirSpring(
++        AirSpringSpecs(total_travel_mm=specs.fork_travel),
++        num_tokens=specs.fork_air_tokens,
++        gauge_pressure_psi=specs.fork_initial_psi,
++    )
++    coil = CoilShock(
++        CoilShockSpecs(
++            rate_n_m=specs.shock_stiffness,
++            preload_mm=preload_mm,
++            stroke_mm=specs.shock_stroke,
++        )
++    )
++    return SuspensionController(specs, air, dampers), coil
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index c5ee49e..e5b49f3 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -6,36 +6,37 @@ them in a fixed order. Everything that computes a force lives in `sim/ride/`; th
+ resolves handles, sequences the writers, and exposes the run's state. It coordinates, it
+ does not compute.
+ 
+ **Track data is written before anything reads the model's geometry.** `model.hfield_data` is
+ filled from the track raster immediately after compilation, ahead of the first
+ `mj_forward`, the equilibrium solve and any viewer: a heightfield read before it is filled
+ is a flat road, and every contact computed against it is wrong.
+ """
+ 
+ import dataclasses
+-from math import sin
++from math import isfinite, sin
+ from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Union
+ 
+ import mujoco
+ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.geometry.hardpoints import compute_ground_z
+ from bike_sim.kinematics.solver import HorstLinkageSolver
+ from bike_sim.mujoco.builder import generate_mujoco_xml
+ from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
+ from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
+ from bike_sim.physics.damper import BikeSuspensionSystem
+ from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
+ from bike_sim.physics.model_config import SimulationPhysicsConfig
+ from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
++from bike_sim.physics.suspension_config import build_suspension_components
+ from bike_sim.physics.tyre import TyreConfig
+ from bike_sim.sim.controllers import SuspensionController
+ from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
+ from bike_sim.sim.ride.braking import BrakeController
+ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
+ from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+ from bike_sim.sim.ride.constraint_forces import (
+     ConstraintForceSnapshot,
+     shock_joint_limit_qfrc,
+ )
+@@ -171,28 +172,43 @@ class RideSimulation:
+         self.drivetrain_specs = drivetrain if drivetrain is not None else DrivetrainSpecs()
+         pedalled = drive_mode != "motor"
+         self.visual_pedalling = bool(visual_pedalling)
+         crank_joint = pedalled or self.visual_pedalling
+ 
+         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
+         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
+         assert_track_fits(self.track, self.field)
+ 
+         self.specs = specs if specs is not None else BikeSpecs()
++        if controller is not None:
++            _validate_controller_geometry(self.specs, controller)
+         if (
+             coil_shock is not None
+             and abs(coil_shock.specs.stroke_mm - self.specs.shock_stroke) > 1e-6
+         ):
+             raise ValueError(
+                 f"CoilShock stroke_mm {coil_shock.specs.stroke_mm} differs from "
+                 f"BikeSpecs shock_stroke {self.specs.shock_stroke}"
+             )
++        if self.physics_config.physics_mode == "physical":
++            default_controller, default_coil = build_suspension_components(self.specs)
++        else:
++            default_controller = _default_controller(self.specs, legacy_behavior=True)
++            default_coil = CoilShock(
++                CoilShockSpecs(
++                    rate_n_m=self.specs.shock_stiffness,
++                    stroke_mm=self.specs.shock_stroke,
++                ),
++                legacy_behavior=True,
++            )
++        resolved_controller = controller if controller is not None else default_controller
++        resolved_coil = coil_shock if coil_shock is not None else default_coil
+         self.tyre_config = tyre if tyre is not None else TyreConfig()
+         if (
+             self.physics_config.physics_mode == "physical"
+             and self.tyre_config.pneumatic
+             and self.tyre_config.tier == "detailed"
+             and self.physics_config.timestep_s != self.tyre_config.tier_spec.timestep_s
+         ):
+             raise ValueError(
+                 "detailed pneumatic tyre requires timestep_s="
+                 f"{self.tyre_config.tier_spec.timestep_s}; "
+@@ -247,30 +263,21 @@ class RideSimulation:
+                 SurfaceMap.uniform(self.track.surface),
+             )
+         self.data = mujoco.MjData(self.model)
+         self.force_accumulator = ForceAccumulator(self.model.nv)
+         self.last_force_snapshot: Optional[
+             Tuple[float, np.ndarray, np.ndarray, Mapping[str, np.ndarray]]
+         ] = None
+         self.last_force_sample: Optional[ForceSample] = None
+         self.last_constraint_snapshot: Optional[ConstraintForceSnapshot] = None
+ 
+-        self.controller = controller if controller is not None else _default_controller(
+-            self.specs, legacy_behavior=self.physics_config.physics_mode == "legacy"
+-        )
+-        resolved_coil = coil_shock if coil_shock is not None else CoilShock(
+-            CoilShockSpecs(
+-                rate_n_m=self.specs.shock_stiffness,
+-                stroke_mm=self.specs.shock_stroke,
+-            ),
+-            legacy_behavior=self.physics_config.physics_mode == "legacy",
+-        )
++        self.controller = resolved_controller
+         self.applier = SuspensionForceApplier(
+             self.model,
+             self.controller,
+             resolved_coil,
+             physics_config=self.physics_config,
+         )
+         self.rider_forces = RiderForceApplier(self.model, self.pose)
+         self.contact_query = TerrainContactQuery(self.model)
+         self.resistance = RollingResistance(self.model)
+         self.cruise = CruiseController(self.model, target_speed_kmh=target_speed_kmh)
+@@ -752,20 +759,40 @@ class RideSimulation:
+     def rear_travel_mm(self) -> float:
+         """Rear wheel travel for the current shaft stroke, from the analytical solver."""
+         return float(self.solver.solve_state_from_shock_stroke(self.shock_stroke_mm)["wheel_travel"])
+ 
+     @property
+     def crash(self) -> Optional[CrashEvent]:
+         """The latched crash event, or None while the run is still upright."""
+         return self.crash_detector.event
+ 
+ 
++def _validate_controller_geometry(specs: BikeSpecs, controller: SuspensionController) -> None:
++    """Reject a force calculator built for geometry unlike the compiled bike."""
++    for field in (
++        "fork_travel", "shock_stroke", "shock_eye_to_eye", "rear_wheel_travel",
++        "front_wheel_radius", "rear_wheel_radius", "wheel_radius",
++    ):
++        expected = getattr(specs, field)
++        actual = getattr(controller.specs, field)
++        if not isfinite(expected) or not isfinite(actual) or abs(expected - actual) > 1e-6:
++            raise ValueError(f"BikeSpecs {field} {expected} differs from controller {field} {actual}")
++    for field, actual in (
++        ("fork_travel", controller.air_spring.specs.total_travel_mm),
++        ("fork_travel", controller.suspension_system.fork_damper.total_travel_mm),
++        ("shock_stroke", controller.suspension_system.shock_damper.total_stroke_mm),
++    ):
++        expected = getattr(specs, field)
++        if not isfinite(expected) or not isfinite(actual) or abs(expected - actual) > 1e-6:
++            raise ValueError(f"BikeSpecs {field} {expected} differs from component {field} {actual}")
++
++
+ def _default_controller(specs: BikeSpecs, *, legacy_behavior: bool) -> SuspensionController:
+     """
+     Builds the suspension force calculator from the shipped defaults.
+ 
+     Args:
+         specs: Bicycle geometry, supplying the fork travel, token count and pressure.
+ 
+     Returns:
+         A `SuspensionController` configured as the shipped bike.
+     """
+diff --git a/tests/test_suspension_config.py b/tests/test_suspension_config.py
+new file mode 100644
+index 0000000..11b75d9
+--- /dev/null
++++ b/tests/test_suspension_config.py
+@@ -0,0 +1,179 @@
++"""Resolved suspension configuration and ride-mode override contracts."""
++
++import pytest
++
++from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
++from bike_sim.physics.damper import BikeSuspensionSystem
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.physics.suspension_config import build_suspension_components
++from bike_sim.sim.ride_sim import RideSimulation
++from bike_sim.terrain import get_preset
++
++
++def test_public_spec_reaches_running_components():
++    specs = BikeSpecs(
++        fork_lsc=2,
++        shock_hsc=4,
++        shock_stiffness=90000.0,
++        fork_travel=170.0,
++        shock_stroke=60.0,
++    )
++
++    controller, coil = build_suspension_components(specs)
++
++    assert controller.suspension_system.fork_damper.lsc_clicks == 2
++    assert controller.suspension_system.shock_damper.hsc_clicks == 4
++    assert coil.specs.rate_n_m == 90000.0
++    assert coil.specs.stroke_mm == 60.0
++    assert controller.suspension_system.fork_damper.total_travel_mm == 170.0
++
++
++@pytest.mark.parametrize(
++    ("field", "value", "damper", "attribute", "velocity", "travel"),
++    [
++        ("fork_hsc", 4, "fork_damper", "hsc_clicks", 0.5, 70.0),
++        ("fork_lsc", 2, "fork_damper", "lsc_clicks", 0.05, 70.0),
++        ("fork_rebound", 15, "fork_damper", "rebound_clicks", -0.5, 70.0),
++        ("shock_hsc", 4, "shock_damper", "hsc_clicks", 0.5, 20.0),
++        ("shock_lsc", 2, "shock_damper", "lsc_clicks", 0.05, 20.0),
++        ("shock_rebound", 12, "shock_damper", "rebound_clicks", -0.5, 20.0),
++        ("shock_hbo", 4, "shock_damper", "hbo_clicks", 0.5, 60.0),
++        ("shock_lockout", True, "shock_damper", "lockout_firm", 0.5, 20.0),
++    ],
++)
++def test_each_public_damper_setting_changes_its_force(
++    field, value, damper, attribute, velocity, travel
++):
++    baseline, _ = build_suspension_components(BikeSpecs())
++    tuned, _ = build_suspension_components(BikeSpecs(**{field: value}))
++    normal_damper = getattr(baseline.suspension_system, damper)
++    tuned_damper = getattr(tuned.suspension_system, damper)
++
++    assert getattr(tuned_damper, attribute) == value
++    assert tuned_damper.compute_damping_force(
++        velocity, travel
++    ) != pytest.approx(normal_damper.compute_damping_force(velocity, travel))
++
++
++def test_factory_passes_air_settings_and_coil_preload():
++    specs = BikeSpecs(fork_initial_psi=95.0, fork_air_tokens=3, shock_stiffness=90000.0)
++    controller, coil = build_suspension_components(specs, preload_mm=3.0)
++    baseline, _ = build_suspension_components(BikeSpecs())
++
++    assert controller.air_spring.gauge_pressure_psi == 95.0
++    assert controller.air_spring.num_tokens == 3
++    assert controller.air_spring.compute_axial_force(80.0) != pytest.approx(
++        baseline.air_spring.compute_axial_force(80.0)
++    )
++    assert coil.compute_spring_force(0.0) == pytest.approx(270.0)
++
++
++def test_physical_hbo_zones_follow_travel_and_legacy_stays_absolute():
++    physical = BikeSuspensionSystem(fork_travel_mm=170.0, shock_stroke_mm=60.0)
++    legacy = BikeSuspensionSystem(
++        fork_travel_mm=170.0, shock_stroke_mm=60.0, legacy_behavior=True
++    )
++
++    assert physical.fork_damper.hbo_start_mm == pytest.approx(150.0)
++    assert physical.shock_damper.hbo_start_mm == pytest.approx(48.0)
++    assert legacy.fork_damper.hbo_start_mm == pytest.approx(160.0)
++    assert legacy.shock_damper.hbo_start_mm == pytest.approx(52.0)
++
++
++@pytest.mark.parametrize(
++    ("fork_travel", "shock_stroke"),
++    [(0.0, 65.0), (float("nan"), 65.0), (19.0, 65.0), (180.0, 0.0), (180.0, float("inf"))],
++)
++def test_invalid_or_too_short_damper_travel_is_rejected(fork_travel, shock_stroke):
++    with pytest.raises(ValueError, match="travel|stroke|zone"):
++        BikeSuspensionSystem(fork_travel_mm=fork_travel, shock_stroke_mm=shock_stroke)
++
++
++def test_legacy_short_travel_keeps_absolute_hbo_thresholds_without_rejection():
++    legacy = BikeSuspensionSystem(
++        fork_travel_mm=15.0, shock_stroke_mm=40.0, legacy_behavior=True
++    )
++
++    assert legacy.fork_damper.hbo_start_mm == 160.0
++    assert legacy.shock_damper.hbo_start_mm == 52.0
++    assert legacy.fork_damper.compute_damping_force(0.5, 14.0) > 0.0
++    assert legacy.shock_damper.compute_damping_force(0.5, 39.0) > 0.0
++
++
++@pytest.mark.parametrize(
++    ("specs", "field", "expected"),
++    [
++        (BikeSpecs(fork_travel=170.0), "fork_travel", r"170\.0.*180\.0"),
++        (BikeSpecs(shock_stroke=60.0), "shock_stroke", r"60\.0.*65\.0"),
++        (BikeSpecs(front_wheel_radius=370.0), "front_wheel_radius", r"370\.0.*372\.0"),
++        (BikeSpecs(shock_eye_to_eye=210.0), "shock_eye_to_eye", r"210\.0.*205\.0"),
++    ],
++)
++def test_conflicting_controller_geometry_is_rejected_before_compile(specs, field, expected):
++    controller, _ = build_suspension_components(BikeSpecs())
++
++    with pytest.raises(ValueError, match=field + ".*" + expected):
++        RideSimulation(
++            track=get_preset("flat"),
++            rider="none",
++            specs=specs,
++            controller=controller,
++            physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++        )
++
++
++def test_conflicting_damper_travel_is_rejected_even_with_matching_controller_specs():
++    specs = BikeSpecs()
++    controller, _ = build_suspension_components(specs)
++    controller.suspension_system.fork_damper.total_travel_mm = 170.0
++
++    with pytest.raises(ValueError, match=r"fork_travel.*180\.0.*170\.0"):
++        RideSimulation(
++            track=get_preset("flat"), rider="none", specs=specs,
++            controller=controller,
++            physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++        )
++
++
++def test_nonfinite_controller_travel_is_rejected():
++    specs = BikeSpecs()
++    controller, _ = build_suspension_components(specs)
++    controller.air_spring.specs.total_travel_mm = float("nan")
++
++    with pytest.raises(ValueError, match="fork_travel"):
++        RideSimulation(track=get_preset("flat"), rider="none", specs=specs, controller=controller)
++
++
++def test_compatible_explicit_overrides_keep_their_identity_and_tuning():
++    specs = BikeSpecs()
++    controller, _ = build_suspension_components(specs)
++    controller.air_spring.set_pressure_psi(105.0)
++    coil = CoilShock(CoilShockSpecs(rate_n_m=100000.0, stroke_mm=specs.shock_stroke))
++
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none", specs=specs,
++        controller=controller, coil_shock=coil,
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++
++    assert sim.controller is controller
++    assert sim.applier.coil_shock is coil
++    assert sim.controller.air_spring.gauge_pressure_psi == 105.0
++    assert sim.applier.coil_shock.specs.rate_n_m == 100000.0
++
++
++def test_physical_ride_uses_resolved_factory_and_legacy_keeps_old_dampers():
++    specs = BikeSpecs(fork_lsc=2, shock_hsc=4)
++    physical = RideSimulation(
++        track=get_preset("flat"), rider="none", specs=specs,
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    legacy = RideSimulation(track=get_preset("flat"), rider="none", specs=specs)
++
++    assert physical.controller.suspension_system.fork_damper.lsc_clicks == 2
++    assert physical.controller.suspension_system.shock_damper.hsc_clicks == 4
++    assert legacy.controller.suspension_system.fork_damper.lsc_clicks == 7
++    assert legacy.controller.suspension_system.shock_damper.hsc_clicks == 2
++    assert legacy.controller.suspension_system.shock_damper.legacy_behavior is True
++    assert legacy.applier.coil_shock.legacy_behavior is True

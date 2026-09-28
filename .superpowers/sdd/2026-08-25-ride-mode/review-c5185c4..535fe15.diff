@@ -1,0 +1,865 @@
+# Review package: c5185c4..535fe15
+
+## Commits
+535fe15 feat(sim): add coil shock, ride suspension forces and static equilibrium
+
+## Files changed
+ src/bike_sim/physics/__init__.py   |   3 +
+ src/bike_sim/physics/coil_shock.py | 100 ++++++++++++++
+ src/bike_sim/sim/__init__.py       |   4 +
+ src/bike_sim/sim/equilibrium.py    | 132 +++++++++++++++++++
+ src/bike_sim/sim/ride/__init__.py  |  11 ++
+ src/bike_sim/sim/ride/forces.py    | 128 ++++++++++++++++++
+ tests/test_coil_shock.py           | 106 +++++++++++++++
+ tests/test_ride_equilibrium.py     | 258 +++++++++++++++++++++++++++++++++++++
+ 8 files changed, 742 insertions(+)
+
+## Diff
+diff --git a/src/bike_sim/physics/__init__.py b/src/bike_sim/physics/__init__.py
+index 3e8a91f..bbd62e9 100644
+--- a/src/bike_sim/physics/__init__.py
++++ b/src/bike_sim/physics/__init__.py
+@@ -3,34 +3,37 @@ Physics & Dynamics Package.
+ """
+ 
+ from bike_sim.physics.mass import (
+     BikeMassSpecs,
+     RiderSpecs,
+     compute_component_centers_of_mass,
+     compute_static_system_cg,
+ )
+ from bike_sim.physics.tuning import compute_suspension_tuning_for_sag
+ from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
++from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
+ from bike_sim.physics.damper import (
+     BikeSuspensionSystem,
+     Charger3Damper,
+     DamperClickConfig,
+     DamperPreset,
+     SuperDeluxeDamper,
+     DAMPER_PRESETS,
+ )
+ 
+ __all__ = [
+     "BikeMassSpecs",
+     "RiderSpecs",
+     "compute_component_centers_of_mass",
+     "compute_static_system_cg",
+     "compute_suspension_tuning_for_sag",
+     "AirSpringSpecs",
+     "ForkAirSpring",
++    "CoilShock",
++    "CoilShockSpecs",
+     "BikeSuspensionSystem",
+     "Charger3Damper",
+     "DamperClickConfig",
+     "DamperPreset",
+     "SuperDeluxeDamper",
+     "DAMPER_PRESETS",
+ ]
+diff --git a/src/bike_sim/physics/coil_shock.py b/src/bike_sim/physics/coil_shock.py
+new file mode 100644
+index 0000000..d892b78
+--- /dev/null
++++ b/src/bike_sim/physics/coil_shock.py
+@@ -0,0 +1,100 @@
++"""
++Coil Spring Rear Shock Model.
++
++Models the steel coil and the bottom-out bumper of a coil-sprung rear shock as a function
++of shaft stroke. Nothing here imports MuJoCo: it is a pure calculator, in the style of
++`physics/air_spring.py`, and the axial force it returns is applied to the `shock_stroke`
++coordinate by the ride-mode force path.
++
++**The coil is linear, and that is not a simplification.** A metal coil spring has a
++constant rate; all of the progression a Horst-link bike shows at the rear wheel comes from
++the linkage, which MuJoCo applies exactly through the constraint Jacobian every step. See
++docs/RIDE.md section 5 -- multiplying this force by an analytic leverage ratio would apply
++the ratio twice.
++
++The bumper is quadratic in engagement depth, so both force and slope are continuous where
++it engages, and it reaches its peak exactly at full stroke.
++"""
++
++from dataclasses import dataclass
++from typing import Optional
++
++
++@dataclass
++class CoilShockSpecs:
++    """
++    Dataclass holding the coil, preload and bumper specifications of a rear shock.
++
++    Attributes:
++        rate_n_m: Coil spring rate in N/m. The default is the repository's shipped
++            `shock_stiffness`.
++        preload_mm: Static coil compression already wound into the spring, in mm. The
++            default is zero deliberately: the shipped defaults must keep reproducing the
++            documented sag behaviour (docs/RIDE.md section 9).
++        stroke_mm: Usable shaft stroke in mm.
++        bumper_length_mm: Free length of the bottom-out bumper in mm; it engages this far
++            before full stroke.
++        bumper_peak_n: Bumper force at full stroke, in N.
++    """
++
++    rate_n_m: float = 114600.0
++    preload_mm: float = 0.0
++    stroke_mm: float = 65.0
++    bumper_length_mm: float = 10.0
++    bumper_peak_n: float = 7000.0
++
++    @property
++    def bumper_engage_mm(self) -> float:
++        """Shaft stroke at which the bumper first touches, in mm."""
++        return self.stroke_mm - self.bumper_length_mm
++
++
++class CoilShock:
++    """
++    Linear coil spring with a progressive bottom-out bumper.
++    """
++
++    def __init__(self, specs: Optional[CoilShockSpecs] = None) -> None:
++        self.specs = specs if specs is not None else CoilShockSpecs()
++
++    def compute_spring_force(self, stroke_mm: float) -> float:
++        """
++        Computes the coil force at a given shaft stroke.
++
++        Args:
++            stroke_mm: Shaft stroke in mm, increasing with compression.
++
++        Returns:
++            Coil force in N, including the preload offset.
++        """
++        return float(self.specs.rate_n_m * (float(stroke_mm) + self.specs.preload_mm) / 1000.0)
++
++    def compute_bumper_force(self, stroke_mm: float) -> float:
++        """
++        Computes the bottom-out bumper force at a given shaft stroke.
++
++        Args:
++            stroke_mm: Shaft stroke in mm, increasing with compression.
++
++        Returns:
++            Bumper force in N: exactly zero until the bumper engages, then quadratic in
++            engagement depth, reaching `bumper_peak_n` at full stroke.
++        """
++        excess_mm = max(0.0, float(stroke_mm) - self.specs.bumper_engage_mm)
++        return float(self.specs.bumper_peak_n * (excess_mm / self.specs.bumper_length_mm) ** 2)
++
++    def compute_axial_force(self, stroke_mm: float) -> float:
++        """
++        Computes the total axial spring force along the shock shaft.
++
++        Args:
++            stroke_mm: Shaft stroke in mm, increasing with compression.
++
++        Returns:
++            Coil plus bumper force in N. This is the generalized force the ride-mode force
++            path writes onto the `shock_stroke` coordinate; no leverage ratio is applied.
++        """
++        return self.compute_spring_force(stroke_mm) + self.compute_bumper_force(stroke_mm)
++
++
++__all__ = ["CoilShockSpecs", "CoilShock"]
+diff --git a/src/bike_sim/sim/__init__.py b/src/bike_sim/sim/__init__.py
+index 318cbf3..2cf829e 100644
+--- a/src/bike_sim/sim/__init__.py
++++ b/src/bike_sim/sim/__init__.py
+@@ -1,26 +1,30 @@
+ """
+ Simulation & Interactive Playground Subpackage.
+ """
+ 
+ from bike_sim.sim.camera import CameraManager
+ from bike_sim.sim.controllers import SuspensionController
++from bike_sim.sim.equilibrium import solve_static_equilibrium
++from bike_sim.sim.ride import SuspensionForceApplier
+ from bike_sim.sim.input_handler import PlaygroundInputHandler
+ from bike_sim.sim.telemetry import TelemetryProvider
+ from bike_sim.sim.hud import PlaygroundHUDManager
+ from bike_sim.sim.playground import (
+     SuspensionPlayground,
+     ensure_macos_mjpython,
+     run_interactive_playground,
+ )
+ 
+ __all__ = [
+     "CameraManager",
+     "SuspensionController",
++    "SuspensionForceApplier",
++    "solve_static_equilibrium",
+     "SuspensionPlayground",
+     "PlaygroundInputHandler",
+     "TelemetryProvider",
+     "PlaygroundHUDManager",
+     "ensure_macos_mjpython",
+     "run_interactive_playground",
+ ]
+ 
+diff --git a/src/bike_sim/sim/equilibrium.py b/src/bike_sim/sim/equilibrium.py
+new file mode 100644
+index 0000000..675321b
+--- /dev/null
++++ b/src/bike_sim/sim/equilibrium.py
+@@ -0,0 +1,132 @@
++"""
++Ride-Mode Static Equilibrium Solver.
++
++A run starts from a numerically solved static equilibrium written into `qpos` rather than
++from a settling drop: that removes the first half-second of transient from the telemetry
++and makes headless runs reproducible from the first frame (docs/RIDE.md section 9).
++
++The method is damped relaxation. The bike is placed just above the road and stepped with
++the suspension forces applied; every few milliseconds the velocities are discarded, so the
++state creeps down the potential-energy gradient instead of oscillating about the bottom of
++it. Convergence is measured on the accelerations of the zero-velocity state, where the
++dampers contribute nothing and the residual is a pure static force imbalance.
++"""
++
++from typing import Any, Dict
++
++import mujoco
++import numpy as np
++
++from bike_sim.kinematics.solver import HorstLinkageSolver
++from bike_sim.sim.ride.forces import SuspensionForceApplier
++
++# Steps between velocity resets. At the ride timestep this is a 20 ms window: short against
++# the ~3 Hz suspension modes, so each cycle is a small downhill move rather than half an
++# oscillation, and long enough that the state advances quadratically rather than one
++# timestep at a time.
++RELAX_STEPS_PER_CYCLE = 40
++
++# Initial gap between the wheels and the road, so the solve starts with no penetration.
++START_CLEARANCE_M = 0.005
++
++
++def solve_static_equilibrium(
++    model: mujoco.MjModel,
++    data: mujoco.MjData,
++    applier: SuspensionForceApplier,
++    solver: HorstLinkageSolver,
++    start_x_m: float = 2.0,
++    max_steps: int = 40000,
++    tol: float = 0.05,
++) -> Dict[str, Any]:
++    """
++    Solves the static equilibrium the bike settles into on the road under gravity.
++
++    The model's state is reset and overwritten, so the solve is reproducible and can be
++    repeated on the same `data`.
++
++    Args:
++        model: Compiled ride-mode model, with `hfield_data` already filled for the track.
++        data: Simulation state to solve in place.
++        applier: Suspension force path, applied at every step of the relaxation.
++        solver: Analytical linkage solver, used to report the rear wheel travel that
++            corresponds to the converged shaft stroke.
++        start_x_m: World X for the chassis root at the start of the solve. The default
++            keeps both contact patches on the heightfield, whose near edge is at x = 0.
++        max_steps: Cap on simulation steps before the solve is declared failed.
++        tol: Convergence threshold on the largest absolute generalized acceleration of the
++            zero-velocity state, in m/s^2 and rad/s^2.
++
++    Returns:
++        Dict with the converged `fork_travel_mm`, `shock_stroke_mm`, `rear_travel_mm`,
++        `root_z_m`, `pitch_rad`, the `steps` taken and the final `residual_qacc`.
++
++    Raises:
++        RuntimeError: If the relaxation has not converged within `max_steps`. The
++            unconverged state stays in `data` for inspection, but is never returned as an
++            equilibrium.
++    """
++    x_adr = _qposadr(model, "root_x")
++    z_adr = _qposadr(model, "root_z")
++    pitch_adr = _qposadr(model, "root_pitch")
++
++    mujoco.mj_resetData(model, data)
++    data.qpos[x_adr] = float(start_x_m)
++    data.qpos[z_adr] = START_CLEARANCE_M
++    mujoco.mj_forward(model, data)
++
++    steps = 0
++    residual = float("inf")
++    while steps < max_steps:
++        for _ in range(min(RELAX_STEPS_PER_CYCLE, max_steps - steps)):
++            applier.apply(model, data)
++            mujoco.mj_step(model, data)
++            steps += 1
++
++        data.qvel[:] = 0.0
++        applier.apply(model, data)
++        mujoco.mj_forward(model, data)
++        residual = float(np.max(np.abs(data.qacc)))
++
++        if residual <= tol:
++            shock_stroke_mm = float(data.qpos[applier.shock_qposadr]) * 1000.0
++            rear_state = solver.solve_state_from_shock_stroke(shock_stroke_mm)
++            return {
++                "fork_travel_mm": float(data.qpos[applier.fork_qposadr]) * 1000.0,
++                "shock_stroke_mm": shock_stroke_mm,
++                "rear_travel_mm": float(rear_state["wheel_travel"]),
++                "root_z_m": float(data.qpos[z_adr]),
++                "pitch_rad": float(data.qpos[pitch_adr]),
++                "steps": steps,
++                "residual_qacc": residual,
++            }
++
++    raise RuntimeError(
++        f"static equilibrium did not converge in {steps} steps: residual "
++        f"{residual:.4f} > {tol:.4f}, root_z {data.qpos[z_adr] * 1000.0:.1f} mm, "
++        f"fork {data.qpos[applier.fork_qposadr] * 1000.0:.1f} mm, "
++        f"shock {data.qpos[applier.shock_qposadr] * 1000.0:.1f} mm"
++    )
++
++
++def _qposadr(model: mujoco.MjModel, joint_name: str) -> int:
++    """
++    Resolves the qpos address of a named joint.
++
++    Args:
++        model: Compiled MuJoCo model.
++        joint_name: Name of the joint to resolve.
++
++    Returns:
++        Index into `qpos` of the joint's first coordinate.
++
++    Raises:
++        ValueError: If the model has no joint of that name.
++    """
++    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
++    if jid < 0:
++        raise ValueError(f"model has no joint '{joint_name}'; the equilibrium solve needs a planar root")
++    return int(model.jnt_qposadr[jid])
++
++
++__all__ = ["solve_static_equilibrium", "RELAX_STEPS_PER_CYCLE", "START_CLEARANCE_M"]
+diff --git a/src/bike_sim/sim/ride/__init__.py b/src/bike_sim/sim/ride/__init__.py
+new file mode 100644
+index 0000000..6d200c4
+--- /dev/null
++++ b/src/bike_sim/sim/ride/__init__.py
+@@ -0,0 +1,11 @@
++"""
++Ride-Mode Runtime Package.
++
++The per-step force writers of the free-rolling ride mode. Each one is a small object that
++reads MuJoCo state, asks a pure calculator for a force, and writes it into `qfrc_applied`
++or `ctrl`; the orchestrator that drives them lives in `sim/ride_sim.py`.
++"""
++
++from bike_sim.sim.ride.forces import SuspensionForceApplier
++
++__all__ = ["SuspensionForceApplier"]
+diff --git a/src/bike_sim/sim/ride/forces.py b/src/bike_sim/sim/ride/forces.py
+new file mode 100644
+index 0000000..da21902
+--- /dev/null
++++ b/src/bike_sim/sim/ride/forces.py
+@@ -0,0 +1,128 @@
++"""
++Ride-Mode Suspension Force Path.
++
++Writes the fork and shock forces into `qfrc_applied` on their own slide coordinates, as
++docs/RIDE.md section 5 prescribes. This is the only module in the ride package that
++touches `data` for the suspension: the spring and damper models themselves are pure
++calculators owned by `physics/` and `sim/controllers.py`.
++
++**No leverage ratio appears here.** By virtual work the axial shock force *is* the
++generalized force on `shock_stroke`; MuJoCo propagates it through the linkage's constraint
++Jacobian, which applies the instantaneous leverage ratio exactly, at the current
++configuration, every step. Multiplying by an analytically computed ratio would apply it
++twice.
++"""
++
++from typing import Tuple
++
++import mujoco
++
++from bike_sim.physics.coil_shock import CoilShock
++from bike_sim.sim.controllers import SuspensionController
++
++
++class SuspensionForceApplier:
++    """
++    Applies fork and rear shock forces to their slide coordinates in `qfrc_applied`.
++
++    The fork force is the existing `SuspensionController` air spring plus Charger 3
++    damping. The shock force is a `CoilShock` coil plus bumper -- which replaces the linear
++    spring term of `SuspensionController.compute_shock_force`, and must not be combined
++    with it -- plus Super Deluxe RC2T damping with HBO.
++    """
++
++    def __init__(
++        self,
++        model: mujoco.MjModel,
++        controller: SuspensionController,
++        coil_shock: CoilShock,
++    ) -> None:
++        self.controller = controller
++        self.coil_shock = coil_shock
++
++        self.fork_qposadr, self.fork_dofadr = self._resolve_compression_joint(model, "fork_travel")
++        self.shock_qposadr, self.shock_dofadr = self._resolve_compression_joint(model, "shock_stroke")
++
++        # Last computed force components, so telemetry can report them without recomputing.
++        self.fork_spring_n = 0.0
++        self.fork_damper_n = 0.0
++        self.fork_total_n = 0.0
++        self.shock_spring_n = 0.0
++        self.shock_bumper_n = 0.0
++        self.shock_damper_n = 0.0
++        self.shock_total_n = 0.0
++
++    @staticmethod
++    def _resolve_compression_joint(model: mujoco.MjModel, joint_name: str) -> Tuple[int, int]:
++        """
++        Resolves a suspension joint's addresses and verifies its sign convention.
++
++        Args:
++            model: Compiled MuJoCo model.
++            joint_name: Name of the suspension slide joint.
++
++        Returns:
++            Tuple of (qpos address, dof address).
++
++        Raises:
++            ValueError: If the joint is missing, unlimited, or its range does not start at
++                zero -- the force path writes a negative generalized force to resist
++                compression, which is only correct if the coordinate increases with
++                compression.
++        """
++        jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
++        if jid < 0:
++            raise ValueError(f"model has no joint '{joint_name}'; suspension forces cannot be applied")
++
++        lo, hi = float(model.jnt_range[jid][0]), float(model.jnt_range[jid][1])
++        if not bool(model.jnt_limited[jid]) or abs(lo) > 1e-9 or hi <= 0.0:
++            raise ValueError(
++                f"joint '{joint_name}' has range [{lo:.4f}, {hi:.4f}]; the suspension force path "
++                f"requires a limited range starting at 0, so that increasing value means compression"
++            )
++
++        return int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid])
++
++    def apply(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
++        """
++        Computes both suspension forces from the current state and applies them.
++
++        Args:
++            model: Compiled MuJoCo model. Unused -- the joint addresses were cached at
++                construction -- but kept so every ride-mode force writer shares one
++                `(model, data)` signature.
++            data: Simulation state, written at the fork and shock DOFs of `qfrc_applied`.
++        """
++        travel_mm = float(data.qpos[self.fork_qposadr]) * 1000.0
++        fork_velocity_mps = float(data.qvel[self.fork_dofadr])
++        fork_total, fork_spring, fork_damper = self.controller.compute_fork_force(
++            travel_mm, fork_velocity_mps
++        )
++
++        stroke_mm = float(data.qpos[self.shock_qposadr]) * 1000.0
++        shock_velocity_mps = float(data.qvel[self.shock_dofadr])
++        # Coil and bumper are taken separately rather than through
++        # CoilShock.compute_axial_force, whose sum they are, because telemetry needs them
++        # apart: a bottom-out is a bumper event, not a stiffer spring.
++        shock_spring = self.coil_shock.compute_spring_force(stroke_mm)
++        shock_bumper = self.coil_shock.compute_bumper_force(stroke_mm)
++        shock_damper = self.controller.suspension_system.shock_damper.compute_damping_force(
++            shock_velocity_mps, stroke_mm
++        )
++        shock_total = shock_spring + shock_bumper + shock_damper
++
++        # Both coordinates increase with compression, so a resisting force is a negative
++        # generalized force. The construction-time range check guarantees that convention.
++        data.qfrc_applied[self.fork_dofadr] = -fork_total
++        data.qfrc_applied[self.shock_dofadr] = -shock_total
++
++        self.fork_spring_n = fork_spring
++        self.fork_damper_n = fork_damper
++        self.fork_total_n = fork_total
++        self.shock_spring_n = shock_spring
++        self.shock_bumper_n = shock_bumper
++        self.shock_damper_n = shock_damper
++        self.shock_total_n = shock_total
++
++
++__all__ = ["SuspensionForceApplier"]
+diff --git a/tests/test_coil_shock.py b/tests/test_coil_shock.py
+new file mode 100644
+index 0000000..4944d5c
+--- /dev/null
++++ b/tests/test_coil_shock.py
+@@ -0,0 +1,106 @@
++"""
++Unit tests for the coil shock spring and bottom-out bumper model.
++
++Tests include:
++- Linearity of the coil term and its agreement with the declared rate.
++- Preload offsetting the whole force curve.
++- Bumper engagement: exactly zero before it, continuous across it, at peak at full stroke.
++- Monotonicity of the total axial force in stroke.
++- The shipped defaults matching the repository's documented spring settings.
++"""
++
++import numpy as np
++import pytest
++
++from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
++
++
++def test_spring_force_is_linear_in_stroke():
++    """The coil rate is constant across the stroke: equal steps give equal force steps."""
++    shock = CoilShock()
++    strokes = np.linspace(0.0, 65.0, 66)
++    forces = np.array([shock.compute_spring_force(s) for s in strokes])
++
++    rate_n_mm = CoilShockSpecs().rate_n_m / 1000.0
++    slopes = np.diff(forces) / np.diff(strokes)
++    assert slopes == pytest.approx(rate_n_mm)
++    assert shock.compute_spring_force(0.0) == pytest.approx(0.0)
++    assert shock.compute_spring_force(32.5) == pytest.approx(shock.compute_spring_force(65.0) / 2.0)
++
++
++def test_preload_offsets_the_whole_curve():
++    """Preload adds one constant force at every stroke and does not change the rate."""
++    plain = CoilShock()
++    preloaded = CoilShock(CoilShockSpecs(preload_mm=5.0))
++    offset_n = 5.0 * CoilShockSpecs().rate_n_m / 1000.0
++
++    for stroke_mm in [0.0, 10.0, 32.5, 55.0, 65.0]:
++        assert preloaded.compute_spring_force(stroke_mm) == pytest.approx(
++            plain.compute_spring_force(stroke_mm) + offset_n
++        )
++
++
++def test_bumper_is_zero_before_engagement():
++    """The bumper contributes nothing until the shaft reaches its engagement point."""
++    shock = CoilShock()
++    engage_mm = CoilShockSpecs().bumper_engage_mm
++    assert engage_mm == pytest.approx(55.0)
++
++    for stroke_mm in [0.0, 20.0, 54.0, engage_mm]:
++        assert shock.compute_bumper_force(stroke_mm) == 0.0
++        assert shock.compute_axial_force(stroke_mm) == pytest.approx(
++            shock.compute_spring_force(stroke_mm)
++        )
++
++
++def test_bumper_is_continuous_at_engagement():
++    """Force and slope are both continuous where the bumper engages: no step, no kink."""
++    specs = CoilShockSpecs()
++    shock = CoilShock(specs)
++    engage_mm = specs.bumper_engage_mm
++
++    # Quadratic in engagement depth, so the added force is second order in the overlap.
++    for depth_mm in [0.01, 0.1, 1.0]:
++        assert shock.compute_bumper_force(engage_mm + depth_mm) == pytest.approx(
++            specs.bumper_peak_n * (depth_mm / specs.bumper_length_mm) ** 2
++        )
++
++    # The slope of the total curve is the coil rate on both sides of engagement.
++    eps_mm = 0.0001
++    rate_n_mm = specs.rate_n_m / 1000.0
++    slope_before = (
++        shock.compute_axial_force(engage_mm) - shock.compute_axial_force(engage_mm - eps_mm)
++    ) / eps_mm
++    slope_after = (
++        shock.compute_axial_force(engage_mm + eps_mm) - shock.compute_axial_force(engage_mm)
++    ) / eps_mm
++    assert slope_before == pytest.approx(rate_n_mm)
++    assert slope_after == pytest.approx(rate_n_mm, rel=1e-4)
++
++
++def test_bumper_reaches_peak_at_full_stroke():
++    """The bumper delivers exactly its peak force at full stroke, and less before it."""
++    specs = CoilShockSpecs()
++    shock = CoilShock(specs)
++    assert shock.compute_bumper_force(specs.stroke_mm) == pytest.approx(specs.bumper_peak_n)
++    # Half way into the bumper a quadratic has delivered a quarter of its peak.
++    assert shock.compute_bumper_force(specs.stroke_mm - specs.bumper_length_mm / 2.0) == (
++        pytest.approx(specs.bumper_peak_n / 4.0)
++    )
++
++
++def test_total_force_increases_monotonically_with_stroke():
++    """Total axial force rises everywhere: no soft spot where the bumper takes over."""
++    shock = CoilShock()
++    strokes = np.linspace(0.0, 65.0, 651)
++    forces = np.array([shock.compute_axial_force(s) for s in strokes])
++    assert np.all(np.diff(forces) > 0.0)
++
++
++def test_defaults_match_the_shipped_spring_settings():
++    """The default rate is the repository's shipped shock stiffness, with no preload."""
++    specs = CoilShockSpecs()
++    assert specs.rate_n_m == pytest.approx(BikeSpecs().shock_stiffness)
++    assert specs.preload_mm == 0.0
++    assert specs.stroke_mm == pytest.approx(BikeSpecs().shock_stroke)
+diff --git a/tests/test_ride_equilibrium.py b/tests/test_ride_equilibrium.py
+new file mode 100644
+index 0000000..271688e
+--- /dev/null
++++ b/tests/test_ride_equilibrium.py
+@@ -0,0 +1,258 @@
++"""
++Unit tests for the ride-mode suspension force path and the static equilibrium solve.
++
++Tests include:
++- Convergence of the damped relaxation on the `flat` preset, and the error when it fails.
++- Front and rear sag at the shipped spring defaults, against docs/RIDE.md section 9.
++- The solved state being genuinely at rest, and staying there when stepped.
++- Reproducibility: two solves of the same model return the same state.
++- Cross-validation of the relaxation against a free dynamic settle.
++- The force path's sign convention and its refusal to run on the wrong joint range.
++"""
++
++from typing import NamedTuple
++
++import mujoco
++import numpy as np
++import pytest
++
++from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.kinematics.solver import HorstLinkageSolver
++from bike_sim.mujoco.builder import generate_mujoco_xml
++from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
++from bike_sim.physics.coil_shock import CoilShock
++from bike_sim.physics.damper import BikeSuspensionSystem
++from bike_sim.sim.controllers import SuspensionController
++from bike_sim.sim.equilibrium import (
++    START_CLEARANCE_M,
++    solve_static_equilibrium,
++)
++from bike_sim.sim.ride import SuspensionForceApplier
++from bike_sim.terrain import build_field_data, get_preset
++
++# docs/RIDE.md section 9 tabulates the sag the shipped defaults produce: 42.0 % front
++# (75.6 mm of 180) and 25.3 % rear (45.5 mm of 180 wheel travel). Those are analytic
++# predictions from the static axle loads (478.2 N front, 546.0 N rear), and the solved
++# equilibrium of the multibody model sits below both of them, by 1.3 pp at the front and
++# 2.6 pp at the rear, for two reasons the table does not model:
++#
++#   1. The table routes the whole axle load through the spring. In the model the unsprung
++#      mass below each spring -- fork lowers and front wheel; chainstay, seatstay and rear
++#      wheel -- is carried directly by the contact patch, about 34 N at the front and 42 N
++#      at the rear.
++#   2. The table evaluates at the undeflected centre of mass. Sagging 73 mm at the front
++#      and 41 mm at the rear pitches the bike 1.14 degrees nose-down, which moves roughly
++#      20 N forward: the solved contact loads are 498 N front and 525 N rear.
++#
++# Feeding the remaining *sprung* loads (464.5 N and 483.0 N) back into the repository's own
++# analytic calculators reproduces the solved travels to the digit, so the force path agrees
++# with the analytic model exactly and only the table's load assumption differs. The values
++# below are therefore the solved equilibrium, with section 9's figures kept alongside.
++SPEC_FRONT_SAG_PCT = 42.0
++SPEC_REAR_SAG_PCT = 25.3
++SOLVED_FRONT_SAG_PCT = 40.7
++SOLVED_REAR_SAG_PCT = 22.7
++
++# A minimal model whose fork coordinate runs the wrong way: increasing value means
++# extension, so a resisting force would need the opposite sign.
++_TOP_OUT_RANGE_XML = """
++<mujoco>
++  <worldbody>
++    <body>
++      <joint name="fork_travel" type="slide" axis="0 0 1" range="-0.180 0"/>
++      <joint name="shock_stroke" type="slide" axis="1 0 0" range="0 0.065"/>
++      <geom type="sphere" size="0.05"/>
++    </body>
++  </worldbody>
++</mujoco>
++"""
++
++
++class Rig(NamedTuple):
++    """A compiled ride model with its track, force path and analytical solver."""
++
++    specs: BikeSpecs
++    solver: HorstLinkageSolver
++    model: mujoco.MjModel
++    data: mujoco.MjData
++    applier: SuspensionForceApplier
++
++
++def _qposadr(model: mujoco.MjModel, joint_name: str) -> int:
++    """Returns the qpos address of a named joint."""
++    return int(model.jnt_qposadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)])
++
++
++def _build_rig() -> Rig:
++    """Compiles the ride model on the `flat` preset with the shipped suspension defaults."""
++    specs = BikeSpecs()
++    solver = HorstLinkageSolver(specs)
++    model = mujoco.MjModel.from_xml_string(
++        generate_mujoco_xml(specs=specs, solver=solver, mode="ride", include_rider=True)
++    )
++    data = mujoco.MjData(model)
++    model.hfield_data[:] = build_field_data(get_preset("flat")).reshape(-1)
++
++    controller = SuspensionController(
++        specs=specs,
++        air_spring=ForkAirSpring(
++            specs=AirSpringSpecs(total_travel_mm=specs.fork_travel),
++            num_tokens=specs.fork_air_tokens,
++            gauge_pressure_psi=specs.fork_initial_psi,
++        ),
++        suspension_system=BikeSuspensionSystem(),
++    )
++    applier = SuspensionForceApplier(model, controller, CoilShock())
++    return Rig(specs=specs, solver=solver, model=model, data=data, applier=applier)
++
++
++@pytest.fixture(scope="module")
++def rig() -> Rig:
++    """Builds the ride rig once for the whole module: compilation is the expensive part."""
++    return _build_rig()
++
++
++@pytest.fixture(scope="module")
++def equilibrium(rig: Rig) -> dict:
++    """Solves the static equilibrium once. Tests that mutate `rig.data` re-solve their own."""
++    return solve_static_equilibrium(rig.model, rig.data, rig.applier, rig.solver)
++
++
++def test_equilibrium_converges_on_flat(rig: Rig, equilibrium: dict):
++    """The relaxation converges well inside the step cap, with both joints in range."""
++    assert equilibrium["residual_qacc"] <= 0.05
++    assert 0 < equilibrium["steps"] < 40000
++    assert 0.0 < equilibrium["fork_travel_mm"] < rig.specs.fork_travel
++    assert 0.0 < equilibrium["shock_stroke_mm"] < rig.specs.shock_stroke
++
++
++def test_unconverged_solve_raises(rig: Rig):
++    """Running out of steps raises: an unsettled state is never returned as equilibrium."""
++    with pytest.raises(RuntimeError, match="did not converge"):
++        solve_static_equilibrium(rig.model, rig.data, rig.applier, rig.solver, max_steps=400)
++
++
++def test_front_sag_at_shipped_defaults(rig: Rig, equilibrium: dict):
++    """Front sag matches the solved equilibrium, and section 9's table within 2 pp."""
++    front_sag_pct = equilibrium["fork_travel_mm"] / rig.specs.fork_travel * 100.0
++    assert front_sag_pct == pytest.approx(SOLVED_FRONT_SAG_PCT, abs=1.0)
++    assert front_sag_pct == pytest.approx(SPEC_FRONT_SAG_PCT, abs=2.0)
++
++
++def test_rear_sag_at_shipped_defaults(rig: Rig, equilibrium: dict):
++    """
++    Rear sag matches the solved equilibrium, 2.6 pp below section 9's analytic table.
++
++    See the reconciliation at the top of this module: the deficit is the unsprung mass the
++    contact patch carries plus the nose-down load transfer at sag, neither of which the
++    table models. It is not the pre-existing spring-calibration mismatch (README Known
++    Limitation #1) -- that is what puts the figure at 25.3 % instead of 30 % to begin with.
++    """
++    rear_sag_pct = equilibrium["rear_travel_mm"] / rig.specs.rear_wheel_travel * 100.0
++    assert rear_sag_pct == pytest.approx(SOLVED_REAR_SAG_PCT, abs=1.0)
++    assert rear_sag_pct < SPEC_REAR_SAG_PCT
++
++
++def test_solved_state_is_at_rest(rig: Rig):
++    """The solve leaves the bike at rest, and it stays put when the run starts."""
++    result = solve_static_equilibrium(rig.model, rig.data, rig.applier, rig.solver)
++    assert float(np.max(np.abs(rig.data.qvel))) == 0.0
++
++    for _ in range(200):  # 0.1 s of ride-mode steps
++        rig.applier.apply(rig.model, rig.data)
++        mujoco.mj_step(rig.model, rig.data)
++
++    assert float(np.max(np.abs(rig.data.qvel))) < 0.02
++    fork_travel_mm = float(rig.data.qpos[rig.applier.fork_qposadr]) * 1000.0
++    shock_stroke_mm = float(rig.data.qpos[rig.applier.shock_qposadr]) * 1000.0
++    assert fork_travel_mm == pytest.approx(result["fork_travel_mm"], abs=0.2)
++    assert shock_stroke_mm == pytest.approx(result["shock_stroke_mm"], abs=0.2)
++
++
++def test_equilibrium_is_reproducible(rig: Rig, equilibrium: dict):
++    """Solving twice on the same model returns the same state: the solve resets its own."""
++    again = solve_static_equilibrium(rig.model, rig.data, rig.applier, rig.solver)
++    assert again == equilibrium
++
++
++def test_relaxation_matches_free_dynamic_settle(rig: Rig, equilibrium: dict):
++    """
++    A free settle under real damping reaches the same state as the damped relaxation.
++
++    The relaxation discards kinetic energy every 20 ms, which is not physical motion; this
++    is the independent check that its fixed point is the one the dynamics actually find.
++    """
++    mujoco.mj_resetData(rig.model, rig.data)
++    rig.data.qpos[_qposadr(rig.model, "root_x")] = 2.0
++    rig.data.qpos[_qposadr(rig.model, "root_z")] = START_CLEARANCE_M
++    mujoco.mj_forward(rig.model, rig.data)
++
++    for _ in range(6000):  # 3 s at the ride timestep
++        rig.applier.apply(rig.model, rig.data)
++        mujoco.mj_step(rig.model, rig.data)
++
++    fork_travel_mm = float(rig.data.qpos[rig.applier.fork_qposadr]) * 1000.0
++    shock_stroke_mm = float(rig.data.qpos[rig.applier.shock_qposadr]) * 1000.0
++    assert fork_travel_mm == pytest.approx(equilibrium["fork_travel_mm"], abs=0.25)
++    assert shock_stroke_mm == pytest.approx(equilibrium["shock_stroke_mm"], abs=0.1)
++
++
++def test_force_path_resists_compression_at_both_ends(rig: Rig):
++    """
++    Both suspension forces resist compression, and no leverage ratio is applied.
++
++    The generalized force on `shock_stroke` is the axial shock force itself: MuJoCo applies
++    the linkage's leverage ratio -- around 3.0 here -- through the constraint Jacobian
++    (docs/RIDE.md section 5), so an analytic ratio in the force path would count it twice.
++    """
++    applier = rig.applier
++    mujoco.mj_resetData(rig.model, rig.data)
++    rig.data.qpos[applier.fork_qposadr] = 0.050
++    rig.data.qpos[applier.shock_qposadr] = 0.020
++    mujoco.mj_forward(rig.model, rig.data)
++    applier.apply(rig.model, rig.data)
++
++    assert applier.fork_spring_n > 0.0
++    assert applier.shock_spring_n > 0.0
++    assert rig.data.qfrc_applied[applier.fork_dofadr] == pytest.approx(-applier.fork_total_n)
++    assert rig.data.qfrc_applied[applier.shock_dofadr] == pytest.approx(-applier.shock_total_n)
++
++    # At zero shaft velocity the dampers are silent, and the shock force is the axial
++    # spring force alone: 20 mm of stroke below the bumper, with no leverage ratio on it.
++    assert applier.fork_damper_n == pytest.approx(0.0)
++    assert applier.shock_damper_n == pytest.approx(0.0)
++    assert applier.shock_bumper_n == 0.0
++    assert applier.shock_total_n == pytest.approx(applier.coil_shock.compute_axial_force(20.0))
++
++
++@pytest.mark.parametrize("shaft_velocity_mps,expected_sign", [(0.5, 1.0), (-0.5, -1.0)])
++def test_damping_opposes_shaft_motion(rig: Rig, shaft_velocity_mps: float, expected_sign: float):
++    """Damping adds resistance while compressing and subtracts it while rebounding."""
++    applier = rig.applier
++    mujoco.mj_resetData(rig.model, rig.data)
++    rig.data.qpos[applier.fork_qposadr] = 0.050
++    rig.data.qpos[applier.shock_qposadr] = 0.020
++    rig.data.qvel[applier.fork_dofadr] = shaft_velocity_mps
++    rig.data.qvel[applier.shock_dofadr] = shaft_velocity_mps
++    mujoco.mj_forward(rig.model, rig.data)
++    applier.apply(rig.model, rig.data)
++
++    assert np.sign(applier.fork_damper_n) == expected_sign
++    assert np.sign(applier.shock_damper_n) == expected_sign
++    assert applier.fork_total_n == pytest.approx(applier.fork_spring_n + applier.fork_damper_n)
++    assert applier.shock_total_n == pytest.approx(
++        applier.shock_spring_n + applier.shock_bumper_n + applier.shock_damper_n
++    )
++
++
++def test_force_path_rejects_a_non_compression_range():
++    """A joint whose range does not start at zero is refused, not silently mis-signed."""
++    model = mujoco.MjModel.from_xml_string(_TOP_OUT_RANGE_XML)
++    controller = SuspensionController(
++        specs=BikeSpecs(),
++        air_spring=ForkAirSpring(),
++        suspension_system=BikeSuspensionSystem(),
++    )
++
++    with pytest.raises(ValueError, match="fork_travel"):
++        SuspensionForceApplier(model, controller, CoilShock())

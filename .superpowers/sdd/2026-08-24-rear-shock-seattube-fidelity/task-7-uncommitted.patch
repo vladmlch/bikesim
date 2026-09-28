@@ -1,0 +1,280 @@
+diff --git a/export_mujoco.py b/export_mujoco.py
+index 25f894c..f07403a 100644
+--- a/export_mujoco.py
++++ b/export_mujoco.py
+@@ -70,6 +70,7 @@ def generate_mujoco_xml(
+     include_rider: bool = True,
+     bump_scale: float = 1.0,
+     pit_scale: float = 1.0,
++    debug_markers: bool = False,
+ ) -> str:
+     """
+     Generates a complete, valid, high-fidelity MuJoCo MJCF XML model string.
+@@ -969,19 +970,20 @@ def generate_mujoco_xml(
+     ET.SubElement(frame, "site", {"name": "site_headtube_top", "pos": _format_vec(P11), "size": "0.006", "rgba": "0.9 0.1 0.1 0.8"})
+     ET.SubElement(frame, "site", {"name": "site_headtube_bottom", "pos": _format_vec(P_HT_bot), "size": "0.006", "rgba": "0.9 0.1 0.1 0.8"})
+ 
+-    # Visual Pivot Markers (matching engineering sketch)
+-    ET.SubElement(frame, "geom", {"name": "marker_bb", "type": "sphere", "pos": _format_vec(BB), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(frame, "geom", {"name": "marker_p0", "type": "sphere", "pos": _format_vec(P0), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    # Dual P5 markers on outer strut pivot faces (left and right)
+-    ET.SubElement(frame, "geom", {"name": "marker_p5_l", "type": "sphere", "pos": f"{P5[0]:.6f} 0.048 {P5[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(frame, "geom", {"name": "marker_p5_r", "type": "sphere", "pos": f"{P5[0]:.6f} -0.048 {P5[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(frame, "geom", {"name": "marker_p7", "type": "sphere", "pos": _format_vec(P7), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(frame, "geom", {"name": "marker_p8", "type": "sphere", "pos": _format_vec(P8), "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(frame, "geom", {"name": "marker_p9", "type": "sphere", "pos": _format_vec(P9), "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(frame, "geom", {"name": "marker_p10", "type": "sphere", "pos": _format_vec(P10), "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(frame, "geom", {"name": "marker_p11", "type": "sphere", "pos": _format_vec(P11), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    # Magenta Center of Gravity Marker
+-    ET.SubElement(frame, "geom", {"name": "marker_cg", "type": "sphere", "pos": _format_vec(cg_pos), "size": "0.014", "material": "mat_cg_marker", "contype": "0", "conaffinity": "0"})
++    # Visual Pivot Markers (debug only - matching engineering sketch)
++    if debug_markers:
++        ET.SubElement(frame, "geom", {"name": "marker_bb", "type": "sphere", "pos": _format_vec(BB), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(frame, "geom", {"name": "marker_p0", "type": "sphere", "pos": _format_vec(P0), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        # Dual P5 markers on outer strut pivot faces (left and right)
++        ET.SubElement(frame, "geom", {"name": "marker_p5_l", "type": "sphere", "pos": f"{P5[0]:.6f} 0.048 {P5[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(frame, "geom", {"name": "marker_p5_r", "type": "sphere", "pos": f"{P5[0]:.6f} -0.048 {P5[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(frame, "geom", {"name": "marker_p7", "type": "sphere", "pos": _format_vec(P7), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(frame, "geom", {"name": "marker_p8", "type": "sphere", "pos": _format_vec(P8), "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(frame, "geom", {"name": "marker_p9", "type": "sphere", "pos": _format_vec(P9), "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(frame, "geom", {"name": "marker_p10", "type": "sphere", "pos": _format_vec(P10), "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(frame, "geom", {"name": "marker_p11", "type": "sphere", "pos": _format_vec(P11), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        # Magenta Center of Gravity Marker
++        ET.SubElement(frame, "geom", {"name": "marker_cg", "type": "sphere", "pos": _format_vec(cg_pos), "size": "0.014", "material": "mat_cg_marker", "contype": "0", "conaffinity": "0", "mass": "0"})
+ 
+     # -------------------------------------------------------------
+     # Body: Steer & Fork Assembly
+@@ -1165,7 +1167,8 @@ def generate_mujoco_xml(
+         },
+     )
+     ET.SubElement(fork_lower, "site", {"name": "site_PFA", "pos": _format_vec(fa_rel_steer), "size": "0.008", "rgba": "0.1 0.7 0.9 1.0"})
+-    ET.SubElement(fork_lower, "geom", {"name": "marker_pfa", "type": "sphere", "pos": _format_vec(fa_rel_steer), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
++    if debug_markers:
++        ET.SubElement(fork_lower, "geom", {"name": "marker_pfa", "type": "sphere", "pos": _format_vec(fa_rel_steer), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
+ 
+     # Front Wheel Body (29" wheel with 75% mass on outer rim+tire)
+     front_wheel = ET.SubElement(fork_lower, "body", {"name": "front_wheel", "pos": _format_vec(fa_rel_steer)})
+@@ -1310,7 +1313,8 @@ def generate_mujoco_xml(
+             "rgba": "0.1 0.9 0.1 1.0",
+         },
+     )
+-    ET.SubElement(chainstay, "geom", {"name": "marker_p2", "type": "sphere", "pos": _format_vec(p2_rel_p0), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
++    if debug_markers:
++        ET.SubElement(chainstay, "geom", {"name": "marker_p2", "type": "sphere", "pos": _format_vec(p2_rel_p0), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
+ 
+     # -------------------------------------------------------------
+     # Body: Seatstay (Child of Chainstay at P2)
+@@ -1483,7 +1487,8 @@ def generate_mujoco_xml(
+             "rgba": "0.9 0.6 0.1 1.0",
+         },
+     )
+-    ET.SubElement(seatstay, "geom", {"name": "marker_p12", "type": "sphere", "pos": _format_vec(p12_rel_p2), "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
++    if debug_markers:
++        ET.SubElement(seatstay, "geom", {"name": "marker_p12", "type": "sphere", "pos": _format_vec(p12_rel_p2), "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
+     ET.SubElement(
+         seatstay,
+         "site",
+@@ -1494,7 +1499,8 @@ def generate_mujoco_xml(
+             "rgba": "0.2 0.4 0.9 1.0",
+         },
+     )
+-    ET.SubElement(seatstay, "geom", {"name": "marker_pra", "type": "sphere", "pos": _format_vec(p1_rel_p2), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
++    if debug_markers:
++        ET.SubElement(seatstay, "geom", {"name": "marker_pra", "type": "sphere", "pos": _format_vec(p1_rel_p2), "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
+ 
+     # Rear Wheel Body (27.5" Mullet wheel with 75% mass on outer rim+tire)
+     rear_wheel = ET.SubElement(seatstay, "body", {"name": "rear_wheel", "pos": _format_vec(p1_rel_p2)})
+@@ -1688,8 +1694,9 @@ def generate_mujoco_xml(
+             "rgba": "0.9 0.5 0.1 1.0",
+         },
+     )
+-    ET.SubElement(rocker, "geom", {"name": "marker_p3_roc_l", "type": "sphere", "pos": f"{p3_rel_p5[0]:.6f} 0.045 {p3_rel_p5[2]:.6f}", "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(rocker, "geom", {"name": "marker_p3_roc_r", "type": "sphere", "pos": f"{p3_rel_p5[0]:.6f} -0.045 {p3_rel_p5[2]:.6f}", "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
++    if debug_markers:
++        ET.SubElement(rocker, "geom", {"name": "marker_p3_roc_l", "type": "sphere", "pos": f"{p3_rel_p5[0]:.6f} 0.045 {p3_rel_p5[2]:.6f}", "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(rocker, "geom", {"name": "marker_p3_roc_r", "type": "sphere", "pos": f"{p3_rel_p5[0]:.6f} -0.045 {p3_rel_p5[2]:.6f}", "size": "0.011", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
+     ET.SubElement(
+         rocker,
+         "site",
+@@ -1700,8 +1707,9 @@ def generate_mujoco_xml(
+             "rgba": "0.7 0.2 0.8 1.0",
+         },
+     )
+-    ET.SubElement(rocker, "geom", {"name": "marker_p4_l", "type": "sphere", "pos": f"{p4_rel_p5[0]:.6f} 0.045 {p4_rel_p5[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(rocker, "geom", {"name": "marker_p4_r", "type": "sphere", "pos": f"{p4_rel_p5[0]:.6f} -0.045 {p4_rel_p5[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
++    if debug_markers:
++        ET.SubElement(rocker, "geom", {"name": "marker_p4_l", "type": "sphere", "pos": f"{p4_rel_p5[0]:.6f} 0.045 {p4_rel_p5[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(rocker, "geom", {"name": "marker_p4_r", "type": "sphere", "pos": f"{p4_rel_p5[0]:.6f} -0.045 {p4_rel_p5[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
+ 
+     # -------------------------------------------------------------
+     # Body: Shock Yoke (Child of Rocker at P4)
+@@ -1794,8 +1802,9 @@ def generate_mujoco_xml(
+             "rgba": "0.6 0.1 0.7 1.0",
+         },
+     )
+-    ET.SubElement(shock_yoke, "geom", {"name": "marker_p6_l", "type": "sphere", "pos": f"{p6_rel_p4[0]:.6f} 0.038 {p6_rel_p4[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
+-    ET.SubElement(shock_yoke, "geom", {"name": "marker_p6_r", "type": "sphere", "pos": f"{p6_rel_p4[0]:.6f} -0.038 {p6_rel_p4[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0"})
++    if debug_markers:
++        ET.SubElement(shock_yoke, "geom", {"name": "marker_p6_l", "type": "sphere", "pos": f"{p6_rel_p4[0]:.6f} 0.038 {p6_rel_p4[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
++        ET.SubElement(shock_yoke, "geom", {"name": "marker_p6_r", "type": "sphere", "pos": f"{p6_rel_p4[0]:.6f} -0.038 {p6_rel_p4[2]:.6f}", "size": "0.013", "material": "mat_pivot_yellow", "contype": "0", "conaffinity": "0", "mass": "0"})
+ 
+     # -------------------------------------------------------------
+     # Body: Shock Shaft (Child of Shock Yoke at P6)
+diff --git a/run_playground.py b/run_playground.py
+index f076249..4817a46 100644
+--- a/run_playground.py
++++ b/run_playground.py
+@@ -288,6 +288,9 @@ class SuspensionPlayground:
+         self.show_telemetry = True
+         self.last_hud_print = 0.0
+ 
++        # Debug livery toggle (pivot marker geoms)
++        self.debug_markers = False
++
+         # Passive viewer reference (if launched)
+         self.viewer: Optional[Any] = None
+ 
+@@ -304,6 +307,7 @@ class SuspensionPlayground:
+             include_rider=self.include_rider,
+             bump_scale=self.bump_scale,
+             pit_scale=self.pit_scale,
++            debug_markers=self.debug_markers,
+         )
+         self.model = mujoco.MjModel.from_xml_string(xml_str)
+         self.data = mujoco.MjData(self.model)
+@@ -362,10 +366,10 @@ class SuspensionPlayground:
+         ga = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "geom_rider_arms")
+ 
+         if self.include_rider:
+-            # Full rider + bike frame mass & inertia (80.0 kg rider + 12.18 kg frame = 92.18 kg)
+-            self.model.body_mass[fid] = 92.1834365
+-            self.model.body_ipos[fid] = [0.14630601, 0.0, 0.5166753]
+-            self.model.body_inertia[fid] = [7.18966364, 6.73004662, 0.96996158]
++            # Full rider + bike frame mass & inertia (80.0 kg rider + 12.1 kg frame = 92.1 kg)
++            self.model.body_mass[fid] = 92.1
++            self.model.body_ipos[fid] = [0.14620022, 0.0, 0.51627016]
++            self.model.body_inertia[fid] = [7.20834956, 6.76067807, 0.95776731]
+ 
+             # Restore rider visual geoms
+             if gt >= 0:
+@@ -378,10 +382,10 @@ class SuspensionPlayground:
+                 self.model.geom_size[ga] = [0.055, 0.12971122, 0.0]
+                 self.model.geom_rgba[ga] = [0.5, 0.5, 0.5, 1.0]
+         else:
+-            # Bike frame mass & inertia only (~12.18 kg)
+-            self.model.body_mass[fid] = 12.1834365
+-            self.model.body_ipos[fid] = [0.11835665, 0.0, 0.20674831]
+-            self.model.body_inertia[fid] = [0.74070237, 0.56206127, 0.19538163]
++            # Bike frame mass & inertia only (~12.1 kg)
++            self.model.body_mass[fid] = 12.1
++            self.model.body_ipos[fid] = [0.11735867, 0.0, 0.20152739]
++            self.model.body_inertia[fid] = [0.72730915, 0.56294102, 0.18085988]
+ 
+             # Hide rider geoms
+             for gid in [gt, gl, ga]:
+diff --git a/tests/test_frame_visuals.py b/tests/test_frame_visuals.py
+index c8be361..26286c0 100644
+--- a/tests/test_frame_visuals.py
++++ b/tests/test_frame_visuals.py
+@@ -271,3 +271,56 @@ def test_down_tube_footprint_matches_measured_envelope(root):
+         assert rendered_hi == pytest.approx(x_hi, abs=DOWNTUBE_FOOTPRINT_TOLERANCE_MM), (
+             f"Z={z_mm}mm: rendered X_hi={rendered_hi:.1f}mm vs measured {x_hi}mm"
+         )
++
++
++# Ruling R27: the plan's Task 7 write-up names markers on only three bodies.
++# There are actually markers on six: frame, fork_lower, chainstay, seatstay,
++# rocker and shock_yoke. Every one of them must be gated by debug_markers.
++ALL_MARKER_GEOM_NAMES = {
++    "marker_bb", "marker_p0", "marker_p5_l", "marker_p5_r", "marker_p7",
++    "marker_p8", "marker_p9", "marker_p10", "marker_p11", "marker_cg",
++    "marker_pfa",
++    "marker_p2",
++    "marker_p12", "marker_pra",
++    "marker_p3_roc_l", "marker_p3_roc_r", "marker_p4_l", "marker_p4_r",
++    "marker_p6_l", "marker_p6_r",
++}
++
++
++def test_markers_are_absent_by_default():
++    root_el = ET.fromstring(generate_mujoco_xml(mode="stand"))
++    markers = [g.get("name") for g in root_el.iter("geom")
++               if (g.get("name") or "").startswith("marker_")]
++    assert markers == [], f"hero render must have no debug markers, found {markers}"
++
++
++def test_markers_return_when_requested():
++    root_el = ET.fromstring(generate_mujoco_xml(mode="stand", debug_markers=True))
++    markers = {g.get("name") for g in root_el.iter("geom")
++               if (g.get("name") or "").startswith("marker_")}
++    assert "marker_p5_l" in markers
++    assert "marker_p7" in markers
++    # Ruling R27: verify all 20 markers across all six bodies come back, not
++    # just the two named in the plan.
++    assert markers == ALL_MARKER_GEOM_NAMES, (
++        f"missing: {ALL_MARKER_GEOM_NAMES - markers}, unexpected: {markers - ALL_MARKER_GEOM_NAMES}"
++    )
++
++
++def test_equality_constraint_sites_survive_marker_removal():
++    """site_P3_ss / site_P3_rocker / site_P7_shock drive loop closure - never optional."""
++    model = mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="stand"))
++    site_names = {mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_SITE, i)
++                  for i in range(model.nsite)}
++    for required in ("site_P3_ss", "site_P3_rocker", "site_P7_shock", "site_P6_yoke"):
++        assert required in site_names
++
++
++def test_debug_markers_do_not_change_total_mass():
++    """Ruling R21: marker geoms had no `mass` attribute, so MuJoCo derived
++    ~0.1646 kg of geometry-based mass for them. Gating them behind a flag must
++    not make the bike's total mass depend on that flag, so every marker_* geom
++    must carry mass="0" in addition to being gated."""
++    model_off = mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="stand"))
++    model_on = mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="stand", debug_markers=True))
++    assert sum(model_off.body_mass) == pytest.approx(sum(model_on.body_mass), abs=1e-9)
+diff --git a/tests/test_playground.py b/tests/test_playground.py
+index fbe7195..d761314 100644
+--- a/tests/test_playground.py
++++ b/tests/test_playground.py
+@@ -395,6 +395,40 @@ def test_rider_toggle_and_mass_telemetry():
+     assert 100.0 <= tel_on2["total_mass_kg"] <= 110.0
+ 
+ 
++def test_rider_toggle_matches_freshly_compiled_frame_mass_properties():
++    """Ruling R26: _apply_rider_in_place() hardcodes the frame body's mass,
++    ipos and inertia for the [B] rider toggle instead of recompiling. Those
++    literals must match what a fresh compile of the corresponding
++    (mode="dynamic", include_rider=...) configuration actually produces -
++    otherwise the first press of [B] silently writes stale mass properties
++    (e.g. from before Ruling R21 zeroed out the debug marker mass) back into
++    the live model for the rest of the session.
++    """
++    fresh_on = mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="dynamic", include_rider=True))
++    fresh_off = mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="dynamic", include_rider=False))
++    fid_fresh = mujoco.mj_name2id(fresh_on, mujoco.mjtObj.mjOBJ_BODY, "frame")
++
++    pg = SuspensionPlayground(mode="dynamic", include_rider=True)
++    fid = mujoco.mj_name2id(pg.model, mujoco.mjtObj.mjOBJ_BODY, "frame")
++
++    # Starts ON: matches a fresh include_rider=True compile.
++    assert pg.model.body_mass[fid] == pytest.approx(fresh_on.body_mass[fid_fresh], abs=1e-6)
++    assert np.allclose(pg.model.body_ipos[fid], fresh_on.body_ipos[fid_fresh], atol=1e-6)
++    assert np.allclose(pg.model.body_inertia[fid], fresh_on.body_inertia[fid_fresh], atol=1e-6)
++
++    # Toggle OFF: matches a fresh include_rider=False compile.
++    pg.toggle_rider()
++    assert pg.model.body_mass[fid] == pytest.approx(fresh_off.body_mass[fid_fresh], abs=1e-6)
++    assert np.allclose(pg.model.body_ipos[fid], fresh_off.body_ipos[fid_fresh], atol=1e-6)
++    assert np.allclose(pg.model.body_inertia[fid], fresh_off.body_inertia[fid_fresh], atol=1e-6)
++
++    # Toggle back ON: matches the fresh include_rider=True compile again.
++    pg.toggle_rider()
++    assert pg.model.body_mass[fid] == pytest.approx(fresh_on.body_mass[fid_fresh], abs=1e-6)
++    assert np.allclose(pg.model.body_ipos[fid], fresh_on.body_ipos[fid_fresh], atol=1e-6)
++    assert np.allclose(pg.model.body_inertia[fid], fresh_on.body_inertia[fid_fresh], atol=1e-6)
++
++
+ def test_bump_and_pit_scaling():
+     """Verifies that bump and pit scale adjustments correctly update scale factors within bounds [0.2, 3.0]."""
+     pg = SuspensionPlayground(mode="dynamic", bump_scale=1.0, pit_scale=1.0)

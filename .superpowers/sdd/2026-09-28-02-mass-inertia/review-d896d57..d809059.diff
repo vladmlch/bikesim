@@ -1,0 +1,1332 @@
+# Review package: d896d57..HEAD
+
+## Commits
+d809059 fix: drive compiled component masses from one budget
+
+## Files changed
+ src/bike_sim/mujoco/builder.py           |  40 ++++++--
+ src/bike_sim/mujoco/drivetrain.py        |  12 +++
+ src/bike_sim/mujoco/frame.py             |  15 ++-
+ src/bike_sim/mujoco/rear_linkage.py      |  42 +++++---
+ src/bike_sim/mujoco/steering_fork.py     |   9 ++
+ src/bike_sim/physics/component_masses.py |  30 ++++++
+ src/bike_sim/physics/mass.py             |  38 ++++---
+ src/bike_sim/sim/ride/mass_properties.py |  35 +++++++
+ src/bike_sim/sim/ride/recorder.py        |   9 ++
+ src/bike_sim/sim/ride_sim.py             |  26 +++++
+ tests/test_compiled_mass_contract.py     | 165 +++++++++++++++++++++++++++++++
+ 11 files changed, 379 insertions(+), 42 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/mujoco/builder.py b/src/bike_sim/mujoco/builder.py
+index 279ef02..33cc64f 100644
+--- a/src/bike_sim/mujoco/builder.py
++++ b/src/bike_sim/mujoco/builder.py
+@@ -12,21 +12,22 @@ import numpy as np
+ 
+ from bike_sim.geometry.hardpoints import (
+     compute_front_axle,
+     compute_ground_z,
+     compute_trail,
+     get_fixed_frame_points,
+ )
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.kinematics.solver import HorstLinkageSolver
+ from bike_sim.physics.tyre import TYRE_MODELS
+-from bike_sim.physics.mass import BikeMassSpecs, compute_static_system_cg
++from bike_sim.physics.mass import BikeMassSpecs, compute_unloaded_analytic_system_cg
++from bike_sim.physics.component_masses import assign_component_mass
+ from bike_sim.physics.model_config import SimulationPhysicsConfig
+ from bike_sim.physics.rider import RiderSpecs, resolve_rider
+ 
+ from bike_sim.mujoco.drivetrain import build_chain_constraint
+ from bike_sim.physics.drivetrain import DrivetrainSpecs
+ from bike_sim.mujoco.assets import build_visual_and_assets
+ from bike_sim.mujoco.environment import build_environment
+ from bike_sim.mujoco.frame import build_frame_body
+ from bike_sim.mujoco.linkage import (
+     build_contact_exclusions,
+@@ -101,37 +102,42 @@ def generate_mujoco_xml(
+     if tyre_model not in TYRE_MODELS:
+         raise ValueError(f"unknown tyre model '{tyre_model}'; available: {', '.join(TYRE_MODELS)}")
+     if tyre_model != "sphere" and mode != "ride":
+         raise ValueError(f"tyre model {tyre_model!r} is ride-mode only")
+     if specs is None:
+         specs = BikeSpecs()
+     if solver is None:
+         solver = HorstLinkageSolver(specs)
+     if mass_specs is None:
+         mass_specs = BikeMassSpecs()
++    physical_masses = physics_config is not None and physics_config.physics_mode == "physical"
++    mass_registry: dict[str, list[ET.Element]] | None = {} if physical_masses else None
+     if field is None:
+         field = FIELD
+     rider_specs = resolve_rider(rider, include_rider=include_rider, default_variant="lumped")
+     if rider_specs.variant == "seated" and mode != "ride":
+         raise ValueError(f"the seated rider is a ride-mode model; mode {mode!r} takes 'none' or 'lumped'")
+     pose = rider_specs.seated_pose(specs) if rider_specs.variant == "seated" else None
+ 
+     # Compute uncompressed reference state (0 mm wheel travel)
+     st0 = solver.solve_state_from_wheel_travel(0.0)
+     fixed = get_fixed_frame_points(specs)
+     trail_info = compute_trail(specs)
+-    # The CG site marks the static centre of the whole system, rider included when present.
+-    cg_info = compute_static_system_cg(
+-        specs, mass_specs, solver=solver,
+-        rider_specs=rider_specs if rider_specs.present else None,
+-    )
+-    cg_pos = cg_info["cg_pos_m"]
++    # A nonzero initial offset keeps MuJoCo from compiling the site as a
++    # same-frame shortcut; RideSimulation moves it to the compiled CoM at runtime.
++    if physical_masses:
++        cg_pos = np.array([0.001, 0.0, 0.0])
++    else:
++        cg_pos = compute_unloaded_analytic_system_cg(
++            specs, mass_specs, solver=solver,
++            rider_specs=rider_specs if rider_specs.present else None,
++        )["cg_pos_m"]
+ 
+     # Hardpoints
+     P10 = np.array(fixed["P10"], dtype=float) / 1000.0
+     P_FA_raw = compute_front_axle(specs)
+ 
+     ground_z_m = compute_ground_z(specs) / 1000.0
+ 
+     root = ET.Element("mujoco", {"model": "enduro_bike_horst_yoke"})
+ 
+     # 1. Compiler & Options
+@@ -183,46 +189,66 @@ def generate_mujoco_xml(
+         worldbody=worldbody,
+         mode=mode,
+         specs=specs,
+         mass_specs=mass_specs,
+         fixed_points=fixed,
+         cg_pos=cg_pos,
+         rider=rider_specs,
+         pose=pose,
+         debug_markers=debug_markers,
+         crank_joint=crank_joint,
++        mass_registry=mass_registry,
+     )
+ 
+     # 5. Steering, Fork & Front Wheel
+     build_steering_and_fork(
+         frame=frame,
+         mode=mode,
+         specs=specs,
+         mass_specs=mass_specs,
+         fixed_points=fixed,
+         front_axle=P_FA_raw,
+         debug_markers=debug_markers,
+         tyre_model=tyre_model,
++        mass_registry=mass_registry,
+     )
+ 
+     # 6. Rear Linkage, Damper & Rear Wheel
+     build_rear_linkage(
+         frame=frame,
+         mode=mode,
+         specs=specs,
+         fixed_points=fixed,
+         solved_points=st0,
+         debug_markers=debug_markers,
+         tyre_model=tyre_model,
+         physics_config=physics_config,
++        mass_registry=mass_registry,
+     )
+ 
++    if mass_registry is not None:
++        expected_components = set(mass_specs.component_masses)
++        if set(mass_registry) != expected_components:
++            raise ValueError(f"mass registry mismatch: {expected_components ^ set(mass_registry)}")
++        registered_geoms = [geom for group in mass_registry.values() for geom in group]
++        if len({id(geom) for geom in registered_geoms}) != len(registered_geoms):
++            raise ValueError("a mass-bearing geom belongs to multiple components")
++        bike_geoms = {
++            id(geom) for geom in frame.iter("geom")
++            if float(geom.get("mass", "0")) > 0
++            and not geom.get("name", "").startswith("geom_rider_")
++        }
++        if {id(geom) for geom in registered_geoms} != bike_geoms:
++            raise ValueError("mass registry does not cover every bike geom exactly once")
++        for component_id, geoms in mass_registry.items():
++            assign_component_mass(geoms, mass_specs.component_masses[component_id])
++
+     # 7. Constraints & Collisions
+     build_equality_constraints(root, mode=mode)
+     if crank_joint:
+         build_chain_constraint(root, gear_ratio=gear_ratio)
+         if pose is not None and pose.leg_chains:
+             # Clipless-pedal welds: each foot body is fixed to its pedal body. No
+             # `relpose` means the weld datum is the relative pose at qpos0 -- the
+             # design pose, which the pose solver makes self-consistent -- so the
+             # constraints start residual-free. Pedal bodies only exist when
+             # `crank_joint` builds them, so no welds are emitted without it; the
+diff --git a/src/bike_sim/mujoco/drivetrain.py b/src/bike_sim/mujoco/drivetrain.py
+index b49a446..75e2fd9 100644
+--- a/src/bike_sim/mujoco/drivetrain.py
++++ b/src/bike_sim/mujoco/drivetrain.py
+@@ -10,38 +10,40 @@ Provides modular builders for:
+ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
+ from bike_sim.geometry.cockpit import (
+     CRANK_ARM_LATERAL_OFFSET_M,
+     PEDAL_HALF_SIZE_M,
+     PEDAL_LATERAL_OFFSET_M,
+     pedal_points,
+ )
+ from bike_sim.physics.mass import BikeMassSpecs
++from bike_sim.physics.component_masses import register_component
+ from bike_sim.mujoco._xml_format import _format_vec, add_geom, add_joint, add_site
+ 
+ # How `crank_pedals_mass` (0.85 kg) is split over the crankset. Authored: a 165 mm alloy arm
+ # is ~200 g, a platform pedal ~175 g, and the spindle with the chainring makes up the rest.
+ CRANK_ARM_MASS_KG = 0.20
+ PEDAL_MASS_KG = 0.175
+ CRANK_ARM_RADIUS_M = 0.012
+ # Bearing drag of the bottom bracket, N.m per rad/s. Small enough to be invisible against a
+ # 30 N.m pedal stroke, large enough that a disengaged crank settles instead of ringing.
+ CRANK_JOINT_DAMPING = 0.03
+ CRANK_SPINDLE_RADIUS_M = 0.016
+ 
+ 
+ def build_bb_and_motor(
+     frame: ET.Element,
+     mass_specs: BikeMassSpecs,
+     crank_length_m: float = 0.165,
+     crank_joint: bool = False,
++    mass_registry: dict[str, list[ET.Element]] | None = None,
+ ) -> None:
+     """
+     Builds the bottom bracket shell, electric motor core, and crankset/pedals on the main frame.
+ 
+     With `crank_joint` false the cranks are horizontal -- 3 and 9 o'clock, the coasting
+     position -- and rigid with the frame, because a free crank with nothing driving it is an
+     unactuated pendulum. With `crank_joint` true the spindle, arms and pedals move into a
+     `crank` body on a `crank_spin` hinge: the pedalled drivetrain drives that hinge, the chain
+     equality ties it to the rear wheel, and the drive torque's reaction lands on the frame
+     through the bottom bracket the way a mid-drive's does.
+@@ -70,20 +72,22 @@ def build_bb_and_motor(
+         {
+             "name": "geom_motor_core",
+             "type": "cylinder",
+             "fromto": "0.015 -0.055 0.020 0.045 0.055 0.035",
+             "size": "0.045",
+             "mass": f"{mass_specs.motor_mass:.2f}",
+             "material": "mat_motor",
+         },
+     )
+     spindle_mass = mass_specs.crank_pedals_mass - 2.0 * CRANK_ARM_MASS_KG - 2.0 * PEDAL_MASS_KG
++    if mass_registry is not None:
++        spindle_mass = 0.10  # authored relative weight; the budget is assigned below
+     if spindle_mass <= 0.0:
+         raise ValueError(
+             f"crank_pedals_mass {mass_specs.crank_pedals_mass:.3f} kg does not cover two "
+             f"{CRANK_ARM_MASS_KG:.3f} kg arms and two {PEDAL_MASS_KG:.3f} kg pedals"
+         )
+     # The crankset either stays welded to the frame, as it was before there was a
+     # drivetrain, or hangs off its own hinge at the bottom bracket. Every geom below keeps
+     # its coordinates either way: the bottom bracket is the frame's origin, so the crank
+     # body sits at 0 0 0 and its children need no re-referencing.
+     if crank_joint:
+@@ -144,20 +148,25 @@ def build_bb_and_motor(
+             add_site(pedal_body, f"site_pedal_{side}", pos=f"0 {y_pedal - y_arm:.6f} 0", size="0.006")
+         else:
+             add_geom(
+                 crankset, f"geom_pedal_{side}", "box",
+                 pos=f"{pedal[0]:.6f} {y_pedal:.6f} {pedal[2]:.6f}",
+                 size=" ".join(f"{s:.3f}" for s in PEDAL_HALF_SIZE_M),
+                 mass=f"{PEDAL_MASS_KG:.3f}", material="mat_metal",
+                 contype="0", conaffinity="0",
+             )
+ 
++    if mass_registry is not None:
++        geoms = list(frame.iter("geom"))
++        register_component(mass_registry, "motor", [geom for geom in geoms if geom.get("name") == "geom_motor_core"])
++        register_component(mass_registry, "crank_pedals", [geom for geom in geoms if geom.get("name", "").startswith(("geom_crank_", "geom_pedal_"))])
++
+ 
+ def build_chain_constraint(root: ET.Element, gear_ratio: float) -> None:
+     """
+     Ties the crank to the rear wheel with the chain, as a joint equality.
+ 
+     The constraint is written `crank = wheel / ratio`: the wheel turns `ratio` times per
+     crank revolution, so a positive crank torque arrives at the wheel divided by the ratio
+     and the power balance closes. It is emitted **active**;
+     the freewheel is expressed at runtime by clearing `eq_active`, which is what lets the
+     cranks stop while the wheel keeps turning.
+@@ -190,20 +199,21 @@ def build_chain_constraint(root: ET.Element, gear_ratio: float) -> None:
+         },
+     )
+ 
+ 
+ def build_rear_wheel(
+     seatstay: ET.Element,
+     mode: str,
+     p1_rel_p2: np.ndarray,
+     rear_wheel_radius_m: float,
+     tyre_model: str = "sphere",
++    mass_registry: dict[str, list[ET.Element]] | None = None,
+ ) -> ET.Element:
+     """
+     Builds the rear wheel body (hub, rim, tire, cassette, brake rotor) mounted on the seatstay at P1 (Rear Axle).
+     """
+     rear_wheel = ET.SubElement(seatstay, "body", {"name": "rear_wheel", "pos": _format_vec(p1_rel_p2)})
+     ET.SubElement(
+         rear_wheel,
+         "joint",
+         {
+             "name": "rear_wheel_spin",
+@@ -295,11 +305,13 @@ def build_rear_wheel(
+             "name": "geom_rear_rotor",
+             "type": "cylinder",
+             "fromto": "0 0.038 0 0 0.040 0",
+             "size": "0.1015",
+             "mass": "0.20",
+             "material": "mat_metal",
+             "contype": "0",
+             "conaffinity": "0",
+         },
+     )
++    if mass_registry is not None:
++        register_component(mass_registry, "rear_wheel", list(rear_wheel.findall("geom")))
+     return rear_wheel
+diff --git a/src/bike_sim/mujoco/frame.py b/src/bike_sim/mujoco/frame.py
+index a263d5e..7ca3ef8 100644
+--- a/src/bike_sim/mujoco/frame.py
++++ b/src/bike_sim/mujoco/frame.py
+@@ -12,20 +12,21 @@ import numpy as np
+ 
+ from bike_sim.geometry.cockpit import (
+     SADDLE_HALF_LENGTH_M,
+     SADDLE_HALF_THICKNESS_M,
+     SADDLE_HALF_WIDTH_M,
+     saddle_geometry,
+     saddle_post_masses,
+ )
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.physics.mass import BikeMassSpecs
++from bike_sim.physics.component_masses import register_component
+ from bike_sim.physics.rider import RiderSpecs, SeatedPose
+ from bike_sim.mujoco.rider import build_rider, build_seated_rider
+ from bike_sim.mujoco.drivetrain import build_bb_and_motor
+ from bike_sim.mujoco._xml_format import (
+     _format_fromto,
+     _format_vec,
+     add_geom,
+     add_joint,
+     add_site,
+     add_marker,
+@@ -214,20 +215,21 @@ def build_frame_body(
+     worldbody: ET.Element,
+     mode: str,
+     specs: BikeSpecs,
+     mass_specs: BikeMassSpecs,
+     fixed_points: Dict[str, np.ndarray],
+     cg_pos: np.ndarray,
+     rider: Optional[RiderSpecs] = None,
+     pose: Optional[SeatedPose] = None,
+     debug_markers: bool = False,
+     crank_joint: bool = False,
++    mass_registry: dict[str, list[ET.Element]] | None = None,
+ ) -> ET.Element:
+     """
+     Constructs the base frame body in worldbody and adds all frame geometry.
+ 
+     Args:
+         rider: The rider variant to build. None or ``none`` builds the bike alone (in stand,
+             playground and ride modes the lumped rider's capsules are still emitted at zero
+             mass, so the in-place toggle has stable geoms to write to). ``lumped`` fills those
+             capsules. ``seated`` -- ride mode only -- adds the rider bodies and sets the
+             saddle for the rider's inseam.
+@@ -251,20 +253,21 @@ def build_frame_body(
+     if variant == "seated":
+         build_seated_rider(frame, pose)
+     elif mode in ("stand", "playground", "ride"):
+         build_rider(frame, include_rider=(variant == "lumped"), rider=rider)
+ 
+     build_bb_and_motor(
+         frame,
+         mass_specs,
+         crank_length_m=specs.crank_length / 1000.0,
+         crank_joint=crank_joint,
++        mass_registry=mass_registry,
+     )
+     _build_front_triangle_tubes(
+         frame=frame,
+         BB=BB,
+         P_HT_bot=fixed_points_m["P_HT_bot"],
+         P11=fixed_points_m["P11"],
+         P8=fixed_points_m["P8"],
+         P10=fixed_points_m["P10"],
+         mass_specs=mass_specs,
+     )
+@@ -280,12 +283,22 @@ def build_frame_body(
+     )
+     _build_mounts_and_sites(
+         frame=frame,
+         fixed_points_m=fixed_points_m,
+         BB=BB,
+         cg_pos=cg_pos,
+         seatpost_top=seatpost_top,
+         debug_markers=debug_markers,
+     )
+ 
+-    return frame
++    if mass_registry is not None:
++        geoms = list(frame.findall("geom"))
++        names = {geom.get("name"): geom for geom in geoms}
++        register_component(mass_registry, "battery", [names["geom_battery_pack"]])
++        register_component(mass_registry, "saddle_post", [names[name] for name in ("geom_seatpost", "geom_seatpost_upper", "geom_saddle")])
++        excluded = {id(geom) for group in mass_registry.values() for geom in group}
++        register_component(mass_registry, "frame_structure", [
++            geom for geom in geoms
++            if id(geom) not in excluded and not geom.get("name", "").startswith("geom_rider_")
++        ])
+ 
++    return frame
+diff --git a/src/bike_sim/mujoco/rear_linkage.py b/src/bike_sim/mujoco/rear_linkage.py
+index 0bb0b85..8a1aebd 100644
+--- a/src/bike_sim/mujoco/rear_linkage.py
++++ b/src/bike_sim/mujoco/rear_linkage.py
+@@ -10,20 +10,21 @@ Constructs:
+ 6. Shock shaft & shock body (shock lower eyelet, damper can, piggyback reservoir, P7 site)
+ 7. Equality constraints and Contact exclusions
+ """
+ 
+ from typing import Dict
+ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.physics.component_masses import register_component
+ from bike_sim.mujoco._xml_format import (
+     _format_vec,
+     add_geom,
+     add_joint,
+     add_site,
+     add_marker,
+ )
+ from bike_sim.mujoco.drivetrain import build_rear_wheel
+ 
+ 
+@@ -52,20 +53,21 @@ def _build_chainstay(
+ def _build_seatstay(
+     chainstay: ET.Element,
+     mode: str,
+     p2_rel_p0: np.ndarray,
+     p1_rel_p2: np.ndarray,
+     p3_rel_p2: np.ndarray,
+     p12_rel_p2: np.ndarray,
+     rear_wheel_radius_m: float,
+     debug_markers: bool = False,
+     tyre_model: str = "sphere",
++    mass_registry: dict[str, list[ET.Element]] | None = None,
+ ) -> ET.Element:
+     """Builds the seatstay body, Horst pivot joint, dropout truss, and rear wheel."""
+     seatstay = ET.SubElement(chainstay, "body", {"name": "seatstay", "pos": _format_vec(p2_rel_p0)})
+     add_joint(seatstay, "horst_pivot", "hinge", axis="0 1 0", damping="0.3")
+ 
+     # Horst pivot sleeves
+     add_geom(seatstay, "geom_horst_sleeve_l", "cylinder", fromto="0 0.068 0 0 0.080 0", size="0.013", mass="0.075", material="mat_metal")
+     add_geom(seatstay, "geom_horst_sleeve_r", "cylinder", fromto="0 -0.080 0 0 -0.068 0", size="0.013", mass="0.075", material="mat_metal")
+ 
+     # Main seatstay tubes
+@@ -86,21 +88,21 @@ def _build_seatstay(
+     add_site(seatstay, "site_P3_ss", pos=p3_rel_p2, size="0.008", rgba="0.9 0.5 0.1 1.0")
+     add_site(seatstay, "site_P12_ss", pos=p12_rel_p2, size="0.007", rgba="0.9 0.6 0.1 1.0")
+     if debug_markers:
+         add_marker(seatstay, "marker_p12", pos=p12_rel_p2, size="0.011")
+ 
+     add_site(seatstay, "site_PRA", pos=p1_rel_p2, size="0.008", rgba="0.2 0.4 0.9 1.0")
+     if debug_markers:
+         add_marker(seatstay, "marker_pra", pos=p1_rel_p2, size="0.013")
+ 
+     # Rear Wheel Assembly
+-    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model)
++    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model, mass_registry)
+     return seatstay
+ 
+ 
+ def _build_rocker(
+     frame: ET.Element,
+     p5: np.ndarray,
+     p3_rel_p5: np.ndarray,
+     p4_rel_p5: np.ndarray,
+     debug_markers: bool = False,
+ ) -> ET.Element:
+@@ -156,20 +158,21 @@ def _build_shock_yoke(
+     return shock_yoke
+ 
+ 
+ def _build_shock_assembly(
+     shock_yoke: ET.Element,
+     mode: str,
+     p6_rel_p4: np.ndarray,
+     p7_rel_p6: np.ndarray,
+     specs: BikeSpecs,
+     physics_config: SimulationPhysicsConfig | None = None,
++    mass_registry: dict[str, list[ET.Element]] | None = None,
+ ) -> None:
+     """Builds the shock shaft and damper body with trunnion mount, canister, and piggyback."""
+     shock_len_m = float(np.linalg.norm(p7_rel_p6))
+     shock_slide_axis = -p7_rel_p6 / shock_len_m
+     shock_stroke_m = specs.shock_stroke / 1000.0
+     if mode == "ride" and physics_config is not None and physics_config.physics_mode == "physical":
+         stop_travel_m = physics_config.end_stops.overtravel_m
+         joint_range = f"{-stop_travel_m:.6f} {shock_stroke_m + stop_travel_m:.6f}"
+     else:
+         joint_range = f"0 {shock_stroke_m:.6f}"
+@@ -211,60 +214,64 @@ def _build_shock_assembly(
+     shock_body = ET.SubElement(shock_shaft, "body", {"name": "shock_body", "pos": _format_vec(p7_rel_p6)})
+     _shock_body_child_geoms = [
+         (0.02, np.array([0.0, 0.019, 0.0]), np.array([0.0, trunnion_half_width, 0.0])),
+         (0.02, np.array([0.0, -0.019, 0.0]), np.array([0.0, -trunnion_half_width, 0.0])),
+         (0.04, np.zeros(3), trunnion_cap_rel_p7),
+         (0.18, np.zeros(3), body_can_end_rel_p7),
+         (0.10, piggy_start, piggy_end),
+         (0.04, piggy_bridge_1, piggy_bridge_2),
+     ]
+     _shock_body_pinned_mass = sum(m for m, _, _ in _shock_body_child_geoms)
+-    ET.SubElement(
+-        shock_body,
+-        "inertial",
+-        {
+-            "pos": "-0.033395 0.011400 -0.028962",
+-            "quat": "-0.10166406 0.38183084 -0.06020627 0.91664870",
+-            "mass": f"{_shock_body_pinned_mass:.6f}",
+-            "diaginertia": "0.00084836 0.00071226 0.00023249",
+-        },
+-    )
++    if mass_registry is None:
++        ET.SubElement(
++            shock_body,
++            "inertial",
++            {
++                "pos": "-0.033395 0.011400 -0.028962",
++                "quat": "-0.10166406 0.38183084 -0.06020627 0.91664870",
++                "mass": f"{_shock_body_pinned_mass:.6f}",
++                "diaginertia": "0.00084836 0.00071226 0.00023249",
++            },
++        )
+     add_joint(
+         shock_body,
+         "shock_stroke",
+         "slide",
+         axis=_format_vec(shock_slide_axis),
+         range=joint_range,
+         stiffness="0",
+         damping="0",
+         springref="0",
+         solreflimit="0.01 1" if mode == "ride" else None,
+     )
+ 
+     add_geom(shock_body, "geom_shock_trunnion_boss_l", "cylinder", fromto=f"0 0.019 0 0 {trunnion_half_width:.6f} 0", size="0.013", mass="0.02", material="mat_metal")
+     add_geom(shock_body, "geom_shock_trunnion_boss_r", "cylinder", fromto=f"0 -0.019 0 0 {-trunnion_half_width:.6f} 0", size="0.013", mass="0.02", material="mat_metal")
+     add_geom(shock_body, "geom_shock_trunnion_overhang", "cylinder", fromto=f"0 0 0 {_format_vec(trunnion_cap_rel_p7)}", size="0.024", mass="0.04", material="mat_damper_body")
+     add_geom(shock_body, "geom_shock_body", "cylinder", fromto=f"0 0 0 {_format_vec(body_can_end_rel_p7)}", size="0.026", mass="0.18", material="mat_damper_body")
+     add_geom(shock_body, "geom_shock_piggyback", "cylinder", fromto=f"{_format_vec(piggy_start)} {_format_vec(piggy_end)}", size="0.018", mass="0.10", material="mat_damper_body")
+     add_geom(shock_body, "geom_shock_piggy_bridge", "cylinder", fromto=f"{_format_vec(piggy_bridge_1)} {_format_vec(piggy_bridge_2)}", size="0.010", mass="0.04", material="mat_damper_body")
+     add_site(shock_body, "site_P7_shock", pos="0 0 0", size="0.008", rgba="0.1 0.6 0.9 1.0")
++    if mass_registry is not None:
++        register_component(mass_registry, "shock_damper", list(shock_shaft.findall("geom")) + list(shock_body.findall("geom")))
+ 
+ 
+ def build_rear_linkage(
+     frame: ET.Element,
+     mode: str,
+     specs: BikeSpecs,
+     fixed_points: Dict[str, np.ndarray],
+     solved_points: Dict[str, np.ndarray],
+     debug_markers: bool = False,
+     tyre_model: str = "sphere",
+     physics_config: SimulationPhysicsConfig | None = None,
++    mass_registry: dict[str, list[ET.Element]] | None = None,
+ ) -> None:
+     """
+     Builds the 4-bar rear suspension linkage, shock yoke, shock shaft, shock body, and rear wheel.
+     """
+     P0 = np.array(fixed_points["P0"], dtype=float) / 1000.0
+     P5 = np.array(fixed_points["P5"], dtype=float) / 1000.0
+     P7 = np.array(fixed_points["P7"], dtype=float) / 1000.0
+ 
+     P1 = np.array(solved_points["P1"], dtype=float) / 1000.0
+     P2 = np.array(solved_points["P2"], dtype=float) / 1000.0
+@@ -280,42 +287,51 @@ def build_rear_linkage(
+     p1_rel_p2 = P1 - P2
+     p12_rel_p2 = P12 - P2
+ 
+     p3_rel_p5 = P3 - P5
+     p4_rel_p5 = P4 - P5
+     p6_rel_p4 = P6 - P4
+     p7_rel_p6 = P7 - P6
+ 
+     # 1. Chainstay
+     chainstay = _build_chainstay(frame, P0, p2_rel_p0, debug_markers)
++    if mass_registry is not None:
++        register_component(mass_registry, "chainstay", list(chainstay.findall("geom")))
+ 
+     # 2. Seatstay & Rear Wheel
+-    _build_seatstay(
++    seatstay = _build_seatstay(
+         chainstay,
+         mode,
+         p2_rel_p0,
+         p1_rel_p2,
+         p3_rel_p2,
+         p12_rel_p2,
+         rear_wheel_radius_m,
+         debug_markers,
+         tyre_model,
++        mass_registry,
+     )
++    if mass_registry is not None:
++        register_component(mass_registry, "seatstay", list(seatstay.findall("geom")))
+ 
+     # 3. Rocker Link
+     rocker = _build_rocker(frame, P5, p3_rel_p5, p4_rel_p5, debug_markers)
++    if mass_registry is not None:
++        register_component(mass_registry, "rocker", list(rocker.findall("geom")))
+ 
+     # 4. Shock Yoke
+     shock_yoke = _build_shock_yoke(rocker, p4_rel_p5, p6_rel_p4, debug_markers)
++    if mass_registry is not None:
++        register_component(mass_registry, "shock_yoke", list(shock_yoke.findall("geom")))
+ 
+     # 5. Shock Shaft & Shock Body
+-    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs, physics_config)
++    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs, physics_config, mass_registry)
+ 
+ 
+ def build_equality_constraints(root: ET.Element, mode: str) -> None:
+     """
+     Appends loop closure equality constraints (<equality>) at P3 and P7, plus stand clamp if in playground mode.
+     """
+     equality = ET.SubElement(root, "equality")
+     ET.SubElement(
+         equality,
+         "connect",
+diff --git a/src/bike_sim/mujoco/steering_fork.py b/src/bike_sim/mujoco/steering_fork.py
+index 89799fe..b3c567e 100644
+--- a/src/bike_sim/mujoco/steering_fork.py
++++ b/src/bike_sim/mujoco/steering_fork.py
+@@ -6,20 +6,21 @@ Constructs:
+ 2. Fork Assembly (crown, stanchions, lower slider, arch, dropouts, axle site)
+ 3. Front Wheel (hub, rim, tire, brake rotor)
+ """
+ 
+ from typing import Dict, Tuple
+ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.physics.mass import BikeMassSpecs
++from bike_sim.physics.component_masses import register_component
+ from bike_sim.mujoco._xml_format import (
+     _format_vec,
+     add_geom,
+     add_joint,
+     add_site,
+     add_marker,
+ )
+ 
+ 
+ def _build_steerer_and_cockpit(
+@@ -143,20 +144,21 @@ def _build_front_wheel(
+ 
+ def build_steering_and_fork(
+     frame: ET.Element,
+     mode: str,
+     specs: BikeSpecs,
+     mass_specs: BikeMassSpecs,
+     fixed_points: Dict[str, np.ndarray],
+     front_axle: np.ndarray,
+     debug_markers: bool = False,
+     tyre_model: str = "sphere",
++    mass_registry: dict[str, list[ET.Element]] | None = None,
+ ) -> Tuple[ET.Element, ET.Element, ET.Element]:
+     """
+     Builds the steering body, fork lower slider, and front wheel.
+     """
+     P11 = np.array(fixed_points["P11"], dtype=float) / 1000.0
+     P_HT_bot = np.array(fixed_points["P_HT_bot"], dtype=float) / 1000.0
+     P_FA = np.array(front_axle, dtype=float) / 1000.0
+ 
+     front_wheel_radius_m = specs.front_wheel_radius / 1000.0
+     fork_travel_m = specs.fork_travel / 1000.0
+@@ -174,11 +176,18 @@ def build_steering_and_fork(
+     _build_fork_crown_and_stanchions(steer, steer_axis_up, mass_specs)
+ 
+     # 3. Fork Lowers Slider
+     fork_lower = _build_fork_lowers(steer, mode, fork_slide_axis, steer_axis_up, fa_rel_steer, fork_travel_m, debug_markers)
+ 
+     # 4. Front Wheel
+     front_wheel = _build_front_wheel(
+         fork_lower, mode, fa_rel_steer, front_wheel_radius_m, tyre_model
+     )
+ 
++    if mass_registry is not None:
++        steer_geoms = list(steer.findall("geom"))
++        register_component(mass_registry, "steer_assembly", [geom for geom in steer_geoms if not geom.get("name", "").startswith("geom_stanchion_")])
++        register_component(mass_registry, "stanchions", [geom for geom in steer_geoms if geom.get("name", "").startswith("geom_stanchion_")])
++        register_component(mass_registry, "fork_lowers", list(fork_lower.findall("geom")))
++        register_component(mass_registry, "front_wheel", list(front_wheel.findall("geom")))
++
+     return steer, fork_lower, front_wheel
+diff --git a/src/bike_sim/physics/component_masses.py b/src/bike_sim/physics/component_masses.py
+new file mode 100644
+index 0000000..685ffb3
+--- /dev/null
++++ b/src/bike_sim/physics/component_masses.py
+@@ -0,0 +1,30 @@
++"""Distribute a component's mass over its existing MJCF geometry."""
++
++import math
++import xml.etree.ElementTree as ET
++
++
++def assign_component_mass(geoms: list[ET.Element], total_kg: float) -> None:
++    """Use authored geom masses as relative weights for one physical component."""
++    if not math.isfinite(total_kg) or total_kg <= 0:
++        raise ValueError("component mass must be finite and positive")
++    weights = [float(geom.get("mass", "0")) for geom in geoms]
++    if not weights or any(not math.isfinite(weight) or weight < 0 for weight in weights):
++        raise ValueError("component has no valid mass weights")
++    denominator = sum(weights)
++    if not math.isfinite(denominator) or denominator <= 0:
++        raise ValueError("component has no valid mass weights")
++    for geom, weight in zip(geoms, weights):
++        geom.set("mass", format(total_kg * weight / denominator, ".17g"))
++
++
++def register_component(
++    registry: dict[str, list[ET.Element]], component_id: str, geoms: list[ET.Element]
++) -> None:
++    """Register a physical component exactly once, excluding zero-mass visual geoms."""
++    if component_id in registry:
++        raise ValueError(f"component {component_id!r} was registered twice")
++    positive_geoms = [geom for geom in geoms if float(geom.get("mass", "0")) > 0]
++    if not positive_geoms:
++        raise ValueError(f"component {component_id!r} has no mass-bearing geoms")
++    registry[component_id] = positive_geoms
+diff --git a/src/bike_sim/physics/mass.py b/src/bike_sim/physics/mass.py
+index 56b8195..87708ab 100644
+--- a/src/bike_sim/physics/mass.py
++++ b/src/bike_sim/physics/mass.py
+@@ -1,19 +1,19 @@
+ """
+ Physical Mass Distribution and Center of Gravity (CG) Profile for eMTB.
+ 
+ This module defines the mass specifications and analytical mass distribution
+ computations for a 29"/27.5" mullet full-power eMTB. It computes component centers
+ of mass, moments of inertia, overall system CG, and static axle load distributions.
+ """
+ 
+-from dataclasses import dataclass
++from dataclasses import dataclass, fields
+ from typing import Any, Dict, Optional, Tuple
+ import numpy as np
+ 
+ from bike_sim.geometry.cockpit import saddle_geometry, saddle_post_center_of_mass
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.geometry.hardpoints import (
+     compute_front_axle,
+     compute_rear_axle,
+     get_fixed_frame_points,
+ )
+@@ -49,40 +49,33 @@ class BikeMassSpecs:
+     shock_damper_mass: float = 0.60    # Metric trunnion 205x65mm air damper body & shaft
+ 
+     # Wheels & Rotational Inertia Breakdown
+     front_wheel_mass: float = 2.40     # 29" front wheel, 2.4" enduro tire, sealant, 203mm rotor
+     rear_wheel_mass: float = 2.80      # 27.5" rear wheel, 2.5" DH tire, 12-spd cassette, rotor
+ 
+     # Wheel mass distribution fractions (Rim+Tire outer ring vs Hub+Rotor inner core)
+     wheel_rim_tire_fraction: float = 0.75
+     wheel_hub_core_fraction: float = 0.25
+ 
++    @property
++    def component_masses(self) -> Dict[str, float]:
++        """The fifteen physical component budgets, excluding wheel-shape fractions."""
++        return {
++            field.name.removesuffix("_mass"): getattr(self, field.name)
++            for field in fields(self)
++            if field.name.endswith("_mass")
++        }
++
+     @property
+     def total_bike_mass(self) -> float:
+         """Computes total mass of the bicycle in kg."""
+-        return (
+-            self.motor_mass
+-            + self.battery_mass
+-            + self.frame_structure_mass
+-            + self.saddle_post_mass
+-            + self.crank_pedals_mass
+-            + self.steer_assembly_mass
+-            + self.stanchions_mass
+-            + self.fork_lowers_mass
+-            + self.chainstay_mass
+-            + self.seatstay_mass
+-            + self.rocker_mass
+-            + self.shock_yoke_mass
+-            + self.shock_damper_mass
+-            + self.front_wheel_mass
+-            + self.rear_wheel_mass
+-        )
++        return sum(self.component_masses.values())
+ 
+     def compute_wheel_rotational_inertia(
+         self, wheel_mass: float, outer_radius: float, hub_radius: float = 0.045
+     ) -> float:
+         """
+         Computes accurate pitch rotational inertia I_yy (kg*m^2) for a bicycle wheel.
+         """
+         m_rim = self.wheel_rim_tire_fraction * wheel_mass
+         m_hub = self.wheel_hub_core_fraction * wheel_mass
+         i_yy = m_rim * (outer_radius ** 2) + 0.5 * m_hub * (hub_radius ** 2)
+@@ -186,21 +179,21 @@ def compute_component_centers_of_mass(
+     return components
+ 
+ 
+ def compute_static_system_cg(
+     specs: Optional[BikeSpecs] = None,
+     mass_specs: Optional[BikeMassSpecs] = None,
+     rider_specs: Optional[RiderSpecs] = None,
+     solver: Optional[Any] = None,
+ ) -> Dict[str, Any]:
+     """
+-    Computes overall Center of Gravity (X, Y, Z in meters) and static axle load distribution.
++    Computes the unloaded analytic CoM and nominal axle load distribution.
+     """
+     if specs is None:
+         specs = BikeSpecs()
+     if mass_specs is None:
+         mass_specs = BikeMassSpecs()
+ 
+     components = compute_component_centers_of_mass(
+         specs=specs, mass_specs=mass_specs, solver=solver, rider_specs=rider_specs
+     )
+ 
+@@ -239,14 +232,17 @@ def compute_static_system_cg(
+         "wheelbase_m": float(wheelbase),
+         "front_axle_x": float(p_fa[0]),
+         "rear_axle_x": float(p_ra[0]),
+         "front_load_n": float(front_load_n),
+         "rear_load_n": float(rear_load_n),
+         "front_load_pct": float(front_pct),
+         "rear_load_pct": float(rear_pct),
+     }
+ 
+ 
+-# Re-export suspension sag tuning for backward compatibility
+-from bike_sim.physics.tuning import compute_suspension_tuning_for_sag
++# Explicit name for the unloaded reference calculation. Dynamic displays use the
++# compiled CoM from sim.ride.mass_properties instead.
++compute_unloaded_analytic_system_cg = compute_static_system_cg
+ 
+ 
++# Re-export suspension sag tuning for backward compatibility
++from bike_sim.physics.tuning import compute_suspension_tuning_for_sag
+diff --git a/src/bike_sim/sim/ride/mass_properties.py b/src/bike_sim/sim/ride/mass_properties.py
+new file mode 100644
+index 0000000..5b8adba
+--- /dev/null
++++ b/src/bike_sim/sim/ride/mass_properties.py
+@@ -0,0 +1,35 @@
++"""Mass properties read from the compiled model at the current pose."""
++
++import mujoco
++import numpy as np
++
++
++def compiled_center_of_mass(model: mujoco.MjModel, data: mujoco.MjData) -> np.ndarray:
++    """Return the current world-space center of mass after kinematics are updated."""
++    masses = np.asarray(model.body_mass)
++    total = float(masses.sum())
++    if not np.isfinite(total) or total <= 0:
++        raise ValueError("model has no positive physical mass")
++    return np.sum(masses[:, None] * data.xipos, axis=0) / total
++
++
++def static_contact_loads(
++    model: mujoco.MjModel, data: mujoco.MjData, front_geom_id: int, rear_geom_id: int
++) -> tuple[float, float]:
++    """Compute static normal loads from the current contact locations after sag."""
++    contact_x: dict[int, list[float]] = {front_geom_id: [], rear_geom_id: []}
++    for contact in data.contact:
++        for geom_id in (contact.geom1, contact.geom2):
++            if geom_id in contact_x:
++                contact_x[geom_id].append(float(contact.pos[0]))
++    if any(not values for values in contact_x.values()):
++        raise ValueError("both wheel contact points are required for static load")
++    front_x = float(np.mean(contact_x[front_geom_id]))
++    rear_x = float(np.mean(contact_x[rear_geom_id]))
++    wheelbase = front_x - rear_x
++    if wheelbase <= 0:
++        raise ValueError("front contact must be ahead of rear contact")
++    com_x = float(compiled_center_of_mass(model, data)[0])
++    total_weight = float(model.body_mass.sum()) * abs(float(model.opt.gravity[2]))
++    front_load = total_weight * (com_x - rear_x) / wheelbase
++    return front_load, total_weight - front_load
+diff --git a/src/bike_sim/sim/ride/recorder.py b/src/bike_sim/sim/ride/recorder.py
+index e518bed..20cfef2 100644
+--- a/src/bike_sim/sim/ride/recorder.py
++++ b/src/bike_sim/sim/ride/recorder.py
+@@ -29,20 +29,21 @@ Channel conventions:
+ 
+ import csv
+ from pathlib import Path
+ from typing import TYPE_CHECKING, Dict, List, Sequence, Union
+ 
+ import mujoco
+ import numpy as np
+ 
+ from bike_sim.sim.ride.metrics import RAMP_EXCLUSION_M
+ from bike_sim.sim.ride.energy import mechanical_energy_terms, system_momentum
++from bike_sim.sim.ride.mass_properties import compiled_center_of_mass
+ from bike_sim.sim.ride.telemetry_v2 import ForceSample, component_powers
+ from bike_sim.sim.ride.wheels import resolve_wheel_spin
+ 
+ if TYPE_CHECKING:  # pragma: no cover
+     from bike_sim.sim.ride_sim import RideSimulation
+ 
+ CHANNELS: Sequence[str] = (
+     "time_s",
+     "x_m",
+     "speed_mps",
+@@ -120,20 +121,22 @@ SEATED_RIDER_CHANNELS: Sequence[str] = CHANNELS[
+ ]
+ TYRE_CHANNELS: Sequence[str] = CHANNELS[
+     CHANNELS.index("front_tyre_fz_n"):CHANNELS.index("crank_phase_rad")
+ ]
+ DRIVETRAIN_CHANNELS: Sequence[str] = CHANNELS[CHANNELS.index("crank_phase_rad"):]
+ 
+ # V2 rows identify the input-force interval separately from the post-step state in
+ # `time_s`. Names added by future force writers get their own power/work columns.
+ V2_FIXED_CHANNELS: Sequence[str] = (
+     "interval_start_s", "interval_dt_s",
++    "compiled_mass_kg", "compiled_com_x_m", "compiled_com_y_m", "compiled_com_z_m",
++    "static_front_load_n", "static_rear_load_n",
+     "linear_momentum_x_kg_mps", "linear_momentum_y_kg_mps", "linear_momentum_z_kg_mps",
+     "angular_momentum_x_kg_m2ps", "angular_momentum_y_kg_m2ps",
+     "angular_momentum_z_kg_m2ps",
+     "kinetic_energy_j", "gravitational_energy_j", "elastic_energy_j",
+     "mechanical_energy_j", "energy_residual_j",
+ )
+ 
+ CSV_FLOAT_FORMAT = "%.10g"
+ _CHUNK_ROWS = 4096
+ 
+@@ -393,29 +396,35 @@ class RideRecorder:
+                 torso_vert,
+                 torso_long,
+                 pelvis_vert,
+                 pelvis_long,
+                 *tyre_channels,
+                 *pedal_channels,
+             ]
+         )
+         if self.schema_version == 1:
+             return legacy_row
++        mujoco.mj_kinematics(sim.model, sim.data)
++        com = compiled_center_of_mass(sim.model, sim.data)
++        total_mass = float(sim.model.body_mass.sum())
+         linear, angular = system_momentum(sim.model, sim.data)
+         kinetic, gravitational, _ = mechanical_energy_terms(
+             sim.model, sim.data, elastic_energy_j=0.0
+         )
+         # Suspension currently combines spring and damper in one force channel. Until
+         # each storage and loss term is supplied, a complete energy and residual would
+         # be misleading. NaN makes that missing accounting explicit in physical CSV.
+         interval_row = (
+             self.last_interval_start_s, self.last_interval_dt_s,
++            total_mass, *com,
++            sim.equilibrium.get("static_front_load_n", np.nan),
++            sim.equilibrium.get("static_rear_load_n", np.nan),
+             *linear, *angular,
+             kinetic, gravitational, np.nan, np.nan, np.nan,
+         )
+         if self._last_force_sample is None:
+             state_row = (np.nan,) * (self._prestep_nq + self._prestep_nv)
+         else:
+             state_row = (*self._last_force_sample.qpos, *self._last_force_sample.qvel)
+         component_row = tuple(
+             value
+             for name in self._component_names
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index 514f07a..2ab1fc3 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -21,36 +21,38 @@ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.geometry.hardpoints import compute_ground_z
+ from bike_sim.kinematics.solver import HorstLinkageSolver
+ from bike_sim.mujoco.builder import generate_mujoco_xml
+ from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
+ from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
+ from bike_sim.physics.damper import BikeSuspensionSystem
+ from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
+ from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.physics.mass import BikeMassSpecs
+ from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
+ from bike_sim.physics.suspension_config import build_suspension_components
+ from bike_sim.physics.tyre import TyreConfig
+ from bike_sim.sim.controllers import SuspensionController
+ from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
+ from bike_sim.sim.ride.braking import BrakeController
+ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
+ from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+ from bike_sim.sim.ride.constraint_forces import (
+     ConstraintForceSnapshot,
+     shock_joint_limit_qfrc,
+ )
+ from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
+ from bike_sim.sim.ride.force_accumulator import ForceAccumulator
+ from bike_sim.sim.ride.forces import SuspensionForceApplier
+ from bike_sim.sim.ride.leg_drive import LegDrive
++from bike_sim.sim.ride.mass_properties import compiled_center_of_mass, static_contact_loads
+ from bike_sim.sim.ride.telemetry_v2 import ForceSample
+ from bike_sim.sim.ride.resistance import RollingResistance
+ from bike_sim.sim.ride.rider_forces import RiderForceApplier
+ from bike_sim.sim.ride.termination import (
+     DEFAULT_MAX_WALL_CLOCK_S,
+     RunLimits,
+     RunOutcome,
+     RunTerminator,
+ )
+ from bike_sim.sim.ride.tyre.applier import TyreForceApplier
+@@ -95,20 +97,21 @@ class RideSimulation:
+         field: Optional[HeightFieldSpec] = None,
+         rider: Optional[Union[RiderSpecs, str]] = None,
+         tyre: Optional[TyreConfig] = None,
+         drive_mode: str = "motor",
+         assist: str = "tour",
+         drivetrain: Optional[DrivetrainSpecs] = None,
+         legs: Optional[str] = None,
+         visual_pedalling: bool = False,
+         *,
+         physics_config: Optional[SimulationPhysicsConfig] = None,
++        mass_specs: Optional[BikeMassSpecs] = None,
+     ) -> None:
+         """
+         Compiles the model, rasterizes the track, and solves the starting equilibrium.
+ 
+         Args:
+             track: Track to ride. Defaults to the shipped default preset.
+             specs: Bicycle geometry. Defaults to the shipped `BikeSpecs`.
+             target_speed_kmh: Initial cruise target, inside the 15-45 km/h band.
+             include_rider: Legacy switch: False rides the bike alone; True rides the default
+                 rider variant. Ignored when ``rider`` is given.
+@@ -142,30 +145,32 @@ class RideSimulation:
+                 ``articulated`` whenever the crankset turns (``pedal``/``pedelec``, or
+                 ``visual_pedalling``) and ``rigid`` otherwise. Supersedes ``rider.legs``:
+                 a ``legs`` set inside the ``rider=`` spec is overwritten by this kwarg's
+                 resolution.
+             visual_pedalling: Build the turning crankset and articulated legs in
+                 ``motor`` mode too, so the pedals and feet visibly spin while the ideal
+                 wheel actuator drives; the legs are dragged, they deliver no torque.
+                 Redundant in the pedalled modes, where the crankset turns anyway.
+             physics_config: Physical model selection and timestep. An omitted config uses
+                 the existing legacy simulation and its historical drive mode.
++            mass_specs: Component mass budget passed to the MJCF builder.
+ 
+         Raises:
+             ValueError: If the track does not fit the heightfield envelope.
+             RuntimeError: If the starting equilibrium does not converge.
+         """
+         if drive_mode not in DRIVE_MODES:
+             raise ValueError(
+                 f"unknown drive mode {drive_mode!r}; available: {', '.join(DRIVE_MODES)}"
+             )
+         self.physics_config = physics_config if physics_config is not None else SimulationPhysicsConfig()
++        self.mass_specs = mass_specs if mass_specs is not None else BikeMassSpecs()
+         if self.physics_config.drive_mode in {"crank_effort", "articulated_effort"}:
+             raise NotImplementedError(
+                 f"{self.physics_config.drive_mode} is not implemented in this physics revision"
+             )
+         if self.physics_config.physics_mode == "physical" and drive_mode != "motor":
+             raise ValueError("physical mode uses physics_config.drive_mode, not legacy drive_mode")
+         self.physics_revision = (
+             "legacy-v1" if self.physics_config.physics_mode == "legacy" else "physical-v1"
+         )
+         self.drive_mode = drive_mode
+@@ -241,20 +246,21 @@ class RideSimulation:
+                 specs=self.specs,
+                 solver=self.solver,
+                 mode="ride",
+                 rider=self.rider,
+                 debug_markers=debug_markers,
+                 field=self.field,
+                 tyre_model=self.tyre_config.model,
+                 crank_joint=crank_joint,
+                 gear_ratio=self.drivetrain_specs.gear_ratio,
+                 physics_config=self.physics_config,
++                mass_specs=self.mass_specs,
+             )
+         )
+         # Before the first forward pass, before the equilibrium solve, before any viewer.
+         self.model.hfield_data[:] = build_field_data(self.track, self.field).reshape(-1)
+         self.tyre_applier: Optional[TyreForceApplier] = None
+         if self.tyre_config.pneumatic:
+             track_x = self.field.track_x()
+             road_z = (
+                 compute_ground_z(self.specs) / 1000.0
+                 + build_profile(self.track, track_x)
+@@ -311,20 +317,22 @@ class RideSimulation:
+         self.crash_detector = CrashDetector(self.model)
+ 
+         self.drive_ctrl_adr = _actuator_id(self.model, "rear_drive")
+         self.crank_drive_ctrl_adr = mujoco.mj_name2id(
+             self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, "crank_drive"
+         )
+         self.front_brake_ctrl_adr = _actuator_id(self.model, "front_brake")
+         self.rear_brake_ctrl_adr = _actuator_id(self.model, "rear_brake")
+         self.root_x_qposadr, self.root_x_dofadr = _root_addresses(self.model, "root_x")
+         self.root_pitch_qposadr, _ = _root_addresses(self.model, "root_pitch")
++        self._cg_site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "site_CG")
++        self._frame_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "frame")
+ 
+         self.contacts = TerrainContacts(
+             front_load_n=0.0,
+             rear_load_n=0.0,
+             front_support_n=0.0,
+             rear_support_n=0.0,
+             handlebar_load_n=0.0,
+         )
+         self.steps = 0
+         self.equilibrium: Dict[str, Any] = {}
+@@ -392,20 +400,37 @@ class RideSimulation:
+         self.force_accumulator.clear()
+         self.last_force_snapshot = None
+         self.last_force_sample = None
+         self.last_constraint_snapshot = None
+         if self.tyre_applier is None:
+             self.contacts = self.contact_query.query(self.model, self.data)
+         else:
+             self.contacts = self.contact_query.query(
+                 self.model, self.data, wheel_load_provider=self.tyre_applier
+             )
++        self._update_compiled_com_marker()
++        if self.physics_config.physics_mode == "physical" and self.tyre_applier is None:
++            front = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "geom_front_contact")
++            rear = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "geom_rear_contact")
++            front_load, rear_load = static_contact_loads(self.model, self.data, front, rear)
++            self.equilibrium["static_front_load_n"] = front_load
++            self.equilibrium["static_rear_load_n"] = rear_load
++
++    def _update_compiled_com_marker(self) -> None:
++        """Place the physical-mode site at the current compiled system CoM."""
++        if self.physics_config.physics_mode != "physical" or self._cg_site_id < 0:
++            return
++        mujoco.mj_kinematics(self.model, self.data)
++        com = compiled_center_of_mass(self.model, self.data)
++        frame = self._frame_body_id
++        self.model.site_pos[self._cg_site_id] = self.data.xmat[frame].reshape(3, 3).T @ (com - self.data.xpos[frame])
++        self.data.site_xpos[self._cg_site_id] = com
+ 
+     def step(
+         self,
+         front_brake_demand: float = 0.0,
+         rear_brake_demand: float = 0.0,
+         *,
+         external_qfrc: Optional[np.ndarray] = None,
+     ) -> None:
+         """Advance one timestep using the selected force and control path."""
+         if self.physics_config.physics_mode == "legacy":
+@@ -492,20 +517,21 @@ class RideSimulation:
+         if self.physics_config.pitch_assist:
+             self.stabilizer.apply(self.model, self.data, self.contacts)
+         else:
+             self.stabilizer.disable(self.data)
+ 
+         # Checked against the same snapshot the writers saw, so a reported crash position is
+         # the state that produced it rather than the state one timestep later.
+         self.crash_detector.check(self.data, self.contacts)
+ 
+         mujoco.mj_step(self.model, self.data)
++        self._update_compiled_com_marker()
+         self.steps += 1
+         if self.tyre_applier is None:
+             self.contacts = self.contact_query.query(self.model, self.data)
+ 
+     def _collect_legacy_qfrc(self, name: str, writer: Callable[[], None]) -> None:
+         """Adapt an assigning legacy writer to one named, additive contribution."""
+         self.data.qfrc_applied.fill(0.0)
+         try:
+             writer()
+             self.force_accumulator.add(name, self.data.qfrc_applied)
+diff --git a/tests/test_compiled_mass_contract.py b/tests/test_compiled_mass_contract.py
+new file mode 100644
+index 0000000..ab14fed
+--- /dev/null
++++ b/tests/test_compiled_mass_contract.py
+@@ -0,0 +1,165 @@
++"""Compiled bicycle mass and moving center-of-mass contracts."""
++
++from dataclasses import fields
++import xml.etree.ElementTree as ET
++
++import mujoco
++import numpy as np
++import pytest
++
++from bike_sim.geometry.hardpoints import compute_front_axle, get_fixed_frame_points
++from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.kinematics.solver import HorstLinkageSolver
++from bike_sim.mujoco.builder import generate_mujoco_xml
++from bike_sim.physics.component_masses import assign_component_mass
++from bike_sim.physics.mass import BikeMassSpecs
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.sim.ride.mass_properties import compiled_center_of_mass, static_contact_loads
++from bike_sim.sim.ride.recorder import RideRecorder
++from bike_sim.sim.ride_sim import RideSimulation
++
++
++MASS_FIELDS = tuple(field.name for field in fields(BikeMassSpecs) if field.name.endswith("_mass"))
++PHYSICAL = SimulationPhysicsConfig(physics_mode="physical")
++
++
++def _model(mass_specs=None):
++    xml = generate_mujoco_xml(
++        specs=BikeSpecs(), mode="ride", mass_specs=mass_specs,
++        rider="none", physics_config=PHYSICAL,
++    )
++    return mujoco.MjModel.from_xml_string(xml)
++
++
++def _geom_masses(mass, *, debug_markers=False):
++    xml = generate_mujoco_xml(
++        specs=BikeSpecs(), mode="ride", mass_specs=mass, rider="none",
++        physics_config=PHYSICAL, debug_markers=debug_markers,
++    )
++    return {
++        geom.get("name"): float(geom.get("mass"))
++        for geom in ET.fromstring(xml).iter("geom") if geom.get("mass")
++    }
++
++
++@pytest.mark.parametrize("field", MASS_FIELDS)
++def test_changing_component_mass_changes_compiled_total(field):
++    mass = BikeMassSpecs()
++    setattr(mass, field, getattr(mass, field) + 0.7)
++    assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
++
++
++def test_default_physical_total_matches_budget():
++    assert _model().body_mass.sum() == pytest.approx(BikeMassSpecs().total_bike_mass, abs=1e-8)
++
++
++def test_lumped_rider_is_not_absorbed_into_frame_budget():
++    xml = generate_mujoco_xml(
++        specs=BikeSpecs(), mode="ride", mass_specs=BikeMassSpecs(),
++        rider="lumped", physics_config=PHYSICAL,
++    )
++    model = mujoco.MjModel.from_xml_string(xml)
++    assert model.body_mass.sum() == pytest.approx(BikeMassSpecs().total_bike_mass + 80.0, abs=1e-8)
++
++
++def test_all_fifteen_mass_fields_are_budget_components():
++    assert len(MASS_FIELDS) == 15
++    assert set(BikeMassSpecs().component_masses) == {name.removesuffix("_mass") for name in MASS_FIELDS}
++
++
++@pytest.mark.parametrize("field", MASS_FIELDS)
++def test_component_override_changes_only_its_own_geom_group(field):
++    baseline = _geom_masses(BikeMassSpecs())
++    changed = BikeMassSpecs()
++    setattr(changed, field, getattr(changed, field) + 0.7)
++    override = _geom_masses(changed)
++    changed_geoms = [name for name in baseline if abs(override[name] - baseline[name]) > 1e-12]
++    assert changed_geoms
++    assert sum(override[name] - baseline[name] for name in changed_geoms) == pytest.approx(0.7, abs=1e-10)
++
++
++def test_debug_geoms_remain_massless():
++    masses = _geom_masses(BikeMassSpecs(), debug_markers=True)
++    assert all(mass == 0 for name, mass in masses.items() if name.startswith("marker_") or name.endswith("_contact"))
++
++
++def test_frame_structure_override_does_not_change_motor_or_battery_geom_mass():
++    baseline = _geom_masses(BikeMassSpecs())
++    changed = BikeMassSpecs(frame_structure_mass=4.2)
++    override = _geom_masses(changed)
++    for name in ("geom_motor_core", "geom_battery_pack"):
++        assert override[name] == pytest.approx(baseline[name])
++
++
++def test_root_translation_moves_compiled_com_without_changing_mass_or_inertia():
++    model = _model()
++    data = mujoco.MjData(model)
++    mujoco.mj_forward(model, data)
++    initial_com = compiled_center_of_mass(model, data)
++    body_mass = model.body_mass.copy()
++    body_inertia = model.body_inertia.copy()
++    root = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_x")
++    data.qpos[model.jnt_qposadr[root]] += 1.0
++    mujoco.mj_forward(model, data)
++    np.testing.assert_allclose(compiled_center_of_mass(model, data), initial_com + [1, 0, 0], atol=1e-12)
++    np.testing.assert_array_equal(model.body_mass, body_mass)
++    np.testing.assert_array_equal(model.body_inertia, body_inertia)
++
++
++def test_mass_override_preserves_geometry():
++    specs = BikeSpecs()
++    before = get_fixed_frame_points(specs)
++    front = compute_front_axle(specs)
++    linkage = HorstLinkageSolver(specs).solve_state_from_wheel_travel(0.0)
++    _model(BikeMassSpecs(frame_structure_mass=4.2, rear_wheel_mass=3.5))
++    for name, point in before.items():
++        np.testing.assert_array_equal(get_fixed_frame_points(specs)[name], point)
++    np.testing.assert_array_equal(compute_front_axle(specs), front)
++    for name, point in linkage.items():
++        np.testing.assert_array_equal(HorstLinkageSolver(specs).solve_state_from_wheel_travel(0.0)[name], point)
++
++
++@pytest.mark.parametrize("total,weights", [(0, [1]), (-1, [1]), (float("nan"), [1]), (1, []), (1, [0]), (1, [-1]), (1, [float("inf")])])
++def test_assign_component_mass_rejects_invalid_budget(total, weights):
++    geoms = [ET.Element("geom", mass=str(weight)) for weight in weights]
++    with pytest.raises(ValueError):
++        assign_component_mass(geoms, total)
++
++
++def test_assign_component_mass_preserves_relative_weights_and_precision():
++    geoms = [ET.Element("geom", mass="1"), ET.Element("geom", mass="2")]
++    assign_component_mass(geoms, 0.7)
++    assert float(geoms[1].get("mass")) / float(geoms[0].get("mass")) == pytest.approx(2)
++    assert sum(float(geom.get("mass")) for geom in geoms) == pytest.approx(0.7, abs=1e-16)
++
++
++def test_compiled_com_rejects_zero_mass_model():
++    model = mujoco.MjModel.from_xml_string('<mujoco><worldbody><body name="empty"/></worldbody></mujoco>')
++    with pytest.raises(ValueError, match="physical mass"):
++        compiled_center_of_mass(model, mujoco.MjData(model))
++
++
++def test_ride_simulation_passes_mass_budget_and_marks_current_com():
++    mass = BikeMassSpecs(frame_structure_mass=4.2)
++    sim = RideSimulation(rider="none", mass_specs=mass, physics_config=PHYSICAL)
++    assert sim.model.body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
++    cg_site = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_SITE, "site_CG")
++    np.testing.assert_allclose(sim.data.site_xpos[cg_site], compiled_center_of_mass(sim.model, sim.data), atol=1e-9)
++
++    recorder = RideRecorder(sim)
++    recorder.record(sim)
++    assert recorder.column("compiled_mass_kg")[0] == pytest.approx(mass.total_bike_mass)
++    assert recorder.column("compiled_com_x_m")[0] == pytest.approx(sim.data.site_xpos[cg_site][0])
++
++
++def test_static_load_uses_contact_locations_after_sag():
++    sim = RideSimulation(rider="none", physics_config=PHYSICAL)
++    front = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_GEOM, "geom_front_contact")
++    rear = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_GEOM, "geom_rear_contact")
++    initial_front, initial_rear = static_contact_loads(sim.model, sim.data, front, rear)
++    assert initial_front + initial_rear == pytest.approx(sim.model.body_mass.sum() * 9.81)
++    for contact in sim.data.contact:
++        if front in (contact.geom1, contact.geom2):
++            contact.pos[0] += 0.1
++    shifted_front, _ = static_contact_loads(sim.model, sim.data, front, rear)
++    assert shifted_front < initial_front

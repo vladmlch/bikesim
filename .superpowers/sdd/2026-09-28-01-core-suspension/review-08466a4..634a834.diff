@@ -1,0 +1,504 @@
+# Review package: 08466a4..HEAD
+
+## Commits
+634a834 fix: reconcile shock stroke and record solver limit work
+
+## Files changed
+ src/bike_sim/sim/ride/constraint_forces.py |  70 ++++++++++++++++
+ src/bike_sim/sim/ride/recorder.py          |   8 ++
+ src/bike_sim/sim/ride_sim.py               |  34 ++++++--
+ tests/test_end_stops.py                    |  53 +++++++++++-
+ tests/test_shock_solver_limit.py           | 125 +++++++++++++++++++++++++++++
+ 5 files changed, 283 insertions(+), 7 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/sim/ride/constraint_forces.py b/src/bike_sim/sim/ride/constraint_forces.py
+new file mode 100644
+index 0000000..e371794
+--- /dev/null
++++ b/src/bike_sim/sim/ride/constraint_forces.py
+@@ -0,0 +1,70 @@
++"""Post-step generalized forces produced by MuJoCo joint limits."""
++
++from dataclasses import dataclass
++from math import isfinite
++from types import MappingProxyType
++from typing import Mapping
++
++import mujoco
++import numpy as np
++
++from bike_sim.sim.ride.telemetry_v2 import _frozen_copy
++
++
++def shock_joint_limit_qfrc(model: mujoco.MjModel, data: mujoco.MjData) -> np.ndarray:
++    """Map only solved ``shock_stroke`` joint-limit rows through the EFC Jacobian."""
++    joint_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "shock_stroke")
++    if joint_id < 0:
++        raise ValueError("model has no shock_stroke joint")
++    qfrc = np.zeros(model.nv)
++    nefc = data.nefc
++    if nefc == 0:
++        return qfrc
++    selected = (
++        (data.efc_type[:nefc] == mujoco.mjtConstraint.mjCNSTR_LIMIT_JOINT)
++        & (data.efc_id[:nefc] == joint_id)
++    )
++    if np.any(selected):
++        multipliers = np.zeros(nefc)
++        multipliers[selected] = data.efc_force[:nefc][selected]
++        mujoco.mj_mulJacTVec(model, data, qfrc, multipliers)
++    return qfrc
++
++
++@dataclass(frozen=True)
++class ConstraintForceSnapshot:
++    """Solved forces captured after a step for its just-finished time interval."""
++
++    interval_start_s: float
++    interval_end_s: float
++    qvel_start: np.ndarray
++    components: Mapping[str, np.ndarray]
++
++    def __post_init__(self) -> None:
++        if (
++            not isfinite(self.interval_start_s)
++            or not isfinite(self.interval_end_s)
++            or self.interval_end_s <= self.interval_start_s
++        ):
++            raise ValueError("invalid constraint interval")
++        qvel = np.array(self.qvel_start, dtype=float, copy=True)
++        if qvel.ndim != 1 or not np.isfinite(qvel).all():
++            raise ValueError("invalid constraint velocity")
++        object.__setattr__(self, "qvel_start", _frozen_copy(qvel))
++        copied: dict[str, np.ndarray] = {}
++        for name, force in self.components.items():
++            value = np.array(force, dtype=float, copy=True)
++            if value.shape != qvel.shape or not np.isfinite(value).all():
++                raise ValueError("invalid constraint force")
++            copied[name] = _frozen_copy(value)
++        object.__setattr__(self, "components", MappingProxyType(copied))
++
++    def powers_w(self) -> dict[str, float]:
++        """Estimate interval power from solved force and incoming velocity."""
++        return {
++            name: float(force @ self.qvel_start)
++            for name, force in self.components.items()
++        }
++
++
++__all__ = ["ConstraintForceSnapshot", "shock_joint_limit_qfrc"]
+diff --git a/src/bike_sim/sim/ride/recorder.py b/src/bike_sim/sim/ride/recorder.py
+index f7c5d00..e518bed 100644
+--- a/src/bike_sim/sim/ride/recorder.py
++++ b/src/bike_sim/sim/ride/recorder.py
+@@ -231,20 +231,28 @@ class RideRecorder:
+ 
+     def _observe_physical_interval(self, sim: "RideSimulation") -> None:
+         """Integrate each actual force interval once, even when no CSV row is retained."""
+         sample = sim.last_force_sample
+         if sample is None or sample is self._last_force_sample:
+             return
+         interval_dt_s = float(sim.data.time) - sample.time_s
+         if interval_dt_s <= 0 or not np.isfinite(interval_dt_s):
+             raise ValueError("invalid physical force interval")
+         powers = component_powers(sample)
++        constraints = sim.last_constraint_snapshot
++        if constraints is not None:
++            if (
++                not np.isclose(constraints.interval_start_s, sample.time_s, rtol=0.0, atol=1e-12)
++                or not np.isclose(constraints.interval_end_s, sim.data.time, rtol=0.0, atol=1e-12)
++            ):
++                raise ValueError("constraint snapshot does not match physical force interval")
++            powers.update(constraints.powers_w())
+         for name, power_w in powers.items():
+             if name not in self.component_work_j:
+                 self._add_component_channels(name)
+                 self.component_work_j[name] = 0.0
+             self.component_work_j[name] += power_w * interval_dt_s
+         self.last_component_powers_w = powers
+         self.last_interval_start_s = sample.time_s
+         self.last_interval_dt_s = interval_dt_s
+         self._last_force_sample = sample
+ 
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index e110bf9..c5ee49e 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -17,31 +17,35 @@ from math import sin
+ from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Union
+ 
+ import mujoco
+ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.geometry.hardpoints import compute_ground_z
+ from bike_sim.kinematics.solver import HorstLinkageSolver
+ from bike_sim.mujoco.builder import generate_mujoco_xml
+ from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
+-from bike_sim.physics.coil_shock import CoilShock
++from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
+ from bike_sim.physics.damper import BikeSuspensionSystem
+ from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
+ from bike_sim.physics.model_config import SimulationPhysicsConfig
+ from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
+ from bike_sim.physics.tyre import TyreConfig
+ from bike_sim.sim.controllers import SuspensionController
+ from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
+ from bike_sim.sim.ride.braking import BrakeController
+ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
+ from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
++from bike_sim.sim.ride.constraint_forces import (
++    ConstraintForceSnapshot,
++    shock_joint_limit_qfrc,
++)
+ from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
+ from bike_sim.sim.ride.force_accumulator import ForceAccumulator
+ from bike_sim.sim.ride.forces import SuspensionForceApplier
+ from bike_sim.sim.ride.leg_drive import LegDrive
+ from bike_sim.sim.ride.telemetry_v2 import ForceSample
+ from bike_sim.sim.ride.resistance import RollingResistance
+ from bike_sim.sim.ride.rider_forces import RiderForceApplier
+ from bike_sim.sim.ride.termination import (
+     DEFAULT_MAX_WALL_CLOCK_S,
+     RunLimits,
+@@ -167,20 +171,28 @@ class RideSimulation:
+         self.drivetrain_specs = drivetrain if drivetrain is not None else DrivetrainSpecs()
+         pedalled = drive_mode != "motor"
+         self.visual_pedalling = bool(visual_pedalling)
+         crank_joint = pedalled or self.visual_pedalling
+ 
+         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
+         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
+         assert_track_fits(self.track, self.field)
+ 
+         self.specs = specs if specs is not None else BikeSpecs()
++        if (
++            coil_shock is not None
++            and abs(coil_shock.specs.stroke_mm - self.specs.shock_stroke) > 1e-6
++        ):
++            raise ValueError(
++                f"CoilShock stroke_mm {coil_shock.specs.stroke_mm} differs from "
++                f"BikeSpecs shock_stroke {self.specs.shock_stroke}"
++            )
+         self.tyre_config = tyre if tyre is not None else TyreConfig()
+         if (
+             self.physics_config.physics_mode == "physical"
+             and self.tyre_config.pneumatic
+             and self.tyre_config.tier == "detailed"
+             and self.physics_config.timestep_s != self.tyre_config.tier_spec.timestep_s
+         ):
+             raise ValueError(
+                 "detailed pneumatic tyre requires timestep_s="
+                 f"{self.tyre_config.tier_spec.timestep_s}; "
+@@ -233,31 +245,36 @@ class RideSimulation:
+                 self.tyre_config,
+                 profile,
+                 SurfaceMap.uniform(self.track.surface),
+             )
+         self.data = mujoco.MjData(self.model)
+         self.force_accumulator = ForceAccumulator(self.model.nv)
+         self.last_force_snapshot: Optional[
+             Tuple[float, np.ndarray, np.ndarray, Mapping[str, np.ndarray]]
+         ] = None
+         self.last_force_sample: Optional[ForceSample] = None
++        self.last_constraint_snapshot: Optional[ConstraintForceSnapshot] = None
+ 
+         self.controller = controller if controller is not None else _default_controller(
+             self.specs, legacy_behavior=self.physics_config.physics_mode == "legacy"
+         )
++        resolved_coil = coil_shock if coil_shock is not None else CoilShock(
++            CoilShockSpecs(
++                rate_n_m=self.specs.shock_stiffness,
++                stroke_mm=self.specs.shock_stroke,
++            ),
++            legacy_behavior=self.physics_config.physics_mode == "legacy",
++        )
+         self.applier = SuspensionForceApplier(
+             self.model,
+             self.controller,
+-            CoilShock(
+-                coil_shock.specs if coil_shock is not None else None,
+-                legacy_behavior=self.physics_config.physics_mode == "legacy",
+-            ),
++            resolved_coil,
+             physics_config=self.physics_config,
+         )
+         self.rider_forces = RiderForceApplier(self.model, self.pose)
+         self.contact_query = TerrainContactQuery(self.model)
+         self.resistance = RollingResistance(self.model)
+         self.cruise = CruiseController(self.model, target_speed_kmh=target_speed_kmh)
+         # Crank arm length in metres, for the pedal positions the rider's legs follow.
+         self.crank_length_m = float(self.specs.crank_length) / 1000.0
+         # Inert without articulated legs, so every caller can treat it as always present.
+         self.leg_drive = LegDrive(
+@@ -357,20 +374,21 @@ class RideSimulation:
+         self.brake_source_cruise = False
+         self.brakes.reset()
+         self.resistance.reset()
+         self.stabilizer.reset()
+         self.crash_detector.reset()
+         self.data.time = 0.0
+         self.steps = 0
+         self.force_accumulator.clear()
+         self.last_force_snapshot = None
+         self.last_force_sample = None
++        self.last_constraint_snapshot = None
+         if self.tyre_applier is None:
+             self.contacts = self.contact_query.query(self.model, self.data)
+         else:
+             self.contacts = self.contact_query.query(
+                 self.model, self.data, wheel_load_provider=self.tyre_applier
+             )
+ 
+     def step(
+         self,
+         front_brake_demand: float = 0.0,
+@@ -566,20 +584,26 @@ class RideSimulation:
+             float(self.data.time), self.data.qpos, self.data.qvel,
+             self.force_accumulator.components,
+         )
+         self.last_force_snapshot = (
+             self.last_force_sample.time_s,
+             self.last_force_sample.qpos,
+             self.last_force_sample.qvel,
+             self.last_force_sample.components,
+         )
+         mujoco.mj_step(self.model, self.data)
++        self.last_constraint_snapshot = ConstraintForceSnapshot(
++            self.last_force_sample.time_s,
++            float(self.data.time),
++            self.last_force_sample.qvel,
++            {"shock_solver_limit": shock_joint_limit_qfrc(self.model, self.data)},
++        )
+         self.steps += 1
+ 
+     def _follow_cranks(self) -> None:
+         """
+         Moves the seated rider's pedal interfaces to where the cranks now are.
+ 
+         The crank turns about +y, so the arm built at 3 o'clock sweeps to
+         `(L cos phi, 0, -L sin phi)`: the front pedal drops as the phase advances and the
+         rear pedal, 180 degrees away, rises by the same amount. Only the interface moves; the
+         leg masses stay on their slide coordinates, which is what makes this a bob source
+diff --git a/tests/test_end_stops.py b/tests/test_end_stops.py
+index 111f610..716dc7f 100644
+--- a/tests/test_end_stops.py
++++ b/tests/test_end_stops.py
+@@ -1,16 +1,17 @@
+ """End-stop physics and its physical ride-mode integration."""
+ 
+ import mujoco
+ import numpy as np
+ import pytest
+ 
++from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.mujoco.builder import generate_mujoco_xml
+ from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
+ from bike_sim.physics.model_config import EndStopConfig, SimulationPhysicsConfig
+ from bike_sim.physics.stops import end_stop
+ from bike_sim.sim.ride_sim import RideSimulation
+ from bike_sim.terrain import get_preset
+ 
+ 
+ def test_unloaded_compression_coil_does_not_pull_but_legacy_law_is_preserved():
+     assert CoilShock().compute_spring_force(-4.0) == 0.0
+@@ -154,17 +155,65 @@ def test_stop_configuration_is_immutable_and_reaches_joint_range():
+     assert stop.provenance == "synthetic"
+     with pytest.raises((AttributeError, TypeError)):
+         stop.overtravel_m = 0.02
+ 
+ 
+ def test_stop_reference_deflection_must_precede_solver_limit():
+     with pytest.raises(ValueError, match="overtravel"):
+         EndStopConfig(overtravel_m=0.008, reference_deflection_m=0.010)
+ 
+ 
+-def test_legacy_simulation_routes_supplied_coil_to_legacy_law():
++def test_legacy_simulation_preserves_supplied_coil_mode():
++    coil = CoilShock()
+     sim = RideSimulation(
+-        track=get_preset("flat"), rider="none", coil_shock=CoilShock()
++        track=get_preset("flat"), rider="none", coil_shock=coil
+     )
+     sim.data.qpos[sim.applier.shock_qposadr] = -0.004
+     sim.applier.compute_qfrc(sim.model, sim.data)
++    assert sim.applier.coil_shock is coil
++    assert coil.legacy_behavior is False
++    assert sim.applier.shock_spring_n == 0.0
++
++
++@pytest.mark.parametrize("mode", ["legacy", "physical"])
++def test_explicit_coil_stroke_must_match_compiled_bike_stroke(mode):
++    coil = CoilShock(CoilShockSpecs(stroke_mm=60.0))
++    with pytest.raises(ValueError, match=r"CoilShock.*60\.0.*BikeSpecs.*65\.0"):
++        RideSimulation(
++            track=get_preset("flat"), rider="none", coil_shock=coil,
++            physics_config=SimulationPhysicsConfig(physics_mode=mode),
++        )
++
++
++def test_default_coil_uses_active_bike_stroke_and_rate():
++    specs = BikeSpecs(shock_stroke=60.0, shock_stiffness=120000.0)
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none", specs=specs,
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    assert sim.applier.coil_shock.specs.stroke_mm == pytest.approx(60.0)
++    assert sim.applier.coil_shock.specs.rate_n_m == pytest.approx(120000.0)
++    jid = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT, "shock_stroke")
++    assert tuple(sim.model.jnt_range[jid]) == pytest.approx((-0.010, 0.070))
++
++
++def test_supplied_coil_subclass_keeps_identity_and_custom_force_method():
++    class OffsetCoil(CoilShock):
++        def compute_spring_force(self, stroke_mm):
++            return super().compute_spring_force(stroke_mm) + 123.0
++
++    coil = OffsetCoil(legacy_behavior=True)
++    sim = RideSimulation(track=get_preset("flat"), rider="none", coil_shock=coil)
++    assert sim.applier.coil_shock is coil
++    assert coil.legacy_behavior is True
++    sim.data.qpos[sim.applier.shock_qposadr] = -0.004
++    sim.applier.compute_qfrc(sim.model, sim.data)
++    assert sim.applier.shock_spring_n == pytest.approx(-458.4 + 123.0)
++
++
++def test_ordinary_legacy_simulation_keeps_compiled_range_and_signed_coil():
++    sim = RideSimulation(track=get_preset("flat"), rider="none")
++    jid = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT, "shock_stroke")
++    assert tuple(sim.model.jnt_range[jid]) == pytest.approx((0.0, 0.065))
++    sim.data.qpos[sim.applier.shock_qposadr] = -0.004
++    sim.applier.compute_qfrc(sim.model, sim.data)
+     assert sim.applier.shock_spring_n == pytest.approx(-458.4)
+diff --git a/tests/test_shock_solver_limit.py b/tests/test_shock_solver_limit.py
+new file mode 100644
+index 0000000..6faa342
+--- /dev/null
++++ b/tests/test_shock_solver_limit.py
+@@ -0,0 +1,125 @@
++"""Native shock-limit forces stay separate from explicit suspension writers."""
++
++import mujoco
++import numpy as np
++import pytest
++
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.sim.ride.constraint_forces import (
++    ConstraintForceSnapshot,
++    shock_joint_limit_qfrc,
++)
++from bike_sim.sim.ride.recorder import RideRecorder
++from bike_sim.sim.ride_sim import RideSimulation
++from bike_sim.terrain import get_preset
++
++
++_LIMIT_AND_CONTACT_XML = """
++<mujoco>
++  <option gravity="0 0 0" timestep="0.001"/>
++  <worldbody>
++    <geom name="floor" type="plane" size="1 1 0.1"/>
++    <body pos="0 0 0.05">
++      <joint name="shock_stroke" type="slide" axis="1 0 0" range="-0.01 0.01"/>
++      <geom type="sphere" size="0.1" mass="1"/>
++    </body>
++  </worldbody>
++</mujoco>
++"""
++
++
++def _stepped_isolated_model(shock_position_m: float, shock_velocity_mps: float):
++    model = mujoco.MjModel.from_xml_string(_LIMIT_AND_CONTACT_XML)
++    data = mujoco.MjData(model)
++    data.qpos[0] = shock_position_m
++    data.qvel[0] = shock_velocity_mps
++    mujoco.mj_step(model, data)
++    return model, data
++
++
++def test_native_shock_limit_has_its_own_nonzero_force_and_power():
++    model, data = _stepped_isolated_model(0.02, 1.0)
++    limit_type = mujoco.mjtConstraint.mjCNSTR_LIMIT_JOINT
++    active = [
++        row for row in range(data.nefc)
++        if data.efc_type[row] == limit_type and data.efc_id[row] == 0
++    ]
++    assert len(active) == 1
++    assert data.efc_force[active[0]] > 0.0
++    assert any(data.efc_type[row] != limit_type for row in range(data.nefc))
++
++    qfrc = shock_joint_limit_qfrc(model, data)
++    assert qfrc[0] == pytest.approx(-float(data.efc_force[active[0]]))
++    snapshot = ConstraintForceSnapshot(
++        0.0, float(data.time), np.array([1.0]), {"shock_solver_limit": qfrc}
++    )
++    assert snapshot.powers_w()["shock_solver_limit"] == pytest.approx(qfrc[0])
++    assert snapshot.powers_w()["shock_solver_limit"] < 0.0
++
++
++def test_unrelated_contact_rows_are_not_attributed_to_shock_limit():
++    model, data = _stepped_isolated_model(0.0, 0.0)
++    assert data.nefc > 0
++    assert any(
++        data.efc_type[row] != mujoco.mjtConstraint.mjCNSTR_LIMIT_JOINT
++        and data.efc_force[row] > 0.0
++        for row in range(data.nefc)
++    )
++    np.testing.assert_array_equal(shock_joint_limit_qfrc(model, data), [0.0])
++
++
++def test_physical_step_exposes_poststep_constraint_snapshot_separately():
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    sim.step()
++    assert "shock_solver_limit" not in sim.last_force_sample.components
++    assert "shock_upper_stop" in sim.last_force_sample.components
++    snapshot = sim.last_constraint_snapshot
++    assert snapshot.interval_start_s == pytest.approx(0.0)
++    assert snapshot.interval_end_s == pytest.approx(sim.data.time)
++    assert snapshot.components["shock_solver_limit"].shape == (sim.model.nv,)
++    assert "shock_upper_stop" not in snapshot.components
++
++
++def test_v2_recorder_integrates_poststep_limit_work_for_finished_interval():
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    recorder = RideRecorder(sim)
++    recorder.record(sim)
++    sim.data.qvel[sim.applier.shock_dofadr] = 2.0
++    sim.step()
++    sample = sim.last_force_sample
++    force = np.zeros(sim.model.nv)
++    force[sim.applier.shock_dofadr] = -3.0
++    # Supply a controlled solved-force snapshot at the recorder boundary. The
++    # isolated MuJoCo test above verifies extraction from actual EFC rows.
++    sim.last_constraint_snapshot = ConstraintForceSnapshot(
++        sample.time_s, float(sim.data.time), sample.qvel,
++        {"shock_solver_limit": force},
++    )
++    recorder.record(sim)
++    dt = float(sim.model.opt.timestep)
++    assert recorder.column("shock_solver_limit_power_w")[1] == pytest.approx(-6.0)
++    assert recorder.column("shock_solver_limit_work_j")[1] == pytest.approx(-6.0 * dt)
++    assert recorder.component_work_j["shock_solver_limit"] == pytest.approx(-6.0 * dt)
++
++
++def test_v2_recorder_rejects_constraint_force_from_a_different_interval():
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    sim.data.time = 1000.0
++    recorder = RideRecorder(sim)
++    sim.step()
++    sample = sim.last_force_sample
++    sim.last_constraint_snapshot = ConstraintForceSnapshot(
++        sample.time_s, float(sim.data.time + sim.model.opt.timestep), sample.qvel,
++        sim.last_constraint_snapshot.components,
++    )
++    with pytest.raises(ValueError, match="constraint snapshot"):
++        recorder.record(sim)

@@ -1,0 +1,86 @@
+# Review package: 5eef51e..HEAD
+
+## Commits
+bfd4f9f feat(visual): battery-box down tube from measured envelope
+
+## Files changed
+ export_mujoco.py            | 21 ++++++++++++++++++---
+ tests/test_frame_visuals.py |  9 +++++++++
+ 2 files changed, 27 insertions(+), 3 deletions(-)
+
+## Diff
+diff --git a/export_mujoco.py b/export_mujoco.py
+index d06624a..c602329 100644
+--- a/export_mujoco.py
++++ b/export_mujoco.py
+@@ -696,28 +696,43 @@ def generate_mujoco_xml(
+         "geom",
+         {
+             "name": "geom_crank_arms",
+             "type": "cylinder",
+             "fromto": "0 -0.090 0 0 0.090 0",
+             "size": "0.016",
+             "mass": f"{mass_specs.crank_pedals_mass:.2f}",
+             "material": "mat_metal",
+         },
+     )
++    # Down tube is a battery box on this e-bike, not a tube. Envelope measured
++    # from the reference silhouette: X 150..266 mm at Z = 255, X 208..305 at Z = 323.
++    # AUTHORED STYLING - the front triangle's exact casting shape is not
++    # measurable from the photo (the silhouette there is white-on-white and
++    # only coarsely readable); the envelope above is an approximate basis for
++    # this box, not a precise measurement, and the box does not attempt to
++    # reproduce the envelope's taper between the two measured heights.
++    downtube_mid = (BB + P_HT_bot) / 2.0
++    downtube_vec = P_HT_bot - BB
++    # arctan2 returns radians; the compiler is configured with angle="degree"
++    # (see module docstring and every other euler-bearing geom in this file,
++    # e.g. the obstacle ramps' angle_deg variables), so this must be converted
++    # before being written into the `euler` attribute.
++    downtube_angle_deg = float(np.degrees(np.arctan2(downtube_vec[2], downtube_vec[0])))
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_downtube",
+-            "type": "capsule",
+-            "fromto": _format_fromto(BB, P_HT_bot),
+-            "size": "0.028",
++            "type": "box",
++            "pos": _format_vec(downtube_mid),
++            "size": f"{float(np.linalg.norm(downtube_vec)) / 2.0:.6f} 0.038 0.058",
++            "euler": f"0 {-downtube_angle_deg:.6f} 0",
+             "mass": "0.60",
+             "material": "mat_frame",
+         },
+     )
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_headtube",
+             "type": "cylinder",
+diff --git a/tests/test_frame_visuals.py b/tests/test_frame_visuals.py
+index 4f4f8b3..169be88 100644
+--- a/tests/test_frame_visuals.py
++++ b/tests/test_frame_visuals.py
+@@ -177,10 +177,19 @@ def test_shock_body_geometry_com_has_not_drifted_unnoticed(root):
+         total_mass += mass
+     com /= total_mass
+ 
+     assert np.allclose(com, SHOCK_BODY_GEOMETRY_COM_M, atol=1e-6), (
+         f"shock_body's geometry-derived CoM {com} has moved from the Task-5 "
+         f"snapshot {SHOCK_BODY_GEOMETRY_COM_M}; a length constant changed. "
+         "Decide whether export_mujoco.py's frozen shock_body <inertial> pin "
+         "needs recomputing (see STALE-PIN WARNING there), then refresh "
+         "SHOCK_BODY_GEOMETRY_COM_M above."
+     )
++
++
++def test_down_tube_is_a_battery_box_not_a_thin_tube(root):
++    downtube = next(g for g in root.iter("geom") if g.get("name") == "geom_downtube")
++    assert downtube.get("type") == "box"
++    half_extents = [float(v) for v in downtube.get("size").split()]
++    # Measured envelope is ~116 mm across at Z = 255 mm, so the largest cross
++    # section half-extent must be well above the old 28 mm capsule radius.
++    assert max(half_extents) >= 0.055

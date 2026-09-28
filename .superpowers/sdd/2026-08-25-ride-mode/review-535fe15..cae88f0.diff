@@ -1,0 +1,1995 @@
+# Review package: 535fe15..cae88f0
+
+## Commits
+cae88f0 feat(sim): add ride-mode cruise, brakes, rolling resistance and virtual rider
+
+## Files changed
+ src/bike_sim/sim/ride/__init__.py      |  17 +-
+ src/bike_sim/sim/ride/braking.py       | 115 +++++++
+ src/bike_sim/sim/ride/contacts.py      | 258 +++++++++++++++
+ src/bike_sim/sim/ride/cruise.py        | 192 +++++++++++
+ src/bike_sim/sim/ride/resistance.py    | 124 ++++++++
+ src/bike_sim/sim/ride/virtual_rider.py | 264 ++++++++++++++++
+ src/bike_sim/sim/ride/wheels.py        | 100 ++++++
+ src/bike_sim/sim/ride_sim.py           | 285 +++++++++++++++++
+ tests/test_ride_controllers.py         | 559 +++++++++++++++++++++++++++++++++
+ 9 files changed, 1913 insertions(+), 1 deletion(-)
+
+## Diff
+diff --git a/src/bike_sim/sim/ride/__init__.py b/src/bike_sim/sim/ride/__init__.py
+index 6d200c4..cc40e17 100644
+--- a/src/bike_sim/sim/ride/__init__.py
++++ b/src/bike_sim/sim/ride/__init__.py
+@@ -1,11 +1,26 @@
+ """
+ Ride-Mode Runtime Package.
+ 
+ The per-step force writers of the free-rolling ride mode. Each one is a small object that
+ reads MuJoCo state, asks a pure calculator for a force, and writes it into `qfrc_applied`
+ or `ctrl`; the orchestrator that drives them lives in `sim/ride_sim.py`.
+ """
+ 
++from bike_sim.sim.ride.braking import BrakeController
++from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
++from bike_sim.sim.ride.cruise import CruiseController
+ from bike_sim.sim.ride.forces import SuspensionForceApplier
++from bike_sim.sim.ride.resistance import RollingResistance
++from bike_sim.sim.ride.virtual_rider import CrashDetector, CrashEvent, PitchStabilizer
+ 
+-__all__ = ["SuspensionForceApplier"]
++__all__ = [
++    "SuspensionForceApplier",
++    "TerrainContacts",
++    "TerrainContactQuery",
++    "RollingResistance",
++    "CruiseController",
++    "BrakeController",
++    "PitchStabilizer",
++    "CrashDetector",
++    "CrashEvent",
++]
+diff --git a/src/bike_sim/sim/ride/braking.py b/src/bike_sim/sim/ride/braking.py
+new file mode 100644
+index 0000000..587610e
+--- /dev/null
++++ b/src/bike_sim/sim/ride/braking.py
+@@ -0,0 +1,115 @@
++"""
++Ride-Mode Brake Torque.
++
++Turns a per-wheel demand in [0, 1] into the motor torque the `front_brake` and `rear_brake`
++actuators are driven with, at a ceiling of 200 N.m per wheel (docs/RIDE.md section 6).
++
++The two actuators carry a two-sided `ctrlrange` precisely because the sign is computed
++here: the torque opposes the wheel's current rotation and tapers to zero as the wheel stops,
++so a held brake at a standstill does nothing instead of reversing the bike.
++"""
++
++from typing import Tuple
++
++import mujoco
++
++from bike_sim.sim.ride.wheels import (
++    WheelSpin,
++    opposing_torque,
++    resolve_wheel_spin,
++)
++
++# Per-wheel ceiling from docs/RIDE.md section 6, and the two-sided actuator ctrlrange.
++BRAKE_TORQUE_CEILING_NM = 200.0
++
++# Wheel speed below which the brake fades out. 1 rad/s is 0.35 m/s at either wheel: slow
++# enough that the fade is invisible in a braking event, wide enough that the last part of a
++# stop settles instead of chattering about zero.
++BRAKE_TAPER_RADPS = 1.0
++
++
++class BrakeController:
++    """
++    Computes sign-aware front and rear brake torques from a demand per wheel.
++
++    The controller is stateless between steps apart from the last torques it reported, which
++    it keeps so telemetry and the HUD can read them without recomputing.
++    """
++
++    def __init__(
++        self,
++        model: mujoco.MjModel,
++        torque_ceiling_nm: float = BRAKE_TORQUE_CEILING_NM,
++        taper_radps: float = BRAKE_TAPER_RADPS,
++    ) -> None:
++        """
++        Args:
++            model: Compiled ride-mode model.
++            torque_ceiling_nm: Torque at full demand, in N.m per wheel.
++            taper_radps: Wheel speed over which the torque ramps in from zero.
++
++        Raises:
++            ValueError: If the ceiling is negative or the taper band is not positive.
++        """
++        if torque_ceiling_nm < 0.0:
++            raise ValueError(f"torque_ceiling_nm must be non-negative, got {torque_ceiling_nm}")
++        if taper_radps <= 0.0:
++            raise ValueError(f"taper_radps must be positive, got {taper_radps}")
++
++        self.torque_ceiling_nm = float(torque_ceiling_nm)
++        self.taper_radps = float(taper_radps)
++        self.front_wheel: WheelSpin = resolve_wheel_spin(model, "front_wheel_spin", "geom_front_contact")
++        self.rear_wheel: WheelSpin = resolve_wheel_spin(model, "rear_wheel_spin", "geom_rear_contact")
++
++        self.front_torque_nm = 0.0
++        self.rear_torque_nm = 0.0
++
++    def compute(
++        self,
++        data: mujoco.MjData,
++        front_demand: float,
++        rear_demand: float,
++    ) -> Tuple[float, float]:
++        """
++        Computes the brake torque for each wheel at the current state.
++
++        Args:
++            data: Simulation state, read for both wheel angular velocities.
++            front_demand: Front brake lever position, clamped into [0, 1].
++            rear_demand: Rear brake lever position, clamped into [0, 1].
++
++        Returns:
++            Tuple of (front torque, rear torque) in N.m, ready to be written to the
++            `front_brake` and `rear_brake` actuators.
++        """
++        self.front_torque_nm = self._wheel_torque(data, self.front_wheel, front_demand)
++        self.rear_torque_nm = self._wheel_torque(data, self.rear_wheel, rear_demand)
++        return self.front_torque_nm, self.rear_torque_nm
++
++    def _wheel_torque(self, data: mujoco.MjData, wheel: WheelSpin, demand: float) -> float:
++        """
++        Computes one wheel's brake torque.
++
++        Args:
++            data: Simulation state.
++            wheel: Wheel-spin handle to brake.
++            demand: Lever position, clamped into [0, 1] rather than rejected: the
++                interactive brake-strength control walks up to the ends of the range.
++
++        Returns:
++            Generalized torque in N.m, opposing the wheel's rotation.
++        """
++        clamped = min(max(float(demand), 0.0), 1.0)
++        return opposing_torque(
++            magnitude_nm=clamped * self.torque_ceiling_nm,
++            omega_radps=wheel.omega_radps(data),
++            taper_radps=self.taper_radps,
++        )
++
++    def reset(self) -> None:
++        """Clears the last reported torques, so a fresh run does not read a stale pair."""
++        self.front_torque_nm = 0.0
++        self.rear_torque_nm = 0.0
++
++
++__all__ = ["BrakeController", "BRAKE_TORQUE_CEILING_NM", "BRAKE_TAPER_RADPS"]
+diff --git a/src/bike_sim/sim/ride/contacts.py b/src/bike_sim/sim/ride/contacts.py
+new file mode 100644
+index 0000000..576acbb
+--- /dev/null
++++ b/src/bike_sim/sim/ride/contacts.py
+@@ -0,0 +1,258 @@
++"""
++Ride-Mode Terrain Contact Queries.
++
++One place that answers, per step, which of the tracked geoms are touching the road and with
++what normal load. Cruise gating, rolling resistance, the virtual rider and the crash
++detector all need that answer, and all four must see the *same* answer within a step, so
++the query is made once per step and the snapshot is passed around.
++
++The normal load comes from `mj_contactForce`, not from a static axle-load estimate. Rolling
++resistance is proportional to the instantaneous load (docs/RIDE.md section 4), and the whole
++reason for modelling it that way is that the load is not static: a G-out roughly doubles it
++and a crest takes it to zero.
++
++The forces read here are those of the last `mj_forward`/`mj_step`, so within one control step
++they lag the state by a single 0.5 ms timestep. That is the normal cost of reading constraint
++forces from a controller and is negligible against every time constant in the model.
++
++**Single-step collision dropouts are bridged.** MuJoCo's sphere-heightfield collision
++intermittently reports no contact at all for a wheel that is demonstrably loaded: the sphere
++rests about 10 um into the surface, so whether a prism registers a contact is decided at the
++edge of floating-point resolution. Measured over the `single_edge` run-up, one wheel drops
++out on 13 % of steps and both drop out simultaneously on 1.7 % of them, for exactly one step
++on flat road and for at most four in the aftermath of the square edge. Taken at face value
++that makes the bike briefly airborne on flat ground, which gates the drive torque off and
++fires the virtual rider. Each wheel's last known load is therefore held across a short gap;
++see `CONTACT_DROPOUT_STEPS`.
++"""
++
++from dataclasses import dataclass
++from typing import Dict, Tuple
++
++import mujoco
++import numpy as np
++
++# Worldbody collision geoms that make up the ground: the road heightfield and the runaway
++# catch plane far below it.
++TERRAIN_GEOMS: Tuple[str, ...] = ("terrain", "catch_plane")
++
++# Contact sphere of each wheel, and the bar that a crash puts into the dirt.
++FRONT_CONTACT_GEOM = "geom_front_contact"
++REAR_CONTACT_GEOM = "geom_rear_contact"
++HANDLEBAR_GEOM = "geom_handlebar"
++
++# Normal load below which a wheel counts as off the ground. MuJoCo registers a contact as
++# soon as the geoms are within margin, so a wheel that has just left the road can still own
++# a contact row carrying nothing. One newton is 0.1 % of the 1024 N static weight -- far
++# below any load that transmits usable traction, far above solver noise.
++CONTACT_LOAD_THRESHOLD_N = 1.0
++
++# Consecutive unloaded steps a wheel is allowed before it counts as airborne. Measured
++# dropouts are one step long on flat ground and at most four in the aftermath of the square
++# edge; the genuine flight phase over that 90 mm edge lasts 220 steps. Ten steps -- 5 ms --
++# is an order of magnitude clear of both, so it removes every dropout without blunting the
++# start of a real flight by more than 2 % of its duration.
++CONTACT_DROPOUT_STEPS = 10
++
++
++@dataclass(frozen=True)
++class TerrainContacts:
++    """
++    Snapshot of the bike's contact with the road at one instant.
++
++    Attributes:
++        front_load_n: Normal force on the front contact sphere, in newtons, held across a
++            collision dropout shorter than `CONTACT_DROPOUT_STEPS`.
++        rear_load_n: Normal force on the rear contact sphere, in newtons, held the same way.
++        handlebar_load_n: Normal force on the handlebar geom, in newtons. Not held: a
++            handlebar contact lasts far longer than a dropout, and a missed step only delays
++            the crash detector by 0.5 ms.
++    """
++
++    front_load_n: float
++    rear_load_n: float
++    handlebar_load_n: float
++
++    @property
++    def front_in_contact(self) -> bool:
++        """Whether the front wheel is carrying load."""
++        return self.front_load_n > CONTACT_LOAD_THRESHOLD_N
++
++    @property
++    def rear_in_contact(self) -> bool:
++        """Whether the rear wheel is carrying load."""
++        return self.rear_load_n > CONTACT_LOAD_THRESHOLD_N
++
++    @property
++    def airborne(self) -> bool:
++        """Whether both wheels are off the ground, which is the virtual rider's gate."""
++        return not self.front_in_contact and not self.rear_in_contact
++
++    @property
++    def handlebar_in_contact(self) -> bool:
++        """Whether the handlebar is touching the ground, which the crash detector treats as a crash."""
++        return self.handlebar_load_n > CONTACT_LOAD_THRESHOLD_N
++
++
++class TerrainContactQuery:
++    """
++    Sums the normal contact load on each tracked geom against the terrain.
++
++    Geom ids are resolved once at construction; the per-step query is a single pass over
++    `data.contact` with a reused force buffer, so it allocates nothing beyond the snapshot.
++
++    The query is stateful, because bridging a collision dropout requires remembering the
++    previous steps. Advance it once per simulation step -- querying the same state twice
++    charges it twice against the dropout budget -- and `reset` it when the run restarts.
++    """
++
++    def __init__(self, model: mujoco.MjModel, dropout_steps: int = CONTACT_DROPOUT_STEPS) -> None:
++        """
++        Args:
++            model: Compiled ride-mode model.
++            dropout_steps: Consecutive unloaded steps a wheel may have before it is reported
++                as airborne.
++
++        Raises:
++            ValueError: If `dropout_steps` is negative, or a tracked geom is missing.
++        """
++        if dropout_steps < 0:
++            raise ValueError(f"dropout_steps must be non-negative, got {dropout_steps}")
++
++        self.terrain_ids = frozenset(_geom_id(model, name) for name in TERRAIN_GEOMS)
++        self.front_id = _geom_id(model, FRONT_CONTACT_GEOM)
++        self.rear_id = _geom_id(model, REAR_CONTACT_GEOM)
++        self.handlebar_id = _geom_id(model, HANDLEBAR_GEOM)
++
++        self._force = np.zeros(6, dtype=float)
++        self._front_load = _BridgedLoad(dropout_steps)
++        self._rear_load = _BridgedLoad(dropout_steps)
++
++    def query(self, model: mujoco.MjModel, data: mujoco.MjData) -> TerrainContacts:
++        """
++        Reads the current contact normal load on each tracked geom.
++
++        Args:
++            model: Compiled ride-mode model.
++            data: Simulation state, after a `mj_forward` or `mj_step` has populated its
++                contacts and constraint forces.
++
++        Returns:
++            The load on each tracked geom, with the two wheel loads held across a short
++            collision dropout.
++        """
++        raw = self._raw_loads(model, data)
++        return TerrainContacts(
++            front_load_n=self._front_load.update(raw[self.front_id]),
++            rear_load_n=self._rear_load.update(raw[self.rear_id]),
++            handlebar_load_n=raw[self.handlebar_id],
++        )
++
++    def reset(self) -> None:
++        """Discards the held loads, so a fresh run does not start off the previous one."""
++        self._front_load.reset()
++        self._rear_load.reset()
++
++    def _raw_loads(self, model: mujoco.MjModel, data: mujoco.MjData) -> Dict[int, float]:
++        """
++        Sums the unfiltered normal load on each tracked geom for the current step.
++
++        Args:
++            model: Compiled ride-mode model.
++            data: Simulation state with populated contacts.
++
++        Returns:
++            Normal load in newtons keyed by geom id. A wheel with several contact rows
++            against adjacent heightfield prisms is summed over all of them: MuJoCo routinely
++            loads only one row of such a group and leaves its siblings at exactly zero.
++        """
++        loads: Dict[int, float] = {self.front_id: 0.0, self.rear_id: 0.0, self.handlebar_id: 0.0}
++
++        for i in range(data.ncon):
++            contact = data.contact[i]
++            geom1, geom2 = int(contact.geom1), int(contact.geom2)
++            if geom1 in self.terrain_ids:
++                tracked = geom2
++            elif geom2 in self.terrain_ids:
++                tracked = geom1
++            else:
++                continue
++            if tracked not in loads:
++                continue
++            mujoco.mj_contactForce(model, data, i, self._force)
++            loads[tracked] += abs(float(self._force[0]))
++
++        return loads
++
++
++class _BridgedLoad:
++    """
++    One wheel's contact load, held across a run of steps that report nothing.
++
++    Attributes:
++        dropout_steps: Consecutive unloaded steps tolerated before the load is released.
++        held_load_n: Load currently being reported, in newtons.
++        unloaded_steps: Length of the current run of unloaded steps.
++    """
++
++    def __init__(self, dropout_steps: int) -> None:
++        self.dropout_steps = int(dropout_steps)
++        self.held_load_n = 0.0
++        self.unloaded_steps = 0
++
++    def update(self, raw_load_n: float) -> float:
++        """
++        Folds this step's raw load into the held value.
++
++        Args:
++            raw_load_n: Load summed from this step's contact rows, in newtons.
++
++        Returns:
++            The load to report for this step.
++        """
++        if raw_load_n > CONTACT_LOAD_THRESHOLD_N:
++            self.held_load_n = raw_load_n
++            self.unloaded_steps = 0
++        else:
++            self.unloaded_steps += 1
++            if self.unloaded_steps > self.dropout_steps:
++                self.held_load_n = 0.0
++        return self.held_load_n
++
++    def reset(self) -> None:
++        """Clears the held load and the dropout counter."""
++        self.held_load_n = 0.0
++        self.unloaded_steps = 0
++
++
++def _geom_id(model: mujoco.MjModel, geom_name: str) -> int:
++    """
++    Resolves a named geom's id.
++
++    Args:
++        model: Compiled MuJoCo model.
++        geom_name: Name of the geom to resolve.
++
++    Returns:
++        The geom's index in the model.
++
++    Raises:
++        ValueError: If the model has no geom of that name, which would leave the contact
++            query silently reporting zero load rather than the load it was asked for.
++    """
++    gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, geom_name)
++    if gid < 0:
++        raise ValueError(f"model has no geom '{geom_name}'; ride-mode contact queries need it")
++    return int(gid)
++
++
++__all__ = [
++    "TerrainContacts",
++    "TerrainContactQuery",
++    "TERRAIN_GEOMS",
++    "FRONT_CONTACT_GEOM",
++    "REAR_CONTACT_GEOM",
++    "HANDLEBAR_GEOM",
++    "CONTACT_LOAD_THRESHOLD_N",
++    "CONTACT_DROPOUT_STEPS",
++]
+diff --git a/src/bike_sim/sim/ride/cruise.py b/src/bike_sim/sim/ride/cruise.py
+new file mode 100644
+index 0000000..f8fe1fc
+--- /dev/null
++++ b/src/bike_sim/sim/ride/cruise.py
+@@ -0,0 +1,192 @@
++"""
++Ride-Mode Cruise Control.
++
++A PI regulator on **chassis longitudinal velocity** (`qvel[root_x]`), producing the rear
++wheel torque the `rear_drive` actuator is driven with, clamped to +/-150 N.m
++(docs/RIDE.md section 6).
++
++**Not on wheel angular velocity.** Regulating wheel speed would command torque into a wheel
++that is airborne or slipping. With nothing to react against, the loop would see no speed
++response, keep integrating, spin the wheel up without bound, and produce a violent
++re-engagement the moment the tyre touched down. Closing on chassis speed makes the loop
++blind to wheel spin-up by construction; the airborne case is then handled by gating the
++torque off entirely while the rear wheel carries no load.
++
++Torque is allowed to go negative, which is the motor holding the target speed on a descent
++rather than a brake: the `rear_drive` actuator's `ctrlrange` is two-sided for exactly that.
++The wheel brakes are a separate, sign-aware path (`braking.py`).
++"""
++
++import mujoco
++
++from bike_sim.sim.ride.contacts import TerrainContacts
++
++# docs/RIDE.md section 6: the default target and the adjustable band around it.
++DEFAULT_TARGET_SPEED_KMH = 25.0
++MIN_TARGET_SPEED_KMH = 15.0
++MAX_TARGET_SPEED_KMH = 45.0
++
++KMH_PER_MPS = 3.6
++
++# Rear-wheel drive torque ceiling, matching the `rear_drive` actuator's ctrlrange.
++DRIVE_TORQUE_CEILING_NM = 150.0
++
++# Gains, in N.m per (m/s) and N.m per (m/s . s). The plant is the whole 104.35 kg system
++# pushed through the 0.352 m rear wheel: a torque T accelerates it at T / M with
++# M = 36.7 kg.m. That makes the closed loop second order, with omega_n = sqrt(ki / M) and
++# zeta = kp / (2 sqrt(ki M)), so the pair below puts it at 2.0 rad/s and zeta = 1.21 --
++# overdamped, settling inside 3 s.
++#
++# The gains are deliberately stiff enough that the proportional term alone nearly holds
++# speed: the ~6 N.m needed against rolling resistance and joint damping costs only 0.03 m/s
++# of droop, which leaves the integrator almost nothing to accumulate. A softer pair (kp = 60,
++# ki = 20) is equally stable on paper but has omega_n = 0.73 rad/s, and a 40 m track is then
++# over before the integrator has finished unwinding the run-up -- measured as a 3 % speed
++# overshoot still present at the finish line.
++DEFAULT_KP_NM_PER_MPS = 180.0
++DEFAULT_KI_NM_PER_MPS_S = 150.0
++
++
++class CruiseController:
++    """
++    PI speed regulator producing a rear-wheel drive torque.
++
++    Integrator wind-up is handled in two places: the accumulator is clamped so that its own
++    contribution can never exceed the torque ceiling, and integration is suspended whenever
++    the output is saturated in the direction the error would push it further, or whenever
++    the torque is gated off because the rear wheel is airborne.
++    """
++
++    def __init__(
++        self,
++        model: mujoco.MjModel,
++        target_speed_kmh: float = DEFAULT_TARGET_SPEED_KMH,
++        kp_nm_per_mps: float = DEFAULT_KP_NM_PER_MPS,
++        ki_nm_per_mps_s: float = DEFAULT_KI_NM_PER_MPS_S,
++        torque_ceiling_nm: float = DRIVE_TORQUE_CEILING_NM,
++    ) -> None:
++        """
++        Args:
++            model: Compiled ride-mode model, used to resolve the `root_x` coordinate.
++            target_speed_kmh: Initial cruise target, inside the 15-45 km/h band.
++            kp_nm_per_mps: Proportional gain.
++            ki_nm_per_mps_s: Integral gain.
++            torque_ceiling_nm: Symmetric output clamp, in N.m at the rear wheel.
++
++        Raises:
++            ValueError: If a gain or the ceiling is not positive, if `root_x` is missing, or
++                if the target speed is outside the adjustable band.
++        """
++        if kp_nm_per_mps <= 0.0 or ki_nm_per_mps_s <= 0.0:
++            raise ValueError(
++                f"cruise gains must be positive, got kp={kp_nm_per_mps}, ki={ki_nm_per_mps_s}"
++            )
++        if torque_ceiling_nm <= 0.0:
++            raise ValueError(f"torque_ceiling_nm must be positive, got {torque_ceiling_nm}")
++
++        jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_x")
++        if jid < 0:
++            raise ValueError("model has no joint 'root_x'; cruise control regulates chassis speed")
++        self.root_x_dofadr = int(model.jnt_dofadr[jid])
++
++        self.kp_nm_per_mps = float(kp_nm_per_mps)
++        self.ki_nm_per_mps_s = float(ki_nm_per_mps_s)
++        self.torque_ceiling_nm = float(torque_ceiling_nm)
++        self.integral_mps_s = 0.0
++        self.torque_nm = 0.0
++        self.engaged = False
++
++        self._target_speed_mps = 0.0
++        self.target_speed_kmh = target_speed_kmh
++
++    @property
++    def target_speed_kmh(self) -> float:
++        """Cruise target in km/h."""
++        return self._target_speed_mps * KMH_PER_MPS
++
++    @target_speed_kmh.setter
++    def target_speed_kmh(self, value: float) -> None:
++        """
++        Sets the cruise target.
++
++        Args:
++            value: New target in km/h.
++
++        Raises:
++            ValueError: If the target is outside the 15-45 km/h band of section 6. The band
++                is the range over which the shipped track's kicker works; a target outside
++                it is a mis-specified experiment, not a clamp to apply silently.
++        """
++        if not MIN_TARGET_SPEED_KMH <= value <= MAX_TARGET_SPEED_KMH:
++            raise ValueError(
++                f"target speed {value:.1f} km/h is outside the adjustable band "
++                f"[{MIN_TARGET_SPEED_KMH:.0f}, {MAX_TARGET_SPEED_KMH:.0f}] km/h"
++            )
++        self._target_speed_mps = float(value) / KMH_PER_MPS
++
++    @property
++    def target_speed_mps(self) -> float:
++        """Cruise target in m/s."""
++        return self._target_speed_mps
++
++    def compute(
++        self,
++        model: mujoco.MjModel,
++        data: mujoco.MjData,
++        contacts: TerrainContacts,
++    ) -> float:
++        """
++        Computes the rear-wheel drive torque for the current state.
++
++        Args:
++            model: Compiled ride-mode model, read for the integration timestep.
++            data: Simulation state, read for the chassis longitudinal velocity.
++            contacts: This step's contact snapshot; the torque is gated off while the rear
++                wheel carries no load.
++
++        Returns:
++            Drive torque in N.m for the `rear_drive` actuator, within +/- the ceiling.
++        """
++        self.engaged = contacts.rear_in_contact
++        error_mps = self._target_speed_mps - float(data.qvel[self.root_x_dofadr])
++
++        if not self.engaged:
++            # A gated step contributes nothing to the integral: accumulating error while the
++            # torque cannot be delivered is precisely the wind-up that lands violently.
++            self.torque_nm = 0.0
++            return self.torque_nm
++
++        proportional_nm = self.kp_nm_per_mps * error_mps
++        demand_nm = proportional_nm + self.ki_nm_per_mps_s * self.integral_mps_s
++        pushing_further_into_saturation = (
++            abs(demand_nm) >= self.torque_ceiling_nm and (demand_nm > 0.0) == (error_mps > 0.0)
++        )
++        if not pushing_further_into_saturation:
++            self.integral_mps_s = _clamp(
++                self.integral_mps_s + error_mps * float(model.opt.timestep),
++                self.torque_ceiling_nm / self.ki_nm_per_mps_s,
++            )
++            demand_nm = proportional_nm + self.ki_nm_per_mps_s * self.integral_mps_s
++
++        self.torque_nm = _clamp(demand_nm, self.torque_ceiling_nm)
++        return self.torque_nm
++
++    def reset(self) -> None:
++        """Clears the integrator and the last reported torque for a fresh run."""
++        self.integral_mps_s = 0.0
++        self.torque_nm = 0.0
++        self.engaged = False
++
++
++def _clamp(value: float, limit: float) -> float:
++    """Clamps a value symmetrically into [-limit, +limit]."""
++    return max(-limit, min(limit, value))
++
++
++__all__ = [
++    "CruiseController",
++    "DEFAULT_TARGET_SPEED_KMH",
++    "MIN_TARGET_SPEED_KMH",
++    "MAX_TARGET_SPEED_KMH",
++    "DRIVE_TORQUE_CEILING_NM",
++]
+diff --git a/src/bike_sim/sim/ride/resistance.py b/src/bike_sim/sim/ride/resistance.py
+new file mode 100644
+index 0000000..e475d7b
+--- /dev/null
++++ b/src/bike_sim/sim/ride/resistance.py
+@@ -0,0 +1,124 @@
++"""
++Ride-Mode Rolling Resistance.
++
++Applies a resistive torque to each wheel-spin coordinate proportional to that wheel's
++*instantaneous* normal contact load, with `Crr = 0.015` (docs/RIDE.md section 4).
++
++The load-dependence is the whole point. The wheel-spin joints already carry constant MJCF
++damping, which is a fixed loss and therefore cannot represent a resistance that doubles in
++a G-out and disappears over a crest, so the load-proportional part is applied explicitly
++here from `mj_contactForce`.
++
++**No aerodynamic term.** Section 4 omits drag deliberately: at 25 km/h that is roughly 13 N
++and 90 W of missing loss, which makes absolute wheel power about a quarter low and coast-down
++optimistic, and which is identical across runs so that comparisons between suspension
++settings are unaffected.
++
++`qfrc_applied` is never cleared by MuJoCo, so both wheel torques are assigned -- not
++accumulated -- on every step, including the steps where they are zero. The two wheel-spin
++DOFs have no other `qfrc_applied` writer in ride mode, which is what makes assignment
++correct here.
++"""
++
++import mujoco
++
++from bike_sim.sim.ride.contacts import TerrainContacts
++from bike_sim.sim.ride.wheels import (
++    WheelSpin,
++    opposing_torque,
++    resolve_wheel_spin,
++)
++
++# Coefficient of rolling resistance, docs/RIDE.md section 4.
++CRR = 0.015
++
++# Wheel speed over which the resistance ramps in from zero. Narrower than the brake taper
++# because rolling resistance is a small torque -- 2.8 N.m at the solved static rear contact
++# load of 525 N -- that only needs to stop flipping sign about zero, not to stage a stop.
++ROLLING_TAPER_RADPS = 0.2
++
++
++class RollingResistance:
++    """
++    Writes the load-proportional rolling-resistance torque to both wheel-spin DOFs.
++
++    Keeps the last torque and load per wheel so telemetry can report the loss without
++    recomputing it.
++    """
++
++    def __init__(
++        self,
++        model: mujoco.MjModel,
++        crr: float = CRR,
++        taper_radps: float = ROLLING_TAPER_RADPS,
++    ) -> None:
++        """
++        Args:
++            model: Compiled ride-mode model.
++            crr: Coefficient of rolling resistance.
++            taper_radps: Wheel speed over which the torque ramps in from zero.
++
++        Raises:
++            ValueError: If `crr` is negative or the taper band is not positive.
++        """
++        if crr < 0.0:
++            raise ValueError(f"crr must be non-negative, got {crr}")
++        if taper_radps <= 0.0:
++            raise ValueError(f"taper_radps must be positive, got {taper_radps}")
++
++        self.crr = float(crr)
++        self.taper_radps = float(taper_radps)
++        self.front_wheel: WheelSpin = resolve_wheel_spin(model, "front_wheel_spin", "geom_front_contact")
++        self.rear_wheel: WheelSpin = resolve_wheel_spin(model, "rear_wheel_spin", "geom_rear_contact")
++
++        self.front_torque_nm = 0.0
++        self.rear_torque_nm = 0.0
++
++    def apply(
++        self,
++        model: mujoco.MjModel,
++        data: mujoco.MjData,
++        contacts: TerrainContacts,
++    ) -> None:
++        """
++        Computes both rolling-resistance torques and writes them into `qfrc_applied`.
++
++        Args:
++            model: Compiled ride-mode model. Unused -- the addresses were cached at
++                construction -- but kept so every ride-mode force writer shares one
++                signature.
++            data: Simulation state, written at the two wheel-spin DOFs.
++            contacts: This step's contact snapshot, supplying each wheel's normal load.
++        """
++        self.front_torque_nm = self._wheel_torque(data, self.front_wheel, contacts.front_load_n)
++        self.rear_torque_nm = self._wheel_torque(data, self.rear_wheel, contacts.rear_load_n)
++
++        data.qfrc_applied[self.front_wheel.dofadr] = self.front_torque_nm
++        data.qfrc_applied[self.rear_wheel.dofadr] = self.rear_torque_nm
++
++    def _wheel_torque(self, data: mujoco.MjData, wheel: WheelSpin, load_n: float) -> float:
++        """
++        Computes one wheel's rolling-resistance torque.
++
++        Args:
++            data: Simulation state.
++            wheel: Wheel-spin handle.
++            load_n: Normal contact load on that wheel, in newtons.
++
++        Returns:
++            Generalized torque in N.m, opposing the wheel's rotation. An airborne wheel
++            carries no load and therefore no resistance.
++        """
++        return opposing_torque(
++            magnitude_nm=self.crr * max(load_n, 0.0) * wheel.radius_m,
++            omega_radps=wheel.omega_radps(data),
++            taper_radps=self.taper_radps,
++        )
++
++    def reset(self) -> None:
++        """Clears the last reported torques, so a fresh run does not read a stale pair."""
++        self.front_torque_nm = 0.0
++        self.rear_torque_nm = 0.0
++
++
++__all__ = ["RollingResistance", "CRR", "ROLLING_TAPER_RADPS"]
+diff --git a/src/bike_sim/sim/ride/virtual_rider.py b/src/bike_sim/sim/ride/virtual_rider.py
+new file mode 100644
+index 0000000..fc5357c
+--- /dev/null
++++ b/src/bike_sim/sim/ride/virtual_rider.py
+@@ -0,0 +1,264 @@
++"""
++Ride-Mode Virtual Rider.
++
++Two independent pieces, deliberately not merged: a pitch stabilizer that manages attitude
++in flight, and a crash detector that judges the run. A stabilized run is not the same thing
++as a successful one, so the detector never consults the stabilizer (docs/RIDE.md section 7).
++
++**The stabilizer's moment has no reaction body.** The rider is lumped rigidly into `frame`,
++so a moment written onto `root_pitch` is applied against the world: it injects angular
++momentum, which is the single most significant non-physicality in the model. It is therefore
++instrumented rather than hidden -- the accumulated angular impulse and the accumulated work
++are carried here so that section 8 can report the rider as an explicit source on its own
++line, never folded into "the physics".
++
++`qfrc_applied` is never cleared by MuJoCo, so the pitch DOF is assigned on **every** step,
++including the steps where the moment is zero. A stabilizer that wrote only while airborne
++would leave its last moment latched in after touchdown and keep applying it for the rest of
++the run.
++"""
++
++from dataclasses import dataclass
++from math import degrees, radians
++from typing import Optional, Tuple
++
++import mujoco
++
++from bike_sim.sim.ride.contacts import TerrainContacts
++
++# Moment ceiling from docs/RIDE.md section 7: the order of magnitude an 80 kg rider can
++# generate by rotating their torso. This is a damage limit, not a tuning knob.
++PITCH_MOMENT_CEILING_NM = 80.0
++
++# PD gains, in N.m per rad and N.m.s per rad. The pitch coordinate's own inertia, measured
++# from the compiled model's mass matrix, is 38.6 kg.m^2, so KP = 500 puts the undamped mode
++# at 3.60 rad/s (0.57 Hz) and KD = 150 damps it at 0.54 of critical. Both terms saturate the
++# ceiling well inside the attitude errors a real flight produces -- 0.160 rad of angle, or
++# 0.533 rad/s of rate, on their own -- so the gains mostly set where the moment reverses and
++# the ceiling sets its authority.
++DEFAULT_KP_NM_PER_RAD = 500.0
++DEFAULT_KD_NMS_PER_RAD = 150.0
++
++# Crash threshold from docs/RIDE.md section 7.
++CRASH_PITCH_LIMIT_DEG = 60.0
++
++CAUSE_PITCH_OVER = "pitch_over"
++CAUSE_HANDLEBAR_CONTACT = "handlebar_contact"
++
++
++class PitchStabilizer:
++    """
++    PD regulator driving `root_pitch` toward level while both wheels are off the ground.
++
++    Accumulates the angular impulse and the mechanical work it injects, because neither is
++    balanced by a reaction elsewhere in the model.
++    """
++
++    def __init__(
++        self,
++        model: mujoco.MjModel,
++        kp_nm_per_rad: float = DEFAULT_KP_NM_PER_RAD,
++        kd_nms_per_rad: float = DEFAULT_KD_NMS_PER_RAD,
++        moment_ceiling_nm: float = PITCH_MOMENT_CEILING_NM,
++    ) -> None:
++        """
++        Args:
++            model: Compiled ride-mode model, used to resolve the `root_pitch` coordinate.
++            kp_nm_per_rad: Proportional gain on pitch angle.
++            kd_nms_per_rad: Derivative gain on pitch rate.
++            moment_ceiling_nm: Symmetric clamp on the applied moment, in N.m.
++
++        Raises:
++            ValueError: If a gain is negative, if the ceiling is not positive, or if the
++                model has no `root_pitch` joint.
++        """
++        if kp_nm_per_rad < 0.0 or kd_nms_per_rad < 0.0:
++            raise ValueError(
++                f"pitch gains must be non-negative, got kp={kp_nm_per_rad}, kd={kd_nms_per_rad}"
++            )
++        if moment_ceiling_nm <= 0.0:
++            raise ValueError(f"moment_ceiling_nm must be positive, got {moment_ceiling_nm}")
++
++        self.pitch_qposadr, self.pitch_dofadr = _resolve_pitch(model)
++        self.kp_nm_per_rad = float(kp_nm_per_rad)
++        self.kd_nms_per_rad = float(kd_nms_per_rad)
++        self.moment_ceiling_nm = float(moment_ceiling_nm)
++
++        self.moment_nm = 0.0
++        self.angular_impulse_nms = 0.0
++        self.work_j = 0.0
++        self.active = False
++
++    def apply(
++        self,
++        model: mujoco.MjModel,
++        data: mujoco.MjData,
++        contacts: TerrainContacts,
++    ) -> float:
++        """
++        Computes the stabilizing moment and writes it into `qfrc_applied`.
++
++        Args:
++            model: Compiled ride-mode model, read for the integration timestep.
++            data: Simulation state, written at the `root_pitch` DOF.
++            contacts: This step's contact snapshot. The moment is applied only while both
++                wheels are out of contact; on the ground the rider steers attitude through
++                the tyres, which the contact model already provides.
++
++        Returns:
++            The applied moment in N.m, zero whenever either wheel is in contact.
++        """
++        self.active = contacts.airborne
++        pitch_rate_radps = float(data.qvel[self.pitch_dofadr])
++
++        if self.active:
++            demand = (
++                -self.kp_nm_per_rad * float(data.qpos[self.pitch_qposadr])
++                - self.kd_nms_per_rad * pitch_rate_radps
++            )
++            self.moment_nm = max(-self.moment_ceiling_nm, min(self.moment_ceiling_nm, demand))
++        else:
++            self.moment_nm = 0.0
++
++        # Assigned every step, zero included: see the module docstring.
++        data.qfrc_applied[self.pitch_dofadr] = self.moment_nm
++
++        dt = float(model.opt.timestep)
++        self.angular_impulse_nms += self.moment_nm * dt
++        self.work_j += self.moment_nm * pitch_rate_radps * dt
++        return self.moment_nm
++
++    def reset(self) -> None:
++        """Clears the moment and both accumulators for a fresh run."""
++        self.moment_nm = 0.0
++        self.angular_impulse_nms = 0.0
++        self.work_j = 0.0
++        self.active = False
++
++
++@dataclass(frozen=True)
++class CrashEvent:
++    """
++    The first crash condition a run met.
++
++    Attributes:
++        cause: Either `pitch_over` or `handlebar_contact`.
++        time_s: Simulation time at which the condition was first seen.
++        position_m: Chassis `root_x` at that moment, in metres along the track.
++        pitch_rad: Chassis pitch at that moment, in radians.
++    """
++
++    cause: str
++    time_s: float
++    position_m: float
++    pitch_rad: float
++
++    def describe(self) -> str:
++        """Returns a one-line human-readable summary of the crash."""
++        return (
++            f"{self.cause} at x = {self.position_m:.2f} m, t = {self.time_s:.3f} s, "
++            f"pitch = {degrees(self.pitch_rad):+.1f} deg"
++        )
++
++
++class CrashDetector:
++    """
++    Trips on excessive pitch or on the handlebar touching the ground, and latches.
++
++    The first condition met is kept; later steps do not overwrite it, so a run reports where
++    it went wrong rather than where it ended up.
++    """
++
++    def __init__(
++        self,
++        model: mujoco.MjModel,
++        pitch_limit_deg: float = CRASH_PITCH_LIMIT_DEG,
++    ) -> None:
++        """
++        Args:
++            model: Compiled ride-mode model, used to resolve the root coordinates.
++            pitch_limit_deg: Absolute pitch beyond which the run is a crash.
++
++        Raises:
++            ValueError: If the limit is not positive, or a root joint is missing.
++        """
++        if pitch_limit_deg <= 0.0:
++            raise ValueError(f"pitch_limit_deg must be positive, got {pitch_limit_deg}")
++
++        self.pitch_qposadr, _ = _resolve_pitch(model)
++        jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_x")
++        if jid < 0:
++            raise ValueError("model has no joint 'root_x'; the crash detector reports track position")
++        self.root_x_qposadr = int(model.jnt_qposadr[jid])
++        self.pitch_limit_rad = radians(float(pitch_limit_deg))
++
++        self.event: Optional[CrashEvent] = None
++
++    @property
++    def tripped(self) -> bool:
++        """Whether a crash condition has been seen at any point in the run."""
++        return self.event is not None
++
++    def check(self, data: mujoco.MjData, contacts: TerrainContacts) -> Optional[CrashEvent]:
++        """
++        Tests both crash conditions against the current state.
++
++        Args:
++            data: Simulation state, read for pitch and track position.
++            contacts: This step's contact snapshot, supplying handlebar-to-ground contact.
++
++        Returns:
++            The latched crash event, or None while the run is still upright.
++        """
++        if self.event is not None:
++            return self.event
++
++        pitch_rad = float(data.qpos[self.pitch_qposadr])
++        if abs(pitch_rad) > self.pitch_limit_rad:
++            cause = CAUSE_PITCH_OVER
++        elif contacts.handlebar_in_contact:
++            cause = CAUSE_HANDLEBAR_CONTACT
++        else:
++            return None
++
++        self.event = CrashEvent(
++            cause=cause,
++            time_s=float(data.time),
++            position_m=float(data.qpos[self.root_x_qposadr]),
++            pitch_rad=pitch_rad,
++        )
++        return self.event
++
++    def reset(self) -> None:
++        """Clears the latched event for a fresh run."""
++        self.event = None
++
++
++def _resolve_pitch(model: mujoco.MjModel) -> Tuple[int, int]:
++    """
++    Resolves the `root_pitch` joint's qpos and dof addresses.
++
++    Args:
++        model: Compiled MuJoCo model.
++
++    Returns:
++        Tuple of (qpos address, dof address).
++
++    Raises:
++        ValueError: If the model has no `root_pitch` joint.
++    """
++    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_pitch")
++    if jid < 0:
++        raise ValueError("model has no joint 'root_pitch'; the virtual rider acts on chassis pitch")
++    return int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid])
++
++
++__all__ = [
++    "PitchStabilizer",
++    "CrashDetector",
++    "CrashEvent",
++    "PITCH_MOMENT_CEILING_NM",
++    "CRASH_PITCH_LIMIT_DEG",
++    "CAUSE_PITCH_OVER",
++    "CAUSE_HANDLEBAR_CONTACT",
++]
+diff --git a/src/bike_sim/sim/ride/wheels.py b/src/bike_sim/sim/ride/wheels.py
+new file mode 100644
+index 0000000..4ace823
+--- /dev/null
++++ b/src/bike_sim/sim/ride/wheels.py
+@@ -0,0 +1,100 @@
++"""
++Ride-Mode Wheel Spin Handles and Resistive Torque Sign.
++
++The two wheel-spin coordinates, and the one sign convention every resistive torque acting
++on them shares: oppose the current rotation, and vanish at rest.
++
++Braking and rolling resistance both need this. A resistive torque that keeps its magnitude
++through zero speed stops being resistive and becomes a source -- it drives a standing wheel
++backwards, and then forwards again, indefinitely (docs/RIDE.md section 6). Both are
++therefore tapered through a small speed band rather than switched on `sign()`.
++"""
++
++from dataclasses import dataclass
++
++import mujoco
++
++
++@dataclass(frozen=True)
++class WheelSpin:
++    """
++    Addresses and radius of one wheel-spin coordinate.
++
++    Attributes:
++        name: Name of the wheel-spin hinge joint.
++        dofadr: Index of the joint in `qvel` and `qfrc_applied`.
++        radius_m: Radius of the wheel's contact sphere, in metres. Read from the compiled
++            model rather than from `BikeSpecs`, so it cannot drift from the geometry the
++            contact actually uses.
++    """
++
++    name: str
++    dofadr: int
++    radius_m: float
++
++    def omega_radps(self, data: mujoco.MjData) -> float:
++        """Returns the wheel's current angular velocity in rad/s."""
++        return float(data.qvel[self.dofadr])
++
++
++def resolve_wheel_spin(model: mujoco.MjModel, joint_name: str, contact_geom: str) -> WheelSpin:
++    """
++    Resolves a wheel-spin joint and the contact sphere that rides on it.
++
++    Args:
++        model: Compiled ride-mode model.
++        joint_name: Name of the wheel-spin hinge joint.
++        contact_geom: Name of that wheel's contact sphere, whose radius sets the lever arm
++            between a contact force and a wheel torque.
++
++    Returns:
++        The wheel's spin handle.
++
++    Raises:
++        ValueError: If the joint or the geom is missing, or the geom is not a sphere -- in
++            which case `geom_size[0]` would not be its radius.
++    """
++    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
++    if jid < 0:
++        raise ValueError(f"model has no joint '{joint_name}'; ride-mode wheel torques need it")
++
++    gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, contact_geom)
++    if gid < 0:
++        raise ValueError(f"model has no geom '{contact_geom}'; ride-mode wheel torques need its radius")
++    if model.geom_type[gid] != mujoco.mjtGeom.mjGEOM_SPHERE:
++        raise ValueError(f"geom '{contact_geom}' is not a sphere, so its size is not a wheel radius")
++
++    return WheelSpin(
++        name=joint_name,
++        dofadr=int(model.jnt_dofadr[jid]),
++        radius_m=float(model.geom_size[gid][0]),
++    )
++
++
++def opposing_torque(magnitude_nm: float, omega_radps: float, taper_radps: float) -> float:
++    """
++    Signs a resistive magnitude against the current rotation and fades it out at rest.
++
++    Args:
++        magnitude_nm: Non-negative resistive torque magnitude.
++        omega_radps: Current wheel angular velocity, in rad/s.
++        taper_radps: Width of the speed band over which the magnitude is ramped in. Below
++            it the torque is scaled down linearly, reaching exactly zero at zero speed.
++
++    Returns:
++        Generalized torque for the wheel-spin coordinate: negative for a forward-spinning
++        wheel, positive for a backward-spinning one, zero at rest.
++
++    Raises:
++        ValueError: If the taper band is not positive, which would divide by zero and
++            restore the discontinuity the taper exists to remove.
++    """
++    if taper_radps <= 0.0:
++        raise ValueError(f"taper_radps must be positive, got {taper_radps}")
++    if omega_radps == 0.0:
++        return 0.0
++    scale = min(abs(omega_radps) / taper_radps, 1.0)
++    return -abs(magnitude_nm) * scale * (1.0 if omega_radps > 0.0 else -1.0)
++
++
++__all__ = ["WheelSpin", "resolve_wheel_spin", "opposing_torque"]
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+new file mode 100644
+index 0000000..f9b5866
+--- /dev/null
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -0,0 +1,285 @@
++"""
++Ride-Mode Simulation Orchestrator.
++
++Owns the compiled ride model, the track raster, and the five per-step writers, and drives
++them in a fixed order. Everything that computes a force lives in `sim/ride/`; this module
++resolves handles, sequences the writers, and exposes the run's state. It coordinates, it
++does not compute.
++
++**Track data is written before anything reads the model's geometry.** `model.hfield_data` is
++filled from the track raster immediately after compilation, ahead of the first
++`mj_forward`, the equilibrium solve and any viewer: a heightfield read before it is filled
++is a flat road, and every contact computed against it is wrong.
++"""
++
++from typing import Any, Dict, Optional, Tuple
++
++import mujoco
++
++from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.kinematics.solver import HorstLinkageSolver
++from bike_sim.mujoco.builder import generate_mujoco_xml
++from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
++from bike_sim.physics.coil_shock import CoilShock
++from bike_sim.physics.damper import BikeSuspensionSystem
++from bike_sim.sim.controllers import SuspensionController
++from bike_sim.sim.equilibrium import solve_static_equilibrium
++from bike_sim.sim.ride.braking import BrakeController
++from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
++from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
++from bike_sim.sim.ride.forces import SuspensionForceApplier
++from bike_sim.sim.ride.resistance import RollingResistance
++from bike_sim.sim.ride.virtual_rider import CrashDetector, CrashEvent, PitchStabilizer
++from bike_sim.terrain import (
++    DEFAULT_PRESET,
++    TrackSpec,
++    assert_track_fits,
++    build_field_data,
++    get_preset,
++)
++
++# World X for the chassis root at the start of a run. The heightfield's near edge is at
++# world x = 0, and starting at x = 0 hangs the rear contact patch off it.
++DEFAULT_START_X_M = 2.0
++
++
++class RideSimulation:
++    """
++    A ride-mode run: compiled model, track, controllers, and a single `step`.
++
++    The five per-step writers are applied in a fixed order -- suspension, rolling
++    resistance, cruise torque, brake torque, virtual rider -- against one contact snapshot
++    taken at the top of the step, so that cruise gating, rolling resistance, the virtual
++    rider and the crash detector all agree about which wheels are on the ground.
++    """
++
++    def __init__(
++        self,
++        track: Optional[TrackSpec] = None,
++        specs: Optional[BikeSpecs] = None,
++        target_speed_kmh: float = DEFAULT_TARGET_SPEED_KMH,
++        include_rider: bool = True,
++        start_x_m: float = DEFAULT_START_X_M,
++        controller: Optional[SuspensionController] = None,
++        coil_shock: Optional[CoilShock] = None,
++    ) -> None:
++        """
++        Compiles the model, rasterizes the track, and solves the starting equilibrium.
++
++        Args:
++            track: Track to ride. Defaults to the shipped default preset.
++            specs: Bicycle geometry. Defaults to the shipped `BikeSpecs`.
++            target_speed_kmh: Initial cruise target, inside the 15-45 km/h band.
++            include_rider: Whether the rider's mass and geometry are present.
++            start_x_m: World X for the chassis root at the start of the run.
++            controller: Fork and shock force calculator. Defaults to the shipped
++                suspension; supplied explicitly when a run overrides the fork pressure.
++            coil_shock: Rear coil and bumper model. Defaults to the shipped coil; supplied
++                explicitly when a run overrides the spring rate.
++
++        Raises:
++            ValueError: If the track does not fit the fixed heightfield envelope.
++            RuntimeError: If the starting equilibrium does not converge.
++        """
++        self.track = track if track is not None else get_preset(DEFAULT_PRESET)
++        assert_track_fits(self.track)
++
++        self.specs = specs if specs is not None else BikeSpecs()
++        self.solver = HorstLinkageSolver(self.specs)
++        self.start_x_m = float(start_x_m)
++
++        self.model = mujoco.MjModel.from_xml_string(
++            generate_mujoco_xml(
++                specs=self.specs,
++                solver=self.solver,
++                mode="ride",
++                include_rider=include_rider,
++            )
++        )
++        # Before the first forward pass, before the equilibrium solve, before any viewer.
++        self.model.hfield_data[:] = build_field_data(self.track).reshape(-1)
++        self.data = mujoco.MjData(self.model)
++
++        self.controller = controller if controller is not None else _default_controller(self.specs)
++        self.applier = SuspensionForceApplier(
++            self.model,
++            self.controller,
++            coil_shock if coil_shock is not None else CoilShock(),
++        )
++        self.contact_query = TerrainContactQuery(self.model)
++        self.resistance = RollingResistance(self.model)
++        self.cruise = CruiseController(self.model, target_speed_kmh=target_speed_kmh)
++        self.brakes = BrakeController(self.model)
++        self.stabilizer = PitchStabilizer(self.model)
++        self.crash_detector = CrashDetector(self.model)
++
++        self.drive_ctrl_adr = _actuator_id(self.model, "rear_drive")
++        self.front_brake_ctrl_adr = _actuator_id(self.model, "front_brake")
++        self.rear_brake_ctrl_adr = _actuator_id(self.model, "rear_brake")
++        self.root_x_qposadr, self.root_x_dofadr = _root_addresses(self.model, "root_x")
++        self.root_pitch_qposadr, _ = _root_addresses(self.model, "root_pitch")
++
++        self.contacts = TerrainContacts(front_load_n=0.0, rear_load_n=0.0, handlebar_load_n=0.0)
++        self.steps = 0
++        self.equilibrium: Dict[str, Any] = {}
++        self.reset()
++
++    def reset(self) -> None:
++        """
++        Returns the run to its starting equilibrium at the track start.
++
++        Raises:
++            RuntimeError: If the equilibrium solve does not converge.
++        """
++        self.equilibrium = solve_static_equilibrium(
++            self.model,
++            self.data,
++            self.applier,
++            self.solver,
++            start_x_m=self.start_x_m,
++        )
++        self.contact_query.reset()
++        self.cruise.reset()
++        self.brakes.reset()
++        self.resistance.reset()
++        self.stabilizer.reset()
++        self.crash_detector.reset()
++        self.data.time = 0.0
++        self.steps = 0
++        self.contacts = self.contact_query.query(self.model, self.data)
++
++    def step(self, front_brake_demand: float = 0.0, rear_brake_demand: float = 0.0) -> None:
++        """
++        Advances the simulation by one timestep.
++
++        The contact snapshot the five writers share is the one taken at the end of the
++        previous step, which holds the constraint forces of the last forward pass -- the same
++        numbers a fresh query at the top of this step would return, since nothing has touched
++        `data.contact` in between. Querying once per state rather than once per use keeps the
++        dropout counter advancing exactly one step per step.
++
++        Args:
++            front_brake_demand: Front brake lever position in [0, 1], not a torque.
++            rear_brake_demand: Rear brake lever position in [0, 1], not a torque.
++        """
++        self.applier.apply(self.model, self.data)
++        self.resistance.apply(self.model, self.data, self.contacts)
++        self.data.ctrl[self.drive_ctrl_adr] = self.cruise.compute(self.model, self.data, self.contacts)
++        front_torque, rear_torque = self.brakes.compute(
++            self.data, front_brake_demand, rear_brake_demand
++        )
++        self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
++        self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
++        self.stabilizer.apply(self.model, self.data, self.contacts)
++
++        # Checked against the same snapshot the writers saw, so a reported crash position is
++        # the state that produced it rather than the state one timestep later.
++        self.crash_detector.check(self.data, self.contacts)
++
++        mujoco.mj_step(self.model, self.data)
++        self.steps += 1
++        self.contacts = self.contact_query.query(self.model, self.data)
++
++    @property
++    def time_s(self) -> float:
++        """Simulation time since the start of the run, in seconds."""
++        return float(self.data.time)
++
++    @property
++    def position_m(self) -> float:
++        """Chassis position along the track, in metres."""
++        return float(self.data.qpos[self.root_x_qposadr])
++
++    @property
++    def speed_mps(self) -> float:
++        """Chassis longitudinal velocity, in m/s."""
++        return float(self.data.qvel[self.root_x_dofadr])
++
++    @property
++    def pitch_rad(self) -> float:
++        """Chassis pitch, in radians. Positive is nose-down about the bottom bracket."""
++        return float(self.data.qpos[self.root_pitch_qposadr])
++
++    @property
++    def fork_travel_mm(self) -> float:
++        """Fork compression, in millimetres of shaft travel."""
++        return float(self.data.qpos[self.applier.fork_qposadr]) * 1000.0
++
++    @property
++    def shock_stroke_mm(self) -> float:
++        """Rear shock compression, in millimetres of shaft stroke."""
++        return float(self.data.qpos[self.applier.shock_qposadr]) * 1000.0
++
++    @property
++    def rear_travel_mm(self) -> float:
++        """Rear wheel travel for the current shaft stroke, from the analytical solver."""
++        return float(self.solver.solve_state_from_shock_stroke(self.shock_stroke_mm)["wheel_travel"])
++
++    @property
++    def crash(self) -> Optional[CrashEvent]:
++        """The latched crash event, or None while the run is still upright."""
++        return self.crash_detector.event
++
++
++def _default_controller(specs: BikeSpecs) -> SuspensionController:
++    """
++    Builds the suspension force calculator from the shipped defaults.
++
++    Args:
++        specs: Bicycle geometry, supplying the fork travel, token count and pressure.
++
++    Returns:
++        A `SuspensionController` configured as the shipped bike.
++    """
++    return SuspensionController(
++        specs=specs,
++        air_spring=ForkAirSpring(
++            specs=AirSpringSpecs(total_travel_mm=specs.fork_travel),
++            num_tokens=specs.fork_air_tokens,
++            gauge_pressure_psi=specs.fork_initial_psi,
++        ),
++        suspension_system=BikeSuspensionSystem(),
++    )
++
++
++def _actuator_id(model: mujoco.MjModel, name: str) -> int:
++    """
++    Resolves a named actuator's index into `data.ctrl`.
++
++    Args:
++        model: Compiled ride-mode model.
++        name: Actuator name.
++
++    Returns:
++        The actuator's index.
++
++    Raises:
++        ValueError: If the model has no actuator of that name.
++    """
++    aid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
++    if aid < 0:
++        raise ValueError(f"model has no actuator '{name}'; the ride torque path needs it")
++    return int(aid)
++
++
++def _root_addresses(model: mujoco.MjModel, joint_name: str) -> Tuple[int, int]:
++    """
++    Resolves a chassis root joint's qpos and dof addresses.
++
++    Args:
++        model: Compiled ride-mode model.
++        joint_name: Name of the root joint.
++
++    Returns:
++        Tuple of (qpos address, dof address).
++
++    Raises:
++        ValueError: If the model has no joint of that name.
++    """
++    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
++    if jid < 0:
++        raise ValueError(f"model has no joint '{joint_name}'; ride mode needs a planar root")
++    return int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid])
++
++
++__all__ = ["RideSimulation", "DEFAULT_START_X_M"]
+diff --git a/tests/test_ride_controllers.py b/tests/test_ride_controllers.py
+new file mode 100644
+index 0000000..ebadbe9
+--- /dev/null
++++ b/tests/test_ride_controllers.py
+@@ -0,0 +1,559 @@
++"""
++Unit tests for the ride-mode controllers and one full `single_edge` traverse.
++
++Tests include:
++- A 40 m `single_edge` run at 25 km/h: it reaches the edge, is worked by it, finishes the
++  track, and never trips the crash detector.
++- Mean speed over the flat run-up against the 25 km/h target.
++- Cruise control closing on chassis speed rather than wheel speed, its airborne gate, its
++  anti-wind-up, and the adjustable speed band.
++- Brake torque opposing rotation for both signs of wheel speed, and vanishing at rest.
++- Rolling-resistance torque scaling with the instantaneous normal load.
++- The pitch stabilizer's ceiling, its both-wheels-airborne gate, and that it does not leave a
++  stale moment latched in `qfrc_applied` after touchdown.
++- The crash detector's two causes and its latching.
++- The contact query bridging MuJoCo's single-step sphere-heightfield collision dropouts.
++"""
++
++from typing import List, NamedTuple, Optional, Tuple
++
++import mujoco
++import numpy as np
++import pytest
++
++from bike_sim.sim.ride.braking import BRAKE_TAPER_RADPS, BRAKE_TORQUE_CEILING_NM, BrakeController
++from bike_sim.sim.ride.contacts import TerrainContacts
++from bike_sim.sim.ride.cruise import (
++    DRIVE_TORQUE_CEILING_NM,
++    MAX_TARGET_SPEED_KMH,
++    MIN_TARGET_SPEED_KMH,
++    CruiseController,
++)
++from bike_sim.sim.ride.resistance import CRR, ROLLING_TAPER_RADPS, RollingResistance
++from bike_sim.sim.ride.virtual_rider import (
++    CAUSE_HANDLEBAR_CONTACT,
++    CAUSE_PITCH_OVER,
++    CRASH_PITCH_LIMIT_DEG,
++    PITCH_MOMENT_CEILING_NM,
++    CrashDetector,
++    CrashEvent,
++    PitchStabilizer,
++)
++from bike_sim.sim.ride_sim import RideSimulation
++from bike_sim.terrain import get_preset
++
++TARGET_SPEED_KMH = 25.0
++TARGET_SPEED_MPS = TARGET_SPEED_KMH / 3.6
++
++# The square edge of the `single_edge` preset is a 90 mm ledge from 20.00 to 20.25 m; the
++# window covers the approach, the ledge, and the settle after the step back down.
++EDGE_WINDOW_M: Tuple[float, float] = (19.0, 22.5)
++
++# Window over which mean speed is compared with the target. The bike starts from the solved
++# static equilibrium at rest, so the first 8 m of the 20 m run-up are the acceleration to
++# target; measuring across those would compare an acceleration ramp with a cruise speed. The
++# window is flat road, clear of the ramp and 2 m clear of the edge.
++RUNUP_WINDOW_M: Tuple[float, float] = (10.0, 18.0)
++
++# Traverse step cap: 40 m at 25 km/h is 5.8 s, i.e. 11 600 steps at the ride timestep. The
++# cap is generous enough to absorb the acceleration ramp and a stumble at the edge, and
++# tight enough that a bike which has stopped moving fails instead of hanging.
++MAX_TRAVERSE_STEPS = 40000
++
++
++class Traverse(NamedTuple):
++    """Per-step trace of one full track traverse, one array per channel."""
++
++    steps: int
++    sim_time_s: float
++    crash: Optional[CrashEvent]
++    x_m: np.ndarray
++    speed_mps: np.ndarray
++    fork_mm: np.ndarray
++    shock_mm: np.ndarray
++    front_load_n: np.ndarray
++    rear_load_n: np.ndarray
++    front_in_contact: np.ndarray
++    rear_in_contact: np.ndarray
++    rider_moment_nm: np.ndarray
++
++    def window(self, lo_m: float, hi_m: float) -> np.ndarray:
++        """Returns the boolean mask of samples with track position in [lo_m, hi_m]."""
++        return (self.x_m >= lo_m) & (self.x_m <= hi_m)
++
++
++@pytest.fixture(scope="module")
++def sim() -> RideSimulation:
++    """Compiles the ride model on `single_edge` once: compilation and the sag solve are slow."""
++    return RideSimulation(track=get_preset("single_edge"), target_speed_kmh=TARGET_SPEED_KMH)
++
++
++@pytest.fixture(scope="module")
++def model(sim: RideSimulation) -> mujoco.MjModel:
++    """The compiled ride model, for controller unit tests that drive their own `MjData`."""
++    return sim.model
++
++
++@pytest.fixture(scope="module")
++def traverse(sim: RideSimulation) -> Traverse:
++    """Rides `single_edge` from the start to the end of the track, recording every step."""
++    sim.reset()
++    channels: List[Tuple[float, ...]] = []
++    while sim.position_m < sim.track.length_m and sim.steps < MAX_TRAVERSE_STEPS:
++        sim.step()
++        channels.append(
++            (
++                sim.position_m,
++                sim.speed_mps,
++                sim.fork_travel_mm,
++                sim.shock_stroke_mm,
++                sim.contacts.front_load_n,
++                sim.contacts.rear_load_n,
++                float(sim.contacts.front_in_contact),
++                float(sim.contacts.rear_in_contact),
++                sim.stabilizer.moment_nm,
++            )
++        )
++
++    trace = np.array(channels, dtype=float)
++    return Traverse(
++        steps=sim.steps,
++        sim_time_s=sim.time_s,
++        crash=sim.crash,
++        x_m=trace[:, 0],
++        speed_mps=trace[:, 1],
++        fork_mm=trace[:, 2],
++        shock_mm=trace[:, 3],
++        front_load_n=trace[:, 4],
++        rear_load_n=trace[:, 5],
++        front_in_contact=trace[:, 6].astype(bool),
++        rear_in_contact=trace[:, 7].astype(bool),
++        rider_moment_nm=trace[:, 8],
++    )
++
++
++def _contacts(front_n: float, rear_n: float, handlebar_n: float = 0.0) -> TerrainContacts:
++    """Builds a synthetic contact snapshot, so a controller can be driven without a track."""
++    return TerrainContacts(front_load_n=front_n, rear_load_n=rear_n, handlebar_load_n=handlebar_n)
++
++
++def _dofadr(model: mujoco.MjModel, joint_name: str) -> int:
++    """Returns the dof address of a named joint."""
++    return int(model.jnt_dofadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)])
++
++
++def _qposadr(model: mujoco.MjModel, joint_name: str) -> int:
++    """Returns the qpos address of a named joint."""
++    return int(model.jnt_qposadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)])
++
++
++# --------------------------------------------------------------------------------------
++# The traverse
++# --------------------------------------------------------------------------------------
++
++
++def test_single_edge_traverse_finishes_the_track(sim: RideSimulation, traverse: Traverse):
++    """The bike rides the whole 40 m track, inside the step cap, without crashing."""
++    assert traverse.crash is None
++    assert traverse.x_m[-1] >= sim.track.length_m
++    assert traverse.steps < MAX_TRAVERSE_STEPS
++
++
++def test_traverse_is_worked_by_the_edge(traverse: Traverse):
++    """
++    The 90 mm edge shows up as a large compression, so the bike really crossed it.
++
++    This is also the check that the heightfield was filled before the run: on an unfilled
++    field the road is dead flat and the fork would never leave its sag band.
++    """
++    runup_peak_mm = traverse.fork_mm[traverse.window(*RUNUP_WINDOW_M)].max()
++    edge_peak_mm = traverse.fork_mm[traverse.window(*EDGE_WINDOW_M)].max()
++    peak_x_m = traverse.x_m[traverse.fork_mm.argmax()]
++
++    assert runup_peak_mm < 90.0
++    assert edge_peak_mm > runup_peak_mm + 50.0
++    assert EDGE_WINDOW_M[0] <= peak_x_m <= EDGE_WINDOW_M[1]
++
++
++def test_mean_runup_speed_tracks_the_target(traverse: Traverse):
++    """Mean speed over the flat part of the run-up is within 5 % of the 25 km/h target."""
++    mean_mps = float(traverse.speed_mps[traverse.window(*RUNUP_WINDOW_M)].mean())
++    assert mean_mps == pytest.approx(TARGET_SPEED_MPS, rel=0.05)
++
++
++def test_pitch_stabilizer_stays_inside_its_ceiling_over_the_traverse(traverse: Traverse):
++    """No moment applied anywhere on the track exceeds the +/-80 N.m damage limit."""
++    assert np.abs(traverse.rider_moment_nm).max() <= PITCH_MOMENT_CEILING_NM
++
++
++def test_pitch_stabilizer_is_silent_whenever_a_wheel_is_in_contact(traverse: Traverse):
++    """
++    Across the whole traverse the moment is exactly zero on every grounded step.
++
++    On `single_edge` that is every step: the 90 mm edge lifts each wheel in turn for about
++    110 ms but never both at once, so the stabilizer's flight behaviour is exercised only by
++    the unit tests below. The full track's kicker is what puts it in the air.
++    """
++    grounded = traverse.front_in_contact | traverse.rear_in_contact
++    assert np.all(traverse.rider_moment_nm[grounded] == 0.0)
++
++
++def test_contact_query_bridges_single_step_collision_dropouts(traverse: Traverse):
++    """
++    Both wheels report contact on every step of the flat run-up.
++
++    MuJoCo's sphere-heightfield collision reports no contact at all for a loaded wheel on
++    13 % of steps, and for both wheels at once on 1.7 % of them, always for a single step.
++    Unbridged, that gates the drive torque off and makes the bike briefly airborne on flat
++    ground -- which fires the virtual rider on a road with no features at all.
++    """
++    flat = traverse.window(*RUNUP_WINDOW_M)
++    assert np.all(traverse.front_in_contact[flat])
++    assert np.all(traverse.rear_in_contact[flat])
++    assert traverse.front_load_n[flat].min() > 0.0
++    assert traverse.rear_load_n[flat].min() > 0.0
++
++
++# --------------------------------------------------------------------------------------
++# Cruise control
++# --------------------------------------------------------------------------------------
++
++
++def test_cruise_closes_on_chassis_speed_not_wheel_speed(model: mujoco.MjModel):
++    """
++    A spun-up rear wheel produces no torque demand while the chassis is on target.
++
++    Regulating wheel speed instead would see a wheel far above target, command full negative
++    torque, and hand the loop a state that has nothing to do with how fast the bike is going.
++    """
++    data = mujoco.MjData(model)
++    cruise = CruiseController(model, target_speed_kmh=TARGET_SPEED_KMH)
++    data.qvel[_dofadr(model, "root_x")] = cruise.target_speed_mps
++    data.qvel[_dofadr(model, "rear_wheel_spin")] = 200.0
++
++    assert cruise.compute(model, data, _contacts(400.0, 500.0)) == 0.0
++
++
++def test_cruise_is_gated_off_while_the_rear_wheel_is_airborne(model: mujoco.MjModel):
++    """With no load on the rear wheel the torque is exactly zero and nothing accumulates."""
++    data = mujoco.MjData(model)
++    cruise = CruiseController(model, target_speed_kmh=TARGET_SPEED_KMH)
++
++    for _ in range(200):
++        assert cruise.compute(model, data, _contacts(0.0, 0.0)) == 0.0
++    assert cruise.integral_mps_s == 0.0
++    assert cruise.engaged is False
++
++
++def test_cruise_torque_is_clamped_to_the_drive_ceiling(model: mujoco.MjModel):
++    """A standing start demands far more than the ceiling and gets exactly the ceiling."""
++    data = mujoco.MjData(model)
++    cruise = CruiseController(model, target_speed_kmh=TARGET_SPEED_KMH)
++
++    assert cruise.compute(model, data, _contacts(400.0, 500.0)) == DRIVE_TORQUE_CEILING_NM
++
++
++def test_cruise_integrator_does_not_wind_up_while_saturated(model: mujoco.MjModel):
++    """
++    The integrator holds while the output is saturated, and resumes once it is not.
++
++    An integrator that kept accumulating through the 1.5 s of saturated acceleration would
++    hand the loop a torque it then has to unwind, which reads as a speed overshoot the track
++    is too short to settle.
++    """
++    data = mujoco.MjData(model)
++    cruise = CruiseController(model, target_speed_kmh=TARGET_SPEED_KMH)
++    contacts = _contacts(400.0, 500.0)
++
++    for _ in range(500):
++        cruise.compute(model, data, contacts)
++    assert cruise.integral_mps_s == 0.0
++
++    error_mps = 0.1
++    data.qvel[_dofadr(model, "root_x")] = cruise.target_speed_mps - error_mps
++    for _ in range(10):
++        cruise.compute(model, data, contacts)
++    assert cruise.integral_mps_s == pytest.approx(10 * error_mps * model.opt.timestep)
++
++
++@pytest.mark.parametrize("target_kmh", [MIN_TARGET_SPEED_KMH - 1.0, MAX_TARGET_SPEED_KMH + 1.0])
++def test_cruise_rejects_a_target_outside_the_adjustable_band(model: mujoco.MjModel, target_kmh: float):
++    """A target outside 15-45 km/h is a mis-specified experiment, not a value to clamp."""
++    with pytest.raises(ValueError, match="outside the adjustable band"):
++        CruiseController(model, target_speed_kmh=target_kmh)
++
++
++# --------------------------------------------------------------------------------------
++# Brakes
++# --------------------------------------------------------------------------------------
++
++
++@pytest.mark.parametrize("omega_radps,expected_sign", [(5.0, -1.0), (-5.0, 1.0)])
++def test_brake_torque_opposes_wheel_rotation(
++    model: mujoco.MjModel, omega_radps: float, expected_sign: float
++):
++    """Full demand gives the full ceiling against the direction the wheel is turning."""
++    data = mujoco.MjData(model)
++    brakes = BrakeController(model)
++    data.qvel[_dofadr(model, "front_wheel_spin")] = omega_radps
++    data.qvel[_dofadr(model, "rear_wheel_spin")] = omega_radps
++
++    front_nm, rear_nm = brakes.compute(data, front_demand=1.0, rear_demand=1.0)
++    assert front_nm == pytest.approx(expected_sign * BRAKE_TORQUE_CEILING_NM)
++    assert rear_nm == pytest.approx(expected_sign * BRAKE_TORQUE_CEILING_NM)
++
++
++def test_brake_torque_is_zero_at_rest(model: mujoco.MjModel):
++    """A held brake on a standing bike does nothing, rather than driving it backwards."""
++    data = mujoco.MjData(model)
++    brakes = BrakeController(model)
++
++    assert brakes.compute(data, front_demand=1.0, rear_demand=1.0) == (0.0, 0.0)
++
++
++def test_brake_torque_tapers_through_the_low_speed_band(model: mujoco.MjModel):
++    """Inside the taper band the torque scales linearly with wheel speed."""
++    data = mujoco.MjData(model)
++    brakes = BrakeController(model)
++    fraction = 0.25
++    data.qvel[_dofadr(model, "rear_wheel_spin")] = fraction * BRAKE_TAPER_RADPS
++
++    _, rear_nm = brakes.compute(data, front_demand=0.0, rear_demand=1.0)
++    assert rear_nm == pytest.approx(-fraction * BRAKE_TORQUE_CEILING_NM)
++
++
++@pytest.mark.parametrize("demand,expected_nm", [(0.4, -80.0), (2.0, -200.0), (-1.0, 0.0)])
++def test_brake_demand_is_clamped_into_the_unit_interval(
++    model: mujoco.MjModel, demand: float, expected_nm: float
++):
++    """Demand scales the ceiling and is clamped, so the interactive control cannot overrun it."""
++    data = mujoco.MjData(model)
++    brakes = BrakeController(model)
++    data.qvel[_dofadr(model, "front_wheel_spin")] = 5.0
++
++    front_nm, _ = brakes.compute(data, front_demand=demand, rear_demand=0.0)
++    assert front_nm == pytest.approx(expected_nm)
++
++
++# --------------------------------------------------------------------------------------
++# Rolling resistance
++# --------------------------------------------------------------------------------------
++
++
++def test_rolling_resistance_scales_with_the_normal_load(model: mujoco.MjModel):
++    """Doubling the normal load doubles the resistive torque: Crr . N . r, exactly."""
++    data = mujoco.MjData(model)
++    resistance = RollingResistance(model)
++    data.qvel[_dofadr(model, "rear_wheel_spin")] = 20.0
++
++    resistance.apply(model, data, _contacts(front_n=0.0, rear_n=500.0))
++    single = resistance.rear_torque_nm
++    resistance.apply(model, data, _contacts(front_n=0.0, rear_n=1000.0))
++    doubled = resistance.rear_torque_nm
++
++    assert single == pytest.approx(-CRR * 500.0 * resistance.rear_wheel.radius_m)
++    assert doubled == pytest.approx(2.0 * single)
++
++
++@pytest.mark.parametrize("omega_radps,expected_sign", [(20.0, -1.0), (-20.0, 1.0)])
++def test_rolling_resistance_opposes_rotation(
++    model: mujoco.MjModel, omega_radps: float, expected_sign: float
++):
++    """The resistive torque follows the sign of the wheel's rotation, not of its load."""
++    data = mujoco.MjData(model)
++    resistance = RollingResistance(model)
++    data.qvel[_dofadr(model, "front_wheel_spin")] = omega_radps
++
++    resistance.apply(model, data, _contacts(front_n=500.0, rear_n=0.0))
++    assert np.sign(resistance.front_torque_nm) == expected_sign
++
++
++def test_rolling_resistance_vanishes_on_an_unloaded_wheel(model: mujoco.MjModel):
++    """
++    An airborne wheel carries no load, so it carries no rolling resistance.
++
++    The write happens on every step regardless: `qfrc_applied` is never cleared by MuJoCo, so
++    a writer that skipped its zero steps would leave the last loaded torque latched in and
++    keep braking a wheel that is no longer touching anything.
++    """
++    data = mujoco.MjData(model)
++    resistance = RollingResistance(model)
++    front_dof = _dofadr(model, "front_wheel_spin")
++    data.qvel[front_dof] = 20.0
++
++    resistance.apply(model, data, _contacts(front_n=500.0, rear_n=500.0))
++    assert data.qfrc_applied[front_dof] < 0.0
++
++    resistance.apply(model, data, _contacts(front_n=0.0, rear_n=0.0))
++    assert resistance.front_torque_nm == 0.0
++    assert data.qfrc_applied[front_dof] == 0.0
++
++
++def test_rolling_resistance_tapers_through_the_low_speed_band(model: mujoco.MjModel):
++    """A standing wheel gets no rolling resistance, so it is not spun up by its own loss."""
++    data = mujoco.MjData(model)
++    resistance = RollingResistance(model)
++
++    resistance.apply(model, data, _contacts(front_n=500.0, rear_n=500.0))
++    assert resistance.front_torque_nm == 0.0
++    assert resistance.rear_torque_nm == 0.0
++
++    data.qvel[_dofadr(model, "rear_wheel_spin")] = 0.5 * ROLLING_TAPER_RADPS
++    resistance.apply(model, data, _contacts(front_n=0.0, rear_n=500.0))
++    assert resistance.rear_torque_nm == pytest.approx(
++        -0.5 * CRR * 500.0 * resistance.rear_wheel.radius_m
++    )
++
++
++# --------------------------------------------------------------------------------------
++# Virtual rider
++# --------------------------------------------------------------------------------------
++
++
++@pytest.mark.parametrize(
++    "front_n,rear_n",
++    [(500.0, 500.0), (500.0, 0.0), (0.0, 500.0)],
++)
++def test_pitch_stabilizer_is_inactive_while_either_wheel_is_in_contact(
++    model: mujoco.MjModel, front_n: float, rear_n: float
++):
++    """On the ground the rider steers attitude through the tyres, so the moment is zero."""
++    data = mujoco.MjData(model)
++    stabilizer = PitchStabilizer(model)
++    data.qpos[_qposadr(model, "root_pitch")] = 0.5
++    data.qvel[stabilizer.pitch_dofadr] = 2.0
++
++    assert stabilizer.apply(model, data, _contacts(front_n, rear_n)) == 0.0
++    assert data.qfrc_applied[stabilizer.pitch_dofadr] == 0.0
++    assert stabilizer.active is False
++
++
++def test_pitch_stabilizer_does_not_latch_a_moment_after_touchdown(model: mujoco.MjModel):
++    """
++    The pitch DOF is written on every step, so a moment cannot survive the landing.
++
++    `qfrc_applied` is never cleared by MuJoCo. A stabilizer that wrote only while airborne
++    would leave its last flight moment applied for the rest of the run -- a plausible-looking
++    simulation with a permanent invisible torque on the chassis.
++    """
++    data = mujoco.MjData(model)
++    stabilizer = PitchStabilizer(model)
++    data.qpos[_qposadr(model, "root_pitch")] = 0.5
++
++    airborne_moment = stabilizer.apply(model, data, _contacts(0.0, 0.0))
++    assert airborne_moment != 0.0
++    assert data.qfrc_applied[stabilizer.pitch_dofadr] == airborne_moment
++
++    stabilizer.apply(model, data, _contacts(0.0, 500.0))
++    assert data.qfrc_applied[stabilizer.pitch_dofadr] == 0.0
++
++
++@pytest.mark.parametrize("pitch_rad", [0.5, -0.5])
++def test_pitch_stabilizer_clamps_to_its_ceiling_and_opposes_the_pitch(
++    model: mujoco.MjModel, pitch_rad: float
++):
++    """A large attitude error saturates at exactly 80 N.m, against the direction of pitch."""
++    data = mujoco.MjData(model)
++    stabilizer = PitchStabilizer(model)
++    data.qpos[_qposadr(model, "root_pitch")] = pitch_rad
++
++    moment_nm = stabilizer.apply(model, data, _contacts(0.0, 0.0))
++    assert abs(moment_nm) == pytest.approx(PITCH_MOMENT_CEILING_NM)
++    assert np.sign(moment_nm) == -np.sign(pitch_rad)
++
++
++def test_pitch_stabilizer_pd_is_linear_below_the_ceiling(model: mujoco.MjModel):
++    """Inside the ceiling the moment is the plain PD expression on angle and rate."""
++    data = mujoco.MjData(model)
++    stabilizer = PitchStabilizer(model)
++    pitch_rad, rate_radps = 0.05, 0.1
++    data.qpos[_qposadr(model, "root_pitch")] = pitch_rad
++    data.qvel[stabilizer.pitch_dofadr] = rate_radps
++
++    expected_nm = -stabilizer.kp_nm_per_rad * pitch_rad - stabilizer.kd_nms_per_rad * rate_radps
++    assert stabilizer.apply(model, data, _contacts(0.0, 0.0)) == pytest.approx(expected_nm)
++    assert abs(expected_nm) < PITCH_MOMENT_CEILING_NM
++
++
++def test_pitch_stabilizer_accounts_the_momentum_and_work_it_injects(model: mujoco.MjModel):
++    """
++    The moment has no reaction body, so its angular impulse and work are accumulated.
++
++    docs/RIDE.md section 8 reports the virtual rider as a source on its own line rather than
++    folding it into the physics, which requires both channels to be carried here.
++    """
++    data = mujoco.MjData(model)
++    stabilizer = PitchStabilizer(model)
++    data.qpos[_qposadr(model, "root_pitch")] = 0.5
++    data.qvel[stabilizer.pitch_dofadr] = 2.0
++    dt = float(model.opt.timestep)
++
++    steps = 20
++    for _ in range(steps):
++        stabilizer.apply(model, data, _contacts(0.0, 0.0))
++
++    assert stabilizer.moment_nm == pytest.approx(-PITCH_MOMENT_CEILING_NM)
++    assert stabilizer.angular_impulse_nms == pytest.approx(steps * -PITCH_MOMENT_CEILING_NM * dt)
++    assert stabilizer.work_j == pytest.approx(steps * -PITCH_MOMENT_CEILING_NM * 2.0 * dt)
++
++    stabilizer.reset()
++    assert stabilizer.angular_impulse_nms == 0.0
++    assert stabilizer.work_j == 0.0
++
++
++# --------------------------------------------------------------------------------------
++# Crash detection
++# --------------------------------------------------------------------------------------
++
++
++def test_crash_detector_trips_on_excessive_pitch(model: mujoco.MjModel):
++    """Pitch beyond 60 degrees is a crash, reported with its cause and track position."""
++    data = mujoco.MjData(model)
++    detector = CrashDetector(model)
++    data.qpos[_qposadr(model, "root_x")] = 31.5
++    data.qpos[_qposadr(model, "root_pitch")] = np.radians(CRASH_PITCH_LIMIT_DEG + 1.0)
++
++    event = detector.check(data, _contacts(0.0, 0.0))
++    assert event is not None
++    assert detector.tripped
++    assert event.cause == CAUSE_PITCH_OVER
++    assert event.position_m == pytest.approx(31.5)
++    assert f"{CAUSE_PITCH_OVER} at x = 31.50 m" in event.describe()
++
++
++def test_crash_detector_trips_on_handlebar_ground_contact(model: mujoco.MjModel):
++    """A handlebar in the dirt is a crash even at a pitch angle well inside the limit."""
++    data = mujoco.MjData(model)
++    detector = CrashDetector(model)
++
++    event = detector.check(data, _contacts(0.0, 0.0, handlebar_n=250.0))
++    assert event is not None
++    assert event.cause == CAUSE_HANDLEBAR_CONTACT
++
++
++def test_crash_detector_stays_silent_on_an_upright_bike(model: mujoco.MjModel):
++    """Neither condition met is not a crash, and nothing is latched."""
++    data = mujoco.MjData(model)
++    detector = CrashDetector(model)
++    data.qpos[_qposadr(model, "root_pitch")] = np.radians(CRASH_PITCH_LIMIT_DEG - 1.0)
++
++    assert detector.check(data, _contacts(500.0, 500.0)) is None
++    assert not detector.tripped
++
++
++def test_crash_detector_latches_the_first_cause(model: mujoco.MjModel):
++    """A run reports where it went wrong, not the last condition it happened to meet."""
++    data = mujoco.MjData(model)
++    detector = CrashDetector(model)
++    data.qpos[_qposadr(model, "root_x")] = 12.0
++    data.qpos[_qposadr(model, "root_pitch")] = np.radians(CRASH_PITCH_LIMIT_DEG + 1.0)
++    first = detector.check(data, _contacts(0.0, 0.0))
++
++    data.qpos[_qposadr(model, "root_x")] = 18.0
++    again = detector.check(data, _contacts(0.0, 0.0, handlebar_n=250.0))
++
++    assert again == first
++    assert again.position_m == pytest.approx(12.0)
++
++    detector.reset()
++    assert not detector.tripped

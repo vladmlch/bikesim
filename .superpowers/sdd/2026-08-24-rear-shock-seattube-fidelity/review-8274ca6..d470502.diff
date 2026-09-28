@@ -1,0 +1,241 @@
+# Review package: 8274ca6..HEAD
+
+## Commits
+d470502 feat(visual): trunnion into frame, spec-derived damper proportions
+
+## Files changed
+ export_mujoco.py            | 54 ++++++++++++++++++++++++++++++++++++---------
+ tests/test_frame_visuals.py | 51 ++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 94 insertions(+), 11 deletions(-)
+
+## Diff
+diff --git a/export_mujoco.py b/export_mujoco.py
+index cdd0ac8..275b350 100644
+--- a/export_mujoco.py
++++ b/export_mujoco.py
+@@ -819,31 +819,36 @@ def generate_mujoco_xml(
+         "geom",
+         {
+             "name": "geom_seat_gusset",
+             "type": "capsule",
+             "fromto": _format_fromto(P9, p_gusset_mid),
+             "size": "0.015",
+             "mass": "0.10",
+             "material": "mat_frame",
+         },
+     )
+-    p_tab_top = P10 + (P8 - P10) * 0.52
++    # Frame casting at the top-tube / seat-tube / down-tube junction. The trunnion
++    # at P7 bolts into this material - the real bike has no standoff bracket.
++    # Mass note: carries the 0.10 kg the removed geom_shock_tab bracket used to
++    # (see test_frame_visuals.py::test_frame_junction_mass_matches_removed_shock_tab)
++    # so this stays visual-only and does not add real simulated mass.
++    p_junction_top = P10 + (P8 - P10) * 0.52
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+-            "name": "geom_shock_tab",
++            "name": "geom_frame_junction",
+             "type": "capsule",
+-            "fromto": _format_fromto(p_tab_top, P7),
+-            "size": "0.014",
++            "fromto": _format_fromto(p_junction_top, P7),
++            "size": "0.042",
+             "mass": "0.10",
+-            "material": "mat_metal",
++            "material": "mat_frame",
+         },
+     )
+     saddle_mass = max(0.20, mass_specs.saddle_post_mass - 0.35)
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_saddle",
+             "type": "box",
+             "pos": f"{P9[0] - 0.045:.6f} 0 {P9[2] + 0.028:.6f}",
+@@ -1741,25 +1746,29 @@ def generate_mujoco_xml(
+ 
+     # -------------------------------------------------------------
+     # Body: Shock Shaft (Child of Shock Yoke at P6)
+     # -------------------------------------------------------------
+     u_shock = p7_rel_p6 / shock_len_m
+     # Trunnion-mount 205x65 proportions. P6 is the shaft eyelet, P7 is the trunnion bolt axis.
+     # At full bottom-out the eye-to-eye collapses to 205 - 65 = 140 mm, so every part measured
+     # back from P7 must stay shorter than that to avoid poking through the lower eyelet.
+     shaft_len = 0.145  # m (145 mm shaft; tip hides inside the trunnion overhang at bottom-out)
+     shaft_tip_rel_p6 = u_shock * shaft_len
+-    body_can_len = 0.133  # m (133 mm air can - stops 7mm above P6 at full bottom-out)
++    # Air can length is DERIVED, not chosen: at full bottom-out the eye-to-eye
++    # collapses to (e2e - stroke), so a can measured back from P7 must stay
++    # shorter than that or it drives through the lower eyelet. 2 mm clearance.
++    bottom_out_clearance_m = 0.002
++    body_can_len = (specs.shock_eye_to_eye - specs.shock_stroke) / 1000.0 - bottom_out_clearance_m
+     body_can_end_rel_p7 = shock_slide_axis * body_can_len
+     # Defining visual of a trunnion mount: the damper body continues PAST the mounting bolt axis
+     # instead of terminating in an eyelet. Overhang carries the reservoir cap and rebound knob.
+-    trunnion_overhang = 0.028  # m (28 mm of damper body beyond P7, away from P6)
++    trunnion_overhang = 0.014  # m (~12 mm overhang per reference photo)
+     trunnion_cap_rel_p7 = -shock_slide_axis * trunnion_overhang
+     trunnion_half_width = 0.027  # m (54 mm across the two trunnion bosses)
+ 
+     shock_shaft = ET.SubElement(shock_yoke, "body", {"name": "shock_shaft", "pos": _format_vec(p6_rel_p4)})
+     # Lower eyelet mount hardware
+     ET.SubElement(
+         shock_shaft,
+         "geom",
+         {
+             "name": "geom_shock_lower_eyelet",
+@@ -1796,20 +1805,39 @@ def generate_mujoco_xml(
+             "material": "mat_linkage",
+             "contype": "0",
+             "conaffinity": "0",
+         },
+     )
+ 
+     # -------------------------------------------------------------
+     # Body: Shock Body / Air Can (Child of Shock Shaft with Telescoping Slide Joint)
+     # -------------------------------------------------------------
+     shock_body = ET.SubElement(shock_shaft, "body", {"name": "shock_body", "pos": _format_vec(p7_rel_p6)})
++    # Pin shock_body's simulated mass properties to their pre-Task-5 values. MuJoCo
++    # auto-derives a body's mass/CoM/inertia from its child geoms' shapes, so
++    # reshaping the air can, trunnion overhang, and piggyback offset for visual
++    # fidelity (this task is scoped visual-only) would otherwise silently perturb
++    # the composite inertia tensor. The "stand" playground drives this body through
++    # a stiff position-actuator + equality-constraint loop that is sensitive enough
++    # to that perturbation to diverge to NaN within a few steps (caught by
++    # tests/test_playground.py::test_reset_simulation). Explicit <inertial> keeps
++    # the physics bit-identical to before this task while the geometry changes.
++    ET.SubElement(
++        shock_body,
++        "inertial",
++        {
++            "pos": "-0.033395 0.011400 -0.028962",
++            "quat": "-0.10166406 0.38183084 -0.06020627 0.91664870",
++            "mass": "0.4",
++            "diaginertia": "0.00084836 0.00071226 0.00023249",
++        },
++    )
+     ET.SubElement(
+         shock_body,
+         "joint",
+         {
+             "name": "shock_stroke",
+             "type": "slide",
+             "pos": "0 0 0",
+             "axis": _format_vec(shock_slide_axis),
+             "range": f"0 {shock_stroke_m:.6f}",
+             "stiffness": "0",
+@@ -1862,37 +1890,41 @@ def generate_mujoco_xml(
+         "geom",
+         {
+             "name": "geom_shock_body",
+             "type": "cylinder",
+             "fromto": f"0 0 0 {_format_vec(body_can_end_rel_p7)}",
+             "size": "0.026",
+             "mass": "0.18",
+             "material": "mat_damper_body",
+         },
+     )
+-    # Piggyback Reservoir attached to Shock Body
+-    piggy_start = (shock_slide_axis * 0.018) + np.array([0.0, 0.038, 0.015])
+-    piggy_end = (shock_slide_axis * 0.108) + np.array([0.0, 0.038, 0.015])
++    # Piggyback Reservoir attached to Shock Body.
++    # Reservoir rides on the damper body in the frame plane. The perpendicular
++    # direction is the shock axis rotated 90 degrees in XZ, pointing up-rearward.
++    perp = np.array([-shock_slide_axis[2], 0.0, shock_slide_axis[0]])
++    piggy_offset = perp * 0.034 + np.array([0.0, 0.008, 0.0])
++    piggy_start = (shock_slide_axis * 0.018) + piggy_offset
++    piggy_end = (shock_slide_axis * 0.108) + piggy_offset
+     ET.SubElement(
+         shock_body,
+         "geom",
+         {
+             "name": "geom_shock_piggyback",
+             "type": "cylinder",
+             "fromto": f"{_format_vec(piggy_start)} {_format_vec(piggy_end)}",
+             "size": "0.018",
+             "mass": "0.10",
+             "material": "mat_damper_body",
+         },
+     )
+     piggy_bridge_1 = shock_slide_axis * 0.030
+-    piggy_bridge_2 = (shock_slide_axis * 0.030) + np.array([0.0, 0.038, 0.015])
++    piggy_bridge_2 = (shock_slide_axis * 0.030) + piggy_offset
+     ET.SubElement(
+         shock_body,
+         "geom",
+         {
+             "name": "geom_shock_piggy_bridge",
+             "type": "cylinder",
+             "fromto": f"{_format_vec(piggy_bridge_1)} {_format_vec(piggy_bridge_2)}",
+             "size": "0.010",
+             "mass": "0.04",
+             "material": "mat_damper_body",
+diff --git a/tests/test_frame_visuals.py b/tests/test_frame_visuals.py
+index 0efdc51..47c7a91 100644
+--- a/tests/test_frame_visuals.py
++++ b/tests/test_frame_visuals.py
+@@ -59,10 +59,61 @@ def test_seattube_and_casting_mass_is_conserved(root):
+     # or the frame silently gains/loses real simulated mass.
+     seattube = next(g for g in root.iter("geom") if g.get("name") == "geom_seattube")
+     casting = next(g for g in root.iter("geom") if g.get("name") == "geom_frame_casting")
+     total_mass = float(seattube.get("mass")) + float(casting.get("mass"))
+     assert total_mass == pytest.approx(REMOVED_CAGE_MASS_KG, abs=1e-6)
+ 
+ 
+ def test_model_still_compiles(root):
+     model = mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="stand"))
+     assert model.ngeom > 0
++
++
++BOTTOM_OUT_CLEARANCE_MM = 2.0
++
++# Ruling R20: geom_shock_tab (the floating bracket) carried 0.10 kg. Its
++# replacement, geom_frame_junction, must carry the same mass or the frame
++# silently gains/loses real simulated mass (Task 5 is visual-only).
++REMOVED_SHOCK_TAB_MASS_KG = 0.10
++
++
++def test_floating_shock_bracket_is_replaced_by_frame_material(root):
++    names = _geom_names(root)
++    assert "geom_shock_tab" not in names, "the thin floating bracket must be gone"
++    assert "geom_frame_junction" in names
++
++
++def test_frame_junction_mass_matches_removed_shock_tab(root):
++    junction = next(g for g in root.iter("geom") if g.get("name") == "geom_frame_junction")
++    assert float(junction.get("mass")) == pytest.approx(REMOVED_SHOCK_TAB_MASS_KG, abs=1e-6)
++
++
++def test_air_can_clears_the_lower_eyelet_at_bottom_out():
++    """
++    At full bottom-out the eye-to-eye collapses to e2e - stroke. The can is
++    measured back from P7, so it must stay shorter than that by the clearance.
++    """
++    from bike_geometry import BikeSpecs
++
++    specs = BikeSpecs()
++    collapsed = specs.shock_eye_to_eye - specs.shock_stroke
++    root_el = ET.fromstring(generate_mujoco_xml(mode="stand"))
++    can = next(g for g in root_el.iter("geom") if g.get("name") == "geom_shock_body")
++    coords = [float(v) for v in can.get("fromto").split()]
++    can_len_mm = 1000.0 * (
++        (coords[3] - coords[0]) ** 2 + (coords[4] - coords[1]) ** 2 + (coords[5] - coords[2]) ** 2
++    ) ** 0.5
++    # Coordinates round-trip through MJCF's 6-decimal-place (micron-resolution)
++    # fromto strings, so reconstructing length via sqrt(sum of squares) carries
++    # up to ~1 micron of formatting noise even when the derived length is exact.
++    # 2e-3 mm absorbs that noise while staying 1000x tighter than the 2 mm
++    # clearance this assertion protects.
++    FORMATTING_NOISE_MM = 2e-3
++    assert can_len_mm <= collapsed - BOTTOM_OUT_CLEARANCE_MM + FORMATTING_NOISE_MM
++    assert can_len_mm == pytest.approx(138.0, abs=0.5)
++
++
++def test_piggyback_sits_in_the_frame_plane(root):
++    piggy = next(g for g in root.iter("geom") if g.get("name") == "geom_shock_piggyback")
++    coords = [float(v) for v in piggy.get("fromto").split()]
++    lateral = max(abs(coords[1]), abs(coords[4]))
++    assert lateral <= 0.012, f"piggyback is {lateral*1000:.0f} mm off-plane; expected <= 12 mm"

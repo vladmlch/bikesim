@@ -1,0 +1,930 @@
+# Review package: 9aa8cb3..HEAD
+
+## Commits
+af53548 fix: assign physical wheel inertia independent of visual cylinders
+
+## Files changed
+ src/bike_sim/mujoco/builder.py           |  27 ++++--
+ src/bike_sim/mujoco/drivetrain.py        |  19 ++--
+ src/bike_sim/mujoco/rear_linkage.py      |   9 +-
+ src/bike_sim/mujoco/steering_fork.py     |  19 ++--
+ src/bike_sim/physics/component_masses.py |  12 +--
+ src/bike_sim/physics/inertia.py          |  99 ++++++++++++++++++++
+ src/bike_sim/physics/mass.py             |  12 ++-
+ tests/test_compiled_mass_contract.py     |  31 ++++++-
+ tests/test_wheel_inertia_contract.py     | 150 +++++++++++++++++++++++++++++++
+ 9 files changed, 348 insertions(+), 30 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/mujoco/builder.py b/src/bike_sim/mujoco/builder.py
+index 33cc64f..58b53c1 100644
+--- a/src/bike_sim/mujoco/builder.py
++++ b/src/bike_sim/mujoco/builder.py
+@@ -216,38 +216,55 @@ def generate_mujoco_xml(
+     build_rear_linkage(
+         frame=frame,
+         mode=mode,
+         specs=specs,
+         fixed_points=fixed,
+         solved_points=st0,
+         debug_markers=debug_markers,
+         tyre_model=tyre_model,
+         physics_config=physics_config,
+         mass_registry=mass_registry,
++        mass_specs=mass_specs,
+     )
+ 
+     if mass_registry is not None:
+         expected_components = set(mass_specs.component_masses)
+         if set(mass_registry) != expected_components:
+             raise ValueError(f"mass registry mismatch: {expected_components ^ set(mass_registry)}")
+-        registered_geoms = [geom for group in mass_registry.values() for geom in group]
+-        if len({id(geom) for geom in registered_geoms}) != len(registered_geoms):
+-            raise ValueError("a mass-bearing geom belongs to multiple components")
++        registered_parts = [part for group in mass_registry.values() for part in group]
++        if len({id(part) for part in registered_parts}) != len(registered_parts):
++            raise ValueError("a mass-bearing part belongs to multiple components")
++        registered_geoms = [part for part in registered_parts if part.tag == "geom"]
+         bike_geoms = {
+             id(geom) for geom in frame.iter("geom")
+             if float(geom.get("mass", "0")) > 0
+             and not geom.get("name", "").startswith("geom_rider_")
+         }
+         if {id(geom) for geom in registered_geoms} != bike_geoms:
+             raise ValueError("mass registry does not cover every bike geom exactly once")
+-        for component_id, geoms in mass_registry.items():
+-            assign_component_mass(geoms, mass_specs.component_masses[component_id])
++        wheel_ids = {"front_wheel", "rear_wheel"}
++        wheel_inertials = {
++            id(inertial) for body in frame.iter("body")
++            if body.get("name") in wheel_ids
++            for inertial in body.findall("inertial")
++        }
++        if {id(part) for part in registered_parts if part.tag == "inertial"} != wheel_inertials:
++            raise ValueError("wheel inertial registry mismatch")
++        for component_id, parts in mass_registry.items():
++            if component_id in wheel_ids:
++                if (len(parts) != 1 or parts[0].tag != "inertial"
++                        or float(parts[0].get("mass", "0")) != mass_specs.component_masses[component_id]):
++                    raise ValueError(f"wheel component {component_id!r} must own one budgeted inertial")
++            else:
++                if any(part.tag != "geom" for part in parts):
++                    raise ValueError(f"component {component_id!r} must own geoms")
++                assign_component_mass(parts, mass_specs.component_masses[component_id])
+ 
+     # 7. Constraints & Collisions
+     build_equality_constraints(root, mode=mode)
+     if crank_joint:
+         build_chain_constraint(root, gear_ratio=gear_ratio)
+         if pose is not None and pose.leg_chains:
+             # Clipless-pedal welds: each foot body is fixed to its pedal body. No
+             # `relpose` means the weld datum is the relative pose at qpos0 -- the
+             # design pose, which the pose solver makes self-consistent -- so the
+             # constraints start residual-free. Pedal bodies only exist when
+diff --git a/src/bike_sim/mujoco/drivetrain.py b/src/bike_sim/mujoco/drivetrain.py
+index ce965a3..56454c3 100644
+--- a/src/bike_sim/mujoco/drivetrain.py
++++ b/src/bike_sim/mujoco/drivetrain.py
+@@ -11,20 +11,21 @@ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
+ from bike_sim.geometry.cockpit import (
+     CRANK_ARM_LATERAL_OFFSET_M,
+     PEDAL_HALF_SIZE_M,
+     PEDAL_LATERAL_OFFSET_M,
+     pedal_points,
+ )
+ from bike_sim.physics.mass import BikeMassSpecs
+ from bike_sim.physics.component_masses import register_component
++from bike_sim.physics.inertia import REAR_WHEEL_PROFILE, add_body_inertial, wheel_body_inertia
+ from bike_sim.mujoco._xml_format import _format_vec, add_geom, add_joint, add_site
+ 
+ # How `crank_pedals_mass` (0.85 kg) is split over the crankset. Authored: a 165 mm alloy arm
+ # is ~200 g, a platform pedal ~175 g, and the spindle with the chainring makes up the rest.
+ CRANK_ARM_MASS_KG = 0.20
+ PEDAL_MASS_KG = 0.175
+ CRANK_ARM_RADIUS_M = 0.012
+ # Bearing drag of the bottom bracket, N.m per rad/s. Small enough to be invisible against a
+ # 30 N.m pedal stroke, large enough that a disengaged crank settles instead of ringing.
+ CRANK_JOINT_DAMPING = 0.03
+@@ -202,72 +203,76 @@ def build_chain_constraint(root: ET.Element, gear_ratio: float) -> None:
+     )
+ 
+ 
+ def build_rear_wheel(
+     seatstay: ET.Element,
+     mode: str,
+     p1_rel_p2: np.ndarray,
+     rear_wheel_radius_m: float,
+     tyre_model: str = "sphere",
+     mass_registry: dict[str, list[ET.Element]] | None = None,
++    mass_specs: BikeMassSpecs | None = None,
+ ) -> ET.Element:
+     """
+     Builds the rear wheel body (hub, rim, tire, cassette, brake rotor) mounted on the seatstay at P1 (Rear Axle).
+     """
++    if mass_registry is not None and mass_specs is None:
++        raise ValueError("physical rear wheel requires mass specs")
++    physical = mass_registry is not None
+     rear_wheel = ET.SubElement(seatstay, "body", {"name": "rear_wheel", "pos": _format_vec(p1_rel_p2)})
+     ET.SubElement(
+         rear_wheel,
+         "joint",
+         {
+             "name": "rear_wheel_spin",
+             "type": "hinge",
+             "pos": "0 0 0",
+             "axis": "0 1 0",
+             "damping": "0.01",
+         },
+     )
+     ET.SubElement(
+         rear_wheel,
+         "geom",
+         {
+             "name": "geom_rear_hub",
+             "type": "cylinder",
+             "fromto": "0 -0.074 0 0 0.074 0",
+             "size": "0.020",
+-            "mass": "0.30",
++            "mass": "0" if physical else "0.30",
+             "material": "mat_metal",
+         },
+     )
+     ET.SubElement(
+         rear_wheel,
+         "geom",
+         {
+             "name": "geom_rear_rim",
+             "type": "cylinder",
+             "fromto": "0 -0.015 0 0 0.015 0",
+             "size": "0.300",
+-            "mass": "0.40",
++            "mass": "0" if physical else "0.40",
+             "material": "mat_rim",
+             "contype": "0",
+             "conaffinity": "0",
+         },
+     )
+     tire_contype = "0" if mode == "ride" else "1"
+     ET.SubElement(
+         rear_wheel,
+         "geom",
+         {
+             "name": "geom_rear_tire",
+             "type": "cylinder",
+             "fromto": "0 -0.032 0 0 0.032 0",
+             "size": f"{rear_wheel_radius_m:.6f}",
+-            "mass": "1.50",
++            "mass": "0" if physical else "1.50",
+             "material": "mat_tire",
+             "contype": tire_contype,
+             "conaffinity": tire_contype,
+             "friction": "1.2 0.005 0.0001",
+         },
+     )
+     if mode == "ride":
+         # Sphere contact patch: see geom_front_contact in steering_fork.py for rationale.
+         ET.SubElement(
+             rear_wheel,
+@@ -287,33 +292,35 @@ def build_rear_wheel(
+             },
+         )
+     ET.SubElement(
+         rear_wheel,
+         "geom",
+         {
+             "name": "geom_rear_cassette",
+             "type": "cylinder",
+             "fromto": "0 -0.055 0 0 -0.035 0",
+             "size": "0.095",
+-            "mass": "0.40",
++            "mass": "0" if physical else "0.40",
+             "material": "mat_metal",
+             "contype": "0",
+             "conaffinity": "0",
+         },
+     )
+     ET.SubElement(
+         rear_wheel,
+         "geom",
+         {
+             "name": "geom_rear_rotor",
+             "type": "cylinder",
+             "fromto": "0 0.038 0 0 0.040 0",
+             "size": "0.1015",
+-            "mass": "0.20",
++            "mass": "0" if physical else "0.20",
+             "material": "mat_metal",
+             "contype": "0",
+             "conaffinity": "0",
+         },
+     )
+     if mass_registry is not None:
+-        register_component(mass_registry, "rear_wheel", list(rear_wheel.findall("geom")))
++        com, tensor = wheel_body_inertia(mass_specs.rear_wheel_mass, REAR_WHEEL_PROFILE)
++        add_body_inertial(rear_wheel, mass_specs.rear_wheel_mass, com, tensor)
++        register_component(mass_registry, "rear_wheel", list(rear_wheel.findall("inertial")))
+     return rear_wheel
+diff --git a/src/bike_sim/mujoco/rear_linkage.py b/src/bike_sim/mujoco/rear_linkage.py
+index 8a1aebd..fcfb887 100644
+--- a/src/bike_sim/mujoco/rear_linkage.py
++++ b/src/bike_sim/mujoco/rear_linkage.py
+@@ -9,20 +9,21 @@ Constructs:
+ 5. Shock yoke body (yoke pivot P4, yoke arms, bridge, P6 site)
+ 6. Shock shaft & shock body (shock lower eyelet, damper can, piggyback reservoir, P7 site)
+ 7. Equality constraints and Contact exclusions
+ """
+ 
+ from typing import Dict
+ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.physics.mass import BikeMassSpecs
+ from bike_sim.physics.model_config import SimulationPhysicsConfig
+ from bike_sim.physics.component_masses import register_component
+ from bike_sim.mujoco._xml_format import (
+     _format_vec,
+     add_geom,
+     add_joint,
+     add_site,
+     add_marker,
+ )
+ from bike_sim.mujoco.drivetrain import build_rear_wheel
+@@ -54,20 +55,21 @@ def _build_seatstay(
+     chainstay: ET.Element,
+     mode: str,
+     p2_rel_p0: np.ndarray,
+     p1_rel_p2: np.ndarray,
+     p3_rel_p2: np.ndarray,
+     p12_rel_p2: np.ndarray,
+     rear_wheel_radius_m: float,
+     debug_markers: bool = False,
+     tyre_model: str = "sphere",
+     mass_registry: dict[str, list[ET.Element]] | None = None,
++    mass_specs: BikeMassSpecs | None = None,
+ ) -> ET.Element:
+     """Builds the seatstay body, Horst pivot joint, dropout truss, and rear wheel."""
+     seatstay = ET.SubElement(chainstay, "body", {"name": "seatstay", "pos": _format_vec(p2_rel_p0)})
+     add_joint(seatstay, "horst_pivot", "hinge", axis="0 1 0", damping="0.3")
+ 
+     # Horst pivot sleeves
+     add_geom(seatstay, "geom_horst_sleeve_l", "cylinder", fromto="0 0.068 0 0 0.080 0", size="0.013", mass="0.075", material="mat_metal")
+     add_geom(seatstay, "geom_horst_sleeve_r", "cylinder", fromto="0 -0.080 0 0 -0.068 0", size="0.013", mass="0.075", material="mat_metal")
+ 
+     # Main seatstay tubes
+@@ -88,21 +90,24 @@ def _build_seatstay(
+     add_site(seatstay, "site_P3_ss", pos=p3_rel_p2, size="0.008", rgba="0.9 0.5 0.1 1.0")
+     add_site(seatstay, "site_P12_ss", pos=p12_rel_p2, size="0.007", rgba="0.9 0.6 0.1 1.0")
+     if debug_markers:
+         add_marker(seatstay, "marker_p12", pos=p12_rel_p2, size="0.011")
+ 
+     add_site(seatstay, "site_PRA", pos=p1_rel_p2, size="0.008", rgba="0.2 0.4 0.9 1.0")
+     if debug_markers:
+         add_marker(seatstay, "marker_pra", pos=p1_rel_p2, size="0.013")
+ 
+     # Rear Wheel Assembly
+-    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model, mass_registry)
++    build_rear_wheel(
++        seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model,
++        mass_registry, mass_specs,
++    )
+     return seatstay
+ 
+ 
+ def _build_rocker(
+     frame: ET.Element,
+     p5: np.ndarray,
+     p3_rel_p5: np.ndarray,
+     p4_rel_p5: np.ndarray,
+     debug_markers: bool = False,
+ ) -> ET.Element:
+@@ -258,20 +263,21 @@ def _build_shock_assembly(
+ def build_rear_linkage(
+     frame: ET.Element,
+     mode: str,
+     specs: BikeSpecs,
+     fixed_points: Dict[str, np.ndarray],
+     solved_points: Dict[str, np.ndarray],
+     debug_markers: bool = False,
+     tyre_model: str = "sphere",
+     physics_config: SimulationPhysicsConfig | None = None,
+     mass_registry: dict[str, list[ET.Element]] | None = None,
++    mass_specs: BikeMassSpecs | None = None,
+ ) -> None:
+     """
+     Builds the 4-bar rear suspension linkage, shock yoke, shock shaft, shock body, and rear wheel.
+     """
+     P0 = np.array(fixed_points["P0"], dtype=float) / 1000.0
+     P5 = np.array(fixed_points["P5"], dtype=float) / 1000.0
+     P7 = np.array(fixed_points["P7"], dtype=float) / 1000.0
+ 
+     P1 = np.array(solved_points["P1"], dtype=float) / 1000.0
+     P2 = np.array(solved_points["P2"], dtype=float) / 1000.0
+@@ -302,20 +308,21 @@ def build_rear_linkage(
+         chainstay,
+         mode,
+         p2_rel_p0,
+         p1_rel_p2,
+         p3_rel_p2,
+         p12_rel_p2,
+         rear_wheel_radius_m,
+         debug_markers,
+         tyre_model,
+         mass_registry,
++        mass_specs,
+     )
+     if mass_registry is not None:
+         register_component(mass_registry, "seatstay", list(seatstay.findall("geom")))
+ 
+     # 3. Rocker Link
+     rocker = _build_rocker(frame, P5, p3_rel_p5, p4_rel_p5, debug_markers)
+     if mass_registry is not None:
+         register_component(mass_registry, "rocker", list(rocker.findall("geom")))
+ 
+     # 4. Shock Yoke
+diff --git a/src/bike_sim/mujoco/steering_fork.py b/src/bike_sim/mujoco/steering_fork.py
+index ed57d9d..efc59d6 100644
+--- a/src/bike_sim/mujoco/steering_fork.py
++++ b/src/bike_sim/mujoco/steering_fork.py
+@@ -7,20 +7,21 @@ Constructs:
+ 3. Front Wheel (hub, rim, tire, brake rotor)
+ """
+ 
+ from typing import Dict, Tuple
+ import xml.etree.ElementTree as ET
+ import numpy as np
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.physics.mass import BikeMassSpecs
+ from bike_sim.physics.component_masses import register_component
++from bike_sim.physics.inertia import FRONT_WHEEL_PROFILE, add_body_inertial, wheel_body_inertia
+ from bike_sim.mujoco._xml_format import (
+     _format_vec,
+     add_geom,
+     add_joint,
+     add_site,
+     add_marker,
+ )
+ 
+ 
+ def _build_steerer_and_cockpit(
+@@ -106,47 +107,52 @@ def _build_fork_lowers(
+ 
+     return fork_lower
+ 
+ 
+ def _build_front_wheel(
+     fork_lower: ET.Element,
+     mode: str,
+     fa_rel_steer: np.ndarray,
+     front_wheel_radius_m: float,
+     tyre_model: str = "sphere",
++    mass_specs: BikeMassSpecs | None = None,
+ ) -> ET.Element:
+     """Builds front wheel assembly (hub, rim, tire, brake rotor)."""
+     front_wheel = ET.SubElement(fork_lower, "body", {"name": "front_wheel", "pos": _format_vec(fa_rel_steer)})
+     add_joint(front_wheel, "front_wheel_spin", "hinge", axis="0 1 0", damping="0.01")
+-    add_geom(front_wheel, "geom_front_hub", "cylinder", fromto="0 -0.055 0 0 0.055 0", size="0.018", mass="0.35", material="mat_metal")
+-    add_geom(front_wheel, "geom_front_rim", "cylinder", fromto="0 -0.015 0 0 0.015 0", size="0.320", mass="0.45", material="mat_rim", contype="0", conaffinity="0")
++    physical = mass_specs is not None
++    add_geom(front_wheel, "geom_front_hub", "cylinder", fromto="0 -0.055 0 0 0.055 0", size="0.018", mass="0" if physical else "0.35", material="mat_metal")
++    add_geom(front_wheel, "geom_front_rim", "cylinder", fromto="0 -0.015 0 0 0.015 0", size="0.320", mass="0" if physical else "0.45", material="mat_rim", contype="0", conaffinity="0")
+     tire_contype = "0" if mode == "ride" else "1"
+-    add_geom(front_wheel, "geom_front_tire", "cylinder", fromto="0 -0.030 0 0 0.030 0", size=f"{front_wheel_radius_m:.6f}", mass="1.35", material="mat_tire", contype=tire_contype, conaffinity=tire_contype, friction="1.2 0.005 0.0001")
+-    add_geom(front_wheel, "geom_front_rotor", "cylinder", fromto="0 0.032 0 0 0.034 0", size="0.1015", mass="0.25", material="mat_metal", contype="0", conaffinity="0")
++    add_geom(front_wheel, "geom_front_tire", "cylinder", fromto="0 -0.030 0 0 0.030 0", size=f"{front_wheel_radius_m:.6f}", mass="0" if physical else "1.35", material="mat_tire", contype=tire_contype, conaffinity=tire_contype, friction="1.2 0.005 0.0001")
++    add_geom(front_wheel, "geom_front_rotor", "cylinder", fromto="0 0.032 0 0 0.034 0", size="0.1015", mass="0" if physical else "0.25", material="mat_metal", contype="0", conaffinity="0")
+     if mode == "ride":
+         # Sphere contact patch: geometrically identical to the cylinder in the sagittal
+         # plane, but with no flat end faces to catch on a heightfield prism edge. See
+         # docs/RIDE.md section 3. Alpha 0 so it does not render over the tyre.
+         add_geom(
+             front_wheel,
+             "geom_front_contact",
+             "sphere",
+             pos="0 0 0",
+             size=f"{front_wheel_radius_m:.6f}",
+             mass="0",
+             condim="3",
+             friction="1.2 0.005 0.0001",
+             solref="-130000 -800",
+             contype="0" if tyre_model == "pneumatic" else "1",
+             conaffinity="0" if tyre_model == "pneumatic" else "1",
+             rgba="0.08 0.08 0.08 0",
+         )
++    if physical:
++        com, tensor = wheel_body_inertia(mass_specs.front_wheel_mass, FRONT_WHEEL_PROFILE)
++        add_body_inertial(front_wheel, mass_specs.front_wheel_mass, com, tensor)
+     return front_wheel
+ 
+ 
+ def build_steering_and_fork(
+     frame: ET.Element,
+     mode: str,
+     specs: BikeSpecs,
+     mass_specs: BikeMassSpecs,
+     fixed_points: Dict[str, np.ndarray],
+     front_axle: np.ndarray,
+@@ -174,21 +180,22 @@ def build_steering_and_fork(
+     steer, stem_top = _build_steerer_and_cockpit(frame, mode, P_HT_bot, steer_axis_up, ht_top_rel_steer)
+ 
+     # 2. Fork Crown & Stanchions
+     _build_fork_crown_and_stanchions(steer, steer_axis_up, mass_specs, mass_registry is not None)
+ 
+     # 3. Fork Lowers Slider
+     fork_lower = _build_fork_lowers(steer, mode, fork_slide_axis, steer_axis_up, fa_rel_steer, fork_travel_m, debug_markers)
+ 
+     # 4. Front Wheel
+     front_wheel = _build_front_wheel(
+-        fork_lower, mode, fa_rel_steer, front_wheel_radius_m, tyre_model
++        fork_lower, mode, fa_rel_steer, front_wheel_radius_m, tyre_model,
++        mass_specs if mass_registry is not None else None,
+     )
+ 
+     if mass_registry is not None:
+         steer_geoms = list(steer.findall("geom"))
+         register_component(mass_registry, "steer_assembly", [geom for geom in steer_geoms if not geom.get("name", "").startswith("geom_stanchion_")])
+         register_component(mass_registry, "stanchions", [geom for geom in steer_geoms if geom.get("name", "").startswith("geom_stanchion_")])
+         register_component(mass_registry, "fork_lowers", list(fork_lower.findall("geom")))
+-        register_component(mass_registry, "front_wheel", list(front_wheel.findall("geom")))
++        register_component(mass_registry, "front_wheel", list(front_wheel.findall("inertial")))
+ 
+     return steer, fork_lower, front_wheel
+diff --git a/src/bike_sim/physics/component_masses.py b/src/bike_sim/physics/component_masses.py
+index 685ffb3..d2a3d83 100644
+--- a/src/bike_sim/physics/component_masses.py
++++ b/src/bike_sim/physics/component_masses.py
+@@ -12,19 +12,19 @@ def assign_component_mass(geoms: list[ET.Element], total_kg: float) -> None:
+     if not weights or any(not math.isfinite(weight) or weight < 0 for weight in weights):
+         raise ValueError("component has no valid mass weights")
+     denominator = sum(weights)
+     if not math.isfinite(denominator) or denominator <= 0:
+         raise ValueError("component has no valid mass weights")
+     for geom, weight in zip(geoms, weights):
+         geom.set("mass", format(total_kg * weight / denominator, ".17g"))
+ 
+ 
+ def register_component(
+-    registry: dict[str, list[ET.Element]], component_id: str, geoms: list[ET.Element]
++    registry: dict[str, list[ET.Element]], component_id: str, parts: list[ET.Element]
+ ) -> None:
+-    """Register a physical component exactly once, excluding zero-mass visual geoms."""
++    """Register one physical component's mass-bearing geoms or inertial."""
+     if component_id in registry:
+         raise ValueError(f"component {component_id!r} was registered twice")
+-    positive_geoms = [geom for geom in geoms if float(geom.get("mass", "0")) > 0]
+-    if not positive_geoms:
+-        raise ValueError(f"component {component_id!r} has no mass-bearing geoms")
+-    registry[component_id] = positive_geoms
++    positive_parts = [part for part in parts if float(part.get("mass", "0")) > 0]
++    if not positive_parts:
++        raise ValueError(f"component {component_id!r} has no mass-bearing parts")
++    registry[component_id] = positive_parts
+diff --git a/src/bike_sim/physics/inertia.py b/src/bike_sim/physics/inertia.py
+new file mode 100644
+index 0000000..fca8bc8
+--- /dev/null
++++ b/src/bike_sim/physics/inertia.py
+@@ -0,0 +1,99 @@
++"""Body-frame inertia tensors for the synthetic physical wheel profile."""
++
++import math
++import xml.etree.ElementTree as ET
++from typing import NamedTuple
++
++import numpy as np
++
++
++class WheelComponent(NamedTuple):
++    """Annular cylinder centered at an offset from its wheel body's axle."""
++
++    mass_fraction: float
++    inner_radius_m: float
++    outer_radius_m: float
++    width_m: float
++    offset_m: tuple[float, float, float]
++
++
++# Synthetic profile: ring/tire assembly and core (including rotor and, for the
++# rear wheel until D1, cassette). Replace these tuples as a whole when measured.
++FRONT_WHEEL_PROFILE = (
++    WheelComponent(0.75, 0.320, 0.372, 0.060, (0.0, 0.0, 0.0)),
++    WheelComponent(0.25, 0.000, 0.045, 0.110, (0.0, 0.0, 0.0)),
++)
++REAR_WHEEL_PROFILE = (
++    WheelComponent(0.75, 0.300, 0.352, 0.064, (0.0, 0.0, 0.0)),
++    WheelComponent(0.25, 0.000, 0.045, 0.148, (0.0, 0.0, 0.0)),
++)
++
++
++def ring_inertia(mass_kg: float, inner_m: float, outer_m: float, width_m: float) -> np.ndarray:
++    """Inertia of a uniform annular cylinder about its center, with axis Y."""
++    if not all(math.isfinite(v) for v in (mass_kg, inner_m, outer_m, width_m)):
++        raise ValueError("non-finite inertia input")
++    if mass_kg <= 0 or inner_m < 0 or outer_m <= inner_m or width_m <= 0:
++        raise ValueError("invalid annular cylinder")
++    radial = inner_m**2 + outer_m**2
++    transverse = mass_kg * (3 * radial + width_m**2) / 12
++    return np.diag([transverse, mass_kg * radial / 2, transverse])
++
++
++def parallel_axis(mass_kg: float, offset_m: tuple[float, float, float] | np.ndarray) -> np.ndarray:
++    """Move an inertia tensor through a displacement in body coordinates."""
++    r = np.asarray(offset_m, dtype=float)
++    if r.shape != (3,) or not np.isfinite(r).all() or not math.isfinite(mass_kg) or mass_kg < 0:
++        raise ValueError("invalid parallel-axis input")
++    return mass_kg * (float(r @ r) * np.eye(3) - np.outer(r, r))
++
++
++def wheel_body_inertia(
++    mass_kg: float, components: tuple[WheelComponent, ...]
++) -> tuple[np.ndarray, np.ndarray]:
++    """Return the combined wheel CoM and tensor in the wheel body's axes."""
++    if not math.isfinite(mass_kg) or mass_kg <= 0 or not components:
++        raise ValueError("invalid wheel mass or empty profile")
++    if not all(math.isfinite(component.mass_fraction) and component.mass_fraction > 0 for component in components):
++        raise ValueError("invalid wheel mass fractions")
++    if not math.isclose(sum(component.mass_fraction for component in components), 1.0, rel_tol=0, abs_tol=1e-12):
++        raise ValueError("wheel mass fractions must sum to one")
++
++    centers = [np.asarray(component.offset_m, dtype=float) for component in components]
++    if any(center.shape != (3,) or not np.isfinite(center).all() for center in centers):
++        raise ValueError("invalid wheel component offset")
++    com = sum((component.mass_fraction * center for component, center in zip(components, centers)), np.zeros(3))
++    tensor = np.zeros((3, 3))
++    for component, center in zip(components, centers):
++        component_mass = mass_kg * component.mass_fraction
++        tensor += ring_inertia(
++            component_mass, component.inner_radius_m, component.outer_radius_m, component.width_m
++        )
++        tensor += parallel_axis(component_mass, center - com)
++    return com, tensor
++
++
++def add_body_inertial(
++    body: ET.Element, mass_kg: float, com_m: tuple[float, float, float] | np.ndarray,
++    tensor: np.ndarray,
++) -> None:
++    """Write one explicit physical inertial using MuJoCo's full tensor order."""
++    com_m = np.asarray(com_m, dtype=float)
++    tensor = np.asarray(tensor, dtype=float)
++    if not math.isfinite(mass_kg) or mass_kg <= 0 or com_m.shape != (3,) or tensor.shape != (3, 3):
++        raise ValueError("invalid body inertial dimensions or mass")
++    if not np.isfinite(com_m).all() or not np.isfinite(tensor).all():
++        raise ValueError("non-finite body inertial")
++    if not np.allclose(tensor, tensor.T, rtol=0, atol=1e-12):
++        raise ValueError("inertia tensor must be symmetric")
++    eig = np.linalg.eigvalsh(tensor)
++    if eig[0] <= 0 or eig[2] > eig[0] + eig[1] + 1e-12:
++        raise ValueError("inertia violates positivity or triangle inequality")
++    if body.find("inertial") is not None:
++        raise ValueError("body already has an explicit inertial")
++    values = (tensor[0, 0], tensor[1, 1], tensor[2, 2], tensor[0, 1], tensor[0, 2], tensor[1, 2])
++    ET.SubElement(body, "inertial", {
++        "mass": format(mass_kg, ".17g"),
++        "pos": " ".join(format(float(x), ".17g") for x in com_m),
++        "fullinertia": " ".join(format(float(x), ".17g") for x in values),
++    })
+diff --git a/src/bike_sim/physics/mass.py b/src/bike_sim/physics/mass.py
+index d291e5e..3544dfa 100644
+--- a/src/bike_sim/physics/mass.py
++++ b/src/bike_sim/physics/mass.py
+@@ -16,22 +16,22 @@ from bike_sim.geometry.hardpoints import (
+     compute_front_axle,
+     compute_rear_axle,
+     get_fixed_frame_points,
+ )
+ from bike_sim.physics.rider import RiderSpecs
+ 
+ 
+ @dataclass
+ class BikeMassSpecs:
+     """
+-    Mass breakdown for a high-performance full-power eMTB (24.40 kg total; the
+-    compiled MJCF is 24.35 kg). All masses are in kilograms (kg).
++    Mass breakdown for a high-performance full-power eMTB (24.40 kg default).
++    Physical MJCF applies all fifteen budgets; masses are in kilograms (kg).
+     """
+ 
+     # Powertrain & Energy
+     motor_mass: float = 2.90          # Mid-drive motor casing & internals around BB
+     battery_mass: float = 4.30        # 750 Wh integrated battery inside lower downtube
+ 
+     # Main Frame & Cockpit
+     frame_structure_mass: float = 3.20 # Front triangle tubes, headtube, pivot mounts
+     saddle_post_mass: float = 0.90     # Dropper post, remote cable, enduro saddle
+     crank_pedals_mass: float = 0.85    # Crank arms, spindle, chainring, platform pedals
+@@ -45,21 +45,22 @@ class BikeMassSpecs:
+     chainstay_mass: float = 1.25       # Chainstay arms, main pivot sleeve, Horst pivots
+     seatstay_mass: float = 1.05        # Seatstay arms, rear dropouts, rear brake caliper
+     rocker_mass: float = 0.40          # Forged aluminum rocker link
+     shock_yoke_mass: float = 0.30      # Shock driving yoke
+     shock_damper_mass: float = 0.60    # Metric trunnion 205x65mm air damper body & shaft
+ 
+     # Wheels & Rotational Inertia Breakdown
+     front_wheel_mass: float = 2.40     # 29" front wheel, 2.4" enduro tire, sealant, 203mm rotor
+     rear_wheel_mass: float = 2.80      # 27.5" rear wheel, 2.5" DH tire, 12-spd cassette, rotor
+ 
+-    # Wheel mass distribution fractions (Rim+Tire outer ring vs Hub+Rotor inner core)
++    # Legacy analytic wheel approximation. Physical MJCF uses the synthetic
++    # annular-cylinder profiles in physics.inertia instead.
+     wheel_rim_tire_fraction: float = 0.75
+     wheel_hub_core_fraction: float = 0.25
+ 
+     @property
+     def component_masses(self) -> Dict[str, float]:
+         """The fifteen physical component budgets, excluding wheel-shape fractions."""
+         return {
+             field.name.removesuffix("_mass"): getattr(self, field.name)
+             for field in fields(self)
+             if field.name.endswith("_mass")
+@@ -79,21 +80,24 @@ class BikeMassSpecs:
+ 
+     @property
+     def total_bike_mass(self) -> float:
+         """Computes total mass of the bicycle in kg."""
+         return sum(self.component_masses.values())
+ 
+     def compute_wheel_rotational_inertia(
+         self, wheel_mass: float, outer_radius: float, hub_radius: float = 0.045
+     ) -> float:
+         """
+-        Computes accurate pitch rotational inertia I_yy (kg*m^2) for a bicycle wheel.
++        Legacy analytic approximation of wheel I_yy (kg*m^2).
++
++        Physical MJCF uses the annular-cylinder profiles in physics.inertia;
++        these values are not compiled wheel tensors or measured references.
+         """
+         m_rim = self.wheel_rim_tire_fraction * wheel_mass
+         m_hub = self.wheel_hub_core_fraction * wheel_mass
+         i_yy = m_rim * (outer_radius ** 2) + 0.5 * m_hub * (hub_radius ** 2)
+         return float(i_yy)
+ 
+ 
+ # `RiderSpecs` lives in `physics/rider.py` together with the anthropometry and the seated
+ # pose solver; it is re-exported here because this is where callers historically found it.
+ 
+diff --git a/tests/test_compiled_mass_contract.py b/tests/test_compiled_mass_contract.py
+index c36c4a7..77e95db 100644
+--- a/tests/test_compiled_mass_contract.py
++++ b/tests/test_compiled_mass_contract.py
+@@ -35,45 +35,62 @@ def _geom_masses(mass, *, debug_markers=False):
+     xml = generate_mujoco_xml(
+         specs=BikeSpecs(), mode="ride", mass_specs=mass, rider="none",
+         physics_config=PHYSICAL, debug_markers=debug_markers,
+     )
+     return {
+         geom.get("name"): float(geom.get("mass"))
+         for geom in ET.fromstring(xml).iter("geom") if geom.get("mass")
+     }
+ 
+ 
++def _wheel_inertial_masses(mass):
++    xml = generate_mujoco_xml(
++        specs=BikeSpecs(), mode="ride", mass_specs=mass, rider="none",
++        physics_config=PHYSICAL,
++    )
++    root = ET.fromstring(xml)
++    return {
++        name: float(root.find(f".//body[@name='{name}']/inertial").get("mass"))
++        for name in ("front_wheel", "rear_wheel")
++    }
++
++
+ @pytest.mark.parametrize("field", MASS_FIELDS)
+ def test_changing_component_mass_changes_compiled_total(field):
+     mass = BikeMassSpecs()
+     setattr(mass, field, getattr(mass, field) + 0.7)
+     assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
+ 
+ 
+ def test_default_physical_total_matches_budget():
+     assert _model().body_mass.sum() == pytest.approx(BikeMassSpecs().total_bike_mass, abs=1e-8)
+ 
+ 
+ def test_tiny_positive_motor_budget_compiles_without_rounding_to_zero():
+     mass = BikeMassSpecs(motor_mass=0.001)
+     assert _geom_masses(mass)["geom_motor_core"] == pytest.approx(0.001, abs=1e-17)
+     assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
+ 
+ 
+ @pytest.mark.parametrize("field", MASS_FIELDS)
+-def test_tiny_positive_component_budget_keeps_authored_geom_weights(field):
++def test_tiny_positive_component_budget_keeps_its_mass_owner(field):
+     mass = BikeMassSpecs()
+     baseline = _geom_masses(mass)
+     setattr(mass, field, 0.0001)
+     tiny = _geom_masses(mass)
+     assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
+     changed = [name for name in baseline if tiny[name] != baseline[name]]
++    if field in ("front_wheel_mass", "rear_wheel_mass"):
++        wheel = field.removesuffix("_mass")
++        assert changed == []
++        assert _wheel_inertial_masses(mass)[wheel] == pytest.approx(0.0001, abs=1e-17)
++        return
+     assert changed
+     scale = 0.0001 / getattr(BikeMassSpecs(), field)
+     for name in changed:
+         assert tiny[name] == pytest.approx(baseline[name] * scale, abs=1e-12)
+ 
+ 
+ def test_component_mass_and_distribution_provenance_is_synthetic():
+     mass = BikeMassSpecs()
+     assert mass.component_provenance == {
+         component_id: {"mass": "synthetic", "distribution": "synthetic"}
+@@ -90,26 +107,36 @@ def test_lumped_rider_is_not_absorbed_into_frame_budget():
+     model = mujoco.MjModel.from_xml_string(xml)
+     assert model.body_mass.sum() == pytest.approx(BikeMassSpecs().total_bike_mass + 80.0, abs=1e-8)
+ 
+ 
+ def test_all_fifteen_mass_fields_are_budget_components():
+     assert len(MASS_FIELDS) == 15
+     assert set(BikeMassSpecs().component_masses) == {name.removesuffix("_mass") for name in MASS_FIELDS}
+ 
+ 
+ @pytest.mark.parametrize("field", MASS_FIELDS)
+-def test_component_override_changes_only_its_own_geom_group(field):
++def test_component_override_changes_only_its_own_mass_group(field):
+     baseline = _geom_masses(BikeMassSpecs())
+     changed = BikeMassSpecs()
+     setattr(changed, field, getattr(changed, field) + 0.7)
+     override = _geom_masses(changed)
+     changed_geoms = [name for name in baseline if abs(override[name] - baseline[name]) > 1e-12]
++    if field in ("front_wheel_mass", "rear_wheel_mass"):
++        wheel = field.removesuffix("_mass")
++        inertial_deltas = {
++            name: value - _wheel_inertial_masses(BikeMassSpecs())[name]
++            for name, value in _wheel_inertial_masses(changed).items()
++        }
++        assert changed_geoms == []
++        assert inertial_deltas[wheel] == pytest.approx(0.7, abs=1e-10)
++        assert inertial_deltas["rear_wheel" if wheel == "front_wheel" else "front_wheel"] == 0
++        return
+     assert changed_geoms
+     assert sum(override[name] - baseline[name] for name in changed_geoms) == pytest.approx(0.7, abs=1e-10)
+ 
+ 
+ def test_debug_geoms_remain_massless():
+     masses = _geom_masses(BikeMassSpecs(), debug_markers=True)
+     assert all(mass == 0 for name, mass in masses.items() if name.startswith("marker_") or name.endswith("_contact"))
+ 
+ 
+ def test_frame_structure_override_does_not_change_motor_or_battery_geom_mass():
+diff --git a/tests/test_wheel_inertia_contract.py b/tests/test_wheel_inertia_contract.py
+new file mode 100644
+index 0000000..d54aa92
+--- /dev/null
++++ b/tests/test_wheel_inertia_contract.py
+@@ -0,0 +1,150 @@
++"""Physical wheel mass, tensor, and fixed-axis response contracts."""
++
++import xml.etree.ElementTree as ET
++
++import mujoco
++import numpy as np
++import pytest
++
++from bike_sim.geometry.specs import BikeSpecs
++from bike_sim.mujoco.builder import generate_mujoco_xml
++from bike_sim.physics.inertia import add_body_inertial, parallel_axis, ring_inertia
++from bike_sim.physics.mass import BikeMassSpecs
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++
++
++PHYSICAL = SimulationPhysicsConfig(physics_mode="physical")
++
++
++def _wheel_xml(*, mass_specs=None, physics_config=PHYSICAL):
++    return ET.fromstring(generate_mujoco_xml(
++        specs=BikeSpecs(), mode="ride", rider="none", mass_specs=mass_specs,
++        physics_config=physics_config,
++    ))
++
++
++def _body_tensor(model, name):
++    body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
++    rotation = np.empty(9)
++    mujoco.mju_quat2Mat(rotation, model.body_iquat[body_id])
++    rotation = rotation.reshape(3, 3)
++    return rotation @ np.diag(model.body_inertia[body_id]) @ rotation.T
++
++
++def test_ring_inertia_has_mass_at_the_rim():
++    tensor = ring_inertia(1.0, 0.30, 0.35, 0.06)
++    assert tensor[1, 1] == pytest.approx(0.10625)
++    assert np.linalg.eigvalsh(tensor).min() > 0
++    assert tensor[0, 0] + tensor[2, 2] >= tensor[1, 1]
++
++
++def test_parallel_axis_uses_full_offset_vector():
++    np.testing.assert_allclose(parallel_axis(2.0, (1.0, 2.0, 0.0)), [
++        [8.0, -4.0, 0.0], [-4.0, 2.0, 0.0], [0.0, 0.0, 10.0],
++    ])
++
++
++@pytest.mark.parametrize("values", [
++    (0.0, 0.30, 0.35, 0.06),
++    (1.0, -0.01, 0.35, 0.06),
++    (1.0, 0.35, 0.35, 0.06),
++    (1.0, 0.30, 0.35, 0.0),
++    (float("nan"), 0.30, 0.35, 0.06),
++])
++def test_ring_inertia_rejects_invalid_components(values):
++    with pytest.raises(ValueError):
++        ring_inertia(*values)
++
++
++@pytest.mark.parametrize("mass,offset", [
++    (-1.0, (0, 0, 0)), (1.0, (0, 0)), (1.0, (0, float("inf"), 0)),
++])
++def test_parallel_axis_rejects_invalid_inputs(mass, offset):
++    with pytest.raises(ValueError):
++        parallel_axis(mass, offset)
++
++
++def test_add_body_inertial_emits_one_full_tensor_and_rejects_duplicate():
++    body = ET.Element("body")
++    tensor = np.diag((0.053425, 0.10625, 0.053425))
++    add_body_inertial(body, 1.0, (0, 0, 0), tensor)
++    inertial = body.find("inertial")
++    assert inertial is not None
++    assert inertial.get("fullinertia") == "0.053425 0.10625 0.053425 0 0 0"
++    with pytest.raises(ValueError, match="already"):
++        add_body_inertial(body, 1.0, (0, 0, 0), tensor)
++
++
++def test_add_body_inertial_rejects_nonphysical_tensor():
++    with pytest.raises(ValueError, match="triangle"):
++        add_body_inertial(ET.Element("body"), 1.0, (0, 0, 0), np.diag((1.0, 1.0, 3.0)))
++
++
++def test_fixed_axis_acceleration_uses_declared_inertia():
++    model = mujoco.MjModel.from_xml_string('''<mujoco>
++      <option gravity="0 0 0"/>
++      <worldbody><body><joint type="hinge" axis="0 1 0"/>
++      <inertial pos="0 0 0" mass="1" diaginertia="0.053425 0.10625 0.053425"/>
++      </body></worldbody></mujoco>''')
++    data = mujoco.MjData(model)
++    data.qfrc_applied[0] = 1.0625
++    mujoco.mj_forward(model, data)
++    assert data.qacc[0] == pytest.approx(10.0, rel=1e-3)
++
++
++@pytest.mark.parametrize("name,mass,diagonal", [
++    ("front_wheel", 2.40, (0.10980155, 0.2173131, 0.10980155)),
++    ("rear_wheel", 2.80, (0.11464850833333334, 0.22530795, 0.11464850833333334)),
++])
++def test_compiled_wheel_tensor_matches_selected_synthetic_ring_model(name, mass, diagonal):
++    root = _wheel_xml()
++    wheel = root.find(f".//body[@name='{name}']")
++    assert wheel is not None
++    inertials = wheel.findall("inertial")
++    assert len(inertials) == 1
++    assert float(inertials[0].get("mass")) == pytest.approx(mass)
++    assert all(float(geom.get("mass")) == 0 for geom in wheel.findall("geom"))
++    model = mujoco.MjModel.from_xml_string(ET.tostring(root, encoding="unicode"))
++    np.testing.assert_allclose(_body_tensor(model, name), np.diag(diagonal), rtol=0, atol=1e-10)
++
++
++@pytest.mark.parametrize("name", ["front_wheel", "rear_wheel"])
++def test_decorative_wheel_geometry_does_not_change_compiled_inertia(name):
++    root = _wheel_xml()
++    original = mujoco.MjModel.from_xml_string(ET.tostring(root, encoding="unicode"))
++    wheel = root.find(f".//body[@name='{name}']")
++    wheel.find(f"geom[@name='geom_{name.removesuffix('_wheel')}_rim']").set("size", "0.05")
++    modified = mujoco.MjModel.from_xml_string(ET.tostring(root, encoding="unicode"))
++    np.testing.assert_allclose(_body_tensor(modified, name), _body_tensor(original, name), rtol=0, atol=1e-12)
++
++
++def test_selected_wheel_inertia_sets_fixed_axis_energy_and_acceleration():
++    wheel = _wheel_xml().find(".//body[@name='front_wheel']")
++    inertial = ET.tostring(wheel.find("inertial"), encoding="unicode")
++    model = mujoco.MjModel.from_xml_string(
++        '<mujoco><option gravity="0 0 0"><flag energy="enable"/></option>'
++        '<worldbody><body><joint type="hinge" axis="0 1 0" damping="0"/>'
++        f'{inertial}</body></worldbody></mujoco>'
++    )
++    data = mujoco.MjData(model)
++    data.qvel[0] = 4.0
++    data.qfrc_applied[0] = 0.2173131 * 10.0
++    mujoco.mj_forward(model, data)
++    assert data.energy[1] == pytest.approx(0.5 * 0.2173131 * 4.0**2, rel=1e-10)
++    assert data.qacc[0] == pytest.approx(10.0, rel=1e-10)
++
++
++def test_legacy_wheels_retain_geom_masses_without_explicit_inertial():
++    root = _wheel_xml(physics_config=SimulationPhysicsConfig())
++    for name in ("front_wheel", "rear_wheel"):
++        wheel = root.find(f".//body[@name='{name}']")
++        assert wheel.find("inertial") is None
++        assert sum(float(geom.get("mass")) for geom in wheel.findall("geom")) > 0
++
++
++def test_physical_wheel_mass_override_scales_selected_tensor():
++    baseline = mujoco.MjModel.from_xml_string(ET.tostring(_wheel_xml(), encoding="unicode"))
++    mass = BikeMassSpecs(front_wheel_mass=4.8)
++    doubled = mujoco.MjModel.from_xml_string(ET.tostring(_wheel_xml(mass_specs=mass), encoding="unicode"))
++    np.testing.assert_allclose(_body_tensor(doubled, "front_wheel"), 2 * _body_tensor(baseline, "front_wheel"), rtol=0, atol=1e-10)
++    np.testing.assert_allclose(_body_tensor(doubled, "rear_wheel"), _body_tensor(baseline, "rear_wheel"), rtol=0, atol=1e-10)

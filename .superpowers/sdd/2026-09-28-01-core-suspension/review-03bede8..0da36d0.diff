@@ -1,0 +1,594 @@
+# Review package: 03bede8..HEAD
+
+## Commits
+0da36d0 feat: separate legacy and physical simulation modes
+
+## Files changed
+ src/bike_sim/mujoco/builder.py         |   6 +-
+ src/bike_sim/physics/model_config.py   |  37 ++++++++++++
+ src/bike_sim/sim/ride/virtual_rider.py |   7 +++
+ src/bike_sim/sim/ride_sim.py           | 106 +++++++++++++++++++++++++++++----
+ tests/test_physics_config.py           | 106 +++++++++++++++++++++++++++++++++
+ 5 files changed, 249 insertions(+), 13 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/mujoco/builder.py b/src/bike_sim/mujoco/builder.py
+index 806fd92..2421109 100644
+--- a/src/bike_sim/mujoco/builder.py
++++ b/src/bike_sim/mujoco/builder.py
+@@ -13,20 +13,21 @@ import numpy as np
+ from bike_sim.geometry.hardpoints import (
+     compute_front_axle,
+     compute_ground_z,
+     compute_trail,
+     get_fixed_frame_points,
+ )
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.kinematics.solver import HorstLinkageSolver
+ from bike_sim.physics.tyre import TYRE_MODELS
+ from bike_sim.physics.mass import BikeMassSpecs, compute_static_system_cg
++from bike_sim.physics.model_config import SimulationPhysicsConfig
+ from bike_sim.physics.rider import RiderSpecs, resolve_rider
+ 
+ from bike_sim.mujoco.drivetrain import build_chain_constraint
+ from bike_sim.physics.drivetrain import DrivetrainSpecs
+ from bike_sim.mujoco.assets import build_visual_and_assets
+ from bike_sim.mujoco.environment import build_environment
+ from bike_sim.mujoco.frame import build_frame_body
+ from bike_sim.mujoco.linkage import (
+     build_contact_exclusions,
+     build_equality_constraints,
+@@ -48,20 +49,22 @@ def generate_mujoco_xml(
+     solver: Optional[HorstLinkageSolver] = None,
+     mode: str = "standard",
+     mass_specs: Optional[BikeMassSpecs] = None,
+     include_rider: bool = False,
+     debug_markers: bool = False,
+     field: Optional[HeightFieldSpec] = None,
+     rider: Optional[Union[RiderSpecs, str]] = None,
+     tyre_model: str = "sphere",
+     crank_joint: bool = False,
+     gear_ratio: float = DEFAULT_GEAR_RATIO,
++    *,
++    physics_config: Optional[SimulationPhysicsConfig] = None,
+ ) -> str:
+     """
+     Generates a complete, valid, high-fidelity MuJoCo MJCF XML model string.
+ 
+     Args:
+         specs: Bicycle geometric specifications.
+         solver: Solved Horst-link kinematics solver instance.
+         mode: Simulation mode ("standard", "stand", "playground", "ride").
+         mass_specs: Physical component mass specifications.
+         include_rider: Legacy switch for the lumped rider: True builds the 80 kg standing
+@@ -77,20 +80,21 @@ def generate_mujoco_xml(
+             rider is present.
+         tyre_model: ``sphere`` keeps the existing wheel–road contacts; ``pneumatic`` disables
+             only the two contact spheres so the ride-mode force applier can carry the wheels.
+         crank_joint: Ride-mode only. Builds the crankset on a `crank_spin` hinge with a
+             `pedal_*` body on each arm end, adds the `crank_drive` motor and ties the crank
+             to the rear wheel with the chain equality. With an articulated-leg seated rider
+             the feet are additionally welded to the pedal bodies; without `crank_joint`
+             those welds do not exist (the pedals stay rigid frame geoms) and the leg
+             chains just hang.
+         gear_ratio: Wheel revolutions per crank revolution for that chain equality.
++        physics_config: Optional ride-mode physics settings, including the integration step.
+ 
+     Returns:
+         Formatted MJCF XML string ready for MuJoCo simulation.
+ 
+     Raises:
+         ValueError: If the tyre model is unknown, a non-sphere model is requested outside
+             ride mode, or a seated rider is requested outside ride mode or does not fit.
+     """
+     if crank_joint and mode != "ride":
+         raise ValueError(f"the pedalled crankset is a ride-mode model; mode {mode!r} builds a rigid crankset")
+@@ -135,21 +139,21 @@ def generate_mujoco_xml(
+         root,
+         "compiler",
+         {
+             "angle": "degree",
+             "coordinate": "local",
+             "inertiafromgeom": "auto",
+             "autolimits": "true",
+         },
+     )
+     if mode == "ride":
+-        timestep = "0.0005"
++        timestep = "0.0005" if physics_config is None else str(physics_config.timestep_s)
+     elif mode in ("stand", "playground"):
+         timestep = "0.001"
+     else:
+         timestep = "0.002"
+     ET.SubElement(
+         root,
+         "option",
+         {
+             "gravity": "0 0 -9.81",
+             "timestep": timestep,
+diff --git a/src/bike_sim/physics/model_config.py b/src/bike_sim/physics/model_config.py
+new file mode 100644
+index 0000000..16e6e2b
+--- /dev/null
++++ b/src/bike_sim/physics/model_config.py
+@@ -0,0 +1,37 @@
++"""Mode selection and shared integration settings for ride simulations."""
++
++from dataclasses import dataclass
++from math import isfinite
++
++
++@dataclass(frozen=True)
++class SimulationPhysicsConfig:
++    """Resolved physics mode and the source of forward drive torque."""
++
++    physics_mode: str = "legacy"
++    drive_mode: str | None = None
++    timestep_s: float = 0.0005
++    pitch_assist: bool | None = None
++
++    def __post_init__(self) -> None:
++        if self.physics_mode not in {"legacy", "physical"}:
++            raise ValueError("unknown physics_mode")
++        if not isfinite(self.timestep_s) or self.timestep_s <= 0:
++            raise ValueError("timestep_s must be finite and positive")
++
++        legacy = self.physics_mode == "legacy"
++        if self.drive_mode is None:
++            object.__setattr__(
++                self, "drive_mode", "ideal_speed_control" if legacy else "coast"
++            )
++        if self.pitch_assist is None:
++            object.__setattr__(self, "pitch_assist", legacy)
++        if self.drive_mode not in {
++            "coast",
++            "ideal_speed_control",
++            "crank_effort",
++            "articulated_effort",
++        }:
++            raise ValueError("unknown drive_mode")
++        if not legacy and self.pitch_assist:
++            raise ValueError("external pitch assist is forbidden in physical mode")
+diff --git a/src/bike_sim/sim/ride/virtual_rider.py b/src/bike_sim/sim/ride/virtual_rider.py
+index fc5357c..c9be75c 100644
+--- a/src/bike_sim/sim/ride/virtual_rider.py
++++ b/src/bike_sim/sim/ride/virtual_rider.py
+@@ -121,20 +121,27 @@ class PitchStabilizer:
+             self.moment_nm = 0.0
+ 
+         # Assigned every step, zero included: see the module docstring.
+         data.qfrc_applied[self.pitch_dofadr] = self.moment_nm
+ 
+         dt = float(model.opt.timestep)
+         self.angular_impulse_nms += self.moment_nm * dt
+         self.work_j += self.moment_nm * pitch_rate_radps * dt
+         return self.moment_nm
+ 
++    def disable(self, data: mujoco.MjData) -> None:
++        """Clear the unbalanced root moment when external pitch help is disabled."""
++        self.active = False
++        self.moment_nm = 0.0
++        # MuJoCo retains applied generalized forces between steps.
++        data.qfrc_applied[self.pitch_dofadr] = 0.0
++
+     def reset(self) -> None:
+         """Clears the moment and both accumulators for a fresh run."""
+         self.moment_nm = 0.0
+         self.angular_impulse_nms = 0.0
+         self.work_j = 0.0
+         self.active = False
+ 
+ 
+ @dataclass(frozen=True)
+ class CrashEvent:
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index 6c02bf3..b5b8091 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -19,20 +19,21 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
+ import mujoco
+ 
+ from bike_sim.geometry.specs import BikeSpecs
+ from bike_sim.geometry.hardpoints import compute_ground_z
+ from bike_sim.kinematics.solver import HorstLinkageSolver
+ from bike_sim.mujoco.builder import generate_mujoco_xml
+ from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
+ from bike_sim.physics.coil_shock import CoilShock
+ from bike_sim.physics.damper import BikeSuspensionSystem
+ from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
++from bike_sim.physics.model_config import SimulationPhysicsConfig
+ from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
+ from bike_sim.physics.tyre import TyreConfig
+ from bike_sim.sim.controllers import SuspensionController
+ from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
+ from bike_sim.sim.ride.braking import BrakeController
+ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
+ from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+ from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
+ from bike_sim.sim.ride.forces import SuspensionForceApplier
+ from bike_sim.sim.ride.leg_drive import LegDrive
+@@ -84,20 +85,22 @@ class RideSimulation:
+         coil_shock: Optional[CoilShock] = None,
+         debug_markers: bool = False,
+         field: Optional[HeightFieldSpec] = None,
+         rider: Optional[Union[RiderSpecs, str]] = None,
+         tyre: Optional[TyreConfig] = None,
+         drive_mode: str = "motor",
+         assist: str = "tour",
+         drivetrain: Optional[DrivetrainSpecs] = None,
+         legs: Optional[str] = None,
+         visual_pedalling: bool = False,
++        *,
++        physics_config: Optional[SimulationPhysicsConfig] = None,
+     ) -> None:
+         """
+         Compiles the model, rasterizes the track, and solves the starting equilibrium.
+ 
+         Args:
+             track: Track to ride. Defaults to the shipped default preset.
+             specs: Bicycle geometry. Defaults to the shipped `BikeSpecs`.
+             target_speed_kmh: Initial cruise target, inside the 15-45 km/h band.
+             include_rider: Legacy switch: False rides the bike alone; True rides the default
+                 rider variant. Ignored when ``rider`` is given.
+@@ -129,29 +132,41 @@ class RideSimulation:
+                 masses on their slide joints, ``articulated`` hangs hip/knee/ankle chains
+                 off the pelvis and welds the feet to the pedals. ``None`` picks
+                 ``articulated`` whenever the crankset turns (``pedal``/``pedelec``, or
+                 ``visual_pedalling``) and ``rigid`` otherwise. Supersedes ``rider.legs``:
+                 a ``legs`` set inside the ``rider=`` spec is overwritten by this kwarg's
+                 resolution.
+             visual_pedalling: Build the turning crankset and articulated legs in
+                 ``motor`` mode too, so the pedals and feet visibly spin while the ideal
+                 wheel actuator drives; the legs are dragged, they deliver no torque.
+                 Redundant in the pedalled modes, where the crankset turns anyway.
++            physics_config: Physical model selection and timestep. An omitted config uses
++                the existing legacy simulation and its historical drive mode.
+ 
+         Raises:
+             ValueError: If the track does not fit the heightfield envelope.
+             RuntimeError: If the starting equilibrium does not converge.
+         """
+         if drive_mode not in DRIVE_MODES:
+             raise ValueError(
+                 f"unknown drive mode {drive_mode!r}; available: {', '.join(DRIVE_MODES)}"
+             )
++        self.physics_config = physics_config if physics_config is not None else SimulationPhysicsConfig()
++        if self.physics_config.drive_mode in {"crank_effort", "articulated_effort"}:
++            raise NotImplementedError(
++                f"{self.physics_config.drive_mode} is not implemented in this physics revision"
++            )
++        if self.physics_config.physics_mode == "physical" and drive_mode != "motor":
++            raise ValueError("physical mode uses physics_config.drive_mode, not legacy drive_mode")
++        self.physics_revision = (
++            "legacy-v1" if self.physics_config.physics_mode == "legacy" else "physical-v1"
++        )
+         self.drive_mode = drive_mode
+         self.drivetrain_specs = drivetrain if drivetrain is not None else DrivetrainSpecs()
+         pedalled = drive_mode != "motor"
+         self.visual_pedalling = bool(visual_pedalling)
+         crank_joint = pedalled or self.visual_pedalling
+ 
+         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
+         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
+         assert_track_fits(self.track, self.field)
+ 
+@@ -179,20 +194,21 @@ class RideSimulation:
+             generate_mujoco_xml(
+                 specs=self.specs,
+                 solver=self.solver,
+                 mode="ride",
+                 rider=self.rider,
+                 debug_markers=debug_markers,
+                 field=self.field,
+                 tyre_model=self.tyre_config.model,
+                 crank_joint=crank_joint,
+                 gear_ratio=self.drivetrain_specs.gear_ratio,
++                physics_config=self.physics_config,
+             )
+         )
+         # Before the first forward pass, before the equilibrium solve, before any viewer.
+         self.model.hfield_data[:] = build_field_data(self.track, self.field).reshape(-1)
+         self.tyre_applier: Optional[TyreForceApplier] = None
+         if self.tyre_config.pneumatic:
+             track_x = self.field.track_x()
+             road_z = (
+                 compute_ground_z(self.specs) / 1000.0
+                 + build_profile(self.track, track_x)
+@@ -235,20 +251,23 @@ class RideSimulation:
+             )
+             if pedalled
+             else None
+         )
+         self.brake_source_cruise = False
+         self.brakes = BrakeController(self.model)
+         self.stabilizer = PitchStabilizer(self.model)
+         self.crash_detector = CrashDetector(self.model)
+ 
+         self.drive_ctrl_adr = _actuator_id(self.model, "rear_drive")
++        self.crank_drive_ctrl_adr = mujoco.mj_name2id(
++            self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, "crank_drive"
++        )
+         self.front_brake_ctrl_adr = _actuator_id(self.model, "front_brake")
+         self.rear_brake_ctrl_adr = _actuator_id(self.model, "rear_brake")
+         self.root_x_qposadr, self.root_x_dofadr = _root_addresses(self.model, "root_x")
+         self.root_pitch_qposadr, _ = _root_addresses(self.model, "root_pitch")
+ 
+         self.contacts = TerrainContacts(
+             front_load_n=0.0,
+             rear_load_n=0.0,
+             front_support_n=0.0,
+             rear_support_n=0.0,
+@@ -318,54 +337,62 @@ class RideSimulation:
+         self.data.time = 0.0
+         self.steps = 0
+         if self.tyre_applier is None:
+             self.contacts = self.contact_query.query(self.model, self.data)
+         else:
+             self.contacts = self.contact_query.query(
+                 self.model, self.data, wheel_load_provider=self.tyre_applier
+             )
+ 
+     def step(self, front_brake_demand: float = 0.0, rear_brake_demand: float = 0.0) -> None:
++        """Advance one timestep using the selected force and control path."""
++        if self.physics_config.physics_mode == "legacy":
++            self._step_legacy(front_brake_demand, rear_brake_demand)
++        else:
++            self._step_physical(front_brake_demand, rear_brake_demand)
++
++    def _step_legacy(self, front_brake_demand: float, rear_brake_demand: float) -> None:
+         """
+-        Advances the simulation by one timestep.
++        Advance the historical ride model by one timestep.
+ 
+         The contact snapshot the five writers share is the one taken at the end of the
+         previous step, which holds the constraint forces of the last forward pass -- the same
+         numbers a fresh query at the top of this step would return, since nothing has touched
+         `data.contact` in between. Querying once per state rather than once per use keeps the
+         dropout counter advancing exactly one step per step.
+ 
+         Args:
+             front_brake_demand: Front brake lever position in [0, 1], not a torque.
+             rear_brake_demand: Rear brake lever position in [0, 1], not a torque.
+         """
+         if self.tyre_applier is not None:
+             self.tyre_applier.apply(self.model, self.data)
+             self.contacts = self.contact_query.query(
+                 self.model, self.data, wheel_load_provider=self.tyre_applier
+             )
+ 
+         self.applier.apply(self.model, self.data)
+         self._follow_cranks()
+         self.rider_forces.apply(self.model, self.data)
+-        self._compensate_cruise_gains()
+         if self.tyre_applier is None:
+             self.resistance.apply(self.model, self.data, self.contacts)
+-            traction_limited = False
+-            drive_torque = self.cruise.compute(self.model, self.data, self.contacts)
+-        else:
+-            error_mps = self.cruise.target_speed_mps - float(self.data.qvel[self.root_x_dofadr])
+-            rear_outputs = self.tyre_applier.rear_outputs
+-            traction_limited = any(
+-                patch.fully_sliding and patch.slip_ratio * error_mps > 0.0
+-                for patch in rear_outputs.patches
+-            )
++        traction_limited = False
++        drive_torque = 0.0
++        if self.physics_config.drive_mode == "ideal_speed_control":
++            self._compensate_cruise_gains()
++            if self.tyre_applier is not None:
++                error_mps = self.cruise.target_speed_mps - float(self.data.qvel[self.root_x_dofadr])
++                rear_outputs = self.tyre_applier.rear_outputs
++                traction_limited = any(
++                    patch.fully_sliding and patch.slip_ratio * error_mps > 0.0
++                    for patch in rear_outputs.patches
++                )
+             drive_torque = self.cruise.compute(
+                 self.model, self.data, self.contacts, traction_limited=traction_limited
+             )
+         if self.drivetrain is None:
+             self.data.ctrl[self.drive_ctrl_adr] = drive_torque
+             # Motor mode with visual pedalling: the chain equality spins the crank off
+             # the driven wheel and the impedance drags the legs along; zero rider torque.
+             # With no leg chains at all this no-ops.
+             self.leg_drive.apply(self.model, self.data, 0.0)
+         else:
+@@ -390,31 +417,86 @@ class RideSimulation:
+             self.brake_source_cruise = command.brake_demand > max(
+                 front_brake_demand, rear_brake_demand
+             )
+             front_brake_demand = max(front_brake_demand, command.brake_demand)
+             rear_brake_demand = max(rear_brake_demand, command.brake_demand)
+         front_torque, rear_torque = self.brakes.compute(
+             self.data, front_brake_demand, rear_brake_demand
+         )
+         self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
+         self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
+-        self.stabilizer.apply(self.model, self.data, self.contacts)
++        if self.physics_config.pitch_assist:
++            self.stabilizer.apply(self.model, self.data, self.contacts)
++        else:
++            self.stabilizer.disable(self.data)
+ 
+         # Checked against the same snapshot the writers saw, so a reported crash position is
+         # the state that produced it rather than the state one timestep later.
+         self.crash_detector.check(self.data, self.contacts)
+ 
+         mujoco.mj_step(self.model, self.data)
+         self.steps += 1
+         if self.tyre_applier is None:
+             self.contacts = self.contact_query.query(self.model, self.data)
+ 
++    def _step_physical(self, front_brake_demand: float, rear_brake_demand: float) -> None:
++        """Advance the physical model with forces read from current kinematics.
++
++        ``contacts`` is the snapshot used by this step's force writers. It remains the
++        pre-step snapshot until the next call refreshes MuJoCo's kinematics.
++        """
++        mujoco.mj_forward(self.model, self.data)
++        if self.tyre_applier is not None:
++            self.tyre_applier.apply(self.model, self.data)
++            self.contacts = self.contact_query.query(
++                self.model, self.data, wheel_load_provider=self.tyre_applier
++            )
++        else:
++            self.contacts = self.contact_query.query(self.model, self.data)
++
++        self.applier.apply(self.model, self.data)
++        self.rider_forces.apply(self.model, self.data)
++        if self.tyre_applier is None:
++            self.resistance.apply(self.model, self.data, self.contacts)
++
++        self.data.ctrl[self.drive_ctrl_adr] = 0.0
++        if self.crank_drive_ctrl_adr >= 0:
++            self.data.ctrl[self.crank_drive_ctrl_adr] = 0.0
++        self.leg_drive.apply(self.model, self.data, 0.0)
++        if self.physics_config.drive_mode == "ideal_speed_control":
++            traction_limited = False
++            if self.tyre_applier is not None:
++                error_mps = self.cruise.target_speed_mps - float(
++                    self.data.qvel[self.root_x_dofadr]
++                )
++                traction_limited = any(
++                    patch.fully_sliding and patch.slip_ratio * error_mps > 0.0
++                    for patch in self.tyre_applier.rear_outputs.patches
++                )
++            drive_torque = self.cruise.compute(
++                self.model, self.data, self.contacts, traction_limited=traction_limited
++            )
++            if (front_brake_demand > 0.0 or rear_brake_demand > 0.0) and drive_torque > 0.0:
++                drive_torque = 0.0
++            self.data.ctrl[self.drive_ctrl_adr] = drive_torque
++
++        front_torque, rear_torque = self.brakes.compute(
++            self.data, front_brake_demand, rear_brake_demand
++        )
++        self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
++        self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
++        self.stabilizer.disable(self.data)
++        self.crash_detector.check(self.data, self.contacts)
++
++        mujoco.mj_step(self.model, self.data)
++        self.steps += 1
++
+     def _follow_cranks(self) -> None:
+         """
+         Moves the seated rider's pedal interfaces to where the cranks now are.
+ 
+         The crank turns about +y, so the arm built at 3 o'clock sweeps to
+         `(L cos phi, 0, -L sin phi)`: the front pedal drops as the phase advances and the
+         rear pedal, 180 degrees away, rises by the same amount. Only the interface moves; the
+         leg masses stay on their slide coordinates, which is what makes this a bob source
+         rather than a kinematic chain.
+         """
+diff --git a/tests/test_physics_config.py b/tests/test_physics_config.py
+new file mode 100644
+index 0000000..89f48ec
+--- /dev/null
++++ b/tests/test_physics_config.py
+@@ -0,0 +1,106 @@
++"""Configuration and orchestration boundaries for physical ride mode."""
++
++import mujoco
++import pytest
++
++from bike_sim.mujoco.builder import generate_mujoco_xml
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.physics.tyre import TyreConfig
++from bike_sim.sim.ride_sim import RideSimulation
++from bike_sim.terrain import get_preset
++
++
++def test_physical_defaults_to_coast_without_external_pitch():
++    cfg = SimulationPhysicsConfig(physics_mode="physical")
++    assert cfg.drive_mode == "coast"
++    assert cfg.pitch_assist is False
++
++
++def test_external_pitch_is_rejected_in_physical():
++    with pytest.raises(ValueError, match="pitch"):
++        SimulationPhysicsConfig(physics_mode="physical", pitch_assist=True)
++
++
++@pytest.mark.parametrize("mode", ["crank_effort", "articulated_effort"])
++def test_effort_modes_cannot_silently_use_legacy_cruise(mode):
++    with pytest.raises(NotImplementedError, match=mode):
++        RideSimulation(physics_config=SimulationPhysicsConfig("physical", drive_mode=mode))
++
++
++def test_invalid_physics_config_is_rejected():
++    with pytest.raises(ValueError, match="physics_mode"):
++        SimulationPhysicsConfig(physics_mode="unknown")
++    with pytest.raises(ValueError, match="drive_mode"):
++        SimulationPhysicsConfig(drive_mode="unknown")
++    with pytest.raises(ValueError, match="timestep"):
++        SimulationPhysicsConfig(timestep_s=0.0)
++
++
++def test_explicit_timestep_reaches_ride_model():
++    cfg = SimulationPhysicsConfig(physics_mode="physical", timestep_s=0.001)
++    model = mujoco.MjModel.from_xml_string(
++        generate_mujoco_xml(mode="ride", rider="none", physics_config=cfg)
++    )
++    assert model.opt.timestep == pytest.approx(0.001)
++
++
++def test_physical_coast_clears_drive_and_root_pitch_every_step():
++    sim = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    root_z_joint = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT, "root_z")
++    sim.data.qpos[sim.model.jnt_qposadr[root_z_joint]] += 1.0
++    sim.data.qpos[sim.root_pitch_qposadr] = 0.2
++    sim.contact_query.reset()
++
++    sim.data.ctrl[sim.drive_ctrl_adr] = 100.0
++    sim.data.qfrc_applied[sim.stabilizer.pitch_dofadr] = 30.0
++    sim.step()
++    assert sim.contacts.airborne
++    assert sim.data.ctrl[sim.drive_ctrl_adr] == 0.0
++    assert sim.data.qfrc_applied[sim.stabilizer.pitch_dofadr] == 0.0
++    assert sim.stabilizer.angular_impulse_nms == 0.0
++    assert sim.cruise.torque_nm == 0.0
++
++
++def test_implicit_legacy_and_physical_have_distinct_revisions():
++    legacy = RideSimulation(track=get_preset("flat"), rider="none")
++    physical = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    assert legacy.physics_config.physics_mode == "legacy"
++    assert legacy.physics_revision != physical.physics_revision
++
++
++def test_explicit_legacy_coast_disables_cruise_and_pitch_help():
++    sim = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        physics_config=SimulationPhysicsConfig(
++            physics_mode="legacy", drive_mode="coast", pitch_assist=False
++        ),
++    )
++    sim.data.ctrl[sim.drive_ctrl_adr] = 100.0
++    sim.data.qfrc_applied[sim.stabilizer.pitch_dofadr] = 30.0
++    sim.step()
++    assert sim.data.ctrl[sim.drive_ctrl_adr] == 0.0
++    assert sim.data.qfrc_applied[sim.stabilizer.pitch_dofadr] == 0.0
++    assert sim.cruise.torque_nm == 0.0
++
++
++def test_physical_pneumatic_reads_current_wheel_geometry():
++    sim = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        tyre=TyreConfig(model="pneumatic"),
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    z_joint = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT, "root_z")
++    sim.data.qpos[sim.model.jnt_qposadr[z_joint]] += 1.0
++    sim.step()
++    assert sim.tyre_applier.front_outputs.normal_load_n == 0.0
++    assert sim.tyre_applier.rear_outputs.normal_load_n == 0.0

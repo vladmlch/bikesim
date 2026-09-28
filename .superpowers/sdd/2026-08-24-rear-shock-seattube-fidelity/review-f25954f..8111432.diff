@@ -1,0 +1,401 @@
+# Review package: f25954f..HEAD
+
+## Commits
+8111432 feat(geometry): constrained fit of hardpoints to photo targets
+
+## Files changed
+ docs/reference/fitted_hardpoints.json |  63 ++++++++++
+ tests/test_fitted_hardpoints.py       |  81 ++++++++++++
+ tools/fit_hardpoints.py               | 227 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 371 insertions(+)
+
+## Diff
+diff --git a/docs/reference/fitted_hardpoints.json b/docs/reference/fitted_hardpoints.json
+new file mode 100644
+index 0000000..8a1cd94
+--- /dev/null
++++ b/docs/reference/fitted_hardpoints.json
+@@ -0,0 +1,63 @@
++{
++  "points_mm": {
++    "P0": [
++      -44.85512,
++      0.0,
++      45.371818
++    ],
++    "P2": [
++      -378.979955,
++      0.0,
++      -8.331742
++    ],
++    "P3": [
++      -71.265947,
++      0.0,
++      206.506791
++    ],
++    "P4": [
++      -37.894603,
++      0.0,
++      190.475423
++    ],
++    "P5": [
++      41.709982,
++      0.0,
++      184.716478
++    ],
++    "P6": [
++      27.017513,
++      0.0,
++      259.307623
++    ],
++    "P7": [
++      172.994686,
++      0.0,
++      403.236929
++    ],
++    "P12": [
++      -413.879585,
++      0.0,
++      59.815388
++    ]
++  },
++  "kinematics": {
++    "max_stroke": 65.000068,
++    "initial_leverage_ratio": 3.364457,
++    "final_leverage_ratio": 2.404184,
++    "progressivity_pct": 28.541706,
++    "max_link_error": 0.0
++  },
++  "residuals_mm": {
++    "P0": 0.4572,
++    "P2": 0.1762,
++    "P3": 0.4122,
++    "P4": 1.7212,
++    "P5": 0.2503,
++    "P6": 3.3895,
++    "P7": 2.462,
++    "P12": 0.2204
++  },
++  "chainstay_shift_mm": 21.0,
++  "shock_eye_to_eye_mm": 204.999952
++}
+diff --git a/tests/test_fitted_hardpoints.py b/tests/test_fitted_hardpoints.py
+new file mode 100644
+index 0000000..c1a370d
+--- /dev/null
++++ b/tests/test_fitted_hardpoints.py
+@@ -0,0 +1,81 @@
++"""Validates the committed fitted hardpoints, not the optimiser that produced them."""
++
++import json
++from pathlib import Path
++
++import numpy as np
++import pytest
++
++from bike_geometry import BikeSpecs, compute_rear_axle
++from linkage_solver import HorstLinkageSolver
++
++REPO = Path(__file__).resolve().parent.parent
++FITTED = REPO / "docs" / "reference" / "fitted_hardpoints.json"
++REFERENCE = REPO / "docs" / "reference" / "bulls_reference_points.json"
++
++FIDELITY_TOLERANCE_MM = 8.0
++CHAINSTAY_SHIFT_MM = 21.0
++
++
++@pytest.fixture(scope="module")
++def fitted():
++    assert FITTED.exists(), "run: uv run --with scipy --with pillow python -m tools.fit_hardpoints"
++    return json.loads(FITTED.read_text())
++
++
++def _solver(points):
++    specs = BikeSpecs()
++    arr = {k: np.array(v, dtype=float) for k, v in points.items()}
++    return HorstLinkageSolver(
++        specs=specs,
++        p0=arr["P0"], p5=arr["P5"], p7=arr["P7"],
++        p1_0=compute_rear_axle(specs),
++        p2_0=arr["P2"], p3_0=arr["P3"], p4_0=arr["P4"],
++        p6_0=arr["P6"], p12_0=arr["P12"],
++    )
++
++
++def test_binding_equality_stroke_is_exactly_65(fitted):
++    traj = _solver(fitted["points_mm"]).solve_trajectory(n_points=101, max_travel=180.0)
++    assert traj["max_stroke"] == pytest.approx(65.0, abs=0.01)
++
++
++def test_four_bar_closes(fitted):
++    traj = _solver(fitted["points_mm"]).solve_trajectory(n_points=41, max_travel=180.0)
++    assert traj["max_link_error"] < 1e-6
++
++
++def test_leverage_curve_is_progressive_and_sane(fitted):
++    traj = _solver(fitted["points_mm"]).solve_trajectory(n_points=41, max_travel=180.0)
++    lr = traj["leverage_ratio"]
++    assert traj["initial_leverage_ratio"] > traj["final_leverage_ratio"], "must be progressive"
++    assert 2.9 <= traj["initial_leverage_ratio"] <= 3.4
++    assert 2.1 <= traj["final_leverage_ratio"] <= 2.6
++    assert 15.0 <= traj["progressivity_pct"] <= 32.0
++    assert np.all(np.diff(lr) < 1e-6), "leverage ratio must decrease monotonically"
++
++
++def test_pivots_stay_within_fidelity_tolerance_of_the_photo(fitted):
++    """P2 is compared against the deliberately shifted target (chainstay spec wins)."""
++    reference = json.loads(REFERENCE.read_text())["points_mm"]
++    points = fitted["points_mm"]
++
++    comparisons = [
++        ("P0", reference["P0_candidate"], 0.0),
++        ("P2", reference["P2_candidate"], CHAINSTAY_SHIFT_MM),
++        ("P3", reference["P3"], 0.0),
++        ("P4", reference["P4"], 0.0),
++        ("P5", reference["P5"], 0.0),
++        ("P6", reference["P6"], 0.0),
++        ("P7", reference["P7"], 0.0),
++    ]
++    for name, target, shift in comparisons:
++        fx, _, fz = points[name]
++        dist = float(np.hypot(fx - (target[0] + shift), fz - target[1]))
++        assert dist <= FIDELITY_TOLERANCE_MM, f"{name} drifted {dist:.2f} mm from photo target"
++
++
++def test_shock_eye_to_eye_matches_spec(fitted):
++    p6 = np.array(fitted["points_mm"]["P6"])
++    p7 = np.array(fitted["points_mm"]["P7"])
++    assert float(np.linalg.norm(p7 - p6)) == pytest.approx(205.0, abs=0.5)
+diff --git a/tools/fit_hardpoints.py b/tools/fit_hardpoints.py
+new file mode 100644
+index 0000000..52bd7ec
+--- /dev/null
++++ b/tools/fit_hardpoints.py
+@@ -0,0 +1,227 @@
++"""
++Offline constrained fit of suspension hardpoints to photo-measured targets.
++
++Run with:  uv run --with scipy --with pillow python -m tools.fit_hardpoints
++
++scipy is used here ONLY. Its output is a committed JSON of constants; the runtime
++library stays numpy-only, and the test suite validates the constants rather than
++re-running this optimiser.
++
++Hard constraints (never traded away):
++  - solve_trajectory(max_travel=180).max_stroke == 65.000 mm
++  - shock eye-to-eye |P7 - P6| == 205.0 mm
++  - chainstay 447.5 mm (spec beats the photo's 468.5 mm; the rear group is
++    translated forward CHAINSTAY_SHIFT_MM as a rigid body)
++
++Objective: least squares distance from each fitted pivot to its photo target.
++"""
++
++from __future__ import annotations
++
++import json
++import time
++from pathlib import Path
++from typing import Any, Dict, Tuple
++
++import numpy as np
++from scipy.optimize import minimize
++
++from bike_geometry import BikeSpecs, compute_rear_axle
++from linkage_solver import HorstLinkageSolver
++from tools.photo_reference import DEFAULT_OUTPUT as REFERENCE_JSON
++from tools.photo_reference import build_reference
++
++CHAINSTAY_SHIFT_MM = 21.0
++TARGET_STROKE_MM = 65.0
++TARGET_E2E_MM = 205.0
++MAX_TRAVEL_MM = 180.0
++OUTPUT = Path(__file__).resolve().parent.parent / "docs" / "reference" / "fitted_hardpoints.json"
++
++# Order of the free parameters packed into the optimisation vector.
++FREE = ("P0", "P2", "P3", "P4", "P5", "P6", "P7", "P12")
++
++# Penalty weights on the two hard equalities. Both are quoted per mm^2 of
++# violation, against a pivot residual objective that is also in mm^2, so a
++# weight of 4e4 buys roughly 200x tighter closure than pivot fidelity.
++STROKE_PENALTY_WEIGHT = 4.0e4
++E2E_PENALTY_WEIGHT = 4.0e4
++
++# Nelder-Mead's default initial simplex perturbs each coordinate by 5% of its
++# own value, which for hardpoints spanning -400 mm to +400 mm means steps from
++# 0.4 mm to 20 mm. A geometry fit wants one uniform length scale, so the simplex
++# is built explicitly with this step instead.
++SIMPLEX_STEP_MM = 1.5
++
++# Ruling R2 (amended): 2000 evaluations was the starting budget, raised to the
++# 8000 ceiling because 2000 terminated on budget rather than on tolerance --
++# P12, which has no kinematic influence at all and must therefore land exactly
++# on its goal, still carried a 0.49 mm residual. At ~43 ms per evaluation this
++# is ~6 minutes of wall time.
++MAX_EVALUATIONS = 8000
++
++# The seed hardpoints already produce a valid four-bar, so an infeasible
++# candidate is genuinely off the manifold. A large finite cost (rather than inf)
++# keeps Nelder-Mead's shrink steps well defined.
++INFEASIBLE_COST = 1e9
++
++
++def _pack(points: Dict[str, np.ndarray]) -> np.ndarray:
++    return np.array([v for name in FREE for v in (points[name][0], points[name][2])], dtype=float)
++
++
++def _unpack(vec: np.ndarray) -> Dict[str, np.ndarray]:
++    return {
++        name: np.array([vec[2 * i], 0.0, vec[2 * i + 1]], dtype=float)
++        for i, name in enumerate(FREE)
++    }
++
++
++def _build_solver(points: Dict[str, np.ndarray]) -> HorstLinkageSolver:
++    specs = BikeSpecs()
++    return HorstLinkageSolver(
++        specs=specs,
++        p0=points["P0"], p5=points["P5"], p7=points["P7"],
++        p1_0=compute_rear_axle(specs),
++        p2_0=points["P2"], p3_0=points["P3"], p4_0=points["P4"],
++        p6_0=points["P6"], p12_0=points["P12"],
++    )
++
++
++def _stroke_at_full_travel(points: Dict[str, np.ndarray]) -> float:
++    """
++    Shock stroke at full rear travel for a candidate hardpoint set.
++
++    Ruling R6: the fit objective reads only this one number, so it is solved
++    directly instead of building a whole trajectory whose other 40 states are
++    discarded.
++    """
++    solver = _build_solver(points)
++    return float(solver.solve_state_from_wheel_travel(MAX_TRAVEL_MM)["shock_stroke"])
++
++
++def evaluate(points: Dict[str, np.ndarray]) -> Dict[str, float]:
++    """
++    Solves the linkage for a candidate hardpoint set.
++
++    Ruling R6: this builds the full trajectory and is therefore called once,
++    after the fit has converged, to produce the reported kinematics -- not from
++    inside the objective.
++    """
++    traj = _build_solver(points).solve_trajectory(n_points=41, max_travel=MAX_TRAVEL_MM)
++    return {
++        "max_stroke": float(traj["max_stroke"]),
++        "initial_leverage_ratio": float(traj["initial_leverage_ratio"]),
++        "final_leverage_ratio": float(traj["final_leverage_ratio"]),
++        "progressivity_pct": float(traj["progressivity_pct"]),
++        "max_link_error": float(traj["max_link_error"]),
++    }
++
++
++def _photo_goal(targets: Dict[str, Tuple[float, float]]) -> Dict[str, np.ndarray]:
++    """
++    The positions the fit is scored against.
++
++    Every linkage pivot is its measured photo position; P2 alone is translated
++    forward by CHAINSTAY_SHIFT_MM because the 447.5 mm chainstay spec overrides
++    the 468.5 mm the photo implies, and the rear group moves as a rigid body.
++    P12 is not a red bolt in the photograph, so it keeps its authored position.
++    """
++    def pt(name: str, shift: float = 0.0) -> np.ndarray:
++        x, z = targets[name]
++        return np.array([x + shift, 0.0, z], dtype=float)
++
++    return {
++        "P0": pt("P0_candidate"),
++        "P2": pt("P2_candidate", shift=CHAINSTAY_SHIFT_MM),
++        "P3": pt("P3"),
++        "P4": pt("P4"),
++        "P5": pt("P5"),
++        "P6": pt("P6"),
++        "P7": pt("P7"),
++        "P12": np.array([-435.0 + CHAINSTAY_SHIFT_MM, 0.0, 60.0], dtype=float),
++    }
++
++
++def _seed(targets: Dict[str, Tuple[float, float]]) -> Dict[str, np.ndarray]:
++    """Starting point: the goal positions, nudged onto the eye-to-eye constraint."""
++    seed = {name: p.copy() for name, p in _photo_goal(targets).items()}
++    # Place P6 exactly on the P7 line at the specified eye-to-eye.
++    direction = seed["P6"] - seed["P7"]
++    seed["P6"] = seed["P7"] + TARGET_E2E_MM * direction / np.linalg.norm(direction)
++    return seed
++
++
++def _initial_simplex(x0: np.ndarray, step: float = SIMPLEX_STEP_MM) -> np.ndarray:
++    simplex = np.repeat(x0[None, :], x0.size + 1, axis=0)
++    simplex[1:] += step * np.eye(x0.size)
++    return simplex
++
++
++def fit(targets: Dict[str, Tuple[float, float]], verbose: bool = False) -> Dict[str, Any]:
++    """Runs the constrained least-squares fit and returns the full payload."""
++    seed = _seed(targets)
++    goal = _photo_goal(targets)
++    calls = 0
++
++    def cost(vec: np.ndarray) -> float:
++        nonlocal calls
++        calls += 1
++        points = _unpack(vec)
++        residual = sum(
++            float(np.sum((points[name][[0, 2]] - goal[name][[0, 2]]) ** 2)) for name in FREE
++        )
++        try:
++            stroke = _stroke_at_full_travel(points)
++        except (ValueError, ZeroDivisionError):
++            return INFEASIBLE_COST
++        stroke_penalty = STROKE_PENALTY_WEIGHT * (stroke - TARGET_STROKE_MM) ** 2
++        e2e = float(np.linalg.norm(points["P7"] - points["P6"]))
++        e2e_penalty = E2E_PENALTY_WEIGHT * (e2e - TARGET_E2E_MM) ** 2
++        return residual + stroke_penalty + e2e_penalty
++
++    x0 = _pack(seed)
++    started = time.perf_counter()
++    result = minimize(
++        cost, x0, method="Nelder-Mead",
++        options={
++            "maxiter": MAX_EVALUATIONS, "maxfev": MAX_EVALUATIONS,
++            "xatol": 1e-6, "fatol": 1e-9,
++            "initial_simplex": _initial_simplex(x0),
++        },
++    )
++    elapsed = time.perf_counter() - started
++
++    points = _unpack(result.x)
++    metrics = evaluate(points)
++    residuals = {
++        name: float(np.linalg.norm(points[name][[0, 2]] - goal[name][[0, 2]])) for name in FREE
++    }
++
++    if verbose:
++        print(f"  evaluations {calls}  wall {elapsed:.1f}s  "
++              f"({1000.0 * elapsed / max(calls, 1):.1f} ms/eval)  success={result.success}")
++        print(f"  cost {result.fun:.6f}  message: {result.message}")
++
++    return {
++        "points_mm": {name: [round(float(v), 6) for v in points[name]] for name in FREE},
++        "kinematics": {k: round(v, 6) for k, v in metrics.items()},
++        "residuals_mm": {k: round(v, 4) for k, v in residuals.items()},
++        "chainstay_shift_mm": CHAINSTAY_SHIFT_MM,
++        "shock_eye_to_eye_mm": round(
++            float(np.linalg.norm(points["P7"] - points["P6"])), 6
++        ),
++    }
++
++
++def main() -> None:
++    targets = json.loads(REFERENCE_JSON.read_text())["points_mm"] if REFERENCE_JSON.exists() \
++        else build_reference()["points_mm"]
++    payload = fit({k: tuple(v) for k, v in targets.items()}, verbose=True)
++    OUTPUT.write_text(json.dumps(payload, indent=2) + "\n")
++    print(f"Wrote {OUTPUT}")
++    print(json.dumps(payload["kinematics"], indent=2))
++    print(json.dumps(payload["residuals_mm"], indent=2))
++
++
++if __name__ == "__main__":
++    main()

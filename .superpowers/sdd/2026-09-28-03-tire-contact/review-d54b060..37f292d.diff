@@ -1,0 +1,319 @@
+# Review package: d54b060..HEAD
+
+## Commits
+37f292d fix: preserve native contact force and road source
+
+## Files changed
+ src/bike_sim/sim/ride/contact_state.py | 35 ++++++++++++++---
+ src/bike_sim/sim/ride/contacts.py      |  9 ++++-
+ tests/test_contact_kinematics.py       | 72 +++++++++++++++++++++++++++++++++-
+ 3 files changed, 107 insertions(+), 9 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/sim/ride/contact_state.py b/src/bike_sim/sim/ride/contact_state.py
+index 6bfd445..fc9aabc 100644
+--- a/src/bike_sim/sim/ride/contact_state.py
++++ b/src/bike_sim/sim/ride/contact_state.py
+@@ -19,53 +19,68 @@ def _frozen_vector(value: np.ndarray, name: str) -> np.ndarray:
+ @dataclass(frozen=True)
+ class ContactPatch:
+     """One X-Z wheel contact, with normal and longitudinal force kept separate."""
+ 
+     point_m: np.ndarray
+     normal: np.ndarray
+     normal_load_n: float
+     tangent_force_n: float
+     slip_mps: float
+     couple_world_nm: np.ndarray | None = None
+-    lateral_force_n: float = 0.0
++    native_world_force_n: np.ndarray | None = None
++    source_geom: str = "terrain"
+ 
+     def __post_init__(self) -> None:
+         point = _frozen_vector(self.point_m, "contact point")
+         normal = _frozen_vector(self.normal, "contact normal")
+         if abs(np.linalg.norm(normal) - 1.0) > 1e-8 or abs(normal[1]) > 1e-8:
+             raise ValueError("expected a unit normal in the X-Z plane")
+         scalars = tuple(float(value) for value in (
+-            self.normal_load_n, self.tangent_force_n, self.slip_mps, self.lateral_force_n
++            self.normal_load_n, self.tangent_force_n, self.slip_mps
+         ))
+         if not all(isfinite(value) for value in scalars) or scalars[0] < 0.0:
+             raise ValueError("invalid contact load, force or slip")
++        if self.source_geom not in ("terrain", "catch_plane"):
++            raise ValueError("contact source must be terrain or catch_plane")
+         couple = _frozen_vector(
+             np.zeros(3) if self.couple_world_nm is None else self.couple_world_nm,
+             "contact couple",
+         )
++        native_force = (
++            None if self.native_world_force_n is None
++            else _frozen_vector(self.native_world_force_n, "native world force")
++        )
+         object.__setattr__(self, "point_m", point)
+         object.__setattr__(self, "normal", normal)
+         object.__setattr__(self, "couple_world_nm", couple)
++        object.__setattr__(self, "native_world_force_n", native_force)
+         for name, value in zip(
+-            ("normal_load_n", "tangent_force_n", "slip_mps", "lateral_force_n"), scalars
++            ("normal_load_n", "tangent_force_n", "slip_mps"), scalars
+         ):
+             object.__setattr__(self, name, value)
+ 
+     @property
+     def tangent(self) -> np.ndarray:
+         return _frozen_vector(np.array([self.normal[2], 0.0, -self.normal[0]]), "tangent")
+ 
++    @property
++    def working_surface(self) -> bool:
++        return self.source_geom == "terrain"
++
+     @property
+     def world_force_n(self) -> np.ndarray:
+-        force = self.normal_load_n * self.normal + self.tangent_force_n * self.tangent
+-        force = force + np.array([0.0, self.lateral_force_n, 0.0])
+-        return _frozen_vector(force, "contact force")
++        if self.native_world_force_n is not None:
++            return self.native_world_force_n
++        return _frozen_vector(
++            self.normal_load_n * self.normal + self.tangent_force_n * self.tangent,
++            "contact force",
++        )
+ 
+ 
+ @dataclass(frozen=True)
+ class WheelContactSnapshot:
+     """Physical contact state for one wheel and one stable simulation interval."""
+ 
+     time_s: float
+     patches: tuple[ContactPatch, ...]
+     geometric_contact: bool
+     interval_id: int = 0
+@@ -94,20 +109,28 @@ class WheelContactSnapshot:
+         object.__setattr__(self, "time_s", time_s)
+         object.__setattr__(self, "interval_id", int(self.interval_id))
+         object.__setattr__(self, "patches", patches)
+         object.__setattr__(self, "geometric_contact", bool(self.geometric_contact))
+         object.__setattr__(self, "wheel_axis_m", axis)
+ 
+     @property
+     def loaded_contact(self) -> bool:
+         return self.normal_load_n > 0.0
+ 
++    @property
++    def road_loaded_contact(self) -> bool:
++        """Only working-road load may re-enable a physical drive controller."""
++        return any(
++            patch.working_surface and patch.normal_load_n > 0.0
++            for patch in self.patches
++        )
++
+     @property
+     def normal_load_n(self) -> float:
+         return sum((patch.normal_load_n for patch in self.patches), 0.0)
+ 
+     @property
+     def world_force_n(self) -> np.ndarray:
+         return _frozen_vector(
+             sum((patch.world_force_n for patch in self.patches), np.zeros(3)),
+             "wheel force",
+         )
+diff --git a/src/bike_sim/sim/ride/contacts.py b/src/bike_sim/sim/ride/contacts.py
+index 80ad526..9acf0b5 100644
+--- a/src/bike_sim/sim/ride/contacts.py
++++ b/src/bike_sim/sim/ride/contacts.py
+@@ -153,21 +153,24 @@ class TerrainContactQuery:
+             model: Compiled ride-mode model.
+             dropout_steps: Consecutive unloaded steps a wheel may have before it is reported
+                 as airborne.
+ 
+         Raises:
+             ValueError: If `dropout_steps` is negative, or a tracked geom is missing.
+         """
+         if dropout_steps < 0:
+             raise ValueError(f"dropout_steps must be non-negative, got {dropout_steps}")
+ 
+-        self.terrain_ids = frozenset(_geom_id(model, name) for name in TERRAIN_GEOMS)
++        self.terrain_geom_names = {
++            _geom_id(model, name): name for name in TERRAIN_GEOMS
++        }
++        self.terrain_ids = frozenset(self.terrain_geom_names)
+         self.front_id = _geom_id(model, FRONT_CONTACT_GEOM)
+         self.rear_id = _geom_id(model, REAR_CONTACT_GEOM)
+         self.handlebar_id = _geom_id(model, HANDLEBAR_GEOM)
+ 
+         self._force = np.zeros(6, dtype=float)
+         self._front_load = _BridgedLoad(dropout_steps)
+         self._rear_load = _BridgedLoad(dropout_steps)
+ 
+     def query(
+         self,
+@@ -282,39 +285,41 @@ class TerrainContactQuery:
+             )
+             if result is None:
+                 continue
+             tracked, normal, force_world, couple_world = result
+             if not include_wheel_contacts and tracked in wheel_patches:
+                 continue
+             normal_force_n = float(self._force[0])
+             magnitude_n[tracked] += abs(normal_force_n)
+             vertical_n[tracked] += normal_force_n * float(normal[2])
+             if tracked in wheel_patches:
++                source_id = geom1 if geom1 in self.terrain_ids else geom2
+                 # MuJoCo's sphere/heightfield rows can tilt a few microradians out of
+                 # the constrained X-Z bicycle plane. Project their direction into our
+                 # planar contact contract while retaining the full world wrench above.
+                 planar_normal = np.array([normal[0], 0.0, normal[2]])
+                 planar_normal /= np.linalg.norm(planar_normal)
+                 tangent = np.array([planar_normal[2], 0.0, -planar_normal[0]])
+                 body_id = int(model.geom_bodyid[tracked])
+                 point = np.asarray(contact.pos, dtype=float)
+                 slip_mps = float(np.dot(
+                     wheel_point_velocity(model, data, body_id, point), tangent
+                 ))
+                 wheel_patches[tracked].append(ContactPatch(
+                     point_m=point,
+                     normal=planar_normal,
+                     normal_load_n=max(0.0, normal_force_n),
+                     tangent_force_n=float(np.dot(force_world, tangent)),
+                     slip_mps=slip_mps,
+                     couple_world_nm=couple_world,
+-                    lateral_force_n=float(force_world[1]),
++                    native_world_force_n=force_world,
++                    source_geom=self.terrain_geom_names[source_id],
+                 ))
+ 
+         return magnitude_n, vertical_n, {
+             geom_id: tuple(patches) for geom_id, patches in wheel_patches.items()
+         }
+ 
+ 
+ def _tracked_wrench(
+     geom1: int,
+     geom2: int,
+diff --git a/tests/test_contact_kinematics.py b/tests/test_contact_kinematics.py
+index e8e0967..700f3fe 100644
+--- a/tests/test_contact_kinematics.py
++++ b/tests/test_contact_kinematics.py
+@@ -29,20 +29,62 @@ def test_slope_keeps_normal_and_vertical_force_distinct():
+     n = np.array([-0.5, 0., np.sqrt(3) / 2])
+     patch = ContactPatch(np.zeros(3), n, 100.0, 20.0, 0.0)
+     assert patch.normal_load_n == 100.0
+     assert patch.world_force_n[2] == pytest.approx(100 * np.sqrt(3) / 2 + 10)
+     snapshot = WheelContactSnapshot(0., (patch,), True)
+     assert snapshot.normal_load_n == 100.
+     assert snapshot.normal_vertical_n == pytest.approx(100 * np.sqrt(3) / 2)
+     assert snapshot.vertical_force_n == pytest.approx(100 * np.sqrt(3) / 2 + 10)
+ 
+ 
++def test_native_world_resultant_is_exact_even_with_out_of_plane_contact_normal():
++    raw_normal = np.array([0., 0.6, 0.8])
++    frame = np.array([
++        raw_normal,
++        [1., 0., 0.],
++        [0., 0.8, -0.6],
++    ])
++    wrench = np.array([100., 20., 5., 0., 0., 0.])
++    transformed = _tracked_wrench(1, 2, frozenset({1}), frozenset({2}), frame, wrench)
++    assert transformed is not None
++    _, _, exact_force, _ = transformed
++    patch = ContactPatch(
++        np.zeros(3), np.array([0., 0., 1.]), 100., 20., 0.,
++        native_world_force_n=exact_force,
++    )
++    snapshot = WheelContactSnapshot(0., (patch,), True)
++    exact_force[:] = 999.
++    np.testing.assert_array_equal(patch.world_force_n, [20., 64., 77.])
++    np.testing.assert_array_equal(snapshot.world_force_n, [20., 64., 77.])
++    assert snapshot.vertical_force_n == 77.
++    assert snapshot.normal_vertical_n == 100.
++    with pytest.raises(ValueError):
++        patch.world_force_n.setflags(write=True)
++
++
++def test_catch_plane_load_does_not_count_as_working_road_contact():
++    catch_patch = ContactPatch(
++        np.zeros(3), np.array([0., 0., 1.]), 200., 0., 0.,
++        source_geom="catch_plane",
++    )
++    catch_only = WheelContactSnapshot(0., (catch_patch,), True)
++    assert catch_only.loaded_contact
++    assert not catch_only.road_loaded_contact
++    assert catch_only.normal_load_n == 200.
++    unloaded_road = ContactPatch(np.zeros(3), np.array([0., 0., 1.]), 0., 0., 0.)
++    assert not WheelContactSnapshot(0., (catch_patch, unloaded_road), True).road_loaded_contact
++    road_patch = ContactPatch(np.zeros(3), np.array([0., 0., 1.]), 50., 0., 0.)
++    mixed = WheelContactSnapshot(0., (catch_patch, road_patch), True)
++    assert mixed.road_loaded_contact
++    assert road_patch.source_geom == "terrain"
++
++
+ def test_contact_patch_and_snapshot_detach_all_input_buffers():
+     point = np.array([0., 0., -0.3])
+     normal = np.array([0., 0., 1.])
+     couple = np.array([0., 2., 0.])
+     patch = ContactPatch(point, normal, 100., 20., -0.5, couple_world_nm=couple)
+     patches = [patch]
+     axis = np.zeros(3)
+     snapshot = WheelContactSnapshot(
+         time_s=0.25, patches=patches, geometric_contact=True,
+         interval_id=500, backend="native_reference", wheel_axis_m=axis,
+@@ -170,29 +212,57 @@ def test_native_query_exposes_physical_snapshots_without_changing_legacy_channel
+     expected_force = np.zeros(3)
+     force6 = np.zeros(6)
+     for index in range(data.ncon):
+         contact = data.contact[index]
+         pair = {int(contact.geom1), int(contact.geom2)}
+         if wheel_geom not in pair or not (pair & query.terrain_ids):
+             continue
+         mujoco.mj_contactForce(model, data, index, force6)
+         sign = 1. if int(contact.geom2) == wheel_geom else -1.
+         expected_force += sign * (contact.frame.reshape(3, 3).T @ force6[:3])
+-    np.testing.assert_allclose(loaded.world_force_n, expected_force, atol=1e-5)
++    np.testing.assert_allclose(loaded.world_force_n, expected_force, rtol=0., atol=1e-12)
+     old_point = loaded.patches[0].point_m.copy()
+     pitch = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_pitch")
+     spin_name = "front_wheel_spin" if front_loaded else "rear_wheel_spin"
+     spin = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, spin_name)
+     data.qvel[model.jnt_dofadr[pitch]] = 1.5
+     data.qvel[model.jnt_dofadr[spin]] = 0.
+     mujoco.mj_forward(model, data)
+     moving = query.query(model, data)
+     moving_snapshot = moving.front_snapshot if front_loaded else moving.rear_snapshot
+     assert moving_snapshot.patches
+     assert any(abs(patch.slip_mps) > 0.1 for patch in moving_snapshot.patches)
+     for patch in moving_snapshot.patches:
+         jacp = np.zeros((3, model.nv))
+         jacr = np.zeros((3, model.nv))
+         body_id = int(model.geom_bodyid[wheel_geom])
+         mujoco.mj_jac(model, data, jacp, jacr, patch.point_m, body_id)
+         assert patch.slip_mps == pytest.approx(float((jacp @ data.qvel) @ patch.tangent))
+     np.testing.assert_array_equal(loaded.patches[0].point_m, old_point)
++
++
++def test_native_query_marks_catch_plane_rows_without_changing_legacy_loads():
++    sim = RideSimulation(track=get_preset("single_edge"), target_speed_kmh=25.)
++    model, data = sim.model, sim.data
++    query = TerrainContactQuery(model)
++    before = query.query(model, data)
++    assert before.front_snapshot.road_loaded_contact or before.rear_snapshot.road_loaded_contact
++    catch_plane = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "catch_plane")
++    for index in range(data.ncon):
++        contact = data.contact[index]
++        if int(contact.geom1) in query.terrain_ids:
++            contact.geom1 = catch_plane
++        elif int(contact.geom2) in query.terrain_ids:
++            contact.geom2 = catch_plane
++    after = query.query(model, data)
++    for old, new in (
++        (before.front_snapshot, after.front_snapshot),
++        (before.rear_snapshot, after.rear_snapshot),
++    ):
++        assert old.normal_load_n == pytest.approx(new.normal_load_n)
++        assert new.loaded_contact == old.loaded_contact
++        assert not new.road_loaded_contact
++        assert all(patch.source_geom == "catch_plane" for patch in new.patches)
++    assert after.front_load_n == pytest.approx(before.front_load_n)
++    assert after.rear_load_n == pytest.approx(before.rear_load_n)
++    assert after.front_support_n == pytest.approx(before.front_support_n)
++    assert after.rear_support_n == pytest.approx(before.rear_support_n)

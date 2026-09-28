@@ -1,0 +1,251 @@
+# Review package: d470502..HEAD
+
+## Commits
+5eef51e fix(shock): guard shock_body inertial pin against silent staleness
+
+## Files changed
+ export_mujoco.py            | 57 +++++++++++++++++++++++++++++++-------
+ tests/test_frame_visuals.py | 67 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 114 insertions(+), 10 deletions(-)
+
+## Diff
+diff --git a/export_mujoco.py b/export_mujoco.py
+index 275b350..d06624a 100644
+--- a/export_mujoco.py
++++ b/export_mujoco.py
+@@ -1757,20 +1757,32 @@ def generate_mujoco_xml(
+     # collapses to (e2e - stroke), so a can measured back from P7 must stay
+     # shorter than that or it drives through the lower eyelet. 2 mm clearance.
+     bottom_out_clearance_m = 0.002
+     body_can_len = (specs.shock_eye_to_eye - specs.shock_stroke) / 1000.0 - bottom_out_clearance_m
+     body_can_end_rel_p7 = shock_slide_axis * body_can_len
+     # Defining visual of a trunnion mount: the damper body continues PAST the mounting bolt axis
+     # instead of terminating in an eyelet. Overhang carries the reservoir cap and rebound knob.
+     trunnion_overhang = 0.014  # m (~12 mm overhang per reference photo)
+     trunnion_cap_rel_p7 = -shock_slide_axis * trunnion_overhang
+     trunnion_half_width = 0.027  # m (54 mm across the two trunnion bosses)
++    # Piggyback Reservoir attached to Shock Body.
++    # Reservoir rides on the damper body in the frame plane. The perpendicular
++    # direction is the shock axis rotated 90 degrees in XZ, pointing up-rearward.
++    # Computed here (rather than beside the geoms below) so the shock_body
++    # <inertial> pin can be derived from the same numbers the geoms use - see
++    # the STALE-PIN comment beside that pin.
++    perp = np.array([-shock_slide_axis[2], 0.0, shock_slide_axis[0]])
++    piggy_offset = perp * 0.034 + np.array([0.0, 0.008, 0.0])
++    piggy_start = (shock_slide_axis * 0.018) + piggy_offset
++    piggy_end = (shock_slide_axis * 0.108) + piggy_offset
++    piggy_bridge_1 = shock_slide_axis * 0.030
++    piggy_bridge_2 = (shock_slide_axis * 0.030) + piggy_offset
+ 
+     shock_shaft = ET.SubElement(shock_yoke, "body", {"name": "shock_shaft", "pos": _format_vec(p6_rel_p4)})
+     # Lower eyelet mount hardware
+     ET.SubElement(
+         shock_shaft,
+         "geom",
+         {
+             "name": "geom_shock_lower_eyelet",
+             "type": "cylinder",
+             "fromto": "0 -0.016 0 0 0.016 0",
+@@ -1814,27 +1826,59 @@ def generate_mujoco_xml(
+     shock_body = ET.SubElement(shock_shaft, "body", {"name": "shock_body", "pos": _format_vec(p7_rel_p6)})
+     # Pin shock_body's simulated mass properties to their pre-Task-5 values. MuJoCo
+     # auto-derives a body's mass/CoM/inertia from its child geoms' shapes, so
+     # reshaping the air can, trunnion overhang, and piggyback offset for visual
+     # fidelity (this task is scoped visual-only) would otherwise silently perturb
+     # the composite inertia tensor. The "stand" playground drives this body through
+     # a stiff position-actuator + equality-constraint loop that is sensitive enough
+     # to that perturbation to diverge to NaN within a few steps (caught by
+     # tests/test_playground.py::test_reset_simulation). Explicit <inertial> keeps
+     # the physics bit-identical to before this task while the geometry changes.
++    #
++    # `mass` below IS live - computed from the same (mass, fromto-start, fromto-
++    # end) tuples used to build the six child geoms further down, so it can never
++    # drift out of sync with a child geom's mass literal. `pos`/`quat`/
++    # `diaginertia` are NOT live: they are a frozen snapshot of the exact
++    # pre-Task-5 CoM and rotational inertia. This was tried the other way -
++    # computing `pos` live from the CURRENT (post-Task-5) geometry via the same
++    # midpoint-of-fromto formula as `mass` - and it empirically reproduces the
++    # exact NaN-QACC divergence in test_playground.py::test_reset_simulation
++    # this pin exists to prevent, because the "stand" loop is sensitive to CoM
++    # position, not just total mass. So `pos`/`quat`/`diaginertia` stay frozen on
++    # purpose and do NOT automatically track later edits.
++    #
++    # STALE-PIN WARNING: if you change any of body_can_len, trunnion_overhang, or
++    # the piggyback offsets below (piggy_offset, piggy_start, piggy_end,
++    # piggy_bridge_1/2), `mass` will keep itself correct but `pos`/`quat`/
++    # `diaginertia` will silently go stale - you must recompute them by hand from
++    # the new geometry. tests/test_frame_visuals.py::
++    # test_shock_body_inertial_pin_matches_child_geom_mass guards the mass half
++    # automatically; ::test_shock_body_geometry_com_has_not_drifted_unnoticed
++    # guards the CoM half by failing the moment the geometry snapshot it is
++    # pinned to changes, forcing a human decision on whether pos/quat/diaginertia
++    # need re-deriving - keep both green.
++    _shock_body_child_geoms = [
++        (0.02, np.array([0.0, 0.019, 0.0]), np.array([0.0, trunnion_half_width, 0.0])),
++        (0.02, np.array([0.0, -0.019, 0.0]), np.array([0.0, -trunnion_half_width, 0.0])),
++        (0.04, np.zeros(3), trunnion_cap_rel_p7),
++        (0.18, np.zeros(3), body_can_end_rel_p7),
++        (0.10, piggy_start, piggy_end),
++        (0.04, piggy_bridge_1, piggy_bridge_2),
++    ]
++    _shock_body_pinned_mass = sum(m for m, _, _ in _shock_body_child_geoms)
+     ET.SubElement(
+         shock_body,
+         "inertial",
+         {
+             "pos": "-0.033395 0.011400 -0.028962",
+             "quat": "-0.10166406 0.38183084 -0.06020627 0.91664870",
+-            "mass": "0.4",
++            "mass": f"{_shock_body_pinned_mass:.6f}",
+             "diaginertia": "0.00084836 0.00071226 0.00023249",
+         },
+     )
+     ET.SubElement(
+         shock_body,
+         "joint",
+         {
+             "name": "shock_stroke",
+             "type": "slide",
+             "pos": "0 0 0",
+@@ -1890,41 +1934,34 @@ def generate_mujoco_xml(
+         "geom",
+         {
+             "name": "geom_shock_body",
+             "type": "cylinder",
+             "fromto": f"0 0 0 {_format_vec(body_can_end_rel_p7)}",
+             "size": "0.026",
+             "mass": "0.18",
+             "material": "mat_damper_body",
+         },
+     )
+-    # Piggyback Reservoir attached to Shock Body.
+-    # Reservoir rides on the damper body in the frame plane. The perpendicular
+-    # direction is the shock axis rotated 90 degrees in XZ, pointing up-rearward.
+-    perp = np.array([-shock_slide_axis[2], 0.0, shock_slide_axis[0]])
+-    piggy_offset = perp * 0.034 + np.array([0.0, 0.008, 0.0])
+-    piggy_start = (shock_slide_axis * 0.018) + piggy_offset
+-    piggy_end = (shock_slide_axis * 0.108) + piggy_offset
++    # Piggyback Reservoir attached to Shock Body (perp/piggy_offset/piggy_start/
++    # piggy_end computed earlier alongside the other trunnion-mount proportions).
+     ET.SubElement(
+         shock_body,
+         "geom",
+         {
+             "name": "geom_shock_piggyback",
+             "type": "cylinder",
+             "fromto": f"{_format_vec(piggy_start)} {_format_vec(piggy_end)}",
+             "size": "0.018",
+             "mass": "0.10",
+             "material": "mat_damper_body",
+         },
+     )
+-    piggy_bridge_1 = shock_slide_axis * 0.030
+-    piggy_bridge_2 = (shock_slide_axis * 0.030) + piggy_offset
+     ET.SubElement(
+         shock_body,
+         "geom",
+         {
+             "name": "geom_shock_piggy_bridge",
+             "type": "cylinder",
+             "fromto": f"{_format_vec(piggy_bridge_1)} {_format_vec(piggy_bridge_2)}",
+             "size": "0.010",
+             "mass": "0.04",
+             "material": "mat_damper_body",
+diff --git a/tests/test_frame_visuals.py b/tests/test_frame_visuals.py
+index 47c7a91..4f4f8b3 100644
+--- a/tests/test_frame_visuals.py
++++ b/tests/test_frame_visuals.py
+@@ -1,15 +1,16 @@
+ """Structural assertions on the generated MJCF frame visuals."""
+ 
+ import xml.etree.ElementTree as ET
+ 
+ import mujoco
++import numpy as np
+ import pytest
+ 
+ from export_mujoco import generate_mujoco_xml
+ 
+ SEAT_TUBE_TERMINATION_Z_M = 0.258
+ 
+ # Total mass the split-strut cage carried (0.25 + 4*0.10 kg) before Task 4.
+ # geom_seattube + geom_frame_casting must continue to sum to this value so
+ # Task 4 stays visual-only and does not add or remove simulated mass.
+ REMOVED_CAGE_MASS_KG = 0.65
+@@ -110,10 +111,76 @@ def test_air_can_clears_the_lower_eyelet_at_bottom_out():
+     FORMATTING_NOISE_MM = 2e-3
+     assert can_len_mm <= collapsed - BOTTOM_OUT_CLEARANCE_MM + FORMATTING_NOISE_MM
+     assert can_len_mm == pytest.approx(138.0, abs=0.5)
+ 
+ 
+ def test_piggyback_sits_in_the_frame_plane(root):
+     piggy = next(g for g in root.iter("geom") if g.get("name") == "geom_shock_piggyback")
+     coords = [float(v) for v in piggy.get("fromto").split()]
+     lateral = max(abs(coords[1]), abs(coords[4]))
+     assert lateral <= 0.012, f"piggyback is {lateral*1000:.0f} mm off-plane; expected <= 12 mm"
++
++
++def test_shock_body_inertial_pin_matches_child_geom_mass(root):
++    """
++    shock_body carries an explicit <inertial> pinned to its pre-Task-5 mass
++    properties (see export_mujoco.py, "STALE-PIN WARNING") so that visual-only
++    edits to the air can, trunnion overhang, or piggyback offsets don't silently
++    perturb simulated dynamics. If a future edit changes a child geom's mass
++    without updating the pin, this catches the mass half of that drift.
++    """
++    shock_body = next(b for b in root.iter("body") if b.get("name") == "shock_body")
++    inertial = shock_body.find("inertial")
++    pinned_mass = float(inertial.get("mass"))
++    child_mass = sum(float(g.get("mass")) for g in shock_body.findall("geom"))
++    assert pinned_mass == pytest.approx(child_mass, abs=1e-9)
++
++
++# Task-5-as-shipped snapshot of shock_body's geometry-derived centre of mass
++# (six child cylinders, midpoint-of-fromto weighted by mass). Frozen the same
++# way export_mujoco.py's <inertial> pos/quat/diaginertia are frozen - see the
++# STALE-PIN WARNING there. This is deliberately a fixed snapshot, not a live
++# recomputation against the pinned pos: an earlier attempt to make the pin's
++# `pos` track the current geometry live was tried and empirically reproduced
++# the exact NaN-QACC divergence in test_playground.py::test_reset_simulation
++# the pin exists to prevent, so pos/quat/diaginertia must stay a manually
++# maintained snapshot rather than something a test can derive automatically.
++SHOCK_BODY_GEOMETRY_COM_M = np.array([-0.02746485, 0.0024, -0.04195878])
++
++
++def test_shock_body_geometry_com_has_not_drifted_unnoticed(root):
++    """
++    Complements test_..._mass: catches a length-only edit (body_can_len,
++    trunnion_overhang, or a piggyback offset) that leaves every child geom's
++    mass untouched and so wouldn't move the mass-parity test at all.
++
++    shock_body's six children are all cylinders (geom_shock_trunnion_boss_l/r,
++    geom_shock_trunnion_overhang, geom_shock_body, geom_shock_piggyback,
++    geom_shock_piggy_bridge), and a uniform-density cylinder's center of mass is
++    exactly the midpoint of its `fromto` endpoints - verified this matches
++    MuJoCo's own body_ipos to full float precision before relying on it here.
++
++    If this test fails, someone changed shock_body's length geometry. That is
++    allowed, but it means export_mujoco.py's frozen <inertial> pin (pos/quat/
++    diaginertia - see STALE-PIN WARNING there) is no longer guaranteed to match
++    reality and needs a conscious decision, not a silent pass. Once you've made
++    that call, refresh SHOCK_BODY_GEOMETRY_COM_M above to the new value.
++    """
++    shock_body = next(b for b in root.iter("body") if b.get("name") == "shock_body")
++
++    total_mass = 0.0
++    com = np.zeros(3)
++    for g in shock_body.findall("geom"):
++        mass = float(g.get("mass"))
++        coords = [float(v) for v in g.get("fromto").split()]
++        midpoint = (np.array(coords[:3]) + np.array(coords[3:])) / 2.0
++        com += mass * midpoint
++        total_mass += mass
++    com /= total_mass
++
++    assert np.allclose(com, SHOCK_BODY_GEOMETRY_COM_M, atol=1e-6), (
++        f"shock_body's geometry-derived CoM {com} has moved from the Task-5 "
++        f"snapshot {SHOCK_BODY_GEOMETRY_COM_M}; a length constant changed. "
++        "Decide whether export_mujoco.py's frozen shock_body <inertial> pin "
++        "needs recomputing (see STALE-PIN WARNING there), then refresh "
++        "SHOCK_BODY_GEOMETRY_COM_M above."
++    )

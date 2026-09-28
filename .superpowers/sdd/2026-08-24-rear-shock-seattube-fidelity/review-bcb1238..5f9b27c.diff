@@ -1,0 +1,176 @@
+# Review package: bcb1238..HEAD
+
+## Commits
+5f9b27c feat(visual): continuous seat tube into frame casting, drop strut cage
+
+## Files changed
+ export_mujoco.py            | 75 ++++++++++++++-------------------------------
+ tests/test_frame_visuals.py | 45 +++++++++++++++++++++++++++
+ 2 files changed, 68 insertions(+), 52 deletions(-)
+
+## Diff
+diff --git a/export_mujoco.py b/export_mujoco.py
+index 0113758..b8921f0 100644
+--- a/export_mujoco.py
++++ b/export_mujoco.py
+@@ -745,86 +745,57 @@ def generate_mujoco_xml(
+         {
+             "name": "geom_toptube_main",
+             "type": "capsule",
+             "fromto": _format_fromto(P8, P10),
+             "size": "0.023",
+             "mass": "0.45",
+             "material": "mat_frame",
+         },
+     )
+ 
+-    # Split Seat Tube (Shock Tunnel Architecture)
+-    p_split = P10 + (BB - P10) * 0.28  # Junction point above shock tunnel (Z ~ 288mm)
++    # Seat Tube (continuous) + Frame Casting
++    #
++    # Reference measurement: the real seat tube runs straight from the collar and
++    # dies into the frame casting at Z ~= 258 mm, where the silhouette width steps
++    # from 29 mm to 68 mm. It never reaches the BB, which is why no split-strut
++    # cage is needed to clear the rocker. Shapes below the tube are AUTHORED
++    # STYLING - the white-on-white front triangle is not measurable from the photo.
++    seattube_end = np.array([-0.030, 0.0, 0.258])
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+-            "name": "geom_seattube_upper",
++            "name": "geom_seattube",
+             "type": "capsule",
+-            "fromto": _format_fromto(P10, p_split),
++            "fromto": _format_fromto(P10, seattube_end),
+             "size": "0.020",
+-            "mass": "0.25",
+-            "material": "mat_frame",
+-        },
+-    )
+-    # Left Split Strut (sweeps out to Y = +0.048m to clear shock & yoke)
+-    p5_strut_l = np.array([P5[0], 0.048, P5[2]])
+-    bb_strut_l = np.array([0.0, 0.035, 0.0])
+-    ET.SubElement(
+-        frame,
+-        "geom",
+-        {
+-            "name": "geom_seattube_strut_l_top",
+-            "type": "capsule",
+-            "fromto": f"{p_split[0]:.6f} 0 {p_split[2]:.6f} {p5_strut_l[0]:.6f} {p5_strut_l[1]:.6f} {p5_strut_l[2]:.6f}",
+-            "size": "0.013",
+-            "mass": "0.10",
+-            "material": "mat_frame",
+-        },
+-    )
+-    ET.SubElement(
+-        frame,
+-        "geom",
+-        {
+-            "name": "geom_seattube_strut_l_bot",
+-            "type": "capsule",
+-            "fromto": f"{p5_strut_l[0]:.6f} {p5_strut_l[1]:.6f} {p5_strut_l[2]:.6f} {bb_strut_l[0]:.6f} {bb_strut_l[1]:.6f} {bb_strut_l[2]:.6f}",
+-            "size": "0.013",
+-            "mass": "0.10",
+-            "material": "mat_frame",
+-        },
+-    )
+-    # Right Split Strut (sweeps out to Y = -0.048m to clear shock & yoke)
+-    p5_strut_r = np.array([P5[0], -0.048, P5[2]])
+-    bb_strut_r = np.array([0.0, -0.035, 0.0])
+-    ET.SubElement(
+-        frame,
+-        "geom",
+-        {
+-            "name": "geom_seattube_strut_r_top",
+-            "type": "capsule",
+-            "fromto": f"{p_split[0]:.6f} 0 {p_split[2]:.6f} {p5_strut_r[0]:.6f} {p5_strut_r[1]:.6f} {p5_strut_r[2]:.6f}",
+-            "size": "0.013",
+-            "mass": "0.10",
++            "mass": "0.45",
+             "material": "mat_frame",
+         },
+     )
++    # Motor / shock-tunnel casting: carries the rocker pivot P5 and spans forward
++    # of the linkage. Sized from the measured silhouette (X -35..+33 at Z = 255).
++    # Visual-only: does not participate in physics (contype/conaffinity = 0), else
++    # this box would create spurious contacts with the crank and, in dynamic mode,
++    # the ground.
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+-            "name": "geom_seattube_strut_r_bot",
+-            "type": "capsule",
+-            "fromto": f"{p5_strut_r[0]:.6f} {p5_strut_r[1]:.6f} {p5_strut_r[2]:.6f} {bb_strut_r[0]:.6f} {bb_strut_r[1]:.6f} {bb_strut_r[2]:.6f}",
+-            "size": "0.013",
+-            "mass": "0.10",
++            "name": "geom_frame_yoke",
++            "type": "box",
++            "pos": f"{(seattube_end[0] + P5[0]) / 2.0:.6f} 0 {(seattube_end[2] + 0.0) / 2.0:.6f}",
++            "size": "0.075 0.036 0.130",
++            "mass": "0.55",
+             "material": "mat_frame",
++            "contype": "0",
++            "conaffinity": "0",
+         },
+     )
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_seatpost",
+             "type": "cylinder",
+             "fromto": _format_fromto(P10, P9),
+             "size": "0.016",
+diff --git a/tests/test_frame_visuals.py b/tests/test_frame_visuals.py
+new file mode 100644
+index 0000000..56e053c
+--- /dev/null
++++ b/tests/test_frame_visuals.py
+@@ -0,0 +1,45 @@
++"""Structural assertions on the generated MJCF frame visuals."""
++
++import xml.etree.ElementTree as ET
++
++import mujoco
++import pytest
++
++from export_mujoco import generate_mujoco_xml
++
++SEAT_TUBE_TERMINATION_Z_M = 0.258
++
++
++@pytest.fixture(scope="module")
++def root():
++    return ET.fromstring(generate_mujoco_xml(mode="stand"))
++
++
++def _geom_names(root):
++    return {g.get("name") for g in root.iter("geom")}
++
++
++def test_split_seat_tube_cage_is_gone(root):
++    names = _geom_names(root)
++    for removed in (
++        "geom_seattube_strut_l_top", "geom_seattube_strut_l_bot",
++        "geom_seattube_strut_r_top", "geom_seattube_strut_r_bot",
++        "geom_seattube_upper",
++    ):
++        assert removed not in names, f"{removed} should have been removed"
++
++
++def test_seat_tube_is_continuous_and_terminates_at_the_casting(root):
++    names = _geom_names(root)
++    assert "geom_seattube" in names
++    assert "geom_frame_yoke" in names
++
++    seattube = next(g for g in root.iter("geom") if g.get("name") == "geom_seattube")
++    coords = [float(v) for v in seattube.get("fromto").split()]
++    lower_z = min(coords[2], coords[5])
++    assert lower_z == pytest.approx(SEAT_TUBE_TERMINATION_Z_M, abs=0.015)
++
++
++def test_model_still_compiles(root):
++    model = mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="stand"))
++    assert model.ngeom > 0

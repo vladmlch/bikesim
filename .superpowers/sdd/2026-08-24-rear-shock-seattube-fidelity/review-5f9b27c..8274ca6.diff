@@ -1,0 +1,156 @@
+# Review package: 5f9b27c..HEAD
+
+## Commits
+8274ca6 fix(visual): mass parity, honest comment, guarded R3, casting rename
+
+## Files changed
+ export_mujoco.py            | 30 ++++++++++++++++++++----------
+ tests/test_frame_visuals.py | 25 ++++++++++++++++++++++++-
+ 2 files changed, 44 insertions(+), 11 deletions(-)
+
+## Diff
+diff --git a/export_mujoco.py b/export_mujoco.py
+index b8921f0..cdd0ac8 100644
+--- a/export_mujoco.py
++++ b/export_mujoco.py
+@@ -750,49 +750,59 @@ def generate_mujoco_xml(
+             "mass": "0.45",
+             "material": "mat_frame",
+         },
+     )
+ 
+     # Seat Tube (continuous) + Frame Casting
+     #
+     # Reference measurement: the real seat tube runs straight from the collar and
+     # dies into the frame casting at Z ~= 258 mm, where the silhouette width steps
+     # from 29 mm to 68 mm. It never reaches the BB, which is why no split-strut
+-    # cage is needed to clear the rocker. Shapes below the tube are AUTHORED
+-    # STYLING - the white-on-white front triangle is not measurable from the photo.
++    # cage is needed to clear the rocker. The casting itself is AUTHORED STYLING
++    # (see below) - the white-on-white front triangle is not measurable from the
++    # photo in this region.
++    #
++    # Mass note: these two geoms replace the five removed split-strut geoms
++    # (0.25 + 4*0.10 = 0.65 kg). Their masses are split ~proportional to their
++    # solid volumes but MUST continue to sum to SEATTUBE_CASTING_MASS_KG so the
++    # frame's contribution to total model mass is unchanged (see
++    # test_frame_visuals.py::test_seattube_and_casting_mass_is_conserved).
+     seattube_end = np.array([-0.030, 0.0, 0.258])
++    SEATTUBE_CASTING_MASS_KG = 0.65
++    seattube_mass_kg = 0.05
++    casting_mass_kg = SEATTUBE_CASTING_MASS_KG - seattube_mass_kg
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_seattube",
+             "type": "capsule",
+             "fromto": _format_fromto(P10, seattube_end),
+             "size": "0.020",
+-            "mass": "0.45",
++            "mass": f"{seattube_mass_kg:.2f}",
+             "material": "mat_frame",
+         },
+     )
+-    # Motor / shock-tunnel casting: carries the rocker pivot P5 and spans forward
+-    # of the linkage. Sized from the measured silhouette (X -35..+33 at Z = 255).
+-    # Visual-only: does not participate in physics (contype/conaffinity = 0), else
+-    # this box would create spurious contacts with the crank and, in dynamic mode,
+-    # the ground.
++    # Frame casting: AUTHORED STYLING sized to enclose the rocker frame pivot P5
++    # and to meet the seat tube where it terminates - not a photo measurement (the
++    # white-on-white front triangle is not segmentable there). Visual-only: does
++    # not participate in physics (contype/conaffinity = 0), else this box would
++    # create spurious contacts with the crank and, in dynamic mode, the ground.
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+-            "name": "geom_frame_yoke",
++            "name": "geom_frame_casting",
+             "type": "box",
+             "pos": f"{(seattube_end[0] + P5[0]) / 2.0:.6f} 0 {(seattube_end[2] + 0.0) / 2.0:.6f}",
+             "size": "0.075 0.036 0.130",
+-            "mass": "0.55",
++            "mass": f"{casting_mass_kg:.2f}",
+             "material": "mat_frame",
+             "contype": "0",
+             "conaffinity": "0",
+         },
+     )
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_seatpost",
+diff --git a/tests/test_frame_visuals.py b/tests/test_frame_visuals.py
+index 56e053c..0efdc51 100644
+--- a/tests/test_frame_visuals.py
++++ b/tests/test_frame_visuals.py
+@@ -2,20 +2,25 @@
+ 
+ import xml.etree.ElementTree as ET
+ 
+ import mujoco
+ import pytest
+ 
+ from export_mujoco import generate_mujoco_xml
+ 
+ SEAT_TUBE_TERMINATION_Z_M = 0.258
+ 
++# Total mass the split-strut cage carried (0.25 + 4*0.10 kg) before Task 4.
++# geom_seattube + geom_frame_casting must continue to sum to this value so
++# Task 4 stays visual-only and does not add or remove simulated mass.
++REMOVED_CAGE_MASS_KG = 0.65
++
+ 
+ @pytest.fixture(scope="module")
+ def root():
+     return ET.fromstring(generate_mujoco_xml(mode="stand"))
+ 
+ 
+ def _geom_names(root):
+     return {g.get("name") for g in root.iter("geom")}
+ 
+ 
+@@ -25,21 +30,39 @@ def test_split_seat_tube_cage_is_gone(root):
+         "geom_seattube_strut_l_top", "geom_seattube_strut_l_bot",
+         "geom_seattube_strut_r_top", "geom_seattube_strut_r_bot",
+         "geom_seattube_upper",
+     ):
+         assert removed not in names, f"{removed} should have been removed"
+ 
+ 
+ def test_seat_tube_is_continuous_and_terminates_at_the_casting(root):
+     names = _geom_names(root)
+     assert "geom_seattube" in names
+-    assert "geom_frame_yoke" in names
++    assert "geom_frame_casting" in names
+ 
+     seattube = next(g for g in root.iter("geom") if g.get("name") == "geom_seattube")
+     coords = [float(v) for v in seattube.get("fromto").split()]
+     lower_z = min(coords[2], coords[5])
+     assert lower_z == pytest.approx(SEAT_TUBE_TERMINATION_Z_M, abs=0.015)
+ 
+ 
++def test_frame_casting_is_visual_only(root):
++    # Ruling R3: the casting must not participate in physics, or it would create
++    # spurious contacts with the crank and, in dynamic mode, the ground.
++    casting = next(g for g in root.iter("geom") if g.get("name") == "geom_frame_casting")
++    assert casting.get("contype") == "0"
++    assert casting.get("conaffinity") == "0"
++
++
++def test_seattube_and_casting_mass_is_conserved(root):
++    # Ruling R16: Task 4 is scoped visual-only. The two replacement geoms must
++    # sum to the mass of the five removed split-strut geoms (0.25 + 4*0.10 kg),
++    # or the frame silently gains/loses real simulated mass.
++    seattube = next(g for g in root.iter("geom") if g.get("name") == "geom_seattube")
++    casting = next(g for g in root.iter("geom") if g.get("name") == "geom_frame_casting")
++    total_mass = float(seattube.get("mass")) + float(casting.get("mass"))
++    assert total_mass == pytest.approx(REMOVED_CAGE_MASS_KG, abs=1e-6)
++
++
+ def test_model_still_compiles(root):
+     model = mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode="stand"))
+     assert model.ngeom > 0

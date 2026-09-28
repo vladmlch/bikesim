@@ -1,0 +1,86 @@
+# Review package: 0da36d0..HEAD
+
+## Commits
+b69c674 fix: reject conflicting detailed tyre timestep in physical mode
+
+## Files changed
+ src/bike_sim/sim/ride_sim.py | 11 +++++++++++
+ tests/test_physics_config.py | 24 ++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+)
+
+## Diff
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index b5b8091..4572020 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -165,20 +165,31 @@ class RideSimulation:
+         pedalled = drive_mode != "motor"
+         self.visual_pedalling = bool(visual_pedalling)
+         crank_joint = pedalled or self.visual_pedalling
+ 
+         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
+         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
+         assert_track_fits(self.track, self.field)
+ 
+         self.specs = specs if specs is not None else BikeSpecs()
+         self.tyre_config = tyre if tyre is not None else TyreConfig()
++        if (
++            self.physics_config.physics_mode == "physical"
++            and self.tyre_config.pneumatic
++            and self.tyre_config.tier == "detailed"
++            and self.physics_config.timestep_s != self.tyre_config.tier_spec.timestep_s
++        ):
++            raise ValueError(
++                "detailed pneumatic tyre requires timestep_s="
++                f"{self.tyre_config.tier_spec.timestep_s}; "
++                f"got {self.physics_config.timestep_s}"
++            )
+         self.solver = HorstLinkageSolver(self.specs)
+         self.start_x_m = float(start_x_m)
+         # The legs choice lands on the rider *before* the pose is solved: `seated_pose`
+         # reads `rider.legs` to decide between slide-mounted leg masses and the hip-knee-
+         # ankle chains, and the pose the builder compiles must be the same one this run's
+         # force path is configured from.
+         self.rider: RiderSpecs = dataclasses.replace(
+             resolve_rider(
+                 rider, include_rider=include_rider, default_variant=DEFAULT_RIDER_VARIANT
+             ),
+diff --git a/tests/test_physics_config.py b/tests/test_physics_config.py
+index 89f48ec..241b650 100644
+--- a/tests/test_physics_config.py
++++ b/tests/test_physics_config.py
+@@ -97,10 +97,34 @@ def test_physical_pneumatic_reads_current_wheel_geometry():
+         track=get_preset("flat"),
+         rider="none",
+         tyre=TyreConfig(model="pneumatic"),
+         physics_config=SimulationPhysicsConfig(physics_mode="physical"),
+     )
+     z_joint = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT, "root_z")
+     sim.data.qpos[sim.model.jnt_qposadr[z_joint]] += 1.0
+     sim.step()
+     assert sim.tyre_applier.front_outputs.normal_load_n == 0.0
+     assert sim.tyre_applier.rear_outputs.normal_load_n == 0.0
++
++
++def test_physical_detailed_tyre_rejects_incompatible_explicit_timestep():
++    with pytest.raises(ValueError, match="detailed.*timestep_s"):
++        RideSimulation(
++            track=get_preset("flat"),
++            rider="none",
++            tyre=TyreConfig(model="pneumatic", tier="detailed"),
++            physics_config=SimulationPhysicsConfig(
++                physics_mode="physical", timestep_s=0.0005
++            ),
++        )
++
++
++def test_physical_detailed_tyre_keeps_matching_explicit_timestep():
++    sim = RideSimulation(
++        track=get_preset("flat"),
++        rider="none",
++        tyre=TyreConfig(model="pneumatic", tier="detailed"),
++        physics_config=SimulationPhysicsConfig(
++            physics_mode="physical", timestep_s=0.00025
++        ),
++    )
++    assert sim.model.opt.timestep == pytest.approx(0.00025)

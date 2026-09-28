@@ -1,0 +1,737 @@
+# Review package: a60df5e..HEAD
+
+## Commits
+e711c5a feat: record synchronized physical power and conservation ledgers
+
+## Files changed
+ src/bike_sim/sim/ride/energy.py       |  87 ++++++++++++++++++++
+ src/bike_sim/sim/ride/recorder.py     | 108 ++++++++++++++++++++++---
+ src/bike_sim/sim/ride/telemetry_v2.py |  47 +++++++++++
+ src/bike_sim/sim/ride_sim.py          |  16 ++--
+ tests/test_physics_telemetry.py       | 145 ++++++++++++++++++++++++++++++++++
+ 5 files changed, 387 insertions(+), 16 deletions(-)
+
+## Diff
+diff --git a/src/bike_sim/sim/ride/energy.py b/src/bike_sim/sim/ride/energy.py
+new file mode 100644
+index 0000000..fd626dd
+--- /dev/null
++++ b/src/bike_sim/sim/ride/energy.py
+@@ -0,0 +1,87 @@
++"""Mechanical accounting and whole-system momentum for the compiled MuJoCo model."""
++
++from math import isfinite
++
++import mujoco
++import numpy as np
++
++
++class EnergyLedger:
++    """Residual of stored mechanical energy and independently assigned work channels.
++
++    Active and signed external work increase stored energy; positive loss reduces it.
++    Callers must supply elastic potential and all work/loss channels before interpreting a
++    residual as a closed balance. Battery storage belongs to an electrical ledger.
++    """
++
++    def __init__(self, initial_energy_j: float) -> None:
++        if not isfinite(initial_energy_j):
++            raise ValueError("invalid initial mechanical energy")
++        self.initial = initial_energy_j
++
++    def residual(
++        self,
++        energy_j: float,
++        active_work_j: float,
++        external_work_j: float,
++        loss_j: float,
++    ) -> float:
++        if not all(isfinite(x) for x in (energy_j, active_work_j, external_work_j, loss_j)):
++            raise ValueError("non-finite energy ledger")
++        if loss_j < 0:
++            raise ValueError("dissipation cannot be negative")
++        return energy_j - self.initial - active_work_j - external_work_j + loss_j
++
++
++def mechanical_energy_terms(
++    model: mujoco.MjModel, data: mujoco.MjData, *, elastic_energy_j: float
++) -> tuple[float, float, float]:
++    """Kinetic, gravitational and explicitly modelled elastic energy in joules.
++
++    External springs are not included in MuJoCo's potential energy. The caller must
++    provide their full stored energy rather than infer it from applied force power.
++    """
++    if not isfinite(elastic_energy_j) or elastic_energy_j < 0:
++        raise ValueError("invalid elastic energy")
++    mujoco.mj_forward(model, data)
++    mass_matrix = np.empty((model.nv, model.nv))
++    mujoco.mj_fullM(model, data, mass_matrix)
++    kinetic = float(0.5 * data.qvel @ mass_matrix @ data.qvel)
++    gravitational = float(
++        -np.sum(model.body_mass[:, None] * data.xipos * model.opt.gravity)
++    )
++    return kinetic, gravitational, float(elastic_energy_j)
++
++
++def system_momentum(
++    model: mujoco.MjModel, data: mujoco.MjData
++) -> tuple[np.ndarray, np.ndarray]:
++    """Linear momentum and angular momentum about the moving compiled system CoM.
++
++    Includes every physical body, its orbital contribution and its inertial-frame spin.
++    Refreshes derived kinematics because `mj_step` can leave them at the input state.
++    """
++    masses = np.asarray(model.body_mass)
++    total = float(masses.sum())
++    if total <= 0:
++        raise ValueError("no physical system mass")
++    mujoco.mj_forward(model, data)
++    com = (masses[:, None] * data.xipos).sum(axis=0) / total
++    linear = np.zeros(3)
++    angular = np.zeros(3)
++    jp = np.zeros((3, model.nv))
++    jr = np.zeros((3, model.nv))
++    for body, mass in enumerate(masses):
++        if mass == 0:
++            continue
++        mujoco.mj_jacBodyCom(model, data, jp, jr, body)
++        velocity, omega = jp @ data.qvel, jr @ data.qvel
++        rotation = data.ximat[body].reshape(3, 3)
++        inertia = rotation @ np.diag(model.body_inertia[body]) @ rotation.T
++        momentum = mass * velocity
++        linear += momentum
++        angular += inertia @ omega + np.cross(data.xipos[body] - com, momentum)
++    return linear, angular
++
++
++__all__ = ["EnergyLedger", "mechanical_energy_terms", "system_momentum"]
+diff --git a/src/bike_sim/sim/ride/recorder.py b/src/bike_sim/sim/ride/recorder.py
+index 363ef9b..f7c5d00 100644
+--- a/src/bike_sim/sim/ride/recorder.py
++++ b/src/bike_sim/sim/ride/recorder.py
+@@ -28,20 +28,22 @@ Channel conventions:
+ """
+ 
+ import csv
+ from pathlib import Path
+ from typing import TYPE_CHECKING, Dict, List, Sequence, Union
+ 
+ import mujoco
+ import numpy as np
+ 
+ from bike_sim.sim.ride.metrics import RAMP_EXCLUSION_M
++from bike_sim.sim.ride.energy import mechanical_energy_terms, system_momentum
++from bike_sim.sim.ride.telemetry_v2 import ForceSample, component_powers
+ from bike_sim.sim.ride.wheels import resolve_wheel_spin
+ 
+ if TYPE_CHECKING:  # pragma: no cover
+     from bike_sim.sim.ride_sim import RideSimulation
+ 
+ CHANNELS: Sequence[str] = (
+     "time_s",
+     "x_m",
+     "speed_mps",
+     "fork_travel_mm",
+@@ -114,20 +116,31 @@ CHANNELS: Sequence[str] = (
+ 
+ # Channels the seated rider fills; every other rider variant records zeros here.
+ SEATED_RIDER_CHANNELS: Sequence[str] = CHANNELS[
+     CHANNELS.index("saddle_load_n"):CHANNELS.index("rider_pelvis_acc_long_mps2") + 1
+ ]
+ TYRE_CHANNELS: Sequence[str] = CHANNELS[
+     CHANNELS.index("front_tyre_fz_n"):CHANNELS.index("crank_phase_rad")
+ ]
+ DRIVETRAIN_CHANNELS: Sequence[str] = CHANNELS[CHANNELS.index("crank_phase_rad"):]
+ 
++# V2 rows identify the input-force interval separately from the post-step state in
++# `time_s`. Names added by future force writers get their own power/work columns.
++V2_FIXED_CHANNELS: Sequence[str] = (
++    "interval_start_s", "interval_dt_s",
++    "linear_momentum_x_kg_mps", "linear_momentum_y_kg_mps", "linear_momentum_z_kg_mps",
++    "angular_momentum_x_kg_m2ps", "angular_momentum_y_kg_m2ps",
++    "angular_momentum_z_kg_m2ps",
++    "kinetic_energy_j", "gravitational_energy_j", "elastic_energy_j",
++    "mechanical_energy_j", "energy_residual_j",
++)
++
+ CSV_FLOAT_FORMAT = "%.10g"
+ _CHUNK_ROWS = 4096
+ 
+ 
+ class RideRecorder:
+     """
+     Per-step telemetry buffer for one ride.
+ 
+     Use ``record`` directly or pass it as ``RideSimulation.run(on_step=...)``. With
+     ``decimate = n`` only every n-th call is stored; the first call is always stored.
+@@ -140,72 +153,118 @@ class RideRecorder:
+                 once here, so recording itself does no name lookups.
+             decimate: Store every n-th call; 1 stores every step.
+ 
+         Raises:
+             ValueError: If ``decimate`` is not positive or a needed sensor is missing.
+         """
+         if decimate < 1:
+             raise ValueError(f"decimate must be >= 1, got {decimate}")
+         self.decimate = int(decimate)
+         self.timestep_s = float(sim.model.opt.timestep)
++        self.schema_version = 2 if sim.physics_config.physics_mode == "physical" else 1
++        self._channel_names = list(CHANNELS)
++        if self.schema_version == 2:
++            self._channel_names.extend(V2_FIXED_CHANNELS)
++            self._channel_names.extend(f"prestep_qpos_{i}" for i in range(sim.model.nq))
++            self._channel_names.extend(f"prestep_qvel_{i}" for i in range(sim.model.nv))
++        self._prestep_nq = sim.model.nq
++        self._prestep_nv = sim.model.nv
++        self._component_names: list[str] = []
++        self._last_force_sample: ForceSample | None = None
++        self.last_component_powers_w: dict[str, float] = {}
++        self.component_work_j: dict[str, float] = {}
++        self.last_interval_start_s = float("nan")
++        self.last_interval_dt_s = float("nan")
+ 
+         self._bar = _Accelerometer(sim.model, "sensor_bar_accel", "site_handlebar")
+         self._saddle = _Accelerometer(sim.model, "sensor_saddle_accel", "site_seatpost_top")
+         self._rear_wheel = resolve_wheel_spin(sim.model, "rear_wheel_spin", "geom_rear_contact")
+         # The rider's own accelerometers exist only on the seated rider's bodies.
+         self._seated = bool(sim.rider_forces.active)
+         if self._seated:
+             self._torso = _Accelerometer(sim.model, "sensor_rider_torso_accel", "site_rider_torso")
+             self._pelvis = _Accelerometer(sim.model, "sensor_rider_pelvis_accel", "site_rider_pelvis")
+ 
+         # Rear wheel travel is a smooth function of shock stroke; tabulating the analytical
+         # solver once at 0.1 mm and interpolating is ~30x cheaper per step than solving.
+         stroke_limit_mm = float(sim.specs.shock_stroke)
+         self._stroke_table_mm = np.linspace(0.0, stroke_limit_mm, int(round(stroke_limit_mm / 0.1)) + 1)
+         self._travel_table_mm = np.array(
+             [float(sim.solver.solve_state_from_shock_stroke(s)["wheel_travel"]) for s in self._stroke_table_mm]
+         )
+ 
+         self._chunks: List[np.ndarray] = []
+-        self._current = np.empty((_CHUNK_ROWS, len(CHANNELS)))
++        self._current = np.empty((_CHUNK_ROWS, len(self._channel_names)))
+         self._fill = 0
+         self._calls = 0
+         self.tyre_rim_events: Dict[str, List[Dict[str, float]]] = {"front": [], "rear": []}
+         self.tyre_rim_strike_counts: Dict[str, int] = {"front": 0, "rear": 0}
+         self.tyre_rim_starts: Dict[str, List[float]] = {"front": [], "rear": []}
+         self.tyre_times_s: Dict[str, Dict[str, float]] = {
+             "front": {"wheelspin": 0.0, "locked": 0.0},
+             "rear": {"wheelspin": 0.0, "locked": 0.0},
+         }
+         self._previous_rim_active: Dict[str, bool] = {"front": False, "rear": False}
+ 
+     # ------------------------------------------------------------------ recording
+ 
+     def record(self, sim: "RideSimulation") -> None:
+         """
+         Stores one row if this call falls on the decimation grid.
+ 
+         Args:
+-            sim: Simulation to read. Nothing is written to it.
++            sim: Simulation to read. V2 momentum/energy queries refresh MuJoCo's
++                derived kinematics on stored rows.
+         """
+         self._observe_tyre_events(sim)
++        if self.schema_version == 2:
++            self._observe_physical_interval(sim)
+         take = self._calls % self.decimate == 0
+         self._calls += 1
+         if not take:
+             return
+         if self._fill == _CHUNK_ROWS:
+             self._chunks.append(self._current)
+-            self._current = np.empty((_CHUNK_ROWS, len(CHANNELS)))
++            self._current = np.empty((_CHUNK_ROWS, len(self._channel_names)))
+             self._fill = 0
+         self._current[self._fill] = self._row(sim)
+         self._fill += 1
+ 
++    def _observe_physical_interval(self, sim: "RideSimulation") -> None:
++        """Integrate each actual force interval once, even when no CSV row is retained."""
++        sample = sim.last_force_sample
++        if sample is None or sample is self._last_force_sample:
++            return
++        interval_dt_s = float(sim.data.time) - sample.time_s
++        if interval_dt_s <= 0 or not np.isfinite(interval_dt_s):
++            raise ValueError("invalid physical force interval")
++        powers = component_powers(sample)
++        for name, power_w in powers.items():
++            if name not in self.component_work_j:
++                self._add_component_channels(name)
++                self.component_work_j[name] = 0.0
++            self.component_work_j[name] += power_w * interval_dt_s
++        self.last_component_powers_w = powers
++        self.last_interval_start_s = sample.time_s
++        self.last_interval_dt_s = interval_dt_s
++        self._last_force_sample = sample
++
++    def _add_component_channels(self, name: str) -> None:
++        """Allocate two columns when a writer first registers a named force."""
++        self._component_names.append(name)
++        self._channel_names.extend((f"{name}_power_w", f"{name}_work_j"))
++        self._current = np.pad(self._current, ((0, 0), (0, 2)), constant_values=np.nan)
++        self._chunks = [
++            np.pad(chunk, ((0, 0), (0, 2)), constant_values=np.nan)
++            for chunk in self._chunks
++        ]
++
+     def _observe_tyre_events(self, sim: "RideSimulation") -> None:
+         """Captures rim events on every callback, even when CSV rows are decimated."""
+         if sim.tyre_applier is None:
+             return
+         for wheel, outputs in (
+             ("front", sim.tyre_applier.front_outputs),
+             ("rear", sim.tyre_applier.rear_outputs),
+         ):
+             if outputs.rim_strike_active and not self._previous_rim_active[wheel]:
+                 self.tyre_rim_strike_counts[wheel] += 1
+@@ -282,21 +341,21 @@ class RideRecorder:
+                     float(outputs.support_n),
+                     float(outputs.force_world_n[0]),
+                     float(outputs.mean_deflection_m * 1000.0),
+                     float(outputs.contact_length_m * 1000.0),
+                     float(outputs.slip_ratio),
+                     float(outputs.fully_sliding),
+                     float(outputs.rim_strike_active or outputs.rim_event is not None),
+                     float(outputs.pressure_bar),
+                     float(outputs.dissipated_power_w),
+                 ))
+-        return np.array(
++        legacy_row = np.array(
+             [
+                 float(data.time),
+                 sim.position_m,
+                 sim.speed_mps,
+                 sim.fork_travel_mm,
+                 float(data.qvel[applier.fork_dofadr]),
+                 stroke_mm,
+                 self.rear_wheel_mm(stroke_mm),
+                 float(data.qvel[applier.shock_dofadr]),
+                 applier.fork_spring_n,
+@@ -324,20 +383,47 @@ class RideRecorder:
+                 pedal_front_n,
+                 pedal_rear_n,
+                 torso_vert,
+                 torso_long,
+                 pelvis_vert,
+                 pelvis_long,
+                 *tyre_channels,
+                 *pedal_channels,
+             ]
+         )
++        if self.schema_version == 1:
++            return legacy_row
++        linear, angular = system_momentum(sim.model, sim.data)
++        kinetic, gravitational, _ = mechanical_energy_terms(
++            sim.model, sim.data, elastic_energy_j=0.0
++        )
++        # Suspension currently combines spring and damper in one force channel. Until
++        # each storage and loss term is supplied, a complete energy and residual would
++        # be misleading. NaN makes that missing accounting explicit in physical CSV.
++        interval_row = (
++            self.last_interval_start_s, self.last_interval_dt_s,
++            *linear, *angular,
++            kinetic, gravitational, np.nan, np.nan, np.nan,
++        )
++        if self._last_force_sample is None:
++            state_row = (np.nan,) * (self._prestep_nq + self._prestep_nv)
++        else:
++            state_row = (*self._last_force_sample.qpos, *self._last_force_sample.qvel)
++        component_row = tuple(
++            value
++            for name in self._component_names
++            for value in (
++                self.last_component_powers_w.get(name, np.nan),
++                self.component_work_j[name],
++            )
++        )
++        return np.concatenate((legacy_row, interval_row, state_row, component_row))
+ 
+     def rear_wheel_mm(self, stroke_mm: float) -> float:
+         """
+         Rear wheel travel for a shock stroke, from the tabulated leverage curve.
+ 
+         Args:
+             stroke_mm: Shock shaft stroke in millimetres; values outside the stroke range
+                 are extrapolated linearly from the nearest table segment.
+         """
+         table_s, table_t = self._stroke_table_mm, self._travel_table_mm
+@@ -355,61 +441,61 @@ class RideRecorder:
+     def rows(self) -> int:
+         """Number of rows stored so far."""
+         return len(self._chunks) * _CHUNK_ROWS + self._fill
+ 
+     @property
+     def sample_interval_s(self) -> float:
+         """Time between stored rows, in seconds."""
+         return self.timestep_s * self.decimate
+ 
+     def array(self) -> np.ndarray:
+-        """Returns all stored rows as an array of shape ``(rows, len(CHANNELS))``."""
++        """Returns stored rows with the selected schema's channel count."""
+         parts = self._chunks + [self._current[: self._fill]]
+-        return np.vstack(parts) if parts else np.empty((0, len(CHANNELS)))
++        return np.vstack(parts) if parts else np.empty((0, len(self._channel_names)))
+ 
+     def column(self, name: str) -> np.ndarray:
+         """
+         Returns one channel as a 1-D array.
+ 
+         Args:
+-            name: Channel name from ``CHANNELS``.
++            name: Channel name from the active schema.
+ 
+         Raises:
+             KeyError: On an unknown channel.
+         """
+-        if name not in CHANNELS:
++        if name not in self._channel_names:
+             raise KeyError(f"unknown channel '{name}'")
+-        return self.array()[:, CHANNELS.index(name)]
++        return self.array()[:, self._channel_names.index(name)]
+ 
+     def columns(self) -> Dict[str, np.ndarray]:
+         """Returns every channel keyed by name."""
+         table = self.array()
+-        return {name: table[:, i] for i, name in enumerate(CHANNELS)}
++        return {name: table[:, i] for i, name in enumerate(self._channel_names)}
+ 
+     # ------------------------------------------------------------------ output
+ 
+     def write_csv(self, path: Union[str, Path]) -> Path:
+         """
+         Writes the stored rows as CSV with a header row.
+ 
+         Args:
+             path: Destination file.
+ 
+         Returns:
+             The path written.
+         """
+         destination = Path(path)
+         destination.parent.mkdir(parents=True, exist_ok=True)
+         table = self.array()
+         with open(destination, "w", newline="", encoding="utf-8") as handle:
+             writer = csv.writer(handle)
+-            writer.writerow(CHANNELS)
++            writer.writerow(self._channel_names)
+             for row in table:
+                 writer.writerow([CSV_FLOAT_FORMAT % v for v in row])
+         return destination
+ 
+ 
+ class _Accelerometer:
+     """Resolves one accelerometer and rotates its reading into world axes."""
+ 
+     def __init__(self, model: mujoco.MjModel, sensor_name: str, site_name: str) -> None:
+         sid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SENSOR, sensor_name)
+diff --git a/src/bike_sim/sim/ride/telemetry_v2.py b/src/bike_sim/sim/ride/telemetry_v2.py
+new file mode 100644
+index 0000000..3a97c0b
+--- /dev/null
++++ b/src/bike_sim/sim/ride/telemetry_v2.py
+@@ -0,0 +1,47 @@
++"""Immutable input-state forces for one physical integration interval."""
++
++from dataclasses import dataclass
++from math import isfinite
++from types import MappingProxyType
++from typing import Mapping
++
++import numpy as np
++
++
++@dataclass(frozen=True)
++class ForceSample:
++    """Forces and velocity evaluated together at the start of a MuJoCo step."""
++
++    time_s: float
++    qpos: np.ndarray
++    qvel: np.ndarray
++    components: Mapping[str, np.ndarray]
++
++    def __post_init__(self) -> None:
++        if not isfinite(self.time_s):
++            raise ValueError("force sample time is not finite")
++        for name in ("qpos", "qvel"):
++            value = np.array(getattr(self, name), dtype=float, copy=True)
++            if value.ndim != 1 or not np.isfinite(value).all():
++                raise ValueError("force sample state shape or value mismatch")
++            object.__setattr__(self, name, _frozen_copy(value))
++        copied: dict[str, np.ndarray] = {}
++        for name, force in self.components.items():
++            value = np.array(force, dtype=float, copy=True)
++            if value.shape != self.qvel.shape or not np.isfinite(value).all():
++                raise ValueError("force sample shape or value mismatch")
++            copied[name] = _frozen_copy(value)
++        object.__setattr__(self, "components", MappingProxyType(copied))
++
++
++def _frozen_copy(value: np.ndarray) -> np.ndarray:
++    """Use immutable bytes as backing storage so write flags cannot be re-enabled."""
++    return np.frombuffer(value.tobytes(), dtype=float).reshape(value.shape)
++
++
++def component_powers(sample: ForceSample) -> dict[str, float]:
++    """Instantaneous generalized power in watts at the sample's own velocity."""
++    return {name: float(force @ sample.qvel) for name, force in sample.components.items()}
++
++
++__all__ = ["ForceSample", "component_powers"]
+diff --git a/src/bike_sim/sim/ride_sim.py b/src/bike_sim/sim/ride_sim.py
+index 708c8c1..5b8987b 100644
+--- a/src/bike_sim/sim/ride_sim.py
++++ b/src/bike_sim/sim/ride_sim.py
+@@ -32,20 +32,21 @@ from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose
+ from bike_sim.physics.tyre import TyreConfig
+ from bike_sim.sim.controllers import SuspensionController
+ from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
+ from bike_sim.sim.ride.braking import BrakeController
+ from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
+ from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+ from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
+ from bike_sim.sim.ride.force_accumulator import ForceAccumulator
+ from bike_sim.sim.ride.forces import SuspensionForceApplier
+ from bike_sim.sim.ride.leg_drive import LegDrive
++from bike_sim.sim.ride.telemetry_v2 import ForceSample
+ from bike_sim.sim.ride.resistance import RollingResistance
+ from bike_sim.sim.ride.rider_forces import RiderForceApplier
+ from bike_sim.sim.ride.termination import (
+     DEFAULT_MAX_WALL_CLOCK_S,
+     RunLimits,
+     RunOutcome,
+     RunTerminator,
+ )
+ from bike_sim.sim.ride.tyre.applier import TyreForceApplier
+ from bike_sim.sim.ride.tyre.geometry import RoadProfile
+@@ -231,20 +232,21 @@ class RideSimulation:
+                 self.model,
+                 self.tyre_config,
+                 profile,
+                 SurfaceMap.uniform(self.track.surface),
+             )
+         self.data = mujoco.MjData(self.model)
+         self.force_accumulator = ForceAccumulator(self.model.nv)
+         self.last_force_snapshot: Optional[
+             Tuple[float, np.ndarray, np.ndarray, Mapping[str, np.ndarray]]
+         ] = None
++        self.last_force_sample: Optional[ForceSample] = None
+ 
+         self.controller = controller if controller is not None else _default_controller(self.specs)
+         self.applier = SuspensionForceApplier(
+             self.model,
+             self.controller,
+             coil_shock if coil_shock is not None else CoilShock(),
+         )
+         self.rider_forces = RiderForceApplier(self.model, self.pose)
+         self.contact_query = TerrainContactQuery(self.model)
+         self.resistance = RollingResistance(self.model)
+@@ -348,20 +350,21 @@ class RideSimulation:
+             mujoco.mj_forward(self.model, self.data)
+         self.brake_source_cruise = False
+         self.brakes.reset()
+         self.resistance.reset()
+         self.stabilizer.reset()
+         self.crash_detector.reset()
+         self.data.time = 0.0
+         self.steps = 0
+         self.force_accumulator.clear()
+         self.last_force_snapshot = None
++        self.last_force_sample = None
+         if self.tyre_applier is None:
+             self.contacts = self.contact_query.query(self.model, self.data)
+         else:
+             self.contacts = self.contact_query.query(
+                 self.model, self.data, wheel_load_provider=self.tyre_applier
+             )
+ 
+     def step(
+         self,
+         front_brake_demand: float = 0.0,
+@@ -545,26 +548,29 @@ class RideSimulation:
+             self.data.ctrl[self.drive_ctrl_adr] = drive_torque
+ 
+         front_torque, rear_torque = self.brakes.compute(
+             self.data, front_brake_demand, rear_brake_demand
+         )
+         self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
+         self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
+         self.crash_detector.check(self.data, self.contacts)
+ 
+         self.data.qfrc_applied[:] = self.force_accumulator.total()
+-        qpos = self.data.qpos.copy()
+-        qvel = self.data.qvel.copy()
+-        qpos.setflags(write=False)
+-        qvel.setflags(write=False)
++        self.last_force_sample = ForceSample(
++            float(self.data.time), self.data.qpos, self.data.qvel,
++            self.force_accumulator.components,
++        )
+         self.last_force_snapshot = (
+-            float(self.data.time), qpos, qvel, self.force_accumulator.components
++            self.last_force_sample.time_s,
++            self.last_force_sample.qpos,
++            self.last_force_sample.qvel,
++            self.last_force_sample.components,
+         )
+         mujoco.mj_step(self.model, self.data)
+         self.steps += 1
+ 
+     def _follow_cranks(self) -> None:
+         """
+         Moves the seated rider's pedal interfaces to where the cranks now are.
+ 
+         The crank turns about +y, so the arm built at 3 o'clock sweeps to
+         `(L cos phi, 0, -L sin phi)`: the front pedal drops as the phase advances and the
+diff --git a/tests/test_physics_telemetry.py b/tests/test_physics_telemetry.py
+new file mode 100644
+index 0000000..09b9b9b
+--- /dev/null
++++ b/tests/test_physics_telemetry.py
+@@ -0,0 +1,145 @@
++"""Synchronized physical force samples and mechanical accounting."""
++
++import mujoco
++import numpy as np
++import pytest
++
++from bike_sim.physics.model_config import SimulationPhysicsConfig
++from bike_sim.sim.ride.energy import EnergyLedger, mechanical_energy_terms, system_momentum
++from bike_sim.sim.ride.recorder import CHANNELS, RideRecorder, read_csv
++from bike_sim.sim.ride.telemetry_v2 import ForceSample, component_powers
++from bike_sim.sim.ride_sim import RideSimulation
++from bike_sim.terrain import get_preset
++
++
++def test_force_sample_does_not_read_poststep_velocity():
++    qvel = np.array([2.0])
++    force = np.array([3.0])
++    sample = ForceSample(0.0, np.array([0.0]), qvel, {"motor": force})
++    qvel[0] = 100.0
++    force[0] = 100.0
++    assert component_powers(sample)["motor"] == 6.0
++    with pytest.raises(ValueError):
++        sample.qvel[0] = 1.0
++    with pytest.raises(ValueError):
++        sample.components["motor"][0] = 1.0
++    with pytest.raises(ValueError):
++        sample.qvel.setflags(write=True)
++    with pytest.raises(TypeError):
++        sample.components["other"] = np.array([1.0])
++
++
++def test_force_sample_rejects_invalid_force():
++    with pytest.raises(ValueError, match="force sample"):
++        ForceSample(0.0, np.array([0.0]), np.array([1.0]), {"bad": np.zeros(2)})
++    with pytest.raises(ValueError, match="force sample"):
++        ForceSample(0.0, np.array([0.0]), np.array([1.0]), {"bad": np.array([np.nan])})
++
++
++def test_loss_is_counted_once():
++    ledger = EnergyLedger(10.0)
++    assert ledger.residual(8.0, 0.0, 0.0, 2.0) == pytest.approx(0.0)
++    assert ledger.residual(13.0, 5.0, 0.0, 2.0) == pytest.approx(0.0)
++    with pytest.raises(ValueError, match="negative"):
++        ledger.residual(10.0, 0.0, 0.0, -1.0)
++
++
++def test_mechanical_energy_includes_compiled_mass_gravity_and_explicit_elastic():
++    model = mujoco.MjModel.from_xml_string("""
++    <mujoco>
++      <worldbody><body><freejoint/><inertial pos="0 0 0" mass="2"
++          diaginertia="1 1 1"/></body></worldbody>
++    </mujoco>
++    """)
++    data = mujoco.MjData(model)
++    data.qpos[2] = 3.0
++    data.qvel[0] = 2.0
++    kinetic, gravitational, elastic = mechanical_energy_terms(
++        model, data, elastic_energy_j=3.0
++    )
++    assert kinetic == pytest.approx(4.0)
++    assert gravitational == pytest.approx(58.86)
++    assert elastic == pytest.approx(3.0)
++
++
++def test_system_momentum_uses_each_body_and_inertial_orientation():
++    model = mujoco.MjModel.from_xml_string("""
++    <mujoco>
++      <worldbody>
++        <body name="one"><freejoint/><inertial pos="0 0 0" mass="2"
++            diaginertia="1 2 3"/></body>
++        <body name="two"><freejoint/><inertial pos="0 0 0" mass="2"
++            diaginertia="1 2 3"/></body>
++      </worldbody>
++    </mujoco>
++    """)
++    data = mujoco.MjData(model)
++    data.qpos[0:3] = (-1.0, 0.0, 0.0)
++    data.qpos[7:10] = (1.0, 0.0, 0.0)
++    data.qpos[3:7] = (1.0, 0.0, 0.0, 0.0)
++    data.qpos[10:14] = (np.sqrt(0.5), 0.0, 0.0, np.sqrt(0.5))
++    data.qvel[2] = 1.0
++    data.qvel[8] = -1.0
++    data.qvel[9] = 2.0  # local x rotates into world y; rotated Iy = 1.
++    mujoco.mj_forward(model, data)
++    linear, angular = system_momentum(model, data)
++    np.testing.assert_allclose(linear, (0.0, 0.0, 0.0), atol=1e-12)
++    np.testing.assert_allclose(angular, (0.0, 6.0, 0.0), atol=1e-12)
++
++    data.qpos[[0, 7]] += 5.0
++    data.qvel[[2, 8]] += 3.0
++    mujoco.mj_forward(model, data)
++    shifted_linear, shifted_angular = system_momentum(model, data)
++    np.testing.assert_allclose(shifted_linear, (0.0, 0.0, 12.0), atol=1e-12)
++    np.testing.assert_allclose(shifted_angular, angular, atol=1e-12)
++
++
++def test_physical_recorder_matches_prestep_power_and_integrates_decimated_work(tmp_path):
++    sim = RideSimulation(
++        track=get_preset("flat"), rider="none",
++        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
++    )
++    sim.data.qvel[sim.root_x_dofadr] = 2.0
++    dense = RideRecorder(sim, decimate=1)
++    sparse = RideRecorder(sim, decimate=10)
++    dense.record(sim)
++    sparse.record(sim)
++    force = np.zeros(sim.model.nv)
++    force[sim.root_x_dofadr] = 3.0
++    dt = float(sim.model.opt.timestep)
++
++    sim.step(external_qfrc=force)
++    dense.record(sim)
++    sparse.record(sim)
++    assert dense.schema_version == sparse.schema_version == 2
++    assert dense.column("interval_start_s")[1] == pytest.approx(0.0)
++    assert dense.column("interval_dt_s")[1] == pytest.approx(dt)
++    assert dense.column(f"prestep_qvel_{sim.root_x_dofadr}")[1] == pytest.approx(2.0)
++    assert np.isnan(dense.column(f"prestep_qvel_{sim.root_x_dofadr}")[0])
++    assert dense.column("external_power_w")[1] == pytest.approx(6.0)
++    assert dense.column("external_work_j")[1] == pytest.approx(6.0 * dt)
++    assert np.isfinite(dense.column("kinetic_energy_j")[1])
++    assert np.isfinite(dense.column("gravitational_energy_j")[1])
++    assert np.isnan(dense.column("mechanical_energy_j")[1])
++    assert np.isnan(dense.column("energy_residual_j")[1])
++
++    for _ in range(9):
++        sim.step(external_qfrc=force)
++        dense.record(sim)
++        sparse.record(sim)
++    assert dense.component_work_j["external"] == pytest.approx(sparse.component_work_j["external"])
++    assert dense.component_work_j["external"] == pytest.approx(
++        sum(dense.column("external_power_w")[1:] * dt)
++    )
++    assert sparse.rows == 2
++    assert dense.column("interval_start_s")[-1] < dense.column("time_s")[-1]
++    back = read_csv(dense.write_csv(tmp_path / "physical.csv"))
++    assert back["external_power_w"][1] == pytest.approx(6.0)
++
++
++def test_legacy_recorder_retains_v1_columns():
++    sim = RideSimulation(track=get_preset("flat"), rider="none")
++    recorder = RideRecorder(sim)
++    recorder.record(sim)
++    assert recorder.schema_version == 1
++    assert tuple(recorder.columns()) == tuple(CHANNELS)

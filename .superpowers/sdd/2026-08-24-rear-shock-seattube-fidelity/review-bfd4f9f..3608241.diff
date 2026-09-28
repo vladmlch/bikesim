@@ -1,0 +1,190 @@
+# Review package: bfd4f9f..HEAD
+
+## Commits
+3608241 fix(visual): correct battery-box perpendicular thickness and off-axis offset
+
+## Files changed
+ export_mujoco.py            | 42 ++++++++++++++++++++--
+ tests/test_frame_visuals.py | 86 ++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 122 insertions(+), 6 deletions(-)
+
+## Diff
+diff --git a/export_mujoco.py b/export_mujoco.py
+index c602329..25f894c 100644
+--- a/export_mujoco.py
++++ b/export_mujoco.py
+@@ -705,33 +705,71 @@ def generate_mujoco_xml(
+     )
+     # Down tube is a battery box on this e-bike, not a tube. Envelope measured
+     # from the reference silhouette: X 150..266 mm at Z = 255, X 208..305 at Z = 323.
+     # AUTHORED STYLING - the front triangle's exact casting shape is not
+     # measurable from the photo (the silhouette there is white-on-white and
+     # only coarsely readable); the envelope above is an approximate basis for
+     # this box, not a precise measurement, and the box does not attempt to
+     # reproduce the envelope's taper between the two measured heights.
+     downtube_mid = (BB + P_HT_bot) / 2.0
+     downtube_vec = P_HT_bot - BB
++    downtube_len = float(np.linalg.norm(downtube_vec))
+     # arctan2 returns radians; the compiler is configured with angle="degree"
+     # (see module docstring and every other euler-bearing geom in this file,
+     # e.g. the obstacle ramps' angle_deg variables), so this must be converted
+     # before being written into the `euler` attribute.
+     downtube_angle_deg = float(np.degrees(np.arctan2(downtube_vec[2], downtube_vec[0])))
++
++    # The photo's X widths are HORIZONTAL slices through a box tilted by the
++    # down-tube angle theta, not the box's own thickness perpendicular to its
++    # axis: a perpendicular thickness t, sliced horizontally through a tilt
++    # of theta, widens to t / sin(theta). Converting the two measured bands
++    # to perpendicular thickness -- and averaging them, since a single box
++    # has no taper to serve both heights exactly -- gives the half-extent
++    # below. The measured envelope's centre also isn't on the idealised
++    # BB-to-head-tube line: at both heights it sits behind the line, which
++    # projects (via the same sin(theta) relationship) to a perpendicular
++    # offset of ~31.5 mm at Z=255 and ~44.9 mm at Z=323. Those two offsets
++    # differ (a rigid translation of the box can only match one exactly), so
++    # they are likewise averaged into a single constant offset applied along
++    # the box's own perpendicular axis. Both approximations are deliberate
++    # compromises -- see the acceptance check in
++    # tests/test_frame_visuals.py::test_down_tube_footprint_matches_measured_envelope,
++    # which reports how well the resulting single box brackets both bands.
++    _dt_sin = downtube_vec[2] / downtube_len
++    _dt_cos = downtube_vec[0] / downtube_len
++    _dt_bands_mm = ((255.0, 150.0, 266.0), (323.0, 208.0, 305.0))  # (Z, X_lo, X_hi)
++    downtube_half_thickness = float(
++        np.mean([(x_hi - x_lo) * _dt_sin / 2.0 for _, x_lo, x_hi in _dt_bands_mm])
++    ) / 1000.0
++    downtube_perp_offset = float(
++        np.mean(
++            [
++                (x_lo + x_hi) / 2.0 * -_dt_sin + z * _dt_cos
++                for z, x_lo, x_hi in _dt_bands_mm
++            ]
++        )
++    ) / 1000.0
++    # This is the box's own local +Z axis after the euler rotation below
++    # (verified against MuJoCo's compiled geom_xmat); offsetting the centre
++    # along it shifts the box away from the idealised centreline towards the
++    # rear, matching the photo's measured bands.
++    downtube_perp_axis = np.array([-_dt_sin, 0.0, _dt_cos])
++    downtube_pos = downtube_mid + downtube_perp_offset * downtube_perp_axis
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_downtube",
+             "type": "box",
+-            "pos": _format_vec(downtube_mid),
+-            "size": f"{float(np.linalg.norm(downtube_vec)) / 2.0:.6f} 0.038 0.058",
++            "pos": _format_vec(downtube_pos),
++            "size": f"{downtube_len / 2.0:.6f} 0.038 {downtube_half_thickness:.6f}",
+             "euler": f"0 {-downtube_angle_deg:.6f} 0",
+             "mass": "0.60",
+             "material": "mat_frame",
+         },
+     )
+     ET.SubElement(
+         frame,
+         "geom",
+         {
+             "name": "geom_headtube",
+diff --git a/tests/test_frame_visuals.py b/tests/test_frame_visuals.py
+index 169be88..c8be361 100644
+--- a/tests/test_frame_visuals.py
++++ b/tests/test_frame_visuals.py
+@@ -182,14 +182,92 @@ def test_shock_body_geometry_com_has_not_drifted_unnoticed(root):
+         f"snapshot {SHOCK_BODY_GEOMETRY_COM_M}; a length constant changed. "
+         "Decide whether export_mujoco.py's frozen shock_body <inertial> pin "
+         "needs recomputing (see STALE-PIN WARNING there), then refresh "
+         "SHOCK_BODY_GEOMETRY_COM_M above."
+     )
+ 
+ 
+ def test_down_tube_is_a_battery_box_not_a_thin_tube(root):
+     downtube = next(g for g in root.iter("geom") if g.get("name") == "geom_downtube")
+     assert downtube.get("type") == "box"
+-    half_extents = [float(v) for v in downtube.get("size").split()]
+-    # Measured envelope is ~116 mm across at Z = 255 mm, so the largest cross
+-    # section half-extent must be well above the old 28 mm capsule radius.
+-    assert max(half_extents) >= 0.055
++    half_length, half_lateral, half_thickness = [float(v) for v in downtube.get("size").split()]
++    # Ruling R24: a bare max() over all three half-extents is dominated by
++    # half_length (~0.38 m, the BB-to-head-tube distance) and would pass even
++    # if the cross-section shrank back to the old 28 mm capsule radius, or to
++    # near zero. Isolate the cross-section extent (half_thickness, the box's
++    # perpendicular thickness) from the length extent and check it directly,
++    # and sanity-check that length still dominates thickness so this box
++    # reads as a down tube rather than some other shape.
++    assert half_thickness >= 0.030, "cross-section must be well above the old 28 mm capsule radius"
++    assert half_thickness < half_length
++
++
++# Reference-photo measured envelope of the battery box: (Z height above BB in
++# mm, measured X_lo mm, measured X_hi mm). See export_mujoco.py's geom_downtube
++# comment for the derivation (perpendicular thickness/offset averaged from
++# these two bands, since a single non-tapered box can't match both exactly).
++DOWNTUBE_ENVELOPE_BANDS_MM = (
++    (255.0, 150.0, 266.0),
++    (323.0, 208.0, 305.0),
++)
++
++# Ruling R23 fix-round: the deliberate single-box compromise (averaging two
++# differently-sized measured bands into one constant thickness and offset)
++# leaves each rendered edge off by ~4.6 mm to ~14.2 mm from the measured
++# bands (computed and reported in the Task 6 fix-round investigation). This
++# tolerance is set just above that so the test stays meaningful: it would
++# fail hard against the pre-fix bug (which rendered ~163 mm wide, blowing
++# past either band by tens of mm), but tolerates the shape of compromise a
++# single non-tapered box necessarily makes here.
++DOWNTUBE_FOOTPRINT_TOLERANCE_MM = 16.0
++
++
++def test_down_tube_footprint_matches_measured_envelope(root):
++    """
++    Ruling R23: the previous implementation applied the photo's measured
++    HORIZONTAL widths directly as the box's perpendicular thickness. For a
++    box tilted ~45.3 degrees, a horizontal slice through a slab of
++    perpendicular thickness t is t / sin(theta) wide -- about 1.41x -- so
++    that implementation overshot the true footprint substantially. This
++    test renders the box's actual horizontal (X) footprint at the two
++    photographed heights (via its pos/size/euler, reproducing MuJoCo's own
++    R_y(euler_y) rotation convention -- verified against a compiled model's
++    geom_xmat during the fix-round investigation) and checks it lands close
++    to the measured bands, rather than only checking that some cross-section
++    dimension is "big enough" (see test_down_tube_is_a_battery_box_not_a_thin_tube).
++    """
++    downtube = next(g for g in root.iter("geom") if g.get("name") == "geom_downtube")
++    pos = np.array([float(v) for v in downtube.get("pos").split()])
++    half_len, _, half_thickness = [float(v) for v in downtube.get("size").split()]
++    euler_y_deg = float(downtube.get("euler").split()[1])
++    phi = np.radians(euler_y_deg)
++
++    # Box-local x/z axes (length / thickness directions) in the (X, Z)
++    # plane, per MuJoCo's R_y(phi) convention: local_x = (cos phi, -sin phi),
++    # local_z = (sin phi, cos phi).
++    u_x = np.array([np.cos(phi), -np.sin(phi)])
++    u_z = np.array([np.sin(phi), np.cos(phi)])
++    center = np.array([pos[0], pos[2]])
++
++    corner_signs = [(-1, -1), (-1, 1), (1, 1), (1, -1)]
++    corners = [center + sx * half_len * u_x + sz * half_thickness * u_z for sx, sz in corner_signs]
++
++    for z_mm, x_lo, x_hi in DOWNTUBE_ENVELOPE_BANDS_MM:
++        z_m = z_mm / 1000.0
++        crossings = []
++        for i in range(len(corners)):
++            p1, p2 = corners[i], corners[(i + 1) % len(corners)]
++            z1, z2 = p1[1], p2[1]
++            if (z1 - z_m) * (z2 - z_m) <= 0 and z1 != z2:
++                t = (z_m - z1) / (z2 - z1)
++                crossings.append(p1[0] + t * (p2[0] - p1[0]))
++        assert len(crossings) == 2, (
++            f"horizontal line at Z={z_mm}mm should cross the tilted box exactly twice, "
++            f"got {len(crossings)}"
++        )
++        rendered_lo, rendered_hi = sorted(x * 1000.0 for x in crossings)
++        assert rendered_lo == pytest.approx(x_lo, abs=DOWNTUBE_FOOTPRINT_TOLERANCE_MM), (
++            f"Z={z_mm}mm: rendered X_lo={rendered_lo:.1f}mm vs measured {x_lo}mm"
++        )
++        assert rendered_hi == pytest.approx(x_hi, abs=DOWNTUBE_FOOTPRINT_TOLERANCE_MM), (
++            f"Z={z_mm}mm: rendered X_hi={rendered_hi:.1f}mm vs measured {x_hi}mm"
++        )

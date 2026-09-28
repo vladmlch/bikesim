@@ -18,7 +18,16 @@ from pathlib import Path
 
 import pytest
 
-from bike_sim.cli.ride import _tyre_config, main, parse_args, resolve_track, run_dir_name, track_seed
+from bike_sim.cli.ride import (
+    _tyre_config,
+    main,
+    parse_args,
+    resolve_leg_config,
+    resolve_rider,
+    resolve_track,
+    run_dir_name,
+    track_seed,
+)
 from bike_sim.physics.tyre import TyreConfig
 from bike_sim.sim.ride.recorder import CHANNELS, read_csv
 from bike_sim.terrain import RoadRoughness, SquareEdge, TrackSpec, get_preset, load_track
@@ -328,6 +337,53 @@ def test_seed_on_a_file_without_generator_is_rejected(capsys, tmp_path):
     assert main(["--track", str(path), "--seed", "4", "--preview", "--out", str(tmp_path)]) == 1
     assert "[generator]" in capsys.readouterr().err
     assert track_seed(str(path), None) is None
+
+
+# --------------------------------------------------------------------------------------
+# Leg arguments
+# --------------------------------------------------------------------------------------
+
+
+def test_legs_flag_defaults():
+    args = parse_args(["--drive-mode", "pedal"])
+    assert resolve_leg_config(args).legs == "articulated"
+    args = parse_args(["--drive-mode", "motor"])
+    assert resolve_leg_config(args).legs == "rigid"
+    args = parse_args(["--drive-mode", "motor", "--visual-pedalling"])
+    assert resolve_leg_config(args).legs == "articulated"
+
+
+def test_visual_pedalling_requires_motor():
+    args = parse_args(["--drive-mode", "pedal", "--visual-pedalling"])
+    with pytest.raises(ValueError):
+        resolve_leg_config(args)
+
+
+def test_legs_explicit_overrides_and_contradictions(capsys):
+    """--legs wins over the drive-mode default; impossible pairings are refused."""
+    args = parse_args(["--drive-mode", "pedal", "--legs", "rigid"])
+    assert resolve_leg_config(args).legs == "rigid"
+    args = parse_args(["--drive-mode", "motor", "--legs", "articulated", "--visual-pedalling"])
+    assert resolve_leg_config(args).legs == "articulated"
+    assert resolve_leg_config(args).visual_pedalling is True
+
+    # The legs cannot pump without a turning crankset to weld the feet to.
+    with pytest.raises(ValueError, match="--visual-pedalling"):
+        resolve_leg_config(parse_args(["--drive-mode", "motor", "--legs", "articulated"]))
+    # Asking for the visual stroke with rigid legs is a contradiction.
+    with pytest.raises(ValueError, match="--legs rigid"):
+        resolve_leg_config(parse_args(["--drive-mode", "motor", "--legs", "rigid",
+                                       "--visual-pedalling"]))
+
+    # main() reports the same contradictions as an argument error, exit code 2.
+    assert main(["--drive-mode", "pedal", "--visual-pedalling", "--headless"]) == 2
+    assert "--visual-pedalling" in capsys.readouterr().err
+
+
+def test_resolve_rider_carries_the_resolved_legs():
+    assert resolve_rider(parse_args(["--drive-mode", "pedal"])).legs == "articulated"
+    assert resolve_rider(parse_args([])).legs == "rigid"
+    assert resolve_rider(parse_args(["--legs", "rigid", "--drive-mode", "pedal"])).legs == "rigid"
 
 
 def test_a_stray_file_named_like_a_preset_does_not_shadow_it(tmp_path, monkeypatch):

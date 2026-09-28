@@ -8,13 +8,13 @@ to edit.
 
 Geometry has one source of truth, the track (preset or file); the command line carries
 only run-level knobs: seed and length overrides for generated roads, speed, sag target,
-output directory, decimation, and the rider (variant, mass, height, inseam).
+output directory, decimation, and the rider (variant, mass, height, inseam, legs).
 """
 
 import argparse
 from pathlib import Path
 import sys
-from typing import List, Optional, Sequence
+from typing import List, NamedTuple, Optional, Sequence
 
 from bike_sim.physics.drivetrain import ASSIST_ORDER, DRIVE_MODES, DrivetrainSpecs
 from bike_sim.geometry.specs import BikeSpecs
@@ -106,6 +106,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--rider-inseam", type=float, default=None, metavar="M",
                         help="rider inseam (crotch height); default 0.47 x height")
     parser.add_argument("--no-rider", action="store_true", help="alias for --rider none")
+    parser.add_argument(
+        "--legs", choices=("articulated", "rigid"), default=None,
+        help="seated rider's legs: articulated hip/knee/ankle chains welded to the pedals, "
+             "or rigid slide-mounted masses (default: articulated when the crankset turns "
+             "-- pedal/pedelec or --visual-pedalling --, rigid otherwise)",
+    )
     parser.add_argument("--preview", action="store_true",
                         help="render the track profile with effective pothole drops and exit")
     parser.add_argument("--dump-track", metavar="NAME", default=None,
@@ -146,6 +152,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--crank-phase", type=float, default=0.0, metavar="DEG",
         help="crank angle at the start of the run (default 0, the built 3/9 o'clock pose). "
              "Deliberately not tied to --seed: the phase a jump is met in is its own variable",
+    )
+    parser.add_argument(
+        "--visual-pedalling", action="store_true",
+        help="motor mode only: build the turning crankset and let the chain equality spin it "
+             "off the driven wheel, so the articulated legs visibly pedal while the ideal "
+             "wheel actuator does the driving",
     )
     parser.add_argument(
         "--surface", choices=tuple(SURFACES), default=None,
@@ -318,6 +330,55 @@ def run_dir_name(
 # --------------------------------------------------------------------------------------
 
 
+class LegConfig(NamedTuple):
+    """
+    The resolved leg options for a run.
+
+    Attributes:
+        legs: ``"articulated"`` or ``"rigid"`` -- which legs the seated rider gets.
+        visual_pedalling: Whether the crankset is built to spin in ``motor`` mode so the
+            legs visibly pedal while the wheel actuator drives.
+    """
+
+    legs: str
+    visual_pedalling: bool
+
+
+def resolve_leg_config(args: argparse.Namespace) -> LegConfig:
+    """
+    Resolves ``--legs`` and ``--visual-pedalling`` against the drive mode.
+
+    The legs default follows the crankset: ``pedal`` and ``pedelec`` turn it, so the
+    rider's legs articulate and pump; ``motor`` leaves them rigid on their slides unless
+    ``--visual-pedalling`` asks for the visual stroke anyway. The result lands on both
+    `RiderSpecs.legs` -- which `seated_pose` reads -- and the `RideSimulation` kwargs.
+
+    Args:
+        args: Parsed command line.
+
+    Raises:
+        ValueError: If ``--visual-pedalling`` is set in a pedalled mode (redundant --
+            the cranks turn anyway), is combined with ``--legs rigid`` (nothing would
+            follow the pedals), or if ``--legs articulated`` is asked for in ``motor``
+            mode without it, which would leave the feet with no pedal bodies to weld to.
+    """
+    visual = bool(args.visual_pedalling)
+    if visual and args.drive_mode != "motor":
+        raise ValueError(
+            f"--visual-pedalling only applies to --drive-mode motor; "
+            f"{args.drive_mode} already turns the crankset"
+        )
+    if visual and args.legs == "rigid":
+        raise ValueError("--visual-pedalling needs the articulated legs; drop --legs rigid")
+    if args.legs == "articulated" and args.drive_mode == "motor" and not visual:
+        raise ValueError(
+            "--legs articulated needs the crankset to turn; add --visual-pedalling "
+            "or use --drive-mode pedal/pedelec"
+        )
+    legs = args.legs or ("articulated" if args.drive_mode != "motor" or visual else "rigid")
+    return LegConfig(legs=legs, visual_pedalling=visual)
+
+
 def resolve_rider(args: argparse.Namespace) -> RiderSpecs:
     """
     Turns the rider arguments into a `RiderSpecs`.
@@ -333,6 +394,7 @@ def resolve_rider(args: argparse.Namespace) -> RiderSpecs:
     variant = "none" if args.no_rider else (args.rider or DEFAULT_RIDER_VARIANT)
     return RiderSpecs(
         variant=variant,
+        legs=resolve_leg_config(args).legs,
         mass_kg=float(args.rider_mass),
         height_m=float(args.rider_height),
         inseam_m=float(args.rider_inseam) if args.rider_inseam is not None else None,
@@ -452,6 +514,7 @@ def _headless(
     )
 
     drivetrain = _drivetrain_config(args)
+    leg_config = resolve_leg_config(args)
     if args.drive_mode != "motor":
         cadence = drivetrain.cadence_rpm_at(args.speed / 3.6, specs.rear_wheel_radius / 1000.0)
         assist = args.assist if args.drive_mode == "pedelec" else "off"
@@ -465,6 +528,7 @@ def _headless(
         track=track, specs=specs, target_speed_kmh=args.speed, rider=rider,
         controller=controller, coil_shock=coil, tyre=tyre,
         drive_mode=args.drive_mode, assist=args.assist, drivetrain=drivetrain,
+        legs=leg_config.legs, visual_pedalling=leg_config.visual_pedalling,
     )
     eq = sim.equilibrium
     print(f"{PREFIX} start equilibrium: fork {eq['fork_travel_mm']:.1f} mm "
@@ -536,9 +600,11 @@ def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, 
         f"{tyre.front.pressure_bar:.2f}/{tyre.rear.pressure_bar:.2f} bar, "
         f"surface {tyre.surface or track.surface}"
     )
+    leg_config = resolve_leg_config(args)
     run_interactive_ride(
         track=track, target_speed_kmh=args.speed, rider=rider, tyre=tyre,
         drive_mode=args.drive_mode, assist=args.assist, drivetrain=_drivetrain_config(args),
+        legs=leg_config.legs, visual_pedalling=leg_config.visual_pedalling,
     )
     return 0
 

@@ -106,6 +106,8 @@ def run_interactive_ride(
     drive_mode: str = "motor",
     assist: str = "tour",
     drivetrain: Optional[DrivetrainSpecs] = None,
+    legs: Optional[str] = None,
+    visual_pedalling: bool = False,
 ) -> Optional[RunOutcome]:
     """
     Launches the live interactive ride viewer.
@@ -123,6 +125,10 @@ def run_interactive_ride(
         drive_mode: ``motor``, ``pedal`` or ``pedelec``; see `RideSimulation`.
         assist: Assist level the mid-drive starts in; `E` cycles it while riding.
         drivetrain: Gearing and drivetrain ceilings. Defaults to the shipped 32x14 eMTB.
+        legs: ``articulated`` or ``rigid`` legs for the seated rider; None follows the
+            crankset (see `RideSimulation`).
+        visual_pedalling: Motor mode only: spin the crankset so the rider visibly
+            pedals while the wheel actuator drives (see `RideSimulation`).
 
     Returns:
         The run's outcome if it terminated before the window was closed, else None.
@@ -147,6 +153,8 @@ def run_interactive_ride(
         drive_mode=drive_mode,
         assist=assist,
         drivetrain=drivetrain,
+        legs=legs,
+        visual_pedalling=visual_pedalling,
     )
     session = RideSession(sim)
 

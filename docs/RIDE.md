@@ -94,14 +94,20 @@ is empty because every actuator used here is stateless (`position`, `motor`).
 | `shock_stroke` | slide, shock axis | 0 … 0.065 m | rear linkage, loaded via `qfrc_applied` |
 | `front_wheel_spin` | hinge Y | — | free, **dynamic** |
 | `rear_wheel_spin` | hinge Y | — | free, **dynamic** |
+| `crank_spin` | hinge Y | — | **turning crankset only** (§6), `crank_drive` + chain equality |
+| `pedal_spin_front`, `pedal_spin_rear` | hinge Y | — | turning crankset only, pedal platforms |
 | `rider_pelvis_z` | slide, frame Z | — | **seated rider only**, loaded via `qfrc_applied` |
 | `rider_torso_z` | slide, frame Z (on pelvis) | — | seated rider only, `qfrc_applied` |
 | `rider_arms_z` | slide, frame Z | — | seated rider only, `qfrc_applied` |
-| `rider_leg_front_z` | slide, frame Z | — | seated rider only, `qfrc_applied` |
-| `rider_leg_rear_z` | slide, frame Z | — | seated rider only, `qfrc_applied` |
+| `rider_leg_front_z`, `rider_leg_rear_z` | slide, frame Z | — | seated rider, `rigid` legs only, `qfrc_applied` |
+| `rider_{hip,knee,ankle}_{front,rear}` | hinge Y, chains off the pelvis | — | seated rider, `articulated` legs only, `qfrc_applied` |
 
 `nq = nv = 12` with the bike alone or the lumped rider; **`nq = nv = 17`** with the seated
-rider (§7), one vertical slide per lumped rider mass. `neq = 2` in every case.
+rider (§7), one vertical slide per lumped rider mass. A turning crankset — the pedalled
+drive modes or `--visual-pedalling` (§6) — adds `crank_spin` and the two `pedal_spin_*`
+platform hinges, and the articulated legs (§7.5) replace the two `rider_leg_*_z` slides
+with six hip/knee/ankle hinges: the pedalled default is `nq = nv = 24`. `neq = 2` without
+a crankset; `chain_drive` plus the two foot–pedal welds raise it to 5.
 
 **Rear linkage mobility.** Five coordinates (`main_pivot`, `horst_pivot`,
 `rocker_frame_pivot`, `yoke_pivot`, `shock_stroke`) are reduced by two `<connect>` loop
@@ -112,7 +118,11 @@ therefore exactly **1 DOF**, as the analytical 4-bar solver assumes.
 
 **Total mobility: 7** — three chassis, one fork, one rear suspension, two wheel spins,
 plus the locked steer coordinate — **12 with the seated rider**, whose five slides are each
-a genuine degree of freedom carried by a preloaded spring-damper.
+a genuine degree of freedom carried by a preloaded spring-damper. The pedalled modes add
+`crank_spin` and the two `pedal_spin_*` hinges and then close them again: `chain_drive`
+ties the crank to the rear wheel, and the foot–pedal welds close each articulated leg
+onto its pedal — the stroke is one kinematic loop per side riding on the wheel's
+coordinate, not six free hinges.
 
 **Wheel rotations are genuine dynamic degrees of freedom**, not auxiliary states. They
 carry rotational inertia, they are driven by actuator torque and by the road — contact
@@ -296,8 +306,9 @@ inherits the other's value.
 on the ground rather than one sinking through it while the crash detector (§7.4) flags it
 anyway. **The rider and the crankset do not collide** (`contype="0"`): the rider's capsules
 are mass and visuals, and a rider on the ground is a crash the detector has already called
-from the frame's attitude and the handlebar; the horizontal cranks and pedals sit 350 mm
-above the road and would only meet it in that same crash. (Earlier revisions of this
+from the frame's attitude and the handlebar; the cranks and pedals — at rest or turning
+(§6) — clear the road by more than 150 mm even at bottom dead centre and would only meet
+it in that same crash. (Earlier revisions of this
 section said rider contact was enabled; the builder never did that.) This paragraph holds
 for both tyre models.
 
@@ -702,9 +713,36 @@ of that comparison are analytical.
 
 ## 6. Propulsion and braking torque path
 
-There is **no drivetrain model**: no chain, no cassette ratios, no motor speed–torque
-curve, no cadence. Torque is applied directly to the wheel spin joints through `motor`
-actuators with `gear="1"`.
+Propulsion comes in three modes (`--drive-mode`; default `motor`). **Motor** is the
+original arrangement and stays the baseline: torque is applied directly to the wheel
+spin joints through `motor` actuators with `gear="1"` — no chain, no cassette, no
+cadence.
+
+**Pedal** and **pedelec** build the turning crankset (§1): spindle, arms and pedals on a
+lightly damped `crank_spin` hinge at the bottom bracket, a pedal body on a `pedal_spin_*`
+hinge at each arm's end, the `crank_drive` actuator, and the `chain_drive` joint equality
+that stands in for the chain — `crank = wheel / gear_ratio`, so 32x14 (`--gearing`, the
+single fixed gear) turns the wheel 2.286 times per crank revolution and delivers crank
+torque divided by 2.286. The rider is a pulsing |cos| crank torque bounded by 60 N·m
+mean / 300 W ceilings (`--ripple-depth` reshapes the revolution without moving its mean,
+`--crank-phase` sets where it starts); `pedelec` adds the mid-drive's support-factor
+assist on top (`--assist`, cycled by `E` in the viewer; 85 N·m / 600 W ceilings behind a
+first-order torque-sensor lag and the legal cutoff taper). The **freewheel** is the
+equality's `eq_active` cleared on the overrun: while it is open the chain datum is
+re-wound so re-engagement is residual-free, a PD stand-in for the rider's legs holds the
+cranks level, and a negative cruise demand is handed to the brakes. Cadence is the crank
+joint's own `qvel`, and the 60–110 rpm band a rider actually pedals in is checked when
+the command line is read.
+
+**Where the rider's torque enters depends on the legs** (§7.5). With the default
+articulated legs, `sim/ride/leg_drive.py` writes the six hip/knee/ankle torques each
+step: the leg's share of the mean crank torque is mapped onto a tangential pedal force
+through the leg Jacobian and added to a joint-space impedance that tracks the stroke's
+IK pose — torque reaches the crank through the foot–pedal welds, and `crank_drive`
+carries only the assist. `--legs rigid` keeps the earlier arrangement, the actuator
+carrying the rider's share while the legs stay on their slides; `--visual-pedalling`
+builds the same turning crankset in `motor` mode, where the chain equality drags the
+crank off the driven wheel and the impedance follows the stroke with zero rider torque.
 
 **Cruise control** is a PI regulator on **chassis longitudinal velocity** (`qvel[root_x]`),
 not on wheel angular velocity. Regulating wheel speed would command torque against a wheel
@@ -728,7 +766,8 @@ spinning or locked wheel is physics to be observed, not suppressed (plan D12).
 |---|---|
 | Default target speed | 25 km/h (6.94 m/s) |
 | Adjustable range | 15–45 km/h |
-| Drive torque ceiling | 150 N·m at the rear wheel |
+| Drive torque ceiling | 150 N·m at the rear wheel (`motor`) |
+| Crank-side ceilings | rider 60 N·m mean / 300 W; assist 85 N·m / 600 W; `crank_drive` 180 N·m (pedal/pedelec) |
 | Brake torque ceiling | 200 N·m per wheel |
 
 The default speed is set by the kicker, not chosen for roundness. Measured against the
@@ -789,7 +828,9 @@ spring-damper written into `qfrc_applied` by `sim/ride/rider_forces.py`, the sam
 fork and shock use (§5). The springs are preloaded to their static loads at zero travel, so
 the equilibrium pose is the drawn pose. The saddle and the flat pedals are **one-sided**: they
 push but cannot pull, so the rider can leave the saddle and come back under gravity, and the
-`saddle_gap_m` channel records it. The spine and the gripped bar are two-sided.
+`saddle_gap_m` channel records it. The spine and the gripped bar are two-sided. (With
+`articulated` legs — §7.5 — the feet are instead welded to the pedal bodies, so the
+`rider_leg_*` paths and their one-sided pedals do not exist.)
 
 **Reactions are internal.** A generalized force on a slide joint acts between the joint's
 child and its parent, so every newton lifting the pelvis presses the frame down through the
@@ -870,6 +911,29 @@ rough-road model, and a rider does not sit through a 600 mm drop. `bike-ride` th
 contact marks the run as failed, with the position and cause recorded. A stabilized run is
 not assumed to be a successful one.
 
+### 7.5 `seated` legs: rigid or articulated
+
+`--legs` picks which legs the seated rider is built with. **Rigid** — the default whenever
+the crankset does not turn — is the §7.2 table: two `rider_leg_*` masses on vertical
+slides behind preloaded one-sided pedal springs, the rough-road rider as first written.
+**Articulated** — the default in `pedal`/`pedelec` and under `--visual-pedalling` —
+replaces them with a thigh–shank–foot hinge chain per side hung off the pelvis, laid out
+by the same pose solver (§7.3: two-link IK puts each ankle on its pedal, the knee-band
+check unchanged) and welded at the foot to the pedal body — the clipless connection that
+makes the leg a force path rather than a visual. The de Leva segment masses are identical
+either way; only their carriers change, so the solved equilibrium and the mass table agree
+between the builds.
+
+At runtime `sim/ride/leg_drive.py` drives the six hinges: every step it solves the chain
+IK at the crank's current phase, maps that leg's share of the mean crank torque onto a
+tangential pedal force through the leg Jacobian, and adds a joint-space impedance toward
+the IK pose plus the segments' bias-force feedforward. In `pedal`/`pedelec` this is where
+the rider's torque physically enters — the downstroke pushes the pedal the foot is welded
+to (§6). Under `--visual-pedalling` the same impedance only tracks the stroke while the
+chain equality drags the crank. Articulated legs in `motor` mode without it are refused:
+the feet would have no pedal bodies to weld to. `rigid` is legal everywhere, the pedalled
+modes included.
+
 ---
 
 ## 8. Energy and momentum accounting
@@ -879,7 +943,7 @@ Tracked per step and reported per run:
 | Sources | Sinks |
 |---|---|
 | gravity (net −600 mm over the track) | fork and shock damping |
-| drive torque | contact dissipation (`sphere`) |
+| drive torque (`pedal`/`pedelec`: rider + mid-drive at the crank, through the chain and — with articulated legs — the leg drive's impedance work, §7.5) | contact dissipation (`sphere`) |
 | **virtual rider moment** (flight, §7.4) | rolling resistance (`sphere`: `Crr = 0.015`) |
 | | **tyre hysteresis** (`pneumatic`: carcass and rim elements, plus the tread-loss term if §3.1 needs it) |
 | | **tyre sliding** (`pneumatic`: `F_t · V_s` per patch) |
@@ -1095,7 +1159,7 @@ authored** and carries no claim of correspondence to a specific real bike, tyre 
 | Seated rider: hip above saddle, ankle above pedal, elbow flexion | 60 mm, 115 mm, 15° (§7.3) |
 | Seated rider: inseam / stature | 0.47 (ANSUR II, rounded; `--rider-inseam` overrides) |
 | Seated rider: helmet | 0.4 kg inside the rider mass |
-| Cranks | 165 mm, horizontal, rigid; spindle 0.10 + arms 2 × 0.20 + pedals 2 × 0.175 kg |
+| Cranks | 165 mm; rigid to the frame in `motor`, on the `crank_spin` hinge in the pedalled modes; spindle 0.10 + arms 2 × 0.20 + pedals 2 × 0.175 kg |
 
 The seated rider's *literature* values — de Leva's segment fractions, Kumar & Saran's saddle
 contact, the 4–6 Hz / ~1.5 × apparent-mass peak, the 55 / 33 / 12 % split extrapolated from
@@ -1187,7 +1251,7 @@ the bike pitches, "vertical" tilts with it. The whole-body-vibration literature 
 follows is vertical too, and the fore-aft parameters it would need are scarcely published;
 the restriction is documented rather than filled with invented numbers. Two sided-ness is
 also a simplification: hands are taken as gripping (two-sided), feet as resting on flat
-pedals (one-sided).
+pedals (one-sided — or welded outright with `articulated` legs, §7.5).
 
 **2 — The spring defaults are calibrated for a weight split the model does not produce**
 (§9). At the shipped settings the fork sags 40.6 % and the shock 22.7 % (solved; 42.0 /
@@ -1206,7 +1270,14 @@ lateral weight shift.
 **5 — No tyre slip model** (`sphere` only, §4.0): regularized Coulomb friction only.
 `pneumatic` has one (§4.1).
 
-**6 — No drivetrain** (§6): torque is applied at the wheel.
+**6 — The drivetrain is a torque equality, not a chain** (§6). `chain_drive` ties
+`crank_spin` to `rear_wheel_spin` kinematically: it transmits torque divided by the gear
+ratio but carries no chain-line tension, so the anti-squat a real chain produces under
+power is absent. The gearing is a single fixed ratio — no cassette, no shifting — the
+mid-drive is a support factor under torque/power ceilings and a legal cutoff rather than
+a measured speed–torque curve, and the rider is a bounded unit-mean |cos| torque law, not
+a physiology model. `motor` mode keeps the pre-drivetrain arrangement — torque applied at
+the wheel — as the regression baseline.
 
 **7 — No aerodynamic drag** (§4): wheel power reads ~90 W low at 25 km/h.
 
@@ -1287,6 +1358,13 @@ uv run bike-ride --list-tracks
 | `--tyre-tier {fast,detailed}` | Pneumatic brush resolution. Default `fast` (§3.1). |
 | `--tyre-pressure FRONT/REAR` | Front/rear pressures in bar, each 0.8–3.0. Default `1.5/1.7`. |
 | `--surface NAME` | Surface preset (`asphalt`, `hardpack`, `loose`, `wet`); default from the track (§4.1). |
+| `--drive-mode {motor,pedal,pedelec}` | Propulsion (§6): ideal wheel torque, the rider's cranks, or rider + mid-drive. Default `motor`. |
+| `--assist {off,eco,tour,sport,turbo}` | Mid-drive level in `pedelec`; `E` cycles it in the viewer. Default `tour`. |
+| `--gearing CHAINRINGxCOG` | Single gear of the pedalled drivetrain. Default `32x14` — 82 rpm at 25 km/h. |
+| `--ripple-depth D` | Depth of the crank-torque pulse in [0,1]; 0 is a smooth crank. Default 0.85. |
+| `--crank-phase DEG` | Crank angle at the start of the run. Default 0, the built 3/9 o'clock pose. |
+| `--legs {articulated,rigid}` | Seated rider's legs (§7.5). Default `articulated` when the crankset turns, `rigid` otherwise. |
+| `--visual-pedalling` | `motor` only: spin the crankset off the driven wheel so the articulated legs visibly pedal; no rider torque is delivered. |
 | `--no-plots` | Headless: skip the PNG figures. |
 | `--preview` | Render the road profile with effective pothole drops to `<out>/preview_<track>_s<seed>.png` and exit. |
 | `--dump-track NAME` | Print a preset as a track file and exit. |
@@ -1420,6 +1498,7 @@ Interactive mode (`bike-ride` without `--headless`) prints this on start and on 
 | Keys | Action |
 |---|---|
 | `W` / `S` | Cruise target ± 1 km/h (15–45) |
+| `E` | Cycle the mid-drive assist off → eco → tour → sport → turbo (`pedelec` only) |
 | `Space` | Brake toggle; `,` / `.` brake strength ∓ 10 % |
 | `R` | Restart from the solved equilibrium |
 | `[` / `]` | Fork air tokens −/+; `-` / `=` fork pressure ∓ 2 psi |
@@ -1473,7 +1552,7 @@ per recorded step, the first row being the start state:
 | `rider_pelvis_acc_vert_mps2`, `rider_pelvis_acc_long_mps2` | m/s² | Same for the pelvis. |
 
 The seated rider's nine channels (§7.2) read zero for `none` and `lumped`. The pneumatic
-channels also remain present under `sphere` and read zero, so every CSV has 54 columns.
+channels also remain present under `sphere` and read zero, so every CSV has 64 columns.
 
 | Channel | Unit | Meaning |
 |---|---|---|
@@ -1486,6 +1565,23 @@ channels also remain present under `sphere` and read zero, so every CSV has 54 c
 | `{front,rear}_rim_strike` | 0/1 | A rim-strike event is active or closes on this step. |
 | `{front,rear}_tyre_pressure_bar` | bar | Live pressure read by the tyre model. |
 | `{front,rear}_tyre_loss_w` | W | Carcass hysteresis and sliding power loss. |
+
+The pedalled drivetrain (§6) appends ten channels, NaN in `motor` mode where no
+`PedalDrivetrain` exists — a NaN says "this run had no crank command" where a zero would
+claim a stationary crank:
+
+| Channel | Unit | Meaning |
+|---|---|---|
+| `crank_phase_rad` | rad | Crank angle of the `crank_spin` joint. |
+| `cadence_rpm` | rpm | Crank angular velocity. |
+| `crank_torque_nm` | N·m | The rider's instantaneous crank torque, ripple included. |
+| `assist_torque_nm` | N·m | The mid-drive's torque on top of it. |
+| `motor_power_w` | W | Assist torque × crank speed while the chain is engaged. |
+| `support_factor` | — | Live assist factor, tapered at the cutoff speed. |
+| `freewheel` | 0/1 | Chain equality open — the wheel outrunning the cranks. |
+| `assist_cutoff_active` | 0/1 | Assist selected and the cutoff taper is biting. |
+| `brake_source` | 0/1 | The brake demand came from cruise on the overrun, not the lever. |
+| `drive_traction_limited` | 0/1 | Drive demand was positive into a fully sliding rear patch (`pneumatic`; recorded, not acted on). |
 
 ## Summary metrics
 

@@ -4,6 +4,9 @@ output/plots/*.png
 output/models/*.xml
 MUJOCO_LOG.TXT
 
+# Offline bundles (built artifacts — published as GitHub Releases)
+bike-sim-offline-*
+
 # Python
 __pycache__/
 *.pyc

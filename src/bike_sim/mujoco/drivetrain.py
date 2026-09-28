@@ -133,8 +133,9 @@ def build_chain_constraint(root: ET.Element, gear_ratio: float) -> None:
     """
     Ties the crank to the rear wheel with the chain, as a joint equality.
 
-    The constraint is written `crank = wheel / ratio`, so a positive crank torque arrives at
-    the wheel multiplied by the ratio and the power balance closes. It is emitted **active**;
+    The constraint is written `crank = wheel / ratio`: the wheel turns `ratio` times per
+    crank revolution, so a positive crank torque arrives at the wheel divided by the ratio
+    and the power balance closes. It is emitted **active**;
     the freewheel is expressed at runtime by clearing `eq_active`, which is what lets the
     cranks stop while the wheel keeps turning.
 

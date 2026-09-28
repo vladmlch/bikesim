@@ -390,8 +390,8 @@ class RideSimulation:
         Drive torque arriving at the rear wheel, N.m.
 
         In `motor` mode that is the controller's output. In the pedalled modes it is the
-        rider's torque plus the motor's, multiplied by the gearing -- which is why the wheel
-        sees more than the controller ever asks for.
+        rider's torque plus the motor's, divided by the gearing -- the chain trades crank
+        torque for wheel speed, the way 32 teeth driving 14 must.
         """
         if self.drivetrain is None:
             return float(self.cruise.torque_nm)
@@ -400,7 +400,7 @@ class RideSimulation:
             return 0.0
         return (
             (command.rider_torque_nm + command.assist_torque_nm)
-            * self.drivetrain.specs.gear_ratio
+            / self.drivetrain.specs.gear_ratio
         )
 
     def default_limits(self, max_wall_clock_s: float = DEFAULT_MAX_WALL_CLOCK_S) -> RunLimits:

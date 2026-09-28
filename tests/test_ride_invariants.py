@@ -172,4 +172,5 @@ def test_full_traverse_is_repeatable(ride):
     _, rec2, outcome2 = _traverse()
 
     assert outcome2.steps == outcome.steps
-    assert np.array_equal(rec2.array(), rec.array())
+    # Motor-mode runs record NaN in the drivetrain channels; identical NaN layouts count as equal.
+    assert np.array_equal(rec2.array(), rec.array(), equal_nan=True)

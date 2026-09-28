@@ -254,7 +254,7 @@ class SuperDeluxeDamper(BaseDamper):
             c_hsc_min=450.0,
             c_hsc_max=1450.0,
             c_reb_min=900.0,
-            c_reb_max=3800.0,
+            c_reb_max=8000.0,
             v_knee_comp=0.16,
             v_knee_reb=0.20,
         )

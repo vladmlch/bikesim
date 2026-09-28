@@ -112,7 +112,9 @@ def test_recorder_appends_live_tyre_channels_and_zeros_them_for_sphere():
     sphere = RideSimulation(track=get_preset("flat"), tyre=TyreConfig(model="sphere"), rider="none")
     sphere_recorder = RideRecorder(sphere)
     sphere_recorder.record(sphere)
-    assert np.array_equal(sphere_recorder.array()[0, -len(TYRE_CHANNELS):], np.zeros(len(TYRE_CHANNELS)))
+    row = sphere_recorder.array()[0]
+    tyre_span = slice(CHANNELS.index("front_tyre_fz_n"), CHANNELS.index("crank_phase_rad"))
+    assert np.array_equal(row[tyre_span], np.zeros(len(TYRE_CHANNELS)))
 
     pneumatic = RideSimulation(
         track=get_preset("flat"), tyre=TyreConfig(model="pneumatic"), rider="none"
@@ -205,7 +207,8 @@ def test_short_run_repeats_bit_identically(tmp_path):
         return rec
 
     a, b = run(), run()
-    assert np.array_equal(a.array(), b.array())
+    # Motor mode records NaN in the drivetrain channels; identical NaN layouts count as equal.
+    assert np.array_equal(a.array(), b.array(), equal_nan=True)
     assert a.write_csv(tmp_path / "a.csv").read_bytes() == b.write_csv(tmp_path / "b.csv").read_bytes()
 
 

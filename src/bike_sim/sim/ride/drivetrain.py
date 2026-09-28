@@ -10,15 +10,20 @@ same split every other writer in `sim/ride/` uses.
 **Where the torque goes in.** At the crank, not the wheel. The 2.9 kg motor of this model
 sits around the bottom bracket (`physics/mass.py`), so its torque passes through the gearing
 and the freewheel exactly as the rider's does, and its reaction lands on the frame through
-the bottom bracket instead of on the swingarm. The chain equality then carries
-`gear_ratio` times that torque to the rear wheel.
+the bottom bracket instead of on the swingarm. The chain equality then carries that torque
+to the rear wheel *divided* by `gear_ratio`: 32 teeth driving 14 spins the wheel
+`gear_ratio` times faster than the cranks and delivers `gear_ratio` times less torque --
+a small cog is the hard end of the cassette.
 
 **What the demand means.** `CruiseController` regulates chassis speed and its gains are
 scaled by `1 / (1 + support)` while assist is available, so its output is the *rider's*
-share: the mean crank torque is `demand / gear_ratio`, the motor multiplies it by the support
-factor, and the closed loop behaves identically in every assist mode. Without that scaling
-Turbo would move the loop from zeta = 1.21 to 0.57 and the difference between modes would be
-half regulator, half drivetrain.
+share of the wheel torque: the mean crank torque is `demand * gear_ratio` (the chain divides
+it back on the way out), the motor multiplies the rider's torque by the support factor, and
+the closed loop behaves identically in every assist mode while the rider's ceilings do not
+bind. When they do -- 60 N.m at the cranks is only ~26 N.m at the wheel through 32x14 --
+the human is the limiter and the run simply takes longer to reach the target. Without the
+gain scaling Turbo would move the loop from zeta = 1.21 to 0.57 and the difference between
+modes would be half regulator, half drivetrain.
 
 **The freewheel, and what replaces engine braking.** A negative demand -- the controller
 holding speed on a descent -- cannot be delivered through a freewheel, so the chain equality
@@ -213,7 +218,7 @@ class PedalDrivetrain:
         if pedalling:
             self._engage(model, data)
             mean_nm, limit = limited_rider_torque(
-                wheel_demand_nm / self.specs.gear_ratio, crank_radps, self.specs
+                wheel_demand_nm * self.specs.gear_ratio, crank_radps, self.specs
             )
             rider_nm = mean_nm * ripple_shape(phase, self.specs.ripple_depth)
             taper = cutoff_factor(speed_mps, self.specs)

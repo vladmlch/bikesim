@@ -6,8 +6,9 @@ Tests include:
   never trips the crash detector, and stays inside the suspension's joint limits to within the
   measured soft-limit excursion.
 - What the bike actually does at the kicker, which is **not** what docs/RIDE.md section 2
-  predicts: it reaches the lip at 17.6 km/h, below the 20.9 km/h floor of the stated working
-  band, and cases into the gap. Recorded as a characterization test, not as a target.
+  predicts: it reaches the lip at 22.1 km/h -- inside the stated 20.9-30.6 km/h working
+  band -- and still cases, the rear wheel dropping into the gap while the front lands on
+  the slope. Recorded as a characterization test, not as a target.
 - Run termination: every reason, including the two safety caps, with an injected clock.
 - The contact debounce measured against this track's real airborne phases.
 - The pitch sign convention, which the HUD and the next task's telemetry both report signed.
@@ -70,16 +71,18 @@ KICKER_LIP_M = 58.4
 GAP_END_M = 60.9
 LANDING_END_M = 65.9
 
-# Floor of the working band section 2 states for the kicker, in km/h. Below it the bike cases.
+# The working band section 2 states for the kicker, in km/h. Below it the bike cases.
 KICKER_BAND_FLOOR_KMH = 20.9
+KICKER_BAND_CEILING_KMH = 30.6
 
 # The suspension's own joint ranges, and the excursions past them that this run produces.
 #
 # MuJoCo's ride-mode joint limits are deliberately soft (`solreflimit="0.01 1"`): they are the
 # final barrier, not the bottom-out mechanism (docs/RIDE.md section 10), so the coordinate
 # passes the limit under a hard enough load. Measured over this traverse: the fork reaches
-# 183.528 mm on 51 of 34 710 steps, peaking where the kicker's landing slope meets the flat at
-# 65.9 m, and the shock tops out to -5.585 mm on 5.6 % of steps. The tolerances below are those
+# 184.399 mm on 55 of 34 827 steps, peaking where the kicker's landing slope meets the flat at
+# 65.9 m, and the shock never tops out -- the rebound ceiling keeps it inside its range
+# (minimum +0.156 mm, on the kicker touchdown). The tolerances below are those
 # measurements with a small margin, not a number chosen to make the assertion pass.
 FORK_TRAVEL_LIMIT_MM = 180.0
 SHOCK_STROKE_LIMIT_MM = 65.0
@@ -273,7 +276,7 @@ def test_enduro_run_terminates_at_the_end_of_the_track(sim: RideSimulation, trav
     """
     The bike rides all 115 m of the default preset and the run says so explicitly.
 
-    Wall clock and step count are recorded rather than asserted: 34 710 steps of 17.355 s of
+    Wall clock and step count are recorded rather than asserted: 34 827 steps of 17.414 s of
     simulated time in about 3.5 s of wall clock, i.e. roughly 5 times real time.
     """
     assert traverse.outcome.reason == REASON_END_OF_TRACK
@@ -311,10 +314,10 @@ def test_suspension_travel_stays_within_the_joint_limits(traverse: Traverse):
 
     Both suspension joints carry `solreflimit="0.01 1"` in ride mode, so a limit is a stiff
     spring rather than a wall and a hard enough impact pushes through it. Measured on this
-    traverse: fork 183.528 mm against a 180 mm range (51 of 34 710 steps past the limit, the
-    peak at the foot of the kicker's landing slope) and shock -5.585 mm against a range
-    starting at 0 (5.6 % of steps below zero). The fork never goes negative and the shock never
-    exceeds 65 mm.
+    traverse: fork 184.399 mm against a 180 mm range (55 of 34 827 steps past the limit, the
+    peak at the foot of the kicker's landing slope) and shock never below zero at all -- the
+    raised rebound ceiling holds it inside its range (minimum +0.156 mm, at the kicker
+    touchdown). The fork never goes negative and the shock never exceeds 65 mm.
     """
     assert traverse.fork_mm.min() >= 0.0
     assert traverse.fork_mm.max() <= FORK_TRAVEL_LIMIT_MM + FORK_OVERTRAVEL_TOLERANCE_MM
@@ -326,8 +329,8 @@ def test_mean_speed_tracks_the_target_past_the_acceleration_ramp(traverse: Trave
     """
     Mean speed from 10 m to the finish is within 5 % of the 25 km/h target.
 
-    Measured 24.72 km/h, 98.9 % of target, against instantaneous extremes of 16.9 and
-    35.2 km/h -- the low over the roots, the high on the 600 mm drop.
+    Measured 24.63 km/h, 98.5 % of target, against instantaneous extremes of 16.5 and
+    35.3 km/h -- the low recovering from the kicker's case, the high on the 600 mm drop.
     """
     cruising = traverse.window(*CRUISE_WINDOW_M)
     assert float(traverse.speed_mps[cruising].mean()) == pytest.approx(TARGET_SPEED_MPS, rel=0.05)
@@ -337,8 +340,8 @@ def test_pitch_stays_inside_the_crash_limit(traverse: Traverse):
     """
     Attitude never reaches the 60 degree crash threshold anywhere on the track.
 
-    Measured range -14.83 degrees nose-up, on the kicker's ramp, to +27.44 degrees nose-down,
-    over the gap -- so the run clears the threshold by better than a factor of two.
+    Measured range -13.65 degrees nose-up, on the kicker's ramp, to +24.60 degrees nose-down,
+    at the gap touchdown -- so the run clears the threshold by better than a factor of two.
     """
     assert np.abs(np.degrees(traverse.pitch_rad)).max() < CRASH_PITCH_LIMIT_DEG
 
@@ -364,40 +367,42 @@ def test_pitch_stabilizer_saturates_rather_than_regulating_over_the_kicker(trave
     """
     Over the kicker the stabilizer runs against its ceiling one-sided, so its gains never act.
 
-    This is the answer to the question the gains were left open for. Across the 195.5 ms flight
-    off the ramp the moment sits at exactly -80 N.m on 380 of 390 steps and never changes sign:
-    the loop is saturated, not oscillating, so `kd` (0.54 of critical) is not the knob and
-    raising it would change nothing. What the ceiling buys is 15.6 N.m.s of angular impulse
-    against a launch pitch rate of 3.4 rad/s on a 38.6 kg.m^2 coordinate. The authority is the
-    limit, as section 7 says it is; the gains are not.
+    This is the answer to the question the gains were left open for. Across the 320.5 ms flight
+    off the ramp the moment sits at exactly -80 N.m for the first 400 of 641 steps, then fades
+    once the pitch rate is arrested, and never changes sign: the loop is saturated, not
+    oscillating, so `kd` (0.54 of critical) is not the knob and raising it would change nothing.
+    What the ceiling buys is 20.5 N.m.s of angular impulse against a launch pitch rate of
+    1.11 rad/s on a 38.6 kg.m^2 coordinate. The authority is the limit, as section 7 says it
+    is; the gains are not.
     """
     start, length = _kicker_flight(traverse)
     moment = traverse.moment_nm[start : start + length]
 
     assert moment.size > 300
     saturated = np.abs(moment) >= PITCH_MOMENT_CEILING_NM - 1e-9
-    assert saturated.mean() > 0.9
+    assert saturated.mean() > 0.5
+    assert not saturated[int(0.75 * moment.size) :].any()  # the tail is the release, not ringing
     nonzero = np.sign(moment[moment != 0.0])
     assert np.all(nonzero == nonzero[0]), "the moment reversed, so the loop is ringing after all"
 
 
-def test_pitch_does_not_settle_before_the_kicker_touchdown(traverse: Traverse):
+def test_the_stabilizer_arrests_the_launch_rotation_before_touchdown(traverse: Traverse):
     """
-    The ceiling is not enough authority to arrest the rotation the ramp imparts.
+    The ceiling now has enough flight time to stop the rotation the ramp imparts.
 
-    Measured over the flight: the bike leaves the ramp at -2.89 degrees (nose-up) rotating
-    nose-down at 3.399 rad/s, and touches down at +23.85 degrees still rotating nose-down at
-    1.755 rad/s. The rider takes 1.6 rad/s out of it and runs out of flight; it did not ring and
-    it did not settle. Reported rather than tuned: more authority than +/-80 N.m is a change to
-    a documented spec value, not a gain adjustment.
+    Measured over the flight: the bike leaves the ramp at +3.01 degrees nose-down rotating
+    nose-down at 1.109 rad/s; the pegged moment caps the dive at +10.15 degrees near 60.0 m,
+    the rate crosses zero, and the bike touches down at +8.26 degrees rotating back at
+    -0.41 rad/s. Arrested and half-recovered, not settled -- it never rings, and more
+    authority than +/-80 N.m is still a spec change, not a gain adjustment.
     """
     start, length = _kicker_flight(traverse)
     end = start + length - 1
 
-    assert traverse.pitch_rate_radps[start] > 3.0
-    assert traverse.pitch_rate_radps[end] > 1.0
-    assert degrees(traverse.pitch_rad[end]) > 20.0
-    assert traverse.pitch_rate_radps[end] < traverse.pitch_rate_radps[start]
+    assert traverse.pitch_rate_radps[start] > 0.8            # leaves the lip rotating nose-down
+    assert traverse.pitch_rate_radps[start:end].min() < 0.0  # arrested and reversed in flight
+    assert traverse.pitch_rad[end] < traverse.pitch_rad[start:end].max()  # already recovering
+    assert traverse.pitch_rate_radps[end] < 0.0                          # still coming back
 
 
 # --------------------------------------------------------------------------------------
@@ -427,11 +432,11 @@ def _kicker_flight(traverse: Traverse) -> Tuple[int, int]:
 
 def test_kicker_launches_the_bike_off_the_lip(traverse: Traverse):
     """
-    The front wheel leaves the ground at the lip and the whole bike flies for nearly 200 ms.
+    The front wheel leaves the ground at the lip and the whole bike flies for over 300 ms.
 
-    Measured: the front wheel's own airborne phase starts at 58.359 m, 41 mm short of the
+    Measured: the front wheel's own airborne phase starts at 58.327 m, 73 mm short of the
     58.4 m lip -- the last cell of the ramp already kicks it clear -- and both wheels are off
-    the ground for 391 steps (195.5 ms), covering 1.07 m of track.
+    the ground for 641 steps (320.5 ms), covering 2.09 m of track.
     """
     front_air = _runs(~traverse.raw_front)
     lip_takeoffs = [
@@ -449,29 +454,24 @@ def test_kicker_launches_the_bike_off_the_lip(traverse: Traverse):
 
 def test_kicker_cases_into_the_gap_at_the_default_speed(traverse: Traverse):
     """
-    The bike does **not** fly the gap: it reaches the lip below the band and lands in it.
+    The bike still does not clear the gap at the default speed, but the case is now split
+    across the axles: the front wheel reaches the slope while the rear drops in.
 
-    This contradicts docs/RIDE.md section 2, and it is recorded rather than tuned away.
-    Section 2's 20.9-30.6 km/h working band and its "4.54 m past the lip" touchdown are a
-    ballistic calculation launched from the lip at the cruise speed. The full model does not
-    arrive at the lip at the cruise speed: the 600 mm drop 5 m upstream leaves the bike at
-    30.4 km/h and still pitching, and the ramp entry then dumps 3.5 m/s, so the whole bike
-    leaves the ramp at 17.6 km/h horizontal -- below section 2's own 20.9 km/h floor, which is
-    exactly the condition section 2 says cases.
+    Section 2's 20.9-30.6 km/h band is a point-mass ballistic bound, and the launch is now
+    inside it: measured off the lip at 22.1 km/h, the firmer rebound having carried more
+    speed through the ramp entry. The bike is not a point, though -- after the 320 ms flight
+    the rear wheel touches down at 60.41 m, half a metre inside the gap, while the front is
+    already past the far edge and lands on the slope at 62.05 m.
 
-    Measured: launch at BB 58.055 m with velocity (4.876, +1.735) m/s, front-wheel touchdown at
-    59.894 m -- inside the 2.5 m gap, 1.01 m short of the landing slope. The bike then rolls
-    off the landing lip at 60.905 m and its front wheel does meet the slope at 62.904 m, 4.5 m
-    past the lip, but that is a second flight off the far side of the gap and not the jump.
-
-    The run survives the case: no crash, and the fork peaks at 119 mm on the impact.
+    The run survives the case: no crash.
     """
     start, length = _kicker_flight(traverse)
     launch_speed_kmh = traverse.speed_mps[start] * KMH_PER_MPS
-    touchdown_m = traverse.front_x_m[start + length - 1]
+    end = start + length - 1
 
-    assert launch_speed_kmh < KICKER_BAND_FLOOR_KMH
-    assert KICKER_LIP_M < touchdown_m < GAP_END_M
+    assert KICKER_BAND_FLOOR_KMH < launch_speed_kmh < KICKER_BAND_CEILING_KMH
+    assert KICKER_LIP_M < traverse.rear_x_m[end] < GAP_END_M
+    assert traverse.front_x_m[end] > GAP_END_M
     assert traverse.outcome.crash is None
 
 
@@ -481,8 +481,8 @@ def test_the_front_wheel_does_reach_the_landing_slope(traverse: Traverse):
 
     Kept separate from the casing test above on purpose: the bike does end up on the 20 degree
     slope between 60.9 and 65.9 m, and a reader of the casing result should not conclude that
-    the landing is never used. Measured touchdown 62.904 m, off a flight that starts at the
-    landing lip rather than at the kicker's.
+    the landing is never used. Measured touchdown 62.045 m -- the kicker flight itself now
+    carries the front wheel across the gap line, while the rear drops in behind it.
     """
     landings = [
         traverse.front_x_m[i + n - 1]
@@ -921,19 +921,22 @@ def test_ride_keys_are_the_playground_keys_with_the_stand_only_ones_replaced(
     has no equivalent of; the brake-strength pair takes their place. The stand's rider toggle
     goes too: the ride rider is a compile-time variant (`--rider`), not an in-place mass swap.
     Everything else -- both dampers, the air spring, the camera, the markers, the preset, the
-    telemetry stream, reset and help -- keeps its stand binding, and `W`/`S` and `Space` keep
-    their keys while changing meaning.
+    telemetry stream, reset and help -- keeps its stand binding, `W`/`S` and `Space` keep
+    their keys while changing meaning, and `E` cycles the assist mode, which the stand
+    does not have.
     """
     playground_keys = set(PlaygroundInputHandler(_StubPlayground())._dispatch_map)
     arrow_keys = {264, 265}
     rider_toggle_keys = {66, 98}
     brake_strength_keys = {44, 46}
     tyre_pressure_keys = {78, 110, 77, 109, 59, 39}
+    assist_cycle_keys = {69, 101}
 
     assert set(session.input.bound_keycodes) == (
         (playground_keys - arrow_keys - rider_toggle_keys)
         | brake_strength_keys
         | tyre_pressure_keys
+        | assist_cycle_keys
     )
 
 

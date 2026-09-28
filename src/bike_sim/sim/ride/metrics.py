@@ -155,8 +155,9 @@ class PedalBobStats:
         assist_torque_mean_nm: Mid-drive torque at the crank, zero without assist.
         wheel_torque_mean_nm: Mean torque arriving at the rear wheel.
         gear_ratio_check: `wheel_torque_mean / (crank_torque_mean + assist_torque_mean)`.
-            This must come out at the gearing; anything else means the ratio is inverted or
-            applied twice, which is the failure this whole metric is most likely to hide.
+            The chain divides crank torque by the gearing, so this must come out at
+            `1 / gear_ratio`; the bare ratio means the division went the wrong way, and 1
+            means it was skipped entirely.
         freewheel_fraction: Share of the window spent coasting.
         cutoff_fraction: Share of the window with the assist tapered by the speed cutoff.
         traction_limited_fraction: Share of the window with the rear patch fully sliding.

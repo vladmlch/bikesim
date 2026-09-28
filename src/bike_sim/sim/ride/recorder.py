@@ -110,7 +110,10 @@ CHANNELS: Sequence[str] = (
 SEATED_RIDER_CHANNELS: Sequence[str] = CHANNELS[
     CHANNELS.index("saddle_load_n"):CHANNELS.index("rider_pelvis_acc_long_mps2") + 1
 ]
-TYRE_CHANNELS: Sequence[str] = CHANNELS[CHANNELS.index("front_tyre_fz_n"):]
+TYRE_CHANNELS: Sequence[str] = CHANNELS[
+    CHANNELS.index("front_tyre_fz_n"):CHANNELS.index("crank_phase_rad")
+]
+DRIVETRAIN_CHANNELS: Sequence[str] = CHANNELS[CHANNELS.index("crank_phase_rad"):]
 
 CSV_FLOAT_FORMAT = "%.10g"
 _CHUNK_ROWS = 4096
@@ -431,7 +434,7 @@ __all__ = [
     "CHANNELS",
     "SEATED_RIDER_CHANNELS",
     "TYRE_CHANNELS",
-    "TYRE_CHANNELS",
+    "DRIVETRAIN_CHANNELS",
     "CSV_FLOAT_FORMAT",
     "RideRecorder",
     "read_csv",

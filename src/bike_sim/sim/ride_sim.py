@@ -603,7 +603,8 @@ class RideSimulation:
                     for patch in self.tyre_applier.rear_outputs.patches
                 )
             drive_torque = self.cruise.compute(
-                self.model, self.data, self.contacts, traction_limited=traction_limited
+                self.model, self.data, self.contacts, traction_limited=traction_limited,
+                controller_grounded=self.contacts.rear_controller_grounded,
             )
             if (front_brake_demand > 0.0 or rear_brake_demand > 0.0) and drive_torque > 0.0:
                 drive_torque = 0.0

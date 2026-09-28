@@ -142,6 +142,8 @@ class CruiseController:
         data: mujoco.MjData,
         contacts: TerrainContacts,
         traction_limited: bool = False,
+        *,
+        controller_grounded: bool | None = None,
     ) -> float:
         """
         Computes the rear-wheel drive torque for the current state.
@@ -153,11 +155,15 @@ class CruiseController:
                 wheel carries no load.
             traction_limited: The pneumatic rear patch is fully sliding in the direction of
                 the speed error; suspend integration even when the PI torque is not saturated.
+            controller_grounded: Physical native-reference gate. When absent, keep the
+                legacy contact gate for compatibility with existing callers.
 
         Returns:
             Drive torque in N.m for the `rear_drive` actuator, within +/- the ceiling.
         """
-        self.engaged = contacts.rear_in_contact
+        self.engaged = (
+            contacts.rear_in_contact if controller_grounded is None else controller_grounded
+        )
         error_mps = self._target_speed_mps - float(data.qvel[self.root_x_dofadr])
 
         if not self.engaged:

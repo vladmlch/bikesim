@@ -17,7 +17,7 @@ forces from a controller and is negligible against every time constant in the mo
 
 **Each wheel gets two load channels, because two questions are being asked.**
 
-*Is this wheel on the ground, and can it be driven?* -- `front_load_n` / `rear_load_n`: the
+*Did the legacy contact bridge report load?* -- `front_load_n` / `rear_load_n`: the
 scalar sum of the normal-force magnitudes of every contact row the wheel owns against the
 terrain, **bridged** across a short collision dropout. Magnitudes are summed rather than
 vectors precisely so that rows with opposing normals cannot cancel and read as airborne; a
@@ -52,6 +52,7 @@ from typing import Collection, Dict, Optional, Protocol, Tuple
 import mujoco
 import numpy as np
 
+from bike_sim.sim.ride.contact_filter import GroundedFilter
 from bike_sim.sim.ride.contact_state import ContactPatch, WheelContactSnapshot
 from bike_sim.sim.ride.tyre.model import WheelOutputs
 from bike_sim.sim.ride.wheel_kinematics import wheel_point_velocity
@@ -77,6 +78,9 @@ CONTACT_LOAD_THRESHOLD_N = 1.0
 # is an order of magnitude clear of both, so it removes every dropout without blunting the
 # start of a real flight by more than 2 % of its duration.
 CONTACT_DROPOUT_STEPS = 10
+
+# Controller-only debounce duration. Physical load and force channels never use this value.
+CONTROLLER_GROUNDED_HOLD_S = 0.005
 
 
 class WheelLoadProvider(Protocol):
@@ -104,6 +108,10 @@ class TerrainContacts:
             the crash detector by 0.5 ms.
         front_snapshot: Raw, immutable physical contact state of the front wheel, when queried.
         rear_snapshot: The corresponding raw state of the rear wheel.
+        front_controller_grounded: Time-filtered working-road load above the contact threshold
+            for the front controller.
+        rear_controller_grounded: The corresponding rear controller signal. Neither field is a
+            normal load; they are absent for legacy pneumatic outputs and synthetic snapshots.
     """
 
     front_load_n: float
@@ -113,6 +121,8 @@ class TerrainContacts:
     handlebar_load_n: float
     front_snapshot: WheelContactSnapshot | None = None
     rear_snapshot: WheelContactSnapshot | None = None
+    front_controller_grounded: bool | None = None
+    rear_controller_grounded: bool | None = None
 
     @property
     def front_in_contact(self) -> bool:
@@ -143,8 +153,9 @@ class TerrainContactQuery:
     `data.contact` with a reused MuJoCo force buffer.
 
     The query is stateful, because bridging a collision dropout requires remembering the
-    previous steps. Advance it once per simulation step -- querying the same state twice
-    charges it twice against the dropout budget -- and `reset` it when the run restarts.
+    previous steps. The legacy load bridge advances per query; the separate controller
+    filter is idempotent at the same timestamp. Advance the query once per simulation step
+    and `reset` it when the run restarts.
     """
 
     def __init__(self, model: mujoco.MjModel, dropout_steps: int = CONTACT_DROPOUT_STEPS) -> None:
@@ -171,6 +182,8 @@ class TerrainContactQuery:
         self._force = np.zeros(6, dtype=float)
         self._front_load = _BridgedLoad(dropout_steps)
         self._rear_load = _BridgedLoad(dropout_steps)
+        self._front_controller_grounded = GroundedFilter(CONTROLLER_GROUNDED_HOLD_S)
+        self._rear_controller_grounded = GroundedFilter(CONTROLLER_GROUNDED_HOLD_S)
 
     def query(
         self,
@@ -190,9 +203,8 @@ class TerrainContactQuery:
                 MuJoCo contact.
 
         Returns:
-            Both load channels for each wheel -- the bridged magnitude that gates the drive
-            torque and the virtual rider, and the raw vertical support the rolling-resistance
-            model may use -- plus the handlebar's raw magnitude.
+            Both legacy load channels for each wheel -- bridged magnitude and raw vertical
+            support -- plus the handlebar's raw magnitude and separate controller booleans.
         """
         magnitude_n, vertical_n, wheel_patches = self._sum_normal_loads(
             model, data, include_wheel_contacts=wheel_load_provider is None
@@ -234,12 +246,20 @@ class TerrainContactQuery:
             handlebar_load_n=magnitude_n[self.handlebar_id],
             front_snapshot=front_snapshot,
             rear_snapshot=rear_snapshot,
+            front_controller_grounded=self._front_controller_grounded.update(
+                _working_road_grounded(front_snapshot), float(data.time)
+            ),
+            rear_controller_grounded=self._rear_controller_grounded.update(
+                _working_road_grounded(rear_snapshot), float(data.time)
+            ),
         )
 
     def reset(self) -> None:
-        """Discards the held loads, so a fresh run does not start off the previous one."""
+        """Discard legacy held loads and timestamp-filter history for a fresh run."""
         self._front_load.reset()
         self._rear_load.reset()
+        self._front_controller_grounded.reset()
+        self._rear_controller_grounded.reset()
 
     def _sum_normal_loads(
         self,
@@ -318,6 +338,13 @@ class TerrainContactQuery:
         return magnitude_n, vertical_n, {
             geom_id: tuple(patches) for geom_id, patches in wheel_patches.items()
         }
+
+
+def _working_road_grounded(snapshot: WheelContactSnapshot) -> bool:
+    """Convert only current terrain normal load to the controller's raw boolean."""
+    return sum(
+        patch.normal_load_n for patch in snapshot.patches if patch.working_surface
+    ) > CONTACT_LOAD_THRESHOLD_N
 
 
 def _tracked_wrench(
@@ -448,5 +475,6 @@ __all__ = [
     "HANDLEBAR_GEOM",
     "CONTACT_LOAD_THRESHOLD_N",
     "CONTACT_DROPOUT_STEPS",
+    "CONTROLLER_GROUNDED_HOLD_S",
     "WheelLoadProvider",
 ]

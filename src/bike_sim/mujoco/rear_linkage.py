@@ -17,6 +17,7 @@ import numpy as np
 
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.model_config import SimulationPhysicsConfig
+from bike_sim.physics.component_masses import register_component
 from bike_sim.mujoco._xml_format import (
     _format_vec,
     add_geom,
@@ -59,6 +60,7 @@ def _build_seatstay(
     rear_wheel_radius_m: float,
     debug_markers: bool = False,
     tyre_model: str = "sphere",
+    mass_registry: dict[str, list[ET.Element]] | None = None,
 ) -> ET.Element:
     """Builds the seatstay body, Horst pivot joint, dropout truss, and rear wheel."""
     seatstay = ET.SubElement(chainstay, "body", {"name": "seatstay", "pos": _format_vec(p2_rel_p0)})
@@ -93,7 +95,7 @@ def _build_seatstay(
         add_marker(seatstay, "marker_pra", pos=p1_rel_p2, size="0.013")
 
     # Rear Wheel Assembly
-    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model)
+    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model, mass_registry)
     return seatstay
 
 
@@ -163,6 +165,7 @@ def _build_shock_assembly(
     p7_rel_p6: np.ndarray,
     specs: BikeSpecs,
     physics_config: SimulationPhysicsConfig | None = None,
+    mass_registry: dict[str, list[ET.Element]] | None = None,
 ) -> None:
     """Builds the shock shaft and damper body with trunnion mount, canister, and piggyback."""
     shock_len_m = float(np.linalg.norm(p7_rel_p6))
@@ -218,16 +221,17 @@ def _build_shock_assembly(
         (0.04, piggy_bridge_1, piggy_bridge_2),
     ]
     _shock_body_pinned_mass = sum(m for m, _, _ in _shock_body_child_geoms)
-    ET.SubElement(
-        shock_body,
-        "inertial",
-        {
-            "pos": "-0.033395 0.011400 -0.028962",
-            "quat": "-0.10166406 0.38183084 -0.06020627 0.91664870",
-            "mass": f"{_shock_body_pinned_mass:.6f}",
-            "diaginertia": "0.00084836 0.00071226 0.00023249",
-        },
-    )
+    if mass_registry is None:
+        ET.SubElement(
+            shock_body,
+            "inertial",
+            {
+                "pos": "-0.033395 0.011400 -0.028962",
+                "quat": "-0.10166406 0.38183084 -0.06020627 0.91664870",
+                "mass": f"{_shock_body_pinned_mass:.6f}",
+                "diaginertia": "0.00084836 0.00071226 0.00023249",
+            },
+        )
     add_joint(
         shock_body,
         "shock_stroke",
@@ -247,6 +251,8 @@ def _build_shock_assembly(
     add_geom(shock_body, "geom_shock_piggyback", "cylinder", fromto=f"{_format_vec(piggy_start)} {_format_vec(piggy_end)}", size="0.018", mass="0.10", material="mat_damper_body")
     add_geom(shock_body, "geom_shock_piggy_bridge", "cylinder", fromto=f"{_format_vec(piggy_bridge_1)} {_format_vec(piggy_bridge_2)}", size="0.010", mass="0.04", material="mat_damper_body")
     add_site(shock_body, "site_P7_shock", pos="0 0 0", size="0.008", rgba="0.1 0.6 0.9 1.0")
+    if mass_registry is not None:
+        register_component(mass_registry, "shock_damper", list(shock_shaft.findall("geom")) + list(shock_body.findall("geom")))
 
 
 def build_rear_linkage(
@@ -258,6 +264,7 @@ def build_rear_linkage(
     debug_markers: bool = False,
     tyre_model: str = "sphere",
     physics_config: SimulationPhysicsConfig | None = None,
+    mass_registry: dict[str, list[ET.Element]] | None = None,
 ) -> None:
     """
     Builds the 4-bar rear suspension linkage, shock yoke, shock shaft, shock body, and rear wheel.
@@ -287,9 +294,11 @@ def build_rear_linkage(
 
     # 1. Chainstay
     chainstay = _build_chainstay(frame, P0, p2_rel_p0, debug_markers)
+    if mass_registry is not None:
+        register_component(mass_registry, "chainstay", list(chainstay.findall("geom")))
 
     # 2. Seatstay & Rear Wheel
-    _build_seatstay(
+    seatstay = _build_seatstay(
         chainstay,
         mode,
         p2_rel_p0,
@@ -299,16 +308,23 @@ def build_rear_linkage(
         rear_wheel_radius_m,
         debug_markers,
         tyre_model,
+        mass_registry,
     )
+    if mass_registry is not None:
+        register_component(mass_registry, "seatstay", list(seatstay.findall("geom")))
 
     # 3. Rocker Link
     rocker = _build_rocker(frame, P5, p3_rel_p5, p4_rel_p5, debug_markers)
+    if mass_registry is not None:
+        register_component(mass_registry, "rocker", list(rocker.findall("geom")))
 
     # 4. Shock Yoke
     shock_yoke = _build_shock_yoke(rocker, p4_rel_p5, p6_rel_p4, debug_markers)
+    if mass_registry is not None:
+        register_component(mass_registry, "shock_yoke", list(shock_yoke.findall("geom")))
 
     # 5. Shock Shaft & Shock Body
-    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs, physics_config)
+    _build_shock_assembly(shock_yoke, mode, p6_rel_p4, p7_rel_p6, specs, physics_config, mass_registry)
 
 
 def build_equality_constraints(root: ET.Element, mode: str) -> None:

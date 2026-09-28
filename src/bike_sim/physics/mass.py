@@ -6,7 +6,7 @@ computations for a 29"/27.5" mullet full-power eMTB. It computes component cente
 of mass, moments of inertia, overall system CG, and static axle load distributions.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Any, Dict, Optional, Tuple
 import numpy as np
 
@@ -57,25 +57,18 @@ class BikeMassSpecs:
     wheel_hub_core_fraction: float = 0.25
 
     @property
+    def component_masses(self) -> Dict[str, float]:
+        """The fifteen physical component budgets, excluding wheel-shape fractions."""
+        return {
+            field.name.removesuffix("_mass"): getattr(self, field.name)
+            for field in fields(self)
+            if field.name.endswith("_mass")
+        }
+
+    @property
     def total_bike_mass(self) -> float:
         """Computes total mass of the bicycle in kg."""
-        return (
-            self.motor_mass
-            + self.battery_mass
-            + self.frame_structure_mass
-            + self.saddle_post_mass
-            + self.crank_pedals_mass
-            + self.steer_assembly_mass
-            + self.stanchions_mass
-            + self.fork_lowers_mass
-            + self.chainstay_mass
-            + self.seatstay_mass
-            + self.rocker_mass
-            + self.shock_yoke_mass
-            + self.shock_damper_mass
-            + self.front_wheel_mass
-            + self.rear_wheel_mass
-        )
+        return sum(self.component_masses.values())
 
     def compute_wheel_rotational_inertia(
         self, wheel_mass: float, outer_radius: float, hub_radius: float = 0.045
@@ -193,7 +186,7 @@ def compute_static_system_cg(
     solver: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
-    Computes overall Center of Gravity (X, Y, Z in meters) and static axle load distribution.
+    Computes the unloaded analytic CoM and nominal axle load distribution.
     """
     if specs is None:
         specs = BikeSpecs()
@@ -246,7 +239,10 @@ def compute_static_system_cg(
     }
 
 
+# Explicit name for the unloaded reference calculation. Dynamic displays use the
+# compiled CoM from sim.ride.mass_properties instead.
+compute_unloaded_analytic_system_cg = compute_static_system_cg
+
+
 # Re-export suspension sag tuning for backward compatibility
 from bike_sim.physics.tuning import compute_suspension_tuning_for_sag
-
-

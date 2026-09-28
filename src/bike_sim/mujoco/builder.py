@@ -19,7 +19,8 @@ from bike_sim.geometry.hardpoints import (
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.physics.tyre import TYRE_MODELS
-from bike_sim.physics.mass import BikeMassSpecs, compute_static_system_cg
+from bike_sim.physics.mass import BikeMassSpecs, compute_unloaded_analytic_system_cg
+from bike_sim.physics.component_masses import assign_component_mass
 from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.physics.rider import RiderSpecs, resolve_rider
 
@@ -108,6 +109,8 @@ def generate_mujoco_xml(
         solver = HorstLinkageSolver(specs)
     if mass_specs is None:
         mass_specs = BikeMassSpecs()
+    physical_masses = physics_config is not None and physics_config.physics_mode == "physical"
+    mass_registry: dict[str, list[ET.Element]] | None = {} if physical_masses else None
     if field is None:
         field = FIELD
     rider_specs = resolve_rider(rider, include_rider=include_rider, default_variant="lumped")
@@ -119,12 +122,15 @@ def generate_mujoco_xml(
     st0 = solver.solve_state_from_wheel_travel(0.0)
     fixed = get_fixed_frame_points(specs)
     trail_info = compute_trail(specs)
-    # The CG site marks the static centre of the whole system, rider included when present.
-    cg_info = compute_static_system_cg(
-        specs, mass_specs, solver=solver,
-        rider_specs=rider_specs if rider_specs.present else None,
-    )
-    cg_pos = cg_info["cg_pos_m"]
+    # A nonzero initial offset keeps MuJoCo from compiling the site as a
+    # same-frame shortcut; RideSimulation moves it to the compiled CoM at runtime.
+    if physical_masses:
+        cg_pos = np.array([0.001, 0.0, 0.0])
+    else:
+        cg_pos = compute_unloaded_analytic_system_cg(
+            specs, mass_specs, solver=solver,
+            rider_specs=rider_specs if rider_specs.present else None,
+        )["cg_pos_m"]
 
     # Hardpoints
     P10 = np.array(fixed["P10"], dtype=float) / 1000.0
@@ -190,6 +196,7 @@ def generate_mujoco_xml(
         pose=pose,
         debug_markers=debug_markers,
         crank_joint=crank_joint,
+        mass_registry=mass_registry,
     )
 
     # 5. Steering, Fork & Front Wheel
@@ -202,6 +209,7 @@ def generate_mujoco_xml(
         front_axle=P_FA_raw,
         debug_markers=debug_markers,
         tyre_model=tyre_model,
+        mass_registry=mass_registry,
     )
 
     # 6. Rear Linkage, Damper & Rear Wheel
@@ -214,7 +222,25 @@ def generate_mujoco_xml(
         debug_markers=debug_markers,
         tyre_model=tyre_model,
         physics_config=physics_config,
+        mass_registry=mass_registry,
     )
+
+    if mass_registry is not None:
+        expected_components = set(mass_specs.component_masses)
+        if set(mass_registry) != expected_components:
+            raise ValueError(f"mass registry mismatch: {expected_components ^ set(mass_registry)}")
+        registered_geoms = [geom for group in mass_registry.values() for geom in group]
+        if len({id(geom) for geom in registered_geoms}) != len(registered_geoms):
+            raise ValueError("a mass-bearing geom belongs to multiple components")
+        bike_geoms = {
+            id(geom) for geom in frame.iter("geom")
+            if float(geom.get("mass", "0")) > 0
+            and not geom.get("name", "").startswith("geom_rider_")
+        }
+        if {id(geom) for geom in registered_geoms} != bike_geoms:
+            raise ValueError("mass registry does not cover every bike geom exactly once")
+        for component_id, geoms in mass_registry.items():
+            assign_component_mass(geoms, mass_specs.component_masses[component_id])
 
     # 7. Constraints & Collisions
     build_equality_constraints(root, mode=mode)

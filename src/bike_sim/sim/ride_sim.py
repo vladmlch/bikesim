@@ -28,6 +28,7 @@ from bike_sim.physics.coil_shock import CoilShock, CoilShockSpecs
 from bike_sim.physics.damper import BikeSuspensionSystem
 from bike_sim.physics.drivetrain import DRIVE_MODES, DrivetrainSpecs, cutoff_factor
 from bike_sim.physics.model_config import SimulationPhysicsConfig
+from bike_sim.physics.mass import BikeMassSpecs
 from bike_sim.physics.rider import DEFAULT_RIDER_VARIANT, RiderSpecs, SeatedPose, resolve_rider
 from bike_sim.physics.suspension_config import build_suspension_components
 from bike_sim.physics.tyre import TyreConfig
@@ -44,6 +45,7 @@ from bike_sim.sim.ride.drivetrain import CrankCommand, PedalDrivetrain
 from bike_sim.sim.ride.force_accumulator import ForceAccumulator
 from bike_sim.sim.ride.forces import SuspensionForceApplier
 from bike_sim.sim.ride.leg_drive import LegDrive
+from bike_sim.sim.ride.mass_properties import compiled_center_of_mass, static_contact_loads
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.resistance import RollingResistance
 from bike_sim.sim.ride.rider_forces import RiderForceApplier
@@ -102,6 +104,7 @@ class RideSimulation:
         visual_pedalling: bool = False,
         *,
         physics_config: Optional[SimulationPhysicsConfig] = None,
+        mass_specs: Optional[BikeMassSpecs] = None,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -149,6 +152,7 @@ class RideSimulation:
                 Redundant in the pedalled modes, where the crankset turns anyway.
             physics_config: Physical model selection and timestep. An omitted config uses
                 the existing legacy simulation and its historical drive mode.
+            mass_specs: Component mass budget passed to the MJCF builder.
 
         Raises:
             ValueError: If the track does not fit the heightfield envelope.
@@ -159,6 +163,7 @@ class RideSimulation:
                 f"unknown drive mode {drive_mode!r}; available: {', '.join(DRIVE_MODES)}"
             )
         self.physics_config = physics_config if physics_config is not None else SimulationPhysicsConfig()
+        self.mass_specs = mass_specs if mass_specs is not None else BikeMassSpecs()
         if self.physics_config.drive_mode in {"crank_effort", "articulated_effort"}:
             raise NotImplementedError(
                 f"{self.physics_config.drive_mode} is not implemented in this physics revision"
@@ -248,6 +253,7 @@ class RideSimulation:
                 crank_joint=crank_joint,
                 gear_ratio=self.drivetrain_specs.gear_ratio,
                 physics_config=self.physics_config,
+                mass_specs=self.mass_specs,
             )
         )
         # Before the first forward pass, before the equilibrium solve, before any viewer.
@@ -318,6 +324,8 @@ class RideSimulation:
         self.rear_brake_ctrl_adr = _actuator_id(self.model, "rear_brake")
         self.root_x_qposadr, self.root_x_dofadr = _root_addresses(self.model, "root_x")
         self.root_pitch_qposadr, _ = _root_addresses(self.model, "root_pitch")
+        self._cg_site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "site_CG")
+        self._frame_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "frame")
 
         self.contacts = TerrainContacts(
             front_load_n=0.0,
@@ -399,6 +407,23 @@ class RideSimulation:
             self.contacts = self.contact_query.query(
                 self.model, self.data, wheel_load_provider=self.tyre_applier
             )
+        self._update_compiled_com_marker()
+        if self.physics_config.physics_mode == "physical" and self.tyre_applier is None:
+            front = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "geom_front_contact")
+            rear = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "geom_rear_contact")
+            front_load, rear_load = static_contact_loads(self.model, self.data, front, rear)
+            self.equilibrium["static_front_load_n"] = front_load
+            self.equilibrium["static_rear_load_n"] = rear_load
+
+    def _update_compiled_com_marker(self) -> None:
+        """Place the physical-mode site at the current compiled system CoM."""
+        if self.physics_config.physics_mode != "physical" or self._cg_site_id < 0:
+            return
+        mujoco.mj_kinematics(self.model, self.data)
+        com = compiled_center_of_mass(self.model, self.data)
+        frame = self._frame_body_id
+        self.model.site_pos[self._cg_site_id] = self.data.xmat[frame].reshape(3, 3).T @ (com - self.data.xpos[frame])
+        self.data.site_xpos[self._cg_site_id] = com
 
     def step(
         self,
@@ -499,6 +524,7 @@ class RideSimulation:
         self.crash_detector.check(self.data, self.contacts)
 
         mujoco.mj_step(self.model, self.data)
+        self._update_compiled_com_marker()
         self.steps += 1
         if self.tyre_applier is None:
             self.contacts = self.contact_query.query(self.model, self.data)

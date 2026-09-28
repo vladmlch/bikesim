@@ -17,6 +17,7 @@ from bike_sim.geometry.cockpit import (
     pedal_points,
 )
 from bike_sim.physics.mass import BikeMassSpecs
+from bike_sim.physics.component_masses import register_component
 from bike_sim.mujoco._xml_format import _format_vec, add_geom, add_joint, add_site
 
 # How `crank_pedals_mass` (0.85 kg) is split over the crankset. Authored: a 165 mm alloy arm
@@ -35,6 +36,7 @@ def build_bb_and_motor(
     mass_specs: BikeMassSpecs,
     crank_length_m: float = 0.165,
     crank_joint: bool = False,
+    mass_registry: dict[str, list[ET.Element]] | None = None,
 ) -> None:
     """
     Builds the bottom bracket shell, electric motor core, and crankset/pedals on the main frame.
@@ -77,6 +79,8 @@ def build_bb_and_motor(
         },
     )
     spindle_mass = mass_specs.crank_pedals_mass - 2.0 * CRANK_ARM_MASS_KG - 2.0 * PEDAL_MASS_KG
+    if mass_registry is not None:
+        spindle_mass = 0.10  # authored relative weight; the budget is assigned below
     if spindle_mass <= 0.0:
         raise ValueError(
             f"crank_pedals_mass {mass_specs.crank_pedals_mass:.3f} kg does not cover two "
@@ -151,6 +155,11 @@ def build_bb_and_motor(
                 contype="0", conaffinity="0",
             )
 
+    if mass_registry is not None:
+        geoms = list(frame.iter("geom"))
+        register_component(mass_registry, "motor", [geom for geom in geoms if geom.get("name") == "geom_motor_core"])
+        register_component(mass_registry, "crank_pedals", [geom for geom in geoms if geom.get("name", "").startswith(("geom_crank_", "geom_pedal_"))])
+
 
 def build_chain_constraint(root: ET.Element, gear_ratio: float) -> None:
     """
@@ -197,6 +206,7 @@ def build_rear_wheel(
     p1_rel_p2: np.ndarray,
     rear_wheel_radius_m: float,
     tyre_model: str = "sphere",
+    mass_registry: dict[str, list[ET.Element]] | None = None,
 ) -> ET.Element:
     """
     Builds the rear wheel body (hub, rim, tire, cassette, brake rotor) mounted on the seatstay at P1 (Rear Axle).
@@ -302,4 +312,6 @@ def build_rear_wheel(
             "conaffinity": "0",
         },
     )
+    if mass_registry is not None:
+        register_component(mass_registry, "rear_wheel", list(rear_wheel.findall("geom")))
     return rear_wheel

@@ -36,6 +36,7 @@ import numpy as np
 
 from bike_sim.sim.ride.metrics import RAMP_EXCLUSION_M
 from bike_sim.sim.ride.energy import mechanical_energy_terms, system_momentum
+from bike_sim.sim.ride.mass_properties import compiled_center_of_mass
 from bike_sim.sim.ride.telemetry_v2 import ForceSample, component_powers
 from bike_sim.sim.ride.wheels import resolve_wheel_spin
 
@@ -127,6 +128,8 @@ DRIVETRAIN_CHANNELS: Sequence[str] = CHANNELS[CHANNELS.index("crank_phase_rad"):
 # `time_s`. Names added by future force writers get their own power/work columns.
 V2_FIXED_CHANNELS: Sequence[str] = (
     "interval_start_s", "interval_dt_s",
+    "compiled_mass_kg", "compiled_com_x_m", "compiled_com_y_m", "compiled_com_z_m",
+    "static_front_load_n", "static_rear_load_n",
     "linear_momentum_x_kg_mps", "linear_momentum_y_kg_mps", "linear_momentum_z_kg_mps",
     "angular_momentum_x_kg_m2ps", "angular_momentum_y_kg_m2ps",
     "angular_momentum_z_kg_m2ps",
@@ -400,6 +403,9 @@ class RideRecorder:
         )
         if self.schema_version == 1:
             return legacy_row
+        mujoco.mj_kinematics(sim.model, sim.data)
+        com = compiled_center_of_mass(sim.model, sim.data)
+        total_mass = float(sim.model.body_mass.sum())
         linear, angular = system_momentum(sim.model, sim.data)
         kinetic, gravitational, _ = mechanical_energy_terms(
             sim.model, sim.data, elastic_energy_j=0.0
@@ -409,6 +415,9 @@ class RideRecorder:
         # be misleading. NaN makes that missing accounting explicit in physical CSV.
         interval_row = (
             self.last_interval_start_s, self.last_interval_dt_s,
+            total_mass, *com,
+            sim.equilibrium.get("static_front_load_n", np.nan),
+            sim.equilibrium.get("static_rear_load_n", np.nan),
             *linear, *angular,
             kinetic, gravitational, np.nan, np.nan, np.nan,
         )

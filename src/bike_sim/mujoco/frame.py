@@ -19,6 +19,7 @@ from bike_sim.geometry.cockpit import (
 )
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.mass import BikeMassSpecs
+from bike_sim.physics.component_masses import register_component
 from bike_sim.physics.rider import RiderSpecs, SeatedPose
 from bike_sim.mujoco.rider import build_rider, build_seated_rider
 from bike_sim.mujoco.drivetrain import build_bb_and_motor
@@ -221,6 +222,7 @@ def build_frame_body(
     pose: Optional[SeatedPose] = None,
     debug_markers: bool = False,
     crank_joint: bool = False,
+    mass_registry: dict[str, list[ET.Element]] | None = None,
 ) -> ET.Element:
     """
     Constructs the base frame body in worldbody and adds all frame geometry.
@@ -258,6 +260,7 @@ def build_frame_body(
         mass_specs,
         crank_length_m=specs.crank_length / 1000.0,
         crank_joint=crank_joint,
+        mass_registry=mass_registry,
     )
     _build_front_triangle_tubes(
         frame=frame,
@@ -287,5 +290,15 @@ def build_frame_body(
         debug_markers=debug_markers,
     )
 
-    return frame
+    if mass_registry is not None:
+        geoms = list(frame.findall("geom"))
+        names = {geom.get("name"): geom for geom in geoms}
+        register_component(mass_registry, "battery", [names["geom_battery_pack"]])
+        register_component(mass_registry, "saddle_post", [names[name] for name in ("geom_seatpost", "geom_seatpost_upper", "geom_saddle")])
+        excluded = {id(geom) for group in mass_registry.values() for geom in group}
+        register_component(mass_registry, "frame_structure", [
+            geom for geom in geoms
+            if id(geom) not in excluded and not geom.get("name", "").startswith("geom_rider_")
+        ])
 
+    return frame

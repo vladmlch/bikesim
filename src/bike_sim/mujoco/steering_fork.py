@@ -13,6 +13,7 @@ import numpy as np
 
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.mass import BikeMassSpecs
+from bike_sim.physics.component_masses import register_component
 from bike_sim.mujoco._xml_format import (
     _format_vec,
     add_geom,
@@ -150,6 +151,7 @@ def build_steering_and_fork(
     front_axle: np.ndarray,
     debug_markers: bool = False,
     tyre_model: str = "sphere",
+    mass_registry: dict[str, list[ET.Element]] | None = None,
 ) -> Tuple[ET.Element, ET.Element, ET.Element]:
     """
     Builds the steering body, fork lower slider, and front wheel.
@@ -180,5 +182,12 @@ def build_steering_and_fork(
     front_wheel = _build_front_wheel(
         fork_lower, mode, fa_rel_steer, front_wheel_radius_m, tyre_model
     )
+
+    if mass_registry is not None:
+        steer_geoms = list(steer.findall("geom"))
+        register_component(mass_registry, "steer_assembly", [geom for geom in steer_geoms if not geom.get("name", "").startswith("geom_stanchion_")])
+        register_component(mass_registry, "stanchions", [geom for geom in steer_geoms if geom.get("name", "").startswith("geom_stanchion_")])
+        register_component(mass_registry, "fork_lowers", list(fork_lower.findall("geom")))
+        register_component(mass_registry, "front_wheel", list(front_wheel.findall("geom")))
 
     return steer, fork_lower, front_wheel

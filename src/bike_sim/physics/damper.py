@@ -240,6 +240,7 @@ class SuperDeluxeDamper(BaseDamper):
         hbo_clicks: int = 2,
         lockout_firm: bool = False,
         total_stroke_mm: float = 65.0,
+        legacy_behavior: bool = False,
     ) -> None:
         super().__init__(
             max_hsc=4,
@@ -262,6 +263,7 @@ class SuperDeluxeDamper(BaseDamper):
         self.total_stroke_mm = float(total_stroke_mm)
         self.hbo_clicks = max(0, min(self.max_hbo, int(hbo_clicks)))
         self.lockout_firm = bool(lockout_firm)
+        self.legacy_behavior = bool(legacy_behavior)
 
         self.hbo_start_mm = 52.0
         self.c_hbo_min = 4000.0
@@ -314,6 +316,27 @@ class SuperDeluxeDamper(BaseDamper):
 
     def compute_damping_force(self, velocity_mps: float, stroke_mm: float = 20.0) -> float:
         """Computes instantaneous rear shock damping force in Newtons."""
+        if self.legacy_behavior:
+            return self._compute_legacy_damping_force(velocity_mps, stroke_mm)
+
+        v = float(velocity_mps)
+        coeffs = self.get_effective_coefficients()
+
+        if self.lockout_firm and v > 0.0:
+            knee = 0.03
+            low = self.lockout_stiffness
+            high = 1.8 * coeffs["c_hsc"]
+            f_damp = low * v if v < knee else low * knee + high * (v - knee)
+        else:
+            f_damp = self._compute_base_damping(v, coeffs["c_lsc"], coeffs["c_hsc"], coeffs["c_reb"])
+
+        if stroke_mm > self.hbo_start_mm and v > 0.0:
+            fraction = min(1.0, (stroke_mm - self.hbo_start_mm) / (self.total_stroke_mm - self.hbo_start_mm))
+            f_damp += coeffs["c_hbo"] * fraction ** 2 * v
+
+        return float(f_damp)
+
+    def _compute_legacy_damping_force(self, velocity_mps: float, stroke_mm: float = 20.0) -> float:
         v = float(velocity_mps)
         coeffs = self.get_effective_coefficients()
 

@@ -420,11 +420,20 @@ class SeatedPose:
 
     @property
     def total_mass_kg(self) -> float:
-        """Rider mass across all bodies, in kg."""
-        return float(sum(b.mass for b in self.bodies))
+        """Rider mass across all bodies, in kg -- plus the articulated leg chains,
+        whose mass lives in ``leg_chains`` rather than in ``bodies``."""
+        return float(
+            sum(b.mass for b in self.bodies)
+            + sum(c.thigh_mass_kg + c.shank_mass_kg + c.foot_mass_kg for c in self.leg_chains)
+        )
 
     def interface_loads_n(self) -> Dict[str, float]:
-        """Static load each interface carries at the design pose, in N."""
+        """Static load each interface carries at the design pose, in N.
+
+        With articulated legs the ``pedals`` entry reads 0: leg weight reaches the
+        pedals through the hip/knee/ankle joints and the foot-pedal weld, not a
+        slide-spring preload (the LegDrive path owns pedal loading at runtime).
+        """
         loads = {"saddle": 0.0, "pedals": 0.0, "bar": 0.0}
         for body in self.bodies:
             if body.parent == "frame":

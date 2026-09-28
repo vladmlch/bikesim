@@ -42,6 +42,18 @@ def _geom_masses(mass, *, debug_markers=False):
     }
 
 
+def _wheel_inertial_masses(mass):
+    xml = generate_mujoco_xml(
+        specs=BikeSpecs(), mode="ride", mass_specs=mass, rider="none",
+        physics_config=PHYSICAL,
+    )
+    root = ET.fromstring(xml)
+    return {
+        name: float(root.find(f".//body[@name='{name}']/inertial").get("mass"))
+        for name in ("front_wheel", "rear_wheel")
+    }
+
+
 @pytest.mark.parametrize("field", MASS_FIELDS)
 def test_changing_component_mass_changes_compiled_total(field):
     mass = BikeMassSpecs()
@@ -60,13 +72,18 @@ def test_tiny_positive_motor_budget_compiles_without_rounding_to_zero():
 
 
 @pytest.mark.parametrize("field", MASS_FIELDS)
-def test_tiny_positive_component_budget_keeps_authored_geom_weights(field):
+def test_tiny_positive_component_budget_keeps_its_mass_owner(field):
     mass = BikeMassSpecs()
     baseline = _geom_masses(mass)
     setattr(mass, field, 0.0001)
     tiny = _geom_masses(mass)
     assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
     changed = [name for name in baseline if tiny[name] != baseline[name]]
+    if field in ("front_wheel_mass", "rear_wheel_mass"):
+        wheel = field.removesuffix("_mass")
+        assert changed == []
+        assert _wheel_inertial_masses(mass)[wheel] == pytest.approx(0.0001, abs=1e-17)
+        return
     assert changed
     scale = 0.0001 / getattr(BikeMassSpecs(), field)
     for name in changed:
@@ -97,12 +114,22 @@ def test_all_fifteen_mass_fields_are_budget_components():
 
 
 @pytest.mark.parametrize("field", MASS_FIELDS)
-def test_component_override_changes_only_its_own_geom_group(field):
+def test_component_override_changes_only_its_own_mass_group(field):
     baseline = _geom_masses(BikeMassSpecs())
     changed = BikeMassSpecs()
     setattr(changed, field, getattr(changed, field) + 0.7)
     override = _geom_masses(changed)
     changed_geoms = [name for name in baseline if abs(override[name] - baseline[name]) > 1e-12]
+    if field in ("front_wheel_mass", "rear_wheel_mass"):
+        wheel = field.removesuffix("_mass")
+        inertial_deltas = {
+            name: value - _wheel_inertial_masses(BikeMassSpecs())[name]
+            for name, value in _wheel_inertial_masses(changed).items()
+        }
+        assert changed_geoms == []
+        assert inertial_deltas[wheel] == pytest.approx(0.7, abs=1e-10)
+        assert inertial_deltas["rear_wheel" if wheel == "front_wheel" else "front_wheel"] == 0
+        return
     assert changed_geoms
     assert sum(override[name] - baseline[name] for name in changed_geoms) == pytest.approx(0.7, abs=1e-10)
 

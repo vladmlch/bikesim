@@ -223,15 +223,17 @@ def generate_mujoco_xml(
         tyre_model=tyre_model,
         physics_config=physics_config,
         mass_registry=mass_registry,
+        mass_specs=mass_specs,
     )
 
     if mass_registry is not None:
         expected_components = set(mass_specs.component_masses)
         if set(mass_registry) != expected_components:
             raise ValueError(f"mass registry mismatch: {expected_components ^ set(mass_registry)}")
-        registered_geoms = [geom for group in mass_registry.values() for geom in group]
-        if len({id(geom) for geom in registered_geoms}) != len(registered_geoms):
-            raise ValueError("a mass-bearing geom belongs to multiple components")
+        registered_parts = [part for group in mass_registry.values() for part in group]
+        if len({id(part) for part in registered_parts}) != len(registered_parts):
+            raise ValueError("a mass-bearing part belongs to multiple components")
+        registered_geoms = [part for part in registered_parts if part.tag == "geom"]
         bike_geoms = {
             id(geom) for geom in frame.iter("geom")
             if float(geom.get("mass", "0")) > 0
@@ -239,8 +241,23 @@ def generate_mujoco_xml(
         }
         if {id(geom) for geom in registered_geoms} != bike_geoms:
             raise ValueError("mass registry does not cover every bike geom exactly once")
-        for component_id, geoms in mass_registry.items():
-            assign_component_mass(geoms, mass_specs.component_masses[component_id])
+        wheel_ids = {"front_wheel", "rear_wheel"}
+        wheel_inertials = {
+            id(inertial) for body in frame.iter("body")
+            if body.get("name") in wheel_ids
+            for inertial in body.findall("inertial")
+        }
+        if {id(part) for part in registered_parts if part.tag == "inertial"} != wheel_inertials:
+            raise ValueError("wheel inertial registry mismatch")
+        for component_id, parts in mass_registry.items():
+            if component_id in wheel_ids:
+                if (len(parts) != 1 or parts[0].tag != "inertial"
+                        or float(parts[0].get("mass", "0")) != mass_specs.component_masses[component_id]):
+                    raise ValueError(f"wheel component {component_id!r} must own one budgeted inertial")
+            else:
+                if any(part.tag != "geom" for part in parts):
+                    raise ValueError(f"component {component_id!r} must own geoms")
+                assign_component_mass(parts, mass_specs.component_masses[component_id])
 
     # 7. Constraints & Collisions
     build_equality_constraints(root, mode=mode)

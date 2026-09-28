@@ -14,6 +14,7 @@ import numpy as np
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.physics.mass import BikeMassSpecs
 from bike_sim.physics.component_masses import register_component
+from bike_sim.physics.inertia import FRONT_WHEEL_PROFILE, add_body_inertial, wheel_body_inertia
 from bike_sim.mujoco._xml_format import (
     _format_vec,
     add_geom,
@@ -113,15 +114,17 @@ def _build_front_wheel(
     fa_rel_steer: np.ndarray,
     front_wheel_radius_m: float,
     tyre_model: str = "sphere",
+    mass_specs: BikeMassSpecs | None = None,
 ) -> ET.Element:
     """Builds front wheel assembly (hub, rim, tire, brake rotor)."""
     front_wheel = ET.SubElement(fork_lower, "body", {"name": "front_wheel", "pos": _format_vec(fa_rel_steer)})
     add_joint(front_wheel, "front_wheel_spin", "hinge", axis="0 1 0", damping="0.01")
-    add_geom(front_wheel, "geom_front_hub", "cylinder", fromto="0 -0.055 0 0 0.055 0", size="0.018", mass="0.35", material="mat_metal")
-    add_geom(front_wheel, "geom_front_rim", "cylinder", fromto="0 -0.015 0 0 0.015 0", size="0.320", mass="0.45", material="mat_rim", contype="0", conaffinity="0")
+    physical = mass_specs is not None
+    add_geom(front_wheel, "geom_front_hub", "cylinder", fromto="0 -0.055 0 0 0.055 0", size="0.018", mass="0" if physical else "0.35", material="mat_metal")
+    add_geom(front_wheel, "geom_front_rim", "cylinder", fromto="0 -0.015 0 0 0.015 0", size="0.320", mass="0" if physical else "0.45", material="mat_rim", contype="0", conaffinity="0")
     tire_contype = "0" if mode == "ride" else "1"
-    add_geom(front_wheel, "geom_front_tire", "cylinder", fromto="0 -0.030 0 0 0.030 0", size=f"{front_wheel_radius_m:.6f}", mass="1.35", material="mat_tire", contype=tire_contype, conaffinity=tire_contype, friction="1.2 0.005 0.0001")
-    add_geom(front_wheel, "geom_front_rotor", "cylinder", fromto="0 0.032 0 0 0.034 0", size="0.1015", mass="0.25", material="mat_metal", contype="0", conaffinity="0")
+    add_geom(front_wheel, "geom_front_tire", "cylinder", fromto="0 -0.030 0 0 0.030 0", size=f"{front_wheel_radius_m:.6f}", mass="0" if physical else "1.35", material="mat_tire", contype=tire_contype, conaffinity=tire_contype, friction="1.2 0.005 0.0001")
+    add_geom(front_wheel, "geom_front_rotor", "cylinder", fromto="0 0.032 0 0 0.034 0", size="0.1015", mass="0" if physical else "0.25", material="mat_metal", contype="0", conaffinity="0")
     if mode == "ride":
         # Sphere contact patch: geometrically identical to the cylinder in the sagittal
         # plane, but with no flat end faces to catch on a heightfield prism edge. See
@@ -140,6 +143,9 @@ def _build_front_wheel(
             conaffinity="0" if tyre_model == "pneumatic" else "1",
             rgba="0.08 0.08 0.08 0",
         )
+    if physical:
+        com, tensor = wheel_body_inertia(mass_specs.front_wheel_mass, FRONT_WHEEL_PROFILE)
+        add_body_inertial(front_wheel, mass_specs.front_wheel_mass, com, tensor)
     return front_wheel
 
 
@@ -181,7 +187,8 @@ def build_steering_and_fork(
 
     # 4. Front Wheel
     front_wheel = _build_front_wheel(
-        fork_lower, mode, fa_rel_steer, front_wheel_radius_m, tyre_model
+        fork_lower, mode, fa_rel_steer, front_wheel_radius_m, tyre_model,
+        mass_specs if mass_registry is not None else None,
     )
 
     if mass_registry is not None:
@@ -189,6 +196,6 @@ def build_steering_and_fork(
         register_component(mass_registry, "steer_assembly", [geom for geom in steer_geoms if not geom.get("name", "").startswith("geom_stanchion_")])
         register_component(mass_registry, "stanchions", [geom for geom in steer_geoms if geom.get("name", "").startswith("geom_stanchion_")])
         register_component(mass_registry, "fork_lowers", list(fork_lower.findall("geom")))
-        register_component(mass_registry, "front_wheel", list(front_wheel.findall("geom")))
+        register_component(mass_registry, "front_wheel", list(front_wheel.findall("inertial")))
 
     return steer, fork_lower, front_wheel

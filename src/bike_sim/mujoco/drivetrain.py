@@ -18,6 +18,7 @@ from bike_sim.geometry.cockpit import (
 )
 from bike_sim.physics.mass import BikeMassSpecs
 from bike_sim.physics.component_masses import register_component
+from bike_sim.physics.inertia import REAR_WHEEL_PROFILE, add_body_inertial, wheel_body_inertia
 from bike_sim.mujoco._xml_format import _format_vec, add_geom, add_joint, add_site
 
 # How `crank_pedals_mass` (0.85 kg) is split over the crankset. Authored: a 165 mm alloy arm
@@ -209,10 +210,14 @@ def build_rear_wheel(
     rear_wheel_radius_m: float,
     tyre_model: str = "sphere",
     mass_registry: dict[str, list[ET.Element]] | None = None,
+    mass_specs: BikeMassSpecs | None = None,
 ) -> ET.Element:
     """
     Builds the rear wheel body (hub, rim, tire, cassette, brake rotor) mounted on the seatstay at P1 (Rear Axle).
     """
+    if mass_registry is not None and mass_specs is None:
+        raise ValueError("physical rear wheel requires mass specs")
+    physical = mass_registry is not None
     rear_wheel = ET.SubElement(seatstay, "body", {"name": "rear_wheel", "pos": _format_vec(p1_rel_p2)})
     ET.SubElement(
         rear_wheel,
@@ -233,7 +238,7 @@ def build_rear_wheel(
             "type": "cylinder",
             "fromto": "0 -0.074 0 0 0.074 0",
             "size": "0.020",
-            "mass": "0.30",
+            "mass": "0" if physical else "0.30",
             "material": "mat_metal",
         },
     )
@@ -245,7 +250,7 @@ def build_rear_wheel(
             "type": "cylinder",
             "fromto": "0 -0.015 0 0 0.015 0",
             "size": "0.300",
-            "mass": "0.40",
+            "mass": "0" if physical else "0.40",
             "material": "mat_rim",
             "contype": "0",
             "conaffinity": "0",
@@ -260,7 +265,7 @@ def build_rear_wheel(
             "type": "cylinder",
             "fromto": "0 -0.032 0 0 0.032 0",
             "size": f"{rear_wheel_radius_m:.6f}",
-            "mass": "1.50",
+            "mass": "0" if physical else "1.50",
             "material": "mat_tire",
             "contype": tire_contype,
             "conaffinity": tire_contype,
@@ -294,7 +299,7 @@ def build_rear_wheel(
             "type": "cylinder",
             "fromto": "0 -0.055 0 0 -0.035 0",
             "size": "0.095",
-            "mass": "0.40",
+            "mass": "0" if physical else "0.40",
             "material": "mat_metal",
             "contype": "0",
             "conaffinity": "0",
@@ -308,12 +313,14 @@ def build_rear_wheel(
             "type": "cylinder",
             "fromto": "0 0.038 0 0 0.040 0",
             "size": "0.1015",
-            "mass": "0.20",
+            "mass": "0" if physical else "0.20",
             "material": "mat_metal",
             "contype": "0",
             "conaffinity": "0",
         },
     )
     if mass_registry is not None:
-        register_component(mass_registry, "rear_wheel", list(rear_wheel.findall("geom")))
+        com, tensor = wheel_body_inertia(mass_specs.rear_wheel_mass, REAR_WHEEL_PROFILE)
+        add_body_inertial(rear_wheel, mass_specs.rear_wheel_mass, com, tensor)
+        register_component(mass_registry, "rear_wheel", list(rear_wheel.findall("inertial")))
     return rear_wheel

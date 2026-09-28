@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 
 from bike_sim.geometry.specs import BikeSpecs
+from bike_sim.physics.mass import BikeMassSpecs
 from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.physics.component_masses import register_component
 from bike_sim.mujoco._xml_format import (
@@ -61,6 +62,7 @@ def _build_seatstay(
     debug_markers: bool = False,
     tyre_model: str = "sphere",
     mass_registry: dict[str, list[ET.Element]] | None = None,
+    mass_specs: BikeMassSpecs | None = None,
 ) -> ET.Element:
     """Builds the seatstay body, Horst pivot joint, dropout truss, and rear wheel."""
     seatstay = ET.SubElement(chainstay, "body", {"name": "seatstay", "pos": _format_vec(p2_rel_p0)})
@@ -95,7 +97,10 @@ def _build_seatstay(
         add_marker(seatstay, "marker_pra", pos=p1_rel_p2, size="0.013")
 
     # Rear Wheel Assembly
-    build_rear_wheel(seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model, mass_registry)
+    build_rear_wheel(
+        seatstay, mode, p1_rel_p2, rear_wheel_radius_m, tyre_model,
+        mass_registry, mass_specs,
+    )
     return seatstay
 
 
@@ -265,6 +270,7 @@ def build_rear_linkage(
     tyre_model: str = "sphere",
     physics_config: SimulationPhysicsConfig | None = None,
     mass_registry: dict[str, list[ET.Element]] | None = None,
+    mass_specs: BikeMassSpecs | None = None,
 ) -> None:
     """
     Builds the 4-bar rear suspension linkage, shock yoke, shock shaft, shock body, and rear wheel.
@@ -309,6 +315,7 @@ def build_rear_linkage(
         debug_markers,
         tyre_model,
         mass_registry,
+        mass_specs,
     )
     if mass_registry is not None:
         register_component(mass_registry, "seatstay", list(seatstay.findall("geom")))

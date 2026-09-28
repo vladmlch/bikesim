@@ -19,12 +19,12 @@ def assign_component_mass(geoms: list[ET.Element], total_kg: float) -> None:
 
 
 def register_component(
-    registry: dict[str, list[ET.Element]], component_id: str, geoms: list[ET.Element]
+    registry: dict[str, list[ET.Element]], component_id: str, parts: list[ET.Element]
 ) -> None:
-    """Register a physical component exactly once, excluding zero-mass visual geoms."""
+    """Register one physical component's mass-bearing geoms or inertial."""
     if component_id in registry:
         raise ValueError(f"component {component_id!r} was registered twice")
-    positive_geoms = [geom for geom in geoms if float(geom.get("mass", "0")) > 0]
-    if not positive_geoms:
-        raise ValueError(f"component {component_id!r} has no mass-bearing geoms")
-    registry[component_id] = positive_geoms
+    positive_parts = [part for part in parts if float(part.get("mass", "0")) > 0]
+    if not positive_parts:
+        raise ValueError(f"component {component_id!r} has no mass-bearing parts")
+    registry[component_id] = positive_parts

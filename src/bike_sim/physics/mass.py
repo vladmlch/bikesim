@@ -23,8 +23,8 @@ from bike_sim.physics.rider import RiderSpecs
 @dataclass
 class BikeMassSpecs:
     """
-    Mass breakdown for a high-performance full-power eMTB (24.40 kg total; the
-    compiled MJCF is 24.35 kg). All masses are in kilograms (kg).
+    Mass breakdown for a high-performance full-power eMTB (24.40 kg default).
+    Physical MJCF applies all fifteen budgets; masses are in kilograms (kg).
     """
 
     # Powertrain & Energy
@@ -52,7 +52,8 @@ class BikeMassSpecs:
     front_wheel_mass: float = 2.40     # 29" front wheel, 2.4" enduro tire, sealant, 203mm rotor
     rear_wheel_mass: float = 2.80      # 27.5" rear wheel, 2.5" DH tire, 12-spd cassette, rotor
 
-    # Wheel mass distribution fractions (Rim+Tire outer ring vs Hub+Rotor inner core)
+    # Legacy analytic wheel approximation. Physical MJCF uses the synthetic
+    # annular-cylinder profiles in physics.inertia instead.
     wheel_rim_tire_fraction: float = 0.75
     wheel_hub_core_fraction: float = 0.25
 
@@ -86,7 +87,10 @@ class BikeMassSpecs:
         self, wheel_mass: float, outer_radius: float, hub_radius: float = 0.045
     ) -> float:
         """
-        Computes accurate pitch rotational inertia I_yy (kg*m^2) for a bicycle wheel.
+        Legacy analytic approximation of wheel I_yy (kg*m^2).
+
+        Physical MJCF uses the annular-cylinder profiles in physics.inertia;
+        these values are not compiled wheel tensors or measured references.
         """
         m_rim = self.wheel_rim_tire_fraction * wheel_mass
         m_hub = self.wheel_hub_core_fraction * wheel_mass

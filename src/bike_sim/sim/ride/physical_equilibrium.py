@@ -57,8 +57,8 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     if isinstance(max_steps, bool) or not isinstance(max_steps, int) or max_steps <= 0:
         raise ValueError('equilibrium max_steps must be a positive integer')
     cycle = max(1, round(.02/dt))
-    first_refine = cycle*max(1, round(1.0/(cycle*dt)))
-    refine_period = cycle*max(1, round(3.0/(cycle*dt)))
+    first_refine = cycle*max(1, round(sim.physics_config.equilibrium_refine_after_s/(cycle*dt)))
+    refine_period = cycle*max(1, round(sim.physics_config.equilibrium_refine_period_s/(cycle*dt)))
     steps = 0
     residual = float('inf')
     while steps < max_steps:

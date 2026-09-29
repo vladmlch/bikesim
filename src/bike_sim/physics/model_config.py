@@ -56,6 +56,8 @@ class SimulationPhysicsConfig:
     initial_front_brake: float = 0.0
     initial_rear_brake: float = 0.0
     closure_time_constant_s: float = 0.001
+    equilibrium_refine_after_s: float = 1.0
+    equilibrium_refine_period_s: float = 3.0
 
     def __post_init__(self) -> None:
         if self.physics_mode not in {"legacy", "physical"}:
@@ -63,6 +65,8 @@ class SimulationPhysicsConfig:
         if not isfinite(self.timestep_s) or self.timestep_s <= 0:
             raise ValueError("timestep_s must be finite and positive")
 
+        for name in ('equilibrium_refine_after_s', 'equilibrium_refine_period_s'):
+            scalar(getattr(self, name), name, positive=True)
         legacy = self.physics_mode == "legacy"
         scalar(self.closure_time_constant_s, "closure time constant", positive=True)
         if not legacy and self.closure_time_constant_s < 2.0*self.timestep_s:

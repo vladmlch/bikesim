@@ -106,3 +106,20 @@ def constraint_components(model,data):
             mujoco.mj_mulJacTVec(model,data,force,weights)
         result[name]=force
     return result
+
+
+def sensor_channels(runtime, *, qvel=None):
+    """Raw input-state proper acceleration, gyro, encoders and shaft sensors.
+
+    Called after the constraint solve and before endpoint forward kinematics.
+    MuJoCo accelerometers report specific force: gravity is not subtracted a
+    second time. The research wrapper adds sensor noise and transport delay.
+    """
+    d = runtime.sim.data
+    v = d.qvel if qvel is None else qvel
+    encoders = {side: float(v[runtime.address(side+'_spin')[1]])
+                for side in ('front_wheel', 'rear_wheel', 'crank')}
+    return dict(frame_specific_force_body_mps2=d.sensor('sensor_frame_accel').data.copy(),
+        frame_gyro_body_rad_s=d.sensor('sensor_frame_gyro').data.copy(), encoders_rad_s=encoders,
+        motor_torque_nm=float(runtime.drive.last.get('motor_torque_nm', 0.)),
+        human_torque_nm=float(runtime.drive.last.get('human_sensor_nm', 0.)))

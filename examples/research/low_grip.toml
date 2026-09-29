@@ -1,0 +1,17 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "research_low_grip"
+length_m = 35.0
+description = "Synthetic longitudinal torque-control challenge; seed=17"
+surface = "asphalt"
+grade_profile = { knots = [[0.0, 0.0], [4.0, 0.0], [8.0, 0.12], [24.0, 0.12], [30.0, 0.0], [35.0, 0.0]] }
+surface_sections = [{ start_m = 6.0, end_m = 10.0, surface = "wet" }, { start_m = 14.0, end_m = 21.0, surface = "loose" }]
+
+[[obstacles]]
+type = "roughness"
+start_m = 4.0
+section_length_m = 23.0
+amplitude_m = 0.008
+correlation_length_m = 0.4
+seed = 17

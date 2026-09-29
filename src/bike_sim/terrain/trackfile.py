@@ -342,12 +342,29 @@ def track_from_dict(data: Mapping[str, Any], *, seed: Union[int, None] = None,
         except ValueError as exc:
             raise TrackFileError(f"generator: {exc}") from exc
 
+    from bike_sim.terrain.grade import GradeProfile
+    from bike_sim.terrain.surface import SurfaceSection
+    try:
+        grade_data = data.get('grade_profile')
+        grade = None
+        if grade_data is not None:
+            if not isinstance(grade_data, dict) or set(grade_data) != {'knots'}:
+                raise ValueError('grade_profile needs exactly a knots array')
+            grade = GradeProfile(grade_data['knots'])
+        sections_data = data.get('surface_sections', [])
+        if not isinstance(sections_data, list):
+            raise ValueError('surface_sections must be an array of tables')
+        sections = tuple(SurfaceSection(**entry) for entry in sections_data)
+    except (TypeError, ValueError, KeyError) as exc:
+        raise TrackFileError(str(exc)) from exc
     track = TrackSpec(
         name=name,
         length_m=track_length,
         description=str(data.get("description", "")),
         obstacles=hand_placed + generated,
         surface=_surface_from(data),
+        grade_profile=grade,
+        surface_sections=sections,
     )
     try:
         track.validate()
@@ -419,7 +436,13 @@ def track_to_dict(track: TrackSpec) -> Dict[str, Any]:
     out: Dict[str, Any] = {"name": track.name, "length_m": track.length_m}
     if track.description:
         out["description"] = track.description
+    track.validate()
     out["surface"] = track.surface
+    if track.grade_profile is not None:
+        out['grade_profile'] = {'knots': [list(k) for k in track.grade_profile.knots]}
+    if track.surface_sections:
+        out['surface_sections'] = [dict(start_m=s.start_m, end_m=s.end_m, surface=s.surface)
+                                   for s in track.surface_map.sections]
     out["obstacles"] = [obstacle_to_dict(o) for o in track.sorted_obstacles]
     return out
 
@@ -460,6 +483,10 @@ def dump_track(track: TrackSpec) -> str:
     for key in ("name", "length_m", "description", "surface"):
         if key in doc:
             lines.append(f"{key} = {_toml_value(doc[key])}")
+    if 'grade_profile' in doc:
+        lines.append('grade_profile = ' + _toml_value(doc['grade_profile']))
+    if 'surface_sections' in doc:
+        lines.append('surface_sections = ' + _toml_value(doc['surface_sections']))
     for entry in doc["obstacles"]:
         lines.append("")
         lines.append("[[obstacles]]")

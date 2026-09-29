@@ -1,5 +1,6 @@
 """Bounded internal rider actuation; no root force or direct human crank torque."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field, asdict
+from bike_sim.physics.rider_posture import RiderPosture
 from math import atan2, cos, pi, sin
 import numpy as np
 from bike_sim.physics.checks import array, scalar
@@ -87,9 +88,12 @@ def two_link_ik(target_xz,upper_m,lower_m,*,elbow_sign=1):
 class RiderCommand:
     mean_crank_torque_nm: float = 0.
     enabled: bool = True
+    posture: RiderPosture = field(default_factory=RiderPosture)
 
     def __post_init__(self):
         scalar(self.mean_crank_torque_nm,'rider effort',minimum=0)
+        if not isinstance(self.posture, RiderPosture):
+            raise ValueError('rider posture must be a RiderPosture')
         if not isinstance(self.enabled,bool):
             raise ValueError('rider controller enable must be a bool')
 
@@ -137,8 +141,14 @@ class ArticulatedRiderController:
         if min(self.pelvis,self.crank,*self.feet.values(),*self.soles.values(),*self.pedals.values()) < 0:
             raise ValueError('incomplete rider interface topology')
 
-    def _targets(self,model,data,side, *, compression_m=None, shear_m=0., clearance_m=0.):
+    def _targets(self,model,data,side, *, compression_m=None, shear_m=0., clearance_m=0., posture=None):
         hip = data.xpos[self.pelvis]
+        if posture is not None and posture.pelvis_offset_m is not None:
+            x, z = posture.pelvis_offset_m
+            hip = data.xpos[self.frame] + data.xmat[self.frame].reshape(3,3) @ (
+                self.pose.hip + np.array([x, 0., z]))
+            # This is only an inverse-kinematics goal. No data coordinate is
+            # written: movement requires actual foot/hand reactions and effort.
         # Solve in the actual parent frame so the foot target reaches the
         # actual platform. Posture is requested through a balanced contact
         # wrench, not a fictitious root frame in the leg IK.
@@ -174,7 +184,7 @@ class ArticulatedRiderController:
         # Equivalent +/-2*pi IK representations must not cause torque impulses.
         return current + np.arctan2(np.sin(targets-current),np.cos(targets-current))
 
-    def _upper_targets(self, data):
+    def _upper_targets(self, data, posture=None):
         """Bounded joint goals keep the hands reachable as the pelvis moves.
 
         A fixed shoulder/elbow angle is not a bar-following controller. Select
@@ -198,7 +208,7 @@ class ArticulatedRiderController:
                       for sign in (-1,1)]
         angles, saturated = max(candidates, key=lambda pair: sin(pair[0][0]))
         neutral_q = atan2(trunk[2],trunk[0])-angles[0]
-        torso_q = neutral_q
+        torso_q = neutral_q + (0. if posture is None else posture.torso_lean_rad)
         torso_R = data.xmat[self.torso].reshape(3,3)
         arm_target = torso_R.T @ (grip-data.xpos[self.upper_arm])
         a0,b0 = atan2(upper[2],upper[0]),atan2(lower[2],lower[0])
@@ -262,6 +272,7 @@ class ArticulatedRiderController:
             self.last_terms = {name:{'posture_nm':0.,'pedaling_nm':0.,'command_nm':0.,'saturated':False} for name in self.joints}
             return {name:0. for name in self.joints}
         cfg = self.config
+        posture = command.posture
         from bike_sim.sim.ride.rider_support import pedaling_support_targets
         support = np.zeros(model.nv)
         weight = self.rider_mass*float(np.linalg.norm(model.opt.gravity))
@@ -272,9 +283,11 @@ class ArticulatedRiderController:
         loads = {} if contact_loads is None else contact_loads
         availability=loads if support_available is None else support_available
         enabled = [bool(availability.get(name,False)) for name in ('saddle','front','rear','grip')]
+        enabled[0] = enabled[0] and posture.use_saddle
         frame_R=data.xmat[self.frame].reshape(3,3)
         pelvis_R=data.xmat[self.pelvis].reshape(3,3)
         pitch_error=atan2(-frame_R[2,0],frame_R[0,0])-atan2(-pelvis_R[2,0],pelvis_R[0,0])
+        pitch_error += posture.pelvis_pitch_rad
         pitch_error=atan2(sin(pitch_error),cos(pitch_error))
         frame_dof,pelvis_dof=self.pitch_dofs
         pitch_request=float(np.clip(cfg.posture_pitch_k_nm_rad*pitch_error
@@ -306,13 +319,14 @@ class ArticulatedRiderController:
         diagnostics['requested_pitch_moment_nm']=pitch_request
         diagnostics['stance']=stance.copy()
         diagnostics['feasible_pedal_force_on_bike_n']={s:requests[s].tolist() for s in requests}
+        diagnostics['posture'] = asdict(posture)
         self.support_diagnostics=diagnostics
         result = {}
         terms = {}
-        upper_targets = self._upper_targets(data)
+        upper_targets = self._upper_targets(data, posture)
         future=self._predict_target_state(model,data) if data.qvel[self.crank_spin_dof] != 0. else data
         saturation=dict(self.saturated_ik)
-        future_upper=self._upper_targets(future) if future is not data else upper_targets
+        future_upper=self._upper_targets(future, posture) if future is not data else upper_targets
         self.saturated_ik=saturation
         for name,(qa,va,_) in self.joints.items():
             if name.startswith(('rider_hip_','rider_knee_','rider_ankle_')):
@@ -342,9 +356,9 @@ class ArticulatedRiderController:
             clearance=0. if stance[side] else cfg.swing_clearance_m
             if not stance[side]:
                 depth=shear=0.
-            target = self._targets(model,data,side,compression_m=depth,shear_m=shear,clearance_m=clearance)
+            target = self._targets(model,data,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture)
             saturation=dict(self.saturated_ik)
-            future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear,clearance_m=clearance) if future is not data else target
+            future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if future is not data else target
             self.saturated_ik=saturation
             target_speed=np.arctan2(np.sin(future_target-target),np.cos(future_target-target))/self.target_difference_s
             pd = cfg.joint_kp_nm_rad*(target-data.qpos[qa])+cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])

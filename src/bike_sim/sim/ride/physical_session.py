@@ -26,6 +26,9 @@ def configuration_metadata(sim,seed=None):
               'mass_budget':asdict(sim.mass_specs),'rider':asdict(sim.rider),
               'target_speed_kmh':sim.cruise.target_speed_kmh if sim.physics_config.drive_mode=='ideal_speed_control' else None,
               'terrain_sha256':terrain_hash,'seed':seed}
+    # Friction zones change the plant even when the heightfield is unchanged.
+    from bike_sim.terrain.trackfile import track_to_dict
+    resolved['track'] = track_to_dict(sim.track)
     # Effective overrides are recorded, not just geometry defaults.
     resolved['active_suspension']={
         'fork_pressure_psi':sim.controller.air_spring.gauge_pressure_psi,

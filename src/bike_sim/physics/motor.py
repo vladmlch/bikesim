@@ -40,18 +40,20 @@ class AssistController:
         self.pedaling = False
         self.age = float('inf')
 
-    def step(self,human_nm,cadence_rpm,speed_mps,braking,dt):
+    def step(self,human_nm,cadence_rpm,speed_mps,braking,dt, *, torque_request_nm=None):
         human = scalar(human_nm,'human torque')
         rpm = scalar(cadence_rpm,'cadence')
         speed = scalar(speed_mps,'road speed')
         dt = scalar(dt,'assist timestep',positive=True)
         if not isinstance(braking,(bool,np.bool_)):
             raise ValueError('braking must be a bool')
+        if torque_request_nm is not None:
+            torque_request_nm = scalar(torque_request_nm, 'motor setpoint', minimum=0.)
         if braking or rpm < 0:
             self.reset()
             return 0.
         threshold = self.off_rpm if self.pedaling else self.on_rpm
-        pedaling = human > 0 and rpm >= threshold
+        pedaling = torque_request_nm is not None or (human > 0 and rpm >= threshold)
         age = 0. if pedaling else self.age+dt
         if age >= self.stop_delay and not pedaling:
             self.pedaling,self.age,self.torque = pedaling,age,0.
@@ -64,7 +66,8 @@ class AssistController:
             ceiling = min(ceiling,self.max_power/omega)
         taper = max(0.,min(1.,(self.cutoff-abs(speed))/self.width))
         ceiling *= taper
-        target = min(self.gain*max(human,0.)*taper,ceiling)
+        demand = self.gain*max(human,0.) if torque_request_nm is None else torque_request_nm
+        target = min(demand*taper,ceiling)
         candidate = self.torque-expm1(-dt/self.tau)*(target-self.torque)
         candidate = max(self.torque-self.slew*dt,min(self.torque+self.slew*dt,candidate))
         torque = scalar(max(0.,min(candidate,ceiling)),'delivered assist torque')

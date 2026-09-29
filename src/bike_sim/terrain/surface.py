@@ -5,10 +5,10 @@ The friction characteristics the pneumatic tyre reads (docs/RIDE.md section 4.1)
 a sliding friction coefficient, the tyre's normalised longitudinal slip stiffness on that
 surface, and the Stribeck speed over which friction falls from peak to sliding.
 
-**One surface per run today.** The tyre never holds a surface itself: it asks a `SurfaceMap`
-for the surface at a track position. That map holds one surface now, and is the seam through
-which per-zone surfaces in a track file can be added later without touching the tyre
-(docs/superpowers/plans/2026-09-26-pneumatic-tyre.md, D9).
+SurfaceMap resolves a base surface and validated half-open material zones at
+an actual contact position. Both pneumatic tyres and physical compliant_2d
+track-material tyres can use it. The configured physical mode preserves the
+original constant-mu contract for existing simulations.
 
 **Every value is authored** (docs/RIDE.md section 11.2): car Burckhardt curves scaled to the
 little published MTB data. They are a considered starting point, not a measurement.
@@ -136,21 +136,50 @@ def get_surface(name: str) -> SurfaceSpec:
     return SURFACES[name]
 
 
+@dataclass(frozen=True)
+class SurfaceSection:
+    """A half-open material interval [start_m, end_m) in track coordinates."""
+    start_m: float
+    end_m: float
+    surface: str
+
+    def __post_init__(self):
+        from math import isfinite
+        from numbers import Real
+        for name in ('start_m', 'end_m'):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, Real) or not isfinite(value):
+                raise ValueError('surface interval stations must be finite real numbers')
+            object.__setattr__(self, name, float(value))
+        if not 0. <= self.start_m < self.end_m:
+            raise ValueError('surface interval must satisfy 0 <= start < end')
+        if not isinstance(self.surface, str) or self.surface not in SURFACES:
+            raise ValueError('unknown surface material')
+
+
 class SurfaceMap:
     """
     The road surface as a function of track position.
 
-    Holds a single surface today, so `at` ignores its argument. The tyre calls `at` with the
-    contact patch's track position on every step all the same, so that zones can be added
-    here without changing the caller.
+    A default material plus nonoverlapping, half-open material sections.
+    Queries use each wheel contact position, not the frame or wheel center.
     """
 
-    def __init__(self, surface: SurfaceSpec) -> None:
+    def __init__(self, surface: SurfaceSpec, sections=()) -> None:
         """
         Args:
             surface: The surface the whole track is made of.
         """
+        if not isinstance(surface, SurfaceSpec):
+            raise ValueError('default material must be a SurfaceSpec')
+        sections = tuple(sections)
+        if any(not isinstance(s, SurfaceSection) for s in sections):
+            raise ValueError('material intervals must be SurfaceSection objects')
+        sections = tuple(sorted(sections, key=lambda s: s.start_m))
+        if any(b.start_m < a.end_m for a, b in zip(sections, sections[1:])):
+            raise ValueError('material intervals must not overlap')
         self._surface = surface
+        self.sections = sections
 
     @classmethod
     def uniform(cls, name: str) -> "SurfaceMap":
@@ -167,19 +196,26 @@ class SurfaceMap:
         Returns the surface at a track position.
 
         Args:
-            x_m: Position along the track, in metres. Unused while the map is uniform.
+            x_m: Contact position along the track in metres.
         """
+        if not np.isfinite(x_m):
+            raise ValueError('material query must be finite')
+        for section in self.sections:
+            if section.start_m <= x_m < section.end_m:
+                return get_surface(section.surface)
         return self._surface
 
     @property
     def surfaces(self) -> Tuple[SurfaceSpec, ...]:
         """Every distinct surface on the map."""
-        return (self._surface,)
+        values = {self._surface.name: self._surface}
+        values.update((s.surface, get_surface(s.surface)) for s in self.sections)
+        return tuple(values.values())
 
     @property
     def name(self) -> str:
         """Human-readable label: the surface name while the map is uniform."""
-        return self._surface.name
+        return self._surface.name + ('+zones' if self.sections else '')
 
 
 def slip_stiffness_n(surface: SurfaceSpec, normal_load_n: float) -> float:

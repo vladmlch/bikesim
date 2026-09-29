@@ -4,7 +4,17 @@ A high-precision analytical 3D kinematic modeling engine and physically consiste
 
 The suspension hardpoints are **derived from a reference photograph** of a Bulls Sonic EVO by calibrated pixel measurement and constrained refit — not hand-invented. See [Provenance](#provenance-what-is-measured-and-what-is-authored) for exactly which parts of the bike are measurement and which are styling.
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
+## Anti-wheelie research extension
+
+For torque-policy development use [the physical research plant](docs/ANTI_WHEELIE.md),
+not legacy cruise/pitch assistance. `bike-research` adds direct bounded motor
+commands, articulated posture targets, grade plus roughness, zoned road materials,
+causal noisy sensors, separate contact truth, energy-quality gates and repeatable
+acceptance runs. The supplied offline bundle keeps all original local wheels and
+adds no runtime dependencies. This is a **synthetic planar plant**, not measured
+real-bicycle safety validation.
+
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
 [![Physics Engine](https://img.shields.io/badge/physics-MuJoCo%20MJCF-purple.svg)](https://mujoco.org/)
 [![Package Manager](https://img.shields.io/badge/manager-uv-green.svg)](https://github.com/astral-sh/uv)
 [![Kinematics Invariance](https://img.shields.io/badge/kinematic_error-%3C_10%5E%7B--12%7D_mm-brightgreen.svg)]()
@@ -618,7 +628,7 @@ The MJCF XML model contains realistic actuators and state-feedback sensors for c
 
 ### Prerequisites
 
-- Python $\ge$ 3.12 (required by `pyproject.toml`)
+- Python $\ge$ 3.13 (required by `pyproject.toml`)
 - [`uv`](https://github.com/astral-sh/uv)
 
 ### Environment Setup via `uv`

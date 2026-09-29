@@ -74,6 +74,9 @@ from bike_sim.terrain import (
 DEFAULT_START_X_M = 2.0
 
 
+from bike_sim.sim.ride.control import RideControl
+
+
 class RideSimulation:
     """
     A ride-mode run: compiled model, track, controllers, and a single `step`.
@@ -271,7 +274,7 @@ class RideSimulation:
                 self.model,
                 self.tyre_config,
                 profile,
-                SurfaceMap.uniform(self.track.surface),
+                self.track.surface_map,
             )
         self.data = mujoco.MjData(self.model)
         self.force_accumulator = ForceAccumulator(self.model.nv)
@@ -432,14 +435,17 @@ class RideSimulation:
         rear_brake_demand: float = 0.0,
         *,
         external_qfrc: Optional[np.ndarray] = None,
+        control: Optional[RideControl] = None,
     ) -> None:
         """Advance one timestep using the selected force and control path."""
         if self.physics_config.physics_mode == "legacy":
+            if control is not None:
+                raise ValueError("RideControl is only supported in physical mode")
             if external_qfrc is not None:
                 raise ValueError("external_qfrc is only supported in physical mode")
             self._step_legacy(front_brake_demand, rear_brake_demand)
         else:
-            self._step_physical(front_brake_demand, rear_brake_demand, external_qfrc)
+            self._step_physical(front_brake_demand, rear_brake_demand, external_qfrc, control)
 
     def _step_legacy(self, front_brake_demand: float, rear_brake_demand: float) -> None:
         """
@@ -545,13 +551,14 @@ class RideSimulation:
         front_brake_demand: float,
         rear_brake_demand: float,
         external_qfrc: Optional[np.ndarray],
+        control: Optional[RideControl] = None,
     ) -> None:
         """Advance the physical model with forces read from current kinematics.
 
         ``contacts`` is the snapshot used by this step's force writers. It remains the
         pre-step snapshot until the next call refreshes MuJoCo's kinematics.
         """
-        self.physical.step(front_brake_demand, rear_brake_demand, external_qfrc)
+        self.physical.step(front_brake_demand, rear_brake_demand, external_qfrc, control=control)
 
     def _follow_cranks(self) -> None:
         """

@@ -17,7 +17,8 @@ from typing import List, Tuple
 import numpy as np
 
 from bike_sim.terrain.obstacles import Obstacle
-from bike_sim.terrain.surface import DEFAULT_SURFACE, SURFACES
+from bike_sim.terrain.surface import DEFAULT_SURFACE, SURFACES, SurfaceMap, SurfaceSection, get_surface
+from bike_sim.terrain.grade import GradeProfile
 
 
 @dataclass
@@ -35,6 +36,12 @@ class TrackSpec:
     obstacles: List[Obstacle] = field(default_factory=list)
     description: str = ""
     surface: str = DEFAULT_SURFACE
+    grade_profile: GradeProfile | None = None
+    surface_sections: tuple[SurfaceSection, ...] = ()
+
+    @property
+    def surface_map(self) -> SurfaceMap:
+        return SurfaceMap(get_surface(self.surface), self.surface_sections)
 
     @property
     def sorted_obstacles(self) -> List[Obstacle]:
@@ -44,7 +51,8 @@ class TrackSpec:
     @property
     def datum_shift_m(self) -> float:
         """Net change of road level between the start and the end of the track, in metres."""
-        return float(sum(o.datum_shift_m for o in self.obstacles))
+        grade = 0. if self.grade_profile is None else self.grade_profile.elevation(self.length_m)
+        return float(sum(o.datum_shift_m for o in self.obstacles)) + grade
 
     @property
     def markers(self) -> List[Tuple[float, str]]:
@@ -62,7 +70,7 @@ class TrackSpec:
             ValueError: If the track length is non-positive, the surface is not registered,
                 an obstacle falls outside the track, or two obstacles overlap.
         """
-        if self.length_m <= 0.0:
+        if not np.isfinite(self.length_m) or self.length_m <= 0.0:
             raise ValueError(f"track '{self.name}' has non-positive length {self.length_m}")
         if self.surface not in SURFACES:
             raise ValueError(
@@ -70,6 +78,14 @@ class TrackSpec:
                 f"available: {', '.join(SURFACES)}"
             )
 
+        if self.grade_profile is not None:
+            if not isinstance(self.grade_profile, GradeProfile):
+                raise ValueError('grade_profile must be a GradeProfile')
+            if self.grade_profile.knots[-1][0] > self.length_m:
+                raise ValueError('grade stations must fit inside the track')
+        mapping = self.surface_map
+        if any(s.end_m > self.length_m for s in mapping.sections):
+            raise ValueError('material intervals must fit inside the track')
         ordered = self.sorted_obstacles
         for obs in ordered:
             if obs.length_m < 0.0:
@@ -116,6 +132,11 @@ def build_profile(track: TrackSpec, x: np.ndarray) -> np.ndarray:
         datum += obs.datum_shift_m
         z[x >= obs.end_m] = datum
 
+    if track.grade_profile is not None:
+        # The compiled field includes runout beyond the finish. Preserve the
+        # established flat-runout contract instead of extrapolating a grade
+        # across the (possibly much longer) heightfield.
+        z += track.grade_profile.elevation(np.clip(x, 0., track.length_m))
     return z
 
 

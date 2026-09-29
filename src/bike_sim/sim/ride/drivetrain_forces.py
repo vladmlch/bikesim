@@ -139,8 +139,12 @@ class DrivetrainForceApplier:
         self.pending_actuation = None
 
     def compute_components(self, model, data, dt, *, speed_mps, braking=False,
-                           sensed_human_nm=0., active=True, advance=True):
+                           sensed_human_nm=0., active=True, advance=True, control=None):
         import mujoco
+        from bike_sim.sim.ride.control import RideControl
+        control = RideControl() if control is None else control
+        if not isinstance(control, RideControl):
+            raise ValueError('expected an immutable RideControl')
         dt = scalar(dt,'drivetrain interval',positive=True)
         speed_mps = scalar(speed_mps,'bike speed')
         sensed_human_nm = scalar(sensed_human_nm,'measured pedal torque')
@@ -158,7 +162,7 @@ class DrivetrainForceApplier:
             probe.battery = copy.deepcopy(self.battery)
             probe.last_time_s = None
             return probe.compute_components(model,data,dt,speed_mps=speed_mps,braking=braking,
-                                            sensed_human_nm=sensed_human_nm,active=active)
+                                            sensed_human_nm=sensed_human_nm,active=active,control=control)
         angles = (self._angle(data,'crank',self.angles[0]),self._angle(data,'cassette',self.angles[1]))
         cf, cr, rf, rr, tf, tr, up = self._geometry(data,angles,self.psi)
         _, psi = chain_geometry(cf,cr,rf,rr,up_xz=up,psi_reference=self.psi)
@@ -181,15 +185,17 @@ class DrivetrainForceApplier:
         components['drive_bearings'] = bearing
         qf, vf = self.joints['crank_spin']
         omega = float(data.qvel[vf]); cadence = omega*60/(2*pi)
-        human = (human_crank_torque(self.config.human_torque_nm,float(data.qpos[qf]),self.config.torque_ripple)
+        mean_human = self.config.human_torque_nm if control.human_torque_nm is None else control.human_torque_nm
+        human = (human_crank_torque(mean_human,float(data.qpos[qf]),self.config.torque_ripple)
                  if active and self.drive_mode=='crank_effort' else 0.)
         sensor = human if self.drive_mode=='crank_effort' else sensed_human_nm
-        request = (self.assist.step(sensor,cadence,speed_mps,braking,dt)
+        request = (self.assist.step(sensor,cadence,speed_mps,braking,dt,torque_request_nm=control.motor_torque_nm)
                    if active and self.drive_mode in ('crank_effort','articulated_effort') else 0.)
         battery_cfg = self.config.battery
         a,b,idle = battery_cfg.copper_w_per_nm2,battery_cfg.speed_w_per_rad_s2,battery_cfg.idle_w
         budget = self.battery.energy_j/dt
-        delivered = limit_torque_by_energy(request,omega,a,b,idle,budget)
+        limited_request = request if control.motor_limit_nm is None else min(request, control.motor_limit_nm)
+        delivered = limit_torque_by_energy(limited_request,omega,a,b,idle,budget)
         enabled = active and delivered > 0. and not braking
         if not enabled:
             delivered = 0.
@@ -217,9 +223,14 @@ class DrivetrainForceApplier:
             'freehub_dissipation_power_w':max(0.,(torque-self.hub.k*deflection)*relative_rate),
             'cadence_rpm':cadence, 'human_torque_nm':human, 'human_sensor_nm':sensor,
             'motor_request_nm':request, 'motor_torque_nm':delivered,
+            'motor_limited_request_nm':limited_request,
+            'motor_setpoint_nm':control.motor_torque_nm,
+            'motor_limit_nm':control.motor_limit_nm,
+            'motor_control_source':'assist' if control.motor_torque_nm is None else 'external_request',
+            'safety_limited':limited_request < request,
             'motor_shaft_power_w':delivered*omega, 'electrical_power_w':actual_electrical,
             'battery_energy_j':self.battery.energy_j, 'motor_enabled':enabled,
-            'energy_limited':delivered < request, 'battery_empty':self.battery.energy_j==0.,
+            'energy_limited':delivered < limited_request, 'battery_empty':self.battery.energy_j==0.,
         }
         self.angles,self.psi,self.last_time_s = angles,psi,time
         return components

@@ -53,10 +53,21 @@ class _BrushState:
     center: np.ndarray | None = None
 
 
+def effective_friction(tire, surface_map, contact_x_m, slip_mps):
+    """Road friction cannot exceed the explicitly configured tire ceiling."""
+    if surface_map is None:
+        return float(tire.mu), 'configured'
+    surface = surface_map.at(contact_x_m)
+    return min(float(tire.mu), surface.mu(slip_mps)), surface.name
+
+
 class TireForceApplier:
-    def __init__(self, model, vertices_xz, config):
+    def __init__(self, model, vertices_xz, config, surface_map=None):
         import mujoco
         self.config = config
+        self.surface_map = surface_map if config.surface_mode == 'track' else None
+        if config.surface_mode == 'track' and self.surface_map is None:
+            raise ValueError('track material mode requires an explicit SurfaceMap')
         self.profile = ProfileQuery(
             vertices_xz, significant_delta_m=config.significant_delta_m,
             significance_fraction=config.significance_fraction,
@@ -145,9 +156,10 @@ class TireForceApplier:
                     transported = xi*float(state.tangent @ tangent)
                     release_loss = .5*cfg.tangent_k_n_m*(xi*xi-transported*transported)
                     xi = transported
+            mu, material = effective_friction(cfg, self.surface_map, p[0], slip)
             xi_new, force, brush_loss = brush_step(
                 xi, slip, float(center_velocity @ tangent), normal,
-                cfg.tangent_k_n_m, cfg.mu, cfg.relaxation_length_m, dt,
+                cfg.tangent_k_n_m, mu, cfg.relaxation_length_m, dt,
             )
             force_world = normal*n + force*tangent
             qfrc += map_wrench(model, data, self.bodies[side], p, force_world)
@@ -165,6 +177,7 @@ class TireForceApplier:
                 'multi_support':contact.multi_support, 'penetration_m':contact.delta,
                 'normal_speed_mps':-delta_dot, 'slip_mps':slip,
                 'normal_load_n':normal, 'tangent_force_n':force,
+                'friction_coefficient':mu, 'surface':material,
                 'branch_release_loss_j':max(release_loss, 0.),
                 'brush_loss_j':brush_loss, 'radial_energy_j':radial_energy,
                 'shear_energy_j':.5*cfg.tangent_k_n_m*xi_new*xi_new,

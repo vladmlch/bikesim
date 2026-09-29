@@ -1,0 +1,16 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "research_crest"
+length_m = 35.0
+description = "Synthetic longitudinal torque-control challenge; seed=17"
+surface = "asphalt"
+grade_profile = { knots = [[0.0, 0.0], [4.0, 0.0], [6.0, 0.28], [8.0, 0.28], [10.0, 0.0], [12.0, -0.35], [16.0, -0.35], [20.0, 0.0], [35.0, 0.0]] }
+
+[[obstacles]]
+type = "roughness"
+start_m = 5.0
+section_length_m = 3.0
+amplitude_m = 0.008
+correlation_length_m = 0.4
+seed = 17

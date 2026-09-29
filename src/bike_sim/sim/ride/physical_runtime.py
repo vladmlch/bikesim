@@ -1,5 +1,7 @@
 """Single owner of the physical initialization, force step and work ledger."""
-from dataclasses import replace
+from dataclasses import replace, asdict
+from bike_sim.sim.ride.control import RideControl
+from bike_sim.physics.rider_posture import RiderPosture
 import copy
 import mujoco
 import numpy as np
@@ -17,7 +19,7 @@ from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
 from bike_sim.sim.ride.physical_observations import (
-    tire_channels, energy_state, actuator_components, constraint_components,
+    tire_channels, energy_state, actuator_components, constraint_components, sensor_channels,
 )
 
 
@@ -30,7 +32,7 @@ class PhysicalRuntime:
             raise ValueError('physical momentum needs explicit rotor bodies, not hidden armature')
         mujoco.mj_forward(m,d)
         self.vertices = compiled_profile_vertices(m,d)
-        self.tire = (TireForceApplier(m,self.vertices,self.cfg.tires)
+        self.tire = (TireForceApplier(m,self.vertices,self.cfg.tires,sim.track.surface_map)
                      if self.cfg.tires.backend == 'compliant_2d' else None)
         self.drive = DrivetrainForceApplier(m,self.cfg.drive,self.cfg.drive_mode)
         self.resistance = ExternalResistanceApplier(m,self.cfg.resistance)
@@ -90,9 +92,13 @@ class PhysicalRuntime:
             front_controller_grounded=grounded['front'],rear_controller_grounded=grounded['rear'])
         return contacts,snapshots
 
-    def apply_forces(self, *, active=True, advance=True, front=0., rear=0., external=None):
+    def apply_forces(self, *, active=True, advance=True, front=0., rear=0., external=None, control=None):
         """Evaluate all writers once; a non-advancing probe copies contact states."""
         sim = self.sim
+        control = RideControl() if control is None else control
+        if not isinstance(control, RideControl):
+            raise ValueError('expected an immutable RideControl')
+        control.validate_for(self.cfg, sim.rider.variant)
         m,d = sim.model,sim.data
         dt = float(m.opt.timestep)
         d.qfrc_applied.fill(0.)
@@ -119,8 +125,9 @@ class PhysicalRuntime:
             loads = {side:observed.get(side+'_pedal',{}).get('normal_load_n',0.) for side in ('front','rear')}
             loads['grip'] = enabled.get('grip',False)
             loads['saddle'] = observed.get('saddle',{}).get('normal_load_n',0.)
-            command = RiderCommand(self.cfg.drive.human_torque_nm
-                if active and self.cfg.drive_mode=='articulated_effort' else 0.)
+            human = self.cfg.drive.human_torque_nm if control.human_torque_nm is None else control.human_torque_nm
+            command = RiderCommand(human if active and self.cfg.drive_mode=='articulated_effort' else 0.,
+                enabled=control.rider_enabled, posture=control.posture or RiderPosture())
             availability={side:bool(enabled.get(side+'_pedal',False)
                 and observed.get(side+'_pedal',{}).get('in_platform',False)) for side in ('front','rear')}
             # A geometrically available saddle is a posture goal even before
@@ -132,7 +139,7 @@ class PhysicalRuntime:
                 support_available=availability))
         sensed = self.rider_contacts.delivered_crank_torque_nm if self.rider_contacts is not None else 0.
         for name,force in self.drive.compute_components(m,d,dt,speed_mps=sim.speed_mps,
-            braking=front>0 or rear>0,sensed_human_nm=sensed,active=active,advance=advance).items():
+            braking=front>0 or rear>0,sensed_human_nm=sensed,active=active,advance=advance,control=control).items():
             acc.add(name,force)
         # Native contact loads must see the current suspension/chain/rider forces.
         d.qfrc_applied[:] = acc.total()
@@ -263,7 +270,11 @@ class PhysicalRuntime:
             loss+=max(0.,-(forces['shock_upper_stop'][sim.applier.shock_dofadr]-elastic)*v)*dt
         return float(loss)
 
-    def step(self, front=0., rear=0., external=None):
+    def step(self, front=0., rear=0., external=None, *, control=None):
+        control = RideControl() if control is None else control
+        if not isinstance(control, RideControl):
+            raise ValueError('expected an immutable RideControl')
+        control.validate_for(self.cfg, self.sim.rider.variant)
         front=scalar(front,'front brake demand'); rear=scalar(rear,'rear brake demand')
         sim=self.sim; m,d=sim.model,sim.data; dt=float(m.opt.timestep)
         if external is not None:
@@ -271,7 +282,7 @@ class PhysicalRuntime:
             if external.shape!=(m.nv,) or not np.isfinite(external).all():
                 raise ValueError('invalid generalized force')
         t=float(d.time); q=d.qpos.copy(); v=d.qvel.copy()
-        self.apply_forces(front=front,rear=rear,external=external)
+        self.apply_forces(front=front,rear=rear,external=external,control=control)
         # Save incoming auxiliary energies before the solve overwrites no state.
         mass0,_,_=energy_state(self)
         sim.last_force_sample=ForceSample(t,q,v,sim.force_accumulator.components)
@@ -285,6 +296,7 @@ class PhysicalRuntime:
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(m,d)
         self.drive.settle_actuation(m,d)
+        sensors = sensor_channels(self, qvel=v)
         components.update(actuator_components(m,d))
         constraints=constraint_components(m,d)
         shock_limit=shock_joint_limit_qfrc(m,d)
@@ -336,6 +348,7 @@ class PhysicalRuntime:
             'generalized_force_components_n':{n:float(f[sim.applier.fork_dofadr if n.startswith('fork') else sim.applier.shock_dofadr])
                 for n,f in components.items() if n.startswith(('fork_','shock_'))}}
         channels={'tires':tires,'drive':drive,'rider':rider,'suspension':suspension,
+                  'control':asdict(control), 'sensors':sensors,
                   'mass':mass0,'endpoint_mass':mass,'energy':self.energy,
                   'component_work_j':{n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()},
                   'rider_control':{} if self.rider_control is None else self.rider_control.last_terms,

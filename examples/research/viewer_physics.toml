@@ -1,0 +1,27 @@
+# Existing bike-ride viewer configuration. The viewer uses assist, not the new
+# external command stream; use bike-research/controller_loop.py for policies.
+physics_mode = "physical"
+drive_mode = "articulated_effort"
+timestep_s = 0.000125
+initial_speed_mps = 3.0
+initial_front_brake = 1.0
+initial_rear_brake = 1.0
+equilibrium_refine_after_s = 3.0
+equilibrium_refine_period_s = 3.0
+
+[tires]
+backend = "compliant_2d"
+surface_mode = "track"
+
+[tires.front]
+mu = 1.1
+
+[tires.rear]
+mu = 1.1
+
+[drive]
+human_torque_nm = 10.0
+
+[drive.gearing]
+front_teeth = 34
+rear_teeth = 51

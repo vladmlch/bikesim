@@ -37,10 +37,15 @@ class TireBackendConfig:
     significant_delta_m: float = .0001
     significance_fraction: float = .05
     distinct_normal_deg: float = 20.
+    surface_mode: str = 'configured'
 
     def __post_init__(self):
         if self.backend not in ('native_reference','compliant_2d'):
             raise ValueError('unknown physical tire backend')
+        if self.surface_mode not in ('configured', 'track'):
+            raise ValueError('surface_mode must be configured or track')
+        if self.surface_mode == 'track' and self.backend != 'compliant_2d':
+            raise ValueError('track material resolution requires compliant_2d tires')
         if not isinstance(self.front,TireParameters) or not isinstance(self.rear,TireParameters):
             raise ValueError('front and rear tires need explicit TireParameters')
         scalar(self.significant_delta_m,'significant penetration',minimum=0)

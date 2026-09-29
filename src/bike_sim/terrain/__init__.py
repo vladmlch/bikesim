@@ -7,6 +7,8 @@ package imports MuJoCo or depends on the physics model, so the whole of it is te
 without compiling a simulation.
 """
 
+from bike_sim.terrain.grade import GradeProfile
+from bike_sim.terrain.surface import SurfaceSection
 from bike_sim.terrain.obstacles import (
     BUMP_TYPES,
     POTHOLE_TYPES,
@@ -73,6 +75,7 @@ from bike_sim.terrain.heightfield import (
 )
 
 __all__ = [
+    "GradeProfile", "SurfaceSection",
     "Obstacle",
     "SquareEdge",
     "Pothole",

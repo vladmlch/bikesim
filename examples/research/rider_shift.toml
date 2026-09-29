@@ -1,0 +1,45 @@
+# Rider intent is independent of the motor policy and evaluated every physics step.
+# Offsets are relative to the rider's design hip position in the bicycle frame.
+# Only bounded internal joint torques realize these requests; no root force,
+# pose teleportation, fixed shoe attachment or forced saddle contact is added.
+reaction_delay_s = 0.15
+
+[[keyframes]]
+time_s = 0.0
+human_torque_nm = 0.0
+[keyframes.posture]
+torso_lean_rad = 0.0
+pelvis_offset_m = [0.0, 0.0]
+use_saddle = true
+
+[[keyframes]]
+time_s = 0.5
+human_torque_nm = 0.0
+[keyframes.posture]
+torso_lean_rad = 0.0
+pelvis_offset_m = [0.0, 0.0]
+use_saddle = true
+
+[[keyframes]]
+time_s = 1.2
+human_torque_nm = 0.0
+[keyframes.posture]
+torso_lean_rad = 0.08
+pelvis_offset_m = [0.02, 0.10]
+use_saddle = false
+
+[[keyframes]]
+time_s = 2.0
+human_torque_nm = 0.0
+[keyframes.posture]
+torso_lean_rad = 0.18
+pelvis_offset_m = [0.05, 0.10]
+use_saddle = false
+
+[[keyframes]]
+time_s = 2.8
+human_torque_nm = 0.0
+[keyframes.posture]
+torso_lean_rad = 0.0
+pelvis_offset_m = [0.0, 0.0]
+use_saddle = true

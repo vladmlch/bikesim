@@ -1,6 +1,6 @@
 [project]
 name = "bike-sim"
-version = "0.2.0"
+version = "0.3.0"
 description = "Bicycle suspension kinematics solver and MuJoCo simulation model generator"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -19,6 +19,7 @@ bike-playground = "bike_sim.cli.playground:main"
 bike-export = "bike_sim.cli.export:main"
 bike-ride = "bike_sim.cli.ride:main"
 bike-research = "bike_sim.cli.research:main"
+bike-replay = "bike_sim.cli.replay:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]

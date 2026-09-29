@@ -14,11 +14,15 @@ acceptance runs. The supplied offline bundle keeps all original local wheels and
 adds no runtime dependencies. This is a **synthetic planar plant**, not measured
 real-bicycle safety validation.
 
+The [0.3.0 completion guide](docs/RESEARCH_COMPLETION.md) covers nonlinear tire
+curves, independent rider programs and sensor clocks, model-validity rejection,
+physical TOML/road refinement, checked `bike-replay`, and offline installation.
+
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
 [![Physics Engine](https://img.shields.io/badge/physics-MuJoCo%20MJCF-purple.svg)](https://mujoco.org/)
 [![Package Manager](https://img.shields.io/badge/manager-uv-green.svg)](https://github.com/astral-sh/uv)
 [![Kinematics Invariance](https://img.shields.io/badge/kinematic_error-%3C_10%5E%7B--12%7D_mm-brightgreen.svg)]()
-[![Tests](https://img.shields.io/badge/tests-425%20passed%20%7C%20100%25-brightgreen.svg)]()
+Executed regression and acceptance evidence: `verification/completion/`.
 
 ---
 

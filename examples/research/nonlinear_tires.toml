@@ -1,0 +1,20 @@
+# SYNTHETIC example, not a measurement of a bicycle tire.
+# Pressure identifies this particular curve; changing it does not rescale force.
+# The exact integral of the piecewise-linear force is the stored elastic energy.
+timestep_s = 0.000125
+
+[tires.front.material]
+deflection_m = [0.0, 0.003, 0.006, 0.012, 0.020, 0.030]
+force_n = [0.0, 300.0, 660.0, 1500.0, 3000.0, 5200.0]
+radial_c_ns_m = 800.0
+pressure_pa_gauge = 200000.0
+provenance = "synthetic progressive demonstration curve; not measured"
+valid_load_range_n = [0.0, 5200.0]
+
+[tires.rear.material]
+deflection_m = [0.0, 0.003, 0.006, 0.012, 0.020, 0.030]
+force_n = [0.0, 300.0, 660.0, 1500.0, 3000.0, 5200.0]
+radial_c_ns_m = 800.0
+pressure_pa_gauge = 200000.0
+provenance = "synthetic progressive demonstration curve; not measured"
+valid_load_range_n = [0.0, 5200.0]

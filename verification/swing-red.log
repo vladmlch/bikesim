@@ -1,0 +1,29 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_return_stroke_is_not_assigned_a_coasting_support_load __________
+
+rig = (<mujoco._structs.MjModel object at 0x7faa98dda0f0>, <mujoco._structs.MjData object at 0x7faa98dd88f0>, <bike_sim.sim.ride.rider_control.ArticulatedRiderController object at 0x7faa9af23230>)
+
+    def test_return_stroke_is_not_assigned_a_coasting_support_load(rig):
+        m,d,c=rig
+        c.compute(m,d,RiderCommand(20.),contact_loads={'saddle':400.,'front':140.,'rear':140.,'grip':True})
+>       assert c.support_diagnostics['stance']=={'front':True,'rear':False}
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'stance'
+
+tests/test_rider_posture_tracking.py:132: KeyError
+______________ test_swing_target_lifts_sole_above_actual_platform ______________
+
+rig = (<mujoco._structs.MjModel object at 0x7faa98de3d30>, <mujoco._structs.MjData object at 0x7faa99019cb0>, <bike_sim.sim.ride.rider_control.ArticulatedRiderController object at 0x7faa9af956d0>)
+
+    def test_swing_target_lifts_sole_above_actual_platform(rig):
+        m,d,c=rig
+>       target=c._targets(m,d,'rear',compression_m=0.,clearance_m=.003)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: ArticulatedRiderController._targets() got an unexpected keyword argument 'clearance_m'
+
+tests/test_rider_posture_tracking.py:138: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_rider_posture_tracking.py::test_return_stroke_is_not_assigned_a_coasting_support_load - KeyError: 'stance'
+FAILED tests/test_rider_posture_tracking.py::test_swing_target_lifts_sole_above_actual_platform - TypeError: ArticulatedRiderController._targets() got an unexpected keyword argument 'clearance_m'
+2 failed, 11 deselected in 0.48s

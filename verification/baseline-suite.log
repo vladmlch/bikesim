@@ -1,0 +1,197 @@
+........................................................................ [  5%]
+........................................................................ [ 11%]
+........................................................................ [ 17%]
+........................................................................ [ 22%]
+........................................................................ [ 28%]
+........................................................................ [ 34%]
+.......................FFFF............................................. [ 40%]
+........................................................................ [ 45%]
+........................................................................ [ 51%]
+........................................................................ [ 57%]
+........................................................................ [ 63%]
+........................................................................ [ 68%]
+........................................................................ [ 74%]
+........................................................................ [ 80%]
+........................................................................ [ 85%]
+........................................................................ [ 91%]
+........................................................................ [ 97%]
+................................                                         [100%]
+=================================== FAILURES ===================================
+__________ test_actuators_reactions_mass_and_backend_ownership[coast] __________
+
+drive = 'coast'
+
+    @pytest.mark.parametrize('drive',['coast','ideal_speed_control','crank_effort','articulated_effort'])
+    def test_actuators_reactions_mass_and_backend_ownership(drive):
+        root=root_fixture()
+        cfg=SimpleNamespace(physics_mode='physical',drive_mode=drive,drive=PhysicalDriveConfig(),
+                            tires=TireBackendConfig(backend='compliant_2d'), articulated=ArticulatedConfig())
+>       finish_physical_topology(root,SimpleNamespace(crank_length=165.),
+                                 SimpleNamespace(crank_pedals_mass=.85,rear_wheel_mass=2.8),cfg)
+
+tests/test_physical_topology_xml.py:59: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = <Element 'mujoco' at 0x7f96f7512b60>
+specs = namespace(crank_length=165.0)
+mass_specs = namespace(crank_pedals_mass=0.85, rear_wheel_mass=2.8)
+physics_config = namespace(physics_mode='physical', drive_mode='coast', drive=PhysicalDriveConfig(gearing=DrivetrainSpecs(front_teeth=3...kp_nm_rad=600.0, joint_kd_nms_rad=15.0, joint_limit_nm=100.0, joint_speed_limit_rad_s=20.0, joint_power_limit_w=250.0))
+
+    def finish_physical_topology(root,specs,mass_specs,physics_config):
+        """Called only for ride/physical, before serialization and compilation."""
+        if physics_config.physics_mode!='physical':
+            raise ValueError('physical topology cannot modify the legacy model')
+        # Steering is fixed in this explicitly sagittal model. A stiff oblique
+        # hinge is not a planar constraint and leaks small lateral velocities.
+        steer = _find(root, 'body', 'steer')
+        for joint in list(steer.findall('joint')):
+            if joint.get('name') == 'steer_joint':
+                steer.remove(joint)
+        sensors = root.find('sensor')
+        if sensors is not None:
+            for sensor in list(sensors):
+                if sensor.get('joint') == 'steer_joint':
+                    sensors.remove(sensor)
+        # The legacy 0.5 ms solref was clamped by MuJoCo at dt=0.5 ms to
+        # 2*dt=1 ms. Preserve that effective reference, explicitly and identically
+        # across all refinement grids instead of changing the linkage stiffness.
+>       for constraint in root.find('equality'):
+                          ^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not iterable
+
+src/bike_sim/mujoco/physical_topology.py:50: TypeError
+___ test_actuators_reactions_mass_and_backend_ownership[ideal_speed_control] ___
+
+drive = 'ideal_speed_control'
+
+    @pytest.mark.parametrize('drive',['coast','ideal_speed_control','crank_effort','articulated_effort'])
+    def test_actuators_reactions_mass_and_backend_ownership(drive):
+        root=root_fixture()
+        cfg=SimpleNamespace(physics_mode='physical',drive_mode=drive,drive=PhysicalDriveConfig(),
+                            tires=TireBackendConfig(backend='compliant_2d'), articulated=ArticulatedConfig())
+>       finish_physical_topology(root,SimpleNamespace(crank_length=165.),
+                                 SimpleNamespace(crank_pedals_mass=.85,rear_wheel_mass=2.8),cfg)
+
+tests/test_physical_topology_xml.py:59: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = <Element 'mujoco' at 0x7f96f6481b20>
+specs = namespace(crank_length=165.0)
+mass_specs = namespace(crank_pedals_mass=0.85, rear_wheel_mass=2.8)
+physics_config = namespace(physics_mode='physical', drive_mode='ideal_speed_control', drive=PhysicalDriveConfig(gearing=DrivetrainSpecs...kp_nm_rad=600.0, joint_kd_nms_rad=15.0, joint_limit_nm=100.0, joint_speed_limit_rad_s=20.0, joint_power_limit_w=250.0))
+
+    def finish_physical_topology(root,specs,mass_specs,physics_config):
+        """Called only for ride/physical, before serialization and compilation."""
+        if physics_config.physics_mode!='physical':
+            raise ValueError('physical topology cannot modify the legacy model')
+        # Steering is fixed in this explicitly sagittal model. A stiff oblique
+        # hinge is not a planar constraint and leaks small lateral velocities.
+        steer = _find(root, 'body', 'steer')
+        for joint in list(steer.findall('joint')):
+            if joint.get('name') == 'steer_joint':
+                steer.remove(joint)
+        sensors = root.find('sensor')
+        if sensors is not None:
+            for sensor in list(sensors):
+                if sensor.get('joint') == 'steer_joint':
+                    sensors.remove(sensor)
+        # The legacy 0.5 ms solref was clamped by MuJoCo at dt=0.5 ms to
+        # 2*dt=1 ms. Preserve that effective reference, explicitly and identically
+        # across all refinement grids instead of changing the linkage stiffness.
+>       for constraint in root.find('equality'):
+                          ^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not iterable
+
+src/bike_sim/mujoco/physical_topology.py:50: TypeError
+______ test_actuators_reactions_mass_and_backend_ownership[crank_effort] _______
+
+drive = 'crank_effort'
+
+    @pytest.mark.parametrize('drive',['coast','ideal_speed_control','crank_effort','articulated_effort'])
+    def test_actuators_reactions_mass_and_backend_ownership(drive):
+        root=root_fixture()
+        cfg=SimpleNamespace(physics_mode='physical',drive_mode=drive,drive=PhysicalDriveConfig(),
+                            tires=TireBackendConfig(backend='compliant_2d'), articulated=ArticulatedConfig())
+>       finish_physical_topology(root,SimpleNamespace(crank_length=165.),
+                                 SimpleNamespace(crank_pedals_mass=.85,rear_wheel_mass=2.8),cfg)
+
+tests/test_physical_topology_xml.py:59: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = <Element 'mujoco' at 0x7f96f6481670>
+specs = namespace(crank_length=165.0)
+mass_specs = namespace(crank_pedals_mass=0.85, rear_wheel_mass=2.8)
+physics_config = namespace(physics_mode='physical', drive_mode='crank_effort', drive=PhysicalDriveConfig(gearing=DrivetrainSpecs(front_...kp_nm_rad=600.0, joint_kd_nms_rad=15.0, joint_limit_nm=100.0, joint_speed_limit_rad_s=20.0, joint_power_limit_w=250.0))
+
+    def finish_physical_topology(root,specs,mass_specs,physics_config):
+        """Called only for ride/physical, before serialization and compilation."""
+        if physics_config.physics_mode!='physical':
+            raise ValueError('physical topology cannot modify the legacy model')
+        # Steering is fixed in this explicitly sagittal model. A stiff oblique
+        # hinge is not a planar constraint and leaks small lateral velocities.
+        steer = _find(root, 'body', 'steer')
+        for joint in list(steer.findall('joint')):
+            if joint.get('name') == 'steer_joint':
+                steer.remove(joint)
+        sensors = root.find('sensor')
+        if sensors is not None:
+            for sensor in list(sensors):
+                if sensor.get('joint') == 'steer_joint':
+                    sensors.remove(sensor)
+        # The legacy 0.5 ms solref was clamped by MuJoCo at dt=0.5 ms to
+        # 2*dt=1 ms. Preserve that effective reference, explicitly and identically
+        # across all refinement grids instead of changing the linkage stiffness.
+>       for constraint in root.find('equality'):
+                          ^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not iterable
+
+src/bike_sim/mujoco/physical_topology.py:50: TypeError
+___ test_actuators_reactions_mass_and_backend_ownership[articulated_effort] ____
+
+drive = 'articulated_effort'
+
+    @pytest.mark.parametrize('drive',['coast','ideal_speed_control','crank_effort','articulated_effort'])
+    def test_actuators_reactions_mass_and_backend_ownership(drive):
+        root=root_fixture()
+        cfg=SimpleNamespace(physics_mode='physical',drive_mode=drive,drive=PhysicalDriveConfig(),
+                            tires=TireBackendConfig(backend='compliant_2d'), articulated=ArticulatedConfig())
+>       finish_physical_topology(root,SimpleNamespace(crank_length=165.),
+                                 SimpleNamespace(crank_pedals_mass=.85,rear_wheel_mass=2.8),cfg)
+
+tests/test_physical_topology_xml.py:59: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = <Element 'mujoco' at 0x7f9707a365c0>
+specs = namespace(crank_length=165.0)
+mass_specs = namespace(crank_pedals_mass=0.85, rear_wheel_mass=2.8)
+physics_config = namespace(physics_mode='physical', drive_mode='articulated_effort', drive=PhysicalDriveConfig(gearing=DrivetrainSpecs(...kp_nm_rad=600.0, joint_kd_nms_rad=15.0, joint_limit_nm=100.0, joint_speed_limit_rad_s=20.0, joint_power_limit_w=250.0))
+
+    def finish_physical_topology(root,specs,mass_specs,physics_config):
+        """Called only for ride/physical, before serialization and compilation."""
+        if physics_config.physics_mode!='physical':
+            raise ValueError('physical topology cannot modify the legacy model')
+        # Steering is fixed in this explicitly sagittal model. A stiff oblique
+        # hinge is not a planar constraint and leaks small lateral velocities.
+        steer = _find(root, 'body', 'steer')
+        for joint in list(steer.findall('joint')):
+            if joint.get('name') == 'steer_joint':
+                steer.remove(joint)
+        sensors = root.find('sensor')
+        if sensors is not None:
+            for sensor in list(sensors):
+                if sensor.get('joint') == 'steer_joint':
+                    sensors.remove(sensor)
+        # The legacy 0.5 ms solref was clamped by MuJoCo at dt=0.5 ms to
+        # 2*dt=1 ms. Preserve that effective reference, explicitly and identically
+        # across all refinement grids instead of changing the linkage stiffness.
+>       for constraint in root.find('equality'):
+                          ^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'NoneType' object is not iterable
+
+src/bike_sim/mujoco/physical_topology.py:50: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_physical_topology_xml.py::test_actuators_reactions_mass_and_backend_ownership[coast] - TypeError: 'NoneType' object is not iterable
+FAILED tests/test_physical_topology_xml.py::test_actuators_reactions_mass_and_backend_ownership[ideal_speed_control] - TypeError: 'NoneType' object is not iterable
+FAILED tests/test_physical_topology_xml.py::test_actuators_reactions_mass_and_backend_ownership[crank_effort] - TypeError: 'NoneType' object is not iterable
+FAILED tests/test_physical_topology_xml.py::test_actuators_reactions_mass_and_backend_ownership[articulated_effort] - TypeError: 'NoneType' object is not iterable
+4 failed, 1252 passed in 655.52s (0:10:55)

@@ -1,0 +1,1577 @@
+{
+  "calibration_status": "parameterized_unvalidated",
+  "cases": [
+    {
+      "backend": "compliant_2d",
+      "case_id": "contact_event",
+      "criteria": {
+        "event_error_s": {
+          "actual": 5.204170427930421e-18,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "analytic_contact_time_s": 0.01,
+        "contact_time_s": 0.010000000000000005,
+        "event_error_s": 5.204170427930421e-18
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.0018484510001144372
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "contact_event",
+      "criteria": {
+        "event_error_s": {
+          "actual": 6.938893903907228e-18,
+          "maximum": 0.0005,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "analytic_contact_time_s": 0.01,
+        "contact_time_s": 0.010000000000000007,
+        "event_error_s": 6.938893903907228e-18
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.0016036500001064269
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "contact_event",
+      "criteria": {
+        "event_error_s": {
+          "actual": 6.938893903907228e-18,
+          "maximum": 0.00025,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "analytic_contact_time_s": 0.01,
+        "contact_time_s": 0.010000000000000007,
+        "event_error_s": 6.938893903907228e-18
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.0017547530001138512
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "terrain_resolution",
+      "criteria": {
+        "mean_fork_travel_m_relative_change": {
+          "actual": 6.396820642500686e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "mean_load_n_relative_change": {
+          "actual": 1.2404009374031422e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "normal_impulse_ns_relative_change": {
+          "actual": 1.2404009374031422e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "rms_load_n_relative_change": {
+          "actual": 1.4193046644165155e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "coarse_dx_m": 0.02,
+        "fine_dx_m": 0.01,
+        "mean_fork_travel_m_fine": 0.07357015216276676,
+        "mean_fork_travel_m_relative_change": 6.396820642500686e-07,
+        "mean_load_n_fine": 1024.5178027392546,
+        "mean_load_n_relative_change": 1.2404009374031422e-07,
+        "normal_impulse_ns_fine": 2049.0356054785093,
+        "normal_impulse_ns_relative_change": 1.2404009374031422e-07,
+        "rms_load_n_fine": 1024.545014528297,
+        "rms_load_n_relative_change": 1.4193046644165155e-07
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 43.459183983
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "terrain_resolution",
+      "criteria": {
+        "mean_fork_travel_m_relative_change": {
+          "actual": 2.2083207687405915e-09,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "mean_load_n_relative_change": {
+          "actual": 1.8597924279726265e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "normal_impulse_ns_relative_change": {
+          "actual": 1.8597924279726265e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "rms_load_n_relative_change": {
+          "actual": 2.0210233048887322e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "coarse_dx_m": 0.02,
+        "fine_dx_m": 0.01,
+        "mean_fork_travel_m_fine": 0.0735697830215708,
+        "mean_fork_travel_m_relative_change": 2.2083207687405915e-09,
+        "mean_load_n_fine": 1024.5181305015792,
+        "mean_load_n_relative_change": 1.8597924279726265e-07,
+        "normal_impulse_ns_fine": 2049.0362610031584,
+        "normal_impulse_ns_relative_change": 1.8597924279726265e-07,
+        "rms_load_n_fine": 1024.5453324495884,
+        "rms_load_n_relative_change": 2.0210233048887322e-07
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 140.89059934700003
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "terrain_resolution",
+      "criteria": {
+        "mean_fork_travel_m_relative_change": {
+          "actual": 2.4009881128330824e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "mean_load_n_relative_change": {
+          "actual": 1.3523731153904446e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "normal_impulse_ns_relative_change": {
+          "actual": 1.3523731153904446e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "rms_load_n_relative_change": {
+          "actual": 1.5136603114999586e-07,
+          "maximum": 0.02,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "coarse_dx_m": 0.02,
+        "fine_dx_m": 0.01,
+        "mean_fork_travel_m_fine": 0.07356998020850412,
+        "mean_fork_travel_m_relative_change": 2.4009881128330824e-07,
+        "mean_load_n_fine": 1024.5174352757656,
+        "mean_load_n_relative_change": 1.3523731153904446e-07,
+        "normal_impulse_ns_fine": 2049.034870551531,
+        "normal_impulse_ns_relative_change": 1.3523731153904446e-07,
+        "rms_load_n_fine": 1024.5446273565065,
+        "rms_load_n_relative_change": 1.5136603114999586e-07
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 162.597688543
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "requested_sag",
+      "criteria": {
+        "force_relative_error": {
+          "actual": 2.3157324400917783e-11,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "fork_error_mm": {
+          "actual": 2.8005710674960937e-06,
+          "maximum": 0.5,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "moment_relative_error": {
+          "actual": 7.2951032004832285e-06,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "rear_error_mm": {
+          "actual": 1.6522161132570545e-06,
+          "maximum": 0.5,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "coil_rate_n_m": 85112.61655528081,
+        "force_relative_error": 2.3157324400917783e-11,
+        "fork_error_mm": 2.8005710674960937e-06,
+        "fork_pressure_psi": 110.16482836003452,
+        "fork_travel_m": 0.054000002800571066,
+        "mass_error_kg": 0.0,
+        "mass_kg": 104.39999999999999,
+        "moment_relative_error": 7.2951032004832285e-06,
+        "rear_error_mm": 1.6522161132570545e-06,
+        "rear_travel_m": 0.05400000165221611,
+        "residual_qacc": 2.2533752641606952e-10
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 284.7555678350002
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "wheel_inertia",
+      "criteria": {
+        "acceleration_relative_error": {
+          "actual": 1.4068746168049984e-14,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "acceleration_relative_error": 1.4068746168049984e-14,
+        "expected_energy_j": 4.6875,
+        "expected_omega_rad_s": 6.25,
+        "omega_rad_s": 6.249999999999912,
+        "rotational_energy_j": 4.687499999999868
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.0028106580000439862
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "wheel_inertia",
+      "criteria": {
+        "acceleration_relative_error": {
+          "actual": 3.538502824085299e-14,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "acceleration_relative_error": 3.538502824085299e-14,
+        "expected_energy_j": 4.6875,
+        "expected_omega_rad_s": 6.25,
+        "omega_rad_s": 6.249999999999779,
+        "rotational_energy_j": 4.687499999999668
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.004421739999997953
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "wheel_inertia",
+      "criteria": {
+        "acceleration_relative_error": {
+          "actual": 5.613287612504792e-14,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "acceleration_relative_error": 5.613287612504792e-14,
+        "expected_energy_j": 4.6875,
+        "expected_omega_rad_s": 6.25,
+        "omega_rad_s": 6.250000000000351,
+        "rotational_energy_j": 4.687500000000526
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.007519332000128998
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_100",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 2.168404344971009e-19,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -2.8971781255556877e-17,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 2.168404344971009e-19,
+        "deflection_m": 0.000769230769230769,
+        "dt_s": 0.0005,
+        "expected_deflection_m": 0.0007692307692307692,
+        "load_n": 100.0,
+        "speed_mps": -2.8971781255556877e-17
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.017798717000005126
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_100",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 9.75781955236954e-19,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -1.684950203441645e-16,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 9.75781955236954e-19,
+        "deflection_m": 0.0007692307692307683,
+        "dt_s": 0.00025,
+        "expected_deflection_m": 0.0007692307692307692,
+        "load_n": 100.0,
+        "speed_mps": -1.684950203441645e-16
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.040849696000123004
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_100",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 1.951563910473908e-18,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -3.2836201799572636e-16,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 1.951563910473908e-18,
+        "deflection_m": 0.0007692307692307673,
+        "dt_s": 0.000125,
+        "expected_deflection_m": 0.0007692307692307692,
+        "load_n": 100.0,
+        "speed_mps": -3.2836201799572636e-16
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.06980122400000255
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_300",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 4.336808689942018e-19,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -4.504905094543579e-17,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 4.336808689942018e-19,
+        "deflection_m": 0.0023076923076923075,
+        "dt_s": 0.0005,
+        "expected_deflection_m": 0.002307692307692308,
+        "load_n": 300.0,
+        "speed_mps": -4.504905094543579e-17
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.018980615999907968
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_300",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 5.204170427930421e-18,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -7.462590401771211e-16,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 5.204170427930421e-18,
+        "deflection_m": 0.0023076923076923027,
+        "dt_s": 0.00025,
+        "expected_deflection_m": 0.002307692307692308,
+        "load_n": 300.0,
+        "speed_mps": -7.462590401771211e-16
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.036953049999965515
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_300",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 1.0842021724855044e-17,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -1.6699818348995443e-15,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 1.0842021724855044e-17,
+        "deflection_m": 0.002307692307692297,
+        "dt_s": 0.000125,
+        "expected_deflection_m": 0.002307692307692308,
+        "load_n": 300.0,
+        "speed_mps": -1.6699818348995443e-15
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.10116392199984148
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_600",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 8.673617379884035e-19,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -9.009810189087158e-17,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 8.673617379884035e-19,
+        "deflection_m": 0.004615384615384615,
+        "dt_s": 0.0005,
+        "expected_deflection_m": 0.004615384615384616,
+        "load_n": 600.0,
+        "speed_mps": -9.009810189087158e-17
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.03265042799989715
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_600",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 1.0408340855860843e-17,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -1.4925180803542421e-15,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 1.0408340855860843e-17,
+        "deflection_m": 0.004615384615384605,
+        "dt_s": 0.00025,
+        "expected_deflection_m": 0.004615384615384616,
+        "load_n": 600.0,
+        "speed_mps": -1.4925180803542421e-15
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.03549417099998209
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_600",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 2.168404344971009e-17,
+          "maximum": 0.0001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -3.3399636697990886e-15,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 2.168404344971009e-17,
+        "deflection_m": 0.004615384615384594,
+        "dt_s": 0.000125,
+        "expected_deflection_m": 0.004615384615384616,
+        "load_n": 600.0,
+        "speed_mps": -3.3399636697990886e-15
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.06988911299981737
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_1000",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 2.6020852139652106e-18,
+          "maximum": 0.00015384615384615385,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -2.2884058995923204e-16,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 2.6020852139652106e-18,
+        "deflection_m": 0.00769230769230769,
+        "dt_s": 0.0005,
+        "expected_deflection_m": 0.007692307692307693,
+        "load_n": 1000.0,
+        "speed_mps": -2.2884058995923204e-16
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.018162091000021974
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_1000",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 6.938893903907228e-18,
+          "maximum": 0.00015384615384615385,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -1.0619071558689205e-15,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 6.938893903907228e-18,
+        "deflection_m": 0.007692307692307686,
+        "dt_s": 0.00025,
+        "expected_deflection_m": 0.007692307692307693,
+        "load_n": 1000.0,
+        "speed_mps": -1.0619071558689205e-15
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.03483073400002468
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "radial_1000",
+      "criteria": {
+        "deflection_error_m": {
+          "actual": 1.214306433183765e-17,
+          "maximum": 0.00015384615384615385,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "speed_mps": {
+          "actual": -1.915240620125745e-15,
+          "maximum": 1e-05,
+          "minimum": -1e-05,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "deflection_error_m": 1.214306433183765e-17,
+        "deflection_m": 0.007692307692307681,
+        "dt_s": 0.000125,
+        "expected_deflection_m": 0.007692307692307693,
+        "load_n": 1000.0,
+        "speed_mps": -1.915240620125745e-15
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.06941213099980814
+    },
+    {
+      "backend": "native_reference",
+      "case_id": "radial_native_reference",
+      "criteria": {},
+      "dt_s": 0.0005,
+      "mandatory": false,
+      "metrics": {
+        "deflection_at_1000n_m": 0.00031476452505786517,
+        "deflection_at_100n_m": 3.565598327629881e-05,
+        "deflection_at_300n_m": 0.00010567556347429604,
+        "deflection_at_600n_m": 0.00020351645135783625
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "diagnostic",
+      "wall_time_s": 0.06241239499991025
+    },
+    {
+      "backend": "native_reference",
+      "case_id": "radial_native_reference",
+      "criteria": {},
+      "dt_s": 0.00025,
+      "mandatory": false,
+      "metrics": {
+        "deflection_at_1000n_m": 0.0003147645250567469,
+        "deflection_at_100n_m": 3.565598327642523e-05,
+        "deflection_at_300n_m": 0.00010567556347445867,
+        "deflection_at_600n_m": 0.0002035164513587125
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "diagnostic",
+      "wall_time_s": 0.09628913400001693
+    },
+    {
+      "backend": "native_reference",
+      "case_id": "radial_native_reference",
+      "criteria": {},
+      "dt_s": 0.000125,
+      "mandatory": false,
+      "metrics": {
+        "deflection_at_1000n_m": 0.0003147645250569386,
+        "deflection_at_100n_m": 3.5655983277208024e-05,
+        "deflection_at_300n_m": 0.00010567556347399962,
+        "deflection_at_600n_m": 0.00020351645135893476
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "diagnostic",
+      "wall_time_s": 0.17044294599986642
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "flat_static",
+      "criteria": {
+        "force_relative_error": {
+          "actual": 7.404136043469129e-14,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "mass_error_kg": {
+          "actual": 0.0,
+          "maximum": 1e-08,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "moment_relative_error": {
+          "actual": 7.3409401713856495e-06,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "residual_qacc": {
+          "actual": 1.0102025882474663e-09,
+          "maximum": 0.05,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "force_relative_error": 7.404136043469129e-14,
+        "fork_travel_m": 0.07326311572450882,
+        "mass_error_kg": 0.0,
+        "mass_kg": 104.39999999999999,
+        "moment_relative_error": 7.3409401713856495e-06,
+        "rear_travel_m": 0.04093172327069445,
+        "residual_qacc": 1.0102025882474663e-09
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 5.523343165000142
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "flat_static",
+      "criteria": {
+        "force_relative_error": {
+          "actual": 5.29491875740349e-14,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "mass_error_kg": {
+          "actual": 0.0,
+          "maximum": 1e-08,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "moment_relative_error": {
+          "actual": 7.340940171385836e-06,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "residual_qacc": {
+          "actual": 1.200100491205447e-09,
+          "maximum": 0.05,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "force_relative_error": 5.29491875740349e-14,
+        "fork_travel_m": 0.0732631157245107,
+        "mass_error_kg": 0.0,
+        "mass_kg": 104.39999999999999,
+        "moment_relative_error": 7.340940171385836e-06,
+        "rear_travel_m": 0.040931723270694956,
+        "residual_qacc": 1.200100491205447e-09
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 38.921756048999896
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "flat_static",
+      "criteria": {
+        "force_relative_error": {
+          "actual": 1.4452790830742537e-13,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "mass_error_kg": {
+          "actual": 0.0,
+          "maximum": 1e-08,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "moment_relative_error": {
+          "actual": 7.340940171385114e-06,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "residual_qacc": {
+          "actual": 7.768949927822177e-10,
+          "maximum": 0.05,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "force_relative_error": 1.4452790830742537e-13,
+        "fork_travel_m": 0.07326311572450128,
+        "mass_error_kg": 0.0,
+        "mass_kg": 104.39999999999999,
+        "moment_relative_error": 7.340940171385114e-06,
+        "rear_travel_m": 0.0409317232706915,
+        "residual_qacc": 7.768949927822177e-10
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 14.039200631999847
+    },
+    {
+      "backend": "native_reference",
+      "case_id": "flat_static_native",
+      "criteria": {
+        "force_relative_error": {
+          "actual": 0.0005385281769462436,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "moment_relative_error": {
+          "actual": 4.3432122738176034e-05,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "residual_qacc": {
+          "actual": 0.006064157538341858,
+          "maximum": 0.05,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "force_relative_error": 0.0005385281769462436,
+        "fork_travel_m": 0.07333465694812785,
+        "mass_error_kg": 0.0,
+        "mass_kg": 104.39999999999999,
+        "moment_relative_error": 4.3432122738176034e-05,
+        "rear_travel_m": 0.04090520749636319,
+        "residual_qacc": 0.006064157538341858
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 14.617833264000183
+    },
+    {
+      "backend": "native_reference",
+      "case_id": "flat_static_native",
+      "criteria": {
+        "force_relative_error": {
+          "actual": 0.005284617669554429,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": false
+        },
+        "moment_relative_error": {
+          "actual": 6.722894490972725e-05,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "residual_qacc": {
+          "actual": 0.04974930608180458,
+          "maximum": 0.05,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "force_relative_error": 0.005284617669554429,
+        "fork_travel_m": 0.07289957515078901,
+        "mass_error_kg": 0.0,
+        "mass_kg": 104.39999999999999,
+        "moment_relative_error": 6.722894490972725e-05,
+        "rear_travel_m": 0.040738512818844566,
+        "residual_qacc": 0.04974930608180458
+      },
+      "passed": false,
+      "physics_mode": "physical",
+      "status": "failed",
+      "wall_time_s": 23.566188596999837
+    },
+    {
+      "backend": "native_reference",
+      "case_id": "flat_static_native",
+      "criteria": {
+        "force_relative_error": {
+          "actual": 0.0005683659985521887,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "moment_relative_error": {
+          "actual": 4.1842036035687235e-05,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "residual_qacc": {
+          "actual": 0.006348515902698942,
+          "maximum": 0.05,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "force_relative_error": 0.0005683659985521887,
+        "fork_travel_m": 0.07332196929762957,
+        "mass_error_kg": 0.0,
+        "mass_kg": 104.39999999999999,
+        "moment_relative_error": 4.1842036035687235e-05,
+        "rear_travel_m": 0.04090145656711276,
+        "residual_qacc": 0.006348515902698942
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 34.26000867499988
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "incline_30_deg",
+      "criteria": {
+        "normal_relative_error": {
+          "actual": 0.0,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "vertical_relative_error": {
+          "actual": 0.0,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "deflection_m": 0.0013070321863269752,
+        "expected_normal_load_n": 169.9141842225069,
+        "expected_weight_n": 196.20000000000002,
+        "normal_load_n": 169.9141842225069,
+        "normal_relative_error": 0.0,
+        "normal_vertical_n": 147.15000000000003,
+        "vertical_relative_error": 0.0,
+        "vertical_with_stand_reaction_n": 196.20000000000002
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.03289663699979428
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "incline_30_deg",
+      "criteria": {
+        "normal_relative_error": {
+          "actual": 0.0,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "vertical_relative_error": {
+          "actual": 0.0,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "deflection_m": 0.001307032186326977,
+        "expected_normal_load_n": 169.9141842225069,
+        "expected_weight_n": 196.20000000000002,
+        "normal_load_n": 169.9141842225069,
+        "normal_relative_error": 0.0,
+        "normal_vertical_n": 147.15000000000003,
+        "vertical_relative_error": 0.0,
+        "vertical_with_stand_reaction_n": 196.20000000000002
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.052113678000296204
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "incline_30_deg",
+      "criteria": {
+        "normal_relative_error": {
+          "actual": 0.0,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "vertical_relative_error": {
+          "actual": 0.0,
+          "maximum": 0.005,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "deflection_m": 0.001307032186326977,
+        "expected_normal_load_n": 169.9141842225069,
+        "expected_weight_n": 196.20000000000002,
+        "normal_load_n": 169.9141842225069,
+        "normal_relative_error": 0.0,
+        "normal_vertical_n": 147.15000000000003,
+        "vertical_relative_error": 0.0,
+        "vertical_with_stand_reaction_n": 196.20000000000002
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 0.0668855829999302
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "brake_hold",
+      "criteria": {
+        "displacement_m": {
+          "actual": 0.00021555952788743227,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "front_brake_work_j": {
+          "actual": -0.013139435228012713,
+          "maximum": 1e-08,
+          "minimum": null,
+          "passed": true
+        },
+        "motor_torque_nm": {
+          "actual": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "rear_brake_work_j": {
+          "actual": -0.009589665555983744,
+          "maximum": 1e-08,
+          "minimum": null,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "displacement_m": 0.00021555952788743227,
+        "front_brake_work_j": -0.013139435228012713,
+        "motor_torque_nm": 0.0,
+        "rear_brake_work_j": -0.009589665555983744,
+        "speed_mps": 3.468514613566935e-05
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 63.478382020000026
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "brake_hold",
+      "criteria": {
+        "displacement_m": {
+          "actual": 0.0001384149959093861,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "front_brake_work_j": {
+          "actual": -0.01768303894404555,
+          "maximum": 1e-08,
+          "minimum": null,
+          "passed": true
+        },
+        "motor_torque_nm": {
+          "actual": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "rear_brake_work_j": {
+          "actual": -0.0033114377204249697,
+          "maximum": 1e-08,
+          "minimum": null,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "displacement_m": 0.0001384149959093861,
+        "front_brake_work_j": -0.01768303894404555,
+        "motor_torque_nm": 0.0,
+        "rear_brake_work_j": -0.0033114377204249697,
+        "speed_mps": 2.29012868980699e-05
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 108.54263239799957
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "brake_hold",
+      "criteria": {
+        "displacement_m": {
+          "actual": 0.000164202177460826,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "front_brake_work_j": {
+          "actual": -0.016112140484784532,
+          "maximum": 1e-08,
+          "minimum": null,
+          "passed": true
+        },
+        "motor_torque_nm": {
+          "actual": 0.0,
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "rear_brake_work_j": {
+          "actual": -0.0050182299376724925,
+          "maximum": 1e-08,
+          "minimum": null,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "displacement_m": 0.000164202177460826,
+        "front_brake_work_j": -0.016112140484784532,
+        "motor_torque_nm": 0.0,
+        "rear_brake_work_j": -0.0050182299376724925,
+        "speed_mps": 2.676327955549236e-05
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 210.1945195909998
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "drive_low_mu",
+      "criteria": {
+        "friction_excess_n": {
+          "actual": 7.105427357601002e-15,
+          "maximum": 1e-06,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "human_peak_nm": {
+          "actual": 107.9997450129508,
+          "maximum": null,
+          "minimum": 50.0,
+          "passed": true
+        },
+        "max_slip_mps": {
+          "actual": 22.903083671749993,
+          "maximum": null,
+          "minimum": 0.1,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "friction_excess_n": 7.105427357601002e-15,
+        "human_peak_nm": 107.9997450129508,
+        "max_slip_mps": 22.903083671749993,
+        "mean_rear_load_n": 588.8464484270581,
+        "speed_mps": 0.27195173918480453,
+        "traction_impulse_ns": 28.82760007737207
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 10.705073997
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "drive_low_mu",
+      "criteria": {
+        "friction_excess_n": {
+          "actual": 7.105427357601002e-15,
+          "maximum": 1e-06,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "human_peak_nm": {
+          "actual": 107.99983350613229,
+          "maximum": null,
+          "minimum": 50.0,
+          "passed": true
+        },
+        "max_slip_mps": {
+          "actual": 22.81613061315302,
+          "maximum": null,
+          "minimum": 0.1,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "friction_excess_n": 7.105427357601002e-15,
+        "human_peak_nm": 107.99983350613229,
+        "max_slip_mps": 22.81613061315302,
+        "mean_rear_load_n": 588.6523401741008,
+        "speed_mps": 0.27213415608273045,
+        "traction_impulse_ns": 28.825794147984094
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 51.82880757200019
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "drive_low_mu",
+      "criteria": {
+        "friction_excess_n": {
+          "actual": 7.105427357601002e-15,
+          "maximum": 1e-06,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "human_peak_nm": {
+          "actual": 107.99999702551398,
+          "maximum": null,
+          "minimum": 50.0,
+          "passed": true
+        },
+        "max_slip_mps": {
+          "actual": 22.927735112240477,
+          "maximum": null,
+          "minimum": 0.1,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "friction_excess_n": 7.105427357601002e-15,
+        "human_peak_nm": 107.99999702551398,
+        "max_slip_mps": 22.927735112240477,
+        "mean_rear_load_n": 588.8386791975236,
+        "speed_mps": 0.2720281941715019,
+        "traction_impulse_ns": 28.832627564205616
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 35.41592794200005
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "airborne_internal_actuation",
+      "criteria": {
+        "absolute_joint_work_j": {
+          "actual": 10.697695084068995,
+          "maximum": null,
+          "minimum": 0.01,
+          "passed": true
+        },
+        "joint_motion_rad": {
+          "actual": 0.24294743706768837,
+          "maximum": null,
+          "minimum": 0.01,
+          "passed": true
+        },
+        "peak_joint_torque_nm": {
+          "actual": 100.0,
+          "maximum": 100.000000001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "relative_Ly_drift": {
+          "actual": 0.0003471882019747143,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.0005,
+      "mandatory": true,
+      "metrics": {
+        "absolute_joint_work_j": 10.697695084068995,
+        "actual_joint_work_j": -0.2244120826766106,
+        "joint_motion_rad": 0.24294743706768837,
+        "peak_joint_torque_nm": 100.0,
+        "relative_Ly_drift": 0.0003471882019747143
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 8.947116850999919
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "airborne_internal_actuation",
+      "criteria": {
+        "absolute_joint_work_j": {
+          "actual": 10.744081538737765,
+          "maximum": null,
+          "minimum": 0.01,
+          "passed": true
+        },
+        "joint_motion_rad": {
+          "actual": 0.24296080216429622,
+          "maximum": null,
+          "minimum": 0.01,
+          "passed": true
+        },
+        "peak_joint_torque_nm": {
+          "actual": 100.0,
+          "maximum": 100.000000001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "relative_Ly_drift": {
+          "actual": 0.00017482087714076606,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.00025,
+      "mandatory": true,
+      "metrics": {
+        "absolute_joint_work_j": 10.744081538737765,
+        "actual_joint_work_j": -0.10360878858122777,
+        "joint_motion_rad": 0.24296080216429622,
+        "peak_joint_torque_nm": 100.0,
+        "relative_Ly_drift": 0.00017482087714076606
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 18.569830336999985
+    },
+    {
+      "backend": "compliant_2d",
+      "case_id": "airborne_internal_actuation",
+      "criteria": {
+        "absolute_joint_work_j": {
+          "actual": 10.757747621886239,
+          "maximum": null,
+          "minimum": 0.01,
+          "passed": true
+        },
+        "joint_motion_rad": {
+          "actual": 0.2429676356207639,
+          "maximum": null,
+          "minimum": 0.01,
+          "passed": true
+        },
+        "peak_joint_torque_nm": {
+          "actual": 100.0,
+          "maximum": 100.000000001,
+          "minimum": 0.0,
+          "passed": true
+        },
+        "relative_Ly_drift": {
+          "actual": 8.771803795559895e-05,
+          "maximum": 0.001,
+          "minimum": 0.0,
+          "passed": true
+        }
+      },
+      "dt_s": 0.000125,
+      "mandatory": true,
+      "metrics": {
+        "absolute_joint_work_j": 10.757747621886239,
+        "actual_joint_work_j": -0.04997746073136127,
+        "joint_motion_rad": 0.2429676356207639,
+        "peak_joint_torque_nm": 100.0,
+        "relative_Ly_drift": 8.771803795559895e-05
+      },
+      "passed": true,
+      "physics_mode": "physical",
+      "status": "passed",
+      "wall_time_s": 35.699472200999935
+    }
+  ],
+  "complete_suite": true,
+  "convergence": [],
+  "dt_values_s": [
+    0.0005,
+    0.00025,
+    0.000125
+  ],
+  "environment": {
+    "declared_requirements_satisfied": false,
+    "locked_environment_verified": false,
+    "locked_versions_match": false,
+    "packages": {
+      "glfw": {
+        "declared_satisfied": true,
+        "installed_version": "2.10.2",
+        "locked_match": true,
+        "locked_version": "2.10.2",
+        "requirement": "glfw>=2.10.0"
+      },
+      "matplotlib": {
+        "declared_satisfied": true,
+        "installed_version": "3.10.8",
+        "locked_match": false,
+        "locked_version": "3.11.1",
+        "requirement": "matplotlib>=3.7.0"
+      },
+      "mujoco": {
+        "declared_satisfied": true,
+        "installed_version": "3.12.0",
+        "locked_match": true,
+        "locked_version": "3.12.0",
+        "requirement": "mujoco>=3.0.0"
+      },
+      "numpy": {
+        "declared_satisfied": true,
+        "installed_version": "2.3.5",
+        "locked_match": false,
+        "locked_version": "2.5.2",
+        "requirement": "numpy>=1.24.0"
+      },
+      "pytest": {
+        "declared_satisfied": true,
+        "installed_version": "9.0.2",
+        "locked_match": false,
+        "locked_version": "9.1.1",
+        "requirement": "pytest>=7.0.0"
+      },
+      "scipy": {
+        "declared_satisfied": false,
+        "installed_version": "1.17.0",
+        "locked_match": false,
+        "locked_version": "1.18.1",
+        "requirement": "scipy>=1.18.0"
+      }
+    },
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "pyproject_sha256": "abfaff7bb8dd9c51fd340deb4a3deb5383fc146a929b10d6014b2b644f2dc8de",
+    "python_requirement": ">=3.12",
+    "python_satisfied": true,
+    "python_version": "3.13.5",
+    "scope": "Direct project dependencies and Python requirement; not transitive wheel integrity.",
+    "uv_lock_sha256": "2ef0a00fcc17685a68f3636223c48deb07e938bab8d46b51bc4401e7b09db5aa"
+  },
+  "jobs": 5,
+  "passed": false,
+  "required_case_count": 69,
+  "schema_version": 1,
+  "source_sha256": "14bc1eab9c77cc70d7494a6543c02998f20c3a5085998054ecc8adbbffeb9d25",
+  "versions": {
+    "mujoco": "3.12.0",
+    "numpy": "2.3.5",
+    "python": "3.13.5",
+    "scipy": "1.17.0"
+  }
+}

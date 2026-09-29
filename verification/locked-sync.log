@@ -1,0 +1,78 @@
+Using CPython 3.13.5 interpreter at: /opt/pyvenv/bin/python3.13
+Creating virtual environment at: /mnt/data/bikesim-locked
+Resolved 26 packages in 3ms
+WARN Retry attempt #0. Sleeping 118.544772ms before the next attempt
+WARN Retry attempt #0. Sleeping 467.256598ms before the next attempt
+WARN Retry attempt #0. Sleeping 692.704655ms before the next attempt
+WARN Retry attempt #0. Sleeping 814.973249ms before the next attempt
+WARN Retry attempt #0. Sleeping 301.652733ms before the next attempt
+WARN Retry attempt #0. Sleeping 118.86886ms before the next attempt
+WARN Retry attempt #0. Sleeping 262.579336ms before the next attempt
+WARN Retry attempt #0. Sleeping 193.52045ms before the next attempt
+WARN Retry attempt #0. Sleeping 54.984328ms before the next attempt
+WARN Retry attempt #0. Sleeping 194.791304ms before the next attempt
+WARN Retry attempt #0. Sleeping 640.058976ms before the next attempt
+WARN Retry attempt #0. Sleeping 166.121904ms before the next attempt
+WARN Retry attempt #0. Sleeping 104.559939ms before the next attempt
+WARN Retry attempt #0. Sleeping 781.635805ms before the next attempt
+WARN Retry attempt #0. Sleeping 718.60808ms before the next attempt
+WARN Retry attempt #0. Sleeping 539.643602ms before the next attempt
+WARN Retry attempt #0. Sleeping 112.596611ms before the next attempt
+WARN Retry attempt #0. Sleeping 105.883618ms before the next attempt
+WARN Retry attempt #0. Sleeping 621.544699ms before the next attempt
+WARN Retry attempt #0. Sleeping 601.613044ms before the next attempt
+WARN Retry attempt #0. Sleeping 487.513913ms before the next attempt
+WARN Retry attempt #0. Sleeping 290.896303ms before the next attempt
+WARN Retry attempt #0. Sleeping 131.396299ms before the next attempt
+WARN Retry attempt #0. Sleeping 261.66636ms before the next attempt
+   Building bike-sim @ file:///mnt/data/bikesim-final
+WARN Retry attempt #0. Sleeping 325.301561ms before the next attempt
+WARN Retry attempt #1. Sleeping 1.224266331s before the next attempt
+WARN Retry attempt #1. Sleeping 664.676447ms before the next attempt
+WARN Retry attempt #1. Sleeping 87.874638ms before the next attempt
+WARN Retry attempt #1. Sleeping 1.531511055s before the next attempt
+WARN Retry attempt #1. Sleeping 1.696630049s before the next attempt
+WARN Retry attempt #1. Sleeping 1.647386291s before the next attempt
+WARN Retry attempt #1. Sleeping 1.762546605s before the next attempt
+WARN Retry attempt #1. Sleeping 540.932762ms before the next attempt
+WARN Retry attempt #1. Sleeping 222.813032ms before the next attempt
+WARN Retry attempt #1. Sleeping 1.57507561s before the next attempt
+WARN Retry attempt #2. Sleeping 3.697281346s before the next attempt
+WARN Retry attempt #1. Sleeping 1.37574268s before the next attempt
+WARN Retry attempt #1. Sleeping 1.989739559s before the next attempt
+WARN Retry attempt #1. Sleeping 242.747048ms before the next attempt
+WARN Retry attempt #1. Sleeping 657.521217ms before the next attempt
+WARN Retry attempt #1. Sleeping 1.152626649s before the next attempt
+WARN Retry attempt #2. Sleeping 827.090211ms before the next attempt
+WARN Retry attempt #1. Sleeping 699.384247ms before the next attempt
+WARN Retry attempt #1. Sleeping 1.592095341s before the next attempt
+WARN Retry attempt #2. Sleeping 1.228200064s before the next attempt
+WARN Retry attempt #1. Sleeping 1.432314294s before the next attempt
+WARN Retry attempt #1. Sleeping 290.320926ms before the next attempt
+WARN Retry attempt #1. Sleeping 1.218501499s before the next attempt
+WARN Retry attempt #1. Sleeping 371.269219ms before the next attempt
+WARN Retry attempt #1. Sleeping 475.574647ms before the next attempt
+WARN Retry attempt #2. Sleeping 3.873954032s before the next attempt
+WARN Retry attempt #1. Sleeping 202.496701ms before the next attempt
+WARN Retry attempt #2. Sleeping 3.928487541s before the next attempt
+WARN Retry attempt #1. Sleeping 968.814143ms before the next attempt
+WARN Retry attempt #1. Sleeping 281.960389ms before the next attempt
+WARN Retry attempt #2. Sleeping 2.64071111s before the next attempt
+WARN Retry attempt #2. Sleeping 1.466346851s before the next attempt
+WARN Retry attempt #2. Sleeping 3.283109934s before the next attempt
+WARN Retry attempt #2. Sleeping 2.540248684s before the next attempt
+WARN Retry attempt #2. Sleeping 1.678476918s before the next attempt
+WARN Retry attempt #2. Sleeping 832.049692ms before the next attempt
+WARN Retry attempt #2. Sleeping 2.648506293s before the next attempt
+  × Failed to download `matplotlib==3.11.1`
+  ├─▶ Request failed after 3 retries
+  ├─▶ Failed to fetch:
+  │   `https://files.pythonhosted.org/packages/24/ea/65cec46fe241390ccea1b1754207ee28eb71c5ab866bd5f22fe47e538fa4/matplotlib-3.11.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl`
+  ├─▶ error sending request for url
+  │   (https://files.pythonhosted.org/packages/24/ea/65cec46fe241390ccea1b1754207ee28eb71c5ab866bd5f22fe47e538fa4/matplotlib-3.11.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl)
+  ├─▶ client error (Connect)
+  ├─▶ dns error
+  ╰─▶ failed to lookup address information: Temporary failure in name
+      resolution
+  help: `matplotlib` (v3.11.1) was included because `bike-sim` (v0.2.0)
+        depends on `matplotlib`

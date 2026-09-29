@@ -1,0 +1,73 @@
+{
+  "command": [
+    "uv",
+    "run",
+    "--offline",
+    "--no-sync",
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "--junitxml=verification/final-pytest.xml"
+  ],
+  "environment": {
+    "declared_requirements_satisfied": false,
+    "locked_environment_verified": false,
+    "locked_versions_match": false,
+    "packages": {
+      "glfw": {
+        "declared_satisfied": true,
+        "installed_version": "2.10.2",
+        "locked_match": true,
+        "locked_version": "2.10.2",
+        "requirement": "glfw>=2.10.0"
+      },
+      "matplotlib": {
+        "declared_satisfied": true,
+        "installed_version": "3.10.8",
+        "locked_match": false,
+        "locked_version": "3.11.1",
+        "requirement": "matplotlib>=3.7.0"
+      },
+      "mujoco": {
+        "declared_satisfied": true,
+        "installed_version": "3.12.0",
+        "locked_match": true,
+        "locked_version": "3.12.0",
+        "requirement": "mujoco>=3.0.0"
+      },
+      "numpy": {
+        "declared_satisfied": true,
+        "installed_version": "2.3.5",
+        "locked_match": false,
+        "locked_version": "2.5.2",
+        "requirement": "numpy>=1.24.0"
+      },
+      "pytest": {
+        "declared_satisfied": true,
+        "installed_version": "9.0.2",
+        "locked_match": false,
+        "locked_version": "9.1.1",
+        "requirement": "pytest>=7.0.0"
+      },
+      "scipy": {
+        "declared_satisfied": false,
+        "installed_version": "1.17.0",
+        "locked_match": false,
+        "locked_version": "1.18.1",
+        "requirement": "scipy>=1.18.0"
+      }
+    },
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "pyproject_sha256": "abfaff7bb8dd9c51fd340deb4a3deb5383fc146a929b10d6014b2b644f2dc8de",
+    "python_requirement": ">=3.12",
+    "python_satisfied": true,
+    "python_version": "3.13.5",
+    "scope": "Direct project dependencies and Python requirement; not transitive wheel integrity.",
+    "uv_lock_sha256": "2ef0a00fcc17685a68f3636223c48deb07e938bab8d46b51bc4401e7b09db5aa"
+  },
+  "exit_code": 0,
+  "source_sha256": "26afe029b921dc05443c7d32fe515669f312dc22125695fa81bb9c2ce0c66cdc",
+  "source_unchanged_during_run": true,
+  "wall_time_s": 748.7248463400001
+}

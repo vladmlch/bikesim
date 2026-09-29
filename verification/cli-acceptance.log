@@ -1,0 +1,12 @@
+START articulated
+DONE articulated True 
+START native_coast
+DONE native_coast True 
+START compliant_coast
+DONE compliant_coast True 
+START crank_assist
+DONE crank_assist True 
+START physical_sag
+DONE physical_sag True 
+START physical_plots
+DONE physical_plots True 

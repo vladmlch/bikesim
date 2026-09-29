@@ -1,0 +1,13 @@
+REFINE 0 40.96419719476246 wall 13.642731827999796
+REFINE 1 37.47288082117575 wall 28.342055378999703
+REFINE 2 36.34717664521844 wall 43.59054233699999
+REFINE 3 35.22220632705765 wall 58.1754193769998
+REFINE 4 34.097966833841895 wall 74.30650769099975
+REFINE 5 32.9744551290608 wall 92.48842336500002
+REFINE 6 32.356049272925844 wall 107.604207288
+REFINE 7 32.32882264715965 wall 124.16338234799969
+Traceback (most recent call last):
+  File "/mnt/data/bikesim-final/verification/warm_stiff_probe.py", line 17, in <module>
+    if residual>.05: raise RuntimeError('diagnostic continuation not equilibrated')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: diagnostic continuation not equilibrated

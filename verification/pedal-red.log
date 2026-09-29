@@ -1,0 +1,74 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_inverted_platform_supports_the_foot_on_its_upper_face __________
+
+pedal_rig = (<mujoco._structs.MjModel object at 0x7f7b598b7bb0>, <mujoco._structs.MjData object at 0x7f7b5d88c7f0>, <bike_sim.sim.ride.rider_contacts.RiderContactApplier object at 0x7f7b7e7ff4d0>)
+
+    def test_inverted_platform_supports_the_foot_on_its_upper_face(pedal_rig):
+        upright = force_at(pedal_rig, 0., -.003)
+        inverted = force_at(pedal_rig, np.pi, -.003)
+        assert upright[2] > 0.
+>       assert inverted[2] > 0., 'a flipped pedal must not pull a foot above it down'
+E       AssertionError: a flipped pedal must not pull a foot above it down
+E       assert np.float64(-389.9999999999993) > 0.0
+
+tests/test_finite_pedal_contact.py:44: AssertionError
+_____ test_a_foot_below_the_finite_platform_does_not_receive_a_ghost_force _____
+
+pedal_rig = (<mujoco._structs.MjModel object at 0x7f7b7c5671b0>, <mujoco._structs.MjData object at 0x7f7b5dacc3b0>, <bike_sim.sim.ride.rider_contacts.RiderContactApplier object at 0x7f7b59185310>)
+
+    def test_a_foot_below_the_finite_platform_does_not_receive_a_ghost_force(pedal_rig):
+>       np.testing.assert_allclose(force_at(pedal_rig, 0., -.30), np.zeros(3), atol=1e-12)
+E       AssertionError: 
+E       Not equal to tolerance rtol=1e-07, atol=1e-12
+E       
+E       Mismatched elements: 1 / 3 (33.3%)
+E       Max absolute difference among violations: 9000.
+E       Max relative difference among violations: inf
+E        ACTUAL: array([   0.,    0., 9000.])
+E        DESIRED: array([0., 0., 0.])
+
+tests/test_finite_pedal_contact.py:49: AssertionError
+____________ test_support_target_does_not_follow_an_inverted_normal ____________
+
+pedal_rig = (<mujoco._structs.MjModel object at 0x7f7b591a70b0>, <mujoco._structs.MjData object at 0x7f7b59264bf0>, <bike_sim.sim.ride.rider_contacts.RiderContactApplier object at 0x7f7b591856d0>)
+
+    def test_support_target_does_not_follow_an_inverted_normal(pedal_rig):
+        from bike_sim.sim.ride.rider_control import ArticulatedRiderController
+        m, d, contact = pedal_rig
+        ctrl = ArticulatedRiderController(m, contact.pose, contact.config, .165)
+        a = ctrl._targets(m, d, 'front')
+        d.qpos[m.joint('pedal_front_spin').qposadr[0]] = np.pi
+        mujoco.mj_forward(m, d)
+        b = ctrl._targets(m, d, 'front')
+>       np.testing.assert_allclose(a, b, atol=1e-10)
+E       AssertionError: 
+E       Not equal to tolerance rtol=1e-07, atol=1e-10
+E       
+E       Mismatched elements: 3 / 3 (100%)
+E       Max absolute difference among violations: 0.0393602
+E       Max relative difference among violations: 0.77637642
+E        ACTUAL: array([ 0.007679, -0.01154 ,  0.003862])
+E        DESIRED: array([ 0.033633, -0.0509  ,  0.017268])
+
+tests/test_finite_pedal_contact.py:83: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_finite_pedal_contact.py::test_inverted_platform_supports_the_foot_on_its_upper_face - AssertionError: a flipped pedal must not pull a foot above it down
+assert np.float64(-389.9999999999993) > 0.0
+FAILED tests/test_finite_pedal_contact.py::test_a_foot_below_the_finite_platform_does_not_receive_a_ghost_force - AssertionError: 
+Not equal to tolerance rtol=1e-07, atol=1e-12
+
+Mismatched elements: 1 / 3 (33.3%)
+Max absolute difference among violations: 9000.
+Max relative difference among violations: inf
+ ACTUAL: array([   0.,    0., 9000.])
+ DESIRED: array([0., 0., 0.])
+FAILED tests/test_finite_pedal_contact.py::test_support_target_does_not_follow_an_inverted_normal - AssertionError: 
+Not equal to tolerance rtol=1e-07, atol=1e-10
+
+Mismatched elements: 3 / 3 (100%)
+Max absolute difference among violations: 0.0393602
+Max relative difference among violations: 0.77637642
+ ACTUAL: array([ 0.007679, -0.01154 ,  0.003862])
+ DESIRED: array([ 0.033633, -0.0509  ,  0.017268])
+3 failed, 34 deselected in 0.53s

@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_upper_face_target_does_not_jump_at_45_degrees ______________
+
+    def test_upper_face_target_does_not_jump_at_45_degrees():
+        from bike_sim.sim.ride.support_geometry import upper_box_face
+        values = []
+        for theta in (np.pi/4-1e-6, np.pi/4+1e-6):
+            R = np.array([[np.cos(theta), 0., np.sin(theta)], [0., 1., 0.],
+                          [-np.sin(theta), 0., np.cos(theta)]])
+            point,normal,_ = upper_box_face(np.zeros(3), R, [.05, .04, .008])
+            values.append(point+.017*normal)
+>       assert np.linalg.norm(values[1]-values[0]) < 1e-5
+E       AssertionError: assert np.float64(0.07151218986997951) < 1e-05
+E        +  where np.float64(0.07151218986997951) = <function norm at 0x7fe933139270>((array([-0.04737611,  0.        ,  0.0473762 ]) - array([0.01767765, 0.        , 0.01767769])))
+E        +    where <function norm at 0x7fe933139270> = <module 'numpy.linalg' from '/opt/pyvenv/lib/python3.13/site-packages/numpy/linalg/__init__.py'>.norm
+E        +      where <module 'numpy.linalg' from '/opt/pyvenv/lib/python3.13/site-packages/numpy/linalg/__init__.py'> = np.linalg
+
+tests/test_finite_pedal_contact.py:119: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_finite_pedal_contact.py::test_upper_face_target_does_not_jump_at_45_degrees - AssertionError: assert np.float64(0.07151218986997951) < 1e-05
+ +  where np.float64(0.07151218986997951) = <function norm at 0x7fe933139270>((array([-0.04737611,  0.        ,  0.0473762 ]) - array([0.01767765, 0.        , 0.01767769])))
+ +    where <function norm at 0x7fe933139270> = <module 'numpy.linalg' from '/opt/pyvenv/lib/python3.13/site-packages/numpy/linalg/__init__.py'>.norm
+ +      where <module 'numpy.linalg' from '/opt/pyvenv/lib/python3.13/site-packages/numpy/linalg/__init__.py'> = np.linalg
+1 failed, 41 deselected in 0.38s

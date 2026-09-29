@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Offline installer for bike-sim (Linux x86_64, CPython 3.13) — SLIM variant.
-# Reuses system-installed: numpy>=1.24, scipy>=1.18, matplotlib>=3.7, pytest>=7.
+# Reuses system-installed: numpy>=1.24, scipy==1.17.0, matplotlib>=3.7, pytest>=7.
 # Usage: ./install.sh [install_dir]
 set -euo pipefail
 
@@ -18,8 +18,7 @@ fi
 echo "Checking system packages ..."
 $PY - <<'PYEOF'
 import importlib.metadata as md, re, sys
-reqs = {"numpy": (1, 24, 0), "scipy": (1, 18, 0),
-        "matplotlib": (3, 7, 0), "pytest": (7, 0, 0)}
+reqs = {"numpy": (1, 24, 0), "matplotlib": (3, 7, 0), "pytest": (7, 0, 0)}
 bad = []
 for name, minv in reqs.items():
     try:
@@ -28,6 +27,14 @@ for name, minv in reqs.items():
         v = ()
     if v < minv:
         bad.append(f"{name}>={'.'.join(map(str, minv))} (found: {v or 'not installed'})")
+# The bike_sim wheel pins scipy==1.17.0; any other system scipy would fail
+# the wheel install below, so reject it up front.
+try:
+    sv = tuple(int(x) for x in re.findall(r"\d+", md.version("scipy"))[:3])
+except md.PackageNotFoundError:
+    sv = ()
+if sv[:2] != (1, 17):
+    bad.append(f"scipy==1.17.0 (found: {sv or 'not installed'})")
 if bad:
     sys.exit("ERROR: unsuitable system packages:\n  " + "\n  ".join(bad) +
              "\nInstall them first, or use the full (non-slim) bundle.")

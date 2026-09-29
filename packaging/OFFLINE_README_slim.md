@@ -6,7 +6,7 @@ Self-contained package: works without internet access.
 ## Assumes pre-installed system packages
 
 - `numpy>=1.24.0`
-- `scipy>=1.18.0`
+- `scipy==1.17.0`
 - `matplotlib>=3.7.0`
 - `pytest>=7.0.0`
 

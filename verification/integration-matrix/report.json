@@ -1552,7 +1552,7 @@
         "installed_version": "1.17.0",
         "locked_match": false,
         "locked_version": "1.18.1",
-        "requirement": "scipy>=1.18.0"
+        "requirement": "scipy>=1.17.0"
       }
     },
     "platform": "Linux-6.18.44-x86_64-with-glibc2.41",

@@ -202,6 +202,45 @@ class RideHUD:
         sys.stdout.write("\r" + self.line(sim, braking, brake_strength))
         sys.stdout.flush()
 
+    def preview_log_line(self, sim: "RideSimulation") -> str:
+        """Build a flushed-file line with the physical preview's key state channels."""
+        line = self.line(sim)
+        if getattr(sim, "physical", None) is None or not sim.physical.interactive_preview:
+            return line
+        drive = sim.physical.drive.last
+        fork_velocity_mps = float(sim.data.qvel[sim.applier.fork_dofadr])
+        shock_velocity_mps = float(sim.data.qvel[sim.applier.shock_dofadr])
+        rider = sim.physical.rider_contacts
+        if rider is None:
+            rider_state = "none"
+        else:
+            diagnostics = rider.diagnostics
+            front = diagnostics.get("front_pedal", {})
+            rear = diagnostics.get("rear_pedal", {})
+            grip = diagnostics.get("grip", {})
+            control = sim.physical.rider_control
+            saturation = "none" if control is None else ",".join(
+                name for name, active in control.saturated_ik.items() if active
+            ) or "none"
+            rider_state = (
+                f"grip={'on' if grip.get('enabled') else 'off'}"
+                f"/{'ok' if grip.get('reachable') else 'lost'} "
+                f"pedals={'on' if front.get('in_platform') else 'off'}"
+                f"/{ 'on' if rear.get('in_platform') else 'off'} "
+                f"ik={saturation}"
+            )
+        factor = sim.physical.preview_real_time_factor
+        rate = "measuring" if factor is None else f"{factor:.2f}x"
+        return (
+            f"{line} x={sim.position_m:.2f}m pitch={degrees(sim.pitch_rad):+.2f}deg "
+            f"fork={sim.fork_travel_mm:.1f}mm/{fork_velocity_mps:+.3f}m/s "
+            f"shock={sim.shock_stroke_mm:.1f}mm/{shock_velocity_mps:+.3f}m/s "
+            f"human={drive.get('human_sensor_nm', 0.0):+.1f}Nm "
+            f"motor_torque={drive.get('motor_torque_nm', 0.0):.1f}Nm "
+            f"battery={drive.get('battery_energy_j', 0.0) / 3600.0:.2f}Wh "
+            f"rider={rider_state} log_rtf={rate}"
+        )
+
     @staticmethod
     def get_help_text() -> str:
         """Returns the interactive control help string for ride mode."""

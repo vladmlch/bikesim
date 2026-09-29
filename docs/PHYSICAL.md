@@ -261,6 +261,12 @@ per-step scientific samples and energy/work audit. Its HUD labels this as
 `energy audit: off`. Closing the viewer restores the preview flag; a successful
 reset is required before research stepping or recording can resume.
 
+The interactive physical viewer also writes `preview.log` beside the hashed run
+artifacts under `--out` (by default `output/ride/`). It flushes one text line per
+0.1 s of simulated time, including speed, wheel loads, pitch, fork/shock state,
+cadence, human/motor torque, battery energy, rider grip/pedal contact and IK
+saturation. The file can be followed live with `tail -f`.
+
 `examples/research/viewer_physics_fast.toml` uses the `ideal_mid_drive` transmission,
 a 1.25 ms step, a 2.5 ms closure time constant and 100 N s/m pedal damping. These are
 explicit synthetic preview parameters, not a convergence-validated replacement for

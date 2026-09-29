@@ -696,7 +696,7 @@ def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, 
         ensure_macos_mjpython()
         from bike_sim.sim.ride.physical_session import build_physical_simulation
         from bike_sim.sim.ride.viewer import run_physical_viewer
-        return run_physical_viewer(build_physical_simulation(track,args,rider))
+        return run_physical_viewer(build_physical_simulation(track,args,rider), out_root=args.out)
     if args.sag is not None:
         print(f"{PREFIX} --sag applies to headless runs only; the viewer uses the shipped tune "
               f"(P cycles damper presets, -/= change pressure)", file=sys.stderr)

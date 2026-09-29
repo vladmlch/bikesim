@@ -15,6 +15,46 @@ from bike_sim.sim.ride.physical_recorder import PhysicalRecorder
 from bike_sim.validation.environment import source_fingerprint, environment_contract
 
 
+class PhysicalPreviewLog:
+    """Flushes the live physical preview state at a fixed simulated-time interval."""
+
+    def __init__(self, path: Path, interval_s: float = 0.1):
+        if interval_s <= 0.0:
+            raise ValueError(f"preview log interval must be positive, got {interval_s}")
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.interval_s = float(interval_s)
+        self._stream = self.path.open("w", encoding="utf-8")
+        self._next_time_s = 0.0
+        self._generation = None
+        self._stream.write(f"# physical preview log; interval={self.interval_s:g}s simulated\n")
+        self._stream.flush()
+
+    def write(self, time_s: float, generation: int, line: str) -> None:
+        """Write one state line when the next simulated-time boundary is reached."""
+        if self._generation != generation:
+            if self._generation is not None:
+                self._stream.write(f"# reset; generation={generation}\n")
+            self._generation = generation
+            self._next_time_s = float(time_s)
+        if float(time_s) + 1e-12 < self._next_time_s:
+            return
+        self._stream.write(line + "\n")
+        self._stream.flush()
+        while self._next_time_s <= float(time_s) + 1e-12:
+            self._next_time_s += self.interval_s
+
+    def close(self) -> None:
+        """Flush and close the preview log."""
+        self._stream.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+
 def canonical_json(payload):
     return json.dumps(plain(payload),sort_keys=True,separators=(',',':'),allow_nan=False)
 

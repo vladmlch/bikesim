@@ -327,8 +327,17 @@ def ensure_macos_mjpython() -> None:
         import shutil
         mjpython_path = shutil.which("mjpython")
         if mjpython_path:
+            # mjpython dlopens the interpreter by @rpath; venvs (uv, pyenv) keep
+            # libpython in base_prefix/lib which is not on the default fallback
+            # path, so the re-exec dies with 'Library not loaded' otherwise.
+            lib_dir = os.path.join(sys.base_prefix, "lib")
+            version = f"{sys.version_info.major}.{sys.version_info.minor}"
+            if os.path.exists(os.path.join(lib_dir, f"libpython{version}.dylib")):
+                fallback = os.environ.get("DYLD_FALLBACK_LIBRARY_PATH")
+                os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = (
+                    lib_dir if not fallback else f"{lib_dir}:{fallback}")
             cmd = [mjpython_path] + sys.argv
-            print(f"[MuJoCo Stand] Re-launching under mjpython: {' '.join(cmd)}")
+            print(f"[MuJoCo Stand] Re-launching under mjpython: {' '.join(cmd)}", flush=True)
             os.environ["MUJOCO_MJPYTHON"] = "1"
             os.execv(mjpython_path, cmd)
 

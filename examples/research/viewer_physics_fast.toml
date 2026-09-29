@@ -1,0 +1,30 @@
+# Fast variant of viewer_physics.toml for interactive inspection.
+# Softened chain/freehub springs drop the cassette ringing frequency ~3x, so a
+# 0.5 ms step stays stable; use the strict file for acceptance-quality results.
+physics_mode = "physical"
+drive_mode = "crank_effort"
+timestep_s = 0.0005
+initial_speed_mps = 3.0
+initial_front_brake = 1.0
+initial_rear_brake = 1.0
+equilibrium_refine_after_s = 0.1
+equilibrium_refine_period_s = 0.5
+
+[tires]
+backend = "compliant_2d"
+surface_mode = "track"
+
+[tires.front]
+mu = 1.1
+
+[tires.rear]
+mu = 1.1
+
+[drive]
+human_torque_nm = 10.0
+chain_k_n_m = 20000.0
+freehub_k_nm_rad = 150.0
+
+[drive.gearing]
+front_teeth = 34
+rear_teeth = 51

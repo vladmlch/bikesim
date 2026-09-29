@@ -39,6 +39,8 @@ def parser():
     p.add_argument('--motor-limit', type=float, default=None, help='immediate crank-side safety ceiling, N*m')
     p.add_argument('--motor-max-torque', type=float, default=80., help='synthetic motor envelope, N*m')
     p.add_argument('--motor-max-power', type=float, default=500., help='synthetic shaft power envelope, W')
+    p.add_argument('--chain-stiffness', type=float, default=None, help='override chain spring rate, N/m')
+    p.add_argument('--freehub-stiffness', type=float, default=None, help='override freehub spring rate, N*m/rad')
     p.add_argument('--front-teeth', type=int, default=34)
     p.add_argument('--rear-teeth', type=int, default=51)
     p.add_argument('--record-decimation', type=int, default=80)
@@ -54,9 +56,15 @@ def make_environment(args):
         raise ValueError('dynamic posture requires --rider articulated_planar')
     tires = TireBackendConfig(backend='compliant_2d', surface_mode='track',
         front=TireParameters(mu=1.1), rear=TireParameters(mu=1.1))
+    drive_kwargs = {}
+    if args.chain_stiffness is not None:
+        drive_kwargs['chain_k_n_m'] = args.chain_stiffness
+    if args.freehub_stiffness is not None:
+        drive_kwargs['freehub_k_nm_rad'] = args.freehub_stiffness
     drive = PhysicalDriveConfig(human_torque_nm=args.human_torque,
         gearing=DrivetrainSpecs(args.front_teeth, args.rear_teeth),
-        assist=AssistConfig(max_torque=args.motor_max_torque, max_power=args.motor_max_power))
+        assist=AssistConfig(max_torque=args.motor_max_torque, max_power=args.motor_max_power),
+        **drive_kwargs)
     cfg = SimulationPhysicsConfig('physical',
         drive_mode='articulated_effort' if args.rider == 'articulated_planar' else 'crank_effort',
         timestep_s=args.dt, initial_speed_mps=args.initial_speed, tires=tires, drive=drive,

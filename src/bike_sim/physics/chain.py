@@ -87,3 +87,19 @@ def chain_tension(extension_m,extension_rate_mps,stiffness_n_m,damping_ns_m):
     if e <= 0:
         return 0.,0.
     return scalar(max(0.,k*e+c*rate),'chain tension'), scalar(.5*k*e*e,'chain energy')
+
+
+def chain_center_gradient(cf, cr, rf, rr, *, up_xz=None, psi_reference=None):
+    """Derivative of the selected geometric branch with respect to rear centre.
+
+    The front-centre derivative is its negative. The branch is held fixed, just
+    as in the independent finite-difference oracle; the unwrap adds a constant.
+    """
+    cf,cr=array(cf,'front centre',(2,)),array(cr,'rear centre',(2,))
+    _,psi=chain_geometry(cf,cr,rf,rr,up_xz=up_xz,psi_reference=psi_reference)
+    a=cr-cf;D=float(np.linalg.norm(a));difference=rf-rr
+    root=float(np.sqrt(D*D-difference*difference))
+    perpendicular=np.array([a[1],-a[0]])/D
+    sign=1. if np.array([np.cos(psi),np.sin(psi)])@perpendicular>=0 else -1.
+    radial=D/root-sign*difference*difference/(D*root)
+    return radial*a/D+difference*np.array([-a[1],a[0]])/(D*D)

@@ -332,7 +332,16 @@ class SuperDeluxeDamper(BaseDamper):
         if self.legacy_behavior:
             return self._compute_legacy_damping_force(velocity_mps, stroke_mm)
 
+        parts = self.compute_damping_components(velocity_mps, stroke_mm)
+        return float(parts['base_n'] + parts['hbo_n'])
+
+    def compute_damping_components(self, velocity_mps: float, stroke_mm: float = 20.0) -> Dict[str, float]:
+        """Distinct passive base-valving and hydraulic-bottom-out forces."""
+        if self.legacy_behavior:
+            return {'base_n': self._compute_legacy_damping_force(velocity_mps, stroke_mm), 'hbo_n': 0.0}
         v = float(velocity_mps)
+        if not np.isfinite([v,stroke_mm]).all():
+            raise ValueError('non-finite shock damper state')
         coeffs = self.get_effective_coefficients()
 
         if self.lockout_firm and v > 0.0:
@@ -343,11 +352,12 @@ class SuperDeluxeDamper(BaseDamper):
         else:
             f_damp = self._compute_base_damping(v, coeffs["c_lsc"], coeffs["c_hsc"], coeffs["c_reb"])
 
+        hbo = 0.0
         if stroke_mm > self.hbo_start_mm and v > 0.0:
             fraction = min(1.0, (stroke_mm - self.hbo_start_mm) / (self.total_stroke_mm - self.hbo_start_mm))
-            f_damp += coeffs["c_hbo"] * fraction ** 2 * v
+            hbo = coeffs["c_hbo"] * fraction ** 2 * v
 
-        return float(f_damp)
+        return {"base_n": float(f_damp), "hbo_n": float(hbo)}
 
     def _compute_legacy_damping_force(self, velocity_mps: float, stroke_mm: float = 20.0) -> float:
         v = float(velocity_mps)

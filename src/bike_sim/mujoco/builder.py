@@ -97,6 +97,13 @@ def generate_mujoco_xml(
         ValueError: If the tyre model is unknown, a non-sphere model is requested outside
             ride mode, or a seated rider is requested outside ride mode or does not fit.
     """
+    physical = physics_config is not None and physics_config.physics_mode == "physical"
+    if physical and mode != "ride":
+        raise ValueError("physical configuration requires ride mode")
+    if physical and tyre_model != "sphere":
+        raise ValueError("legacy pneumatic tyre_model is not a physical backend; configure physics_config.tires")
+    if physical:
+        crank_joint = True
     if crank_joint and mode != "ride":
         raise ValueError(f"the pedalled crankset is a ride-mode model; mode {mode!r} builds a rigid crankset")
     if tyre_model not in TYRE_MODELS:
@@ -117,6 +124,16 @@ def generate_mujoco_xml(
     if rider_specs.variant == "seated" and mode != "ride":
         raise ValueError(f"the seated rider is a ride-mode model; mode {mode!r} takes 'none' or 'lumped'")
     pose = rider_specs.seated_pose(specs) if rider_specs.variant == "seated" else None
+    articulated_pose = None
+    if rider_specs.variant == "articulated_planar":
+        if not physical:
+            raise ValueError("articulated_planar requires physical ride mode")
+        from bike_sim.physics.rider_segments import geometry_pose
+        articulated_pose = geometry_pose(rider_specs, specs)
+    if physical and physics_config.drive_mode == "articulated_effort" and articulated_pose is None:
+        raise ValueError("articulated_effort requires articulated_planar rider")
+    if physical and pose is not None and pose.leg_chains:
+        raise ValueError("physical seated rider supports rigid legs; use articulated_planar")
 
     # Compute uncompressed reference state (0 mm wheel travel)
     st0 = solver.solve_state_from_wheel_travel(0.0)
@@ -193,7 +210,7 @@ def generate_mujoco_xml(
         fixed_points=fixed,
         cg_pos=cg_pos,
         rider=rider_specs,
-        pose=pose,
+        pose=articulated_pose if articulated_pose is not None else pose,
         debug_markers=debug_markers,
         crank_joint=crank_joint,
         mass_registry=mass_registry,
@@ -261,7 +278,7 @@ def generate_mujoco_xml(
 
     # 7. Constraints & Collisions
     build_equality_constraints(root, mode=mode)
-    if crank_joint:
+    if crank_joint and not physical:
         build_chain_constraint(root, gear_ratio=gear_ratio)
         if pose is not None and pose.leg_chains:
             # Clipless-pedal welds: each foot body is fixed to its pedal body. No
@@ -294,6 +311,27 @@ def generate_mujoco_xml(
     # 8. Actuators & Sensors
     build_actuators(root, mode=mode, crank_joint=crank_joint)
     build_sensors(root, mode=mode, seated_rider=(rider_specs.variant == "seated"))
+
+    if physical:
+        from bike_sim.mujoco.physical_topology import finish_physical_topology
+        finish_physical_topology(root, specs, mass_specs, physics_config)
+        if articulated_pose is not None:
+            from bike_sim.mujoco.articulated_rider import build_articulated_rider, add_rider_actuators
+            from bike_sim.physics.rider_segments import segment_masses
+            for geom in list(frame.findall("geom")):
+                if geom.get("name", "").startswith("geom_rider_"):
+                    frame.remove(geom)
+            build_articulated_rider(worldbody, articulated_pose,
+                segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg))
+            add_rider_actuators(root, physics_config.articulated)
+            # Dedicated crash mask: no invisible rider/bike or rider/rider contacts.
+            for name in ("geom_rider_head", "geom_rider_pelvis", "geom_rider_torso"):
+                geom = root.find(f".//geom[@name='{name}']")
+                geom.set("contype", "4")
+                geom.set("conaffinity", "0")
+            for name in ("terrain", "catch_plane"):
+                geom = root.find(f".//geom[@name='{name}']")
+                geom.set("conaffinity", str(int(geom.get("conaffinity", "1")) | 4))
 
     # Prettify XML
     xml_raw = ET.tostring(root, encoding="utf-8")

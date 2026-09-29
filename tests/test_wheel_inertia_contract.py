@@ -127,13 +127,22 @@ def test_compiled_wheel_mass_com_and_tensor_match_selected_synthetic_profile(nam
     inertials = wheel.findall("inertial")
     assert len(inertials) == 1
     assert expected_mass == pytest.approx(budget)
-    assert float(inertials[0].get("mass")) == pytest.approx(expected_mass)
+    share = .9 if name == 'rear_wheel' else 1.
+    assert float(inertials[0].get("mass")) == pytest.approx(expected_mass*share)
     assert all(float(geom.get("mass")) == 0 for geom in wheel.findall("geom"))
     model = mujoco.MjModel.from_xml_string(ET.tostring(root, encoding="unicode"))
     body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
-    assert model.body_mass[body_id] == pytest.approx(expected_mass)
+    assert model.body_mass[body_id] == pytest.approx(expected_mass*share)
     np.testing.assert_allclose(model.body_ipos[body_id], expected_com, rtol=0, atol=1e-12)
-    np.testing.assert_allclose(_body_tensor(model, name), expected_tensor, rtol=0, atol=1e-10)
+    combined_tensor=_body_tensor(model,name)
+    if name=='rear_wheel':
+        cassette=model.body('cassette').id
+        assert model.body_parentid[body_id]==model.body_parentid[cassette]
+        assert model.body_mass[cassette]==pytest.approx(.1*expected_mass)
+        np.testing.assert_allclose(model.body_ipos[cassette],expected_com,atol=1e-12)
+        combined_tensor+=_body_tensor(model,'cassette')
+    # D1 transfers cassette inertia to a sibling, preserving the locked assembly.
+    np.testing.assert_allclose(combined_tensor, expected_tensor, rtol=0, atol=1e-10)
 
 
 @pytest.mark.parametrize("name", ["front_wheel", "rear_wheel"])

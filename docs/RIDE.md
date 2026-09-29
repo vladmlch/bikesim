@@ -1,5 +1,9 @@
 # Ride Mode
 
+> **Model selection:** this document describes the historical `legacy` model.
+> For the separate SI physical model, effort drivetrain, independent rider,
+> schema-2 outputs and verification commands, see [PHYSICAL.md](PHYSICAL.md).
+
 Rolling whole-bike simulation over a longitudinal road profile with bumps, potholes,
 rock gardens, a drop and a kicker. Complements the three existing modes
 (`standard`, `stand`, `playground`), all of which bolt the frame to the world.

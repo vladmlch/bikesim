@@ -81,3 +81,21 @@ def test_query_copies_input_and_rejects_invalid_branch():
     assert query.contact([0,.34],.35).delta == pytest.approx(.01)
     with pytest.raises(ValueError):
         query.contact([0,.34],.35, previous_segment=9)
+
+
+def test_airborne_search_matches_full_independent_projection():
+    """Even when a remote hill is closer, an airborne gap must be exact."""
+    from bike_sim.terrain.contact_profile import ProfileQuery
+    rng=np.random.default_rng(931)
+    x=np.linspace(-60.,60.,24001)
+    for z in (np.zeros_like(x),.2*np.sin(x/2),np.exp(-((x-8.)/3.)**2)*5.):
+        vertices=np.column_stack((x,z));query=ProfileQuery(vertices)
+        a,b=vertices[:-1],vertices[1:];direction=b-a
+        for cx,cz in zip(rng.uniform(-10,10,8),rng.uniform(8,40,8)):
+            center=np.array([cx,cz])
+            fraction=np.clip(np.sum((center-a)*direction,axis=1)/np.sum(direction**2,axis=1),0,1)
+            points=a+fraction[:,None]*direction
+            index=np.argmin(np.linalg.norm(center-points,axis=1))
+            contact=query.contact(center,.35)
+            np.testing.assert_allclose(contact.point,points[index],atol=1e-10)
+            assert contact.delta==pytest.approx(.35-np.linalg.norm(center-points[index]),abs=1e-10)

@@ -54,18 +54,12 @@ def mass_observations(model, data):
     mujoco.mj_mulM(model, data, mv, data.qvel)
     kinetic = .5*float(data.qvel @ mv)
     gravity = -float(np.sum(mass[:, None]*data.xipos*model.opt.gravity))
-    linear = np.zeros(3)
-    angular = np.zeros(3)
-    jp = np.zeros((3, model.nv)); jr = np.zeros_like(jp)
-    for body, m in enumerate(mass):
-        if m == 0:
-            continue
-        mujoco.mj_jacBodyCom(model, data, jp, jr, body)
-        p = m*(jp @ data.qvel)
-        rotation = data.ximat[body].reshape(3, 3)
-        inertia = rotation @ np.diag(model.body_inertia[body]) @ rotation.T
-        linear += p
-        angular += inertia @ (jr @ data.qvel)+np.cross(data.xipos[body]-com, p)
+    # Engine subtree momentum is the same body-COM sum as the independent
+    # Jacobian oracle in energy.system_momentum, without Python loops each step.
+    # mj_subtreeVel updates observation caches only; it does not solve forces.
+    mujoco.mj_subtreeVel(model, data)
+    linear = total * np.array(data.subtree_linvel[0], copy=True)
+    angular = np.array(data.subtree_angmom[0], copy=True)
     return {
         'mass_kg': total, 'com_m': com, 'com_velocity_mps': linear/total,
         'linear_momentum_kg_mps': linear, 'angular_momentum_kg_m2_s': angular,

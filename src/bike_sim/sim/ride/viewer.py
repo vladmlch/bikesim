@@ -219,3 +219,30 @@ __all__ = [
     "SYNC_INTERVAL_S",
     "HUD_REFRESH_INTERVAL_S",
 ]
+
+
+def run_physical_viewer(sim) -> int:
+    """Show an already resolved physical simulation; never rebuild it as legacy."""
+    import mujoco.viewer
+    from bike_sim.sim.playground import ensure_macos_mjpython
+    ensure_macos_mjpython()
+    session=RideSession(sim)
+    pacer=RealTimePacer(float(sim.model.opt.timestep))
+    with mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
+                                      show_left_ui=False,show_right_ui=False) as viewer:
+        session.viewer=viewer
+        session.camera.reset_preset()
+        previous=time.monotonic();last_hud=previous
+        while viewer.is_running():
+            now=time.monotonic()
+            session.process_pending_keys()
+            for _ in range(pacer.steps_for(now-previous)):
+                if session.step() is not None:
+                    pacer.reset();break
+            previous=now
+            session.camera.update_viewer(viewer,bike_x=sim.position_m,bike_z=float(sim.data.xpos[sim._frame_body_id,2]))
+            viewer.sync()
+            if now-last_hud>=HUD_REFRESH_INTERVAL_S:
+                session.print_hud();last_hud=now
+            time.sleep(FRAME_SLEEP_S)
+    return 0

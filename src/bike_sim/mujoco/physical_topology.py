@@ -33,6 +33,22 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
     """Called only for ride/physical, before serialization and compilation."""
     if physics_config.physics_mode!='physical':
         raise ValueError('physical topology cannot modify the legacy model')
+    # Steering is fixed in this explicitly sagittal model. A stiff oblique
+    # hinge is not a planar constraint and leaks small lateral velocities.
+    steer = _find(root, 'body', 'steer')
+    for joint in list(steer.findall('joint')):
+        if joint.get('name') == 'steer_joint':
+            steer.remove(joint)
+    sensors = root.find('sensor')
+    if sensors is not None:
+        for sensor in list(sensors):
+            if sensor.get('joint') == 'steer_joint':
+                sensors.remove(sensor)
+    # The legacy 0.5 ms solref was clamped by MuJoCo at dt=0.5 ms to
+    # 2*dt=1 ms. Preserve that effective reference, explicitly and identically
+    # across all refinement grids instead of changing the linkage stiffness.
+    for constraint in root.find('equality'):
+        constraint.set('solref', f'{physics_config.closure_time_constant_s:.17g} 1')
     crank=_find(root,'body','crank')
     crank_length=scalar(specs.crank_length/1000.,'crank length',positive=True)
     budget=scalar(mass_specs.crank_pedals_mass,'crank mass',positive=True)
@@ -77,6 +93,9 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
         joint.set('frictionloss','0')
         joint.set('solreffriction','0.005 1')
         joint.set('solimpfriction','0.9999 0.9999 0.001 0.5 2')
+        contact_geom = _find(body, 'geom', 'geom_'+side+'_contact')
+        contact_geom.set('priority', '1')
+        contact_geom.set('friction', f'{getattr(physics_config.tires, side).mu:.17g} 0.005 0.0001')
         if physics_config.tires.backend=='compliant_2d':
             for geom in body.iter('geom'):
                 geom.set('contype','0'); geom.set('conaffinity','0')

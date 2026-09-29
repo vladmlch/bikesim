@@ -35,9 +35,6 @@ import mujoco
 import numpy as np
 
 from bike_sim.sim.ride.metrics import RAMP_EXCLUSION_M
-from bike_sim.sim.ride.energy import mechanical_energy_terms, system_momentum
-from bike_sim.sim.ride.mass_properties import compiled_center_of_mass
-from bike_sim.sim.ride.telemetry_v2 import ForceSample, component_powers
 from bike_sim.sim.ride.wheels import resolve_wheel_spin
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -159,20 +156,22 @@ class RideRecorder:
         Raises:
             ValueError: If ``decimate`` is not positive or a needed sensor is missing.
         """
+        self._physical = None
+        if sim.physics_config.physics_mode == "physical":
+            from bike_sim.sim.ride.physical_recorder import PhysicalRecorder
+            self._physical = PhysicalRecorder(sim,decimate)
+            self.decimate = decimate
+            self.timestep_s = float(sim.model.opt.timestep)
+            self.schema_version = 2
+            self.component_work_j = self._physical.component_work_j
+            self.last_component_powers_w = {}
+            return
         if decimate < 1:
             raise ValueError(f"decimate must be >= 1, got {decimate}")
         self.decimate = int(decimate)
         self.timestep_s = float(sim.model.opt.timestep)
-        self.schema_version = 2 if sim.physics_config.physics_mode == "physical" else 1
+        self.schema_version = 1
         self._channel_names = list(CHANNELS)
-        if self.schema_version == 2:
-            self._channel_names.extend(V2_FIXED_CHANNELS)
-            self._channel_names.extend(f"prestep_qpos_{i}" for i in range(sim.model.nq))
-            self._channel_names.extend(f"prestep_qvel_{i}" for i in range(sim.model.nv))
-        self._prestep_nq = sim.model.nq
-        self._prestep_nv = sim.model.nv
-        self._component_names: list[str] = []
-        self._last_force_sample: ForceSample | None = None
         self.last_component_powers_w: dict[str, float] = {}
         self.component_work_j: dict[str, float] = {}
         self.last_interval_start_s = float("nan")
@@ -207,6 +206,7 @@ class RideRecorder:
             "rear": {"wheelspin": 0.0, "locked": 0.0},
         }
         self._previous_rim_active: Dict[str, bool] = {"front": False, "rear": False}
+        self._rim_start_time_s = {"front": 0.0, "rear": 0.0}
 
     # ------------------------------------------------------------------ recording
 
@@ -218,9 +218,12 @@ class RideRecorder:
             sim: Simulation to read. V2 momentum/energy queries refresh MuJoCo's
                 derived kinematics on stored rows.
         """
+        if self._physical is not None:
+            self._physical.record(sim)
+            self.component_work_j=self._physical.component_work_j
+            self.last_component_powers_w=self._physical.last_component_powers_w
+            return
         self._observe_tyre_events(sim)
-        if self.schema_version == 2:
-            self._observe_physical_interval(sim)
         take = self._calls % self.decimate == 0
         self._calls += 1
         if not take:
@@ -232,43 +235,6 @@ class RideRecorder:
         self._current[self._fill] = self._row(sim)
         self._fill += 1
 
-    def _observe_physical_interval(self, sim: "RideSimulation") -> None:
-        """Integrate each actual force interval once, even when no CSV row is retained."""
-        sample = sim.last_force_sample
-        if sample is None or sample is self._last_force_sample:
-            return
-        interval_dt_s = float(sim.data.time) - sample.time_s
-        if interval_dt_s <= 0 or not np.isfinite(interval_dt_s):
-            raise ValueError("invalid physical force interval")
-        powers = component_powers(sample)
-        constraints = sim.last_constraint_snapshot
-        if constraints is not None:
-            if (
-                not np.isclose(constraints.interval_start_s, sample.time_s, rtol=0.0, atol=1e-12)
-                or not np.isclose(constraints.interval_end_s, sim.data.time, rtol=0.0, atol=1e-12)
-            ):
-                raise ValueError("constraint snapshot does not match physical force interval")
-            powers.update(constraints.powers_w())
-        for name, power_w in powers.items():
-            if name not in self.component_work_j:
-                self._add_component_channels(name)
-                self.component_work_j[name] = 0.0
-            self.component_work_j[name] += power_w * interval_dt_s
-        self.last_component_powers_w = powers
-        self.last_interval_start_s = sample.time_s
-        self.last_interval_dt_s = interval_dt_s
-        self._last_force_sample = sample
-
-    def _add_component_channels(self, name: str) -> None:
-        """Allocate two columns when a writer first registers a named force."""
-        self._component_names.append(name)
-        self._channel_names.extend((f"{name}_power_w", f"{name}_work_j"))
-        self._current = np.pad(self._current, ((0, 0), (0, 2)), constant_values=np.nan)
-        self._chunks = [
-            np.pad(chunk, ((0, 0), (0, 2)), constant_values=np.nan)
-            for chunk in self._chunks
-        ]
-
     def _observe_tyre_events(self, sim: "RideSimulation") -> None:
         """Captures rim events on every callback, even when CSV rows are decimated."""
         if sim.tyre_applier is None:
@@ -278,6 +244,7 @@ class RideRecorder:
             ("rear", sim.tyre_applier.rear_outputs),
         ):
             if outputs.rim_strike_active and not self._previous_rim_active[wheel]:
+                self._rim_start_time_s[wheel] = float(sim.time_s)
                 self.tyre_rim_strike_counts[wheel] += 1
                 self.tyre_rim_starts[wheel].append(float(outputs.hub_position_world_m[0]))
             self._previous_rim_active[wheel] = outputs.rim_strike_active
@@ -289,6 +256,8 @@ class RideRecorder:
             event = outputs.rim_event
             if event is not None:
                 self.tyre_rim_events[wheel].append({
+                    "start_time_s": self._rim_start_time_s[wheel],
+                    "end_time_s": float(sim.time_s),
                     "x_m": float(event.x_m),
                     "speed_mps": float(event.speed_mps),
                     "peak_load_n": float(event.peak_load_n),
@@ -401,39 +370,7 @@ class RideRecorder:
                 *pedal_channels,
             ]
         )
-        if self.schema_version == 1:
-            return legacy_row
-        mujoco.mj_kinematics(sim.model, sim.data)
-        com = compiled_center_of_mass(sim.model, sim.data)
-        total_mass = float(sim.model.body_mass.sum())
-        linear, angular = system_momentum(sim.model, sim.data)
-        kinetic, gravitational, _ = mechanical_energy_terms(
-            sim.model, sim.data, elastic_energy_j=0.0
-        )
-        # Suspension currently combines spring and damper in one force channel. Until
-        # each storage and loss term is supplied, a complete energy and residual would
-        # be misleading. NaN makes that missing accounting explicit in physical CSV.
-        interval_row = (
-            self.last_interval_start_s, self.last_interval_dt_s,
-            total_mass, *com,
-            sim.equilibrium.get("static_front_load_n", np.nan),
-            sim.equilibrium.get("static_rear_load_n", np.nan),
-            *linear, *angular,
-            kinetic, gravitational, np.nan, np.nan, np.nan,
-        )
-        if self._last_force_sample is None:
-            state_row = (np.nan,) * (self._prestep_nq + self._prestep_nv)
-        else:
-            state_row = (*self._last_force_sample.qpos, *self._last_force_sample.qvel)
-        component_row = tuple(
-            value
-            for name in self._component_names
-            for value in (
-                self.last_component_powers_w.get(name, np.nan),
-                self.component_work_j[name],
-            )
-        )
-        return np.concatenate((legacy_row, interval_row, state_row, component_row))
+        return legacy_row
 
     def rear_wheel_mm(self, stroke_mm: float) -> float:
         """
@@ -457,6 +394,7 @@ class RideRecorder:
     @property
     def rows(self) -> int:
         """Number of rows stored so far."""
+        if self._physical is not None: return self._physical.rows
         return len(self._chunks) * _CHUNK_ROWS + self._fill
 
     @property
@@ -466,6 +404,7 @@ class RideRecorder:
 
     def array(self) -> np.ndarray:
         """Returns stored rows with the selected schema's channel count."""
+        if self._physical is not None: return self._physical.array()
         parts = self._chunks + [self._current[: self._fill]]
         return np.vstack(parts) if parts else np.empty((0, len(self._channel_names)))
 
@@ -479,12 +418,14 @@ class RideRecorder:
         Raises:
             KeyError: On an unknown channel.
         """
+        if self._physical is not None: return self._physical.column(name)
         if name not in self._channel_names:
             raise KeyError(f"unknown channel '{name}'")
         return self.array()[:, self._channel_names.index(name)]
 
     def columns(self) -> Dict[str, np.ndarray]:
         """Returns every channel keyed by name."""
+        if self._physical is not None: return self._physical.columns()
         table = self.array()
         return {name: table[:, i] for i, name in enumerate(self._channel_names)}
 
@@ -500,6 +441,7 @@ class RideRecorder:
         Returns:
             The path written.
         """
+        if self._physical is not None: return self._physical.write_csv(path)
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
         table = self.array()
@@ -545,7 +487,9 @@ def read_csv(path: Union[str, Path]) -> Dict[str, np.ndarray]:
     with open(path, newline="", encoding="utf-8") as handle:
         reader = csv.reader(handle)
         header = next(reader)
-        rows = [[float(v) for v in row] for row in reader]
+        # Schema 2 has variable-length contact patches. An absent optional column
+        # is missing evidence, not a zero load; preserve it as NaN on CSV read.
+        rows = [[float(v) if v.strip() else float("nan") for v in row] for row in reader]
     table = np.array(rows, dtype=float) if rows else np.empty((0, len(header)))
     return {name: table[:, i] for i, name in enumerate(header)}
 

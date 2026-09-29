@@ -83,7 +83,7 @@ def test_physical_step_exposes_poststep_constraint_snapshot_separately():
     assert "shock_upper_stop" not in snapshot.components
 
 
-def test_v2_recorder_integrates_poststep_limit_work_for_finished_interval():
+def test_v2_recorder_integrates_poststep_limit_work_for_finished_interval(monkeypatch):
     sim = RideSimulation(
         track=get_preset("flat"), rider="none",
         physics_config=SimulationPhysicsConfig(physics_mode="physical"),
@@ -91,20 +91,17 @@ def test_v2_recorder_integrates_poststep_limit_work_for_finished_interval():
     recorder = RideRecorder(sim)
     recorder.record(sim)
     sim.data.qvel[sim.applier.shock_dofadr] = 2.0
-    sim.step()
-    sample = sim.last_force_sample
     force = np.zeros(sim.model.nv)
     force[sim.applier.shock_dofadr] = -3.0
-    # Supply a controlled solved-force snapshot at the recorder boundary. The
-    # isolated MuJoCo test above verifies extraction from actual EFC rows.
-    sim.last_constraint_snapshot = ConstraintForceSnapshot(
-        sample.time_s, float(sim.data.time), sample.qvel,
-        {"shock_solver_limit": force},
-    )
+    # Inject at solved-force extraction, before the immutable interval is built.
+    # Recorders must never replace actual forces from a later mutable attribute.
+    from bike_sim.sim.ride import physical_runtime
+    monkeypatch.setattr(physical_runtime,"shock_joint_limit_qfrc",lambda model,data: force.copy())
+    sim.step()
     recorder.record(sim)
     dt = float(sim.model.opt.timestep)
-    assert recorder.column("shock_solver_limit_power_w")[1] == pytest.approx(-6.0)
-    assert recorder.column("shock_solver_limit_work_j")[1] == pytest.approx(-6.0 * dt)
+    assert recorder.column("shock_solver_limit_power_w")[0] == pytest.approx(-6.0)
+    assert recorder.column("shock_solver_limit_work_j")[0] == pytest.approx(-6.0 * dt)
     assert recorder.component_work_j["shock_solver_limit"] == pytest.approx(-6.0 * dt)
 
 

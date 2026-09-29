@@ -132,7 +132,8 @@ def test_physical_native_cruise_uses_controller_grounded_instead_of_held_load(mo
         handlebar_load_n=0.0, rear_controller_grounded=False,
     )
     assert held_load.rear_in_contact  # Compatibility bridge still reports load.
-    monkeypatch.setattr(sim.contact_query, "query", lambda model, data: held_load)
+    snapshots = dict(sim.physical.snapshots)
+    monkeypatch.setattr(sim.physical, "_contacts", lambda **kwargs: (held_load, snapshots))
     sim.step()
     assert not sim.cruise.engaged
     assert sim.data.ctrl[sim.drive_ctrl_adr] == 0.0
@@ -142,7 +143,7 @@ def test_physical_native_cruise_uses_controller_grounded_instead_of_held_load(mo
         front_support_n=0.0, rear_support_n=0.0,
         handlebar_load_n=0.0, rear_controller_grounded=True,
     )
-    monkeypatch.setattr(sim.contact_query, "query", lambda model, data: held_grounded)
+    monkeypatch.setattr(sim.physical, "_contacts", lambda **kwargs: (held_grounded, snapshots))
     sim.step()
     assert sim.cruise.engaged
     assert sim.data.ctrl[sim.drive_ctrl_adr] > 0.0

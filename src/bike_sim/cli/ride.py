@@ -123,11 +123,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help=f"wheel contact model: sphere or pneumatic (default {DEFAULT_TYRE_MODEL}, or pneumatic for climb_steps)",
     )
     parser.add_argument(
-        "--tyre-tier", choices=TYRE_TIERS, default=DEFAULT_TYRE_TIER,
+        "--tyre-tier", choices=TYRE_TIERS, default=None,
         help=f"pneumatic brush fidelity (default {DEFAULT_TYRE_TIER})",
     )
     parser.add_argument(
-        "--tyre-pressure", type=_parse_tyre_pressures, default=(FRONT_TYRE.pressure_bar, REAR_TYRE.pressure_bar),
+        "--tyre-pressure", type=_parse_tyre_pressures, default=None,
         metavar="FRONT/REAR", help="front/rear tyre pressure in bar (default 1.5/1.7)",
     )
     parser.add_argument(
@@ -149,7 +149,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
              "and reproduces the motor baseline",
     )
     parser.add_argument(
-        "--crank-phase", type=float, default=0.0, metavar="DEG",
+        "--crank-phase", type=float, default=None, metavar="DEG",
         help="crank angle at the start of the run (default 0, the built 3/9 o'clock pose). "
              "Deliberately not tied to --seed: the phase a jump is met in is its own variable",
     )
@@ -163,25 +163,79 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--surface", choices=tuple(SURFACES), default=None,
         help="override the track surface friction preset (default: track surface)",
     )
+    parser.add_argument("--physics", choices=("legacy","physical"), default=None)
+    parser.add_argument("--drive", choices=("coast","ideal_speed_control","crank_effort","articulated_effort"), default=None)
+    parser.add_argument("--physics-config", default=None, metavar="PATH")
+    parser.add_argument("--initial-speed", type=float, default=None, metavar="KMH")
+    parser.add_argument("--human-torque", type=float, default=None, metavar="NM")
+    parser.add_argument("--assist-gain", type=float, default=None)
+    parser.add_argument("--timestep", type=float, default=None, metavar="S")
+    parser.add_argument("--duration", type=float, default=None, metavar="S", help="physical run duration; permits stationary rigs")
     args = parser.parse_args(argv)
-    if args.track == "climb_steps":
-        if args.speed is None:
-            args.speed = 16.0
-        if args.tyre_model is None:
-            args.tyre_model = "pneumatic"
-        if args.drive_mode is None:
-            args.drive_mode = "pedelec"
-        if args.assist is None:
-            args.assist = "turbo"
+    from bike_sim.physics.resolution import load_physics_config
+    from math import isfinite, radians
+    overrides={"physics_mode":args.physics,"drive_mode":args.drive,"timestep_s":args.timestep}
+    if args.initial_speed is not None:
+        overrides["initial_speed_mps"]=args.initial_speed/3.6
+    drive_values={}
+    if args.human_torque is not None: drive_values["human_torque_nm"]=args.human_torque
+    if args.assist_gain is not None: drive_values["assist"]={"gain":args.assist_gain}
+    if args.crank_phase is not None: drive_values["crank_phase_rad"]=radians(args.crank_phase)
+    if drive_values: overrides["drive"]=drive_values
+    try:
+        args.resolved_physics=load_physics_config(args.physics_config,overrides)
+    except (ValueError,OSError) as exc:
+        parser.error(str(exc))
+    args.physics=args.resolved_physics.physics_mode
+    args.drive=args.resolved_physics.drive_mode
+    if args.duration is not None and (not isfinite(args.duration) or args.duration<=0):
+        parser.error("--duration must be finite and positive")
+    if args.physics=="physical":
+        if args.speed is not None and args.drive!="ideal_speed_control":
+            parser.error("--speed is only an ideal controller target; use --initial-speed for coast/effort")
+        if args.drive_mode not in (None,"motor") or args.assist is not None or args.visual_pedalling:
+            parser.error("legacy drive/assist/visual flags cannot select physical drivetrain settings; use --drive and TOML")
+        if (args.tyre_model not in (None,"sphere") or args.surface is not None
+                or args.tyre_tier is not None or args.tyre_pressure is not None):
+            parser.error("physical tire backend and friction must be selected in --physics-config")
+        if args.gearing is not None or args.ripple_depth is not None:
+            parser.error("physical gearing and torque_ripple are configured in TOML")
+        if args.legs is not None:
+            parser.error("use --rider articulated_planar instead of legacy --legs")
+        if args.drive=="ideal_speed_control" and args.speed is None: args.speed=DEFAULT_TARGET_SPEED_KMH
+        args.tyre_model="sphere"
+        args.drive_mode="motor"
+        args.assist="tour"
+        if args.rider is None and not args.no_rider:
+            args.rider="articulated_planar" if args.drive=="articulated_effort" else "lumped"
+        if args.drive=="articulated_effort" and (args.no_rider or args.rider!="articulated_planar"):
+            parser.error("articulated_effort requires --rider articulated_planar")
+        if args.headless and args.drive=="coast" and args.resolved_physics.initial_speed_mps==0 and args.duration is None:
+            parser.error("a stationary physical coast run needs --duration or nonzero --initial-speed")
     else:
-        if args.speed is None:
-            args.speed = DEFAULT_TARGET_SPEED_KMH
-        if args.tyre_model is None:
-            args.tyre_model = DEFAULT_TYRE_MODEL
-        if args.drive_mode is None:
-            args.drive_mode = "motor"
-        if args.assist is None:
-            args.assist = "tour"
+        if any(v is not None for v in (args.initial_speed,args.human_torque,args.assist_gain,args.duration)):
+            parser.error("initial-speed, human-torque, assist-gain and duration require --physics physical")
+        if args.track == "climb_steps":
+            if args.speed is None:
+                args.speed = 16.0
+            if args.tyre_model is None:
+                args.tyre_model = "pneumatic"
+            if args.drive_mode is None:
+                args.drive_mode = "pedelec"
+            if args.assist is None:
+                args.assist = "turbo"
+        else:
+            if args.speed is None:
+                args.speed = DEFAULT_TARGET_SPEED_KMH
+            if args.tyre_model is None:
+                args.tyre_model = DEFAULT_TYRE_MODEL
+            if args.drive_mode is None:
+                args.drive_mode = "motor"
+            if args.assist is None:
+                args.assist = "tour"
+    if args.tyre_tier is None: args.tyre_tier=DEFAULT_TYRE_TIER
+    if args.tyre_pressure is None: args.tyre_pressure=(FRONT_TYRE.pressure_bar,REAR_TYRE.pressure_bar)
+    if args.crank_phase is None: args.crank_phase=0.
     return args
 
 
@@ -331,6 +385,7 @@ def run_dir_name(
     speed_kmh: float,
     seed: Optional[int],
     tyre: Optional[TyreConfig] = None,
+    *, drive_settings: Optional[dict] = None,
 ) -> str:
     """Builds a unique artifact directory, adding tyre settings for pneumatic runs."""
     name = f"{track.name}_{speed_kmh:g}"
@@ -342,6 +397,12 @@ def run_dir_name(
             f"{name}_pneumatic-{tyre.tier}_{tyre.front.pressure_bar:.2f}-"
             f"{tyre.rear.pressure_bar:.2f}bar_{surface}"
         )
+    if drive_settings is not None:
+        import hashlib
+        import json
+        encoded = json.dumps(drive_settings, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        digest = hashlib.sha256(encoded.encode()).hexdigest()[:16]
+        name += "_" + str(drive_settings["mode"]) + "_" + digest
     return name
 
 
@@ -382,6 +443,8 @@ def resolve_leg_config(args: argparse.Namespace) -> LegConfig:
             follow the pedals), or if ``--legs articulated`` is asked for in ``motor``
             mode without it, which would leave the feet with no pedal bodies to weld to.
     """
+    if getattr(args,"physics","legacy")=="physical":
+        return LegConfig(legs="rigid",visual_pedalling=False)
     visual = bool(args.visual_pedalling)
     if visual and args.drive_mode != "motor":
         raise ValueError(
@@ -432,6 +495,8 @@ def describe_rider(rider: RiderSpecs, specs: BikeSpecs) -> str:
         return "rider: none (bike alone)"
     if rider.variant == "lumped":
         return f"rider: lumped, {rider.mass_kg:g} kg standing attack pose (rigid in frame)"
+    if rider.variant == "articulated_planar":
+        return f"rider: articulated_planar, {rider.mass_kg:g} kg, independent planar root"
     pose = rider.seated_pose(specs)
     return (
         f"rider: seated, {rider.mass_kg:g} kg, {rider.height_m:.2f} m (inseam {rider.inseam:.3f} m), "
@@ -511,6 +576,9 @@ def _headless(
     rider: RiderSpecs,
     tyre: TyreConfig,
 ) -> int:
+    if args.physics == "physical":
+        from bike_sim.sim.ride.physical_session import run_physical_headless
+        return run_physical_headless(track,args,seed,rider)
     from bike_sim.sim.ride.metrics import RAMP_EXCLUSION_M, summarize_ride
     from bike_sim.sim.ride.recorder import RideRecorder
     from bike_sim.sim.ride_sim import RideSimulation
@@ -524,7 +592,19 @@ def _headless(
         controller, coil, extras_sag = _fit_sag(args.sag, specs, rider)
         extras.update(extras_sag)
 
-    run_dir = Path(args.out) / run_dir_name(track, args.speed, seed, tyre)
+    from dataclasses import asdict
+    drivetrain = _drivetrain_config(args)
+    leg_config = resolve_leg_config(args)
+    drive_settings = {"mode": args.drive_mode, "assist": args.assist if args.drive_mode == "pedelec" else "off",
+                      "drivetrain": asdict(drivetrain), "legs": leg_config.legs,
+                      "visual_pedalling": leg_config.visual_pedalling}
+    drive_settings["physics"] = asdict(args.resolved_physics)
+    from bike_sim.physics.model_config import SimulationPhysicsConfig
+    default_drive = (args.drive_mode == "motor" and drivetrain == DrivetrainSpecs()
+                     and not leg_config.visual_pedalling and leg_config.legs == "rigid"
+                     and args.resolved_physics == SimulationPhysicsConfig())
+    run_dir = Path(args.out) / run_dir_name(track, args.speed, seed, tyre,
+        drive_settings=None if default_drive else drive_settings)
     print(f"{PREFIX} {track.name}: {track.length_m:.0f} m, {len(track.markers)} marked obstacles, "
           f"target {args.speed:g} km/h -> {run_dir}")
     print(f"{PREFIX} {describe_rider(rider, specs)}")
@@ -534,8 +614,6 @@ def _headless(
         f"{tyre.front.pressure_bar:.2f}/{tyre.rear.pressure_bar:.2f} bar, surface {tyre_surface}"
     )
 
-    drivetrain = _drivetrain_config(args)
-    leg_config = resolve_leg_config(args)
     if args.drive_mode != "motor":
         cadence = drivetrain.cadence_rpm_at(args.speed / 3.6, specs.rear_wheel_radius / 1000.0)
         assist = args.assist if args.drive_mode == "pedelec" else "off"
@@ -550,6 +628,7 @@ def _headless(
         controller=controller, coil_shock=coil, tyre=tyre,
         drive_mode=args.drive_mode, assist=args.assist, drivetrain=drivetrain,
         legs=leg_config.legs, visual_pedalling=leg_config.visual_pedalling,
+        physics_config=args.resolved_physics,
     )
     eq = sim.equilibrium
     print(f"{PREFIX} start equilibrium: fork {eq['fork_travel_mm']:.1f} mm "
@@ -612,6 +691,10 @@ def _headless(
 
 
 def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, tyre: TyreConfig) -> int:
+    if args.physics == "physical":
+        from bike_sim.sim.ride.physical_session import build_physical_simulation
+        from bike_sim.sim.ride.viewer import run_physical_viewer
+        return run_physical_viewer(build_physical_simulation(track,args,rider))
     if args.sag is not None:
         print(f"{PREFIX} --sag applies to headless runs only; the viewer uses the shipped tune "
               f"(P cycles damper presets, -/= change pressure)", file=sys.stderr)
@@ -648,7 +731,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.decimate < 1:
         print(f"{PREFIX} --decimate must be >= 1", file=sys.stderr)
         return 2
-    if not MIN_TARGET_SPEED_KMH <= args.speed <= MAX_TARGET_SPEED_KMH:
+    if args.speed is not None and not MIN_TARGET_SPEED_KMH <= args.speed <= MAX_TARGET_SPEED_KMH:
         print(f"{PREFIX} --speed must be within {MIN_TARGET_SPEED_KMH:.0f}-{MAX_TARGET_SPEED_KMH:.0f} km/h",
               file=sys.stderr)
         return 2

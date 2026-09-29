@@ -105,6 +105,19 @@ class RideHUD:
         Returns:
             One line of text, without a trailing newline.
         """
+        if getattr(sim,"physical",None) is not None:
+            sample=sim.physical.sample
+            if sample is None:
+                return f"[PHYSICAL|{sim.physics_config.drive_mode}] initial condition"
+            channels=sample.channels
+            tires=channels["tires"];drive=channels["drive"];energy=channels["energy"]
+            return (f"[PHYSICAL|{sim.physics_config.drive_mode}] t={sample.time_s:.4f}s "
+                    f"v={sample.qvel[sim.root_x_dofadr]*3.6:.2f}km/h "
+                    f"Fn={tires['front']['normal_load_n']:.1f}/{tires['rear']['normal_load_n']:.1f}N "
+                    f"cadence={drive.get('cadence_rpm',0.):.1f}rpm "
+                    f"motor={drive.get('motor_shaft_power_w',0.):.1f}W "
+                    f"battery={drive.get('battery_energy_j',0.)/3600.:.2f}Wh "
+                    f"energy residual={energy['residual_j']:.5f}J")
         obstacle = nearest_obstacle(sim.track, sim.position_m)
         obstacle_str = "--" if obstacle is None else f"{obstacle[0]} {obstacle[1]:+.1f}m"
 

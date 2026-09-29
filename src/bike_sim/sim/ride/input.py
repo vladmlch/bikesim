@@ -58,6 +58,19 @@ class RideInputHandler:
         handler = self._dispatch_map.get(keycode)
         if handler is None:
             return False
+        physics = getattr(getattr(self.session, "sim", None), "physics_config", None)
+        if physics is not None and physics.physics_mode == "physical":
+            tuning_keys = {
+                80,112,76,108,75,107,74,106,72,104,85,117,89,121,
+                88,120,48,57,56,55,54,53,52,51,91,93,45,61,
+                78,110,77,109,59,39,69,101,
+            }
+            if keycode in tuning_keys:
+                print("Physical parameters are fixed per run; edit the configuration and start a new run.")
+                return True
+            if keycode in {87,119,83,115} and physics.drive_mode != "ideal_speed_control":
+                print("W/S adjusts only ideal_speed_control, not physical coast or effort.")
+                return True
         handler()
         return True
 

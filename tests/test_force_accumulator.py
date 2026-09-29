@@ -83,7 +83,11 @@ def test_physical_steps_do_not_carry_old_generalized_or_body_forces():
     sim.step()
 
     assert "external" not in sim.last_force_snapshot[3]
-    assert sim.data.qfrc_applied[sim.root_x_dofadr] == 0.0
+    # External drag and world rolling torque legitimately act on root DOFs.
+    # Only named current contributions may remain; a zero root force would now
+    # incorrectly require dropping real road/air interactions.
+    np.testing.assert_allclose(sim.data.qfrc_applied,
+        sum(sim.last_force_snapshot[3].values(), np.zeros(sim.model.nv)))
     assert sim.data.xfrc_applied[1, 0] == 0.0
     assert first_snapshot[3]["external"][sim.root_x_dofadr] == 9.0
 

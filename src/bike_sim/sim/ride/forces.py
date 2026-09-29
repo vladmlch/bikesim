@@ -142,9 +142,10 @@ class SuspensionForceApplier:
             0.0 if physical and stroke_mm > stroke_limit_mm
             else self.coil_shock.compute_bumper_force(stroke_mm)
         )
-        shock_damper = self.controller.suspension_system.shock_damper.compute_damping_force(
-            shock_velocity_mps, stroke_mm
-        )
+        damper_model = self.controller.suspension_system.shock_damper
+        shock_damper = damper_model.compute_damping_force(shock_velocity_mps, stroke_mm)
+        shock_hbo = (damper_model.compute_damping_components(shock_velocity_mps, stroke_mm)['hbo_n']
+                     if physical else 0.0)
         top_out_force = 0.0
         top_out_energy = 0.0
         upper_force = 0.0
@@ -195,10 +196,13 @@ class SuspensionForceApplier:
             "fork_damper": vector(self.fork_dofadr, fork_damper),
             "shock_coil": vector(self.shock_dofadr, shock_spring),
             "shock_bumper": vector(self.shock_dofadr, shock_bumper),
-            "shock_damper": vector(self.shock_dofadr, shock_damper),
+            "shock_damper": vector(self.shock_dofadr, shock_damper - shock_hbo),
             "shock_top_out": vector(self.shock_dofadr, shock_top_out),
             "shock_upper_stop": vector(self.shock_dofadr, shock_upper_stop),
         }
+
+        if physical:
+            components["shock_hbo"] = vector(self.shock_dofadr, shock_hbo)
 
         self.fork_spring_n = fork_spring
         self.fork_damper_n = fork_damper

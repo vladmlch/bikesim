@@ -88,6 +88,9 @@ def fit_sag(
 
     result = least_squares(
         residual, np.log(x0), bounds=(np.log(lower), np.log(upper)),
+        # Default machine-epsilon differences are smaller than the equilibrium
+        # stopping tolerance. Resolve a real pressure/rate perturbation instead.
+        diff_step=1e-3, x_scale="jac", max_nfev=40,
     )
     error_mm = float(np.max(np.abs(residual(result.x))))
     if not result.success or error_mm > 0.5:

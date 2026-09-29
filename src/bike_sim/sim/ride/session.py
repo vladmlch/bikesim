@@ -136,6 +136,9 @@ class RideSession:
         Returns:
             The new target in km/h.
         """
+        if (getattr(self.sim,"physical",None) is not None
+                and self.sim.physics_config.drive_mode!="ideal_speed_control"):
+            return self.sim.cruise.target_speed_kmh
         target = self.sim.cruise.target_speed_kmh + float(delta_kmh)
         self.sim.cruise.target_speed_kmh = max(
             MIN_TARGET_SPEED_KMH, min(MAX_TARGET_SPEED_KMH, target)
@@ -212,7 +215,11 @@ class RideSession:
 
     def print_help(self) -> None:
         """Displays the ride-mode control help in the terminal."""
-        self.hud.print_help()
+        if self.sim.physics_config.physics_mode == "physical":
+            print("Physical ride: Space brakes; ,/. brake strength; R reset; C/1/2 camera; T telemetry; G markers.")
+            print("W/S changes the target only in ideal_speed_control. Material and drive tuning is fixed per run.")
+        else:
+            self.hud.print_help()
 
     # --- Running ---
 

@@ -48,10 +48,10 @@ def _wheel_inertial_masses(mass):
         physics_config=PHYSICAL,
     )
     root = ET.fromstring(xml)
-    return {
-        name: float(root.find(f".//body[@name='{name}']/inertial").get("mass"))
-        for name in ("front_wheel", "rear_wheel")
-    }
+    groups={'front_wheel':('front_wheel',),'rear_wheel':('rear_wheel','cassette'),
+            'crank_pedals':('crank','pedal_front','pedal_rear')}
+    return {key:sum(float(root.find(f".//body[@name='{name}']/inertial").get('mass'))
+                    for name in names) for key,names in groups.items()}
 
 
 @pytest.mark.parametrize("field", MASS_FIELDS)
@@ -79,7 +79,7 @@ def test_tiny_positive_component_budget_keeps_its_mass_owner(field):
     tiny = _geom_masses(mass)
     assert _model(mass).body_mass.sum() == pytest.approx(mass.total_bike_mass, abs=1e-8)
     changed = [name for name in baseline if tiny[name] != baseline[name]]
-    if field in ("front_wheel_mass", "rear_wheel_mass"):
+    if field in ("front_wheel_mass", "rear_wheel_mass", "crank_pedals_mass"):
         wheel = field.removesuffix("_mass")
         assert changed == []
         assert _wheel_inertial_masses(mass)[wheel] == pytest.approx(0.0001, abs=1e-17)
@@ -120,7 +120,7 @@ def test_component_override_changes_only_its_own_mass_group(field):
     setattr(changed, field, getattr(changed, field) + 0.7)
     override = _geom_masses(changed)
     changed_geoms = [name for name in baseline if abs(override[name] - baseline[name]) > 1e-12]
-    if field in ("front_wheel_mass", "rear_wheel_mass"):
+    if field in ("front_wheel_mass", "rear_wheel_mass", "crank_pedals_mass"):
         wheel = field.removesuffix("_mass")
         inertial_deltas = {
             name: value - _wheel_inertial_masses(BikeMassSpecs())[name]
@@ -128,7 +128,7 @@ def test_component_override_changes_only_its_own_mass_group(field):
         }
         assert changed_geoms == []
         assert inertial_deltas[wheel] == pytest.approx(0.7, abs=1e-10)
-        assert inertial_deltas["rear_wheel" if wheel == "front_wheel" else "front_wheel"] == 0
+        assert all(delta == 0 for key,delta in inertial_deltas.items() if key != wheel)
         return
     assert changed_geoms
     assert sum(override[name] - baseline[name] for name in changed_geoms) == pytest.approx(0.7, abs=1e-10)
@@ -203,9 +203,13 @@ def test_ride_simulation_passes_mass_budget_and_marks_current_com():
     np.testing.assert_allclose(sim.data.site_xpos[cg_site], compiled_center_of_mass(sim.model, sim.data), atol=1e-9)
 
     recorder = RideRecorder(sim)
+    before_com = sim.data.site_xpos[cg_site].copy()
+    recorder.record(sim)
+    assert recorder.rows == 0  # A state alone is not a solved force interval.
+    sim.step()
     recorder.record(sim)
     assert recorder.column("compiled_mass_kg")[0] == pytest.approx(mass.total_bike_mass)
-    assert recorder.column("compiled_com_x_m")[0] == pytest.approx(sim.data.site_xpos[cg_site][0])
+    assert recorder.column("compiled_com_x_m")[0] == pytest.approx(before_com[0])
 
 
 def test_static_load_uses_contact_locations_after_sag():

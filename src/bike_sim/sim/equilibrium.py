@@ -12,7 +12,7 @@ it. Convergence is measured on the accelerations of the zero-velocity state, whe
 dampers contribute nothing and the residual is a pure static force imbalance.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import mujoco
 import numpy as np
@@ -46,6 +46,9 @@ def solve_static_equilibrium(
     tyre_applier: Optional[TyreForceApplier] = None,
     relax_steps_per_cycle: Optional[int] = None,
     leg_drive: Optional[LegDrive] = None,
+    crank_phase_rad: Optional[float] = None,
+    drive_initialize: Optional[Callable[[], None]] = None,
+    before_forces: Optional[Callable[[], None]] = None,
 ) -> Dict[str, Any]:
     """
     Solves the static equilibrium the bike settles into on the road under gravity.
@@ -97,7 +100,10 @@ def solve_static_equilibrium(
         raise ValueError(f"relax_steps_per_cycle must be positive, got {cycle_steps}")
 
     def apply_forces() -> None:
+        if before_forces is not None:
+            before_forces()
         if tyre_applier is not None:
+            mujoco.mj_forward(model, data)
             tyre_applier.apply(model, data)
         applier.apply(model, data)
         if rider_applier is not None:
@@ -110,6 +116,15 @@ def solve_static_equilibrium(
         tyre_applier.reset(data)
     data.qpos[x_adr] = float(start_x_m)
     data.qpos[z_adr] = START_CLEARANCE_M
+    if crank_phase_rad is not None:
+        if not np.isfinite(crank_phase_rad):
+            raise ValueError("initial crank phase must be finite")
+        crank_joint = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "crank_spin")
+        if crank_joint < 0:
+            raise ValueError("initial crank phase requires a dynamic crank")
+        data.qpos[model.jnt_qposadr[crank_joint]] = crank_phase_rad
+    if drive_initialize is not None:
+        drive_initialize()
     if leg_drive is not None and leg_drive.active:
         # Start the relaxation weld-consistent -- legs and pedal platforms at the IK pose
         # for the crank's compiled phase -- and clear the tracked reference velocity.

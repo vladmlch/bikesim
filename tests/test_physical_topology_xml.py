@@ -24,6 +24,8 @@ def pose():
 def root_fixture():
     root=ET.Element('mujoco'); world=ET.SubElement(root,'worldbody')
     frame=ET.SubElement(world,'body',name='frame')
+    steer=ET.SubElement(frame,'body',name='steer')
+    ET.SubElement(steer,'joint',name='steer_joint',axis='-.5 0 .866')
     crank=ET.SubElement(frame,'body',name='crank',pos='0 0 0')
     ET.SubElement(crank,'joint',name='crank_spin',type='hinge',axis='0 1 0')
     ET.SubElement(crank,'geom',name='geom_crank_spindle',mass='.1')

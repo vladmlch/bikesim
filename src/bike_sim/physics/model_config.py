@@ -53,6 +53,9 @@ class SimulationPhysicsConfig:
     resistance: ResistanceConfig = field(default_factory=ResistanceConfig)
     articulated: ArticulatedConfig = field(default_factory=ArticulatedConfig)
     initial_speed_mps: float = 0.0
+    initial_front_brake: float = 0.0
+    initial_rear_brake: float = 0.0
+    closure_time_constant_s: float = 0.001
 
     def __post_init__(self) -> None:
         if self.physics_mode not in {"legacy", "physical"}:
@@ -61,6 +64,12 @@ class SimulationPhysicsConfig:
             raise ValueError("timestep_s must be finite and positive")
 
         legacy = self.physics_mode == "legacy"
+        scalar(self.closure_time_constant_s, "closure time constant", positive=True)
+        if not legacy and self.closure_time_constant_s < 2.0*self.timestep_s:
+            raise ValueError(
+                f"closure_time_constant_s={self.closure_time_constant_s} must be at least "
+                f"2*timestep_s={2.0*self.timestep_s}; otherwise MuJoCo silently changes closure stiffness"
+            )
         if self.drive_mode is None:
             object.__setattr__(
                 self, "drive_mode", "ideal_speed_control" if legacy else "coast"
@@ -74,10 +83,15 @@ class SimulationPhysicsConfig:
             "articulated_effort",
         }:
             raise ValueError("unknown drive_mode")
+        if legacy and self.drive_mode in {'crank_effort','articulated_effort'}:
+            raise ValueError('physical effort drive modes require physics_mode=physical')
         if not legacy and self.pitch_assist:
             raise ValueError("external pitch assist is forbidden in physical mode")
 
         scalar(self.initial_speed_mps, "initial speed")
+        for name in ('initial_front_brake','initial_rear_brake'):
+            value=scalar(getattr(self,name),name,minimum=0.)
+            if value>1.: raise ValueError(f'{name} must lie in [0,1]')
         scalar(self.timestep_s, "timestep", positive=True)
         if not isinstance(self.pitch_assist, bool):
             raise ValueError("pitch_assist must be a bool")

@@ -345,7 +345,7 @@ class PedalDrivetrain:
         """
         data.ctrl[self.ctrl_adr] = self.command.crank_torque_nm
 
-    def reset(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
+    def reset(self, model: mujoco.MjModel, data: mujoco.MjData, *, initialize_pose: bool = True) -> None:
         """
         Returns the crank to its starting phase, re-engages the chain and clears the motor.
 
@@ -357,23 +357,26 @@ class PedalDrivetrain:
 
         Args:
             model: Compiled model; `eq_data` carries the chain datum.
-            data: Simulation state, written at the crank coordinate.
+            data: Simulation state, written at the crank coordinate only during initialization.
+            initialize_pose: False clears command state without undoing a solved equilibrium.
         """
         self.current_cog = int(self.specs.cog_teeth)
         self.shift_cooldown_timer_s = 0.0
         self.shift_cut_timer_s = 0.0
         model.eq_data[self.eq_id, 1] = 1.0 / self.current_gear_ratio
-        data.qpos[self.crank_qposadr] = self.start_phase_rad
-        data.qvel[self.crank_dofadr] = 0.0
+        if initialize_pose:
+            data.qpos[self.crank_qposadr] = self.start_phase_rad
+            data.qvel[self.crank_dofadr] = 0.0
         data.ctrl[self.ctrl_adr] = 0.0
         self.assist_torque_nm = 0.0
-        self.hold_phase_rad = self.start_phase_rad
+        self.hold_phase_rad = float(data.qpos[self.crank_qposadr])
         self.engaged = True
         self.traction_limited = False
-        self._redatum(model, data)
+        if initialize_pose:
+            self._redatum(model, data)
         _set_equality(data, self.eq_id, True)
         self.command = _idle_command(
-            self.start_phase_rad, self.nominal_support_factor, gear_teeth=self.current_cog
+            self.hold_phase_rad, self.nominal_support_factor, gear_teeth=self.current_cog
         )
 
     # --- internals -------------------------------------------------------------------

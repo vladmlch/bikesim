@@ -112,29 +112,26 @@ def test_physical_recorder_matches_prestep_power_and_integrates_decimated_work(t
     dense.record(sim)
     sparse.record(sim)
     assert dense.schema_version == sparse.schema_version == 2
-    assert dense.column("interval_start_s")[1] == pytest.approx(0.0)
-    assert dense.column("interval_dt_s")[1] == pytest.approx(dt)
-    assert dense.column(f"prestep_qvel_{sim.root_x_dofadr}")[1] == pytest.approx(2.0)
-    assert np.isnan(dense.column(f"prestep_qvel_{sim.root_x_dofadr}")[0])
-    assert dense.column("external_power_w")[1] == pytest.approx(6.0)
-    assert dense.column("external_work_j")[1] == pytest.approx(6.0 * dt)
-    assert np.isfinite(dense.column("kinetic_energy_j")[1])
-    assert np.isfinite(dense.column("gravitational_energy_j")[1])
-    assert np.isnan(dense.column("mechanical_energy_j")[1])
-    assert np.isnan(dense.column("energy_residual_j")[1])
+    assert dense.column("interval_start_s")[0] == pytest.approx(0.0)
+    assert dense.column("interval_dt_s")[0] == pytest.approx(dt)
+    assert dense.column(f"prestep_qvel_{sim.root_x_dofadr}")[0] == pytest.approx(2.0)
+    assert dense.column("external_power_w")[0] == pytest.approx(6.0)
+    assert dense.column("external_work_j")[0] == pytest.approx(6.0 * dt)
+    assert np.isfinite(dense.column("kinetic_energy_j")[0])
+    assert np.isfinite(dense.column("gravitational_energy_j")[0])
+    assert np.isfinite(dense.column("mechanical_energy_j")[0])
+    assert np.isfinite(dense.column("energy_residual_j")[0])
 
     for _ in range(9):
         sim.step(external_qfrc=force)
         dense.record(sim)
         sparse.record(sim)
     assert dense.component_work_j["external"] == pytest.approx(sparse.component_work_j["external"])
-    assert dense.component_work_j["external"] == pytest.approx(
-        sum(dense.column("external_power_w")[1:] * dt)
-    )
-    assert sparse.rows == 2
-    assert dense.column("interval_start_s")[-1] < dense.column("time_s")[-1]
+    assert dense.component_work_j["external"] == pytest.approx(sum(dense.column("external_power_w") * dt))
+    assert sparse.rows == 1
+    assert dense.column("interval_start_s")[-1] < dense.column("interval_end_s")[-1]
     back = read_csv(dense.write_csv(tmp_path / "physical.csv"))
-    assert back["external_power_w"][1] == pytest.approx(6.0)
+    assert back["external_power_w"][0] == pytest.approx(6.0)
 
 
 def test_legacy_recorder_retains_v1_columns():

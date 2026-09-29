@@ -4,7 +4,10 @@ Fast and detailed runs use a common 1 ms telemetry interval. Measured on the dev
 (M4 Max, MuJoCo 3.12.0, Python 3.12.13; rider seated; 25 km/h), the flat-track RMS differs
 by 0.069 m/s² at the bar and 0.0099 m/s² at the saddle. On `single_edge`, the largest RMS
 difference is 10.4 %; fork/shock maximum and p95 travel differ by at most 4.3 %, traverse
-time by 0.09 %, and total rim strikes are equal (individual wheels can differ by one).
+time by 0.09 %. Raw rim-threshold crossings are retained but are not grid-invariant:
+a coarse ray discretization can separate one physical impact into several pulses.
+The additional episode metric groups crossings at one feature with a <=1 ms gap;
+the grouping is observation-only and never holds contact force.
 The assertions keep modest headroom around those measured values.
 """
 
@@ -83,9 +86,10 @@ def test_fast_tier_metrics_converge_to_detailed(track_name):
         assert _relative_difference(fast_value, detailed_value) <= _TRAVEL_REL_TOL
     assert _relative_difference(fast.sim_time_s, detailed.sim_time_s) <= _TRAVERSE_TIME_REL_TOL
 
-    fast_rim_counts = tuple(fast.tyres[wheel].rim_strikes for wheel in ("front", "rear"))
-    detailed_rim_counts = tuple(
-        detailed.tyres[wheel].rim_strikes for wheel in ("front", "rear")
-    )
-    assert sum(fast_rim_counts) == sum(detailed_rim_counts)
-    assert all(abs(a - b) <= 1 for a, b in zip(fast_rim_counts, detailed_rim_counts))
+    fast_rim_counts = tuple(fast.tyres[wheel].completed_rim_impact_episodes for wheel in ("front", "rear"))
+    detailed_rim_counts = tuple(detailed.tyres[wheel].completed_rim_impact_episodes for wheel in ("front", "rear"))
+    assert fast_rim_counts == detailed_rim_counts
+    assert fast_rim_counts == ((0, 0) if track_name == "flat" else (1, 1))
+    for summary in (fast, detailed):
+        for wheel in ("front", "rear"):
+            assert summary.tyres[wheel].rim_strikes >= summary.tyres[wheel].completed_rim_impact_episodes

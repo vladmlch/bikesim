@@ -17,8 +17,9 @@ def wheel_point_velocity(
     data: mujoco.MjData,
     body_id: int,
     point_m: np.ndarray,
+    *, qvel: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Read the wheel body's absolute twist and transport it from its body origin.
+    """Read absolute point velocity through the current spatial Jacobian.
 
     ``mj_objectVelocity(..., flg_local=0)`` gives world-axis angular and linear
     velocity at ``data.xpos[body_id]``. The wheel hinge ``qvel`` is only relative
@@ -27,11 +28,13 @@ def wheel_point_velocity(
     point = np.asarray(point_m, dtype=float)
     if point.shape != (3,) or not np.isfinite(point).all():
         raise ValueError("expected a finite world contact point")
-    velocity6 = np.zeros(6, dtype=float)
-    mujoco.mj_objectVelocity(
-        model, data, mujoco.mjtObj.mjOBJ_BODY, body_id, velocity6, 0
-    )
-    return point_velocity(velocity6[3:6], velocity6[:3], point - data.xpos[body_id])
+    velocity = data.qvel if qvel is None else np.asarray(qvel, dtype=float)
+    if velocity.shape != (model.nv,) or not np.isfinite(velocity).all():
+        raise ValueError("invalid generalized velocity")
+    jacobian = np.zeros((3, model.nv))
+    mujoco.mj_jac(model, data, jacobian, None, point, body_id)
+    return jacobian @ velocity
+
 
 
 __all__ = ["point_velocity", "wheel_point_velocity"]

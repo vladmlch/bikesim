@@ -3,7 +3,7 @@ import copy
 from dataclasses import asdict
 from math import atan2, pi
 import numpy as np
-from bike_sim.physics.chain import chain_extension, chain_geometry, chain_jacobian, chain_tension
+from bike_sim.physics.chain import chain_extension, chain_geometry, chain_jacobian, chain_tension, chain_center_gradient
 from bike_sim.physics.freehub import Freehub
 from bike_sim.physics.motor import AssistController
 from bike_sim.physics.pedaling import human_crank_torque
@@ -60,6 +60,34 @@ class DrivetrainForceApplier:
         theta_r = self._angle(data, 'cassette', theta_reference[1])
         rf, rr = self.config.gearing.front_radius_m, self.config.gearing.rear_radius_m
         return cf, cr, rf, rr, theta_f, theta_r, up
+
+    def jacobian(self,model,data,*,psi_reference=None):
+        """Analytic centre gradient mapped through engine body Jacobians.
+
+        The full finite-difference implementation remains an independent test
+        oracle. World rotational Jacobians include carrier and frame reactions.
+        """
+        import mujoco
+        cf,cr,rf,rr,tf,tr,up=self._geometry(data,self.angles,self.psi)
+        gradient=chain_center_gradient(cf,cr,rf,rr,up_xz=up,
+                                       psi_reference=self.psi if psi_reference is None else psi_reference)
+        jp_f,jr_f=np.zeros((3,model.nv)),np.zeros((3,model.nv))
+        jp_r,jr_r=np.zeros((3,model.nv)),np.zeros((3,model.nv))
+        mujoco.mj_jac(model,data,jp_f,jr_f,data.xpos[self.ids['crank']],self.ids['crank'])
+        mujoco.mj_jac(model,data,jp_r,jr_r,data.xpos[self.ids['cassette']],self.ids['cassette'])
+        return gradient@(jp_r[[0,2]]-jp_f[[0,2]])+rf*jr_f[1]-rr*jr_r[1]
+
+    def finite_difference_jacobian(self,model,data):
+        """Read-only oracle; perturb only scratch data with a frozen angle branch."""
+        import mujoco
+        angles=(self._angle(data,'crank',self.angles[0]),self._angle(data,'cassette',self.angles[1]))
+        psi=self.psi
+        def evaluate(q):
+            self.scratch.qpos[:]=q
+            mujoco.mj_kinematics(model,self.scratch)
+            cf,cr,rf,rr,tf,tr,up=self._geometry(self.scratch,angles,psi)
+            return chain_extension(cf,cr,rf,rr,tf,tr,self.reference,up_xz=up,psi_reference=psi)
+        return chain_jacobian(data.qpos,evaluate)
 
     def reset(self, model, data):
         """Bind the stress-free chain datum after initial crank/rider posing."""
@@ -136,15 +164,7 @@ class DrivetrainForceApplier:
         _, psi = chain_geometry(cf,cr,rf,rr,up_xz=up,psi_reference=self.psi)
         extension = chain_extension(cf,cr,rf,rr,tf,tr,self.reference,up_xz=up,psi_reference=psi)
 
-        def evaluate(q):
-            self.scratch.qpos[:] = q
-            # Pure forward kinematics, no live-state writes, filters, contacts or
-            # control callbacks. Unwrap references are frozen for the entire J.
-            mujoco.mj_kinematics(model,self.scratch)
-            af, ar, r_f, r_r, t_f, t_r, up_q = self._geometry(self.scratch,angles,psi)
-            return chain_extension(af,ar,r_f,r_r,t_f,t_r,self.reference,up_xz=up_q,psi_reference=psi)
-
-        J = chain_jacobian(data.qpos,evaluate)
+        J = self.jacobian(model,data,psi_reference=psi)
         extension_rate = float(J @ data.qvel)
         tension, chain_energy = chain_tension(extension,extension_rate,
                                                self.config.chain_k_n_m,self.config.chain_c_ns_m)
@@ -193,6 +213,7 @@ class DrivetrainForceApplier:
             'chain_tension_n':tension, 'chain_energy_j':chain_energy,
             'chain_dissipation_power_w':max(0.,(tension-self.config.chain_k_n_m*max(extension,0.))*extension_rate),
             'freehub_torque_nm':torque, 'freehub_energy_j':self.hub.energy_j,
+            'freehub_engaged':torque > 0., 'freehub_deflection_rad':deflection,
             'freehub_dissipation_power_w':max(0.,(torque-self.hub.k*deflection)*relative_rate),
             'cadence_rpm':cadence, 'human_torque_nm':human, 'human_sensor_nm':sensor,
             'motor_request_nm':request, 'motor_torque_nm':delivered,

@@ -38,6 +38,7 @@ class ProfileQuery:
         if np.any(np.diff(vertices[:, 0]) <= 0):
             raise ValueError('profile x must increase strictly')
         self.vertices = array(vertices, 'profile', readonly=True)
+        self._maximum_z = float(np.max(vertices[:, 1]))
         self.significant_delta_m = scalar(significant_delta_m, 'significant penetration', minimum=0)
         self.significance_fraction = scalar(significance_fraction, 'significance fraction', minimum=0)
         angle = scalar(normal_angle_deg, 'normal angle', positive=True)
@@ -55,14 +56,16 @@ class ProfileQuery:
         # A projection on a segment endpoint is not a separate support when
         # continuing along its neighbour moves closer to the wheel. In particular,
         # subdividing a flat road must not manufacture hundreds of supports.
-        for k in np.flatnonzero((t == 0.) | (t == 1.)):
-            vertex_id = int(ids[k] + (t[k] == 1.))
-            v = self.vertices[vertex_id]
-            offset = c-v
-            for neighbour in (vertex_id-1, vertex_id+1):
-                if 0 <= neighbour < len(self.vertices):
-                    if offset @ (self.vertices[neighbour]-v) > 1e-14:
-                        keep[k] = False
+        endpoint = np.flatnonzero((t == 0.) | (t == 1.))
+        vertex_ids = ids[endpoint] + (t[endpoint] == 1.).astype(int)
+        v = self.vertices[vertex_ids]
+        offsets = c-v
+        for shift in (-1, 1):
+            neighbours = vertex_ids+shift
+            valid = (neighbours >= 0) & (neighbours < len(self.vertices))
+            directions = self.vertices[np.clip(neighbours,0,len(self.vertices)-1)]-v
+            closer = np.einsum('ij,ij->i',offsets,directions) > 1e-14
+            keep[endpoint[valid & closer]] = False
         points, ids = points[keep], ids[keep]
         distances = np.linalg.norm(c-points, axis=1)
         return ids, points, distances
@@ -87,7 +90,20 @@ class ProfileQuery:
         if len(ids) == 0 or np.min(distances) >= radius:
             # Outside contact, retain an exact signed nearest gap rather than a
             # radius-window artefact; no force is applied in either case.
-            ids, points, distances = self._candidates(c, 0, count)
+            # A segment farther away horizontally than this bound cannot beat
+            # the current distance, even at the highest point of the terrain.
+            # This is exact branch-and-bound, not a contact radius heuristic.
+            # In particular a high airborne wheel over flat road need not scan
+            # all 24,000 segments four times in every physical interval.
+            if len(ids):
+                best = float(np.min(distances))
+                vertical_lower = max(0., float(c[1]) - self._maximum_z)
+                reach = np.sqrt(max(0., best*best - vertical_lower*vertical_lower)) + 1e-8
+                search_lo = max(0, int(np.searchsorted(x, c[0]-reach, side='right'))-2)
+                search_hi = min(count, int(np.searchsorted(x, c[0]+reach, side='right'))+1)
+            else:
+                search_lo, search_hi = 0, count
+            ids, points, distances = self._candidates(c, search_lo, search_hi)
         if len(ids) == 0 or np.min(distances) <= 1e-12:
             raise ValueError('unsupported or degenerate contact geometry')
         winner = int(np.argmin(distances))

@@ -6,6 +6,7 @@ import pytest
 from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.physics.tyre import TyreConfig
+from bike_sim.physics.physical_config import TireBackendConfig
 from bike_sim.sim.ride_sim import RideSimulation
 from bike_sim.terrain import get_preset
 
@@ -23,8 +24,11 @@ def test_external_pitch_is_rejected_in_physical():
 
 @pytest.mark.parametrize("mode", ["crank_effort", "articulated_effort"])
 def test_effort_modes_cannot_silently_use_legacy_cruise(mode):
-    with pytest.raises(NotImplementedError, match=mode):
-        RideSimulation(physics_config=SimulationPhysicsConfig("physical", drive_mode=mode))
+    model=mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode='ride',
+        rider='articulated_planar' if mode=='articulated_effort' else 'none',
+        physics_config=SimulationPhysicsConfig('physical',drive_mode=mode)))
+    assert mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_ACTUATOR,'rear_drive') == -1
+    assert mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_ACTUATOR,'mid_drive') >= 0
 
 
 def test_invalid_physics_config_is_rejected():
@@ -37,7 +41,7 @@ def test_invalid_physics_config_is_rejected():
 
 
 def test_explicit_timestep_reaches_ride_model():
-    cfg = SimulationPhysicsConfig(physics_mode="physical", timestep_s=0.001)
+    cfg = SimulationPhysicsConfig(physics_mode="physical", timestep_s=0.001, closure_time_constant_s=0.002)
     model = mujoco.MjModel.from_xml_string(
         generate_mujoco_xml(mode="ride", rider="none", physics_config=cfg)
     )
@@ -102,12 +106,12 @@ def test_explicit_legacy_coast_disables_cruise_and_pitch_help():
     assert sim.cruise.torque_nm == 0.0
 
 
-def test_physical_pneumatic_reads_current_wheel_geometry():
+def test_legacy_pneumatic_reads_current_wheel_geometry():
     sim = RideSimulation(
         track=get_preset("flat"),
         rider="none",
         tyre=TyreConfig(model="pneumatic"),
-        physics_config=SimulationPhysicsConfig(physics_mode="physical"),
+        physics_config=SimulationPhysicsConfig(physics_mode="legacy"),
     )
     z_joint = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_JOINT, "root_z")
     sim.data.qpos[sim.model.jnt_qposadr[z_joint]] += 1.0
@@ -128,13 +132,10 @@ def test_physical_detailed_tyre_rejects_incompatible_explicit_timestep():
         )
 
 
-def test_physical_detailed_tyre_keeps_matching_explicit_timestep():
-    sim = RideSimulation(
-        track=get_preset("flat"),
-        rider="none",
-        tyre=TyreConfig(model="pneumatic", tier="detailed"),
-        physics_config=SimulationPhysicsConfig(
-            physics_mode="physical", timestep_s=0.00025
-        ),
-    )
-    assert sim.model.opt.timestep == pytest.approx(0.00025)
+def test_compliant_physical_backend_keeps_explicit_timestep():
+    sim = RideSimulation(track=get_preset('flat'),rider='none',
+        physics_config=SimulationPhysicsConfig('physical',timestep_s=.00025,
+            tires=TireBackendConfig(backend='compliant_2d')))
+    assert sim.model.opt.timestep==pytest.approx(.00025)
+    assert sim.physical.tire is not None
+    assert sim.tyre_applier is None

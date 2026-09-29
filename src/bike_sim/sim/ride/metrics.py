@@ -116,6 +116,8 @@ class RimStrikeStats:
     peak_load_n: float
     peak_rim_force_n: float
     absorbed_energy_j: float
+    start_time_s: Optional[float] = None
+    end_time_s: Optional[float] = None
 
 
 @dataclass
@@ -131,6 +133,9 @@ class TyreStats:
     locked_time_s: float
     mean_dissipated_power_w: float
     crr_equivalent: float
+    completed_rim_impact_episodes: int = 0
+    rim_episode_gap_s: float = 0.001
+    rim_episode_distance_m: float = 0.01
 
 
 @dataclass
@@ -307,7 +312,7 @@ class RideSummary:
 
     def to_dict(self) -> Dict:
         """Returns a JSON-ready dictionary."""
-        return asdict(self)
+        return dict(asdict(self), schema_version=1, physics_revision="legacy-v1")
 
     def to_json(self) -> str:
         """Returns the summary as indented JSON text."""
@@ -675,6 +680,8 @@ def _tyre_stats(
             peak_load_n=float(event["peak_load_n"]),
             peak_rim_force_n=float(event["peak_rim_force_n"]),
             absorbed_energy_j=float(event["absorbed_energy_j"]),
+            start_time_s=event.get("start_time_s"),
+            end_time_s=event.get("end_time_s"),
         )
         for event in rim_events
         if float(event["x_m"]) >= window_start_m
@@ -686,12 +693,15 @@ def _tyre_stats(
     mean_loss_w = float(np.mean(loss)) if loss.size else 0.0
     mean_load_speed = float(np.mean(fz * np.abs(speed))) if fz.size else 0.0
     crr_equivalent = mean_loss_w / mean_load_speed if mean_load_speed > 1e-9 else 0.0
+    from bike_sim.sim.ride.rim_events import count_completed_impact_episodes
+    episodes = count_completed_impact_episodes([asdict(event) for event in events])
     return TyreStats(
         wheel=wheel,
         peak_fz_n=float(np.max(fz)) if fz.size else 0.0,
         max_deflection_mm=float(np.max(deflection)) if deflection.size else 0.0,
         rim_strikes=int(rim_strikes),
         rim_strike_events=events,
+        completed_rim_impact_episodes=episodes,
         wheelspin_time_s=(
             float(tyre_times_s.get("wheelspin", 0.0))
             if tyre_times_s is not None

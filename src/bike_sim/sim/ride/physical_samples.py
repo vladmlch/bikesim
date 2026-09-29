@@ -13,6 +13,8 @@ def freeze(value):
         return MappingProxyType({str(k): freeze(v) for k, v in value.items()})
     if isinstance(value, (tuple, list)):
         return tuple(freeze(v) for v in value)
+    if isinstance(value, np.bool_):
+        return bool(value)
     if isinstance(value, (bool, str)) or value is None:
         return value
     if isinstance(value, (int, float, np.number)):

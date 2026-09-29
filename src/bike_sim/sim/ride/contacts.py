@@ -190,6 +190,7 @@ class TerrainContactQuery:
         model: mujoco.MjModel,
         data: mujoco.MjData,
         wheel_load_provider: Optional[WheelLoadProvider] = None,
+        *, time_s: float | None = None, qvel: np.ndarray | None = None,
     ) -> TerrainContacts:
         """
         Reads the current contact normal load on each tracked geom.
@@ -206,10 +207,11 @@ class TerrainContactQuery:
             Both legacy load channels for each wheel -- bridged magnitude and raw vertical
             support -- plus the handlebar's raw magnitude and separate controller booleans.
         """
+        sample_time = float(data.time) if time_s is None else float(time_s)
         magnitude_n, vertical_n, wheel_patches = self._sum_normal_loads(
-            model, data, include_wheel_contacts=wheel_load_provider is None
+            model, data, include_wheel_contacts=wheel_load_provider is None, qvel=qvel
         )
-        interval_id = round(float(data.time) / float(model.opt.timestep))
+        interval_id = round(sample_time / float(model.opt.timestep))
         front_axis = data.geom_xpos[self.front_id]
         rear_axis = data.geom_xpos[self.rear_id]
         if wheel_load_provider is not None:
@@ -229,12 +231,12 @@ class TerrainContactQuery:
                 ),
             )
         front_snapshot = WheelContactSnapshot(
-            time_s=float(data.time), patches=wheel_patches[self.front_id],
+            time_s=sample_time, patches=wheel_patches[self.front_id],
             geometric_contact=bool(wheel_patches[self.front_id]),
             interval_id=interval_id, backend="native_reference", wheel_axis_m=front_axis,
         )
         rear_snapshot = WheelContactSnapshot(
-            time_s=float(data.time), patches=wheel_patches[self.rear_id],
+            time_s=sample_time, patches=wheel_patches[self.rear_id],
             geometric_contact=bool(wheel_patches[self.rear_id]),
             interval_id=interval_id, backend="native_reference", wheel_axis_m=rear_axis,
         )
@@ -247,10 +249,10 @@ class TerrainContactQuery:
             front_snapshot=front_snapshot,
             rear_snapshot=rear_snapshot,
             front_controller_grounded=self._front_controller_grounded.update(
-                _working_road_grounded(front_snapshot), float(data.time)
+                _working_road_grounded(front_snapshot), sample_time
             ),
             rear_controller_grounded=self._rear_controller_grounded.update(
-                _working_road_grounded(rear_snapshot), float(data.time)
+                _working_road_grounded(rear_snapshot), sample_time
             ),
         )
 
@@ -266,6 +268,7 @@ class TerrainContactQuery:
         model: mujoco.MjModel,
         data: mujoco.MjData,
         include_wheel_contacts: bool = True,
+        qvel: np.ndarray | None = None,
     ) -> Tuple[Dict[int, float], Dict[int, float], Dict[int, tuple[ContactPatch, ...]]]:
         """
         Accumulates this step's normal contact load on each tracked geom, two ways.
@@ -322,7 +325,7 @@ class TerrainContactQuery:
                 body_id = int(model.geom_bodyid[tracked])
                 point = np.asarray(contact.pos, dtype=float)
                 slip_mps = float(np.dot(
-                    wheel_point_velocity(model, data, body_id, point), tangent
+                    wheel_point_velocity(model, data, body_id, point, qvel=qvel), tangent
                 ))
                 wheel_patches[tracked].append(ContactPatch(
                     point_m=point,

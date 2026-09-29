@@ -41,7 +41,7 @@ from bike_sim.geometry.specs import BikeSpecs
 
 GRAVITY_MPS2 = 9.81
 
-RIDER_VARIANTS = ("none", "lumped", "seated")
+RIDER_VARIANTS = ("none", "lumped", "seated", "articulated_planar")
 DEFAULT_RIDER_VARIANT = "seated"
 
 # --------------------------------------------------------------------------------------
@@ -293,6 +293,29 @@ class RiderSpecs:
                 "rider_legs": (LUMPED_COM_M["rider_legs"].copy(), self.legs_mass),
                 "rider_arms": (LUMPED_COM_M["rider_arms"].copy(), self.arms_mass),
             }
+        if self.variant == "articulated_planar":
+            from bike_sim.physics.rider_segments import geometry_pose, segment_masses
+            pose = geometry_pose(self, specs if specs is not None else BikeSpecs())
+            masses = segment_masses(self.mass_kg, self.helmet_mass_kg)
+            centers = {
+                "pelvis": pose.hip + np.array([0., 0., .06]),
+                "torso": (pose.hip + pose.shoulder) / 2,
+                "head": pose.head_center,
+                "upper_arm_pair": (pose.shoulder + pose.elbow) / 2,
+                "forearm_pair": (pose.elbow + pose.grip) / 2,
+            }
+            for side, sign in (("front", -1.), ("rear", 1.)):
+                knee = getattr(pose, "knee_" + side)
+                ankle = getattr(pose, "ankle_" + side)
+                pedal = getattr(pose, "pedal_" + side)
+                for part, point in (("thigh", (pose.hip + knee) / 2),
+                                    ("shank", (knee + ankle) / 2),
+                                    ("foot", (ankle + pedal) / 2)):
+                    center = np.array(point, copy=True)
+                    center[1] = sign * PEDAL_LATERAL_OFFSET_M
+                    centers[part + "_" + side] = center
+            return {"rider_" + key: (np.array(center, copy=True), masses[key])
+                    for key, center in centers.items()}
         pose = self.seated_pose(specs)
         components = {body.name: (body.center_of_mass, body.mass) for body in pose.bodies}
         for chain in pose.leg_chains:

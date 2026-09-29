@@ -134,6 +134,16 @@ class ResistanceConfig:
 
 @dataclass(frozen=True)
 class ArticulatedConfig:
+    # Desired support distribution belongs to posture control, never anatomy.
+    pedal_support_fraction: float = .33
+    bar_support_fraction: float = .12
+    posture_sole_depth_m: float = .003
+    stance_blend_load_n: float = 50.
+    posture_pitch_k_nm_rad: float = 600.
+    posture_pitch_d_nms_rad: float = 60.
+    posture_pitch_limit_nm: float = 60.
+    saddle_patch_half_length_m: float = .045
+    pedal_patch_half_length_m: float = .025
     support_k_n_m: float = 30000.
     support_c_ns_m: float = 500.
     support_tangent_k_n_m: float = 20000.
@@ -142,14 +152,19 @@ class ArticulatedConfig:
     grip_k_n_m: float = 4000.
     grip_c_ns_m: float = 150.
     grip_release_distance_m: float = .12
-    joint_kp_nm_rad: float = 150.
+    arm_reach_fraction: float = .92
+    joint_kp_nm_rad: float = 600.
     joint_kd_nms_rad: float = 15.
     joint_limit_nm: float = 100.
     joint_speed_limit_rad_s: float = 20.
     joint_power_limit_w: float = 250.
 
     def __post_init__(self):
+        if not 0 < scalar(self.arm_reach_fraction,'arm reach fraction',positive=True) < 1:
+            raise ValueError('arm reach fraction must lie strictly between zero and one')
+        if self.pedal_support_fraction + self.bar_support_fraction >= 1.:
+            raise ValueError('postural support fractions must leave a saddle share')
         for key in self.__dataclass_fields__:
             scalar(getattr(self,key),key,minimum=0)
-        for key in ('support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s'):
+        for key in ('stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s'):
             scalar(getattr(self,key),key,positive=True)

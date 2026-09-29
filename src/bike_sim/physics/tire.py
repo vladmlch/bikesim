@@ -1,4 +1,4 @@
-"""Pure SI material laws for the planned ``compliant_2d`` tire backend.
+"""Pure SI material laws for the ``compliant_2d`` tire backend.
 
 These laws are independent of native MuJoCo solver parameters and the legacy
 ``tyre`` module. They do not select a backend or apply any simulator force.

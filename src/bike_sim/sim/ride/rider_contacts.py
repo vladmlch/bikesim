@@ -69,7 +69,7 @@ class RiderContactApplier:
 
     def reset(self,model,data):
         self.enabled={name:True for name in self.CONTACTS}
-        self.states={name:_SupportState() for name in self.supports}
+        self.states={f"{name}:{i}":_SupportState() for name in self.supports for i in range(2)}
         self.grip_xi_local=np.zeros(3)
         self.grip_anchor_local=None
         if data is not None:
@@ -92,10 +92,10 @@ class RiderContactApplier:
                 self.pending_release_loss_j+=.5*self.config.grip_k_n_m*float(self.grip_xi_local@self.grip_xi_local)
                 self.grip_xi_local[:]=0.
             else:
-                state=self.states[name]
-                self.pending_release_loss_j+=.5*self.config.support_tangent_k_n_m*state.xi**2
-                self.states[name]=_SupportState()
-                # Radial support energy is removed by an explicit release too.
+                for i in range(2):
+                    key=f"{name}:{i}"
+                    self.pending_release_loss_j+=.25*self.config.support_tangent_k_n_m*self.states[key].xi**2
+                    self.states[key]=_SupportState()
                 self.pending_release_loss_j+=self.diagnostics.get(name,{}).get('radial_energy_j',0.)
         self.enabled[name]=enabled
 
@@ -106,20 +106,44 @@ class RiderContactApplier:
     def restart_clock(self):
         self.last_time_s=None
 
+    def initialize_settled_state(self, model, data):
+        """Commit the final initial material state before starting the clock.
+
+        The equilibrium solver may refine both pose and shear after its last
+        advancing contact evaluation. Release-energy data must correspond to
+        that settled pose, not to an earlier relaxation step.
+        """
+        if self.last_time_s is not None or float(data.time) != 0.:
+            raise ValueError('settled contact initialization requires a fresh clock')
+        self.compute_qfrc(model,data,float(model.opt.timestep))
+        self.loss_step_j=0.
+        self.radial_dissipation_power_w=0.
+        self.restart_clock()
+
+    def _pads(self, model, data, name, entry):
+        body,site,bike,geom=entry
+        R=data.geom_xmat[geom].reshape(3,3)
+        n,tangent=R[:,2],R[:,0]
+        origin=data.geom_xpos[geom]+n*model.geom_size[geom,2]
+        half=(self.config.saddle_patch_half_length_m if name=='saddle'
+              else self.config.pedal_patch_half_length_m)
+        foot_rotation=data.xmat[body].reshape(3,3)
+        for i,sign in enumerate((-1.,1.)):
+            anchor=data.site_xpos[site]+foot_rotation@np.array([sign*half,0.,0.])
+            local=R.T@(anchor-origin)
+            inside=(abs(local[0])<=model.geom_size[geom,0]
+                    and abs(local[1])<=model.geom_size[geom,1]+1e-8)
+            point=anchor-local[2]*n
+            yield f"{name}:{i}",point,n,tangent,float(local[2]),bool(inside)
+
     def stored_energy(self, model, data):
-        """Current support geometry plus persistent shear, without a force update."""
-        cfg = self.config
-        energy = .5*cfg.grip_k_n_m*float(self.grip_xi_local @ self.grip_xi_local)
-        for name, (_, site, _, geom) in self.supports.items():
-            state = self.states[name]
-            energy += .5*cfg.support_tangent_k_n_m*state.xi**2
-            if not self.enabled[name]:
-                continue
-            R = data.geom_xmat[geom].reshape(3, 3)
-            origin = data.geom_xpos[geom]+R[:, 2]*model.geom_size[geom, 2]
-            local = R.T @ (data.site_xpos[site]-origin)
-            if abs(local[0]) <= model.geom_size[geom, 0] and abs(local[1]) <= model.geom_size[geom, 1]+1e-8:
-                energy += .5*cfg.support_k_n_m*max(-float(local[2]), 0.)**2
+        cfg=self.config
+        energy=.5*cfg.grip_k_n_m*float(self.grip_xi_local@self.grip_xi_local)
+        for name,entry in self.supports.items():
+            for key,point,n,tangent,gap,inside in self._pads(model,data,name,entry):
+                energy+=.25*cfg.support_tangent_k_n_m*self.states[key].xi**2
+                if self.enabled[name] and inside:
+                    energy+=.25*cfg.support_k_n_m*max(-gap,0.)**2
         return energy
 
     def compute_qfrc(self,model,data,dt,*,advance=True):
@@ -130,7 +154,11 @@ class RiderContactApplier:
             probe.grip_xi_local=self.grip_xi_local.copy()
             probe.enabled=self.enabled.copy()
             probe.last_time_s=None
-            return probe.compute_qfrc(model,data,dt)
+            force=probe.compute_qfrc(model,data,dt)
+            self.probe_diagnostics=probe.diagnostics
+            self.probe_enabled=probe.enabled
+            self.probe_delivered_crank_torque_nm=probe.delivered_crank_torque_nm
+            return force
         time=float(data.time)
         if self.last_time_s is not None and time<=self.last_time_s:
             raise ValueError('rider contact state advances only once per timestamp')
@@ -140,51 +168,54 @@ class RiderContactApplier:
         qfrc=np.zeros(model.nv)
         energy=0.; loss=self.pending_release_loss_j; radial_power=0.; delivered=0.
         new_states={}; diagnostics={}
-        for name,(body,site,bike,geom) in self.supports.items():
-            R=data.geom_xmat[geom].reshape(3,3)
-            n,tangent=R[:,2],R[:,0]
-            if abs(n[1])>1e-9 or abs(tangent[1])>1e-9:
-                raise ValueError('rider support surface is outside the planar model')
-            anchor=np.array(data.site_xpos[site],copy=True)
-            origin=data.geom_xpos[geom]+n*model.geom_size[geom,2]
-            local=R.T@(anchor-origin)
-            in_platform=(abs(local[0])<=model.geom_size[geom,0]
-                         and abs(local[1])<=model.geom_size[geom,1]+1e-8)
-            point=anchor-local[2]*n
-            u=(point_velocity(model,data,body,point)-point_velocity(model,data,bike,point))
-            penetration=-float(local[2])
-            normal,radial_energy=normal_contact(penetration,-float(u@n),cfg.support_k_n_m,cfg.support_c_ns_m)
-            state=self.states[name]; xi=state.xi
-            transport_loss=0.
-            if state.tangent is not None:
-                transported=xi*float(state.tangent@tangent)
-                transport_loss=.5*cfg.support_tangent_k_n_m*(xi*xi-transported*transported)
-                xi=transported
-            if self.enabled[name] and not in_platform and self.diagnostics.get(name,{}).get('in_platform',False):
-                loss+=self.diagnostics[name].get('radial_energy_j',0.)
-            if not self.enabled[name] or not in_platform:
-                normal=0.; radial_energy=0.
-            new_xi,friction,brush_loss=brush_step(xi,float(u@tangent),0.,normal,
-                cfg.support_tangent_k_n_m,cfg.support_mu,cfg.support_length_m,dt)
-            f=normal*n+friction*tangent
-            contribution=np.zeros(model.nv)
-            apply_internal_force(model,data,body,bike,point,f,contribution)
-            qfrc+=contribution
-            if name.endswith('_pedal'):
-                delivered+=float(contribution[self.crank_dof])
-            energy+=radial_energy+.5*cfg.support_tangent_k_n_m*new_xi**2
-            loss+=max(transport_loss,0.)+brush_loss
-            radial_loss=(normal-cfg.support_k_n_m*max(penetration,0.))*(-float(u@n))
-            if self.enabled[name] and in_platform and penetration>0:
-                radial_power+=max(radial_loss,0.)
-            diagnostics[name]={
-                'enabled':self.enabled[name], 'in_platform':bool(in_platform),
-                'normal_load_n':normal, 'tangent_force_n':friction, 'gap_m':float(local[2]),
-                'point_m':point.tolist(), 'force_on_rider_n':f.tolist(), 'force_on_bike_n':(-f).tolist(),
-                'radial_energy_j':radial_energy, 'shear_energy_j':.5*cfg.support_tangent_k_n_m*new_xi**2,
-                'relative_power_w':float(f@u),
-            }
-            new_states[name]=_SupportState(new_xi,tangent.copy())
+        for name,entry in self.supports.items():
+            body,site,bike,geom=entry
+            patches=[];group_force=np.zeros(3);group_moment=np.zeros(3)
+            group_normal=group_tangent=group_radial=group_shear=group_power=0.
+            for key,point,n,tangent,gap,inside in self._pads(model,data,name,entry):
+                if abs(n[1])>1e-9 or abs(tangent[1])>1e-9:
+                    raise ValueError('rider support surface is outside the planar model')
+                u=point_velocity(model,data,body,point)-point_velocity(model,data,bike,point)
+                penetration=-gap
+                # Two finite-area pressure samples split, rather than duplicate,
+                # the specified stiffness/damping and carry a physical moment.
+                k,c,kx=cfg.support_k_n_m/2,cfg.support_c_ns_m/2,cfg.support_tangent_k_n_m/2
+                normal,radial_energy=normal_contact(penetration,-float(u@n),k,c)
+                state=self.states[key];xi=state.xi;transport_loss=0.
+                if state.tangent is not None:
+                    transported=xi*float(state.tangent@tangent)
+                    transport_loss=.5*kx*(xi*xi-transported*transported);xi=transported
+                old_patch=self.diagnostics.get(name,{}).get('patches',[])
+                index=int(key.rsplit(':',1)[1])
+                if self.enabled[name] and not inside and len(old_patch)>index and old_patch[index]['in_platform']:
+                    loss+=old_patch[index].get('radial_energy_j',0.)
+                if not self.enabled[name] or not inside:
+                    normal=0.;radial_energy=0.
+                new_xi,friction,brush_loss=brush_step(xi,float(u@tangent),0.,normal,kx,cfg.support_mu,cfg.support_length_m,dt)
+                f=normal*n+friction*tangent
+                contribution=np.zeros(model.nv)
+                apply_internal_force(model,data,body,bike,point,f,contribution)
+                qfrc+=contribution
+                if name.endswith('_pedal'): delivered+=float(contribution[self.crank_dof])
+                shear=.5*kx*new_xi**2
+                energy+=radial_energy+shear;loss+=max(transport_loss,0.)+brush_loss
+                radial_loss=(normal-k*max(penetration,0.))*(-float(u@n))
+                if self.enabled[name] and inside and penetration>0:radial_power+=max(radial_loss,0.)
+                power=float(f@u)
+                group_normal+=normal;group_tangent+=friction;group_force+=f
+                group_moment+=np.cross(point-data.xpos[body],f)
+                group_radial+=radial_energy;group_shear+=shear;group_power+=power
+                patches.append({'in_platform':inside,'normal_load_n':normal,'gap_m':gap,
+                    'point_m':point.tolist(),'force_on_rider_n':f.tolist(),
+                    'radial_energy_j':radial_energy,'shear_energy_j':shear})
+                new_states[key]=_SupportState(new_xi,tangent.copy())
+            diagnostics[name]={'enabled':self.enabled[name],
+                'in_platform':any(p['in_platform'] for p in patches),
+                'normal_load_n':group_normal,'tangent_force_n':group_tangent,
+                'gap_m':min(p['gap_m'] for p in patches),'patches':patches,
+                'force_on_rider_n':group_force.tolist(),'force_on_bike_n':(-group_force).tolist(),
+                'moment_about_rider_origin_nm':group_moment.tolist(),
+                'radial_energy_j':group_radial,'shear_energy_j':group_shear,'relative_power_w':group_power}
         R=data.xmat[self.steer].reshape(3,3)
         grip=data.xpos[self.steer]+R@self.grip_anchor_local
         hand=data.site_xpos[self.grip_site]
@@ -204,6 +235,9 @@ class RiderContactApplier:
                 self.enabled['grip']=False
         energy+=grip_energy; loss+=grip_loss
         diagnostics['grip']={'enabled':bool(grip_active),'reachable':bool(reachable),
+                             'shoulder_distance_m':float(np.linalg.norm(grip-data.xpos[self.shoulder])),
+                             'arm_reach_m':self.arm_reach,
+                             'hand_gap_m':float(np.linalg.norm(hand-grip)),
                              'point_m':grip.tolist(),'force_on_rider_n':force.tolist(),
                              'force_on_bike_n':(-force).tolist(),'elastic_energy_j':grip_energy}
         self.states,self.grip_xi_local,self.diagnostics=new_states,new,diagnostics

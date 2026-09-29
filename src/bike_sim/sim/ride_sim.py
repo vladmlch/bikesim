@@ -164,20 +164,19 @@ class RideSimulation:
             )
         self.physics_config = physics_config if physics_config is not None else SimulationPhysicsConfig()
         self.mass_specs = mass_specs if mass_specs is not None else BikeMassSpecs()
-        if self.physics_config.drive_mode in {"crank_effort", "articulated_effort"}:
-            raise NotImplementedError(
-                f"{self.physics_config.drive_mode} is not implemented in this physics revision"
-            )
         if self.physics_config.physics_mode == "physical" and drive_mode != "motor":
             raise ValueError("physical mode uses physics_config.drive_mode, not legacy drive_mode")
         self.physics_revision = (
-            "legacy-v1" if self.physics_config.physics_mode == "legacy" else "physical-v1"
+            "legacy-v1" if self.physics_config.physics_mode == "legacy" else "physical-2026-09-29"
         )
         self.drive_mode = drive_mode
         self.drivetrain_specs = drivetrain if drivetrain is not None else DrivetrainSpecs()
         pedalled = drive_mode != "motor"
         self.visual_pedalling = bool(visual_pedalling)
         crank_joint = pedalled or self.visual_pedalling
+        physical = self.physics_config.physics_mode == "physical"
+        if physical and self.visual_pedalling:
+            raise ValueError("physical mode has a dynamic crank; visual_pedalling is legacy only")
 
         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
@@ -223,6 +222,8 @@ class RideSimulation:
                 f"{self.tyre_config.tier_spec.timestep_s}; "
                 f"got {self.physics_config.timestep_s}"
             )
+        if physical and self.tyre_config.pneumatic:
+            raise ValueError("legacy pneumatic tyre is not a physical backend; select tires.backend=compliant_2d")
         self.solver = HorstLinkageSolver(self.specs)
         self.start_x_m = float(start_x_m)
         # The legs choice lands on the rider *before* the pose is solved: `seated_pose`
@@ -316,7 +317,8 @@ class RideSimulation:
         self.stabilizer = PitchStabilizer(self.model)
         self.crash_detector = CrashDetector(self.model)
 
-        self.drive_ctrl_adr = _actuator_id(self.model, "rear_drive")
+        self.drive_ctrl_adr = (int(mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, "rear_drive"))
+                               if physical else _actuator_id(self.model, "rear_drive"))
         self.crank_drive_ctrl_adr = mujoco.mj_name2id(
             self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, "crank_drive"
         )
@@ -336,6 +338,10 @@ class RideSimulation:
         )
         self.steps = 0
         self.equilibrium: Dict[str, Any] = {}
+        self.physical = None
+        if physical:
+            from bike_sim.sim.ride.physical_runtime import PhysicalRuntime
+            self.physical = PhysicalRuntime(self)
         self.reset()
 
     def reset(self) -> None:
@@ -345,6 +351,9 @@ class RideSimulation:
         Raises:
             RuntimeError: If the equilibrium solve does not converge.
         """
+        if self.physical is not None:
+            self.physical.reset()
+            return
         if self.tyre_applier is None:
             self.equilibrium = solve_static_equilibrium(
                 self.model,
@@ -354,6 +363,9 @@ class RideSimulation:
                 start_x_m=self.start_x_m,
                 rider_applier=self.rider_forces,
                 leg_drive=self.leg_drive,
+                crank_phase_rad=float(np.deg2rad(self.drivetrain_specs.crank_phase_deg)) if self.drivetrain is not None else None,
+                drive_initialize=(lambda: self.drivetrain.reset(self.model, self.data)) if self.drivetrain is not None else None,
+                before_forces=self._follow_cranks if self.drivetrain is not None else None,
             )
         else:
             relax_steps = max(1, round(RELAX_CYCLE_S / float(self.model.opt.timestep)))
@@ -367,28 +379,17 @@ class RideSimulation:
                 tyre_applier=self.tyre_applier,
                 relax_steps_per_cycle=relax_steps,
                 leg_drive=self.leg_drive,
+                crank_phase_rad=float(np.deg2rad(self.drivetrain_specs.crank_phase_deg)) if self.drivetrain is not None else None,
+                drive_initialize=(lambda: self.drivetrain.reset(self.model, self.data)) if self.drivetrain is not None else None,
+                before_forces=self._follow_cranks if self.drivetrain is not None else None,
             )
         self.contact_query.reset()
         self.cruise.reset()
         if self.drivetrain is not None:
-            self.drivetrain.reset(self.model, self.data)
-            self.rider_forces.set_pedal_offsets(0.0, 0.0)
-            if self.leg_drive.active:
-                # The drivetrain has just written the crank's start phase; pose the legs
-                # and pedal platforms to match it before the forward pass, so the foot
-                # welds begin residual-free at any `--crank-phase`.
-                self.leg_drive.initialize(
-                    self.model,
-                    self.data,
-                    float(self.data.qpos[self.drivetrain.crank_qposadr]),
-                )
-            mujoco.mj_forward(self.model, self.data)
-        elif self.leg_drive.active:
-            # Motor mode with visual pedalling: no drivetrain touches the crank, which
-            # stays wherever the equilibrium left it; pose the legs to match.
-            self.leg_drive.initialize(
-                self.model, self.data, float(self.data.qpos[self.leg_drive.crank_qposadr])
-            )
+            # Phase, equality datum and leg pose were set before relaxation. Clearing
+            # control memory must not invalidate the actual converged state.
+            self.drivetrain.reset(self.model, self.data, initialize_pose=False)
+        if self.drivetrain is not None or self.leg_drive.active:
             mujoco.mj_forward(self.model, self.data)
         self.brake_source_cruise = False
         self.brakes.reset()
@@ -455,6 +456,7 @@ class RideSimulation:
             rear_brake_demand: Rear brake lever position in [0, 1], not a torque.
         """
         if self.tyre_applier is not None:
+            mujoco.mj_forward(self.model, self.data)
             self.tyre_applier.apply(self.model, self.data)
             self.contacts = self.contact_query.query(
                 self.model, self.data, wheel_load_provider=self.tyre_applier
@@ -549,93 +551,7 @@ class RideSimulation:
         ``contacts`` is the snapshot used by this step's force writers. It remains the
         pre-step snapshot until the next call refreshes MuJoCo's kinematics.
         """
-        external = None
-        if external_qfrc is not None:
-            # Copy before clearing: callers may explicitly pass a view of MuJoCo's array.
-            external = np.array(external_qfrc, dtype=float, copy=True)
-            if external.shape != (self.model.nv,) or not np.isfinite(external).all():
-                raise ValueError("invalid generalized force")
-            external.setflags(write=False)
-        # MuJoCo retains both arrays after a step. The current-state forward pass must
-        # not see force input from the previous interval; explicit input is kept apart.
-        self.stabilizer.disable(self.data)
-        self.data.qfrc_applied.fill(0.0)
-        self.data.xfrc_applied.fill(0.0)
-        mujoco.mj_forward(self.model, self.data)
-        self.force_accumulator.clear()
-        if external is not None:
-            self.force_accumulator.add("external", external)
-        if self.tyre_applier is not None:
-            self.tyre_applier.apply(self.model, self.data)
-            self.contacts = self.contact_query.query(
-                self.model, self.data, wheel_load_provider=self.tyre_applier
-            )
-        else:
-            self.contacts = self.contact_query.query(self.model, self.data)
-
-        for name, qfrc in self.applier.compute_qfrc_components(self.model, self.data).items():
-            self.force_accumulator.add(name, qfrc)
-        if self.rider_forces.active:
-            self._collect_legacy_qfrc(
-                "rider", lambda: self.rider_forces.apply(self.model, self.data)
-            )
-        if self.tyre_applier is None:
-            self._collect_legacy_qfrc(
-                "rolling_resistance",
-                lambda: self.resistance.apply(self.model, self.data, self.contacts),
-            )
-
-        self.data.ctrl[self.drive_ctrl_adr] = 0.0
-        if self.crank_drive_ctrl_adr >= 0:
-            self.data.ctrl[self.crank_drive_ctrl_adr] = 0.0
-        if self.leg_drive.active:
-            self._collect_legacy_qfrc(
-                "leg_drive", lambda: self.leg_drive.apply(self.model, self.data, 0.0)
-            )
-        if self.physics_config.drive_mode == "ideal_speed_control":
-            traction_limited = False
-            if self.tyre_applier is not None:
-                error_mps = self.cruise.target_speed_mps - float(
-                    self.data.qvel[self.root_x_dofadr]
-                )
-                traction_limited = any(
-                    patch.fully_sliding and patch.slip_ratio * error_mps > 0.0
-                    for patch in self.tyre_applier.rear_outputs.patches
-                )
-            drive_torque = self.cruise.compute(
-                self.model, self.data, self.contacts, traction_limited=traction_limited,
-                controller_grounded=self.contacts.rear_controller_grounded,
-            )
-            if (front_brake_demand > 0.0 or rear_brake_demand > 0.0) and drive_torque > 0.0:
-                drive_torque = 0.0
-            self.data.ctrl[self.drive_ctrl_adr] = drive_torque
-
-        front_torque, rear_torque = self.brakes.compute(
-            self.data, front_brake_demand, rear_brake_demand
-        )
-        self.data.ctrl[self.front_brake_ctrl_adr] = front_torque
-        self.data.ctrl[self.rear_brake_ctrl_adr] = rear_torque
-        self.crash_detector.check(self.data, self.contacts)
-
-        self.data.qfrc_applied[:] = self.force_accumulator.total()
-        self.last_force_sample = ForceSample(
-            float(self.data.time), self.data.qpos, self.data.qvel,
-            self.force_accumulator.components,
-        )
-        self.last_force_snapshot = (
-            self.last_force_sample.time_s,
-            self.last_force_sample.qpos,
-            self.last_force_sample.qvel,
-            self.last_force_sample.components,
-        )
-        mujoco.mj_step(self.model, self.data)
-        self.last_constraint_snapshot = ConstraintForceSnapshot(
-            self.last_force_sample.time_s,
-            float(self.data.time),
-            self.last_force_sample.qvel,
-            {"shock_solver_limit": shock_joint_limit_qfrc(self.model, self.data)},
-        )
-        self.steps += 1
+        self.physical.step(front_brake_demand, rear_brake_demand, external_qfrc)
 
     def _follow_cranks(self) -> None:
         """
@@ -680,6 +596,8 @@ class RideSimulation:
         rider's torque plus the motor's, divided by the gearing -- the chain trades crank
         torque for wheel speed, the way 32 teeth driving 14 must.
         """
+        if self.physical is not None:
+            return float(self.physical.drive.last.get("freehub_torque_nm", 0.)) + float(self.cruise.torque_nm)
         if self.drivetrain is None:
             return float(self.cruise.torque_nm)
         command = self.drivetrain.command

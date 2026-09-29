@@ -278,4 +278,8 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
                 if session.show_telemetry and now-last_hud>=HUD_REFRESH_INTERVAL_S:
                     session.print_hud();last_hud=now
                 time.sleep(FRAME_SLEEP_S)
+            if session.outcome is None:
+                preview_log.write_marker(f"# viewer closed; t={sim.time_s:.3f}s x={sim.position_m:.3f}m")
+            else:
+                preview_log.write_marker(f"# run ended; {session.outcome.describe()}")
     return 0

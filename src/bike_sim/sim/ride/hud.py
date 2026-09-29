@@ -16,10 +16,11 @@ ground -- and a signed number in degrees is ambiguous to a reader who does not k
 """
 
 import sys
-from math import degrees
+from math import atan2, degrees
 from typing import TYPE_CHECKING, Optional, Tuple
 
 import mujoco
+import numpy as np
 
 from bike_sim.sim.ride.cruise import KMH_PER_MPS, MAX_TARGET_SPEED_KMH, MIN_TARGET_SPEED_KMH
 from bike_sim.sim.ride.wheels import resolve_wheel_spin
@@ -208,37 +209,82 @@ class RideHUD:
         if getattr(sim, "physical", None) is None or not sim.physical.interactive_preview:
             return line
         drive = sim.physical.drive.last
+        assist = sim.physical.drive.assist
         fork_velocity_mps = float(sim.data.qvel[sim.applier.fork_dofadr])
         shock_velocity_mps = float(sim.data.qvel[sim.applier.shock_dofadr])
+        force_components = sim.force_accumulator.components
+        fork_force_n = float(force_components.get("fork_spring", np.zeros(sim.model.nv))[sim.applier.fork_dofadr])
+        shock_force_n = float(force_components.get("shock_coil", np.zeros(sim.model.nv))[sim.applier.shock_dofadr])
+        grade = 0.0 if sim.track.grade_profile is None else 100.0 * sim.track.grade_profile.slope(sim.position_m)
+        obstacle = nearest_obstacle(sim.track, sim.position_m)
+        obstacle_state = "none" if obstacle is None else f"{obstacle[0]}:{obstacle[1]:+.2f}m"
         rider = sim.physical.rider_contacts
         if rider is None:
             rider_state = "none"
+            rider_pose = "none"
+            rider_contacts = "none"
         else:
             diagnostics = rider.diagnostics
             front = diagnostics.get("front_pedal", {})
             rear = diagnostics.get("rear_pedal", {})
+            saddle = diagnostics.get("saddle", {})
             grip = diagnostics.get("grip", {})
             control = sim.physical.rider_control
             saturation = "none" if control is None else ",".join(
                 name for name, active in control.saturated_ik.items() if active
             ) or "none"
+            joint_saturation = "none" if control is None else ",".join(
+                name for name, terms in control.last_terms.items() if terms.get("saturated")
+            ) or "none"
             rider_state = (
                 f"grip={'on' if grip.get('enabled') else 'off'}"
                 f"/{'ok' if grip.get('reachable') else 'lost'} "
                 f"pedals={'on' if front.get('in_platform') else 'off'}"
-                f"/{ 'on' if rear.get('in_platform') else 'off'} "
-                f"ik={saturation}"
+                f"/{'on' if rear.get('in_platform') else 'off'} ik={saturation}"
+            )
+            rider_contacts = (
+                f"grip_gap={grip.get('hand_gap_m', 0.0):.3f}m "
+                f"fp={front.get('normal_load_n', 0.0):.0f}N/{front.get('gap_m', 0.0):+.3f}m "
+                f"rp={rear.get('normal_load_n', 0.0):.0f}N/{rear.get('gap_m', 0.0):+.3f}m "
+                f"saddle={saddle.get('normal_load_n', 0.0):.0f}N"
+            )
+            root_pitch = degrees(float(sim.data.qpos[sim.physical.address('rider_root_pitch')[0]]))
+            body_pitch = {}
+            for name in ('rider_pelvis', 'rider_torso'):
+                body_id = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_BODY, name)
+                rotation = sim.data.xmat[body_id].reshape(3, 3)
+                body_pitch[name] = degrees(atan2(-rotation[2, 0], rotation[0, 0]))
+            rider_pose = (
+                f"root={root_pitch:+.1f}deg pelvis={body_pitch['rider_pelvis']:+.1f}deg "
+                f"torso={body_pitch['rider_torso']:+.1f}deg "
+                f"rel={root_pitch-degrees(sim.pitch_rad):+.1f}deg jsat={joint_saturation}"
             )
         factor = sim.physical.preview_real_time_factor
         rate = "measuring" if factor is None else f"{factor:.2f}x"
+        tire = sim.physical.tire
+        if tire is None:
+            tire_state = "none"
+        else:
+            front_tire = tire.diagnostics.get('front', {})
+            rear_tire = tire.diagnostics.get('rear', {})
+            tire_state = (
+                f"slip={front_tire.get('slip_mps', 0.0):+.2f}/{rear_tire.get('slip_mps', 0.0):+.2f}m/s "
+                f"mu={front_tire.get('friction_coefficient', 0.0):.2f}/{rear_tire.get('friction_coefficient', 0.0):.2f}"
+            )
         return (
             f"{line} x={sim.position_m:.2f}m pitch={degrees(sim.pitch_rad):+.2f}deg "
+            f"grade={grade:+.1f}% obstacle={obstacle_state} "
             f"fork={sim.fork_travel_mm:.1f}mm/{fork_velocity_mps:+.3f}m/s "
             f"shock={sim.shock_stroke_mm:.1f}mm/{shock_velocity_mps:+.3f}m/s "
+            f"Fforce={fork_force_n:+.0f}N Sforce={shock_force_n:+.0f}N "
             f"human={drive.get('human_sensor_nm', 0.0):+.1f}Nm "
+            f"motor_req={drive.get('motor_request_nm', 0.0):.1f}Nm "
             f"motor_torque={drive.get('motor_torque_nm', 0.0):.1f}Nm "
+            f"motor_on={int(bool(drive.get('motor_enabled', False)))} "
+            f"assist_pedaling={int(bool(assist.pedaling))} assist_age={assist.age:.3f}s "
             f"battery={drive.get('battery_energy_j', 0.0) / 3600.0:.2f}Wh "
-            f"rider={rider_state} log_rtf={rate}"
+            f"rider={rider_state} pose={rider_pose} contacts={rider_contacts} "
+            f"tires={tire_state} log_rtf={rate}"
         )
 
     @staticmethod

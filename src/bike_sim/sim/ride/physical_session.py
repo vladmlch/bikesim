@@ -44,6 +44,11 @@ class PhysicalPreviewLog:
         while self._next_time_s <= float(time_s) + 1e-12:
             self._next_time_s += self.interval_s
 
+    def write_marker(self, marker: str) -> None:
+        """Write an immediate non-state marker, such as a run termination reason."""
+        self._stream.write(marker + "\n")
+        self._stream.flush()
+
     def close(self) -> None:
         """Flush and close the preview log."""
         self._stream.close()

@@ -107,7 +107,10 @@ class ArticulatedRiderController:
         self.model=model
         self.command_enabled=True
         self.target_data = mujoco.MjData(model)
-        self.target_difference_s = 1e-6
+        # Central acceleration differences need a larger interval than the old
+        # forward velocity-only difference (1e-6 s), to avoid cancellation.
+        self.target_difference_s = 1e-4
+        self.previous_target_data = mujoco.MjData(model)
         self.crank_length_m = scalar(crank_length_m,'crank length',positive=True)
         self.enabled = True
         self.last_terms = {}
@@ -206,7 +209,7 @@ class ArticulatedRiderController:
         # Equivalent +/-2*pi IK representations must not cause torque impulses.
         return current + np.arctan2(np.sin(targets-current),np.cos(targets-current))
 
-    def _upper_targets(self, data, posture=None):
+    def _upper_targets(self, data, posture=None, *, grip_force_n=None):
         """Bounded joint goals keep the hands reachable as the pelvis moves.
 
         A fixed shoulder/elbow angle is not a bar-following controller. Select
@@ -218,6 +221,13 @@ class ArticulatedRiderController:
         pelvis_R = data.xmat[self.pelvis].reshape(3,3)
         hip = data.xpos[self.pelvis]
         grip = data.xpos[self.frame] + data.xmat[self.frame].reshape(3,3) @ pose.grip
+        if grip_force_n is not None:
+            # The grip is compliant, not a weld. To push down on the bar, the
+            # hand goal must allow its spring to deflect down. A zero-deflection
+            # IK goal fights the very support wrench used to balance the rider.
+            # This is only an actuator goal; the actual paired contact force
+            # remains exclusively in RiderContactApplier.
+            grip = grip + array(grip_force_n, 'grip force goal', (3,))/self.config.grip_k_n_m
         # Keep a neutral relative torso/pelvis angle. Counter-rotating the
         # torso against the unactuated pelvis pitch pushes the pelvis further
         # in that direction through the equal actuator reaction. The hands
@@ -235,7 +245,7 @@ class ArticulatedRiderController:
             targets[name] = current+atan2(sin(target_q-current),cos(target_q-current))
         return targets
 
-    def _predict_target_state(self,model,data):
+    def _predict_target_state(self,model,data, *, reverse=False):
         """Directional derivative of moving IK goals on detached kinematics.
 
         Damping against zero joint speed brakes intended pedaling. Estimate the
@@ -245,16 +255,33 @@ class ArticulatedRiderController:
         No forces, contacts, or controller states are advanced on the live model.
         """
         import mujoco
-        future=self.target_data
+        future=self.previous_target_data if reverse else self.target_data
         future.qpos[:]=data.qpos
         future.qvel.fill(0.)
         rate=data.qvel[self.crank_spin_dof]
         future.qvel[self.crank_spin_dof]=rate
         # Keep the platform attitude fixed while its spindle follows the crank.
         future.qvel[self.pedal_spin_dofs]=-rate
-        mujoco.mj_integratePos(model,future.qpos,future.qvel,self.target_difference_s)
+        mujoco.mj_integratePos(model,future.qpos,future.qvel,
+                               -self.target_difference_s if reverse else self.target_difference_s)
         mujoco.mj_kinematics(model,future)
         return future
+
+    def initialize_velocity(self, model, data):
+        """Match moving pedal targets at startup, without moving the solved pose.
+
+        Only reset calls this method. During a ride the same target derivative
+        is a bounded actuator request, never a write to generalized velocity.
+        """
+        future = self._predict_target_state(model, data)
+        previous = self._predict_target_state(model, data, reverse=True)
+        for side in ('front', 'rear'):
+            next_target = self._targets(model, future, side)
+            previous_target = self._targets(model, previous, side)
+            velocity = np.arctan2(np.sin(next_target-previous_target),
+                                 np.cos(next_target-previous_target)) / (2.*self.target_difference_s)
+            for joint, rate in zip(('hip', 'knee', 'ankle'), velocity):
+                data.qvel[self.joints[f'rider_{joint}_{side}'][1]] = rate
 
     def initialize(self,model,data):
         """Initial-condition setup only, before static equilibrium, never in step()."""
@@ -326,7 +353,11 @@ class ArticulatedRiderController:
             if command.mean_crank_torque_nm==0.:
                 requests[side]=np.zeros(3)
             else:
-                raw=stance_force(phase+offset,command.mean_crank_torque_nm,self.crank_length_m)*blends[side]
+                # A lost contact must still be approached/pressed normally.
+                # Multiplying the entire request by measured Fn makes zero
+                # load an absorbing state. Tangential demand remains bounded
+                # by measured Fn in feasible_pedal_force; no adhesion is added.
+                raw=stance_force(phase+offset,command.mean_crank_torque_nm,self.crank_length_m)
                 requests[side]=feasible_pedal_force(raw,normal,cfg.support_mu,load)
         support_forces,diagnostics=pedaling_support_targets(weight,com,points,data.xpos[self.crank,0],
             cfg.pedal_support_fraction,cfg.bar_support_fraction,enabled,requests,pitch_moment_nm=pitch_request)
@@ -338,10 +369,12 @@ class ArticulatedRiderController:
         self.support_diagnostics=diagnostics
         result = {}
         terms = {}
-        upper_targets = self._upper_targets(data, posture)
+        upper_targets = self._upper_targets(data, posture, grip_force_n=support_forces['grip'])
         future=self._predict_target_state(model,data) if data.qvel[self.crank_spin_dof] != 0. else data
+        previous=self._predict_target_state(model,data,reverse=True) if future is not data else data
+        desired_acceleration=np.zeros(model.nv)
         saturation=dict(self.saturated_ik)
-        future_upper=self._upper_targets(future, posture) if future is not data else upper_targets
+        future_upper=self._upper_targets(future, posture, grip_force_n=support_forces['grip']) if future is not data else upper_targets
         self.saturated_ik=saturation
         for name,(qa,va,_) in self.joints.items():
             if name.startswith(('rider_hip_','rider_knee_','rider_ankle_')):
@@ -370,8 +403,12 @@ class ArticulatedRiderController:
             target = self._targets(model,data,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture)
             saturation=dict(self.saturated_ik)
             future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if future is not data else target
+            previous_target=self._targets(model,previous,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if previous is not data else target
             self.saturated_ik=saturation
-            target_speed=np.arctan2(np.sin(future_target-target),np.cos(future_target-target))/self.target_difference_s
+            ahead=np.arctan2(np.sin(future_target-target),np.cos(future_target-target))
+            behind=np.arctan2(np.sin(previous_target-target),np.cos(previous_target-target))
+            target_speed=(ahead-behind)/(2.*self.target_difference_s)
+            desired_acceleration[va]=(ahead+behind)/self.target_difference_s**2
             pd = cfg.joint_kp_nm_rad*(target-data.qpos[qa])+cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])
             jp,jr = self.sole_jacobians[side]
             mujoco.mj_jac(model,data,jp,jr,data.site_xpos[self.soles[side]],self.feet[side])
@@ -391,12 +428,17 @@ class ArticulatedRiderController:
             jp,jr=np.zeros((3,model.nv)),np.zeros((3,model.nv))
             mujoco.mj_jac(model,data,jp,jr,grip,self.forearm)
             support += jp.T@support_forces['grip']
+        # Convective acceleration of the moving crank targets. Gravity/Coriolis
+        # compensation alone cannot track a circular pedal path at cadence.
+        # Only limb rows are commanded, still inside the existing effort caps.
+        tracking_inertia=np.zeros(model.nv)
+        mujoco.mj_mulM(model,data,tracking_inertia,desired_acceleration)
         self.last_terms = {}
         for name, (posture, pedaling) in terms.items():
             _, va, _ = self.joints[name]
             # Joint-only inverse-dynamics bias compensation. No root column is
             # actuated; the reaction on the parent is part of the mechanism.
-            posture += float(data.qfrc_bias[va]) + float(support[va])
+            posture += float(data.qfrc_bias[va]) + float(support[va]) + float(tracking_inertia[va])
             # A hip actuator's equal opposite reaction acts on the pelvis.
             # Split the posture request between the two internal hips; never
             # write the floating root. This remains internal even in flight.
@@ -416,7 +458,7 @@ class ArticulatedRiderController:
             scale = command_torque/requested_torque if requested_torque != 0 else 0.
             result[name] = command_torque
             self.last_terms[name] = {'posture_nm':posture*scale, 'pedaling_nm':pedaling*scale,
-                                    'command_nm':command_torque, 'support_nm':float(support[va])*scale, 'hip_posture_nm':hip_posture*scale, 'saturated':scale!=1.}
+                                    'command_nm':command_torque, 'support_nm':float(support[va])*scale, 'tracking_nm':float(tracking_inertia[va])*scale, 'hip_posture_nm':hip_posture*scale, 'saturated':scale!=1.}
         return result
 
     def write(self,data,torques):

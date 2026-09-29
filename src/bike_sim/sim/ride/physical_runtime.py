@@ -254,6 +254,26 @@ class PhysicalRuntime:
             roll=float(point_velocity(m,d,bid,d.geom_xpos[gid])@tangent)
             parent_omega=float(body_angular_velocity(m,d,bid)[1])-float(d.qvel[dof])
             d.qvel[dof]=roll/radius-parent_omega
+        coupled = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                   'ideal_mid_drive_kinematics') >= 0
+        pedaling = (self.cfg.drive_mode in ('crank_effort', 'articulated_effort')
+                    and self.cfg.drive.human_torque_nm > 0.)
+        if coupled or pedaling:
+            # A rolling, already pedaling initial condition must not kick a
+            # stationary crank/legs up to wheel speed through the transmission.
+            # A genuinely coasting elastic drivetrain remains freewheeling.
+            ratio = self.cfg.drive.gearing.front_teeth / self.cfg.drive.gearing.rear_teeth
+            rate = d.qvel[self.address('rear_wheel_spin')[1]] / ratio
+            d.qvel[self.address('crank_spin')[1]] = rate
+            cassette = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, 'cassette_spin')
+            if cassette >= 0:
+                d.qvel[int(m.jnt_dofadr[cassette])] = d.qvel[self.address('rear_wheel_spin')[1]]
+            frame = m.body('frame').id
+            frame_pitch_rate = float(body_angular_velocity(m, d, frame)[1])
+            for side in ('front', 'rear'):
+                d.qvel[self.address(f'pedal_{side}_spin')[1]] = -rate-frame_pitch_rate
+            if self.rider_control is not None:
+                self.rider_control.initialize_velocity(m, d)
         mujoco.mj_forward(m,d)
 
     def _loss_increment(self, forces, velocity, dt):

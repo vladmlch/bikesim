@@ -71,6 +71,52 @@ moment is not forcibly made equal to its requested phase average. Contact loss,
 reach limits and actuator saturation remain observable rather than being fixed
 by prescribing the crank or foot coordinates.
 
+## Physical pedaling and climbing regression checks
+
+A rolling effort-mode initial condition now initializes the crank, cassette,
+platform and leg velocities consistently with wheel speed and gearing. These
+velocity writes occur **only at reset**; an unpowered elastic drivetrain still
+starts freewheeling. The ideal transmission retains its existing coupling.
+
+Moving leg targets include a central-difference acceleration feedforward through
+the compiled mass matrix, in addition to position/velocity feedback and bias
+compensation. All terms remain inside the existing internal joint torque,
+positive-power and speed limits; `tracking_nm` exposes the scaled inertial term.
+The desired downward stance force is no longer suppressed by the very absence
+of contact that the foot needs to recover. Its tangential part is still limited
+by measured normal load, and actual foot/pedal contacts remain unilateral.
+
+Arm IK allows the grip spring's requested deflection (`force_on_bike / grip_k`)
+instead of demanding both a nonzero support force and zero spring deformation.
+Only actuator goals change: no hand, foot, pelvis, crank or bike pose is imposed
+while stepping. Terrain geometry, tire forces, support release rules, motor
+assistance and anti-wheelie logic are not changed by these corrections.
+
+Use the installed offline environment and explicitly select the patched source
+checkout, rather than an older copy of the bundled wheel:
+
+```sh
+export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
+python -m pytest -q tests/test_physical_pedaling_regression.py
+python examples/research/check_pedaling.py --initial-speed-mps 0 --duration 5
+python examples/research/check_pedaling.py --track rough_uphill --duration 13
+```
+
+The last two commands are **opt-in integration checks**, not part of the default
+unit test suite. They use the unchanged `viewer_physics_fast.toml`, ordinary
+static initialization and real physical stepping. They report progress, actual
+crank rotation, measured pedal work, contact gaps, tire loads and crash status;
+a zero front-wheel load is allowed, not concealed. The rough check traverses the
+22% climb, the 6 cm bump and the 4 cm step when the reported final X exceeds
+16 m. Timing and command values here are SI (m/s and seconds).
+
+These checks use physical preview to omit expensive scientific accounting, not
+to simplify the applied forces. They do **not** establish energy convergence,
+calibration, a guaranteed climbing capability at every power setting, or a
+validated strict-profile (`viewer_physics.toml`) trajectory. In particular, a
+physically underpowered climb may still stall; no artificial speed regulator or
+front-wheel hold-down force is introduced.
+
 ## TOML and API
 
 Resolution is defaults, then TOML, then explicitly supplied CLI values. Unknown

@@ -24,6 +24,8 @@ class PhysicalRecorder:
     schema_version=2
 
     def __init__(self,sim,decimate=1):
+        if sim.physical.interactive_preview or not sim.physical.research_accounting_valid:
+            raise ValueError('interactive preview has no research force intervals')
         if isinstance(decimate,bool) or not isinstance(decimate,int) or decimate<1:
             raise ValueError('decimate must be a positive integer')
         self.sim=sim
@@ -34,6 +36,8 @@ class PhysicalRecorder:
         self._generation=sim.physical.generation
 
     def record(self,sim):
+        if sim.physical.interactive_preview or not sim.physical.research_accounting_valid:
+            raise ValueError('interactive preview has no research force intervals')
         if sim is not self.sim:
             raise ValueError('recorder belongs to a different simulation')
         if sim.physical.generation != self._generation:

@@ -1,4 +1,4 @@
-"""Physical chain/freehub path and independently metered crank sources."""
+"""Physical drivetrain paths and independently metered crank sources."""
 import copy
 from dataclasses import asdict
 from math import atan2, pi
@@ -23,14 +23,21 @@ class DrivetrainForceApplier:
         if model.nq != model.nv:
             raise ValueError('physical chain supports scalar planar coordinates only (nq == nv)')
         self.config, self.drive_mode = config, drive_mode
+        self.simplified = config.transmission_model == 'ideal_mid_drive'
         self.scratch = mujoco.MjData(model)
         self.ids = {name:resolve_id(model, mujoco.mjtObj.mjOBJ_BODY, name)
-                    for name in ('frame','crank','cassette','rear_wheel')}
-        if model.body_parentid[self.ids['cassette']] != model.body_parentid[self.ids['rear_wheel']]:
-            raise ValueError('cassette and wheel must have the same carrier body')
+                    for name in ('frame','crank','rear_wheel')}
+        if not self.simplified:
+            self.ids['cassette']=resolve_id(model, mujoco.mjtObj.mjOBJ_BODY, 'cassette')
+            if model.body_parentid[self.ids['cassette']] != model.body_parentid[self.ids['rear_wheel']]:
+                raise ValueError('cassette and wheel must have the same carrier body')
         self.joints = {}
-        for name in ('crank_spin','cassette_spin','rear_wheel_spin','front_wheel_spin',
-                     'pedal_front_spin','pedal_rear_spin'):
+        joint_names=('crank_spin','rear_wheel_spin','front_wheel_spin',
+                     'pedal_front_spin','pedal_rear_spin')
+        if not self.simplified:
+            joint_names=('crank_spin','cassette_spin','rear_wheel_spin','front_wheel_spin',
+                         'pedal_front_spin','pedal_rear_spin')
+        for name in joint_names:
             jid = resolve_id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
             self.joints[name] = (int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid]))
         self.actuators = {name:int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_ACTUATOR,name))
@@ -39,7 +46,7 @@ class DrivetrainForceApplier:
             raise ValueError('articulated effort must not have a human_crank actuator')
         if drive_mode in ('crank_effort','articulated_effort') and self.actuators['mid_drive'] < 0:
             raise ValueError('physical effort needs a mid_drive actuator')
-        self.hub = Freehub(config.freehub_k_nm_rad, config.freehub_c_nms_rad)
+        self.hub = None if self.simplified else Freehub(config.freehub_k_nm_rad, config.freehub_c_nms_rad)
         self.assist = AssistController(**asdict(config.assist))
         self.battery = Battery(config.battery.energy_j)
         self.last_time_s = None
@@ -90,14 +97,19 @@ class DrivetrainForceApplier:
         return chain_jacobian(data.qpos,evaluate)
 
     def reset(self, model, data):
-        """Bind the stress-free chain datum after initial crank/rider posing."""
+        """Reset drivetrain state after initial crank/rider posing."""
         import mujoco
         mujoco.mj_kinematics(model, data)
-        self.angles = (self._angle(data,'crank'), self._angle(data,'cassette'))
-        cf, cr, rf, rr, tf, tr, up = self._geometry(data, self.angles, None)
-        _, self.psi = chain_geometry(cf, cr, rf, rr, up_xz=up)
-        self.reference = chain_extension(cf,cr,rf,rr,tf,tr,0.,up_xz=up,psi_reference=self.psi)
-        self.hub.reset(); self.assist.reset(); self.battery.reset()
+        if self.simplified:
+            self.angles = (self._angle(data,'crank'),)
+            self.reference = 0.
+            self.psi = None
+        else:
+            cf, cr, rf, rr, tf, tr, up = self._geometry(data, self.angles, None)
+            _, self.psi = chain_geometry(cf, cr, rf, rr, up_xz=up)
+            self.reference = chain_extension(cf,cr,rf,rr,tf,tr,0.,up_xz=up,psi_reference=self.psi)
+            self.hub.reset()
+        self.assist.reset(); self.battery.reset()
         self.pending_actuation = None
         self.last_time_s = None
         self.last = {'chain_energy_j':0., 'freehub_energy_j':0., 'motor_torque_nm':0.,
@@ -108,6 +120,8 @@ class DrivetrainForceApplier:
         self.assist.reset()
 
     def stored_energy(self, model, data):
+        if self.simplified:
+            return {}
         cf, cr, rf, rr, tf, tr, up = self._geometry(data, self.angles, self.psi)
         e = chain_extension(cf, cr, rf, rr, tf, tr, self.reference, up_xz=up, psi_reference=self.psi)
         qc, _ = self.joints['cassette_spin']; qw, _ = self.joints['rear_wheel_spin']
@@ -123,6 +137,8 @@ class DrivetrainForceApplier:
         requested, omega, dt, enabled = self.pending_actuation
         aid = self.actuators['mid_drive']
         torque = float(data.actuator_force[aid]) if aid >= 0 else 0.
+        if self.simplified:
+            torque *= self.config.gearing.front_teeth / self.config.gearing.rear_teeth
         if torque < -1e-10 or torque > requested+1e-8:
             raise ArithmeticError('solved motor effort violates the reserved effort ceiling')
         torque = max(torque, 0.)
@@ -151,7 +167,7 @@ class DrivetrainForceApplier:
         if not isinstance(braking,bool) or not isinstance(active,bool):
             raise ValueError('drive enable and brake status must be booleans')
         if self.reference is None:
-            raise RuntimeError('initialize the chain datum before applying forces')
+            raise RuntimeError('initialize the drivetrain before applying forces')
         time = float(data.time)
         if advance and self.last_time_s is not None and time <= self.last_time_s:
             raise ValueError('drivetrain state can advance only once per timestamp')
@@ -163,27 +179,32 @@ class DrivetrainForceApplier:
             probe.last_time_s = None
             return probe.compute_components(model,data,dt,speed_mps=speed_mps,braking=braking,
                                             sensed_human_nm=sensed_human_nm,active=active,control=control)
-        angles = (self._angle(data,'crank',self.angles[0]),self._angle(data,'cassette',self.angles[1]))
-        cf, cr, rf, rr, tf, tr, up = self._geometry(data,angles,self.psi)
-        _, psi = chain_geometry(cf,cr,rf,rr,up_xz=up,psi_reference=self.psi)
-        extension = chain_extension(cf,cr,rf,rr,tf,tr,self.reference,up_xz=up,psi_reference=psi)
-
-        J = self.jacobian(model,data,psi_reference=psi)
-        extension_rate = float(J @ data.qvel)
-        tension, chain_energy = chain_tension(extension,extension_rate,
-                                               self.config.chain_k_n_m,self.config.chain_c_ns_m)
-        components = {'chain':-tension*J}
-        qc, vc = self.joints['cassette_spin']
+        qf, vf = self.joints['crank_spin']
         qw, vw = self.joints['rear_wheel_spin']
-        torque = self.hub.update(float(data.qpos[qc]),float(data.qpos[qw]),
-                                 float(data.qvel[vc]),float(data.qvel[vw]))
-        hub_force = np.zeros(model.nv); hub_force[vw] = torque; hub_force[vc] = -torque
-        components['freehub'] = hub_force
+        human=0.
+        chain_energy=extension=tension=extension_rate=0.
+        torque=deflection=relative_rate=0.
+        if self.simplified:
+            components={'chain':np.zeros(model.nv),'freehub':np.zeros(model.nv)}
+        else:
+            angles = (self._angle(data,'crank',self.angles[0]),self._angle(data,'cassette',self.angles[1]))
+            cf, cr, rf, rr, tf, tr, up = self._geometry(data,angles,self.psi)
+            _, psi = chain_geometry(cf,cr,rf,rr,up_xz=up,psi_reference=self.psi)
+            extension = chain_extension(cf,cr,rf,rr,tf,tr,self.reference,up_xz=up,psi_reference=psi)
+            J = self.jacobian(model,data,psi_reference=psi)
+            extension_rate = float(J @ data.qvel)
+            tension, chain_energy = chain_tension(extension,extension_rate,
+                                                   self.config.chain_k_n_m,self.config.chain_c_ns_m)
+            components['chain']=-tension*J
+            qc, vc = self.joints['cassette_spin']
+            torque = self.hub.update(float(data.qpos[qc]),float(data.qpos[qw]),
+                                     float(data.qvel[vc]),float(data.qvel[vw]))
+            hub_force = np.zeros(model.nv); hub_force[vw] = torque; hub_force[vc] = -torque
+            components['freehub'] = hub_force
         bearing = np.zeros(model.nv)
         for _, va in self.joints.values():
             bearing[va] = -self.config.bearing_c_nms_rad*data.qvel[va]
         components['drive_bearings'] = bearing
-        qf, vf = self.joints['crank_spin']
         omega = float(data.qvel[vf]); cadence = omega*60/(2*pi)
         mean_human = self.config.human_torque_nm if control.human_torque_nm is None else control.human_torque_nm
         human = (human_crank_torque(mean_human,float(data.qpos[qf]),self.config.torque_ripple)
@@ -206,21 +227,34 @@ class DrivetrainForceApplier:
         if active and self.pending_actuation is not None:
             raise RuntimeError('previous motor interval was not settled')
         self.pending_actuation = (delivered, omega, dt, enabled) if active else None
-        for name,value in (('human_crank',human),('mid_drive',delivered)):
+        control_torque = delivered
+        if self.simplified:
+            ratio=self.config.gearing.front_teeth/self.config.gearing.rear_teeth
+            control_torque=delivered/ratio
+        for name,value in (('human_crank',human),('mid_drive',control_torque)):
             aid = self.actuators[name]
             if aid >= 0:
                 data.ctrl[aid] = value
+        if self.simplified:
+            ideal=np.zeros(model.nv)
+            transferred=human if self.drive_mode == 'crank_effort' else sensed_human_nm
+            ratio=self.config.gearing.front_teeth/self.config.gearing.rear_teeth
+            ideal[vf] -= transferred
+            ideal[vw] += transferred/ratio
+            components['ideal_transmission']=ideal
         if self.drive_mode in ('crank_effort','articulated_effort'):
             self.assist.torque = delivered
-        relative_rate = float(data.qvel[vc]-data.qvel[vw])
-        deflection = max(float(data.qpos[qc]-data.qpos[qw])-self.hub.boundary,0.)
+        if not self.simplified:
+            relative_rate = float(data.qvel[vc]-data.qvel[vw])
+            deflection = max(float(data.qpos[qc]-data.qpos[qw])-self.hub.boundary,0.)
         self.last = {
-            'chain_extension_m':extension, 'chain_extension_rate_mps':extension_rate,
+            'chain_extension_m':extension, 'chain_extension_rate_mps':0. if self.simplified else extension_rate,
             'chain_tension_n':tension, 'chain_energy_j':chain_energy,
             'chain_dissipation_power_w':max(0.,(tension-self.config.chain_k_n_m*max(extension,0.))*extension_rate),
-            'freehub_torque_nm':torque, 'freehub_energy_j':self.hub.energy_j,
-            'freehub_engaged':torque > 0., 'freehub_deflection_rad':deflection,
-            'freehub_dissipation_power_w':max(0.,(torque-self.hub.k*deflection)*relative_rate),
+            'freehub_torque_nm':0. if self.simplified else torque, 'freehub_energy_j':0. if self.simplified else self.hub.energy_j,
+            'freehub_engaged':False if self.simplified else torque > 0., 'freehub_deflection_rad':0. if self.simplified else deflection,
+            'freehub_dissipation_power_w':(0. if self.simplified else
+                max(0.,(torque-self.hub.k*deflection)*relative_rate)),
             'cadence_rpm':cadence, 'human_torque_nm':human, 'human_sensor_nm':sensor,
             'motor_request_nm':request, 'motor_torque_nm':delivered,
             'motor_limited_request_nm':limited_request,
@@ -232,5 +266,9 @@ class DrivetrainForceApplier:
             'battery_energy_j':self.battery.energy_j, 'motor_enabled':enabled,
             'energy_limited':delivered < limited_request, 'battery_empty':self.battery.energy_j==0.,
         }
-        self.angles,self.psi,self.last_time_s = angles,psi,time
+        if not self.simplified:
+            self.angles,self.psi = angles,psi
+        else:
+            self.angles=(self._angle(data,'crank',self.angles[0]),)
+        self.last_time_s = time
         return components

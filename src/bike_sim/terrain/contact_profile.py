@@ -7,6 +7,7 @@ silently replaced by native contact. Significance defaults (0.1 mm and 5% of the
 largest penetration) are explicit synthetic geometry criteria, not calibration.
 """
 from dataclasses import dataclass
+from math import hypot, isclose
 import numpy as np
 from bike_sim.physics.checks import array, scalar
 
@@ -22,7 +23,7 @@ class ProfileContact:
     def __post_init__(self):
         object.__setattr__(self, 'point', array(self.point, 'contact point', (2,), readonly=True))
         n = array(self.normal, 'contact normal', (2,), readonly=True)
-        if not np.isclose(np.linalg.norm(n), 1., rtol=0., atol=1e-10):
+        if not isclose(hypot(float(n[0]),float(n[1])),1.,rel_tol=0.,abs_tol=1e-10):
             raise ValueError('contact normal must be a unit vector')
         object.__setattr__(self, 'normal', n)
         object.__setattr__(self, 'delta', scalar(self.delta, 'penetration'))
@@ -38,6 +39,11 @@ class ProfileQuery:
         if np.any(np.diff(vertices[:, 0]) <= 0):
             raise ValueError('profile x must increase strictly')
         self.vertices = array(vertices, 'profile', readonly=True)
+        self._segments = np.diff(self.vertices,axis=0)
+        self._segment_lengths_sq = np.einsum('ij,ij->i',self._segments,self._segments)
+        self._height_changes = np.r_[0,np.cumsum(self._segments[:,1]!=0.)]
+        self._left_directions=np.vstack((np.zeros(2),-self._segments))
+        self._right_directions=np.vstack((self._segments,np.zeros(2)))
         self._maximum_z = float(np.max(vertices[:, 1]))
         self.significant_delta_m = scalar(significant_delta_m, 'significant penetration', minimum=0)
         self.significance_fraction = scalar(significance_fraction, 'significance fraction', minimum=0)
@@ -48,9 +54,9 @@ class ProfileQuery:
 
     def _candidates(self, c, lo, hi):
         ids = np.arange(lo, hi)
-        a, b = self.vertices[ids], self.vertices[ids+1]
-        d = b-a
-        t = np.clip(np.einsum('ij,ij->i', c-a, d)/np.einsum('ij,ij->i', d, d), 0., 1.)
+        a = self.vertices[lo:hi]
+        d = self._segments[lo:hi]
+        t = np.clip(np.einsum('ij,ij->i', c-a, d)/self._segment_lengths_sq[lo:hi], 0., 1.)
         points = a+t[:, None]*d
         keep = np.ones(len(ids), dtype=bool)
         # A projection on a segment endpoint is not a separate support when
@@ -60,12 +66,10 @@ class ProfileQuery:
         vertex_ids = ids[endpoint] + (t[endpoint] == 1.).astype(int)
         v = self.vertices[vertex_ids]
         offsets = c-v
-        for shift in (-1, 1):
-            neighbours = vertex_ids+shift
-            valid = (neighbours >= 0) & (neighbours < len(self.vertices))
-            directions = self.vertices[np.clip(neighbours,0,len(self.vertices)-1)]-v
+        for neighbour_directions in (self._left_directions,self._right_directions):
+            directions=neighbour_directions[vertex_ids]
             closer = np.einsum('ij,ij->i',offsets,directions) > 1e-14
-            keep[endpoint[valid & closer]] = False
+            keep[endpoint[closer]] = False
         points, ids = points[keep], ids[keep]
         distances = np.linalg.norm(c-points, axis=1)
         return ids, points, distances
@@ -86,6 +90,25 @@ class ProfileQuery:
             raise ValueError('wheel center reached or entered solid road')
         lo = max(0, int(np.searchsorted(x, c[0]-radius, side='right'))-2)
         hi = min(count, int(np.searchsorted(x, c[0]+radius, side='right'))+1)
+        height=float(c[1]-self.vertices[lo,1])
+        if height<radius and self._height_changes[hi]==self._height_changes[lo]:
+            segment=max(0,int(np.searchsorted(x,c[0],side='left'))-1)
+            point=np.array([c[0],self.vertices[lo,1]])
+            distance=height
+            if previous_segment is not None and lo<=previous_segment<hi:
+                previous_x=min(max(float(c[0]),float(x[previous_segment])),float(x[previous_segment+1]))
+                previous_distance=hypot(float(c[0])-previous_x,height)
+                vertex=previous_segment if previous_x==x[previous_segment] else previous_segment+1
+                endpoint=previous_x==x[previous_segment] or previous_x==x[previous_segment+1]
+                eligible=not endpoint or not any(float((c-self.vertices[vertex])@directions[vertex])>1e-14
+                    for directions in (self._left_directions,self._right_directions))
+                if eligible and abs(previous_distance-distance)<=1e-12:
+                    segment=previous_segment
+                    point[0]=previous_x
+                    distance=previous_distance
+            if distance<=1e-12:
+                raise ValueError('unsupported or degenerate contact geometry')
+            return ProfileContact(point,(c-point)/distance,radius-distance,segment,False)
         ids, points, distances = self._candidates(c, lo, hi)
         if len(ids) == 0 or np.min(distances) >= radius:
             # Outside contact, retain an exact signed nearest gap rather than a

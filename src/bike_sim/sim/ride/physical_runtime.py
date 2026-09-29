@@ -1,5 +1,6 @@
 """Single owner of the physical initialization, force step and work ledger."""
 from dataclasses import replace, asdict
+from contextlib import contextmanager
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.physics.rider_posture import RiderPosture
 import copy
@@ -21,6 +22,7 @@ from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_j
 from bike_sim.sim.ride.physical_observations import (
     tire_channels, energy_state, actuator_components, constraint_components, sensor_channels,
 )
+from bike_sim.sim.ride.physical_energy import mass_observations
 
 
 class PhysicalRuntime:
@@ -52,6 +54,19 @@ class PhysicalRuntime:
         self.active_work_j = self.external_work_j = self.solver_work_j = 0.
         self.snapshots = {}
         self.generation = 0
+        self.interactive_preview = False
+        self.preview_real_time_factor = None
+        self.research_accounting_valid = True
+
+    @contextmanager
+    def preview_mode(self):
+        """Scope viewer diagnostics; reset before resuming research accounting."""
+        previous=self.interactive_preview
+        self.interactive_preview=True
+        try:
+            yield
+        finally:
+            self.interactive_preview=previous
 
     def address(self, name):
         m = self.sim.model
@@ -119,7 +134,8 @@ class PhysicalRuntime:
             acc.add('seated_interfaces',d.qfrc_applied.copy())
             d.qfrc_applied.fill(0.)
         if self.rider_contacts is not None:
-            acc.add('rider_interfaces',self.rider_contacts.compute_qfrc(m,d,dt,advance=advance))
+            acc.add('rider_interfaces',self.rider_contacts.compute_qfrc(m,d,dt,advance=advance,
+                detailed=not self.interactive_preview))
             observed=(self.rider_contacts.diagnostics if advance else self.rider_contacts.probe_diagnostics)
             enabled=(self.rider_contacts.enabled if advance else self.rider_contacts.probe_enabled)
             loads = {side:observed.get(side+'_pedal',{}).get('normal_load_n',0.) for side in ('front','rear')}
@@ -161,6 +177,8 @@ class PhysicalRuntime:
     def reset(self):
         from bike_sim.sim.ride.physical_equilibrium import solve_physical_equilibrium
         sim = self.sim
+        self.research_accounting_valid=False
+        self.preview_real_time_factor=None
         sim.equilibrium = solve_physical_equilibrium(self)
         self.generation += 1
         d,m = sim.data,sim.model
@@ -210,6 +228,7 @@ class PhysicalRuntime:
         self.energy = {'mechanical_energy_j':total,'elastic_energy_j':elastic,
                       'residual_j':0.,'energy_scale_j':self.energy_scale_j}
         sim._update_compiled_com_marker()
+        self.research_accounting_valid=True
 
     def _initial_speed(self):
         sim=self.sim; m,d=sim.model,sim.data
@@ -271,6 +290,8 @@ class PhysicalRuntime:
         return float(loss)
 
     def step(self, front=0., rear=0., external=None, *, control=None):
+        if not self.interactive_preview and not self.research_accounting_valid:
+            raise RuntimeError('reset is required after interactive preview before research accounting')
         control = RideControl() if control is None else control
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
@@ -281,10 +302,12 @@ class PhysicalRuntime:
             external=np.array(external,dtype=float,copy=True)
             if external.shape!=(m.nv,) or not np.isfinite(external).all():
                 raise ValueError('invalid generalized force')
+        if self.interactive_preview:
+            return self._step_preview(front,rear,external,control)
         t=float(d.time); q=d.qpos.copy(); v=d.qvel.copy()
         self.apply_forces(front=front,rear=rear,external=external,control=control)
         # Save incoming auxiliary energies before the solve overwrites no state.
-        mass0,_,_=energy_state(self)
+        mass0=mass_observations(m,d)
         sim.last_force_sample=ForceSample(t,q,v,sim.force_accumulator.components)
         sim.last_force_snapshot=(t,sim.last_force_sample.qpos,sim.last_force_sample.qvel,sim.last_force_sample.components)
         components={k:np.array(f,copy=True) for k,f in sim.force_accumulator.components.items()}
@@ -362,4 +385,32 @@ class PhysicalRuntime:
             from bike_sim.sim.ride.virtual_rider import CrashEvent
             sim.crash_detector.event=CrashEvent(contact_crash,t,float(q[sim.root_x_qposadr]),float(q[sim.root_pitch_qposadr]))
         sim.crash_detector.check(d,sim.contacts)
+        sim._update_compiled_com_marker()
+
+    def _step_preview(self, front, rear, external, control):
+        """Same force/integration path without research samples or energy audits."""
+        sim=self.sim
+        self.research_accounting_valid=False
+        model,data=sim.model,sim.data
+        time_s=float(data.time)
+        position_m=sim.position_m
+        pitch_rad=sim.pitch_rad
+        self.apply_forces(front=front,rear=rear,external=external,control=control)
+        warning_counts=np.array([warning.number for warning in data.warning],copy=True)
+        mujoco.mj_step(model,data)
+        for warning in (mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,mujoco.mjtWarning.mjWARN_BADQACC):
+            if data.warning[int(warning)].number>warning_counts[int(warning)]:
+                raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
+        from bike_sim.sim.ride.physical_crash import physical_contact_crash
+        contact_crash=physical_contact_crash(model,data)
+        self.drive.settle_actuation(model,data)
+        sim.contacts,self.snapshots=self._contacts(final=True,time_s=time_s)
+        mujoco.mj_forward(model,data)
+        if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all():
+            raise RuntimeError('non-finite physical simulation state')
+        sim.steps+=1
+        if contact_crash is not None and sim.crash_detector.event is None:
+            from bike_sim.sim.ride.virtual_rider import CrashEvent
+            sim.crash_detector.event=CrashEvent(contact_crash,time_s,position_m,pitch_rad)
+        sim.crash_detector.check(data,sim.contacts)
         sim._update_compiled_com_marker()

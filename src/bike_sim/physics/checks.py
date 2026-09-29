@@ -5,7 +5,8 @@ import numpy as np
 
 
 def scalar(value, name: str, *, minimum=None, positive=False) -> float:
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+    if type(value) not in (float,int) and (
+            isinstance(value,(bool,np.bool_)) or not isinstance(value,Real)):
         raise ValueError(f'{name} must be a finite real scalar')
     value = float(value)
     if not isfinite(value) or (minimum is not None and value < minimum) or (positive and value <= 0):

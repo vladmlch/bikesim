@@ -82,7 +82,8 @@ def pedaling_support_targets(weight_n, com_m, points_m, crank_x_m,
     extra[1]=-pedal['front']; extra[2]=-pedal['rear']
     if enabled[3]:
         extra[3,0]=-np.sum(extra[:3,0])
-    extra_moment=float(np.cross(points-com,extra).sum(axis=0)[1])
+    arms=points-com
+    extra_moment=float(np.sum(arms[:,2]*extra[:,0]-arms[:,0]*extra[:,2]))
     loads,diagnostics=gravity_support_targets(weight_n,com[0],points[:,0],crank_x_m,
         pedal_fraction,bar_fraction,enabled,pitch_moment_nm=pitch_moment_nm-extra_moment,
         vertical_target_n=weight_n-float(np.sum(extra[:,2])))
@@ -91,6 +92,6 @@ def pedaling_support_targets(weight_n, com_m, points_m, crank_x_m,
     diagnostics.update(requested_vertical_forces_n=loads,
         requested_pitch_moment_nm=float(pitch_moment_nm),
         total_requested_force_on_rider_n=np.sum(reactions,axis=0).tolist(),
-        total_requested_pitch_moment_nm=float(np.cross(points-com,reactions).sum(axis=0)[1]))
+        total_requested_pitch_moment_nm=float(np.sum(arms[:,2]*reactions[:,0]-arms[:,0]*reactions[:,2])))
     diagnostics['feasible']=bool(diagnostics['feasible'] and abs(np.sum(reactions[:,0]))<=1e-8)
     return {name:-force for name,force in zip(NAMES,reactions)},diagnostics

@@ -92,6 +92,7 @@ class BatteryConfig:
 @dataclass(frozen=True)
 class PhysicalDriveConfig:
     gearing: DrivetrainSpecs = field(default_factory=DrivetrainSpecs)
+    transmission_model: str = 'elastic_chain'
     human_torque_nm: float = 0.
     torque_ripple: float = .35
     crank_phase_rad: float = 0.
@@ -107,6 +108,8 @@ class PhysicalDriveConfig:
     def __post_init__(self):
         if not isinstance(self.gearing,DrivetrainSpecs) or not isinstance(self.assist,AssistConfig) or not isinstance(self.battery,BatteryConfig):
             raise ValueError('invalid drivetrain configuration object')
+        if self.transmission_model not in ('elastic_chain', 'ideal_mid_drive'):
+            raise ValueError('unknown transmission model')
         for key in ('chain_k_n_m','freehub_k_nm_rad'):
             scalar(getattr(self,key),key,positive=True)
         for key in ('human_torque_nm','torque_ripple','chain_c_ns_m','freehub_c_nms_rad','bearing_c_nms_rad','brake_ceiling_nm'):

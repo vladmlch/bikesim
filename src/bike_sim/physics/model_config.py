@@ -58,6 +58,7 @@ class SimulationPhysicsConfig:
     closure_time_constant_s: float = 0.001
     equilibrium_refine_after_s: float = 1.0
     equilibrium_refine_period_s: float = 3.0
+    equilibrium_cache_enabled: bool = False
 
     def __post_init__(self) -> None:
         if self.physics_mode not in {"legacy", "physical"}:
@@ -99,6 +100,8 @@ class SimulationPhysicsConfig:
         scalar(self.timestep_s, "timestep", positive=True)
         if not isinstance(self.pitch_assist, bool):
             raise ValueError("pitch_assist must be a bool")
+        if not isinstance(self.equilibrium_cache_enabled, bool):
+            raise ValueError("equilibrium_cache_enabled must be a bool")
         for name, cls in (("end_stops", EndStopConfig), ("tires", TireBackendConfig),
                           ("drive", PhysicalDriveConfig), ("resistance", ResistanceConfig),
                           ("articulated", ArticulatedConfig)):

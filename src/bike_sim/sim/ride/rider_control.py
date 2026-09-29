@@ -1,9 +1,10 @@
 """Bounded internal rider actuation; no root force or direct human crank torque."""
 from dataclasses import dataclass, field, asdict
 from bike_sim.physics.rider_posture import RiderPosture
-from math import atan2, cos, pi, sin
+from math import acos, atan2, cos, hypot, isfinite, pi, sin
 import numpy as np
 from bike_sim.physics.checks import array, scalar
+from bike_sim.sim.ride.support_geometry import _upper_box_face, validate_planar_support_model
 
 
 def stance_force(phase,mean_nm,crank_m):
@@ -71,15 +72,15 @@ def two_link_ik(target_xz,upper_m,lower_m,*,elbow_sign=1):
     a,b = scalar(upper_m,'upper link',positive=True),scalar(lower_m,'lower link',positive=True)
     if elbow_sign not in (-1,1):
         raise ValueError('IK branch must be -1 or +1')
-    distance = float(np.linalg.norm(p))
+    distance = hypot(float(p[0]),float(p[1]))
     lo,hi = abs(a-b)+1e-10,a+b-1e-10
     if hi <= lo:
         raise ValueError('IK links are too small')
     saturated = not lo <= distance <= hi
-    d = float(np.clip(distance,lo,hi))
+    d = min(max(distance,lo),hi)
     direction = atan2(p[1],p[0]) if distance > 1e-15 else -pi/2
-    cosine = np.clip((d*d-a*a-b*b)/(2*a*b),-1.,1.)
-    knee = elbow_sign*float(np.arccos(cosine))
+    cosine = min(max((d*d-a*a-b*b)/(2*a*b),-1.),1.)
+    knee = elbow_sign*acos(cosine)
     hip = direction-atan2(b*sin(knee),a+b*cos(knee))
     return np.array([hip,knee]),saturated
 
@@ -140,6 +141,31 @@ class ArticulatedRiderController:
         self.pedal_spin_dofs=[int(model.jnt_dofadr[model.joint(f'pedal_{side}_spin').id]) for side in ('front','rear')]
         if min(self.pelvis,self.crank,*self.feet.values(),*self.soles.values(),*self.pedals.values()) < 0:
             raise ValueError('incomplete rider interface topology')
+        mujoco.mj_kinematics(model,self.target_data)
+        validate_planar_support_model(model,self.target_data,self.pedal_geoms.values())
+        self.leg_geometry={}
+        self.sole_jacobians={}
+        for side in ('front','rear'):
+            upper=getattr(pose,f'knee_{side}')-pose.hip
+            lower=getattr(pose,f'ankle_{side}')-getattr(pose,f'knee_{side}')
+            upper_angle=atan2(upper[2],upper[0])
+            lower_angle=atan2(lower[2],lower[0])
+            self.leg_geometry[side]=(float(np.linalg.norm(upper)),float(np.linalg.norm(lower)),
+                upper_angle,lower_angle,1 if sin(lower_angle-upper_angle)>=0 else -1)
+            self.sole_jacobians[side]=(np.empty((3,model.nv)),np.empty((3,model.nv)))
+        trunk=pose.shoulder-pose.hip
+        upper=pose.elbow-pose.shoulder
+        lower=pose.grip-pose.elbow
+        upper_length=float(np.linalg.norm(upper))
+        lower_length=float(np.linalg.norm(lower))
+        upper_angle=atan2(upper[2],upper[0])
+        lower_angle=atan2(lower[2],lower[0])
+        self.arm_geometry=(upper_length,lower_length,upper_angle,lower_angle,
+            1 if sin(lower_angle-upper_angle)>=0 else -1)
+        candidates=[two_link_ik((pose.grip-pose.hip)[[0,2]],np.linalg.norm(trunk),
+            (upper_length+lower_length)*config.arm_reach_fraction,elbow_sign=sign) for sign in (-1,1)]
+        neutral,self.neutral_torso_saturated=max(candidates,key=lambda pair:sin(pair[0][0]))
+        self.neutral_torso_q=atan2(trunk[2],trunk[0])-neutral[0]
 
     def _targets(self,model,data,side, *, compression_m=None, shear_m=0., clearance_m=0., posture=None):
         hip = data.xpos[self.pelvis]
@@ -157,9 +183,8 @@ class ArticulatedRiderController:
         pedal = data.site_xpos[self.pedals[side]]
         depth=self.config.posture_sole_depth_m if compression_m is None else scalar(compression_m,'target sole compression',minimum=0)
         depth-=scalar(clearance_m,'target sole clearance',minimum=0)
-        from bike_sim.sim.ride.support_geometry import upper_box_face
         geom=self.pedal_geoms[side]
-        surface,normal,tangent=upper_box_face(data.geom_xpos[geom],
+        surface,normal,tangent=_upper_box_face(data.geom_xpos[geom],
             data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
         shear=scalar(shear_m,'target sole shear')
         # Target the actual platform top, with a deflection consistent with the
@@ -169,11 +194,8 @@ class ArticulatedRiderController:
         ankle_goal=(surface+ankle_offset+normal*(radius-depth)
                     -np.array([0.,0.,.008+radius])+shear*tangent)
         target = R.T@(ankle_goal-hip)
-        upper = getattr(self.pose,f'knee_{side}')-self.pose.hip
-        lower = getattr(self.pose,f'ankle_{side}')-getattr(self.pose,f'knee_{side}')
-        a0,b0 = atan2(upper[2],upper[0]),atan2(lower[2],lower[0])
-        branch = 1 if sin(b0-a0) >= 0 else -1
-        angles,saturated = two_link_ik(target[[0,2]],np.linalg.norm(upper),np.linalg.norm(lower),elbow_sign=branch)
+        upper_length,lower_length,a0,b0,branch=self.leg_geometry[side]
+        angles,saturated = two_link_ik(target[[0,2]],upper_length,lower_length,elbow_sign=branch)
         self.saturated_ik[side] = saturated
         # MuJoCo +Y is clockwise in X-Z; the pure IK helper uses CCW.
         hip_q = a0-angles[0]
@@ -196,27 +218,18 @@ class ArticulatedRiderController:
         pelvis_R = data.xmat[self.pelvis].reshape(3,3)
         hip = data.xpos[self.pelvis]
         grip = data.xpos[self.frame] + data.xmat[self.frame].reshape(3,3) @ pose.grip
-        trunk = pose.shoulder-pose.hip
-        upper, lower = pose.elbow-pose.shoulder, pose.grip-pose.elbow
         # Keep a neutral relative torso/pelvis angle. Counter-rotating the
         # torso against the unactuated pelvis pitch pushes the pelvis further
         # in that direction through the equal actuator reaction. The hands
         # follow the actual bar separately, through the two arm joints.
-        target = pose.grip-pose.hip
-        reach = self.config.arm_reach_fraction*(np.linalg.norm(upper)+np.linalg.norm(lower))
-        candidates = [two_link_ik(target[[0,2]], np.linalg.norm(trunk), reach, elbow_sign=sign)
-                      for sign in (-1,1)]
-        angles, saturated = max(candidates, key=lambda pair: sin(pair[0][0]))
-        neutral_q = atan2(trunk[2],trunk[0])-angles[0]
-        torso_q = neutral_q + (0. if posture is None else posture.torso_lean_rad)
+        torso_q = self.neutral_torso_q + (0. if posture is None else posture.torso_lean_rad)
         torso_R = data.xmat[self.torso].reshape(3,3)
         arm_target = torso_R.T @ (grip-data.xpos[self.upper_arm])
-        a0,b0 = atan2(upper[2],upper[0]),atan2(lower[2],lower[0])
-        branch = 1 if sin(b0-a0)>=0 else -1
-        arm_angles, arm_saturated = two_link_ik(arm_target[[0,2]],np.linalg.norm(upper),np.linalg.norm(lower),elbow_sign=branch)
+        upper_length,lower_length,a0,b0,branch=self.arm_geometry
+        arm_angles, arm_saturated = two_link_ik(arm_target[[0,2]],upper_length,lower_length,elbow_sign=branch)
         targets = {'rider_torso_hinge':torso_q,'rider_shoulder':a0-arm_angles[0],
                    'rider_elbow':(b0-a0)-arm_angles[1]}
-        self.saturated_ik.update(torso=saturated,arms=arm_saturated)
+        self.saturated_ik.update(torso=self.neutral_torso_saturated,arms=arm_saturated)
         for name,target_q in targets.items():
             current = float(data.qpos[self.joints[name][0]])
             targets[name] = current+atan2(sin(target_q-current),cos(target_q-current))
@@ -308,11 +321,13 @@ class ArticulatedRiderController:
                 # a coasting support load that brakes the rising crank arm.
                 # This changes only the control target, never physical Fn.
                 enabled[1+('front','rear').index(side)]=False
-            from bike_sim.sim.ride.support_geometry import upper_box_face
             geom=self.pedal_geoms[side]
-            _,normal,_=upper_box_face(data.geom_xpos[geom],data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
-            raw=stance_force(phase+offset,command.mean_crank_torque_nm,self.crank_length_m)*blends[side]
-            requests[side]=feasible_pedal_force(raw,normal,cfg.support_mu,load)
+            _,normal,_=_upper_box_face(data.geom_xpos[geom],data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
+            if command.mean_crank_torque_nm==0.:
+                requests[side]=np.zeros(3)
+            else:
+                raw=stance_force(phase+offset,command.mean_crank_torque_nm,self.crank_length_m)*blends[side]
+                requests[side]=feasible_pedal_force(raw,normal,cfg.support_mu,load)
         support_forces,diagnostics=pedaling_support_targets(weight,com,points,data.xpos[self.crank,0],
             cfg.pedal_support_fraction,cfg.bar_support_fraction,enabled,requests,pitch_moment_nm=0.)
         support_targets=diagnostics['requested_vertical_forces_n']
@@ -333,9 +348,6 @@ class ArticulatedRiderController:
                 continue
             target_q = upper_targets[name]
             target_speed=atan2(sin(future_upper[name]-target_q),cos(future_upper[name]-target_q))/self.target_difference_s
-            result[name] = float(bounded_joint_torque(
-                [data.qpos[qa]],[data.qvel[va]-target_speed],[target_q],cfg.joint_kp_nm_rad,
-                cfg.joint_kd_nms_rad,cfg.joint_limit_nm)[0])
             raw = cfg.joint_kp_nm_rad*(target_q-data.qpos[qa])+cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])
             terms[name] = (float(raw), 0.)
         rotation = data.xmat[self.crank].reshape(3,3)
@@ -346,9 +358,8 @@ class ArticulatedRiderController:
             va = [self.joints[n][1] for n in names]
             requested=requests[side]
             blend=blends[side]
-            from bike_sim.sim.ride.support_geometry import upper_box_face
             geom=self.pedal_geoms[side]
-            _,normal,tangent=upper_box_face(data.geom_xpos[geom],
+            _,normal,tangent=_upper_box_face(data.geom_xpos[geom],
                 data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
             desired_down=support_forces[side]
             depth=(1.-blend)*cfg.posture_sole_depth_m+blend*max(0.,-float(desired_down@normal))/cfg.support_k_n_m
@@ -362,7 +373,7 @@ class ArticulatedRiderController:
             self.saturated_ik=saturation
             target_speed=np.arctan2(np.sin(future_target-target),np.cos(future_target-target))/self.target_difference_s
             pd = cfg.joint_kp_nm_rad*(target-data.qpos[qa])+cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])
-            jp,jr = np.zeros((3,model.nv)),np.zeros((3,model.nv))
+            jp,jr = self.sole_jacobians[side]
             mujoco.mj_jac(model,data,jp,jr,data.site_xpos[self.soles[side]],self.feet[side])
             feedforward = jp[:,va].T@requested
             torque = pd+feedforward
@@ -374,8 +385,7 @@ class ArticulatedRiderController:
         # never by writing the actual contact force or a root contribution.
         for side in ('front','rear'):
             if enabled[('front','rear').index(side)+1]:
-                jp,jr=np.zeros((3,model.nv)),np.zeros((3,model.nv))
-                mujoco.mj_jac(model,data,jp,jr,data.site_xpos[self.soles[side]],self.feet[side])
+                jp,_=self.sole_jacobians[side]
                 support += jp.T@np.array([0.,0.,-support_targets[side]])
         if enabled[3]:
             jp,jr=np.zeros((3,model.nv)),np.zeros((3,model.nv))
@@ -392,9 +402,18 @@ class ArticulatedRiderController:
             # write the floating root. This remains internal even in flight.
             hip_posture=-.5*pitch_request if name.startswith('rider_hip_') else 0.
             posture += hip_posture
-            command_torque = float(bounded_effort([data.qvel[va]],[posture+pedaling],
-                cfg.joint_limit_nm,cfg.joint_speed_limit_rad_s,cfg.joint_power_limit_w)[0])
-            scale = command_torque/(posture+pedaling) if posture+pedaling != 0 else 0.
+            joint_speed=float(data.qvel[va])
+            requested_torque=posture+pedaling
+            if not all(isfinite(value) for value in (posture,pedaling,requested_torque,joint_speed)):
+                raise ValueError('non-finite articulated command')
+            command_torque = min(max(requested_torque,-cfg.joint_limit_nm),cfg.joint_limit_nm)
+            if command_torque*joint_speed>0.:
+                if abs(joint_speed)>=cfg.joint_speed_limit_rad_s:
+                    command_torque=0.
+                else:
+                    power_cap=min(cfg.joint_limit_nm,cfg.joint_power_limit_w/abs(joint_speed))
+                    command_torque=min(max(command_torque,-power_cap),power_cap)
+            scale = command_torque/requested_torque if requested_torque != 0 else 0.
             result[name] = command_torque
             self.last_terms[name] = {'posture_nm':posture*scale, 'pedaling_nm':pedaling*scale,
                                     'command_nm':command_torque, 'support_nm':float(support[va])*scale, 'hip_posture_nm':hip_posture*scale, 'saturated':scale!=1.}

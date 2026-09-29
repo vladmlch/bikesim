@@ -5,7 +5,7 @@ import numpy as np
 from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.tire import normal_contact, brush_step
 from bike_sim.sim.ride.physical_mapping import resolve_id, point_velocity
-from bike_sim.sim.ride.support_geometry import box_pad_contact
+from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
 
 
 def apply_internal_force(model,data,body_a,body_b,point,force,qfrc):
@@ -75,6 +75,7 @@ class RiderContactApplier:
         self.grip_xi_local=np.zeros(3)
         self.grip_anchor_local=None
         if data is not None:
+            validate_planar_support_model(model,data,[entry[3] for entry in self.supports.values()])
             frame_R=data.xmat[self.frame].reshape(3,3)
             world_anchor=data.xpos[self.frame]+frame_R@self.pose.grip
             self.grip_anchor_local=data.xmat[self.steer].reshape(3,3).T@(world_anchor-data.xpos[self.steer])
@@ -141,7 +142,7 @@ class RiderContactApplier:
             # Place the circular sample above the declared sole surface, so a
             # horizontal pad retains exactly the previous gap and stiffness.
             center=data.site_xpos[site]+foot_rotation@np.array([sign*half,0.,radius])
-            contact=box_pad_contact(center,radius,data.geom_xpos[geom],R,model.geom_size[geom])
+            contact=_box_pad_contact(center,radius,data.geom_xpos[geom],R,model.geom_size[geom])
             yield (f"{name}:{i}",contact.point_m,contact.normal,contact.tangent,
                    contact.gap_m,contact.within_footprint)
 
@@ -155,7 +156,7 @@ class RiderContactApplier:
                     energy+=.25*cfg.support_k_n_m*max(-gap,0.)**2
         return energy
 
-    def compute_qfrc(self,model,data,dt,*,advance=True):
+    def compute_qfrc(self,model,data,dt,*,advance=True,detailed=True):
         dt=scalar(dt,'rider contact dt',positive=True)
         if not advance:
             probe=copy.copy(self)
@@ -163,7 +164,7 @@ class RiderContactApplier:
             probe.grip_xi_local=self.grip_xi_local.copy()
             probe.enabled=self.enabled.copy()
             probe.last_time_s=None
-            force=probe.compute_qfrc(model,data,dt)
+            force=probe.compute_qfrc(model,data,dt,detailed=detailed)
             self.probe_diagnostics=probe.diagnostics
             self.probe_enabled=probe.enabled
             self.probe_delivered_crank_torque_nm=probe.delivered_crank_torque_nm
@@ -182,6 +183,8 @@ class RiderContactApplier:
             body,site,bike,geom=entry
             patches=[];group_force=np.zeros(3);group_moment=np.zeros(3)
             group_normal=group_tangent=group_radial=group_shear=group_power=0.
+            in_platform=False
+            minimum_gap=float('inf')
             for key,point,n,tangent,gap,inside in self._pads(model,data,name,entry):
                 if abs(n[1])>1e-9 or abs(tangent[1])>1e-9:
                     raise ValueError('rider support surface is outside the planar model')
@@ -211,21 +214,24 @@ class RiderContactApplier:
                 energy+=radial_energy+shear;loss+=max(transport_loss,0.)+brush_loss
                 radial_loss=(normal-k*max(penetration,0.))*(-float(u@n))
                 if self.enabled[name] and inside and penetration>0:radial_power+=max(radial_loss,0.)
-                power=float(f@u)
-                group_normal+=normal;group_tangent+=friction;group_force+=f
-                group_moment+=np.cross(point-data.xpos[body],f)
-                group_radial+=radial_energy;group_shear+=shear;group_power+=power
-                patches.append({'in_platform':inside,'normal_load_n':normal,'gap_m':gap,
-                    'point_m':point.tolist(),'force_on_rider_n':f.tolist(),
-                    'radial_energy_j':radial_energy,'shear_energy_j':shear})
+                group_normal+=normal
+                in_platform=in_platform or inside
+                minimum_gap=min(minimum_gap,gap)
+                if detailed:
+                    group_tangent+=friction;group_force+=f
+                    group_moment+=np.cross(point-data.xpos[body],f)
+                    group_radial+=radial_energy;group_shear+=shear;group_power+=float(f@u)
+                    patches.append({'in_platform':inside,'normal_load_n':normal,'gap_m':gap,
+                        'point_m':point.tolist(),'force_on_rider_n':f.tolist(),
+                        'radial_energy_j':radial_energy,'shear_energy_j':shear})
                 new_states[key]=_SupportState(new_xi,tangent.copy())
             diagnostics[name]={'enabled':self.enabled[name],
-                'in_platform':any(p['in_platform'] for p in patches),
-                'normal_load_n':group_normal,'tangent_force_n':group_tangent,
-                'gap_m':min(p['gap_m'] for p in patches),'patches':patches,
+                'in_platform':in_platform,'normal_load_n':group_normal,'gap_m':minimum_gap}
+            if detailed:
+                diagnostics[name].update({'tangent_force_n':group_tangent,'patches':patches,
                 'force_on_rider_n':group_force.tolist(),'force_on_bike_n':(-group_force).tolist(),
                 'moment_about_rider_origin_nm':group_moment.tolist(),
-                'radial_energy_j':group_radial,'shear_energy_j':group_shear,'relative_power_w':group_power}
+                'radial_energy_j':group_radial,'shear_energy_j':group_shear,'relative_power_w':group_power})
         R=data.xmat[self.steer].reshape(3,3)
         grip=data.xpos[self.steer]+R@self.grip_anchor_local
         hand=data.site_xpos[self.grip_site]

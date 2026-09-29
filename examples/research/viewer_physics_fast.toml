@@ -1,14 +1,16 @@
 # Fast variant of viewer_physics.toml for interactive inspection.
-# Softened chain/freehub springs drop the cassette ringing frequency ~3x, so a
-# 0.5 ms step stays stable; use the strict file for acceptance-quality results.
+# Synthetic preview profile: idealized mid-drive removes high-frequency chain and
+# freehub states; use the strict file for drivetrain and energy studies.
 physics_mode = "physical"
-drive_mode = "crank_effort"
-timestep_s = 0.0005
+drive_mode = "articulated_effort"
+timestep_s = 0.00125
+closure_time_constant_s = 0.0025
 initial_speed_mps = 3.0
 initial_front_brake = 1.0
 initial_rear_brake = 1.0
-equilibrium_refine_after_s = 0.1
-equilibrium_refine_period_s = 0.5
+equilibrium_refine_after_s = 1.0
+equilibrium_refine_period_s = 3.0
+equilibrium_cache_enabled = true
 
 [tires]
 backend = "compliant_2d"
@@ -21,10 +23,12 @@ mu = 1.1
 mu = 1.1
 
 [drive]
+transmission_model = "ideal_mid_drive"
 human_torque_nm = 10.0
-chain_k_n_m = 20000.0
-freehub_k_nm_rad = 150.0
 
 [drive.gearing]
 front_teeth = 34
 rear_teeth = 51
+
+[articulated]
+pedal_c_ns_m = 40.0

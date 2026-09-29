@@ -76,18 +76,24 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
         _set_inertia(pedal,pedal_mass,[0.,sign*.04,0.],pedal_tensor)
     wheel=_find(root,'body','rear_wheel')
     parent=next(p for p in root.iter('body') if wheel in list(p))
-    cassette=ET.SubElement(parent,'body',name='cassette',pos=wheel.get('pos','0 0 0'))
-    ET.SubElement(cassette,'joint',name='cassette_spin',type='hinge',axis='0 1 0',damping='0')
-    geom=_find(wheel,'geom','geom_rear_cassette'); wheel.remove(geom); cassette.append(geom)
-    ring,core=REAR_WHEEL_PROFILE
-    # Renormalize fractions inside the remaining 90% wheel body.
-    profile=(ring._replace(mass_fraction=.75/.9),core._replace(mass_fraction=.15/.9))
-    wheel_mass=mass_specs.rear_wheel_mass*.9
-    com,tensor=wheel_body_inertia(wheel_mass,profile)
-    _set_inertia(wheel,wheel_mass,com,tensor)
-    cassette_mass=mass_specs.rear_wheel_mass*.1
-    tensor=ring_inertia(cassette_mass,core.inner_radius_m,core.outer_radius_m,core.width_m)
-    _set_inertia(cassette,cassette_mass,core.offset_m,tensor)
+    if physics_config.drive.transmission_model == 'elastic_chain':
+        cassette=ET.SubElement(parent,'body',name='cassette',pos=wheel.get('pos','0 0 0'))
+        ET.SubElement(cassette,'joint',name='cassette_spin',type='hinge',axis='0 1 0',damping='0')
+        geom=_find(wheel,'geom','geom_rear_cassette'); wheel.remove(geom); cassette.append(geom)
+        ring,core=REAR_WHEEL_PROFILE
+        # Renormalize fractions inside the remaining 90% wheel body.
+        profile=(ring._replace(mass_fraction=.75/.9),core._replace(mass_fraction=.15/.9))
+        wheel_mass=mass_specs.rear_wheel_mass*.9
+        com,tensor=wheel_body_inertia(wheel_mass,profile)
+        _set_inertia(wheel,wheel_mass,com,tensor)
+        cassette_mass=mass_specs.rear_wheel_mass*.1
+        tensor=ring_inertia(cassette_mass,core.inner_radius_m,core.outer_radius_m,core.width_m)
+        _set_inertia(cassette,cassette_mass,core.offset_m,tensor)
+    else:
+        # The ideal mid-drive keeps the complete rear wheel as one body. The
+        # decorative cassette remains attached to that body and has no rotor DOF.
+        com,tensor=wheel_body_inertia(mass_specs.rear_wheel_mass,REAR_WHEEL_PROFILE)
+        _set_inertia(wheel,mass_specs.rear_wheel_mass,com,tensor)
     for side in ('front','rear'):
         body=_find(root,'body',side+'_wheel')
         joint=_find(body,'joint',side+'_wheel_spin')
@@ -106,7 +112,10 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
         contact=ET.SubElement(root,'contact')
     existing={frozenset((e.get('body1'),e.get('body2'))) for e in contact.findall('exclude')}
     names=[b.get('name') for b in root.iter('body') if b.get('name')]
-    for moving in ('crank','pedal_front','pedal_rear','cassette'):
+    moving_bodies=('crank','pedal_front','pedal_rear')
+    if physics_config.drive.transmission_model == 'elastic_chain':
+        moving_bodies += ('cassette',)
+    for moving in moving_bodies:
         for name in names:
             pair=frozenset((moving,name))
             if moving==name or name.startswith('rider_') or pair in existing:
@@ -121,8 +130,13 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
         if name=='crank_drive' or (name=='rear_drive' and physics_config.drive_mode!='ideal_speed_control'):
             actuators.remove(actuator)
     if physics_config.drive_mode in ('crank_effort','articulated_effort'):
-        ET.SubElement(actuators,'motor',name='mid_drive',joint='crank_spin',gear='1',
-                      ctrllimited='true',ctrlrange=f'0 {physics_config.drive.assist.max_torque:.17g}')
+        ratio=(physics_config.drive.gearing.front_teeth /
+               physics_config.drive.gearing.rear_teeth)
+        motor_joint=('crank_spin' if physics_config.drive.transmission_model == 'elastic_chain'
+                     else 'rear_wheel_spin')
+        max_control=physics_config.drive.assist.max_torque if motor_joint == 'crank_spin' else physics_config.drive.assist.max_torque/ratio
+        ET.SubElement(actuators,'motor',name='mid_drive',joint=motor_joint,gear='1',
+                      ctrllimited='true',ctrlrange=f'0 {max_control:.17g}')
     if physics_config.drive_mode=='crank_effort':
         # The request is validated in the configuration. No contact torque cap
         # is imposed here; the wheel can spin through a saturated tire force.

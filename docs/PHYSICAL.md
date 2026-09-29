@@ -11,7 +11,7 @@ and acceptance criteria are in
 The model is planar: X forward, Z upward, wheel rotation about +Y. It is not a
 three-dimensional balance model, a soil model or a measured reproduction of a
 particular bicycle. Defaults for tires, anatomical inertias, contact compliance,
-chain/freehub, motor losses and postural control are **synthetic**. Passing
+transmission, motor losses and postural control are **synthetic**. Passing
 mechanics tests does not constitute experimental calibration. Run metadata keeps
 `calibration_status=parameterized_unvalidated` until independent measurement and
 holdout evidence exists; component names cannot upgrade this status.
@@ -57,7 +57,7 @@ Four drive modes are distinct:
 |---|---|
 | `coast` | No human or motor propulsion. |
 | `ideal_speed_control` | Explicit external rear-wheel test actuator; metadata identifies it as an external speed controller, not motor assist. |
-| `crank_effort` | Human crank moment and mid-drive moment, transmitted through the chain, cassette and freehub. |
+| `crank_effort` | Human crank moment and mid-drive moment. The transmission model is selected under `[drive]`. |
 | `articulated_effort` | Bounded internal rider joint actuators act through unilateral feet and pedals. No second human-crank actuator exists. The mid-drive remains a separate source. |
 
 Unloaded rear contact does not disable effort input. Wheelspin is possible: tire
@@ -96,6 +96,7 @@ mu = 0.8
 mu = 0.8
 
 [drive]
+transmission_model = "elastic_chain"
 human_torque_nm = 20.0
 crank_phase_rad = 0.0
 
@@ -140,6 +141,20 @@ not aliases. `articulated_effort` requires `articulated_planar`.
 `closure_time_constant_s` must be at least twice `timestep_s`. Otherwise MuJoCo's
 safety rule changes the effective closure stiffness as dt changes. The default
 1 ms reference is held fixed for the 0.5/0.25/0.125 ms refinement matrix.
+
+`drive.transmission_model = "elastic_chain"` retains the research drivetrain with
+separate cassette and freehub dynamics. `"ideal_mid_drive"` removes those high-frequency
+states and applies motor torque directly at the rear wheel with the configured gear
+ratio; articulated pedal torque is transferred with the same ratio. It is intended for
+interactive plant/control development, not for chain, cadence-coupling or drivetrain
+energy studies.
+
+`equilibrium_cache_enabled = true` enables a validated initial-pose cache for
+interactive runs. The cache is keyed by source, compiled model, road, rider and
+physics configuration; a mismatch falls back to the full equilibrium solve. The
+default is `false`, so research runs do not silently reuse an old initial state.
+Files are kept under the system temporary directory; set
+`BIKE_SIM_EQUILIBRIUM_CACHE_DIR` to choose another location or remove old entries.
 
 ## Initialization and rider behavior
 
@@ -193,7 +208,26 @@ reported as a solver channel without inventing a material spring energy. Battery
 work is a separate electrical ledger; only actual energy-limited shaft effort is
 applied. Reset starts a new generation and requires a new recorder.
 
-The viewer and physical plots consume these same immutable samples. Runtime keys
+Headless runs and physical plots consume these immutable samples. The interactive
+viewer instead uses a preview path with the same force laws, controller updates,
+material-state advancement, battery settling and crash checks, but without the
+per-step scientific samples and energy/work audit. Its HUD labels this as
+`PHYSICAL PREVIEW`, reports measured simulation/wall-time `RTF`, and shows
+`energy audit: off`. Closing the viewer restores the preview flag; a successful
+reset is required before research stepping or recording can resume.
+
+`examples/research/viewer_physics_fast.toml` uses the `ideal_mid_drive` transmission,
+a 1.25 ms step, a 2.5 ms closure time constant and 40 N s/m pedal damping. These are
+explicit synthetic preview parameters, not a convergence-validated replacement for
+the strict configuration. The road, tires, suspension, bicycle body and articulated
+rider remain in the physical preview path; only drivetrain internal dynamics are
+removed.
+The viewer synchronizes at at most 60 Hz without skipping integration steps.
+Real-time capacity depends on the machine; `RTF` exposes slowdowns rather than
+relabelling elapsed wall time as simulated time. An articulated rider can still
+fall or roll backwards on a hill; preview mode does not stabilize its roots.
+
+Runtime keys
 that would change physical parameters or inject unrecorded pose/velocity changes
 are blocked; camera, pause, reset, brakes and the explicitly ideal speed target
 remain available. Restart with a new configuration to change material parameters.

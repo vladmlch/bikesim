@@ -10,6 +10,10 @@ import numpy as np
 def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     sim = runtime.sim
     model, data = sim.model, sim.data
+    cached = None
+    if sim.physics_config.equilibrium_cache_enabled:
+        from bike_sim.sim.ride.equilibrium_cache import load
+        cached = load(runtime)
     runtime.probe_query.reset()
     sim.contact_query.reset()
     mujoco.mj_resetData(model, data)
@@ -49,6 +53,15 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     runtime.drive.reset(model, data)
     if runtime.tire is not None:
         runtime.tire.reset()
+    cache_hit = False
+    steps = 0
+    residual = float('inf')
+    if cached is not None:
+        _, qpos, steps, residual = cached
+        data.qpos[:] = qpos
+        data.qvel.fill(0.)
+        mujoco.mj_forward(model, data)
+        cache_hit = True
     dt = float(model.opt.timestep)
     # A smaller integration step must not silently shorten the physical settling
     # budget. The historical 40,000-step limit represented 20 seconds at 0.5 ms.
@@ -59,9 +72,7 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     cycle = max(1, round(.02/dt))
     first_refine = cycle*max(1, round(sim.physics_config.equilibrium_refine_after_s/(cycle*dt)))
     refine_period = cycle*max(1, round(sim.physics_config.equilibrium_refine_period_s/(cycle*dt)))
-    steps = 0
-    residual = float('inf')
-    while steps < max_steps:
+    while not cache_hit and steps < max_steps:
         for _ in range(min(cycle, max_steps-steps)):
             runtime.apply_forces(active=False, advance=True, front=sim.physics_config.initial_front_brake, rear=sim.physics_config.initial_rear_brake)
             mujoco.mj_step(model, data)
@@ -80,21 +91,26 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
             # a fixed number of identical optimizer calls.
             for _ in range(8):
                 previous = residual
-                residual = refine_equilibrium(runtime)
+                residual = refine_equilibrium(runtime,acceleration_tolerance=tolerance)
                 if residual <= tolerance or residual >= previous*(1.-1e-3):
                     break
         if residual <= tolerance:
             break
-    else:
+    if not cache_hit and steps >= max_steps and residual > tolerance:
         names = []
         for dof in np.argsort(np.abs(data.qacc))[-5:][::-1]:
             jid = int(model.dof_jntid[dof])
             names.append((mujoco.mj_id2name(model,mujoco.mjtObj.mjOBJ_JOINT,jid),float(data.qacc[dof])))
         raise RuntimeError(f'physical equilibrium did not converge after {steps} steps: residual={residual:.6g}; {names}')
     stroke = sim.shock_stroke_mm
-    return {'fork_travel_mm': sim.fork_travel_mm, 'shock_stroke_mm': stroke,
+    result = {'fork_travel_mm': sim.fork_travel_mm, 'shock_stroke_mm': stroke,
             'rear_travel_mm': float(sim.solver.solve_state_from_shock_stroke(stroke)['wheel_travel']),
             'root_z_m': float(data.qpos[root_z]), 'pitch_rad': sim.pitch_rad,
             'steps': steps, 'residual_qacc': residual,
             'initial_crank_phase_rad': phase,
-            'settled_crank_phase_rad': float(data.qpos[runtime.address('crank_spin')[0]])}
+            'settled_crank_phase_rad': float(data.qpos[runtime.address('crank_spin')[0]]),
+            'cache_hit': cache_hit}
+    if sim.physics_config.equilibrium_cache_enabled and not cache_hit:
+        from bike_sim.sim.ride.equilibrium_cache import save
+        save(runtime, data.qpos, steps, residual)
+    return result

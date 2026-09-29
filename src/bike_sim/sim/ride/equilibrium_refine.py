@@ -8,7 +8,7 @@ import mujoco
 from scipy.optimize import least_squares
 
 
-def refine_equilibrium(runtime, *, max_evaluations=80):
+def refine_equilibrium(runtime, *, max_evaluations=80, acceleration_tolerance=.05):
     sim=runtime.sim; m,d=sim.model,sim.data
     if m.nq != m.nv:
         raise ValueError("physical equilibrium requires scalar planar coordinates")
@@ -29,7 +29,10 @@ def refine_equilibrium(runtime, *, max_evaluations=80):
     qids=np.array([i for i in range(m.nq) if i!=sim.root_x_qposadr])
     x0=np.r_[q0[qids],[get(*item) for item in auxiliary]]
     scale=np.r_[[.05 if m.jnt_type[i]==mujoco.mjtJoint.mjJNT_SLIDE else .2 for i in qids],np.full(len(auxiliary),.005)]
-    best=[float('inf'),x0.copy()]
+    mass_matrix=np.empty((m.nv,m.nv))
+    mujoco.mj_fullM(m,d,mass_matrix)
+    force_scale=np.sqrt(np.maximum(np.diag(mass_matrix),1e-12))
+    best=[(1,float('inf')),x0.copy()]
     def place(x):
         d.qpos[:]=q0
         d.qpos[qids]=x[:len(qids)]
@@ -45,17 +48,25 @@ def refine_equilibrium(runtime, *, max_evaluations=80):
         # Raw acceleration weights a light pedal about a million times more
         # strongly than a loaded chassis. Solve the equivalent generalized
         # force balance instead; M is positive definite, so the zero is
-        # unchanged. Acceptance and best-state selection still use qacc.
+        # unchanged. Acceptance still uses qacc.
         result=np.empty(m.nv)
         mujoco.mj_mulM(m,d,result,d.qacc)
-        norm=float(np.max(np.abs(d.qacc)))
-        if np.isfinite(norm) and norm<best[0]:
-            best[:]=[norm,x.copy()]
+        result/=force_scale
+        objective=np.r_[result,1e-5*y]
+        acceleration=float(np.max(np.abs(d.qacc)))
+        norm=float(objective@objective)
+        rank=(int(acceleration>acceleration_tolerance),norm)
+        if np.isfinite(norm) and np.isfinite(acceleration) and rank<best[0]:
+            best[:]=[rank,x.copy()]
         # Weak datum removes arbitrary whole-system translation without hiding
         # force residuals (acceptance below uses qacc alone).
-        return np.r_[result,1e-5*y]
+        return objective
+    def stop_when_converged(intermediate_result):
+        if best[0][0]==0:
+            raise StopIteration
     try:
-        least_squares(residual,np.zeros_like(x0),jac='3-point',max_nfev=max_evaluations,
+        least_squares(residual,np.zeros_like(x0),jac='3-point',x_scale='jac',max_nfev=max_evaluations,
+                      callback=stop_when_converged,
                       xtol=1e-10,ftol=1e-10,gtol=1e-10, bounds=(-np.ones_like(x0),np.ones_like(x0)))
     finally:
         place(best[1])

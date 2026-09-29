@@ -329,7 +329,7 @@ class ArticulatedRiderController:
                 raw=stance_force(phase+offset,command.mean_crank_torque_nm,self.crank_length_m)*blends[side]
                 requests[side]=feasible_pedal_force(raw,normal,cfg.support_mu,load)
         support_forces,diagnostics=pedaling_support_targets(weight,com,points,data.xpos[self.crank,0],
-            cfg.pedal_support_fraction,cfg.bar_support_fraction,enabled,requests,pitch_moment_nm=0.)
+            cfg.pedal_support_fraction,cfg.bar_support_fraction,enabled,requests,pitch_moment_nm=pitch_request)
         support_targets=diagnostics['requested_vertical_forces_n']
         diagnostics['requested_pitch_moment_nm']=pitch_request
         diagnostics['stance']=stance.copy()

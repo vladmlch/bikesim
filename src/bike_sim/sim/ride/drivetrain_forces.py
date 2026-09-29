@@ -105,6 +105,7 @@ class DrivetrainForceApplier:
             self.reference = 0.
             self.psi = None
         else:
+            self.angles = (self._angle(data,'crank'), self._angle(data,'cassette'))
             cf, cr, rf, rr, tf, tr, up = self._geometry(data, self.angles, None)
             _, self.psi = chain_geometry(cf, cr, rf, rr, up_xz=up)
             self.reference = chain_extension(cf,cr,rf,rr,tf,tr,0.,up_xz=up,psi_reference=self.psi)
@@ -184,8 +185,9 @@ class DrivetrainForceApplier:
         human=0.
         chain_energy=extension=tension=extension_rate=0.
         torque=deflection=relative_rate=0.
+        components={}
         if self.simplified:
-            components={'chain':np.zeros(model.nv),'freehub':np.zeros(model.nv)}
+            components.update(chain=np.zeros(model.nv), freehub=np.zeros(model.nv))
         else:
             angles = (self._angle(data,'crank',self.angles[0]),self._angle(data,'cassette',self.angles[1]))
             cf, cr, rf, rr, tf, tr, up = self._geometry(data,angles,self.psi)
@@ -236,12 +238,7 @@ class DrivetrainForceApplier:
             if aid >= 0:
                 data.ctrl[aid] = value
         if self.simplified:
-            ideal=np.zeros(model.nv)
-            transferred=human if self.drive_mode == 'crank_effort' else sensed_human_nm
-            ratio=self.config.gearing.front_teeth/self.config.gearing.rear_teeth
-            ideal[vf] -= transferred
-            ideal[vw] += transferred/ratio
-            components['ideal_transmission']=ideal
+            components['ideal_transmission']=np.zeros(model.nv)
         if self.drive_mode in ('crank_effort','articulated_effort'):
             self.assist.torque = delivered
         if not self.simplified:

@@ -57,11 +57,13 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     steps = 0
     residual = float('inf')
     if cached is not None:
-        _, qpos, steps, residual = cached
-        data.qpos[:] = qpos
-        data.qvel.fill(0.)
-        mujoco.mj_forward(model, data)
-        cache_hit = True
+        from bike_sim.sim.ride.equilibrium_cache import restore_state
+        _, qpos, cached_steps, cached_residual, state = cached
+        if restore_state(runtime, state):
+            data.qpos[:] = qpos
+            data.qvel.fill(0.)
+            mujoco.mj_forward(model, data)
+            steps, residual, cache_hit = cached_steps, cached_residual, True
     dt = float(model.opt.timestep)
     # A smaller integration step must not silently shorten the physical settling
     # budget. The historical 40,000-step limit represented 20 seconds at 0.5 ms.

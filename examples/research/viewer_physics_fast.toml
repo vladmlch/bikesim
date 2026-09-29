@@ -24,11 +24,15 @@ mu = 1.1
 
 [drive]
 transmission_model = "ideal_mid_drive"
-human_torque_nm = 10.0
+human_torque_nm = 20.0
+
+[drive.assist]
+gain = 4.0
 
 [drive.gearing]
 front_teeth = 34
 rear_teeth = 51
 
 [articulated]
-pedal_c_ns_m = 40.0
+pedal_c_ns_m = 100.0
+posture_pitch_limit_nm = 120.0

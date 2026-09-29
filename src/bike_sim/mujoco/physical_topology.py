@@ -132,6 +132,15 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
     if physics_config.drive_mode in ('crank_effort','articulated_effort'):
         ratio=(physics_config.drive.gearing.front_teeth /
                physics_config.drive.gearing.rear_teeth)
+        if physics_config.drive.transmission_model == 'ideal_mid_drive':
+            equality = root.find('equality')
+            if equality is None:
+                equality = ET.SubElement(root, 'equality')
+            ET.SubElement(
+                equality, 'joint', name='ideal_mid_drive_kinematics',
+                joint1='crank_spin', joint2='rear_wheel_spin',
+                polycoef=f'0 {1.0 / ratio:.17g} 0 0 0',
+            )
         motor_joint=('crank_spin' if physics_config.drive.transmission_model == 'elastic_chain'
                      else 'rear_wheel_spin')
         max_control=physics_config.drive.assist.max_torque if motor_joint == 'crank_spin' else physics_config.drive.assist.max_torque/ratio

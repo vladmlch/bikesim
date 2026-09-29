@@ -144,10 +144,9 @@ safety rule changes the effective closure stiffness as dt changes. The default
 
 `drive.transmission_model = "elastic_chain"` retains the research drivetrain with
 separate cassette and freehub dynamics. `"ideal_mid_drive"` removes those high-frequency
-states and applies motor torque directly at the rear wheel with the configured gear
-ratio; articulated pedal torque is transferred with the same ratio. It is intended for
-interactive plant/control development, not for chain, cadence-coupling or drivetrain
-energy studies.
+states, keeps the crank/rear-wheel gear-ratio kinematic coupling, and applies motor torque
+directly at the rear wheel. It is intended for interactive plant/control development,
+not for chain, freehub or drivetrain-energy studies.
 
 `equilibrium_cache_enabled = true` enables a validated initial-pose cache for
 interactive runs. The cache is keyed by source, compiled model, road, rider and
@@ -217,7 +216,7 @@ per-step scientific samples and energy/work audit. Its HUD labels this as
 reset is required before research stepping or recording can resume.
 
 `examples/research/viewer_physics_fast.toml` uses the `ideal_mid_drive` transmission,
-a 1.25 ms step, a 2.5 ms closure time constant and 40 N s/m pedal damping. These are
+a 1.25 ms step, a 2.5 ms closure time constant and 100 N s/m pedal damping. These are
 explicit synthetic preview parameters, not a convergence-validated replacement for
 the strict configuration. The road, tires, suspension, bicycle body and articulated
 rider remain in the physical preview path; only drivetrain internal dynamics are

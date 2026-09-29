@@ -13,6 +13,26 @@ def stance_force(phase,mean_nm,crank_m):
     return (mean_nm/crank_m)*weight*np.array([-sin(phase),0.,-cos(phase)])
 
 
+def feasible_pedal_force(request,normal,mu,measured_normal_n):
+    """Project a limb force target onto the unilateral flat-pedal friction cone.
+
+    This limits only the *requested human contact force*, not the tire force,
+    crank motor, or a solver load. Actual contact is still solved independently.
+    The pure crank-tangential request otherwise asks for infinite Fx/Fn near a
+    dead center, which makes a flat-pedal controller slide its own foot off.
+    """
+    f=array(request,'pedal force request',(3,))
+    n=array(normal,'pedal normal',(3,))
+    friction=scalar(mu,'pedal friction',minimum=0.)
+    measured=scalar(measured_normal_n,'measured pedal load',minimum=0.)
+    if abs(np.linalg.norm(n)-1.)>1e-9 or abs(n[1])>1e-9 or abs(f[1])>1e-9:
+        raise ValueError('pedal force request must use a planar unit normal')
+    tangent=np.array([n[2],0.,-n[0]])
+    compression=max(-float(f@n),0.)
+    bound=friction*min(compression,measured)
+    return -compression*n+np.clip(float(f@tangent),-bound,bound)*tangent
+
+
 def bounded_joint_torque(q,qd,target,kp,kd,limit):
     q,qd,target = (array(v,n) for v,n in zip((q,qd,target),('joint position','joint speed','joint target')))
     if q.ndim != 1 or q.shape != qd.shape or q.shape != target.shape:
@@ -98,6 +118,7 @@ class ArticulatedRiderController:
         self.pelvis = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'rider_pelvis')
         self.feet = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,f'rider_foot_{s}') for s in ('front','rear')}
         self.soles = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_SITE,f'site_rider_sole_{s}') for s in ('front','rear')}
+        self.pedal_geoms = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_GEOM,f'geom_pedal_{s}') for s in ('front','rear')}
         self.pedals = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_SITE,f'site_pedal_{s}') for s in ('front','rear')}
         self.frame = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'frame')
         self.torso = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'rider_torso')
@@ -116,7 +137,7 @@ class ArticulatedRiderController:
         if min(self.pelvis,self.crank,*self.feet.values(),*self.soles.values(),*self.pedals.values()) < 0:
             raise ValueError('incomplete rider interface topology')
 
-    def _targets(self,model,data,side, *, compression_m=None, shear_m=0.):
+    def _targets(self,model,data,side, *, compression_m=None, shear_m=0., clearance_m=0.):
         hip = data.xpos[self.pelvis]
         # Solve in the actual parent frame so the foot target reaches the
         # actual platform. Posture is requested through a balanced contact
@@ -125,13 +146,18 @@ class ArticulatedRiderController:
         ankle_offset = getattr(self.pose,f'ankle_{side}')-getattr(self.pose,f'pedal_{side}')
         pedal = data.site_xpos[self.pedals[side]]
         depth=self.config.posture_sole_depth_m if compression_m is None else scalar(compression_m,'target sole compression',minimum=0)
-        normal=data.site_xmat[self.pedals[side]].reshape(3,3)[:,2]
-        tangent=data.site_xmat[self.pedals[side]].reshape(3,3)[:,0]
+        depth-=scalar(clearance_m,'target sole clearance',minimum=0)
+        from bike_sim.sim.ride.support_geometry import upper_box_face
+        geom=self.pedal_geoms[side]
+        surface,normal,tangent=upper_box_face(data.geom_xpos[geom],
+            data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
         shear=scalar(shear_m,'target sole shear')
         # Target the actual platform top, with a deflection consistent with the
         # requested normal load. A fixed 3 mm position goal in parallel with an
         # unrelated force goal makes the PD oppose the very load it must hold.
-        ankle_goal=pedal+ankle_offset+normal*(.008-depth)-np.array([0.,0.,.008])+shear*tangent
+        radius=self.config.support_pad_radius_m
+        ankle_goal=(surface+ankle_offset+normal*(radius-depth)
+                    -np.array([0.,0.,.008+radius])+shear*tangent)
         target = R.T@(ankle_goal-hip)
         upper = getattr(self.pose,f'knee_{side}')-self.pose.hip
         lower = getattr(self.pose,f'ankle_{side}')-getattr(self.pose,f'knee_{side}')
@@ -258,15 +284,28 @@ class ArticulatedRiderController:
         phase = atan2(-rotation[2,0],rotation[0,0])
         blends={}
         requests={}
+        stance={}
         for side,offset in (('front',0.),('rear',pi)):
             load=max(float(loads.get(side,0.)),0.)
             fraction=min(load/cfg.stance_blend_load_n,1.)
             blends[side]=fraction*fraction*(3.-2.*fraction)
-            requests[side]=stance_force(phase+offset,command.mean_crank_torque_nm,self.crank_length_m)*blends[side]
+            stance[side]=(command.mean_crank_torque_nm==0. or cos(phase+offset)>0.)
+            if not stance[side]:
+                # A flat-pedal return foot must be lifted rather than carrying
+                # a coasting support load that brakes the rising crank arm.
+                # This changes only the control target, never physical Fn.
+                enabled[1+('front','rear').index(side)]=False
+            from bike_sim.sim.ride.support_geometry import upper_box_face
+            geom=self.pedal_geoms[side]
+            _,normal,_=upper_box_face(data.geom_xpos[geom],data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
+            raw=stance_force(phase+offset,command.mean_crank_torque_nm,self.crank_length_m)*blends[side]
+            requests[side]=feasible_pedal_force(raw,normal,cfg.support_mu,load)
         support_forces,diagnostics=pedaling_support_targets(weight,com,points,data.xpos[self.crank,0],
             cfg.pedal_support_fraction,cfg.bar_support_fraction,enabled,requests,pitch_moment_nm=0.)
         support_targets=diagnostics['requested_vertical_forces_n']
         diagnostics['requested_pitch_moment_nm']=pitch_request
+        diagnostics['stance']=stance.copy()
+        diagnostics['feasible_pedal_force_on_bike_n']={s:requests[s].tolist() for s in requests}
         self.support_diagnostics=diagnostics
         result = {}
         terms = {}
@@ -293,14 +332,19 @@ class ArticulatedRiderController:
             va = [self.joints[n][1] for n in names]
             requested=requests[side]
             blend=blends[side]
-            normal=data.site_xmat[self.pedals[side]].reshape(3,3)[:,2]
+            from bike_sim.sim.ride.support_geometry import upper_box_face
+            geom=self.pedal_geoms[side]
+            _,normal,tangent=upper_box_face(data.geom_xpos[geom],
+                data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
             desired_down=support_forces[side]
             depth=(1.-blend)*cfg.posture_sole_depth_m+blend*max(0.,-float(desired_down@normal))/cfg.support_k_n_m
-            tangent=data.site_xmat[self.pedals[side]].reshape(3,3)[:,0]
             shear=blend*float(desired_down@tangent)/cfg.support_tangent_k_n_m
-            target = self._targets(model,data,side,compression_m=depth,shear_m=shear)
+            clearance=0. if stance[side] else cfg.swing_clearance_m
+            if not stance[side]:
+                depth=shear=0.
+            target = self._targets(model,data,side,compression_m=depth,shear_m=shear,clearance_m=clearance)
             saturation=dict(self.saturated_ik)
-            future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear) if future is not data else target
+            future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear,clearance_m=clearance) if future is not data else target
             self.saturated_ik=saturation
             target_speed=np.arctan2(np.sin(future_target-target),np.cos(future_target-target))/self.target_difference_s
             pd = cfg.joint_kp_nm_rad*(target-data.qpos[qa])+cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])

@@ -138,14 +138,22 @@ class ArticulatedConfig:
     pedal_support_fraction: float = .33
     bar_support_fraction: float = .12
     posture_sole_depth_m: float = .003
+    swing_clearance_m: float = .003  # unstrapped return foot is not a brake
     stance_blend_load_n: float = 50.
     posture_pitch_k_nm_rad: float = 600.
     posture_pitch_d_nms_rad: float = 60.
     posture_pitch_limit_nm: float = 60.
     saddle_patch_half_length_m: float = .045
     pedal_patch_half_length_m: float = .025
-    support_k_n_m: float = 30000.
-    support_c_ns_m: float = 500.
+    support_pad_radius_m: float = .020  # synthetic sole contact shape
+    # Synthetic finite-pad stiffness: 1000 N gives 10 mm total deflection,
+    # at most 20 mm if one pressure pad carries that entire load.
+    support_k_n_m: float = 100000.
+    support_c_ns_m: float = 500.  # saddle interface
+    # A 0.175 kg pedal has Iyy ~= 1.50e-4 kg m^2. Reusing saddle damping
+    # makes its explicit edge contact unstable at 0.5 ms; keep the synthetic
+    # sole material separate and validate it on the unforced edge-pad rig.
+    pedal_c_ns_m: float = 100.
     support_tangent_k_n_m: float = 20000.
     support_mu: float = .8
     support_length_m: float = .1
@@ -166,5 +174,5 @@ class ArticulatedConfig:
             raise ValueError('postural support fractions must leave a saddle share')
         for key in self.__dataclass_fields__:
             scalar(getattr(self,key),key,minimum=0)
-        for key in ('stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s'):
+        for key in ('support_pad_radius_m','stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s'):
             scalar(getattr(self,key),key,positive=True)

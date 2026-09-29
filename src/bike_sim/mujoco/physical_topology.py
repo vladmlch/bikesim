@@ -47,8 +47,10 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
     # The legacy 0.5 ms solref was clamped by MuJoCo at dt=0.5 ms to
     # 2*dt=1 ms. Preserve that effective reference, explicitly and identically
     # across all refinement grids instead of changing the linkage stiffness.
-    for constraint in root.find('equality'):
-        constraint.set('solref', f'{physics_config.closure_time_constant_s:.17g} 1')
+    equality = root.find('equality')
+    if equality is not None:
+        for constraint in equality:
+            constraint.set('solref', f'{physics_config.closure_time_constant_s:.17g} 1')
     crank=_find(root,'body','crank')
     crank_length=scalar(specs.crank_length/1000.,'crank length',positive=True)
     budget=scalar(mass_specs.crank_pedals_mass,'crank mass',positive=True)

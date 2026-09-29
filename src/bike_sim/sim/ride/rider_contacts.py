@@ -5,6 +5,7 @@ import numpy as np
 from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.tire import normal_contact, brush_step
 from bike_sim.sim.ride.physical_mapping import resolve_id, point_velocity
+from bike_sim.sim.ride.support_geometry import box_pad_contact
 
 
 def apply_internal_force(model,data,body_a,body_b,point,force,qfrc):
@@ -68,6 +69,7 @@ class RiderContactApplier:
         self.reset(model,None)
 
     def reset(self,model,data):
+        self._model,self._data=model,data
         self.enabled={name:True for name in self.CONTACTS}
         self.states={f"{name}:{i}":_SupportState() for name in self.supports for i in range(2)}
         self.grip_xi_local=np.zeros(3)
@@ -96,7 +98,15 @@ class RiderContactApplier:
                     key=f"{name}:{i}"
                     self.pending_release_loss_j+=.25*self.config.support_tangent_k_n_m*self.states[key].xi**2
                     self.states[key]=_SupportState()
-                self.pending_release_loss_j+=self.diagnostics.get(name,{}).get('radial_energy_j',0.)
+                if self._data is not None:
+                    import mujoco
+                    # Release can be requested after integration, whereas the
+                    # previous diagnostic row belongs to the incoming pose.
+                    # Refresh positions only; do not run a new force solve.
+                    mujoco.mj_kinematics(self._model,self._data)
+                    for _,_,_,_,gap,inside in self._pads(self._model,self._data,name,self.supports[name]):
+                        if inside:
+                            self.pending_release_loss_j+=.25*self.config.support_k_n_m*max(-gap,0.)**2
         self.enabled[name]=enabled
 
     def release_all(self):
@@ -123,18 +133,17 @@ class RiderContactApplier:
     def _pads(self, model, data, name, entry):
         body,site,bike,geom=entry
         R=data.geom_xmat[geom].reshape(3,3)
-        n,tangent=R[:,2],R[:,0]
-        origin=data.geom_xpos[geom]+n*model.geom_size[geom,2]
         half=(self.config.saddle_patch_half_length_m if name=='saddle'
               else self.config.pedal_patch_half_length_m)
+        radius=self.config.support_pad_radius_m
         foot_rotation=data.xmat[body].reshape(3,3)
         for i,sign in enumerate((-1.,1.)):
-            anchor=data.site_xpos[site]+foot_rotation@np.array([sign*half,0.,0.])
-            local=R.T@(anchor-origin)
-            inside=(abs(local[0])<=model.geom_size[geom,0]
-                    and abs(local[1])<=model.geom_size[geom,1]+1e-8)
-            point=anchor-local[2]*n
-            yield f"{name}:{i}",point,n,tangent,float(local[2]),bool(inside)
+            # Place the circular sample above the declared sole surface, so a
+            # horizontal pad retains exactly the previous gap and stiffness.
+            center=data.site_xpos[site]+foot_rotation@np.array([sign*half,0.,radius])
+            contact=box_pad_contact(center,radius,data.geom_xpos[geom],R,model.geom_size[geom])
+            yield (f"{name}:{i}",contact.point_m,contact.normal,contact.tangent,
+                   contact.gap_m,contact.within_footprint)
 
     def stored_energy(self, model, data):
         cfg=self.config
@@ -159,6 +168,7 @@ class RiderContactApplier:
             self.probe_enabled=probe.enabled
             self.probe_delivered_crank_torque_nm=probe.delivered_crank_torque_nm
             return force
+        self._model,self._data=model,data
         time=float(data.time)
         if self.last_time_s is not None and time<=self.last_time_s:
             raise ValueError('rider contact state advances only once per timestamp')
@@ -179,16 +189,16 @@ class RiderContactApplier:
                 penetration=-gap
                 # Two finite-area pressure samples split, rather than duplicate,
                 # the specified stiffness/damping and carry a physical moment.
-                k,c,kx=cfg.support_k_n_m/2,cfg.support_c_ns_m/2,cfg.support_tangent_k_n_m/2
+                damping = cfg.support_c_ns_m if name == 'saddle' else cfg.pedal_c_ns_m
+                k,c,kx=cfg.support_k_n_m/2,damping/2,cfg.support_tangent_k_n_m/2
                 normal,radial_energy=normal_contact(penetration,-float(u@n),k,c)
                 state=self.states[key];xi=state.xi;transport_loss=0.
                 if state.tangent is not None:
-                    transported=xi*float(state.tangent@tangent)
+                    alignment=float(state.tangent@tangent)
+                    # An opposite face is a new material contact, not a shear
+                    # spring that can be carried through the pedal's solid core.
+                    transported=xi*alignment if alignment>=0. else 0.
                     transport_loss=.5*kx*(xi*xi-transported*transported);xi=transported
-                old_patch=self.diagnostics.get(name,{}).get('patches',[])
-                index=int(key.rsplit(':',1)[1])
-                if self.enabled[name] and not inside and len(old_patch)>index and old_patch[index]['in_platform']:
-                    loss+=old_patch[index].get('radial_energy_j',0.)
                 if not self.enabled[name] or not inside:
                     normal=0.;radial_energy=0.
                 new_xi,friction,brush_loss=brush_step(xi,float(u@tangent),0.,normal,kx,cfg.support_mu,cfg.support_length_m,dt)

@@ -87,3 +87,31 @@ def suspension_energy(applier, data):
         'shock_upper_stop': coil.bumper_peak_n*over+.5*stop.stiffness_n_m*over**2,
     }
     return terms
+
+
+def engine_passive_loss_power(model, qpos, qvel, passive_force):
+    """Damping/fluid loss with native joint spring storage counted only once.
+
+    The physical model admits only scalar planar joints and has no gravity
+    compensation. Native joint spring energy is already in ``stored_terms``;
+    subtract its generalized force before classifying the passive work as loss.
+    Samples belong to the incoming state, not the post-integration coordinates.
+    """
+    import mujoco
+    from bike_sim.physics.checks import array
+    q = array(qpos, 'passive sample positions', (model.nq,))
+    v = array(qvel, 'passive sample velocities', (model.nv,))
+    force = array(passive_force, 'passive sample force', (model.nv,)).copy()
+    if np.any(model.body_gravcomp != 0.):
+        raise ValueError('gravity compensation is not a passive material loss')
+    active = np.flatnonzero(model.jnt_stiffness)
+    if np.any(~np.isin(model.jnt_type[active],
+                      [mujoco.mjtJoint.mjJNT_HINGE, mujoco.mjtJoint.mjJNT_SLIDE])):
+        raise ValueError('spring accounting requires scalar planar joints')
+    qa = model.jnt_qposadr[active]
+    va = model.jnt_dofadr[active]
+    force[va] += model.jnt_stiffness[active]*(q[qa]-model.qpos_spring[qa])
+    power = -float(force @ v)
+    if power < -1e-8:
+        raise ArithmeticError('unclassified active force in native passive channel')
+    return max(0., power)

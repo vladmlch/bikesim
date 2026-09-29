@@ -234,7 +234,11 @@ class PhysicalRuntime:
         """Material losses only; road/aero/native-solver work stay signed external."""
         sim=self.sim
         loss=sum(max(0.,-float(forces[name]@velocity))*dt for name in
-                 ('fork_damper','shock_damper','shock_hbo','drive_bearings','engine_passive') if name in forces)
+                 ('fork_damper','shock_damper','shock_hbo','drive_bearings') if name in forces)
+        if 'engine_passive' in forces:
+            from bike_sim.sim.ride.physical_energy import engine_passive_loss_power
+            loss += engine_passive_loss_power(sim.model, sim.last_force_sample.qpos,
+                                              velocity, forces['engine_passive'])*dt
         for side in ('front','rear'):
             loss+=max(0.,-float(forces.get(side+'_static_brake',np.zeros_like(velocity))@velocity))*dt
         loss+=self.drive.last.get('chain_dissipation_power_w',0.)*dt

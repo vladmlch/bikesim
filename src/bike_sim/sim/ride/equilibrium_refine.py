@@ -10,6 +10,8 @@ from scipy.optimize import least_squares
 
 def refine_equilibrium(runtime, *, max_evaluations=80):
     sim=runtime.sim; m,d=sim.model,sim.data
+    if m.nq != m.nv:
+        raise ValueError("physical equilibrium requires scalar planar coordinates")
     d.qvel.fill(0.)
     auxiliary=[]
     if runtime.tire is not None:
@@ -40,8 +42,13 @@ def refine_equilibrium(runtime, *, max_evaluations=80):
         place(x)
         runtime.apply_forces(active=False,advance=False, front=sim.physics_config.initial_front_brake, rear=sim.physics_config.initial_rear_brake)
         mujoco.mj_forward(m,d)
-        result=d.qacc.copy()
-        norm=float(np.max(np.abs(result)))
+        # Raw acceleration weights a light pedal about a million times more
+        # strongly than a loaded chassis. Solve the equivalent generalized
+        # force balance instead; M is positive definite, so the zero is
+        # unchanged. Acceptance and best-state selection still use qacc.
+        result=np.empty(m.nv)
+        mujoco.mj_mulM(m,d,result,d.qacc)
+        norm=float(np.max(np.abs(d.qacc)))
         if np.isfinite(norm) and norm<best[0]:
             best[:]=[norm,x.copy()]
         # Weak datum removes arbitrary whole-system translation without hiding

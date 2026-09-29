@@ -124,3 +124,36 @@ def test_disabled_controller_has_no_hidden_velocity_bias(rig):
     np.testing.assert_array_equal(d.actuator_force[[a for _,_,a in c.joints.values()]],0.)
     c.write(d,c.compute(m,d,RiderCommand()))
     assert all(m.actuator_biasprm[a,2]==-c.config.joint_kd_nms_rad for _,_,a in c.joints.values())
+
+
+def test_return_stroke_is_not_assigned_a_coasting_support_load(rig):
+    m,d,c=rig
+    c.compute(m,d,RiderCommand(20.),contact_loads={'saddle':400.,'front':140.,'rear':140.,'grip':True})
+    assert c.support_diagnostics['stance']=={'front':True,'rear':False}
+    assert c.support_diagnostics['requested_vertical_forces_n']['rear']==pytest.approx(0.,abs=1e-8)
+
+
+def test_swing_target_lifts_sole_above_actual_platform(rig):
+    m,d,c=rig
+    target=c._targets(m,d,'rear',compression_m=0.,clearance_m=.003)
+    for joint,value in zip(('hip','knee','ankle'),target):
+        d.qpos[c.joints[f'rider_{joint}_rear'][0]]=value
+    mujoco.mj_forward(m,d)
+    sole=d.site_xpos[c.soles['rear']]
+    geom=c.pedal_geoms['rear']
+    assert sole[2]-(d.geom_xpos[geom,2]+m.geom_size[geom,2])==pytest.approx(.003,abs=1e-10)
+
+
+@pytest.mark.parametrize('phase', np.linspace(-np.pi,np.pi,65))
+def test_pedal_request_stays_inside_the_flat_pedal_friction_cone(phase):
+    from bike_sim.sim.ride.rider_control import stance_force, feasible_pedal_force
+    raw=stance_force(phase,20.,.165)
+    force=feasible_pedal_force(raw,np.array([0.,0.,1.]),.8,200.)
+    assert force[2]<=0.
+    assert abs(force[0])<=.8*(-force[2])+1e-12
+    assert abs(force[0])<=.8*200.+1e-12
+
+
+def test_return_foot_never_requests_a_tensile_normal_force():
+    from bike_sim.sim.ride.rider_control import feasible_pedal_force
+    np.testing.assert_array_equal(feasible_pedal_force([30.,0.,20.],[0.,0.,1.],.8,200.),0.)

@@ -46,3 +46,22 @@ def test_numpy_contact_flags_remain_boolean_in_frozen_samples():
     frozen=freeze({'feasible':np.bool_(True),'released':np.bool_(False)})
     assert plain(frozen)=={'feasible':True,'released':False}
     assert type(frozen['feasible']) is bool
+
+
+def test_releasing_a_support_uses_current_pose_not_previous_force_row():
+    cfg=SimulationPhysicsConfig('physical',drive_mode='articulated_effort')
+    specs=BikeSpecs();rider=RiderSpecs(variant='articulated_planar')
+    m=mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode='ride',rider=rider,physics_config=cfg))
+    d=mujoco.MjData(m)
+    contact=RiderContactApplier(m,geometry_pose(rider,specs),cfg.articulated)
+    contact.reset(m,d)
+    mujoco.mj_forward(m,d)
+    contact.compute_qfrc(m,d,m.opt.timestep)
+    # A running step changes the pose before a user's release command. The
+    # old force row cannot be used as the new spring-energy datum.
+    d.qpos[m.joint('rider_root_z').qposadr[0]]-=.002
+    mujoco.mj_forward(m,d)
+    energy=contact.stored_energy(m,d)
+    contact.release_all()
+    assert contact.pending_release_loss_j==pytest.approx(energy,rel=1e-12,abs=1e-12)
+    assert contact.stored_energy(m,d)==0.

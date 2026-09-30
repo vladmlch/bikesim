@@ -82,14 +82,20 @@ class AssistConfig:
 
 @dataclass(frozen=True)
 class BatteryConfig:
+    # enabled=false removes the energy store: metering still runs but torque is
+    # never energy-limited and the reserve never depletes.
+    enabled: bool = True
     energy_j: float = 1800000.
     copper_w_per_nm2: float = .02
     speed_w_per_rad_s2: float = 0.
     idle_w: float = 5.
 
     def __post_init__(self):
+        if not isinstance(self.enabled, bool):
+            raise ValueError('battery enable must be a bool')
         for key in self.__dataclass_fields__:
-            scalar(getattr(self,key),key,minimum=0)
+            if key != 'enabled':
+                scalar(getattr(self,key),key,minimum=0)
 
 
 @dataclass(frozen=True)

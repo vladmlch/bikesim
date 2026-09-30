@@ -79,6 +79,25 @@ def test_motor_battery_limit_and_airborne_drive_use_solved_torque():
     assert sim.physical.sample.channels['drive']['motor_torque_nm'] == 0.
 
 
+def test_disabled_battery_never_limits_or_depletes_motor():
+    sim = make(drive_mode='crank_effort', drive=PhysicalDriveConfig(
+        human_torque_nm=20., battery=BatteryConfig(enabled=False, energy_j=.003)))
+    m, d = sim.model, sim.data
+    d.qpos[sim.physical.address('root_z')[0]] += 2.
+    d.qvel[:] = 0.
+    d.qvel[sim.physical.address('crank_spin')[1]] = 10.
+    sim.step()
+    result = sim.physical.sample.channels['drive']
+    assert result['motor_torque_nm'] > 0.
+    assert not result['energy_limited']
+    assert result['electrical_power_w'] > 0.
+    for _ in range(200):
+        sim.step()
+    assert sim.physical.drive.battery.energy_j == .003
+    assert not sim.physical.sample.channels['drive']['battery_empty']
+    assert abs(sim.physical.energy['electrical_residual_j']) < 1e-10
+
+
 @pytest.mark.parametrize('flag,value', [('--tyre-tier','fast'), ('--tyre-pressure','1.5/1.7')])
 def test_physical_cli_does_not_silently_ignore_legacy_tire_settings(flag, value):
     with pytest.raises(SystemExit):

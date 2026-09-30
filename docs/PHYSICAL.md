@@ -356,8 +356,12 @@ research motor setpoint retains its separate command path. Preview logs include
 The last event persists across 0.1 s log samples so a shift is not lost between samples.
 
 Mid-drive response parameters are overridden under `[drive.assist]` in any physical
-TOML file. For example, `gain`, `tau`, `stop_delay`, `slew`, `max_torque` and
-`max_power` are accepted there and override their `AssistConfig` defaults.
+TOML file. For example, `gain`, `tau`, `stop_delay`, `slew`, `max_torque`,
+`max_power` and `torque_curve` (a piecewise-linear rpm/torque ceiling, end values
+held outside its range) are accepted there and override their `AssistConfig`
+defaults. `[drive.battery]` accepts `enabled`: `false` removes the energy store --
+electrical power is still metered, but motor torque is never energy-limited and
+the reserve never depletes.
 Assist engages on pedal torque (`engage_torque_nm`), not crank rotation, so a
 rider pressing a pedal at standstill is assisted like on torque-sensing
 mid-drives. `stall_timeout_s` bounds sustained torque while |crank rpm| stays

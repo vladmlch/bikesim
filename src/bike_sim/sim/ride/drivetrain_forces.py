@@ -209,9 +209,12 @@ class DrivetrainForceApplier:
         cfg = self.config.battery
         power = motor_electrical_power(torque, omega, cfg.copper_w_per_nm2,
             cfg.speed_w_per_rad_s2, cfg.idle_w, enabled and torque > 0.)
-        if power*dt > self.battery.energy_j+max(1e-10, self.battery.energy_j*1e-12):
-            raise ArithmeticError('solved motor energy exceeds available battery storage')
-        delivered_power = self.battery.draw(power, dt)
+        if cfg.enabled:
+            if power*dt > self.battery.energy_j+max(1e-10, self.battery.energy_j*1e-12):
+                raise ArithmeticError('solved motor energy exceeds available battery storage')
+            delivered_power = self.battery.draw(power, dt)
+        else:
+            delivered_power = power
         self.last.update(motor_torque_nm=torque, motor_shaft_power_w=torque*omega,
                          electrical_power_w=delivered_power, battery_energy_j=self.battery.energy_j,
                          motor_enabled=enabled and torque > 0., battery_empty=self.battery.energy_j == 0.)
@@ -302,12 +305,13 @@ class DrivetrainForceApplier:
         limited_request = safety_request
         if self.shifting.torque_factor < 1. and self.shift_motor_limit_nm is not None:
             limited_request = min(limited_request, self.shift_motor_limit_nm)
-        delivered = limit_torque_by_energy(limited_request,omega,a,b,idle,budget)
+        delivered = (limit_torque_by_energy(limited_request,omega,a,b,idle,budget)
+                     if battery_cfg.enabled else limited_request)
         enabled = active and delivered > 0. and not braking
         if not enabled:
             delivered = 0.
         electrical = motor_electrical_power(delivered,omega,a,b,idle,enabled)
-        if electrical > budget+max(1e-10,abs(budget)*1e-12):
+        if battery_cfg.enabled and electrical > budget+max(1e-10,abs(budget)*1e-12):
             raise ArithmeticError('delivered motor torque exceeds the battery budget')
         actual_electrical = 0.  # settled from data.actuator_force after mj_step
         if active and self.pending_actuation is not None:

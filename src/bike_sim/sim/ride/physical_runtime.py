@@ -429,7 +429,8 @@ class PhysicalRuntime:
             'loss_j':self.loss_j,'loss_step_j':loss_step,'solver_constraint_work_j':self.solver_work_j,'energy_scale_j':self.energy_scale_j,
             'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
             'electrical_work_j':self.electrical_work_j,
-            'electrical_residual_j':self.initial_battery_j-self.drive.battery.energy_j-self.electrical_work_j}
+            'electrical_residual_j':(self.initial_battery_j-self.drive.battery.energy_j-self.electrical_work_j
+                                    if self.cfg.drive.battery.enabled else 0.)}
         drive.update(chain_power_w=float(components['chain']@v),
             freehub_power_w=float((components['freehub']+components.get('ideal_transmission',np.zeros(m.nv)))@v),
             front_brake_power_w=float(components['front_static_brake']@v),rear_brake_power_w=float(components['rear_static_brake']@v),

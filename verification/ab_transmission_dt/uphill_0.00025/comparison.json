@@ -1,0 +1,118 @@
+{
+  "reference": "elastic_chain",
+  "dt_s": 0.00025,
+  "reference_dt_s": 0.000125,
+  "seed": 17,
+  "tolerances": {
+    "onset_s": 0.05,
+    "min_load_relative": 0.15,
+    "shock_stroke_relative": 0.1,
+    "speed_relative": 0.05
+  },
+  "candidates": {
+    "ideal_mid_drive": {
+      "passed": false,
+      "scenarios": [
+        {
+          "scenario": "uphill",
+          "seed": 17,
+          "reference_outcome": "duration",
+          "candidate_outcome": "duration",
+          "checks": {
+            "onset_s": {
+              "reference": null,
+              "candidate": null,
+              "tolerance": 0.05,
+              "passed": true
+            },
+            "front_load_fraction_min": {
+              "reference": 0.1330386486129736,
+              "candidate": 0.09963954323255,
+              "delta": 0.033399105380423594,
+              "relative": 0.2510481407368009,
+              "tolerance": 0.15,
+              "passed": false
+            },
+            "min_front_load_n": {
+              "reference": 134.80119910893708,
+              "candidate": 92.91230742537208,
+              "delta": 41.88889168356501,
+              "relative": 0.3107456903978523,
+              "tolerance": 0.15,
+              "passed": false
+            },
+            "max_shock_stroke_m": {
+              "reference": 0.018777273593013327,
+              "candidate": 0.01901971998309726,
+              "delta": 0.00024244639008393423,
+              "relative": 0.012911692897425962,
+              "tolerance": 0.1,
+              "passed": true
+            },
+            "mean_speed_mps": {
+              "reference": 1.4805237877407085,
+              "candidate": 1.4868717283972768,
+              "delta": 0.006347940656568296,
+              "relative": 0.00428763165383199,
+              "tolerance": 0.05,
+              "passed": true
+            }
+          },
+          "passed": false
+        }
+      ]
+    },
+    "geometric_ideal_mid_drive": {
+      "passed": false,
+      "scenarios": [
+        {
+          "scenario": "uphill",
+          "seed": 17,
+          "reference_outcome": "duration",
+          "candidate_outcome": "crash:rider_ground_contact",
+          "checks": {
+            "onset_s": {
+              "reference": null,
+              "candidate": null,
+              "tolerance": 0.05,
+              "passed": true
+            },
+            "front_load_fraction_min": {
+              "reference": 0.1330386486129736,
+              "candidate": 0.0,
+              "delta": 0.1330386486129736,
+              "relative": 1.0,
+              "tolerance": 0.15,
+              "passed": false
+            },
+            "min_front_load_n": {
+              "reference": 134.80119910893708,
+              "candidate": 0.0,
+              "delta": 134.80119910893708,
+              "relative": 1.0,
+              "tolerance": 0.15,
+              "passed": false
+            },
+            "max_shock_stroke_m": {
+              "reference": 0.018777273593013327,
+              "candidate": 0.01897836544609673,
+              "delta": 0.000201091853083403,
+              "relative": 0.010709321142246419,
+              "tolerance": 0.1,
+              "passed": true
+            },
+            "mean_speed_mps": {
+              "reference": 1.4805237877407085,
+              "candidate": 1.8202795566113972,
+              "delta": 0.3397557688706887,
+              "relative": 0.22948349204787774,
+              "tolerance": 0.05,
+              "passed": false
+            }
+          },
+          "passed": false
+        }
+      ]
+    }
+  }
+}

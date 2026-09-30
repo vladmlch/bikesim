@@ -50,3 +50,13 @@ def test_cli_rider_random_conflicts_are_explicit():
     for extra in (['--rider', 'lumped'], ['--posture', 'forward'], ['--human-torque', '10']):
         with pytest.raises(ValueError, match='rider-random'):
             build_rider(parser().parse_args(['--rider-random', *extra]))
+
+
+def test_every_sampled_rider_fits_the_frame():
+    # The bike has one frame size: a rider the seatpost/reach limits reject would only fail at plant build time.
+    from bike_sim.geometry.specs import BikeSpecs
+    from bike_sim.physics.rider import solve_seated_pose
+    specs = BikeSpecs()
+    for seed in range(200):
+        rider, _ = sample_rider(RiderRandomSpec(), seed)
+        solve_seated_pose(specs, rider)

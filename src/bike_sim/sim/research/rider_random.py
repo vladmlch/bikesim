@@ -24,7 +24,9 @@ def _range(value, name, low_limit, high_limit):
 @dataclass(frozen=True)
 class RiderRandomSpec:
     mass_kg: tuple = (60., 100.)
-    height_m: tuple = (1.55, 1.95)
+    # The single frame accepts about 1.56-1.88 m (seatpost exposure / reach limits in
+    # physics.rider.solve_seated_pose); keep a margin inside that window.
+    height_m: tuple = (1.60, 1.85)
     torso_lean_rad: tuple = (0., .25)
     pelvis_pitch_rad: tuple = (0., .08)
     human_torque_nm: tuple = (0., 25.)

@@ -125,3 +125,32 @@ def test_cli_gen_spec_requires_generated_scenario(tmp_path):
     (tmp_path/'s.toml').write_text('grade_max = 0.1\n')
     with pytest.raises(ValueError, match='generated'):
         build_track(parser().parse_args(['--scenario', 'flat', '--gen-spec', str(tmp_path/'s.toml')]))
+
+
+def _obstacles(spec, seeds=range(60)):
+    return [o for s in seeds for o in generate_track(spec, seed=s).obstacles]
+
+
+def test_default_spec_avoids_vertical_faces_the_tire_model_cannot_support():
+    # SquareEdge/Drop faces end runs in model_violation (front:multi_support): opt-in only.
+    kinds = {type(o) for o in _obstacles(TerrainGenSpec())}
+    assert SquareEdge not in kinds and Drop not in kinds and Bump in kinds and Roots in kinds
+
+
+def test_edges_and_drops_are_available_by_opting_in():
+    spec = replace(TerrainGenSpec(), feature_types=('bump', 'edge', 'drop', 'roots'))
+    kinds = {type(o) for o in _obstacles(spec)}
+    assert SquareEdge in kinds and Drop in kinds
+
+
+def test_bump_crest_radius_stays_above_the_wheel_contact_radius():
+    from bike_sim.terrain.generator import MIN_CONTACT_RADIUS_M
+    for o in _obstacles(TerrainGenSpec()):
+        if isinstance(o, Bump):
+            curvature = 2.*np.pi**2*o.height_m/o.bump_length_m**2   # peak of a raised cosine
+            assert curvature <= 1./MIN_CONTACT_RADIUS_M+1e-9
+
+
+def test_unknown_feature_type_rejected():
+    with pytest.raises(ValueError, match='feature_types'):
+        TerrainGenSpec(feature_types=('bump', 'volcano'))

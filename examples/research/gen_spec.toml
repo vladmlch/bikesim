@@ -1,5 +1,6 @@
 # Default TerrainGenSpec ranges (lengths m, heights m, grades dz/dx). Pass with --gen-spec;
-# omitted keys keep these defaults.
+# omitted keys keep these defaults. feature_types adds "edge"/"drop" only by opt-in (vertical faces
+# end runs in model_violation).
 length_m = [60.0, 120.0]
 grade_max = 0.25
 grade_peak = 0.3
@@ -14,6 +15,7 @@ drop_height_m = [0.02, 0.1]
 roots_len_m = [3.0, 6.0]
 base_surfaces = ["hardpack", "asphalt", "loose"]
 section_surfaces = ["wet", "loose"]
+feature_types = ["bump", "roots"]
 section_len_m = [3.0, 15.0]
 n_roughness = [2, 6]
 n_features = [1, 4]

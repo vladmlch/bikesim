@@ -3,7 +3,7 @@
 
 name = "eval_05"
 length_m = 64.9
-description = "Generated rough climb; seed=1005; spec_sha256=188a0aa4247b59f2a45b42d994270f5407189a6a1de01cce44346165e1c37d03"
+description = "Generated rough climb; seed=1005; spec_sha256=45d11d386fb651dff55d7af3292ea3e2a972d9354e1bef677227f2399bfcf8e7"
 surface = "asphalt"
 grade_profile = { knots = [[0.0, 0.0], [4.0, 0.0], [12.13, 0.1242], [23.41, 0.1792], [33.82, 0.085], [43.93, 0.2361], [48.7, 0.0426], [59.9, 0.0], [64.9, 0.0]] }
 
@@ -26,9 +26,9 @@ seed = 287264334
 [[obstacles]]
 type = "bump"
 shape = "cosine"
-start_m = 22.29
+start_m = 22.23
 height_m = 0.0673
-bump_length_m = 0.58
+bump_length_m = 0.78
 
 [[obstacles]]
 type = "roughness"

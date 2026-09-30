@@ -3,7 +3,7 @@
 
 name = "long_climb"
 length_m = 118.1
-description = "Generated rough climb; seed=5; spec_sha256=ca1f920ffe4b2f65eab493e661dcf989ee7aa32b1d84e791b0a7cb3b62bf6224"
+description = "Generated rough climb; seed=5; spec_sha256=288180c9cf2857b2faaffb8ec31f0f190c5a1df62bf04a1c0c32b2bf4f3b6242"
 surface = "asphalt"
 grade_profile = { knots = [[0.0, 0.0], [4.0, 0.0], [31.53, 0.0958], [55.04, 0.3], [78.53, 0.2826], [113.1, 0.0], [118.1, 0.0]] }
 surface_sections = [{ start_m = 39.3, end_m = 52.44, surface = "wet" }, { start_m = 92.67, end_m = 107.08, surface = "loose" }]
@@ -26,9 +26,9 @@ bump_length_m = 0.85
 [[obstacles]]
 type = "bump"
 shape = "cosine"
-start_m = 38.32
+start_m = 38.25
 height_m = 0.0845
-bump_length_m = 0.66
+bump_length_m = 0.87
 
 [[obstacles]]
 type = "roughness"
@@ -41,9 +41,9 @@ seed = 1873025505
 [[obstacles]]
 type = "bump"
 shape = "cosine"
-start_m = 58.99
+start_m = 58.88
 height_m = 0.084
-bump_length_m = 0.66
+bump_length_m = 0.87
 
 [[obstacles]]
 type = "roughness"
@@ -70,7 +70,8 @@ correlation_length_m = 0.474
 seed = 503606823
 
 [[obstacles]]
-type = "square_edge"
-start_m = 105.54
-height_m = 0.0209
-ledge_length_m = 0.29
+type = "bump"
+shape = "cosine"
+start_m = 105.24
+height_m = 0.0212
+bump_length_m = 0.62

@@ -3,7 +3,7 @@
 
 name = "eval_08"
 length_m = 70.0
-description = "Generated rough climb; seed=1008; spec_sha256=188a0aa4247b59f2a45b42d994270f5407189a6a1de01cce44346165e1c37d03"
+description = "Generated rough climb; seed=1008; spec_sha256=45d11d386fb651dff55d7af3292ea3e2a972d9354e1bef677227f2399bfcf8e7"
 surface = "hardpack"
 grade_profile = { knots = [[0.0, 0.0], [4.0, 0.0], [14.13, 0.0997], [31.94, 0.0057], [44.14, 0.26], [55.32, 0.271], [65.0, 0.0], [70.0, 0.0]] }
 
@@ -26,18 +26,20 @@ seed = 1816125836
 [[obstacles]]
 type = "bump"
 shape = "cosine"
-start_m = 52.83
+start_m = 52.52
 height_m = 0.0912
-bump_length_m = 0.52
+bump_length_m = 0.91
 
 [[obstacles]]
-type = "square_edge"
-start_m = 56.93
-height_m = 0.0453
-ledge_length_m = 0.25
+type = "bump"
+shape = "cosine"
+start_m = 56.53
+height_m = 0.0538
+bump_length_m = 0.7
 
 [[obstacles]]
-type = "square_edge"
-start_m = 60.06
-height_m = 0.0395
-ledge_length_m = 0.31
+type = "bump"
+shape = "cosine"
+start_m = 59.75
+height_m = 0.046
+bump_length_m = 0.64

@@ -3,9 +3,10 @@
 
 name = "eval_03"
 length_m = 71.3
-description = "Generated rough climb; seed=1003; spec_sha256=188a0aa4247b59f2a45b42d994270f5407189a6a1de01cce44346165e1c37d03"
+description = "Generated rough climb; seed=1003; spec_sha256=45d11d386fb651dff55d7af3292ea3e2a972d9354e1bef677227f2399bfcf8e7"
 surface = "asphalt"
 grade_profile = { knots = [[0.0, 0.0], [4.0, 0.0], [16.42, 0.257], [30.12, 0.2854], [43.26, 0.2426], [55.51, 0.1767], [66.3, 0.0], [71.3, 0.0]] }
+surface_sections = [{ start_m = 21.07, end_m = 27.77, surface = "loose" }]
 
 [[obstacles]]
 type = "roughness"
@@ -16,10 +17,11 @@ correlation_length_m = 0.493
 seed = 1496797466
 
 [[obstacles]]
-type = "drop"
-start_m = 27.34
+type = "bump"
+shape = "cosine"
+start_m = 27.06
 height_m = 0.0615
-ramp_m = 0.0
+bump_length_m = 0.74
 
 [[obstacles]]
 type = "roughness"
@@ -30,17 +32,18 @@ correlation_length_m = 0.384
 seed = 1853043821
 
 [[obstacles]]
-type = "drop"
-start_m = 48.63
-height_m = 0.0582
-ramp_m = 0.0
+type = "bump"
+shape = "cosine"
+start_m = 47.22
+height_m = 0.0317
+bump_length_m = 0.97
 
 [[obstacles]]
 type = "roots"
-start_m = 55.99
-n_bumps = 4
-height_m = 0.0281
+start_m = 56.07
+n_bumps = 8
+height_m = 0.063
 width_m = 0.25
-section_length_m = 4.52
+section_length_m = 4.43
 jitter = 0.35
-seed = 341569911
+seed = 360276287

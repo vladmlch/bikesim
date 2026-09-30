@@ -24,6 +24,11 @@ from bike_sim.terrain.surface import SURFACES, SurfaceSection
 CLEARANCE_M = 1.
 PLACEMENT_TRIES = 200
 FEATURE_TYPES = ('bump', 'edge', 'drop', 'roots')
+# A road crest sharper than the wheel makes the tyre touch two places at once, which the
+# 2D tyre model declares out of scope (front:multi_support -> model_violation). Bump
+# lengths are floored so the crest radius of curvature stays above this, with margin over
+# the ~0.37 m wheel radius. Vertical faces (edge/drop) are always multi-support: opt-in.
+MIN_CONTACT_RADIUS_M = .45
 
 
 def _range(value, name, *, minimum=0., integer=False):
@@ -57,6 +62,8 @@ class TerrainGenSpec:
     roots_len_m: tuple = (3., 6.)
     base_surfaces: tuple = ('hardpack', 'asphalt', 'loose')
     section_surfaces: tuple = ('wet', 'loose')
+    # edge/drop have vertical faces that end runs in model_violation (multi_support); opt in deliberately.
+    feature_types: tuple = ('bump', 'roots')
     section_len_m: tuple = (3., 15.)
     n_roughness: tuple = (2, 6)
     n_features: tuple = (1, 4)
@@ -82,7 +89,8 @@ class TerrainGenSpec:
             raise ValueError('grade_peak must not be below grade_max')
         if scalar(self.grade_peak_prob, 'grade_peak_prob', minimum=0.) > 1.:
             raise ValueError('grade_peak_prob must lie in [0, 1]')
-        for name, allowed in (('base_surfaces', SURFACES), ('section_surfaces', SURFACES)):
+        for name, allowed in (('base_surfaces', SURFACES), ('section_surfaces', SURFACES),
+                              ('feature_types', FEATURE_TYPES)):
             value = getattr(self, name)
             if not isinstance(value, tuple) or not value or any(v not in allowed for v in value):
                 raise ValueError(f'{name} must be a nonempty tuple of known surfaces')
@@ -150,6 +158,8 @@ def _feature(kind, rng, spec, grade, taken, lo, hi):
     if kind == 'bump':
         size = _r(rng.uniform(*spec.bump_length_m), 2)
         height = _r(rng.uniform(*spec.bump_height_m))
+        # Raised-cosine crest curvature is 2*pi^2*h/L^2; keep it below 1/MIN_CONTACT_RADIUS_M.
+        size = max(size, _r(np.ceil(np.pi*np.sqrt(2.*height*MIN_CONTACT_RADIUS_M)*100.)/100., 2))
     elif kind == 'edge':
         size = _r(rng.uniform(.2, .6), 2)
         height = _r(rng.uniform(*spec.edge_height_m))
@@ -199,7 +209,7 @@ def generate_track(spec, *, seed, name=None):
                                            correlation_length_m=correlation, seed=rough_seed))
             taken.append((start, start+size))
     for _ in range(int(rng.integers(spec.n_features[0], spec.n_features[1]+1))):
-        kind = FEATURE_TYPES[int(rng.integers(0, len(FEATURE_TYPES)))]
+        kind = spec.feature_types[int(rng.integers(0, len(spec.feature_types)))]
         feature = _feature(kind, rng, spec, grade, taken, lo, hi)
         if feature is not None:
             obstacle, start, end = feature

@@ -1,0 +1,55 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "eval_04"
+length_m = 60.1
+description = "Generated rough climb; seed=1004; spec_sha256=188a0aa4247b59f2a45b42d994270f5407189a6a1de01cce44346165e1c37d03"
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [4.0, 0.0], [14.0, 0.2912], [28.64, 0.2821], [43.25, 0.1401], [55.1, 0.0], [60.1, 0.0]] }
+surface_sections = [{ start_m = 4.27, end_m = 14.12, surface = "wet" }, { start_m = 39.87, end_m = 54.54, surface = "loose" }]
+
+[[obstacles]]
+type = "roughness"
+start_m = 5.6
+section_length_m = 6.52
+amplitude_m = 0.0147
+correlation_length_m = 0.272
+seed = 1654558185
+
+[[obstacles]]
+type = "roughness"
+start_m = 18.33
+section_length_m = 8.51
+amplitude_m = 0.0219
+correlation_length_m = 0.361
+seed = 713145846
+
+[[obstacles]]
+type = "roughness"
+start_m = 27.92
+section_length_m = 5.89
+amplitude_m = 0.0058
+correlation_length_m = 0.466
+seed = 458331179
+
+[[obstacles]]
+type = "roughness"
+start_m = 36.15
+section_length_m = 8.46
+amplitude_m = 0.0239
+correlation_length_m = 0.499
+seed = 908963173
+
+[[obstacles]]
+type = "square_edge"
+start_m = 46.45
+height_m = 0.0559
+ledge_length_m = 0.41
+
+[[obstacles]]
+type = "roughness"
+start_m = 50.16
+section_length_m = 3.28
+amplitude_m = 0.0173
+correlation_length_m = 0.331
+seed = 461083306

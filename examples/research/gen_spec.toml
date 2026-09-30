@@ -1,0 +1,22 @@
+# Default TerrainGenSpec ranges (lengths m, heights m, grades dz/dx). Pass with --gen-spec;
+# omitted keys keep these defaults.
+length_m = [60.0, 120.0]
+grade_max = 0.25
+grade_peak = 0.3
+grade_peak_prob = 0.35
+roughness_amp_m = [0.005, 0.03]
+roughness_len_m = [3.0, 10.0]
+roughness_corr_m = [0.25, 0.5]
+bump_height_m = [0.02, 0.1]
+bump_length_m = [0.5, 1.0]
+edge_height_m = [0.02, 0.08]
+drop_height_m = [0.02, 0.1]
+roots_len_m = [3.0, 6.0]
+base_surfaces = ["hardpack", "asphalt", "loose"]
+section_surfaces = ["wet", "loose"]
+section_len_m = [3.0, 15.0]
+n_roughness = [2, 6]
+n_features = [1, 4]
+n_surface_sections = [0, 2]
+lead_in_m = 4.0
+lead_out_m = 5.0

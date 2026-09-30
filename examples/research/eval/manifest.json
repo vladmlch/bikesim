@@ -1,0 +1,125 @@
+{
+  "date": "2026-09-30",
+  "seed0": 1000,
+  "spec": {
+    "base_surfaces": [
+      "hardpack",
+      "asphalt",
+      "loose"
+    ],
+    "bump_height_m": [
+      0.02,
+      0.1
+    ],
+    "bump_length_m": [
+      0.5,
+      1.0
+    ],
+    "drop_height_m": [
+      0.02,
+      0.1
+    ],
+    "edge_height_m": [
+      0.02,
+      0.08
+    ],
+    "grade_max": 0.25,
+    "grade_peak": 0.3,
+    "grade_peak_prob": 0.35,
+    "lead_in_m": 4.0,
+    "lead_out_m": 5.0,
+    "length_m": [
+      60.0,
+      120.0
+    ],
+    "n_features": [
+      1,
+      4
+    ],
+    "n_roughness": [
+      2,
+      6
+    ],
+    "n_surface_sections": [
+      0,
+      2
+    ],
+    "roots_len_m": [
+      3.0,
+      6.0
+    ],
+    "roughness_amp_m": [
+      0.005,
+      0.03
+    ],
+    "roughness_corr_m": [
+      0.25,
+      0.5
+    ],
+    "roughness_len_m": [
+      3.0,
+      10.0
+    ],
+    "section_len_m": [
+      3.0,
+      15.0
+    ],
+    "section_surfaces": [
+      "wet",
+      "loose"
+    ]
+  },
+  "spec_sha256": "188a0aa4247b59f2a45b42d994270f5407189a6a1de01cce44346165e1c37d03",
+  "tracks": [
+    {
+      "file": "eval_00.toml",
+      "length_m": 91.3,
+      "seed": 1000
+    },
+    {
+      "file": "eval_01.toml",
+      "length_m": 96.8,
+      "seed": 1001
+    },
+    {
+      "file": "eval_02.toml",
+      "length_m": 82.8,
+      "seed": 1002
+    },
+    {
+      "file": "eval_03.toml",
+      "length_m": 71.3,
+      "seed": 1003
+    },
+    {
+      "file": "eval_04.toml",
+      "length_m": 60.1,
+      "seed": 1004
+    },
+    {
+      "file": "eval_05.toml",
+      "length_m": 64.9,
+      "seed": 1005
+    },
+    {
+      "file": "eval_06.toml",
+      "length_m": 80.2,
+      "seed": 1006
+    },
+    {
+      "file": "eval_07.toml",
+      "length_m": 64.3,
+      "seed": 1007
+    },
+    {
+      "file": "eval_08.toml",
+      "length_m": 70.0,
+      "seed": 1008
+    },
+    {
+      "file": "eval_09.toml",
+      "length_m": 63.4,
+      "seed": 1009
+    }
+  ]
+}

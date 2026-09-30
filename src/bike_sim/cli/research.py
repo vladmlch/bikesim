@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 import json
 import sys
+import tomllib
 from bike_sim.physics.chain import DrivetrainSpecs
 from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.physics.physical_config import AssistConfig, PhysicalDriveConfig, TireBackendConfig, TireParameters
@@ -12,6 +13,7 @@ from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride_sim import RideSimulation
 from bike_sim.sim.research.environment import ExperimentConfig, ResearchEnvironment
 from bike_sim.sim.research.sensors import SensorConfig
+from bike_sim.terrain.generator import TerrainGenSpec, generate_track
 from bike_sim.terrain.research import RESEARCH_SCENARIOS, build_research_track
 from bike_sim.terrain.trackfile import load_track
 
@@ -21,7 +23,9 @@ TRANSMISSIONS = ('elastic_chain', 'ideal_mid_drive', 'geometric_ideal_mid_drive'
 
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--scenario', choices=RESEARCH_SCENARIOS, default='rough_uphill')
+    p.add_argument('--scenario', choices=RESEARCH_SCENARIOS+('generated',), default='rough_uphill',
+        help="'generated' draws a seeded procedural rough climb (see --gen-spec); the seed is --seed")
+    p.add_argument('--gen-spec', type=Path, help='TOML of TerrainGenSpec ranges for --scenario generated')
     p.add_argument('--track-file', type=Path, help='TOML overrides --scenario; preserves its authored seed/geometry')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--rider', choices=('lumped', 'articulated_planar'), default='articulated_planar')
@@ -57,8 +61,20 @@ def parser():
     return p
 
 
+def build_track(args):
+    """--track-file wins over --scenario so an authored/frozen track is never regenerated."""
+    if args.track_file:
+        return load_track(args.track_file)
+    if args.gen_spec is not None and args.scenario != 'generated':
+        raise ValueError('--gen-spec requires --scenario generated')
+    if args.scenario == 'generated':
+        spec = TerrainGenSpec.from_dict(tomllib.loads(args.gen_spec.read_text())) if args.gen_spec else TerrainGenSpec()
+        return generate_track(spec, seed=args.seed, name=f'generated_{args.seed}')
+    return build_research_track(args.scenario, seed=args.seed)
+
+
 def make_environment(args):
-    track = load_track(args.track_file) if args.track_file else build_research_track(args.scenario, seed=args.seed)
+    track = build_track(args)
     if args.posture != 'neutral' and args.rider != 'articulated_planar':
         raise ValueError('dynamic posture requires --rider articulated_planar')
     tires = TireBackendConfig(backend='compliant_2d', surface_mode='track',

@@ -1,0 +1,41 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "eval_00"
+length_m = 91.3
+description = "Generated rough climb; seed=1000; spec_sha256=188a0aa4247b59f2a45b42d994270f5407189a6a1de01cce44346165e1c37d03"
+surface = "loose"
+grade_profile = { knots = [[0.0, 0.0], [4.0, 0.0], [17.48, 0.1884], [28.99, 0.1379], [45.39, 0.2992], [56.32, 0.2835], [70.79, 0.0621], [86.3, 0.0], [91.3, 0.0]] }
+
+[[obstacles]]
+type = "roughness"
+start_m = 5.27
+section_length_m = 9.82
+amplitude_m = 0.0088
+correlation_length_m = 0.425
+seed = 1745163767
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 16.12
+height_m = 0.085
+bump_length_m = 0.67
+
+[[obstacles]]
+type = "roots"
+start_m = 58.92
+n_bumps = 5
+height_m = 0.0393
+width_m = 0.25
+section_length_m = 4.14
+jitter = 0.35
+seed = 251739207
+
+[[obstacles]]
+type = "roughness"
+start_m = 73.99
+section_length_m = 4.43
+amplitude_m = 0.0206
+correlation_length_m = 0.413
+seed = 602117542

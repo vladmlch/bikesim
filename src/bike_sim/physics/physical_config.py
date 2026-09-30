@@ -63,9 +63,11 @@ class AssistConfig:
     max_power: float = 500.
     tau: float = .05
     slew: float = 400.
-    stop_delay: float = .1
-    on_rpm: float = 10.
-    off_rpm: float = 5.
+    stop_delay: float = .2
+    engage_torque_nm: float = 4.
+    spin_rpm: float = 15.
+    stall_timeout_s: float = 1.
+    boost_s: float = .4
     cutoff_mps: float = 25/3.6
     taper_width_mps: float = 2/3.6
     torque_curve: tuple[tuple[float,float],...] | None = None
@@ -96,6 +98,22 @@ class PedalingConfig:
     coast_above_rpm: float = 110.
     resume_below_rpm: float = 90.
     stop_time_s: float = .35
+    # Low-cadence effort ramp: a rider grinding to a stall presses harder on
+    # the pedal, so commanded effort rises toward a low-cadence ceiling instead
+    # of fading. The ceiling is capped near what the articulated leg drive can
+    # actually transmit; commanding far beyond it just deepens the pedal-stroke
+    # torque oscillation. The slew bound models force development; without it a
+    # 0-rpm mash appears as an impulse that rips the modelled feet off the pedals.
+    mash_cadence_rpm: float = 45.
+    mash_torque_nm: float = 60.
+    effort_slew_nm_s: float = 300.
+    # Hill-hold reflex: sustained rollback grabs the wheel brakes and holds
+    # until forward motion resumes. Braking here is a physical restraint, not
+    # rider intent -- it does not gate pedaling or assist.
+    rollback_brake: bool = True
+    rollback_engage_mps: float = .25
+    rollback_release_mps: float = 0.
+    rollback_demand: float = 1.
 
     def __post_init__(self):
         if not isinstance(self.enabled, bool):
@@ -105,6 +123,20 @@ class PedalingConfig:
         scalar(self.stop_time_s, 'coasting stop time', positive=True)
         if self.resume_below_rpm >= self.coast_above_rpm:
             raise ValueError('resume cadence must be below coasting cadence')
+        scalar(self.mash_torque_nm, 'mash torque', minimum=0.)
+        scalar(self.mash_cadence_rpm, 'mash cadence', minimum=0.)
+        scalar(self.effort_slew_nm_s, 'effort slew', minimum=0.)
+        if self.mash_torque_nm > 0. and self.mash_cadence_rpm <= 0.:
+            raise ValueError('a nonzero mash torque needs a positive mash cadence')
+        if not isinstance(self.rollback_brake, bool):
+            raise ValueError('rollback brake enable must be a bool')
+        engage = scalar(self.rollback_engage_mps, 'rollback engage speed', positive=True)
+        release = scalar(self.rollback_release_mps, 'rollback release speed', minimum=0.)
+        if release >= engage:
+            raise ValueError('rollback release must be slower than engage')
+        demand = scalar(self.rollback_demand, 'rollback brake demand', minimum=0.)
+        if demand > 1.:
+            raise ValueError('rollback brake demand must not exceed one')
 
 
 @dataclass(frozen=True)
@@ -116,6 +148,7 @@ class ShiftingConfig:
     shift_cooldown_s: float = .4
     shift_cut_duration_s: float = .2
     torque_factor: float = .3
+    cadence_smoothing_tau_s: float = .35
 
     def __post_init__(self):
         if not isinstance(self.enabled, bool):
@@ -135,6 +168,7 @@ class ShiftingConfig:
             raise ValueError('maximum shift cadence must exceed minimum shift cadence')
         scalar(self.shift_cooldown_s, 'shift cooldown', minimum=0.)
         scalar(self.shift_cut_duration_s, 'shift torque cut duration', minimum=0.)
+        scalar(self.cadence_smoothing_tau_s, 'shift cadence smoothing', minimum=0.)
         if self.shift_cut_duration_s > self.shift_cooldown_s:
             raise ValueError('shift torque cut must not outlast the cooldown')
         if scalar(self.torque_factor, 'shift torque factor', minimum=0.) > 1.:

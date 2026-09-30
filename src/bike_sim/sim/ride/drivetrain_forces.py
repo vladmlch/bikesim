@@ -348,6 +348,7 @@ class DrivetrainForceApplier:
             'motor_shaft_power_w':delivered*omega, 'electrical_power_w':actual_electrical,
             'battery_energy_j':self.battery.energy_j, 'motor_enabled':enabled,
             'energy_limited':delivered < limited_request, 'battery_empty':self.battery.energy_j==0.,
+            'assist_stall_s':self.assist.stall_s, 'assist_stalled':self.assist.stalled,
         }
         self.last.update(self._shift_diagnostics())
         if not self.simplified:

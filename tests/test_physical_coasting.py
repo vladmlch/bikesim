@@ -48,6 +48,24 @@ def test_zero_effort_braking_disabled_and_reset():
     assert policy.update(0., 0., 60., 20., .01).mode == 'pedaling'
 
 
+def test_low_cadence_mash_ramps_effort_toward_the_isometric_ceiling():
+    policy = PedalingPolicy(PedalingConfig(mash_torque_nm=120., mash_cadence_rpm=45.,
+                                           effort_slew_nm_s=300.))
+    # Force develops over time from the commanded effort: the first update of
+    # a stall is one slew step above the cruise torque, not the isometric cap.
+    assert policy.update(0., 0., 0., 20., .01).effort_nm == pytest.approx(23.)
+    for _ in range(60):
+        state = policy.update(0., 0., 0., 20., .01)
+    assert state.effort_nm == pytest.approx(120.)
+    policy2 = PedalingPolicy(PedalingConfig(mash_torque_nm=120., mash_cadence_rpm=45.))
+    for _ in range(60):
+        state = policy2.update(0., rpm_rate(22.5), 0., 20., .01)
+    assert state.effort_nm == pytest.approx(70.)
+    policy3 = PedalingPolicy(PedalingConfig(mash_torque_nm=120., mash_cadence_rpm=45.))
+    assert policy3.update(0., rpm_rate(45.), 0., 20., .01).effort_nm == pytest.approx(20.)
+    assert policy3.update(0., 0., 0., 0., .01).reason == 'no_effort'
+
+
 def test_cadence_policy_is_opt_in_and_has_validated_toml_parameters():
     policy = PedalingPolicy(PedalingConfig())
     assert policy.update(0., rpm_rate(150.), 150., 20., .01).mode == 'pedaling'

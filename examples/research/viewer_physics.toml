@@ -22,6 +22,22 @@ mu = 1.1
 [drive]
 human_torque_nm = 10.0
 
+[drive.pedaling]
+# See viewer_physics_fast.toml for the full description of these knobs.
+mash_cadence_rpm = 45.0
+mash_torque_nm = 60.0
+effort_slew_nm_s = 300.0
+rollback_brake = true
+rollback_engage_mps = 0.25
+rollback_release_mps = 0.0
+rollback_demand = 1.0
+
+[drive.assist]
+engage_torque_nm = 4.0
+spin_rpm = 15.0
+stall_timeout_s = 1.0
+boost_s = 0.4
+
 [drive.gearing]
 front_teeth = 34
 rear_teeth = 51

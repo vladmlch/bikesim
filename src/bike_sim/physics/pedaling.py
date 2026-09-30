@@ -34,6 +34,7 @@ class PedalingPolicy:
         self.target_phase_rad = None
         self.target_rate_rad_s = 0.
         self.deceleration_rad_s2 = 0.
+        self._effort = None
 
     def update(self, phase_rad, rate_rad_s, required_cadence_rpm, effort_nm, dt,
                *, enabled=True, braking=False):
@@ -54,8 +55,28 @@ class PedalingPolicy:
         reason = ('braking' if braking else 'no_effort' if effort_nm == 0.
                   else 'cadence' if excessive else '')
         if not reason:
+            previous = self._effort
             self.reset()
-            return PedalingState('pedaling', '', effort_nm, required_cadence_rpm)
+            self._effort = previous
+            # Muscle force-velocity is inverted relative to the naive constant
+            # effort: as cadence collapses a real rider converts to standing on
+            # the pedal, and the available torque rises toward the isometric
+            # ceiling instead of fading. The ramp is linear in cadence and
+            # never reduces the commanded effort. The slew bound models force
+            # development and initializes from the commanded effort, so a mash
+            # builds over a fraction of a second rather than appearing as an
+            # impulse that rips the feet off the pedals.
+            target = effort_nm
+            if self.config.mash_torque_nm > target and cadence < self.config.mash_cadence_rpm:
+                target = effort_nm + (self.config.mash_torque_nm-effort_nm)*(1.-cadence/self.config.mash_cadence_rpm)
+            slew = self.config.effort_slew_nm_s
+            if slew <= 0.:
+                effort = target
+            else:
+                base = effort_nm if self._effort is None else self._effort
+                effort = max(base-slew*dt, min(base+slew*dt, target))
+            self._effort = effort
+            return PedalingState('pedaling', '', effort, required_cadence_rpm)
         if not self.coasting:
             self.target_phase_rad = phase_rad
             self.target_rate_rad_s = rate_rad_s

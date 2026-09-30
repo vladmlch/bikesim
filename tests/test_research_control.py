@@ -17,8 +17,8 @@ def test_command_validation(field, bad):
 
 
 def test_direct_motor_keeps_physical_limits_and_can_start_without_pedaling():
-    motor = AssistController(max_torque=60., max_power=200.)
-    for _ in range(200):
+    motor = AssistController(max_torque=60., max_power=200., stall_timeout_s=5.)
+    for _ in range(300):
         value = motor.step(0., 0., 0., False, .005, torque_request_nm=100.)
     assert value == pytest.approx(60., abs=1e-5)
     assert motor.step(0., 300., 1., False, .005, torque_request_nm=100.) <= 200./(10*np.pi)

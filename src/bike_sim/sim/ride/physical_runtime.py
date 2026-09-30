@@ -57,6 +57,7 @@ class PhysicalRuntime:
         self.interactive_preview = False
         self.preview_real_time_factor = None
         self.research_accounting_valid = True
+        self._rollback_hold = False
 
     @contextmanager
     def preview_mode(self):
@@ -107,13 +108,41 @@ class PhysicalRuntime:
             front_controller_grounded=grounded['front'],rear_controller_grounded=grounded['rear'])
         return contacts,snapshots
 
-    def apply_forces(self, *, active=True, advance=True, front=0., rear=0., external=None, control=None):
-        """Evaluate all writers once; a non-advancing probe copies contact states."""
+    def _rollback_brake_demand(self, speed_mps, control=None):
+        """Hill-hold reflex: sustained rollback engages the wheel brakes.
+
+        The hold releases only once the bike has nearly stopped, so a stalled
+        climb cannot run away downhill. It is a physical restraint, never a
+        rider intent signal: pedaling and assist keep working while it holds.
+        """
+        cfg = self.cfg.drive.pedaling
+        if (not cfg.rollback_brake or cfg.rollback_demand <= 0.
+                or self.cfg.drive_mode not in ('crank_effort', 'articulated_effort')
+                or (control is not None and not control.rider_enabled)):
+            self._rollback_hold = False
+            return 0.
+        if self._rollback_hold:
+            self._rollback_hold = speed_mps <= -cfg.rollback_release_mps
+        else:
+            self._rollback_hold = speed_mps < -cfg.rollback_engage_mps
+        return cfg.rollback_demand if self._rollback_hold else 0.
+
+    def apply_forces(self, *, active=True, advance=True, front=0., rear=0., external=None,
+                     control=None, braking=None):
+        """Evaluate all writers once; a non-advancing probe copies contact states.
+
+        ``braking`` overrides rider brake intent when the demands already carry
+        a reflex hold (hill-hold must not read as the rider grabbing brakes).
+        """
         sim = self.sim
         control = RideControl() if control is None else control
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
         control.validate_for(self.cfg, sim.rider.variant)
+        if braking is None:
+            braking = front > 0. or rear > 0.
+        elif not isinstance(braking, bool):
+            raise ValueError('brake intent must be a bool')
         m,d = sim.model,sim.data
         dt = float(m.opt.timestep)
         d.qfrc_applied.fill(0.)
@@ -121,7 +150,7 @@ class PhysicalRuntime:
         d.ctrl.fill(0.)
         self.brake.apply(m,d,front,rear)
         pedaling = self.drive.prepare_pedaling(d, dt, control, active=active,
-            advance=advance, braking=front > 0. or rear > 0., model=m,
+            advance=advance, braking=braking, model=m,
             rear_in_contact=bool(sim.contacts.rear_controller_grounded))
         mujoco.mj_forward(m,d)
         acc = sim.force_accumulator
@@ -160,9 +189,15 @@ class PhysicalRuntime:
             availability['grip']=bool(enabled.get('grip',False))
             self.rider_control.write(d,self.rider_control.compute(m,d,command,contact_loads=loads,
                 support_available=availability))
-        sensed = self.rider_contacts.delivered_crank_torque_nm if self.rider_contacts is not None else 0.
+        if self.rider_contacts is None:
+            sensed = 0.
+        elif advance:
+            sensed = self.rider_contacts.delivered_crank_torque_nm
+        else:
+            sensed = getattr(self.rider_contacts, 'probe_delivered_crank_torque_nm',
+                             self.rider_contacts.delivered_crank_torque_nm)
         for name,force in self.drive.compute_components(m,d,dt,speed_mps=sim.speed_mps,
-            braking=front>0 or rear>0,sensed_human_nm=sensed,active=active,advance=advance,
+            braking=braking,sensed_human_nm=sensed,active=active,advance=advance,
             control=control,pedaling_state=pedaling).items():
             acc.add(name,force)
         # Native contact loads must see the current suspension/chain/rider forces.
@@ -212,6 +247,7 @@ class PhysicalRuntime:
         sim.last_force_sample = sim.last_force_snapshot = sim.last_constraint_snapshot = None
         sim.force_accumulator.clear()
         d.qfrc_applied.fill(0.); d.ctrl.fill(0.)
+        self._rollback_hold = False
         mujoco.mj_forward(m,d)
         self.apply_forces(active=False,advance=False,front=self.cfg.initial_front_brake,rear=self.cfg.initial_rear_brake)
         mujoco.mj_forward(m,d)
@@ -335,7 +371,11 @@ class PhysicalRuntime:
         if self.interactive_preview:
             return self._step_preview(front,rear,external,control)
         t=float(d.time); q=d.qpos.copy(); v=d.qvel.copy()
-        self.apply_forces(front=front,rear=rear,external=external,control=control)
+        braking = front > 0. or rear > 0.
+        hold = self._rollback_brake_demand(sim.speed_mps, control)
+        if hold:
+            front = max(front, hold); rear = max(rear, hold)
+        self.apply_forces(front=front,rear=rear,external=external,control=control,braking=braking)
         # Save incoming auxiliary energies before the solve overwrites no state.
         mass0=mass_observations(m,d)
         sim.last_force_sample=ForceSample(t,q,v,sim.force_accumulator.components)
@@ -428,7 +468,11 @@ class PhysicalRuntime:
         time_s=float(data.time)
         position_m=sim.position_m
         pitch_rad=sim.pitch_rad
-        self.apply_forces(front=front,rear=rear,external=external,control=control)
+        braking = front > 0. or rear > 0.
+        hold = self._rollback_brake_demand(sim.speed_mps, control)
+        if hold:
+            front = max(front, hold); rear = max(rear, hold)
+        self.apply_forces(front=front,rear=rear,external=external,control=control,braking=braking)
         warning_counts=np.array([warning.number for warning in data.warning],copy=True)
         mujoco.mj_step(model,data)
         for warning in (mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,mujoco.mjtWarning.mjWARN_BADQACC):

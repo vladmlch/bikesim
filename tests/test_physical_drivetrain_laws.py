@@ -56,7 +56,45 @@ def test_assist_brake_priority_and_power_cap_after_cadence_jump():
     torque = motor.step(100,500,2,False,.005)
     assert torque*500*2*math.pi/60 <= 500+1e-9
     assert motor.step(100,60,2,True,.005) == 0
-    assert motor.step(100,-1,2,False,.005) == 0
+    # Reverse crank rotation is backdrive, not a lockout: pressing a pedal
+    # still produces assist, which brakes the rollback through the drivetrain.
+    assert motor.step(100,-1,2,False,.005) > 0
+    held = motor.torque
+    assert 0. <= motor.step(0,-1,2,False,.005) < held
+    motor.reset()
+    assert motor.step(0,-1,2,False,.005) == 0
+
+
+def test_assist_engages_on_torque_at_zero_cadence_with_stall_timeout():
+    motor = AssistController(stall_timeout_s=.2)
+    assert motor.step(30,0,0,False,.005) > 0
+    assert not motor.stalled
+    for _ in range(100):
+        motor.step(30,0,0,False,.005)
+    assert motor.stalled
+    for _ in range(80):
+        value = motor.step(30,0,0,False,.005)
+    assert value < 1e-3
+    assert motor.step(30,-40,-.5,False,.005) > 0
+    assert not motor.stalled
+
+
+def test_assist_extended_boost_defers_release_while_cranks_turn():
+    motor = AssistController(stop_delay=.1, boost_s=.3, tau=.02)
+    for _ in range(100):
+        motor.step(60,80,2,False,.005)
+    assert motor.step(0,80,2,False,.2) > 0
+    motor.reset()
+    for _ in range(100):
+        motor.step(60,80,2,False,.005)
+    for _ in range(80):
+        torque = motor.step(0,80,2,False,.005)
+    assert torque == 0
+    for _ in range(100):
+        motor.step(60,80,2,False,.005)
+    peak = motor.torque
+    decayed = motor.step(0,-20,-1,False,.005)
+    assert 0 < decayed < peak
 
 
 def test_assist_stop_delay_cutoff_table_and_atomic_validation():
@@ -71,7 +109,7 @@ def test_assist_stop_delay_cutoff_table_and_atomic_validation():
     with pytest.raises(ValueError):
         motor.step(float('nan'),60,2,False,.005)
     assert motor.torque == old
-    for _ in range(25):
+    for _ in range(50):
         torque = motor.step(0,0,2,False,.005)
     assert torque == 0
 

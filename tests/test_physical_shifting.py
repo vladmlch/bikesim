@@ -80,6 +80,38 @@ def test_overrunning_wheel_can_upshift_with_stationary_pedals():
     assert policy.rear_teeth == 45
 
 
+def test_power_stroke_spike_cannot_upshift_while_the_wheel_grinds():
+    # A hard stroke spins the crank fast while the wheel-required cadence stays
+    # low; the filtered rate must not trigger a climbing upshift, and a shift
+    # that would land required cadence below the band is refused anyway.
+    policy = shifter()
+    for _ in range(200):
+        assert not policy.update(120., 60., .01)
+    assert policy.rear_teeth == 51
+
+
+def test_shift_decision_uses_filtered_cadence_not_one_stroke():
+    policy = shifter()
+    for _ in range(50):
+        policy.update(75., 75., .01)
+    assert not policy.update(120., 75., .01)
+    shifted = any(policy.update(120., 75., .01) for _ in range(150))
+    assert shifted and policy.direction == 'up' and policy.rear_teeth == 45
+
+
+def test_rollback_hill_hold_latches_and_releases_on_stop():
+    from bike_sim.sim.ride.physical_runtime import PhysicalRuntime
+    rt = object.__new__(PhysicalRuntime)
+    rt.cfg = SimulationPhysicsConfig('physical', drive_mode='crank_effort',
+        drive=PhysicalDriveConfig(pedaling=PedalingConfig(
+            rollback_engage_mps=.2, rollback_release_mps=.05)))
+    rt._rollback_hold = False
+    assert rt._rollback_brake_demand(-.1) == 0.
+    assert rt._rollback_brake_demand(-.3) == pytest.approx(1.)
+    assert rt._rollback_brake_demand(-.1) == pytest.approx(1.)
+    assert rt._rollback_brake_demand(-.01) == 0.
+
+
 def test_shifting_is_opt_in_and_config_is_immutable_and_validated():
     policy = CadenceShifter(DrivetrainSpecs(), ShiftingConfig())
     assert not policy.update(120., 120., .01)
@@ -95,7 +127,7 @@ def test_shifting_is_opt_in_and_config_is_immutable_and_validated():
 @pytest.mark.parametrize('options', [
     {'enabled': 1}, {'cassette': []}, {'cassette': [24, 24]}, {'cassette': [10, 20.5]},
     {'target_cadence_min_rpm': 85.}, {'shift_cooldown_s': -.1},
-    {'shift_cut_duration_s': .5}, {'torque_factor': 1.1},
+    {'shift_cut_duration_s': .5}, {'torque_factor': 1.1}, {'cadence_smoothing_tau_s': -1.},
 ])
 def test_invalid_shift_config_is_rejected(options):
     with pytest.raises(ValueError):
@@ -124,8 +156,11 @@ def set_cadence(data, drive, rpm):
 def test_first_stationary_command_pedals_without_injected_motion(drive_rig):
     model, data, drive = drive_rig
     positions, velocities = data.qpos.copy(), data.qvel.copy()
-    state = drive.prepare_pedaling(data, .00125, RideControl(), model=model)
-    assert state.mode == 'pedaling' and state.effort_nm == 20.
+    for _ in range(300):
+        state = drive.prepare_pedaling(data, .00125, RideControl(), model=model)
+    # At zero cadence the rider presses hard on the pedals: effort slews to
+    # the configured low-cadence ceiling instead of the cruising torque.
+    assert state.mode == 'pedaling' and state.effort_nm == pytest.approx(60.)
     assert drive.shifting.rear_teeth == 51
     np.testing.assert_array_equal(data.qpos, positions)
     np.testing.assert_array_equal(data.qvel, velocities)

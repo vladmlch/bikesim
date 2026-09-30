@@ -301,6 +301,7 @@ class RideHUD:
             f"motor_torque={drive.get('motor_torque_nm', 0.0):.1f}Nm "
             f"motor_on={int(bool(drive.get('motor_enabled', False)))} "
             f"assist_pedaling={int(bool(assist.pedaling))} assist_age={assist.age:.3f}s "
+            f"assist_stall={drive.get('assist_stall_s', 0.0):.2f}s "
             f"battery={drive.get('battery_energy_j', 0.0) / 3600.0:.2f}Wh "
             f"rider={rider_state} pose={rider_pose} contacts={rider_contacts} "
             f"tires={tire_state} log_rtf={rate}"

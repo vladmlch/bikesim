@@ -358,6 +358,21 @@ The last event persists across 0.1 s log samples so a shift is not lost between 
 Mid-drive response parameters are overridden under `[drive.assist]` in any physical
 TOML file. For example, `gain`, `tau`, `stop_delay`, `slew`, `max_torque` and
 `max_power` are accepted there and override their `AssistConfig` defaults.
+Assist engages on pedal torque (`engage_torque_nm`), not crank rotation, so a
+rider pressing a pedal at standstill is assisted like on torque-sensing
+mid-drives. `stall_timeout_s` bounds sustained torque while |crank rpm| stays
+below `spin_rpm`; the latch clears as soon as the shaft rotates again. `boost_s`
+holds the last assist target briefly after pedal torque drops while the cranks
+still turn forward. Reverse crank rotation is backdrive, not a lockout: sensed
+rider torque still produces assist, which brakes the rollback through the
+engaged drivetrain. `[drive.pedaling]` additionally accepts `mash_cadence_rpm`/
+`mash_torque_nm` (the low-cadence effort ramp toward the isometric ceiling),
+`effort_slew_nm_s` (rider force-development rate bound), and
+the hill-hold reflex `rollback_brake`/`rollback_engage_mps`/
+`rollback_release_mps`/`rollback_demand`, which physically grabs the wheel
+brakes on sustained rollback without gating pedaling or assist intent.
+`[drive.shifting]` accepts `cadence_smoothing_tau_s`, the filter constant on
+measured crank cadence used for shift decisions.
 The viewer synchronizes at at most 60 Hz without skipping integration steps.
 Real-time capacity depends on the machine; `RTF` exposes slowdowns rather than
 relabelling elapsed wall time as simulated time. An articulated rider can still

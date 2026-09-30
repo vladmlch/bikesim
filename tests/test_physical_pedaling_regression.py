@@ -91,7 +91,9 @@ def test_zero_speed_start_does_not_inject_motion(transmission):
 
 
 def test_excessive_startup_cadence_leaves_feet_and_cranks_stationary():
-    model, data, runtime = rolling_rig(speed=5.)
+    # 6 m/s in the default 34/24 gear implies ~115 rpm at the crank, which is
+    # beyond PedalingConfig.coast_above_rpm=110, so the start is a coast.
+    model, data, runtime = rolling_rig(speed=6.)
     runtime.cfg = replace(runtime.cfg, drive=replace(runtime.cfg.drive, pedaling=PedalingConfig(enabled=True)))
     runtime._initial_speed()
     assert data.qvel[runtime.address('rear_wheel_spin')[1]] > 0.

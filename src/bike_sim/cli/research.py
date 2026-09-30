@@ -16,6 +16,9 @@ from bike_sim.terrain.research import RESEARCH_SCENARIOS, build_research_track
 from bike_sim.terrain.trackfile import load_track
 
 
+TRANSMISSIONS = ('elastic_chain', 'ideal_mid_drive', 'geometric_ideal_mid_drive')
+
+
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--scenario', choices=RESEARCH_SCENARIOS, default='rough_uphill')
@@ -39,6 +42,10 @@ def parser():
     p.add_argument('--motor-limit', type=float, default=None, help='immediate crank-side safety ceiling, N*m')
     p.add_argument('--motor-max-torque', type=float, default=80., help='synthetic motor envelope, N*m')
     p.add_argument('--motor-max-power', type=float, default=500., help='synthetic shaft power envelope, W')
+    p.add_argument('--transmission', choices=TRANSMISSIONS, default='ideal_mid_drive',
+        help='ideal_mid_drive: one-way tendon, cheap, omits chain-growth/suspension coupling; '
+             'geometric_ideal_mid_drive: experimental, tendon linearized from the chain geometry; '
+             'elastic_chain: frozen reference for A/B comparison')
     p.add_argument('--chain-stiffness', type=float, default=None, help='override chain spring rate, N/m')
     p.add_argument('--freehub-stiffness', type=float, default=None, help='override freehub spring rate, N*m/rad')
     p.add_argument('--front-teeth', type=int, default=34)
@@ -57,12 +64,15 @@ def make_environment(args):
     tires = TireBackendConfig(backend='compliant_2d', surface_mode='track',
         front=TireParameters(mu=1.1), rear=TireParameters(mu=1.1))
     drive_kwargs = {}
+    if args.transmission != 'elastic_chain' and (args.chain_stiffness is not None or args.freehub_stiffness is not None):
+        # Explicit over silent: the ideal modes have no chain/freehub spring to tune.
+        raise ValueError('--chain-stiffness/--freehub-stiffness apply only to --transmission elastic_chain')
     if args.chain_stiffness is not None:
         drive_kwargs['chain_k_n_m'] = args.chain_stiffness
     if args.freehub_stiffness is not None:
         drive_kwargs['freehub_k_nm_rad'] = args.freehub_stiffness
     drive = PhysicalDriveConfig(human_torque_nm=args.human_torque,
-        gearing=DrivetrainSpecs(args.front_teeth, args.rear_teeth),
+        gearing=DrivetrainSpecs(args.front_teeth, args.rear_teeth), transmission_model=args.transmission,
         assist=AssistConfig(max_torque=args.motor_max_torque, max_power=args.motor_max_power),
         **drive_kwargs)
     cfg = SimulationPhysicsConfig('physical',

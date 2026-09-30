@@ -134,6 +134,9 @@ class ResearchEnvironment:
         # requested is the applied policy command (None = pedelec assist, no request).
         self.torque_delivered_nms = 0.
         self.torque_requested_nms = 0.
+        # Peak |travel| at physics rate; the decimated recorder can miss the peak.
+        self.max_shock_stroke_m = 0.
+        self.max_fork_travel_m = 0.
         self.metadata = configuration_metadata(self.sim, seed=self.seed)
 
     @property
@@ -173,6 +176,9 @@ class ResearchEnvironment:
                 self.sim.step(front_brake_demand, rear_brake_demand, control=self._applied)
                 sample = self.sim.physical.sample
                 self.last_truth = truth_from_sample(self.sim, sample)
+                suspension = sample.channels['suspension']
+                self.max_shock_stroke_m = max(self.max_shock_stroke_m, abs(suspension['shock_stroke_m']))
+                self.max_fork_travel_m = max(self.max_fork_travel_m, abs(suspension['fork_travel_m']))
                 delivered = float(sample.channels['drive'].get('motor_torque_nm', 0.))
                 applied = self._applied.motor_torque_nm
                 if applied is not None:

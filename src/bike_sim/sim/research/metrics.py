@@ -20,6 +20,8 @@ def episode_metrics(env):
         'motor_pass_fraction': env.torque_delivered_nms/requested if requested > 0. else None,
         'loop_out': env.reason == 'crash:loop_out',
         'endo': env.reason == 'crash:endo',
+        'max_shock_stroke_m': env.max_shock_stroke_m,
+        'max_fork_travel_m': env.max_fork_travel_m,
         'numerically_valid': env.numerically_valid,
         'max_energy_residual_ratio': env.max_energy_residual_ratio,
         # model_valid / first_model_violation / counts keep out-of-scope runs

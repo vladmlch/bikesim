@@ -14,26 +14,27 @@ import time
 import traceback
 import numpy as np
 
+TRANSMISSIONS = ('elastic_chain', 'ideal_mid_drive', 'geometric_ideal_mid_drive')
 CASES = ('wheelie', 'limited', 'rough', 'standing', 'low_grip', 'crest', 'incline', 'reject_coarse')
 
 
 def run_case(payload):
-    name, dt, root, seed, overwrite = payload
+    name, dt, root, seed, overwrite, transmission = payload
     from bike_sim.cli.research import parser, make_environment, posture_at
     from bike_sim.sim.ride.control import RideControl
     from bike_sim.sim.ride.physical_samples import plain
     from bike_sim.terrain import TrackSpec, GradeProfile
     from bike_sim.terrain.trackfile import save_track
-    path = Path(root)/f'{name}_dt_{dt:.8f}'
+    path = Path(root)/f'{name}_{transmission}_dt_{dt:.8f}'
     started = time.monotonic()
     env = None
-    result = dict(case=name, timestep_s=dt, seed=seed, output=str(path), passed=False)
+    result = dict(case=name, timestep_s=dt, seed=seed, transmission=transmission, output=str(path), passed=False)
     try:
         if path.exists() and any(path.iterdir()) and not overwrite:
             raise FileExistsError(f'output already exists: {path}')
         argv = ['--scenario', 'flat', '--rider', 'lumped', '--duration', '1',
                 '--initial-speed', '.5', '--dt', str(dt), '--seed', str(seed),
-                '--ideal-sensors', '--record-decimation', str(max(1, round(.01/dt)))]
+                '--transmission', transmission, '--ideal-sensors', '--record-decimation', str(max(1, round(.01/dt)))]
         if name in ('wheelie', 'limited', 'reject_coarse'):
             argv += ['--motor-torque', '300', '--motor-max-torque', '300', '--motor-max-power', '10000']
             if name != 'wheelie':
@@ -113,6 +114,7 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--cases', nargs='+', choices=CASES, default=list(CASES))
     p.add_argument('--dt', nargs='+', type=float, default=[.000125])
+    p.add_argument('--transmission', choices=TRANSMISSIONS, default='ideal_mid_drive')
     p.add_argument('--seed', type=int, default=17)
     p.add_argument('--jobs', type=int, default=1)
     p.add_argument('--out', type=Path, default=Path('verification/antiwheelie'))
@@ -122,7 +124,7 @@ def main(argv=None):
         p.error('jobs and finite timesteps must be positive')
     args.out.mkdir(parents=True, exist_ok=True)
     work = list(dict.fromkeys((name, .0005 if name == 'reject_coarse' else dt,
-                              str(args.out), args.seed, args.overwrite) for dt in args.dt for name in args.cases))
+                              str(args.out), args.seed, args.overwrite, args.transmission) for dt in args.dt for name in args.cases))
     if args.jobs == 1:
         results = [run_case(item) for item in work]
     else:
@@ -137,7 +139,7 @@ def main(argv=None):
             convergence.append(dict(case=name, fine_dt_s=fine['timestep_s'], coarse_dt_s=coarse['timestep_s'],
                 wheelie_time_difference_s=time_difference, max_gap_difference_m=gap_difference,
                 passed=time_difference <= .035 and gap_difference <= .05))
-    report = dict(passed=all(r['passed'] for r in results) and all(r['passed'] for r in convergence),
+    report = dict(transmission=args.transmission, passed=all(r['passed'] for r in results) and all(r['passed'] for r in convergence),
         scope='Synthetic planar plant acceptance; not experimental calibration or real-controller certification.',
         convergence=convergence, cases=results)
     (args.out/'report.json').write_text(json.dumps(report, indent=2, allow_nan=False)+'\n')

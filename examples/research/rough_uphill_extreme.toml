@@ -1,0 +1,77 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "research_rough_uphill_extreme"
+length_m = 100.0
+description = "Extended stepped climb: 100 m, plateaus 12/20/28% into a 35% wall; seeds 101+"
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [8.0, 0.0], [12.0, 0.12], [30.0, 0.12], [34.0, 0.2], [50.0, 0.2], [54.0, 0.28], [70.0, 0.28], [74.0, 0.35], [88.0, 0.35], [92.0, 0.0], [100.0, 0.0]] }
+
+[[obstacles]]
+type = "roughness"
+start_m = 8.0
+section_length_m = 6.0
+amplitude_m = 0.015
+correlation_length_m = 0.35
+seed = 101
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 14.5
+height_m = 0.06
+bump_length_m = 0.7
+
+[[obstacles]]
+type = "roughness"
+start_m = 16.0
+section_length_m = 5.0
+amplitude_m = 0.025
+correlation_length_m = 0.45
+seed = 102
+
+[[obstacles]]
+type = "square_edge"
+start_m = 26.0
+height_m = 0.04
+ledge_length_m = 0.25
+
+[[obstacles]]
+type = "roughness"
+start_m = 36.0
+section_length_m = 12.0
+amplitude_m = 0.018
+correlation_length_m = 0.3
+seed = 103
+
+[[obstacles]]
+type = "roots"
+start_m = 54.0
+n_bumps = 7
+height_m = 0.06
+width_m = 0.25
+section_length_m = 6.0
+jitter = 0.35
+seed = 105
+
+[[obstacles]]
+type = "rock_garden"
+start_m = 63.0
+section_length_m = 7.0
+amplitude_m = 0.06
+correlation_length_m = 0.25
+seed = 106
+
+[[obstacles]]
+type = "square_edge"
+start_m = 74.5
+height_m = 0.06
+ledge_length_m = 0.3
+
+[[obstacles]]
+type = "roughness"
+start_m = 76.0
+section_length_m = 12.0
+amplitude_m = 0.02
+correlation_length_m = 0.35
+seed = 104

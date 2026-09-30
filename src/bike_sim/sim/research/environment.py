@@ -20,6 +20,7 @@ from bike_sim.sim.ride.wheelie import WheelieTracker, WheelieTruth, truth_from_s
 from bike_sim.sim.research.observations import raw_observation
 from bike_sim.sim.research.sensors import SensorConfig, SensorObservation, SensorPipeline
 from bike_sim.terrain.trackfile import save_track
+from bike_sim.sim.research.metrics import episode_metrics
 from bike_sim.sim.research.quality import energy_quality
 
 
@@ -57,6 +58,20 @@ class ResearchStep:
     reason: str | None
     physics_steps: int
     numerically_valid: bool = True
+
+
+def crash_reason(event):
+    """Map a latched CrashEvent to an outcome reason.
+
+    pitch_over splits by sign because the two failures call for different
+    policies: root pitch is negative when the nose is up (wheelie.py defines
+    pitch_up = -qpos), so negative is a loop-out and positive is an endo.
+    Other causes pass through; model_violation/numerical_quality are not crashes
+    and never come through here.
+    """
+    if event.cause == 'pitch_over':
+        return 'crash:loop_out' if event.pitch_rad < 0. else 'crash:endo'
+    return 'crash:'+event.cause
 
 
 def _integer_steps(seconds, dt, name):
@@ -115,6 +130,10 @@ class ResearchEnvironment:
         self.last_truth = None
         self.numerically_valid = True
         self.max_energy_residual_ratio = 0.
+        # N*m*s per control interval: delivered is the solved drive torque,
+        # requested is the applied policy command (None = pedelec assist, no request).
+        self.torque_delivered_nms = 0.
+        self.torque_requested_nms = 0.
         self.metadata = configuration_metadata(self.sim, seed=self.seed)
 
     @property
@@ -154,7 +173,16 @@ class ResearchEnvironment:
                 self.sim.step(front_brake_demand, rear_brake_demand, control=self._applied)
                 sample = self.sim.physical.sample
                 self.last_truth = truth_from_sample(self.sim, sample)
-                self.tracker.update(self.last_truth, sample.dt_s)
+                delivered = float(sample.channels['drive'].get('motor_torque_nm', 0.))
+                applied = self._applied.motor_torque_nm
+                if applied is not None:
+                    self.torque_requested_nms += applied*sample.dt_s
+                self.torque_delivered_nms += delivered*sample.dt_s
+                self.tracker.update(self.last_truth, sample.dt_s, context={
+                    'delivered_motor_nm': delivered, 'applied_motor_nm': applied,
+                    'road_pitch_rad': self.last_truth.road_pitch_rad,
+                    'pitch_rate_up_rad_s': self.last_truth.pitch_rate_up_rad_s,
+                    'speed_mps': self.last_truth.speed_mps})
                 self.recorder.record(self.sim)
                 quality = energy_quality(self.sim.physical.energy,
                     maximum_ratio=self.config.maximum_energy_residual_ratio)
@@ -170,7 +198,7 @@ class ResearchEnvironment:
                     break
                 if self.sim.crash is not None:
                     self.terminated = True
-                    self.reason = 'crash:'+self.sim.crash.cause
+                    self.reason = crash_reason(self.sim.crash)
                     break
                 if self.sim.position_m >= self.sim.track.length_m:
                     self.terminated = True
@@ -234,6 +262,8 @@ class ResearchEnvironment:
         with (path/'trace.csv').open('w', newline='', encoding='utf-8') as stream:
             writer = csv.DictWriter(stream, fieldnames=list(rows[0]) if rows else ['sensor_time_s'])
             writer.writeheader(); writer.writerows(rows)
+        (path/'episode_metrics.json').write_text(
+            json.dumps(plain(episode_metrics(self)), indent=2, sort_keys=True, allow_nan=False)+'\n')
         self.recorder.write_csv(path/'telemetry.csv')
         self.recorder.write_jsonl(path/'intervals.jsonl')
         np.save(path/'terrain_vertices.npy', self.sim.physical.vertices, allow_pickle=False)

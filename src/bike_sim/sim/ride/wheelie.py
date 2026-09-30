@@ -111,6 +111,12 @@ class WheelieTracker:
     Confirmed time starts after persistence_s. Candidate time retains the
     onset interval as well. A transition to rear-unloaded/flight clears a
     wheelie immediately. No metric changes a force or contact state.
+
+    Every candidate bout (confirmed or not) is also kept as an episode record
+    with the caller's onset context, so a policy developer can attribute a lift
+    to what the bike was doing when it started. The front-load fraction is a
+    continuous margin (0 = front unloaded) that only counts while the rear wheel
+    carries load; in flight or rear lift it has no defined meaning.
     """
     def __init__(self, persistence_s=.02, load_threshold_n=5., clearance_threshold_m=.01,
                  pitch_threshold_rad=.035):
@@ -125,13 +131,16 @@ class WheelieTracker:
         self._candidate_s = 0.
         self._active = False
         self._states = {}
+        self._episode = None
+        self.episodes = []
         self._metrics = dict(duration_s=0., wheelie_candidate_time_s=0., wheelie_time_s=0.,
             wheelie_episodes=0, front_unloaded_time_s=0., front_lift_time_s=0., flight_time_s=0.,
             max_front_clearance_m=0., max_relative_pitch_rad=0., rear_slip_distance_m=0.,
-            min_front_load_n=None)
+            min_front_load_n=None, front_load_fraction_min=None, front_load_fraction_sum=0.,
+            front_load_fraction_n=0, max_pitch_rate_up_rad_s=0.)
         self.state = 'uninitialized'
 
-    def update(self, truth, dt_s):
+    def update(self, truth, dt_s, context=None):
         if not isinstance(truth, WheelieTruth):
             raise ValueError('expected WheelieTruth')
         dt = scalar(dt_s, 'metric interval', positive=True)
@@ -148,8 +157,10 @@ class WheelieTracker:
         candidate = (truth.rear_load_n > self.load_threshold_n and truth.front_load_n <= threshold
             and truth.front_clearance_m > self.clearance_threshold_m*(.5 if hysteresis else 1.)
             and truth.relative_pitch_rad > self.pitch_threshold_rad*(.5 if hysteresis else 1.))
+        onset = candidate and self._candidate_s == 0.
         self._candidate_s = self._candidate_s+dt if candidate else 0.
         active = candidate and self._candidate_s+1e-12 >= self.persistence_s
+        self._track_episode(truth, candidate, onset, active, context)
         if active and not self._active:
             self._metrics['wheelie_episodes'] += 1
         self.state = 'wheelie' if active else raw
@@ -166,13 +177,49 @@ class WheelieTracker:
         if truth.rear_load_n > self.load_threshold_n:
             m['rear_slip_distance_m'] += abs(truth.rear_slip_mps)*dt
         m['min_front_load_n'] = truth.front_load_n if m['min_front_load_n'] is None else min(m['min_front_load_n'], truth.front_load_n)
+        if truth.rear_load_n > self.load_threshold_n:
+            total = truth.front_load_n+truth.rear_load_n
+            fraction = truth.front_load_n/total
+            if m['front_load_fraction_min'] is None or fraction < m['front_load_fraction_min']:
+                m['front_load_fraction_min'] = fraction
+            m['front_load_fraction_sum'] += fraction
+            m['front_load_fraction_n'] += 1
+            m['max_pitch_rate_up_rad_s'] = max(m['max_pitch_rate_up_rad_s'], truth.pitch_rate_up_rad_s)
         self._states[raw] = self._states.get(raw, 0.)+dt
         self._last_end = truth.time_s+dt
         return self.state
 
+    def _track_episode(self, truth, candidate, onset, active, context):
+        if onset:
+            self._episode = dict(start_s=truth.time_s, end_s=truth.time_s, confirmed=False,
+                max_relative_pitch_rad=truth.relative_pitch_rad,
+                max_front_clearance_m=truth.front_clearance_m,
+                min_front_load_n=truth.front_load_n,
+                onset=dict(context) if context else {})
+        if candidate:
+            e = self._episode
+            e['end_s'] = truth.time_s
+            e['confirmed'] = e['confirmed'] or active
+            e['max_relative_pitch_rad'] = max(e['max_relative_pitch_rad'], truth.relative_pitch_rad)
+            e['max_front_clearance_m'] = max(e['max_front_clearance_m'], truth.front_clearance_m)
+            e['min_front_load_n'] = min(e['min_front_load_n'], truth.front_load_n)
+        elif self._episode is not None:
+            self.episodes.append(self._episode)
+            self._episode = None
+
     @property
     def metrics(self):
-        return dict(self._metrics, contact_state_time_s=dict(self._states))
+        m = dict(self._metrics)
+        n = m.pop('front_load_fraction_n')
+        total = m.pop('front_load_fraction_sum')
+        m['front_load_fraction_mean'] = total/n if n else None
+        # A still-open bout is reported as a copy so reading metrics never
+        # changes what a later update() closes.
+        records = list(self.episodes)
+        if self._episode is not None:
+            records.append(dict(self._episode, onset=dict(self._episode['onset'])))
+        m['wheelie_episode_records'] = records
+        return dict(m, contact_state_time_s=dict(self._states))
 
 
 def quasistatic_front_load(mass_kg, wheelbase_m, com_forward_m, com_height_m,

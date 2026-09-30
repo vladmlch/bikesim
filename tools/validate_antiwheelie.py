@@ -76,7 +76,7 @@ def run_case(payload):
         env.save(path, overwrite=True)
         metrics = env.tracker.metrics
         checks = dict(numerical_energy_gate=env.numerically_valid, duration_or_expected_crash=
-                      env.reason in ('duration', 'crash:pitch_over'))
+                      env.reason in ('duration', 'crash:loop_out', 'crash:endo'))
         if name == 'wheelie':
             checks.update(front_lift_observed=metrics['wheelie_episodes'] >= 1 and metrics['max_front_clearance_m'] > .05)
         elif name == 'limited':

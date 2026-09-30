@@ -37,7 +37,7 @@ def parser():
         help='sample rider mass/height/posture/effort from --rider-seed (articulated rider; replaces --rider-mass/-height)')
     p.add_argument('--rider-seed', type=int, default=None, help='default: --seed')
     p.add_argument('--posture', choices=('neutral', 'forward', 'crouched', 'standing'), default='neutral')
-    p.add_argument('--duration', type=float, default=3., help='simulation seconds')
+    p.add_argument('--duration', type=float, default=3., help='simulation seconds (10-30 s episodes are supported; see --record-decimation)')
     p.add_argument('--dt', type=float, default=.000125, help='physics timestep, seconds')
     p.add_argument('--control-period', type=float, default=.01, help='seconds, integer multiple of --dt')
     p.add_argument('--actuator-delay', type=float, default=.005, help='seconds, integer multiple of --dt')
@@ -62,7 +62,8 @@ def parser():
     p.add_argument('--freehub-stiffness', type=float, default=None, help='override freehub spring rate, N*m/rad')
     p.add_argument('--front-teeth', type=int, default=34)
     p.add_argument('--rear-teeth', type=int, default=51)
-    p.add_argument('--record-decimation', type=int, default=80)
+    p.add_argument('--record-decimation', type=int, default=80,
+        help='keep every Nth physics interval in telemetry; for 10-30 s episodes use >= 80 (memory and file size scale with duration/dt/N)')
     p.add_argument('--energy-tolerance', type=float, default=.05, help='maximum normalized numerical energy residual')
     p.add_argument('--out', type=Path, default=Path('output/antiwheelie'))
     p.add_argument('--overwrite', action='store_true')

@@ -12,10 +12,17 @@ class SensorConfig:
     gyro_std_rad_s: float = .002
     encoder_std_rad_s: float = .01
     torque_std_nm: float = .05
+    # An absent sensor reports exact zeros, not noise: a policy must not be able
+    # to mistake a missing IMU for a quiet one. Keep this field LAST so
+    # ideal()'s positional cls(0., 0., 0., 0., 0.) stays valid.
+    imu_enabled: bool = True
 
     def __post_init__(self):
         for f in fields(self):
-            scalar(getattr(self, f.name), f.name, minimum=0.)
+            if f.name != 'imu_enabled':
+                scalar(getattr(self, f.name), f.name, minimum=0.)
+        if type(self.imu_enabled) is not bool:
+            raise ValueError('imu_enabled must be a bool')
 
     @classmethod
     def ideal(cls):
@@ -87,6 +94,10 @@ class SensorPipeline:
             crank_rad_s=raw.crank_rad_s+float(encoder_noise[2]),
             motor_torque_nm=raw.motor_torque_nm+float(torque_noise[0]),
             human_torque_nm=raw.human_torque_nm+float(torque_noise[1]))
+        if not c.imu_enabled:
+            # The noise above is still drawn (and discarded) so toggling the IMU
+            # does not shift the encoder/torque noise stream for a given seed.
+            measured = replace(measured, specific_force_body_mps2=(0., 0., 0.), pitch_rate_up_rad_s=0.)
         self._queue.append(measured)
         self._last_time = t
 

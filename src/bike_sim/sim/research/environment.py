@@ -4,7 +4,7 @@ Policies receive SensorObservation only. Truth/metrics are a separate evaluation
 surface. This wrapper never adds forces or edits qpos/qvel to keep the bike up.
 """
 from collections import deque
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 import csv
 import hashlib
@@ -18,8 +18,11 @@ from bike_sim.sim.ride.physical_session import configuration_metadata, physical_
 from bike_sim.sim.ride.physical_samples import plain
 from bike_sim.sim.ride.wheelie import WheelieTracker, WheelieTruth, truth_from_sample
 from bike_sim.sim.research.observations import raw_observation
+from bike_sim.sim.research.rider_behavior import RiderBehavior, signals_from_sample
+from bike_sim.sim.research.rider_program import RiderProgram
 from bike_sim.sim.research.sensors import SensorConfig, SensorObservation, SensorPipeline
 from bike_sim.terrain.trackfile import save_track
+from bike_sim.sim.research.demand import DemandProgram
 from bike_sim.sim.research.metrics import episode_metrics
 from bike_sim.sim.research.quality import energy_quality
 
@@ -58,6 +61,7 @@ class ResearchStep:
     reason: str | None
     physics_steps: int
     numerically_valid: bool = True
+    demand_nm: float | None = None  # appended last: step() builds ResearchStep positionally
 
 
 def crash_reason(event):
@@ -83,12 +87,21 @@ def _integer_steps(seconds, dt, name):
 
 
 class ResearchEnvironment:
-    def __init__(self, sim, config=None, sensors=None):
+    def __init__(self, sim, config=None, sensors=None, *, demand=None, rider_behavior=None, rider_program=None):
         self.sim = sim
         self.config = ExperimentConfig() if config is None else config
         self.sensor_config = SensorConfig() if sensors is None else sensors
         if not isinstance(self.config, ExperimentConfig) or not isinstance(self.sensor_config, SensorConfig):
             raise ValueError('expected ExperimentConfig and SensorConfig')
+        if demand is not None and not isinstance(demand, DemandProgram):
+            raise ValueError('demand must be a DemandProgram')
+        if rider_program is not None and not isinstance(rider_program, RiderProgram):
+            raise ValueError('rider_program must be a RiderProgram')
+        if rider_behavior is not None and not isinstance(rider_behavior, RiderBehavior):
+            raise ValueError('rider_behavior must implement the RiderBehavior protocol (reset, act)')
+        if rider_behavior is not None and rider_program is not None:
+            raise ValueError('rider_behavior and a posture-owning rider_program are exclusive')
+        self.demand, self.rider_behavior, self.rider_program = demand, rider_behavior, rider_program
         cfg = sim.physics_config
         if cfg.physics_mode != 'physical' or cfg.drive_mode not in ('crank_effort', 'articulated_effort'):
             raise ValueError('research requires a physical effort drive, not a speed controller')
@@ -106,6 +119,8 @@ class ResearchEnvironment:
         self._begin_episode()
 
     def _begin_episode(self):
+        if self.rider_behavior is not None:
+            self.rider_behavior.reset(self.seed)
         self.recorder = PhysicalRecorder(self.sim, decimate=self.config.record_decimation)
         self.tracker = WheelieTracker(persistence_s=self.config.wheelie_persistence_s)
         self.pipeline = SensorPipeline(self.sensor_config, seed=self.seed)
@@ -137,6 +152,7 @@ class ResearchEnvironment:
         # Peak |travel| at physics rate; the decimated recorder can miss the peak.
         self.max_shock_stroke_m = 0.
         self.max_fork_travel_m = 0.
+        self.demand_nm = None if self.demand is None else self.demand.at(0.)
         self.metadata = configuration_metadata(self.sim, seed=self.seed)
 
     @property
@@ -157,6 +173,15 @@ class ResearchEnvironment:
             raise RuntimeError('episode has ended; reset before stepping again')
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
+        # env.demand_nm is what the policy saw when it chose this command; it is
+        # refreshed at the end of step() for the next call and never enforced.
+        seen_demand_nm = self.demand_nm
+        if self.rider_program is not None:
+            control = self.rider_program.apply(control, self.sim.time_s)
+        elif self.rider_behavior is not None and control.posture is None:
+            posture = self.rider_behavior.act(self.sim.time_s, signals_from_sample(self.sim.physical.sample))
+            if posture is not None:
+                control = replace(control, posture=posture)
         control.validate_for(self.sim.physics_config, self.sim.rider.variant)
         for value in (front_brake_demand, rear_brake_demand):
             if scalar(value, 'brake demand', minimum=0.) > 1.:
@@ -217,6 +242,7 @@ class ResearchEnvironment:
             raise  # Never manufacture a successful transition from invalid dynamics.
         if not self.done and self.sim.steps >= self.max_steps:
             self.truncated, self.reason = True, 'duration'
+        self.demand_nm = None if self.demand is None else self.demand.at(self.sim.time_s)
         raw = raw_observation(self.sim, self.sim.physical.sample)
         if raw.source_time_s > self._sensor_time:
             self.pipeline.push(raw)
@@ -224,7 +250,8 @@ class ResearchEnvironment:
         self.observation = self.pipeline.read(self.sim.time_s)
         self.observations.append(self.observation)
         result = ResearchStep(self.observation, self.last_truth, self.tracker.state,
-                              self.terminated, self.truncated, self.reason, self.sim.steps-start_step, self.numerically_valid)
+                              self.terminated, self.truncated, self.reason, self.sim.steps-start_step, self.numerically_valid,
+                              demand_nm=seen_demand_nm)
         self.trace.append(result)
         return result
 
@@ -244,6 +271,10 @@ class ResearchEnvironment:
             privileged_outputs='contact loads/clearances, road-relative pitch, CoM and simulator speed',
             timestep_alignment='truth/sensor source is the last incoming physical state, not the endpoint',
             parameters_validated_against_measurements=False)
+        if self.demand is not None:
+            research['demand_program'] = self.demand.to_dict()
+        if self.rider_program is not None:
+            research['rider_program'] = self.rider_program.to_dict()
         commands_json = json.dumps(plain(self.commands_requested), sort_keys=True, allow_nan=False)
         research['commands_sha256'] = hashlib.sha256(commands_json.encode()).hexdigest()
         summary = physical_summary(self.sim, self.metadata, self.reason or 'not_finished')
@@ -262,7 +293,7 @@ class ResearchEnvironment:
             row = {'sensor_'+k: v for k, v in obs.items()}
             row.update({f'sensor_specific_force_{axis}_mps2': acceleration[i] for i, axis in enumerate('xyz')})
             row.update({'truth_'+k: v for k, v in asdict(result.truth).items()})
-            row.update(contact_state=result.contact_state, terminated=result.terminated,
+            row.update(contact_state=result.contact_state, demand_nm=result.demand_nm, terminated=result.terminated,
                        truncated=result.truncated, reason=result.reason, numerically_valid=result.numerically_valid)
             rows.append(row)
         with (path/'trace.csv').open('w', newline='', encoding='utf-8') as stream:

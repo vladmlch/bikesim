@@ -11,6 +11,8 @@ from bike_sim.physics.rider import RiderSpecs
 from bike_sim.physics.rider_posture import RiderPosture
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride_sim import RideSimulation
+from bike_sim.sim.research.demand import DemandProgram
+from bike_sim.sim.research.rider_random import RiderRandomSpec, sample_rider
 from bike_sim.sim.research.environment import ExperimentConfig, ResearchEnvironment
 from bike_sim.sim.research.sensors import SensorConfig
 from bike_sim.terrain.generator import TerrainGenSpec, generate_track
@@ -31,6 +33,9 @@ def parser():
     p.add_argument('--rider', choices=('lumped', 'articulated_planar'), default='articulated_planar')
     p.add_argument('--rider-mass', type=float, default=80., help='kg')
     p.add_argument('--rider-height', type=float, default=1.8, help='m')
+    p.add_argument('--rider-random', action='store_true',
+        help='sample rider mass/height/posture/effort from --rider-seed (articulated rider; replaces --rider-mass/-height)')
+    p.add_argument('--rider-seed', type=int, default=None, help='default: --seed')
     p.add_argument('--posture', choices=('neutral', 'forward', 'crouched', 'standing'), default='neutral')
     p.add_argument('--duration', type=float, default=3., help='simulation seconds')
     p.add_argument('--dt', type=float, default=.000125, help='physics timestep, seconds')
@@ -42,6 +47,9 @@ def parser():
     p.add_argument('--initial-speed', type=float, default=2., help='m/s (unlike legacy bike-ride km/h)')
     p.add_argument('--human-torque', type=float, default=0., help='mean crank torque, N*m')
     p.add_argument('--motor-torque', type=float, default=80., help='external crank-side setpoint, N*m')
+    p.add_argument('--demand', type=float, default=None,
+        help='constant torque demand, N*m: advisory echo as env.demand_nm; the CLI loop passes it as the motor setpoint')
+    p.add_argument('--demand-file', type=Path, help='DemandProgram TOML ([[keyframes]] time_s/torque_nm)')
     p.add_argument('--assist', action='store_true', help='use configured pedelec demand instead of external motor setpoint')
     p.add_argument('--motor-limit', type=float, default=None, help='immediate crank-side safety ceiling, N*m')
     p.add_argument('--motor-max-torque', type=float, default=80., help='synthetic motor envelope, N*m')
@@ -71,6 +79,23 @@ def build_track(args):
         spec = TerrainGenSpec.from_dict(tomllib.loads(args.gen_spec.read_text())) if args.gen_spec else TerrainGenSpec()
         return generate_track(spec, seed=args.seed, name=f'generated_{args.seed}')
     return build_research_track(args.scenario, seed=args.seed)
+
+
+def build_rider(args):
+    """(RiderSpecs, RiderProgram|None). A sampled rider brings a program that owns posture and effort."""
+    if args.rider_random:
+        if args.rider != 'articulated_planar' or args.posture != 'neutral' or args.human_torque != 0.:
+            raise ValueError('--rider-random owns rider type, posture and effort; drop --rider/--posture/--human-torque')
+        return sample_rider(RiderRandomSpec(), args.seed if args.rider_seed is None else args.rider_seed)
+    return RiderSpecs(variant=args.rider, mass_kg=args.rider_mass, height_m=args.rider_height), None
+
+
+def build_demand(args):
+    if args.demand is not None and args.demand_file is not None:
+        raise ValueError('choose one of --demand and --demand-file')
+    if args.demand_file is not None:
+        return DemandProgram.load(args.demand_file)
+    return None if args.demand is None else DemandProgram.constant(args.demand)
 
 
 def make_environment(args):
@@ -104,9 +129,9 @@ def make_environment(args):
         duration_s=args.duration, seed=args.seed, record_decimation=args.record_decimation,
         maximum_energy_residual_ratio=args.energy_tolerance)
     sensors = SensorConfig.ideal() if args.ideal_sensors else SensorConfig(latency_s=args.sensor_delay)
-    sim = RideSimulation(track=track, rider=RiderSpecs(variant=args.rider, mass_kg=args.rider_mass, height_m=args.rider_height),
-                         physics_config=cfg)
-    return ResearchEnvironment(sim, experiment, sensors)
+    rider, program = build_rider(args)
+    sim = RideSimulation(track=track, rider=rider, physics_config=cfg)
+    return ResearchEnvironment(sim, experiment, sensors, demand=build_demand(args), rider_program=program)
 
 
 def posture_at(name, time_s):
@@ -121,6 +146,15 @@ def posture_at(name, time_s):
     return RiderPosture(torso_lean_rad=.08*blend, pelvis_offset_m=(0., .16*blend), use_saddle=blend < .1)
 
 
+def command_for(env, args):
+    """The CLI's fixed 'policy': setpoint (or demand passthrough), never an anti-wheelie law."""
+    owned = env.rider_program is not None  # a sampled rider owns posture and effort
+    motor = env.demand_nm if env.demand_nm is not None else args.motor_torque
+    return RideControl(motor_torque_nm=None if args.assist else motor, motor_limit_nm=args.motor_limit,
+        human_torque_nm=None if owned else args.human_torque,
+        posture=None if owned else posture_at(args.posture, env.sim.time_s))
+
+
 def main(argv=None):
     p = parser()
     args = p.parse_args(argv)
@@ -133,10 +167,7 @@ def main(argv=None):
             raise FileExistsError(f'output exists; choose another --out or pass --overwrite: {args.out}')
         env = make_environment(args)
         while not env.done:
-            command = RideControl(motor_torque_nm=None if args.assist else args.motor_torque,
-                motor_limit_nm=args.motor_limit, human_torque_nm=args.human_torque,
-                posture=posture_at(args.posture, env.sim.time_s))
-            env.step(command)
+            env.step(command_for(env, args))
         env.save(args.out, overwrite=args.overwrite)
         print(json.dumps(dict(output=str(args.out), outcome=env.reason, metrics=env.tracker.metrics), indent=2))
         return 0 if env.reason in ('duration', 'finish') else 1

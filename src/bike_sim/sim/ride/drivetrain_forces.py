@@ -154,7 +154,7 @@ class DrivetrainForceApplier:
         }
 
     def prepare_pedaling(self, data, dt, control, *, active=True, advance=True, braking=False,
-                         model=None, rear_in_contact=True):
+                         model=None, rear_in_contact=True, rear_slip_mps=None):
         if advance and self.last_time_s is not None and float(data.time) <= self.last_time_s:
             raise ValueError('drivetrain state can advance only once per timestamp')
         crank_qpos, crank_dof = self.joints['crank_spin']
@@ -168,7 +168,7 @@ class DrivetrainForceApplier:
                 raise ValueError('automatic shifting needs the live ideal_mid_drive model')
             shifted = self.shifting.update(float(data.qvel[crank_dof]) * 60. / (2. * pi),
                 required, dt, pedaling=enabled and effort > 0., braking=braking,
-                rear_in_contact=rear_in_contact)
+                rear_in_contact=rear_in_contact, rear_slip_mps=rear_slip_mps)
             if shifted:
                 self.ideal_hub.set_ratio(model, data, self.shifting.gear_ratio)
                 self.shift_time_s = float(data.time)

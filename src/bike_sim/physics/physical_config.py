@@ -155,6 +155,7 @@ class ShiftingConfig:
     shift_cut_duration_s: float = .2
     torque_factor: float = .3
     cadence_smoothing_tau_s: float = .35
+    upshift_slip_limit_mps: float = .5
 
     def __post_init__(self):
         if not isinstance(self.enabled, bool):
@@ -175,6 +176,7 @@ class ShiftingConfig:
         scalar(self.shift_cooldown_s, 'shift cooldown', minimum=0.)
         scalar(self.shift_cut_duration_s, 'shift torque cut duration', minimum=0.)
         scalar(self.cadence_smoothing_tau_s, 'shift cadence smoothing', minimum=0.)
+        scalar(self.upshift_slip_limit_mps, 'upshift rear slip limit', minimum=0.)
         if self.shift_cut_duration_s > self.shift_cooldown_s:
             raise ValueError('shift torque cut must not outlast the cooldown')
         if scalar(self.torque_factor, 'shift torque factor', minimum=0.) > 1.:

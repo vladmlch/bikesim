@@ -99,6 +99,38 @@ def test_shift_decision_uses_filtered_cadence_not_one_stroke():
     assert shifted and policy.direction == 'up' and policy.rear_teeth == 45
 
 
+def test_wheel_spin_up_transient_cannot_upshift():
+    # An obstacle crossing spikes the wheel-implied cadence ~84->110+ rpm in a
+    # few control steps; the smoothed required cadence must not let it trigger
+    # an upshift a rider could never perceive or intend.
+    policy = shifter(target_cadence_max_rpm=110., cadence_smoothing_tau_s=.35)
+    for _ in range(100):
+        policy.update(84., 84., .01)
+    for _ in range(5):
+        assert not policy.update(84., 111., .01)
+    assert policy.rear_teeth == 51
+    # The same level held long enough is a real spin-up and must still shift.
+    for _ in range(100):
+        policy.update(84., 84., .01)
+    for _ in range(300):
+        if policy.update(84., 111., .01):
+            break
+    assert policy.rear_teeth == 45
+
+
+def test_upshift_refused_while_the_rear_tire_slips():
+    policy = shifter(target_cadence_max_rpm=110.)
+    for _ in range(400):
+        policy.update(84., 84., .01)
+    for _ in range(400):
+        assert not policy.update(84., 120., .01, rear_slip_mps=.8)
+    assert policy.rear_teeth == 51
+    for _ in range(300):
+        if policy.update(84., 120., .01, rear_slip_mps=.2):
+            break
+    assert policy.rear_teeth == 45
+
+
 def test_rollback_hill_hold_latches_and_releases_on_stop():
     from bike_sim.sim.ride.physical_runtime import PhysicalRuntime
     rt = object.__new__(PhysicalRuntime)
@@ -275,7 +307,7 @@ def test_research_sample_reports_current_gear_ratio_after_shifting():
     config = replace(load_physics_config('examples/research/viewer_physics_fast.toml'),
                      drive_mode='crank_effort')
     sim = RideSimulation(track=get_preset('flat'), rider='none', physics_config=config)
-    set_cadence(sim.data, sim.physical.drive, 95.)
+    set_cadence(sim.data, sim.physical.drive, 120.)
     sim.step()
     sample = sim.physical.sample.channels['drive']
     assert sample['gear_front_teeth'] == 34

@@ -19,7 +19,7 @@ from bike_sim.validation.environment import source_fingerprint, environment_cont
 class PhysicalPreviewCsv:
     """Flushes the live physical preview state at a fixed simulated-time interval, as CSV."""
 
-    def __init__(self, path: Path, interval_s: float = 0.1):
+    def __init__(self, path: Path, interval_s: float = 0.01):
         if interval_s <= 0.0:
             raise ValueError(f"preview csv interval must be positive, got {interval_s}")
         self.path = Path(path)

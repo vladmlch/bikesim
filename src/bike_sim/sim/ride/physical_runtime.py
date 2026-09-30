@@ -149,9 +149,11 @@ class PhysicalRuntime:
         d.xfrc_applied.fill(0.)
         d.ctrl.fill(0.)
         self.brake.apply(m,d,front,rear)
+        rear_snapshot = sim.contacts.rear_snapshot
         pedaling = self.drive.prepare_pedaling(d, dt, control, active=active,
             advance=advance, braking=braking, model=m,
-            rear_in_contact=bool(sim.contacts.rear_controller_grounded))
+            rear_in_contact=bool(sim.contacts.rear_controller_grounded),
+            rear_slip_mps=None if rear_snapshot is None else float(rear_snapshot.slip_mps))
         mujoco.mj_forward(m,d)
         acc = sim.force_accumulator
         acc.clear()

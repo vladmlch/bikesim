@@ -303,7 +303,11 @@ torque_factor = 0.3
 
 Below 65 rpm the rider selects the next larger rear sprocket (an easier gear);
 above 85 rpm the next smaller sprocket (a harder gear). Decisions use the larger
-of actual forward crank cadence and wheel-required cadence in the current gear.
+of actual forward crank cadence and wheel-required cadence in the current gear,
+both smoothed by `cadence_smoothing_tau_s` so a sub-100 ms transient cannot
+trigger a shift a rider would never perceive. An upshift is also refused while
+the rear tire slips faster than `upshift_slip_limit_mps` (default 0.5 m/s):
+a spinning wheel inflates the implied cadence without accelerating the bike.
 This allows selecting a usable gear while the wheel overruns stationary pedals.
 Only one sprocket is selected per shift, with at least 0.4 s between changes;
 braking, zero requested human effort, a disabled rider or an airborne rear wheel
@@ -377,7 +381,9 @@ the hill-hold reflex `rollback_brake`/`rollback_engage_mps`/
 `rollback_release_mps`/`rollback_demand`, which physically grabs the wheel
 brakes on sustained rollback without gating pedaling or assist intent.
 `[drive.shifting]` accepts `cadence_smoothing_tau_s`, the filter constant on
-measured crank cadence used for shift decisions.
+measured crank cadence and wheel-required cadence used for shift decisions,
+and `upshift_slip_limit_mps`, the rear tire slip speed above which upshifts
+are refused.
 The viewer synchronizes at at most 60 Hz without skipping integration steps.
 Real-time capacity depends on the machine; `RTF` exposes slowdowns rather than
 relabelling elapsed wall time as simulated time. An articulated rider can still

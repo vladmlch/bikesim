@@ -321,8 +321,11 @@ def generate_mujoco_xml(
             for geom in list(frame.findall("geom")):
                 if geom.get("name", "").startswith("geom_rider_"):
                     frame.remove(geom)
+            from bike_sim.physics.rider_envelope import load_joint_envelopes
+            envelope_path=physics_config.articulated.joint_envelope_path
+            envelopes=None if envelope_path is None else load_joint_envelopes(envelope_path)
             build_articulated_rider(worldbody, articulated_pose,
-                segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg))
+                segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg),envelopes=envelopes)
             add_rider_actuators(root, physics_config.articulated)
             # Dedicated crash mask: no invisible rider/bike or rider/rider contacts.
             for name in ("geom_rider_head", "geom_rider_pelvis", "geom_rider_torso"):
@@ -332,6 +335,10 @@ def generate_mujoco_xml(
             for name in ("terrain", "catch_plane"):
                 geom = root.find(f".//geom[@name='{name}']")
                 geom.set("conaffinity", str(int(geom.get("conaffinity", "1")) | 4))
+
+    if physical:
+        from bike_sim.mujoco.physical_topology import finalize_geometric_transmission
+        finalize_geometric_transmission(root,physics_config)
 
     # Prettify XML
     xml_raw = ET.tostring(root, encoding="utf-8")

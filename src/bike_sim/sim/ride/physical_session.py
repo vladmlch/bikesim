@@ -92,6 +92,10 @@ def configuration_metadata(sim,seed=None):
     # Friction zones change the plant even when the heightfield is unchanged.
     from bike_sim.terrain.trackfile import track_to_dict
     resolved['track'] = track_to_dict(sim.track)
+    envelope=sim.physics_config.articulated.joint_envelope_path
+    resolved['joint_envelope_status']='unspecified' if envelope is None else 'declared_unvalidated'
+    if envelope is not None:
+        resolved['joint_envelope_sha256']=hashlib.sha256(Path(envelope).read_bytes()).hexdigest()
     # Effective overrides are recorded, not just geometry defaults.
     resolved['active_suspension']={
         'fork_pressure_psi':sim.controller.air_spring.gauge_pressure_psi,
@@ -134,7 +138,8 @@ def configuration_metadata(sim,seed=None):
         'environment_contract':environment_contract(),
         'component_provenance':{key:'synthetic' for key in sim.mass_specs.component_masses},
         'limitations':['planar X-Z dynamics','synthetic material and drive parameters',
-                       'single equivalent tire support; multi-support peaks not calibrated',
+                       ('experimental distributed tire; mesh/time/station gates required' if sim.physics_config.tires.backend=='distributed_2d_reference'
+                        else 'single equivalent tire support; multi-support peaks not calibrated'),
                        'native contact work is a solver diagnostic, not material tire hysteresis']}
 
 
@@ -147,7 +152,7 @@ def physical_summary(sim,metadata,reason):
     r=sim.physical
     return plain(dict(metadata,outcome={'reason':reason,'time_s':sim.time_s,'position_m':sim.position_m,
                                        'steps':sim.steps,'crashed':sim.crash is not None},
-        equilibrium=sim.equilibrium,energy=r.energy,battery_energy_j=r.drive.battery.energy_j,
+        equilibrium=sim.equilibrium,energy=r.energy,model_status=r.model_status.as_dict(),battery_energy_j=r.drive.battery.energy_j,
         component_work_j=r.history.work_j,airtime_threshold_s=r.history.airtime_s,
         duration_s=r.history.duration_s))
 
@@ -206,9 +211,14 @@ def run_physical_headless(track,args,seed,rider):
     recorder.write_jsonl(out/'intervals.jsonl')
     np.save(out/'terrain_vertices.npy',sim.physical.vertices,allow_pickle=False)
     summary=physical_summary(sim,metadata,reason)
+    summary['model_status']=sim.physical.model_status.as_dict()
     (out/'summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True,allow_nan=False)+'\n')
     if not args.no_plots and recorder.rows:
         from bike_sim.viz.ride_plots import plot_physical_ride
         plot_physical_ride(recorder.columns(),out)
     print(f"[bike-ride] {reason}: {sim.time_s:.6f} s, {sim.position_m:.3f} m -> {out}")
+    if reason == 'simulation_error':
+        return 1
+    if not sim.physical.model_status.as_dict()['model_valid']:
+        return 2
     return 0 if reason in ('duration_reached','end_of_track') else 1

@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "provenance": "synthetic software fixture, not physiological limits",
+  "joints": {
+    "rider_torso_hinge": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -0.65,
+      "maximum_anatomical_rad": 0.65,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    },
+    "rider_shoulder": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -1.6,
+      "maximum_anatomical_rad": 1.6,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    },
+    "rider_elbow": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -1.6,
+      "maximum_anatomical_rad": 1.6,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    },
+    "rider_hip_front": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -2.0,
+      "maximum_anatomical_rad": 2.0,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    },
+    "rider_knee_front": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -1.9,
+      "maximum_anatomical_rad": 1.9,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    },
+    "rider_ankle_front": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -1.2,
+      "maximum_anatomical_rad": 1.2,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    },
+    "rider_hip_rear": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -2.0,
+      "maximum_anatomical_rad": 2.0,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    },
+    "rider_knee_rear": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -1.9,
+      "maximum_anatomical_rad": 1.9,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    },
+    "rider_ankle_rear": {
+      "neutral_anatomical_rad": 0.0,
+      "direction": 1,
+      "minimum_anatomical_rad": -1.2,
+      "maximum_anatomical_rad": 1.2,
+      "provenance": "synthetic joint-coordinate fixture; measure anatomical zero before real use"
+    }
+  }
+}

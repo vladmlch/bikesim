@@ -14,7 +14,7 @@ from bike_sim.terrain.trackfile import track_to_dict
 from bike_sim.validation.environment import source_fingerprint
 
 
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 
 
 def _serializable(value):
@@ -88,19 +88,19 @@ def _state_arrays(runtime):
     tire = runtime.tire
     if tire is not None:
         sides = tuple(tire.states)
-        state['state_tire_sides'] = np.asarray(sides)
+        state['state_tire_sides'] = np.asarray([json.dumps(key) for key in sides])
         state['state_tire_xi'] = np.asarray([tire.states[side].xi for side in sides], dtype=float)
         state['state_tire_tangent'] = np.asarray([
             value.tangent if value.tangent is not None else np.zeros(3)
             for value in (tire.states[side] for side in sides)
-        ], dtype=float)
+        ], dtype=float).reshape(-1,3)
         state['state_tire_tangent_valid'] = np.asarray([
             value.tangent is not None for value in (tire.states[side] for side in sides)
         ], dtype=bool)
         state['state_tire_point'] = np.asarray([
             value.point if value.point is not None else np.zeros(3)
             for value in (tire.states[side] for side in sides)
-        ], dtype=float)
+        ], dtype=float).reshape(-1,3)
         state['state_tire_point_valid'] = np.asarray([
             value.point is not None for value in (tire.states[side] for side in sides)
         ], dtype=bool)
@@ -111,7 +111,7 @@ def _state_arrays(runtime):
         state['state_tire_center'] = np.asarray([
             value.center if value.center is not None else np.zeros(3)
             for value in (tire.states[side] for side in sides)
-        ], dtype=float)
+        ], dtype=float).reshape(-1,3)
         state['state_tire_center_valid'] = np.asarray([
             value.center is not None for value in (tire.states[side] for side in sides)
         ], dtype=bool)
@@ -162,8 +162,15 @@ def restore_state(runtime, state):
         }
         if not required.issubset(state):
             return False
-        sides = tuple(str(value) for value in state['state_tire_sides'])
-        if sides != tuple(tire.states):
+        try:
+            decoded = [json.loads(str(value)) for value in state['state_tire_sides']]
+            sides = tuple(tuple(key) if isinstance(key,list) else key for key in decoded)
+        except (ValueError,TypeError):
+            return False
+        distributed = tire.config.backend == 'distributed_2d_reference'
+        if not distributed and sides != tuple(tire.states):
+            return False
+        if distributed and (any(not isinstance(key,tuple) or len(key)!=2 or key[0] not in ('front','rear') or type(key[1]) is not int or not 0<=key[1]<tire.config.distributed.station_count for key in sides) or len(set(sides)) != len(sides)):
             return False
         xi = state['state_tire_xi']
         tangent = state['state_tire_tangent']
@@ -179,8 +186,11 @@ def restore_state(runtime, state):
                 or point_valid.shape != (count,) or segment.shape != (count,)
                 or center.shape != (count, 3) or center_valid.shape != (count,)):
             return False
+        if distributed:
+            tire.states.clear()
         for index, side in enumerate(sides):
-            value = tire.states[side]
+            from bike_sim.sim.ride.tire_forces import _BrushState
+            value = tire.states.get(side,_BrushState())
             tire.states[side] = type(value)(
                 float(xi[index]),
                 tangent[index].copy() if tangent_valid[index] else None,

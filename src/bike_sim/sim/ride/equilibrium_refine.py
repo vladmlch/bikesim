@@ -9,7 +9,12 @@ from scipy.optimize import least_squares
 
 
 def refine_equilibrium(runtime, *, max_evaluations=80, acceleration_tolerance=.05):
+    if not getattr(runtime,'initializing',False):
+        raise ValueError('equilibrium refinement is confined to initialization')
     sim=runtime.sim; m,d=sim.model,sim.data
+    hub=runtime.drive.ideal_hub
+    candidate=getattr(hub,'prepare_initial_candidate',None)
+    incoming_boundary=None if hub is None else hub.boundary
     if m.nq != m.nv:
         raise ValueError("physical equilibrium requires scalar planar coordinates")
     d.qvel.fill(0.)
@@ -32,6 +37,9 @@ def refine_equilibrium(runtime, *, max_evaluations=80, acceleration_tolerance=.0
     mass_matrix=np.empty((m.nv,m.nv))
     mujoco.mj_fullM(m,d,mass_matrix)
     force_scale=np.sqrt(np.maximum(np.diag(mass_matrix),1e-12))
+    # Once the force residual is small, polish the actual acceptance metric.
+    # Fixed per solve (not a discontinuous switch inside a residual call).
+    acceleration_polish = float(np.max(np.abs(d.qacc))) < 1.0
     best=[(1,float('inf')),x0.copy()]
     def place(x):
         d.qpos[:]=q0
@@ -40,6 +48,8 @@ def refine_equilibrium(runtime, *, max_evaluations=80, acceleration_tolerance=.0
         for value,(obj,key,index) in zip(x[len(qids):],auxiliary):
             if index is None: setattr(obj,key,float(value))
             else: getattr(obj,key)[index]=value
+        if candidate is not None:
+            candidate(m,d,incoming_boundary)
     def residual(y):
         x=x0+scale*y
         place(x)
@@ -52,7 +62,9 @@ def refine_equilibrium(runtime, *, max_evaluations=80, acceleration_tolerance=.0
         result=np.empty(m.nv)
         mujoco.mj_mulM(m,d,result,d.qacc)
         result/=force_scale
-        objective=np.r_[result,1e-5*y]
+        if acceleration_polish:
+            result = d.qacc.copy()
+        objective=np.r_[result,1e-7*y if acceleration_polish else 1e-5*y]
         acceleration=float(np.max(np.abs(d.qacc)))
         norm=float(objective@objective)
         rank=(int(acceleration>acceleration_tolerance),norm)

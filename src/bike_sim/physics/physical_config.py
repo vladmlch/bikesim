@@ -7,6 +7,7 @@ upgrades these parameters to a measured/calibrated model.
 from dataclasses import dataclass, field
 from bike_sim.physics.checks import scalar
 from bike_sim.physics.tire import TireSpec
+from bike_sim.physics.distributed_tire import DistributedTireConfig
 from bike_sim.physics.chain import DrivetrainSpecs
 from bike_sim.physics.drivetrain import CASSETTE_12S_TEETH
 
@@ -39,14 +40,17 @@ class TireBackendConfig:
     significance_fraction: float = .05
     distinct_normal_deg: float = 20.
     surface_mode: str = 'configured'
+    distributed: DistributedTireConfig = field(default_factory=DistributedTireConfig)
 
     def __post_init__(self):
-        if self.backend not in ('native_reference','compliant_2d'):
+        if self.backend not in ('native_reference','compliant_2d','distributed_2d_reference'):
             raise ValueError('unknown physical tire backend')
         if self.surface_mode not in ('configured', 'track'):
             raise ValueError('surface_mode must be configured or track')
-        if self.surface_mode == 'track' and self.backend != 'compliant_2d':
+        if self.surface_mode == 'track' and self.backend not in ('compliant_2d','distributed_2d_reference'):
             raise ValueError('track material resolution requires compliant_2d tires')
+        if not isinstance(self.distributed,DistributedTireConfig):
+            raise ValueError('distributed tire configuration must be explicit')
         if not isinstance(self.front,TireParameters) or not isinstance(self.rear,TireParameters):
             raise ValueError('front and rear tires need explicit TireParameters')
         scalar(self.significant_delta_m,'significant penetration',minimum=0)
@@ -206,12 +210,12 @@ class PhysicalDriveConfig:
             raise ValueError('invalid drivetrain configuration object')
         if not isinstance(self.pedaling, PedalingConfig):
             raise ValueError('pedaling needs an immutable PedalingConfig')
-        if self.transmission_model not in ('elastic_chain', 'ideal_mid_drive'):
+        if self.transmission_model not in ('elastic_chain', 'ideal_mid_drive', 'geometric_ideal_mid_drive'):
             raise ValueError('unknown transmission model')
         if not isinstance(self.shifting, ShiftingConfig):
             raise ValueError('shifting needs an immutable ShiftingConfig')
         if self.shifting.enabled:
-            if self.transmission_model != 'ideal_mid_drive':
+            if self.transmission_model not in ('ideal_mid_drive','geometric_ideal_mid_drive'):
                 raise ValueError('automatic physical shifting requires ideal_mid_drive')
             if self.gearing.rear_teeth not in self.shifting.cassette:
                 raise ValueError('initial rear sprocket must belong to the cassette')
@@ -256,6 +260,10 @@ class ArticulatedConfig:
     posture_pitch_k_nm_rad: float = 600.
     posture_pitch_d_nms_rad: float = 60.
     posture_pitch_limit_nm: float = 60.
+    # Synthetic internal support feedback, not a force on the floating root.
+    posture_translation_k_n_m: float = 1500.
+    posture_translation_d_ns_m: float = 150.
+    posture_translation_limit_n: float = 400.
     saddle_patch_half_length_m: float = .045
     pedal_patch_half_length_m: float = .025
     support_pad_radius_m: float = .020  # synthetic sole contact shape
@@ -273,19 +281,35 @@ class ArticulatedConfig:
     grip_k_n_m: float = 4000.
     grip_c_ns_m: float = 150.
     grip_release_distance_m: float = .12
+    grip_pair_force_limit_n: float | None = None
+    grip_capture_distance_m: float = .02
+    grip_capture_speed_mps: float = .2
     arm_reach_fraction: float = .92
     joint_kp_nm_rad: float = 600.
     joint_kd_nms_rad: float = 15.
     joint_limit_nm: float = 100.
     joint_speed_limit_rad_s: float = 20.
     joint_power_limit_w: float = 250.
+    joint_envelope_path: str | None = None
+    joint_envelope_soft_margin_rad: float = .1
+    joint_envelope_soft_k_nm_rad: float = 100.
+    activation_tau_s: float = 0.
+    active_positive_power_limit_w: float | None = None
 
     def __post_init__(self):
         if not 0 < scalar(self.arm_reach_fraction,'arm reach fraction',positive=True) < 1:
             raise ValueError('arm reach fraction must lie strictly between zero and one')
         if self.pedal_support_fraction + self.bar_support_fraction >= 1.:
             raise ValueError('postural support fractions must leave a saddle share')
+        if self.joint_envelope_path is not None and (not isinstance(self.joint_envelope_path,str) or not self.joint_envelope_path.strip()):
+            raise ValueError('joint_envelope_path must be a nonempty path or None')
         for key in self.__dataclass_fields__:
+            if key == 'joint_envelope_path':
+                continue
+            if key in ('grip_pair_force_limit_n','active_positive_power_limit_w') and getattr(self,key) is None:
+                continue
             scalar(getattr(self,key),key,minimum=0)
+        if self.grip_pair_force_limit_n is not None:
+            scalar(self.grip_pair_force_limit_n,'pair grip force limit',positive=True)
         for key in ('support_pad_radius_m','stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s'):
             scalar(getattr(self,key),key,positive=True)

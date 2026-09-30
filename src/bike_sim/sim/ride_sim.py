@@ -109,6 +109,7 @@ class RideSimulation:
         *,
         physics_config: Optional[SimulationPhysicsConfig] = None,
         mass_specs: Optional[BikeMassSpecs] = None,
+        physical_initial_state=None,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -343,6 +344,11 @@ class RideSimulation:
         self.steps = 0
         self.equilibrium: Dict[str, Any] = {}
         self.physical = None
+        self.physical_initial_state = physical_initial_state
+        if physical_initial_state is not None:
+            from bike_sim.sim.ride.initial_state import PhysicalInitialState
+            if not physical or not isinstance(physical_initial_state, PhysicalInitialState):
+                raise ValueError("physical_initial_state requires a physical t=0 state")
         if physical:
             from bike_sim.sim.ride.physical_runtime import PhysicalRuntime
             self.physical = PhysicalRuntime(self)

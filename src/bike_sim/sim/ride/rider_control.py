@@ -136,6 +136,9 @@ class ArticulatedRiderController:
             if jid < 0 or aid < 0:
                 raise ValueError(f'missing articulated joint/actuator {name}')
             self.joints[name] = (int(model.jnt_qposadr[jid]),int(model.jnt_dofadr[jid]),aid)
+        self.joint_ranges={name:tuple(model.joint(name).range) for name in self.joints
+                           if model.joint(name).limited[0]}
+        self.reset_activation()
         self.pelvis = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'rider_pelvis')
         self.feet = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,f'rider_foot_{s}') for s in ('front','rear')}
         self.soles = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_SITE,f'site_rider_sole_{s}') for s in ('front','rear')}
@@ -223,7 +226,14 @@ class ArticulatedRiderController:
         targets=np.array([hip_q,knee_q,-pitch-hip_q-knee_q])
         current=np.array([data.qpos[self.joints[f'rider_{joint}_{side}'][0]] for joint in ('hip','knee','ankle')])
         # Equivalent +/-2*pi IK representations must not cause torque impulses.
-        return current + np.arctan2(np.sin(targets-current),np.cos(targets-current))
+        result=current + np.arctan2(np.sin(targets-current),np.cos(targets-current))
+        for i,joint in enumerate(('hip','knee','ankle')):
+            name=f'rider_{joint}_{side}'
+            if name in self.joint_ranges:
+                limited=float(np.clip(result[i],*self.joint_ranges[name]))
+                self.saturated_ik[side]=bool(self.saturated_ik[side] or limited!=result[i])
+                result[i]=limited
+        return result
 
     def _upper_targets(self, data, posture=None, *, grip_force_n=None):
         """Bounded joint goals keep the hands reachable as the pelvis moves.
@@ -259,6 +269,10 @@ class ArticulatedRiderController:
         for name,target_q in targets.items():
             current = float(data.qpos[self.joints[name][0]])
             targets[name] = current+atan2(sin(target_q-current),cos(target_q-current))
+            if name in self.joint_ranges:
+                limited=float(np.clip(targets[name],*self.joint_ranges[name]))
+                self.saturated_ik['arms' if name!='rider_torso_hinge' else 'torso'] |= limited!=targets[name]
+                targets[name]=limited
         return targets
 
     def _predict_target_state(self,model,data, *, reverse=False):
@@ -312,10 +326,26 @@ class ArticulatedRiderController:
         mujoco.mj_kinematics(model, target)
         return target
 
+    def reset_activation(self):
+        self.active_state=np.zeros(len(self.joints))
+        self.activation_time_s=None
+        self.effort_diagnostics={}
+
+    def envelope_forces(self, model, data):
+        from bike_sim.physics.rider_envelope import soft_edge_response
+        force=np.zeros(model.nv); energy=0.
+        for name,(lo,hi) in self.joint_ranges.items():
+            qa,va,_=self.joints[name]
+            torque,stored=soft_edge_response(data.qpos[qa],lo,hi,
+                self.config.joint_envelope_soft_k_nm_rad,self.config.joint_envelope_soft_margin_rad)
+            force[va]=float(torque); energy+=float(stored)
+        return force,energy
+
     def initialize(self,model,data):
         """Initial-condition setup only, before static equilibrium, never in step()."""
         import mujoco
         mujoco.mj_forward(model,data)
+        self.reset_activation()
         # Pose the torso first, then solve the arms about that actual shoulder.
         upper = self._upper_targets(data)
         data.qpos[self.joints['rider_torso_hinge'][0]] = upper['rider_torso_hinge']
@@ -332,12 +362,18 @@ class ArticulatedRiderController:
                 data.qpos[qa] = value
         mujoco.mj_forward(model,data)
 
-    def compute(self,model,data,command, *, contact_loads=None, support_available=None):
+    def compute(self,model,data,command, *, contact_loads=None, support_available=None,
+                advance=True, dt_s=None, steady_state=False):
         import mujoco
         if not isinstance(command,RiderCommand):
             raise ValueError('expected a RiderCommand')
         self.command_enabled=command.enabled and self.enabled
         if not self.command_enabled:
+            if advance:
+                self.reset_activation()
+            self.effort_diagnostics={'rider_active_request_nm':{n:0. for n in self.joints},
+                'rider_active_delivered_nm':{n:0. for n in self.joints},
+                'rider_positive_power_w':0.,'rider_passive_power_w':0.,'rider_activation_saturated':False}
             self.last_terms = {name:{'posture_nm':0.,'pedaling_nm':0.,'command_nm':0.,'saturated':False} for name in self.joints}
             return {name:0. for name in self.joints}
         cfg = self.config
@@ -388,8 +424,11 @@ class ArticulatedRiderController:
                 # by measured Fn in feasible_pedal_force; no adhesion is added.
                 raw=stance_force(phase+offset,command.mean_crank_torque_nm,self.crank_length_m)
                 requests[side]=feasible_pedal_force(raw,normal,cfg.support_mu,load)
+        from bike_sim.sim.ride.rider_balance import balance_force_request
+        balance=balance_force_request(self,model,data,posture)
         support_forces,diagnostics=pedaling_support_targets(weight,com,points,data.xpos[self.crank,0],
-            cfg.pedal_support_fraction,cfg.bar_support_fraction,enabled,requests,pitch_moment_nm=pitch_request)
+            cfg.pedal_support_fraction,cfg.bar_support_fraction,enabled,requests,
+            pitch_moment_nm=pitch_request,balance_force_on_rider_n=balance)
         support_targets=diagnostics['requested_vertical_forces_n']
         diagnostics['requested_pitch_moment_nm']=pitch_request
         diagnostics['stance']=stance.copy()
@@ -489,9 +528,11 @@ class ArticulatedRiderController:
                     command_torque=min(max(command_torque,-power_cap),power_cap)
             scale = command_torque/requested_torque if requested_torque != 0 else 0.
             result[name] = command_torque
-            self.last_terms[name] = {'posture_nm':posture*scale, 'pedaling_nm':pedaling*scale,
+            self.last_terms[name] = {'requested_nm':requested_torque, 'posture_nm':posture*scale, 'pedaling_nm':pedaling*scale,
                                     'command_nm':command_torque, 'support_nm':float(support[va])*scale, 'tracking_nm':float(tracking_inertia[va])*scale, 'hip_posture_nm':hip_posture*scale, 'saturated':scale!=1.}
-        return result
+        from bike_sim.sim.ride.rider_effort import finalize_effort
+        return finalize_effort(self,data,result,advance=advance,
+            dt_s=float(model.opt.timestep) if dt_s is None else dt_s,steady_state=steady_state)
 
     def write(self,data,torques):
         if set(torques) != set(self.joints):

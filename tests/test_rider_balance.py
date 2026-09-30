@@ -82,3 +82,23 @@ def test_no_supports_cannot_realize_a_balance_request():
         [False]*4,feet,balance_force_on_rider_n=(100.,0.,100.))
     assert not info['feasible']
     np.testing.assert_array_equal(list(forces.values()),np.zeros((4,3)))
+
+
+def test_compute_routes_balance_through_support_targets(rig, monkeypatch):
+    from bike_sim.sim.ride.rider_control import RiderCommand
+    import bike_sim.sim.ride.rider_balance as balance
+    m, d, c = rig
+    calls = []
+    def request(*args):
+        calls.append(True)
+        return np.array([50., 0., 20.])
+    monkeypatch.setattr(balance, 'balance_force_request', request)
+    before = (d.qpos.copy(), d.qvel.copy(), d.qfrc_applied.copy())
+    torques = c.compute(m, d, RiderCommand(),
+        contact_loads={'saddle':440., 'front':130., 'rear':130., 'grip':100.},
+        support_available={n:True for n in ('saddle','front','rear','grip')})
+    assert calls == [True]
+    assert c.support_diagnostics['requested_balance_force_on_rider_n'] == [50.,0.,20.]
+    assert not any(n.startswith('rider_root_') for n in torques)
+    for current, old in zip((d.qpos,d.qvel,d.qfrc_applied), before):
+        np.testing.assert_array_equal(current, old)

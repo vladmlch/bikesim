@@ -9,7 +9,7 @@ def _vec(value):
     return ' '.join(format(float(x), '.17g') for x in value)
 
 
-def build_articulated_rider(worldbody, pose, masses, *, pedal_lateral_m=.115):
+def build_articulated_rider(worldbody, pose, masses, *, pedal_lateral_m=.115, envelopes=None):
     expected={'pelvis','torso','head','upper_arm_pair','forearm_pair'} | {
         f'{part}_{side}' for side in ('front','rear') for part in ('thigh','shank','foot')}
     if set(masses)!=expected:
@@ -23,7 +23,13 @@ def build_articulated_rider(worldbody, pose, masses, *, pedal_lateral_m=.115):
         body=ET.SubElement(parent,'body',name='rider_'+key,pos=_vec(start-origin))
         centers['rider_'+key]=start
         if joint:
-            ET.SubElement(body,'joint',name=joint,type='hinge',axis='0 1 0',damping='0')
+            attrs={}
+            if envelopes is not None:
+                from bike_sim.physics.rider_envelope import joint_q_range
+                lo,hi=joint_q_range(envelopes[joint])
+                # The parent builder explicitly uses a degree compiler.
+                attrs={'limited':'true','range':_vec(np.degrees([lo,hi]))}
+            ET.SubElement(body,'joint',name=joint,type='hinge',axis='0 1 0',damping='0',**attrs)
         vector=end-start
         add_body_inertial(body,masses[key],vector/2,segment_inertia(masses[key],vector,radius))
         ET.SubElement(body,'geom',name='geom_rider_'+key,type='capsule',

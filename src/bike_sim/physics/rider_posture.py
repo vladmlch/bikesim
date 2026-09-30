@@ -9,7 +9,9 @@ class RiderPosture:
 
     Positive torso/pelvis pitch is forward lean (+Y in the engine).
     An optional (forward, upward) hip offset is measured in the bicycle frame.
-    None retains the original support-following IK. A supplied (0, 0) instead
+    None retains the original support-following IK. Translational balance is
+    a separate nominal support-wrench request; set its gains to zero for a
+    passive experiment. A supplied (0, 0) instead
     requests the nominal hip location. Targets can be unreachable: the bounded
     joint actuators and unilateral contacts, not this object, decide motion.
     use_saddle controls requested support only, not the physical saddle contact.

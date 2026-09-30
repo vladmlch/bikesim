@@ -117,7 +117,8 @@ class RideHUD:
                         f"Fn={sim.contacts.front_load_n:.1f}/{sim.contacts.rear_load_n:.1f}N "
                         f"cadence={drive.get('cadence_rpm',0.):.1f}rpm "
                         f"motor={drive.get('motor_shaft_power_w',0.):.1f}W "
-                        "energy audit: off")
+                        f"model_valid={sim.physical.model_status.as_dict()['model_valid']} "
+                        f"UNVALIDATED planar/experimental; energy audit: off")
             sample=sim.physical.sample
             if sample is None:
                 return f"[PHYSICAL|{sim.physics_config.drive_mode}] initial condition"
@@ -129,7 +130,8 @@ class RideHUD:
                     f"cadence={drive.get('cadence_rpm',0.):.1f}rpm "
                     f"motor={drive.get('motor_shaft_power_w',0.):.1f}W "
                     f"battery={drive.get('battery_energy_j',0.)/3600.:.2f}Wh "
-                    f"energy residual={energy['residual_j']:.5f}J")
+                    f"energy residual={energy['residual_j']:.5f}J "
+                    f"model_valid={channels.get('model_status',{}).get('model_valid','not_evaluated')} UNVALIDATED")
         obstacle = nearest_obstacle(sim.track, sim.position_m)
         obstacle_str = "--" if obstacle is None else f"{obstacle[0]} {obstacle[1]:+.1f}m"
 

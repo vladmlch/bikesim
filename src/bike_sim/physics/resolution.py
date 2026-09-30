@@ -9,12 +9,14 @@ from bike_sim.physics.physical_config import (
     BatteryConfig,ResistanceConfig,ArticulatedConfig,PedalingConfig,ShiftingConfig,
 )
 from bike_sim.physics.tire import TireSpec
+from bike_sim.physics.distributed_tire import DistributedTireConfig, HingeDensity
 from bike_sim.physics.chain import DrivetrainSpecs
 
 CHILDREN={
     SimulationPhysicsConfig:{'end_stops':EndStopConfig,'tires':TireBackendConfig,
                              'drive':PhysicalDriveConfig,'resistance':ResistanceConfig,'articulated':ArticulatedConfig},
-    TireBackendConfig:{'front':TireParameters,'rear':TireParameters},
+    TireBackendConfig:{'front':TireParameters,'rear':TireParameters,'distributed':DistributedTireConfig},
+    DistributedTireConfig:{'density':HingeDensity},
     TireParameters:{'material':TireSpec},
     PhysicalDriveConfig:{'gearing':DrivetrainSpecs,'assist':AssistConfig,'battery':BatteryConfig,
                          'pedaling':PedalingConfig,'shifting':ShiftingConfig},
@@ -63,4 +65,16 @@ def load_physics_config(path=None,overrides=None):
     if path is not None:
         with Path(path).open('rb') as source:
             values=tomllib.load(source)
+    values=resolve_config_paths(values,Path(path).parent) if path is not None else values
     return resolve_physics_config(values,overrides)
+
+
+def resolve_config_paths(values, directory):
+    """Resolve external model data relative to the TOML, never process cwd."""
+    result=copy.deepcopy(values)
+    path=result.get('articulated',{}).get('joint_envelope_path')
+    if path is not None:
+        file=Path(path)
+        if not file.is_absolute():
+            result['articulated']['joint_envelope_path']=str((Path(directory)/file).resolve())
+    return result

@@ -32,12 +32,15 @@ class ExperimentConfig:
     record_decimation: int = 20
     wheelie_persistence_s: float = .02
     maximum_energy_residual_ratio: float = .05
+    stop_on_model_violation: bool = True
 
     def __post_init__(self):
         for name in ('control_period_s', 'duration_s', 'maximum_energy_residual_ratio'):
             scalar(getattr(self, name), name, positive=True)
         for name in ('actuator_delay_s', 'wheelie_persistence_s'):
             scalar(getattr(self, name), name, minimum=0.)
+        if type(self.stop_on_model_violation) is not bool:
+            raise ValueError('stop_on_model_violation must be a bool')
         if type(self.seed) is not int or self.seed < 0:
             raise ValueError('experiment seed must be a nonnegative integer')
         if type(self.record_decimation) is not int or self.record_decimation < 1:
@@ -74,7 +77,7 @@ class ResearchEnvironment:
         cfg = sim.physics_config
         if cfg.physics_mode != 'physical' or cfg.drive_mode not in ('crank_effort', 'articulated_effort'):
             raise ValueError('research requires a physical effort drive, not a speed controller')
-        if cfg.pitch_assist or cfg.tires.backend != 'compliant_2d' or cfg.tires.surface_mode != 'track':
+        if cfg.pitch_assist or cfg.tires.backend not in ('compliant_2d','distributed_2d_reference') or cfg.tires.surface_mode != 'track':
             raise ValueError('research requires no pitch assist and track-material compliant_2d tires')
         self.dt_s = float(sim.model.opt.timestep)
         self.control_steps = _integer_steps(self.config.control_period_s, self.dt_s, 'control period')
@@ -161,6 +164,10 @@ class ResearchEnvironment:
                     self.truncated = True
                     self.reason = 'numerical_quality'
                     break
+                if self.config.stop_on_model_violation and not self.sim.physical.model_status.as_dict()['model_valid']:
+                    self.truncated = True
+                    self.reason = 'model_violation'
+                    break
                 if self.sim.crash is not None:
                     self.terminated = True
                     self.reason = 'crash:'+self.sim.crash.cause
@@ -194,6 +201,7 @@ class ResearchEnvironment:
         path.mkdir(parents=True, exist_ok=True)
         current_metadata = configuration_metadata(self.sim, seed=self.seed)
         research = dict(config=asdict(self.config), sensor_config=asdict(self.sensor_config),
+            model_status=self.sim.physical.model_status.as_dict(),
             numerically_valid=self.numerically_valid, max_energy_residual_ratio=self.max_energy_residual_ratio,
             actual_sensor_seed=self.seed, control_steps=self.control_steps, actuator_delay_steps=self.delay_steps,
             metrics=self.tracker.metrics, terminated=self.terminated, truncated=self.truncated, error=self.error,

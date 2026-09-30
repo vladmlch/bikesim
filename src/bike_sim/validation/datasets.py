@@ -5,11 +5,17 @@ import hashlib
 import json
 import numpy as np
 from bike_sim.physics.checks import scalar
+from bike_sim.validation.experiment_acceptance import is_synthetic, validate_split
 
 RIG_UNITS={
     'tire':{'force':'N','deflection':'m'},
     'damper':{'force':'N','velocity':'m/s','stroke':'m'},
     'motor':{'torque':'N*m','angular_speed':'rad/s','electrical_power':'W'},
+    'axle_loads':{'front_load_n':'N','rear_load_n':'N','slope_rad':'rad'},
+    'rider_pose':{'pelvis_x_m':'m','pelvis_z_m':'m','torso_pitch_rad':'rad','com_x_m':'m','com_z_m':'m'},
+    'suspension_kinematics':{'rear_travel_m':'m','shock_stroke_m':'m'},
+    'full_bike_run':{'time_s':'s','pitch_rad':'rad','pitch_rate_rad_s':'rad/s','speed_mps':'m/s',
+                     'fork_travel_m':'m','shock_stroke_m':'m','motor_torque_nm':'N*m','crank_rad_s':'rad/s'},
 }
 REQUIRED={'dataset_id','source','measured_at','units','bike_config_hash',
           'sensor_uncertainty','conditions','samples','split'}
@@ -60,7 +66,7 @@ def validate_dataset(payload,allow_synthetic=False):
         datetime.fromisoformat(stamp.replace('Z','+00:00')) if 'T' in stamp else date.fromisoformat(stamp)
     except ValueError as exc:
         raise ValueError('measured_at must be an ISO date or datetime') from exc
-    synthetic=payload['source'].strip().lower()=='synthetic'
+    synthetic=is_synthetic(payload)
     if synthetic and not allow_synthetic:
         raise ValueError('synthetic data cannot validate a measured model')
     units=payload['units']
@@ -104,6 +110,8 @@ def validate_dataset(payload,allow_synthetic=False):
         ids.add(_text(row['experiment_id'],'experiment_id'))
         for key in units:
             scalar(row[key],'measurement '+key)
+    if kind in {'axle_loads','rider_pose','suspension_kinematics','full_bike_run'}:
+        _validate_bicycle_metadata(payload,kind)
     if fit|holdout!=ids:
         raise ValueError('every experiment must have exactly one split')
     _canonical(payload)
@@ -162,7 +170,7 @@ def calibration_report(payload,predictions,*,output,parameters,bounds,error_budg
         experiments[eid]={'split':'fit' if eid in data['split']['fit'] else 'holdout',
                           'metrics':metrics,'passed':bool(passed),'sample_count':len(y)}
     passed=all(experiments[eid]['passed'] for eid in data['split']['holdout'])
-    synthetic=data['source'].strip().lower()=='synthetic'
+    synthetic=is_synthetic(data)
     result={'dataset_id':data['dataset_id'],'dataset_hash':dataset_hash(data),'output':output,
             'unit':data['units'][output],'source':data['source'],
             'parameters':copy.deepcopy(parameters),'bounds':copy.deepcopy(bounds),
@@ -173,3 +181,57 @@ def calibration_report(payload,predictions,*,output,parameters,bounds,error_budg
             'calibration_status':'measured_holdout_passed' if passed and not synthetic else 'parameterized_unvalidated'}
     _canonical(result)
     return result
+
+
+def _validate_bicycle_metadata(payload,kind):
+    """No implicit sensors, unit conversions, zero uncertainty or split leakage."""
+    validate_split(payload['split']['fit'],payload['split']['holdout'])
+    required={'rider_config_hash','sensor_calibration','synchronisation_method',
+              'quantity_provenance','experiment_metadata'}
+    if not required<=payload.keys():
+        raise ValueError('missing bicycle/rider measurement metadata')
+    _text(payload['rider_config_hash'],'rider configuration hash')
+    _text(payload['synchronisation_method'],'synchronisation method')
+    units=payload['units']; provenance=payload['quantity_provenance']
+    if not isinstance(provenance,dict) or set(provenance)!=set(units):
+        raise ValueError('quantity provenance required for every channel')
+    calibration=payload['sensor_calibration']
+    if not isinstance(calibration,dict):
+        raise ValueError('sensor calibration must identify measured channels')
+    for channel,entry in provenance.items():
+        if not isinstance(entry,dict) or entry.get('kind') not in ('sensor','estimate'):
+            raise ValueError('channel must be explicitly sensor or estimate')
+        _text(entry.get('method'),'channel method')
+        if entry['kind']=='sensor':
+            _text(calibration.get(channel),'sensor calibration identifier')
+        else:
+            if 'estimate_uncertainty' not in entry:
+                raise ValueError('estimated channels need separate uncertainty')
+            scalar(entry['estimate_uncertainty'],'estimate uncertainty',minimum=0.)
+    experiments=payload['experiment_metadata']
+    ids=set(payload['split']['fit'])|set(payload['split']['holdout'])
+    if not isinstance(experiments,dict) or set(experiments)!=ids:
+        raise ValueError('metadata must cover whole experiments exactly')
+    mandatory={'bike_mass_kg','rider_mass_kg','front_pressure_pa_gauge',
+               'rear_pressure_pa_gauge','temperature_c','front_teeth','rear_teeth',
+               'bike_config_hash','rider_config_hash'}
+    for eid,conditions in experiments.items():
+        if not isinstance(conditions,dict) or not mandatory<=conditions.keys():
+            raise ValueError('incomplete experiment mass/pressure/temperature/gear metadata')
+        for name in ('bike_mass_kg','rider_mass_kg','front_pressure_pa_gauge','rear_pressure_pa_gauge'):
+            value=scalar(conditions[name],name,minimum=0.)
+            if name!='rider_mass_kg' and value==0.:
+                raise ValueError('positive mass and pressure required')
+        if scalar(conditions['temperature_c'],'temperature')<=-273.15:
+            raise ValueError('temperature is below absolute zero')
+        for name in ('front_teeth','rear_teeth'):
+            if type(conditions[name]) is not int or conditions[name]<=0:
+                raise ValueError('gear tooth counts must be positive integers')
+        for name in ('bike_config_hash','rider_config_hash'):
+            _text(conditions[name],name)
+            if conditions[name]!=payload[name]:
+                raise ValueError('mixed configuration hashes require separate datasets')
+        if kind=='full_bike_run':
+            times=[r['time_s'] for r in payload['samples'] if r['experiment_id']==eid]
+            if any(b<=a for a,b in zip(times,times[1:])):
+                raise ValueError('full-bike times must increase within each experiment')

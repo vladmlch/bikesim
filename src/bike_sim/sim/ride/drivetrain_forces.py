@@ -25,7 +25,7 @@ class DrivetrainForceApplier:
         if model.nq != model.nv:
             raise ValueError('physical chain supports scalar planar coordinates only (nq == nv)')
         self.config, self.drive_mode = config, drive_mode
-        self.simplified = config.transmission_model == 'ideal_mid_drive'
+        self.simplified = config.transmission_model in ('ideal_mid_drive','geometric_ideal_mid_drive')
         self.scratch = mujoco.MjData(model)
         self.ids = {name:resolve_id(model, mujoco.mjtObj.mjOBJ_BODY, name)
                     for name in ('frame','crank','rear_wheel')}
@@ -50,8 +50,13 @@ class DrivetrainForceApplier:
             raise ValueError('physical effort needs a mid_drive actuator')
         self.hub = None if self.simplified else Freehub(config.freehub_k_nm_rad, config.freehub_c_nms_rad)
         ratio = config.gearing.front_teeth / config.gearing.rear_teeth
-        self.ideal_hub = (IdealFreehubConstraint(model, ratio)
-                          if self.simplified and drive_mode in ('crank_effort', 'articulated_effort') else None)
+        self.ideal_hub = None
+        if self.simplified and drive_mode in ('crank_effort','articulated_effort'):
+            if config.transmission_model == 'geometric_ideal_mid_drive':
+                from bike_sim.sim.ride.geometric_freehub import GeometricFreehubConstraint
+                self.ideal_hub = GeometricFreehubConstraint(model,config.gearing)
+            else:
+                self.ideal_hub = IdealFreehubConstraint(model,ratio)
         self.pedaling = PedalingPolicy(config.pedaling)
         self.shifting = CadenceShifter(config.gearing, config.shifting)
         self.shift_time_s = None
@@ -198,6 +203,7 @@ class DrivetrainForceApplier:
         if self.ideal_hub is not None:
             torque = float(transmission[self.ideal_hub.wheel_dof])
             self.last.update(freehub_torque_nm=torque, freehub_engaged=torque > 1e-8)
+            self.last.update(getattr(self.ideal_hub,'diagnostics',{}))
         if self.pending_actuation is None:
             return transmission
         requested, omega, dt, enabled = self.pending_actuation
@@ -329,6 +335,8 @@ class DrivetrainForceApplier:
             relative_rate = float(data.qvel[vc]-data.qvel[vw])
             deflection = max(float(data.qpos[qc]-data.qpos[qw])-self.hub.boundary,0.)
         self.last = {
+            'transmission_model':self.config.transmission_model,
+            'omits_suspension_coupling':self.config.transmission_model=='ideal_mid_drive',
             'chain_extension_m':extension, 'chain_extension_rate_mps':0. if self.simplified else extension_rate,
             'chain_tension_n':tension, 'chain_energy_j':chain_energy,
             'chain_dissipation_power_w':max(0.,(tension-self.config.chain_k_n_m*max(extension,0.))*extension_rate),
@@ -336,7 +344,9 @@ class DrivetrainForceApplier:
             'freehub_engaged':False if self.simplified else torque > 0., 'freehub_deflection_rad':0. if self.simplified else deflection,
             'freehub_dissipation_power_w':(0. if self.simplified else
                 max(0.,(torque-self.hub.k*deflection)*relative_rate)),
-            'cadence_rpm':cadence, 'human_torque_nm':human, 'human_sensor_nm':sensor,
+            'cadence_rpm':cadence, 'crank_rad_s':omega, 'human_torque_nm':human, 'human_sensor_nm':sensor,
+            'human_setpoint_nm':control.human_torque_nm,
+            'assist_demand_gated':bool(control.motor_torque_nm is None and assist_sensor<=0.),
             'assist_sensor_nm':assist_sensor, 'human_command_nm':mean_human,
             'rider_mode':pedaling_state.mode, 'coasting_reason':pedaling_state.reason,
             'required_cadence_rpm':pedaling_state.required_cadence_rpm,

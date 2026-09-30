@@ -104,7 +104,7 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
         contact_geom = _find(body, 'geom', 'geom_'+side+'_contact')
         contact_geom.set('priority', '1')
         contact_geom.set('friction', f'{getattr(physics_config.tires, side).mu:.17g} 0.005 0.0001')
-        if physics_config.tires.backend=='compliant_2d':
+        if physics_config.tires.backend in ('compliant_2d','distributed_2d_reference'):
             for geom in body.iter('geom'):
                 geom.set('contype','0'); geom.set('conaffinity','0')
     contact=root.find('contact')
@@ -141,9 +141,34 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
                 solreflimit=f'{physics_config.closure_time_constant_s:.17g} 1')
             ET.SubElement(freehub, 'joint', joint='crank_spin', coef=f'{ratio:.17g}')
             ET.SubElement(freehub, 'joint', joint='rear_wheel_spin', coef='-1')
+        if physics_config.drive.transmission_model == 'geometric_ideal_mid_drive':
+            finalize_geometric_transmission(root,physics_config)
         ET.SubElement(actuators,'motor',name='mid_drive',joint='crank_spin',gear='1',
                       ctrllimited='true',ctrlrange=f'0 {physics_config.drive.assist.max_torque:.17g}')
     if physics_config.drive_mode=='crank_effort':
         # The request is validated in the configuration. No contact torque cap
         # is imposed here; the wheel can spin through a saturated tire force.
         ET.SubElement(actuators,'motor',name='human_crank',joint='crank_spin',gear='1')
+
+
+def finalize_geometric_transmission(root,physics_config):
+    """Run again after adding the independent rider to include its zero rows."""
+    if (physics_config.drive.transmission_model != 'geometric_ideal_mid_drive'
+            or physics_config.drive_mode not in ('crank_effort','articulated_effort')):
+        return
+    tendons=root.find('tendon')
+    if tendons is None:tendons=ET.SubElement(root,'tendon')
+    freehub=tendons.find("fixed[@name='geometric_mid_drive_freehub']")
+    if freehub is None:
+        freehub=ET.SubElement(tendons,'fixed',name='geometric_mid_drive_freehub',limited='true',
+            range='-1e12 0',margin='0',solreflimit=f'{physics_config.closure_time_constant_s:.17g} 1')
+    for child in list(freehub):freehub.remove(child)
+    gearing=physics_config.drive.gearing
+    for joint in root.find('worldbody').iter('joint'):
+        if joint.get('type','hinge') not in ('slide','hinge'):
+            raise ValueError('geometric ideal drive requires scalar planar joints')
+        name=joint.get('name')
+        if not name:raise ValueError('geometric tendon requires named coordinates')
+        coefficient=(gearing.front_radius_m if name=='crank_spin' else
+                     -gearing.rear_radius_m if name=='rear_wheel_spin' else 0.)
+        ET.SubElement(freehub,'joint',joint=name,coef=f'{coefficient:.17g}')

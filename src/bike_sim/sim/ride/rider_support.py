@@ -77,7 +77,7 @@ def gravity_support_targets(weight_n, com_x_m, points_x_m, crank_x_m,
 
 def pedaling_support_targets(weight_n, com_m, points_m, crank_x_m,
                              pedal_fraction, bar_fraction, enabled, pedal_forces,
-                             *, pitch_moment_nm=0.):
+                             *, pitch_moment_nm=0., balance_force_on_rider_n=(0., 0., 0.)):
     """Return forces requested *on the bike*, including the pedaling request.
 
     Pedal reaction is part of supporting rider weight, not an additional upward
@@ -90,20 +90,28 @@ def pedaling_support_targets(weight_n, com_m, points_m, crank_x_m,
     pedal={side:array(pedal_forces[side],side+' pedal force',(3,)) for side in ('front','rear')}
     if any(abs(force[1])>1e-12 for force in pedal.values()):
         raise ValueError('pedaling request must be planar')
+    balance=array(balance_force_on_rider_n,'balance force',(3,))
+    if abs(balance[1])>1e-12:
+        raise ValueError('balance request must be planar')
+    target_force=np.array([balance[0],0.,weight_n+balance[2]])
     extra=np.zeros((4,3))
-    extra[1]=-pedal['front']; extra[2]=-pedal['rear']
+    for index,side in enumerate(('front','rear'),1):
+        if enabled[index]:
+            extra[index]=-pedal[side]
     if enabled[3]:
-        extra[3,0]=-np.sum(extra[:3,0])
+        extra[3,0]=target_force[0]-np.sum(extra[:3,0])
     arms=points-com
     extra_moment=float(np.sum(arms[:,2]*extra[:,0]-arms[:,0]*extra[:,2]))
     loads,diagnostics=gravity_support_targets(weight_n,com[0],points[:,0],crank_x_m,
         pedal_fraction,bar_fraction,enabled,pitch_moment_nm=pitch_moment_nm-extra_moment,
-        vertical_target_n=weight_n-float(np.sum(extra[:,2])))
+        vertical_target_n=target_force[2]-float(np.sum(extra[:,2])))
     reactions=extra.copy()
     reactions[:,2]+=np.array(list(loads.values()))
-    diagnostics.update(requested_vertical_forces_n=loads,
+    error=np.sum(reactions,axis=0)-target_force
+    diagnostics.update(requested_balance_force_on_rider_n=balance.tolist(),
+        horizontal_force_error_n=float(error[0]),requested_vertical_forces_n=loads,
         requested_pitch_moment_nm=float(pitch_moment_nm),
         total_requested_force_on_rider_n=np.sum(reactions,axis=0).tolist(),
         total_requested_pitch_moment_nm=float(np.sum(arms[:,2]*reactions[:,0]-arms[:,0]*reactions[:,2])))
-    diagnostics['feasible']=bool(diagnostics['feasible'] and abs(np.sum(reactions[:,0]))<=1e-8)
+    diagnostics['feasible']=bool(diagnostics['feasible'] and np.max(np.abs(error))<=1e-8)
     return {name:-force for name,force in zip(NAMES,reactions)},diagnostics

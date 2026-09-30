@@ -100,6 +100,26 @@ REGISTRY={
     **{name:partial(road_run,case=name) for name in ('smooth_coast','single_edge','road_worn')},
 }
 
+# Review reference stands are independently executable through the same registry.
+from bike_sim.validation.contact_manifold_rigs import distributed_flat_rig,distributed_step_rig,distributed_incline_rig
+from bike_sim.validation.drive_suspension_rig import drive_suspension_rig
+from bike_sim.validation.load_transfer import load_transfer_rig
+from bike_sim.validation.system_momentum import momentum_rig
+from bike_sim.validation.plant_torque_rig import shaft_ratio_rig
+REGISTRY.update({
+    'distributed_flat_600':partial(distributed_flat_rig,station_count=256,load_n=600.),
+    'distributed_step':partial(distributed_step_rig,station_count=256,terrain_dx_m=.005),
+    'distributed_incline':partial(distributed_incline_rig,station_count=256),
+    'rigid_load_transfer':partial(load_transfer_rig,slope_rad=.1,com_x_m=.5,com_h_m=.9),
+    'whole_system_passive':partial(momentum_rig,active=False),
+    'whole_system_active':partial(momentum_rig,active=True),
+    'motor_only_airborne':partial(momentum_rig,active=True,rider_active=False),
+    'actual_shaft_ratio':shaft_ratio_rig,
+    'actual_freehub_overrun':partial(shaft_ratio_rig,overrun=True),
+    **{f'drive_suspension_{mode}_{int(torque)}':partial(drive_suspension_rig,mode=mode,imposed_torque_nm=torque)
+       for mode in ('ideal_mid_drive','geometric_ideal_mid_drive','elastic_chain') for torque in (0.,20.,40.)},
+})
+
 # Peaks at non-smooth contacts are not used as sole convergence evidence.
 CONVERGENCE={
     'wheel_inertia':{'omega_rad_s':1.},

@@ -28,7 +28,12 @@ def tire_channels(runtime, snapshots, *, qvel=None):
         roll_speed = (sum(float(velocity @ p.tangent) * p.normal_load_n for p in snapshot.patches)
                       / snapshot.normal_load_n if snapshot.normal_load_n > 0 else float(velocity[0]))
         diagnostics = runtime.tire.diagnostics.get(side,{}) if runtime.tire is not None else {}
+        radius=(runtime.tire.radii[side] if runtime.tire is not None else
+                float(model.geom_size[getattr(sim.contact_query,side+'_id'),0]))
         result[side] = dict(diagnostics, backend=snapshot.backend,
+            unloaded_radius_m=radius,
+            supports_multiple_contacts=bool(diagnostics.get('supports_multiple_contacts',False)),
+            outside_material_load_range=bool(diagnostics.get('outside_material_load_range',False)),
             patches=patches, geometric_contact=snapshot.geometric_contact,
             raw_contact=snapshot.road_loaded_contact, normal_load_n=snapshot.normal_load_n,
             world_force_n=snapshot.world_force_n, vertical_force_n=snapshot.vertical_force_n,
@@ -49,6 +54,8 @@ def stored_terms(runtime):
     terms.update(runtime.drive.stored_energy(sim.model,sim.data))
     if runtime.tire is not None:
         terms['tires'] = runtime.tire.stored_energy(sim.model,sim.data)
+    if runtime.rider_control is not None:
+        terms['rider_joint_envelope']=runtime.rider_control.envelope_forces(sim.model,sim.data)[1]
     if runtime.rider_contacts is not None:
         terms['rider_interfaces'] = runtime.rider_contacts.stored_energy(sim.model,sim.data)
     for path in sim.rider_forces._paths:

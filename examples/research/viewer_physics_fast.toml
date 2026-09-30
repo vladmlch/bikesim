@@ -1,3 +1,5 @@
+# PREVIEW ONLY: single-contact tire and no geometric drive/suspension coupling.
+# Always unvalidated; never a reference or safety-control acceptance profile.
 # Fast variant of viewer_physics.toml for interactive inspection.
 # Synthetic preview profile: idealized mid-drive removes high-frequency chain and
 # freehub states; use the strict file for drivetrain and energy studies.

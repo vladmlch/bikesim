@@ -116,7 +116,22 @@ class RiderContactApplier:
                     for _,_,_,_,gap,inside in self._pads(self._model,self._data,name,self.supports[name]):
                         if inside:
                             self.pending_release_loss_j+=.25*self.config.support_k_n_m*max(-gap,0.)**2
+        if name=='grip' and enabled and not self.enabled[name]:
+            if self._data is None or self.grip_anchor_local is None:
+                return False
+            import mujoco
+            model,data=self._model,self._data
+            mujoco.mj_kinematics(model,data); mujoco.mj_comPos(model,data)
+            R=data.xmat[self.steer].reshape(3,3)
+            grip=data.xpos[self.steer]+R@self.grip_anchor_local
+            gap=float(np.linalg.norm(data.site_xpos[self.grip_site]-grip))
+            jac=relative_point_jacobian(model,data,self.forearm,self.steer,grip,self._jac_a,self._jac_b)
+            speed=float(np.linalg.norm(jac@data.qvel))
+            if gap>self.config.grip_capture_distance_m or speed>self.config.grip_capture_speed_mps:
+                return False
+            self.grip_xi_local[:]=0.
         self.enabled[name]=enabled
+        return bool(self.enabled[name])
 
     def release_all(self):
         for name in self.CONTACTS:
@@ -250,11 +265,20 @@ class RiderContactApplier:
                    and hypot(*hand_gap)<=cfg.grip_release_distance_m)
         grip_active=self.enabled['grip'] and reachable
         old=self.grip_xi_local
+        overloaded=False; trial_force_norm=0.
         if grip_active:
             jrel=relative_point_jacobian(model,data,self.forearm,self.steer,grip,self._jac_a,self._jac_b)
             relative=jrel@data.qvel
             new,force_local,grip_energy,grip_loss=_grip_step(old,R.T@relative,cfg.grip_k_n_m,cfg.grip_c_ns_m,dt)
             force=R@force_local
+            trial_force_norm=float(np.linalg.norm(force))
+            if cfg.grip_pair_force_limit_n is not None:
+                from bike_sim.physics.grip_release import release_if_overloaded
+                force,release_loss,overloaded=release_if_overloaded(force,
+                    .5*cfg.grip_k_n_m*float(old@old),cfg.grip_pair_force_limit_n)
+                if overloaded:
+                    new=np.zeros(3); grip_energy=0.; grip_loss=release_loss
+                    grip_active=False; self.enabled['grip']=False
             qfrc+=jrel.T@force
         else:
             new=np.zeros(3); force=np.zeros(3); grip_energy=0.
@@ -263,6 +287,9 @@ class RiderContactApplier:
                 self.enabled['grip']=False
         energy+=grip_energy; loss+=grip_loss
         diagnostics['grip']={'enabled':bool(grip_active),'reachable':bool(reachable),
+                             'overloaded':overloaded,'trial_pair_force_n':trial_force_norm,
+                             'pair_force_limit_n':cfg.grip_pair_force_limit_n,
+                             'release_loss_j':grip_loss if not grip_active else 0.,
                              'shoulder_distance_m':hypot(*shoulder_gap),
                              'arm_reach_m':self.arm_reach,
                              'hand_gap_m':hypot(*hand_gap),

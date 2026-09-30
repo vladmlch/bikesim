@@ -1,0 +1,5 @@
+# Fixed-gear diagnostic road; grade is a ratio, not degrees.
+name = "rider_resume_flat"
+length_m = 30.0
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [30.0, 0.0]] }

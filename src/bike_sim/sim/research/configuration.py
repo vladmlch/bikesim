@@ -28,7 +28,8 @@ def resolve_research_physics(default_config, args):
     for side in ('front', 'rear'):
         data['tires'][side].pop('material')
     with Path(path).open('rb') as stream:
-        resolved = resolve_physics_config(data, tomllib.load(stream))
+        from bike_sim.physics.resolution import resolve_config_paths
+        resolved = resolve_physics_config(data, resolve_config_paths(tomllib.load(stream),Path(path).parent))
     overrides = {}
     for name in getattr(args, '_explicit_physics', ()):
         if name == 'initial_brake_demand':

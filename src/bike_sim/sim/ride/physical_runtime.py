@@ -36,6 +36,9 @@ class PhysicalRuntime:
         self.vertices = compiled_profile_vertices(m,d)
         self.tire = (TireForceApplier(m,self.vertices,self.cfg.tires,sim.track.surface_map)
                      if self.cfg.tires.backend == 'compliant_2d' else None)
+        if self.cfg.tires.backend == 'distributed_2d_reference':
+            from bike_sim.sim.ride.distributed_tire_forces import DistributedTireForceApplier
+            self.tire = DistributedTireForceApplier(m,self.vertices,self.cfg.tires,sim.track.surface_map)
         self.drive = DrivetrainForceApplier(m,self.cfg.drive,self.cfg.drive_mode)
         self.resistance = ExternalResistanceApplier(m,self.cfg.resistance)
         self.brake = StaticBrakeApplier(self.address('front_wheel_spin')[1],
@@ -49,6 +52,8 @@ class PhysicalRuntime:
         self.filters = {s:GroundedFilter(.005) for s in ('front','rear')}
         self.history = WorkHistory()
         self.sample = None
+        from bike_sim.sim.ride.model_status import ModelStatus
+        self.model_status = ModelStatus()
         self.initial_energy_j = None
         self.loss_j = 0.
         self.active_work_j = self.external_work_j = self.solver_work_j = 0.
@@ -190,7 +195,8 @@ class PhysicalRuntime:
             availability['saddle']=bool(enabled.get('saddle',False) and observed.get('saddle',{}).get('in_platform',False))
             availability['grip']=bool(enabled.get('grip',False))
             self.rider_control.write(d,self.rider_control.compute(m,d,command,contact_loads=loads,
-                support_available=availability))
+                support_available=availability,advance=advance,dt_s=dt,steady_state=not active))
+            acc.add('rider_joint_envelope',self.rider_control.envelope_forces(m,d)[0])
         if self.rider_contacts is None:
             sensed = 0.
         elif advance:
@@ -224,7 +230,12 @@ class PhysicalRuntime:
         sim = self.sim
         self.research_accounting_valid=False
         self.preview_real_time_factor=None
-        sim.equilibrium = solve_physical_equilibrium(self)
+        self.initializing=True
+        try:
+            seed = sim.physical_initial_state
+            sim.equilibrium = solve_physical_equilibrium(self) if seed is None else seed.prepare(self)
+        finally:
+            self.initializing=False
         self.generation += 1
         d,m = sim.data,sim.model
         d.time = 0.
@@ -245,6 +256,8 @@ class PhysicalRuntime:
         self.history.reset()
         self.loss_j = self.active_work_j = self.external_work_j = self.solver_work_j = 0.
         self.sample = None
+        from bike_sim.sim.ride.model_status import ModelStatus
+        self.model_status = ModelStatus()
         self.initial_energy_j = None
         sim.last_force_sample = sim.last_force_snapshot = sim.last_constraint_snapshot = None
         sim.force_accumulator.clear()
@@ -266,8 +279,15 @@ class PhysicalRuntime:
         sim.equilibrium.update(static_front_load_n=self.snapshots['front'].normal_load_n,
                                static_rear_load_n=self.snapshots['rear'].normal_load_n,
                                total_vertical_force_n=sum(s.vertical_force_n for s in self.snapshots.values()))
+        if self.rider_control is not None:
+            c=self.rider_control
+            requests=c.effort_diagnostics.get('rider_active_request_nm',{})
+            c.active_state=np.array([requests.get(n,0.) for n in c.joints])
+            c.activation_time_s=None
         self._initial_speed()
         mujoco.mj_forward(m,d)
+        if sim.physical_initial_state is not None:
+            sim.physical_initial_state.restore(self)
         mass,elastic,total=energy_state(self)
         self.initial_energy_j=total
         self.energy_scale_j=max(1.,mass['kinetic_energy_j']+sum(elastic.values()))
@@ -328,7 +348,7 @@ class PhysicalRuntime:
         """Material losses only; road/aero/native-solver work stay signed external."""
         sim=self.sim
         loss=sum(max(0.,-float(forces[name]@velocity))*dt for name in
-                 ('fork_damper','shock_damper','shock_hbo','drive_bearings') if name in forces)
+                 ('fork_damper','shock_damper','shock_hbo','drive_bearings','rider_passive_damping') if name in forces)
         if 'engine_passive' in forces:
             from bike_sim.sim.ride.physical_energy import engine_passive_loss_power
             loss += engine_passive_loss_power(sim.model, sim.last_force_sample.qpos,
@@ -391,8 +411,19 @@ class PhysicalRuntime:
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(m,d)
         transmission = self.drive.settle_actuation(m,d)
+        effort={}
+        if self.rider_control is not None:
+            from bike_sim.sim.ride.rider_effort import solved_effort
+            effort=solved_effort(self.rider_control,d,v,dt)
         sensors = sensor_channels(self, qvel=v)
         components.update(actuator_components(m,d))
+        if self.rider_control is not None:
+            passive=np.zeros(m.nv)
+            for name,(_,dof,aid) in self.rider_control.joints.items():
+                damping=self.rider_control.last_terms[name]['solved_passive_nm']
+                passive[dof]=damping
+                components['act_'+name][dof]-=damping
+            components['rider_passive_damping']=passive
         constraints=constraint_components(m,d)
         if self.drive.ideal_hub is not None:
             constraints['joint_limits'] -= transmission
@@ -417,7 +448,8 @@ class PhysicalRuntime:
         self.solver_work_j+=sum(float(components[n]@v)*dt for n in ('joint_limits','shock_solver_limit','closure','ideal_transmission') if n in components)
         self.electrical_work_j+=self.drive.last.get('electrical_power_w',0.)*dt
         rider={} if self.rider_contacts is None else copy.deepcopy(self.rider_contacts.diagnostics)
-        drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]))
+        drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]),
+                   front_brake_demand=front,rear_brake_demand=rear,rollback_brake_demand=hold)
         # Capture all solved quantities before refreshing the endpoint kinematics.
         equality_rows=d.efc_type[:d.nefc]==mujoco.mjtConstraint.mjCNSTR_EQUALITY
         linkage_error=float(np.max(np.abs(d.efc_pos[:d.nefc][equality_rows]))) if np.any(equality_rows) else 0.
@@ -438,7 +470,9 @@ class PhysicalRuntime:
             front_brake_power_w=float(components['front_static_brake']@v),rear_brake_power_w=float(components['rear_static_brake']@v),
             front_brake_torque_nm=float(components['front_static_brake'][self.address('front_wheel_spin')[1]]),
             rear_brake_torque_nm=float(components['rear_static_brake'][self.address('rear_wheel_spin')[1]]),
-            human_joint_power_w=sum(float(f@v) for n,f in components.items() if n.startswith('act_rider_')))
+            human_active_power_w=sum(float(f@v) for n,f in components.items() if n.startswith('act_rider_')),
+            human_joint_power_w=sum(float(f@v) for n,f in components.items() if n.startswith('act_rider_'))
+                +float(components.get('rider_passive_damping',np.zeros(m.nv))@v))
         suspension={'fork_travel_m':float(q[sim.applier.fork_qposadr]),
             'shock_stroke_m':float(q[sim.applier.shock_qposadr]),
             'fork_velocity_mps':float(v[sim.applier.fork_dofadr]),
@@ -446,7 +480,7 @@ class PhysicalRuntime:
             'shock_solver_limit_power_w':shock_limit_power,'linkage_closure_max_m':linkage_error,
             'generalized_force_components_n':{n:float(f[sim.applier.fork_dofadr if n.startswith('fork') else sim.applier.shock_dofadr])
                 for n,f in components.items() if n.startswith(('fork_','shock_'))}}
-        channels={'tires':tires,'drive':drive,'rider':rider,'suspension':suspension,
+        channels={**effort,'tires':tires,'drive':drive,'rider':rider,'suspension':suspension,
                   'control':asdict(control), 'sensors':sensors,
                   'mass':mass0,'endpoint_mass':mass,'energy':self.energy,
                   'component_work_j':{n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()},
@@ -454,6 +488,8 @@ class PhysicalRuntime:
                   'rider_ik_saturation':{} if self.rider_control is None else self.rider_control.saturated_ik,
                   'rider_support_targets':{} if self.rider_control is None else self.rider_control.support_diagnostics,
                   'contact_crash_cause':contact_crash}
+        self.model_status.observe(sim.steps,t,channels)
+        channels['model_status']=self.model_status.as_dict()
         self.sample=PhysicalSample(sim.steps,t,float(d.time),q,v,components,channels)
         self.history.add(self.sample)
         sim.steps+=1
@@ -469,6 +505,7 @@ class PhysicalRuntime:
         self.research_accounting_valid=False
         model,data=sim.model,sim.data
         time_s=float(data.time)
+        incoming_velocity=data.qvel.copy()
         position_m=sim.position_m
         pitch_rad=sim.pitch_rad
         braking = front > 0. or rear > 0.
@@ -484,7 +521,15 @@ class PhysicalRuntime:
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(model,data)
         self.drive.settle_actuation(model,data)
-        sim.contacts,self.snapshots=self._contacts(final=True,time_s=time_s)
+        if self.rider_control is not None:
+            from bike_sim.sim.ride.rider_effort import solved_effort
+            solved_effort(self.rider_control,data,incoming_velocity,float(model.opt.timestep))
+        sim.contacts,self.snapshots=self._contacts(final=True,time_s=time_s,qvel=incoming_velocity)
+        equality=data.efc_type[:data.nefc]==mujoco.mjtConstraint.mjCNSTR_EQUALITY
+        closure=float(np.max(np.abs(data.efc_pos[:data.nefc][equality]))) if np.any(equality) else 0.
+        preview_channels={'tires':tire_channels(self,self.snapshots,qvel=incoming_velocity),
+                          'suspension':{'linkage_closure_max_m':closure}}
+        self.model_status.observe(sim.steps,time_s,preview_channels)
         mujoco.mj_forward(model,data)
         if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all():
             raise RuntimeError('non-finite physical simulation state')

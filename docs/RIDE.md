@@ -1395,7 +1395,11 @@ surface to the directory name, so a pressure sweep does not overwrite the sphere
 
 The run starts from the solved static equilibrium at *x* = 2 m and ends at the track's
 end, at a crash (pitch > 60° or handlebar contact), at the step cap or at the wall-clock
-cap (`sim/ride/termination.py`). The outcome is printed and stored in the summary.
+cap (`sim/ride/termination.py`). The step cap is sized for a traverse at the slowest
+cruise-band speed; on a track with a sustained positive grade an effort drive
+(`crank_effort`/`articulated_effort`) instead uses the power-limited climb speed the
+configured shaft/human budget can hold against gravity, so a slow-but-moving climb is
+not cut short. The outcome is printed and stored in the summary.
 
 ## Tracks: presets and track files
 

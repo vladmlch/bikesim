@@ -78,6 +78,7 @@ class RunLimits:
         timestep_s: float,
         start_x_m: float,
         max_wall_clock_s: float = DEFAULT_MAX_WALL_CLOCK_S,
+        min_speed_mps: Optional[float] = None,
     ) -> "RunLimits":
         """
         Derives the limits of a traverse of one track.
@@ -91,6 +92,9 @@ class RunLimits:
             timestep_s: Integration timestep of the compiled model, in seconds.
             start_x_m: Track position the run starts from, in metres.
             max_wall_clock_s: Real seconds the run may take.
+            min_speed_mps: Slowest sustained speed the cap is sized for. Defaults to the
+                minimum of the section 6 cruise band; callers with a steep grade should pass
+                the power-limited climb speed instead.
 
         Returns:
             Limits for a traverse from `start_x_m` to the end of `track`.
@@ -108,7 +112,12 @@ class RunLimits:
                 f"'{track.name}' at {track.length_m:.3f} m"
             )
 
-        slowest_mps = MIN_TARGET_SPEED_KMH / KMH_PER_MPS
+        if min_speed_mps is None:
+            slowest_mps = MIN_TARGET_SPEED_KMH / KMH_PER_MPS
+        else:
+            slowest_mps = float(min_speed_mps)
+            if slowest_mps <= 0.0:
+                raise ValueError(f"min_speed_mps must be positive, got {min_speed_mps}")
         steps = STEP_CAP_SAFETY_FACTOR * distance_m / (slowest_mps * timestep_s)
         return cls(
             finish_x_m=float(track.length_m),

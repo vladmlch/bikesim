@@ -36,7 +36,8 @@ from bike_sim.sim.controllers import SuspensionController
 from bike_sim.sim.equilibrium import RELAX_CYCLE_S, solve_static_equilibrium
 from bike_sim.sim.ride.braking import BrakeController
 from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
-from bike_sim.sim.ride.cruise import DEFAULT_TARGET_SPEED_KMH, CruiseController
+from bike_sim.sim.ride.cruise import (
+    DEFAULT_TARGET_SPEED_KMH, KMH_PER_MPS, MIN_TARGET_SPEED_KMH, CruiseController)
 from bike_sim.sim.ride.constraint_forces import (
     ConstraintForceSnapshot,
     shock_joint_limit_qfrc,
@@ -625,11 +626,29 @@ class RideSimulation:
         Returns:
             Limits derived from the track length, the compiled timestep and the start position.
         """
+        min_speed = None
+        profile = self.track.grade_profile
+        if (profile is not None
+                and self.physics_config.drive_mode in ('crank_effort', 'articulated_effort')):
+            grade = max((float(g) for _, g in profile.knots), default=0.)
+            if grade > 0.:
+                # The cruise-band floor assumes a flat traverse. On a sustained
+                # grade the honest floor is the speed the configured shaft
+                # power holds against gravity; a smaller floor only lengthens
+                # the stall budget, never the finish position.
+                drive = self.physics_config.drive
+                human_w = drive.human_torque_nm*drive.pedaling.mash_cadence_rpm*np.pi/30.
+                power = drive.assist.max_power + human_w
+                mass = float(self.model.body_mass.sum())
+                sin_grade = grade/np.sqrt(1.+grade*grade)
+                climb_speed = power/(mass*9.81*sin_grade)
+                min_speed = min(MIN_TARGET_SPEED_KMH/KMH_PER_MPS, climb_speed)
         return RunLimits.for_track(
             self.track,
             timestep_s=float(self.model.opt.timestep),
             start_x_m=self.start_x_m,
             max_wall_clock_s=max_wall_clock_s,
+            min_speed_mps=min_speed,
         )
 
     def run(

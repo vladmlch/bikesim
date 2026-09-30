@@ -626,6 +626,58 @@ def test_run_limits_reject_a_run_that_cannot_move_forward():
         RunLimits.for_track(track, timestep_s=RIDE_TIMESTEP_S, start_x_m=track.length_m)
 
 
+def test_run_limits_accept_a_power_limited_climb_floor():
+    """A slow-but-moving climb below the cruise band gets a longer budget."""
+    track = get_preset("enduro_aggressive")
+    flat = RunLimits.for_track(track, timestep_s=RIDE_TIMESTEP_S, start_x_m=2.0)
+    climb = RunLimits.for_track(
+        track, timestep_s=RIDE_TIMESTEP_S, start_x_m=2.0, min_speed_mps=2.5
+    )
+    expected = STEP_CAP_SAFETY_FACTOR * (track.length_m - 2.0) / (2.5 * RIDE_TIMESTEP_S)
+    assert climb.max_steps == int(expected) > flat.max_steps
+    with pytest.raises(ValueError, match="min_speed_mps"):
+        RunLimits.for_track(track, timestep_s=RIDE_TIMESTEP_S, start_x_m=2.0, min_speed_mps=0.)
+
+
+def test_default_limits_size_the_cap_from_the_climb_power_budget():
+    """On a graded track an effort drive cannot hold 15 km/h, so the cap must not assume it."""
+    from types import SimpleNamespace
+    from bike_sim.physics.model_config import SimulationPhysicsConfig
+    from bike_sim.physics.physical_config import PhysicalDriveConfig
+    from bike_sim.terrain.research import build_research_track
+
+    drive = PhysicalDriveConfig(human_torque_nm=20.)
+    sim = SimpleNamespace(
+        track=build_research_track("rough_uphill"),
+        physics_config=SimulationPhysicsConfig(
+            "physical", drive_mode="crank_effort", drive=drive),
+        model=SimpleNamespace(
+            body_mass=np.array([90., 15.]),
+            opt=SimpleNamespace(timestep=.00125)),
+        start_x_m=2.)
+    limits = RideSimulation.default_limits(sim)
+
+    # 500 W shaft + ~94 W sustained human against 22% on a 105 kg system.
+    grade = .22
+    floor = (drive.assist.max_power
+             + drive.human_torque_nm*drive.pedaling.mash_cadence_rpm*np.pi/30.) \
+        / (105.*9.81*(grade/np.sqrt(1.+grade*grade)))
+    expected = STEP_CAP_SAFETY_FACTOR * 33. / (floor * .00125)
+    assert limits.max_steps == int(expected)
+    cruise = RunLimits.for_track(sim.track, timestep_s=.00125, start_x_m=2.)
+    assert limits.max_steps > cruise.max_steps
+
+    # A flat track keeps the cruise-band floor, and a coast drive adds no power.
+    flat_track = SimpleNamespace(
+        track=get_preset("flat"),
+        physics_config=sim.physics_config,
+        model=sim.model, start_x_m=2.)
+    flat_limits = RideSimulation.default_limits(flat_track)
+    flat_expected = STEP_CAP_SAFETY_FACTOR * (flat_track.track.length_m - 2.) \
+        / (MIN_TARGET_SPEED_KMH / KMH_PER_MPS * .00125)
+    assert flat_limits.max_steps == int(flat_expected)
+
+
 @pytest.mark.parametrize("bad", [{"finish_x_m": 0.0}, {"max_steps": 0}, {"max_wall_clock_s": 0.0}])
 def test_run_limits_reject_a_non_positive_bound(bad: Dict[str, float]):
     """Every bound must be positive; a zero bound would terminate every run immediately."""

@@ -25,3 +25,12 @@ def test_geometric_transmission_selectable():
 def test_chain_spring_overrides_rejected_for_ideal_modes(transmission, flag):
     with pytest.raises(ValueError, match='elastic_chain'):
         make_environment(parser().parse_args(['--scenario', 'flat', '--transmission', transmission, *flag]))
+
+
+def test_default_dt_follows_the_validated_step_per_transmission():
+    from bike_sim.cli.research import resolve_dt
+    p = parser()
+    assert resolve_dt(p.parse_args([])) == .0005                       # ideal_mid_drive (dt sweep)
+    assert resolve_dt(p.parse_args(['--transmission', 'geometric_ideal_mid_drive'])) == .0005
+    assert resolve_dt(p.parse_args(['--transmission', 'elastic_chain'])) == .000125   # chain oscillates at 0.5 ms
+    assert resolve_dt(p.parse_args(['--transmission', 'elastic_chain', '--dt', '0.00025'])) == .00025

@@ -1,0 +1,1627 @@
+{
+  "transmission": "ideal_mid_drive",
+  "passed": false,
+  "scope": "Synthetic planar plant acceptance; not experimental calibration or real-controller certification.",
+  "convergence": [
+    {
+      "case": "wheelie",
+      "fine_dt_s": 0.000125,
+      "coarse_dt_s": 0.00025,
+      "wheelie_time_difference_s": 0.00012499999986659294,
+      "max_gap_difference_m": 0.00020364967112351806,
+      "passed": true
+    },
+    {
+      "case": "wheelie",
+      "fine_dt_s": 0.00025,
+      "coarse_dt_s": 0.0005,
+      "wheelie_time_difference_s": 0.0004999999999999449,
+      "max_gap_difference_m": 0.0003093822567183935,
+      "passed": true
+    },
+    {
+      "case": "limited",
+      "fine_dt_s": 0.000125,
+      "coarse_dt_s": 0.00025,
+      "wheelie_time_difference_s": 0.0,
+      "max_gap_difference_m": 0.0,
+      "passed": true
+    },
+    {
+      "case": "limited",
+      "fine_dt_s": 0.00025,
+      "coarse_dt_s": 0.0005,
+      "wheelie_time_difference_s": 0.0,
+      "max_gap_difference_m": 0.0,
+      "passed": true
+    }
+  ],
+  "cases": [
+    {
+      "case": "wheelie",
+      "timestep_s": 0.000125,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/wheelie_ideal_mid_drive_dt_0.00012500",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "front_lift_observed": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 1.0000000000001257,
+        "wheelie_candidate_time_s": 0.32025000000010695,
+        "wheelie_time_s": 0.3003750000001003,
+        "wheelie_episodes": 1,
+        "front_unloaded_time_s": 0.5441250000001621,
+        "front_lift_time_s": 0.37750000000012607,
+        "flight_time_s": 0.006000000000001893,
+        "max_front_clearance_m": 1.0234539883812728,
+        "max_relative_pitch_rad": 0.9113667028197889,
+        "rear_slip_distance_m": 0.5226756103511361,
+        "min_front_load_n": 0.0,
+        "front_load_fraction_min": 0.0,
+        "max_pitch_rate_up_rad_s": 2.918222774269034,
+        "front_load_fraction_mean": 0.12749924986372146,
+        "wheelie_episode_records": [
+          {
+            "start_s": 0.6086249999999951,
+            "end_s": 0.928750000000102,
+            "confirmed": true,
+            "max_relative_pitch_rad": 0.69502813334942,
+            "max_front_clearance_m": 0.8206729679654193,
+            "min_front_load_n": 0,
+            "onset": {
+              "delivered_motor_nm": 241.50000000002066,
+              "applied_motor_nm": 300.0,
+              "road_pitch_rad": 0.0,
+              "pitch_rate_up_rad_s": 0.6218074870984623,
+              "speed_mps": 3.6237192512891565
+            }
+          }
+        ],
+        "contact_state_time_s": {
+          "two_wheels": 0.45587499999996367,
+          "front_unloaded": 0.0955000000000123,
+          "front_lift": 0.05725000000001912,
+          "wheelie_candidate": 0.32025000000010695,
+          "unsupported": 0.06512500000002175,
+          "flight": 0.006000000000001893
+        }
+      },
+      "max_energy_residual_ratio": 0.00021908312829892144,
+      "energy": {
+        "mechanical_energy_j": 2575.223698606374,
+        "elastic_energy_j": {
+          "fork_air": -0.0,
+          "shock_coil": 0.0,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.013384759409779696,
+          "shock_upper_stop": 0.0,
+          "tires": 0.0
+        },
+        "active_work_j": 2655.3002949926013,
+        "external_work_j": -75.31376563452231,
+        "loss_j": 479.97523697552225,
+        "loss_step_j": 0.009278825691051495,
+        "solver_constraint_work_j": 0.015395851879203337,
+        "energy_scale_j": 40.81386262518032,
+        "residual_j": 0.6071764722524904,
+        "electrical_work_j": 3172.2239034457048,
+        "electrical_residual_j": 6.1086211644578725e-09
+      },
+      "final_truth": {
+        "time_s": 0.9998750000001257,
+        "front_load_n": 0,
+        "rear_load_n": 0,
+        "front_clearance_m": 1.0234539883812728,
+        "rear_clearance_m": 0.010944111328831996,
+        "relative_pitch_rad": 0.9113667028197889,
+        "position_m": 5.23936807741686,
+        "speed_mps": 6.841866593242532,
+        "pitch_up_rad": 0.9216768116500929,
+        "pitch_rate_up_rad_s": 3.0169113879113088,
+        "axle_pitch_rad": 0.9377585886760764,
+        "road_pitch_rad": 0.0,
+        "front_slip_mps": 0.0,
+        "rear_slip_mps": 0.0,
+        "com_x_m": 4.952559070220489,
+        "com_z_m": 0.7767717293882497
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 15.45442045899108
+    },
+    {
+      "case": "limited",
+      "timestep_s": 0.000125,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/limited_ideal_mid_drive_dt_0.00012500",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "front_supported": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 1.0000000000001257,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0023233023041607237,
+        "rear_slip_distance_m": 0.11336268744164926,
+        "min_front_load_n": 319.4178691128345,
+        "front_load_fraction_min": 0.31211049290167797,
+        "max_pitch_rate_up_rad_s": 0.13195920526625235,
+        "front_load_fraction_mean": 0.34151600950150995,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 1.0000000000001257
+        }
+      },
+      "max_energy_residual_ratio": 0.00011335340398718543,
+      "energy": {
+        "mechanical_energy_j": 814.3926879004468,
+        "elastic_energy_j": {
+          "fork_air": 6.742112230867214,
+          "shock_coil": 11.042378432182486,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 3.7293801638893025
+        },
+        "active_work_j": 389.1649303530178,
+        "external_work_j": -24.583837647133922,
+        "loss_j": 24.822440437321823,
+        "loss_step_j": 0.005581345740136659,
+        "solver_constraint_work_j": -0.00011517305080388718,
+        "energy_scale_j": 40.81386262518032,
+        "residual_j": 0.02880588032016007,
+        "electrical_work_j": 458.5844320592314,
+        "electrical_residual_j": 5.324181984178722e-09
+      },
+      "final_truth": {
+        "time_s": 0.9998750000001257,
+        "front_load_n": 334.28538644611916,
+        "rear_load_n": 689.6191863506864,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.0021606629303380018,
+        "position_m": 3.445902070329636,
+        "speed_mps": 2.541112088481124,
+        "pitch_up_rad": 0.005849237241241597,
+        "pitch_rate_up_rad_s": 0.0003854467766033358,
+        "axle_pitch_rad": 0.01797428823410253,
+        "road_pitch_rad": 0.0,
+        "front_slip_mps": 0.004766082765933266,
+        "rear_slip_mps": -0.1510177501107853,
+        "com_x_m": 3.5939722800599707,
+        "com_z_m": 0.43249717467836524
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 15.095312332967296
+    },
+    {
+      "case": "rough",
+      "timestep_s": 0.000125,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/rough_ideal_mid_drive_dt_0.00012500",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "reached_rough_grade": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 1.9999999999995715,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.004840051042468291,
+        "rear_slip_distance_m": 0.025312702309282866,
+        "min_front_load_n": 337.59356887340846,
+        "front_load_fraction_min": 0.3716497118934508,
+        "max_pitch_rate_up_rad_s": 0.3477722288829463,
+        "front_load_fraction_mean": 0.4336049845192714,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 1.9999999999995715
+        }
+      },
+      "max_energy_residual_ratio": 0.0001054135124492399,
+      "energy": {
+        "mechanical_energy_j": 1040.4670372252933,
+        "elastic_energy_j": {
+          "fork_air": 13.641941317599052,
+          "shock_coil": 12.630882316577477,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 2.2209145073857597,
+          "rider_joint_envelope": 0.0,
+          "rider_interfaces": 5.269441540950075
+        },
+        "active_work_j": 45.14242436278247,
+        "external_work_j": -89.3449554444303,
+        "loss_j": 55.08006307280301,
+        "loss_step_j": 0.0005547891414752793,
+        "solver_constraint_work_j": -0.00015323232516257574,
+        "energy_scale_j": 516.0496158969464,
+        "residual_j": 0.058043123550511666,
+        "electrical_work_j": 312.7043500577123,
+        "electrical_residual_j": -5.28083319295547e-08
+      },
+      "final_truth": {
+        "time_s": 1.9998749999995715,
+        "front_load_n": 447.8433277489434,
+        "rear_load_n": 617.7077389766138,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.0041966189412180055,
+        "position_m": 7.074180480873908,
+        "speed_mps": 1.3830403885879219,
+        "pitch_up_rad": 0.16696724796091783,
+        "pitch_rate_up_rad_s": 0.10193353506021485,
+        "axle_pitch_rad": 0.19205281398574076,
+        "road_pitch_rad": 0.17191752827909532,
+        "front_slip_mps": 0.006314138475018883,
+        "rear_slip_mps": 0.0024732359136971143,
+        "com_x_m": 7.050768954944437,
+        "com_z_m": 0.8907439073704412
+      },
+      "max_hip_lift_m": 0.004921247279687679,
+      "contacted_surfaces": [
+        "hardpack"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 61.313755458104424
+    },
+    {
+      "case": "crest",
+      "timestep_s": 0.000125,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/crest_ideal_mid_drive_dt_0.00012500",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "two_wheel_flight": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 1.9999999999995715,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.4109999999999663,
+        "front_lift_time_s": 0.011875000000003966,
+        "flight_time_s": 0.07887499999995629,
+        "max_front_clearance_m": 0.053498290772263146,
+        "max_relative_pitch_rad": 0.05051423188403028,
+        "rear_slip_distance_m": 0.10368315224977247,
+        "min_front_load_n": 0.0,
+        "front_load_fraction_min": 0.0,
+        "max_pitch_rate_up_rad_s": 1.5382954430464777,
+        "front_load_fraction_mean": 0.47176772394411254,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 1.5063749999996499,
+          "rear_unloaded": 0.009999999999995457,
+          "front_unloaded": 0.000500000000000167,
+          "unsupported": 0.31975000000000586,
+          "front_lift": 0.011875000000003966,
+          "flight": 0.07887499999995629,
+          "rear_lift": 0.07262499999995975
+        }
+      },
+      "max_energy_residual_ratio": 3.220828482248076e-05,
+      "energy": {
+        "mechanical_energy_j": 4805.753097208251,
+        "elastic_energy_j": {
+          "fork_air": 44.12654346057066,
+          "shock_coil": 21.87745009789692,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 3.861258253133273
+        },
+        "active_work_j": 0.0,
+        "external_work_j": -811.5808119919877,
+        "loss_j": 237.08986156264785,
+        "loss_step_j": 0.013328825591163534,
+        "solver_constraint_work_j": -0.03131047677945433,
+        "energy_scale_j": 5420.550674444406,
+        "residual_j": 0.09705043003822311,
+        "electrical_work_j": 0.0,
+        "electrical_residual_j": 0.0
+      },
+      "final_truth": {
+        "time_s": 1.9998749999995715,
+        "front_load_n": 620.5216966326641,
+        "rear_load_n": 774.938588835064,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.000936867531639329,
+        "position_m": 20.196549099319608,
+        "speed_mps": 10.371651090274497,
+        "pitch_up_rad": -0.04033566313278966,
+        "pitch_rate_up_rad_s": 0.21575144025823564,
+        "axle_pitch_rad": 0.014918585445040529,
+        "road_pitch_rad": -0.0022443625304953783,
+        "front_slip_mps": 0.01300839155768685,
+        "rear_slip_mps": 0.017915038485933864,
+        "com_x_m": 20.365489986430305,
+        "com_z_m": -0.9369869634828639
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 28.243879417073913
+    },
+    {
+      "case": "low_grip",
+      "timestep_s": 0.000125,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/low_grip_ideal_mid_drive_dt_0.00012500",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "actual_wet_contact": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 1.9999999999995715,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0024331234273070323,
+        "rear_slip_distance_m": 0.21778867664062412,
+        "min_front_load_n": 351.5757128643949,
+        "front_load_fraction_min": 0.3775145982638187,
+        "max_pitch_rate_up_rad_s": 0.18404090156294683,
+        "front_load_fraction_mean": 0.41543215322930577,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 1.9999999999995715
+        }
+      },
+      "max_energy_residual_ratio": 3.482743105294016e-05,
+      "energy": {
+        "mechanical_energy_j": 1705.6972189643157,
+        "elastic_energy_j": {
+          "fork_air": 13.401351772680465,
+          "shock_coil": 11.695976330357926,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 2.5651515971833625
+        },
+        "active_work_j": 965.6682669823865,
+        "external_work_j": -149.7027004335174,
+        "loss_j": 56.826926103152175,
+        "loss_step_j": 0.0037898883288439433,
+        "solver_constraint_work_j": -0.0008711925104587408,
+        "energy_scale_j": 512.7222061882278,
+        "residual_j": 0.04863769626336989,
+        "electrical_work_j": 1010.2347972776353,
+        "electrical_residual_j": 3.3450078262831084e-09
+      },
+      "final_truth": {
+        "time_s": 1.9998749999995715,
+        "front_load_n": 417.8134978899689,
+        "rear_load_n": 637.310866983792,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.001954498811562566,
+        "position_m": 9.423375173308939,
+        "speed_mps": 3.847612802831085,
+        "pitch_up_rad": 0.11424393279285544,
+        "pitch_rate_up_rad_s": 0.04434164586952139,
+        "axle_pitch_rad": 0.14020756487865432,
+        "road_pitch_rad": 0.12232649162137921,
+        "front_slip_mps": 0.0003060439143793537,
+        "rear_slip_mps": -0.11581980954999462,
+        "com_x_m": 9.51830190857043,
+        "com_z_m": 0.8509532824687823
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt",
+        "wet"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 28.338019625050947
+    },
+    {
+      "case": "incline",
+      "timestep_s": 0.000125,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/incline_ideal_mid_drive_dt_0.00012500",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "grade_not_wheelie": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 0.19999999999999182,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.00227812772025493,
+        "rear_slip_distance_m": 0.020634242141080693,
+        "min_front_load_n": 307.0320385743758,
+        "front_load_fraction_min": 0.309121910720683,
+        "max_pitch_rate_up_rad_s": 0.0,
+        "front_load_fraction_mean": 0.47351005069179436,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 0.19999999999999182
+        }
+      },
+      "max_energy_residual_ratio": 0.00022022125703396157,
+      "energy": {
+        "mechanical_energy_j": 1214.2011676073876,
+        "elastic_energy_j": {
+          "fork_air": 9.718336851547527,
+          "shock_coil": 8.880002978282844,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 1.8783064472009103
+        },
+        "active_work_j": 0.0,
+        "external_work_j": -5.010789608404865,
+        "loss_j": 6.666544077495827,
+        "loss_step_j": 0.0016222126195279405,
+        "solver_constraint_work_j": 0.008433845300433753,
+        "energy_scale_j": 235.44612259650506,
+        "residual_j": 0.05264560484209824,
+        "electrical_work_j": 0.0,
+        "electrical_residual_j": 0.0
+      },
+      "final_truth": {
+        "time_s": 0.19987499999999184,
+        "front_load_n": 487.199171800597,
+        "rear_load_n": 513.7234585080947,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.00023728231458103322,
+        "position_m": 2.3275799249296645,
+        "speed_mps": 1.4443404905992496,
+        "pitch_up_rad": 0.23834893339834048,
+        "pitch_rate_up_rad_s": -0.07334273073172085,
+        "axle_pitch_rad": 0.26108347249817954,
+        "road_pitch_rad": 0.2449788315719145,
+        "front_slip_mps": -0.3063045121203965,
+        "rear_slip_mps": -0.09921227742555724,
+        "com_x_m": 2.361023302676039,
+        "com_z_m": 1.0451385404357214
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 9.405268625007011
+    },
+    {
+      "case": "wheelie",
+      "timestep_s": 0.00025,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/wheelie_ideal_mid_drive_dt_0.00025000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "front_lift_observed": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 0.9999999999999176,
+        "wheelie_candidate_time_s": 0.32024999999996473,
+        "wheelie_time_s": 0.3004999999999669,
+        "wheelie_episodes": 1,
+        "front_unloaded_time_s": 0.5442499999999402,
+        "front_lift_time_s": 0.3774999999999584,
+        "flight_time_s": 0.005749999999999367,
+        "max_front_clearance_m": 1.0232503387101493,
+        "max_relative_pitch_rad": 0.911155433174768,
+        "rear_slip_distance_m": 0.5227336488625823,
+        "min_front_load_n": 0.0,
+        "front_load_fraction_min": 0.0,
+        "max_pitch_rate_up_rad_s": 2.916761486991773,
+        "front_load_fraction_mean": 0.12748861967400557,
+        "wheelie_episode_records": [
+          {
+            "start_s": 0.6084999999999607,
+            "end_s": 0.9284999999999255,
+            "confirmed": true,
+            "max_relative_pitch_rad": 0.6944930679774998,
+            "max_front_clearance_m": 0.8201253632556073,
+            "min_front_load_n": 0,
+            "onset": {
+              "delivered_motor_nm": 241.49999999999056,
+              "applied_motor_nm": 300.0,
+              "road_pitch_rad": 0.0,
+              "pitch_rate_up_rad_s": 0.6213551880559078,
+              "speed_mps": 3.622883383235979
+            }
+          }
+        ],
+        "contact_state_time_s": {
+          "two_wheels": 0.4557499999999775,
+          "front_unloaded": 0.09549999999998954,
+          "front_lift": 0.057249999999993695,
+          "wheelie_candidate": 0.32024999999996473,
+          "unsupported": 0.06549999999999279,
+          "flight": 0.005749999999999367
+        }
+      },
+      "max_energy_residual_ratio": 0.0004378801150332821,
+      "energy": {
+        "mechanical_energy_j": 2576.0096077553876,
+        "elastic_energy_j": {
+          "fork_air": -0.0,
+          "shock_coil": 0.0,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.013642287949887475,
+          "shock_upper_stop": 0.0,
+          "tires": 0.0
+        },
+        "active_work_j": 2655.752815238428,
+        "external_work_j": -75.30727890377213,
+        "loss_j": 480.2466355416983,
+        "loss_step_j": 0.01872038133022457,
+        "solver_constraint_work_j": 0.014288662330495297,
+        "energy_scale_j": 40.82376967392106,
+        "residual_j": 1.2137590818678063,
+        "electrical_work_j": 3172.7375041751657,
+        "electrical_residual_j": -1.862645149230957e-09
+      },
+      "final_truth": {
+        "time_s": 0.9997499999999176,
+        "front_load_n": 0,
+        "rear_load_n": 0,
+        "front_clearance_m": 1.0232503387101493,
+        "rear_clearance_m": 0.01090646341265783,
+        "relative_pitch_rad": 0.911155433174768,
+        "position_m": 5.239305619931546,
+        "speed_mps": 6.841716740386529,
+        "pitch_up_rad": 0.9214580702384237,
+        "pitch_rate_up_rad_s": 3.0160175255580657,
+        "axle_pitch_rad": 0.9375394421813484,
+        "road_pitch_rad": 0.0,
+        "front_slip_mps": 0.0,
+        "rear_slip_mps": 0.0,
+        "com_x_m": 4.952585855376269,
+        "com_z_m": 0.7767370845142556
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 9.38880070799496
+    },
+    {
+      "case": "limited",
+      "timestep_s": 0.00025,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/limited_ideal_mid_drive_dt_0.00025000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "front_supported": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 0.9999999999999176,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0023227503312549524,
+        "rear_slip_distance_m": 0.11289666062521854,
+        "min_front_load_n": 319.5610367295083,
+        "front_load_fraction_min": 0.3121735907965829,
+        "max_pitch_rate_up_rad_s": 0.13151460734546447,
+        "front_load_fraction_mean": 0.34151415587169637,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 0.9999999999999176
+        }
+      },
+      "max_energy_residual_ratio": 0.0002811562487744981,
+      "energy": {
+        "mechanical_energy_j": 814.4330968212105,
+        "elastic_energy_j": {
+          "fork_air": 6.742341462481107,
+          "shock_coil": 11.042176292975228,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 3.7295863369015065
+        },
+        "active_work_j": 389.1873505955772,
+        "external_work_j": -24.58474692732731,
+        "loss_j": 24.841441759810177,
+        "loss_step_j": 0.011163649047222321,
+        "solver_constraint_work_j": -0.00015697746991749675,
+        "energy_scale_j": 40.82376967392106,
+        "residual_j": 0.07498703220852931,
+        "electrical_work_j": 458.6113561566218,
+        "electrical_residual_j": 7.008452485024463e-09
+      },
+      "final_truth": {
+        "time_s": 0.9997499999999176,
+        "front_load_n": 334.2845357942114,
+        "rear_load_n": 689.6151626699725,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.002160605176064676,
+        "position_m": 3.4459252849681152,
+        "speed_mps": 2.5409853109874763,
+        "pitch_up_rad": 0.005848235357229926,
+        "pitch_rate_up_rad_s": 0.0003946639538254599,
+        "axle_pitch_rad": 0.017974235627406503,
+        "road_pitch_rad": 0.0,
+        "front_slip_mps": 0.0048362048800325574,
+        "rear_slip_mps": -0.15108951273744733,
+        "com_x_m": 3.593995958807627,
+        "com_z_m": 0.4324969745541827
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 9.450311749940738
+    },
+    {
+      "case": "rough",
+      "timestep_s": 0.00025,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/rough_ideal_mid_drive_dt_0.00025000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "reached_rough_grade": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 2.0000000000002514,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.004847356529367353,
+        "rear_slip_distance_m": 0.024956715556145658,
+        "min_front_load_n": 337.583184972677,
+        "front_load_fraction_min": 0.37166667753025145,
+        "max_pitch_rate_up_rad_s": 0.34757201195238996,
+        "front_load_fraction_mean": 0.43363098119809984,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 2.0000000000002514
+        }
+      },
+      "max_energy_residual_ratio": 0.00016438324369528836,
+      "energy": {
+        "mechanical_energy_j": 1040.3483804077955,
+        "elastic_energy_j": {
+          "fork_air": 13.649683016884246,
+          "shock_coil": 12.646427124346568,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 2.2239891091442945,
+          "rider_joint_envelope": 0.0,
+          "rider_interfaces": 5.302065658527486
+        },
+        "active_work_j": 45.720772839698306,
+        "external_work_j": -89.3420415548562,
+        "loss_j": 55.7842480642094,
+        "loss_step_j": 0.00101682406638162,
+        "solver_constraint_work_j": -0.0004736775530579101,
+        "energy_scale_j": 516.0438658590656,
+        "residual_j": 0.09462634670727965,
+        "electrical_work_j": 312.5420995823411,
+        "electrical_residual_j": -6.363336524373153e-09
+      },
+      "final_truth": {
+        "time_s": 1.9997500000002515,
+        "front_load_n": 448.47762857388693,
+        "rear_load_n": 617.6110355604252,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.004194463907395529,
+        "position_m": 7.073717788244942,
+        "speed_mps": 1.3813602030021674,
+        "pitch_up_rad": 0.16694596974525044,
+        "pitch_rate_up_rad_s": 0.10093782016986277,
+        "axle_pitch_rad": 0.19202845377987562,
+        "road_pitch_rad": 0.17189522016172004,
+        "front_slip_mps": 0.006319626972625863,
+        "rear_slip_mps": 0.0029566537938834282,
+        "com_x_m": 7.0506699933308905,
+        "com_z_m": 0.8905377889266385
+      },
+      "max_hip_lift_m": 0.004919969524855183,
+      "contacted_surfaces": [
+        "hardpack"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 32.919582166010514
+    },
+    {
+      "case": "crest",
+      "timestep_s": 0.00025,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/crest_ideal_mid_drive_dt_0.00025000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "two_wheel_flight": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 2.0000000000002514,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.4110000000000402,
+        "front_lift_time_s": 0.011999999999998678,
+        "flight_time_s": 0.0787500000000263,
+        "max_front_clearance_m": 0.05350922411809789,
+        "max_relative_pitch_rad": 0.05052354121000227,
+        "rear_slip_distance_m": 0.10364877398076974,
+        "min_front_load_n": 0.0,
+        "front_load_fraction_min": 0.0,
+        "max_pitch_rate_up_rad_s": 1.5383375535771244,
+        "front_load_fraction_mean": 0.47176886988200706,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 1.506250000000184,
+          "rear_unloaded": 0.010250000000002868,
+          "unsupported": 0.32000000000001527,
+          "front_unloaded": 0.00024999999999997247,
+          "front_lift": 0.011999999999998678,
+          "flight": 0.0787500000000263,
+          "rear_lift": 0.07250000000002421
+        }
+      },
+      "max_energy_residual_ratio": 6.470181472512909e-05,
+      "energy": {
+        "mechanical_energy_j": 4805.812305758679,
+        "elastic_energy_j": {
+          "fork_air": 44.118892629879255,
+          "shock_coil": 21.875085902656135,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 3.857822665632979
+        },
+        "active_work_j": 0.0,
+        "external_work_j": -811.574645576977,
+        "loss_j": 237.16538079229215,
+        "loss_step_j": 0.026691747639182823,
+        "solver_constraint_work_j": -0.04352676831194553,
+        "energy_scale_j": 5420.561100325561,
+        "residual_j": 0.23202412464823396,
+        "electrical_work_j": 0.0,
+        "electrical_residual_j": 0.0
+      },
+      "final_truth": {
+        "time_s": 1.9997500000002515,
+        "front_load_n": 620.5518733181761,
+        "rear_load_n": 772.2382452377506,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.0009336348263189188,
+        "position_m": 20.19529672408732,
+        "speed_mps": 10.372377728587661,
+        "pitch_up_rad": -0.04036038618544118,
+        "pitch_rate_up_rad_s": 0.2170958208443155,
+        "axle_pitch_rad": 0.01489304375445328,
+        "road_pitch_rad": -0.0022667605185708027,
+        "front_slip_mps": 0.01295669269163291,
+        "rear_slip_mps": 0.017947143415547363,
+        "com_x_m": 20.364249208811557,
+        "com_z_m": -0.9369845518575967
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 15.541206749971025
+    },
+    {
+      "case": "low_grip",
+      "timestep_s": 0.00025,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/low_grip_ideal_mid_drive_dt_0.00025000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "actual_wet_contact": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 2.0000000000002514,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0024328395057409686,
+        "rear_slip_distance_m": 0.21779038710601994,
+        "min_front_load_n": 351.7524131381378,
+        "front_load_fraction_min": 0.3776508471262384,
+        "max_pitch_rate_up_rad_s": 0.1840367728805388,
+        "front_load_fraction_mean": 0.41542955301210005,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 2.0000000000002514
+        }
+      },
+      "max_energy_residual_ratio": 6.161579732747509e-05,
+      "energy": {
+        "mechanical_energy_j": 1705.7538638590684,
+        "elastic_energy_j": {
+          "fork_air": 13.40105537605324,
+          "shock_coil": 11.695578450191633,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 2.565790865055332
+        },
+        "active_work_j": 965.6936332614422,
+        "external_work_j": -149.70591905089046,
+        "loss_j": 56.83810662344737,
+        "loss_step_j": 0.0075807450996133,
+        "solver_constraint_work_j": -0.0010433011416958393,
+        "energy_scale_j": 512.7196293939994,
+        "residual_j": 0.09213273313969239,
+        "electrical_work_j": 1010.2612283203331,
+        "electrical_residual_j": 1.4855459085083567e-09
+      },
+      "final_truth": {
+        "time_s": 1.9997500000002515,
+        "front_load_n": 417.8783683615602,
+        "rear_load_n": 637.4852115354738,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.0019537929181721314,
+        "position_m": 9.42310408940588,
+        "speed_mps": 3.8478460287138962,
+        "pitch_up_rad": 0.11423973692510707,
+        "pitch_rate_up_rad_s": 0.044623617467765345,
+        "axle_pitch_rad": 0.14020262000319508,
+        "road_pitch_rad": 0.12232224207016162,
+        "front_slip_mps": 0.00015686500697783664,
+        "rear_slip_mps": -0.11596945935058929,
+        "com_x_m": 9.518032837628501,
+        "com_z_m": 0.850916449615334
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt",
+        "wet"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 15.5019647909794
+    },
+    {
+      "case": "incline",
+      "timestep_s": 0.00025,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/incline_ideal_mid_drive_dt_0.00025000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "grade_not_wheelie": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 0.20000000000000015,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0022783626480977204,
+        "rear_slip_distance_m": 0.02054979564234053,
+        "min_front_load_n": 307.024289365926,
+        "front_load_fraction_min": 0.3091047017523166,
+        "max_pitch_rate_up_rad_s": 0.0,
+        "front_load_fraction_mean": 0.4734958648000022,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 0.20000000000000015
+        }
+      },
+      "max_energy_residual_ratio": 0.00040437381108611627,
+      "energy": {
+        "mechanical_energy_j": 1214.1916144103734,
+        "elastic_energy_j": {
+          "fork_air": 9.718558829910066,
+          "shock_coil": 8.883651077669416,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 1.8799074268293023
+        },
+        "active_work_j": 0.0,
+        "external_work_j": -5.011164620994916,
+        "loss_j": 6.734846825680308,
+        "loss_step_j": 0.003291949290257308,
+        "solver_constraint_work_j": 0.008334811769896965,
+        "energy_scale_j": 235.45622465893118,
+        "residual_j": 0.09707948466726002,
+        "electrical_work_j": 0.0,
+        "electrical_residual_j": 0.0
+      },
+      "final_truth": {
+        "time_s": 0.19975000000000015,
+        "front_load_n": 487.06789592377334,
+        "rear_load_n": 513.7757768915027,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.00023827311502894188,
+        "position_m": 2.3273626534554612,
+        "speed_mps": 1.4445470646534009,
+        "pitch_up_rad": 0.23836327043398736,
+        "pitch_rate_up_rad_s": -0.07355053380532471,
+        "axle_pitch_rad": 0.2610843921806151,
+        "road_pitch_rad": 0.24497883155500172,
+        "front_slip_mps": -0.3050857178004221,
+        "rear_slip_mps": -0.10061571530761308,
+        "com_x_m": 2.3607991550823626,
+        "com_z_m": 1.0450864629155316
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 6.522247415967286
+    },
+    {
+      "case": "wheelie",
+      "timestep_s": 0.0005,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/wheelie_ideal_mid_drive_dt_0.00050000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "front_lift_observed": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 0.9999999999999453,
+        "wheelie_candidate_time_s": 0.3204999999999647,
+        "wheelie_time_s": 0.30099999999996685,
+        "wheelie_episodes": 1,
+        "front_unloaded_time_s": 0.5444999999999449,
+        "front_lift_time_s": 0.37799999999995837,
+        "flight_time_s": 0.005499999999999394,
+        "max_front_clearance_m": 1.0229409564534309,
+        "max_relative_pitch_rad": 0.9108484567913319,
+        "rear_slip_distance_m": 0.5238860406399054,
+        "min_front_load_n": 0.0,
+        "front_load_fraction_min": 0.0,
+        "max_pitch_rate_up_rad_s": 2.914456811482778,
+        "front_load_fraction_mean": 0.12738479553353188,
+        "wheelie_episode_records": [
+          {
+            "start_s": 0.6084999999999884,
+            "end_s": 0.9284999999999531,
+            "confirmed": true,
+            "max_relative_pitch_rad": 0.6951305988976693,
+            "max_front_clearance_m": 0.8207559751292631,
+            "min_front_load_n": 0,
+            "onset": {
+              "delivered_motor_nm": 241.59999999999482,
+              "applied_motor_nm": 300.0,
+              "road_pitch_rad": 0.0,
+              "pitch_rate_up_rad_s": 0.6219334224527712,
+              "speed_mps": 3.624377087688109
+            }
+          }
+        ],
+        "contact_state_time_s": {
+          "two_wheels": 0.45550000000000035,
+          "front_unloaded": 0.09549999999999437,
+          "front_lift": 0.05749999999999367,
+          "wheelie_candidate": 0.3204999999999647,
+          "unsupported": 0.06549999999999279,
+          "flight": 0.005499999999999394
+        }
+      },
+      "max_energy_residual_ratio": 0.0008773278572374524,
+      "energy": {
+        "mechanical_energy_j": 2577.7804062796017,
+        "elastic_energy_j": {
+          "fork_air": -0.0,
+          "shock_coil": 0.0,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.01447984157012004,
+          "shock_upper_stop": 0.0,
+          "tires": 0.0
+        },
+        "active_work_j": 2656.8193010638456,
+        "external_work_j": -75.28986924170002,
+        "loss_j": 480.77861043899225,
+        "loss_step_j": 0.03822289853961948,
+        "solver_constraint_work_j": 0.012128904776759675,
+        "energy_scale_j": 40.82424352771115,
+        "residual_j": 2.4327823712465033,
+        "electrical_work_j": 3173.9110819199186,
+        "electrical_residual_j": 3.7189238355495036e-09
+      },
+      "final_truth": {
+        "time_s": 0.9994999999999453,
+        "front_load_n": 0,
+        "rear_load_n": 0,
+        "front_clearance_m": 1.0229409564534309,
+        "rear_clearance_m": 0.0108391188772749,
+        "relative_pitch_rad": 0.9108484567913319,
+        "position_m": 5.239035952799524,
+        "speed_mps": 6.841265780321607,
+        "pitch_up_rad": 0.9211340533560413,
+        "pitch_rate_up_rad_s": 3.0147561355353827,
+        "axle_pitch_rad": 0.9372210521337937,
+        "road_pitch_rad": 0.0,
+        "front_slip_mps": 0.0,
+        "rear_slip_mps": 0.0,
+        "com_x_m": 4.952448697087359,
+        "com_z_m": 0.7766779077731564
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 6.3646627919515595
+    },
+    {
+      "case": "limited",
+      "timestep_s": 0.0005,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/limited_ideal_mid_drive_dt_0.00050000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "front_supported": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 0.9999999999999453,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0023236042899087116,
+        "rear_slip_distance_m": 0.11318138185131801,
+        "min_front_load_n": 319.30338713954785,
+        "front_load_fraction_min": 0.31197455033044524,
+        "max_pitch_rate_up_rad_s": 0.13152799236405857,
+        "front_load_fraction_mean": 0.3414927376668222,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 0.9999999999999453
+        }
+      },
+      "max_energy_residual_ratio": 0.0007393598799459083,
+      "energy": {
+        "mechanical_energy_j": 814.5157844500833,
+        "elastic_energy_j": {
+          "fork_air": 6.742480017458636,
+          "shock_coil": 11.041959239575046,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 3.729906337806245
+        },
+        "active_work_j": 389.2143503040727,
+        "external_work_j": -24.585321302718967,
+        "loss_j": 24.87889769120192,
+        "loss_step_j": 0.022329326086631282,
+        "solver_constraint_work_j": -0.0001912036406671167,
+        "energy_scale_j": 40.82424352771115,
+        "residual_j": 0.16885061472975593,
+        "electrical_work_j": 458.6473709858975,
+        "electrical_residual_j": -1.8837909010471776e-10
+      },
+      "final_truth": {
+        "time_s": 0.9994999999999453,
+        "front_load_n": 334.2791912835359,
+        "rear_load_n": 689.6150392679231,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.002160574714235867,
+        "position_m": 3.4458135967588865,
+        "speed_mps": 2.5407396504751785,
+        "pitch_up_rad": 0.005847423452220316,
+        "pitch_rate_up_rad_s": 0.00041171685608735933,
+        "axle_pitch_rad": 0.017974209224200784,
+        "road_pitch_rad": 0.0,
+        "front_slip_mps": 0.004932972674989156,
+        "rear_slip_mps": -0.1511154965072871,
+        "com_x_m": 3.5938846470518238,
+        "com_z_m": 0.4324968388708607
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 5.4863852499984205
+    },
+    {
+      "case": "rough",
+      "timestep_s": 0.0005,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/rough_ideal_mid_drive_dt_0.00050000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "reached_rough_grade": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 1.9999999999998352,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0048557675158064926,
+        "rear_slip_distance_m": 0.025400422221931673,
+        "min_front_load_n": 337.5230328008909,
+        "front_load_fraction_min": 0.3714577539327797,
+        "max_pitch_rate_up_rad_s": 0.3478264237337716,
+        "front_load_fraction_mean": 0.4336772107707505,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 1.9999999999998352
+        }
+      },
+      "max_energy_residual_ratio": 0.00035424393032253246,
+      "energy": {
+        "mechanical_energy_j": 1040.1430322032204,
+        "elastic_energy_j": {
+          "fork_air": 13.68019562839083,
+          "shock_coil": 12.65312336031025,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 2.2308951337409586,
+          "rider_joint_envelope": 0.0,
+          "rider_interfaces": 5.345680633405876
+        },
+        "active_work_j": 47.97181135214268,
+        "external_work_j": -89.34069661871023,
+        "loss_j": 58.29484659139393,
+        "loss_step_j": 0.001719051061071964,
+        "solver_constraint_work_j": -0.0010527745406895522,
+        "energy_scale_j": 516.0306324741337,
+        "residual_j": 0.21048291643501926,
+        "electrical_work_j": 312.41025557610453,
+        "electrical_residual_j": 6.432969712477643e-09
+      },
+      "final_truth": {
+        "time_s": 1.9994999999998353,
+        "front_load_n": 450.5462935644852,
+        "rear_load_n": 617.3392165320596,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.004180037690157651,
+        "position_m": 7.0729038879630926,
+        "speed_mps": 1.3786532374260387,
+        "pitch_up_rad": 0.16683686251840707,
+        "pitch_rate_up_rad_s": 0.0974407001308119,
+        "axle_pitch_rad": 0.19197489074670135,
+        "road_pitch_rad": 0.17185571056003165,
+        "front_slip_mps": 0.006625794602503918,
+        "rear_slip_mps": 0.001749020918216361,
+        "com_x_m": 7.05055001516867,
+        "com_z_m": 0.8901750142163024
+      },
+      "max_hip_lift_m": 0.004918159434936342,
+      "contacted_surfaces": [
+        "hardpack"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 18.309106250060722
+    },
+    {
+      "case": "crest",
+      "timestep_s": 0.0005,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/crest_ideal_mid_drive_dt_0.00050000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "two_wheel_flight": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 1.9999999999998352,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.41099999999995485,
+        "front_lift_time_s": 0.011999999999998678,
+        "flight_time_s": 0.0789999999999913,
+        "max_front_clearance_m": 0.053496082020168645,
+        "max_relative_pitch_rad": 0.05050757665169703,
+        "rear_slip_distance_m": 0.1036217797196928,
+        "min_front_load_n": 0.0,
+        "front_load_fraction_min": 0.0,
+        "max_pitch_rate_up_rad_s": 1.5379621713062457,
+        "front_load_fraction_mean": 0.4718757987533333,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 1.5064999999998894,
+          "rear_unloaded": 0.009999999999998899,
+          "unsupported": 0.31999999999996487,
+          "front_lift": 0.011999999999998678,
+          "flight": 0.0789999999999913,
+          "rear_lift": 0.07249999999999202
+        }
+      },
+      "max_energy_residual_ratio": 0.00013133372331118295,
+      "energy": {
+        "mechanical_energy_j": 4805.851651400629,
+        "elastic_energy_j": {
+          "fork_air": 44.10677420846703,
+          "shock_coil": 21.872084372509857,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 3.851946026542465
+        },
+        "active_work_j": 0.0,
+        "external_work_j": -811.5478422624632,
+        "loss_j": 237.38400406204906,
+        "loss_step_j": 0.05342140054867114,
+        "solver_constraint_work_j": -0.06774980404304427,
+        "energy_scale_j": 5420.556153197683,
+        "residual_j": 0.45795015553224516,
+        "electrical_work_j": 0.0,
+        "electrical_residual_j": 0.0
+      },
+      "final_truth": {
+        "time_s": 1.9994999999998353,
+        "front_load_n": 620.5910128170252,
+        "rear_load_n": 774.5384503104474,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.000928147294726865,
+        "position_m": 20.19254406318936,
+        "speed_mps": 10.373860796910408,
+        "pitch_up_rad": -0.04041485108405792,
+        "pitch_rate_up_rad_s": 0.2200166880715865,
+        "axle_pitch_rad": 0.014838367095300481,
+        "road_pitch_rad": -0.002316151459106559,
+        "front_slip_mps": 0.012848227392069589,
+        "rear_slip_mps": 0.018034262564664862,
+        "com_x_m": 20.36152207532221,
+        "com_z_m": -0.936980145318522
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 8.839943749946542
+    },
+    {
+      "case": "low_grip",
+      "timestep_s": 0.0005,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/low_grip_ideal_mid_drive_dt_0.00050000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "actual_wet_contact": true,
+        "duration_reached": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 1.9999999999998352,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0024324096173727605,
+        "rear_slip_distance_m": 0.21767080144706796,
+        "min_front_load_n": 352.0828020053685,
+        "front_load_fraction_min": 0.3772451887774856,
+        "max_pitch_rate_up_rad_s": 0.18403013775441893,
+        "front_load_fraction_mean": 0.4154303368283939,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 1.9999999999998352
+        }
+      },
+      "max_energy_residual_ratio": 0.00013393536975655853,
+      "energy": {
+        "mechanical_energy_j": 1705.8788281024706,
+        "elastic_energy_j": {
+          "fork_air": 13.400487096253718,
+          "shock_coil": 11.694437584768739,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 2.567032501571001
+        },
+        "active_work_j": 965.7531129548311,
+        "external_work_j": -149.713794356564,
+        "loss_j": 56.857893788977655,
+        "loss_step_j": 0.015165565885571509,
+        "solver_constraint_work_j": -0.0014364870456405675,
+        "energy_scale_j": 512.7320721904459,
+        "residual_j": 0.1939902934142239,
+        "electrical_work_j": 1010.3224792148928,
+        "electrical_residual_j": -6.064055924070999e-10
+      },
+      "final_truth": {
+        "time_s": 1.9994999999998353,
+        "front_load_n": 417.9854965735654,
+        "rear_load_n": 637.9893324402879,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.001952599612265904,
+        "position_m": 9.42263974630956,
+        "speed_mps": 3.8483242772950828,
+        "pitch_up_rad": 0.11423217733922801,
+        "pitch_rate_up_rad_s": 0.0451976736931516,
+        "axle_pitch_rad": 0.14019416683431124,
+        "road_pitch_rad": 0.12231496046159797,
+        "front_slip_mps": -0.00011531250357736309,
+        "rear_slip_mps": -0.11618422332705625,
+        "com_x_m": 9.517572112065887,
+        "com_z_m": 0.8508527614866719
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt",
+        "wet"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 8.831980624934658
+    },
+    {
+      "case": "incline",
+      "timestep_s": 0.0005,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/incline_ideal_mid_drive_dt_0.00050000",
+      "passed": true,
+      "checks": {
+        "numerical_energy_gate": true,
+        "duration_or_expected_crash": true,
+        "grade_not_wheelie": true
+      },
+      "outcome": "duration",
+      "metrics": {
+        "duration_s": 0.20000000000000015,
+        "wheelie_candidate_time_s": 0.0,
+        "wheelie_time_s": 0.0,
+        "wheelie_episodes": 0,
+        "front_unloaded_time_s": 0.0,
+        "front_lift_time_s": 0.0,
+        "flight_time_s": 0.0,
+        "max_front_clearance_m": 0.0,
+        "max_relative_pitch_rad": 0.0022786251451275548,
+        "rear_slip_distance_m": 0.020465217134527043,
+        "min_front_load_n": 307.00132359256537,
+        "front_load_fraction_min": 0.3090805569105184,
+        "max_pitch_rate_up_rad_s": 0.0,
+        "front_load_fraction_mean": 0.4734741545709201,
+        "wheelie_episode_records": [],
+        "contact_state_time_s": {
+          "two_wheels": 0.20000000000000015
+        }
+      },
+      "max_energy_residual_ratio": 0.0007740057339590156,
+      "energy": {
+        "mechanical_energy_j": 1214.169996327811,
+        "elastic_energy_j": {
+          "fork_air": 9.722620524776692,
+          "shock_coil": 8.891255198377296,
+          "shock_bumper": 0.0,
+          "shock_top_out": 0.0,
+          "shock_upper_stop": 0.0,
+          "tires": 1.883115547909505
+        },
+        "active_work_j": 0.0,
+        "external_work_j": -5.012245940793535,
+        "loss_j": 6.852330239639754,
+        "loss_step_j": 0.006755210982710918,
+        "solver_constraint_work_j": 0.008109975884642453,
+        "energy_scale_j": 235.46350992689284,
+        "residual_j": 0.1858805295788093,
+        "electrical_work_j": 0.0,
+        "electrical_residual_j": 0.0
+      },
+      "final_truth": {
+        "time_s": 0.19950000000000015,
+        "front_load_n": 486.7892692801883,
+        "rear_load_n": 513.8892672925313,
+        "front_clearance_m": 0.0,
+        "rear_clearance_m": 0.0,
+        "relative_pitch_rad": 0.00024031430863930003,
+        "position_m": 2.326923521134411,
+        "speed_mps": 1.4450348111252034,
+        "pitch_up_rad": 0.23838456134164207,
+        "pitch_rate_up_rad_s": -0.07384541146040059,
+        "axle_pitch_rad": 0.261086350244522,
+        "road_pitch_rad": 0.24497883153523242,
+        "front_slip_mps": -0.30210415419346637,
+        "rear_slip_mps": -0.10168677980239803,
+        "com_x_m": 2.360349693233388,
+        "com_z_m": 1.0449770280121091
+      },
+      "max_hip_lift_m": 0.0,
+      "contacted_surfaces": [
+        "asphalt"
+      ],
+      "source_sha256": "e48bfc04df501681246d65947b9212d7cafae6b808f6bc46d15e306fb102e1e4",
+      "wall_time_s": 5.023091124952771
+    },
+    {
+      "case": "wheelie",
+      "timestep_s": 0.001,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/wheelie_ideal_mid_drive_dt_0.00100000",
+      "passed": false,
+      "error": "ValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/tools/validate_antiwheelie.py\", line 60, in run_case\n    env = make_environment(args)\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/cli/research.py\", line 120, in make_environment\n    cfg = SimulationPhysicsConfig('physical',\n        drive_mode='articulated_effort' if args.rider == 'articulated_planar' else 'crank_effort',\n    ...<5 lines>...\n        equilibrium_refine_after_s=3. if args.rider == 'articulated_planar' else .1,\n        equilibrium_refine_period_s=3. if args.rider == 'articulated_planar' else .5)\n  File \"<string>\", line 19, in __init__\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/physics/model_config.py\", line 74, in __post_init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness\n",
+      "wall_time_s": 0.0022344589233398438
+    },
+    {
+      "case": "limited",
+      "timestep_s": 0.001,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/limited_ideal_mid_drive_dt_0.00100000",
+      "passed": false,
+      "error": "ValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/tools/validate_antiwheelie.py\", line 60, in run_case\n    env = make_environment(args)\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/cli/research.py\", line 120, in make_environment\n    cfg = SimulationPhysicsConfig('physical',\n        drive_mode='articulated_effort' if args.rider == 'articulated_planar' else 'crank_effort',\n    ...<5 lines>...\n        equilibrium_refine_after_s=3. if args.rider == 'articulated_planar' else .1,\n        equilibrium_refine_period_s=3. if args.rider == 'articulated_planar' else .5)\n  File \"<string>\", line 19, in __init__\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/physics/model_config.py\", line 74, in __post_init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness\n",
+      "wall_time_s": 0.0008151250658556819
+    },
+    {
+      "case": "rough",
+      "timestep_s": 0.001,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/rough_ideal_mid_drive_dt_0.00100000",
+      "passed": false,
+      "error": "ValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/tools/validate_antiwheelie.py\", line 60, in run_case\n    env = make_environment(args)\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/cli/research.py\", line 120, in make_environment\n    cfg = SimulationPhysicsConfig('physical',\n        drive_mode='articulated_effort' if args.rider == 'articulated_planar' else 'crank_effort',\n    ...<5 lines>...\n        equilibrium_refine_after_s=3. if args.rider == 'articulated_planar' else .1,\n        equilibrium_refine_period_s=3. if args.rider == 'articulated_planar' else .5)\n  File \"<string>\", line 19, in __init__\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/physics/model_config.py\", line 74, in __post_init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness\n",
+      "wall_time_s": 0.001062333001755178
+    },
+    {
+      "case": "crest",
+      "timestep_s": 0.001,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/crest_ideal_mid_drive_dt_0.00100000",
+      "passed": false,
+      "error": "ValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/tools/validate_antiwheelie.py\", line 60, in run_case\n    env = make_environment(args)\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/cli/research.py\", line 120, in make_environment\n    cfg = SimulationPhysicsConfig('physical',\n        drive_mode='articulated_effort' if args.rider == 'articulated_planar' else 'crank_effort',\n    ...<5 lines>...\n        equilibrium_refine_after_s=3. if args.rider == 'articulated_planar' else .1,\n        equilibrium_refine_period_s=3. if args.rider == 'articulated_planar' else .5)\n  File \"<string>\", line 19, in __init__\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/physics/model_config.py\", line 74, in __post_init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness\n",
+      "wall_time_s": 0.0012178750475868583
+    },
+    {
+      "case": "low_grip",
+      "timestep_s": 0.001,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/low_grip_ideal_mid_drive_dt_0.00100000",
+      "passed": false,
+      "error": "ValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/tools/validate_antiwheelie.py\", line 60, in run_case\n    env = make_environment(args)\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/cli/research.py\", line 120, in make_environment\n    cfg = SimulationPhysicsConfig('physical',\n        drive_mode='articulated_effort' if args.rider == 'articulated_planar' else 'crank_effort',\n    ...<5 lines>...\n        equilibrium_refine_after_s=3. if args.rider == 'articulated_planar' else .1,\n        equilibrium_refine_period_s=3. if args.rider == 'articulated_planar' else .5)\n  File \"<string>\", line 19, in __init__\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/physics/model_config.py\", line 74, in __post_init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness\n",
+      "wall_time_s": 0.000739875016734004
+    },
+    {
+      "case": "incline",
+      "timestep_s": 0.001,
+      "seed": 17,
+      "transmission": "ideal_mid_drive",
+      "output": "verification/dt_sweep_ideal/incline_ideal_mid_drive_dt_0.00100000",
+      "passed": false,
+      "error": "ValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/tools/validate_antiwheelie.py\", line 60, in run_case\n    env = make_environment(args)\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/cli/research.py\", line 120, in make_environment\n    cfg = SimulationPhysicsConfig('physical',\n        drive_mode='articulated_effort' if args.rider == 'articulated_planar' else 'crank_effort',\n    ...<5 lines>...\n        equilibrium_refine_after_s=3. if args.rider == 'articulated_planar' else .1,\n        equilibrium_refine_period_s=3. if args.rider == 'articulated_planar' else .5)\n  File \"<string>\", line 19, in __init__\n  File \"/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/src/bike_sim/physics/model_config.py\", line 74, in __post_init__\n    raise ValueError(\n    ...<2 lines>...\n    )\nValueError: closure_time_constant_s=0.001 must be at least 2*timestep_s=0.002; otherwise MuJoCo silently changes closure stiffness\n",
+      "wall_time_s": 0.0009169579716399312
+    }
+  ]
+}

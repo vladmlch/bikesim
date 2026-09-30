@@ -14,7 +14,7 @@ def test_cli_uses_appropriate_initial_refinement_and_fine_dynamics(monkeypatch, 
     config = captured['physics_config']
     assert config.equilibrium_refine_after_s == first
     assert config.equilibrium_refine_period_s == period
-    assert config.timestep_s == .000125
+    assert config.timestep_s == .0005  # ideal_mid_drive default; elastic_chain keeps .000125
     assert config.pitch_assist is False
     assert config.tires.surface_mode == 'track'
     assert result[1].control_period_s == .01

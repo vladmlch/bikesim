@@ -6,6 +6,6 @@ seeds = [1, 2]                      # sensor/rider seeds (terrain is fixed by th
 demand_nm = [60.0, 80.0]
 policy = ["passthrough", "fixed_limit_40"]
 transmission = "ideal_mid_drive"
-dt = 0.000125                       # raise once the dt sweep validates a coarser step
+dt = 0.0005                         # validated ideal-mode step (verification/dt_sweep_ideal)
 duration = 15.0
 extra_args = ["--rider-random", "--record-decimation", "160"]

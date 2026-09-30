@@ -38,7 +38,9 @@ def parser():
     p.add_argument('--rider-seed', type=int, default=None, help='default: --seed')
     p.add_argument('--posture', choices=('neutral', 'forward', 'crouched', 'standing'), default='neutral')
     p.add_argument('--duration', type=float, default=3., help='simulation seconds (10-30 s episodes are supported; see --record-decimation)')
-    p.add_argument('--dt', type=float, default=.000125, help='physics timestep, seconds')
+    p.add_argument('--dt', type=float, default=None,
+        help='physics timestep, seconds (default: 0.0005 for the ideal transmissions, validated by '
+             'tools/validate_antiwheelie.py; 0.000125 for elastic_chain, whose low gears oscillate at 0.5 ms)')
     p.add_argument('--control-period', type=float, default=.01, help='seconds, integer multiple of --dt')
     p.add_argument('--actuator-delay', type=float, default=.005, help='seconds, integer multiple of --dt')
     p.add_argument('--sensor-delay', type=float, default=.01, help='seconds')
@@ -82,6 +84,19 @@ def build_track(args):
     return build_research_track(args.scenario, seed=args.seed)
 
 
+# Largest step where every tools/validate_antiwheelie.py case passes with energy ratio < 0.05
+# (verification/dt_sweep_ideal). 0.001 is refused by SimulationPhysicsConfig's
+# closure_time_constant_s >= 2*dt guard, so it is not a candidate without a model change.
+IDEAL_DT_S = .0005
+CHAIN_DT_S = .000125
+
+
+def resolve_dt(args):
+    if args.dt is not None:
+        return args.dt
+    return CHAIN_DT_S if args.transmission == 'elastic_chain' else IDEAL_DT_S
+
+
 def build_rider(args):
     """(RiderSpecs, RiderProgram|None). A sampled rider brings a program that owns posture and effort."""
     if args.rider_random:
@@ -119,7 +134,7 @@ def make_environment(args):
         **drive_kwargs)
     cfg = SimulationPhysicsConfig('physical',
         drive_mode='articulated_effort' if args.rider == 'articulated_planar' else 'crank_effort',
-        timestep_s=args.dt, initial_speed_mps=args.initial_speed, tires=tires, drive=drive,
+        timestep_s=resolve_dt(args), initial_speed_mps=args.initial_speed, tires=tires, drive=drive,
         initial_front_brake=args.initial_brake_demand, initial_rear_brake=args.initial_brake_demand,
         # Let unilateral rider supports settle before an expensive static solve.
         # Frequent early refinement helps the lumped plant but wastes solves on

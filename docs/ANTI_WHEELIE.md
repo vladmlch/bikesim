@@ -108,8 +108,9 @@ recorder, command queue, metrics and sensor RNG. Same configuration, command
 sequence, seed and numerical environment reproduce the episode; equality across
 different engine/BLAS versions is not promised.
 
-Defaults are physics `dt=0.000125 s` (8 kHz), control period `0.01 s` (100 Hz),
-actuator transport delay `0.005 s`, sensor delay `0.01 s`. Control period, actuator
+Defaults are physics `dt=0.0005 s` (2 kHz) for the ideal transmissions and
+`0.000125 s` (8 kHz) for `--transmission elastic_chain` (see below), control
+period `0.01 s` (100 Hz), actuator transport delay `0.005 s`, sensor delay `0.01 s`. Control period, actuator
 delay and duration must be integer multiples of the physics timestep. Commands
 are sample-held and queued by physics-step index, avoiding floating-point event
 drift. A final partial control interval stops exactly at the physics-step budget.
@@ -239,8 +240,9 @@ Metrics are integrated every physics interval independently of CSV decimation.
 Do not judge the model by a plausible-looking chassis trajectory alone. The
 34/51 low gear exposed an explicit chain/freehub oscillation at 0.5 ms. Cassette
 speed and inferred dissipative loss became very large even while the bicycle
-appeared to ride normally. The research default is therefore 0.125 ms; legacy
-mode retains its old timestep. Static equilibrium refinement starts at 0.1 s for a lumped rider and at 3 s
+appeared to ride normally. That is why `elastic_chain` keeps 0.125 ms; the ideal
+transmissions have no chain spring and use a validated 0.5 ms (see "Transmission
+modes"). Legacy mode retains its old timestep. Static equilibrium refinement starts at 0.1 s for a lumped rider and at 3 s
 for an articulated rider, whose unilateral supports must first settle. The
 **same actual acceleration-residual acceptance test** remains in force; no
 riding force or mass is changed to speed initialization.
@@ -281,6 +283,145 @@ The delivered archive's `verification/antiwheelie*` directories contain actual
 run data and acceptance results; `verification/DELIVERY_VERIFICATION.json`
 summarizes executed checks.
 
+## Refocused plant: rough-terrain front-load margin
+
+The plant is refocused on one question: how does a mid-drive e-bike with an
+articulated rider keep its front wheel loaded while climbing rough, procedurally
+generated terrain under a torque request? The deliverable is infrastructure and a
+Python policy hook, `policy(observation, demand_nm) -> RideControl`
+(`examples/research/controller_loop.py`). The anti-wheelie algorithm is the
+user's; the demo policies in `bike_sim.sim.research.policies` are plumbing, not
+solutions. The plant stays planar (X-Z): no roll, yaw, steering or hub motor.
+
+### Transmission modes
+
+`--transmission` selects how crank torque reaches the rear wheel:
+
+| Value | Role |
+| --- | --- |
+| `ideal_mid_drive` (default) | One-way tendon constraint, no chain/freehub spring. Cheap; omits chain-growth/suspension coupling (`omits_suspension_coupling`). Validated at `dt = 0.0005 s`. |
+| `geometric_ideal_mid_drive` | **Experimental** (`transmission_reference_status: experimental_geometric_reduction`): the same tendon linearized from the chain geometry. |
+| `elastic_chain` | Frozen reference model for A/B comparison; default `dt = 0.000125 s`. `--chain-stiffness`/`--freehub-stiffness` apply only here and raise `ValueError` otherwise. |
+
+`--dt` defaults to `0.0005` (ideal modes) or `0.000125` (`elastic_chain`).
+`tools/validate_antiwheelie.py --transmission ideal_mid_drive --dt ...` passes all of
+`wheelie limited rough crest low_grip incline` at 0.125, 0.25 and 0.5 ms with a
+maximum energy residual ratio of 0.0009 (`verification/dt_sweep_ideal/report.json`).
+1 ms is not a candidate: `SimulationPhysicsConfig` refuses it
+(`closure_time_constant_s` must be at least `2*dt`). The `reject_coarse` acceptance
+case (0.5 ms must be rejected) was written against the chain's instability and was
+not re-run for the ideal modes; do not read it as evidence for them.
+
+**A/B parity is not fully met.** `tools/compare_transmissions.py` runs identical
+episodes (seed 17, 5 s, 3 m/s, 80 N*m) on `elastic_chain` and each candidate and
+checks wheelie onset (50 ms), minimum front load (15 %), peak shock stroke (10 %)
+and mean speed (5 %):
+
+| Scenario | `ideal_mid_drive` @ 0.5 ms | Note |
+| --- | --- | --- |
+| `flat`, `step_up` | pass | `step_up` ends in `model_violation` for both |
+| `uphill`, `rough_uphill` | **fail**: minimum front load 24-31 % lower, front-load fraction 22-25 % lower (tolerance 15 %) | shock stroke and speed agree (<= 1.1 %) |
+| `crest` | not comparable | the chain reference itself ends in `model_violation` |
+
+The climb deviation is the same at 0.125, 0.25 and 0.5 ms (31/31/30 % on
+`uphill`), so it comes from the missing chain/suspension coupling, not the
+timestep. The ideal plant has *less* front-load margin on climbs than the chain
+reference, i.e. it errs toward earlier front unloading. `geometric_ideal_mid_drive`
+does worse (energy gate at 0.5 ms; even at 0.125 ms the rider falls on `uphill`),
+so it is not a replacement. Reports are in `verification/ab_transmission*/`.
+Whether to ship `ideal_mid_drive` or `elastic_chain` as the research default is
+the owner's call; `--transmission elastic_chain` restores the reference.
+
+### Margin metrics, episodes and `episode_metrics.json`
+
+`WheelieTracker` reports, besides the existing counters, a continuous margin
+`front_load_fraction_min` / `front_load_fraction_mean` (front normal load over
+total, counted only while the rear wheel carries load; 0 means unloaded),
+`max_pitch_rate_up_rad_s`, and `wheelie_episode_records`: one record per candidate
+bout `{start_s, end_s, confirmed, max_relative_pitch_rad, max_front_clearance_m,
+min_front_load_n, onset}`. `onset` holds the state when the bout began
+(`delivered_motor_nm`, `applied_motor_nm`, `road_pitch_rad`, `pitch_rate_up_rad_s`,
+`speed_mps`), so a lift can be attributed to torque, grade or terrain. Terrain
+micro-lifts are acceptable; only `crash:loop_out` is a failure outcome.
+
+Every run also writes `episode_metrics.json`: `outcome`, `duration_s`,
+`progress_m`, `mean_speed_mps`, `finish_time_s`, `torque_delivered_nms` and
+`torque_requested_nms` (integrals of the solved and commanded motor torque),
+`motor_pass_fraction` (their ratio; `null` when the policy never commanded a
+torque), `loop_out`, `endo`, `max_shock_stroke_m`, `max_fork_travel_m` (peaks at
+physics rate), `numerically_valid`, `max_energy_residual_ratio`, `model_status`
+(`model_valid`, `first_model_violation`, counts) and the full `wheelie` block.
+These are privileged evaluation outputs, like `truth_*`.
+
+### Generated terrain and the eval set
+
+`--scenario generated [--gen-spec spec.toml] --seed N` draws a seeded track from
+`TerrainGenSpec` (defaults in `examples/research/gen_spec.toml`): 60-120 m,
+uphill grade 0-25 % with an optional stretch up to 30 %, roughness sections,
+bumps and root sections of 2-10 cm, wet/loose friction zones, and a flat obstacle-free
+lead-in (4 m) and lead-out (5 m). `(spec, seed)` fully determines the track, and
+the spec hash is stored in the track description. `--track-file` still wins over
+`--scenario`.
+
+Vertical faces (`SquareEdge`, `Drop`) are opt-in (`feature_types`), and bump
+lengths are floored so the crest radius stays above the wheel: sharper geometry
+makes the tyre touch two places and the run ends in `model_violation`
+(`front:multi_support`). A smoke run of the first eval set ended 4 of 10 tracks that way
+before the ranges were narrowed; the committed set then ran 15 s with no
+`model_violation` (7 reached `duration`, 3 ended `crash:rider_ground_contact`
+under the non-solution `passthrough` policy).
+
+```bash
+PYTHONPATH=src uv run python tools/generate_eval_set.py \
+  --gen-spec examples/research/gen_spec.toml --n 10 --seed0 1000 --out examples/research/eval
+```
+
+`examples/research/eval/` holds the committed set (`eval_00..09.toml`, loadable
+with `--track-file`) and `manifest.json` (seeds, spec hash, date). Regenerating
+refuses to overwrite a non-empty directory, because a policy is compared across
+revisions on the same tracks. `examples/research/long_climb.toml` is a 118 m
+track for 10-30 s episodes; use `--record-decimation 80` or more for long runs.
+
+### Demand channel, rider and sensors
+
+* **Demand.** `--demand NM` or `--demand-file demand.toml` (`[[keyframes]]` with
+  `time_s`, `torque_nm`, quintic smoothstep between knots) gives the policy the
+  torque "the bike wants" as `env.demand_nm` (`None` without a program). It is an
+  advisory command echo, not a sensor and not enforced: metrics compare what was
+  delivered with what the policy actually requested. The CLI's own loop passes the
+  demand through as the motor setpoint. `ResearchStep.demand_nm` and the
+  `trace.csv` column `demand_nm` hold the value the policy saw for that command.
+* **Random rider.** `--rider-random [--rider-seed N]` samples mass (60-100 kg),
+  height (1.60-1.85 m, inside the frame's seatpost window), torso lean, pelvis
+  pitch and pedalling effort once per episode (`rider_random.py`). The rider
+  program then owns posture and human effort, so the policy must leave
+  `posture` and `human_torque_nm` as `None`. The program is saved in
+  `summary.json` (`research.rider_program`).
+* **Reactive-rider hook.** `ResearchEnvironment(..., rider_behavior=...)` calls
+  `act(time_s, RiderSignals) -> RiderPosture | None` once per control step when the
+  policy does not set a posture. `RiderSignals` carries pitch rate, proper
+  acceleration and saddle/bar/pedal loads only. It is an interface: there is no
+  reflex or balance model, and it is exclusive with a rider program.
+* **No-IMU variant.** `SensorConfig(imu_enabled=False)` reports exact zeros for
+  proper acceleration and pitch rate (not noise) and keeps the encoder and torque
+  noise streams unchanged for a given seed. There is no CLI flag yet.
+
+### Batch evaluation
+
+```bash
+PYTHONPATH=src uv run python tools/research_batch.py \
+  --spec examples/research/batch_demo.toml --jobs 4 --out output/batch_demo
+```
+
+A `[grid]` of tracks and/or scenarios, seeds, `demand_nm` (or `demand_files`),
+`policy` (`passthrough`, `zero`, `fixed_limit_40`; a list makes it an axis),
+`transmission`, `dt`, `duration` and verbatim `extra_args` is expanded into runs.
+Each run gets its own directory with the usual artifacts;
+`batch_report.json`/`.csv` aggregate `episode_metrics`. `outcome_counts` counts
+`model_violation` and `numerical_quality` separately from `crash:*`, `finish` and
+`duration`, so out-of-scope runs are not read as policy failures. A failing run is
+an `error` record and the exit code is 1.
+
 ## Saved evidence and outcomes
 
 Each run saves `summary.json`, requested/applied command streams, timestamped
@@ -293,7 +434,14 @@ Physical interval files explicitly use incoming-state timing.
 
 `duration` is a normal time-budget truncation; `finish` is a course completion;
 crash outcomes are actual terminated episodes; `numerical_quality` is invalid
-dynamics. The command-line tool returns nonzero for crash/invalid/error outcomes.
+dynamics. `crash:loop_out` (backward, nose-up past the pitch limit) and
+`crash:endo` (forward) replace the old `crash:pitch_over`; other crash causes
+(`handlebar_contact`, `rider_ground_contact`, `catch_plane_contact`) are
+unchanged. `model_violation` and `numerical_quality` are *truncations*, not
+crashes: the run left the model's declared scope (or its energy gate), so it
+says nothing about the bike. `ExperimentConfig.stop_on_model_violation`
+(default on) enables the former; never switch it off to make a run "work".
+The command-line tool returns nonzero for crash/invalid/error outcomes.
 A validation *case* may intentionally expect wheelie or numerical rejection; its
 acceptance result documents that expectation rather than calling the ride safe.
 

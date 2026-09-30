@@ -14,6 +14,8 @@ acceptance runs. The supplied offline bundle keeps all original local wheels and
 adds no runtime dependencies. This is a **synthetic planar plant**, not measured
 real-bicycle safety validation.
 
+Rough-terrain front-load margin work (transmission modes, generated terrain and eval set, demand channel, batch runner) is described in [the refocus section](docs/ANTI_WHEELIE.md#refocused-plant-rough-terrain-front-load-margin).
+
 The [0.3.0 completion guide](docs/RESEARCH_COMPLETION.md) covers nonlinear tire
 curves, independent rider programs and sensor clocks, model-validity rejection,
 physical TOML/road refinement, checked `bike-replay`, and offline installation.

@@ -19,6 +19,11 @@
           "reference_outcome": "duration",
           "candidate_outcome": "duration",
           "checks": {
+            "comparable": {
+              "reference": "duration",
+              "candidate": "duration",
+              "passed": true
+            },
             "onset_s": {
               "reference": null,
               "candidate": null,
@@ -71,6 +76,11 @@
           "reference_outcome": "duration",
           "candidate_outcome": "crash:rider_ground_contact",
           "checks": {
+            "comparable": {
+              "reference": "duration",
+              "candidate": "crash:rider_ground_contact",
+              "passed": true
+            },
             "onset_s": {
               "reference": null,
               "candidate": null,

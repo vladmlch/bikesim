@@ -18,8 +18,15 @@ TRANSMISSIONS = ('elastic_chain', 'ideal_mid_drive', 'geometric_ideal_mid_drive'
 CASES = ('wheelie', 'limited', 'rough', 'standing', 'low_grip', 'crest', 'incline', 'reject_coarse')
 
 
+def case_transmission(name, requested):
+    """reject_coarse checks that the chain's 0.5 ms instability is caught; the ideal modes have
+    no chain spring, so the case is only meaningful on elastic_chain."""
+    return 'elastic_chain' if name == 'reject_coarse' else requested
+
+
 def run_case(payload):
     name, dt, root, seed, overwrite, transmission = payload
+    transmission = case_transmission(name, transmission)
     from bike_sim.cli.research import parser, make_environment, posture_at
     from bike_sim.sim.ride.control import RideControl
     from bike_sim.sim.ride.physical_samples import plain

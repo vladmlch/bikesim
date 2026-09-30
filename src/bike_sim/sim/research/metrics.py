@@ -8,7 +8,7 @@ This is an evaluation surface, not an observation: it reads simulator truth
 def episode_metrics(env):
     m = env.tracker.metrics
     duration = env.sim.time_s
-    progress = float(env.sim.position_m)
+    progress = float(env.sim.position_m)-env.start_position_m  # distance travelled, not absolute x
     requested = env.torque_requested_nms
     return {
         'outcome': env.reason, 'duration_s': duration, 'progress_m': progress,

@@ -13,6 +13,7 @@ import json
 import sys
 
 REFERENCE = 'elastic_chain'
+CHAIN_DT_S = .000125  # matches cli.research: the chain's low gears oscillate at 0.5 ms
 CANDIDATES = ('ideal_mid_drive', 'geometric_ideal_mid_drive')
 ONSET_TOLERANCE_S = .05
 MIN_LOAD_RELATIVE = .15
@@ -42,8 +43,20 @@ def _relative(reference, candidate, tolerance):
                 tolerance=tolerance, passed=passed)
 
 
+TRUNCATIONS = ('model_violation', 'numerical_quality')
+
+
+def _usable(metrics):
+    return (metrics['outcome'] not in TRUNCATIONS and metrics['numerically_valid']
+            and metrics['model_status']['model_valid'])
+
+
 def compare_metrics(reference, candidate):
-    """Diff two episode_metrics records; returns per-check deltas and a verdict."""
+    """Diff two episode_metrics records; returns per-check deltas and a verdict.
+
+    A run that left the model's scope or failed the energy gate says nothing about
+    the bike, so a pair with such a run is never a pass: 'comparable' fails.
+    """
     ref_onset, cand_onset = _first_onset(reference), _first_onset(candidate)
     onset = dict(reference=ref_onset, candidate=cand_onset, tolerance=ONSET_TOLERANCE_S)
     if ref_onset is None or cand_onset is None:
@@ -52,6 +65,8 @@ def compare_metrics(reference, candidate):
         onset.update(delta=abs(cand_onset-ref_onset), passed=abs(cand_onset-ref_onset) <= ONSET_TOLERANCE_S+1e-12)
     rw, cw = reference['wheelie'], candidate['wheelie']
     checks = {
+        'comparable': dict(reference=reference['outcome'], candidate=candidate['outcome'],
+                           passed=_usable(reference) and _usable(candidate)),
         'onset_s': onset,
         'front_load_fraction_min': _relative(rw['front_load_fraction_min'], cw['front_load_fraction_min'], MIN_LOAD_RELATIVE),
         'min_front_load_n': _relative(rw['min_front_load_n'], cw['min_front_load_n'], MIN_LOAD_RELATIVE),
@@ -74,26 +89,33 @@ def run_one(scenario, seed, transmission, dt, out, *, duration=5., initial_speed
     return json.loads((Path(out)/'episode_metrics.json').read_text())
 
 
+def _run(args, scenario, transmission, dt):
+    out = args.out/f'{scenario}_{transmission}'
+    if args.reuse and (out/'episode_metrics.json').is_file():
+        return json.loads((out/'episode_metrics.json').read_text())
+    return run_one(scenario, args.seed, transmission, dt, out, duration=args.duration)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--scenarios', nargs='+', default=['flat', 'uphill', 'rough_uphill', 'crest', 'step_up'])
     p.add_argument('--candidates', nargs='+', choices=CANDIDATES, default=list(CANDIDATES))
     p.add_argument('--dt', type=float, required=True, help='validated physics timestep for the candidates')
-    p.add_argument('--reference-dt', type=float, default=None,
-                   help='reference timestep (default: --dt); the chain may need a finer step')
+    p.add_argument('--reference-dt', type=float, default=CHAIN_DT_S,
+                   help='reference timestep; the chain oscillates at 0.5 ms in low gears, so keep it fine')
+    p.add_argument('--reuse', action='store_true',
+                   help='reuse episode_metrics.json found in an existing run directory instead of re-simulating')
     p.add_argument('--seed', type=int, default=17)
     p.add_argument('--duration', type=float, default=5.)
     p.add_argument('--out', type=Path, default=Path('verification/ab_transmission'))
     args = p.parse_args(argv)
     args.out.mkdir(parents=True, exist_ok=True)
-    reference_dt = args.dt if args.reference_dt is None else args.reference_dt
+    reference_dt = args.reference_dt
     records = {c: [] for c in args.candidates}
     for scenario in args.scenarios:
-        ref = run_one(scenario, args.seed, REFERENCE, reference_dt, args.out/f'{scenario}_{REFERENCE}',
-                      duration=args.duration)
+        ref = _run(args, scenario, REFERENCE, reference_dt)
         for candidate in args.candidates:
-            cand = run_one(scenario, args.seed, candidate, args.dt, args.out/f'{scenario}_{candidate}',
-                           duration=args.duration)
+            cand = _run(args, scenario, candidate, args.dt)
             verdict = compare_metrics(ref, cand)
             records[candidate].append(dict(scenario=scenario, seed=args.seed, reference_outcome=ref['outcome'],
                                            candidate_outcome=cand['outcome'], **verdict))

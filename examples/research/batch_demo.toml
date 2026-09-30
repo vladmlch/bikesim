@@ -2,7 +2,7 @@
 #   uv run python tools/research_batch.py --spec examples/research/batch_demo.toml --jobs 4 --out output/batch_demo
 [grid]
 tracks = ["examples/research/eval/eval_00.toml", "examples/research/eval/eval_01.toml"]
-seeds = [1, 2]                      # sensor/rider seeds (terrain is fixed by the track file)
+seeds = [1, 2]                      # rider-random seeds (terrain is fixed by the track file; ideal sensors ignore the seed)
 demand_nm = [60.0, 80.0]
 policy = ["passthrough", "fixed_limit_40"]
 transmission = "ideal_mid_drive"

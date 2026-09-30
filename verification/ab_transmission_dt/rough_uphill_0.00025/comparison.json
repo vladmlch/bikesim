@@ -19,6 +19,11 @@
           "reference_outcome": "duration",
           "candidate_outcome": "duration",
           "checks": {
+            "comparable": {
+              "reference": "duration",
+              "candidate": "duration",
+              "passed": true
+            },
             "onset_s": {
               "reference": null,
               "candidate": null,
@@ -71,6 +76,11 @@
           "reference_outcome": "duration",
           "candidate_outcome": "numerical_quality",
           "checks": {
+            "comparable": {
+              "reference": "duration",
+              "candidate": "numerical_quality",
+              "passed": false
+            },
             "onset_s": {
               "reference": null,
               "candidate": null,

@@ -13,6 +13,7 @@ Batch TOML:
     dt = 0.0005
     duration = 15.0
     extra_args = ["--rider-random"]   # appended verbatim to the bike-research argv
+    ideal_sensors = true              # default; false adds sensor noise and latency (seed-dependent)
 
 A failed run is a record with outcome 'error', never a crash of the batch; the
 exit code is 1 if any run errored. outcome_counts keeps the model_violation and
@@ -31,7 +32,7 @@ import tomllib
 import traceback
 
 GRID_KEYS = {'tracks', 'scenarios', 'seeds', 'demand_nm', 'demand_files', 'policy', 'transmission',
-             'dt', 'duration', 'extra_args'}
+             'dt', 'duration', 'extra_args', 'ideal_sensors'}
 CSV_COLUMNS = ('run_id', 'track', 'scenario', 'seed', 'demand_nm', 'demand_file', 'policy', 'outcome',
                'duration_s', 'progress_m', 'mean_speed_mps', 'motor_pass_fraction', 'loop_out', 'endo',
                'wheelie_time_s', 'wheelie_episodes', 'front_load_fraction_min', 'max_energy_residual_ratio',
@@ -62,6 +63,9 @@ def expand_grid(grid, policies=None):
     for name in policy_names:
         if name not in known:
             raise ValueError(f'unknown policy {name!r}; choose from {sorted(known)}')
+    ideal = grid.get('ideal_sensors', True)
+    if type(ideal) is not bool:
+        raise ValueError('grid.ideal_sensors must be true or false')
     runs = []
     for (track, scenario), seed, (demand, demand_file), policy in itertools.product(
             sources, seeds, demands, policy_names):
@@ -71,7 +75,7 @@ def expand_grid(grid, policies=None):
                                 f'{hashlib.sha256(key.encode()).hexdigest()[:6]}',
                          track=track, scenario=scenario, seed=seed, demand_nm=demand, demand_file=demand_file,
                          policy=policy, transmission=grid.get('transmission'), dt=grid.get('dt'),
-                         duration=grid.get('duration'), extra_args=list(grid.get('extra_args', []))))
+                         duration=grid.get('duration'), ideal_sensors=ideal, extra_args=list(grid.get('extra_args', []))))
     return runs
 
 
@@ -81,7 +85,9 @@ def _policies():
 
 
 def _argv(run, out):
-    argv = ['--seed', str(run['seed']), '--out', str(out), '--ideal-sensors']
+    argv = ['--seed', str(run['seed']), '--out', str(out)]
+    if run['ideal_sensors']:
+        argv.append('--ideal-sensors')
     argv += ['--track-file', run['track']] if run['track'] else ['--scenario', run['scenario']]
     if run['demand_nm'] is not None:
         argv += ['--demand', str(run['demand_nm'])]

@@ -147,6 +147,7 @@ class ResearchEnvironment:
         self.max_energy_residual_ratio = 0.
         # N*m*s per control interval: delivered is the solved drive torque,
         # requested is the applied policy command (None = pedelec assist, no request).
+        self.start_position_m = float(self.sim.position_m)
         self.torque_delivered_nms = 0.
         self.torque_requested_nms = 0.
         # Peak |travel| at physics rate; the decimated recorder can miss the peak.

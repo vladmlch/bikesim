@@ -71,3 +71,13 @@ def test_failed_run_becomes_a_record_and_nonzero_exit(tmp_path):
     report = json.loads((out/'batch_report.json').read_text())
     assert report['runs'][0]['outcome'] == 'error' and 'exist' in report['runs'][0]['error']
     assert report['outcome_counts'] == {'error': 1}
+
+
+def test_sensors_are_ideal_by_default_and_can_be_made_noisy():
+    from tools.research_batch import _argv
+    base = dict(scenarios=['flat'], seeds=[3])
+    ideal = _argv(expand_grid(base)[0], 'out')
+    noisy = _argv(expand_grid(dict(base, ideal_sensors=False))[0], 'out')
+    assert '--ideal-sensors' in ideal and '--ideal-sensors' not in noisy
+    with pytest.raises(ValueError, match='ideal_sensors'):
+        expand_grid(dict(base, ideal_sensors='yes'))

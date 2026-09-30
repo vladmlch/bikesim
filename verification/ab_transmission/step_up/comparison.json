@@ -11,7 +11,7 @@
   },
   "candidates": {
     "ideal_mid_drive": {
-      "passed": true,
+      "passed": false,
       "scenarios": [
         {
           "scenario": "step_up",
@@ -19,6 +19,11 @@
           "reference_outcome": "model_violation",
           "candidate_outcome": "model_violation",
           "checks": {
+            "comparable": {
+              "reference": "model_violation",
+              "candidate": "model_violation",
+              "passed": false
+            },
             "onset_s": {
               "reference": null,
               "candidate": null,
@@ -58,7 +63,7 @@
               "passed": true
             }
           },
-          "passed": true
+          "passed": false
         }
       ]
     },
@@ -71,6 +76,11 @@
           "reference_outcome": "model_violation",
           "candidate_outcome": "model_violation",
           "checks": {
+            "comparable": {
+              "reference": "model_violation",
+              "candidate": "model_violation",
+              "passed": false
+            },
             "onset_s": {
               "reference": null,
               "candidate": null,

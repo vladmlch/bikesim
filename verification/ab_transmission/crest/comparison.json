@@ -19,6 +19,11 @@
           "reference_outcome": "model_violation",
           "candidate_outcome": "duration",
           "checks": {
+            "comparable": {
+              "reference": "model_violation",
+              "candidate": "duration",
+              "passed": false
+            },
             "onset_s": {
               "reference": 2.513500000000199,
               "candidate": 4.701000000000114,
@@ -72,6 +77,11 @@
           "reference_outcome": "model_violation",
           "candidate_outcome": "crash:rider_ground_contact",
           "checks": {
+            "comparable": {
+              "reference": "model_violation",
+              "candidate": "crash:rider_ground_contact",
+              "passed": false
+            },
             "onset_s": {
               "reference": 2.513500000000199,
               "candidate": null,

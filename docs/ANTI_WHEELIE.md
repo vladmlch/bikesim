@@ -309,8 +309,9 @@ solutions. The plant stays planar (X-Z): no roll, yaw, steering or hub motor.
 maximum energy residual ratio of 0.0009 (`verification/dt_sweep_ideal/report.json`).
 1 ms is not a candidate: `SimulationPhysicsConfig` refuses it
 (`closure_time_constant_s` must be at least `2*dt`). The `reject_coarse` acceptance
-case (0.5 ms must be rejected) was written against the chain's instability and was
-not re-run for the ideal modes; do not read it as evidence for them.
+case (0.5 ms must be rejected) tests the chain's instability, so
+`validate_antiwheelie.py` always runs it on `elastic_chain`, whatever
+`--transmission` says.
 
 **A/B parity is not fully met.** `tools/compare_transmissions.py` runs identical
 episodes (seed 17, 5 s, 3 m/s, 80 N*m) on `elastic_chain` and each candidate and
@@ -319,7 +320,8 @@ and mean speed (5 %):
 
 | Scenario | `ideal_mid_drive` @ 0.5 ms | Note |
 | --- | --- | --- |
-| `flat`, `step_up` | pass | `step_up` ends in `model_violation` for both |
+| `flat` | pass | |
+| `step_up` | not comparable | both transmissions end in `model_violation`; a pair with a truncated run is never a pass |
 | `uphill`, `rough_uphill` | **fail**: minimum front load 24-31 % lower, front-load fraction 22-25 % lower (tolerance 15 %) | shock stroke and speed agree (<= 1.1 %) |
 | `crest` | not comparable | the chain reference itself ends in `model_violation` |
 
@@ -328,7 +330,11 @@ The climb deviation is the same at 0.125, 0.25 and 0.5 ms (31/31/30 % on
 timestep. The ideal plant has *less* front-load margin on climbs than the chain
 reference, i.e. it errs toward earlier front unloading. `geometric_ideal_mid_drive`
 does worse (energy gate at 0.5 ms; even at 0.125 ms the rider falls on `uphill`),
-so it is not a replacement. Reports are in `verification/ab_transmission*/`.
+so it is not a replacement. Reports are in `verification/ab_transmission*/`
+(re-derived with `--reuse`; their `mean_speed_mps` figures predate the fix that
+measures distance from the start position instead of absolute x, so treat the
+speed check as indicative). `compare_transmissions.py` runs the reference at
+`0.000125 s` unless `--reference-dt` says otherwise.
 Whether to ship `ideal_mid_drive` or `elastic_chain` as the research default is
 the owner's call; `--transmission elastic_chain` restores the reference.
 
@@ -342,10 +348,11 @@ bout `{start_s, end_s, confirmed, max_relative_pitch_rad, max_front_clearance_m,
 min_front_load_n, onset}`. `onset` holds the state when the bout began
 (`delivered_motor_nm`, `applied_motor_nm`, `road_pitch_rad`, `pitch_rate_up_rad_s`,
 `speed_mps`), so a lift can be attributed to torque, grade or terrain. Terrain
-micro-lifts are acceptable; only `crash:loop_out` is a failure outcome.
+micro-lifts are acceptable; crash outcomes (`loop_out`, `endo`,
+`rider_ground_contact`, ...) end the episode.
 
 Every run also writes `episode_metrics.json`: `outcome`, `duration_s`,
-`progress_m`, `mean_speed_mps`, `finish_time_s`, `torque_delivered_nms` and
+`progress_m` (distance travelled from the start position), `mean_speed_mps`, `finish_time_s`, `torque_delivered_nms` and
 `torque_requested_nms` (integrals of the solved and commanded motor torque),
 `motor_pass_fraction` (their ratio; `null` when the policy never commanded a
 torque), `loop_out`, `endo`, `max_shock_stroke_m`, `max_fork_travel_m` (peaks at

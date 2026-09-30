@@ -120,6 +120,9 @@ class PhysicalRuntime:
         d.xfrc_applied.fill(0.)
         d.ctrl.fill(0.)
         self.brake.apply(m,d,front,rear)
+        pedaling = self.drive.prepare_pedaling(d, dt, control, active=active,
+            advance=advance, braking=front > 0. or rear > 0., model=m,
+            rear_in_contact=bool(sim.contacts.rear_controller_grounded))
         mujoco.mj_forward(m,d)
         acc = sim.force_accumulator
         acc.clear()
@@ -141,9 +144,13 @@ class PhysicalRuntime:
             loads = {side:observed.get(side+'_pedal',{}).get('normal_load_n',0.) for side in ('front','rear')}
             loads['grip'] = enabled.get('grip',False)
             loads['saddle'] = observed.get('saddle',{}).get('normal_load_n',0.)
-            human = self.cfg.drive.human_torque_nm if control.human_torque_nm is None else control.human_torque_nm
-            command = RiderCommand(human if active and self.cfg.drive_mode=='articulated_effort' else 0.,
-                enabled=control.rider_enabled, posture=control.posture or RiderPosture())
+            crank_goal = pedaling.target_phase_rad
+            if not active and self.drive.ideal_hub is not None:
+                crank_goal = self.cfg.drive.crank_phase_rad
+            command = RiderCommand(pedaling.effort_nm if self.cfg.drive_mode=='articulated_effort' else 0.,
+                enabled=control.rider_enabled, posture=control.posture or RiderPosture(),
+                crank_target_phase_rad=crank_goal,
+                crank_target_rate_rad_s=pedaling.target_rate_rad_s)
             availability={side:bool(enabled.get(side+'_pedal',False)
                 and observed.get(side+'_pedal',{}).get('in_platform',False)) for side in ('front','rear')}
             # A geometrically available saddle is a posture goal even before
@@ -155,7 +162,8 @@ class PhysicalRuntime:
                 support_available=availability))
         sensed = self.rider_contacts.delivered_crank_torque_nm if self.rider_contacts is not None else 0.
         for name,force in self.drive.compute_components(m,d,dt,speed_mps=sim.speed_mps,
-            braking=front>0 or rear>0,sensed_human_nm=sensed,active=active,advance=advance,control=control).items():
+            braking=front>0 or rear>0,sensed_human_nm=sensed,active=active,advance=advance,
+            control=control,pedaling_state=pedaling).items():
             acc.add(name,force)
         # Native contact loads must see the current suspension/chain/rider forces.
         d.qfrc_applied[:] = acc.total()
@@ -191,6 +199,8 @@ class PhysicalRuntime:
         sim.cruise.reset(); sim.brakes.reset(); sim.stabilizer.reset(); sim.crash_detector.reset()
         sim.brake_source_cruise = False
         self.drive.restart_clock()
+        if self.drive.ideal_hub is not None:
+            self.drive.ideal_hub.reset(m, d)
         if self.tire is not None:
             self.tire.restart_clock()
         if self.rider_contacts is not None:
@@ -254,16 +264,16 @@ class PhysicalRuntime:
             roll=float(point_velocity(m,d,bid,d.geom_xpos[gid])@tangent)
             parent_omega=float(body_angular_velocity(m,d,bid)[1])-float(d.qvel[dof])
             d.qvel[dof]=roll/radius-parent_omega
-        coupled = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_EQUALITY,
-                                   'ideal_mid_drive_kinematics') >= 0
         pedaling = (self.cfg.drive_mode in ('crank_effort', 'articulated_effort')
                     and self.cfg.drive.human_torque_nm > 0.)
-        if coupled or pedaling:
+        ratio = self.cfg.drive.gearing.front_teeth / self.cfg.drive.gearing.rear_teeth
+        rate = d.qvel[self.address('rear_wheel_spin')[1]] / ratio
+        if self.cfg.drive.pedaling.enabled and abs(rate) * 60. / (2. * np.pi) >= self.cfg.drive.pedaling.coast_above_rpm:
+            pedaling = False
+        if pedaling:
             # A rolling, already pedaling initial condition must not kick a
             # stationary crank/legs up to wheel speed through the transmission.
             # A genuinely coasting elastic drivetrain remains freewheeling.
-            ratio = self.cfg.drive.gearing.front_teeth / self.cfg.drive.gearing.rear_teeth
-            rate = d.qvel[self.address('rear_wheel_spin')[1]] / ratio
             d.qvel[self.address('crank_spin')[1]] = rate
             cassette = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, 'cassette_spin')
             if cassette >= 0:
@@ -338,10 +348,13 @@ class PhysicalRuntime:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(m,d)
-        self.drive.settle_actuation(m,d)
+        transmission = self.drive.settle_actuation(m,d)
         sensors = sensor_channels(self, qvel=v)
         components.update(actuator_components(m,d))
         constraints=constraint_components(m,d)
+        if self.drive.ideal_hub is not None:
+            constraints['joint_limits'] -= transmission
+            constraints['ideal_transmission'] = transmission
         shock_limit=shock_joint_limit_qfrc(m,d)
         # Split the shock limit out of aggregate joint limits; never count it twice.
         constraints['joint_limits']-=shock_limit
@@ -359,11 +372,10 @@ class PhysicalRuntime:
         external_names={'external','rear_drive','road_rolling','aerodynamic','native_contact'}
         self.active_work_j+=sum(float(components[n]@v)*dt for n in active_names if n in components)
         self.external_work_j+=sum(float(components[n]@v)*dt for n in external_names if n in components)
-        self.solver_work_j+=sum(float(components[n]@v)*dt for n in ('joint_limits','shock_solver_limit','closure') if n in components)
+        self.solver_work_j+=sum(float(components[n]@v)*dt for n in ('joint_limits','shock_solver_limit','closure','ideal_transmission') if n in components)
         self.electrical_work_j+=self.drive.last.get('electrical_power_w',0.)*dt
         rider={} if self.rider_contacts is None else copy.deepcopy(self.rider_contacts.diagnostics)
-        drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]),
-                   gear_ratio=self.cfg.drive.gearing.front_teeth/self.cfg.drive.gearing.rear_teeth)
+        drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]))
         # Capture all solved quantities before refreshing the endpoint kinematics.
         equality_rows=d.efc_type[:d.nefc]==mujoco.mjtConstraint.mjCNSTR_EQUALITY
         linkage_error=float(np.max(np.abs(d.efc_pos[:d.nefc][equality_rows]))) if np.any(equality_rows) else 0.
@@ -378,7 +390,8 @@ class PhysicalRuntime:
             'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
             'electrical_work_j':self.electrical_work_j,
             'electrical_residual_j':self.initial_battery_j-self.drive.battery.energy_j-self.electrical_work_j}
-        drive.update(chain_power_w=float(components['chain']@v),freehub_power_w=float(components['freehub']@v),
+        drive.update(chain_power_w=float(components['chain']@v),
+            freehub_power_w=float((components['freehub']+components.get('ideal_transmission',np.zeros(m.nv)))@v),
             front_brake_power_w=float(components['front_static_brake']@v),rear_brake_power_w=float(components['rear_static_brake']@v),
             front_brake_torque_nm=float(components['front_static_brake'][self.address('front_wheel_spin')[1]]),
             rear_brake_torque_nm=float(components['rear_static_brake'][self.address('rear_wheel_spin')[1]]),

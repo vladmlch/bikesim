@@ -90,6 +90,8 @@ class RiderCommand:
     mean_crank_torque_nm: float = 0.
     enabled: bool = True
     posture: RiderPosture = field(default_factory=RiderPosture)
+    crank_target_phase_rad: float | None = None
+    crank_target_rate_rad_s: float = 0.
 
     def __post_init__(self):
         scalar(self.mean_crank_torque_nm,'rider effort',minimum=0)
@@ -97,6 +99,11 @@ class RiderCommand:
             raise ValueError('rider posture must be a RiderPosture')
         if not isinstance(self.enabled,bool):
             raise ValueError('rider controller enable must be a bool')
+        scalar(self.crank_target_rate_rad_s, 'coasting crank goal speed')
+        if self.crank_target_phase_rad is not None:
+            scalar(self.crank_target_phase_rad, 'coasting crank goal phase')
+            if self.mean_crank_torque_nm > 0.:
+                raise ValueError('coasting goals cannot request pedaling effort')
 
 
 class ArticulatedRiderController:
@@ -107,6 +114,7 @@ class ArticulatedRiderController:
         self.model=model
         self.command_enabled=True
         self.target_data = mujoco.MjData(model)
+        self.coasting_target_data = mujoco.MjData(model)
         # Central acceleration differences need a larger interval than the old
         # forward velocity-only difference (1e-6 s), to avoid cancellation.
         self.target_difference_s = 1e-4
@@ -141,7 +149,9 @@ class ArticulatedRiderController:
             for name in ('root_pitch', 'rider_root_pitch'))
         self.crank = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'crank')
         self.crank_spin_dof=int(model.jnt_dofadr[model.joint('crank_spin').id])
+        self.crank_spin_qpos=int(model.jnt_qposadr[model.joint('crank_spin').id])
         self.pedal_spin_dofs=[int(model.jnt_dofadr[model.joint(f'pedal_{side}_spin').id]) for side in ('front','rear')]
+        self.pedal_spin_qpos=[int(model.jnt_qposadr[model.joint(f'pedal_{side}_spin').id]) for side in ('front','rear')]
         if min(self.pelvis,self.crank,*self.feet.values(),*self.soles.values(),*self.pedals.values()) < 0:
             raise ValueError('incomplete rider interface topology')
         mujoco.mj_kinematics(model,self.target_data)
@@ -283,6 +293,19 @@ class ArticulatedRiderController:
             for joint, rate in zip(('hip', 'knee', 'ankle'), velocity):
                 data.qvel[self.joints[f'rider_{joint}_{side}'][1]] = rate
 
+    def _coasting_target_state(self, model, data, command):
+        import mujoco
+        target = self.coasting_target_data
+        target.qpos[:] = data.qpos
+        target.qvel.fill(0.)
+        phase_change = command.crank_target_phase_rad - float(data.qpos[self.crank_spin_qpos])
+        target.qpos[self.crank_spin_qpos] += phase_change
+        target.qpos[self.pedal_spin_qpos] -= phase_change
+        target.qvel[self.crank_spin_dof] = command.crank_target_rate_rad_s
+        target.qvel[self.pedal_spin_dofs] = -command.crank_target_rate_rad_s
+        mujoco.mj_kinematics(model, target)
+        return target
+
     def initialize(self,model,data):
         """Initial-condition setup only, before static equilibrium, never in step()."""
         import mujoco
@@ -366,12 +389,15 @@ class ArticulatedRiderController:
         diagnostics['stance']=stance.copy()
         diagnostics['feasible_pedal_force_on_bike_n']={s:requests[s].tolist() for s in requests}
         diagnostics['posture'] = asdict(posture)
+        diagnostics['coasting'] = command.crank_target_phase_rad is not None
         self.support_diagnostics=diagnostics
         result = {}
         terms = {}
         upper_targets = self._upper_targets(data, posture, grip_force_n=support_forces['grip'])
-        future=self._predict_target_state(model,data) if data.qvel[self.crank_spin_dof] != 0. else data
-        previous=self._predict_target_state(model,data,reverse=True) if future is not data else data
+        target_state = (data if command.crank_target_phase_rad is None
+                        else self._coasting_target_state(model, data, command))
+        future=self._predict_target_state(model,target_state) if target_state.qvel[self.crank_spin_dof] != 0. else target_state
+        previous=self._predict_target_state(model,target_state,reverse=True) if future is not target_state else target_state
         desired_acceleration=np.zeros(model.nv)
         saturation=dict(self.saturated_ik)
         future_upper=self._upper_targets(future, posture, grip_force_n=support_forces['grip']) if future is not data else upper_targets
@@ -400,10 +426,10 @@ class ArticulatedRiderController:
             clearance=0. if stance[side] else cfg.swing_clearance_m
             if not stance[side]:
                 depth=shear=0.
-            target = self._targets(model,data,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture)
+            target = self._targets(model,target_state,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture)
             saturation=dict(self.saturated_ik)
-            future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if future is not data else target
-            previous_target=self._targets(model,previous,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if previous is not data else target
+            future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if future is not target_state else target
+            previous_target=self._targets(model,previous,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if previous is not target_state else target
             self.saturated_ik=saturation
             ahead=np.arctan2(np.sin(future_target-target),np.cos(future_target-target))
             behind=np.arctan2(np.sin(previous_target-target),np.cos(previous_target-target))

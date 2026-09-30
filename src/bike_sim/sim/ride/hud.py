@@ -210,6 +210,12 @@ class RideHUD:
             return line
         drive = sim.physical.drive.last
         assist = sim.physical.drive.assist
+        crank_phase_rad = float(sim.data.qpos[sim.physical.address('crank_spin')[0]])
+        crank_goal = ("follow" if drive.get('crank_target_phase_rad') is None else
+                      f"{drive.get('crank_target_rate_rad_s', 0.0) * 60.0 / (2.0 * np.pi):.1f}rpm")
+        last_shift = ("none" if not drive.get('shift_count') else
+                      f"{drive['shift_direction']}:{drive['shift_from_teeth']}->{drive['gear_rear_teeth']}"
+                      f"@{drive['shift_time_s']:.3f}s#{drive['shift_count']}")
         fork_velocity_mps = float(sim.data.qvel[sim.applier.fork_dofadr])
         shock_velocity_mps = float(sim.data.qvel[sim.applier.shock_dofadr])
         force_components = sim.force_accumulator.components
@@ -230,6 +236,7 @@ class RideHUD:
             saddle = diagnostics.get("saddle", {})
             grip = diagnostics.get("grip", {})
             control = sim.physical.rider_control
+            stance = {} if control is None else control.support_diagnostics.get('stance', {})
             saturation = "none" if control is None else ",".join(
                 name for name, active in control.saturated_ik.items() if active
             ) or "none"
@@ -259,6 +266,7 @@ class RideHUD:
                 f"torso={body_pitch['rider_torso']:+.1f}deg "
                 f"rel={root_pitch-degrees(sim.pitch_rad):+.1f}deg jsat={joint_saturation}"
             )
+            rider_state += f" stance={'on' if stance.get('front') else 'off'}/{'on' if stance.get('rear') else 'off'}"
         factor = sim.physical.preview_real_time_factor
         rate = "measuring" if factor is None else f"{factor:.2f}x"
         tire = sim.physical.tire
@@ -274,10 +282,21 @@ class RideHUD:
         return (
             f"{line} x={sim.position_m:.2f}m pitch={degrees(sim.pitch_rad):+.2f}deg "
             f"grade={grade:+.1f}% obstacle={obstacle_state} "
+            f"crank={crank_phase_rad:+.2f}rad "
+            f"rider_mode={drive.get('rider_mode', 'unknown')} "
+            f"coast_reason={drive.get('coasting_reason') or 'none'} "
+            f"required_cadence={drive.get('required_cadence_rpm', 0.0):.1f}rpm "
+            f"crank_goal={crank_goal} "
+            f"gear={drive.get('gear_front_teeth', 0)}x{drive.get('gear_rear_teeth', 0)} "
+            f"last_shift={last_shift} shift_cut={drive.get('shift_torque_factor', 1.0):.2f} "
+            f"freehub={'engaged' if drive.get('freehub_engaged') else 'free'} "
+            f"freehub_torque={drive.get('freehub_torque_nm', 0.0):.1f}Nm "
             f"fork={sim.fork_travel_mm:.1f}mm/{fork_velocity_mps:+.3f}m/s "
             f"shock={sim.shock_stroke_mm:.1f}mm/{shock_velocity_mps:+.3f}m/s "
             f"Fforce={fork_force_n:+.0f}N Sforce={shock_force_n:+.0f}N "
             f"human={drive.get('human_sensor_nm', 0.0):+.1f}Nm "
+            f"human_cmd={drive.get('human_command_nm', 0.0):.1f}Nm "
+            f"assist_input={drive.get('assist_sensor_nm', 0.0):+.1f}Nm "
             f"motor_req={drive.get('motor_request_nm', 0.0):.1f}Nm "
             f"motor_torque={drive.get('motor_torque_nm', 0.0):.1f}Nm "
             f"motor_on={int(bool(drive.get('motor_enabled', False)))} "

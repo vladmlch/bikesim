@@ -6,7 +6,7 @@ import tomllib
 from bike_sim.physics.model_config import SimulationPhysicsConfig, EndStopConfig
 from bike_sim.physics.physical_config import (
     TireParameters,TireBackendConfig,PhysicalDriveConfig,AssistConfig,
-    BatteryConfig,ResistanceConfig,ArticulatedConfig,
+    BatteryConfig,ResistanceConfig,ArticulatedConfig,PedalingConfig,ShiftingConfig,
 )
 from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.chain import DrivetrainSpecs
@@ -16,7 +16,8 @@ CHILDREN={
                              'drive':PhysicalDriveConfig,'resistance':ResistanceConfig,'articulated':ArticulatedConfig},
     TireBackendConfig:{'front':TireParameters,'rear':TireParameters},
     TireParameters:{'material':TireSpec},
-    PhysicalDriveConfig:{'gearing':DrivetrainSpecs,'assist':AssistConfig,'battery':BatteryConfig},
+    PhysicalDriveConfig:{'gearing':DrivetrainSpecs,'assist':AssistConfig,'battery':BatteryConfig,
+                         'pedaling':PedalingConfig,'shifting':ShiftingConfig},
 }
 
 

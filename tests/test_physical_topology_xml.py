@@ -89,3 +89,22 @@ def test_anatomical_tree_independent_root_and_visual_mass_zero():
         I=np.array([[values[0],values[3],values[4]],[values[3],values[1],values[5]],[values[4],values[5],values[2]]])
         eig=np.linalg.eigvalsh(I)
         assert eig[0]>0 and eig[-1]<=sum(eig[:2])+1e-12
+
+
+@pytest.mark.parametrize('drive_mode', ['crank_effort', 'articulated_effort'])
+def test_ideal_mid_drive_has_one_way_constraint_and_motor_at_crank(drive_mode):
+    root = root_fixture()
+    config = SimpleNamespace(physics_mode='physical', drive_mode=drive_mode,
+        drive=PhysicalDriveConfig(transmission_model='ideal_mid_drive'),
+        tires=TireBackendConfig(), articulated=ArticulatedConfig(), closure_time_constant_s=.0025)
+    finish_physical_topology(root, SimpleNamespace(crank_length=165.),
+        SimpleNamespace(crank_pedals_mass=.85, rear_wheel_mass=2.8), config)
+    tendon = root.find(".//fixed[@name='ideal_mid_drive_freehub']")
+    assert tendon is not None and tendon.get('limited') == 'true'
+    assert root.find(".//joint[@name='ideal_mid_drive_kinematics']") is None
+    assert root.find(".//motor[@name='mid_drive']").get('joint') == 'crank_spin'
+    assert root.find(".//joint[@name='cassette_spin']") is None
+    joints = tendon.findall('joint')
+    ratio = config.drive.gearing.front_teeth / config.drive.gearing.rear_teeth
+    assert float(joints[0].get('coef')) == pytest.approx(ratio)
+    assert float(joints[1].get('coef')) == -1.

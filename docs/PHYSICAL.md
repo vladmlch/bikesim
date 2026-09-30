@@ -76,7 +76,9 @@ by prescribing the crank or foot coordinates.
 A rolling effort-mode initial condition now initializes the crank, cassette,
 platform and leg velocities consistently with wheel speed and gearing. These
 velocity writes occur **only at reset**; an unpowered elastic drivetrain still
-starts freewheeling. The ideal transmission retains its existing coupling.
+starts freewheeling. The ideal transmission also permits stationary cranks during
+overrun. A stationary start does not inject crank, pedal, wheel or rider velocity;
+the configured human effort starts pedaling through the existing actuators and contacts.
 
 Moving leg targets include a central-difference acceleration feedforward through
 the compiled mass matrix, in addition to position/velocity feedback and bias
@@ -190,8 +192,11 @@ safety rule changes the effective closure stiffness as dt changes. The default
 
 `drive.transmission_model = "elastic_chain"` retains the research drivetrain with
 separate cassette and freehub dynamics. `"ideal_mid_drive"` removes those high-frequency
-states, keeps the crank/rear-wheel gear-ratio kinematic coupling, and applies motor torque
-directly at the rear wheel. It is intended for interactive plant/control development,
+states and uses a massless one-way gear-ratio constraint. The wheel can overrun stationary
+cranks; a ratchet boundary follows that overrun and re-engagement is solved without
+rewriting joint positions or velocities. Motor torque acts at the crank, not directly
+at the rear wheel, so it cannot bypass the freewheel. Solved transmission forces and
+their constraint work are recorded separately. It is intended for interactive plant/control development,
 not for chain, freehub or drivetrain-energy studies.
 
 `equilibrium_cache_enabled = true` enables a validated initial-pose cache for
@@ -265,7 +270,7 @@ The interactive physical viewer also writes `preview.log` beside the hashed run
 artifacts under `--out` (by default `output/ride/`). It flushes one text line per
 0.1 s of simulated time, including speed, wheel loads, pitch, fork/shock state,
 cadence, human/motor torque, battery energy, rider grip/pedal contact and IK
-saturation. It also records rider-root/pelvis/torso angles, motor request versus
+saturation. It also records crank phase and front/rear stance, rider-root/pelvis/torso angles, motor request versus
 delivered torque, assist latch state, grade, nearby obstacle, tire slip and a final
 `run ended` or `viewer closed` marker. The file can be followed live with `tail -f`.
 
@@ -275,6 +280,80 @@ explicit synthetic preview parameters, not a convergence-validated replacement f
 the strict configuration. The road, tires, suspension, bicycle body and articulated
 rider remain in the physical preview path; only drivetrain internal dynamics are
 removed.
+
+The fast profile starts at `initial_speed_mps = 0.0`, with the rider requesting
+`human_torque_nm = 20.0` from the first running interval. The initial 34x51 gear is
+the easiest gear of its configured cassette. Motor assistance still uses the measured
+pedal torque and configured cadence/response gates; no startup speed or motor impulse
+is injected. Initialization brakes hold the equilibrium pose only, not the running ride.
+
+Automatic shifting is enabled for this profile under `[drive.shifting]`:
+
+```toml
+[drive.shifting]
+enabled = true
+cassette = [10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51]
+target_cadence_min_rpm = 65.0
+target_cadence_max_rpm = 85.0
+shift_cooldown_s = 0.4
+shift_cut_duration_s = 0.2
+torque_factor = 0.3
+```
+
+Below 65 rpm the rider selects the next larger rear sprocket (an easier gear);
+above 85 rpm the next smaller sprocket (a harder gear). Decisions use the larger
+of actual forward crank cadence and wheel-required cadence in the current gear.
+This allows selecting a usable gear while the wheel overruns stationary pedals.
+Only one sprocket is selected per shift, with at least 0.4 s between changes;
+braking, zero requested human effort, a disabled rider or an airborne rear wheel
+prevent new shifts. The initial rear sprocket must belong to the cassette.
+
+For 0.2 s after a change the human effort request is multiplied by 0.3 and motor
+output is capped at 0.3 of its delivered torque immediately before the shift.
+The motor cap is latched for that interval, not multiplied into the previous output
+on every step. Existing motor lag, safety ceilings and battery limits still apply,
+including for an external research motor request. Foot support/posture actuation
+remains active during the relief interval.
+
+The native transmission ratio and solver constants are updated at each change,
+reanchoring the ratchet without a crank/wheel position or velocity rewrite. The
+solver handles the resulting speed transition; shift transients and real-time
+performance still require runtime validation. Automatic physical shifting is
+opt-in outside this profile and currently requires `ideal_mid_drive`; the detailed
+`elastic_chain` drivetrain retains its fixed sprocket geometry.
+
+The fast profile enables cadence coasting under `[drive.pedaling]`:
+
+```toml
+[drive.pedaling]
+enabled = true
+coast_above_rpm = 110.0
+resume_below_rpm = 90.0
+stop_time_s = 0.35
+```
+
+Above the upper cadence threshold the rider stops requesting pedaling effort. The
+decision uses both actual crank cadence and the cadence required by rear-wheel speed
+in the selected gear, so stopping the crank does not immediately restart pedaling.
+The lower threshold supplies hysteresis. `stop_time_s` ramps the rider's crank-position
+goal to rest; it does not overwrite the actual crank velocity. Both feet receive
+stance/support goals, realized only through bounded internal limb actuation and the
+existing unilateral pedal contacts. Saddle, hand and pedal forces still determine
+the actual load transfer to the bicycle. This is a synthetic rider policy, not a
+cadence calibration or an automatic gear-shift controller. Cadence coasting is disabled
+by default outside the fast profile; zero requested effort or braking also requests coasting.
+Gear selection runs before the cadence-coasting decision. If a harder gear brings
+wheel-required cadence below the resume threshold, the rider can resume pedaling;
+if the cassette is exhausted, high-cadence coasting remains available.
+
+While coasting, automatic assistance receives zero pedaling demand, even if passive
+foot support produces a positive raw torque-sensor reading. The raw sensor remains
+logged. The configured motor response and stop delay still apply; an explicit
+research motor setpoint retains its separate command path. Preview logs include
+`rider_mode`, `coast_reason`, `required_cadence`, `crank_goal`, `human_cmd`,
+`assist_input`, `freehub` and `freehub_torque`. Logs also include `gear`, `last_shift`
+(direction, old/new sprocket, simulation timestamp and counter) and `shift_cut`.
+The last event persists across 0.1 s log samples so a shift is not lost between samples.
 
 Mid-drive response parameters are overridden under `[drive.assist]` in any physical
 TOML file. For example, `gain`, `tau`, `stop_delay`, `slew`, `max_torque` and

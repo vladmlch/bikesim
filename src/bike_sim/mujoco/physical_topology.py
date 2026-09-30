@@ -133,19 +133,16 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
         ratio=(physics_config.drive.gearing.front_teeth /
                physics_config.drive.gearing.rear_teeth)
         if physics_config.drive.transmission_model == 'ideal_mid_drive':
-            equality = root.find('equality')
-            if equality is None:
-                equality = ET.SubElement(root, 'equality')
-            ET.SubElement(
-                equality, 'joint', name='ideal_mid_drive_kinematics',
-                joint1='crank_spin', joint2='rear_wheel_spin',
-                polycoef=f'0 {1.0 / ratio:.17g} 0 0 0',
-            )
-        motor_joint=('crank_spin' if physics_config.drive.transmission_model == 'elastic_chain'
-                     else 'rear_wheel_spin')
-        max_control=physics_config.drive.assist.max_torque if motor_joint == 'crank_spin' else physics_config.drive.assist.max_torque/ratio
-        ET.SubElement(actuators,'motor',name='mid_drive',joint=motor_joint,gear='1',
-                      ctrllimited='true',ctrlrange=f'0 {max_control:.17g}')
+            tendons = root.find('tendon')
+            if tendons is None:
+                tendons = ET.SubElement(root, 'tendon')
+            freehub = ET.SubElement(tendons, 'fixed', name='ideal_mid_drive_freehub',
+                limited='true', range='-1e12 0', margin='0',
+                solreflimit=f'{physics_config.closure_time_constant_s:.17g} 1')
+            ET.SubElement(freehub, 'joint', joint='crank_spin', coef=f'{ratio:.17g}')
+            ET.SubElement(freehub, 'joint', joint='rear_wheel_spin', coef='-1')
+        ET.SubElement(actuators,'motor',name='mid_drive',joint='crank_spin',gear='1',
+                      ctrllimited='true',ctrlrange=f'0 {physics_config.drive.assist.max_torque:.17g}')
     if physics_config.drive_mode=='crank_effort':
         # The request is validated in the configuration. No contact torque cap
         # is imposed here; the wheel can spin through a saturated tire force.

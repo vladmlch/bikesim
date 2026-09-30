@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from bike_sim.physics.checks import scalar
 from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.chain import DrivetrainSpecs
+from bike_sim.physics.drivetrain import CASSETTE_12S_TEETH
 
 
 def _material():
@@ -90,6 +91,57 @@ class BatteryConfig:
 
 
 @dataclass(frozen=True)
+class PedalingConfig:
+    enabled: bool = False
+    coast_above_rpm: float = 110.
+    resume_below_rpm: float = 90.
+    stop_time_s: float = .35
+
+    def __post_init__(self):
+        if not isinstance(self.enabled, bool):
+            raise ValueError('cadence coasting enable must be a bool')
+        scalar(self.coast_above_rpm, 'coasting cadence', positive=True)
+        scalar(self.resume_below_rpm, 'resume cadence', minimum=0.)
+        scalar(self.stop_time_s, 'coasting stop time', positive=True)
+        if self.resume_below_rpm >= self.coast_above_rpm:
+            raise ValueError('resume cadence must be below coasting cadence')
+
+
+@dataclass(frozen=True)
+class ShiftingConfig:
+    enabled: bool = False
+    cassette: tuple[int, ...] = CASSETTE_12S_TEETH
+    target_cadence_min_rpm: float = 65.
+    target_cadence_max_rpm: float = 85.
+    shift_cooldown_s: float = .4
+    shift_cut_duration_s: float = .2
+    torque_factor: float = .3
+
+    def __post_init__(self):
+        if not isinstance(self.enabled, bool):
+            raise ValueError('automatic shifting enable must be a bool')
+        try:
+            cassette = tuple(self.cassette)
+        except TypeError as exc:
+            raise ValueError('cassette needs a sequence of integer tooth counts') from exc
+        if not cassette or any(type(teeth) is not int or teeth < 3 for teeth in cassette):
+            raise ValueError('cassette needs integer tooth counts of at least three')
+        if len(set(cassette)) != len(cassette):
+            raise ValueError('cassette tooth counts must be distinct')
+        object.__setattr__(self, 'cassette', tuple(sorted(cassette)))
+        scalar(self.target_cadence_min_rpm, 'minimum shift cadence', positive=True)
+        scalar(self.target_cadence_max_rpm, 'maximum shift cadence', positive=True)
+        if self.target_cadence_max_rpm <= self.target_cadence_min_rpm:
+            raise ValueError('maximum shift cadence must exceed minimum shift cadence')
+        scalar(self.shift_cooldown_s, 'shift cooldown', minimum=0.)
+        scalar(self.shift_cut_duration_s, 'shift torque cut duration', minimum=0.)
+        if self.shift_cut_duration_s > self.shift_cooldown_s:
+            raise ValueError('shift torque cut must not outlast the cooldown')
+        if scalar(self.torque_factor, 'shift torque factor', minimum=0.) > 1.:
+            raise ValueError('shift torque factor must not exceed one')
+
+
+@dataclass(frozen=True)
 class PhysicalDriveConfig:
     gearing: DrivetrainSpecs = field(default_factory=DrivetrainSpecs)
     transmission_model: str = 'elastic_chain'
@@ -104,12 +156,23 @@ class PhysicalDriveConfig:
     brake_ceiling_nm: float = 200.
     assist: AssistConfig = field(default_factory=AssistConfig)
     battery: BatteryConfig = field(default_factory=BatteryConfig)
+    pedaling: PedalingConfig = field(default_factory=PedalingConfig)
+    shifting: ShiftingConfig = field(default_factory=ShiftingConfig)
 
     def __post_init__(self):
         if not isinstance(self.gearing,DrivetrainSpecs) or not isinstance(self.assist,AssistConfig) or not isinstance(self.battery,BatteryConfig):
             raise ValueError('invalid drivetrain configuration object')
+        if not isinstance(self.pedaling, PedalingConfig):
+            raise ValueError('pedaling needs an immutable PedalingConfig')
         if self.transmission_model not in ('elastic_chain', 'ideal_mid_drive'):
             raise ValueError('unknown transmission model')
+        if not isinstance(self.shifting, ShiftingConfig):
+            raise ValueError('shifting needs an immutable ShiftingConfig')
+        if self.shifting.enabled:
+            if self.transmission_model != 'ideal_mid_drive':
+                raise ValueError('automatic physical shifting requires ideal_mid_drive')
+            if self.gearing.rear_teeth not in self.shifting.cassette:
+                raise ValueError('initial rear sprocket must belong to the cassette')
         for key in ('chain_k_n_m','freehub_k_nm_rad'):
             scalar(getattr(self,key),key,positive=True)
         for key in ('human_torque_nm','torque_ripple','chain_c_ns_m','freehub_c_nms_rad','bearing_c_nms_rad','brake_ceiling_nm'):

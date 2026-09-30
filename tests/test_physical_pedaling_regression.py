@@ -9,11 +9,13 @@ import pytest
 from bike_sim.geometry.specs import BikeSpecs
 from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.model_config import SimulationPhysicsConfig
-from bike_sim.physics.physical_config import PhysicalDriveConfig
+from bike_sim.physics.physical_config import PhysicalDriveConfig, PedalingConfig
 from bike_sim.physics.rider import RiderSpecs
 from bike_sim.physics.rider_segments import geometry_pose
 from bike_sim.sim.ride.physical_runtime import PhysicalRuntime
 from bike_sim.sim.ride.rider_control import ArticulatedRiderController, RiderCommand
+from bike_sim.sim.ride.control import RideControl
+from bike_sim.sim.ride.drivetrain_forces import DrivetrainForceApplier
 
 
 def rolling_rig(transmission='ideal_mid_drive', human=20., speed=2.):
@@ -73,8 +75,9 @@ def test_powered_rolling_start_feet_follow_moving_spindles():
         np.testing.assert_allclose(angular @ d.qvel, 0., atol=1e-6)
 
 
-def test_unpowered_elastic_start_keeps_freewheeling_crank_at_rest():
-    m, d, r = rolling_rig('elastic_chain', human=0.)
+@pytest.mark.parametrize('transmission', ['ideal_mid_drive', 'elastic_chain'])
+def test_unpowered_start_keeps_freewheeling_crank_at_rest(transmission):
+    m, d, r = rolling_rig(transmission, human=0.)
     r._initial_speed()
     assert d.qvel[r.address('rear_wheel_spin')[1]] > 0.
     assert d.qvel[r.address('crank_spin')[1]] == 0.
@@ -87,12 +90,65 @@ def test_zero_speed_start_does_not_inject_motion(transmission):
     np.testing.assert_array_equal(d.qvel, 0.)
 
 
-def test_ideal_transmission_also_matches_velocity_without_human_effort():
-    m, d, r = rolling_rig(human=0.)
-    r._initial_speed()
-    ratio = r.cfg.drive.gearing.front_teeth / r.cfg.drive.gearing.rear_teeth
-    assert d.qvel[r.address('crank_spin')[1]] == pytest.approx(
-        d.qvel[r.address('rear_wheel_spin')[1]] / ratio)
+def test_excessive_startup_cadence_leaves_feet_and_cranks_stationary():
+    model, data, runtime = rolling_rig(speed=5.)
+    runtime.cfg = replace(runtime.cfg, drive=replace(runtime.cfg.drive, pedaling=PedalingConfig(enabled=True)))
+    runtime._initial_speed()
+    assert data.qvel[runtime.address('rear_wheel_spin')[1]] > 0.
+    assert data.qvel[runtime.address('crank_spin')[1]] == 0.
+    for side in ('front', 'rear'):
+        assert data.qvel[runtime.address('pedal_' + side + '_spin')[1]] == 0.
+
+
+def test_coasting_rider_holds_both_feet_using_only_internal_actuators():
+    model, data, runtime = rolling_rig(speed=0.)
+    controller = runtime.rider_control
+    qpos, qvel = data.qpos.copy(), data.qvel.copy()
+    command = RiderCommand(0., crank_target_phase_rad=.1, crank_target_rate_rad_s=0.)
+    effort = controller.compute(model, data, command,
+        contact_loads={'front':100., 'rear':100., 'saddle':400., 'grip':True})
+    assert controller.support_diagnostics['stance'] == {'front':True, 'rear':True}
+    assert controller.support_diagnostics['coasting']
+    assert all(name.startswith('rider_') for name in effort)
+    assert all(abs(value) <= controller.config.joint_limit_nm for value in effort.values())
+    np.testing.assert_array_equal(data.qpos, qpos)
+    np.testing.assert_array_equal(data.qvel, qvel)
+
+
+@pytest.mark.parametrize('motor_request', [None, 20.])
+def test_coasting_gates_passive_pedal_torque_but_preserves_external_motor_command(motor_request):
+    model, data, runtime = rolling_rig(speed=0.)
+    config = replace(runtime.cfg.drive, pedaling=PedalingConfig(enabled=True))
+    drive = DrivetrainForceApplier(model, config, 'articulated_effort')
+    drive.reset(model, data)
+    ratio = config.gearing.front_teeth / config.gearing.rear_teeth
+    data.qvel[runtime.address('rear_wheel_spin')[1]] = 120. * 2. * np.pi / 60. * ratio
+    drive.compute_components(model, data, model.opt.timestep, speed_mps=2.,
+        sensed_human_nm=40., control=RideControl(motor_torque_nm=motor_request))
+    assert drive.last['rider_mode'] == 'coasting'
+    assert drive.last['human_sensor_nm'] == 40.
+    assert drive.last['assist_sensor_nm'] == 0.
+    assert (drive.last['motor_request_nm'] > 0.) == (motor_request is not None)
+    motor = model.actuator('mid_drive').id
+    assert model.actuator_trnid[motor, 0] == model.joint('crank_spin').id
+    assert data.ctrl[motor] == pytest.approx(drive.last['motor_torque_nm'])
+
+
+def test_coasting_probe_does_not_advance_rider_policy_or_ratchet_boundary():
+    model, data, runtime = rolling_rig(speed=0.)
+    config = replace(runtime.cfg.drive, pedaling=PedalingConfig(enabled=True))
+    drive = DrivetrainForceApplier(model, config, 'articulated_effort')
+    drive.reset(model, data)
+    data.qpos[runtime.address('rear_wheel_spin')[0]] += 2.
+    boundary = drive.ideal_hub.boundary
+    ranges = model.tendon_range.copy()
+    policy = vars(drive.pedaling).copy()
+    drive.compute_components(model, data, model.opt.timestep, speed_mps=2.,
+        sensed_human_nm=40., advance=False)
+    assert drive.ideal_hub.boundary == boundary
+    np.testing.assert_array_equal(model.tendon_range, ranges)
+    assert vars(drive.pedaling) == policy
+    assert drive.pending_actuation is None
 
 
 def test_unloaded_stance_foot_can_press_but_cannot_request_friction():

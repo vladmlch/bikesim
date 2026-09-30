@@ -5,7 +5,7 @@ physics_mode = "physical"
 drive_mode = "articulated_effort"
 timestep_s = 0.00125
 closure_time_constant_s = 0.0025
-initial_speed_mps = 3.0
+initial_speed_mps = 0.0
 initial_front_brake = 1.0
 initial_rear_brake = 1.0
 equilibrium_refine_after_s = 1.0
@@ -26,6 +26,12 @@ mu = 1.1
 transmission_model = "ideal_mid_drive"
 human_torque_nm = 20.0
 
+[drive.pedaling]
+enabled = true
+coast_above_rpm = 110.0
+resume_below_rpm = 90.0
+stop_time_s = 0.35
+
 [drive.assist]
 gain = 4.0
 tau = 0.3
@@ -34,6 +40,15 @@ stop_delay = 0.3
 [drive.gearing]
 front_teeth = 34
 rear_teeth = 51
+
+[drive.shifting]
+enabled = true
+cassette = [10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51]
+target_cadence_min_rpm = 65.0
+target_cadence_max_rpm = 85.0
+shift_cooldown_s = 0.4
+shift_cut_duration_s = 0.2
+torque_factor = 0.3
 
 [articulated]
 pedal_c_ns_m = 100.0

@@ -1,15 +1,17 @@
 """Physical drivetrain paths and independently metered crank sources."""
 import copy
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from math import atan2, pi
 import numpy as np
 from bike_sim.physics.chain import chain_extension, chain_geometry, chain_jacobian, chain_tension, chain_center_gradient
 from bike_sim.physics.freehub import Freehub
 from bike_sim.physics.motor import AssistController
-from bike_sim.physics.pedaling import human_crank_torque
+from bike_sim.physics.pedaling import human_crank_torque, PedalingPolicy
+from bike_sim.physics.shifting import CadenceShifter
 from bike_sim.physics.battery import Battery, limit_torque_by_energy, motor_electrical_power
 from bike_sim.physics.checks import scalar
 from bike_sim.sim.ride.physical_mapping import resolve_id
+from bike_sim.sim.ride.ideal_freehub import IdealFreehubConstraint
 
 
 def _unwrap(value, reference):
@@ -47,6 +49,13 @@ class DrivetrainForceApplier:
         if drive_mode in ('crank_effort','articulated_effort') and self.actuators['mid_drive'] < 0:
             raise ValueError('physical effort needs a mid_drive actuator')
         self.hub = None if self.simplified else Freehub(config.freehub_k_nm_rad, config.freehub_c_nms_rad)
+        ratio = config.gearing.front_teeth / config.gearing.rear_teeth
+        self.ideal_hub = (IdealFreehubConstraint(model, ratio)
+                          if self.simplified and drive_mode in ('crank_effort', 'articulated_effort') else None)
+        self.pedaling = PedalingPolicy(config.pedaling)
+        self.shifting = CadenceShifter(config.gearing, config.shifting)
+        self.shift_time_s = None
+        self.shift_motor_limit_nm = None
         self.assist = AssistController(**asdict(config.assist))
         self.battery = Battery(config.battery.energy_j)
         self.last_time_s = None
@@ -100,10 +109,16 @@ class DrivetrainForceApplier:
         """Reset drivetrain state after initial crank/rider posing."""
         import mujoco
         mujoco.mj_kinematics(model, data)
+        self.shifting.reset()
+        self.shift_time_s = None
+        self.shift_motor_limit_nm = None
         if self.simplified:
             self.angles = (self._angle(data,'crank'),)
             self.reference = 0.
             self.psi = None
+            if self.ideal_hub is not None:
+                self.ideal_hub.set_ratio(model, data, self.shifting.gear_ratio)
+                self.ideal_hub.reset(model, data)
         else:
             self.angles = (self._angle(data,'crank'), self._angle(data,'cassette'))
             cf, cr, rf, rr, tf, tr, up = self._geometry(data, self.angles, None)
@@ -111,14 +126,59 @@ class DrivetrainForceApplier:
             self.reference = chain_extension(cf,cr,rf,rr,tf,tr,0.,up_xz=up,psi_reference=self.psi)
             self.hub.reset()
         self.assist.reset(); self.battery.reset()
+        self.pedaling.reset()
         self.pending_actuation = None
         self.last_time_s = None
         self.last = {'chain_energy_j':0., 'freehub_energy_j':0., 'motor_torque_nm':0.,
                      'human_torque_nm':0., 'electrical_power_w':0., 'freehub_torque_nm':0.}
+        self.last.update(self._shift_diagnostics())
 
     def restart_clock(self):
         self.last_time_s = None
         self.assist.reset()
+        self.pedaling.reset()
+
+    def _shift_diagnostics(self):
+        return {
+            'gear_front_teeth':self.config.gearing.front_teeth,
+            'gear_rear_teeth':self.shifting.rear_teeth,
+            'gear_ratio':self.shifting.gear_ratio,
+            'shift_active':self.shifting.cut_remaining_s > 0.,
+            'shift_direction':self.shifting.direction,
+            'shift_from_teeth':self.shifting.from_teeth,
+            'shift_count':self.shifting.shift_count,
+            'shift_time_s':self.shift_time_s,
+            'shift_torque_factor':self.shifting.torque_factor,
+            'shift_motor_limit_nm':(self.shift_motor_limit_nm
+                                    if self.shifting.torque_factor < 1. else None),
+        }
+
+    def prepare_pedaling(self, data, dt, control, *, active=True, advance=True, braking=False,
+                         model=None, rear_in_contact=True):
+        if advance and self.last_time_s is not None and float(data.time) <= self.last_time_s:
+            raise ValueError('drivetrain state can advance only once per timestamp')
+        crank_qpos, crank_dof = self.joints['crank_spin']
+        _, wheel_dof = self.joints['rear_wheel_spin']
+        required = float(data.qvel[wheel_dof]) / self.shifting.gear_ratio * 60. / (2. * pi)
+        effort = self.config.human_torque_nm if control.human_torque_nm is None else control.human_torque_nm
+        enabled = active and control.rider_enabled and self.drive_mode in ('crank_effort', 'articulated_effort')
+        if (advance and active and self.config.shifting.enabled
+                and self.drive_mode in ('crank_effort', 'articulated_effort')):
+            if model is None or self.ideal_hub is None:
+                raise ValueError('automatic shifting needs the live ideal_mid_drive model')
+            shifted = self.shifting.update(float(data.qvel[crank_dof]) * 60. / (2. * pi),
+                required, dt, pedaling=enabled and effort > 0., braking=braking,
+                rear_in_contact=rear_in_contact)
+            if shifted:
+                self.ideal_hub.set_ratio(model, data, self.shifting.gear_ratio)
+                self.shift_time_s = float(data.time)
+                self.shift_motor_limit_nm = self.assist.torque * self.config.shifting.torque_factor
+            required = float(data.qvel[wheel_dof]) / self.shifting.gear_ratio * 60. / (2. * pi)
+        policy = self.pedaling if advance else copy.deepcopy(self.pedaling)
+        state = policy.update(float(data.qpos[crank_qpos]), float(data.qvel[crank_dof]),
+            required, effort, dt, braking=braking,
+            enabled=enabled)
+        return replace(state, effort_nm=state.effort_nm * self.shifting.torque_factor)
 
     def stored_energy(self, model, data):
         if self.simplified:
@@ -133,13 +193,16 @@ class DrivetrainForceApplier:
 
     def settle_actuation(self, model, data):
         """Debit only delivered, solved shaft effort at the saved input velocity."""
+        transmission = (np.zeros(model.nv) if self.ideal_hub is None
+                        else self.ideal_hub.solved_qfrc(model, data))
+        if self.ideal_hub is not None:
+            torque = float(transmission[self.ideal_hub.wheel_dof])
+            self.last.update(freehub_torque_nm=torque, freehub_engaged=torque > 1e-8)
         if self.pending_actuation is None:
-            return
+            return transmission
         requested, omega, dt, enabled = self.pending_actuation
         aid = self.actuators['mid_drive']
         torque = float(data.actuator_force[aid]) if aid >= 0 else 0.
-        if self.simplified:
-            torque *= self.config.gearing.front_teeth / self.config.gearing.rear_teeth
         if torque < -1e-10 or torque > requested+1e-8:
             raise ArithmeticError('solved motor effort violates the reserved effort ceiling')
         torque = max(torque, 0.)
@@ -154,10 +217,11 @@ class DrivetrainForceApplier:
                          motor_enabled=enabled and torque > 0., battery_empty=self.battery.energy_j == 0.)
         self.assist.torque = torque
         self.pending_actuation = None
+        return transmission
 
     def compute_components(self, model, data, dt, *, speed_mps, braking=False,
-                           sensed_human_nm=0., active=True, advance=True, control=None):
-        import mujoco
+                           sensed_human_nm=0., active=True, advance=True, control=None,
+                           pedaling_state=None):
         from bike_sim.sim.ride.control import RideControl
         control = RideControl() if control is None else control
         if not isinstance(control, RideControl):
@@ -177,9 +241,25 @@ class DrivetrainForceApplier:
             probe.hub = copy.deepcopy(self.hub)
             probe.assist = copy.deepcopy(self.assist)
             probe.battery = copy.deepcopy(self.battery)
+            probe.pedaling = copy.deepcopy(self.pedaling)
+            probe.shifting = copy.deepcopy(self.shifting)
+            probe.pending_actuation = None
             probe.last_time_s = None
-            return probe.compute_components(model,data,dt,speed_mps=speed_mps,braking=braking,
-                                            sensed_human_nm=sensed_human_nm,active=active,control=control)
+            return probe._compute_components(model, data, dt, speed_mps=speed_mps, braking=braking,
+                sensed_human_nm=sensed_human_nm, active=active, advance=False,
+                control=control, pedaling_state=pedaling_state)
+        return self._compute_components(model, data, dt, speed_mps=speed_mps, braking=braking,
+            sensed_human_nm=sensed_human_nm, active=active, advance=True,
+            control=control, pedaling_state=pedaling_state)
+
+    def _compute_components(self, model, data, dt, *, speed_mps, braking,
+                            sensed_human_nm, active, advance, control, pedaling_state):
+        time = float(data.time)
+        if self.ideal_hub is not None and advance:
+            self.ideal_hub.prepare(model, data)
+        if pedaling_state is None:
+            pedaling_state = self.prepare_pedaling(data, dt, control,
+                active=active, advance=advance, braking=braking, model=model)
         qf, vf = self.joints['crank_spin']
         qw, vw = self.joints['rear_wheel_spin']
         human=0.
@@ -208,16 +288,20 @@ class DrivetrainForceApplier:
             bearing[va] = -self.config.bearing_c_nms_rad*data.qvel[va]
         components['drive_bearings'] = bearing
         omega = float(data.qvel[vf]); cadence = omega*60/(2*pi)
-        mean_human = self.config.human_torque_nm if control.human_torque_nm is None else control.human_torque_nm
+        mean_human = pedaling_state.effort_nm
         human = (human_crank_torque(mean_human,float(data.qpos[qf]),self.config.torque_ripple)
                  if active and self.drive_mode=='crank_effort' else 0.)
         sensor = human if self.drive_mode=='crank_effort' else sensed_human_nm
-        request = (self.assist.step(sensor,cadence,speed_mps,braking,dt,torque_request_nm=control.motor_torque_nm)
+        assist_sensor = sensor if pedaling_state.mode == 'pedaling' else 0.
+        request = (self.assist.step(assist_sensor,cadence,speed_mps,braking,dt,torque_request_nm=control.motor_torque_nm)
                    if active and self.drive_mode in ('crank_effort','articulated_effort') else 0.)
         battery_cfg = self.config.battery
         a,b,idle = battery_cfg.copper_w_per_nm2,battery_cfg.speed_w_per_rad_s2,battery_cfg.idle_w
         budget = self.battery.energy_j/dt
-        limited_request = request if control.motor_limit_nm is None else min(request, control.motor_limit_nm)
+        safety_request = request if control.motor_limit_nm is None else min(request, control.motor_limit_nm)
+        limited_request = safety_request
+        if self.shifting.torque_factor < 1. and self.shift_motor_limit_nm is not None:
+            limited_request = min(limited_request, self.shift_motor_limit_nm)
         delivered = limit_torque_by_energy(limited_request,omega,a,b,idle,budget)
         enabled = active and delivered > 0. and not braking
         if not enabled:
@@ -229,11 +313,7 @@ class DrivetrainForceApplier:
         if active and self.pending_actuation is not None:
             raise RuntimeError('previous motor interval was not settled')
         self.pending_actuation = (delivered, omega, dt, enabled) if active else None
-        control_torque = delivered
-        if self.simplified:
-            ratio=self.config.gearing.front_teeth/self.config.gearing.rear_teeth
-            control_torque=delivered/ratio
-        for name,value in (('human_crank',human),('mid_drive',control_torque)):
+        for name,value in (('human_crank',human),('mid_drive',delivered)):
             aid = self.actuators[name]
             if aid >= 0:
                 data.ctrl[aid] = value
@@ -253,16 +333,23 @@ class DrivetrainForceApplier:
             'freehub_dissipation_power_w':(0. if self.simplified else
                 max(0.,(torque-self.hub.k*deflection)*relative_rate)),
             'cadence_rpm':cadence, 'human_torque_nm':human, 'human_sensor_nm':sensor,
+            'assist_sensor_nm':assist_sensor, 'human_command_nm':mean_human,
+            'rider_mode':pedaling_state.mode, 'coasting_reason':pedaling_state.reason,
+            'required_cadence_rpm':pedaling_state.required_cadence_rpm,
+            'crank_target_phase_rad':pedaling_state.target_phase_rad,
+            'crank_target_rate_rad_s':pedaling_state.target_rate_rad_s,
             'motor_request_nm':request, 'motor_torque_nm':delivered,
             'motor_limited_request_nm':limited_request,
             'motor_setpoint_nm':control.motor_torque_nm,
             'motor_limit_nm':control.motor_limit_nm,
             'motor_control_source':'assist' if control.motor_torque_nm is None else 'external_request',
-            'safety_limited':limited_request < request,
+            'safety_limited':safety_request < request,
+            'shift_limited':limited_request < safety_request,
             'motor_shaft_power_w':delivered*omega, 'electrical_power_w':actual_electrical,
             'battery_energy_j':self.battery.energy_j, 'motor_enabled':enabled,
             'energy_limited':delivered < limited_request, 'battery_empty':self.battery.energy_j==0.,
         }
+        self.last.update(self._shift_diagnostics())
         if not self.simplified:
             self.angles,self.psi = angles,psi
         else:

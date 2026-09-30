@@ -266,13 +266,14 @@ per-step scientific samples and energy/work audit. Its HUD labels this as
 `energy audit: off`. Closing the viewer restores the preview flag; a successful
 reset is required before research stepping or recording can resume.
 
-The interactive physical viewer also writes `preview.log` beside the hashed run
-artifacts under `--out` (by default `output/ride/`). It flushes one text line per
+The interactive physical viewer also writes `preview.csv` beside the hashed run
+artifacts under `--out` (by default `output/ride/`). It flushes one row per
 0.1 s of simulated time, including speed, wheel loads, pitch, fork/shock state,
-cadence, human/motor torque, battery energy, rider grip/pedal contact and IK
+cadence, human/motor torque, rider grip/pedal contact and IK
 saturation. It also records crank phase and front/rear stance, rider-root/pelvis/torso angles, motor request versus
-delivered torque, assist latch state, grade, nearby obstacle, tire slip and a final
-`run ended` or `viewer closed` marker. The file can be followed live with `tail -f`.
+delivered torque, assist latch state, grade, nearby obstacle and tire slip. The
+`event` column carries `reset`, `run ended` or `viewer closed` markers. The file
+can be followed live with `tail -f` or loaded directly with `pandas.read_csv`.
 
 `examples/research/viewer_physics_fast.toml` uses the `ideal_mid_drive` transmission,
 a 1.25 ms step, a 2.5 ms closure time constant and 100 N s/m pedal damping. These are

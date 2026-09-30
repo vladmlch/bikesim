@@ -18,6 +18,11 @@ def rolling_moment(crr, Fn, radius, omega_abs, taper):
     return scalar(-crr*load*radius*tanh(speed/taper), 'rolling torque')
 
 
+def _rolling_moment(crr, load, radius, speed, taper):
+    """Core of `rolling_moment` for callers that already validated inputs."""
+    return -crr*load*radius*tanh(speed/taper)
+
+
 def drag_force(velocity_relative, rho, cda):
     v = array(velocity_relative, 'air-relative velocity', (3,))
     rho = scalar(rho, 'air density', minimum=0)
@@ -27,3 +32,11 @@ def drag_force(velocity_relative, rho, cda):
     with np.errstate(over='ignore', invalid='ignore'):
         force = -.5*rho*cda*np.linalg.norm(v)*v
     return array(force, 'aerodynamic force', (3,))
+
+
+def _drag_force(v, rho, cda):
+    """Core of `drag_force` for callers that already validated inputs."""
+    if v[1] != 0:
+        raise ValueError('drag velocity must be planar X-Z')
+    with np.errstate(over='ignore', invalid='ignore'):
+        return -.5*rho*cda*np.linalg.norm(v)*v

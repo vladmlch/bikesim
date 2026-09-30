@@ -5,8 +5,14 @@ import numpy as np
 
 
 def scalar(value, name: str, *, minimum=None, positive=False) -> float:
-    if type(value) not in (float,int) and (
-            isinstance(value,(bool,np.bool_)) or not isinstance(value,Real)):
+    # Fast path: plain and numpy floats make up nearly every call in the
+    # per-step force evaluations; they can skip the abstract Real dispatch.
+    if type(value) is float or type(value) is int or isinstance(value, np.floating):
+        value = float(value)
+        if not isfinite(value) or (minimum is not None and value < minimum) or (positive and value <= 0):
+            raise ValueError(f'invalid {name}')
+        return value
+    if isinstance(value,(bool,np.bool_)) or not isinstance(value,Real):
         raise ValueError(f'{name} must be a finite real scalar')
     value = float(value)
     if not isfinite(value) or (minimum is not None and value < minimum) or (positive and value <= 0):

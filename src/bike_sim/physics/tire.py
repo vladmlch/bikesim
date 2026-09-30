@@ -100,6 +100,11 @@ def normal_contact(
     c = _scalar(c, "c")
     if k <= 0.0 or c < 0.0:
         raise ValueError("radial stiffness must be positive and damping nonnegative")
+    return _normal_contact(delta, delta_dot, k, c)
+
+
+def _normal_contact(delta: float, delta_dot: float, k: float, c: float) -> tuple[float, float]:
+    """Core of `normal_contact` for callers that already validated inputs."""
     if delta <= 0.0:
         return 0.0, 0.0
     spring_force = k * delta
@@ -139,6 +144,14 @@ def brush_step(
     dt = _scalar(dt, "dt")
     if Fn < 0.0 or k <= 0.0 or mu < 0.0 or length <= 0.0 or dt <= 0.0:
         raise ValueError("invalid brush load, stiffness, friction, length or timestep")
+    return _brush_step(xi, u, v_roll, Fn, k, mu, length, dt)
+
+
+def _brush_step(
+    xi: float, u: float, v_roll: float, Fn: float,
+    k: float, mu: float, length: float, dt: float,
+) -> tuple[float, float, float]:
+    """Core of `brush_step` for callers that already validated inputs."""
     old_energy = 0.5 * k * xi * xi
     _finite_result(old_energy)
     if Fn == 0.0 or mu == 0.0:

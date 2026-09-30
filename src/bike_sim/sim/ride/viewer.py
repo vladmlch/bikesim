@@ -227,7 +227,7 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
     import mujoco.viewer
     from bike_sim.sim.playground import ensure_macos_mjpython
     from bike_sim.sim.ride.physical_session import (
-        PhysicalPreviewLog,
+        PhysicalPreviewCsv,
         configuration_metadata,
         physical_run_dir_name,
     )
@@ -237,9 +237,9 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
     metadata=configuration_metadata(sim)
     log_dir=physical_run_dir_name(sim.track.name,metadata)
     from pathlib import Path
-    log_path=Path(out_root)/log_dir/"preview.log"
-    print(f"[bike-ride] physical preview log: {log_path}")
-    with PhysicalPreviewLog(log_path) as preview_log:
+    csv_path=Path(out_root)/log_dir/"preview.csv"
+    print(f"[bike-ride] physical preview csv: {csv_path}")
+    with PhysicalPreviewCsv(csv_path) as preview_log:
         with sim.physical.preview_mode(), mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
                                           show_left_ui=False,show_right_ui=False) as viewer:
             session.viewer=viewer
@@ -269,7 +269,8 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
                 elif not announced:
                     print(f"\n[RUN ENDED] {session.outcome.describe()}")
                     announced=True
-                preview_log.write(sim.time_s,sim.physical.generation,session.hud.preview_log_line(sim))
+                if preview_log.due(sim.time_s,sim.physical.generation):
+                    preview_log.write(sim.time_s,sim.physical.generation,session.hud.preview_log_row(sim))
                 if now-last_sync>=PHYSICAL_SYNC_INTERVAL_S:
                     with viewer.lock():
                         session.camera.update_viewer(viewer,bike_x=sim.position_m,bike_z=float(sim.data.xpos[sim._frame_body_id,2]))
@@ -279,7 +280,12 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
                     session.print_hud();last_hud=now
                 time.sleep(FRAME_SLEEP_S)
             if session.outcome is None:
-                preview_log.write_marker(f"# viewer closed; t={sim.time_s:.3f}s x={sim.position_m:.3f}m")
+                preview_log.write_marker(f"viewer closed; t={sim.time_s:.3f}s x={sim.position_m:.3f}m")
             else:
-                preview_log.write_marker(f"# run ended; {session.outcome.describe()}")
+                preview_log.write_marker(f"run ended; {session.outcome.describe()}")
+    try:
+        from bike_sim.viz.ride_plots import load_ride_csv,plot_physical_ride_html
+        print(f"[bike-ride] physical preview html: {plot_physical_ride_html(load_ride_csv(csv_path),csv_path.parent)}")
+    except ImportError:
+        print("[bike-ride] skipped ride.html (plotly not installed; use `uv run --with plotly`)")
     return 0

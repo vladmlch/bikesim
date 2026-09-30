@@ -203,109 +203,138 @@ class RideHUD:
         sys.stdout.write("\r" + self.line(sim, braking, brake_strength))
         sys.stdout.flush()
 
-    def preview_log_line(self, sim: "RideSimulation") -> str:
-        """Build a flushed-file line with the physical preview's key state channels."""
-        line = self.line(sim)
+    def preview_log_row(self, sim: "RideSimulation") -> dict:
+        """Build one CSV row of the physical preview's key state channels.
+
+        Columns absent from this build (no rider contacts, no tire model) are
+        emitted as empty strings, so every preview CSV shares one schema.
+        """
+        row = {"time_s": float(sim.time_s)}
         if getattr(sim, "physical", None) is None or not sim.physical.interactive_preview:
-            return line
+            return row
         drive = sim.physical.drive.last
         assist = sim.physical.drive.assist
-        crank_phase_rad = float(sim.data.qpos[sim.physical.address('crank_spin')[0]])
-        crank_goal = ("follow" if drive.get('crank_target_phase_rad') is None else
-                      f"{drive.get('crank_target_rate_rad_s', 0.0) * 60.0 / (2.0 * np.pi):.1f}rpm")
-        last_shift = ("none" if not drive.get('shift_count') else
-                      f"{drive['shift_direction']}:{drive['shift_from_teeth']}->{drive['gear_rear_teeth']}"
-                      f"@{drive['shift_time_s']:.3f}s#{drive['shift_count']}")
-        fork_velocity_mps = float(sim.data.qvel[sim.applier.fork_dofadr])
-        shock_velocity_mps = float(sim.data.qvel[sim.applier.shock_dofadr])
-        force_components = sim.force_accumulator.components
-        fork_force_n = float(force_components.get("fork_spring", np.zeros(sim.model.nv))[sim.applier.fork_dofadr])
-        shock_force_n = float(force_components.get("shock_coil", np.zeros(sim.model.nv))[sim.applier.shock_dofadr])
-        grade = 0.0 if sim.track.grade_profile is None else 100.0 * sim.track.grade_profile.slope(sim.position_m)
         obstacle = nearest_obstacle(sim.track, sim.position_m)
-        obstacle_state = "none" if obstacle is None else f"{obstacle[0]}:{obstacle[1]:+.2f}m"
+        force_components = sim.force_accumulator.components
+        shift_count = int(drive.get("shift_count") or 0)
+        crank_rate = drive.get("crank_target_rate_rad_s")
+        grade = (0.0 if sim.track.grade_profile is None
+                 else 100.0 * sim.track.grade_profile.slope(sim.position_m))
+        row.update({
+            "x_m": float(sim.position_m),
+            "rtf": sim.physical.preview_real_time_factor,
+            "speed_kmh": float(sim.speed_mps) * KMH_PER_MPS,
+            "pitch_deg": float(degrees(sim.pitch_rad)),
+            "grade_pct": float(grade),
+            "obstacle": "" if obstacle is None else obstacle[0],
+            "obstacle_distance_m": "" if obstacle is None else float(obstacle[1]),
+            "front_load_n": float(sim.contacts.front_load_n),
+            "rear_load_n": float(sim.contacts.rear_load_n),
+            "fork_travel_mm": float(sim.fork_travel_mm),
+            "fork_velocity_mps": float(sim.data.qvel[sim.applier.fork_dofadr]),
+            "fork_force_n": float(force_components.get(
+                "fork_spring", np.zeros(sim.model.nv))[sim.applier.fork_dofadr]),
+            "shock_stroke_mm": float(sim.shock_stroke_mm),
+            "shock_velocity_mps": float(sim.data.qvel[sim.applier.shock_dofadr]),
+            "shock_force_n": float(force_components.get(
+                "shock_coil", np.zeros(sim.model.nv))[sim.applier.shock_dofadr]),
+            "crank_phase_rad": float(sim.data.qpos[sim.physical.address("crank_spin")[0]]),
+            "crank_target_rate_rpm": (
+                "" if drive.get("crank_target_phase_rad") is None or crank_rate is None
+                else float(crank_rate) * 60.0 / (2.0 * np.pi)),
+            "cadence_rpm": float(drive.get("cadence_rpm", 0.0)),
+            "required_cadence_rpm": float(drive.get("required_cadence_rpm", 0.0)),
+            "rider_mode": drive.get("rider_mode", "unknown"),
+            "coast_reason": drive.get("coasting_reason") or "",
+            "gear_front_teeth": int(drive.get("gear_front_teeth", 0)),
+            "gear_rear_teeth": int(drive.get("gear_rear_teeth", 0)),
+            "shift_count": shift_count,
+            "shift_torque_factor": float(drive.get("shift_torque_factor", 1.0)),
+            "last_shift_direction": "" if not shift_count else drive.get("shift_direction", ""),
+            "last_shift_from_teeth": "" if not shift_count else drive.get("shift_from_teeth", ""),
+            "last_shift_to_teeth": "" if not shift_count else drive.get("gear_rear_teeth", ""),
+            "last_shift_time_s": "" if not shift_count else float(drive.get("shift_time_s", 0.0)),
+            "freehub_engaged": int(bool(drive.get("freehub_engaged"))),
+            "freehub_torque_nm": float(drive.get("freehub_torque_nm", 0.0)),
+            "human_sensor_nm": float(drive.get("human_sensor_nm", 0.0)),
+            "human_command_nm": float(drive.get("human_command_nm", 0.0)),
+            "assist_sensor_nm": float(drive.get("assist_sensor_nm", 0.0)),
+            "motor_request_nm": float(drive.get("motor_request_nm", 0.0)),
+            "motor_torque_nm": float(drive.get("motor_torque_nm", 0.0)),
+            "motor_shaft_power_w": float(drive.get("motor_shaft_power_w", 0.0)),
+            "motor_enabled": int(bool(drive.get("motor_enabled", False))),
+            "assist_pedaling": int(bool(assist.pedaling)),
+            "assist_age_s": float(assist.age),
+            "assist_stall_s": float(drive.get("assist_stall_s", 0.0)),
+        })
+
+        rider_columns = {
+            "rider_grip_enabled": "", "rider_grip_reachable": "",
+            "rider_pedal_front": "", "rider_pedal_rear": "",
+            "rider_ik_saturated": "",
+            "rider_stance_front": "", "rider_stance_rear": "",
+            "grip_gap_m": "", "front_pedal_load_n": "", "front_pedal_gap_m": "",
+            "rear_pedal_load_n": "", "rear_pedal_gap_m": "", "saddle_load_n": "",
+            "rider_root_pitch_deg": "", "rider_pelvis_pitch_deg": "",
+            "rider_torso_pitch_deg": "", "rider_rel_pitch_deg": "",
+            "rider_joints_saturated": "",
+        }
         rider = sim.physical.rider_contacts
-        if rider is None:
-            rider_state = "none"
-            rider_pose = "none"
-            rider_contacts = "none"
-        else:
+        if rider is not None:
             diagnostics = rider.diagnostics
             front = diagnostics.get("front_pedal", {})
-            rear = diagnostics.get("rear_pedal", {})
+            rear_pedal = diagnostics.get("rear_pedal", {})
             saddle = diagnostics.get("saddle", {})
             grip = diagnostics.get("grip", {})
             control = sim.physical.rider_control
-            stance = {} if control is None else control.support_diagnostics.get('stance', {})
-            saturation = "none" if control is None else ",".join(
-                name for name, active in control.saturated_ik.items() if active
-            ) or "none"
-            joint_saturation = "none" if control is None else ",".join(
-                name for name, terms in control.last_terms.items() if terms.get("saturated")
-            ) or "none"
-            rider_state = (
-                f"grip={'on' if grip.get('enabled') else 'off'}"
-                f"/{'ok' if grip.get('reachable') else 'lost'} "
-                f"pedals={'on' if front.get('in_platform') else 'off'}"
-                f"/{'on' if rear.get('in_platform') else 'off'} ik={saturation}"
-            )
-            rider_contacts = (
-                f"grip_gap={grip.get('hand_gap_m', 0.0):.3f}m "
-                f"fp={front.get('normal_load_n', 0.0):.0f}N/{front.get('gap_m', 0.0):+.3f}m "
-                f"rp={rear.get('normal_load_n', 0.0):.0f}N/{rear.get('gap_m', 0.0):+.3f}m "
-                f"saddle={saddle.get('normal_load_n', 0.0):.0f}N"
-            )
-            root_pitch = degrees(float(sim.data.qpos[sim.physical.address('rider_root_pitch')[0]]))
+            stance = {} if control is None else control.support_diagnostics.get("stance", {})
+            ik_saturated = "" if control is None else ",".join(
+                name for name, active in control.saturated_ik.items() if active)
+            joints_saturated = "" if control is None else ",".join(
+                name for name, terms in control.last_terms.items() if terms.get("saturated"))
+            root_pitch = degrees(float(sim.data.qpos[sim.physical.address("rider_root_pitch")[0]]))
             body_pitch = {}
-            for name in ('rider_pelvis', 'rider_torso'):
+            for name in ("rider_pelvis", "rider_torso"):
                 body_id = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_BODY, name)
                 rotation = sim.data.xmat[body_id].reshape(3, 3)
                 body_pitch[name] = degrees(atan2(-rotation[2, 0], rotation[0, 0]))
-            rider_pose = (
-                f"root={root_pitch:+.1f}deg pelvis={body_pitch['rider_pelvis']:+.1f}deg "
-                f"torso={body_pitch['rider_torso']:+.1f}deg "
-                f"rel={root_pitch-degrees(sim.pitch_rad):+.1f}deg jsat={joint_saturation}"
-            )
-            rider_state += f" stance={'on' if stance.get('front') else 'off'}/{'on' if stance.get('rear') else 'off'}"
-        factor = sim.physical.preview_real_time_factor
-        rate = "measuring" if factor is None else f"{factor:.2f}x"
+            rider_columns.update({
+                "rider_grip_enabled": int(bool(grip.get("enabled"))),
+                "rider_grip_reachable": int(bool(grip.get("reachable"))),
+                "rider_pedal_front": int(bool(front.get("in_platform"))),
+                "rider_pedal_rear": int(bool(rear_pedal.get("in_platform"))),
+                "rider_ik_saturated": ik_saturated,
+                "rider_stance_front": "" if control is None else int(bool(stance.get("front"))),
+                "rider_stance_rear": "" if control is None else int(bool(stance.get("rear"))),
+                "grip_gap_m": float(grip.get("hand_gap_m", 0.0)),
+                "front_pedal_load_n": float(front.get("normal_load_n", 0.0)),
+                "front_pedal_gap_m": float(front.get("gap_m", 0.0)),
+                "rear_pedal_load_n": float(rear_pedal.get("normal_load_n", 0.0)),
+                "rear_pedal_gap_m": float(rear_pedal.get("gap_m", 0.0)),
+                "saddle_load_n": float(saddle.get("normal_load_n", 0.0)),
+                "rider_root_pitch_deg": float(root_pitch),
+                "rider_pelvis_pitch_deg": float(body_pitch["rider_pelvis"]),
+                "rider_torso_pitch_deg": float(body_pitch["rider_torso"]),
+                "rider_rel_pitch_deg": float(root_pitch - degrees(sim.pitch_rad)),
+                "rider_joints_saturated": joints_saturated,
+            })
+        row.update(rider_columns)
+
+        tire_columns = {
+            "front_slip_mps": "", "rear_slip_mps": "", "front_mu": "", "rear_mu": "",
+        }
         tire = sim.physical.tire
-        if tire is None:
-            tire_state = "none"
-        else:
-            front_tire = tire.diagnostics.get('front', {})
-            rear_tire = tire.diagnostics.get('rear', {})
-            tire_state = (
-                f"slip={front_tire.get('slip_mps', 0.0):+.2f}/{rear_tire.get('slip_mps', 0.0):+.2f}m/s "
-                f"mu={front_tire.get('friction_coefficient', 0.0):.2f}/{rear_tire.get('friction_coefficient', 0.0):.2f}"
-            )
-        return (
-            f"{line} x={sim.position_m:.2f}m pitch={degrees(sim.pitch_rad):+.2f}deg "
-            f"grade={grade:+.1f}% obstacle={obstacle_state} "
-            f"crank={crank_phase_rad:+.2f}rad "
-            f"rider_mode={drive.get('rider_mode', 'unknown')} "
-            f"coast_reason={drive.get('coasting_reason') or 'none'} "
-            f"required_cadence={drive.get('required_cadence_rpm', 0.0):.1f}rpm "
-            f"crank_goal={crank_goal} "
-            f"gear={drive.get('gear_front_teeth', 0)}x{drive.get('gear_rear_teeth', 0)} "
-            f"last_shift={last_shift} shift_cut={drive.get('shift_torque_factor', 1.0):.2f} "
-            f"freehub={'engaged' if drive.get('freehub_engaged') else 'free'} "
-            f"freehub_torque={drive.get('freehub_torque_nm', 0.0):.1f}Nm "
-            f"fork={sim.fork_travel_mm:.1f}mm/{fork_velocity_mps:+.3f}m/s "
-            f"shock={sim.shock_stroke_mm:.1f}mm/{shock_velocity_mps:+.3f}m/s "
-            f"Fforce={fork_force_n:+.0f}N Sforce={shock_force_n:+.0f}N "
-            f"human={drive.get('human_sensor_nm', 0.0):+.1f}Nm "
-            f"human_cmd={drive.get('human_command_nm', 0.0):.1f}Nm "
-            f"assist_input={drive.get('assist_sensor_nm', 0.0):+.1f}Nm "
-            f"motor_req={drive.get('motor_request_nm', 0.0):.1f}Nm "
-            f"motor_torque={drive.get('motor_torque_nm', 0.0):.1f}Nm "
-            f"motor_on={int(bool(drive.get('motor_enabled', False)))} "
-            f"assist_pedaling={int(bool(assist.pedaling))} assist_age={assist.age:.3f}s "
-            f"assist_stall={drive.get('assist_stall_s', 0.0):.2f}s "
-            f"battery={drive.get('battery_energy_j', 0.0) / 3600.0:.2f}Wh "
-            f"rider={rider_state} pose={rider_pose} contacts={rider_contacts} "
-            f"tires={tire_state} log_rtf={rate}"
-        )
+        if tire is not None:
+            front_tire = tire.diagnostics.get("front", {})
+            rear_tire = tire.diagnostics.get("rear", {})
+            tire_columns.update({
+                "front_slip_mps": float(front_tire.get("slip_mps", 0.0)),
+                "rear_slip_mps": float(rear_tire.get("slip_mps", 0.0)),
+                "front_mu": float(front_tire.get("friction_coefficient", 0.0)),
+                "rear_mu": float(rear_tire.get("friction_coefficient", 0.0)),
+            })
+        row.update(tire_columns)
+        return row
 
     @staticmethod
     def get_help_text() -> str:

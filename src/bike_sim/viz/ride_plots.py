@@ -334,6 +334,8 @@ __all__ = [
     "plot_ride",
     "plot_tyres",
     "plot_track_profile",
+    "load_ride_csv",
+    "plot_physical_ride_html",
 ]
 
 
@@ -356,3 +358,201 @@ def plot_physical_ride(channels, output_dir):
         ax.legend();ax.grid(True);fig.tight_layout()
         path=out/(name+'.png');fig.savefig(path,dpi=130);plt.close(fig);paths.append(path)
     return paths
+
+
+# --------------------------------------------------------------------------------------
+# Interactive HTML figures (physical preview.csv schema)
+# --------------------------------------------------------------------------------------
+
+
+def load_ride_csv(path: Union[str, Path]) -> Dict[str, np.ndarray]:
+    """
+    Loads a ride CSV into a channels dict, matching ``recorder.columns()``.
+
+    Numeric columns become float arrays (missing entries become NaN); columns
+    containing any non-numeric value become object arrays of strings.
+    """
+    import csv
+
+    with Path(path).open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    channels: Dict[str, np.ndarray] = {}
+    for name in (rows[0].keys() if rows else []):
+        values = [row.get(name) or "" for row in rows]
+        try:
+            channels[name] = np.array(
+                [float(v) if v != "" else np.nan for v in values], dtype=float
+            )
+        except ValueError:
+            channels[name] = np.array(values, dtype=object)
+    return channels
+
+
+def _series(channels: Dict[str, np.ndarray], name: str) -> Optional[np.ndarray]:
+    values = channels.get(name)
+    if values is None or values.dtype == object:
+        return None
+    return values
+
+
+def _obstacle_positions(channels: Dict[str, np.ndarray]) -> List[Tuple[float, str]]:
+    """Parses unique ``Name@Xm`` obstacle labels into (x, label) marker pairs."""
+    import re
+
+    labels = channels.get("obstacle")
+    if labels is None:
+        return []
+    out = []
+    seen = set()
+    for label in labels:
+        match = re.search(r"@(-?\d+(?:\.\d+)?)m\b", str(label))
+        if match and label not in seen:
+            seen.add(label)
+            out.append((float(match.group(1)), str(label)))
+    return sorted(out)
+
+
+def _shift_events(channels: Dict[str, np.ndarray]) -> List[Tuple[float, str]]:
+    """Returns (time_s, label) for each step change of ``shift_count``."""
+    count, time = _series(channels, "shift_count"), _series(channels, "time_s")
+    if count is None or time is None:
+        return []
+    direction = channels.get("last_shift_direction")
+    from_t, to_t = channels.get("last_shift_from_teeth"), channels.get("last_shift_to_teeth")
+    events = []
+    for i in range(1, len(count)):
+        if count[i] != count[i - 1] and np.isfinite(count[i]):
+            label = ""
+            if direction is not None and from_t is not None and to_t is not None:
+                label = f"{direction[i]}:{int(from_t[i])}->{int(to_t[i])}"
+            events.append((float(time[i]), label))
+    return events
+
+
+def _html_layout(fig: Any, title: str, height: int) -> None:
+    """Applies the dark ride-plots theme to a plotly figure."""
+    fig.update_layout(
+        title=dict(text=title, font=dict(color=FG, size=14)),
+        paper_bgcolor=BG, plot_bgcolor=PANEL, font=dict(color=FG, size=11),
+        hovermode="x unified", height=height,
+        legend=dict(bgcolor="#161b22", bordercolor=SPINE, font=dict(size=10)),
+        margin=dict(l=60, r=60, t=50, b=40),
+    )
+    fig.update_xaxes(gridcolor=GRID, zerolinecolor=GRID)
+    fig.update_yaxes(gridcolor=GRID, zerolinecolor=GRID)
+
+
+def plot_physical_ride_html(channels: Dict[str, np.ndarray],
+                            output_dir: Union[str, Path],
+                            filename: str = "ride.html") -> Path:
+    """
+    Interactive HTML dashboards for a physical ``preview.csv`` recording.
+
+    Two figures share one file: an effort/drivetrain view over time (speed and
+    grade, motor vs human power, cadence tracking with shift-cut shading, gear
+    steps with shift markers, motor request vs delivered torque) and a
+    suspension/load view over track position with obstacle markers. Unified
+    hover reports every curve at the cursor's x.
+
+    Args:
+        channels: Channels keyed by CSV column name (``load_ride_csv`` or
+            ``PhysicalRecorder.columns()``).
+        output_dir: Directory for the output file.
+        filename: Output file name.
+
+    Requires plotly (``uv run --with plotly``); imported lazily so the package
+    does not depend on it.
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    time = _series(channels, "time_s")
+    x_m = _series(channels, "x_m")
+    if time is None or x_m is None:
+        raise ValueError("channels lack time_s/x_m; is this a physical preview.csv?")
+
+    def add(fig: Any, xs: np.ndarray, name: str, row: int, color: str,
+            secondary: bool = False, step: bool = False, text: Optional[Sequence[str]] = None) -> None:
+        ys = _series(channels, name)
+        if ys is None:
+            return
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, name=name, text=text,
+            line=dict(color=color, width=1.4, shape="hv" if step else "linear"),
+        ), row=row, col=1, secondary_y=secondary)
+
+    # Figure 1 -- effort and drivetrain over time
+    fig1 = make_subplots(
+        rows=5, cols=1, shared_xaxes=True, vertical_spacing=0.035,
+        specs=[[{"secondary_y": True}], [{"secondary_y": False}], [{"secondary_y": False}],
+               [{"secondary_y": True}], [{"secondary_y": False}]],
+        subplot_titles=("Speed and grade", "Power: motor vs human", "Cadence vs required",
+                        "Rear gear and freehub torque", "Motor request vs delivered"),
+    )
+    add(fig1, time, "speed_kmh", 1, FORK)
+    add(fig1, time, "grade_pct", 1, MUTED, secondary=True)
+    cadence = _series(channels, "cadence_rpm")
+    human_nm = _series(channels, "human_sensor_nm")
+    add(fig1, time, "motor_shaft_power_w", 2, SHOCK)
+    if cadence is not None and human_nm is not None:
+        human_w = human_nm * cadence * (2.0 * np.pi / 60.0)
+        fig1.add_trace(go.Scatter(x=time, y=human_w, name="human_power_w (sensor Nm x cadence)",
+                                  line=dict(color=RIDER, width=1.4)), row=2, col=1)
+    add(fig1, time, "cadence_rpm", 3, BAR)
+    add(fig1, time, "required_cadence_rpm", 3, RAW)
+    cut = _series(channels, "shift_torque_factor")
+    if cut is not None:
+        in_cut = cut < 0.999
+        edges = np.diff(in_cut.astype(int))
+        for start, end in zip(np.where(edges == 1)[0], np.where(edges == -1)[0]):
+            fig1.add_vrect(float(time[start]), float(time[end]), row=3, col=1,
+                           fillcolor=MARKER, opacity=0.18, line_width=0)
+    add(fig1, time, "gear_rear_teeth", 4, SADDLE, step=True)
+    add(fig1, time, "gear_front_teeth", 4, MUTED, step=True)
+    add(fig1, time, "freehub_torque_nm", 4, RIDER, secondary=True)
+    for t, label in _shift_events(channels):
+        fig1.add_vline(t, row=4, col=1, line=dict(color=MARKER, dash="dot", width=1))
+        fig1.add_annotation(x=t, y=1.0, yref="y4 domain", text=label, showarrow=False,
+                            font=dict(color=MARKER, size=9), textangle=-90,
+                            xanchor="left", yanchor="top", row=4, col=1)
+    add(fig1, time, "motor_request_nm", 5, MUTED)
+    add(fig1, time, "motor_torque_nm", 5, SHOCK)
+    fig1.update_yaxes(title_text="km/h | %", row=1, col=1)
+    fig1.update_yaxes(title_text="W", row=2, col=1)
+    fig1.update_yaxes(title_text="rpm", row=3, col=1)
+    fig1.update_yaxes(title_text="teeth", row=4, col=1)
+    fig1.update_yaxes(title_text="Nm", row=4, col=1, secondary_y=True)
+    fig1.update_yaxes(title_text="Nm", row=5, col=1)
+    fig1.update_xaxes(title_text="time (s)", row=5, col=1)
+    _html_layout(fig1, "Effort and drivetrain", height=1100)
+
+    # Figure 2 -- suspension and wheel load over track position
+    fig2 = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.06,
+                         subplot_titles=("Suspension travel", "Wheel normal load"))
+    add(fig2, x_m, "fork_travel_mm", 1, FORK)
+    add(fig2, x_m, "shock_stroke_mm", 1, SHOCK)
+    add(fig2, x_m, "front_load_n", 2, BAR)
+    add(fig2, x_m, "rear_load_n", 2, SADDLE)
+    for pos, label in _obstacle_positions(channels):
+        fig2.add_vline(pos, line=dict(color=MARKER, dash="dot", width=1))
+        fig2.add_annotation(x=pos, y=1.0, yref="paper", text=label, showarrow=False,
+                            font=dict(color=MARKER, size=9), textangle=-90,
+                            xanchor="left", yanchor="top")
+    fig2.update_yaxes(title_text="mm", row=1, col=1)
+    fig2.update_yaxes(title_text="N", row=2, col=1)
+    fig2.update_xaxes(title_text="track x (m)", row=2, col=1)
+    _html_layout(fig2, "Suspension and wheel load", height=650)
+
+    path = out / filename
+    path.write_text(
+        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        f"<title>{path.stem}</title>"
+        f"<style>body{{background:{BG};margin:0;padding:12px}}</style></head><body>"
+        + fig1.to_html(full_html=False, include_plotlyjs=True)
+        + fig2.to_html(full_html=False, include_plotlyjs=False)
+        + "</body></html>",
+        encoding="utf-8",
+    )
+    return path

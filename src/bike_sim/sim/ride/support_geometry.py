@@ -107,12 +107,13 @@ def _upper_box_face(origin, rotation, half):
     # Intersect a vertical ray through the spindle with the finite box.
     # Choosing the face with the most upward normal jumps by centimetres at
     # 45 degrees even though the physical top of a thin pedal is continuous.
-    distances = {i: half[i]/abs(rotation[2, i]) if abs(rotation[2, i])>1e-14
-                 else float('inf') for i in (0, 2)}
-    axis = min(distances, key=distances.get)
+    d0 = half[0]/abs(rotation[2, 0]) if abs(rotation[2, 0]) > 1e-14 else float('inf')
+    d2 = half[2]/abs(rotation[2, 2]) if abs(rotation[2, 2]) > 1e-14 else float('inf')
+    axis = 2 if d2 < d0 else 0
+    distance = d2 if axis == 2 else d0
     sign = 1. if rotation[2, axis] >= 0. else -1.
     normal = sign*rotation[:, axis]
-    point = origin+np.array([0., 0., distances[axis]])
+    point = origin+np.array([0., 0., distance])
     tangent = np.array([normal[2], 0., -normal[0]])
     return point, normal, tangent
 

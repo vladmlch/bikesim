@@ -45,7 +45,19 @@ def gravity_support_targets(weight_n, com_x_m, points_x_m, crank_x_m,
             break
         selected = matrix[:, columns]
         desired = preferred[columns]
-        correction = np.linalg.lstsq(selected, target-selected@desired, rcond=1e-10)[0]
+        residual_target = target-selected@desired
+        # The active-set correction is tiny (3 x <=4); a direct solve avoids the
+        # SVD machinery of lstsq while producing the same minimum-norm or
+        # least-squares correction on a well-conditioned support geometry.
+        try:
+            if selected.shape[1] >= selected.shape[0]:
+                correction = selected.T @ np.linalg.solve(
+                    selected @ selected.T, residual_target)
+            else:
+                correction = np.linalg.solve(
+                    selected.T @ selected, selected.T @ residual_target)
+        except np.linalg.LinAlgError:
+            correction = np.linalg.lstsq(selected, residual_target, rcond=1e-10)[0]
         forces[:] = 0.
         forces[columns] = desired+correction
         negative = [index for index in columns if index != 3 and forces[index] < -1e-9]

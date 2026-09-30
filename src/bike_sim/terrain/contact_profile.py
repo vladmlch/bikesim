@@ -53,16 +53,24 @@ class ProfileQuery:
         self.normal_cosine = np.cos(np.deg2rad(angle))
 
     def _candidates(self, c, lo, hi):
+        """Project the centre onto every window segment; pruning is the caller's."""
         ids = np.arange(lo, hi)
         a = self.vertices[lo:hi]
         d = self._segments[lo:hi]
         t = np.clip(np.einsum('ij,ij->i', c-a, d)/self._segment_lengths_sq[lo:hi], 0., 1.)
         points = a+t[:, None]*d
+        diff = c-points
+        distances = np.sqrt(np.einsum('ij,ij->i', diff, diff))
+        return ids, t, points, distances
+
+    def _endpoint_keep(self, c, ids, t):
         keep = np.ones(len(ids), dtype=bool)
         # A projection on a segment endpoint is not a separate support when
         # continuing along its neighbour moves closer to the wheel. In particular,
         # subdividing a flat road must not manufacture hundreds of supports.
         endpoint = np.flatnonzero((t == 0.) | (t == 1.))
+        if not len(endpoint):
+            return keep
         vertex_ids = ids[endpoint] + (t[endpoint] == 1.).astype(int)
         v = self.vertices[vertex_ids]
         offsets = c-v
@@ -70,9 +78,7 @@ class ProfileQuery:
             directions=neighbour_directions[vertex_ids]
             closer = np.einsum('ij,ij->i',offsets,directions) > 1e-14
             keep[endpoint[closer]] = False
-        points, ids = points[keep], ids[keep]
-        distances = np.linalg.norm(c-points, axis=1)
-        return ids, points, distances
+        return keep
 
     def contact(self, center_xz, radius, previous_segment=None):
         c = array(center_xz, 'wheel center', (2,))
@@ -109,7 +115,7 @@ class ProfileQuery:
             if distance<=1e-12:
                 raise ValueError('unsupported or degenerate contact geometry')
             return ProfileContact(point,(c-point)/distance,radius-distance,segment,False)
-        ids, points, distances = self._candidates(c, lo, hi)
+        ids, t, points, distances = self._candidates(c, lo, hi)
         if len(ids) == 0 or np.min(distances) >= radius:
             # Outside contact, retain an exact signed nearest gap rather than a
             # radius-window artefact; no force is applied in either case.
@@ -126,22 +132,32 @@ class ProfileQuery:
                 search_hi = min(count, int(np.searchsorted(x, c[0]+reach, side='right'))+1)
             else:
                 search_lo, search_hi = 0, count
-            ids, points, distances = self._candidates(c, search_lo, search_hi)
+            ids, t, points, distances = self._candidates(c, search_lo, search_hi)
         if len(ids) == 0 or np.min(distances) <= 1e-12:
             raise ValueError('unsupported or degenerate contact geometry')
+        # An endpoint-pruned segment always has a closer neighbour inside the
+        # window, so it can never be the winner; pruning is only required to
+        # interpret the previous segment and the multi-support test.
+        keep = self._endpoint_keep(c, ids, t)
         winner = int(np.argmin(distances))
         if previous_segment is not None:
-            same = np.flatnonzero(ids == previous_segment)
+            same = np.flatnonzero((ids == previous_segment) & keep)
             if len(same) and abs(distances[same[0]]-distances[winner]) <= 1e-12:
                 winner = int(same[0])
-        normals = (c-points)/distances[:, None]
         delta = radius-distances
-        significant = delta >= max(self.significant_delta_m,
-                                   self.significance_fraction*max(float(delta[winner]), 0.))
-        different = normals @ normals[winner] < self.normal_cosine
-        separated = np.linalg.norm(points-points[winner], axis=1) > 1e-10
-        multi = bool(np.any(significant & different & separated))
-        return ProfileContact(points[winner], normals[winner], float(delta[winner]),
+        normal_winner = (c-points[winner])/distances[winner]
+        # Normals and the multi-support tests are needed only for supports that
+        # could be significant; skipped segments never reach them.
+        near = np.flatnonzero((delta >= max(self.significant_delta_m,
+            self.significance_fraction*max(float(delta[winner]), 0.))) & keep)
+        if len(near):
+            normals = (c-points[near])/distances[near, None]
+            different = normals @ normal_winner < self.normal_cosine
+            separated = np.linalg.norm(points[near]-points[winner], axis=1) > 1e-10
+            multi = bool(np.any(different & separated))
+        else:
+            multi = False
+        return ProfileContact(points[winner], normal_winner, float(delta[winner]),
                               int(ids[winner]), multi)
 
 

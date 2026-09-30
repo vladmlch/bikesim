@@ -8,10 +8,10 @@ from dataclasses import dataclass
 import copy
 import numpy as np
 from bike_sim.physics.checks import array, scalar
-from bike_sim.physics.tire import brush_step
+from bike_sim.physics.tire import _brush_step, _normal_contact
 from bike_sim.terrain.contact_profile import ProfileQuery
 from bike_sim.sim.ride.physical_mapping import (
-    resolve_id, point_velocity, map_wrench,
+    resolve_id, point_jacobian_into,
 )
 
 
@@ -77,6 +77,10 @@ class TireForceApplier:
                       for s in ('front', 'rear')}
         self.bodies = {s:int(model.geom_bodyid[g]) for s, g in self.geoms.items()}
         self.radii = {s:float(model.geom_size[g, 0]) for s, g in self.geoms.items()}
+        # Per-step Jacobian scratch: the contact-point Jacobian serves both the
+        # velocity read and the wrench map, so it is computed once per wheel.
+        self._jac_contact = np.empty((3, model.nv))
+        self._jac_center = np.empty((3, model.nv))
         if config.backend == 'compliant_2d':
             for body in self.bodies.values():
                 ids = np.flatnonzero(model.geom_bodyid == body)
@@ -133,10 +137,13 @@ class TireForceApplier:
             p = np.array([contact.point[0], 0., contact.point[1]])
             n = np.array([contact.normal[0], 0., contact.normal[1]])
             tangent = np.array([n[2], 0., -n[0]])
-            velocity = point_velocity(model, data, self.bodies[side], p)
-            center_velocity = point_velocity(model, data, self.bodies[side], center)
+            point_jacobian_into(model, data, self.bodies[side], p, self._jac_contact)
+            point_jacobian_into(model, data, self.bodies[side], center, self._jac_center)
+            velocity = self._jac_contact @ data.qvel
+            center_velocity = self._jac_center @ data.qvel
             delta_dot, slip = -float(velocity @ n), float(velocity @ tangent)
-            normal, radial_energy = cfg.material.normal_contact(contact.delta, delta_dot)
+            normal, radial_energy = _normal_contact(
+                contact.delta, delta_dot, cfg.material.radial_k_n_m, cfg.material.radial_c_ns_m)
             xi = state.xi
             release_loss = 0.
             if state.tangent is not None:
@@ -157,12 +164,12 @@ class TireForceApplier:
                     release_loss = .5*cfg.tangent_k_n_m*(xi*xi-transported*transported)
                     xi = transported
             mu, material = effective_friction(cfg, self.surface_map, p[0], slip)
-            xi_new, force, brush_loss = brush_step(
+            xi_new, force, brush_loss = _brush_step(
                 xi, slip, float(center_velocity @ tangent), normal,
                 cfg.tangent_k_n_m, mu, cfg.relaxation_length_m, dt,
             )
             force_world = normal*n + force*tangent
-            qfrc += map_wrench(model, data, self.bodies[side], p, force_world)
+            qfrc += self._jac_contact.T @ force_world
             patches = (ContactPatch(p, n, normal, force, slip),) if contact.delta > 0 else ()
             snapshots[side] = WheelContactSnapshot(
                 time_s=time, patches=patches, geometric_contact=contact.delta > 0,

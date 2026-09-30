@@ -1,10 +1,11 @@
 """Unilateral rider supports and a releasable grip, all with paired reactions."""
 import copy
 from dataclasses import dataclass
+from math import hypot
 import numpy as np
 from bike_sim.physics.checks import array, scalar
-from bike_sim.physics.tire import normal_contact, brush_step
-from bike_sim.sim.ride.physical_mapping import resolve_id, point_velocity
+from bike_sim.physics.tire import _brush_step, _normal_contact
+from bike_sim.sim.ride.physical_mapping import resolve_id, relative_point_jacobian
 from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
 
 
@@ -25,6 +26,11 @@ def grip_step(xi,relative_velocity,k,c,dt):
     """Backward-force quadrature: work + stored-energy change + loss = 0."""
     xi=array(xi,'grip state',(3,)); u=array(relative_velocity,'grip velocity',(3,))
     k,c,dt=scalar(k,'grip stiffness',positive=True),scalar(c,'grip damping',minimum=0),scalar(dt,'grip dt',positive=True)
+    return _grip_step(xi,u,k,c,dt)
+
+
+def _grip_step(xi,u,k,c,dt):
+    """Core of `grip_step` for callers that already validated inputs."""
     new=xi+dt*u
     force=-k*new-c*u
     energy=.5*k*float(new@new)
@@ -66,6 +72,8 @@ class RiderContactApplier:
             self.supports[side+'_pedal']=(foot,sole,pedal,geom)
         crank=resolve_id(model,obj.mjOBJ_JOINT,'crank_spin')
         self.crank_dof=int(model.jnt_dofadr[crank])
+        # Per-step Jacobian scratch for the paired-support relative Jacobian.
+        self._jac_a=np.empty((3,model.nv)); self._jac_b=np.empty((3,model.nv))
         self.reset(model,None)
 
     def reset(self,model,data):
@@ -188,13 +196,16 @@ class RiderContactApplier:
             for key,point,n,tangent,gap,inside in self._pads(model,data,name,entry):
                 if abs(n[1])>1e-9 or abs(tangent[1])>1e-9:
                     raise ValueError('rider support surface is outside the planar model')
-                u=point_velocity(model,data,body,point)-point_velocity(model,data,bike,point)
+                # One Jacobian pair per pad serves the relative-velocity read
+                # and the paired force application alike.
+                jrel=relative_point_jacobian(model,data,body,bike,point,self._jac_a,self._jac_b)
+                u=jrel@data.qvel
                 penetration=-gap
                 # Two finite-area pressure samples split, rather than duplicate,
                 # the specified stiffness/damping and carry a physical moment.
                 damping = cfg.support_c_ns_m if name == 'saddle' else cfg.pedal_c_ns_m
                 k,c,kx=cfg.support_k_n_m/2,damping/2,cfg.support_tangent_k_n_m/2
-                normal,radial_energy=normal_contact(penetration,-float(u@n),k,c)
+                normal,radial_energy=_normal_contact(penetration,-float(u@n),k,c)
                 state=self.states[key];xi=state.xi;transport_loss=0.
                 if state.tangent is not None:
                     alignment=float(state.tangent@tangent)
@@ -204,12 +215,10 @@ class RiderContactApplier:
                     transport_loss=.5*kx*(xi*xi-transported*transported);xi=transported
                 if not self.enabled[name] or not inside:
                     normal=0.;radial_energy=0.
-                new_xi,friction,brush_loss=brush_step(xi,float(u@tangent),0.,normal,kx,cfg.support_mu,cfg.support_length_m,dt)
+                new_xi,friction,brush_loss=_brush_step(xi,float(u@tangent),0.,normal,kx,cfg.support_mu,cfg.support_length_m,dt)
                 f=normal*n+friction*tangent
-                contribution=np.zeros(model.nv)
-                apply_internal_force(model,data,body,bike,point,f,contribution)
-                qfrc+=contribution
-                if name.endswith('_pedal'): delivered+=float(contribution[self.crank_dof])
+                qfrc+=jrel.T@f
+                if name.endswith('_pedal'): delivered+=float(f@jrel[:,self.crank_dof])
                 shear=.5*kx*new_xi**2
                 energy+=radial_energy+shear;loss+=max(transport_loss,0.)+brush_loss
                 radial_loss=(normal-k*max(penetration,0.))*(-float(u@n))
@@ -235,15 +244,18 @@ class RiderContactApplier:
         R=data.xmat[self.steer].reshape(3,3)
         grip=data.xpos[self.steer]+R@self.grip_anchor_local
         hand=data.site_xpos[self.grip_site]
-        reachable=(np.linalg.norm(grip-data.xpos[self.shoulder])<=self.arm_reach+1e-6
-                   and np.linalg.norm(hand-grip)<=cfg.grip_release_distance_m)
+        shoulder_gap=grip-data.xpos[self.shoulder]
+        hand_gap=hand-grip
+        reachable=(hypot(*shoulder_gap)<=self.arm_reach+1e-6
+                   and hypot(*hand_gap)<=cfg.grip_release_distance_m)
         grip_active=self.enabled['grip'] and reachable
         old=self.grip_xi_local
         if grip_active:
-            relative=point_velocity(model,data,self.forearm,grip)-point_velocity(model,data,self.steer,grip)
-            new,force_local,grip_energy,grip_loss=grip_step(old,R.T@relative,cfg.grip_k_n_m,cfg.grip_c_ns_m,dt)
+            jrel=relative_point_jacobian(model,data,self.forearm,self.steer,grip,self._jac_a,self._jac_b)
+            relative=jrel@data.qvel
+            new,force_local,grip_energy,grip_loss=_grip_step(old,R.T@relative,cfg.grip_k_n_m,cfg.grip_c_ns_m,dt)
             force=R@force_local
-            apply_internal_force(model,data,self.forearm,self.steer,grip,force,qfrc)
+            qfrc+=jrel.T@force
         else:
             new=np.zeros(3); force=np.zeros(3); grip_energy=0.
             grip_loss=.5*cfg.grip_k_n_m*float(old@old)
@@ -251,9 +263,9 @@ class RiderContactApplier:
                 self.enabled['grip']=False
         energy+=grip_energy; loss+=grip_loss
         diagnostics['grip']={'enabled':bool(grip_active),'reachable':bool(reachable),
-                             'shoulder_distance_m':float(np.linalg.norm(grip-data.xpos[self.shoulder])),
+                             'shoulder_distance_m':hypot(*shoulder_gap),
                              'arm_reach_m':self.arm_reach,
-                             'hand_gap_m':float(np.linalg.norm(hand-grip)),
+                             'hand_gap_m':hypot(*hand_gap),
                              'point_m':grip.tolist(),'force_on_rider_n':force.tolist(),
                              'force_on_bike_n':(-force).tolist(),'elastic_energy_j':grip_energy}
         self.states,self.grip_xi_local,self.diagnostics=new_states,new,diagnostics

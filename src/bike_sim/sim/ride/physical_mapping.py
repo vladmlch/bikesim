@@ -21,6 +21,44 @@ def point_jacobian(model, data, body_id, point):
     return jp, jr
 
 
+def point_jacobian_into(model, data, body_id, point, jp):
+    """Fill a caller-provided (3, nv) translational Jacobian at a world point.
+
+    The scratch-buffer form of `point_jacobian` for per-step call sites: the
+    rotational half is skipped, and the caller owns the buffer so repeated
+    evaluations do not allocate.
+    """
+    import mujoco
+    point = np.asarray(point, dtype=float)
+    if point.shape != (3,) or not np.isfinite(point).all():
+        raise ValueError('invalid world point')
+    if not 0 < body_id < model.nbody:
+        raise ValueError('point Jacobian requires a physical body')
+    mujoco.mj_jac(model, data, jp, None, point, body_id)
+
+
+def relative_point_jacobian(model, data, body_a, body_b, point, jac_a, jac_b):
+    """Jacobian difference of one world point on two bodies.
+
+    Fills ``jac_a`` with ``J_a - J_b`` and returns it; ``jac_b`` is scratch.
+    ``(J_a - J_b) @ qvel`` is the relative point velocity, and
+    ``(J_a - J_b).T @ f`` is the generalized force of applying ``f`` to
+    ``body_a`` with its Newton-pair reaction ``-f`` on ``body_b`` at the same
+    point -- exactly what two `mj_applyFT` calls compute, without rebuilding
+    either Jacobian.
+    """
+    import mujoco
+    point = np.asarray(point, dtype=float)
+    if point.shape != (3,) or not np.isfinite(point).all():
+        raise ValueError('invalid world point')
+    if not (0 < body_a < model.nbody and 0 < body_b < model.nbody) or body_a == body_b:
+        raise ValueError('relative Jacobian requires distinct physical bodies')
+    mujoco.mj_jac(model, data, jac_a, None, point, body_a)
+    mujoco.mj_jac(model, data, jac_b, None, point, body_b)
+    jac_a -= jac_b
+    return jac_a
+
+
 def point_velocity(model, data, body_id, point):
     jp, _ = point_jacobian(model, data, body_id, point)
     return jp @ data.qvel

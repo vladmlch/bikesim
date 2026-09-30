@@ -118,6 +118,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
                         help="print a preset as a TOML track file and exit")
     parser.add_argument("--list-tracks", action="store_true", help="list the built-in presets and exit")
     parser.add_argument("--no-plots", action="store_true", help="headless: skip the PNG figures")
+    parser.add_argument("--html", metavar="DIR", default=None,
+                        help="render an interactive ride.html from DIR/preview.csv and exit "
+                             "(needs plotly: uv run --with plotly)")
     parser.add_argument(
         "--tyre-model", choices=TYRE_MODELS, default=None,
         help=f"wheel contact model: sphere or pneumatic (default {DEFAULT_TYRE_MODEL}, or pneumatic for climb_steps)",
@@ -541,6 +544,23 @@ def _preview(track: TrackSpec, out_root: Path, seed: Optional[int]) -> int:
     return 0
 
 
+def _html_report(run_dir: Path) -> int:
+    from bike_sim.viz.ride_plots import load_ride_csv, plot_physical_ride_html
+
+    csv_path = run_dir / "preview.csv"
+    if not csv_path.is_file():
+        print(f"{PREFIX} no preview.csv in {run_dir}", file=sys.stderr)
+        return 1
+    try:
+        path = plot_physical_ride_html(load_ride_csv(csv_path), run_dir)
+    except ImportError:
+        print(f"{PREFIX} --html needs plotly: uv run --with plotly bike-ride --html {run_dir}",
+              file=sys.stderr)
+        return 1
+    print(f"{PREFIX} wrote {path}")
+    return 0
+
+
 def _fit_sag(target_pct: float, specs: BikeSpecs, rider: RiderSpecs):
     """Fits both ends to ``target_pct`` against the model's own centre of mass, rider included."""
     from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
@@ -730,6 +750,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return _list_tracks()
     if args.dump_track is not None:
         return _dump_track(args.dump_track)
+    if args.html is not None:
+        return _html_report(Path(args.html))
     if args.decimate < 1:
         print(f"{PREFIX} --decimate must be >= 1", file=sys.stderr)
         return 2

@@ -72,6 +72,11 @@ def two_link_ik(target_xz,upper_m,lower_m,*,elbow_sign=1):
     a,b = scalar(upper_m,'upper link',positive=True),scalar(lower_m,'lower link',positive=True)
     if elbow_sign not in (-1,1):
         raise ValueError('IK branch must be -1 or +1')
+    return _two_link_ik(p,a,b,elbow_sign)
+
+
+def _two_link_ik(p,a,b,elbow_sign):
+    """Core of `two_link_ik` for callers that already validated inputs."""
     distance = hypot(float(p[0]),float(p[1]))
     lo,hi = abs(a-b)+1e-10,a+b-1e-10
     if hi <= lo:
@@ -179,6 +184,7 @@ class ArticulatedRiderController:
             (upper_length+lower_length)*config.arm_reach_fraction,elbow_sign=sign) for sign in (-1,1)]
         neutral,self.neutral_torso_saturated=max(candidates,key=lambda pair:sin(pair[0][0]))
         self.neutral_torso_q=atan2(trunk[2],trunk[0])-neutral[0]
+        self._sole_drop=np.array([0.,0.,.008+config.support_pad_radius_m])
 
     def _targets(self,model,data,side, *, compression_m=None, shear_m=0., clearance_m=0., posture=None):
         hip = data.xpos[self.pelvis]
@@ -205,10 +211,10 @@ class ArticulatedRiderController:
         # unrelated force goal makes the PD oppose the very load it must hold.
         radius=self.config.support_pad_radius_m
         ankle_goal=(surface+ankle_offset+normal*(radius-depth)
-                    -np.array([0.,0.,.008+radius])+shear*tangent)
+                    -self._sole_drop+shear*tangent)
         target = R.T@(ankle_goal-hip)
         upper_length,lower_length,a0,b0,branch=self.leg_geometry[side]
-        angles,saturated = two_link_ik(target[[0,2]],upper_length,lower_length,elbow_sign=branch)
+        angles,saturated = _two_link_ik(target[[0,2]],upper_length,lower_length,elbow_sign=branch)
         self.saturated_ik[side] = saturated
         # MuJoCo +Y is clockwise in X-Z; the pure IK helper uses CCW.
         hip_q = a0-angles[0]
@@ -246,7 +252,7 @@ class ArticulatedRiderController:
         torso_R = data.xmat[self.torso].reshape(3,3)
         arm_target = torso_R.T @ (grip-data.xpos[self.upper_arm])
         upper_length,lower_length,a0,b0,branch=self.arm_geometry
-        arm_angles, arm_saturated = two_link_ik(arm_target[[0,2]],upper_length,lower_length,elbow_sign=branch)
+        arm_angles, arm_saturated = _two_link_ik(arm_target[[0,2]],upper_length,lower_length,elbow_sign=branch)
         targets = {'rider_torso_hinge':torso_q,'rider_shoulder':a0-arm_angles[0],
                    'rider_elbow':(b0-a0)-arm_angles[1]}
         self.saturated_ik.update(torso=self.neutral_torso_saturated,arms=arm_saturated)
@@ -437,7 +443,7 @@ class ArticulatedRiderController:
             desired_acceleration[va]=(ahead+behind)/self.target_difference_s**2
             pd = cfg.joint_kp_nm_rad*(target-data.qpos[qa])+cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])
             jp,jr = self.sole_jacobians[side]
-            mujoco.mj_jac(model,data,jp,jr,data.site_xpos[self.soles[side]],self.feet[side])
+            mujoco.mj_jac(model,data,jp,None,data.site_xpos[self.soles[side]],self.feet[side])
             feedforward = jp[:,va].T@requested
             torque = pd+feedforward
             terms.update({n:(float(p),float(f)) for n,p,f in zip(names,pd,feedforward)})
@@ -451,8 +457,8 @@ class ArticulatedRiderController:
                 jp,_=self.sole_jacobians[side]
                 support += jp.T@np.array([0.,0.,-support_targets[side]])
         if enabled[3]:
-            jp,jr=np.zeros((3,model.nv)),np.zeros((3,model.nv))
-            mujoco.mj_jac(model,data,jp,jr,grip,self.forearm)
+            jp=np.zeros((3,model.nv))
+            mujoco.mj_jac(model,data,jp,None,grip,self.forearm)
             support += jp.T@support_forces['grip']
         # Convective acceleration of the moving crank targets. Gravity/Coriolis
         # compensation alone cannot track a circular pedal path at cadence.

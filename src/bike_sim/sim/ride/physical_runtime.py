@@ -30,10 +30,9 @@ from bike_sim.physics.seated_climb import SeatedClimbSignals
 def _connect_equality_rows(model, data):
     """EFC rows owned by `connect` equalities (the suspension linkage closures).
 
-    Weld equalities share the mjCNSTR_EQUALITY flag but their rows 3-5 carry a
-    rotational residual in radians, not metres; folding them into a
-    metre-denominated closure metric trips linkage:closure_error on a healthy
-    weld (and let the playground stand_clamp pollute it too).
+    The linkage closure metric is metre-denominated, so it must see connect
+    rows only: weld equalities share the mjCNSTR_EQUALITY flag but their rows
+    3-5 carry a rotational residual in radians.
     """
     n = data.nefc
     rows = data.efc_type[:n] == mujoco.mjtConstraint.mjCNSTR_EQUALITY

@@ -77,6 +77,13 @@ class TireSpec:
             self.radial_k_n_m, self.radial_c_ns_m,
         )
 
+    def elastic_response(self, penetration_m: float) -> tuple[float, float]:
+        penetration = max(0., _scalar(penetration_m, 'tire deflection'))
+        force = self.radial_k_n_m * penetration
+        energy = .5 * self.radial_k_n_m * penetration**2
+        _finite_result(force, energy)
+        return force, energy
+
     def is_load_in_valid_range(self, load_n: float) -> bool:
         """Report applicability without modifying physical force or pressure."""
         load = _scalar(load_n, "load_n")

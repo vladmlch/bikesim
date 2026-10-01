@@ -26,7 +26,7 @@ def test_control_delay_hold_duration_recording_and_reset(plant, tmp_path):
     assert not result.terminated and not result.truncated
     assert plant.steps == 20
     assert result.truth.time_s == pytest.approx(.0095)
-    assert result.observation.source_time_s == pytest.approx(.0095)
+    assert result.observation.source_time_s == pytest.approx(.009)
     for sample in env.recorder.samples:
         expected = 0. if sample.time_s < .005-1e-12 else 60.
         assert sample.channels['control']['motor_torque_nm'] == expected

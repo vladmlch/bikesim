@@ -31,6 +31,75 @@ def open_loop_schedule(time_s: float) -> RideControl:
     return RideControl(motor_torque_nm=torque,human_torque_nm=0.)
 
 
+def automatic_schedule(time_s: float) -> RideControl:
+    _time(time_s)
+    return RideControl()
+
+
+def coasting_evidence(rows: list[dict]) -> dict:
+    coast_entered = False
+    resumed = False
+    loss_duration = 0.
+    maximum_loss = 0.
+    maximum_gap = 0.
+    maximum_stopped_gap = 0.
+    stopped_duration = 0.
+    rotation = 0.
+    positive_work = 0.
+    first_loss = None
+    for row in rows:
+        interval = row['end_time_s'] - row['time_s']
+        if interval <= 0. or not isfinite(interval):
+            raise ValueError('invalid coasting diagnostic interval')
+        drive = row['drive']
+        coasting = drive['rider_mode'] == 'coasting'
+        coast_entered = coast_entered or coasting
+        pedals = [row['rider'][side + '_pedal'] for side in ('front', 'rear')]
+        available = any(pedal['in_platform'] and pedal['normal_load_n'] > 1.
+                        for pedal in pedals)
+        if coasting:
+            maximum_gap = max(maximum_gap, *(pedal['gap_m'] for pedal in pedals))
+            if row['support']['crank_tracking']['target_rate_rad_s'] == 0.:
+                maximum_stopped_gap = max(maximum_stopped_gap, *(pedal['gap_m'] for pedal in pedals))
+                stopped_duration += interval
+        loss_duration = loss_duration + interval if coasting and not available else 0.
+        maximum_loss = max(maximum_loss, loss_duration)
+        if loss_duration >= .20 and first_loss is None:
+            first_loss = row['end_time_s'] - loss_duration
+        if coast_entered and drive['rider_mode'] == 'pedaling':
+            resumed = True
+            rate = drive['crank_rad_s']
+            rotation += rate * interval
+            positive_work += max(0., drive['human_sensor_nm'] * rate) * interval
+    return {
+        'coast_entered': coast_entered, 'pedaling_resumed': resumed,
+        'max_both_unloaded_coast_s': maximum_loss,
+        'max_coasting_gap_m': maximum_gap,
+        'max_stopped_coasting_gap_m': maximum_stopped_gap,
+        'stopped_coast_duration_s': stopped_duration,
+        'resume_crank_turns': rotation / (2. * pi),
+        'resume_positive_work_j': positive_work,
+        'first_support_loss': first_loss,
+    }
+
+
+def run_automatic_coast_case(*, dt_s: float, duration_s: float = 5.) -> dict:
+    from bike_sim.sim.research.quality import energy_quality
+    from bike_sim.sim.ride.physical_session import configuration_metadata
+    root = Path(__file__).resolve().parents[3]
+    sim = build_sim(root / 'examples/research/viewer_physics_fast.toml',
+                    root / 'examples/research/rough_uphill_extreme.toml', timestep_s=dt_s)
+    metadata = configuration_metadata(sim)
+    rows = replay(sim, automatic_schedule, duration_s)
+    return {
+        'metadata': metadata, 'rows': rows, 'duration_s': sim.time_s,
+        **coasting_evidence(rows),
+        'model_valid': sim.physical.model_status.as_dict()['model_valid'],
+        'numerically_valid': bool(rows) and all(
+            energy_quality(row['energy']).acceptable for row in rows),
+    }
+
+
 def build_sim(physics_path: str, track_path: str, timestep_s: float | None=None,
               *, physics_overrides=None):
     from bike_sim.cli.ride import parse_args,resolve_track,resolve_rider
@@ -79,13 +148,15 @@ def replay(sim, schedule, duration_s: float) -> list[dict]:
     return rows
 
 
-def resume_evidence(rows: list[dict]) -> dict:
-    window=[r for r in rows if r['end_time_s']>4. and r['time_s']<8.]
-    result={'window_s':[4.,8.],'interval_count':len(window),'positive_crank_work_j':0.,
+def resume_evidence(rows: list[dict], *, end_s=8.) -> dict:
+    if not isfinite(end_s) or end_s <= 4.:
+        raise ValueError('resume observation must end after restart')
+    window=[r for r in rows if r['end_time_s']>4. and r['time_s']<end_s]
+    result={'window_s':[4.,end_s],'interval_count':len(window),'positive_crank_work_j':0.,
             'crank_rotation_rad':0.,'diagnosis':'mixed_or_unresolved'}
     if not window:
         return result
-    durations=np.array([min(8.,r['end_time_s'])-max(4.,r['time_s']) for r in window])
+    durations=np.array([min(end_s,r['end_time_s'])-max(4.,r['time_s']) for r in window])
     if np.any(durations<=0) or not np.isfinite(durations).all():
         raise ValueError('invalid diagnostic intervals')
     duration=float(durations.sum())
@@ -115,7 +186,7 @@ def resume_evidence(rows: list[dict]) -> dict:
                   crank_rotation_rad=rotation,requested_effort_peak_nm=float(np.max(request)),
                   delivered_human_mean_nm=float(np.dot(torque,durations)/duration),
                   mean_abs_crank_speed_rad_s=float(np.dot(np.abs(speed),durations)/duration))
-    if duration<3.99:
+    if duration<end_s-4.-.01:
         result['incomplete_window']=True
     elif positive>0. and rotation>=2*pi:
         result['diagnosis']='resumed'
@@ -149,7 +220,7 @@ def run_replay(physics_path,track_path,*,duration_s=8.,mode='human-only',timeste
                activation_tau_s=None,output=None):
     from bike_sim.sim.ride.physical_session import configuration_metadata
     from bike_sim.validation.environment import environment_contract,source_fingerprint
-    if mode not in ('human-only','motor40','assist','shifting','rollback','open-loop'):
+    if mode not in ('human-only','motor40','assist','shifting','rollback','open-loop','automatic'):
         raise ValueError('unknown isolated replay factor')
     overrides={}
     if mode=='shifting':overrides={'drive':{'shifting':{'enabled':True}}}
@@ -157,6 +228,7 @@ def run_replay(physics_path,track_path,*,duration_s=8.,mode='human-only',timeste
     if activation_tau_s is not None:
         overrides['articulated']={'activation_tau_s':activation_tau_s,'active_positive_power_limit_w':600.}
     def schedule(t):
+        if mode=='automatic':return automatic_schedule(t)
         if mode=='open-loop':return open_loop_schedule(t)
         base=resume_schedule(t)
         return replace(base,motor_torque_nm=40. if mode=='motor40' else None if mode=='assist' else 0.)
@@ -167,7 +239,7 @@ def run_replay(physics_path,track_path,*,duration_s=8.,mode='human-only',timeste
         sim=build_sim(physics_path,track_path,timestep_s,physics_overrides=overrides)
         report.update(configuration_metadata(sim),equilibrium=sim.equilibrium)
         rows=replay(sim,schedule,duration_s)
-        report.update(rows=rows,evidence=resume_evidence(rows),model_status=sim.physical.model_status.as_dict(),
+        report.update(rows=rows,evidence=coasting_evidence(rows) if mode=='automatic' else resume_evidence(rows,end_s=max(8.,duration_s)),model_status=sim.physical.model_status.as_dict(),
             end_time_s=sim.time_s,end_position_m=sim.position_m,crash=None if sim.crash is None else str(sim.crash),
             completed_requested_duration=abs(sim.time_s-duration_s)<1e-8)
     except (ValueError,RuntimeError,ArithmeticError) as exc:
@@ -183,7 +255,7 @@ def main(argv=None):
     parser.add_argument('--track',default='examples/research/rider_resume_flat.toml')
     parser.add_argument('--duration',type=float,default=8.)
     parser.add_argument('--timestep',type=float)
-    parser.add_argument('--mode',choices=('human-only','motor40','assist','shifting','rollback','open-loop'),default='human-only')
+    parser.add_argument('--mode',choices=('human-only','motor40','assist','shifting','rollback','open-loop','automatic'),default='human-only')
     parser.add_argument('--activation-tau',type=float)
     parser.add_argument('--output',required=True)
     args=parser.parse_args(argv)

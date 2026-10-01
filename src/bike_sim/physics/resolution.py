@@ -9,6 +9,7 @@ from bike_sim.physics.physical_config import (
     BatteryConfig,ResistanceConfig,ArticulatedConfig,PedalingConfig,ShiftingConfig,
 )
 from bike_sim.physics.tire import TireSpec
+from bike_sim.physics.tire_curve import TabulatedTireSpec
 from bike_sim.physics.distributed_tire import DistributedTireConfig, HingeDensity
 from bike_sim.physics.chain import DrivetrainSpecs
 
@@ -38,6 +39,8 @@ def _merge(base,override):
 def _construct(cls,values):
     if not isinstance(values,dict):
         raise ValueError(f'{cls.__name__} requires a TOML table')
+    if cls is TireSpec and ('deflection_m' in values or 'force_n' in values):
+        cls = TabulatedTireSpec
     names={f.name for f in fields(cls)}
     unknown=set(values)-names
     if unknown:

@@ -7,7 +7,7 @@ from bike_sim.physics.tire import normal_contact
 from bike_sim.sim.ride.support_geometry import box_pad_contact
 
 
-@pytest.mark.parametrize('dt', [.0005, .00025, .000125])
+@pytest.mark.parametrize('dt', [.000625, .0003125, .0005, .00025, .000125])
 def test_unforced_pedal_with_loaded_edge_pads_relaxes_without_numerical_flip(dt):
     cfg = ArticulatedConfig()
     # Test the shipped law, including compatibility with the pre-separation

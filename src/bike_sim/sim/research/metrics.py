@@ -16,6 +16,8 @@ def episode_metrics(env):
         'finish_time_s': duration if env.reason == 'finish' else None,
         'torque_delivered_nms': env.torque_delivered_nms,
         'torque_requested_nms': requested,
+        'demand_integral_nms': env.demand_integral_nms,
+        'operator_intervention': env.run_metadata.get('operator_intervention', False),
         # Delivered/requested only exists when the policy commanded a torque.
         'motor_pass_fraction': env.torque_delivered_nms/requested if requested > 0. else None,
         'loop_out': env.reason == 'crash:loop_out',

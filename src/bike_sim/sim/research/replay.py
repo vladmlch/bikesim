@@ -19,6 +19,7 @@ from bike_sim.sim.ride.physical_samples import plain
 FILES = ('summary.json', 'commands_requested.jsonl', 'commands_applied.jsonl',
          'observations.jsonl', 'transitions.jsonl', 'states.npz',
          'terrain_vertices.npy', 'track.toml')
+ENVELOPE_FILE = 'rider_joint_envelope.json'
 
 
 def integration_state(sim):
@@ -47,6 +48,11 @@ def save_replay_files(env, path):
                     heightfield=asdict(env.sim.field),
                     state_signature='mjSTATE_INTEGRATION',
                     file_sha256={name: _sha256(path/name) for name in FILES})
+    envelope = env.sim.physics_config.articulated.joint_envelope_path
+    if envelope is not None:
+        (path / ENVELOPE_FILE).write_bytes(Path(envelope).read_bytes())
+        manifest['joint_envelope_file'] = ENVELOPE_FILE
+        manifest['file_sha256'][ENVELOPE_FILE] = _sha256(path / ENVELOPE_FILE)
     (path/'replay.json').write_text(json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False)+'\n')
 
 
@@ -59,9 +65,13 @@ def validate_recording(directory):
     if manifest.get('state_signature') != 'mjSTATE_INTEGRATION':
         raise ValueError('unsupported replay state signature')
     hashes = manifest.get('file_sha256', {})
-    if set(hashes) != set(FILES):
+    envelope = manifest.get('joint_envelope_file')
+    if envelope not in (None, ENVELOPE_FILE):
+        raise ValueError('unsupported replay joint envelope path')
+    required = set(FILES) | ({ENVELOPE_FILE} if envelope else set())
+    if set(hashes) != required:
         raise ValueError('replay manifest must cover the complete fixed recording file set')
-    for name in FILES:
+    for name in required:
         if _sha256(path/name) != hashes[name]:
             raise ValueError(f'recording checksum mismatch: {name}')
     summary = json.loads((path/'summary.json').read_text())
@@ -106,6 +116,8 @@ def _rebuild(path, summary, manifest):
     from bike_sim.terrain.trackfile import load_track
     _check_runtime(summary)
     data = summary['resolved_config']
+    if manifest.get('joint_envelope_file') is not None:
+        data['physics']['articulated']['joint_envelope_path'] = str((path / ENVELOPE_FILE).resolve())
     cfg = resolve_physics_config(data['physics'])
     sim = RideSimulation(track=load_track(path/'track.toml'),
         specs=BikeSpecs(**data['geometry_and_suspension']), mass_specs=BikeMassSpecs(**data['mass_budget']),
@@ -113,9 +125,12 @@ def _rebuild(path, summary, manifest):
         field=HeightFieldSpec(**manifest['heightfield']), start_x_m=manifest['start_x_m'])
     research = summary['research']
     program = research.get('rider_program')
+    from bike_sim.sim.research.demand import DemandProgram
+    demand = research.get('demand_program')
     experiment = dict(research['config'], seed=research['actual_sensor_seed'])
     env = ResearchEnvironment(sim, ExperimentConfig(**experiment), SensorConfig(**research['sensor_config']),
-        rider_program=None if program is None else RiderProgram.from_dict(program))
+        rider_program=None if program is None else RiderProgram.from_dict(program),
+        demand=None if demand is None else DemandProgram.from_dict(demand))
     if env.metadata['configuration_sha256'] != summary['configuration_sha256']:
         raise ValueError('reconstructed configuration differs; custom runtime/suspension overrides are not reproducible from this recipe')
     if env.metadata['terrain_sha256'] != summary['terrain_sha256']:
@@ -166,6 +181,7 @@ def replay_episode(directory):
     path = Path(directory)
     summary, manifest = validate_recording(path)
     env = _rebuild(path, summary, manifest)
+    env.rider_program = None
     commands = _rows(path/'commands_requested.jsonl')
     transitions = _rows(path/'transitions.jsonl')
     observations = _rows(path/'observations.jsonl')
@@ -184,6 +200,9 @@ def replay_episode(directory):
         _compare(plain(asdict(result)), expected, f'transition {i}')
         _compare(plain(asdict(env.observation)), observations[i+1], f'observation {i+1}')
     _compare(plain(env.commands_applied), _rows(path/'commands_applied.jsonl'), 'applied commands')
+    if summary['outcome']['reason'] == 'operator_stop' and not env.done:
+        env.truncated = True
+        env.reason = 'operator_stop'
     _compare(env.reason, summary['outcome']['reason'] if env.done else None, 'outcome')
     _compare(env.tracker.metrics, summary['research']['metrics'], 'event metrics')
     with np.load(path/'states.npz', allow_pickle=False) as states:

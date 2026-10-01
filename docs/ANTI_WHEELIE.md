@@ -480,3 +480,39 @@ The standalone `GradeProfile` extrapolates endpoint grade. A `TrackSpec` clips
 that evaluation to the authored track domain: compiled heightfield runout is
 flat at the final elevation, consistent with existing obstacle tracks. Use a
 zero-grade lead-out before the finish to make the slope continuous there.
+# Shared research viewer and policy factory
+
+The accounted research loop is available through the existing ride CLI:
+
+```bash
+uv run bike-ride --research --headless \
+  --physics-config examples/research/viewer_physics_fast.toml \
+  --rider articulated_planar --track examples/research/rough_uphill_extreme.toml \
+  --duration 15 --sensor-period .005 --seed 17 --out output/research-example
+```
+
+Remove `--headless` for the viewer. Both paths use the same physical steps,
+sensor clock, command delay, truth metrics and validity gates. The fast profile
+remains an unqualified preview model; using it through this command exposes
+its limitations rather than promoting it to a reference. The default recorder
+keeps every 80th interval, while validity and event detection run each physics
+step. Recordings are under `episode-0000`; viewer reset saves a separate episode.
+
+Use `--policy package.module:factory` for an importable local Python factory.
+It returns an object with `reset(seed)` and
+`act(observation, demand_nm) -> RideControl`. Only the sensor observation and
+external demand are passed to the algorithm. With no `--demand`, returning
+`RideControl(motor_limit_nm=40.)` caps configured pedelec assistance while
+preserving rider effort. A numeric `motor_torque_nm` requests crank-side Nm.
+The safety ceiling is applied after motor lag, but its command still has the
+configured transport delay. Policy commands cannot own rider posture or effort;
+use an independent `--rider-program` for those.
+
+The default factory transparently passes demand/assistance. It does not implement
+anti-wheelie. Policy exceptions stop and save the failed episode. `bike-replay`
+reconstructs recorded commands without executing a saved policy module.
+
+In the viewer: Space pauses, R saves/resets, B toggles operator brakes, C changes
+camera, Q stops. Physical tuning keys are disabled during a research episode;
+change the file before a new run. Operator braking is recorded and excludes that
+episode from unattended acceptance. Closing the window saves a partial run.

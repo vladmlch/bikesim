@@ -4,7 +4,7 @@ import argparse
 from bike_sim.validation.rider_replay import run_replay,write_report
 
 
-def run_matrix(output_dir):
+def run_matrix(output_dir, *, physics_profile=None):
     out=Path(output_dir);out.mkdir(parents=True,exist_ok=True)
     base=Path(__file__).resolve().parents[3]/'examples/research'
     variants=[('human_flat','human-only','rider_resume_flat.toml',None),
@@ -16,12 +16,13 @@ def run_matrix(output_dir):
               ('active_tau0','human-only','rider_resume_flat.toml',0.),
               ('active_tau005','human-only','rider_resume_flat.toml',.05),
               ('motor_open_loop','open-loop','rider_resume_flat.toml',None)]
-    summary={'schema_version':1,'duration_s':8.,'resume_window_s':[4.,8.],
+    summary={'schema_version':1,'duration_s':10.,'resume_window_s':[4.,10.],
              'synthetic':True,'anti_wheelie_policy_used':False,'variants':[]}
     for name,mode,track,tau in variants:
         physics='plant_reference_open_loop.toml' if mode=='open-loop' else 'rider_resume_physics.toml'
         file=name+'.json.gz'
-        result=run_replay(base/physics,base/track,duration_s=8.,mode=mode,activation_tau_s=tau,output=out/file)
+        result=run_replay(base/physics if physics_profile is None else physics_profile,
+            base/track,duration_s=10.,mode=mode,activation_tau_s=tau,output=out/file)
         summary['variants'].append({k:v for k,v in result.items() if k!='rows'}|{'name':name,'file':file})
         write_report(out/'report.json',summary)
         print(name,result.get('evidence',{}).get('diagnosis',result.get('error')),flush=True)
@@ -35,4 +36,5 @@ def run_matrix(output_dir):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',default='results/rider_factors')
-    a=p.parse_args();run_matrix(a.output)
+    p.add_argument('--physics-config')
+    a=p.parse_args();run_matrix(a.output, physics_profile=a.physics_config)

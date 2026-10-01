@@ -20,6 +20,24 @@ STATIONS=(128,256,512)
 DEFAULT_CASES=('static_sag','motor_ramp_grade','bump_coast','crest_coast','step_4cm','recontact','coast_resume')
 
 
+def resolution_variants(time_steps, road_steps, station_counts, *, include_stations=True):
+    axes = (tuple(time_steps), tuple(road_steps), tuple(station_counts))
+    for index, values in enumerate(axes):
+        if (len(values) < 3 or len(set(values)) != len(values)
+                or any(isinstance(value, bool) or not isfinite(value) or value <= 0. for value in values)):
+            raise ValueError('resolution axes require at least three distinct positive values')
+        if index == 2 and any(type(value) is not int or value < 16 for value in values):
+            raise ValueError('station counts must be integers of at least sixteen')
+        if tuple(sorted(values, reverse=index != 2)) != values:
+            raise ValueError('time and road steps decrease; station counts increase')
+    anchor = (axes[0][-2], axes[1][-2], axes[2][-2])
+    variants = [('time', value, anchor[1], anchor[2]) for value in axes[0]]
+    variants += [('road', anchor[0], value, anchor[2]) for value in axes[1]]
+    if include_stations:
+        variants += [('stations', anchor[0], anchor[1], value) for value in axes[2]]
+    return anchor, variants
+
+
 def scalar_relative_error(value: float, reference: float, floor: float) -> float:
     if any(isinstance(v,bool) or not isfinite(v) for v in (value,reference,floor)) or floor<=0:
         raise ValueError('finite comparison and positive floor required')
@@ -144,6 +162,7 @@ def interval_row(sim,tracker):
     from bike_sim.sim.research.quality import energy_quality
     s=sim.physical.sample;c=s.channels;dt=s.end_time_s-s.time_s
     truth=truth_from_sample(sim,s);state=tracker.update(truth,dt)
+    quality = energy_quality(c['energy'])
     row={'time_s':s.time_s,'end_time_s':s.end_time_s,'contact_state':state,
          'position_m':truth.position_m,'speed_mps':truth.speed_mps,
          'pitch_rad':truth.pitch_up_rad,'pitch_rate_rad_s':truth.pitch_rate_up_rad_s,
@@ -153,7 +172,9 @@ def interval_row(sim,tracker):
          'crank_rad_s':c['drive'].get('crank_rad_s',0.),'rear_slip_mps':truth.rear_slip_mps,
          'joint_positive_power_w':c.get('rider_positive_power_w',0.),'control':dict(c['control']),
          'model_status':dict(c['model_status']),'energy':dict(c['energy']),
-         'energy_residual_ratio':energy_quality(c['energy']).residual_ratio}
+         'energy_residual_ratio':quality.residual_ratio}
+    row['model_status']['numerically_valid'] = (
+        row['model_status']['numerically_valid'] is True and quality.acceptable)
     for side in ('front','rear'):
         row[side+'_load_n']=c['tires'][side]['normal_load_n']
         row[side+'_vertical_force_n']=c['tires'][side]['vertical_force_n']
@@ -180,7 +201,9 @@ def metrics_from_rows(rows,expected_duration_s,initial_state_sha256):
         'initial_state_sha256':initial_state_sha256,'contact_events':persistent_events(rows),
         'peak_pitch_rate_rad_s':max(abs(r['pitch_rate_rad_s']) for r in rows),
         'model_valid':all(r['model_status']['model_valid'] is True for r in rows),
-        'numerically_valid':all(r['model_status']['numerically_valid'] is True for r in rows),
+        'numerically_valid':all(r['model_status']['numerically_valid'] is True
+                               and isfinite(r['energy_residual_ratio'])
+                               and r['energy_residual_ratio'] <= .05 for r in rows),
         'max_energy_residual_ratio':max(r['energy_residual_ratio'] for r in rows),
         'joint_positive_work_j':interval_integral(rows,'joint_positive_power_w'),
         'motor_shaft_work_j':interval_integral([{**r,'power':r['motor_torque_nm']*r['crank_rad_s']} for r in rows],'power'),
@@ -219,6 +242,8 @@ def run_case(sim,case,*,duration_s=None,output=None,initial_state_sha256=None):
             sim.step(1. if case=="static_sag" else 0.,1. if case=="static_sag" else 0.,
                      control=case_control(case,sim.time_s))
             report['rows'].append(interval_row(sim,tracker))
+            if not report['rows'][-1]['model_status']['numerically_valid']:
+                report['termination']='numerical_quality';break
             if sim.crash is not None:
                 report['termination']='crash';break
             if not sim.physical.model_status.as_dict()['model_valid']:
@@ -237,22 +262,36 @@ def run_case(sim,case,*,duration_s=None,output=None,initial_state_sha256=None):
 
 
 def run_fidelity_sweep(output_dir: str,cases: tuple[str,...]=DEFAULT_CASES,*,
-                       backend='compliant_2d',transmission='ideal_mid_drive',include_stations=False,physics_path=None):
+                       backend='compliant_2d',transmission='ideal_mid_drive',include_stations=False,physics_path=None,
+                       time_steps=TIME_STEPS,road_steps=ROAD_STEPS,station_counts=STATIONS):
     from bike_sim.sim.ride.initial_state import PhysicalInitialState
     from bike_sim.validation.environment import environment_contract,source_fingerprint
     if not cases or len(set(cases))!=len(cases) or any(c not in DEFAULT_CASES for c in cases):
         raise ValueError('distinct known fidelity cases required')
     out=Path(output_dir);out.mkdir(parents=True,exist_ok=True)
+    anchor, variants = resolution_variants(time_steps, road_steps, station_counts,
+                                          include_stations=include_stations)
+    if include_stations and backend!='distributed_2d_reference':
+        raise ValueError('station sweep requires distributed backend')
     report={'schema_version':1,'backend':backend,'transmission':transmission,'physics_profile':str(physics_path),
         'closure_time_constant_s':.0025,
         'environment':environment_contract(),'source_sha256':source_fingerprint(Path(__file__).resolve().parents[1]),
-        'series':[],'comparisons':[],'passed':False,'station_initialization':'same qpos/qvel; explicit periodic angular material-field projection, target residual recorded'}
+        'series':[],'comparisons':[],'passed':False,
+        'candidate_resolution':{'dt_s':anchor[0],'dx_m':anchor[1],'station_count':anchor[2]},
+        'time_steps':list(time_steps),'road_steps':list(road_steps),'station_counts':list(station_counts),
+        'station_initialization':'same qpos/qvel; explicit periodic angular material-field projection, target residual recorded'}
     for case in cases:
         seed=None;rows={};station_seeds={}
-        variants=[('time',dt,.005,128) for dt in TIME_STEPS]+[('road',TIME_STEPS[-1],dx,128) for dx in ROAD_STEPS]
-        if include_stations:
-            if backend!='distributed_2d_reference':raise ValueError('station sweep requires distributed backend')
-            variants += [('stations',TIME_STEPS[-1],.005,n) for n in STATIONS]
+        try:
+            initial_sim = make_case_sim(case,*anchor,backend=backend,
+                                       transmission=transmission,physics_path=physics_path)
+            seed = PhysicalInitialState.capture(initial_sim)
+            (out/(case+'_initial_state.json')).write_text(seed.payload_json+'\n')
+            if include_stations:
+                station_seeds={count:PhysicalInitialState.project_stations(initial_sim,count)
+                               for count in station_counts if count!=anchor[2]}
+        except Exception as error:
+            report.setdefault('initialization_errors',{})[case]=f'{type(error).__name__}: {error}'
         for axis,dt,dx,n in variants:
             key=(dt,dx,n)
             if key in rows:continue
@@ -260,16 +299,11 @@ def run_fidelity_sweep(output_dir: str,cases: tuple[str,...]=DEFAULT_CASES,*,
             item={'case':case,'dt_s':dt,'dx_m':dx,'station_count':n,'axis':axis,'file':name+'.json.gz'}
             started=time.monotonic()
             try:
-                target_seed=seed if n==128 else station_seeds.get(n)
-                sim=make_case_sim(case,dt,dx,n,backend=backend,transmission=transmission,initial_state=target_seed,physics_path=physics_path)
                 if seed is None:
-                    seed=PhysicalInitialState.capture(sim)
-                    (out/(case+'_initial_state.json')).write_text(seed.payload_json+'\n')
-                    if include_stations:
-                        station_seeds={count:PhysicalInitialState.project_stations(sim,count) for count in STATIONS if count!=128}
-                        for count,snapshot in station_seeds.items():
-                            (out/(case+f'_initial_state_n{count}.json')).write_text(snapshot.payload_json+'\n')
-                result=run_case(sim,case,output=out/item['file'],initial_state_sha256=seed.sha256 if target_seed is not None or n==128 else None)
+                    raise ValueError('shared candidate initialization failed')
+                target_seed=seed if n==anchor[2] else station_seeds[n]
+                sim=make_case_sim(case,dt,dx,n,backend=backend,transmission=transmission,initial_state=target_seed,physics_path=physics_path)
+                result=run_case(sim,case,output=out/item['file'],initial_state_sha256=seed.sha256)
                 item.update(metrics=result['metrics'],termination=result['termination'],metadata=result['metadata'],
                             equilibrium=result['equilibrium'],runtime_s=result['wall_time_s'])
             except Exception as exc:
@@ -278,13 +312,14 @@ def run_fidelity_sweep(output_dir: str,cases: tuple[str,...]=DEFAULT_CASES,*,
             rows[key]=item;report['series'].append(item)
             write_report(out/'report.json',report)
             print(name,item['termination'],flush=True)
-        groups={'time':[(dt,.005,128) for dt in TIME_STEPS],
-                'road':[(TIME_STEPS[-1],dx,128) for dx in ROAD_STEPS]}
-        if include_stations:groups['stations']=[(TIME_STEPS[-1],.005,n) for n in STATIONS]
+        groups={'time':[(dt,anchor[1],anchor[2]) for dt in time_steps],
+                'road':[(anchor[0],dx,anchor[2]) for dx in road_steps]}
+        if include_stations:groups['stations']=[(anchor[0],anchor[1],count) for count in station_counts]
         for axis,keys in groups.items():
-            for ai,bi in combinations(range(3),2):
+            for ai,bi in combinations(range(len(keys)),2):
                 a,b=rows[keys[ai]],rows[keys[bi]]
-                comparison={'case':case,'axis':axis,'coarse':a['file'],'reference':b['file'],'finest_pair':(ai,bi)==(1,2)}
+                comparison={'case':case,'axis':axis,'coarse':a['file'],'reference':b['file'],
+                            'finest_pair':(ai,bi)==(len(keys)-2,len(keys)-1)}
                 try:
                     if a['metrics'] is None or b['metrics'] is None:raise ValueError('missing/aborted series')
                     comparison.update(compare_metrics(a['metrics'],b['metrics']))
@@ -293,6 +328,11 @@ def run_fidelity_sweep(output_dir: str,cases: tuple[str,...]=DEFAULT_CASES,*,
     finest=[r for r in report['comparisons'] if r['finest_pair']]
     report['passed']=bool(finest) and all(r['passed'] for r in finest)
     report['failed_criteria']=sorted({k for r in finest for k in r.get('failed_criteria',[])})
+    report['axes_passed']={axis:bool([item for item in finest if item['axis']==axis])
+        and all(item['passed'] for item in finest if item['axis']==axis)
+        for axis in ('time','road','stations')}
+    report['source_unchanged_during_run']=report['source_sha256']==source_fingerprint(Path(__file__).resolve().parents[1])
+    report['passed']=report['passed'] and report['source_unchanged_during_run']
     report['maximum_errors']={key:max(v['actual'] for r in report['comparisons'] for k,v in r.get('criteria',{}).items()
         if k==key and isinstance(v.get('actual'),(int,float)) and not isinstance(v['actual'],bool))
         for key in sorted({k for r in report['comparisons'] for k,v in r.get('criteria',{}).items()
@@ -335,6 +375,9 @@ def run_fidelity_parallel(output_dir,cases=DEFAULT_CASES,*,jobs=3,**settings):
     report['axes_passed']={axis:bool([r for r in finest if r['axis']==axis]) and
         all(r['passed'] for r in finest if r['axis']==axis) for axis in ('time','road','stations')}
     report['source_unchanged_during_run']=report['source_sha256']==source_fingerprint(Path(__file__).resolve().parents[1])
+    if report['case_reports']:
+        report['candidate_resolution']=json.loads((out/next(iter(report['case_reports'].values()))).read_text())['candidate_resolution']
+    report['passed']=report['passed'] and report['source_unchanged_during_run']
     write_report(out/'report.json',report);return report
 
 
@@ -344,9 +387,13 @@ def main(argv=None):
     p.add_argument('--backend',choices=('compliant_2d','distributed_2d_reference'),default='compliant_2d')
     p.add_argument('--transmission',choices=('ideal_mid_drive','geometric_ideal_mid_drive','elastic_chain'),default='ideal_mid_drive')
     p.add_argument('--stations',action='store_true');p.add_argument('--jobs',type=int,default=1)
+    p.add_argument('--time-steps',nargs='+',type=float,default=TIME_STEPS)
+    p.add_argument('--road-steps',nargs='+',type=float,default=ROAD_STEPS)
+    p.add_argument('--station-counts',nargs='+',type=int,default=STATIONS)
     p.add_argument('--physics-config');a=p.parse_args(argv)
     report=run_fidelity_parallel(a.output,tuple(a.cases),jobs=a.jobs,backend=a.backend,transmission=a.transmission,
-        include_stations=a.stations,physics_path=a.physics_config)
+        include_stations=a.stations,physics_path=a.physics_config,
+        time_steps=tuple(a.time_steps),road_steps=tuple(a.road_steps),station_counts=tuple(a.station_counts))
     print(json.dumps({'passed':report['passed'],'failed_criteria':report['failed_criteria']}))
     return 0 if report['passed'] else 2
 

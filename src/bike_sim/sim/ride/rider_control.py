@@ -4,7 +4,9 @@ from bike_sim.physics.rider_posture import RiderPosture
 from math import acos, atan2, cos, hypot, isfinite, pi, sin
 import numpy as np
 from bike_sim.physics.checks import array, scalar
-from bike_sim.sim.ride.support_geometry import _upper_box_face, validate_planar_support_model
+from bike_sim.sim.ride.support_geometry import (
+    _upper_box_face, sole_target_height, validate_planar_support_model,
+)
 
 
 def stance_force(phase,mean_nm,crank_m):
@@ -120,6 +122,7 @@ class ArticulatedRiderController:
         self.command_enabled=True
         self.target_data = mujoco.MjData(model)
         self.coasting_target_data = mujoco.MjData(model)
+        self.sole_targets = {}
         # Central acceleration differences need a larger interval than the old
         # forward velocity-only difference (1e-6 s), to avoid cancellation.
         self.target_difference_s = 1e-4
@@ -187,7 +190,6 @@ class ArticulatedRiderController:
             (upper_length+lower_length)*config.arm_reach_fraction,elbow_sign=sign) for sign in (-1,1)]
         neutral,self.neutral_torso_saturated=max(candidates,key=lambda pair:sin(pair[0][0]))
         self.neutral_torso_q=atan2(trunk[2],trunk[0])-neutral[0]
-        self._sole_drop=np.array([0.,0.,.008+config.support_pad_radius_m])
 
     def _targets(self,model,data,side, *, compression_m=None, shear_m=0., clearance_m=0., posture=None):
         hip = data.xpos[self.pelvis]
@@ -213,8 +215,12 @@ class ArticulatedRiderController:
         # requested normal load. A fixed 3 mm position goal in parallel with an
         # unrelated force goal makes the PD oppose the very load it must hold.
         radius=self.config.support_pad_radius_m
-        ankle_goal=(surface+ankle_offset+normal*(radius-depth)
-                    -self._sole_drop+shear*tangent)
+        sole_goal = surface+normal*(radius-depth)+shear*tangent
+        sole_goal[2] = sole_target_height(
+            data.geom_xpos[geom], data.geom_xmat[geom].reshape(3,3), model.geom_size[geom],
+            sole_goal[0], self.config.pedal_patch_half_length_m, radius, depth)
+        ankle_goal = sole_goal+ankle_offset-np.array([0.,0.,.008])
+        self.sole_targets[side] = sole_goal
         target = R.T@(ankle_goal-hip)
         upper_length,lower_length,a0,b0,branch=self.leg_geometry[side]
         angles,saturated = _two_link_ik(target[[0,2]],upper_length,lower_length,elbow_sign=branch)
@@ -314,13 +320,11 @@ class ArticulatedRiderController:
                 data.qvel[self.joints[f'rider_{joint}_{side}'][1]] = rate
 
     def _coasting_target_state(self, model, data, command):
+        """Brake through limb velocity targets while retaining the real support geometry."""
         import mujoco
         target = self.coasting_target_data
         target.qpos[:] = data.qpos
         target.qvel.fill(0.)
-        phase_change = command.crank_target_phase_rad - float(data.qpos[self.crank_spin_qpos])
-        target.qpos[self.crank_spin_qpos] += phase_change
-        target.qpos[self.pedal_spin_qpos] -= phase_change
         target.qvel[self.crank_spin_dof] = command.crank_target_rate_rad_s
         target.qvel[self.pedal_spin_dofs] = -command.crank_target_rate_rad_s
         mujoco.mj_kinematics(model, target)
@@ -435,6 +439,17 @@ class ArticulatedRiderController:
         diagnostics['feasible_pedal_force_on_bike_n']={s:requests[s].tolist() for s in requests}
         diagnostics['posture'] = asdict(posture)
         diagnostics['coasting'] = command.crank_target_phase_rad is not None
+        actual_phase = float(data.qpos[self.crank_spin_qpos])
+        desired_phase = command.crank_target_phase_rad
+        diagnostics['crank_tracking'] = {
+            'actual_phase_rad': actual_phase,
+            'target_phase_rad': desired_phase,
+            'phase_error_rad': None if desired_phase is None else atan2(
+                sin(desired_phase - actual_phase), cos(desired_phase - actual_phase)),
+            'actual_rate_rad_s': float(data.qvel[self.crank_spin_dof]),
+            'target_rate_rad_s': command.crank_target_rate_rad_s,
+        }
+        diagnostics['feet'] = {}
         self.support_diagnostics=diagnostics
         result = {}
         terms = {}
@@ -472,6 +487,11 @@ class ArticulatedRiderController:
             if not stance[side]:
                 depth=shear=0.
             target = self._targets(model,target_state,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture)
+            diagnostics['feet'][side] = {
+                'actual_sole_position_m': data.site_xpos[self.soles[side]].tolist(),
+                'target_sole_position_m': self.sole_targets[side].tolist(),
+                'ik_saturated': bool(self.saturated_ik[side]),
+            }
             saturation=dict(self.saturated_ik)
             future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if future is not target_state else target
             previous_target=self._targets(model,previous,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if previous is not target_state else target

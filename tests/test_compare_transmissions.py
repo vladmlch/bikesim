@@ -4,6 +4,7 @@ from tools.compare_transmissions import compare_metrics
 def _metrics(onset=1.0, fraction=.30, min_load=200., stroke=.020, speed=3.0):
     episodes = [] if onset is None else [dict(start_s=onset, confirmed=True)]
     return dict(outcome='duration', numerically_valid=True, model_status=dict(model_valid=True),
+                duration_s=5.,
                 mean_speed_mps=speed, max_shock_stroke_m=stroke,
                 wheelie=dict(front_load_fraction_min=fraction, min_front_load_n=min_load,
                              wheelie_episode_records=episodes))
@@ -62,3 +63,22 @@ def test_reference_dt_defaults_to_the_chain_step(monkeypatch, tmp_path):
     assert tool.main(['--scenarios', 'flat', '--candidates', 'ideal_mid_drive', '--dt', '0.0005',
                       '--out', str(tmp_path)]) == 0
     assert seen == [('elastic_chain', .000125), ('ideal_mid_drive', .0005)]
+
+
+def test_matching_early_failures_do_not_establish_transmission_parity():
+    early = dict(_metrics(), outcome='crash:loop_out', duration_s=.2)
+    assert not compare_metrics(early, early)['passed']
+    assert not compare_metrics(_metrics(), dict(_metrics(), duration_s=2.))['passed']
+
+
+def test_reuse_requires_current_source_and_request_identity(tmp_path):
+    import json
+    from types import SimpleNamespace
+    import pytest
+    import tools.compare_transmissions as tool
+    destination = tmp_path / 'flat_ideal_mid_drive'
+    destination.mkdir()
+    (destination / 'episode_metrics.json').write_text(json.dumps(_metrics()))
+    arguments = SimpleNamespace(out=tmp_path, reuse=True, seed=17, duration=5.)
+    with pytest.raises(ValueError, match='reuse'):
+        tool._run(arguments, 'flat', 'ideal_mid_drive', .0005)

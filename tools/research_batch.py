@@ -27,6 +27,7 @@ import csv
 import hashlib
 import itertools
 import json
+import re
 import sys
 import tomllib
 import traceback
@@ -61,7 +62,7 @@ def expand_grid(grid, policies=None):
     policy_names = _listed(grid.get('policy', 'passthrough'), 'policy')
     known = policies if policies is not None else _policies()
     for name in policy_names:
-        if name not in known:
+        if name not in known and (not isinstance(name, str) or ':' not in name):
             raise ValueError(f'unknown policy {name!r}; choose from {sorted(known)}')
     ideal = grid.get('ideal_sensors', True)
     if type(ideal) is not bool:
@@ -71,8 +72,9 @@ def expand_grid(grid, policies=None):
             sources, seeds, demands, policy_names):
         key = json.dumps([track, scenario, seed, demand, demand_file, policy], sort_keys=True)
         stem = Path(track).stem if track else scenario
-        runs.append(dict(run_id=f'{stem}_s{seed}_d{demand if demand is not None else demand_file or "none"}_{policy}_'
-                                f'{hashlib.sha256(key.encode()).hexdigest()[:6]}',
+        label = f'{stem}_s{seed}_d{demand if demand is not None else demand_file or "none"}_{policy}'
+        run_id = re.sub(r'[^A-Za-z0-9_.-]', '_', label).strip('._')
+        runs.append(dict(run_id=f'{run_id}_{hashlib.sha256(key.encode()).hexdigest()[:6]}',
                          track=track, scenario=scenario, seed=seed, demand_nm=demand, demand_file=demand_file,
                          policy=policy, transmission=grid.get('transmission'), dt=grid.get('dt'),
                          duration=grid.get('duration'), ideal_sensors=ideal, extra_args=list(grid.get('extra_args', []))))
@@ -103,16 +105,23 @@ def run_one(payload):
     run, root = payload
     from bike_sim.cli.research import parser, make_environment
     from bike_sim.sim.research.metrics import episode_metrics
+    from bike_sim.sim.research.policy_session import PolicySession, load_policy
     record = dict(run, outcome='error')
+    session = None
     try:
         out = Path(root)/run['run_id']
-        policy = _policies()[run['policy']]
+        reference = run['policy'] if ':' in run['policy'] else (
+            'bike_sim.sim.research.policies:' + run['policy'] + '_factory')
+        policy = load_policy(reference)
         env = make_environment(parser().parse_args(_argv(run, out)))
+        session = PolicySession(env, policy, reference=reference)
         while not env.done:
-            env.step(policy(env.observation, env.demand_nm))
-        env.save(out, overwrite=True)
+            session.advance()
+        session.save(out)
         record.update(episode_metrics(env))
     except (Exception, SystemExit) as exc:  # argparse exits; a bad run must not kill the batch
+        if session is not None and session.env.error is not None and not out.exists():
+            session.save(out)
         record.update(error=f'{type(exc).__name__}: {exc}', traceback=traceback.format_exc())
     return record
 

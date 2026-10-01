@@ -9,6 +9,7 @@ from pathlib import Path
 from bike_sim.cli.research import parser, make_environment
 from bike_sim.sim.research.sensors import SensorObservation
 from bike_sim.sim.ride.control import RideControl
+from bike_sim.sim.research.policy_session import PolicySession
 
 MOTOR_CAP_NM = 80.0
 
@@ -27,12 +28,25 @@ def policy(observation: SensorObservation, demand_nm: float | None) -> RideContr
 def main() -> None:
     args = parser().parse_args()
     env = make_environment(args)
+    session = PolicySession(env, factory(), reference='examples.research.controller_loop:factory')
     while not env.done:
-        transition = env.step(policy(env.observation, env.demand_nm))
+        transition = session.advance()
         if not transition.numerically_valid:
             break
-    env.save(args.out, overwrite=args.overwrite)
+    session.save(args.out, overwrite=args.overwrite)
     print(f'{env.reason}: {Path(args.out).resolve()}')
+
+
+class ExamplePolicy:
+    def reset(self, seed):
+        self.seed = seed
+
+    def act(self, observation, demand_nm):
+        return policy(observation, demand_nm)
+
+
+def factory():
+    return ExamplePolicy()
 
 
 if __name__ == '__main__':

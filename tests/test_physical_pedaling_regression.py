@@ -117,6 +117,24 @@ def test_coasting_rider_holds_both_feet_using_only_internal_actuators():
     np.testing.assert_array_equal(data.qvel, qvel)
 
 
+@pytest.mark.parametrize('phase_error', [-1., 1.])
+def test_coasting_foot_targets_stay_on_real_pedals_when_crank_misses_stop_goal(phase_error):
+    model, data, runtime = rolling_rig(speed=0.)
+    controller = runtime.rider_control
+    mujoco.mj_forward(model, data)
+    initial_positions = data.qpos.copy()
+    initial_velocities = data.qvel.copy()
+    command = RiderCommand(
+        0., crank_target_phase_rad=float(data.qpos[controller.crank_spin_qpos]) + phase_error,
+        crank_target_rate_rad_s=0.)
+    target = controller._coasting_target_state(model, data, command)
+    for side in ('front', 'rear'):
+        pedal_id = controller.pedals[side]
+        np.testing.assert_allclose(target.site_xpos[pedal_id], data.site_xpos[pedal_id], atol=1e-12)
+    np.testing.assert_array_equal(data.qpos, initial_positions)
+    np.testing.assert_array_equal(data.qvel, initial_velocities)
+
+
 @pytest.mark.parametrize('motor_request', [None, 20.])
 def test_coasting_gates_passive_pedal_torque_but_preserves_external_motor_command(motor_request):
     model, data, runtime = rolling_rig(speed=0.)

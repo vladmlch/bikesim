@@ -118,6 +118,96 @@ def _upper_box_face(origin, rotation, half):
     return point, normal, tangent
 
 
+def sole_target_height(origin, rotation, half, sole_x_m, pad_half_length_m,
+                       pad_radius_m, compression_m):
+    """Match the combined pad compression rather than the spindle's clearance.
+
+    Tilt changes how many sole pads carry load. Matching their summed
+    penetration retains the declared two-pad stiffness without moving a foot
+    through the platform or doubling its support request.
+    """
+    face_normal = rotation[:,2].copy()
+    if face_normal[2] < 0.:
+        face_normal = -face_normal
+    if face_normal[2] > 1e-8:
+        spread = abs(face_normal[0])*pad_half_length_m
+        effective = compression_m if compression_m <= 0. or spread <= compression_m else 2.*compression_m-spread
+        height = (origin[2]+(half[2]+pad_radius_m-effective
+                  -face_normal[0]*(sole_x_m-origin[0]))/face_normal[2]-pad_radius_m)
+        valid = True
+        for offset in (-pad_half_length_m, pad_half_length_m):
+            center = np.array([sole_x_m+offset, origin[1], height+pad_radius_m])
+            local = rotation.T@(center-origin)
+            if (abs(local[0]) > half[0] or abs(local[1]) > half[1]
+                    or local[2]*np.sign(face_normal@rotation[:,2]) < 0.):
+                valid = False
+                break
+        if valid:
+            return float(height)
+    radius = pad_radius_m-min(compression_m, 0.)
+    along = rotation[[0, 2], 0]*half[0]
+    across = rotation[[0, 2], 2]*half[2]
+    corners = [first*along+second*across for first, second in
+               ((-1., -1.), (-1., 1.), (1., 1.), (1., -1.))]
+    normals = [-rotation[[0, 2], 0], rotation[[0, 2], 2],
+               rotation[[0, 2], 0], -rotation[[0, 2], 2]]
+    heights = []
+    for offset in (-pad_half_length_m, pad_half_length_m):
+        query_x = sole_x_m+offset-origin[0]
+        for corner in corners:
+            horizontal = query_x-corner[0]
+            if abs(horizontal) <= radius+1e-12:
+                heights.append(corner[1]+np.sqrt(max(0., radius*radius-horizontal*horizontal)))
+        for index, normal in enumerate(normals):
+            start = corners[index]+radius*normal
+            end = corners[(index+1)%4]+radius*normal
+            span = end[0]-start[0]
+            if abs(span) > 1e-12:
+                fraction = (query_x-start[0])/span
+                if -1e-12 <= fraction <= 1.+1e-12:
+                    heights.append(start[1]+fraction*(end[1]-start[1]))
+    if not heights:
+        raise ValueError('sole target is outside the finite pedal footprint')
+    upper = float(origin[2]+max(heights)-pad_radius_m)
+    if compression_m <= 0.:
+        return upper
+
+    def penetration(height):
+        total = derivative = 0.
+        for offset in (-pad_half_length_m, pad_half_length_m):
+            center = np.array([sole_x_m+offset, origin[1], height+pad_radius_m])
+            contact = _box_pad_contact(center, pad_radius_m, origin, rotation, half)
+            if contact.within_footprint and contact.gap_m < 0.:
+                if center[2] < origin[2] and contact.normal[2] < -.5:
+                    raise ValueError('requested sole compression crosses the pedal surface')
+                total -= contact.gap_m
+                derivative += contact.normal[2]
+        return total, derivative
+
+    requested = 2.*compression_m
+    lower = upper-max(requested, .001)
+    for attempt in range(32):
+        value, derivative = penetration(lower)
+        if value >= requested:
+            break
+        lower -= max(requested, .001)
+    else:
+        raise ValueError('requested pedal support load is not reachable')
+    height = (lower+upper)/2.
+    for attempt in range(32):
+        value, derivative = penetration(height)
+        difference = value-requested
+        if abs(difference) <= 1e-12:
+            return height
+        if difference > 0.:
+            lower = height
+        else:
+            upper = height
+        candidate = height+difference/derivative if derivative > 1e-12 else upper
+        height = candidate if lower < candidate < upper else (lower+upper)/2.
+    raise RuntimeError('finite pedal support target did not converge')
+
+
 def validate_planar_support_model(model, data, geoms):
     """Validate static topology once; MuJoCo preserves these planar rotations."""
     import mujoco

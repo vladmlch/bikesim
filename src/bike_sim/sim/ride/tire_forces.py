@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import copy
 import numpy as np
 from bike_sim.physics.checks import array, scalar
-from bike_sim.physics.tire import _brush_step, _normal_contact
+from bike_sim.physics.tire import TireSpec, _brush_step, _normal_contact
 from bike_sim.terrain.contact_profile import ProfileQuery
 from bike_sim.sim.ride.physical_mapping import (
     resolve_id, point_jacobian_into,
@@ -109,7 +109,7 @@ class TireForceApplier:
         for side, geom in self.geoms.items():
             cfg, state = getattr(self.config, side), self.states[side]
             contact = self.profile.contact(data.geom_xpos[geom][[0, 2]], self.radii[side], state.segment)
-            energy += .5*cfg.material.radial_k_n_m*max(contact.delta, 0.)**2
+            energy += cfg.material.elastic_response(contact.delta)[1]
             energy += .5*cfg.tangent_k_n_m*state.xi**2
         return energy
 
@@ -142,8 +142,13 @@ class TireForceApplier:
             velocity = self._jac_contact @ data.qvel
             center_velocity = self._jac_center @ data.qvel
             delta_dot, slip = -float(velocity @ n), float(velocity @ tangent)
-            normal, radial_energy = _normal_contact(
-                contact.delta, delta_dot, cfg.material.radial_k_n_m, cfg.material.radial_c_ns_m)
+            if isinstance(cfg.material, TireSpec):
+                normal, radial_energy = _normal_contact(
+                    contact.delta, delta_dot, cfg.material.radial_k_n_m, cfg.material.radial_c_ns_m)
+                elastic_force = cfg.material.radial_k_n_m * max(contact.delta, 0.)
+            else:
+                normal, radial_energy = cfg.material.normal_contact(contact.delta, delta_dot)
+                elastic_force = cfg.material.elastic_response(contact.delta)[0]
             xi = state.xi
             release_loss = 0.
             if state.tangent is not None:
@@ -176,7 +181,7 @@ class TireForceApplier:
                 interval_id=round(time/dt), backend='compliant_2d', wheel_axis_m=center,
             )
             # Continuous radial passivity, separated from numerical integration error.
-            radial_loss = (normal-cfg.material.radial_k_n_m*max(contact.delta, 0.))*delta_dot
+            radial_loss = (normal-elastic_force)*delta_dot
             radial_loss_power += max(radial_loss, 0.) if contact.delta > 0 else 0.
             energy += radial_energy + .5*cfg.tangent_k_n_m*xi_new*xi_new
             loss += max(release_loss, 0.) + brush_loss

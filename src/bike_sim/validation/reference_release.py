@@ -108,6 +108,9 @@ def classify_outcome(rows,*,goal_x_m=None,crashed=False,numerical_error=None,dur
                 'time_s':last.get('end_time_s',0.),'position_m':last.get('position_m'),
                 'control':last.get('control',{})}
     for row in rows:
+        if row.get('model_status',{}).get('numerically_valid') is False:
+            return {'outcome':'numerical_failure','reason':'energy quality gate failed',
+                    'time_s':row['time_s'],'position_m':row['position_m'],'control':row.get('control',{})}
         status=row.get('model_status',{})
         if status.get('model_valid') is False:
             return {'outcome':'model_invalid','reason':status.get('first_model_violation'),
@@ -250,7 +253,8 @@ def run_reference_matrix(output_dir,*,physics_profile,dt_s=None,dx_m=.005,names=
                     row=interval_row(sim,tracker);record['rows'].append(row)
                 except Exception as exc:
                     error=f'{type(exc).__name__}: {exc}';break
-                if sim.crash is not None or not row['model_status']['model_valid'] or index%check_every==0:
+                if (sim.crash is not None or not row['model_status']['model_valid']
+                        or not row['model_status']['numerically_valid'] or index%check_every==0):
                     result=classify_outcome(record['rows'],goal_x_m=item['goal_x_m'],crashed=sim.crash is not None)
                     if result['outcome']!='duration_limit':break
             if error is not None or result is None or result['outcome']=='duration_limit':

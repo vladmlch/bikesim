@@ -1646,3 +1646,12 @@ reaches 4–5 m/s on a road preset is the square-edged potholes.
 happened. **`profile.png`** — the road, and for each pothole three bars: declared depth,
 front-wheel drop, rear-wheel drop. When the coloured bars are shorter than the grey one,
 the hole is shorter than the wheel can fall into and its declared depth is moot.
+# Research mode
+
+Add `--research` to a physical effort-drive invocation to use the same accounted
+policy loop in the viewer and with `--headless`. See
+[the research workflow](ANTI_WHEELIE.md#shared-research-viewer-and-policy-factory)
+for the policy factory interface, clocks and recording format. Always choose a
+new `--out` directory. The existing command without `--research` retains preview
+behavior and does not certify numerical quality. No anti-wheelie controller is
+provided by this mode.

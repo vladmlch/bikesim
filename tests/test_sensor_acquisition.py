@@ -88,3 +88,34 @@ def test_sensor_period_must_be_aligned_with_physics(sim):
     sim.reset()
     with pytest.raises(ValueError, match='sensor period'):
         ResearchEnvironment(sim, sensors=SensorConfig(sample_period_s=.0007))
+
+
+def test_reset_restarts_sensor_random_stream_and_counters():
+    config = SensorConfig(sample_period_s=.001, dropout_probability=.25)
+    pipeline = SensorPipeline(config, seed=71)
+    outputs = []
+    for attempt in range(2):
+        pipeline.reset(observation())
+        for sample_index in range(1, 20):
+            pipeline.push(observation(sample_index * .001))
+        outputs.append((pipeline.read(.03), pipeline.samples_attempted,
+                        pipeline.samples_dropped))
+    assert outputs[0] == outputs[1]
+    assert outputs[0][1] == 20
+
+
+def test_fast_profile_requires_an_aligned_sensor_period():
+    from bike_sim.sim.research.environment import _integer_steps
+    assert _integer_steps(.005, .00125, 'sensor period') == 4
+    with pytest.raises(ValueError, match='sensor period'):
+        _integer_steps(.001, .00125, 'sensor period')
+
+
+def test_transport_latency_does_not_expose_undelivered_measurements():
+    pipeline = SensorPipeline(replace(SensorConfig.ideal(), latency_s=.02))
+    pipeline.reset(observation())
+    pending = pipeline.read(.01)
+    assert not pending.valid
+    assert pending.specific_force_body_mps2 == (0., 0., 0.)
+    assert pending.motor_torque_nm == 0.
+    assert pipeline.read(.02).motor_torque_nm == observation().motor_torque_nm

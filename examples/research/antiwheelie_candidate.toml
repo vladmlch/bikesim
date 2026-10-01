@@ -1,0 +1,82 @@
+# Synthetic candidate for longitudinal torque-policy development.
+# Qualification reports determine its accepted scope and resolution.
+physics_mode = "physical"
+drive_mode = "articulated_effort"
+timestep_s = 0.000625
+closure_time_constant_s = 0.0025
+initial_speed_mps = 0.0
+initial_front_brake = 1.0
+initial_rear_brake = 1.0
+equilibrium_refine_after_s = 1.0
+equilibrium_refine_period_s = 3.0
+equilibrium_cache_enabled = true
+
+[tires]
+backend = "distributed_2d_reference"
+surface_mode = "track"
+
+[tires.front]
+mu = 1.1
+
+[tires.rear]
+mu = 1.1
+
+[tires.distributed]
+station_count = 256
+calibration_status = "experimental_unvalidated"
+
+[drive]
+transmission_model = "geometric_ideal_mid_drive"
+human_torque_nm = 20.0
+
+[drive.pedaling]
+enabled = true
+coast_above_rpm = 110.0
+resume_below_rpm = 90.0
+stop_time_s = 0.35
+mash_cadence_rpm = 45.0
+mash_torque_nm = 60.0
+effort_slew_nm_s = 300.0
+rollback_brake = false
+rollback_engage_mps = 0.25
+rollback_release_mps = 0.0
+rollback_demand = 1.0
+
+[drive.assist]
+gain = 4.0
+tau = 0.3
+stop_delay = 0.3
+max_torque = 85.0
+max_power = 600.0
+torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
+engage_torque_nm = 4.0
+spin_rpm = 15.0
+stall_timeout_s = 1.0
+boost_s = 0.4
+
+[drive.battery]
+enabled = false
+
+[drive.gearing]
+front_teeth = 34
+rear_teeth = 51
+
+[drive.shifting]
+enabled = false
+cassette = [10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51]
+target_cadence_min_rpm = 80.0
+target_cadence_max_rpm = 110.0
+shift_cooldown_s = 0.4
+shift_cut_duration_s = 0.2
+torque_factor = 0.3
+cadence_smoothing_tau_s = 0.35
+upshift_slip_limit_mps = 0.5
+
+[articulated]
+activation_tau_s = 0.0
+active_positive_power_limit_w = 600.0
+grip_pair_force_limit_n = 400.0
+joint_envelope_path = "rider_joint_envelope_synthetic.json"
+pedal_c_ns_m = 100.0
+posture_pitch_limit_nm = 120.0
+grip_release_distance_m = 0.30

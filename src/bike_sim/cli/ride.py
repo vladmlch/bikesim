@@ -93,8 +93,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
                              "the shipped tune; headless only")
     parser.add_argument("--out", default=DEFAULT_OUT_DIR, metavar="DIR",
                         help=f"root directory for run artifacts (default {DEFAULT_OUT_DIR})")
-    parser.add_argument("--decimate", type=int, default=1, metavar="N",
-                        help="store every N-th step in telemetry.csv (default 1 = every step)")
+    parser.add_argument("--decimate", type=int, default=None, metavar="N",
+                        help="store every N-th step (default 80 in research, otherwise 1)")
     parser.add_argument("--rider", choices=RIDER_VARIANTS, default=None,
                         help=f"rider model: seated biodynamic rider (default), the lumped standing rider, "
                              f"or none (default {DEFAULT_RIDER_VARIANT})")
@@ -174,7 +174,28 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--assist-gain", type=float, default=None)
     parser.add_argument("--timestep", type=float, default=None, metavar="S")
     parser.add_argument("--duration", type=float, default=None, metavar="S", help="physical run duration; permits stationary rigs")
+    parser.add_argument('--research', action='store_true', help='accounted policy loop in viewer or headless mode')
+    parser.add_argument('--policy', help='motor policy factory, module:factory')
+    parser.add_argument('--control-period', type=float)
+    parser.add_argument('--sensor-period', type=float)
+    parser.add_argument('--sensor-delay', type=float)
+    parser.add_argument('--actuator-delay', type=float)
+    parser.add_argument('--road-resolution', type=float)
+    parser.add_argument('--demand', type=float, help='external crank-side demand, Nm; omitted selects pedelec')
+    parser.add_argument('--rider-program')
     args = parser.parse_args(argv)
+    research_defaults = {'control_period': .01, 'sensor_period': .005,
+                         'sensor_delay': .01, 'actuator_delay': .005, 'road_resolution': .005}
+    research_values = (*research_defaults, 'policy', 'demand', 'rider_program')
+    if not args.research and any(getattr(args, name) is not None for name in research_values):
+        parser.error('policy, sensor and experiment options require --research')
+    for name, value in research_defaults.items():
+        if getattr(args, name) is None:
+            setattr(args, name, value)
+    if args.decimate is None:
+        args.decimate = 80 if args.research else 1
+    if args.research and args.seed is None:
+        args.seed = 0
     from bike_sim.physics.resolution import load_physics_config
     from math import isfinite, radians
     overrides={"physics_mode":args.physics,"drive_mode":args.drive,"timestep_s":args.timestep}
@@ -191,6 +212,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         parser.error(str(exc))
     args.physics=args.resolved_physics.physics_mode
     args.drive=args.resolved_physics.drive_mode
+    if args.research:
+        if args.physics != 'physical' or args.drive not in ('crank_effort', 'articulated_effort'):
+            parser.error('--research requires physical crank_effort or articulated_effort')
+        if args.sag is not None:
+            parser.error('--research uses the resolved physical config; fit sag in a separate run')
+        if args.preview:
+            parser.error('--research runs an experiment; --preview only draws the track')
     if args.duration is not None and (not isfinite(args.duration) or args.duration<=0):
         parser.error("--duration must be finite and positive")
     if args.physics=="physical":
@@ -770,7 +798,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 2
 
     try:
-        track = resolve_track(args.track, seed=args.seed, length_m=args.length)
+        road_seed = None if args.research and _is_file_argument(args.track) else args.seed
+        track = resolve_track(args.track, seed=road_seed, length_m=args.length)
     except (TrackFileError, ValueError, FileNotFoundError) as exc:
         print(f"{PREFIX} {exc}", file=sys.stderr)
         return 1
@@ -792,7 +821,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"{PREFIX} {exc}", file=sys.stderr)
             return 2
 
-    seed = track_seed(args.track, args.seed)
+    seed = args.seed if args.research else track_seed(args.track, args.seed)
+    if args.research:
+        from bike_sim.sim.research.viewer import run_ride_research
+        try:
+            return run_ride_research(track, args, rider)
+        except KeyboardInterrupt:
+            return 0
+        except Exception as error:
+            print(f'{PREFIX} research error: {type(error).__name__}: {error}', file=sys.stderr)
+            return 2 if isinstance(error, (ValueError, OSError)) else 3
     try:
         tyre = _tyre_config(args)
     except ValueError as exc:

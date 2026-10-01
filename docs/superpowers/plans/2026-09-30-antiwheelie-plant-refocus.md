@@ -4,11 +4,33 @@
 
 **Goal:** Refocus the physical research plant on the anti-wheelie problem: a mid-drive e-bike + articulated rider on procedurally generated rough terrain, exposing continuous front-load margin metrics, episode attribution, a torque-demand channel, and batch evaluation — while demoting the elastic chain to an optional reference model.
 
-**Architecture:** All changes extend the existing `bike-research` plant (`src/bike_sim/sim/research/`, `src/bike_sim/sim/ride/`). The elastic chain is bypassed by the already-implemented `ideal_mid_drive` transmission (one-way tendon constraint), validated by A/B parity runs. New code is small modules in `sim/research/` plus a terrain generator in `terrain/`; every artifact keeps the existing seed/hash reproducibility contract.
+**Architecture:** All changes extend the existing `bike-research` plant (`src/bike_sim/sim/research/`, `src/bike_sim/sim/ride/`). The elastic chain is bypassed by the already-implemented `ideal_mid_drive` transmission (one-way tendon constraint), validated by A/B parity runs against `elastic_chain`. If plain `ideal_mid_drive` misses squat parity, the candidate is the experimental `geometric_ideal_mid_drive` (same one-way tendon, linearized from the full chain geometry; already in the tree). New code is small modules in `sim/research/` plus a terrain generator in `terrain/`; every artifact keeps the existing seed/hash reproducibility contract.
 
 **Tech Stack:** Python 3.13, MuJoCo ≥3.0, NumPy, SciPy 1.17.0, pytest. No new dependencies (offline bundle constraint).
 
 **Spec:** Design decisions agreed in the 2026-09-30 grilling session, restated below; background contract in `docs/ANTI_WHEELIE.md`.
+
+## Status
+
+Last checked 2026-09-30 against `main` @ `0408101`. **Tasks 1–7: none started (no step is checked off).** Every file, flag and test this plan creates is still absent:
+
+| Task | Status | Evidence |
+|---|---|---|
+| 1 Margin metrics / episodes / `loop_out` | not started | `WheelieTracker.update(truth, dt_s)` has no `context`, no `episodes`; no `crash_reason`, `sim/research/metrics.py` or `episode_metrics.json`; `env.reason` is still `'crash:'+cause` |
+| 2 Transmission flag / dt / A/B | not started | `bike-research` has no `--transmission`; `PhysicalDriveConfig.transmission_model` still defaults to `'elastic_chain'`, so research runs on the chain today; `validate_antiwheelie.py` has no `--transmission`; no `tools/compare_transmissions.py` |
+| 3 Terrain generator + eval set | not started | no `terrain/generator.py`, `--scenario generated`, `tools/generate_eval_set.py`, `examples/research/eval/` |
+| 4 Demand / rider random / behavior hook / no-IMU | not started | no `demand.py`, `rider_random.py`, `rider_behavior.py`; `SensorConfig` has no `imu_enabled`; `controller_loop.py` policy still takes `(observation)` |
+| 5 Long episodes | not started | no `tests/test_long_episode.py` or `long_climb.toml`; no `slow` pytest marker is registered (no pytest config at all) |
+| 6 Batch runner | not started | no `tools/research_batch.py` or `sim/research/policies.py` |
+| 7 Documentation | not started | `docs/ANTI_WHEELIE.md` mentions none of the new flags or outcomes |
+
+### Already in the tree (commit `0408101`) and affecting this plan
+
+- **Third transmission mode `geometric_ideal_mid_drive`** (`physics/transmission_constraint.py`, `sim/ride/geometric_freehub.py`, `validation/drive_suspension_rig.py`, `tests/test_geometric_transmission.py`). It reports `transmission_reference_status: experimental_geometric_reduction`; no A/B report is committed. Plain `ideal_mid_drive` is flagged `omits_suspension_coupling` in `drivetrain_forces.py`, and the fidelity audit (`specs/2026-09-30-bikesim-fidelity-audit.md`) warns that a hand-added "anti-squat force" on top of the ideal tendon can double-count torque. Task 2 is adjusted accordingly (the hand-written `chainline_pull` fallback is dropped in favor of trying `geometric_ideal_mid_drive`).
+- **`model_violation` outcome.** `ExperimentConfig.stop_on_model_violation` (default on) truncates a run with `env.reason == 'model_violation'` when the tire/suspension model leaves its declared scope (`sim/research/validity.py::channel_violations`; status in `env.sim.physical.model_status`). Generated terrain can trip this (Tasks 3, 5, 6 are adjusted); it must stay a distinct outcome from `loop_out`/`endo`.
+- `bike_sim.validation.fidelity_sweep` already has `--transmission {ideal_mid_drive,geometric_ideal_mid_drive,elastic_chain}` (default `ideal_mid_drive`), `--jobs`, and a time-step axis `TIME_STEPS = 1.25 / 0.625 / 0.3125 ms`. It uses different cases from `validate_antiwheelie.py`, so it corroborates Task 2's dt choice but does not replace its gates.
+
+**Open decision for the owner:** which transmission is the research default — `ideal_mid_drive` (agreed above, cheap, omits chain-growth coupling) or the experimental `geometric_ideal_mid_drive`. Task 2 keeps the agreed default and lets the A/B result decide.
 
 ## Agreed Design Decisions
 
@@ -71,7 +93,7 @@ These are explicit non-goals of this change set and of the project direction. Do
   - `WheelieTracker.metrics` gains `front_load_fraction_min`, `front_load_fraction_mean`, `max_pitch_rate_up_rad_s`, `wheelie_episode_records` (= episodes)
   - `episode_metrics(env) -> dict` (below)
   - `env.torque_delivered_nms`, `env.torque_requested_nms` — integrated N·m·s per control interval
-  - `env.reason` may now be `'crash:loop_out'` / `'crash:endo'` instead of `'crash:pitch_over'`
+  - `env.reason` may now be `'crash:loop_out'` / `'crash:endo'` instead of `'crash:pitch_over'`. Other causes pass through unchanged (`handlebar_contact`, `rider_ground_contact`, `catch_plane_contact`). The existing truncation reasons `'model_violation'` and `'numerical_quality'` stay distinct: they mean the run left the model's scope, not that the bike crashed.
 
 - [ ] **Step 1: Write failing tests for episode tracking and margins**
 
@@ -226,6 +248,8 @@ def episode_metrics(env):
         'endo': env.reason == 'crash:endo',
         'numerically_valid': env.numerically_valid,
         'max_energy_residual_ratio': env.max_energy_residual_ratio,
+        # model_valid / first_model_violation / counts: keeps out-of-scope runs separable from real outcomes
+        'model_status': env.sim.physical.model_status.as_dict(),
         'wheelie': m,  # includes wheelie_episode_records
     }
 ```
@@ -250,7 +274,7 @@ def test_episode_metrics_schema(tmp_path):
     env.save(tmp_path/'run')
     rec = json.loads((tmp_path/'run'/'episode_metrics.json').read_text())
     for key in ('outcome','duration_s','progress_m','motor_pass_fraction',
-                'loop_out','wheelie','numerically_valid'):
+                'loop_out','wheelie','numerically_valid','model_status'):
         assert key in rec
     assert rec['progress_m'] > 0.
 ```
@@ -278,8 +302,8 @@ git commit -m "feat: margin metrics, wheelie episode records, loop_out outcome"
 - Test: `tests/test_research_transmission.py`
 
 **Interfaces:**
-- Consumes: `PhysicalDriveConfig(transmission_model=...)` already supports `'elastic_chain'`/`'ideal_mid_drive'`; `validate_antiwheelie.py` builds argv lists per case.
-- Produces: `--transmission {elastic_chain,ideal_mid_drive}` on `bike-research` (default `ideal_mid_drive`) and on `validate_antiwheelie.py`; `tools/compare_transmissions.py --scenarios ... --dt ... --out ...` writing `comparison.json` with per-scenario deltas and a `passed` verdict.
+- Consumes: `PhysicalDriveConfig(transmission_model=...)` already supports `'elastic_chain'`, `'ideal_mid_drive'` and the experimental `'geometric_ideal_mid_drive'`; `validate_antiwheelie.py` builds argv lists per case and fans out with `ProcessPoolExecutor` (`--cases`, `--dt` nargs+, `--seed`, `--jobs`, `--out`, `--overwrite`).
+- Produces: `--transmission {elastic_chain,ideal_mid_drive,geometric_ideal_mid_drive}` on `bike-research` (default `ideal_mid_drive`) and on `validate_antiwheelie.py` — the same three choices as `bike_sim.validation.fidelity_sweep --transmission`; `tools/compare_transmissions.py --scenarios ... --candidates ... --dt ... --out ...` writing `comparison.json` with per-scenario deltas (each candidate against the `elastic_chain` reference) and a `passed` verdict per candidate.
 
 - [ ] **Step 1: Failing test for the flag**
 
@@ -296,15 +320,20 @@ def test_elastic_chain_selectable():
     args = parser().parse_args(['--scenario','flat','--transmission','elastic_chain'])
     env = make_environment(args)
     assert env.sim.physics_config.drive.transmission_model == 'elastic_chain'
+
+def test_geometric_transmission_selectable():
+    args = parser().parse_args(['--scenario','flat','--transmission','geometric_ideal_mid_drive'])
+    env = make_environment(args)
+    assert env.sim.physics_config.drive.transmission_model == 'geometric_ideal_mid_drive'
 ```
 
 - [ ] **Step 2: Run to verify failure** — `--transmission` unknown arg. Expected FAIL.
 
 - [ ] **Step 3: Implement flag + propagation**
 
-In `parser()`: `p.add_argument('--transmission', choices=('elastic_chain','ideal_mid_drive'), default='ideal_mid_drive')`. In `make_environment`: `drive = PhysicalDriveConfig(..., transmission_model=args.transmission, **drive_kwargs)`. Ignore `chain_k_n_m`/`freehub_k_nm_rad` overrides with a warning comment when transmission is `ideal_mid_drive` (they are unused; raise `ValueError` if both given with ideal model — explicit over silent).
+In `parser()`: `p.add_argument('--transmission', choices=('elastic_chain','ideal_mid_drive','geometric_ideal_mid_drive'), default='ideal_mid_drive')`. In `make_environment`: `drive = PhysicalDriveConfig(..., transmission_model=args.transmission, **drive_kwargs)`. `--chain-stiffness` / `--freehub-stiffness` are unused by both ideal modes: raise `ValueError` if either is given with `ideal_mid_drive` or `geometric_ideal_mid_drive` (explicit over silent).
 
-In `tools/validate_antiwheelie.py`: add `p.add_argument('--transmission', default='ideal_mid_drive', choices=...)`, append `['--transmission', args.transmission]` to each case argv; include the value in output dir name (`f'{name}_{args.transmission}_dt_{dt:.8f}'`) and in `result`.
+In `tools/validate_antiwheelie.py`: add `p.add_argument('--transmission', default='ideal_mid_drive', choices=('elastic_chain','ideal_mid_drive','geometric_ideal_mid_drive'))`, append `['--transmission', args.transmission]` to each case argv; include the value in output dir name (`f'{name}_{args.transmission}_dt_{dt:.8f}'`) and in `result`.
 
 - [ ] **Step 4: Fix research-mode tests that assumed the old default**
 
@@ -315,11 +344,13 @@ Expected: failures where tests/goldens implicitly used `elastic_chain`. For each
 
 Run: `PYTHONPATH=src uv run python tools/validate_antiwheelie.py --cases wheelie limited rough crest low_grip incline --transmission ideal_mid_drive --dt 0.000125 0.00025 0.0005 0.001 --jobs 4 --out verification/dt_sweep_ideal`
 
+Corroboration only: `python -m bike_sim.validation.fidelity_sweep --transmission ideal_mid_drive` already checks convergence at 1.25 / 0.625 / 0.3125 ms on other cases; it does not replace the anti-wheelie case gates here.
+
 Record the largest `dt` where every case passes its expectation AND `max_energy_residual_ratio < 0.05`. That becomes the new default `--dt` in `parser()` (update help text) and `SimulationPhysicsConfig` guidance — expected `0.0005`–`0.001`. If only `0.00025` passes, keep default `0.000125` and flag the blocker instead of silently picking a coarse step.
 
 - [ ] **Step 6: compare_transmissions.py**
 
-`tools/compare_transmissions.py` — for each `(scenario, seed)` run identical episodes on both transmissions at the validated dt (same initial speed, duration, demand=constant motor torque), then diff: wheelie episode onsets (Δt), `front_load_fraction_min`, `min_front_load_n`, max shock stroke used (`suspension.shock_stroke_m` from telemetry), `mean_speed_mps`. Emit JSON + `passed` bool vs tolerances: onset |Δt| ≤ 50 ms, min load within 15 %, shock stroke within 10 %, speed within 5 %. Skeleton:
+`tools/compare_transmissions.py` — for each `(scenario, seed)` run identical episodes on the `elastic_chain` reference and on each candidate (`--candidates`, default `ideal_mid_drive geometric_ideal_mid_drive`) at the validated dt (same initial speed, duration, demand=constant motor torque), then diff each candidate against the reference: wheelie episode onsets (Δt), `front_load_fraction_min`, `min_front_load_n`, max shock stroke used (`suspension.shock_stroke_m` from telemetry), `mean_speed_mps`. Emit JSON + `passed` bool vs tolerances: onset |Δt| ≤ 50 ms, min load within 15 %, shock stroke within 10 %, speed within 5 %. Skeleton:
 
 ```python
 def run_one(scenario, seed, transmission, dt, out):
@@ -338,13 +369,18 @@ Compare pairs in `comparison.json`; exit non-zero on parity failure with the del
 
 Run: `PYTHONPATH=src uv run python tools/compare_transmissions.py --scenarios flat uphill rough_uphill crest step_up --dt <validated> --seed 17 --out verification/ab_transmission`
 
-If `passed` — done. If squat/loads diverge beyond tolerance, implement the optional correction: in `DrivetrainForceApplier._compute_components` under `self.simplified`, add `components['chainline_pull']` — a force pair applied at the cassette-axle point and the BB point along the instantaneous top-run chain line: `F = delivered_wheel_torque / rear_radius`, direction = unit(BB_center − cassette_center) on the cassette, opposite on the frame; realize through `mj_jac` transposes of both points into `qfrc` (same pattern as `jacobian()`). Re-run A/B; tolerance must pass.
+If `ideal_mid_drive` passes — done; it stays the default. If squat/loads diverge beyond tolerance, do **not** hand-roll a chain-line force: the fidelity audit (`docs/superpowers/specs/2026-09-30-bikesim-fidelity-audit.md`, the paragraph on the ideal tendon) warns that an ad-hoc "anti-squat force" on top of the ideal tendon can double-count torque or break power accounting, and the principled version already exists as `geometric_ideal_mid_drive`. Instead:
+
+1. Read the `geometric_ideal_mid_drive` candidate from the same `comparison.json`. If it passes parity, make it the research default in `parser()` and say so in the commit message. It still reports `transmission_reference_status: experimental_geometric_reduction`, so `ANTI_WHEELIE.md` (Task 7) must keep that label.
+2. If neither candidate passes, stop and report the per-metric deltas. Choosing between shipping with `elastic_chain` as the default and extending the geometric reduction belongs to the owner.
+
+(The earlier hand-written `chainline_pull` correction in `DrivetrainForceApplier` is dropped from this plan.)
 
 - [ ] **Step 8: Commit**
 
 ```bash
 git add src/bike_sim/cli/research.py tools/validate_antiwheelie.py \
-  tools/compare_transmissions.py tests/ src/bike_sim/sim/ride/drivetrain_forces.py
+  tools/compare_transmissions.py tests/
 git commit -m "feat: ideal_mid_drive research default, dt validation, transmission A/B tool"
 ```
 
@@ -440,7 +476,11 @@ In `parser()`: extend `--scenario` choices to `RESEARCH_SCENARIOS + ('generated'
 
 `tools/generate_eval_set.py`: `--n 10 --seed0 1000 --out examples/research/eval` → writes `eval_{i:02d}.toml` via `save_track` + `manifest.json` (seeds, spec hash, date). Run it once, commit the outputs.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Smoke-run the eval set against the model-scope gate**
+
+Run each `eval_XX.toml` once (`--track-file examples/research/eval/eval_XX.toml --duration 15 --ideal-sensors --out /tmp/eval_smoke/eval_XX`). `ResearchEnvironment` truncates a run with `env.reason == 'model_violation'` when the tire/suspension model leaves its declared scope (`ExperimentConfig.stop_on_model_violation`, default on; reasons such as `tire_compression`, `multi_support`, `catch_plane` come from `sim/research/validity.py::channel_violations`). If a reference run ends in `model_violation`, a generator range (bump / edge / drop heights) exceeds what the plant can represent: narrow the `TerrainGenSpec` ranges, regenerate, and re-run. Do **not** set `stop_on_model_violation=False` to make the set run (Anti-goal 8). Put the per-track outcomes in the commit message.
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/bike_sim/terrain/generator.py src/bike_sim/cli/research.py \
@@ -488,11 +528,11 @@ def test_constant_and_keyframes():
 
 - [ ] **Step 2: Run to verify failure** — Expected FAIL (missing modules/fields).
 
-- [ ] **Step 3: Implement demand.py** — smoothstep interpolation identical to `RiderProgram.at`; nonnegative torques validated; TOML `[[keyframes]]` table support.
+- [ ] **Step 3: Implement demand.py** — quintic smoothstep interpolation identical to `RiderProgram.at` (`sim/research/rider_program.py`); nonnegative torques validated; TOML `[[keyframes]]` table support.
 
 - [ ] **Step 4: Wire demand + behavior into environment**
 
-`ResearchEnvironment.__init__(sim, config=None, sensors=None, *, demand=None, rider_behavior=None)` — validate types. In `step()` at the top of each control interval: `self.demand_nm = self.demand.at(self.sim.time_s) if self.demand else None`; if `self.rider_behavior` and control.posture is None and no `RiderProgram` owns posture: `posture = self.rider_behavior.act(self.sim.time_s, self._rider_signals(sample))`; merge via `replace(control, posture=posture)`. `ResearchStep` gains `demand_nm: float|None`; trace row gains `demand_nm`; `save()` writes `demand_program` dict into `research` metadata when present. Enforce exclusivity: `rider_behavior` + posture-owning `RiderProgram` → `ValueError` at env construction.
+`ResearchEnvironment.__init__(sim, config=None, sensors=None, *, demand=None, rider_behavior=None)` — validate types. In `step()` at the top of each control interval: `self.demand_nm = self.demand.at(self.sim.time_s) if self.demand else None`; if `self.rider_behavior` and control.posture is None and no `RiderProgram` owns posture: `posture = self.rider_behavior.act(self.sim.time_s, self._rider_signals(sample))`; merge via `replace(control, posture=posture)`. `ResearchStep` gains `demand_nm: float|None` — `step()` builds it positionally today, so append the field LAST with default `None` and pass it by keyword; trace row gains `demand_nm` (the `trace.csv` header is taken from `rows[0]`, so the column appears automatically); `save()` writes `demand_program` dict into `research` metadata when present. Enforce exclusivity: `rider_behavior` + posture-owning `RiderProgram` → `ValueError` at env construction.
 
 - [ ] **Step 5: rider_random.py + CLI flags**
 
@@ -518,7 +558,7 @@ def sample_rider(spec, seed):
 
 CLI: `--rider-random` (default off), `--rider-seed` (default = `--seed`); when on, `make_environment` uses `sample_rider` for `RiderSpecs` and installs the program (env applies it when the policy leaves posture/human fields `None`). Sampled values land in `summary.json` metadata.
 
-- [ ] **Step 6: SensorConfig imu_enabled + tests** — zero-fill IMU channels in `SensorPipeline.push` when disabled; document "absent sensor reports exact zero, not noise".
+- [ ] **Step 6: SensorConfig imu_enabled + tests** — zero-fill IMU channels in `SensorPipeline.push` when disabled (`reset()` also goes through `push`, so the t=0 observation is covered); document "absent sensor reports exact zero, not noise". Trap: `SensorConfig.__post_init__` runs `scalar(..., minimum=0.)` over *every* dataclass field, so a bool field would be rejected. Add `imu_enabled: bool = True` as the LAST field (keeps `ideal()`'s positional `cls(0., 0., 0., 0., 0.)` valid), restrict the `scalar` loop to the float fields, and add an explicit `type(self.imu_enabled) is bool` check. `asdict(self.sensor_config)` already lands in `summary.json`, so the flag is recorded. Keep the `rng.normal` calls in the same order even when the IMU is disabled and simply discard the IMU draws, so toggling the IMU does not shift the noise stream of the encoder and torque sensors (seed reproducibility contract); add a test that the encoder readings are identical with `imu_enabled` True and False under the same seed.
 
 - [ ] **Step 7: Update controller_loop.py** — policy signature `policy(observation, demand_nm) -> RideControl`; show `motor_torque_nm=min(demand, cap)` passthrough and pedelec `motor_limit_nm` example.
 
@@ -536,15 +576,25 @@ git commit -m "feat: torque demand channel, rider randomization, reactive-rider 
 
 **Files:**
 - Modify: `src/bike_sim/cli/research.py` (help text only), `examples/research/long_climb.toml` (new)
+- Modify: `pyproject.toml` (register the `slow` marker under `[tool.pytest.ini_options]`; there is no pytest config or registered marker today)
 - Test: `tests/test_long_episode.py` (marked slow)
 
 **Interfaces:** Consumes Task 2 dt + Task 3 generator.
 
-- [ ] **Step 1: Failing/verification test**
+- [ ] **Step 1: Register the marker, then write the failing/verification test**
+
+```toml
+# pyproject.toml
+[tool.pytest.ini_options]
+markers = ["slow: multi-second full-plant episodes; deselect with -m 'not slow'"]
+```
 
 ```python
 # tests/test_long_episode.py
 import pytest
+from bike_sim.cli.research import parser, make_environment
+from bike_sim.sim.ride.control import RideControl
+
 @pytest.mark.slow
 def test_fifteen_second_episode_completes(tmp_path):
     args = parser().parse_args(['--scenario','generated','--seed','5','--duration','15',
@@ -553,7 +603,10 @@ def test_fifteen_second_episode_completes(tmp_path):
     while not env.done:
         env.step(RideControl(motor_torque_nm=env.demand_nm or 60., human_torque_nm=0.))
     env.save(tmp_path/'long')
-    assert env.reason in ('duration','finish','crash:loop_out','crash:endo') or env.tracker.state
+    # 'model_violation' and 'numerical_quality' are truncations (the plant left its
+    # declared scope), not episode outcomes: a validated long episode must not end in them.
+    assert env.reason in ('duration','finish','crash:loop_out','crash:endo')
+    assert env.numerically_valid
 ```
 
 - [ ] **Step 2: Run at validated dt; fix real blockers** (step caps, recorder memory, file sizes — decimation already supported; document recommended `--record-decimation` for long runs).
@@ -595,7 +648,7 @@ duration = 15.
 
 - [ ] **Step 2: Implement policies.py** — `passthrough` (`motor_torque_nm=demand or 0`), `zero`, `fixed_limit_40` (`motor_torque_nm=demand, motor_limit_nm=40.`); docstring: "demo plumbing, not anti-wheelie solutions".
 
-- [ ] **Step 3: Implement runner** — `multiprocessing.Pool` over the cartesian grid (pattern after `validate_antiwheelie.py --jobs`); each worker builds argv → `make_environment` → loop `env.step(policy(env.observation, env.demand_nm))` → `env.save(subdir)` → return `episode_metrics`. Aggregate to report files; exit non-zero if any run errored.
+- [ ] **Step 3: Implement runner** — `concurrent.futures.ProcessPoolExecutor` over the cartesian grid (what `validate_antiwheelie.py --jobs` uses); each worker builds argv → `make_environment` → loop `env.step(policy(env.observation, env.demand_nm))` → `env.save(subdir)` → return `episode_metrics`. Aggregate to report files, including an `outcome_counts` map in `batch_report.json` that counts `model_violation` and `numerical_quality` separately from `crash:*` / `finish` / `duration`, so out-of-scope runs are not read as policy failures. Exit non-zero if any run errored.
 
 - [ ] **Step 4: Run + commit**
 
@@ -612,7 +665,7 @@ git commit -m "feat: batch evaluation runner over tracks/seeds/demand grid"
 - Modify: `docs/ANTI_WHEELIE.md`
 - Modify: `README.md` (one pointer line only)
 
-- [ ] **Step 1: Update ANTI_WHEELIE.md** — new flags (`--transmission`, `--scenario generated`, `--gen-spec`, `--rider-random`, `--demand`, validated `--dt` default), `episode_metrics.json` schema, `loop_out`/`endo` outcomes, demand channel semantics (advisory echo, not enforced), eval-set workflow, batch runner usage, chain-line correction note if implemented. Keep the "Scope before a real bicycle" section verbatim.
+- [ ] **Step 1: Update ANTI_WHEELIE.md** — new flags (`--transmission`, `--scenario generated`, `--gen-spec`, `--rider-random`, `--demand`, validated `--dt` default), `episode_metrics.json` schema, `loop_out`/`endo` outcomes and how they differ from the `model_violation` / `numerical_quality` truncations (including `ExperimentConfig.stop_on_model_violation`), the three `--transmission` values with `geometric_ideal_mid_drive` labelled experimental (`experimental_geometric_reduction`) and the A/B parity result that chose the default, demand channel semantics (advisory echo, not enforced), eval-set workflow, batch runner usage. Keep the "Scope before a real bicycle" section verbatim.
 
 - [ ] **Step 2: Commit**
 
@@ -627,3 +680,4 @@ git commit -m "docs: antiwheelie plant refocus — metrics, generator, demand ch
 - Spec coverage: metrics/episodes/loop_out (T1), transmission + dt + A/B (T2), generator + eval set (T3), demand + rider randomization + behavior hook + no-IMU (T4), long episodes (T5), batch runner (T6), docs (T7). All agreed items covered.
 - Type consistency: `env.demand_nm` (float|None), `ResearchStep.demand_nm`, `DemandProgram.at(t)`, `WheelieTracker.update(truth, dt_s, context=None)`, `episode_metrics(env)`, `crash_reason(event)`, `sample_rider(spec, seed)`, `POLICIES` registry — consistent across tasks.
 - Execution order: T1 → T2 → T3 → T4 → T5 → T6 → T7 (T2 dt result feeds T5/T6 defaults).
+- Status pass 2026-09-30 (`0408101`): no task started. Names this plan depends on were checked against the tree and exist with the assumed shape (`CrashEvent(cause, time_s, position_m, pitch_rad)` with raw `qpos` pitch, `WheelieTruth`, `RiderKeyframe(time_s, posture, human_torque_nm)`, `TrackSpec.validate`, `build_profile`, obstacle classes, `load_track`/`save_track`, `ResearchEnvironment._begin_episode/_applied/last_truth`, `plain`). Changes made in that pass: third transmission mode and dropped `chainline_pull` (T2), `model_violation` outcome plus `model_status` in `episode_metrics` (T1), eval-set scope smoke run (T3), `SensorConfig` bool-field trap and `ResearchStep` positional construction (T4), `slow` marker registration and a non-vacuous outcome assertion in the long-episode test (T5), `ProcessPoolExecutor` and `outcome_counts` (T6), docs list (T7).

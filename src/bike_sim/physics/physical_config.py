@@ -7,6 +7,7 @@ upgrades these parameters to a measured/calibrated model.
 from dataclasses import dataclass, field
 from bike_sim.physics.checks import scalar
 from bike_sim.physics.tire import TireSpec
+from bike_sim.physics.tire_curve import TabulatedTireSpec
 from bike_sim.physics.distributed_tire import DistributedTireConfig
 from bike_sim.physics.chain import DrivetrainSpecs
 from bike_sim.physics.drivetrain import CASSETTE_12S_TEETH
@@ -18,14 +19,14 @@ def _material():
 
 @dataclass(frozen=True)
 class TireParameters:
-    material: TireSpec = field(default_factory=_material)
+    material: TireSpec | TabulatedTireSpec = field(default_factory=_material)
     tangent_k_n_m: float = 20000.
     mu: float = .8
     relaxation_length_m: float = .2
 
     def __post_init__(self):
-        if not isinstance(self.material,TireSpec):
-            raise ValueError('tire material must be a TireSpec')
+        if not isinstance(self.material, (TireSpec, TabulatedTireSpec)):
+            raise ValueError('tire material must be a TireSpec or TabulatedTireSpec')
         for key in ('tangent_k_n_m','relaxation_length_m'):
             scalar(getattr(self,key),key,positive=True)
         scalar(self.mu,'tire friction',minimum=0)

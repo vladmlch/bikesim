@@ -125,7 +125,9 @@ def configuration_metadata(sim,seed=None):
     except (OSError,subprocess.CalledProcessError):
         commit=None
         dirty=None
-    config_hash=hashlib.sha256(canonical_json(resolved).encode()).hexdigest()
+    hashable = dict(resolved, physics=asdict(sim.physics_config))
+    hashable['physics']['articulated']['joint_envelope_path'] = resolved.get('joint_envelope_sha256')
+    config_hash=hashlib.sha256(canonical_json(hashable).encode()).hexdigest()
     return {'schema_version':2,'physics_revision':sim.physics_revision,
         'model_commit':commit,'model_source_dirty':dirty,'model_source_sha256':source_hash,
         'versions':{'python':platform.python_version(),**{n:importlib.metadata.version(n) for n in ('mujoco','numpy','scipy')}},

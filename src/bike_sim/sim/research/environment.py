@@ -62,6 +62,12 @@ class ResearchStep:
     physics_steps: int
     numerically_valid: bool = True
     demand_nm: float | None = None  # appended last: step() builds ResearchStep positionally
+    model_valid: bool = True
+
+    @property
+    def valid_for_learning(self):
+        return self.numerically_valid and self.model_valid and self.reason not in (
+            'simulation_error', 'policy_error')
 
 
 def crash_reason(event):
@@ -111,6 +117,9 @@ class ResearchEnvironment:
         self.control_steps = _integer_steps(self.config.control_period_s, self.dt_s, 'control period')
         self.delay_steps = _integer_steps(self.config.actuator_delay_s, self.dt_s, 'actuator delay')
         self.max_steps = _integer_steps(self.config.duration_s, self.dt_s, 'duration')
+        self.sensor_steps = _integer_steps(self.sensor_config.sample_period_s, self.dt_s, 'sensor period')
+        if self.sensor_steps < 1:
+            raise ValueError('sensor period must span at least one physics step')
         if min(self.control_steps, self.max_steps) < 1:
             raise ValueError('control period and duration must span at least one physics step')
         if sim.steps != 0 or sim.time_s != 0.:
@@ -119,11 +128,13 @@ class ResearchEnvironment:
         self._begin_episode()
 
     def _begin_episode(self):
+        self.run_metadata = {}
         if self.rider_behavior is not None:
             self.rider_behavior.reset(self.seed)
         self.recorder = PhysicalRecorder(self.sim, decimate=self.config.record_decimation)
         self.tracker = WheelieTracker(persistence_s=self.config.wheelie_persistence_s)
         self.pipeline = SensorPipeline(self.sensor_config, seed=self.seed)
+        self.sim.data.qacc_warmstart.fill(0.)
         # Initial holding brakes belong to static equilibrium, not the policy
         # episode. Re-solve sensors for the same q/v with the safe startup input.
         self.sim.physical.apply_forces(active=True, advance=False,
@@ -132,6 +143,7 @@ class ResearchEnvironment:
         initial = raw_observation(self.sim)
         self.pipeline.reset(initial)
         self._sensor_time = initial.source_time_s
+        self._next_sensor_step = self.sensor_steps
         self.observation = self.pipeline.read(self.sim.time_s)
         self._queue = deque()
         # Safe startup while a first controller command is in transport.
@@ -150,15 +162,22 @@ class ResearchEnvironment:
         self.start_position_m = float(self.sim.position_m)
         self.torque_delivered_nms = 0.
         self.torque_requested_nms = 0.
+        self.demand_integral_nms = None if self.demand is None else 0.
         # Peak |travel| at physics rate; the decimated recorder can miss the peak.
         self.max_shock_stroke_m = 0.
         self.max_fork_travel_m = 0.
         self.demand_nm = None if self.demand is None else self.demand.at(0.)
         self.metadata = configuration_metadata(self.sim, seed=self.seed)
+        from bike_sim.sim.research.replay import integration_state
+        self.initial_integration_state = integration_state(self.sim).copy()
 
     @property
     def done(self):
         return self.terminated or self.truncated
+
+    @property
+    def model_valid(self):
+        return self.sim.physical.model_status.as_dict()['model_valid']
 
     def reset(self, *, seed=None):
         if seed is not None:
@@ -201,11 +220,21 @@ class ResearchEnvironment:
                 # Brakes are an immediate out-of-band safety input, not queued.
                 self.sim.step(front_brake_demand, rear_brake_demand, control=self._applied)
                 sample = self.sim.physical.sample
+                source_step = round(sample.time_s / self.dt_s)
+                if source_step >= self._next_sensor_step:
+                    if source_step != self._next_sensor_step:
+                        raise RuntimeError('sensor acquisition skipped a physical sample')
+                    raw = raw_observation(self.sim, sample)
+                    self.pipeline.push(raw)
+                    self._sensor_time = raw.source_time_s
+                    self._next_sensor_step += self.sensor_steps
                 self.last_truth = truth_from_sample(self.sim, sample)
                 suspension = sample.channels['suspension']
                 self.max_shock_stroke_m = max(self.max_shock_stroke_m, abs(suspension['shock_stroke_m']))
                 self.max_fork_travel_m = max(self.max_fork_travel_m, abs(suspension['fork_travel_m']))
                 delivered = float(sample.channels['drive'].get('motor_torque_nm', 0.))
+                if self.demand is not None:
+                    self.demand_integral_nms += self.demand.at(sample.time_s)*sample.dt_s
                 applied = self._applied.motor_torque_nm
                 if applied is not None:
                     self.torque_requested_nms += applied*sample.dt_s
@@ -244,15 +273,11 @@ class ResearchEnvironment:
         if not self.done and self.sim.steps >= self.max_steps:
             self.truncated, self.reason = True, 'duration'
         self.demand_nm = None if self.demand is None else self.demand.at(self.sim.time_s)
-        raw = raw_observation(self.sim, self.sim.physical.sample)
-        if raw.source_time_s > self._sensor_time:
-            self.pipeline.push(raw)
-            self._sensor_time = raw.source_time_s
         self.observation = self.pipeline.read(self.sim.time_s)
         self.observations.append(self.observation)
         result = ResearchStep(self.observation, self.last_truth, self.tracker.state,
                               self.terminated, self.truncated, self.reason, self.sim.steps-start_step, self.numerically_valid,
-                              demand_nm=seen_demand_nm)
+                              demand_nm=seen_demand_nm, model_valid=self.model_valid)
         self.trace.append(result)
         return result
 
@@ -272,6 +297,8 @@ class ResearchEnvironment:
             privileged_outputs='contact loads/clearances, road-relative pitch, CoM and simulator speed',
             timestep_alignment='truth/sensor source is the last incoming physical state, not the endpoint',
             parameters_validated_against_measurements=False)
+        research['valid_for_learning'] = self.numerically_valid and self.model_valid and self.error is None
+        research['run_metadata'] = plain(self.run_metadata)
         if self.demand is not None:
             research['demand_program'] = self.demand.to_dict()
         if self.rider_program is not None:
@@ -306,4 +333,6 @@ class ResearchEnvironment:
         self.recorder.write_jsonl(path/'intervals.jsonl')
         np.save(path/'terrain_vertices.npy', self.sim.physical.vertices, allow_pickle=False)
         save_track(self.sim.track, path/'track.toml')
+        from bike_sim.sim.research.replay import save_replay_files
+        save_replay_files(self, path)
         return path

@@ -5,7 +5,7 @@ from bike_sim.sim.ride.physical_observations import sensor_channels
 
 def raw_observation(sim, sample=None):
     if sample is None:
-        channels = sensor_channels(sim.physical)
+        channels = sensor_channels(sim.physical, drive_channels=sim.physical.drive.probe_last)
         t = sim.time_s
     else:
         channels = sample.channels['sensors']

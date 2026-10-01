@@ -25,3 +25,33 @@ def fixed_limit_40(observation, demand_nm):
 
 
 POLICIES = {'passthrough': passthrough, 'zero': zero, 'fixed_limit_40': fixed_limit_40}
+
+
+class PassthroughPolicy:
+    def reset(self, seed):
+        self.seed = seed
+
+    def act(self, observation, demand_nm):
+        return RideControl(motor_torque_nm=demand_nm)
+
+
+class ZeroPolicy(PassthroughPolicy):
+    def act(self, observation, demand_nm):
+        return RideControl(motor_torque_nm=0.)
+
+
+class FixedLimitPolicy(PassthroughPolicy):
+    def act(self, observation, demand_nm):
+        return RideControl(motor_torque_nm=demand_nm, motor_limit_nm=40.)
+
+
+def passthrough_factory():
+    return PassthroughPolicy()
+
+
+def zero_factory():
+    return ZeroPolicy()
+
+
+def fixed_limit_40_factory():
+    return FixedLimitPolicy()

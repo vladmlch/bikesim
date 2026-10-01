@@ -117,3 +117,30 @@ def test_upper_face_target_does_not_jump_at_45_degrees():
         point,normal,_ = upper_box_face(np.zeros(3), R, [.05, .04, .008])
         values.append(point+.017*normal)
     assert np.linalg.norm(values[1]-values[0]) < 1e-5
+
+
+@pytest.mark.parametrize('angle', np.radians([0., 30., 60., 75., 84.4, 90., 120., 180.]))
+def test_foot_ik_accounts_for_both_finite_pressure_pads(pedal_rig, angle):
+    from bike_sim.sim.ride.rider_control import ArticulatedRiderController
+    model, data, contacts = pedal_rig
+    controller = ArticulatedRiderController(model, contacts.pose, contacts.config, .165)
+    data.qpos[model.joint('pedal_front_spin').qposadr[0]] = angle
+    mujoco.mj_forward(model, data)
+    desired = controller._targets(model, data, 'front', compression_m=.003)
+    for joint, value in zip(('hip', 'knee', 'ankle'), desired):
+        data.qpos[controller.joints[f'rider_{joint}_front'][0]] = value
+    mujoco.mj_forward(model, data)
+    assert not controller.saturated_ik['front']
+    pads = list(contacts._pads(model, data, 'front_pedal', contacts.supports['front_pedal']))
+    compression = sum(max(0., -pad[4]) for pad in pads if pad[5])
+    assert compression == pytest.approx(.006, abs=1e-10)
+    for pad in pads:
+        if pad[4] < 0.:
+            assert pad[1][2] >= data.geom_xpos[controller.pedal_geoms['front'],2]-1e-10
+
+
+def test_sole_target_at_horizontal_platform_is_the_declared_compression():
+    from bike_sim.sim.ride.support_geometry import sole_target_height
+    height = sole_target_height(np.zeros(3), np.eye(3), np.array([.05,.04,.008]),
+                                0., .025, .02, .003)
+    assert height == pytest.approx(.005, abs=1e-12)

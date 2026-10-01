@@ -9,6 +9,7 @@ about a real bicycle. The reference is frozen: nothing here tunes the chain.
 """
 from pathlib import Path
 import argparse
+from hashlib import sha256
 import json
 import sys
 
@@ -47,7 +48,7 @@ TRUNCATIONS = ('model_violation', 'numerical_quality')
 
 
 def _usable(metrics):
-    return (metrics['outcome'] not in TRUNCATIONS and metrics['numerically_valid']
+    return (metrics['outcome'] in ('duration', 'finish') and metrics['numerically_valid']
             and metrics['model_status']['model_valid'])
 
 
@@ -66,7 +67,10 @@ def compare_metrics(reference, candidate):
     rw, cw = reference['wheelie'], candidate['wheelie']
     checks = {
         'comparable': dict(reference=reference['outcome'], candidate=candidate['outcome'],
-                           passed=_usable(reference) and _usable(candidate)),
+                           passed=_usable(reference) and _usable(candidate)
+                           and reference.get('duration_s') is not None
+                           and candidate.get('duration_s') is not None
+                           and abs(reference['duration_s']-candidate['duration_s']) <= 1e-8),
         'onset_s': onset,
         'front_load_fraction_min': _relative(rw['front_load_fraction_min'], cw['front_load_fraction_min'], MIN_LOAD_RELATIVE),
         'min_front_load_n': _relative(rw['min_front_load_n'], cw['min_front_load_n'], MIN_LOAD_RELATIVE),
@@ -85,13 +89,39 @@ def run_one(scenario, seed, transmission, dt, out, *, duration=5., initial_speed
     env = make_environment(parser().parse_args(argv))
     while not env.done:
         env.step(RideControl(motor_torque_nm=motor_torque, human_torque_nm=0.))
-    env.save(out, overwrite=True)
+    env.save(out)
+    contract = _request_identity(scenario, seed, transmission, dt, duration, initial_speed, motor_torque)
+    contract['configuration_sha256'] = env.metadata['configuration_sha256']
+    contract['metrics_sha256'] = sha256((Path(out)/'episode_metrics.json').read_bytes()).hexdigest()
+    contract['summary_sha256'] = sha256((Path(out)/'summary.json').read_bytes()).hexdigest()
+    (Path(out)/'comparison-inputs.json').write_text(json.dumps(contract, indent=2, sort_keys=True)+'\n')
     return json.loads((Path(out)/'episode_metrics.json').read_text())
+
+
+def _request_identity(scenario, seed, transmission, dt, duration, initial_speed=3., motor_torque=80.):
+    from bike_sim.validation.environment import source_fingerprint
+    from bike_sim.validation.antiwheelie_bench import runtime_versions
+    return {'source_sha256': source_fingerprint(Path(__file__).resolve().parents[1]/'src/bike_sim'),
+            'versions': runtime_versions(), 'scenario': scenario, 'seed': seed,
+            'transmission': transmission, 'dt_s': dt, 'duration_s': duration,
+            'initial_speed_mps': initial_speed, 'motor_torque_nm': motor_torque}
 
 
 def _run(args, scenario, transmission, dt):
     out = args.out/f'{scenario}_{transmission}'
     if args.reuse and (out/'episode_metrics.json').is_file():
+        try:
+            contract = json.loads((out/'comparison-inputs.json').read_text())
+            summary = json.loads((out/'summary.json').read_text())
+            expected = _request_identity(scenario, args.seed, transmission, dt, args.duration)
+            valid = (all(contract.get(key) == value for key, value in expected.items())
+                     and contract.get('configuration_sha256') == summary.get('configuration_sha256')
+                     and contract.get('metrics_sha256') == sha256((out/'episode_metrics.json').read_bytes()).hexdigest()
+                     and contract.get('summary_sha256') == sha256((out/'summary.json').read_bytes()).hexdigest())
+        except (OSError, ValueError, TypeError) as error:
+            raise ValueError(f'reuse requires current source/configuration evidence: {error}') from error
+        if not valid:
+            raise ValueError('reuse source, configuration, runtime or requested episode differs')
         return json.loads((out/'episode_metrics.json').read_text())
     return run_one(scenario, args.seed, transmission, dt, out, duration=args.duration)
 

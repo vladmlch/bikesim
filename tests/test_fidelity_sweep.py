@@ -37,6 +37,28 @@ def test_compares_integrals_events_energy_scope_and_initial_conditions():
     assert 'front_normal_impulse_ns' in compare_metrics(bad,metrics)['failed_criteria']
 
 
+def test_energy_residual_cannot_pass_through_a_stale_validity_flag():
+    rows = fixture_rows()
+    rows[2]['energy_residual_ratio'] = .2
+    metrics = metrics_from_rows(rows, .04, 'same-state')
+    assert not metrics['numerically_valid']
+    assert not compare_metrics(metrics, metrics)['passed']
+
+
+def test_resolution_axes_share_an_actually_tested_candidate():
+    from bike_sim.validation.fidelity_sweep import resolution_variants
+    anchor, variants = resolution_variants(
+        (.00125, .000625, .0003125), (.01, .005, .0025), (128, 256, 512))
+    assert anchor == (.000625, .005, 256)
+    for axis, timestep, road_step, station_count in variants:
+        values = (timestep, road_step, station_count)
+        axis_index = {'time': 0, 'road': 1, 'stations': 2}[axis]
+        assert all(value == anchor[index] for index, value in enumerate(values)
+                   if index != axis_index)
+    for axis in ('time', 'road', 'stations'):
+        assert (axis, *anchor) in variants
+
+
 def test_persistent_transitions_not_single_sample_noise():
     rows=fixture_rows();rows[2]['contact_state']='flight'
     assert [e['state'] for e in persistent_events(rows)]==['two_wheels']

@@ -254,9 +254,11 @@ class DrivetrainForceApplier:
             probe.shifting = copy.deepcopy(self.shifting)
             probe.pending_actuation = None
             probe.last_time_s = None
-            return probe._compute_components(model, data, dt, speed_mps=speed_mps, braking=braking,
+            components = probe._compute_components(model, data, dt, speed_mps=speed_mps, braking=braking,
                 sensed_human_nm=sensed_human_nm, active=active, advance=False,
                 control=control, pedaling_state=pedaling_state)
+            self.probe_last = dict(probe.last)
+            return components
         return self._compute_components(model, data, dt, speed_mps=speed_mps, braking=braking,
             sensed_human_nm=sensed_human_nm, active=active, advance=True,
             control=control, pedaling_state=pedaling_state)

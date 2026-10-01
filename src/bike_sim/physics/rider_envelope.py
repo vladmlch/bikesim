@@ -55,6 +55,25 @@ def load_joint_envelopes(path: str) -> dict[str,JointEnvelope]:
 
 def soft_edge_response(q, lower, upper, stiffness_nm_rad, margin_rad):
     """Torque = -dU/dq; inward soft edges precede, not replace, solver limits."""
+    if (isinstance(q,(float,int,np.floating,np.integer))
+            and isinstance(lower,(float,int,np.floating,np.integer))
+            and isinstance(upper,(float,int,np.floating,np.integer))
+            and isinstance(stiffness_nm_rad,(float,int,np.floating,np.integer))
+            and isinstance(margin_rad,(float,int,np.floating,np.integer))):
+        # Scalar fast path: identical validation and arithmetic without the
+        # broadcast/concatenation ritual (np.float64 is already a float
+        # subclass; float() normalizes ints and other numpy scalars).
+        q,lo,hi=float(q),float(lower),float(upper)
+        k,m=float(stiffness_nm_rad),float(margin_rad)
+        if not (isfinite(q) and isfinite(lo) and isfinite(hi)
+                and isfinite(k) and isfinite(m)):
+            raise ValueError('joint edge state must be finite')
+        if hi<=lo or k<0 or m<0:
+            raise ValueError('invalid soft edge parameters')
+        margin=min(m,(hi-lo)/2.)
+        left=max(lo+margin-q,0.)
+        right=max(q-hi+margin,0.)
+        return k*(left-right),.5*k*(left*left+right*right)
     q,lo,hi=np.broadcast_arrays(np.asarray(q,float),lower,upper)
     if not np.isfinite(np.r_[q.ravel(),lo.ravel(),hi.ravel(),stiffness_nm_rad,margin_rad]).all():
         raise ValueError('joint edge state must be finite')

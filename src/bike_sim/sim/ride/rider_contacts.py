@@ -7,7 +7,7 @@ from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.tire import _brush_step, _normal_contact
 from bike_sim.sim.ride.physical_mapping import resolve_id, relative_point_jacobian
 from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
-from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, GripConnect
+from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, GripConnect, equality_rows
 
 
 def apply_internal_force(model,data,body_a,body_b,point,force,qfrc):
@@ -213,19 +213,25 @@ class RiderContactApplier:
         if self.grip_anchor_local is None:
             raise RuntimeError('initialize rider contact anchors before evaluation')
         cfg=self.config
+        # One efc scan feeds every welded-attachment diagnostic in this call.
+        # The map stays a local: the probe copy above gets its own inside its
+        # recursive call, and the efc layout is rebuilt every step anyway.
+        eq_rows=(equality_rows(data)
+                 if self.welded_pedals or self.welded_saddle or self.welded_grip
+                 else None)
         qfrc=np.zeros(model.nv)
         energy=0.; loss=self.pending_release_loss_j; radial_power=0.; delivered=0.
         new_states={}; diagnostics={}
         for name,entry in self.supports.items():
             body,site,bike,geom=entry
             if self.welded_saddle and name == 'saddle':
-                force_on_rider=self._saddle_weld.force_on_rider_n(model,data)
+                force_on_rider=self._saddle_weld.force_on_rider_n(model,data,rows=eq_rows)
                 toward_rider=data.site_xpos[site]-data.geom_xpos[geom]
                 normal_hat=toward_rider/max(np.linalg.norm(toward_rider),1e-9)
                 normal_load=float(max(0.,force_on_rider@normal_hat))
                 diagnostics[name]={'enabled':True,'in_platform':True,
                     'normal_load_n':normal_load,
-                    'gap_m':self._saddle_weld.translation_residual_m(model,data),
+                    'gap_m':self._saddle_weld.translation_residual_m(model,data,rows=eq_rows),
                     'vertical_force_on_rider_n':float(force_on_rider[2])}
                 if detailed:
                     diagnostics[name].update({'tangent_force_n':np.zeros(3),
@@ -240,13 +246,13 @@ class RiderContactApplier:
                 continue
             if self.welded_pedals and name.endswith('_pedal'):
                 side=name.split('_')[0]
-                force_on_rider=self._welds.force_on_rider_n(model,data,side)
+                force_on_rider=self._welds.force_on_rider_n(model,data,side,rows=eq_rows)
                 toward_foot=data.site_xpos[site]-data.geom_xpos[geom]
                 normal_hat=toward_foot/max(np.linalg.norm(toward_foot),1e-9)
                 normal_load=float(max(0.,force_on_rider@normal_hat))
                 diagnostics[name]={'enabled':True,'in_platform':True,
                     'normal_load_n':normal_load,
-                    'gap_m':self._welds.translation_residual_m(model,data,side),
+                    'gap_m':self._welds.translation_residual_m(model,data,side,rows=eq_rows),
                     'vertical_force_on_rider_n':float(force_on_rider[2])}
                 if detailed:
                     diagnostics[name].update({'tangent_force_n':np.zeros(3),
@@ -316,7 +322,7 @@ class RiderContactApplier:
         if self.welded_grip:
             # The connect equality holds the hand on the bar: report its
             # reaction instead of the disabled spring, and never release.
-            force=self._grip_connect.force_on_rider_n(model,data)
+            force=self._grip_connect.force_on_rider_n(model,data,rows=eq_rows)
             diagnostics['grip']={'enabled':True,'reachable':True,
                                  'overloaded':False,'trial_pair_force_n':float(np.linalg.norm(force)),
                                  'pair_force_limit_n':cfg.grip_pair_force_limit_n,
@@ -325,7 +331,7 @@ class RiderContactApplier:
                                      +data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local
                                      -data.xpos[self.shoulder])),
                                  'arm_reach_m':self.arm_reach,
-                                 'hand_gap_m':self._grip_connect.translation_residual_m(model,data),
+                                 'hand_gap_m':self._grip_connect.translation_residual_m(model,data,rows=eq_rows),
                                  'point_m':(data.xpos[self.steer]
                                      +data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local).tolist(),
                                  'force_on_rider_n':force.tolist(),
@@ -334,7 +340,7 @@ class RiderContactApplier:
             self.elastic_energy_j,self.loss_step_j=energy,loss
             self.radial_dissipation_power_w=radial_power
             if self.welded_pedals:
-                delivered=self._welds.delivered_crank_torque_nm(model,data)
+                delivered=self._welds.delivered_crank_torque_nm(model,data,rows=eq_rows)
             self.delivered_crank_torque_nm=delivered
             self.pending_release_loss_j=0.; self.last_time_s=time
             return qfrc
@@ -381,7 +387,7 @@ class RiderContactApplier:
         self.elastic_energy_j,self.loss_step_j=energy,loss
         self.radial_dissipation_power_w=radial_power
         if self.welded_pedals:
-            delivered=self._welds.delivered_crank_torque_nm(model,data)
+            delivered=self._welds.delivered_crank_torque_nm(model,data,rows=eq_rows)
         self.delivered_crank_torque_nm=delivered
         self.pending_release_loss_j=0.; self.last_time_s=time
         return qfrc

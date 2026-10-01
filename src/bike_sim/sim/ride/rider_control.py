@@ -219,6 +219,9 @@ class ArticulatedRiderController:
             self.joints[name] = (int(model.jnt_qposadr[jid]),int(model.jnt_dofadr[jid]),aid)
         self.joint_ranges={name:tuple(model.joint(name).range) for name in self.joints
                            if model.joint(name).limited[0]}
+        # Aligned envelope vectors let envelope_forces batch all joints into a
+        # single soft_edge_response call instead of one numpy ritual per joint.
+        self._sync_joint_envelope()
         self.reset_activation()
         self.pelvis = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'rider_pelvis')
         self.feet = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,f'rider_foot_{s}') for s in ('front','rear')}
@@ -352,8 +355,13 @@ class ArticulatedRiderController:
         for i,joint in enumerate(('hip','knee','ankle')):
             name=f'rider_{joint}_{side}'
             if name in self.joint_ranges:
-                limited=float(np.clip(result[i],*self.joint_ranges[name]))
-                self.saturated_ik[side]=bool(self.saturated_ik[side] or limited!=result[i])
+                lo,hi=self.joint_ranges[name]
+                # NaN-preserving scalar clip: comparisons are False for NaN so
+                # a non-finite IK result propagates exactly like np.clip, which
+                # min(max(x,lo),hi) would silently swallow.
+                value=float(result[i])
+                limited=float(hi) if value>hi else float(lo) if value<lo else value
+                self.saturated_ik[side]=bool(self.saturated_ik[side] or limited!=value)
                 result[i]=limited
         return result
 
@@ -396,8 +404,10 @@ class ArticulatedRiderController:
             current = float(data.qpos[self.joints[name][0]])
             targets[name] = current+atan2(sin(target_q-current),cos(target_q-current))
             if name in self.joint_ranges:
-                limited=float(np.clip(targets[name],*self.joint_ranges[name]))
-                self.saturated_ik['arms' if name!='rider_torso_hinge' else 'torso'] |= limited!=targets[name]
+                lo,hi=self.joint_ranges[name]
+                value=targets[name]
+                limited=float(hi) if value>hi else float(lo) if value<lo else value
+                self.saturated_ik['arms' if name!='rider_torso_hinge' else 'torso'] |= limited!=value
                 targets[name]=limited
         return targets
 
@@ -461,15 +471,36 @@ class ArticulatedRiderController:
             self.config.support_pad_radius_m, .01) for side in ('front', 'rear')}
         self._active_recovery = self.pedal_recovery
 
-    def envelope_forces(self, model, data):
-        from bike_sim.physics.rider_envelope import soft_edge_response
-        force=np.zeros(model.nv); energy=0.
+    def _sync_joint_envelope(self):
+        """Rebuild the aligned envelope vectors in joint_ranges order."""
+        qpos_adrs=[];dof_adrs=[];lower=[];upper=[]
         for name,(lo,hi) in self.joint_ranges.items():
             qa,va,_=self.joints[name]
-            torque,stored=soft_edge_response(data.qpos[qa],lo,hi,
-                self.config.joint_envelope_soft_k_nm_rad,self.config.joint_envelope_soft_margin_rad)
-            force[va]=float(torque); energy+=float(stored)
-        return force,energy
+            qpos_adrs.append(qa);dof_adrs.append(va);lower.append(lo);upper.append(hi)
+        self._envelope_qpos_adrs=np.asarray(qpos_adrs,dtype=np.intp)
+        self._envelope_dof_adrs=np.asarray(dof_adrs,dtype=np.intp)
+        self._envelope_lower=np.asarray(lower)
+        self._envelope_upper=np.asarray(upper)
+        # joint_ranges stays a plain dict (tests inject limits); realign only
+        # when its contents or iteration order actually change.
+        self._envelope_signature=tuple(self.joint_ranges.items())
+
+    def envelope_forces(self, model, data):
+        from bike_sim.physics.rider_envelope import soft_edge_response
+        if not self.joint_ranges:
+            return np.zeros(model.nv),0.
+        if tuple(self.joint_ranges.items())!=self._envelope_signature:
+            self._sync_joint_envelope()
+        torque,stored=soft_edge_response(data.qpos[self._envelope_qpos_adrs],
+            self._envelope_lower,self._envelope_upper,
+            self.config.joint_envelope_soft_k_nm_rad,self.config.joint_envelope_soft_margin_rad)
+        force=np.zeros(model.nv)
+        force[self._envelope_dof_adrs]=torque
+        # sum() over the ndarray iterates np.float64s and adds left-to-right:
+        # the same sequential accumulation as the old per-joint loop (summing a
+        # tolist() of exact floats would take CPython's compensated fast path
+        # and drift by an ulp).
+        return force,float(sum(stored))
 
     def initialize(self,model,data):
         """Initial-condition setup only, before static equilibrium, never in step()."""

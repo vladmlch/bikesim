@@ -22,7 +22,8 @@ def _config(attachment='weld', **kwargs):
                       transmission_model='ideal_mid_drive',
                       human_torque_nm=20.))
     values.update(kwargs)
-    return SimulationPhysicsConfig('physical', **values)
+    physics_mode = values.pop('physics_mode', 'physical')
+    return SimulationPhysicsConfig(physics_mode, **values)
 
 
 def welded_rig(transmission='ideal_mid_drive', human=20., speed=0.):
@@ -102,6 +103,21 @@ def test_flat_mode_keeps_physical_feet_unwelded():
 
 
 def test_weld_mode_rejects_non_articulated_riders():
+    # drive_mode='coast' avoids the earlier 'articulated_effort requires
+    # articulated_planar' check so the weld guard itself is what raises.
+    cfg = _config('weld', drive_mode='coast')
     with pytest.raises((ValueError, RuntimeError)):
         generate_mujoco_xml(mode='ride', rider=RiderSpecs(variant='lumped'),
-                            physics_config=_config('weld'))
+                            physics_config=cfg)
+
+
+def test_weld_mode_rejects_nonphysical_mode():
+    # legacy + drive_mode='coast' constructs cleanly (legacy rejects the
+    # articulated_effort default at config level); the lumped rider avoids the
+    # earlier 'articulated_planar requires physical' check, so the weld guard
+    # itself is what raises.
+    cfg = _config('weld', physics_mode='legacy', drive_mode='coast')
+    with pytest.raises((ValueError, RuntimeError)):
+        generate_mujoco_xml(mode='ride',
+                            rider=RiderSpecs(variant='lumped'),
+                            physics_config=cfg)

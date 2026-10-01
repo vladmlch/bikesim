@@ -312,11 +312,14 @@ def generate_mujoco_xml(
     build_actuators(root, mode=mode, crank_joint=crank_joint)
     build_sensors(root, mode=mode, seated_rider=(rider_specs.variant == "seated"))
 
+    if (physics_config is not None
+            and getattr(physics_config.articulated, 'pedal_attachment', 'flat') == 'weld'
+            and not (physical and articulated_pose is not None)):
+        raise ValueError(
+            "pedal_attachment='weld' requires physics_mode='physical' "
+            "and rider='articulated_planar'")
+
     if physical:
-        if (physics_config.articulated.pedal_attachment == 'weld'
-                and articulated_pose is None):
-            raise ValueError(
-                "pedal_attachment='weld' requires rider='articulated_planar'")
         from bike_sim.mujoco.physical_topology import finish_physical_topology
         finish_physical_topology(root, specs, mass_specs, physics_config)
         if articulated_pose is not None:

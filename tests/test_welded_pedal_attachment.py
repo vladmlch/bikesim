@@ -177,3 +177,65 @@ def test_weld_mode_pedal_release_is_a_noop():
     applier.reset(model, data)
     assert applier.set_enabled('front_pedal', False) is True
     assert applier.enabled['front_pedal']
+
+
+def test_weld_mode_sole_targets_track_the_welded_anchor():
+    model, data, controller, _ = welded_rig()
+    from bike_sim.sim.ride.rider_control import RiderCommand
+    controller.compute(model, data, RiderCommand(20.),
+        contact_loads={'front':100., 'rear':100., 'saddle':400., 'grip':True})
+    for side in ('front', 'rear'):
+        # The target must be the welded sole position, not a footprint
+        # projection: it coincides with the actual sole site (< 3 mm residual).
+        target = np.asarray(controller.sole_targets[side])
+        actual = np.asarray(data.site_xpos[controller.soles[side]])
+        assert np.linalg.norm(target - actual) < .003
+
+
+def test_weld_mode_never_enters_pedal_recovery():
+    model, data, controller, _ = welded_rig()
+    from bike_sim.sim.ride.rider_control import RiderCommand
+    # Force the sole below the pedal platform — the flat-mode recovery trigger.
+    data.qpos[model.joint('rider_root_z').qposadr[0]] -= .04
+    mujoco.mj_forward(model, data)
+    controller.compute(model, data, RiderCommand(20.),
+        contact_loads={'front':100., 'rear':100., 'saddle':400., 'grip':True},
+        support_states={'front_pedal':{'normal_load_n':200.,'in_platform':True,
+                                       'force_on_rider_n':[0.,0.,-50.]},
+                        'rear_pedal':{'normal_load_n':200.,'in_platform':True,
+                                      'force_on_rider_n':[0.,0.,-50.]}})
+    feet = controller.support_diagnostics['feet']
+    assert all(entry['recovery_stage'] == 'none' for entry in feet.values())
+
+
+def test_weld_mode_feet_stay_pinned_when_crank_is_kicked():
+    model, data, controller, _ = welded_rig()
+    from bike_sim.sim.ride.weld_pedals import PedalWelds
+    welds = PedalWelds(model)
+    data.qvel[controller.crank_spin_dof] = 8.   # sudden cadence jump
+    # A raw qvel write is not a weld-consistent velocity: the soft equality
+    # (solref >= 2*dt, the stiffest stable setting) bleeds the relative-mode
+    # impulse over ~25 ms. Also, mj_objectVelocity(BODY) reads data.cvel --
+    # the velocity a step's forward pass saw on *entry* -- so asserted
+    # iterations only ever inspect velocities the previous solve produced.
+    # Assert the position bound through the impulse itself, then the shared
+    # angular velocity once the bodies' motion has equalized.
+    for _ in range(40):
+        mujoco.mj_step(model, data)
+        assert welds.translation_residual_m(model, data, 'front') < .003
+        assert welds.translation_residual_m(model, data, 'rear') < .003
+    for _ in range(100):
+        mujoco.mj_step(model, data)
+        assert welds.translation_residual_m(model, data, 'front') < .003
+        assert welds.translation_residual_m(model, data, 'rear') < .003
+        for side in ('front', 'rear'):
+            # mj_objectVelocity fills res[0:3] = angular, res[3:6] = linear:
+            # welded bodies must share angular velocity (residual covers linear).
+            foot_v = np.zeros(6); pedal_v = np.zeros(6)
+            mujoco.mj_objectVelocity(model, data, mujoco.mjtObj.mjOBJ_BODY,
+                int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
+                    f'rider_foot_{side}')), foot_v, 0)
+            mujoco.mj_objectVelocity(model, data, mujoco.mjtObj.mjOBJ_BODY,
+                int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
+                    f'pedal_{side}')), pedal_v, 0)
+            np.testing.assert_allclose(foot_v[:3], pedal_v[:3], atol=.05)

@@ -244,6 +244,18 @@ class ArticulatedRiderController:
         if min(self.pelvis,self.crank,*self.feet.values(),*self.soles.values(),*self.pedals.values()) < 0:
             raise ValueError('incomplete rider interface topology')
         mujoco.mj_kinematics(model,self.target_data)
+        self.welded=config.pedal_attachment=='weld'
+        self._weld_pedal_bodies={}
+        self._weld_sole_offset={}
+        if self.welded:
+            for side in ('front','rear'):
+                body=int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,
+                    f'pedal_{side}'))
+                self._weld_pedal_bodies[side]=body
+                rel=(np.asarray(self.target_data.site_xpos[self.soles[side]])
+                     -np.asarray(self.target_data.xpos[body]))
+                self._weld_sole_offset[side]=np.asarray(
+                    self.target_data.xmat[body]).reshape(3,3).T@rel
         validate_planar_support_model(model,self.target_data,self.pedal_geoms.values())
         self.leg_geometry={}
         self.sole_jacobians={}
@@ -293,15 +305,24 @@ class ArticulatedRiderController:
         # requested normal load. A fixed 3 mm position goal in parallel with an
         # unrelated force goal makes the PD oppose the very load it must hold.
         radius=self.config.support_pad_radius_m
-        recovery_goal = self._active_recovery[side].goal(data.geom_xpos[geom],
-            data.geom_xmat[geom].reshape(3,3), model.geom_size[geom])
-        if recovery_goal is None:
-            sole_goal, goal_diagnostic = project_sole_goal(data.geom_xpos[geom],
-                data.geom_xmat[geom].reshape(3,3), model.geom_size[geom],
-                self.config.pedal_patch_half_length_m, radius, depth, shear)
+        if self.welded:
+            # The welded sole cannot hover or separate: aim at the exact point
+            # the weld equality is already holding (datum = qpos0 relative pose).
+            body=self._weld_pedal_bodies[side]
+            sole_goal=(np.asarray(data.xpos[body])
+                +np.asarray(data.xmat[body]).reshape(3,3)
+                 @self._weld_sole_offset[side])
+            goal_diagnostic={'saturated':False,'limiting_reasons':[],'weld':True}
         else:
-            sole_goal = recovery_goal
-            goal_diagnostic = {'saturated': False, 'limiting_reasons': [], 'recovery': True}
+            recovery_goal = self._active_recovery[side].goal(data.geom_xpos[geom],
+                data.geom_xmat[geom].reshape(3,3), model.geom_size[geom])
+            if recovery_goal is None:
+                sole_goal, goal_diagnostic = project_sole_goal(data.geom_xpos[geom],
+                    data.geom_xmat[geom].reshape(3,3), model.geom_size[geom],
+                    self.config.pedal_patch_half_length_m, radius, depth, shear)
+            else:
+                sole_goal = recovery_goal
+                goal_diagnostic = {'saturated': False, 'limiting_reasons': [], 'recovery': True}
         ankle_goal = sole_goal+ankle_offset-np.array([0.,0.,.008])
         self.sole_targets[side] = sole_goal
         self.sole_goal_diagnostics[side] = goal_diagnostic
@@ -477,7 +498,7 @@ class ArticulatedRiderController:
             return {name:0. for name in self.joints}
         cfg = self.config
         self._active_recovery = self.pedal_recovery if advance else copy.deepcopy(self.pedal_recovery)
-        if support_states is not None and not steady_state:
+        if support_states is not None and not steady_state and not self.welded:
             for side in ('front', 'rear'):
                 geom = self.pedal_geoms[side]
                 self._active_recovery[side].observe(data.geom_xpos[geom],
@@ -611,7 +632,7 @@ class ArticulatedRiderController:
             desired_down=support_forces[side]
             depth=(1.-blend)*cfg.posture_sole_depth_m+blend*max(0.,-float(desired_down@normal))/cfg.support_k_n_m
             shear=blend*float(desired_down@tangent)/cfg.support_tangent_k_n_m
-            clearance=0. if stance[side] else cfg.swing_clearance_m
+            clearance=0. if (self.welded or stance[side]) else cfg.swing_clearance_m
             if not stance[side]:
                 depth=shear=0.
             target = self._targets(model,target_state,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture)

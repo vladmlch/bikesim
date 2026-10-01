@@ -19,9 +19,11 @@ from bike_sim.validation.environment import source_fingerprint, environment_cont
 class PhysicalPreviewCsv:
     """Flushes the live physical preview state at a fixed simulated-time interval, as CSV."""
 
-    def __init__(self, path: Path, interval_s: float = 0.01):
+    def __init__(self, path: Path, interval_s: float = 0.01, *, flush_every: int = 25):
         if interval_s <= 0.0:
             raise ValueError(f"preview csv interval must be positive, got {interval_s}")
+        if flush_every < 1:
+            raise ValueError(f"preview csv flush_every must be positive, got {flush_every}")
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.interval_s = float(interval_s)
@@ -29,6 +31,8 @@ class PhysicalPreviewCsv:
         self._next_time_s = 0.0
         self._generation = None
         self._writer = None
+        self._flush_every = int(flush_every)
+        self._rows_since_flush = 0
 
     def due(self, time_s: float, generation: int) -> bool:
         """Whether `write` would emit a row now -- lets callers skip building it."""
@@ -50,7 +54,11 @@ class PhysicalPreviewCsv:
                 self._stream, fieldnames=list(record), restval="", extrasaction="ignore")
             self._writer.writeheader()
         self._writer.writerow(record)
-        self._stream.flush()
+        self._rows_since_flush += 1
+        # Events are rare and must reach the file; plain rows batch their flushes.
+        if event or self._rows_since_flush >= self._flush_every:
+            self._stream.flush()
+            self._rows_since_flush = 0
         while self._next_time_s <= float(time_s) + 1e-12:
             self._next_time_s += self.interval_s
 
@@ -66,9 +74,13 @@ class PhysicalPreviewCsv:
             self._writer.writeheader()
         self._writer.writerow(record)
         self._stream.flush()
+        self._rows_since_flush = 0
 
     def close(self) -> None:
         """Flush and close the preview log."""
+        if self._stream.closed:
+            return
+        self._stream.flush()
         self._stream.close()
 
     def __enter__(self):

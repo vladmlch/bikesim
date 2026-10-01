@@ -54,8 +54,9 @@ def test_releasing_a_support_uses_current_pose_not_previous_force_row():
     m=mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode='ride',rider=rider,physics_config=cfg))
     d=mujoco.MjData(m)
     contact=RiderContactApplier(m,geometry_pose(rider,specs),cfg.articulated)
-    contact.reset(m,d)
+    # reset() validates planar joint axes from live kinematics; forward first.
     mujoco.mj_forward(m,d)
+    contact.reset(m,d)
     contact.compute_qfrc(m,d,m.opt.timestep)
     # A running step changes the pose before a user's release command. The
     # old force row cannot be used as the new spring-energy datum.

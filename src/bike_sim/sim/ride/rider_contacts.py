@@ -322,8 +322,11 @@ class RiderContactApplier:
         if self.welded_grip:
             # The connect equality holds the hand on the bar: report its
             # reaction instead of the disabled spring, and never release.
-            force=self._grip_connect.force_on_rider_n(model,data,rows=eq_rows)
             diagnostics['grip']={'enabled':True,'reachable':True,
+                                 'hand_gap_m':self._grip_connect.translation_residual_m(model,data,rows=eq_rows)}
+            if detailed:
+                force=self._grip_connect.force_on_rider_n(model,data,rows=eq_rows)
+                diagnostics['grip'].update({
                                  'overloaded':False,'trial_pair_force_n':float(np.linalg.norm(force)),
                                  'pair_force_limit_n':cfg.grip_pair_force_limit_n,
                                  'release_loss_j':0.,
@@ -331,11 +334,10 @@ class RiderContactApplier:
                                      +data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local
                                      -data.xpos[self.shoulder])),
                                  'arm_reach_m':self.arm_reach,
-                                 'hand_gap_m':self._grip_connect.translation_residual_m(model,data,rows=eq_rows),
                                  'point_m':(data.xpos[self.steer]
                                      +data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local).tolist(),
                                  'force_on_rider_n':force.tolist(),
-                                 'force_on_bike_n':(-force).tolist(),'elastic_energy_j':0.}
+                                 'force_on_bike_n':(-force).tolist(),'elastic_energy_j':0.})
             self.states,self.grip_xi_local,self.diagnostics=new_states,np.zeros(3),diagnostics
             self.elastic_energy_j,self.loss_step_j=energy,loss
             self.radial_dissipation_power_w=radial_power

@@ -20,7 +20,8 @@ from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
 from bike_sim.sim.ride.physical_observations import (
-    tire_channels, energy_state, actuator_components, constraint_components, sensor_channels,
+    tire_channels, preview_tire_channels, energy_state, actuator_components,
+    constraint_components, sensor_channels,
 )
 from bike_sim.sim.ride.physical_energy import mass_observations
 from bike_sim.sim.ride.rider_intent import RiderIntentResolver, signals_from_channels
@@ -107,10 +108,14 @@ class PhysicalRuntime:
     def _contacts(self, *, final=False, time_s=None, qvel=None, update_grounded=False):
         sim = self.sim
         query = sim.contact_query if final else self.probe_query
-        raw = query.query(sim.model,sim.data,time_s=time_s,qvel=qvel)
         if self.tire is None:
+            raw = query.query(sim.model,sim.data,time_s=time_s,qvel=qvel)
             snapshots = {'front':raw.front_snapshot,'rear':raw.rear_snapshot}
+            handlebar_load_n = raw.handlebar_load_n
         else:
+            # The tire backend owns every wheel channel; the engine contact
+            # scan is kept only for the handlebar crash load it still reports.
+            handlebar_load_n = query.handlebar_load(sim.model,sim.data)
             snapshots = self.tire.snapshots
             if not snapshots:
                 probe = copy.copy(self.tire)
@@ -132,7 +137,7 @@ class PhysicalRuntime:
         front,rear = snapshots['front'],snapshots['rear']
         contacts = TerrainContacts(front_load_n=front.normal_load_n,rear_load_n=rear.normal_load_n,
             front_support_n=front.normal_vertical_n,rear_support_n=rear.normal_vertical_n,
-            handlebar_load_n=raw.handlebar_load_n,front_snapshot=front,rear_snapshot=rear,
+            handlebar_load_n=handlebar_load_n,front_snapshot=front,rear_snapshot=rear,
             front_controller_grounded=grounded['front'],rear_controller_grounded=grounded['rear'])
         return contacts,snapshots
 
@@ -574,10 +579,12 @@ class PhysicalRuntime:
         sim.contacts,self.snapshots=self._contacts(final=True,time_s=time_s,qvel=incoming_velocity)
         equality=_connect_equality_rows(model,data)
         closure=float(np.max(np.abs(data.efc_pos[:data.nefc][equality]))) if np.any(equality) else 0.
-        preview_channels={'tires':tire_channels(self,self.snapshots,qvel=incoming_velocity),
+        preview_channels={'tires':preview_tire_channels(self,self.snapshots),
                           'suspension':{'linkage_closure_max_m':closure}}
         self.model_status.observe(sim.steps,time_s,preview_channels)
-        mujoco.mj_forward(model,data)
+        # mj_step leaves a fully consistent endpoint state; preview consumers
+        # below read qpos/qvel only, and _update_compiled_com_marker refreshes
+        # endpoint kinematics itself, so no extra forward pass is needed here.
         if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all():
             raise RuntimeError('non-finite physical simulation state')
         sim.steps+=1

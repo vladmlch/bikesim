@@ -209,6 +209,10 @@ class ArticulatedRiderController:
         self.enabled = True
         self.last_terms = {}
         self.saturated_ik = {'front':False,'rear':False}
+        # Geometric reach failure only (two-link IK), before envelope clipping.
+        # initialize() must reject genuinely unreachable pedals; a clipped
+        # target merely starts the joint at its anatomical bound.
+        self.ik_reach_limited = {'front':False,'rear':False}
         self.joints = {}
         for name in ('rider_torso_hinge','rider_shoulder','rider_elbow') + tuple(
             f'rider_{joint}_{side}' for side in ('front','rear') for joint in ('hip','knee','ankle')):
@@ -343,6 +347,7 @@ class ArticulatedRiderController:
         target = R.T@(ankle_goal-hip)
         upper_length,lower_length,a0,b0,branch=self.leg_geometry[side]
         angles,saturated = _two_link_ik(target[[0,2]],upper_length,lower_length,elbow_sign=branch)
+        self.ik_reach_limited[side] = saturated
         self.saturated_ik[side] = saturated
         # MuJoCo +Y is clockwise in X-Z; the pure IK helper uses CCW.
         hip_q = a0-angles[0]
@@ -521,7 +526,7 @@ class ArticulatedRiderController:
         for side in ('front','rear'):
             targets = self._targets(model,data,side,
                                     compression_m=0. if welded else None)
-            if self.saturated_ik[side]:
+            if self.ik_reach_limited[side]:
                 raise ValueError(f'initial {side} pedal is unreachable')
             for joint,value in zip(('hip','knee','ankle'),targets):
                 qa,_,_ = self.joints[f'rider_{joint}_{side}']
@@ -654,9 +659,9 @@ class ArticulatedRiderController:
         future=self._predict_target_state(model,target_state) if target_state.qvel[self.crank_spin_dof] != 0. else target_state
         previous=self._predict_target_state(model,target_state,reverse=True) if future is not target_state else target_state
         desired_acceleration=np.zeros(model.nv)
-        saturation=dict(self.saturated_ik)
+        saturation=dict(self.saturated_ik); reach=dict(self.ik_reach_limited)
         future_upper=self._upper_targets(future, posture, grip_force_n=support_forces['grip']) if future is not data else upper_targets
-        self.saturated_ik=saturation
+        self.saturated_ik=saturation; self.ik_reach_limited=reach
         for name,(qa,va,_) in self.joints.items():
             if name.startswith(('rider_hip_','rider_knee_','rider_ankle_')):
                 continue
@@ -689,10 +694,10 @@ class ArticulatedRiderController:
                 'recovery_stage': self._active_recovery[side].stage,
                 'goal_geometry': self.sole_goal_diagnostics[side].copy(),
             }
-            saturation=dict(self.saturated_ik)
+            saturation=dict(self.saturated_ik); reach=dict(self.ik_reach_limited)
             future_target=self._targets(model,future,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if future is not target_state else target
             previous_target=self._targets(model,previous,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture) if previous is not target_state else target
-            self.saturated_ik=saturation
+            self.saturated_ik=saturation; self.ik_reach_limited=reach
             ahead=np.arctan2(np.sin(future_target-target),np.cos(future_target-target))
             behind=np.arctan2(np.sin(previous_target-target),np.cos(previous_target-target))
             target_speed=(ahead-behind)/(2.*self.target_difference_s)

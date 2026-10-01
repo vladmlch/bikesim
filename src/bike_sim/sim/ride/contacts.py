@@ -263,6 +263,29 @@ class TerrainContactQuery:
         self._front_controller_grounded.reset()
         self._rear_controller_grounded.reset()
 
+    def handlebar_load(self, model: mujoco.MjModel, data: mujoco.MjData) -> float:
+        """
+        Normal-force magnitude on the handlebar geom against the terrain.
+
+        Identical to ``query(...).handlebar_load_n`` -- the same pass over
+        `data.contact` with `mj_contactForce`, restricted to handlebar rows --
+        for tire backends whose wheel channels replace every other field. No
+        bridge or filter state advances here, so it must not be the sole call
+        when the native wheel loads are consumed.
+        """
+        load_n = 0.0
+        for i in range(data.ncon):
+            contact = data.contact[i]
+            geom1, geom2 = int(contact.geom1), int(contact.geom2)
+            if not (
+                (geom1 == self.handlebar_id and geom2 in self.terrain_ids)
+                or (geom2 == self.handlebar_id and geom1 in self.terrain_ids)
+            ):
+                continue
+            mujoco.mj_contactForce(model, data, i, self._force)
+            load_n += abs(float(self._force[0]))
+        return load_n
+
     def _sum_normal_loads(
         self,
         model: mujoco.MjModel,

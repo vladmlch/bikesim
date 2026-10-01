@@ -427,10 +427,13 @@ class RideSimulation:
             self.equilibrium["static_rear_load_n"] = rear_load
 
     def _update_compiled_com_marker(self) -> None:
-        """Place the physical-mode site at the current compiled system CoM."""
+        """Place the physical-mode site at the current compiled system CoM.
+
+        Every call site runs right after a forward/step pass, so xpos/xmat/xipos
+        are already current and no extra kinematics refresh is needed here.
+        """
         if self.physics_config.physics_mode != "physical" or self._cg_site_id < 0:
             return
-        mujoco.mj_kinematics(self.model, self.data)
         com = compiled_center_of_mass(self.model, self.data)
         frame = self._frame_body_id
         self.model.site_pos[self._cg_site_id] = self.data.xmat[frame].reshape(3, 3).T @ (com - self.data.xpos[frame])

@@ -205,6 +205,17 @@ class RideHUD:
         sys.stdout.write("\r" + self.line(sim, braking, brake_strength))
         sys.stdout.flush()
 
+    def _cached_lookup(self, sim: "RideSimulation", key, resolve):
+        """Memoize a model-name resolution; the compiled model never changes."""
+        cache = getattr(self, "_lookup_cache", None)
+        if cache is None or cache[0] is not sim.model:
+            cache = (sim.model, {})
+            self._lookup_cache = cache
+        ids = cache[1]
+        if key not in ids:
+            ids[key] = resolve()
+        return ids[key]
+
     def preview_log_row(self, sim: "RideSimulation") -> dict:
         """Build one CSV row of the physical preview's key state channels.
 
@@ -217,7 +228,8 @@ class RideHUD:
         drive = sim.physical.drive.last
         assist = sim.physical.drive.assist
         obstacle = nearest_obstacle(sim.track, sim.position_m)
-        force_components = sim.force_accumulator.components
+        fork_spring = sim.force_accumulator.component("fork_spring")
+        shock_coil = sim.force_accumulator.component("shock_coil")
         shift_count = int(drive.get("shift_count") or 0)
         crank_rate = drive.get("crank_target_rate_rad_s")
         grade = (0.0 if sim.track.grade_profile is None
@@ -234,13 +246,14 @@ class RideHUD:
             "rear_load_n": float(sim.contacts.rear_load_n),
             "fork_travel_mm": float(sim.fork_travel_mm),
             "fork_velocity_mps": float(sim.data.qvel[sim.applier.fork_dofadr]),
-            "fork_force_n": float(force_components.get(
-                "fork_spring", np.zeros(sim.model.nv))[sim.applier.fork_dofadr]),
+            "fork_force_n": float(0.0 if fork_spring is None
+                                  else fork_spring[sim.applier.fork_dofadr]),
             "shock_stroke_mm": float(sim.shock_stroke_mm),
             "shock_velocity_mps": float(sim.data.qvel[sim.applier.shock_dofadr]),
-            "shock_force_n": float(force_components.get(
-                "shock_coil", np.zeros(sim.model.nv))[sim.applier.shock_dofadr]),
-            "crank_phase_rad": float(sim.data.qpos[sim.physical.address("crank_spin")[0]]),
+            "shock_force_n": float(0.0 if shock_coil is None
+                                   else shock_coil[sim.applier.shock_dofadr]),
+            "crank_phase_rad": float(sim.data.qpos[self._cached_lookup(
+                sim, "crank_spin", lambda: sim.physical.address("crank_spin"))[0]]),
             "crank_target_rate_rpm": (
                 "" if drive.get("crank_target_phase_rad") is None or crank_rate is None
                 else float(crank_rate) * 60.0 / (2.0 * np.pi)),
@@ -294,10 +307,14 @@ class RideHUD:
                 name for name, active in control.saturated_ik.items() if active)
             joints_saturated = "" if control is None else ",".join(
                 name for name, terms in control.last_terms.items() if terms.get("saturated"))
-            root_pitch = degrees(float(sim.data.qpos[sim.physical.address("rider_root_pitch")[0]]))
+            root_pitch = degrees(float(sim.data.qpos[self._cached_lookup(
+                sim, "rider_root_pitch", lambda: sim.physical.address("rider_root_pitch"))[0]]))
             body_pitch = {}
             for name in ("rider_pelvis", "rider_torso"):
-                body_id = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_BODY, name)
+                body_id = self._cached_lookup(
+                    sim, ("body", name),
+                    lambda name=name: int(mujoco.mj_name2id(
+                        sim.model, mujoco.mjtObj.mjOBJ_BODY, name)))
                 rotation = sim.data.xmat[body_id].reshape(3, 3)
                 body_pitch[name] = degrees(atan2(-rotation[2, 0], rotation[0, 0]))
             rider_columns.update({

@@ -1,7 +1,7 @@
 """Named generalized-force contributions for one physical simulation step."""
 
 from types import MappingProxyType
-from typing import Mapping
+from typing import Mapping, Optional
 
 import numpy as np
 
@@ -30,6 +30,19 @@ class ForceAccumulator:
         for value in copied.values():
             value.setflags(write=False)
         return MappingProxyType(copied)
+
+    def component(self, name: str) -> Optional[np.ndarray]:
+        """Return one named contribution as a read-only view, or None if absent.
+
+        Unlike `components`, no per-entry copies are made; callers must not
+        mutate the returned array and must not outlive the accumulator's state.
+        """
+        value = self._components.get(name)
+        if value is None:
+            return None
+        view = value.view()
+        view.setflags(write=False)
+        return view
 
     def total(self) -> np.ndarray:
         result = np.zeros(self.nv)

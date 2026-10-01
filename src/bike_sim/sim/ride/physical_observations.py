@@ -48,6 +48,34 @@ def tire_channels(runtime, snapshots, *, qvel=None):
     return result
 
 
+def preview_tire_channels(runtime, snapshots):
+    """Compact tire channels for interactive preview steps.
+
+    ``ModelStatus.observe`` -> ``channel_violations`` is the only consumer of
+    the preview channels dict, so only the keys it reads are emitted -- every
+    emitted value is identical to ``tire_channels``, but no wheel point
+    Jacobians or snapshot-derived kinematics are evaluated.
+    """
+    sim = runtime.sim
+    result = {}
+    for side, snapshot in snapshots.items():
+        diagnostics = runtime.tire.diagnostics.get(side,{}) if runtime.tire is not None else {}
+        radius=(runtime.tire.radii[side] if runtime.tire is not None else
+                float(sim.model.geom_size[getattr(sim.contact_query,side+'_id'),0]))
+        result[side] = dict(
+            normal_load_n=snapshot.normal_load_n,
+            unloaded_radius_m=radius,
+            penetration_m=diagnostics.get('penetration_m',0.),
+            multi_support=bool(diagnostics.get('multi_support',False)),
+            supports_multiple_contacts=bool(diagnostics.get('supports_multiple_contacts',False)),
+            outside_material_load_range=bool(diagnostics.get('outside_material_load_range',False)),
+            outside_material_deflection_range=bool(diagnostics.get('outside_material_deflection_range',False)),
+            outside_profile_domain=bool(diagnostics.get('outside_profile_domain',False)),
+            patches=[{'source_geom':p.source_geom,'normal_load_n':p.normal_load_n}
+                     for p in snapshot.patches])
+    return result
+
+
 def stored_terms(runtime):
     sim = runtime.sim
     terms = suspension_energy(sim.applier,sim.data)

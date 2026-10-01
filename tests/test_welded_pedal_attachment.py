@@ -239,3 +239,33 @@ def test_weld_mode_feet_stay_pinned_when_crank_is_kicked():
                 int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
                     f'pedal_{side}')), pedal_v, 0)
             np.testing.assert_allclose(foot_v[:3], pedal_v[:3], atol=.05)
+
+
+@pytest.mark.slow
+def test_welded_ride_holds_feet_through_pedaling_and_coast():
+    from bike_sim.terrain import get_preset
+    from bike_sim.sim.ride_sim import RideSimulation
+    from bike_sim.sim.ride.weld_pedals import PedalWelds
+    cfg = SimulationPhysicsConfig(
+        'physical', drive_mode='articulated_effort', timestep_s=.00125,
+        closure_time_constant_s=.0025, initial_speed_mps=4.,
+        articulated=ArticulatedConfig(pedal_attachment='weld'),
+        drive=PhysicalDriveConfig(
+            transmission_model='ideal_mid_drive', human_torque_nm=20.,
+            pedaling=PedalingConfig(enabled=True, coast_above_rpm=110.,
+                                    resume_below_rpm=90., stop_time_s=.35)))
+    sim = RideSimulation(track=get_preset('flat'), rider='articulated_planar',
+                         physics_config=cfg)
+    rt = sim.physical
+    welds = PedalWelds(sim.model)
+    worst_residual = 0.
+    for _ in range(int(6. / cfg.timestep_s)):
+        sim.step()
+        for side in ('front', 'rear'):
+            worst_residual = max(worst_residual,
+                welds.translation_residual_m(sim.model, sim.data, side))
+        feet = rt.rider_control.support_diagnostics['feet']
+        assert all(entry['recovery_stage'] == 'none' for entry in feet.values())
+    assert worst_residual < .003
+    # The weld-mode torque sensor still feeds the drivetrain observer.
+    assert 'human_sensor_nm' in rt.drive.last

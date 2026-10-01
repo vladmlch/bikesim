@@ -252,20 +252,33 @@ def test_welded_ride_holds_feet_through_pedaling_and_coast():
         articulated=ArticulatedConfig(pedal_attachment='weld'),
         drive=PhysicalDriveConfig(
             transmission_model='ideal_mid_drive', human_torque_nm=20.,
-            pedaling=PedalingConfig(enabled=True, coast_above_rpm=110.,
-                                    resume_below_rpm=90., stop_time_s=.35)))
+            # Cadence-triggered coasting exercises pedaling first only if
+            # coast_above_rpm sits between the wheel-synced launch cadence
+            # (~77 rpm at 4 m/s -- below it the drivetrain starts already
+            # coasting) and the cadence the assisted rider spins up to
+            # (~111 rpm here). 95/80 rpm lands pedal->coast->pedal->coast.
+            pedaling=PedalingConfig(enabled=True, coast_above_rpm=95.,
+                                    resume_below_rpm=80., stop_time_s=.35)))
     sim = RideSimulation(track=get_preset('flat'), rider='articulated_planar',
                          physics_config=cfg)
     rt = sim.physical
     welds = PedalWelds(sim.model)
     worst_residual = 0.
+    modes = set()
+    max_sensed = 0.
     for _ in range(int(6. / cfg.timestep_s)):
         sim.step()
+        modes.add(rt.drive.last.get('rider_mode'))
+        max_sensed = max(max_sensed, abs(float(rt.drive.last['human_sensor_nm'])))
         for side in ('front', 'rear'):
             worst_residual = max(worst_residual,
                 welds.translation_residual_m(sim.model, sim.data, side))
         feet = rt.rider_control.support_diagnostics['feet']
         assert all(entry['recovery_stage'] == 'none' for entry in feet.values())
     assert worst_residual < .003
-    # The weld-mode torque sensor still feeds the drivetrain observer.
-    assert 'human_sensor_nm' in rt.drive.last
+    # The name promises both halves: a real pedaling phase AND a real coast.
+    assert {'pedaling', 'coasting'} <= modes, f'observed rider modes: {modes}'
+    # The weld-mode torque sensor must feed the drivetrain observer a real
+    # nonzero weld-derived signal, not merely exist (weld reactions peak
+    # >100 Nm through the pedal/coast transitions; .5 Nm is far inside that).
+    assert max_sensed > .5, f'max |human_sensor_nm| observed: {max_sensed}'

@@ -27,6 +27,23 @@ from bike_sim.sim.ride.rider_intent import RiderIntentResolver, signals_from_cha
 from bike_sim.physics.seated_climb import SeatedClimbSignals
 
 
+def _connect_equality_rows(model, data):
+    """EFC rows owned by `connect` equalities (the suspension linkage closures).
+
+    Weld equalities share the mjCNSTR_EQUALITY flag but their rows 3-5 carry a
+    rotational residual in radians, not metres; folding them into a
+    metre-denominated closure metric trips linkage:closure_error on a healthy
+    weld (and let the playground stand_clamp pollute it too).
+    """
+    n = data.nefc
+    rows = data.efc_type[:n] == mujoco.mjtConstraint.mjCNSTR_EQUALITY
+    if not np.any(rows):
+        return rows
+    rows = rows.copy()
+    rows[rows] = model.eq_type[data.efc_id[:n][rows]] == mujoco.mjtEq.mjEQ_CONNECT
+    return rows
+
+
 class PhysicalRuntime:
     def __init__(self, sim):
         self.sim = sim
@@ -475,8 +492,10 @@ class PhysicalRuntime:
         drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]),
                    front_brake_demand=front,rear_brake_demand=rear,rollback_brake_demand=hold)
         # Capture all solved quantities before refreshing the endpoint kinematics.
-        equality_rows=d.efc_type[:d.nefc]==mujoco.mjtConstraint.mjCNSTR_EQUALITY
-        linkage_error=float(np.max(np.abs(d.efc_pos[:d.nefc][equality_rows]))) if np.any(equality_rows) else 0.
+        # Only connect-equality rows measure linkage closure; weld rows 3-5 are
+        # rotational residuals in radians and must stay out of a metre metric.
+        connect_rows=_connect_equality_rows(m,d)
+        linkage_error=float(np.max(np.abs(d.efc_pos[:d.nefc][connect_rows]))) if np.any(connect_rows) else 0.
         shock_limit_power=float(sim.last_constraint_snapshot.components['shock_solver_limit']@v)
         mujoco.mj_forward(m,d)
         if not np.isfinite(d.qpos).all() or not np.isfinite(d.qvel).all():
@@ -554,7 +573,7 @@ class PhysicalRuntime:
             from bike_sim.sim.ride.rider_effort import solved_effort
             solved_effort(self.rider_control,data,incoming_velocity,float(model.opt.timestep))
         sim.contacts,self.snapshots=self._contacts(final=True,time_s=time_s,qvel=incoming_velocity)
-        equality=data.efc_type[:data.nefc]==mujoco.mjtConstraint.mjCNSTR_EQUALITY
+        equality=_connect_equality_rows(model,data)
         closure=float(np.max(np.abs(data.efc_pos[:data.nefc][equality]))) if np.any(equality) else 0.
         preview_channels={'tires':tire_channels(self,self.snapshots,qvel=incoming_velocity),
                           'suspension':{'linkage_closure_max_m':closure}}

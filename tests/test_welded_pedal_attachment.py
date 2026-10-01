@@ -264,6 +264,7 @@ def test_welded_ride_holds_feet_through_pedaling_and_coast():
     rt = sim.physical
     welds = PedalWelds(sim.model)
     worst_residual = 0.
+    worst_linkage = 0.
     modes = set()
     max_sensed = 0.
     for _ in range(int(6. / cfg.timestep_s)):
@@ -273,9 +274,16 @@ def test_welded_ride_holds_feet_through_pedaling_and_coast():
         for side in ('front', 'rear'):
             worst_residual = max(worst_residual,
                 welds.translation_residual_m(sim.model, sim.data, side))
+        # The metre-denominated linkage metric must only see connect equalities;
+        # weld rows 3-5 are rotational residuals in radians. A welded run that
+        # folded them in could read >2e-3 here and trip linkage:closure_error.
+        linkage = float(rt.sample.channels['suspension']['linkage_closure_max_m'])
+        assert np.isfinite(linkage)
+        worst_linkage = max(worst_linkage, linkage)
         feet = rt.rider_control.support_diagnostics['feet']
         assert all(entry['recovery_stage'] == 'none' for entry in feet.values())
     assert worst_residual < .003
+    assert worst_linkage < .001, f'linkage metric polluted by weld rows: {worst_linkage}'
     # The name promises both halves: a real pedaling phase AND a real coast.
     assert {'pedaling', 'coasting'} <= modes, f'observed rider modes: {modes}'
     # The weld-mode torque sensor must feed the drivetrain observer a real

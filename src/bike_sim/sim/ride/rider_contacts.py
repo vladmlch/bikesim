@@ -7,6 +7,7 @@ from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.tire import _brush_step, _normal_contact
 from bike_sim.sim.ride.physical_mapping import resolve_id, relative_point_jacobian
 from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
+from bike_sim.sim.ride.weld_pedals import PedalWelds
 
 
 def apply_internal_force(model,data,body_a,body_b,point,force,qfrc):
@@ -74,6 +75,8 @@ class RiderContactApplier:
         self.crank_dof=int(model.jnt_dofadr[crank])
         # Per-step Jacobian scratch for the paired-support relative Jacobian.
         self._jac_a=np.empty((3,model.nv)); self._jac_b=np.empty((3,model.nv))
+        self.welded_pedals = config.pedal_attachment == 'weld'
+        self._welds = PedalWelds(model) if self.welded_pedals else None
         self.reset(model,None)
 
     def reset(self,model,data):
@@ -98,6 +101,8 @@ class RiderContactApplier:
     def set_enabled(self,name,enabled):
         if name not in self.CONTACTS or not isinstance(enabled,bool):
             raise ValueError('invalid rider contact enable request')
+        if not enabled and self.welded_pedals and name.endswith('_pedal'):
+            return True   # a weld cannot be released
         if not enabled and self.enabled[name]:
             if name=='grip':
                 self.pending_release_loss_j+=.5*self.config.grip_k_n_m*float(self.grip_xi_local@self.grip_xi_local)
@@ -173,6 +178,8 @@ class RiderContactApplier:
         cfg=self.config
         energy=.5*cfg.grip_k_n_m*float(self.grip_xi_local@self.grip_xi_local)
         for name,entry in self.supports.items():
+            if self.welded_pedals and name.endswith('_pedal'):
+                continue
             for key,point,n,tangent,gap,inside in self._pads(model,data,name,entry):
                 energy+=.25*cfg.support_tangent_k_n_m*self.states[key].xi**2
                 if self.enabled[name] and inside:
@@ -204,6 +211,27 @@ class RiderContactApplier:
         new_states={}; diagnostics={}
         for name,entry in self.supports.items():
             body,site,bike,geom=entry
+            if self.welded_pedals and name.endswith('_pedal'):
+                side=name.split('_')[0]
+                force_on_rider=self._welds.force_on_rider_n(model,data,side)
+                toward_foot=data.site_xpos[site]-data.geom_xpos[geom]
+                normal_hat=toward_foot/max(np.linalg.norm(toward_foot),1e-9)
+                normal_load=float(max(0.,force_on_rider@normal_hat))
+                diagnostics[name]={'enabled':True,'in_platform':True,
+                    'normal_load_n':normal_load,
+                    'gap_m':self._welds.translation_residual_m(model,data,side),
+                    'vertical_force_on_rider_n':float(force_on_rider[2])}
+                if detailed:
+                    diagnostics[name].update({'tangent_force_n':np.zeros(3),
+                        'patches':[],
+                        'force_on_rider_n':force_on_rider.tolist(),
+                        'force_on_bike_n':(-force_on_rider).tolist(),
+                        'moment_about_rider_origin_nm':np.zeros(3).tolist(),
+                        'radial_energy_j':0.,'shear_energy_j':0.,
+                        'relative_power_w':0.})
+                new_states[f"{name}:0"]=_SupportState()
+                new_states[f"{name}:1"]=_SupportState()
+                continue
             patches=[];group_force=np.zeros(3);group_moment=np.zeros(3)
             group_normal=group_tangent=group_radial=group_shear=group_power=group_vertical=0.
             in_platform=False
@@ -300,6 +328,8 @@ class RiderContactApplier:
         self.states,self.grip_xi_local,self.diagnostics=new_states,new,diagnostics
         self.elastic_energy_j,self.loss_step_j=energy,loss
         self.radial_dissipation_power_w=radial_power
+        if self.welded_pedals:
+            delivered=self._welds.delivered_crank_torque_nm(model,data)
         self.delivered_crank_torque_nm=delivered
         self.pending_release_loss_j=0.; self.last_time_s=time
         return qfrc

@@ -147,3 +147,33 @@ def test_pedal_welds_reader_is_quiet_when_unloaded():
     for side in ('front', 'rear'):
         assert welds.translation_residual_m(model, data, side) < .001
     assert abs(welds.delivered_crank_torque_nm(model, data)) < 5.
+
+
+def test_weld_mode_applier_reports_weld_diagnostics_and_no_pad_qfrc():
+    from bike_sim.sim.ride.rider_contacts import RiderContactApplier
+    model, data, controller, cfg = welded_rig()
+    applier = RiderContactApplier(model, controller.pose, cfg.articulated)
+    applier.reset(model, data)
+    applier.initialize_settled_state(model, data)
+    qfrc = applier.compute_qfrc(model, data, model.opt.timestep)
+    diag = applier.diagnostics['front_pedal']
+    assert diag['in_platform'] and diag['enabled']
+    assert diag['normal_load_n'] >= 0.
+    assert diag['gap_m'] < .003          # weld translation residual
+    # The weld is solver-side: the applier must not double-apply its force.
+    crank_dof = int(model.joint('crank_spin').dofadr[0])
+    assert qfrc[crank_dof] == 0.
+    # delivered_crank_torque_nm is weld-derived; saddle/grip entries survive.
+    from bike_sim.sim.ride.weld_pedals import PedalWelds
+    assert applier.delivered_crank_torque_nm == pytest.approx(
+        PedalWelds(model).delivered_crank_torque_nm(model, data))
+    assert 'saddle' in applier.diagnostics and 'grip' in applier.diagnostics
+
+
+def test_weld_mode_pedal_release_is_a_noop():
+    from bike_sim.sim.ride.rider_contacts import RiderContactApplier
+    model, data, controller, cfg = welded_rig()
+    applier = RiderContactApplier(model, controller.pose, cfg.articulated)
+    applier.reset(model, data)
+    assert applier.set_enabled('front_pedal', False) is True
+    assert applier.enabled['front_pedal']

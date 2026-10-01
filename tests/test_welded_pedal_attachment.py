@@ -121,3 +121,29 @@ def test_weld_mode_rejects_nonphysical_mode():
         generate_mujoco_xml(mode='ride',
                             rider=RiderSpecs(variant='lumped'),
                             physics_config=cfg)
+
+
+def test_pedal_welds_reader_reports_forces_and_residual():
+    from bike_sim.sim.ride.weld_pedals import PedalWelds
+    model, data, _, _ = welded_rig()
+    welds = PedalWelds(model)
+    foot = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
+                             'rider_foot_front')
+    data.xfrc_applied[foot] = [0., 0., -300., 0., 0., 0.]
+    for _ in range(20):
+        mujoco.mj_step(model, data)
+    force_on_rider = welds.force_on_rider_n(model, data, 'front')
+    assert force_on_rider[2] > 0.          # weld pushes the loaded foot up
+    assert welds.translation_residual_m(model, data, 'front') < .003
+    # Downward force on the front pedal (arm at 3 o'clock at design pose)
+    # must read as positive forward crank torque — the torque-sensor feed.
+    assert welds.delivered_crank_torque_nm(model, data) > 0.
+
+
+def test_pedal_welds_reader_is_quiet_when_unloaded():
+    from bike_sim.sim.ride.weld_pedals import PedalWelds
+    model, data, _, _ = welded_rig()
+    welds = PedalWelds(model)
+    for side in ('front', 'rear'):
+        assert welds.translation_residual_m(model, data, side) < .001
+    assert abs(welds.delivered_crank_torque_nm(model, data)) < 5.

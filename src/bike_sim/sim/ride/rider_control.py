@@ -447,8 +447,13 @@ class ArticulatedRiderController:
         for name,value in self._upper_targets(data).items():
             data.qpos[self.joints[name][0]] = value
         mujoco.mj_forward(model,data)
+        # A weld has no pad to deflect: with pedal_attachment='weld' the sole
+        # rests exactly on the pedal surface, so the weld datum at qpos0 is the
+        # design pose itself and the equalities start residual-free.
+        welded = self.config.pedal_attachment == 'weld'
         for side in ('front','rear'):
-            targets = self._targets(model,data,side)
+            targets = self._targets(model,data,side,
+                                    compression_m=0. if welded else None)
             if self.saturated_ik[side]:
                 raise ValueError(f'initial {side} pedal is unreachable')
             for joint,value in zip(('hip','knee','ankle'),targets):

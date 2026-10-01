@@ -731,7 +731,6 @@ def test_welded_ride_holds_feet_through_pedaling_and_coast():
     rt = sim.physical
     welds = PedalWelds(sim.model)
     worst_residual = 0.
-    saw_coast = False
     for _ in range(int(6. / cfg.timestep_s)):
         sim.step()
         for side in ('front', 'rear'):
@@ -739,7 +738,6 @@ def test_welded_ride_holds_feet_through_pedaling_and_coast():
                 welds.translation_residual_m(sim.model, sim.data, side))
         feet = rt.rider_control.support_diagnostics['feet']
         assert all(entry['recovery_stage'] == 'none' for entry in feet.values())
-        saw_coast = saw_coast or rt.drive.last.get('rider_mode') == 'coasting'
     assert worst_residual < .003
     # The weld-mode torque sensor still feeds the drivetrain observer.
     assert 'human_sensor_nm' in rt.drive.last

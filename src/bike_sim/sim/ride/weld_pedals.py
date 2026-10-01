@@ -3,7 +3,9 @@
 With articulated.pedal_attachment = 'weld' the MJCF builder emits one `weld`
 equality per foot (body1 = rider_foot_*, body2 = pedal_*); with
 articulated.saddle_attachment = 'weld' it emits `weld_saddle`
-(body1 = rider_pelvis, body2 = frame). This module reads the solved
+(body1 = rider_pelvis, body2 = frame); with
+articulated.grip_attachment = 'weld' it emits `connect_grip`
+(body1 = rider_forearm_pair, body2 = steer). This module reads the solved
 constraint multipliers and reports them in the conventions
 RiderContactApplier uses for pad supports.
 
@@ -91,6 +93,35 @@ class SaddleWeld:
 
     def translation_residual_m(self, model, data):
         """Norm of the weld's positional residual — actual pelvis/frame mismatch."""
+        mask = PedalWelds._mask(data, self.eq_id)
+        if not np.any(mask):
+            return 0.
+        pos = data.efc_pos[:data.nefc][mask]
+        return float(np.linalg.norm(pos[:3]))
+
+
+class GripConnect:
+    """Solved connect reaction for a hand pinned to the handlebar.
+
+    A `connect` equality contributes three translational rows: the reported
+    force is the signed constraint reaction on the forearm, which the
+    releasable spring grip cannot produce once disabled.
+    """
+
+    def __init__(self, model):
+        self.eq_id = resolve_id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                'connect_grip')
+
+    def force_on_rider_n(self, model, data):
+        """World force the pin applies to the hand, in Newtons."""
+        mask = PedalWelds._mask(data, self.eq_id)
+        if not np.any(mask):
+            return np.zeros(3)
+        lam = data.efc_force[:data.nefc][mask]
+        return np.asarray(lam[:3], dtype=float)
+
+    def translation_residual_m(self, model, data):
+        """Norm of the pin's positional residual — actual hand/bar mismatch."""
         mask = PedalWelds._mask(data, self.eq_id)
         if not np.any(mask):
             return 0.

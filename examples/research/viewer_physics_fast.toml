@@ -131,4 +131,5 @@ pedal_c_ns_m = 100.0
 posture_pitch_limit_nm = 120.0
 grip_release_distance_m = 0.30
 saddle_attachment = "weld"
+grip_attachment = "weld"
 joint_envelope_path = "rider_joint_envelope_anatomical.json"

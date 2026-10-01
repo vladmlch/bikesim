@@ -256,6 +256,17 @@ class ArticulatedRiderController:
                      -np.asarray(self.target_data.xpos[body]))
                 self._weld_sole_offset[side]=np.asarray(
                     self.target_data.xmat[body]).reshape(3,3).T@rel
+        self.welded_grip = config.grip_attachment == 'weld'
+        self._weld_grip_offset = None
+        if self.welded_grip:
+            # The connect datum is the steer point the grip site occupies at
+            # qpos0; aim the arm IK there instead of the frame-fixed design
+            # point plus a spring deflection that no longer exists.
+            self.steer = int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'steer'))
+            rel = (np.asarray(self.target_data.site_xpos[self.grip_site])
+                   - np.asarray(self.target_data.xpos[self.steer]))
+            self._weld_grip_offset = np.asarray(
+                self.target_data.xmat[self.steer]).reshape(3,3).T @ rel
         validate_planar_support_model(model,self.target_data,self.pedal_geoms.values())
         self.leg_geometry={}
         self.sole_jacobians={}
@@ -357,14 +368,18 @@ class ArticulatedRiderController:
         pose = self.pose
         pelvis_R = data.xmat[self.pelvis].reshape(3,3)
         hip = data.xpos[self.pelvis]
-        grip = data.xpos[self.frame] + data.xmat[self.frame].reshape(3,3) @ pose.grip
-        if grip_force_n is not None:
-            # The grip is compliant, not a weld. To push down on the bar, the
-            # hand goal must allow its spring to deflect down. A zero-deflection
-            # IK goal fights the very support wrench used to balance the rider.
-            # This is only an actuator goal; the actual paired contact force
-            # remains exclusively in RiderContactApplier.
-            grip = grip + array(grip_force_n, 'grip force goal', (3,))/self.config.grip_k_n_m
+        if self.welded_grip:
+            grip = (data.xpos[self.steer]
+                    + data.xmat[self.steer].reshape(3,3) @ self._weld_grip_offset)
+        else:
+            grip = data.xpos[self.frame] + data.xmat[self.frame].reshape(3,3) @ pose.grip
+            if grip_force_n is not None:
+                # The grip is compliant, not a weld. To push down on the bar, the
+                # hand goal must allow its spring to deflect down. A zero-deflection
+                # IK goal fights the very support wrench used to balance the rider.
+                # This is only an actuator goal; the actual paired contact force
+                # remains exclusively in RiderContactApplier.
+                grip = grip + array(grip_force_n, 'grip force goal', (3,))/self.config.grip_k_n_m
         # Keep a neutral relative torso/pelvis angle. Counter-rotating the
         # torso against the unactuated pelvis pitch pushes the pelvis further
         # in that direction through the equal actuator reaction. The hands

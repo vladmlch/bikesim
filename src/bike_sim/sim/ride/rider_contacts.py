@@ -7,7 +7,7 @@ from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.tire import _brush_step, _normal_contact
 from bike_sim.sim.ride.physical_mapping import resolve_id, relative_point_jacobian
 from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
-from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld
+from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, GripConnect
 
 
 def apply_internal_force(model,data,body_a,body_b,point,force,qfrc):
@@ -79,6 +79,8 @@ class RiderContactApplier:
         self._welds = PedalWelds(model) if self.welded_pedals else None
         self.welded_saddle = config.saddle_attachment == 'weld'
         self._saddle_weld = SaddleWeld(model) if self.welded_saddle else None
+        self.welded_grip = config.grip_attachment == 'weld'
+        self._grip_connect = GripConnect(model) if self.welded_grip else None
         self.reset(model,None)
 
     def reset(self,model,data):
@@ -104,7 +106,8 @@ class RiderContactApplier:
         if name not in self.CONTACTS or not isinstance(enabled,bool):
             raise ValueError('invalid rider contact enable request')
         if not enabled and ((self.welded_pedals and name.endswith('_pedal'))
-                            or (self.welded_saddle and name == 'saddle')):
+                            or (self.welded_saddle and name == 'saddle')
+                            or (self.welded_grip and name == 'grip')):
             return True   # a weld cannot be released
         if not enabled and self.enabled[name]:
             if name=='grip':
@@ -310,6 +313,31 @@ class RiderContactApplier:
                 'force_on_rider_n':group_force.tolist(),'force_on_bike_n':(-group_force).tolist(),
                 'moment_about_rider_origin_nm':group_moment.tolist(),
                 'radial_energy_j':group_radial,'shear_energy_j':group_shear,'relative_power_w':group_power})
+        if self.welded_grip:
+            # The connect equality holds the hand on the bar: report its
+            # reaction instead of the disabled spring, and never release.
+            force=self._grip_connect.force_on_rider_n(model,data)
+            diagnostics['grip']={'enabled':True,'reachable':True,
+                                 'overloaded':False,'trial_pair_force_n':float(np.linalg.norm(force)),
+                                 'pair_force_limit_n':cfg.grip_pair_force_limit_n,
+                                 'release_loss_j':0.,
+                                 'shoulder_distance_m':hypot(*(data.xpos[self.steer]
+                                     +data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local
+                                     -data.xpos[self.shoulder])),
+                                 'arm_reach_m':self.arm_reach,
+                                 'hand_gap_m':self._grip_connect.translation_residual_m(model,data),
+                                 'point_m':(data.xpos[self.steer]
+                                     +data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local).tolist(),
+                                 'force_on_rider_n':force.tolist(),
+                                 'force_on_bike_n':(-force).tolist(),'elastic_energy_j':0.}
+            self.states,self.grip_xi_local,self.diagnostics=new_states,np.zeros(3),diagnostics
+            self.elastic_energy_j,self.loss_step_j=energy,loss
+            self.radial_dissipation_power_w=radial_power
+            if self.welded_pedals:
+                delivered=self._welds.delivered_crank_torque_nm(model,data)
+            self.delivered_crank_torque_nm=delivered
+            self.pending_release_loss_j=0.; self.last_time_s=time
+            return qfrc
         R=data.xmat[self.steer].reshape(3,3)
         grip=data.xpos[self.steer]+R@self.grip_anchor_local
         hand=data.site_xpos[self.grip_site]

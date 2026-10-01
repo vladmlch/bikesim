@@ -314,10 +314,11 @@ def generate_mujoco_xml(
 
     if (physics_config is not None
             and (getattr(physics_config.articulated, 'pedal_attachment', 'flat') == 'weld'
-                 or getattr(physics_config.articulated, 'saddle_attachment', 'flat') == 'weld')
+                 or getattr(physics_config.articulated, 'saddle_attachment', 'flat') == 'weld'
+                 or getattr(physics_config.articulated, 'grip_attachment', 'spring') == 'weld')
             and not (physical and articulated_pose is not None)):
         raise ValueError(
-            "pedal_attachment/saddle_attachment='weld' requires "
+            "pedal_attachment/saddle_attachment/grip_attachment='weld' requires "
             "physics_mode='physical' and rider='articulated_planar'")
 
     if physical:
@@ -353,6 +354,22 @@ def generate_mujoco_xml(
                     'name': 'weld_saddle',
                     'body1': 'rider_pelvis',
                     'body2': 'frame',
+                    'solref': f'{solref:.17g} 1',
+                })
+            if physics_config.articulated.grip_attachment == 'weld':
+                assert equality is not None
+                # A `connect` pins the grip site to the bar point it already
+                # occupies at qpos0: the hand can never leave the bar, but the
+                # wrist keeps rotating and the torso keeps its lean-over-hands
+                # DOF. A full `weld` here would freeze the whole arm+torso
+                # loop rigid to the frame.
+                site = root.find(".//site[@name='site_rider_grip']")
+                assert site is not None
+                ET.SubElement(equality, 'connect', {
+                    'name': 'connect_grip',
+                    'body1': 'rider_forearm_pair',
+                    'body2': 'steer',
+                    'anchor': site.get('pos'),
                     'solref': f'{solref:.17g} 1',
                 })
             # Dedicated crash mask: no invisible rider/bike or rider/rider contacts.

@@ -7,6 +7,7 @@ from bike_sim.physics.physical_config import (
     TireBackendConfig, PhysicalDriveConfig, ResistanceConfig, ArticulatedConfig,
 )
 from bike_sim.physics.checks import scalar
+from bike_sim.physics.seated_climb import SeatedClimbConfig
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,7 @@ class SimulationPhysicsConfig:
     drive: PhysicalDriveConfig = field(default_factory=PhysicalDriveConfig)
     resistance: ResistanceConfig = field(default_factory=ResistanceConfig)
     articulated: ArticulatedConfig = field(default_factory=ArticulatedConfig)
+    seated_climb: SeatedClimbConfig = field(default_factory=SeatedClimbConfig)
     initial_speed_mps: float = 0.0
     initial_front_brake: float = 0.0
     initial_rear_brake: float = 0.0
@@ -104,6 +106,8 @@ class SimulationPhysicsConfig:
             raise ValueError("equilibrium_cache_enabled must be a bool")
         for name, cls in (("end_stops", EndStopConfig), ("tires", TireBackendConfig),
                           ("drive", PhysicalDriveConfig), ("resistance", ResistanceConfig),
-                          ("articulated", ArticulatedConfig)):
+                          ("articulated", ArticulatedConfig), ("seated_climb", SeatedClimbConfig)):
             if not isinstance(getattr(self, name), cls):
                 raise ValueError(f"{name} needs an immutable {cls.__name__}")
+        if self.seated_climb.enabled and (legacy or self.drive_mode != 'articulated_effort'):
+            raise ValueError('seated climb requires the articulated physical effort drive')

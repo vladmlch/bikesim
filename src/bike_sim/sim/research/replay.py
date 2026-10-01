@@ -181,7 +181,8 @@ def replay_episode(directory):
     path = Path(directory)
     summary, manifest = validate_recording(path)
     env = _rebuild(path, summary, manifest)
-    env.rider_program = None
+    if summary['research'].get('rider_command_recording') != 'program_inputs':
+        env.rider_program = None
     commands = _rows(path/'commands_requested.jsonl')
     transitions = _rows(path/'transitions.jsonl')
     observations = _rows(path/'observations.jsonl')

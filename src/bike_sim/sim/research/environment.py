@@ -140,6 +140,11 @@ class ResearchEnvironment:
         self.sim.physical.apply_forces(active=True, advance=False,
             control=RideControl(motor_torque_nm=0., human_torque_nm=0.))
         mujoco.mj_forward(self.sim.model, self.sim.data)
+        if self.sim.physics_config.seated_climb.enabled:
+            from bike_sim.sim.ride.rider_intent import signals_from_channels
+            from bike_sim.sim.ride.physical_observations import sensor_channels
+            self.sim.physical.rider_intent_signals = signals_from_channels(sensor_channels(
+                self.sim.physical, drive_channels=self.sim.physical.drive.probe_last))
         initial = raw_observation(self.sim)
         self.pipeline.reset(initial)
         self._sensor_time = initial.source_time_s
@@ -147,7 +152,9 @@ class ResearchEnvironment:
         self.observation = self.pipeline.read(self.sim.time_s)
         self._queue = deque()
         # Safe startup while a first controller command is in transport.
-        self._applied = RideControl(motor_torque_nm=0., human_torque_nm=0.)
+        self._applied = RideControl(motor_torque_nm=0.,
+            human_torque_nm=None if self.sim.physics_config.seated_climb.enabled else 0.)
+        self._motor_applied = self._applied
         self.commands_requested = []
         self.commands_applied = [dict(time_s=0., step=0, control=asdict(self._applied))]
         self.observations = [self.observation]
@@ -197,7 +204,7 @@ class ResearchEnvironment:
         # refreshed at the end of step() for the next call and never enforced.
         seen_demand_nm = self.demand_nm
         if self.rider_program is not None:
-            control = self.rider_program.apply(control, self.sim.time_s)
+            self.rider_program.validate_control(control)
         elif self.rider_behavior is not None and control.posture is None:
             posture = self.rider_behavior.act(self.sim.time_s, signals_from_sample(self.sim.physical.sample))
             if posture is not None:
@@ -214,7 +221,14 @@ class ResearchEnvironment:
         try:
             for _ in range(count):
                 while self._queue and self._queue[0][0] <= self.sim.steps:
-                    _, self._applied = self._queue.popleft()
+                    _, self._motor_applied = self._queue.popleft()
+                rider_control = (self.rider_program.apply(control, self.sim.time_s)
+                                 if self.rider_program is not None else control)
+                effective = replace(self._motor_applied,
+                    human_torque_nm=rider_control.human_torque_nm,
+                    posture=rider_control.posture, rider_enabled=rider_control.rider_enabled)
+                if effective != self._applied:
+                    self._applied = effective
                     self.commands_applied.append(dict(time_s=self.sim.time_s, step=self.sim.steps,
                                                        control=asdict(self._applied)))
                 # Brakes are an immediate out-of-band safety input, not queued.
@@ -303,6 +317,7 @@ class ResearchEnvironment:
             research['demand_program'] = self.demand.to_dict()
         if self.rider_program is not None:
             research['rider_program'] = self.rider_program.to_dict()
+            research['rider_command_recording'] = 'program_inputs'
         commands_json = json.dumps(plain(self.commands_requested), sort_keys=True, allow_nan=False)
         research['commands_sha256'] = hashlib.sha256(commands_json.encode()).hexdigest()
         summary = physical_summary(self.sim, self.metadata, self.reason or 'not_finished')

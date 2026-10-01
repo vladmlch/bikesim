@@ -118,6 +118,10 @@ def _upper_box_face(origin, rotation, half):
     return point, normal, tangent
 
 
+class UnreachableSoleTarget(ValueError):
+    """The finite support cannot realize the requested actuator goal."""
+
+
 def sole_target_height(origin, rotation, half, sole_x_m, pad_half_length_m,
                        pad_radius_m, compression_m):
     """Match the combined pad compression rather than the spindle's clearance.
@@ -167,7 +171,7 @@ def sole_target_height(origin, rotation, half, sole_x_m, pad_half_length_m,
                 if -1e-12 <= fraction <= 1.+1e-12:
                     heights.append(start[1]+fraction*(end[1]-start[1]))
     if not heights:
-        raise ValueError('sole target is outside the finite pedal footprint')
+        raise UnreachableSoleTarget('sole target is outside the finite pedal footprint')
     upper = float(origin[2]+max(heights)-pad_radius_m)
     if compression_m <= 0.:
         return upper
@@ -179,7 +183,7 @@ def sole_target_height(origin, rotation, half, sole_x_m, pad_half_length_m,
             contact = _box_pad_contact(center, pad_radius_m, origin, rotation, half)
             if contact.within_footprint and contact.gap_m < 0.:
                 if center[2] < origin[2] and contact.normal[2] < -.5:
-                    raise ValueError('requested sole compression crosses the pedal surface')
+                    raise UnreachableSoleTarget('requested sole compression crosses the pedal surface')
                 total -= contact.gap_m
                 derivative += contact.normal[2]
         return total, derivative
@@ -192,7 +196,7 @@ def sole_target_height(origin, rotation, half, sole_x_m, pad_half_length_m,
             break
         lower -= max(requested, .001)
     else:
-        raise ValueError('requested pedal support load is not reachable')
+        raise UnreachableSoleTarget('requested pedal support load is not reachable')
     height = (lower+upper)/2.
     for attempt in range(32):
         value, derivative = penetration(height)
@@ -206,6 +210,57 @@ def sole_target_height(origin, rotation, half, sole_x_m, pad_half_length_m,
         candidate = height+difference/derivative if derivative > 1e-12 else upper
         height = candidate if lower < candidate < upper else (lower+upper)/2.
     raise RuntimeError('finite pedal support target did not converge')
+
+
+def project_sole_goal(origin, rotation, half, pad_half_length_m, pad_radius_m,
+                      compression_m, shear_m):
+    """Project only the desired sole goal; actual material forces remain untouched."""
+    surface, normal, tangent = _upper_box_face(origin, rotation, half)
+
+    def evaluate(compression, shear):
+        goal = surface+normal*(pad_radius_m-compression)+shear*tangent
+        goal[2] = sole_target_height(origin, rotation, half, goal[0],
+            pad_half_length_m, pad_radius_m, compression)
+        return goal
+
+    applied_compression = compression_m
+    applied_shear = shear_m
+    reasons = []
+    try:
+        goal = evaluate(applied_compression, applied_shear)
+    except UnreachableSoleTarget:
+        baseline = min(compression_m, 0.)
+        for attempt in range(18):
+            try:
+                goal = evaluate(baseline, applied_shear)
+                break
+            except UnreachableSoleTarget:
+                applied_shear *= .5
+        else:
+            applied_shear = 0.
+            goal = evaluate(baseline, applied_shear)
+        if applied_shear != shear_m:
+            reasons.append('finite_shear_footprint')
+        applied_compression = baseline
+        if compression_m > 0.:
+            lower, upper = 0., compression_m
+            for attempt in range(18):
+                candidate = (lower+upper)/2.
+                try:
+                    tested = evaluate(candidate, applied_shear)
+                except UnreachableSoleTarget:
+                    upper = candidate
+                else:
+                    lower = candidate
+                    goal = tested
+            applied_compression = lower
+            reasons.append('finite_compression_capacity')
+    return goal, {
+        'requested_compression_m': float(compression_m),
+        'applied_compression_m': float(applied_compression),
+        'requested_shear_m': float(shear_m), 'applied_shear_m': float(applied_shear),
+        'saturated': bool(reasons), 'limiting_reasons': reasons,
+    }
 
 
 def validate_planar_support_model(model, data, geoms):

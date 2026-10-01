@@ -159,7 +159,7 @@ class DrivetrainForceApplier:
         }
 
     def prepare_pedaling(self, data, dt, control, *, active=True, advance=True, braking=False,
-                         model=None, rear_in_contact=True, rear_slip_mps=None):
+                         model=None, rear_in_contact=True, rear_slip_mps=None, effort_ceiling_nm=None):
         if advance and self.last_time_s is not None and float(data.time) <= self.last_time_s:
             raise ValueError('drivetrain state can advance only once per timestamp')
         crank_qpos, crank_dof = self.joints['crank_spin']
@@ -183,6 +183,9 @@ class DrivetrainForceApplier:
         state = policy.update(float(data.qpos[crank_qpos]), float(data.qvel[crank_dof]),
             required, effort, dt, braking=braking,
             enabled=enabled)
+        if effort_ceiling_nm is not None:
+            ceiling = scalar(effort_ceiling_nm, 'automatic rider effort ceiling', minimum=0.)
+            state = replace(state, effort_nm=min(state.effort_nm, ceiling))
         return replace(state, effort_nm=state.effort_nm * self.shifting.torque_factor)
 
     def stored_energy(self, model, data):

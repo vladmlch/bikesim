@@ -12,10 +12,12 @@ from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.tire_curve import TabulatedTireSpec
 from bike_sim.physics.distributed_tire import DistributedTireConfig, HingeDensity
 from bike_sim.physics.chain import DrivetrainSpecs
+from bike_sim.physics.seated_climb import SeatedClimbConfig
 
 CHILDREN={
     SimulationPhysicsConfig:{'end_stops':EndStopConfig,'tires':TireBackendConfig,
-                             'drive':PhysicalDriveConfig,'resistance':ResistanceConfig,'articulated':ArticulatedConfig},
+                             'drive':PhysicalDriveConfig,'resistance':ResistanceConfig,'articulated':ArticulatedConfig,
+                             'seated_climb':SeatedClimbConfig},
     TireBackendConfig:{'front':TireParameters,'rear':TireParameters,'distributed':DistributedTireConfig},
     DistributedTireConfig:{'density':HingeDensity},
     TireParameters:{'material':TireSpec},

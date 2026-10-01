@@ -157,3 +157,54 @@ def test_pedal_request_stays_inside_the_flat_pedal_friction_cone(phase):
 def test_return_foot_never_requests_a_tensile_normal_force():
     from bike_sim.sim.ride.rider_control import feasible_pedal_force
     np.testing.assert_array_equal(feasible_pedal_force([30.,0.,20.],[0.,0.,1.],.8,200.),0.)
+
+
+def test_mean_pedaling_intention_survives_flat_platform_friction_projection():
+    from bike_sim.sim.ride.rider_control import stance_force, feasible_pedal_force
+    phases = np.linspace(-np.pi, np.pi, 2001)
+    moments = []
+    for phase in phases:
+        moment = 0.
+        for side_phase in (phase, phase+np.pi):
+            force = feasible_pedal_force(stance_force(side_phase, 20., .165),
+                np.array([0., 0., 1.]), .8, 1000.)
+            lever = .165*np.array([np.cos(side_phase), 0., -np.sin(side_phase)])
+            moment += np.cross(lever, force)[1]
+        moments.append(moment)
+    mean = np.trapezoid(moments, phases)/(2.*np.pi)
+    assert mean == pytest.approx(20., rel=.001)
+
+
+@pytest.mark.parametrize('phase', [np.pi/2-.02, np.pi/2, np.pi/2+.02])
+def test_flat_pedal_force_allocation_crosses_dead_center_without_tensile_support(phase):
+    from bike_sim.sim.ride.rider_control import pedaling_force_requests
+    normals = dict.fromkeys(('front', 'rear'), np.array([0., 0., 1.]))
+    requests, weights = pedaling_force_requests(phase, 20., .165, normals,
+                                               {'front': 1000., 'rear': 1000.}, .8)
+    moment = 0.
+    for side, offset in (('front', 0.), ('rear', np.pi)):
+        force = requests[side]
+        assert force[2] <= 0.
+        assert abs(force[0]) <= .8*(-force[2]) + 1e-10
+        lever = .165*np.array([np.cos(phase+offset), 0., -np.sin(phase+offset)])
+        moment += np.cross(lever, force)[1]
+    assert moment == pytest.approx(20.*(1.+.35*np.cos(2.*phase)), rel=1e-9)
+    assert all(value > 0. for value in weights.values())
+
+
+def test_unfavourable_platform_cannot_demand_unlimited_normal_pressure():
+    from bike_sim.sim.ride.rider_control import pedaling_force_requests
+    phase = 4.7323
+    normals = {'front': np.array([0., 0., 1.]),
+               'rear': np.array([-.35, 0., np.sqrt(1.-.35**2)])}
+    requests, weights = pedaling_force_requests(phase, 34., .165, normals,
+        {'front': 1000., 'rear': 236.}, .8, normal_limit_n=500.)
+    moment = 0.
+    for side, offset in (('front', 0.), ('rear', np.pi)):
+        force = requests[side]
+        assert -float(force @ normals[side]) <= 500.+1e-8
+        lever = .165*np.array([np.cos(phase+offset), 0., -np.sin(phase+offset)])
+        contribution = np.cross(lever, force)[1]
+        assert contribution >= -1e-8
+        moment += contribution
+    assert moment == pytest.approx(34.*(1.+.35*np.cos(2.*phase)), rel=1e-8)

@@ -108,3 +108,16 @@ def test_rider_program_is_applied_and_saved(articulated, tmp_path):
     env.save(tmp_path/'run')
     summary = json.loads((tmp_path/'run'/'summary.json').read_text())
     assert RiderProgram.from_dict(summary['research']['rider_program']) == program
+
+
+def test_rider_program_evolves_at_physics_rate_without_motor_transport_delay(articulated):
+    program = RiderProgram((RiderKeyframe(0., human_torque_nm=10.),
+        RiderKeyframe(.01, RiderPosture(torso_lean_rad=.1), human_torque_nm=20.)))
+    env = ResearchEnvironment(_fresh(articulated),
+        ExperimentConfig(duration_s=.02, actuator_delay_s=.02, record_decimation=1),
+        SensorConfig.ideal(), rider_program=program)
+    env.step(RideControl(motor_torque_nm=40.))
+    middle = min(env.recorder.samples, key=lambda sample: abs(sample.time_s-.005))
+    assert middle.channels['control']['human_torque_nm'] == pytest.approx(15.)
+    assert middle.channels['control']['posture']['torso_lean_rad'] == pytest.approx(.05)
+    assert middle.channels['control']['motor_torque_nm'] == 0.

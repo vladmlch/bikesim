@@ -19,14 +19,18 @@ def test_automatic_coasting_keeps_reachable_pedals_and_resumes_work():
 
 
 @pytest.mark.slow
-def test_resume_transmits_human_work_and_completes_a_crank_turn(tmp_path):
+@pytest.mark.parametrize('track', ['rider_resume_flat', 'rider_resume_incline'])
+def test_resume_transmits_human_work_and_completes_a_crank_turn(tmp_path, track):
     report = run_replay(
         'examples/research/viewer_physics_fast.toml',
-        'examples/research/rider_resume_flat.toml', mode='human-only',
-        timestep_s=.000625, duration_s=8., output=tmp_path/'resume.json.gz')
+        f'examples/research/{track}.toml', mode='human-only',
+        timestep_s=.000625, duration_s=10., output=tmp_path/'resume.json.gz')
     assert 'error' not in report
     assert report['completed_requested_duration']
     assert report['evidence']['diagnosis'] == 'resumed'
     assert report['evidence']['crank_rotation_rad'] >= 2.*3.141592653589793
     assert report['evidence']['positive_crank_work_j'] > 0.
     assert report['model_status']['model_valid']
+    assert report['evidence']['window_s'] == [4., 10.]
+    assert report['support_evidence']['numerically_valid']
+    assert report['support_evidence']['complete']

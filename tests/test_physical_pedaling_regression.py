@@ -135,6 +135,94 @@ def test_coasting_foot_targets_stay_on_real_pedals_when_crank_misses_stop_goal(p
     np.testing.assert_array_equal(data.qvel, initial_velocities)
 
 
+def test_coasting_target_derivative_follows_a_still_moving_platform():
+    model, data, runtime = rolling_rig(speed=0.)
+    controller = runtime.rider_control
+    data.qvel[controller.crank_spin_dof] = 8.
+    data.qvel[controller.pedal_spin_dofs] = -8.
+    mujoco.mj_forward(model, data)
+    command = RiderCommand(0., crank_target_phase_rad=.1, crank_target_rate_rad_s=0.)
+    target = controller._coasting_target_state(model, data, command)
+    assert target.qvel[controller.crank_spin_dof] == pytest.approx(8.)
+    np.testing.assert_allclose(target.qvel[controller.pedal_spin_dofs], -8.)
+    np.testing.assert_array_equal(target.qpos, data.qpos)
+
+
+@pytest.mark.parametrize('rate', [-8., 8.])
+def test_coasting_brakes_with_compressive_leg_requests(rate):
+    model, data, runtime = rolling_rig(speed=0.)
+    controller = runtime.rider_control
+    data.qvel[controller.crank_spin_dof] = rate
+    mujoco.mj_forward(model, data)
+    before = data.qpos.copy(), data.qvel.copy(), data.qfrc_applied.copy()
+    controller.compute(model, data, RiderCommand(0., crank_target_phase_rad=.1,
+        crank_target_rate_rad_s=0.), contact_loads={
+            'front': 100., 'rear': 100., 'saddle': 400., 'grip': True},
+        support_available=dict.fromkeys(('front', 'rear', 'saddle', 'grip'), True))
+    requested = controller.support_diagnostics['coasting_requested_crank_torque_nm']
+    assert requested * rate < 0.
+    forces = controller.support_diagnostics['feasible_pedal_force_on_bike_n']
+    assert all(force[2] <= 1e-10 for force in forces.values())
+    assert any(force[2] < -1. for force in forces.values())
+    np.testing.assert_array_equal(data.qpos, before[0])
+    np.testing.assert_array_equal(data.qvel, before[1])
+    np.testing.assert_array_equal(data.qfrc_applied, before[2])
+
+
+@pytest.mark.parametrize('phase', np.linspace(-np.pi, np.pi, 13))
+def test_coasting_brake_force_request_respects_instantaneous_shaft_ceiling(phase):
+    model, data, runtime = rolling_rig(speed=0.)
+    controller = runtime.rider_control
+    data.qpos[controller.crank_spin_qpos] = phase
+    data.qpos[controller.pedal_spin_qpos] = -phase
+    data.qvel[controller.crank_spin_dof] = 80.
+    mujoco.mj_forward(model, data)
+    controller.compute(model, data, RiderCommand(0., crank_target_phase_rad=phase,
+        crank_target_rate_rad_s=0.), contact_loads={
+            'front': 1000., 'rear': 1000., 'saddle': 400., 'grip': True},
+        support_available=dict.fromkeys(('front', 'rear', 'saddle', 'grip'), True))
+    forces = controller.support_diagnostics['feasible_pedal_force_on_bike_n']
+    torque = sum(np.cross(data.site_xpos[controller.pedals[side]] - data.xpos[controller.crank],
+        forces[side])[1] for side in ('front', 'rear'))
+    assert abs(torque) <= controller.config.coasting_brake_limit_nm + 1e-8
+
+
+def test_static_initialization_does_not_inject_a_riding_brake_request():
+    model, data, runtime = rolling_rig(speed=0.)
+    controller = runtime.rider_control
+    data.qvel[controller.crank_spin_dof] = 8.
+    mujoco.mj_forward(model, data)
+    controller.compute(model, data, RiderCommand(0., crank_target_phase_rad=.1),
+        contact_loads={'front': 100., 'rear': 100., 'saddle': 400., 'grip': True},
+        steady_state=True)
+    assert controller.support_diagnostics['coasting_requested_crank_torque_nm'] == 0.
+
+
+def test_trapped_return_foot_is_released_by_goals_without_physical_state_writes():
+    model, data, runtime = rolling_rig(speed=0.)
+    controller = runtime.rider_control
+    data.qpos[model.joint('rider_root_z').qposadr[0]] -= .04
+    mujoco.mj_forward(model, data)
+    from bike_sim.sim.ride.rider_contacts import RiderContactApplier
+    contacts = RiderContactApplier(model, controller.pose, controller.config)
+    contacts.reset(model, data)
+    contacts.compute_qfrc(model, data, model.opt.timestep, advance=False)
+    observed = contacts.probe_diagnostics
+    assert observed['rear_pedal']['force_on_rider_n'][2] < -1.
+    before = data.qpos.copy(), data.qvel.copy(), data.qfrc_applied.copy()
+    controller.compute(model, data, RiderCommand(20.),
+        contact_loads={'front': 100., 'rear': 100., 'saddle': 400., 'grip': True},
+        support_available=dict.fromkeys(('front', 'rear', 'saddle', 'grip'), True),
+        support_states=observed)
+    diagnostic = controller.support_diagnostics['feet']['rear']
+    assert diagnostic['recovery_stage'] == 'release'
+    assert diagnostic['target_sole_position_m'][2] < diagnostic['actual_sole_position_m'][2]
+    assert controller.support_diagnostics['requested_vertical_forces_n']['rear'] == 0.
+    np.testing.assert_array_equal(data.qpos, before[0])
+    np.testing.assert_array_equal(data.qvel, before[1])
+    np.testing.assert_array_equal(data.qfrc_applied, before[2])
+
+
 @pytest.mark.parametrize('motor_request', [None, 20.])
 def test_coasting_gates_passive_pedal_torque_but_preserves_external_motor_command(motor_request):
     model, data, runtime = rolling_rig(speed=0.)
@@ -169,6 +257,19 @@ def test_coasting_probe_does_not_advance_rider_policy_or_ratchet_boundary():
     np.testing.assert_array_equal(model.tendon_range, ranges)
     assert vars(drive.pedaling) == policy
     assert drive.pending_actuation is None
+
+
+def test_automatic_effort_ceiling_is_applied_after_low_cadence_mash():
+    model, data, runtime = rolling_rig(speed=0.)
+    config = replace(runtime.cfg.drive, pedaling=PedalingConfig(
+        mash_torque_nm=60., effort_slew_nm_s=0.))
+    drive = DrivetrainForceApplier(model, config, 'articulated_effort')
+    drive.reset(model, data)
+    state = drive.prepare_pedaling(data, model.opt.timestep, RideControl(human_torque_nm=3.),
+        effort_ceiling_nm=3.)
+    assert state.effort_nm == 3.
+    explicit = drive.prepare_pedaling(data, model.opt.timestep, RideControl(human_torque_nm=3.))
+    assert explicit.effort_nm == 60.
 
 
 def test_unloaded_stance_foot_can_press_but_cannot_request_friction():

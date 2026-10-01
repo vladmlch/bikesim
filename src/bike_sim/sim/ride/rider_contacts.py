@@ -205,7 +205,7 @@ class RiderContactApplier:
         for name,entry in self.supports.items():
             body,site,bike,geom=entry
             patches=[];group_force=np.zeros(3);group_moment=np.zeros(3)
-            group_normal=group_tangent=group_radial=group_shear=group_power=0.
+            group_normal=group_tangent=group_radial=group_shear=group_power=group_vertical=0.
             in_platform=False
             minimum_gap=float('inf')
             for key,point,n,tangent,gap,inside in self._pads(model,data,name,entry):
@@ -239,6 +239,7 @@ class RiderContactApplier:
                 radial_loss=(normal-k*max(penetration,0.))*(-float(u@n))
                 if self.enabled[name] and inside and penetration>0:radial_power+=max(radial_loss,0.)
                 group_normal+=normal
+                group_vertical+=float(f[2])
                 in_platform=in_platform or inside
                 minimum_gap=min(minimum_gap,gap)
                 if detailed:
@@ -250,7 +251,8 @@ class RiderContactApplier:
                         'radial_energy_j':radial_energy,'shear_energy_j':shear})
                 new_states[key]=_SupportState(new_xi,tangent.copy())
             diagnostics[name]={'enabled':self.enabled[name],
-                'in_platform':in_platform,'normal_load_n':group_normal,'gap_m':minimum_gap}
+                'in_platform':in_platform,'normal_load_n':group_normal,'gap_m':minimum_gap,
+                'vertical_force_on_rider_n':group_vertical}
             if detailed:
                 diagnostics[name].update({'tangent_force_n':group_tangent,'patches':patches,
                 'force_on_rider_n':group_force.tolist(),'force_on_bike_n':(-group_force).tolist(),

@@ -123,6 +123,7 @@ def diagnostic_row(sample) -> dict:
          'ik_saturation':plain(c['rider_ik_saturation']),'tires':plain(c['tires']),
          'energy':plain(c['energy']),'control':plain(c.get('control',{})),
          'model_status':plain(c.get('model_status',{})),
+         'rider_intent':plain(c.get('rider_intent',{})),
          'suspension':plain(c.get('suspension',{})), 'mass':plain(c.get('mass',{}))}
     row.update({k:plain(v) for k,v in c.items() if k.startswith('rider_active') or k in
                 ('rider_positive_power_w','rider_activation_saturated','rider_passive_power_w',
@@ -130,7 +131,7 @@ def diagnostic_row(sample) -> dict:
     return row
 
 
-def replay(sim, schedule, duration_s: float) -> list[dict]:
+def replay(sim, schedule, duration_s: float, *, row_sink=None) -> list[dict]:
     dt=float(sim.model.opt.timestep)
     if not isfinite(duration_s) or duration_s<=0:
         raise ValueError('duration must be finite and positive')
@@ -142,7 +143,10 @@ def replay(sim, schedule, duration_s: float) -> list[dict]:
     rows=[]
     for _ in range(count):
         sim.step(control=schedule(sim.time_s))
-        rows.append(diagnostic_row(sim.physical.sample))
+        row = diagnostic_row(sim.physical.sample)
+        rows.append(row)
+        if row_sink is not None:
+            row_sink(row)
         if sim.crash is not None:
             break
     return rows
@@ -235,17 +239,32 @@ def run_replay(physics_path,track_path,*,duration_s=8.,mode='human-only',timeste
     report={'schema_version':1,'mode':mode,'physics_path':str(physics_path),'track_path':str(track_path),
             'duration_requested_s':duration_s,'source_sha256':source_fingerprint(Path(__file__).resolve().parents[1]),
             'environment':environment_contract(),'calibration_status':'parameterized_unvalidated'}
+    from bike_sim.validation.climbing_evidence import support_evidence
+    rows=[]
+    sim=None
     try:
         sim=build_sim(physics_path,track_path,timestep_s,physics_overrides=overrides)
         report.update(configuration_metadata(sim),equilibrium=sim.equilibrium)
-        rows=replay(sim,schedule,duration_s)
+        replay(sim,schedule,duration_s,row_sink=rows.append)
         report.update(rows=rows,evidence=coasting_evidence(rows) if mode=='automatic' else resume_evidence(rows,end_s=max(8.,duration_s)),model_status=sim.physical.model_status.as_dict(),
             end_time_s=sim.time_s,end_position_m=sim.position_m,crash=None if sim.crash is None else str(sim.crash),
             completed_requested_duration=abs(sim.time_s-duration_s)<1e-8)
     except (ValueError,RuntimeError,ArithmeticError) as exc:
         report.update(error=f'{type(exc).__name__}: {exc}',diagnosis='mixed_or_unresolved',
                       completed_requested_duration=False)
-    if output is not None:write_report(output,report)
+    finally:
+        report['rows']=rows
+        try:
+            report['support_evidence']=support_evidence(rows,required_duration_s=duration_s)
+        except (ValueError,KeyError,TypeError,ArithmeticError) as error:
+            report['support_evidence']={
+                'interval_count':len(rows),'complete':False,'valid_for_learning':False,
+                'evaluation_error':f'{type(error).__name__}: {error}'}
+            report['completed_requested_duration']=False
+        if sim is not None:
+            report.update(end_time_s=sim.time_s,end_position_m=sim.position_m,
+                          model_status=sim.physical.model_status.as_dict())
+        if output is not None:write_report(output,report)
     return report
 
 

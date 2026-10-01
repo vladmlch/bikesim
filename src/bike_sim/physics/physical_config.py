@@ -257,6 +257,8 @@ class ArticulatedConfig:
     bar_support_fraction: float = .12
     posture_sole_depth_m: float = .003
     swing_clearance_m: float = .003  # unstrapped return foot is not a brake
+    coasting_brake_d_nm_s_rad: float = 2.
+    coasting_brake_limit_nm: float = 60.
     stance_blend_load_n: float = 50.
     posture_pitch_k_nm_rad: float = 600.
     posture_pitch_d_nms_rad: float = 60.

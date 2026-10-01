@@ -23,12 +23,19 @@ from bike_sim.sim.ride.physical_observations import (
     tire_channels, energy_state, actuator_components, constraint_components, sensor_channels,
 )
 from bike_sim.sim.ride.physical_energy import mass_observations
+from bike_sim.sim.ride.rider_intent import RiderIntentResolver, signals_from_channels
+from bike_sim.physics.seated_climb import SeatedClimbSignals
 
 
 class PhysicalRuntime:
     def __init__(self, sim):
         self.sim = sim
         self.cfg = sim.physics_config
+        if self.cfg.seated_climb.enabled and sim.rider.variant != 'articulated_planar':
+            raise ValueError('seated climb needs an articulated planar rider')
+        self.rider_intent = RiderIntentResolver(self.cfg.seated_climb, float(sim.model.opt.timestep))
+        self.rider_intent_signals = SeatedClimbSignals()
+        self.applied_control = RideControl()
         m, d = sim.model, sim.data
         if np.any(m.dof_armature):
             raise ValueError('physical momentum needs explicit rotor bodies, not hidden armature')
@@ -144,6 +151,13 @@ class PhysicalRuntime:
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
         control.validate_for(self.cfg, sim.rider.variant)
+        automatic_effort = (active and self.cfg.seated_climb.enabled
+                            and control.human_torque_nm is None and control.rider_enabled)
+        if self.cfg.seated_climb.enabled:
+            control = self.rider_intent.resolve(control, self.rider_intent_signals,
+                step=sim.steps, active=active, advance=advance)
+        if advance:
+            self.applied_control = control
         if braking is None:
             braking = front > 0. or rear > 0.
         elif not isinstance(braking, bool):
@@ -158,7 +172,8 @@ class PhysicalRuntime:
         pedaling = self.drive.prepare_pedaling(d, dt, control, active=active,
             advance=advance, braking=braking, model=m,
             rear_in_contact=bool(sim.contacts.rear_controller_grounded),
-            rear_slip_mps=None if rear_snapshot is None else float(rear_snapshot.slip_mps))
+            rear_slip_mps=None if rear_snapshot is None else float(rear_snapshot.slip_mps),
+            effort_ceiling_nm=control.human_torque_nm if automatic_effort else None)
         mujoco.mj_forward(m,d)
         acc = sim.force_accumulator
         acc.clear()
@@ -195,7 +210,8 @@ class PhysicalRuntime:
             availability['saddle']=bool(enabled.get('saddle',False) and observed.get('saddle',{}).get('in_platform',False))
             availability['grip']=bool(enabled.get('grip',False))
             self.rider_control.write(d,self.rider_control.compute(m,d,command,contact_loads=loads,
-                support_available=availability,advance=advance,dt_s=dt,steady_state=not active))
+                support_available=availability,advance=advance,dt_s=dt,steady_state=not active,
+                support_states=observed if self.cfg.seated_climb.enabled else None))
             acc.add('rider_joint_envelope',self.rider_control.envelope_forces(m,d)[0])
         if self.rider_contacts is None:
             sensed = 0.
@@ -228,6 +244,9 @@ class PhysicalRuntime:
     def reset(self):
         from bike_sim.sim.ride.physical_equilibrium import solve_physical_equilibrium
         sim = self.sim
+        self.rider_intent.reset()
+        self.rider_intent_signals = SeatedClimbSignals()
+        self.applied_control = RideControl()
         self.research_accounting_valid=False
         self.preview_real_time_factor=None
         self.initializing=True
@@ -297,6 +316,9 @@ class PhysicalRuntime:
                       'residual_j':0.,'energy_scale_j':self.energy_scale_j}
         sim._update_compiled_com_marker()
         self.research_accounting_valid=True
+        if self.cfg.seated_climb.enabled:
+            self.rider_intent_signals = signals_from_channels(sensor_channels(self,
+                drive_channels=getattr(self.drive, 'probe_last', self.drive.last)))
 
     def _initial_speed(self):
         sim=self.sim; m,d=sim.model,sim.data
@@ -416,6 +438,8 @@ class PhysicalRuntime:
             from bike_sim.sim.ride.rider_effort import solved_effort
             effort=solved_effort(self.rider_control,d,v,dt)
         sensors = sensor_channels(self, qvel=v)
+        if self.cfg.seated_climb.enabled:
+            self.rider_intent_signals = signals_from_channels(sensors)
         components.update(actuator_components(m,d))
         if self.rider_control is not None:
             passive=np.zeros(m.nv)
@@ -481,7 +505,10 @@ class PhysicalRuntime:
             'generalized_force_components_n':{n:float(f[sim.applier.fork_dofadr if n.startswith('fork') else sim.applier.shock_dofadr])
                 for n,f in components.items() if n.startswith(('fork_','shock_'))}}
         channels={**effort,'tires':tires,'drive':drive,'rider':rider,'suspension':suspension,
-                  'control':asdict(control), 'sensors':sensors,
+                  'control':asdict(self.applied_control), 'sensors':sensors,
+                  'rider_intent':(dict(asdict(self.rider_intent.intent),
+                      inclination_rad=self.rider_intent.policy.inclination_rad)
+                      if self.cfg.seated_climb.enabled else {}),
                   'mass':mass0,'endpoint_mass':mass,'energy':self.energy,
                   'component_work_j':{n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()},
                   'rider_control':{} if self.rider_control is None else self.rider_control.last_terms,
@@ -521,6 +548,8 @@ class PhysicalRuntime:
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(model,data)
         self.drive.settle_actuation(model,data)
+        if self.cfg.seated_climb.enabled:
+            self.rider_intent_signals = signals_from_channels(sensor_channels(self, qvel=incoming_velocity))
         if self.rider_control is not None:
             from bike_sim.sim.ride.rider_effort import solved_effort
             solved_effort(self.rider_control,data,incoming_velocity,float(model.opt.timestep))

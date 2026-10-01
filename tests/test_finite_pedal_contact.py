@@ -144,3 +144,44 @@ def test_sole_target_at_horizontal_platform_is_the_declared_compression():
     height = sole_target_height(np.zeros(3), np.eye(3), np.array([.05,.04,.008]),
                                 0., .025, .02, .003)
     assert height == pytest.approx(.005, abs=1e-12)
+
+
+def test_preview_and_accounted_contacts_expose_the_same_underside_recovery_signal(pedal_rig):
+    model, data, contacts = pedal_rig
+    data.qpos[model.joint('rider_root_z').qposadr[0]] = -.04
+    mujoco.mj_forward(model, data)
+    full = contacts.compute_qfrc(model, data, model.opt.timestep, advance=False, detailed=True)
+    detailed = contacts.probe_diagnostics['front_pedal']
+    preview = contacts.compute_qfrc(model, data, model.opt.timestep, advance=False, detailed=False)
+    compact = contacts.probe_diagnostics['front_pedal']
+    assert compact['vertical_force_on_rider_n'] < -1.
+    assert compact['vertical_force_on_rider_n'] == pytest.approx(detailed['force_on_rider_n'][2])
+    np.testing.assert_allclose(preview, full, atol=1e-12)
+
+
+def test_reachable_sole_goal_projection_preserves_requested_compression():
+    from bike_sim.sim.ride.support_geometry import project_sole_goal
+    goal, diagnostic = project_sole_goal(np.zeros(3), np.eye(3), np.array([.05, .04, .008]),
+        .025, .02, .003, .001)
+    np.testing.assert_allclose(goal, [.001, 0., .005], atol=1e-12)
+    assert not diagnostic['saturated']
+    assert diagnostic['applied_compression_m'] == .003
+
+
+def test_excessive_pressure_projects_the_goal_without_changing_contact_material():
+    from bike_sim.sim.ride.support_geometry import project_sole_goal, box_pad_contact
+    origin = np.zeros(3)
+    rotation = np.eye(3)
+    half = np.array([.05, .04, .008])
+    goal, diagnostic = project_sole_goal(origin, rotation, half, .025, .02, .2, .08)
+    assert diagnostic['saturated']
+    assert 0. <= diagnostic['applied_compression_m'] < .2
+    assert abs(diagnostic['applied_shear_m']) <= .08
+    assert np.isfinite(goal).all()
+    compression = 0.
+    for offset in (-.025, .025):
+        pad = box_pad_contact(goal + np.array([offset, 0., .02]), .02, origin, rotation, half)
+        if pad.within_footprint and pad.gap_m < 0.:
+            compression -= pad.gap_m
+            assert pad.point_m[2] >= origin[2] - 1e-10
+    assert compression == pytest.approx(2.*diagnostic['applied_compression_m'], abs=1e-9)

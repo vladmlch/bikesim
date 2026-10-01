@@ -1,14 +1,17 @@
-"""Solved weld reactions for feet rigidly attached to pedals.
+"""Solved weld reactions for rider bodies rigidly attached to the bike.
 
 With articulated.pedal_attachment = 'weld' the MJCF builder emits one `weld`
-equality per foot (body1 = rider_foot_*, body2 = pedal_*). This module reads
-the solved constraint multipliers and reports them in the conventions
+equality per foot (body1 = rider_foot_*, body2 = pedal_*); with
+articulated.saddle_attachment = 'weld' it emits `weld_saddle`
+(body1 = rider_pelvis, body2 = frame). This module reads the solved
+constraint multipliers and reports them in the conventions
 RiderContactApplier uses for pad supports.
 
 Conventions (pinned by tests): a weld's six EFC rows are [x,y,z translation,
 3 rotational]; the translational multipliers are the world-frame force applied
-BY the weld ON body1 (the foot); the equal-and-opposite force acts on body2
-(the pedal). efc_pos rows 0-2 are the world-frame translation residual.
+BY the weld ON body1 (the rider body); the equal-and-opposite force acts on
+body2 (the bike body). efc_pos rows 0-2 are the world-frame translation
+residual.
 """
 import numpy as np
 import mujoco
@@ -65,3 +68,31 @@ class PedalWelds:
         qfrc = np.zeros(model.nv)
         mujoco.mj_mulJacTVec(model, data, qfrc, multipliers)
         return float(qfrc[self.crank_dof])
+
+
+class SaddleWeld:
+    """Solved weld reaction for a pelvis rigidly attached at the saddle.
+
+    The weld can pull down, which the unilateral saddle pad cannot: the
+    reported force is the signed constraint reaction on the pelvis.
+    """
+
+    def __init__(self, model):
+        self.eq_id = resolve_id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                'weld_saddle')
+
+    def force_on_rider_n(self, model, data):
+        """World force the weld applies to the pelvis, in Newtons."""
+        mask = PedalWelds._mask(data, self.eq_id)
+        if not np.any(mask):
+            return np.zeros(3)
+        lam = data.efc_force[:data.nefc][mask]
+        return np.asarray(lam[:3], dtype=float)
+
+    def translation_residual_m(self, model, data):
+        """Norm of the weld's positional residual — actual pelvis/frame mismatch."""
+        mask = PedalWelds._mask(data, self.eq_id)
+        if not np.any(mask):
+            return 0.
+        pos = data.efc_pos[:data.nefc][mask]
+        return float(np.linalg.norm(pos[:3]))

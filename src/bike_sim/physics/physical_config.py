@@ -299,6 +299,7 @@ class ArticulatedConfig:
     activation_tau_s: float = 0.
     active_positive_power_limit_w: float | None = None
     pedal_attachment: str = 'flat'
+    saddle_attachment: str = 'flat'
 
     def __post_init__(self):
         if not 0 < scalar(self.arm_reach_fraction,'arm reach fraction',positive=True) < 1:
@@ -308,7 +309,7 @@ class ArticulatedConfig:
         if self.joint_envelope_path is not None and (not isinstance(self.joint_envelope_path,str) or not self.joint_envelope_path.strip()):
             raise ValueError('joint_envelope_path must be a nonempty path or None')
         for key in self.__dataclass_fields__:
-            if key in ('joint_envelope_path', 'pedal_attachment'):
+            if key in ('joint_envelope_path', 'pedal_attachment', 'saddle_attachment'):
                 continue
             if key in ('grip_pair_force_limit_n','active_positive_power_limit_w') and getattr(self,key) is None:
                 continue
@@ -320,3 +321,6 @@ class ArticulatedConfig:
         if self.pedal_attachment not in ('flat', 'weld'):
             raise ValueError(
                 f"pedal_attachment must be 'flat' or 'weld', got {self.pedal_attachment!r}")
+        if self.saddle_attachment not in ('flat', 'weld'):
+            raise ValueError(
+                f"saddle_attachment must be 'flat' or 'weld', got {self.saddle_attachment!r}")

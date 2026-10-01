@@ -67,3 +67,41 @@ def test_physics_toml_loads_articulated_pedal_attachment(tmp_path):
         'pedal_attachment = "weld"\n')
     cfg = load_physics_config(str(path), {})
     assert cfg.articulated.pedal_attachment == 'weld'
+
+
+def _equality_names(model):
+    return {mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_EQUALITY, i)
+            for i in range(model.neq)}
+
+
+def test_weld_mode_emits_foot_pedal_equalities():
+    model, _, _, _ = welded_rig()
+    for side in ('front', 'rear'):
+        eq = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                   f'weld_foot_{side}'))
+        assert eq >= 0
+        assert model.eq_type[eq] == mujoco.mjtEq.mjEQ_WELD
+        foot = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
+                                 f'rider_foot_{side}')
+        pedal = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
+                                  f'pedal_{side}')
+        assert {int(model.eq_obj1id[eq]), int(model.eq_obj2id[eq])} == {foot, pedal}
+        # solref[0] = closure time constant: >= 2*dt, critically damped row.
+        assert model.eq_solref[eq][0] == pytest.approx(
+            max(2. * model.opt.timestep, .0025))
+        assert model.eq_solref[eq][1] == pytest.approx(1.)
+
+
+def test_flat_mode_keeps_physical_feet_unwelded():
+    cfg = _config('flat')
+    model = mujoco.MjModel.from_xml_string(generate_mujoco_xml(
+        mode='ride', rider=RiderSpecs(variant='articulated_planar'),
+        physics_config=cfg))
+    assert not any(name.startswith('weld_foot_')
+                   for name in _equality_names(model) if name)
+
+
+def test_weld_mode_rejects_non_articulated_riders():
+    with pytest.raises((ValueError, RuntimeError)):
+        generate_mujoco_xml(mode='ride', rider=RiderSpecs(variant='lumped'),
+                            physics_config=_config('weld'))

@@ -313,6 +313,10 @@ def generate_mujoco_xml(
     build_sensors(root, mode=mode, seated_rider=(rider_specs.variant == "seated"))
 
     if physical:
+        if (physics_config.articulated.pedal_attachment == 'weld'
+                and articulated_pose is None):
+            raise ValueError(
+                "pedal_attachment='weld' requires rider='articulated_planar'")
         from bike_sim.mujoco.physical_topology import finish_physical_topology
         finish_physical_topology(root, specs, mass_specs, physics_config)
         if articulated_pose is not None:
@@ -327,6 +331,18 @@ def generate_mujoco_xml(
             build_articulated_rider(worldbody, articulated_pose,
                 segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg),envelopes=envelopes)
             add_rider_actuators(root, physics_config.articulated)
+            if physics_config.articulated.pedal_attachment == 'weld':
+                solref = max(2. * physics_config.timestep_s,
+                             physics_config.closure_time_constant_s)
+                equality = root.find('equality')
+                assert equality is not None
+                for side in ('front', 'rear'):
+                    ET.SubElement(equality, 'weld', {
+                        'name': f'weld_foot_{side}',
+                        'body1': f'rider_foot_{side}',
+                        'body2': f'pedal_{side}',
+                        'solref': f'{solref:.17g} 1',
+                    })
             # Dedicated crash mask: no invisible rider/bike or rider/rider contacts.
             for name in ("geom_rider_head", "geom_rider_pelvis", "geom_rider_torso"):
                 geom = root.find(f".//geom[@name='{name}']")

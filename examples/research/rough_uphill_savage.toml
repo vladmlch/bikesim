@@ -1,0 +1,88 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "research_rough_uphill_savage"
+length_m = 120.0
+description = "Savage stepped climb: 120 m loose base, plateaus 15/25/34% into a 45% wet wall; continuous 25 mm roughness, washboard, G-out, roots, rock garden, ledges on the wall; seeds 210+"
+surface = "loose"
+grade_profile = { knots = [[0.0, 0.0], [10.0, 0.0], [15.0, 0.15], [33.0, 0.15], [38.0, 0.25], [55.0, 0.25], [60.0, 0.34], [76.0, 0.34], [81.0, 0.45], [98.0, 0.45], [104.0, 0.0], [120.0, 0.0]] }
+surface_sections = [{ start_m = 40.0, end_m = 45.0, surface = "wet" }, { start_m = 80.0, end_m = 98.0, surface = "wet" }]
+
+[[obstacles]]
+type = "roughness"
+start_m = 10.0
+section_length_m = 94.0
+amplitude_m = 0.025
+correlation_length_m = 0.3
+seed = 210
+
+[[obstacles]]
+type = "washboard"
+start_m = 18.0
+amplitude_m = 0.04
+wavelength_m = 0.85
+n_waves = 9
+
+[[obstacles]]
+type = "bump"
+shape = "trapezoid"
+start_m = 28.0
+height_m = 0.08
+ramp_m = 0.15
+plateau_m = 0.3
+
+[[obstacles]]
+type = "square_edge"
+start_m = 31.5
+height_m = 0.09
+ledge_length_m = 0.3
+
+[[obstacles]]
+type = "g_out"
+start_m = 40.0
+depth_m = 0.3
+dip_length_m = 5.0
+
+[[obstacles]]
+type = "roots"
+start_m = 48.0
+n_bumps = 9
+height_m = 0.085
+width_m = 0.28
+section_length_m = 6.5
+jitter = 0.4
+seed = 211
+
+[[obstacles]]
+type = "pothole"
+edge = "sharp"
+start_m = 57.5
+depth_m = 0.14
+hole_length_m = 0.65
+
+[[obstacles]]
+type = "rock_garden"
+start_m = 62.0
+section_length_m = 11.0
+amplitude_m = 0.095
+correlation_length_m = 0.22
+seed = 212
+
+[[obstacles]]
+type = "pothole"
+edge = "bowl"
+start_m = 75.5
+depth_m = 0.11
+hole_length_m = 0.55
+
+[[obstacles]]
+type = "square_edge"
+start_m = 84.0
+height_m = 0.1
+ledge_length_m = 0.25
+
+[[obstacles]]
+type = "square_edge"
+start_m = 91.0
+height_m = 0.08
+ledge_length_m = 0.3

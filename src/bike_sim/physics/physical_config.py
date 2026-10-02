@@ -186,8 +186,11 @@ class ShiftingConfig:
     torque_factor: float = .3
     cadence_smoothing_tau_s: float = .35
     upshift_slip_limit_mps: float = .5
+    upshift_slip_mode: str = 'legacy_signed'
 
     def __post_init__(self):
+        if self.upshift_slip_mode not in ('legacy_signed', 'magnitude'):
+            raise ValueError('unknown upshift slip mode')
         if not isinstance(self.enabled, bool):
             raise ValueError('automatic shifting enable must be a bool')
         try:

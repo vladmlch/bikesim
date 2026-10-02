@@ -66,8 +66,11 @@ class CadenceShifter:
             return False
         # A slipping wheel spins up without the bike accelerating, so the implied
         # cadence over-reads. Upshifting on wheelspin is never a rider's intent.
-        if direction == 'up' and rear_slip_mps is not None \
-                and rear_slip_mps > self.config.upshift_slip_limit_mps:
+        slip_for_gate = rear_slip_mps
+        if slip_for_gate is not None and self.config.upshift_slip_mode == 'magnitude':
+            slip_for_gate = abs(slip_for_gate)
+        if direction == 'up' and slip_for_gate is not None \
+                and slip_for_gate > self.config.upshift_slip_limit_mps:
             return False
         # A shift that lands the wheel-implied cadence outside the target band is
         # hunting: an upshift while grinding throws the next required cadence

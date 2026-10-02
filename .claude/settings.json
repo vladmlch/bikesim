@@ -1,0 +1,12 @@
+{
+    "hooks": {
+        "SessionStart": [
+        ],
+        "SessionEnd": [
+        ]
+    },
+    "enabledPlugins": {
+        "superpowers@claude-plugins-official": true,
+        "mattpocock-skills@claude-plugins-official": true
+    }
+}

@@ -1,0 +1,33 @@
+[project]
+name = "bike-sim"
+version = "0.3.0"
+description = "Bicycle suspension kinematics solver and MuJoCo simulation model generator"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=1.24.0",
+    "matplotlib>=3.7.0",
+    "mujoco>=3.0.0",
+    "scipy==1.17.0",
+    "glfw>=2.10.0",
+    "pytest>=7.0.0",
+    "plotly>=5.24",
+]
+
+[project.scripts]
+bike-sim = "bike_sim.cli.main:main"
+bike-playground = "bike_sim.cli.playground:main"
+bike-export = "bike_sim.cli.export:main"
+bike-ride = "bike_sim.cli.ride:main"
+bike-research = "bike_sim.cli.research:main"
+bike-replay = "bike_sim.cli.replay:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+markers = ["slow: multi-second full-plant episodes; deselect with -m 'not slow'"]

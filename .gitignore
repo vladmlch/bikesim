@@ -1,0 +1,41 @@
+.venv/
+__pycache__/
+.pytest_cache/
+results/
+*.pyc
+# Generated outputs
+*.png
+output/plots/*.png
+output/models/*.xml
+MUJOCO_LOG.TXT
+
+# Offline bundles (built artifacts — published as GitHub Releases)
+bike-sim-offline-*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+.pytest_cache/
+
+# MuJoCo generated legacy
+bike_model.xml
+bike_playground*.xml
+coordinates.json
+
+# Tooling / IDE
+.idea/
+.DS_Store
+.work/
+
+# AI agent configs (local)
+.agents/
+.ai/
+.codex/
+.junie/
+skills-lock.json
+.claude/settings.local.json

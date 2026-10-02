@@ -59,6 +59,7 @@ cp "$WORK/requirements.txt" "$FULL/requirements.txt"
 cp packaging/install_full.sh "$FULL/install.sh"
 cp packaging/OFFLINE_README_full.md "$FULL/OFFLINE_README.md"
 chmod +x "$FULL/install.sh"
+python3 tools/check_offline_sources.py --source "$FULL/project/src" --wheel "$FULL/wheelhouse/$WHEEL"
 
 # ---------- slim bundle ----------
 echo "==> assembling slim bundle"
@@ -92,6 +93,7 @@ cp "$WORK/req-slim.txt" "$SLIM/requirements.txt"
 cp packaging/install_slim.sh "$SLIM/install.sh"
 cp packaging/OFFLINE_README_slim.md "$SLIM/OFFLINE_README.md"
 chmod +x "$SLIM/install.sh"
+python3 tools/check_offline_sources.py --source "$SLIM/project/src" --wheel "$SLIM/wheelhouse/$WHEEL"
 
 echo "==> packing"
 tar -czf "$FULL.tar.gz" "$FULL"

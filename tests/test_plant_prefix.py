@@ -67,3 +67,13 @@ def test_model_violation_details_preserved_in_first_bad():
         'reasons': ['model_violation', 'numerical_quality'],
         'model_event': {'code': 'kinematic_infeasible'},
     }
+
+
+def test_rider_budget_overrun_does_not_enter_valid_prefix():
+    s = SimpleNamespace(time_s=0., end_time_s=.01, channels={
+        'model_status': {'model_valid': True, 'numerically_valid': True},
+        'rider_effort_budget_exceeded': True})
+    p = ValidPrefix()
+    assert not p.observe(s)
+    assert p.first_bad['reasons'] == ['rider_effort_budget']
+

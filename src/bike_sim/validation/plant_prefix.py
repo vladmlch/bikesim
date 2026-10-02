@@ -24,6 +24,8 @@ class ValidPrefix:
             reasons.append('model_violation' if flags[0] is False else 'model_status_unavailable')
         if flags[1] is not True:
             reasons.append('numerical_quality' if flags[1] is False else 'numerical_not_evaluated')
+        if sample.channels.get('rider_effort_budget_exceeded') is True:
+            reasons.append('rider_effort_budget')
         if reasons and self.first_bad is None:
             self.first_bad = {'time_s': float(sample.time_s),
                               'reasons': reasons,

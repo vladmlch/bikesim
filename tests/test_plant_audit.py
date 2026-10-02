@@ -62,6 +62,9 @@ def test_run_audit_generates_all_expected_artifacts(tmp_path):
     assert 'metadata' in report
     assert 'valid_prefix' in report
     assert 'model_status' in report
+    assert 'rider_work' in report
+    assert 'active_joint_work_j' in report['rider_work']
+    assert 'rider_effort_budget_exceeded' in report
     assert report['time_s'] == pytest.approx(0.05)
 
     # Check samples.jsonl lines
@@ -75,6 +78,11 @@ def test_run_audit_generates_all_expected_artifacts(tmp_path):
         assert 'drive' in row
         assert 'energy' in row
         assert 'model_status' in row
+        assert 'rider_work' in row
+        assert 'active_joint_work_j' in row['rider_work']
+        assert 'rider_positive_power_w' in row
+        assert 'rider_passive_power_w' in row
+        assert 'rider_effort_budget_exceeded' in row
 
 
 def test_main_cli_returns_nonzero_when_invalid(monkeypatch, tmp_path):

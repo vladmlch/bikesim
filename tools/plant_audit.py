@@ -7,6 +7,7 @@ import shutil
 import numpy as np
 from bike_sim.validation.rider_replay import build_sim
 from bike_sim.validation.plant_prefix import ValidPrefix
+from bike_sim.validation.rider_work import rider_work_ledger
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.physical_samples import plain
 from bike_sim.sim.ride.physical_session import configuration_metadata
@@ -39,6 +40,7 @@ def run_audit(physics: str, track: str, duration_s: float, out: Path,
         raise ValueError('terrain evidence contains a nonfinite vertex')
     prefix = ValidPrefix()
     reason = 'duration_reached'
+    c = {}
     with (out / 'samples.jsonl').open('w') as stream:
         for i in range(steps):
             sim.step(control=RideControl())
@@ -49,7 +51,11 @@ def run_audit(physics: str, track: str, duration_s: float, out: Path,
                    'x_m': float(sample.qpos[sim.root_x_qposadr]),
                    'eligible': eligible,
                    'tires': plain(c['tires']), 'drive': plain(c['drive']),
-                   'energy': plain(c['energy']), 'model_status': plain(c['model_status'])}
+                   'energy': plain(c['energy']), 'model_status': plain(c['model_status']),
+                   'rider_work': rider_work_ledger(c['component_work_j']),
+                   'rider_positive_power_w': c.get('rider_positive_power_w'),
+                   'rider_passive_power_w': c.get('rider_passive_power_w'),
+                   'rider_effort_budget_exceeded': c.get('rider_effort_budget_exceeded')}
             first_invalid = prefix.first_bad is not None and prefix.first_bad['time_s'] == sample.time_s
             if i % decimate == 0 or first_invalid:
                 stream.write(json.dumps(row, allow_nan=False) + '\n')
@@ -66,7 +72,11 @@ def run_audit(physics: str, track: str, duration_s: float, out: Path,
     report = {'metadata': metadata, 'mode': 'audited', 'reason': reason,
               'time_s': sim.time_s, 'x_m': sim.position_m,
               'valid_prefix': plain(asdict(prefix)),
-              'model_status': sim.physical.model_status.as_dict()}
+              'model_status': sim.physical.model_status.as_dict(),
+              'rider_work': rider_work_ledger(c.get('component_work_j', {})),
+              'rider_positive_power_w': c.get('rider_positive_power_w'),
+              'rider_passive_power_w': c.get('rider_passive_power_w'),
+              'rider_effort_budget_exceeded': c.get('rider_effort_budget_exceeded')}
     (out / 'summary.json').write_text(json.dumps(report, indent=2, allow_nan=False))
     return report
 

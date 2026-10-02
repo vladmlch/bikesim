@@ -14,13 +14,15 @@ from bike_sim.sim.ride.physical_mapping import resolve_id
 
 
 class GeometricFreehubConstraint(IdealFreehubConstraint):
-    def __init__(self,model,gearing):
+    def __init__(self,model,gearing,*,driver='crank_spin',driver_body='crank'):
         self.gearing=gearing
+        self.front_body=driver_body
         self.ratio=gearing.front_teeth/gearing.rear_teeth
         self.tendon_id=resolve_id(model,mujoco.mjtObj.mjOBJ_TENDON,'geometric_mid_drive_freehub')
-        self.crank_qpos=int(model.joint('crank_spin').qposadr[0])
-        self.wheel_qpos=int(model.joint('rear_wheel_spin').qposadr[0])
-        self.wheel_dof=int(model.joint('rear_wheel_spin').dofadr[0])
+        self.driver_qpos=int(model.joint(driver).qposadr[0])
+        self.driver_dof=int(model.joint(driver).dofadr[0])
+        self.driven_qpos=int(model.joint('rear_wheel_spin').qposadr[0])
+        self.driven_dof=int(model.joint('rear_wheel_spin').dofadr[0])
         start=int(model.tendon_adr[self.tendon_id]);end=start+int(model.tendon_num[self.tendon_id])
         self.coefficients={}
         for index in range(start,end):
@@ -40,7 +42,7 @@ class GeometricFreehubConstraint(IdealFreehubConstraint):
 
     def _geometry(self,model,data):
         mujoco.mj_kinematics(model,data);mujoco.mj_comPos(model,data)
-        return transmission_geometry(model,data,self.gearing)
+        return transmission_geometry(model,data,self.gearing,front_body=self.front_body)
 
     def _linearize(self,model,data,phi,jacobian):
         coefficients,upper=linearized_upper_bound(phi,jacobian,data.qpos,self.boundary)

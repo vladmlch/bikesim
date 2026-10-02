@@ -70,6 +70,7 @@ class PhysicalInitialState:
             'material':state,'equilibrium':copy.deepcopy(sim.equilibrium),
             'drive':{name:copy.deepcopy(getattr(drive,name)) for name in ('reference','angles','psi')},
             'ideal_boundary':None if drive.ideal_hub is None else drive.ideal_hub.boundary,
+            'clutch_boundary':None if drive.clutch is None else drive.clutch.boundary,
             'hub':None if drive.hub is None else {k:getattr(drive.hub,k) for k in ('boundary','energy_j','torque_nm')},
             'grip_anchor_local':None if r.rider_contacts is None else r.rider_contacts.grip_anchor_local,
             'active_state':None if r.rider_control is None else r.rider_control.active_state,
@@ -177,6 +178,8 @@ class PhysicalInitialState:
         mujoco.mj_forward(m,d)
         if drive.ideal_hub is not None:
             drive.ideal_hub.boundary=p['ideal_boundary'];drive.ideal_hub.prepare(m,d)
+        if drive.clutch is not None:
+            drive.clutch.boundary=p['clutch_boundary'];drive.clutch.prepare(m,d)
         if runtime.rider_contacts is not None:
             runtime.rider_contacts.grip_anchor_local=np.asarray(p['grip_anchor_local'],float).copy()
             runtime.rider_contacts.restart_clock()

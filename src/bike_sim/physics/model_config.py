@@ -111,3 +111,7 @@ class SimulationPhysicsConfig:
                 raise ValueError(f"{name} needs an immutable {cls.__name__}")
         if self.seated_climb.enabled and (legacy or self.drive_mode != 'articulated_effort'):
             raise ValueError('seated climb requires the articulated physical effort drive')
+        if self.drive.motor_clutch and self.drive_mode not in ('crank_effort','articulated_effort'):
+            raise ValueError('drive.motor_clutch requires an effort drive mode')
+        if self.drive.pedaling.reposition_on_stall and self.drive_mode != 'articulated_effort':
+            raise ValueError('the reposition stall reflex requires articulated_effort')

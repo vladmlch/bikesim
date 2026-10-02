@@ -974,8 +974,8 @@ def test_ride_keys_are_the_playground_keys_with_the_stand_only_ones_replaced(
     goes too: the ride rider is a compile-time variant (`--rider`), not an in-place mass swap.
     Everything else -- both dampers, the air spring, the camera, the markers, the preset, the
     telemetry stream, reset and help -- keeps its stand binding, `W`/`S` and `Space` keep
-    their keys while changing meaning, and `E` cycles the assist mode, which the stand
-    does not have.
+    their keys while changing meaning, `E` cycles the assist mode, and `V` requests one
+    crank-reposition maneuver (drive.motor_clutch only) -- both ride-mode additions.
     """
     playground_keys = set(PlaygroundInputHandler(_StubPlayground())._dispatch_map)
     arrow_keys = {264, 265}
@@ -983,12 +983,14 @@ def test_ride_keys_are_the_playground_keys_with_the_stand_only_ones_replaced(
     brake_strength_keys = {44, 46}
     tyre_pressure_keys = {78, 110, 77, 109, 59, 39}
     assist_cycle_keys = {69, 101}
+    crank_reposition_keys = {86, 118}
 
     assert set(session.input.bound_keycodes) == (
         (playground_keys - arrow_keys - rider_toggle_keys)
         | brake_strength_keys
         | tyre_pressure_keys
         | assist_cycle_keys
+        | crank_reposition_keys
     )
 
 

@@ -44,10 +44,10 @@ def _body_kinematics(model,data,name):
     return body,jp,jr,float(angle)
 
 
-def transmission_geometry(model,data,gearing):
+def transmission_geometry(model,data,gearing,*,front_body='crank'):
     if model.nq!=model.nv or np.any(~np.isin(model.jnt_type,[mujoco.mjtJoint.mjJNT_SLIDE,mujoco.mjtJoint.mjJNT_HINGE])):
         raise ValueError('transmission geometry needs scalar planar coordinates')
-    front,jp_f,jr_f,tf=_body_kinematics(model,data,'crank')
+    front,jp_f,jr_f,tf=_body_kinematics(model,data,front_body)
     rear,jp_r,jr_r,tr=_body_kinematics(model,data,'rear_wheel')
     frame,_,_,theta_frame=_body_kinematics(model,data,'frame')
     cf,cr=data.xpos[front][[0,2]],data.xpos[rear][[0,2]]

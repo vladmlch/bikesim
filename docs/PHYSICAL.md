@@ -199,6 +199,16 @@ at the rear wheel, so it cannot bypass the freewheel. Solved transmission forces
 their constraint work are recorded separately. It is intended for interactive plant/control development,
 not for chain, freehub or drivetrain-energy studies.
 
+`drive.motor_clutch = true` (ideal transmissions only) splits the real mid-drive
+topology: the motor and chainring move to a coaxial `drive_shaft` body, and a
+second one-way tendon (`crank_clutch`) couples crank to shaft forward-only. The
+rider can then hold or backpedal the cranks — including the `crank_reposition`
+maneuver — while the motor keeps driving the wheel, matching how production
+mid-drives isolate the pedal spindle behind a sprag clutch. Crank rpm still
+governs cadence and rider intent; shaft rpm governs the motor torque curve,
+power ceiling and stall accounting. With the flag off the historical topology
+is unchanged.
+
 `equilibrium_cache_enabled = true` enables a validated initial-pose cache for
 interactive runs. The cache is keyed by source, compiled model, road, rider and
 physics configuration; a mismatch falls back to the full equilibrium solve. The

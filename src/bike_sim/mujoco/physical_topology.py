@@ -54,18 +54,38 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
     crank=_find(root,'body','crank')
     crank_length=scalar(specs.crank_length/1000.,'crank length',positive=True)
     budget=scalar(mass_specs.crank_pedals_mass,'crank mass',positive=True)
+    clutch=physics_config.drive.motor_clutch
     # Physical dimensions below are explicit synthetic component inputs, not
     # radii or sizes read back from decorative cylinders and pedal meshes.
     arm_y=.075
     spindle_mass=budget*.10/.85
     arm_mass=budget*.20/.85
     pedal_mass=budget*.175/.85
+    shaft_mass=0.
+    if clutch:
+        # The chainring and motor output shaft ride on their own body ahead of
+        # the crank clutch: a share of the spindle budget, not new mass.
+        shaft_mass=spindle_mass*.6
+        spindle_mass-=shaft_mass
     tensor=ring_inertia(spindle_mass,0.,.016,2*arm_y)
     for sign in (-1.,1.):
         tensor+=segment_inertia(arm_mass,[crank_length,0.,0.],.012)
         tensor+=parallel_axis(arm_mass,[sign*crank_length/2,-sign*arm_y,0.])
     _set_inertia(crank,spindle_mass+2*arm_mass,np.zeros(3),tensor)
     _find(root,'joint','crank_spin').set('damping','0')
+    if clutch:
+        # The motor-side shaft is coaxial with the crank: the crank body owns
+        # arms and pedals, the shaft owns the chainring and motor output.
+        frame_body=_find(root,'body','frame')
+        shaft=ET.SubElement(frame_body,'body',name='drive_shaft',pos='0 0 0')
+        ET.SubElement(shaft,'joint',name='drive_shaft_spin',type='hinge',
+                      pos='0 0 0',axis='0 1 0',damping='0')
+        ring_radius=physics_config.drive.gearing.front_radius_m
+        ET.SubElement(shaft,'geom',name='geom_drive_shaft_ring',type='cylinder',
+                      fromto='0 -0.015 0 0 0.015 0',size=f'{ring_radius:.17g}',
+                      mass='0',material='mat_metal',contype='0',conaffinity='0')
+        _set_inertia(shaft,shaft_mass,np.zeros(3),
+                     ring_inertia(shaft_mass,.015,ring_radius,.03))
     for side,sign in (('front',-1.),('rear',1.)):
         pedal=_find(root,'body','pedal_'+side)
         joint=_find(pedal,'joint','pedal_spin_'+side)
@@ -115,6 +135,8 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
     moving_bodies=('crank','pedal_front','pedal_rear')
     if physics_config.drive.transmission_model == 'elastic_chain':
         moving_bodies += ('cassette',)
+    if clutch:
+        moving_bodies += ('drive_shaft',)
     for moving in moving_bodies:
         for name in names:
             pair=frozenset((moving,name))
@@ -132,18 +154,30 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
     if physics_config.drive_mode in ('crank_effort','articulated_effort'):
         ratio=(physics_config.drive.gearing.front_teeth /
                physics_config.drive.gearing.rear_teeth)
+        # With the motor clutch the chainring lives on the drive shaft; the
+        # crank drives it through a second one-way tendon, and the shaft drives
+        # the wheel through the usual cassette freehub.
+        driver_joint='drive_shaft_spin' if clutch else 'crank_spin'
+        tendons = root.find('tendon')
         if physics_config.drive.transmission_model == 'ideal_mid_drive':
-            tendons = root.find('tendon')
             if tendons is None:
                 tendons = ET.SubElement(root, 'tendon')
             freehub = ET.SubElement(tendons, 'fixed', name='ideal_mid_drive_freehub',
                 limited='true', range='-1e12 0', margin='0',
                 solreflimit=f'{physics_config.closure_time_constant_s:.17g} 1')
-            ET.SubElement(freehub, 'joint', joint='crank_spin', coef=f'{ratio:.17g}')
+            ET.SubElement(freehub, 'joint', joint=driver_joint, coef=f'{ratio:.17g}')
             ET.SubElement(freehub, 'joint', joint='rear_wheel_spin', coef='-1')
+        if clutch:
+            if tendons is None:
+                tendons = ET.SubElement(root, 'tendon')
+            crank_clutch = ET.SubElement(tendons, 'fixed', name='crank_clutch',
+                limited='true', range='-1e12 0', margin='0',
+                solreflimit=f'{physics_config.closure_time_constant_s:.17g} 1')
+            ET.SubElement(crank_clutch, 'joint', joint='crank_spin', coef='1')
+            ET.SubElement(crank_clutch, 'joint', joint='drive_shaft_spin', coef='-1')
         if physics_config.drive.transmission_model == 'geometric_ideal_mid_drive':
             finalize_geometric_transmission(root,physics_config)
-        ET.SubElement(actuators,'motor',name='mid_drive',joint='crank_spin',gear='1',
+        ET.SubElement(actuators,'motor',name='mid_drive',joint=driver_joint,gear='1',
                       ctrllimited='true',ctrlrange=f'0 {physics_config.drive.assist.max_torque:.17g}')
     if physics_config.drive_mode=='crank_effort':
         # The request is validated in the configuration. No contact torque cap
@@ -164,11 +198,12 @@ def finalize_geometric_transmission(root,physics_config):
             range='-1e12 0',margin='0',solreflimit=f'{physics_config.closure_time_constant_s:.17g} 1')
     for child in list(freehub):freehub.remove(child)
     gearing=physics_config.drive.gearing
+    driver_joint='drive_shaft_spin' if physics_config.drive.motor_clutch else 'crank_spin'
     for joint in root.find('worldbody').iter('joint'):
         if joint.get('type','hinge') not in ('slide','hinge'):
             raise ValueError('geometric ideal drive requires scalar planar joints')
         name=joint.get('name')
         if not name:raise ValueError('geometric tendon requires named coordinates')
-        coefficient=(gearing.front_radius_m if name=='crank_spin' else
+        coefficient=(gearing.front_radius_m if name==driver_joint else
                      -gearing.rear_radius_m if name=='rear_wheel_spin' else 0.)
         ET.SubElement(freehub,'joint',joint=name,coef=f'{coefficient:.17g}')

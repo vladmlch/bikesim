@@ -60,7 +60,8 @@ class AssistController:
         self.stalled = False
         self._boost_target = None
 
-    def step(self,human_nm,cadence_rpm,speed_mps,braking,dt, *, torque_request_nm=None):
+    def step(self,human_nm,cadence_rpm,speed_mps,braking,dt, *,
+             torque_request_nm=None,shaft_rpm=None):
         human = scalar(human_nm,'human torque')
         rpm = scalar(cadence_rpm,'cadence')
         speed = scalar(speed_mps,'road speed')
@@ -69,6 +70,11 @@ class AssistController:
             raise ValueError('braking must be a bool')
         if torque_request_nm is not None:
             torque_request_nm = scalar(torque_request_nm, 'motor setpoint', minimum=0.)
+        # With the crank-side clutch the motor shaft is its own coordinate: the
+        # crank rpm still gates rider-intent boost while shaft rpm drives stall
+        # accounting, the torque curve and the power ceiling. They coincide
+        # when there is no clutch.
+        shaft = rpm if shaft_rpm is None else scalar(shaft_rpm,'motor shaft rpm')
         if braking:
             self.reset()
             return 0.
@@ -84,17 +90,17 @@ class AssistController:
             self.pedaling,self.age,self.torque = False,age,0.
             self.stall_s,self.stalled,self._boost_target = 0.,False,None
             return 0.
-        if abs(rpm) >= self.spin_rpm:
+        if abs(shaft) >= self.spin_rpm:
             self.stall_s = 0.
             self.stalled = False
         elif pressing:
             self.stall_s += dt
             if self.stall_s > self.stall_timeout_s:
                 self.stalled = True
-        omega = rpm*2*pi/60
+        omega = shaft*2*pi/60
         ceiling = self.max_torque
         if self.torque_curve is not None:
-            ceiling = min(ceiling,float(np.interp(rpm,self.torque_curve[:,0],self.torque_curve[:,1])))
+            ceiling = min(ceiling,float(np.interp(shaft,self.torque_curve[:,0],self.torque_curve[:,1])))
         if omega > 0:
             ceiling = min(ceiling,self.max_power/omega)
         taper = max(0.,min(1.,(self.cutoff-abs(speed))/self.width))

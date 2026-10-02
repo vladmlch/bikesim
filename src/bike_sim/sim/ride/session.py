@@ -89,6 +89,7 @@ class RideSession:
 
         self.braking = False
         self.brake_strength = DEFAULT_BRAKE_STRENGTH
+        self._reposition_pulse = False
         # (time_s, x_m, mode) for every mid-drive switch made while riding. A run with
         # entries here is several experiments in a trench coat: the pedalling spectrum is
         # only meaningful over a stretch with one assist mode.
@@ -170,6 +171,26 @@ class RideSession:
         self.braking = not self.braking
         return self.braking
 
+    def request_crank_reposition(self) -> bool:
+        """
+        Queues one crank-reposition pulse for the next physical step.
+
+        Returns:
+            Whether the request was accepted; the maneuver needs the
+            articulated rider and the drive.motor_clutch topology.
+        """
+        physics = getattr(self.sim, "physics_config", None)
+        rider = getattr(getattr(self.sim, "rider", None), "variant", None)
+        if (physics is None or physics.physics_mode != "physical"
+                or physics.drive_mode != "articulated_effort"
+                or rider != "articulated_planar"
+                or not physics.drive.motor_clutch):
+            print("\n[KEY V] Crank reposition needs drive.motor_clutch and the articulated rider.")
+            return False
+        self._reposition_pulse = True
+        print("\n[KEY V] Crank reposition requested (one backpedal to the power phase).")
+        return True
+
     def adjust_brake_strength(self, delta: float) -> float:
         """
         Steps the lever position the brake toggle applies.
@@ -216,7 +237,7 @@ class RideSession:
     def print_help(self) -> None:
         """Displays the ride-mode control help in the terminal."""
         if self.sim.physics_config.physics_mode == "physical":
-            print("Physical ride: Space brakes; ,/. brake strength; R reset; C/1/2 camera; T telemetry; G markers.")
+            print("Physical ride: Space brakes; ,/. brake strength; R reset; V crank reposition; C/1/2 camera; T telemetry; G markers.")
             print("W/S changes the target only in ideal_speed_control. Material and drive tuning is fixed per run.")
         else:
             self.hud.print_help()
@@ -263,7 +284,12 @@ class RideSession:
                 return self.outcome
 
             demand = self.brake_strength if self.braking else 0.0
-            self.sim.step(demand, demand)
+            control = None
+            if self._reposition_pulse:
+                from bike_sim.sim.ride.control import RideControl
+                control = RideControl(crank_reposition=True)
+                self._reposition_pulse = False
+            self.sim.step(demand, demand, control=control)
             return None
 
     def hud_line(self) -> str:

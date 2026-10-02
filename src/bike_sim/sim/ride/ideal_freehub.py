@@ -7,26 +7,40 @@ from bike_sim.sim.ride.physical_mapping import resolve_id
 
 
 class IdealFreehubConstraint:
-    def __init__(self, model, ratio):
+    """One-way coupling driver -> driven through an upper-limited fixed tendon.
+
+    The tendon measures ``ratio*driver - driven``; the upper boundary ratchets
+    down with any relative overrun so forward re-engagement has zero lash.
+    Defaults keep the historical cassette freehub (crank_spin drives
+    rear_wheel_spin); the crank-side motor clutch reuses the same class with
+    crank_spin -> drive_shaft_spin at ratio 1.
+    """
+    def __init__(self, model, ratio, *, tendon_name='ideal_mid_drive_freehub',
+                 driver='crank_spin', driven='rear_wheel_spin'):
         self.ratio = scalar(ratio, 'gear ratio', positive=True)
-        self.tendon_id = resolve_id(model, mujoco.mjtObj.mjOBJ_TENDON, 'ideal_mid_drive_freehub')
-        self.crank_qpos = int(model.joint('crank_spin').qposadr[0])
-        self.wheel_qpos = int(model.joint('rear_wheel_spin').qposadr[0])
-        self.wheel_dof = int(model.joint('rear_wheel_spin').dofadr[0])
-        crank_joint = model.joint('crank_spin').id
+        self.tendon_id = resolve_id(model, mujoco.mjtObj.mjOBJ_TENDON, tendon_name)
+        self.driver_qpos = int(model.joint(driver).qposadr[0])
+        self.driver_dof = int(model.joint(driver).dofadr[0])
+        self.driven_qpos = int(model.joint(driven).qposadr[0])
+        self.driven_dof = int(model.joint(driven).dofadr[0])
+        driver_joint = model.joint(driver).id
         path_start = int(model.tendon_adr[self.tendon_id])
         path_end = path_start + int(model.tendon_num[self.tendon_id])
         coefficients = [index for index in range(path_start, path_end)
                         if model.wrap_type[index] == mujoco.mjtWrap.mjWRAP_JOINT
-                        and model.wrap_objid[index] == crank_joint]
+                        and model.wrap_objid[index] == driver_joint]
         if len(coefficients) != 1:
-            raise ValueError('ideal freehub needs one crank joint coefficient')
-        self.crank_coefficient = coefficients[0]
+            raise ValueError('ideal freehub needs one driver joint coefficient')
+        self.driver_coefficient = coefficients[0]
         self.constant_data = mujoco.MjData(model)
         self.boundary = None
 
     def _relative_angle(self, data):
-        return float(self.ratio * data.qpos[self.crank_qpos] - data.qpos[self.wheel_qpos])
+        return float(self.ratio * data.qpos[self.driver_qpos] - data.qpos[self.driven_qpos])
+
+    def relative_rate(self, data):
+        """Tendon-length rate: positive while the driver outruns the driven."""
+        return float(self.ratio * data.qvel[self.driver_dof] - data.qvel[self.driven_dof])
 
     def reset(self, model, data):
         self.boundary = self._relative_angle(data)
@@ -43,7 +57,7 @@ class IdealFreehubConstraint:
             return
         previous_relative = self._relative_angle(data)
         self.ratio = ratio
-        model.wrap_prm[self.crank_coefficient] = ratio
+        model.wrap_prm[self.driver_coefficient] = ratio
         mujoco.mj_setConst(model, self.constant_data)
         relative = self._relative_angle(data)
         self.boundary = (relative if self.boundary is None

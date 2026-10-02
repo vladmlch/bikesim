@@ -1,4 +1,5 @@
 """Motor-policy lifecycle shared by interactive and unattended experiments."""
+from dataclasses import replace
 from hashlib import sha256
 from importlib import import_module
 import inspect
@@ -50,7 +51,8 @@ class PolicySession:
             policy=_metadata(self.policy, self.reference),
             operator_events=self.operator_events, operator_intervention=False)
 
-    def advance(self, *, front_brake_demand=0., rear_brake_demand=0.):
+    def advance(self, *, front_brake_demand=0., rear_brake_demand=0.,
+                crank_reposition=False):
         if self.env.done:
             raise RuntimeError('episode has ended')
         try:
@@ -60,16 +62,19 @@ class PolicySession:
             if (command.human_torque_nm is not None or command.posture is not None
                     or not command.rider_enabled):
                 raise ValueError('motor policy cannot own rider inputs')
+            if crank_reposition:
+                command = replace(command, crank_reposition=True)
         except Exception as error:
             self.env.terminated = True
             self.env.reason = 'policy_error'
             self.env.error = f'{type(error).__name__}: {error}'
             raise
-        if front_brake_demand or rear_brake_demand:
+        if front_brake_demand or rear_brake_demand or crank_reposition:
             self.operator_events.append({
                 'time_s': self.env.sim.time_s,
                 'front_brake_demand': front_brake_demand,
                 'rear_brake_demand': rear_brake_demand,
+                'crank_reposition': bool(crank_reposition),
             })
             self.env.run_metadata['operator_intervention'] = True
         return self.env.step(command, front_brake_demand=front_brake_demand,

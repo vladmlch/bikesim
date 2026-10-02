@@ -97,6 +97,9 @@ class RideInputHandler:
             ((44,), lambda: self._adjust_brake_strength(-BRAKE_STRENGTH_STEP, ",")),
             ((82, 114), self._on_reset_run),
             ((69, 101), self._on_cycle_assist),
+            # One crank-reposition maneuver per press; physical mode with the
+            # motor clutch only (the session reports and refuses otherwise).
+            ((86, 118), s.request_crank_reposition),
             # System / views. `B` is deliberately unbound in ride mode: the rider variant
             # changes the compiled model's coordinates and is a command-line choice.
             ((67, 99), self._on_cycle_camera),

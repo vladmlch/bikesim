@@ -61,7 +61,7 @@ def test_common_translation_rotation_invariance():
 def test_live_state_unchanged_and_gear_change_preserves_physical_gap():
     m,d,g=model('articulated_planar');hub=GeometricFreehubConstraint(m,g)
     hub.reset(m,d)
-    d.qpos[hub.wheel_qpos]+=.2;forward(m,d)
+    d.qpos[hub.driven_qpos]+=.2;forward(m,d)
     # An opened freehub gap, before a ratchet takes up the new boundary.
     old_phi,_=transmission_geometry(m,d,g);old_gap=hub.boundary-old_phi
     q=d.qpos.copy();v=d.qvel.copy();time=d.time
@@ -76,7 +76,7 @@ def test_live_state_unchanged_and_gear_change_preserves_physical_gap():
 
 def test_initial_candidates_do_not_accumulate_a_temporal_ratchet():
     m,d,g=model();hub=GeometricFreehubConstraint(m,g);hub.reset(m,d);boundary=hub.boundary;q=d.qpos.copy()
-    d.qpos[hub.wheel_qpos]+=1.;hub.prepare_initial_candidate(m,d,boundary)
+    d.qpos[hub.driven_qpos]+=1.;hub.prepare_initial_candidate(m,d,boundary)
     d.qpos[:]=q;hub.prepare_initial_candidate(m,d,boundary)
     assert hub.boundary==pytest.approx(boundary)
 

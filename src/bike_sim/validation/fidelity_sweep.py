@@ -169,7 +169,9 @@ def interval_row(sim,tracker):
          'com_x_m':truth.com_x_m,'com_z_m':truth.com_z_m,
          'fork_travel_m':c['suspension']['fork_travel_m'],'shock_stroke_m':c['suspension']['shock_stroke_m'],
          'human_torque_nm':c['drive'].get('human_sensor_nm',0.),'motor_torque_nm':c['drive'].get('motor_torque_nm',0.),
-         'crank_rad_s':c['drive'].get('crank_rad_s',0.),'rear_slip_mps':truth.rear_slip_mps,
+         'crank_rad_s':c['drive'].get('crank_rad_s',0.),
+         'drive_shaft_rad_s':c['drive'].get('drive_shaft_rad_s',c['drive'].get('crank_rad_s',0.)),
+         'rear_slip_mps':truth.rear_slip_mps,
          'joint_positive_power_w':c.get('rider_positive_power_w',0.),'control':dict(c['control']),
          'model_status':dict(c['model_status']),'energy':dict(c['energy']),
          'energy_residual_ratio':quality.residual_ratio}
@@ -206,7 +208,10 @@ def metrics_from_rows(rows,expected_duration_s,initial_state_sha256):
                                and r['energy_residual_ratio'] <= .05 for r in rows),
         'max_energy_residual_ratio':max(r['energy_residual_ratio'] for r in rows),
         'joint_positive_work_j':interval_integral(rows,'joint_positive_power_w'),
-        'motor_shaft_work_j':interval_integral([{**r,'power':r['motor_torque_nm']*r['crank_rad_s']} for r in rows],'power'),
+        # Motor torque acts on the drive shaft when present, else on the crank.
+        'motor_shaft_work_j':interval_integral(
+            [{**r,'power':r['motor_torque_nm']*r.get('drive_shaft_rad_s',r['crank_rad_s'])}
+             for r in rows],'power'),
         'human_crank_work_j':interval_integral([{**r,'power':r['human_torque_nm']*r['crank_rad_s']} for r in rows],'power'),
         'max_pitch_rad':max(r['pitch_rad'] for r in rows),
         'com_dx_m':rows[-1]['com_x_m']-rows[0]['com_x_m'],

@@ -230,10 +230,10 @@ def test_coast_override_does_not_require_an_active_gear_constraint():
 def test_shift_updates_native_ratio_without_pose_velocity_or_slack_jump(drive_rig):
     model, data, drive = drive_rig
     hub = drive.ideal_hub
-    data.qpos[hub.crank_qpos] = 100.
-    data.qpos[hub.wheel_qpos] = 70.
+    data.qpos[hub.driver_qpos] = 100.
+    data.qpos[hub.driven_qpos] = 70.
     hub.reset(model, data)
-    data.qpos[hub.wheel_qpos] += .25
+    data.qpos[hub.driven_qpos] += .25
     gap = hub.boundary - hub._relative_angle(data)
     positions, velocities = data.qpos.copy(), data.qvel.copy()
     hub.set_ratio(model, data, 34. / 45.)
@@ -242,7 +242,7 @@ def test_shift_updates_native_ratio_without_pose_velocity_or_slack_jump(drive_ri
     np.testing.assert_array_equal(data.qvel, velocities)
     mujoco.mj_forward(model, data)
     assert data.ten_length[hub.tendon_id] == pytest.approx(hub._relative_angle(data))
-    assert model.wrap_prm[hub.crank_coefficient] == pytest.approx(34. / 45.)
+    assert model.wrap_prm[hub.driver_coefficient] == pytest.approx(34. / 45.)
     weight = float(model.tendon_invweight0[hub.tendon_id])
     reference = mujoco.MjData(model)
     mujoco.mj_setConst(model, reference)

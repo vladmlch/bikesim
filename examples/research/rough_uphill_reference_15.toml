@@ -1,0 +1,12 @@
+name = "research_reference_15_small_washboard"
+length_m = 60.0
+description = "Synthetic reference, 15 percent hardpack climb with 20 mm washboard; not a user-route reconstruction"
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [8.0, 0.0], [15.0, 0.15], [48.0, 0.15], [55.0, 0.0], [60.0, 0.0]] }
+
+[[obstacles]]
+type = "washboard"
+start_m = 24.0
+amplitude_m = 0.02
+wavelength_m = 1.0
+n_waves = 5

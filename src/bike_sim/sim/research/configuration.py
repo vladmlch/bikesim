@@ -51,6 +51,9 @@ def resolve_research_physics(default_config, args):
     if ('timestep_s' not in overrides and transmission in DEFAULT_TIME_STEPS
             and transmission != default_config.drive.transmission_model):
         overrides['timestep_s'] = DEFAULT_TIME_STEPS[transmission]
+    if 'closure_time_constant_s' not in overrides and 'timestep_s' in overrides:
+        if overrides['timestep_s'] * 2.0 > data.get('closure_time_constant_s', 0.001):
+            overrides['closure_time_constant_s'] = 0.0025
     return resolve_physics_config(data, overrides)
 
 

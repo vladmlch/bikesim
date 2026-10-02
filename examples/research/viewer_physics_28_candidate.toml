@@ -1,0 +1,228 @@
+# Explicit candidate; not real-world safety validation.
+physics_mode = "physical"
+drive_mode = "articulated_effort"
+timestep_s = 0.000625
+pitch_assist = false
+initial_speed_mps = 0.0
+initial_front_brake = 1.0
+initial_rear_brake = 1.0
+closure_time_constant_s = 0.0025
+equilibrium_refine_after_s = 1.0
+equilibrium_refine_period_s = 3.0
+equilibrium_cache_enabled = true
+
+[end_stops]
+reference_force_n = 7000.0
+reference_deflection_m = 0.01
+damping_n_s_m = 500.0
+overtravel_m = 0.01
+provenance = "synthetic"
+
+[tires]
+backend = "distributed_2d_reference"
+significant_delta_m = 0.0001
+significance_fraction = 0.05
+distinct_normal_deg = 20.0
+surface_mode = "track"
+
+[tires.front]
+tangent_k_n_m = 20000.0
+mu = 1.1
+relaxation_length_m = 0.2
+
+[tires.front.material]
+deflection_m = [0.0, 0.001, 0.001894736842105263, 0.002789473684210526, 0.003684210526315789, 0.004578947368421052, 0.0054736842105263155, 0.006368421052631578, 0.007263157894736841, 0.008157894736842104, 0.009052631578947368, 0.009947368421052632, 0.010842105263157892, 0.011736842105263157, 0.01263157894736842, 0.013526315789473681, 0.014421052631578946, 0.01531578947368421, 0.01621052631578947, 0.017105263157894735, 0.018]
+force_n = [0.0, 22.352839524601492, 58.67491061227339, 104.5586033847774, 159.23987189548717, 233.44021382209058, 340.3309290252099, 468.4327084374644, 613.3856751448376, 773.0833065598706, 946.3221676679004, 1132.1666372414957, 1329.6167423956647, 1537.881231976447, 1756.2487686653913, 1984.0099992065586, 2222.144368916112, 2468.8518042072083, 2723.6870105745747, 2988.5288377862043, 3261.3361165274473]
+radial_c_ns_m = 0.0
+pressure_pa_gauge = 100000.0
+provenance = "synthetic-profile-test"
+valid_load_range_n = [0.0, 3261.3361165274473]
+
+[tires.rear]
+tangent_k_n_m = 20000.0
+mu = 1.1
+relaxation_length_m = 0.2
+
+[tires.rear.material]
+deflection_m = [0.0, 0.001, 0.001894736842105263, 0.002789473684210526, 0.003684210526315789, 0.004578947368421052, 0.0054736842105263155, 0.006368421052631578, 0.007263157894736841, 0.008157894736842104, 0.009052631578947368, 0.009947368421052632, 0.010842105263157892, 0.011736842105263157, 0.01263157894736842, 0.013526315789473681, 0.014421052631578946, 0.01531578947368421, 0.01621052631578947, 0.017105263157894735, 0.018]
+force_n = [0.0, 23.081340285122216, 60.40824899367992, 107.78297125078564, 163.53728876028111, 239.90779859027168, 350.4808278843744, 482.11351510834766, 630.7916295298503, 795.4225321813049, 973.2746673010092, 1163.6743827062487, 1366.5130969894785, 1580.1631759974757, 1804.6265526888142, 2039.4846506207148, 2284.3759861370736, 2538.0797554884875, 2801.1966549559793, 3072.971265029047, 3351.8457721189843]
+radial_c_ns_m = 0.0
+pressure_pa_gauge = 100000.0
+provenance = "synthetic-profile-test"
+valid_load_range_n = [0.0, 3351.8457721189843]
+
+[tires.distributed]
+station_count = 128
+fitting_dataset_id = "none-synthetic"
+valid_load_range_n = [0.0, 2000.0]
+valid_deflection_range_m = [0.0, 0.04]
+calibration_status = "experimental_unvalidated"
+
+[tires.distributed.density]
+knots_m = [0.0, 0.004, 0.012]
+stiffness_n_m = [300000.0, 0.0, 0.0]
+damping_ns_m = 2000.0
+provenance = "synthetic density; not fitted or measured"
+
+[tires.distributed.front_material]
+fitting_dataset_id = "synthetic-front"
+valid_load_range_n = [0.0, 3261.3361165274473]
+valid_deflection_range_m = [0.0, 0.018]
+calibration_status = "experimental_unvalidated"
+
+[tires.distributed.front_material.density]
+knots_m = [0.0, 0.004]
+stiffness_n_m = [230000.0, 300000.0]
+damping_ns_m = 0.0
+provenance = "synthetic-profile-test"
+
+[tires.distributed.rear_material]
+fitting_dataset_id = "synthetic-rear"
+valid_load_range_n = [0.0, 3351.8457721189843]
+valid_deflection_range_m = [0.0, 0.018]
+calibration_status = "experimental_unvalidated"
+
+[tires.distributed.rear_material.density]
+knots_m = [0.0, 0.004]
+stiffness_n_m = [230000.0, 300000.0]
+damping_ns_m = 0.0
+provenance = "synthetic-profile-test"
+
+[drive]
+transmission_model = "ideal_mid_drive"
+human_torque_nm = 20.0
+torque_ripple = 0.35
+crank_phase_rad = 0.0
+chain_k_n_m = 200000.0
+chain_c_ns_m = 10.0
+freehub_k_nm_rad = 1000.0
+freehub_c_nms_rad = 0.5
+bearing_c_nms_rad = 0.03
+brake_ceiling_nm = 200.0
+motor_clutch = false
+
+[drive.gearing]
+front_teeth = 34
+rear_teeth = 51
+chain_pitch_m = 0.0127
+
+[drive.assist]
+gain = 4.0
+max_torque = 85.0
+max_power = 600.0
+tau = 0.3
+slew = 400.0
+stop_delay = 0.3
+engage_torque_nm = 4.0
+spin_rpm = 15.0
+stall_timeout_s = 1.0
+boost_s = 0.4
+cutoff_mps = 6.944444444444445
+taper_width_mps = 0.5555555555555556
+torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
+
+[drive.battery]
+enabled = false
+energy_j = 1800000.0
+copper_w_per_nm2 = 0.02
+speed_w_per_rad_s2 = 0.0
+idle_w = 5.0
+
+[drive.pedaling]
+enabled = true
+coast_above_rpm = 110.0
+resume_below_rpm = 90.0
+stop_time_s = 0.35
+mash_cadence_rpm = 45.0
+mash_torque_nm = 60.0
+effort_slew_nm_s = 300.0
+rollback_brake = false
+rollback_engage_mps = 0.25
+rollback_release_mps = 0.0
+rollback_demand = 1.0
+reposition_on_stall = false
+reposition_min_effort_nm = 20.0
+reposition_stall_cadence_rpm = 12.0
+reposition_stall_dwell_s = 0.5
+reposition_cooldown_s = 1.0
+reposition_back_rate_rad_s = 3.0
+reposition_timeout_s = 3.0
+reposition_phase_tolerance_rad = 0.05
+reposition_noop_rad = 0.12
+
+[drive.shifting]
+enabled = true
+cassette = [10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51]
+target_cadence_min_rpm = 80.0
+target_cadence_max_rpm = 110.0
+shift_cooldown_s = 0.4
+shift_cut_duration_s = 0.2
+torque_factor = 0.3
+cadence_smoothing_tau_s = 0.35
+upshift_slip_limit_mps = 0.5
+upshift_slip_mode = "magnitude"
+
+[resistance]
+crr = 0.015
+rolling_taper_rad_s = 0.2
+rho_kg_m3 = 1.2
+cda_m2 = 0.5
+wind_world_mps = [0.0, 0.0, 0.0]
+point_body_m = [0.0, 0.0, 0.5]
+
+[articulated]
+pedal_support_fraction = 0.33
+bar_support_fraction = 0.12
+posture_sole_depth_m = 0.003
+swing_clearance_m = 0.003
+coasting_brake_d_nm_s_rad = 2.0
+coasting_brake_limit_nm = 60.0
+stance_blend_load_n = 50.0
+posture_pitch_k_nm_rad = 600.0
+posture_pitch_d_nms_rad = 60.0
+posture_pitch_limit_nm = 120.0
+posture_translation_k_n_m = 1500.0
+posture_translation_d_ns_m = 150.0
+posture_translation_limit_n = 400.0
+saddle_patch_half_length_m = 0.045
+pedal_patch_half_length_m = 0.025
+support_pad_radius_m = 0.02
+support_k_n_m = 100000.0
+support_c_ns_m = 500.0
+pedal_c_ns_m = 100.0
+support_tangent_k_n_m = 20000.0
+support_mu = 0.8
+support_length_m = 0.1
+grip_k_n_m = 4000.0
+grip_c_ns_m = 150.0
+grip_release_distance_m = 0.3
+grip_pair_force_limit_n = 600.0
+grip_capture_distance_m = 0.02
+grip_capture_speed_mps = 0.2
+arm_reach_fraction = 0.92
+joint_kp_nm_rad = 600.0
+joint_kd_nms_rad = 15.0
+joint_limit_nm = 100.0
+joint_speed_limit_rad_s = 20.0
+joint_power_limit_w = 250.0
+joint_envelope_path = "/Users/vladislav.molchanov/Desktop/Projects_my/mujoco_sim_new2/examples/research/rider_joint_envelope_anatomical.json"
+joint_envelope_soft_margin_rad = 0.1
+joint_envelope_soft_k_nm_rad = 100.0
+activation_tau_s = 0.0
+active_positive_power_limit_w = 600.0
+pedal_attachment = "flat"
+saddle_attachment = "flat"
+grip_attachment = "spring"
+
+[seated_climb]
+enabled = false
+period_s = 0.01
+reaction_delay_s = 0.15
+target_crank_power_w = 225.0
+max_crank_torque_nm = 60.0
+torque_slew_nm_s = 300.0
+lean_gain = 1.0
+max_forward_lean_rad = 0.35
+max_backward_lean_rad = 0.1
+lean_rate_rad_s = 0.5
+orientation_tau_s = 0.5

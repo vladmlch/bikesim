@@ -68,7 +68,7 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     # A smaller integration step must not silently shorten the physical settling
     # budget. The historical 40,000-step limit represented 20 seconds at 0.5 ms.
     if max_steps is None:
-        max_steps = round(20.0/dt)
+        max_steps = max(40000, round(20.0/dt))
     if isinstance(max_steps, bool) or not isinstance(max_steps, int) or max_steps <= 0:
         raise ValueError('equilibrium max_steps must be a positive integer')
     cycle = max(1, round(.02/dt))

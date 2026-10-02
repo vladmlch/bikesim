@@ -30,6 +30,28 @@ class HingeDensity:
 
 
 @dataclass(frozen=True)
+class DistributedWheelMaterial:
+    density: HingeDensity = field(default_factory=HingeDensity)
+    fitting_dataset_id: str = 'none-synthetic'
+    valid_load_range_n: tuple[float, float] = (0., 2000.)
+    valid_deflection_range_m: tuple[float, float] = (0., .04)
+    calibration_status: str = 'experimental_unvalidated'
+
+    def __post_init__(self):
+        if self.calibration_status != 'experimental_unvalidated':
+            raise ValueError('a material record cannot certify the plant')
+        if not isinstance(self.density, HingeDensity):
+            raise ValueError('an explicit density is required')
+        if not isinstance(self.fitting_dataset_id, str) or not self.fitting_dataset_id.strip():
+            raise ValueError('fitting dataset ID is required')
+        for name in ('valid_load_range_n', 'valid_deflection_range_m'):
+            value = tuple(float(x) for x in getattr(self, name))
+            if len(value) != 2 or not np.isfinite(value).all() or not 0 <= value[0] < value[1]:
+                raise ValueError('invalid per-wheel material domain')
+            object.__setattr__(self, name, value)
+
+
+@dataclass(frozen=True)
 class DistributedTireConfig:
     station_count: int = 128
     density: HingeDensity = field(default_factory=HingeDensity)
@@ -37,6 +59,8 @@ class DistributedTireConfig:
     valid_load_range_n: tuple[float, float] = (0., 2000.)
     valid_deflection_range_m: tuple[float, float] = (0., .04)
     calibration_status: str = 'experimental_unvalidated'
+    front_material: DistributedWheelMaterial | None = None
+    rear_material: DistributedWheelMaterial | None = None
 
     def __post_init__(self):
         station_angles(self.station_count)
@@ -52,6 +76,20 @@ class DistributedTireConfig:
         # Status is produced by evidence, never user-upgraded via a TOML label.
         if self.calibration_status != 'experimental_unvalidated':
             raise ValueError('distributed tire acceptance is evaluated in the validation report')
+        self.for_wheel('front')
+        self.for_wheel('rear')
+
+    def for_wheel(self, side: str) -> DistributedWheelMaterial:
+        if side not in ('front', 'rear'):
+            raise ValueError('wheel side must be front or rear')
+        selected = getattr(self, side + '_material')
+        if selected is not None:
+            if not isinstance(selected, DistributedWheelMaterial):
+                raise ValueError('invalid per-wheel distributed material')
+            return selected
+        return DistributedWheelMaterial(self.density, self.fitting_dataset_id,
+                                        self.valid_load_range_n, self.valid_deflection_range_m)
+
 
 
 def station_angles(count: int):

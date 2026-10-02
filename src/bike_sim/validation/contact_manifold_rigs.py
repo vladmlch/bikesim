@@ -81,7 +81,7 @@ def distributed_flat_rig(dt_s: float, station_count: int, load_n: float):
     if not np.isfinite(load_n) or load_n<=0:
         raise ValueError('axle load must be finite and positive')
     m,d,tire=wheel_stand(dt_s,station_count)
-    depth=brentq(lambda x:float(flat_load(x,.37,tire.material,station_count)[0])-load_n,1e-9,.1,xtol=1e-14)
+    depth=brentq(lambda x:float(flat_load(x,.37,tire.materials['front'].density,station_count)[0])-load_n,1e-9,.1,xtol=1e-14)
     d.qpos[1]=-depth;mujoco.mj_forward(m,d)
     rows,metrics=_run_stand(m,d,tire,load_n,.05)
     metrics.update(normal_force_n=float(np.mean([r['normal_load_n'] for r in rows])),deflection_m=depth,
@@ -108,7 +108,7 @@ def contact_case_vertices(case, terrain_dx_m):
 def distributed_road_trace(dt_s,station_count,terrain_dx_m,*,case='step',duration_s=.4):
     vertices=contact_case_vertices(case,terrain_dx_m)
     m,d,tire=wheel_stand(dt_s,station_count,vertices=vertices)
-    load=600.;depth=brentq(lambda x:float(flat_load(x,.37,tire.material,station_count)[0])-load,1e-9,.1)
+    load=600.;depth=brentq(lambda x:float(flat_load(x,.37,tire.materials['front'].density,station_count)[0])-load,1e-9,.1)
     d.qpos[0]=-.45;d.qpos[1]=float(np.interp(-.45,vertices[:,0],vertices[:,1]))-depth
     d.qvel[0]=2.;d.qvel[2]=2./.37
     mujoco.mj_forward(m,d)

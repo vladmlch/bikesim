@@ -26,7 +26,8 @@ class DistributedTireForceApplier:
         if config.surface_mode == 'track' and surface_map is None:
             raise ValueError('track material mode needs the actual track surface map')
         self.angles, self.weights = station_angles(config.distributed.station_count)
-        self.material = config.distributed.density
+        self.materials = {side: config.distributed.for_wheel(side)
+                          for side in ('front', 'rear')}
         self.geoms = {s:resolve_id(model, mujoco.mjtObj.mjOBJ_GEOM, 'geom_'+s+'_contact') for s in ('front','rear')}
         self.bodies = {s:int(model.geom_bodyid[g]) for s,g in self.geoms.items()}
         self.radii = {s:float(model.geom_size[g,0]) for s,g in self.geoms.items()}
@@ -61,7 +62,7 @@ class DistributedTireForceApplier:
         energy = 0.
         for side in self.geoms:
             _, _, ids, geometry = self._geometry(data, side)
-            energy += float(np.dot(self.weights[ids], density_response(-geometry.distance, self.material)[1]))
+            energy += float(np.dot(self.weights[ids], density_response(-geometry.distance, self.materials[side].density)[1]))
         # A detached station keeps its old energy until the next force interval
         # releases it as loss. Endpoint accounting must not discard it twice.
         for (side, sid), state in self.states.items():
@@ -95,8 +96,10 @@ class DistributedTireForceApplier:
             velocities = jacobians@data.qvel
             rate = -np.sum(velocities*normals,axis=1)
             penetration = -geometry.distance
-            normal_loads, elastic_energies = normal_station_response(penetration,rate,self.weights[ids],self.material)
-            elastic_density,_ = density_response(penetration,self.material)
+            domain = self.materials[side]
+            material = domain.density
+            normal_loads, elastic_energies = normal_station_response(penetration,rate,self.weights[ids],material)
+            elastic_density,_ = density_response(penetration,material)
             radial_power = float(np.sum(np.maximum(0.,(normal_loads-self.weights[ids]*elastic_density)*rate)))
             losses = 0.; shear_energy = 0.; patches = []
             for j, sid_value in enumerate(ids):
@@ -125,7 +128,6 @@ class DistributedTireForceApplier:
             max_depth=float(penetration.max()) if len(ids) else 0.
             center_clearance=float(self.profile.query(center[[0,2]][None,:]).distance[0])-self.radii[side]
             signed_overlap=max_depth if len(ids) else -max(0.,center_clearance)
-            domain=self.config.distributed
             distinct=any(float(a@b) < np.cos(np.radians(self.config.distinct_normal_deg))
                          for a in normals for b in normals) if len(ids)>1 else False
             # Separate material patches across a missing tread station are also

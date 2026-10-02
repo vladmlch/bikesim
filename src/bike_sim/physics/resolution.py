@@ -10,7 +10,7 @@ from bike_sim.physics.physical_config import (
 )
 from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.tire_curve import TabulatedTireSpec
-from bike_sim.physics.distributed_tire import DistributedTireConfig, HingeDensity
+from bike_sim.physics.distributed_tire import DistributedTireConfig, HingeDensity, DistributedWheelMaterial
 from bike_sim.physics.chain import DrivetrainSpecs
 from bike_sim.physics.seated_climb import SeatedClimbConfig
 
@@ -19,7 +19,10 @@ CHILDREN={
                              'drive':PhysicalDriveConfig,'resistance':ResistanceConfig,'articulated':ArticulatedConfig,
                              'seated_climb':SeatedClimbConfig},
     TireBackendConfig:{'front':TireParameters,'rear':TireParameters,'distributed':DistributedTireConfig},
-    DistributedTireConfig:{'density':HingeDensity},
+    DistributedTireConfig:{'density':HingeDensity,
+                           'front_material':DistributedWheelMaterial,
+                           'rear_material':DistributedWheelMaterial},
+    DistributedWheelMaterial:{'density':HingeDensity},
     TireParameters:{'material':TireSpec},
     PhysicalDriveConfig:{'gearing':DrivetrainSpecs,'assist':AssistConfig,'battery':BatteryConfig,
                          'pedaling':PedalingConfig,'shifting':ShiftingConfig},
@@ -49,7 +52,7 @@ def _construct(cls,values):
         raise ValueError(f'unknown {cls.__name__} parameter(s): {", ".join(sorted(unknown))}')
     kwargs=copy.deepcopy(values)
     for name,child in CHILDREN.get(cls,{}).items():
-        if name in kwargs:
+        if name in kwargs and kwargs[name] is not None:
             kwargs[name]=_construct(child,kwargs[name])
     try:
         return cls(**kwargs)

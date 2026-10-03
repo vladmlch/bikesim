@@ -9,6 +9,15 @@ import xml.etree.ElementTree as ET
 from numbers import Real
 
 
+def reference_joint_names() -> tuple[str, ...]:
+    """The 11 internal joints of the two-arm reference rider topology."""
+    return ('rider_torso_hinge',) + tuple(
+        f'rider_{joint}_{side}'
+        for side in ('left', 'right') for joint in ('shoulder', 'elbow')) + tuple(
+        f'rider_{joint}_{side}'
+        for side in ('front', 'rear') for joint in ('hip', 'knee', 'ankle'))
+
+
 def add_saddle_pin(root: ET.Element, solref_s: float) -> None:
     """Replace the legacy pelvis weld with a three-row `connect` equality.
 

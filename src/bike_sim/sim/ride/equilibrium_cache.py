@@ -78,7 +78,9 @@ def _state_arrays(runtime):
         state['state_rider_tangent_valid'] = np.asarray([
             value.tangent is not None for value in (rider.states[key] for key in keys)
         ], dtype=bool)
-        state['state_rider_grip_xi'] = np.asarray(rider.grip_xi_local, dtype=float)
+        # One shear vector per hand, stacked left-then-right.
+        state['state_rider_grip_xi'] = np.asarray(
+            [rider.grip_xi_local[side] for side in ('left', 'right')], dtype=float)
         state['state_rider_enabled'] = np.asarray([
             rider.enabled[name] for name in rider.CONTACTS
         ], dtype=bool)
@@ -143,9 +145,11 @@ def restore_state(runtime, state):
         if enabled.shape != (len(rider.CONTACTS),):
             return False
         rider.enabled = dict(zip(rider.CONTACTS, map(bool, enabled)))
-        rider.grip_xi_local = np.array(state['state_rider_grip_xi'], dtype=float, copy=True)
-        if rider.grip_xi_local.shape != (3,):
+        grip_xi = np.array(state['state_rider_grip_xi'], dtype=float, copy=True)
+        if grip_xi.shape != (2, 3):
             return False
+        rider.grip_xi_local = {side: grip_xi[index].copy()
+                               for index, side in enumerate(('left', 'right'))}
         pending = state['state_rider_pending_release_loss']
         if pending.shape != (1,):
             return False

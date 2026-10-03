@@ -9,7 +9,8 @@ from bike_sim.sim.ride.control import RideControl
 
 ROOT = Path(__file__).resolve().parents[1]
 WELDED = ROOT / 'examples' / 'research' / 'viewer_physics_welded.toml'
-SUPPORTS = ('saddle', 'front_pedal', 'rear_pedal', 'grip')
+SUPPORTS = ('saddle', 'front_pedal', 'rear_pedal', 'grip_left', 'grip_right')
+DIAGNOSTIC_SUPPORTS = ('saddle', 'front_pedal', 'rear_pedal', 'grip')
 
 
 def _environment(tmp_path, grade):
@@ -31,18 +32,19 @@ def _rider_weight(model):
 def _held_episode(tmp_path, grade, channel='rider_welds'):
     env = _environment(tmp_path, grade)
     samples = []
+    supports = DIAGNOSTIC_SUPPORTS if channel == 'rider' else SUPPORTS
     while not env.done:
         env.step(RideControl(motor_torque_nm=0., human_torque_nm=0.),
                  front_brake_demand=1., rear_brake_demand=1.)
         samples.append(env.sim.physical.sample.channels[channel])
-    return samples[len(samples)//2:], _rider_weight(env.sim.model)
+    return samples[len(samples)//2:], _rider_weight(env.sim.model), supports
 
 
 @pytest.mark.slow
 def test_held_rider_weight_is_carried_by_the_welds(tmp_path):
     """At rest every attachment together carries exactly the rider's weight, the saddle in compression."""
-    samples, weight = _held_episode(tmp_path, 0.)
-    vertical = np.mean([sum(w[k]['force_on_rider_n'][2] for k in SUPPORTS) for w in samples])
+    samples, weight, supports = _held_episode(tmp_path, 0.)
+    vertical = np.mean([sum(w[k]['force_on_rider_n'][2] for k in supports) for w in samples])
     assert vertical == pytest.approx(weight, rel=.01)
     assert np.mean([w['saddle']['normal_n'] for w in samples]) > .3*weight
     assert not any(w['saddle']['would_separate'] or w['saddle']['would_slip'] for w in samples)
@@ -55,8 +57,8 @@ def test_contact_diagnostics_carry_the_solved_weight(tmp_path):
     Regression: they were read from the zero-input forward pass at the top of
     apply_forces and summed to ~40 N for a 785 N rider, saddle in tension.
     """
-    samples, weight = _held_episode(tmp_path, 0., channel='rider')
-    vertical = np.mean([sum(r[k]['force_on_rider_n'][2] for k in SUPPORTS) for r in samples])
+    samples, weight, supports = _held_episode(tmp_path, 0., channel='rider')
+    vertical = np.mean([sum(r[k]['force_on_rider_n'][2] for k in supports) for r in samples])
     assert vertical == pytest.approx(weight, rel=.01)
     assert np.mean([r['saddle']['normal_load_n'] for r in samples]) > .3*weight
 
@@ -79,5 +81,5 @@ def test_torque_sensor_reads_the_previous_solved_crank_torque(tmp_path):
 @pytest.mark.slow
 def test_steep_grade_saddle_shear_exceeds_friction(tmp_path):
     """On a held 35 % grade the weld keeps the neutral rider from sliding back off the saddle."""
-    samples, _ = _held_episode(tmp_path, .35)
+    samples, _, _ = _held_episode(tmp_path, .35)
     assert all(w['saddle']['would_slip'] for w in samples)

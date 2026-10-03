@@ -181,7 +181,9 @@ class PhysicalInitialState:
         if drive.clutch is not None:
             drive.clutch.boundary=p['clutch_boundary'];drive.clutch.prepare(m,d)
         if runtime.rider_contacts is not None:
-            runtime.rider_contacts.grip_anchor_local=np.asarray(p['grip_anchor_local'],float).copy()
+            runtime.rider_contacts.grip_anchor_local={
+                side:np.asarray(anchor,float).copy()
+                for side,anchor in p['grip_anchor_local'].items()}
             runtime.rider_contacts.restart_clock()
         if runtime.rider_control is not None:
             runtime.rider_control.active_state=np.asarray(p['active_state'],float).copy()

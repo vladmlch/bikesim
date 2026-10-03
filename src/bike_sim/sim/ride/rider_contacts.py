@@ -58,9 +58,12 @@ class RiderContactApplier:
         self.frame=resolve_id(model,obj.mjOBJ_BODY,'frame')
         self.steer=resolve_id(model,obj.mjOBJ_BODY,'steer')
         self.pelvis=resolve_id(model,obj.mjOBJ_BODY,'rider_pelvis')
-        self.forearm=resolve_id(model,obj.mjOBJ_BODY,'rider_forearm_pair')
-        self.shoulder=resolve_id(model,obj.mjOBJ_BODY,'rider_upper_arm_pair')
-        self.grip_site=resolve_id(model,obj.mjOBJ_SITE,'site_rider_grip')
+        self.forearms={side:resolve_id(model,obj.mjOBJ_BODY,f'rider_forearm_{side}')
+                       for side in ('left','right')}
+        self.shoulders={side:resolve_id(model,obj.mjOBJ_BODY,f'rider_upper_arm_{side}')
+                        for side in ('left','right')}
+        self.grip_sites={side:resolve_id(model,obj.mjOBJ_SITE,f'site_rider_grip_{side}')
+                         for side in ('left','right')}
         self.arm_reach=float(np.linalg.norm(pose.shoulder-pose.elbow)+np.linalg.norm(pose.elbow-pose.grip))
         self.supports={
             'saddle':(self.pelvis,resolve_id(model,obj.mjOBJ_SITE,'site_rider_saddle'),
@@ -84,20 +87,24 @@ class RiderContactApplier:
         self._saddle_link = (SaddleWeld(model) if self.welded_saddle
                              else SaddlePin(model) if self.pinned_saddle else None)
         self.welded_grip = config.grip_attachment == 'weld'
-        self._grip_connect = GripConnect(model) if self.welded_grip else None
+        self._grip_connect = ({side:GripConnect(model,side) for side in ('left','right')}
+                              if self.welded_grip else None)
         self.reset(model,None)
 
     def reset(self,model,data):
         self._model,self._data=model,data
         self.enabled={name:True for name in self.CONTACTS}
         self.states={f"{name}:{i}":_SupportState() for name in self.supports for i in range(2)}
-        self.grip_xi_local=np.zeros(3)
-        self.grip_anchor_local=None
+        self.grip_xi_local={side:np.zeros(3) for side in ('left','right')}
+        self.grip_anchor_local={side:None for side in ('left','right')}
         if data is not None:
             validate_planar_support_model(model,data,[entry[3] for entry in self.supports.values()])
-            frame_R=data.xmat[self.frame].reshape(3,3)
-            world_anchor=data.xpos[self.frame]+frame_R@self.pose.grip
-            self.grip_anchor_local=data.xmat[self.steer].reshape(3,3).T@(world_anchor-data.xpos[self.steer])
+            steer_R=data.xmat[self.steer].reshape(3,3)
+            for side in ('left','right'):
+                # Each hand grasps its own bar point: the site position at
+                # reset is the coincident anchor of its connect equality.
+                self.grip_anchor_local[side]=steer_R.T@(
+                    data.site_xpos[self.grip_sites[side]]-data.xpos[self.steer])
         self.elastic_energy_j=0.
         self.loss_step_j=0.
         self.radial_dissipation_power_w=0.
@@ -119,8 +126,10 @@ class RiderContactApplier:
             return True   # a weld or pin cannot be released
         if not enabled and self.enabled[name]:
             if name=='grip':
-                self.pending_release_loss_j+=.5*self.config.grip_k_n_m*float(self.grip_xi_local@self.grip_xi_local)
-                self.grip_xi_local[:]=0.
+                for side in ('left','right'):
+                    xi=self.grip_xi_local[side]
+                    self.pending_release_loss_j+=.5*self.config.grip_k_n_m*float(xi@xi)
+                    self.grip_xi_local[side]=np.zeros(3)
             else:
                 for i in range(2):
                     key=f"{name}:{i}"
@@ -136,19 +145,21 @@ class RiderContactApplier:
                         if inside:
                             self.pending_release_loss_j+=.25*self.config.support_k_n_m*max(-gap,0.)**2
         if name=='grip' and enabled and not self.enabled[name]:
-            if self._data is None or self.grip_anchor_local is None:
+            if self._data is None or any(self.grip_anchor_local[s] is None for s in ('left','right')):
                 return False
             import mujoco
             model,data=self._model,self._data
             mujoco.mj_kinematics(model,data); mujoco.mj_comPos(model,data)
             R=data.xmat[self.steer].reshape(3,3)
-            grip=data.xpos[self.steer]+R@self.grip_anchor_local
-            gap=float(np.linalg.norm(data.site_xpos[self.grip_site]-grip))
-            jac=relative_point_jacobian(model,data,self.forearm,self.steer,grip,self._jac_a,self._jac_b)
-            speed=float(np.linalg.norm(jac@data.qvel))
-            if gap>self.config.grip_capture_distance_m or speed>self.config.grip_capture_speed_mps:
-                return False
-            self.grip_xi_local[:]=0.
+            for side in ('left','right'):
+                grip=data.xpos[self.steer]+R@self.grip_anchor_local[side]
+                gap=float(np.linalg.norm(data.site_xpos[self.grip_sites[side]]-grip))
+                jac=relative_point_jacobian(model,data,self.forearms[side],self.steer,grip,self._jac_a,self._jac_b)
+                speed=float(np.linalg.norm(jac@data.qvel))
+                if gap>self.config.grip_capture_distance_m or speed>self.config.grip_capture_speed_mps:
+                    return False
+            for side in ('left','right'):
+                self.grip_xi_local[side][:]=0.
         self.enabled[name]=enabled
         return bool(self.enabled[name])
 
@@ -190,7 +201,8 @@ class RiderContactApplier:
 
     def stored_energy(self, model, data):
         cfg=self.config
-        energy=.5*cfg.grip_k_n_m*float(self.grip_xi_local@self.grip_xi_local)
+        energy=sum(.5*cfg.grip_k_n_m*float(self.grip_xi_local[s]@self.grip_xi_local[s])
+                   for s in ('left','right'))
         for name,entry in self.supports.items():
             if (self.welded_pedals and name.endswith('_pedal')
                     or self.linked_saddle and name == 'saddle'):
@@ -247,7 +259,9 @@ class RiderContactApplier:
                           'would_separate':normal<0.,
                           'would_slip':abs(shear)>self.config.support_mu*max(normal,0.)}
         if self.welded_grip:
-            result['grip']={'force_on_rider_n':self._grip_connect.force_on_rider_n(model,data,rows=rows).tolist()}
+            for side in ('left','right'):
+                force=self._grip_connect[side].force_on_rider_n(model,data,rows=rows)
+                result['grip_'+side]={'force_on_rider_n':force.tolist()}
         crank=(self._welds.delivered_crank_torque_nm(model,data,rows=rows)
                if self.welded_pedals else 0.)
         self._settled_welds=(copy.deepcopy(result),crank)
@@ -302,15 +316,20 @@ class RiderContactApplier:
                     rotational=rotational,half_patch_m=half,rows=rows)
             except ValueError:
                 errors.append(out+':unobservable_attachment_wrench')
-        if self.welded_grip and self.grip_anchor_local is not None:
-            grip=data.xpos[self.steer]+data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local
-            pull=data.xpos[self.pelvis]-grip
-            try:
-                samples['grip']=attachment_sample(model,data,self._grip_connect.eq_id,
-                    self.forearm,self.steer,grip,pull,'grip',rotational=False,
-                    pull_direction=pull,rows=rows)
-            except ValueError:
-                errors.append('grip:unobservable_attachment_wrench')
+        if self.welded_grip:
+            for side in ('left','right'):
+                anchor=self.grip_anchor_local[side]
+                if anchor is None:
+                    continue
+                grip=data.xpos[self.steer]+data.xmat[self.steer].reshape(3,3)@anchor
+                pull=data.xpos[self.pelvis]-grip
+                try:
+                    samples['grip_'+side]=attachment_sample(model,data,
+                        self._grip_connect[side].eq_id,self.forearms[side],self.steer,
+                        grip,pull,'grip',rotational=False,
+                        pull_direction=pull,rows=rows)
+                except ValueError:
+                    errors.append('grip_'+side+':unobservable_attachment_wrench')
         return samples,tuple(errors)
 
     def _settled(self,name):
@@ -341,7 +360,7 @@ class RiderContactApplier:
         time=float(data.time)
         if self.last_time_s is not None and time<=self.last_time_s:
             raise ValueError('rider contact state advances only once per timestamp')
-        if self.grip_anchor_local is None:
+        if any(self.grip_anchor_local[s] is None for s in ('left','right')):
             raise RuntimeError('initialize rider contact anchors before evaluation')
         cfg=self.config
         # One efc scan feeds every welded-attachment residual in this call.
@@ -447,25 +466,42 @@ class RiderContactApplier:
                 'moment_about_rider_origin_nm':group_moment.tolist(),
                 'radial_energy_j':group_radial,'shear_energy_j':group_shear,'relative_power_w':group_power})
         if self.welded_grip:
-            # The connect equality holds the hand on the bar: report its
-            # reaction instead of the disabled spring, and never release.
+            # The connect equalities hold each hand on its own bar point:
+            # report each reaction instead of the disabled springs, and never
+            # release. 'grip' stays the aggregate for consumers that read the
+            # pair; 'grip_left'/'grip_right' carry the per-hand detail.
+            R=data.xmat[self.steer].reshape(3,3)
+            total_force=np.zeros(3)
+            for side in ('left','right'):
+                connect=self._grip_connect[side]
+                anchor=grip=data.xpos[self.steer]+R@self.grip_anchor_local[side]
+                diagnostics['grip_'+side]={'enabled':True,'reachable':True,
+                    'hand_gap_m':connect.translation_residual_m(model,data,rows=eq_rows)}
+                if detailed:
+                    force,_=self._settled('grip_'+side)
+                    total_force+=force
+                    diagnostics['grip_'+side].update({
+                        'overloaded':False,'trial_pair_force_n':float(np.linalg.norm(force)),
+                        'pair_force_limit_n':cfg.grip_pair_force_limit_n,
+                        'release_loss_j':0.,
+                        'shoulder_distance_m':hypot(*(anchor-data.xpos[self.shoulders[side]])),
+                        'arm_reach_m':self.arm_reach,
+                        'point_m':grip.tolist(),
+                        'force_on_rider_n':force.tolist(),
+                        'force_on_bike_n':(-force).tolist(),'elastic_energy_j':0.})
+            left,right=(diagnostics['grip_'+s] for s in ('left','right'))
             diagnostics['grip']={'enabled':True,'reachable':True,
-                                 'hand_gap_m':self._grip_connect.translation_residual_m(model,data,rows=eq_rows)}
+                'hand_gap_m':max(left['hand_gap_m'],right['hand_gap_m'])}
             if detailed:
-                force,_=self._settled('grip')
                 diagnostics['grip'].update({
-                                 'overloaded':False,'trial_pair_force_n':float(np.linalg.norm(force)),
-                                 'pair_force_limit_n':cfg.grip_pair_force_limit_n,
-                                 'release_loss_j':0.,
-                                 'shoulder_distance_m':hypot(*(data.xpos[self.steer]
-                                     +data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local
-                                     -data.xpos[self.shoulder])),
-                                 'arm_reach_m':self.arm_reach,
-                                 'point_m':(data.xpos[self.steer]
-                                     +data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local).tolist(),
-                                 'force_on_rider_n':force.tolist(),
-                                 'force_on_bike_n':(-force).tolist(),'elastic_energy_j':0.})
-            self.states,self.grip_xi_local,self.diagnostics=new_states,np.zeros(3),diagnostics
+                    'overloaded':False,'trial_pair_force_n':float(np.linalg.norm(total_force)),
+                    'pair_force_limit_n':cfg.grip_pair_force_limit_n,
+                    'release_loss_j':0.,
+                    'shoulder_distance_m':max(left['shoulder_distance_m'],right['shoulder_distance_m']),
+                    'arm_reach_m':self.arm_reach,
+                    'force_on_rider_n':total_force.tolist(),
+                    'force_on_bike_n':(-total_force).tolist(),'elastic_energy_j':0.})
+            self.states,self.grip_xi_local,self.diagnostics=new_states,self.grip_xi_local,diagnostics
             self.elastic_energy_j,self.loss_step_j=energy,loss
             self.radial_dissipation_power_w=radial_power
             if self.welded_pedals:
@@ -473,46 +509,81 @@ class RiderContactApplier:
             self.delivered_crank_torque_nm=delivered
             self.pending_release_loss_j=0.; self.last_time_s=time
             return qfrc
+        # Spring grip: two hands, one 'grip' enable flag. Each hand grasps
+        # its own bar point with its own spring xi; the pair force limit is
+        # split evenly so total hand strength is preserved.
         R=data.xmat[self.steer].reshape(3,3)
-        grip=data.xpos[self.steer]+R@self.grip_anchor_local
-        hand=data.site_xpos[self.grip_site]
-        shoulder_gap=grip-data.xpos[self.shoulder]
-        hand_gap=hand-grip
-        reachable=(hypot(*shoulder_gap)<=self.arm_reach+1e-6
-                   and hypot(*hand_gap)<=cfg.grip_release_distance_m)
-        grip_active=self.enabled['grip'] and reachable
-        old=self.grip_xi_local
-        overloaded=False; trial_force_norm=0.
-        if grip_active:
-            jrel=relative_point_jacobian(model,data,self.forearm,self.steer,grip,self._jac_a,self._jac_b)
-            relative=jrel@data.qvel
-            new,force_local,grip_energy,grip_loss=_grip_step(old,R.T@relative,cfg.grip_k_n_m,cfg.grip_c_ns_m,dt)
-            force=R@force_local
-            trial_force_norm=float(np.linalg.norm(force))
-            if cfg.grip_pair_force_limit_n is not None:
-                from bike_sim.physics.grip_release import release_if_overloaded
-                force,release_loss,overloaded=release_if_overloaded(force,
-                    .5*cfg.grip_k_n_m*float(old@old),cfg.grip_pair_force_limit_n)
-                if overloaded:
-                    new=np.zeros(3); grip_energy=0.; grip_loss=release_loss
-                    grip_active=False; self.enabled['grip']=False
-            qfrc+=jrel.T@force
-        else:
-            new=np.zeros(3); force=np.zeros(3); grip_energy=0.
-            grip_loss=.5*cfg.grip_k_n_m*float(old@old)
+        total_force=np.zeros(3); pair_energy=0.; pair_loss=0.; overloaded=False
+        per_side={}
+        for side in ('left','right'):
+            grip=data.xpos[self.steer]+R@self.grip_anchor_local[side]
+            hand=data.site_xpos[self.grip_sites[side]]
+            shoulder_gap=grip-data.xpos[self.shoulders[side]]
+            hand_gap=hand-grip
+            reachable=(hypot(*shoulder_gap)<=self.arm_reach+1e-6
+                       and hypot(*hand_gap)<=cfg.grip_release_distance_m)
+            active=self.enabled['grip'] and reachable
+            old=self.grip_xi_local[side]
+            force=np.zeros(3); grip_energy=0.; trial_norm=0.
+            if active:
+                jrel=relative_point_jacobian(model,data,self.forearms[side],self.steer,
+                                             grip,self._jac_a,self._jac_b)
+                relative=jrel@data.qvel
+                new,force_local,grip_energy,grip_loss=_grip_step(
+                    old,R.T@relative,cfg.grip_k_n_m,cfg.grip_c_ns_m,dt)
+                force=R@force_local
+                trial_norm=float(np.linalg.norm(force))
+                if cfg.grip_pair_force_limit_n is not None:
+                    from bike_sim.physics.grip_release import release_if_overloaded
+                    force,release_loss,side_overloaded=release_if_overloaded(force,
+                        .5*cfg.grip_k_n_m*float(old@old),cfg.grip_pair_force_limit_n/2.)
+                    if side_overloaded:
+                        overloaded=True
+                        new=np.zeros(3); grip_energy=0.; force=np.zeros(3)
+                        grip_loss=release_loss
+                qfrc+=jrel.T@force
+            else:
+                new=np.zeros(3); grip_loss=.5*cfg.grip_k_n_m*float(old@old)
             if not reachable:
                 self.enabled['grip']=False
-        energy+=grip_energy; loss+=grip_loss
-        diagnostics['grip']={'enabled':bool(grip_active),'reachable':bool(reachable),
-                             'overloaded':overloaded,'trial_pair_force_n':trial_force_norm,
+            self.grip_xi_local[side]=new
+            pair_energy+=grip_energy; pair_loss+=grip_loss; total_force+=force
+            per_side[side]=dict(reachable=reachable,active=active,old=old,
+                                grip=grip,hand_gap=hand_gap,
+                                shoulder_gap=shoulder_gap,trial_norm=trial_norm,
+                                grip_energy=grip_energy,grip_loss=grip_loss,
+                                force=force)
+        if overloaded:
+            # A grip that lets go does so with both hands at once.
+            self.enabled['grip']=False
+        energy+=pair_energy; loss+=pair_loss
+        for side in ('left','right'):
+            s=per_side[side]
+            diagnostics['grip_'+side]={'enabled':bool(s['active']),'reachable':bool(s['reachable']),
+                'overloaded':overloaded,'trial_pair_force_n':s['trial_norm'],
+                'pair_force_limit_n':cfg.grip_pair_force_limit_n,
+                'release_loss_j':s['grip_loss'] if not s['active'] else 0.,
+                'shoulder_distance_m':hypot(*s['shoulder_gap']),
+                'arm_reach_m':self.arm_reach,
+                'hand_gap_m':hypot(*s['hand_gap']),
+                'point_m':s['grip'].tolist(),'force_on_rider_n':s['force'].tolist(),
+                'force_on_bike_n':(-s['force']).tolist(),'elastic_energy_j':s['grip_energy']}
+        left,right=(per_side[s] for s in ('left','right'))
+        diagnostics['grip']={'enabled':any(s['active'] for s in per_side.values()),
+                             'reachable':all(s['reachable'] for s in per_side.values()),
+                             'overloaded':overloaded,
+                             'trial_pair_force_n':float(np.linalg.norm(total_force)),
                              'pair_force_limit_n':cfg.grip_pair_force_limit_n,
-                             'release_loss_j':grip_loss if not grip_active else 0.,
-                             'shoulder_distance_m':hypot(*shoulder_gap),
+                             'release_loss_j':(pair_loss if not all(s['active']
+                                               for s in per_side.values()) else 0.),
+                             'shoulder_distance_m':max(hypot(*left['shoulder_gap']),
+                                                      hypot(*right['shoulder_gap'])),
                              'arm_reach_m':self.arm_reach,
-                             'hand_gap_m':hypot(*hand_gap),
-                             'point_m':grip.tolist(),'force_on_rider_n':force.tolist(),
-                             'force_on_bike_n':(-force).tolist(),'elastic_energy_j':grip_energy}
-        self.states,self.grip_xi_local,self.diagnostics=new_states,new,diagnostics
+                             'hand_gap_m':max(hypot(*left['hand_gap']),hypot(*right['hand_gap'])),
+                             'force_on_rider_n':total_force.tolist(),
+                             'force_on_bike_n':(-total_force).tolist(),
+                             'elastic_energy_j':pair_energy}
+        self.states,self.diagnostics=new_states,diagnostics
         self.elastic_energy_j,self.loss_step_j=energy,loss
         self.radial_dissipation_power_w=radial_power
         if self.welded_pedals:

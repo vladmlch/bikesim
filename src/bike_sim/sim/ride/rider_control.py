@@ -218,8 +218,8 @@ class ArticulatedRiderController:
         # target merely starts the joint at its anatomical bound.
         self.ik_reach_limited = {'front':False,'rear':False}
         self.joints = {}
-        for name in ('rider_torso_hinge','rider_shoulder','rider_elbow') + tuple(
-            f'rider_{joint}_{side}' for side in ('front','rear') for joint in ('hip','knee','ankle')):
+        from bike_sim.mujoco.reference_rider import reference_joint_names
+        for name in reference_joint_names():
             jid = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_JOINT,name)
             aid = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_ACTUATOR,'act_'+name)
             if jid < 0 or aid < 0:
@@ -238,9 +238,12 @@ class ArticulatedRiderController:
         self.pedals = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_SITE,f'site_pedal_{s}') for s in ('front','rear')}
         self.frame = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'frame')
         self.torso = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'rider_torso')
-        self.upper_arm = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'rider_upper_arm_pair')
-        self.forearm = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'rider_forearm_pair')
-        self.grip_site = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_SITE,'site_rider_grip')
+        self.upper_arms = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,
+            f'rider_upper_arm_{s}') for s in ('left','right')}
+        self.forearms = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,
+            f'rider_forearm_{s}') for s in ('left','right')}
+        self.grip_sites = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_SITE,
+            f'site_rider_grip_{s}') for s in ('left','right')}
         self.rider_bodies = [b for b in range(model.nbody)
             if (mujoco.mj_id2name(model,mujoco.mjtObj.mjOBJ_BODY,b) or '').startswith('rider_')]
         self.rider_mass = float(np.sum(model.body_mass[self.rider_bodies]))
@@ -252,7 +255,9 @@ class ArticulatedRiderController:
         self.crank_spin_qpos=int(model.jnt_qposadr[model.joint('crank_spin').id])
         self.pedal_spin_dofs=[int(model.jnt_dofadr[model.joint(f'pedal_{side}_spin').id]) for side in ('front','rear')]
         self.pedal_spin_qpos=[int(model.jnt_qposadr[model.joint(f'pedal_{side}_spin').id]) for side in ('front','rear')]
-        if min(self.pelvis,self.crank,*self.feet.values(),*self.soles.values(),*self.pedals.values()) < 0:
+        if min(self.pelvis,self.crank,*self.feet.values(),*self.soles.values(),
+               *self.pedals.values(),*self.upper_arms.values(),
+               *self.forearms.values(),*self.grip_sites.values()) < 0:
             raise ValueError('incomplete rider interface topology')
         mujoco.mj_kinematics(model,self.target_data)
         self.welded=config.pedal_attachment=='weld'
@@ -268,16 +273,17 @@ class ArticulatedRiderController:
                 self._weld_sole_offset[side]=np.asarray(
                     self.target_data.xmat[body]).reshape(3,3).T@rel
         self.welded_grip = config.grip_attachment == 'weld'
-        self._weld_grip_offset = None
+        self._weld_grip_offset = {}
         if self.welded_grip:
-            # The connect datum is the steer point the grip site occupies at
+            # The connect datum is the steer point each grip site occupies at
             # qpos0; aim the arm IK there instead of the frame-fixed design
             # point plus a spring deflection that no longer exists.
             self.steer = int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'steer'))
-            rel = (np.asarray(self.target_data.site_xpos[self.grip_site])
-                   - np.asarray(self.target_data.xpos[self.steer]))
-            self._weld_grip_offset = np.asarray(
-                self.target_data.xmat[self.steer]).reshape(3,3).T @ rel
+            steer_R = self.target_data.xmat[self.steer].reshape(3,3)
+            for side in ('left','right'):
+                rel = (np.asarray(self.target_data.site_xpos[self.grip_sites[side]])
+                       - np.asarray(self.target_data.xpos[self.steer]))
+                self._weld_grip_offset[side] = steer_R.T @ rel
         validate_planar_support_model(model,self.target_data,self.pedal_geoms.values())
         self.leg_geometry={}
         self.sole_jacobians={}
@@ -385,29 +391,40 @@ class ArticulatedRiderController:
         pose = self.pose
         pelvis_R = data.xmat[self.pelvis].reshape(3,3)
         hip = data.xpos[self.pelvis]
-        if self.welded_grip:
-            grip = (data.xpos[self.steer]
-                    + data.xmat[self.steer].reshape(3,3) @ self._weld_grip_offset)
-        else:
-            grip = data.xpos[self.frame] + data.xmat[self.frame].reshape(3,3) @ pose.grip
-            if grip_force_n is not None:
-                # The grip is compliant, not a weld. To push down on the bar, the
-                # hand goal must allow its spring to deflect down. A zero-deflection
-                # IK goal fights the very support wrench used to balance the rider.
-                # This is only an actuator goal; the actual paired contact force
-                # remains exclusively in RiderContactApplier.
-                grip = grip + array(grip_force_n, 'grip force goal', (3,))/self.config.grip_k_n_m
+        from bike_sim.physics.rider_segments import ARM_LATERAL_OFFSET_M
+        frame_R = data.xmat[self.frame].reshape(3,3)
+        grips = {}
+        for side,sign in (('left',-1.),('right',1.)):
+            if self.welded_grip:
+                grips[side] = (data.xpos[self.steer]
+                        + data.xmat[self.steer].reshape(3,3) @ self._weld_grip_offset[side])
+            else:
+                grip = (data.xpos[self.frame]
+                        + frame_R @ (pose.grip + np.array([0.,sign*ARM_LATERAL_OFFSET_M,0.])))
+                if grip_force_n is not None:
+                    # The grip is compliant, not a weld. To push down on the bar, each
+                    # hand goal must allow its spring to deflect down; two springs in
+                    # parallel split the requested pair force. A zero-deflection
+                    # IK goal fights the very support wrench used to balance the rider.
+                    # This is only an actuator goal; the actual contact force
+                    # remains exclusively in RiderContactApplier.
+                    grip = grip + array(grip_force_n, 'grip force goal', (3,))/(2.*self.config.grip_k_n_m)
+                grips[side] = grip
         # Keep a neutral relative torso/pelvis angle. Counter-rotating the
         # torso against the unactuated pelvis pitch pushes the pelvis further
         # in that direction through the equal actuator reaction. The hands
         # follow the actual bar separately, through the two arm joints.
         torso_q = self.neutral_torso_q + (0. if posture is None else posture.torso_lean_rad)
         torso_R = data.xmat[self.torso].reshape(3,3)
-        arm_target = torso_R.T @ (grip-data.xpos[self.upper_arm])
         upper_length,lower_length,a0,b0,branch=self.arm_geometry
-        arm_angles, arm_saturated = _two_link_ik(arm_target[[0,2]],upper_length,lower_length,elbow_sign=branch)
-        targets = {'rider_torso_hinge':torso_q,'rider_shoulder':a0-arm_angles[0],
-                   'rider_elbow':(b0-a0)-arm_angles[1]}
+        targets = {'rider_torso_hinge':torso_q}
+        arm_saturated = False
+        for side in ('left','right'):
+            arm_target = torso_R.T @ (grips[side]-data.xpos[self.upper_arms[side]])
+            arm_angles, saturated = _two_link_ik(arm_target[[0,2]],upper_length,lower_length,elbow_sign=branch)
+            arm_saturated |= saturated
+            targets[f'rider_shoulder_{side}'] = a0-arm_angles[0]
+            targets[f'rider_elbow_{side}'] = (b0-a0)-arm_angles[1]
         self.saturated_ik.update(torso=self.neutral_torso_saturated,arms=arm_saturated)
         for name,target_q in targets.items():
             current = float(data.qpos[self.joints[name][0]])
@@ -609,7 +626,10 @@ class ArticulatedRiderController:
         weight = self.rider_mass*float(np.linalg.norm(model.opt.gravity))
         com = np.sum(model.body_mass[self.rider_bodies,None]*data.xipos[self.rider_bodies],axis=0)/self.rider_mass
         saddle = data.xpos[self.pelvis]+data.xmat[self.pelvis].reshape(3,3)@np.array([0.,0.,-.060])
-        grip = data.site_xpos[self.grip_site]
+        # The support polygon sees the pair of hands as one bar contact: its
+        # midpoint, halfway between the two grip sites.
+        grip = 0.5*(data.site_xpos[self.grip_sites['left']]
+                    +data.site_xpos[self.grip_sites['right']])
         points = np.array([saddle,data.site_xpos[self.pedals['front']],data.site_xpos[self.pedals['rear']],grip])
         # A welded sole cannot measure its coupling: its load prediction is
         # the rider's own weight (a foot cannot press more than it carries),
@@ -768,9 +788,11 @@ class ArticulatedRiderController:
                 jp,_=self.sole_jacobians[side]
                 support += jp.T@np.array([0.,0.,-support_targets[side]])
         if enabled[3]:
-            jp=np.zeros((3,model.nv))
-            mujoco.mj_jac(model,data,jp,None,grip,self.forearm)
-            support += jp.T@support_forces['grip']
+            for side in ('left','right'):
+                jp=np.zeros((3,model.nv))
+                mujoco.mj_jac(model,data,jp,None,
+                    data.site_xpos[self.grip_sites[side]],self.forearms[side])
+                support += jp.T@(support_forces['grip']/2.)
         # Convective acceleration of the moving crank targets. Gravity/Coriolis
         # compensation alone cannot track a circular pedal path at cadence.
         # Only limb rows are commanded, still inside the existing effort caps.

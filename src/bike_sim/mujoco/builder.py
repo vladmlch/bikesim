@@ -326,7 +326,7 @@ def generate_mujoco_xml(
         finish_physical_topology(root, specs, mass_specs, physics_config)
         if articulated_pose is not None:
             from bike_sim.mujoco.articulated_rider import build_articulated_rider, add_rider_actuators
-            from bike_sim.physics.rider_segments import segment_masses
+            from bike_sim.physics.rider_segments import segment_masses, split_paired_arm_masses
             for geom in list(frame.findall("geom")):
                 if geom.get("name", "").startswith("geom_rider_"):
                     frame.remove(geom)
@@ -334,7 +334,8 @@ def generate_mujoco_xml(
             envelope_path=physics_config.articulated.joint_envelope_path
             envelopes=None if envelope_path is None else load_joint_envelopes(envelope_path)
             build_articulated_rider(worldbody, articulated_pose,
-                segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg),envelopes=envelopes)
+                split_paired_arm_masses(segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg)),
+                envelopes=envelopes)
             add_rider_actuators(root, physics_config.articulated)
             solref = max(2. * physics_config.timestep_s,
                          physics_config.closure_time_constant_s)
@@ -361,20 +362,21 @@ def generate_mujoco_xml(
                 add_saddle_pin(root, solref)
             if physics_config.articulated.grip_attachment == 'weld':
                 assert equality is not None
-                # A `connect` pins the grip site to the bar point it already
+                # A `connect` pins each grip site to the bar point it already
                 # occupies at qpos0: the hand can never leave the bar, but the
                 # wrist keeps rotating and the torso keeps its lean-over-hands
                 # DOF. A full `weld` here would freeze the whole arm+torso
                 # loop rigid to the frame.
-                site = root.find(".//site[@name='site_rider_grip']")
-                assert site is not None
-                ET.SubElement(equality, 'connect', {
-                    'name': 'connect_grip',
-                    'body1': 'rider_forearm_pair',
-                    'body2': 'steer',
-                    'anchor': site.get('pos'),
-                    'solref': f'{solref:.17g} 1',
-                })
+                for side in ('left', 'right'):
+                    site = root.find(f".//site[@name='site_rider_grip_{side}']")
+                    assert site is not None
+                    ET.SubElement(equality, 'connect', {
+                        'name': f'connect_grip_{side}',
+                        'body1': f'rider_forearm_{side}',
+                        'body2': 'steer',
+                        'anchor': site.get('pos'),
+                        'solref': f'{solref:.17g} 1',
+                    })
             # Dedicated crash mask: no invisible rider/bike or rider/rider contacts.
             for name in ("geom_rider_head", "geom_rider_pelvis", "geom_rider_torso"):
                 geom = root.find(f".//geom[@name='{name}']")

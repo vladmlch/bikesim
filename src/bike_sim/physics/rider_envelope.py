@@ -9,7 +9,10 @@ from pathlib import Path
 import json
 import numpy as np
 
-RIDER_JOINTS = ('rider_torso_hinge','rider_shoulder','rider_elbow') + tuple(
+from bike_sim.mujoco.reference_rider import reference_joint_names
+
+RIDER_JOINTS = reference_joint_names()
+LEGACY_RIDER_JOINTS = ('rider_torso_hinge','rider_shoulder','rider_elbow') + tuple(
     f'rider_{joint}_{side}' for side in ('front','rear') for joint in ('hip','knee','ankle'))
 
 
@@ -78,14 +81,25 @@ def load_joint_envelopes(path: str) -> dict[str,JointEnvelope]:
     payload=json.loads(Path(path).read_text())
     if not isinstance(payload,dict):
         raise ValueError('joint profile must be an object')
+    names = RIDER_JOINTS
     if 'joints' in payload:
-        if set(payload)-{'joints','schema_version','provenance'} or payload.get('schema_version',1)!=1:
+        version=payload.get('schema_version',1)
+        if version==2:
+            if set(payload)!={'joints','schema_version','provenance','topology'}:
+                raise ValueError('unknown joint profile schema')
+            if payload['topology']!='articulated_planar_two_arm':
+                raise ValueError('joint profile names a different rider topology')
+        elif version==1:
+            if set(payload)!={'joints','schema_version','provenance'}:
+                raise ValueError('unknown joint profile schema')
+            names = LEGACY_RIDER_JOINTS
+        else:
             raise ValueError('unknown joint profile schema')
         payload=payload['joints']
-    if not isinstance(payload,dict) or set(payload)!=set(RIDER_JOINTS):
-        raise ValueError('profile must cover exactly nine internal rider joints, never root joints')
+    if not isinstance(payload,dict) or set(payload)!=set(names):
+        raise ValueError(f'profile must cover exactly {len(names)} internal rider joints, never root joints')
     try:
-        return {name:JointEnvelope(**payload[name]) for name in RIDER_JOINTS}
+        return {name:JointEnvelope(**payload[name]) for name in names}
     except TypeError as exc:
         raise ValueError('invalid joint envelope fields') from exc
 

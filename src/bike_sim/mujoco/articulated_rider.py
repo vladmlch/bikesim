@@ -2,15 +2,17 @@
 import xml.etree.ElementTree as ET
 import numpy as np
 from bike_sim.physics.inertia import add_body_inertial
-from bike_sim.physics.rider_segments import segment_inertia
+from bike_sim.physics.rider_segments import ARM_LATERAL_OFFSET_M, segment_inertia
 
 
 def _vec(value):
     return ' '.join(format(float(x), '.17g') for x in value)
 
 
-def build_articulated_rider(worldbody, pose, masses, *, pedal_lateral_m=.115, envelopes=None):
-    expected={'pelvis','torso','head','upper_arm_pair','forearm_pair'} | {
+def build_articulated_rider(worldbody, pose, masses, *, pedal_lateral_m=.115,
+                            arm_lateral_m=ARM_LATERAL_OFFSET_M, envelopes=None):
+    expected={'pelvis','torso','head'} | {
+        f'{part}_{side}' for side in ('left','right') for part in ('upper_arm','forearm')} | {
         f'{part}_{side}' for side in ('front','rear') for part in ('thigh','shank','foot')}
     if set(masses)!=expected:
         raise ValueError('incomplete anatomical segment mass budget')
@@ -51,9 +53,13 @@ def build_articulated_rider(worldbody, pose, masses, *, pedal_lateral_m=.115, en
     ET.SubElement(head,'geom',name='geom_rider_head',type='sphere',size=str(radius),
                   mass='0',contype='0',conaffinity='0',rgba='.6 .6 .6 1')
     bodies['head']=head
-    arm=segment('upper_arm_pair',torso,pose.shoulder,pose.elbow,.045,'rider_shoulder')
-    forearm=segment('forearm_pair',arm,pose.elbow,pose.grip,.04,'rider_elbow')
-    ET.SubElement(forearm,'site',name='site_rider_grip',pos=_vec(pose.grip-pose.elbow),size='.004')
+    for side,sign in (('left',-1.),('right',1.)):
+        lateral=np.array([0.,sign*arm_lateral_m,0.])
+        shoulder=pose.shoulder+lateral; elbow=pose.elbow+lateral; grip=pose.grip+lateral
+        arm=segment('upper_arm_'+side,torso,shoulder,elbow,.045,f'rider_shoulder_{side}')
+        forearm=segment('forearm_'+side,arm,elbow,grip,.04,f'rider_elbow_{side}')
+        ET.SubElement(forearm,'site',name=f'site_rider_grip_{side}',
+                      pos=_vec(grip-elbow),size='.004')
     for side,sign in (('front',-1.),('rear',1.)):
         lateral=np.array([0.,sign*pedal_lateral_m,0.])
         hip=pose.hip.copy(); hip[1]=lateral[1]

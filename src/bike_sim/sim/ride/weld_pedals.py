@@ -5,8 +5,8 @@ equality per foot (body1 = rider_foot_*, body2 = pedal_*); with
 articulated.saddle_attachment = 'weld' it emits `weld_saddle`
 (body1 = rider_pelvis, body2 = frame), while the reference 'pin' emits
 `connect_saddle` between the same bodies; with
-articulated.grip_attachment = 'weld' it emits `connect_grip`
-(body1 = rider_forearm_pair, body2 = steer). This module reads the solved
+articulated.grip_attachment = 'weld' it emits one `connect_grip_<side>`
+per hand (body1 = rider_forearm_<side>, body2 = steer). This module reads the solved
 constraint multipliers and reports them in the conventions
 RiderContactApplier uses for pad supports.
 
@@ -172,9 +172,10 @@ class GripConnect:
     releasable spring grip cannot produce once disabled.
     """
 
-    def __init__(self, model):
+    def __init__(self, model, side):
+        self.side = side
         self.eq_id = resolve_id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
-                                'connect_grip')
+                                f'connect_grip_{side}')
 
     def force_on_rider_n(self, model, data, rows=None):
         """World force the pin applies to the hand, in Newtons."""

@@ -294,16 +294,23 @@ class RiderSpecs:
                 "rider_arms": (LUMPED_COM_M["rider_arms"].copy(), self.arms_mass),
             }
         if self.variant == "articulated_planar":
-            from bike_sim.physics.rider_segments import geometry_pose, segment_masses
+            from bike_sim.physics.rider_segments import (
+                ARM_LATERAL_OFFSET_M, geometry_pose, segment_masses,
+                split_paired_arm_masses)
             pose = geometry_pose(self, specs if specs is not None else BikeSpecs())
-            masses = segment_masses(self.mass_kg, self.helmet_mass_kg)
+            masses = split_paired_arm_masses(
+                segment_masses(self.mass_kg, self.helmet_mass_kg))
             centers = {
                 "pelvis": pose.hip + np.array([0., 0., .06]),
                 "torso": (pose.hip + pose.shoulder) / 2,
                 "head": pose.head_center,
-                "upper_arm_pair": (pose.shoulder + pose.elbow) / 2,
-                "forearm_pair": (pose.elbow + pose.grip) / 2,
             }
+            for side, sign in (("left", -1.), ("right", 1.)):
+                for part, point in (("upper_arm", (pose.shoulder + pose.elbow) / 2),
+                                    ("forearm", (pose.elbow + pose.grip) / 2)):
+                    center = np.array(point, copy=True)
+                    center[1] = sign * ARM_LATERAL_OFFSET_M
+                    centers[part + "_" + side] = center
             for side, sign in (("front", -1.), ("rear", 1.)):
                 knee = getattr(pose, "knee_" + side)
                 ankle = getattr(pose, "ankle_" + side)

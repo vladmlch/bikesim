@@ -232,6 +232,7 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
         physical_run_dir_name,
     )
     ensure_macos_mjpython()
+    sim.physical.set_strict(False)
     session=RideSession(sim)
     pacer=RealTimePacer(float(sim.model.opt.timestep))
     metadata=configuration_metadata(sim)

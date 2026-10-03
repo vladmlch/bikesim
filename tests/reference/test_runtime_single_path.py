@@ -80,7 +80,8 @@ def _fake_viewer_run(monkeypatch, tmp_path, *, fail=False, cleanup_fail=False):
     from bike_sim.viz import ride_plots
     state=SimpleNamespace(open=False,pending=0,flushes=0,events=[])
     runtime=SimpleNamespace(generation=0,live_real_time_factor=None,sample=None,
-        history=SimpleNamespace(duration_s=0.),reference_monitor=SimpleNamespace(first_failure=None))
+        history=SimpleNamespace(duration_s=0.),reference_monitor=SimpleNamespace(first_failure=None),
+        set_strict=lambda strict: state.events.append(('strict', strict)))
     def flush():
         state.flushes+=1
         if state.pending:
@@ -146,6 +147,7 @@ def _fake_viewer_run(monkeypatch, tmp_path, *, fail=False, cleanup_fail=False):
 def test_terminal_viewer_tail_is_accounted_before_announcement_hud_and_live_csv(monkeypatch,tmp_path):
     sim,state=_fake_viewer_run(monkeypatch,tmp_path)
     assert viewer.run_physical_viewer(sim,out_root=tmp_path) == 0
+    assert state.events[0] == ('strict', False)
     assert ('flush',True) in state.events
     for event in ('announcement','hud','live_csv'):
         assert (event,True) in state.events

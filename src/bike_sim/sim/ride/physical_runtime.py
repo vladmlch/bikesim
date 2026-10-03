@@ -49,7 +49,10 @@ def _connect_equality_rows(model, data):
 
 
 class PhysicalRuntime:
-    def __init__(self, sim):
+    def __init__(self, sim, *, strict: bool = True):
+        if not isinstance(strict, bool):
+            raise ValueError('monitor strictness must be a bool')
+        self._strict = strict
         self.sim = sim
         self.cfg = sim.physics_config
         self.control_clock = ControlClock(float(sim.model.opt.timestep), self.cfg.control_period_s)
@@ -101,6 +104,15 @@ class PhysicalRuntime:
         self.live_real_time_factor = None
         self.research_accounting_valid = True
         self._rollback_hold = False
+
+    def set_strict(self, strict: bool) -> None:
+        if not isinstance(strict, bool):
+            raise ValueError('monitor strictness must be a bool')
+        if self.sim.steps != 0:
+            raise RuntimeError('monitor strictness can change only before the first step')
+        from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
+        self._strict = strict
+        self.reference_monitor = ReferenceMonitor(strict=strict)
 
     def preview_mode(self):
         """Deprecated: there is only one accounted physical step."""
@@ -342,8 +354,7 @@ class PhysicalRuntime:
         self.attachment_samples,self.attachment_errors={},()
         self.step_violations=()
         from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
-        # The interactive preview is the viewer path: warn once, never fix.
-        self.reference_monitor=ReferenceMonitor(strict=False)
+        self.reference_monitor=ReferenceMonitor(strict=self._strict)
         self.sample = None
         from bike_sim.sim.ride.model_status import ModelStatus
         self.model_status = ModelStatus()

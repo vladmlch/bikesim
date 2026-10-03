@@ -173,7 +173,8 @@ def physical_run_dir_name(track_name,metadata):
 
 def physical_summary(sim,metadata,reason):
     r=sim.physical
-    return plain(dict(metadata,outcome={'reason':reason,'time_s':sim.time_s,'position_m':sim.position_m,
+    return plain(dict(metadata,first_failure=r.reference_monitor.first_failure,
+        outcome={'reason':reason,'time_s':sim.time_s,'position_m':sim.position_m,
                                        'steps':sim.steps,'crashed':sim.crash is not None},
         equilibrium=sim.equilibrium,energy=r.energy,model_status=r.model_status.as_dict(),battery_energy_j=r.drive.battery.energy_j,
         component_work_j=r.history.work_j,airtime_threshold_s=r.history.airtime_s,
@@ -207,7 +208,9 @@ def build_physical_simulation(track,args,rider):
 
 
 def run_physical_headless(track,args,seed,rider):
+    from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
     sim=build_physical_simulation(track,args,rider)
+    sim.physical.set_strict(True)
     metadata=configuration_metadata(sim,seed)
     out=Path(args.out)/physical_run_dir_name(track.name,metadata)
     out.mkdir(parents=True,exist_ok=True)
@@ -227,11 +230,23 @@ def run_physical_headless(track,args,seed,rider):
             if time.monotonic()>deadline:
                 reason='wall_clock_cap';break
             sim.step();recorder.record(sim)
+        sim.physical.flush()
+        recorder.record(sim)
+    except InvalidReferenceRun as exc:
+        reason='invalid_controller'
+        metadata['failure']=str(exc)
+        recorder.record(sim)
     except (ValueError,RuntimeError,ArithmeticError) as exc:
         reason='simulation_error'
         metadata['failure']=str(exc)
-    sim.physical.flush()
-    recorder.record(sim)
+        try:
+            sim.physical.flush()
+        except InvalidReferenceRun as invalid:
+            reason='invalid_controller'
+            metadata['tail_failure']=str(invalid)
+        except (ValueError, RuntimeError, ArithmeticError) as tail_error:
+            metadata['tail_failure']=f'{type(tail_error).__name__}: {tail_error}'
+        recorder.record(sim)
     recorder.write_csv(out/'telemetry.csv')
     recorder.write_jsonl(out/'intervals.jsonl')
     np.save(out/'terrain_vertices.npy',sim.physical.vertices,allow_pickle=False)
@@ -244,6 +259,6 @@ def run_physical_headless(track,args,seed,rider):
     print(f"[bike-ride] {reason}: {sim.time_s:.6f} s, {sim.position_m:.3f} m -> {out}")
     if reason == 'simulation_error':
         return 1
-    if not sim.physical.model_status.as_dict()['model_valid']:
+    if reason == 'invalid_controller' or not sim.physical.model_status.as_dict()['model_valid']:
         return 2
     return 0 if reason in ('duration_reached','end_of_track') else 1

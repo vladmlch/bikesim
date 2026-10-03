@@ -137,11 +137,9 @@ class ResearchEnvironment:
         if self.rider_behavior is not None:
             self.rider_behavior.reset(self.seed)
         self.recorder = PhysicalRecorder(self.sim, decimate=self.config.record_decimation)
-        from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
         # Diagnostic mode may keep recording a violating episode; the run's
         # model_valid flag still goes false and stays false.
-        self.sim.physical.reference_monitor = ReferenceMonitor(strict=self.config.stop_on_model_violation)
-        self.reference_monitor = self.sim.physical.reference_monitor
+        self.sim.physical.set_strict(self.config.stop_on_model_violation)
         self.sim.physical.set_record_decimation(self.config.record_decimation)
         self.tracker = WheelieTracker(persistence_s=self.config.wheelie_persistence_s)
         self.pipeline = SensorPipeline(self.sensor_config, seed=self.seed)
@@ -194,6 +192,10 @@ class ResearchEnvironment:
         return self.terminated or self.truncated
 
     @property
+    def reference_monitor(self):
+        return self.sim.physical.reference_monitor
+
+    @property
     def model_valid(self):
         return self.sim.physical.model_status.as_dict()['model_valid']
 
@@ -206,7 +208,7 @@ class ResearchEnvironment:
         self._begin_episode()
         return self.observation
 
-    def _consume_completed_samples(self):
+    def _consume_completed_samples(self, *, stop_at_outcome=True):
         for sample in self.sim.physical.completed_samples:
             source_step = round(sample.time_s / self.dt_s)
             if source_step >= self._next_sensor_step:
@@ -240,19 +242,23 @@ class ResearchEnvironment:
                 self.numerically_valid = False
                 self.truncated = True
                 self.reason = 'numerical_quality'
-                break
+                if stop_at_outcome:
+                    break
             if self.config.stop_on_model_violation and not sample.channels['model_status']['model_valid']:
                 self.truncated = True
                 self.reason = 'model_violation'
-                break
+                if stop_at_outcome:
+                    break
             if self.sim.crash is not None and self.sim.crash.time_s <= sample.end_time_s:
                 self.terminated = True
                 self.reason = crash_reason(self.sim.crash)
-                break
+                if stop_at_outcome:
+                    break
             if self.last_truth.position_m >= self.sim.track.length_m:
                 self.terminated = True
                 self.reason = 'finish'
-                break
+                if stop_at_outcome:
+                    break
 
     def step(self, control, *, front_brake_demand=0., rear_brake_demand=0.):
         if self.done:
@@ -301,8 +307,17 @@ class ResearchEnvironment:
                 self.sim.physical.flush()
                 self._consume_completed_samples()
         except Exception as exc:
+            from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
+            # Account a partial physical period even when integration or a
+            # caller fails, without replacing the originating exception.
+            try:
+                if self.sim.physical._buffer._raws:
+                    self.sim.physical.flush()
+            except Exception as tail_error:
+                exc.add_note(f'trailing interval check: {tail_error}')
+            self._consume_completed_samples(stop_at_outcome=False)
             self.terminated = True
-            self.reason = 'simulation_error'
+            self.reason = 'invalid_controller' if isinstance(exc, InvalidReferenceRun) else 'simulation_error'
             self.error = f'{type(exc).__name__}: {exc}'
             raise  # Never manufacture a successful transition from invalid dynamics.
         if not self.done and self.sim.steps >= self.max_steps:

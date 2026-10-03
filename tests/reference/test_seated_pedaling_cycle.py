@@ -112,7 +112,7 @@ def test_full_crank_revolutions_keep_both_feet_loaded(tmp_path):
                     f'{key}: unexplained sample gap at call {calls}'
         for error in physical.attachment_errors:
             assert error.endswith('unobservable_attachment_wrench'), error
-        violations.update(v[0] for v in physical.step_violations)
+        violations.update(physical.step_violations)
         diagnostics = controller.effort_diagnostics
         max_power = max(max_power, diagnostics['rider_positive_power_w'])
         for name in ankle_rom:
@@ -162,8 +162,7 @@ def test_flat_pedals_keep_contact_through_the_cycle(tmp_path):
         for side in ('front', 'rear'):
             if feet.get(side, {}).get('recovery_stage', 'none') != 'none':
                 recovery_calls[side] += 1
-        if any(v[0] == 'rider_controller.infeasible'
-               for v in env.sim.physical.step_violations):
+        if 'rider_controller.infeasible' in env.sim.physical.step_violations:
             infeasible += 1
     assert env.sim.steps > 2000
     # A flat sole may still physically separate under a bad stroke, but the

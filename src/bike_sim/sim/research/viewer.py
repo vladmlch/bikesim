@@ -20,7 +20,8 @@ def make_ride_session(track, args, rider):
     experiment = ExperimentConfig(
         duration_s=90. if args.duration is None else args.duration,
         control_period_s=args.control_period, actuator_delay_s=args.actuator_delay,
-        seed=0 if args.seed is None else args.seed, record_decimation=args.decimate)
+        seed=0 if args.seed is None else args.seed, record_decimation=args.decimate,
+        stop_on_model_violation=args.headless)
     sensors = SensorConfig(sample_period_s=args.sensor_period, latency_s=args.sensor_delay)
     program = None if args.rider_program is None else RiderProgram.load(args.rider_program)
     demand = None if args.demand is None else DemandProgram.constant(args.demand)

@@ -21,6 +21,55 @@ ROOT = Path(__file__).resolve().parents[2]
 WELDED = ROOT / 'examples' / 'research' / 'viewer_physics_welded.toml'
 
 
+def _capture_support_problem(monkeypatch, *, name='saddle', coupled=True, reserve=.15):
+    """Exercise production constraint assembly on a declared one-DOF stand."""
+    from types import SimpleNamespace
+    import mujoco
+    from bike_sim.physics.model_config import ArticulatedConfig
+    from bike_sim.sim.ride.rider_control import ArticulatedRiderController
+    import bike_sim.physics.rider_allocation as allocation
+    controller = ArticulatedRiderController.__new__(ArticulatedRiderController)
+    controller.config = ArticulatedConfig(saddle_reserve_weight_fraction=reserve)
+    controller._rider_dofs, controller._bike_dofs = np.array([0]), np.array([], dtype=int)
+    controller.joints = {'joint': (0,0,0)}
+    controller._alloc_attachments = {name: {'eq':0 if coupled else -1}}
+    controller._fullM = np.zeros((1,1))
+    controller._envelope_dof_adrs = np.array([], dtype=int)
+    controller.envelope_forces = lambda *args:(np.zeros(1), {})
+    controller._attachment_frames = lambda *args:({name:np.zeros((2,1))}, [])
+    controller._active_recovery = {side:SimpleNamespace(stage='none') for side in ('front','rear')}
+    controller.rider_mass = 80.
+    controller.strength = None
+    controller._last_branch = controller._last_solution = None
+    model = SimpleNamespace(nv=1, opt=SimpleNamespace(gravity=np.array([0.,0.,-9.81])))
+    data = SimpleNamespace(qacc=np.zeros(1), qvel=np.zeros(1), qfrc_bias=np.zeros(1))
+    monkeypatch.setattr(mujoco,'mj_fullM',lambda m,d,out:out.__setitem__(slice(None), np.eye(1)))
+    captured = {}
+    def capture(target, ae, be, g, h, lo, hi, **kwargs):
+        captured.update(g=g.copy(),h=h.copy(),lo=lo.copy(),hi=hi.copy())
+        return Allocation(target.copy(),True,0.)
+    monkeypatch.setattr(allocation,'allocate_effort',capture)
+    _, diagnostic=controller.allocate(model,data,np.zeros(1),np.zeros(2),
+        {name:np.array([0.,1.])},estimates={name:(1000.,0.)})
+    return captured, diagnostic
+
+
+@pytest.mark.parametrize('coupled',[True,False])
+@pytest.mark.parametrize('reserve',[0.,.15,.5])
+def test_saddle_reserve_is_an_actual_configured_lower_bound(monkeypatch,coupled,reserve):
+    captured,diagnostic=_capture_support_problem(monkeypatch,coupled=coupled,reserve=reserve)
+    # x=[qddot/500,tau/50,Fx/300,Fz/300,p/450]. Check generated
+    # inequality, not only a diagnostic echo or a wish toward that force.
+    row=np.array([0.,0.,0.,-300.,0.])
+    selected=np.all(np.isclose(captured['g'],row),axis=1)
+    assert selected.any(), 'no lower-normal bound in the coupled support problem'
+    expected=reserve*80.*9.81
+    assert np.min(captured['h'][selected]) == pytest.approx(-expected)
+    assert diagnostic['saddle_normal_lower_bound_n'] == pytest.approx(expected)
+    from bike_sim.physics.attachment_budget import AttachmentSample, attachment_violations
+    assert 'normal' in attachment_violations(AttachmentSample('saddle',0.,0.,0.,0.))
+
+
 # --- plan step-1 checks -----------------------------------------------------
 
 def test_intent_is_relaxed_but_physical_limit_is_not():

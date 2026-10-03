@@ -1157,6 +1157,11 @@ class ArticulatedRiderController:
             i0 = i_f.start+2*k
             coupled = self._alloc_attachments[name]['eq'] >= 0
             if coupled:
+                if name == 'saddle':
+                    row = np.zeros(n_z)
+                    row[i0:i0+2] = -n_hat
+                    g_rows.append(row)
+                    g_hi.append(-cfg.saddle_reserve_weight_fraction*weight)
                 for s_t_,s_n_ in ((1.,1.),(-1.,1.),(1.,-1.),(-1.,-1.)):
                     row = np.zeros(n_z)
                     row[i0] = s_t_*t_hat[0]-s_n_*mu*n_hat[0]
@@ -1176,7 +1181,7 @@ class ArticulatedRiderController:
             # normal through the whole crank cycle; a genuinely airborne or
             # recovering foot has no such floor, so infeasibility is reported
             # only when physics truly cannot meet the request.
-            pad_lo = .15*weight if name=='saddle' else 0.
+            pad_lo = cfg.saddle_reserve_weight_fraction*weight if name=='saddle' else 0.
             if name in ('front','rear') and predicted > 0. \
                     and self._active_recovery[name].stage == 'none':
                 pad_lo = cfg.pedal_min_normal_n
@@ -1228,6 +1233,7 @@ class ArticulatedRiderController:
         result, branch = self._select_allocation_branch(scaled_target, solve)
         z = result.solution*scales
         return z[i_t], {'feasible':bool(result.feasible),'violation':float(result.violation),
+                        'saddle_normal_lower_bound_n':cfg.saddle_reserve_weight_fraction*weight,
                         'grip_branch':branch,'effort_scale':effort_scale,
                         'solution_qddot':z[i_q],'solution_wrenches':z[i_f],
                         'solution_tau':z[i_t].copy(),'solution_power':z[i_p],

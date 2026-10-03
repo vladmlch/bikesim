@@ -12,6 +12,7 @@ from bike_sim.sim.ride.support_geometry import (
 from bike_sim.sim.ride.pedal_recovery import PedalRecovery
 from bike_sim.sim.ride.physical_mapping import relative_point_jacobian
 from bike_sim.sim.ride.rider_state import RiderKinematicState
+from bike_sim.physics.rider_program import pedal_intent
 from bike_sim.physics.tire import _normal_contact
 
 
@@ -389,6 +390,18 @@ class ArticulatedRiderController:
         knee_q = (b0-a0)-angles[1]
         pitch = atan2(-R[2,0],R[0,0])
         targets=np.array([hip_q,knee_q,-pitch-hip_q-knee_q])
+        # The pedaling program modulates foot pitch with crank phase. This is
+        # a bounded ankle wish, applied before the joint-range clip so it can
+        # never exceed the anatomical envelope. `data` is the target state
+        # (current, future or previous), so each candidate gets its own
+        # phase-consistent offset.
+        rotation = data.xmat[self.crank].reshape(3,3)
+        crank_phase = atan2(-rotation[2,0],rotation[0,0])
+        side_offset = 0. if side == 'front' else pi
+        targets[2] += pedal_intent(crank_phase+side_offset,
+            abs(float(data.qvel[self.crank_spin_dof])),
+            ankle_amplitude_rad=self.config.pedal_ankle_amplitude_rad,
+            scrape_fraction=self.config.pedal_scrape_fraction).ankle_offset_rad
         current=np.array([data.qpos[self.joints[f'rider_{joint}_{side}'][0]] for joint in ('hip','knee','ankle')])
         # Equivalent +/-2*pi IK representations must not cause torque impulses.
         result=current + np.arctan2(np.sin(targets-current),np.cos(targets-current))
@@ -695,6 +708,10 @@ class ArticulatedRiderController:
             pedal_loads = {side: max(float(loads.get(side, 0.)), 0.) for side in ('front', 'rear')}
             pedaling_requests, pedaling_weights = pedaling_force_requests(phase,
                 command.mean_crank_torque_nm, self.crank_length_m, normals, pedal_loads, cfg.support_mu)
+        # Both feet keep their support objective for the whole cycle: the
+        # return foot rides through its backstroke loaded at least the
+        # declared minimum instead of being lifted by a control-mode switch.
+        # Recovery (a genuinely lost contact) still overrides everything.
         for side,offset in (('front',0.),('rear',pi)):
             load=max(float(loads.get(side,0.)),0.)
             fraction=min(load/cfg.stance_blend_load_n,1.)
@@ -704,13 +721,9 @@ class ArticulatedRiderController:
             if recovering:
                 stance[side] = False
                 blends[side] = 0.
-            if not stance[side]:
-                # A flat-pedal return foot must be lifted rather than carrying
-                # a coasting support load that brakes the rising crank arm.
-                # This changes only the control target, never physical Fn.
-                enabled[1+('front','rear').index(side)]=False
             geom=self.pedal_geoms[side]
-            _,normal,_=_upper_box_face(data.geom_xpos[geom],data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
+            _,normal,tangent=_upper_box_face(data.geom_xpos[geom],
+                data.geom_xmat[geom].reshape(3,3),model.geom_size[geom])
             if recovering:
                 requests[side] = np.zeros(3)
             elif command.mean_crank_torque_nm==0.:
@@ -723,6 +736,14 @@ class ArticulatedRiderController:
                 # load an absorbing state. Tangential demand remains bounded
                 # by measured Fn in feasible_pedal_force; no adhesion is added.
                 requests[side] = pedaling_requests[side]
+                # In its backstroke the foot may scrape with at most the
+                # declared fraction of its friction cone; the downstroke foot
+                # keeps the full budget. This is an intent bound, not a
+                # physical limit -- the QP still enforces the whole cone.
+                if pedaling_weights.get(side,0.) < .5:
+                    t_cap = cfg.pedal_scrape_fraction*cfg.foot_mu*load
+                    t_part = float(requests[side]@tangent)
+                    requests[side] = requests[side]+(min(max(t_part,-t_cap),t_cap)-t_part)*tangent
         from bike_sim.sim.ride.rider_balance import balance_force_request
         balance=balance_force_request(self,model,data,posture)
         support_forces,diagnostics=pedaling_support_targets(weight,com,points,data.xpos[self.crank,0],
@@ -780,9 +801,11 @@ class ArticulatedRiderController:
             desired_down=support_forces[side]
             depth=(1.-blend)*cfg.posture_sole_depth_m+blend*max(0.,-float(desired_down@normal))/cfg.support_k_n_m
             shear=blend*float(desired_down@tangent)/cfg.support_tangent_k_n_m
-            clearance=0. if (self.welded or stance[side]) else cfg.swing_clearance_m
-            if not stance[side]:
-                depth=shear=0.
+            # No separate swing-lift mode: the return foot keeps its sole
+            # pressed to the pedal through the backstroke at the same depth
+            # and shear law as the stance foot. Only a real recovery event
+            # lifts it, through _active_recovery, not a control switch.
+            clearance=0.
             target = self._targets(model,target_state,side,compression_m=depth,shear_m=shear,clearance_m=clearance,posture=posture)
             diagnostics['feet'][side] = {
                 'actual_sole_position_m': data.site_xpos[self.soles[side]].tolist(),
@@ -1144,11 +1167,18 @@ class ArticulatedRiderController:
                 g_rows.append(row); g_hi.append(0.)
             row = np.zeros(n_z); row[i0] = -n_hat[0]; row[i0+1] = -n_hat[1]
             g_rows.append(row)
+            predicted = 0. if estimates is None else float(estimates.get(name,(0.,0.))[0])
+            # A pedal that is in contact keeps at least the declared minimum
+            # normal through the whole crank cycle; a genuinely airborne or
+            # recovering foot has no such floor, so infeasibility is reported
+            # only when physics truly cannot meet the request.
             pad_lo = .15*weight if name=='saddle' else 0.
+            if name in ('front','rear') and predicted > 0. \
+                    and self._active_recovery[name].stage == 'none':
+                pad_lo = cfg.pedal_min_normal_n
             g_hi.append(-pad_lo)
             row = np.zeros(n_z); row[i0] = n_hat[0]; row[i0+1] = n_hat[1]
             g_rows.append(row)
-            predicted = 0. if estimates is None else float(estimates.get(name,(0.,0.))[0])
             g_hi.append(predicted+.005*cfg.support_k_n_m)
         # Positive-work epigraph: p_j >= tau_j*v_j and p_j >= 0; sum(p) <= cap.
         for i in range(n_t):

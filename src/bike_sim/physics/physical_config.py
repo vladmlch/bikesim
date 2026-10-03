@@ -351,6 +351,12 @@ class ArticulatedConfig:
     pedal_min_normal_n: float = 20.
     saddle_reserve_weight_fraction: float = .15
     grip_pull_per_hand_n: float = 300.
+    # Seated pedaling-cycle strategy knobs (R5): the ankle rocks with the
+    # crank phase inside the joint envelope, and the return foot may ask for
+    # up to this fraction of its friction cone while scraping through the
+    # backstroke. Both are intents, never physical guarantees.
+    pedal_ankle_amplitude_rad: float = .1
+    pedal_scrape_fraction: float = .5
     link_max_gap_m: float = .005
     # Bounded road preview the rider planner may see ahead of the front wheel.
     road_lookahead_m: float = 0.
@@ -386,6 +392,8 @@ class ArticulatedConfig:
             scalar(getattr(self,key),key,positive=True)
         if self.saddle_reserve_weight_fraction > 1.:
             raise ValueError('saddle reserve fraction must not exceed one')
+        if self.pedal_scrape_fraction > 1.:
+            raise ValueError('pedal scrape fraction must not exceed one')
         if self.pedal_attachment not in ('flat', 'weld'):
             raise ValueError(
                 f"pedal_attachment must be 'flat' or 'weld', got {self.pedal_attachment!r}")

@@ -170,6 +170,11 @@ class PhysicalInitialState:
         p=self._validated(runtime);sim=runtime.sim;m,d=sim.model,sim.data
         d.qpos[:]=p['qpos'];d.qvel[:]=p['qvel'];d.qacc_warmstart[:]=p['qacc_warmstart']
         state={k:np.asarray(v['values'],dtype=v['dtype']).reshape(v['shape']) for k,v in p['material'].items()}
+        # Schema 1 already stored these explicitly before cache state learned
+        # to retain the unilateral preload as part of equilibrium.
+        for name,key in (('ideal_hub','ideal_boundary'),('clutch','clutch_boundary')):
+            if p[key] is not None:
+                state['state_drive_'+name+'_boundary']=np.array([p[key]])
         if not restore_state(runtime,state):raise ValueError('incompatible initial material state')
         drive=runtime.drive
         for name,value in p['drive'].items():setattr(drive,name,tuple(value) if name=='angles' else value)
@@ -181,9 +186,10 @@ class PhysicalInitialState:
         if drive.clutch is not None:
             drive.clutch.boundary=p['clutch_boundary'];drive.clutch.prepare(m,d)
         if runtime.rider_contacts is not None:
-            runtime.rider_contacts.grip_anchor_local={
-                side:np.asarray(anchor,float).copy()
-                for side,anchor in p['grip_anchor_local'].items()}
+            if not runtime.rider_contacts.welded_grip:
+                runtime.rider_contacts.grip_anchor_local={
+                    side:np.asarray(anchor,float).copy()
+                    for side,anchor in p['grip_anchor_local'].items()}
             runtime.rider_contacts.restart_clock()
         if runtime.rider_control is not None:
             runtime.rider_control.active_state=np.asarray(p['active_state'],float).copy()

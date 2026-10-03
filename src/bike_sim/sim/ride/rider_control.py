@@ -305,9 +305,9 @@ class ArticulatedRiderController:
             self.steer = int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'steer'))
             steer_R = self.target_data.xmat[self.steer].reshape(3,3)
             for side in ('left','right'):
-                rel = (np.asarray(self.target_data.site_xpos[self.grip_sites[side]])
-                       - np.asarray(self.target_data.xpos[self.steer]))
-                self._weld_grip_offset[side] = steer_R.T @ rel
+                eq=mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_EQUALITY,'connect_grip_'+side)
+                if eq<0:raise ValueError('missing compiled grip connect equality')
+                self._weld_grip_offset[side] = model.eq_data[eq,3:6].copy()
         validate_planar_support_model(model,self.target_data,self.pedal_geoms.values())
         self.leg_geometry={}
         self.sole_jacobians={}
@@ -776,6 +776,10 @@ class ArticulatedRiderController:
         target_state = (data if command.crank_target_phase_rad is None
                         else self._coasting_target_state(model, data, command,
                                                          follow_motion=not steady_state))
+        if command.mean_crank_torque_nm > 0. and command.crank_target_rate_rad_s > 0.:
+            # Cadence is a limb velocity wish in the IK/PD objective. Only
+            # muscle torques act; the physical crank velocity is never set.
+            target_state = self._coasting_target_state(model,data,command,follow_motion=False)
         future=self._predict_target_state(model,target_state) if target_state.qvel[self.crank_spin_dof] != 0. else target_state
         previous=self._predict_target_state(model,target_state,reverse=True) if future is not target_state else target_state
         desired_acceleration=np.zeros(model.nv)
@@ -870,7 +874,9 @@ class ArticulatedRiderController:
                 raise ValueError('non-finite articulated command')
             requested[name]=requested_torque
             pedaling_of[name]=pedaling
-        tau_intent = np.asarray([requested[n] for n in names])
+        from bike_sim.sim.ride.rider_effort import activation_target
+        tau_intent,activation_gain = activation_target(self,np.asarray([requested[n] for n in names]),
+            dt_s=float(model.opt.timestep) if dt_s is None else dt_s,steady_state=steady_state)
         pedaling_part = np.asarray([pedaling_of.get(n,0.) for n in names])
         # The allocation's wrench intent is the preferred on-rider share of the
         # support split: preferred, never authoritative. Pedal normals are the
@@ -890,10 +896,10 @@ class ArticulatedRiderController:
             f_intent.extend((float(vec[0]),float(vec[2])))
         tau_alloc = None; alloc_diagnostics = {}
         for effort_scale in (1.,.5,.25):
-            intent = tau_intent-(1.-effort_scale)*pedaling_part
+            intent = tau_intent-(1.-effort_scale)*activation_gain*pedaling_part
             tau_alloc,alloc_diagnostics = self.allocate(model,data,intent,
                 np.asarray(f_intent,float),normals_alloc,effort_scale=effort_scale,
-                estimates=estimates)
+                estimates=estimates,dt_s=dt_s,steady_state=steady_state)
             if alloc_diagnostics['feasible']:
                 break
         alloc_diagnostics['invalid_controller']=not alloc_diagnostics['feasible']
@@ -1066,7 +1072,7 @@ class ArticulatedRiderController:
         return wrench, closures
 
     def allocate(self, model, data, tau_intent, f_intent, normals, *,
-                 effort_scale=1., estimates=None):
+                 effort_scale=1., estimates=None,dt_s=None,steady_state=False):
         """Solve z=[qddot_r,tau,f_attach,p] nearest the intent under dynamics.
 
         qddot over the rider DOFs, tau the 11 muscle torques, f the planar
@@ -1077,10 +1083,14 @@ class ArticulatedRiderController:
         """
         import mujoco
         from bike_sim.physics.rider_allocation import (
-            allocate_effort, grip_constraints, inverse_dynamics_rows)
+            allocate_effort, grip_constraints, inverse_dynamics_rows, Allocation, _residual)
         cfg = self.config
         if not hasattr(self,'_rider_dofs'):
             self._allocation_setup(model)
+        if all(meta['eq'] >= 0 for meta in self._alloc_attachments.values()):
+            from bike_sim.sim.ride.rider_response_allocation import allocate_response
+            return allocate_response(self,model,data,tau_intent,effort_scale=effort_scale,
+                                     dt_s=dt_s,steady_state=steady_state)
         rd, bd = self._rider_dofs, self._bike_dofs
         names = tuple(self.joints)
         n_r, n_t = len(rd), len(names)
@@ -1102,12 +1112,16 @@ class ArticulatedRiderController:
             actuation[int(np.flatnonzero(rd==dof)[0]),i] = 1.
         a_dyn,b_dyn = inverse_dynamics_rows(mass_r,actuation,jac_att,bias,known[rd])
         # z = [qddot_r(n_r), tau(n_t), f(n_f), p(n_t)]
-        n_z = n_r+n_t+n_f+n_t
+        base_size = n_r+n_t+n_f+n_t
+        activation_enabled=cfg.activation_tau_s>0. and not steady_state
+        n_z = base_size+(n_t if activation_enabled else 0)
         i_q = slice(0,n_r); i_t = slice(n_r,n_r+n_t)
-        i_f = slice(n_r+n_t,n_r+n_t+n_f); i_p = slice(n_r+n_t+n_f,n_z)
+        i_f = slice(n_r+n_t,n_r+n_t+n_f); i_p = slice(n_r+n_t+n_f,base_size)
+        excitation_indices=np.arange(base_size,n_z);torque_indices=np.arange(n_r,n_r+n_t)
         s_q,s_t,s_f,s_p = 500.,50.,300.,450.
         scales = np.concatenate([np.full(n_r,s_q),np.full(n_t,s_t),
-                                 np.full(n_f,s_f),np.full(n_t,s_p)])
+                                 np.full(n_f,s_f),np.full(n_t,s_p),
+                                 np.full(n_t if activation_enabled else 0,s_t)])
         speed = np.asarray([data.qvel[self.joints[n][1]] for n in names])
         angle = np.asarray([self.anatomical_joint_angle(n,data.qpos[self.joints[n][0]])
                             for n in names]) if self.strength is not None else None
@@ -1117,8 +1131,8 @@ class ArticulatedRiderController:
             if self.strength is None:
                 cap_pos = cap_neg = cfg.joint_limit_nm
             else:
-                cap_pos = self.strength_capacity(name,angle[i],speed[i],1.)
-                cap_neg = self.strength_capacity(name,angle[i],speed[i],-1.)
+                cap_pos = min(cfg.joint_limit_nm,self.strength_capacity(name,angle[i],speed[i],1.))
+                cap_neg = min(cfg.joint_limit_nm,self.strength_capacity(name,angle[i],speed[i],-1.))
             # Positive-power torque (the accelerating direction) keeps the
             # per-joint speed/power budget; braking stays bounded by strength.
             if v > 0.:
@@ -1128,6 +1142,13 @@ class ArticulatedRiderController:
                 cap_neg = min(cap_neg,-cfg.joint_power_limit_w/v)
                 if -v >= cfg.joint_speed_limit_rad_s: cap_neg = 0.
             lo[n_r+i],hi[n_r+i] = -cap_neg,cap_pos
+            aid=self.joints[name][2]
+            if model.actuator_forcelimited[aid]:
+                lo[n_r+i]=max(lo[n_r+i],model.actuator_forcerange[aid,0])
+                hi[n_r+i]=min(hi[n_r+i],model.actuator_forcerange[aid,1])
+            if model.actuator_ctrllimited[aid]:
+                lo[n_r+i]=max(lo[n_r+i],model.actuator_ctrlrange[aid,0])
+                hi[n_r+i]=min(hi[n_r+i],model.actuator_ctrlrange[aid,1])
         lo[i_p] = 0.
         cap = cfg.active_positive_power_limit_w
         hi[i_p] = cap if cap is not None else np.inf
@@ -1140,10 +1161,8 @@ class ArticulatedRiderController:
             row = np.zeros(n_z); row[i_q] = jrel[rd]
             g_rows.append(row); g_hi.append(rhs+tol)
             g_rows.append(-row); g_hi.append(tol-rhs)
-        # Per-attachment friction budgets on the on-rider (Fx,Fz). Coupled
-        # (weld/pin) supports carry a two-sided cone |t| <= mu|n| since the
-        # coupling can pull; a bare pad contact is strictly unilateral,
-        # friction-bounded, and limited by its declared spring capacity.
+        # Every foot/saddle support obeys the unilateral physical cone even
+        # when a computational equality enforces attachment geometry.
         # Grips take their pull/press branch instead of a friction cone.
         weight = self.rider_mass*float(np.linalg.norm(model.opt.gravity))
         for k,name in enumerate(attach):
@@ -1156,19 +1175,7 @@ class ArticulatedRiderController:
             mu = dict(saddle=cfg.saddle_mu,front=cfg.foot_mu,rear=cfg.foot_mu).get(name,cfg.support_mu)
             i0 = i_f.start+2*k
             coupled = self._alloc_attachments[name]['eq'] >= 0
-            if coupled:
-                if name == 'saddle':
-                    row = np.zeros(n_z)
-                    row[i0:i0+2] = -n_hat
-                    g_rows.append(row)
-                    g_hi.append(-cfg.saddle_reserve_weight_fraction*weight)
-                for s_t_,s_n_ in ((1.,1.),(-1.,1.),(1.,-1.),(-1.,-1.)):
-                    row = np.zeros(n_z)
-                    row[i0] = s_t_*t_hat[0]-s_n_*mu*n_hat[0]
-                    row[i0+1] = s_t_*t_hat[1]-s_n_*mu*n_hat[1]
-                    g_rows.append(row); g_hi.append(0.)
-                continue
-            # Bare pad: -mu*fn <= ft <= mu*fn, 0 <= fn <= pad capacity.
+            # -mu*fn <= ft <= mu*fn and the declared normal floor.
             for s_t_ in (1.,-1.):
                 row = np.zeros(n_z)
                 row[i0] = s_t_*t_hat[0]-mu*n_hat[0]
@@ -1182,10 +1189,12 @@ class ArticulatedRiderController:
             # recovering foot has no such floor, so infeasibility is reported
             # only when physics truly cannot meet the request.
             pad_lo = cfg.saddle_reserve_weight_fraction*weight if name=='saddle' else 0.
-            if name in ('front','rear') and predicted > 0. \
-                    and self._active_recovery[name].stage == 'none':
+            if name in ('front','rear') and (coupled or (predicted > 0.
+                    and self._active_recovery[name].stage == 'none')):
                 pad_lo = cfg.pedal_min_normal_n
             g_hi.append(-pad_lo)
+            if coupled:
+                continue
             row = np.zeros(n_z); row[i0] = n_hat[0]; row[i0+1] = n_hat[1]
             g_rows.append(row)
             g_hi.append(predicted+.005*cfg.support_k_n_m)
@@ -1200,8 +1209,20 @@ class ArticulatedRiderController:
         dyn = np.zeros((n_r,n_z)); dyn[:,i_q] = a_dyn[:,:n_r]
         dyn[:,i_t] = a_dyn[:,n_r:n_r+n_t]; dyn[:,i_f] = a_dyn[:,n_r+n_t:]
         aeq = np.vstack([dyn]); beq = b_dyn
-        target = np.concatenate([np.zeros(n_r),np.asarray(tau_intent,float),
-                                 np.asarray(f_intent,float),np.zeros(n_t)])
+        activation=None
+        activated_target=np.asarray(tau_intent,float)
+        excitation_target=np.zeros(0)
+        if activation_enabled:
+            from bike_sim.sim.ride.rider_activation_allocation import ActivationLaw
+            lo[excitation_indices]=lo[i_t];hi[excitation_indices]=hi[i_t]
+            activation=ActivationLaw(self.active_state,speed,lo[i_t],hi[i_t],
+                dt_s=float(model.opt.timestep) if dt_s is None else dt_s,
+                tau_s=cfg.activation_tau_s,power_limit=cap)
+            excitation_target=np.clip((activated_target-(1.-activation.gain)*self.active_state)/activation.gain,
+                                      lo[i_t],hi[i_t])
+            activated_target=activation.delivered(excitation_target)
+        target = np.concatenate([np.zeros(n_r),activated_target,
+                                 np.asarray(f_intent,float),np.zeros(n_t),excitation_target])
         g = np.asarray(g_rows,float).reshape(-1,n_z); h = np.asarray(g_hi,float)
         # Dimensionless x = z/scale.
         S = np.diag(scales)
@@ -1215,28 +1236,39 @@ class ArticulatedRiderController:
         def solve(branch, x0):
             pull_left, pull_right = branch
             extra = []
+            if activation is not None:
+                extra.append(activation.constraint(torque_indices,excitation_indices,scales))
             for side,pulling in (('grip_left',pull_left),('grip_right',pull_right)):
                 if side not in self._alloc_attachments:
                     continue
-                site = self.grip_sites[side.split('_')[1]]
-                origin = np.asarray(data.site_xpos[site],dtype=float)
+                from bike_sim.sim.ride.rider_response_allocation import allocation_support_point,allocation_grip_constraints
+                origin = allocation_support_point(model,data,self,side,self._alloc_attachments[side])
                 pelvis = np.asarray(data.xpos[self.pelvis],dtype=float)
                 direction = pelvis-origin; direction[1]=0.
                 direction = direction[[0,2]]/max(np.linalg.norm(direction[[0,2]]),1e-9)
                 k = attach.index(side)
                 force_map = np.zeros((2,n_z))
                 force_map[0,i_f.start+2*k] = s_f; force_map[1,i_f.start+2*k+1] = s_f
-                extra.extend(grip_constraints(force_map,direction,pulling=pulling,
+                extra.extend(allocation_grip_constraints(force_map,direction,pulling=pulling,
                                               limit_n=cfg.grip_pull_per_hand_n))
-            return allocate_effort(scaled_target,aeq_x,beq_x,g_x,h_x,lo_x,hi_x,
+            result=allocate_effort(scaled_target,aeq_x,beq_x,g_x,h_x,lo_x,hi_x,
                                    extra_constraints=extra,x0=x0)
+            if activation is not None:
+                projected=activation.project(result.solution,torque_indices,excitation_indices,scales)
+                error=_residual(projected,aeq_x,beq_x,g_x,h_x,extra,lo_x,hi_x)
+                result=Allocation(projected,error<=1e-7,error)
+            return result
         result, branch = self._select_allocation_branch(scaled_target, solve)
         z = result.solution*scales
+        excitation=z[i_t].copy() if activation is None else z[excitation_indices].copy()
+        activation_state=z[i_t].copy() if activation is None else activation.latent(excitation)
         return z[i_t], {'feasible':bool(result.feasible),'violation':float(result.violation),
                         'saddle_normal_lower_bound_n':cfg.saddle_reserve_weight_fraction*weight,
                         'grip_branch':branch,'effort_scale':effort_scale,
                         'solution_qddot':z[i_q],'solution_wrenches':z[i_f],
                         'solution_tau':z[i_t].copy(),'solution_power':z[i_p],
+                        'solution_excitation_nm':excitation,'solution_activation_state_nm':activation_state,
+                        'solution_active_lower_nm':lo[i_t].copy(),'solution_active_upper_nm':hi[i_t].copy(),
                         'solution_base_qacc':qacc_b.copy()}
 
     def _select_allocation_branch(self, target, solve):

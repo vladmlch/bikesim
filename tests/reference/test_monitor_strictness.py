@@ -40,6 +40,9 @@ def neutral_raw(i, *, violation=(), components=None, qvel=None):
             loss_step_j=0., electrical_power_w=0., mechanical_energy_j=0.,
             elastic_energy_j={}, battery_energy_j=0., attachment_errors=violation,
             rider_control_terms={}, full=False, constraint_snapshot=None,
+            numerical_constraint_power_w={name:float(force@np.asarray(qvel))
+                for name,force in (components or {}).items() if name in
+                ('joint_limits','shock_solver_limit','closure','ideal_transmission')},
             channels={'tires': {s: {'unloaded_radius_m':.35, 'patches':()}
                                 for s in ('front','rear')}},
             diagnostics=dict(rider={}, rider_welds={}, endpoint_mass={}, rider_intent=None,
@@ -80,6 +83,21 @@ def test_monitor_mode_cannot_change_after_a_step():
     runtime.sim.steps = 1
     with pytest.raises(RuntimeError, match='first step'):
         runtime.set_strict(False)
+
+
+def test_reset_enters_new_episode_before_preparing_an_explicit_initial_state():
+    from bike_sim.sim.ride.initial_state import _guard
+    runtime=runtime_for_raws()
+    class Prepared(Exception):pass
+    class Seed:
+        def prepare(self,owner):
+            _guard(owner)
+            raise Prepared
+    runtime.sim=SimpleNamespace(steps=3,data=SimpleNamespace(time=.0015),physical_initial_state=Seed())
+    runtime.rider_intent=SimpleNamespace(reset=lambda:None)
+    with pytest.raises(Prepared):
+        runtime.reset()
+    assert runtime.sim.steps==0 and runtime.sim.data.time==0.
 
 
 @pytest.mark.parametrize('tail_error', [ValueError, RuntimeError, ArithmeticError])

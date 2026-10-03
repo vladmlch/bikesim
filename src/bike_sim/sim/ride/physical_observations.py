@@ -124,6 +124,9 @@ def constraint_components(model,data):
     """Separate contacts, joint limits and closure work using solved EFC rows."""
     groups={'native_contact':[], 'joint_limits':[], 'closure':[]}
     for i,t in enumerate(data.efc_type[:data.nefc]):
+        # NumPy scalar membership against pybind enum tuples is not reliable.
+        # A Python integer preserves every actual MuJoCo row category.
+        t = int(t)
         if t in (mujoco.mjtConstraint.mjCNSTR_CONTACT_FRICTIONLESS,
                  mujoco.mjtConstraint.mjCNSTR_CONTACT_PYRAMIDAL,
                  mujoco.mjtConstraint.mjCNSTR_CONTACT_ELLIPTIC):
@@ -141,6 +144,27 @@ def constraint_components(model,data):
             mujoco.mj_mulJacTVec(model,data,force,weights)
         result[name]=force
     return result
+
+
+def numerical_constraint_powers(model, data, incoming_velocity):
+    """Signed work rates per physical equality/limit, before aggregation.
+
+    Multiple coordinate rows of one weld describe one constraint. Independent
+    welds or ideal tendons cannot cancel each other's absolute numerical work.
+    Native contact and brake friction remain their separate physical channels.
+    """
+    velocity=np.empty(data.nefc)
+    mujoco.mj_mulJacVec(model,data,velocity,np.asarray(incoming_velocity))
+    powers={}
+    kinds={int(mujoco.mjtConstraint.mjCNSTR_EQUALITY):'equality',
+           int(mujoco.mjtConstraint.mjCNSTR_LIMIT_JOINT):'joint_limit',
+           int(mujoco.mjtConstraint.mjCNSTR_LIMIT_TENDON):'tendon_limit'}
+    for i in range(data.nefc):
+        kind=kinds.get(int(data.efc_type[i]))
+        if kind is not None:
+            key=f'{kind}:{int(data.efc_id[i])}'
+            powers[key]=powers.get(key,0.)+float(data.efc_force[i]*velocity[i])
+    return powers
 
 
 def sensor_channels(runtime, *, qvel=None, drive_channels=None):

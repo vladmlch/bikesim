@@ -85,7 +85,7 @@ class PedalingPolicy:
         self.target_phase_rad = None
         self.target_rate_rad_s = 0.
         self.deceleration_rad_s2 = 0.
-        self._effort = None
+        self._effort = 0.
         self._reposition_armed = True
         self._reposition_goal = None
         self._reposition_reason = ''
@@ -178,7 +178,7 @@ class PedalingPolicy:
             # the pedal, and the available torque rises toward the isometric
             # ceiling instead of fading. The ramp is linear in cadence and
             # never reduces the commanded effort. The slew bound models force
-            # development and initializes from the commanded effort, so a mash
+            # development from the actually issued previous effort, so a mash
             # builds over a fraction of a second rather than appearing as an
             # impulse that rips the feet off the pedals.
             target = effort_nm
@@ -188,7 +188,7 @@ class PedalingPolicy:
             if slew <= 0.:
                 effort = target
             else:
-                base = effort_nm if self._effort is None else self._effort
+                base = self._effort
                 effort = max(base-slew*dt, min(base+slew*dt, target))
             self._effort = effort
             return PedalingState('pedaling', '', effort, required_cadence_rpm)
@@ -201,5 +201,6 @@ class PedalingPolicy:
         next_speed = max(0., abs(previous_rate) - self.deceleration_rad_s2 * dt)
         self.target_rate_rad_s = copysign(next_speed, previous_rate)
         self.target_phase_rad += .5 * (previous_rate + self.target_rate_rad_s) * dt
+        self._effort = 0.
         return PedalingState('coasting', reason, 0., required_cadence_rpm,
                              self.target_phase_rad, self.target_rate_rad_s)

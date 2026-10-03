@@ -14,7 +14,7 @@ from bike_sim.terrain.trackfile import track_to_dict
 from bike_sim.validation.environment import source_fingerprint
 
 
-CACHE_VERSION = 3
+CACHE_VERSION = 4
 
 
 def _serializable(value):
@@ -66,6 +66,10 @@ def _cache_path(runtime):
 
 def _state_arrays(runtime):
     state = {}
+    for name in ('ideal_hub','clutch'):
+        constraint=getattr(runtime.drive,name)
+        if constraint is not None:
+            state['state_drive_'+name+'_boundary']=np.array([constraint.boundary],dtype=float)
     rider = runtime.rider_contacts
     if rider is not None:
         keys = tuple(rider.states)
@@ -121,6 +125,14 @@ def _state_arrays(runtime):
 
 
 def restore_state(runtime, state):
+    drive_boundaries=[]
+    for name in ('ideal_hub','clutch'):
+        constraint=getattr(runtime.drive,name)
+        if constraint is not None:
+            value=np.asarray(state.get('state_drive_'+name+'_boundary',()),dtype=float)
+            if value.shape != (1,) or not np.isfinite(value).all():
+                return False
+            drive_boundaries.append((constraint,float(value[0])))
     rider = runtime.rider_contacts
     if rider is not None:
         required = {
@@ -204,6 +216,9 @@ def restore_state(runtime, state):
             )
     elif any(key.startswith('state_tire_') for key in state):
         return False
+    for constraint,boundary in drive_boundaries:
+        constraint.boundary=boundary
+        runtime.sim.model.tendon_range[constraint.tendon_id,1]=boundary
     return True
 
 

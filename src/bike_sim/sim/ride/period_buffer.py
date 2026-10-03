@@ -164,6 +164,8 @@ def evaluate_period(runtime, raws):
         if c is not None:
             errors.extend(f'rider_strength.{name}' for name in
                           effort['rider_strength_violations'])
+            if effort['rider_effort_budget_exceeded']:
+                errors.append('rider_power.positive')
             if raw.metadata.get('invalid_controller'):
                 errors.append('rider_controller.infeasible')
         errors = tuple(errors)
@@ -174,7 +176,6 @@ def evaluate_period(runtime, raws):
         muscle = np.array([float(f@v) for n, f in components.items()
                            if n == 'human_crank' or n.startswith('act_rider_')])
         motor = float(components.get('mid_drive', np.zeros_like(v))@v)
-        constraint = np.array([float(components[n]@v) for n in
-            ('joint_limits', 'shock_solver_limit', 'closure', 'ideal_transmission') if n in components])
+        constraint = np.array(list(raw.metadata['numerical_constraint_power_w'].values()))
         works.append(step_work(muscle, motor, constraint, runtime.control_clock.timestep_s))
     return PeriodReport(tuple(violations), tuple(works), first, tuple(attachments), tuple(efforts))

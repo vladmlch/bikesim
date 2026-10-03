@@ -60,6 +60,7 @@ class PolicySession:
             if not isinstance(command, RideControl):
                 raise ValueError('policy must return RideControl')
             if (command.human_torque_nm is not None or command.posture is not None
+                    or command.crank_target_rate_rad_s is not None
                     or not command.rider_enabled):
                 raise ValueError('motor policy cannot own rider inputs')
             if crank_reposition:

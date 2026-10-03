@@ -1,4 +1,9 @@
-"""Test-only scalar step oracle captured before P3 batching. Never called by runtime."""
+"""Independent scalar integration oracle captured before P3 batching.
+
+G5 corrects its constraint-work inputs to individual physical constraints, just
+as the real ledger requires; scalar stepping and scalar wrench recovery remain
+independent of the batched runtime. Never called by runtime.
+"""
 from dataclasses import replace, asdict
 from contextlib import contextmanager
 from bike_sim.sim.ride.control import RideControl
@@ -25,7 +30,7 @@ from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
 from bike_sim.sim.ride.physical_observations import (
     tire_channels, preview_tire_channels, energy_state, actuator_components,
-    constraint_components, sensor_channels,
+    constraint_components, sensor_channels, numerical_constraint_powers,
 )
 from bike_sim.sim.ride.physical_energy import mass_observations
 from bike_sim.sim.ride.rider_intent import RiderIntentResolver, signals_from_channels
@@ -63,6 +68,7 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
     components={k:np.array(f,copy=True) for k,f in sim.force_accumulator.components.items()}
     warning_counts=np.array([w.number for w in d.warning],copy=True)
     mujoco.mj_step(m,d)
+    constraint_powers=numerical_constraint_powers(m,d,v)
     for warning in (mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,mujoco.mjtWarning.mjWARN_BADQACC):
         if d.warning[int(warning)].number>warning_counts[int(warning)]:
             raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
@@ -125,9 +131,7 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
     muscle_power=np.array([float(components[n]@v) for n in components
                            if n=='human_crank' or n.startswith('act_rider_')])
     motor_power=float(components.get('mid_drive',np.zeros(m.nv))@v)
-    constraint_power=np.array([float(components[n]@v) for n in
-        ('joint_limits','shock_solver_limit','closure','ideal_transmission')
-        if n in components])
+    constraint_power=np.array(list(constraint_powers.values()))
     work=step_work(muscle_power,motor_power,constraint_power,dt)
     self.muscle_signed_j+=work.muscle_signed_j
     self.muscle_positive_j+=work.muscle_positive_j

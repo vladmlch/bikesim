@@ -18,6 +18,7 @@ class RideControl:
     motor_torque_nm: float | None = None
     motor_limit_nm: float | None = None
     human_torque_nm: float | None = None
+    crank_target_rate_rad_s: float | None = None
     posture: RiderPosture | None = None
     rider_enabled: bool = True
     # One crank-reposition maneuver per rising edge: the rider backpedals to
@@ -26,7 +27,7 @@ class RideControl:
     crank_reposition: bool = False
 
     def __post_init__(self):
-        for name in ('motor_torque_nm', 'motor_limit_nm', 'human_torque_nm'):
+        for name in ('motor_torque_nm', 'motor_limit_nm', 'human_torque_nm', 'crank_target_rate_rad_s'):
             value = getattr(self, name)
             if value is not None:
                 scalar(value, name, minimum=0.)
@@ -43,7 +44,8 @@ class RideControl:
         if any(v is not None for v in (self.motor_torque_nm, self.motor_limit_nm, self.human_torque_nm)):
             if config.drive_mode not in ('crank_effort', 'articulated_effort'):
                 raise ValueError('torque commands require a physical effort drive mode')
-        if (self.posture is not None or not self.rider_enabled) and rider_variant != 'articulated_planar':
+        if (self.posture is not None or not self.rider_enabled
+                or self.crank_target_rate_rad_s is not None) and rider_variant != 'articulated_planar':
             raise ValueError('rider commands require articulated_planar')
         if self.crank_reposition:
             if rider_variant != 'articulated_planar' or config.drive_mode != 'articulated_effort':

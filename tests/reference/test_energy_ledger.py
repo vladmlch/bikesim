@@ -92,6 +92,94 @@ def test_runtime_zero_source_tolerance_does_not_grow_with_episode_steps():
     assert runtime.energy['constraint_absolute_j'] == pytest.approx(5.e-8)
 
 
+@pytest.mark.parametrize('kind',['tendon','joint','contact','equality'])
+def test_actual_solver_rows_partition_without_missing_or_duplicate_forces(kind):
+    from bike_sim.sim.ride.physical_observations import constraint_components
+    if kind == 'contact':
+        xml='<worldbody><geom type="plane" size="1 1 .1"/><body pos="0 0 .09"><joint type="slide" axis="0 0 1"/><geom type="sphere" size=".1" mass="1"/></body></worldbody>'
+    else:
+        joint='limited="true" range="-.1 .1"' if kind=='joint' else ''
+        xml=f'<worldbody><body><joint name="a" type="slide" axis="1 0 0" {joint}/><inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/></body><body><joint name="b" type="slide" axis="1 0 0"/><inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/></body></worldbody>'
+        if kind=='tendon':
+            xml+='<tendon><fixed limited="true" range="-100 0"><joint joint="a" coef="1"/><joint joint="b" coef="-1"/></fixed></tendon>'
+        elif kind=='equality':
+            xml+='<equality><joint joint1="a" joint2="b"/></equality>'
+    model=mujoco.MjModel.from_xml_string('<mujoco><option gravity="0 0 0"/>'+xml+'</mujoco>')
+    data=mujoco.MjData(model)
+    if kind!='contact':data.qpos[0]=.2
+    mujoco.mj_forward(model,data)
+    parts=constraint_components(model,data)
+    target={'tendon':'joint_limits','joint':'joint_limits','contact':'native_contact','equality':'closure'}[kind]
+    assert np.linalg.norm(data.qfrc_constraint)>1.
+    np.testing.assert_allclose(parts[target],data.qfrc_constraint,rtol=1e-12,atol=1e-12)
+    np.testing.assert_allclose(sum(parts.values()),data.qfrc_constraint,rtol=1e-12,atol=1e-12)
+    assert all(not np.any(force) for name,force in parts.items() if name!=target)
+
+
+def test_cached_equilibrium_restores_the_actual_one_way_constraint_preload():
+    from types import SimpleNamespace
+    from bike_sim.sim.ride.ideal_freehub import IdealFreehubConstraint
+    from bike_sim.sim.ride.equilibrium_cache import _state_arrays,restore_state
+    model=mujoco.MjModel.from_xml_string('''<mujoco><option gravity="0 0 0"/>
+      <worldbody><body><joint name="a" type="slide" axis="1 0 0"/>
+      <inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/></body>
+      <body><joint name="b" type="slide" axis="1 0 0"/>
+      <inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/></body></worldbody>
+      <tendon><fixed name="coupling" limited="true" range="-10 0"><joint joint="a" coef="1"/>
+      <joint joint="b" coef="-1"/></fixed></tendon></mujoco>''')
+    data=mujoco.MjData(model)
+    hub=IdealFreehubConstraint(model,1.,tendon_name='coupling',driver='a',driven='b')
+    hub.boundary=-.001;model.tendon_range[hub.tendon_id,1]=hub.boundary
+    mujoco.mj_forward(model,data)
+    before=data.qacc.copy()
+    runtime=SimpleNamespace(sim=SimpleNamespace(model=model),rider_contacts=None,tire=None,
+                            drive=SimpleNamespace(ideal_hub=hub,clutch=None))
+    state=_state_arrays(runtime)
+    hub.reset(model,data)
+    mujoco.mj_forward(model,data)
+    assert not np.allclose(data.qacc,before)
+    assert restore_state(runtime,state)
+    mujoco.mj_forward(model,data)
+    np.testing.assert_allclose(data.qacc,before,atol=1e-12)
+    assert hub.boundary == model.tendon_range[hub.tendon_id,1] == -.001
+
+
+@pytest.mark.parametrize('kind',['equality','tendon'])
+def test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(kind):
+    from dataclasses import replace
+    from test_monitor_strictness import runtime_for_raws,neutral_raw
+    from bike_sim.sim.ride.physical_observations import constraint_components,numerical_constraint_powers
+    from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
+    model=mujoco.MjModel.from_xml_string('''<mujoco><option gravity="0 0 0" timestep=".0005"/>
+      <worldbody><body><joint name="a" type="slide" axis="1 0 0"/><geom size=".1" mass="1" contype="0" conaffinity="0"/></body>
+      <body><joint name="b" type="slide" axis="1 0 0"/><geom size=".1" mass="1" contype="0" conaffinity="0"/></body></worldbody>
+      <equality><joint name="one" joint1="a" solref="-100 0"/><joint name="two" joint1="b" solref="-100 0"/></equality></mujoco>''')
+    if kind=='tendon':
+        bodies=''.join(f'<body><joint name="{name}" type="slide" axis="1 0 0"/>'
+            '<geom size=".1" mass="1" contype="0" conaffinity="0"/></body>' for name in 'abcd')
+        tendons=''.join(f'<fixed limited="true" range="-10 0" solreflimit="-100 0"><joint joint="{a}" coef="1"/>'
+            f'<joint joint="{b}" coef="-1"/></fixed>' for a,b in (('a','b'),('c','d')))
+        model=mujoco.MjModel.from_xml_string('<mujoco><option gravity="0 0 0" timestep=".0005"/>'
+            '<worldbody>'+bodies+'</worldbody><tendon>'+tendons+'</tendon></mujoco>')
+    data=mujoco.MjData(model)
+    data.qpos[:]=[.1,-.1] if kind=='equality' else [.1,0.,.1,0.]
+    data.qvel[:]=[1.,1.] if kind=='equality' else [1.,0.,-1.,0.]
+    mujoco.mj_forward(model,data)
+    parts=constraint_components(model,data)
+    assert parts['closure' if kind=='equality' else 'joint_limits']@data.qvel == pytest.approx(0.,abs=1e-12)
+    powers=numerical_constraint_powers(model,data,data.qvel)
+    assert len(powers)==2 and min(powers.values())<0.<max(powers.values())
+    runtime=runtime_for_raws()
+    raw=neutral_raw(0)
+    runtime._buffer.push(replace(raw,qpos=data.qpos.copy(),qvel=data.qvel.copy(),components=parts,
+        metadata=dict(raw.metadata,numerical_constraint_power_w=powers)))
+    with pytest.raises(InvalidReferenceRun,match='energy.constraint_work'):
+        runtime.flush()
+    assert runtime.energy['constraint_signed_j'] == pytest.approx(0.,abs=1e-12)
+    assert runtime.energy['constraint_absolute_j'] == pytest.approx(sum(map(abs,powers.values()))*.0005)
+    assert runtime.energy['constraint_absolute_j'] > 1e-8
+
+
 def _free_body(extra=''):
     return mujoco.MjModel.from_xml_string(
         '<mujoco><option gravity="0 0 -9.81" timestep="0.0005"/>' +

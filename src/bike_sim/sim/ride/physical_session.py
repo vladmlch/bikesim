@@ -137,6 +137,13 @@ def configuration_metadata(sim,seed=None):
     }
     resolved['compiled_equality_solref'] = sim.model.eq_solref.tolist()
     resolved['compiled_equality_solimp'] = sim.model.eq_solimp.tolist()
+    from bike_sim.sim.ride.rider_response_allocation import SUPPORT_FORCE_GUARD_N,SUPPORT_MOMENT_GUARD_NM,GRIP_RADIUS_GUARD_FRACTION
+    resolved['allocation_numerical_guards']={
+        'support_force_n':SUPPORT_FORCE_GUARD_N,'support_moment_nm':SUPPORT_MOMENT_GUARD_NM,
+        'grip_radius_fraction':GRIP_RADIUS_GUARD_FRACTION}
+    resolved['pedal_support_half_length_m'] = {
+        side:float(sim.model.geom_size[sim.model.geom('geom_pedal_'+side).id,0])
+        for side in ('front','rear')}
     source_root=Path(__file__).resolve().parents[2]
     source_hash=source_fingerprint(source_root)
     try:

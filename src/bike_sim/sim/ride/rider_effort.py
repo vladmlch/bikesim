@@ -3,6 +3,15 @@ import numpy as np
 from bike_sim.physics.rider_activation import activation_step,limit_positive_power
 
 
+def activation_target(controller, requested, *, dt_s, steady_state):
+    """Filter the desired active force before constrained muscle allocation."""
+    tau=controller.config.activation_tau_s
+    gain=1. if steady_state or tau==0. else float(-np.expm1(-dt_s/tau))
+    target=(np.asarray(requested).copy() if steady_state else
+            activation_step(controller.active_state,requested,dt_s,tau))
+    return target,gain
+
+
 def finalize_effort(controller, data, torques, *, advance, dt_s, steady_state):
     from bike_sim.sim.ride.rider_control import bounded_effort
     c=controller; cfg=c.config; names=tuple(c.joints)
@@ -10,19 +19,36 @@ def finalize_effort(controller, data, torques, *, advance, dt_s, steady_state):
     passive=-cfg.joint_kd_nms_rad*speeds
     # Passive damping is a DOF property solved by the engine: the requested,
     # activated, bounded, and commanded torque are all purely active muscle.
-    target=np.array([c.last_terms[n]['requested_nm'] for n in names])
+    target=np.array([torques[n] for n in names])
     enabled=(cfg.activation_tau_s>0 or cfg.active_positive_power_limit_w is not None
              or c.strength is not None)
     if enabled:
         if (advance and not steady_state and cfg.activation_tau_s>0
                 and c.activation_time_s is not None and data.time<=c.activation_time_s):
             raise ValueError('rider activation advances once per timestamp')
-        activated=(target.copy() if steady_state else
-                   activation_step(c.active_state,target,dt_s,cfg.activation_tau_s))
-        active=bounded_effort(speeds,activated,cfg.joint_limit_nm,cfg.joint_speed_limit_rad_s,cfg.joint_power_limit_w)
-        active,strength_limited=c.strength_limited(active,data.qpos,data.qvel)
+        certificate=getattr(c,'allocation_diagnostics',{})
+        excitation=certificate.get('solution_excitation_nm')
+        if excitation is None:
+            # Standalone callers must still obey bounded excitation; the
+            # production allocators provide this same solved physical input.
+            gain=1. if steady_state or cfg.activation_tau_s==0. else -np.expm1(-dt_s/cfg.activation_tau_s)
+            excitation=(target-(1.-gain)*c.active_state)/gain
+            excitation=bounded_effort(speeds,excitation,cfg.joint_limit_nm,
+                cfg.joint_speed_limit_rad_s,cfg.joint_power_limit_w)
+            excitation,_=c.strength_limited(excitation,data.qpos,data.qvel)
+        excitation=np.asarray(excitation)
+        activated=(excitation.copy() if steady_state else
+                   activation_step(c.active_state,excitation,dt_s,cfg.activation_tau_s))
+        if 'solution_active_lower_nm' in certificate:
+            active=np.clip(activated,certificate['solution_active_lower_nm'],certificate['solution_active_upper_nm'])
+            _,strength_limited=c.strength_limited(activated,data.qpos,data.qvel)
+        else:
+            active=bounded_effort(speeds,activated,cfg.joint_limit_nm,cfg.joint_speed_limit_rad_s,cfg.joint_power_limit_w)
+            active,strength_limited=c.strength_limited(active,data.qpos,data.qvel)
         if cfg.active_positive_power_limit_w is not None:
             active=limit_positive_power(active,speeds,cfg.active_positive_power_limit_w)
+        if not np.allclose(active,target,rtol=1e-9,atol=1e-7):
+            raise ArithmeticError('allocated rider torque is outside final actuator limits')
         if advance:
             c.active_state=activated.copy()
             # Without an activation time constant there is no filter state to
@@ -32,20 +58,21 @@ def finalize_effort(controller, data, torques, *, advance, dt_s, steady_state):
         torques=dict(zip(names,map(float,active)))
     else:
         active=np.array([torques[n] for n in names])
+        excitation=target.copy()
         strength_limited=()
     c.effort_diagnostics={
-        'rider_active_request_nm':dict(zip(names,map(float,target))),
+        'rider_active_request_nm':dict(zip(names,map(float,excitation))),
         'rider_active_delivered_nm':dict(zip(names,map(float,active))),
         'rider_positive_power_w':float(np.maximum(active*speeds,0.).sum()),
         'rider_passive_power_w':float(passive@speeds),
-        'rider_activation_saturated':bool(not np.allclose(active,target,rtol=1e-10,atol=1e-10)),
+        'rider_activation_saturated':bool(not np.allclose(active,excitation,rtol=1e-10,atol=1e-10)),
         'rider_strength_limited':strength_limited,
         'rider_effort_budget_exceeded':False,
         'rider_active_positive_power_limit_w':cfg.active_positive_power_limit_w,
         'rider_effort_observation':'incoming_request',
     }
     for i,name in enumerate(names):
-        c.last_terms[name].update(active_request_nm=float(target[i]),active_delivered_nm=float(active[i]),
+        c.last_terms[name].update(active_request_nm=float(excitation[i]),active_delivered_nm=float(active[i]),
                                   passive_damping_nm=float(passive[i]),command_nm=float(torques[name]))
     return torques
 

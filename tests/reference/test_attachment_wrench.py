@@ -47,6 +47,31 @@ def _pair_model(equality_xml):
 <equality>{equality_xml}</equality></mujoco>''')
 
 
+@pytest.mark.parametrize('pad_spacing',[.01,.04])
+def test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads(pad_spacing):
+    from types import SimpleNamespace
+    from bike_sim.physics.model_config import ArticulatedConfig
+    from bike_sim.sim.ride.rider_contacts import RiderContactApplier
+    model=mujoco.MjModel.from_xml_string('''<mujoco><option gravity="0 0 0"/>
+      <worldbody><body name="bike"><freejoint/><inertial mass="1000" pos="0 0 0" diaginertia="1000 1000 1000"/>
+      <geom name="platform" type="box" size=".05 .025 .01" contype="0" conaffinity="0"/></body>
+      <body name="rider"><freejoint/><inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/>
+      <site name="sole"/></body></worldbody><equality><weld body1="rider" body2="bike"/></equality></mujoco>''')
+    data=mujoco.MjData(model)
+    data.xfrc_applied[model.body('rider').id,2]=-100.
+    mujoco.mj_forward(model,data)
+    c=RiderContactApplier.__new__(RiderContactApplier)
+    c.config=ArticulatedConfig(pedal_patch_half_length_m=pad_spacing)
+    c.supports={'front_pedal':(model.body('rider').id,model.site('sole').id,
+        model.body('bike').id,model.geom('platform').id)}
+    c.linked_saddle=False;c.welded_pedals=True;c.welded_grip=False
+    c._welds=SimpleNamespace(eq_ids={'front':0})
+    c._pads=lambda *args:[(None,None,np.array([0.,0.,1.]),None,None,None)]
+    samples,errors=c._attachment_samples(model,data)
+    assert not errors
+    assert samples['foot_front'].half_patch_m == .05
+
+
 def _recover(model, data, eq_name, rotational):
     eq_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_EQUALITY, eq_name)
     assert eq_id >= 0

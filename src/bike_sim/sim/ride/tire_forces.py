@@ -118,7 +118,9 @@ class TireForceApplier:
             probe = copy.copy(self)
             probe.states = copy.deepcopy(self.states)
             probe.last_time_s = None
-            return probe.compute_qfrc(model, data, dt)
+            force=probe.compute_qfrc(model, data, dt)
+            self.probe_snapshots=probe.snapshots
+            return force
         from bike_sim.sim.ride.contact_state import ContactPatch, WheelContactSnapshot
         dt = scalar(dt, 'tire interval', positive=True)
         time = float(data.time)

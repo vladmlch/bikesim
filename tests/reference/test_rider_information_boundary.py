@@ -105,6 +105,19 @@ def test_sensor_observation_contract_unchanged():
         'crank_rad_s', 'motor_torque_nm', 'human_torque_nm')
 
 
+def test_motor_policy_cannot_take_ownership_of_rider_cadence():
+    from types import SimpleNamespace
+    from bike_sim.sim.research.policy_session import PolicySession
+    from bike_sim.sim.ride.control import RideControl
+    session=PolicySession.__new__(PolicySession)
+    session.policy=SimpleNamespace(act=lambda *args:RideControl(crank_target_rate_rad_s=8.))
+    session.env=SimpleNamespace(done=False,observation=None,demand_nm=None,terminated=False,
+        reason=None,error=None,step=lambda *args,**kwargs:None)
+    with pytest.raises(ValueError,match='motor policy cannot own rider inputs'):
+        session.advance()
+    assert session.env.terminated and session.env.reason == 'policy_error'
+
+
 @pytest.mark.slow
 def test_same_kinematic_state_same_command(tmp_path):
     """Identical RiderKinematicState must produce an identical command even

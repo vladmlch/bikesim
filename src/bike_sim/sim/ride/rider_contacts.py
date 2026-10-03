@@ -101,10 +101,11 @@ class RiderContactApplier:
             validate_planar_support_model(model,data,[entry[3] for entry in self.supports.values()])
             steer_R=data.xmat[self.steer].reshape(3,3)
             for side in ('left','right'):
-                # Each hand grasps its own bar point: the site position at
-                # reset is the coincident anchor of its connect equality.
-                self.grip_anchor_local[side]=steer_R.T@(
-                    data.site_xpos[self.grip_sites[side]]-data.xpos[self.steer])
+                if self.welded_grip:
+                    self.grip_anchor_local[side]=model.eq_data[self._grip_connect[side].eq_id,3:6].copy()
+                else:
+                    self.grip_anchor_local[side]=steer_R.T@(
+                        data.site_xpos[self.grip_sites[side]]-data.xpos[self.steer])
         self.elastic_energy_j=0.
         self.loss_step_j=0.
         self.radial_dissipation_power_w=0.
@@ -306,7 +307,7 @@ class RiderContactApplier:
                 half=self.config.saddle_patch_half_length_m
             elif name.endswith('_pedal') and self.welded_pedals:
                 eq_id=self._welds.eq_ids[name.split('_')[0]]
-                rotational,half=True,self.config.pedal_patch_half_length_m
+                rotational,half=True,float(model.geom_size[entry[3],0])
             else:
                 continue
             normal=np.mean([n for _,_,n,_,_,_ in self._pads(model,data,name,entry)],axis=0)

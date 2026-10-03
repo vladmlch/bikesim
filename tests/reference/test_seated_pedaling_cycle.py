@@ -53,13 +53,14 @@ def test_pedal_intent_carries_no_torque_or_force_field():
 
 def _environment(tmp_path, config=WELDED, duration_s=8.):
     from bike_sim.cli import research as research_cli
+    tmp_path.mkdir(parents=True, exist_ok=True)
     track = tmp_path / 'track.toml'
     track.write_text('name = "probe"\nlength_m = 200.0\nsurface = "hardpack"\n'
                      'grade_profile = { knots = [[0.0, 0.0], [200.0, 0.0]] }\n')
     args = research_cli.parser().parse_args([
         '--physics-config', str(config), '--track-file', str(track),
-        '--duration', str(duration_s), '--energy-tolerance', '1e9',
-        '--diagnostic-model-limits', '--initial-speed', '0',
+        '--duration', str(duration_s), '--dt', '.0005',
+        '--record-decimation', '1', '--initial-speed', '0',
         '--out', str(tmp_path / 'out')])
     return research_cli.make_environment(args)
 
@@ -75,80 +76,113 @@ def _flat_config(tmp_path):
     return path
 
 
-@pytest.mark.slow
-def test_full_crank_revolutions_keep_both_feet_loaded(tmp_path):
+def _observe_all_intervals(runtime):
+    rows=[]
+    original=runtime._close_period
+    def close():
+        try:
+            return original()
+        finally:
+            rows.extend(runtime.completed_samples)
+    runtime._close_period=close
+    return rows
+
+
+def _assert_physical_intervals(rows):
+    assert rows
+    for index,sample in enumerate(rows):
+        assert sample.interval_id == index
+        assert not sample.channels['attachment_violations'], (index,sample.channels['attachment_violations'])
+        assert sample.channels['rider_positive_power_w'] <= 450.+1e-9
+        assert not sample.channels['rider_strength_violations']
+        # The work criterion is integral at a closing 5 ms period/tail; every
+        # incoming interval still contributes its signed and absolute work.
+        if (sample.interval_id+1)%10==0 or index==len(rows)-1:
+            assert sample.channels['energy']['constraint_work_ok']
+        attachments=sample.channels['attachment_samples']
+        for key in ('foot_front','foot_rear'):
+            assert key in attachments, (index,key)
+            assert attachments[key]['normal_n'] >= 20., (index,key,attachments[key])
+
+
+def test_cadence_control_validates_a_finite_nonnegative_wish():
     from bike_sim.sim.ride.control import RideControl
-    env = _environment(tmp_path)
-    controller = env.sim.physical.rider_control
-    min_normal = {'foot_front': math.inf, 'foot_rear': math.inf}
-    pedal_steps = {'foot_front': 0, 'foot_rear': 0}
-    max_power = 0.
-    cadences = []
-    violations = set()
-    ankle_rom = {name: (math.inf, -math.inf) for name in
-                 ('rider_ankle_front', 'rider_ankle_rear')}
-    # Each env.step advances `control_steps` physical steps; the counters
-    # below are per control call and attachment_samples reflects the last
-    # physics interval of each window.
-    calls = 0
-    for _ in range(8000):
-        if env.done:
-            break
-        env.step(RideControl(motor_torque_nm=0., human_torque_nm=30.),
-                 front_brake_demand=0., rear_brake_demand=0.)
-        calls += 1
-        physical = env.sim.physical
-        samples = physical.attachment_samples or {}
-        # A weld equality cannot physically release the foot; a missing sample
-        # is a solved-wrench *measurement* failure near specific crank poses,
-        # not a detached foot. Track observability separately from contact.
-        for key in ('foot_front', 'foot_rear'):
-            if key in samples:
-                pedal_steps[key] += 1
-                min_normal[key] = min(min_normal[key], samples[key].normal_n)
-            else:
-                assert any(e.startswith(key) for e in
-                           physical.attachment_errors), \
-                    f'{key}: unexplained sample gap at call {calls}'
-        for error in physical.attachment_errors:
-            assert error.endswith('unobservable_attachment_wrench'), error
-        violations.update(physical.step_violations)
-        diagnostics = controller.effort_diagnostics
-        max_power = max(max_power, diagnostics['rider_positive_power_w'])
-        for name in ankle_rom:
-            q = float(env.sim.data.qpos[controller.joints[name][0]])
-            lo, hi = ankle_rom[name]
-            ankle_rom[name] = (min(lo, q), max(hi, q))
-        cadences.append(float(env.sim.data.qvel[controller.crank_spin_dof])
-                        * 60. / (2 * math.pi))
-    assert env.sim.steps > 4000
-    # Both feet stayed welded through every step; wrench recovery must succeed
-    # on the overwhelming majority of control windows (rare solver poses leave
-    # a weld momentarily unexplained, which is a measurement gap, never a lift).
-    for key in ('foot_front', 'foot_rear'):
-        assert pedal_steps[key] >= .98*calls, (key, pedal_steps[key], calls)
-    # min_normal, slip and cadence are recorded by the run; the weld may pull
-    # (normal < 0 is physical for a clipped shoe), so no floor is asserted on
-    # it. Occasional friction-budget flags are physical findings of the run,
-    # not a controller failure mode this test legislates away.
-    # The whole-body positive-power budget was never exceeded to preserve
-    # crank-cycle continuity at dead centers.
-    assert max_power <= 450. + 1e-6
-    assert 'rider_controller.infeasible' not in violations
-    # The ankle program stays inside the declared anatomical envelope.
-    for name, (lo, hi) in ankle_rom.items():
-        rom_lo, rom_hi = controller.joint_ranges[name]
-        assert lo >= rom_lo - 1e-6, (name, lo, rom_lo)
-        assert hi <= rom_hi + 1e-6, (name, hi, rom_hi)
-    # The run actually pedaled multiple revolutions (cadence recorded, rpm).
-    assert np.ptp(np.asarray(cadences)) > 0.
-    assert max(cadences) > 20.
+    assert RideControl(crank_target_rate_rad_s=8.).crank_target_rate_rad_s == 8.
+    for bad in (-1.,math.nan,math.inf):
+        with pytest.raises(ValueError):
+            RideControl(crank_target_rate_rad_s=bad)
+
+
+def test_first_pedal_command_and_restart_respect_configured_effort_slew():
+    from bike_sim.physics.physical_config import PedalingConfig
+    from bike_sim.physics.pedaling import PedalingPolicy
+    policy=PedalingPolicy(PedalingConfig(enabled=True,effort_slew_nm_s=300.))
+    policy.update(0.,0.,0.,0.,.0005,enabled=False)
+    first=policy.update(0.,0.,0.,30.,.0005)
+    assert 0. <= first.effort_nm <= .15+1e-12
+    for _ in range(10):policy.update(0.,0.,0.,30.,.0005)
+    coast=policy.update(0.,0.,0.,0.,.0005)
+    assert coast.effort_nm == 0.
+    resumed=policy.update(0.,0.,0.,30.,.0005)
+    assert 0. <= resumed.effort_nm <= .15+1e-12
+
+
+def test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue():
+    from collections import deque
+    from types import SimpleNamespace
+    from bike_sim.sim.research.environment import ResearchEnvironment
+    from bike_sim.sim.ride.control import RideControl
+    env=ResearchEnvironment.__new__(ResearchEnvironment)
+    env.terminated=env.truncated=False;env.reason=env.error=None
+    env.demand_nm=None;env.rider_program=env.rider_behavior=None
+    env._queue=deque();env.delay_steps=2;env.control_steps=env.max_steps=1
+    env._motor_applied=env._applied=RideControl(motor_torque_nm=0.)
+    env.commands_requested=[];env.commands_applied=[]
+    class CommandObserved(Exception):pass
+    def step(*args,control):
+        assert control.crank_target_rate_rad_s == 8.
+        assert control.motor_torque_nm == 0.
+        raise CommandObserved
+    env.sim=SimpleNamespace(steps=0,time_s=0.,rider=SimpleNamespace(variant='articulated_planar'),
+        physics_config=SimpleNamespace(physics_mode='physical',drive_mode='articulated_effort'),
+        physical=SimpleNamespace(_buffer=SimpleNamespace(_raws=[])),step=step)
+    env._consume_completed_samples=lambda **kwargs:None
+    with pytest.raises(CommandObserved):
+        env.step(RideControl(motor_torque_nm=50.,crank_target_rate_rad_s=8.))
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize('cadence_rpm',[40.,80.,110.])
+def test_full_crank_revolutions_keep_both_feet_loaded(tmp_path,cadence_rpm,record_property):
+    from bike_sim.sim.ride.control import RideControl
+    env=_environment(tmp_path/f'{cadence_rpm:.0f}')
+    runtime=env.sim.physical;controller=runtime.rider_control
+    rows=_observe_all_intervals(runtime)
+    while not env.done:
+        env.step(RideControl(motor_torque_nm=0.,human_torque_nm=30.,
+            crank_target_rate_rad_s=cadence_rpm*2*math.pi/60.))
+    _assert_physical_intervals(rows)
+    assert len(rows) == env.sim.steps
+    assert env.reason == 'duration', env.reason
+    phases=np.array([sample.qpos[controller.crank_spin_qpos] for sample in rows])
+    cadences=np.array([sample.qvel[controller.crank_spin_dof]*60/(2*math.pi) for sample in rows])
+    achieved_turns=float((phases[-1]-phases[0])/(2*math.pi))
+    achieved_rpm=float(np.mean(cadences[len(cadences)//2:]))
+    record_property('requested_cadence_rpm',cadence_rpm)
+    record_property('achieved_mean_cadence_rpm',achieved_rpm)
+    record_property('achieved_forward_revolutions',achieved_turns)
+    assert achieved_turns >= 1., (cadence_rpm,achieved_rpm,achieved_turns)
+    for name in ('rider_ankle_front','rider_ankle_rear'):
+        positions=np.array([sample.qpos[controller.joints[name][0]] for sample in rows])
+        lo,hi=controller.joint_ranges[name]
+        assert positions.min() >= lo-1e-6 and positions.max() <= hi+1e-6
 
 
 @pytest.mark.slow
 def test_flat_pedals_keep_contact_through_the_cycle(tmp_path):
     from bike_sim.sim.ride.control import RideControl
     env = _environment(tmp_path, config=_flat_config(tmp_path), duration_s=4.)
+    rows = _observe_all_intervals(env.sim.physical)
     recovery_calls = {'front': 0, 'rear': 0}
     infeasible = 0
     calls = 0
@@ -165,6 +199,7 @@ def test_flat_pedals_keep_contact_through_the_cycle(tmp_path):
         if 'rider_controller.infeasible' in env.sim.physical.step_violations:
             infeasible += 1
     assert env.sim.steps > 2000
+    _assert_physical_intervals(rows)
     # A flat sole may still physically separate under a bad stroke, but the
     # controller itself never commands a lift: the overwhelming share of the
     # cycle keeps both feet in their non-recovering contact state.
@@ -180,6 +215,7 @@ def test_free_coast_is_an_intent_not_a_crank_lock(tmp_path):
     from bike_sim.sim.ride.control import RideControl
     env = _environment(tmp_path)
     controller = env.sim.physical.rider_control
+    rows = _observe_all_intervals(env.sim.physical)
     # Spin the cranks up, then stop requesting effort entirely: the coast
     # request is zero cadence, executed through bounded muscle moments while
     # the feet keep following the pedals. The 8 s episode gives ~3 s of
@@ -209,5 +245,6 @@ def test_free_coast_is_an_intent_not_a_crank_lock(tmp_path):
         assert last['human_torque_nm'] == pytest.approx(0.)
         assert last['human_command_nm'] == pytest.approx(0.)
     assert coast_calls > 100
-    assert coast_missing <= .02*2*coast_calls
+    assert coast_missing == 0
+    _assert_physical_intervals(rows)
     assert cadence_before > 1.

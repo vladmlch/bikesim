@@ -25,7 +25,7 @@ from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
 from bike_sim.sim.ride.physical_observations import (
     tire_channels, preview_tire_channels, energy_state, actuator_components,
-    constraint_components, sensor_channels,
+    constraint_components, sensor_channels, numerical_constraint_powers,
 )
 from bike_sim.sim.ride.physical_energy import mass_observations
 from bike_sim.sim.ride.rider_intent import RiderIntentResolver, signals_from_channels
@@ -238,6 +238,10 @@ class PhysicalRuntime:
             acc.add('external',external)
         if self.tire is not None:
             acc.add('tires',self.tire.compute_qfrc(m,d,dt,advance=advance))
+            if active:
+                force_snapshots=self.tire.snapshots if advance else self.tire.probe_snapshots
+                for name,force in self.resistance.compute_components(m,d,force_snapshots).items():
+                    acc.add(name,force)
         if sim.rider_forces.active:
             sim.rider_forces.apply(m,d)
             acc.add('seated_interfaces',d.qfrc_applied.copy())
@@ -247,13 +251,26 @@ class PhysicalRuntime:
                 detailed=True))
             observed=(self.rider_contacts.diagnostics if advance else self.rider_contacts.probe_diagnostics)
             enabled=(self.rider_contacts.enabled if advance else self.rider_contacts.probe_enabled)
+        if self.rider_contacts is None:
+            sensed = 0.
+        elif advance:
+            sensed = self.rider_contacts.delivered_crank_torque_nm
+        else:
+            sensed = getattr(self.rider_contacts, 'probe_delivered_crank_torque_nm',
+                             self.rider_contacts.delivered_crank_torque_nm)
+        for name,force in self.drive.compute_components(m,d,dt,speed_mps=sim.speed_mps,
+            braking=braking,sensed_human_nm=sensed,active=active,advance=advance,
+            control=control,pedaling_state=pedaling).items():
+            acc.add(name,force)
+        if self.rider_contacts is not None:
             crank_goal = pedaling.target_phase_rad
             if not active and self.drive.ideal_hub is not None:
                 crank_goal = self.cfg.drive.crank_phase_rad
             command = RiderCommand(pedaling.effort_nm if self.cfg.drive_mode=='articulated_effort' else 0.,
                 enabled=control.rider_enabled, posture=control.posture or RiderPosture(),
                 crank_target_phase_rad=crank_goal,
-                crank_target_rate_rad_s=pedaling.target_rate_rad_s)
+                crank_target_rate_rad_s=(pedaling.target_rate_rad_s if control.crank_target_rate_rad_s is None
+                                         else control.crank_target_rate_rad_s))
             availability={side:bool(enabled.get(side+'_pedal',False)
                 and observed.get(side+'_pedal',{}).get('in_platform',False)) for side in ('front','rear')}
             # A geometrically available saddle is a posture goal even before
@@ -264,7 +281,12 @@ class PhysicalRuntime:
             # The planner sees kinematics and a bounded road window only.
             # Solved reactions stay inside the physics layer; flat-pad loads
             # are predicted from the declared pad law inside compute().
+            acc.add('rider_joint_envelope',self.rider_control.envelope_forces(m,d)[0])
             if control_tick:
+                # Predict from the forces assembled for this incoming state.
+                # The previous zero-input forward omits tire/suspension load.
+                d.qfrc_applied[:] = acc.total()
+                mujoco.mj_forward(m,d)
                 torques = self.rider_control.compute(m,d,command,
                     kinematic_state=self.rider_state,
                     support_available=availability,advance=advance,
@@ -280,23 +302,11 @@ class PhysicalRuntime:
             else:
                 torques = self.control_clock.held()
             self.rider_control.write(d,torques)
-            acc.add('rider_joint_envelope',self.rider_control.envelope_forces(m,d)[0])
-        if self.rider_contacts is None:
-            sensed = 0.
-        elif advance:
-            sensed = self.rider_contacts.delivered_crank_torque_nm
-        else:
-            sensed = getattr(self.rider_contacts, 'probe_delivered_crank_torque_nm',
-                             self.rider_contacts.delivered_crank_torque_nm)
-        for name,force in self.drive.compute_components(m,d,dt,speed_mps=sim.speed_mps,
-            braking=braking,sensed_human_nm=sensed,active=active,advance=advance,
-            control=control,pedaling_state=pedaling).items():
-            acc.add(name,force)
         # Native contact loads must see the current suspension/chain/rider forces.
         d.qfrc_applied[:] = acc.total()
         mujoco.mj_forward(m,d)
         contacts,snapshots = self._contacts(update_grounded=active and advance)
-        if active:
+        if active and self.tire is None:
             for name,force in self.resistance.compute_components(m,d,snapshots).items():
                 acc.add(name,force)
         sim.cruise.torque_nm = 0.
@@ -318,6 +328,8 @@ class PhysicalRuntime:
         self._held_rider_terms = None
         sim = self.sim
         self.control_clock.reset()
+        sim.steps=0
+        sim.data.time=0.
         if self.rider_control is not None:
             self.rider_control._last_branch = None
             self.rider_control._last_solution = None
@@ -344,9 +356,9 @@ class PhysicalRuntime:
         sim.brake_source_cruise = False
         self.drive.restart_clock()
         if self.drive.ideal_hub is not None:
-            self.drive.ideal_hub.reset(m, d)
+            self.drive.ideal_hub.prepare(m, d)
         if self.drive.clutch is not None:
-            self.drive.clutch.reset(m, d)
+            self.drive.clutch.prepare(m, d)
         if self.tire is not None:
             self.tire.restart_clock()
         if self.rider_contacts is not None:
@@ -529,6 +541,7 @@ class PhysicalRuntime:
         components={k:np.array(f,copy=True) for k,f in sim.force_accumulator.components.items()}
         warning_counts=np.array([w.number for w in d.warning],copy=True)
         mujoco.mj_step(m,d)
+        constraint_powers=numerical_constraint_powers(m,d,v)
         for warning in (mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,mujoco.mjtWarning.mjWARN_BADQACC):
             if d.warning[int(warning)].number>warning_counts[int(warning)]:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
@@ -615,6 +628,7 @@ class PhysicalRuntime:
             solved_actuator_force,solved_passive,tires,
             dict(channels=channels, diagnostics=diagnostics, attachment_errors=attachment_errors,
                 rider_control_terms=self._held_rider_terms,
+                numerical_constraint_power_w=constraint_powers,
                 loss_step_j=loss_step, mechanical_energy_j=total, elastic_energy_j=elastic,
                 battery_energy_j=self.drive.battery.energy_j,
                 electrical_power_w=self.drive.last.get('electrical_power_w',0.),

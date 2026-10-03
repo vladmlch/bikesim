@@ -11,6 +11,26 @@ def _raw(i, jac, qfrc):
                    {'foot_front': (jac, qfrc)}, np.zeros(0), np.zeros(4), {})
 
 
+def _current_budget_contract_on_scalar_sample(sample, *, closes_period):
+    """Apply G's new gates to the preserved P scalar force/work oracle.
+
+    Physical integration and work values come from the independent old scalar
+    step. The work gate runs only at a closing interval, including a tail.
+    """
+    from dataclasses import replace
+    from bike_sim.physics.energy_ledger import constraint_work_ok
+    violations=list(sample.channels['attachment_violations'])
+    if sample.channels.get('rider_effort_budget_exceeded'):
+        position=(violations.index('rider_controller.infeasible')
+                  if 'rider_controller.infeasible' in violations else len(violations))
+        violations.insert(position,'rider_power.positive')
+    energy=sample.channels['energy']
+    if closes_period and not constraint_work_ok(energy['constraint_absolute_j'],
+            energy['muscle_positive_j']+energy['motor_positive_j']):
+        violations.append('energy.constraint_work')
+    return replace(sample,channels=dict(sample.channels,attachment_violations=tuple(violations)))
+
+
 def test_batched_wrench_matches_scalar_and_first_violation():
     jac = np.array([[1., 0., 0., -1.], [0., 1., 0., 0.], [0., 0., 1., 0.]])
     buffer = PeriodBuffer(10)
@@ -108,7 +128,7 @@ def test_held_command_power_and_strength_are_checked_at_each_incoming_state():
     for i, speed in enumerate((-1., 1., 6.)):
         raw = RawStep(i,i*.0005,(i+1)*.0005,np.array([float(i)]),np.array([speed]),
             {'act_rider_joint':np.array([2.])}, {},np.array([2.]),np.array([-.5*speed]),{},
-            {'effort_base':{}})
+            {'effort_base':{},'numerical_constraint_power_w':{}})
         raws.append(raw)
         c.effort_diagnostics = {}
         expected.append(solved_effort(c, SimpleNamespace(actuator_force=raw.actuator_force,
@@ -117,8 +137,8 @@ def test_held_command_power_and_strength_are_checked_at_each_incoming_state():
     assert report.efforts == tuple(expected)
     assert [e['rider_positive_power_w'] for e in report.efforts] == [0., 2., 12.]
     assert [e['rider_effort_budget_exceeded'] for e in report.efforts] == [False, False, True]
-    assert report.violations_by_step == ((), (), ('rider_strength.joint',))
-    assert report.first_failure == (.0015, ('rider_strength.joint',))
+    assert report.violations_by_step == ((), (), ('rider_strength.joint','rider_power.positive'))
+    assert report.first_failure == (.0015, ('rider_strength.joint','rider_power.positive'))
 
 
 @pytest.mark.slow
@@ -196,9 +216,10 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
     sim, runtime = env.sim, env.sim.physical
     command = RideControl(motor_torque_nm=0., human_torque_nm=0.)
     expected = []
-    for _ in range(2003):
+    for index in range(2003):
         step_reference(runtime, control=command)
-        sample = runtime.sample
+        sample = _current_budget_contract_on_scalar_sample(runtime.sample,
+            closes_period=(index+1)%runtime.control_clock.steps_per_period==0 or index==2002)
         expected.append(sample)
         runtime.reference_monitor.accept(sample.end_time_s, sample.channels['attachment_violations'])
     failure = runtime.reference_monitor.first_failure

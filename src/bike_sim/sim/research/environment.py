@@ -297,6 +297,7 @@ class ResearchEnvironment:
                                  if self.rider_program is not None else control)
                 effective = replace(self._motor_applied,
                     human_torque_nm=rider_control.human_torque_nm,
+                    crank_target_rate_rad_s=rider_control.crank_target_rate_rad_s,
                     posture=rider_control.posture, rider_enabled=rider_control.rider_enabled,
                     crank_reposition=rider_control.crank_reposition)
                 if effective != self._applied:

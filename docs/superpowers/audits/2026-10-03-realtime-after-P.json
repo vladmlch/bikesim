@@ -1,0 +1,566 @@
+{
+  "date": "2026-10-03",
+  "phase": "P1-P5",
+  "realtime_qualified": false,
+  "physical_plant_valid": false,
+  "short_unprofiled_reports": {
+    "extreme": {
+      "steps": 500,
+      "sim_seconds": 0.25,
+      "wall_seconds": 11.373597590034478,
+      "startup_seconds": 0.4873867089918349,
+      "flush_wall_seconds": 4.2333005694672465e-05,
+      "factor": 0.021980731955828073,
+      "step_ms_mean": 22.747110514057567,
+      "step_ms_p99": 570.886540508217,
+      "git_sha": "3604a4bfebd6f7109e962f3baff3f8d2ab4a78e5",
+      "machine": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "track": "examples/research/rough_uphill_extreme.toml",
+      "physics": "examples/research/viewer_physics_welded.toml",
+      "working_tree_dirty": true,
+      "source_sha256": "f2db61494342c36c5d7587029636ea8eaa27c0b62504ec2856faea7f4329ddf3",
+      "requested_duration_s": 0.25,
+      "source_timestep_s": 0.00125,
+      "effective_timestep_s": 0.0005,
+      "controller_interval_s": 0.005,
+      "record_decimation": 80,
+      "monitor_strict": false,
+      "measurement_path": "accounted_headless",
+      "reason": "duration",
+      "model_valid": false,
+      "first_failure": [
+        0.1355000000000001,
+        [
+          "foot_front.friction"
+        ]
+      ]
+    },
+    "savage": {
+      "steps": 500,
+      "sim_seconds": 0.25,
+      "wall_seconds": 10.323816146861645,
+      "startup_seconds": 11.934433499991428,
+      "flush_wall_seconds": 4.979100776836276e-05,
+      "factor": 0.02421585162343267,
+      "step_ms_mean": 20.647532711707754,
+      "step_ms_p99": 579.7840288355656,
+      "git_sha": "3604a4bfebd6f7109e962f3baff3f8d2ab4a78e5",
+      "machine": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "track": "examples/research/rough_uphill_savage.toml",
+      "physics": "examples/research/viewer_physics_welded.toml",
+      "working_tree_dirty": true,
+      "source_sha256": "f2db61494342c36c5d7587029636ea8eaa27c0b62504ec2856faea7f4329ddf3",
+      "requested_duration_s": 0.25,
+      "source_timestep_s": 0.00125,
+      "effective_timestep_s": 0.0005,
+      "controller_interval_s": 0.005,
+      "record_decimation": 80,
+      "monitor_strict": false,
+      "measurement_path": "accounted_headless",
+      "reason": "duration",
+      "model_valid": false,
+      "first_failure": [
+        0.12550000000000008,
+        [
+          "foot_front.friction"
+        ]
+      ]
+    }
+  },
+  "profiles": [
+    {
+      "decimation": 80,
+      "requested_duration_s": 3.0,
+      "sim_seconds": 3.0,
+      "physics_steps": 6000,
+      "startup_s": 14.330091374999029,
+      "profiled_wall_seconds": 472.6123622919986,
+      "counts": {
+        "allocation": 5737,
+        "ticks": 600
+      },
+      "allocations_per_tick": 9.561666666666667,
+      "allocator_percent": 95.52785283979941,
+      "row_and_csv_percent": 0.02806367026812017,
+      "hot": [
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride_sim.py",
+          "line": 442,
+          "function": "step",
+          "primitive_calls": 6000,
+          "calls": 6000,
+          "self_s": 0.002707143,
+          "cumulative_s": 472.36522646000003
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride_sim.py",
+          "line": 559,
+          "function": "_step_physical",
+          "primitive_calls": 6000,
+          "calls": 6000,
+          "self_s": 0.004997415000000001,
+          "cumulative_s": 472.362519317
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/physical_runtime.py",
+          "line": 482,
+          "function": "step",
+          "primitive_calls": 6000,
+          "calls": 6000,
+          "self_s": 0.073400347,
+          "cumulative_s": 472.35752190200003
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/physical_runtime.py",
+          "line": 490,
+          "function": "_advance_physics",
+          "primitive_calls": 6000,
+          "calls": 6000,
+          "self_s": 0.471959187,
+          "cumulative_s": 468.684930333
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/physical_runtime.py",
+          "line": 176,
+          "function": "apply_forces",
+          "primitive_calls": 6000,
+          "calls": 6000,
+          "self_s": 0.15060414600000002,
+          "cumulative_s": 458.314724988
+        },
+        {
+          "file": "/private/tmp/mujoco-v2-profile.py",
+          "line": 13,
+          "function": "compute",
+          "primitive_calls": 600,
+          "calls": 600,
+          "self_s": 0.004914427000000001,
+          "cumulative_s": 453.840768602
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/rider_control.py",
+          "line": 635,
+          "function": "compute",
+          "primitive_calls": 600,
+          "calls": 600,
+          "self_s": 0.12329338000000001,
+          "cumulative_s": 453.83577738800005
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/rider_control.py",
+          "line": 1068,
+          "function": "allocate",
+          "primitive_calls": 1534,
+          "calls": 1534,
+          "self_s": 0.25932983000000004,
+          "cumulative_s": 453.26324531800003
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/rider_control.py",
+          "line": 1236,
+          "function": "_select_allocation_branch",
+          "primitive_calls": 1534,
+          "calls": 1534,
+          "self_s": 0.032819463,
+          "cumulative_s": 452.41507173400004
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/rider_control.py",
+          "line": 1210,
+          "function": "solve",
+          "primitive_calls": 5737,
+          "calls": 5737,
+          "self_s": 0.117620555,
+          "cumulative_s": 452.380235647
+        },
+        {
+          "file": "/private/tmp/mujoco-v2-profile.py",
+          "line": 10,
+          "function": "allocate",
+          "primitive_calls": 5737,
+          "calls": 5737,
+          "self_s": 0.024816343,
+          "cumulative_s": 451.501258296
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/physics/rider_allocation.py",
+          "line": 56,
+          "function": "allocate_effort",
+          "primitive_calls": 5737,
+          "calls": 5737,
+          "self_s": 0.270192066,
+          "cumulative_s": 451.476441953
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.venv/lib/python3.14/site-packages/scipy/optimize/_minimize.py",
+          "line": 54,
+          "function": "minimize",
+          "primitive_calls": 22549,
+          "calls": 22549,
+          "self_s": 0.295907696,
+          "cumulative_s": 449.027544777
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.venv/lib/python3.14/site-packages/scipy/optimize/_slsqp_py.py",
+          "line": 219,
+          "function": "_minimize_slsqp",
+          "primitive_calls": 22549,
+          "calls": 22549,
+          "self_s": 3.1213856690000004,
+          "cumulative_s": 447.894290758
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method scipy.optimize._slsqplib.slsqp>",
+          "primitive_calls": 2854248,
+          "calls": 2854248,
+          "self_s": 355.482504501,
+          "cumulative_s": 355.482504501
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.venv/lib/python3.14/site-packages/scipy/optimize/_slsqp_py.py",
+          "line": 569,
+          "function": "_eval_constraint",
+          "primitive_calls": 2570363,
+          "calls": 2570363,
+          "self_s": 13.528055076000001,
+          "cumulative_s": 52.789693103000005
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.venv/lib/python3.14/site-packages/scipy/optimize/_differentiable_functions.py",
+          "line": 391,
+          "function": "fun",
+          "primitive_calls": 2570363,
+          "calls": 2570363,
+          "self_s": 1.973333774,
+          "cumulative_s": 26.350751937000002
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/physics/rider_allocation.py",
+          "line": 145,
+          "function": "<lambda>",
+          "primitive_calls": 7733331,
+          "calls": 7733331,
+          "self_s": 10.075053605,
+          "cumulative_s": 25.742096148
+        }
+      ],
+      "first_failure": [
+        0.1355000000000001,
+        [
+          "foot_front.friction"
+        ]
+      ],
+      "model_valid": false,
+      "instrumented_factor": 0.006347696842822917,
+      "timing_method": "cProfile instrumented; not unprofiled or live rate"
+    },
+    {
+      "decimation": 1,
+      "requested_duration_s": 1.0,
+      "sim_seconds": 1.0,
+      "physics_steps": 2000,
+      "startup_s": 14.330091374999029,
+      "profiled_wall_seconds": 147.6999847089901,
+      "counts": {
+        "allocation": 1861,
+        "ticks": 200
+      },
+      "allocations_per_tick": 9.305,
+      "allocator_percent": 90.93479714614004,
+      "row_and_csv_percent": 2.3800477203340105,
+      "hot": [
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride_sim.py",
+          "line": 442,
+          "function": "step",
+          "primitive_calls": 2000,
+          "calls": 2000,
+          "self_s": 0.0010275730000000002,
+          "cumulative_s": 142.04960788100001
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride_sim.py",
+          "line": 559,
+          "function": "_step_physical",
+          "primitive_calls": 2000,
+          "calls": 2000,
+          "self_s": 0.001800836,
+          "cumulative_s": 142.048580308
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/physical_runtime.py",
+          "line": 482,
+          "function": "step",
+          "primitive_calls": 2000,
+          "calls": 2000,
+          "self_s": 0.0321894,
+          "cumulative_s": 142.046779472
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/physical_runtime.py",
+          "line": 490,
+          "function": "_advance_physics",
+          "primitive_calls": 2000,
+          "calls": 2000,
+          "self_s": 0.165499012,
+          "cumulative_s": 140.204822121
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/physical_runtime.py",
+          "line": 176,
+          "function": "apply_forces",
+          "primitive_calls": 2000,
+          "calls": 2000,
+          "self_s": 0.052985684000000005,
+          "cumulative_s": 136.65908654700002
+        },
+        {
+          "file": "/private/tmp/mujoco-v2-profile.py",
+          "line": 13,
+          "function": "compute",
+          "primitive_calls": 200,
+          "calls": 200,
+          "self_s": 0.0017848340000000001,
+          "cumulative_s": 135.108333538
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/rider_control.py",
+          "line": 635,
+          "function": "compute",
+          "primitive_calls": 200,
+          "calls": 200,
+          "self_s": 0.043173522000000006,
+          "cumulative_s": 135.10651846300001
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/rider_control.py",
+          "line": 1068,
+          "function": "allocate",
+          "primitive_calls": 502,
+          "calls": 502,
+          "self_s": 0.08606140200000001,
+          "cumulative_s": 134.906226836
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/rider_control.py",
+          "line": 1236,
+          "function": "_select_allocation_branch",
+          "primitive_calls": 502,
+          "calls": 502,
+          "self_s": 0.010809334,
+          "cumulative_s": 134.62423925500002
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/sim/ride/rider_control.py",
+          "line": 1210,
+          "function": "solve",
+          "primitive_calls": 1861,
+          "calls": 1861,
+          "self_s": 0.039741475000000005,
+          "cumulative_s": 134.612770568
+        },
+        {
+          "file": "/private/tmp/mujoco-v2-profile.py",
+          "line": 10,
+          "function": "allocate",
+          "primitive_calls": 1861,
+          "calls": 1861,
+          "self_s": 0.008471018,
+          "cumulative_s": 134.31915249800002
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/physics/rider_allocation.py",
+          "line": 56,
+          "function": "allocate_effort",
+          "primitive_calls": 1861,
+          "calls": 1861,
+          "self_s": 0.095129791,
+          "cumulative_s": 134.31068148
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.venv/lib/python3.14/site-packages/scipy/optimize/_minimize.py",
+          "line": 54,
+          "function": "minimize",
+          "primitive_calls": 7297,
+          "calls": 7297,
+          "self_s": 0.10464021300000001,
+          "cumulative_s": 133.48463649200002
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.venv/lib/python3.14/site-packages/scipy/optimize/_slsqp_py.py",
+          "line": 219,
+          "function": "_minimize_slsqp",
+          "primitive_calls": 7297,
+          "calls": 7297,
+          "self_s": 0.960515698,
+          "cumulative_s": 133.09843446600001
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method scipy.optimize._slsqplib.slsqp>",
+          "primitive_calls": 820595,
+          "calls": 820595,
+          "self_s": 106.241977984,
+          "cumulative_s": 106.241977984
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.venv/lib/python3.14/site-packages/scipy/optimize/_slsqp_py.py",
+          "line": 569,
+          "function": "_eval_constraint",
+          "primitive_calls": 740464,
+          "calls": 740464,
+          "self_s": 3.895653921,
+          "cumulative_s": 14.994040617000001
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.venv/lib/python3.14/site-packages/scipy/optimize/_differentiable_functions.py",
+          "line": 391,
+          "function": "fun",
+          "primitive_calls": 740464,
+          "calls": 740464,
+          "self_s": 0.5948986110000001,
+          "cumulative_s": 7.831792537
+        },
+        {
+          "file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/src/bike_sim/physics/rider_allocation.py",
+          "line": 145,
+          "function": "<lambda>",
+          "primitive_calls": 2170863,
+          "calls": 2170863,
+          "self_s": 2.8886658560000003,
+          "cumulative_s": 7.203595891000001
+        }
+      ],
+      "first_failure": [
+        0.1355000000000001,
+        [
+          "foot_front.friction"
+        ]
+      ],
+      "model_valid": false,
+      "instrumented_factor": 0.006770481405060922,
+      "timing_method": "cProfile instrumented; not unprofiled or live rate"
+    }
+  ],
+  "gui_functional_smokes": {
+    "extreme": {
+      "track": "examples/research/rough_uphill_extreme.toml",
+      "exit_code": 0,
+      "viewer_opened": true,
+      "viewer_wall_seconds": 16.125540624998393,
+      "physics_steps": 516,
+      "sim_seconds": 0.2580000000000002,
+      "live_factor": 0.005352780484421953,
+      "first_failure": [
+        0.1355000000000001,
+        [
+          "foot_front.friction"
+        ]
+      ],
+      "model_status": {
+        "model_valid": false,
+        "first_model_violation": {
+          "interval_id": 270,
+          "time_s": 0.1350000000000001,
+          "reasons": [
+            "foot_front.friction"
+          ]
+        },
+        "model_violation_counts": {
+          "foot_front.friction": 76,
+          "foot_front:unobservable_attachment_wrench": 159,
+          "foot_front.cop": 46,
+          "foot_front.normal": 29,
+          "foot_rear.normal": 40,
+          "rider_strength.rider_ankle_front": 149,
+          "rider_controller.infeasible": 196,
+          "foot_rear.friction": 37,
+          "foot_rear.cop": 29,
+          "saddle.cop": 15
+        },
+        "numerically_valid": false,
+        "calibration_status": "parameterized_unvalidated"
+      },
+      "effective_dt": 0.0005,
+      "controller_period_s": 0.005,
+      "record_decimation": 80,
+      "history_duration_s": 0.2580000000000002,
+      "method": "real passive viewer, closed by timer after12wall seconds"
+    },
+    "savage": {
+      "track": "examples/research/rough_uphill_savage.toml",
+      "exit_code": 0,
+      "viewer_opened": true,
+      "viewer_wall_seconds": 13.02379983299761,
+      "physics_steps": 524,
+      "sim_seconds": 0.2620000000000002,
+      "live_factor": 0.007436863169796234,
+      "first_failure": [
+        0.12550000000000008,
+        [
+          "foot_front.friction"
+        ]
+      ],
+      "model_status": {
+        "model_valid": false,
+        "first_model_violation": {
+          "interval_id": 250,
+          "time_s": 0.12500000000000008,
+          "reasons": [
+            "foot_front.friction"
+          ]
+        },
+        "model_violation_counts": {
+          "foot_front.friction": 77,
+          "foot_front:unobservable_attachment_wrench": 167,
+          "foot_front.cop": 46,
+          "foot_front.normal": 29,
+          "foot_rear.normal": 40,
+          "rider_strength.rider_ankle_front": 153,
+          "rider_controller.infeasible": 204,
+          "foot_rear.friction": 37,
+          "foot_rear.cop": 29,
+          "saddle.cop": 18
+        },
+        "numerically_valid": false,
+        "calibration_status": "parameterized_unvalidated"
+      },
+      "effective_dt": 0.0005,
+      "controller_period_s": 0.005,
+      "record_decimation": 80,
+      "history_duration_s": 0.2620000000000002,
+      "method": "real passive viewer, closed by timer after12wall seconds"
+    }
+  },
+  "full_20s_measurements_status": "pending immediately after G5 allocation/support repair; owed on both tracks",
+  "final_W6_status": "pending final profile and live-viewer rate validation",
+  "rulings": [
+    "Source profile timestep .00125 is preserved; every performance measurement explicitly uses .0005 with closure_time_constant_s .0025 unchanged.",
+    "P2 early exit requires an actually remembered feasible branch; cold/fallback enumeration preserves full ranking.",
+    "Paired spatial body-wrench reconstruction retains explanation, disjoint-support, Newton third-law and out-of-plane tolerances.",
+    "After measured 9.56 allocation calls/tick, 37.58 SLSQP restarts/tick and 95.5 percent allocator cost on an invalid plant, parent defers intermediate 20s episodes to prerequisite G5 repair. Cost is less intermediate 20s evidence; full measurements remain owed, no physics relaxation.",
+    "Passive tissue envelope forces remain evaluated every physics step as the current-q potential gradient."
+  ],
+  "known_failures": [
+    "Baseline canonical tests: 120 passed. After P1/P2 unchanged full-crank observability and free-coast sample-gap tests fail; not claimed as preexisting failures.",
+    "Current controller contradictory signed pedal cone and finalize_effort raw-wish bypass require G5 repair.",
+    "P2 <=2 allocation calls/tick and <25 percent allocator cost goals failed.",
+    "All measured short and GUI runs have model_valid=false; no >=1x live or headless claim."
+  ],
+  "full_measurement_commands": [
+    "UV_CACHE_DIR=/private/tmp/uv-cache-mujoco-v2 uv run python tools/measure_realtime.py --track examples/research/rough_uphill_extreme.toml --physics-config examples/research/viewer_physics_welded.toml --duration 20 --out output/realtime-after-G5/extreme",
+    "UV_CACHE_DIR=/private/tmp/uv-cache-mujoco-v2 uv run python tools/measure_realtime.py --track examples/research/rough_uphill_savage.toml --physics-config examples/research/viewer_physics_welded.toml --duration 20 --out output/realtime-after-G5/savage"
+  ],
+  "raw_artifacts": {
+    "profiles": "/private/tmp/mujoco-v2-profiles.json",
+    "profile_stats": [
+      "/private/tmp/mujoco-v2-profile-80.pstats",
+      "/private/tmp/mujoco-v2-profile-1.pstats"
+    ],
+    "csv_before": "/private/tmp/mujoco-v2-P4-before.csv",
+    "csv_after": "/private/tmp/mujoco-v2-P4-after.csv"
+  }
+}

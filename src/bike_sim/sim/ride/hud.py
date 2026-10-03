@@ -107,31 +107,23 @@ class RideHUD:
             One line of text, without a trailing newline.
         """
         if getattr(sim,"physical",None) is not None:
-            if sim.physical.interactive_preview:
-                drive=sim.physical.drive.last
-                factor=sim.physical.preview_real_time_factor
-                rate='measuring' if factor is None else f'{factor:.2f}x'
-                return (f"[PHYSICAL PREVIEW|{sim.physics_config.drive_mode}] t={sim.time_s:.3f}s "
-                        f"RTF={rate} "
-                        f"v={sim.speed_mps*KMH_PER_MPS:.2f}km/h "
-                        f"Fn={sim.contacts.front_load_n:.1f}/{sim.contacts.rear_load_n:.1f}N "
-                        f"cadence={drive.get('cadence_rpm',0.):.1f}rpm "
-                        f"motor={drive.get('motor_shaft_power_w',0.):.1f}W "
-                        f"model_valid={sim.physical.model_status.as_dict()['model_valid']} "
-                        f"UNVALIDATED planar/experimental; energy audit: off")
+            factor=sim.physical.live_real_time_factor
+            rate='measuring' if factor is None else f'{factor:.2f}x'
+            failure=sim.physical.reference_monitor.first_failure
+            warning='' if failure is None else f' first_failure={failure[0]:.6f}s:{failure[1]}'
             sample=sim.physical.sample
             if sample is None:
-                return f"[PHYSICAL|{sim.physics_config.drive_mode}] initial condition"
+                return f"[PHYSICAL|{sim.physics_config.drive_mode}] initial condition RTF={rate}{warning}"
             channels=sample.channels
             tires=channels["tires"];drive=channels["drive"];energy=channels["energy"]
-            return (f"[PHYSICAL|{sim.physics_config.drive_mode}] t={sample.time_s:.4f}s "
+            return (f"[PHYSICAL|{sim.physics_config.drive_mode}] t={sample.time_s:.4f}s RTF={rate} "
                     f"v={sample.qvel[sim.root_x_dofadr]*3.6:.2f}km/h "
                     f"Fn={tires['front']['normal_load_n']:.1f}/{tires['rear']['normal_load_n']:.1f}N "
                     f"cadence={drive.get('cadence_rpm',0.):.1f}rpm "
                     f"motor={drive.get('motor_shaft_power_w',0.):.1f}W "
                     f"battery={drive.get('battery_energy_j',0.)/3600.:.2f}Wh "
                     f"energy residual={energy['residual_j']:.5f}J "
-                    f"model_valid={channels.get('model_status',{}).get('model_valid','not_evaluated')} UNVALIDATED")
+                    f"model_valid={channels.get('model_status',{}).get('model_valid','not_evaluated')} UNVALIDATED{warning}")
         obstacle = nearest_obstacle(sim.track, sim.position_m)
         obstacle_str = "--" if obstacle is None else f"{obstacle[0]} {obstacle[1]:+.1f}m"
 
@@ -223,7 +215,7 @@ class RideHUD:
         emitted as empty strings, so every preview CSV shares one schema.
         """
         row = {"time_s": float(sim.time_s)}
-        if getattr(sim, "physical", None) is None or not sim.physical.interactive_preview:
+        if getattr(sim, "physical", None) is None:
             return row
         drive = sim.physical.drive.last
         assist = sim.physical.drive.assist
@@ -236,7 +228,7 @@ class RideHUD:
                  else 100.0 * sim.track.grade_profile.slope(sim.position_m))
         row.update({
             "x_m": float(sim.position_m),
-            "rtf": sim.physical.preview_real_time_factor,
+            "rtf": sim.physical.live_real_time_factor,
             "speed_kmh": float(sim.speed_mps) * KMH_PER_MPS,
             "pitch_deg": float(degrees(sim.pitch_rad)),
             "grade_pct": float(grade),

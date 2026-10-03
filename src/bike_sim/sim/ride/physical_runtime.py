@@ -1,6 +1,5 @@
 """Single owner of the physical initialization, force step and work ledger."""
 from dataclasses import replace, asdict
-from contextlib import contextmanager
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.control_clock import ControlClock
 from bike_sim.sim.ride.period_buffer import PeriodBuffer, RawStep, evaluate_period
@@ -99,19 +98,18 @@ class PhysicalRuntime:
         self.snapshots = {}
         self.generation = 0
         self.interactive_preview = False
-        self.preview_real_time_factor = None
+        self.live_real_time_factor = None
         self.research_accounting_valid = True
         self._rollback_hold = False
 
-    @contextmanager
     def preview_mode(self):
-        """Scope viewer diagnostics; reset before resuming research accounting."""
-        previous=self.interactive_preview
-        self.interactive_preview=True
-        try:
-            yield
-        finally:
-            self.interactive_preview=previous
+        """Deprecated: there is only one accounted physical step."""
+        raise RuntimeError('preview path removed')
+
+    @property
+    def preview_real_time_factor(self):
+        """Legacy name for the accounted live factor."""
+        return self.live_real_time_factor
 
     def address(self, name):
         m = self.sim.model
@@ -225,7 +223,7 @@ class PhysicalRuntime:
             d.qfrc_applied.fill(0.)
         if self.rider_contacts is not None:
             acc.add('rider_interfaces',self.rider_contacts.compute_qfrc(m,d,dt,advance=advance,
-                detailed=not self.interactive_preview))
+                detailed=True))
             observed=(self.rider_contacts.diagnostics if advance else self.rider_contacts.probe_diagnostics)
             enabled=(self.rider_contacts.enabled if advance else self.rider_contacts.probe_enabled)
             crank_goal = pedaling.target_phase_rad
@@ -310,7 +308,7 @@ class PhysicalRuntime:
         self.rider_intent_signals = SeatedClimbSignals()
         self.applied_control = RideControl()
         self.research_accounting_valid=False
-        self.preview_real_time_factor=None
+        self.live_real_time_factor=None
         self.initializing=True
         try:
             seed = sim.physical_initial_state
@@ -482,8 +480,6 @@ class PhysicalRuntime:
         return float(loss)
 
     def step(self, front=0., rear=0., external=None, *, control=None):
-        if self.interactive_preview:
-            return self._step_preview(front,rear,external,control or RideControl())
         self.completed_samples = ()
         self.period_violations = ()
         raw = self._advance_physics(front,rear,external,control=control)
@@ -492,8 +488,8 @@ class PhysicalRuntime:
             self._close_period()
 
     def _advance_physics(self, front=0., rear=0., external=None, *, control=None):
-        if not self.interactive_preview and not self.research_accounting_valid:
-            raise RuntimeError('reset is required after interactive preview before research accounting')
+        if not self.research_accounting_valid:
+            raise RuntimeError('reset is required before physical accounting')
         control = RideControl() if control is None else control
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
@@ -723,63 +719,3 @@ class PhysicalRuntime:
         for name,s in self.attachment_samples.items():
             violations.extend(f'{name}.{v}' for v in attachment_violations(s))
         return tuple(violations)
-
-    def _step_preview(self, front, rear, external, control):
-        """Same force/integration path without research samples or energy audits."""
-        sim=self.sim
-        self.research_accounting_valid=False
-        model,data=sim.model,sim.data
-        time_s=float(data.time)
-        incoming_state=(data.qpos.copy(),data.qvel.copy())
-        incoming_velocity=incoming_state[1]
-        position_m=sim.position_m
-        pitch_rad=sim.pitch_rad
-        braking = front > 0. or rear > 0.
-        hold = self._rollback_brake_demand(sim.speed_mps, control)
-        if hold:
-            front = max(front, hold); rear = max(rear, hold)
-        self.apply_forces(front=front,rear=rear,external=external,control=control,braking=braking)
-        warning_counts=np.array([warning.number for warning in data.warning],copy=True)
-        mujoco.mj_step(model,data)
-        for warning in (mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,mujoco.mjtWarning.mjWARN_BADQACC):
-            if data.warning[int(warning)].number>warning_counts[int(warning)]:
-                raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
-        if self.rider_contacts is not None:
-            self.rider_contacts.settle_welds(model,data,incoming_state)
-            self.attachment_samples=self.rider_contacts.last_attachment_samples
-            self.attachment_errors=self.rider_contacts.last_attachment_errors
-            self.step_violations=self._attachment_violations()
-        else:
-            self.step_violations=()
-        from bike_sim.sim.ride.physical_crash import physical_contact_crash
-        contact_crash=physical_contact_crash(model,data)
-        self.drive.settle_actuation(model,data)
-        if self.cfg.seated_climb.enabled:
-            self.rider_intent_signals = signals_from_channels(sensor_channels(self, qvel=incoming_velocity))
-        if self.rider_control is not None:
-            from bike_sim.sim.ride.rider_effort import solved_effort
-            effort=solved_effort(self.rider_control,data,incoming_state,float(model.opt.timestep))
-            self.step_violations+=tuple(
-                f'rider_strength.{name}'
-                for name in effort.get('rider_strength_violations',()))
-            if self.rider_control.allocation_diagnostics.get('invalid_controller'):
-                self.step_violations+=('rider_controller.infeasible',)
-        if self.rider_contacts is not None:
-            self.reference_monitor.accept(float(data.time),self.step_violations)
-        sim.contacts,self.snapshots=self._contacts(final=True,time_s=time_s,qvel=incoming_velocity)
-        equality=_connect_equality_rows(model,data)
-        closure=float(np.max(np.abs(data.efc_pos[:data.nefc][equality]))) if np.any(equality) else 0.
-        preview_channels={'tires':preview_tire_channels(self,self.snapshots),
-                          'suspension':{'linkage_closure_max_m':closure}}
-        self.model_status.observe(sim.steps,time_s,preview_channels)
-        # mj_step leaves a fully consistent endpoint state; preview consumers
-        # below read qpos/qvel only, and _update_compiled_com_marker refreshes
-        # endpoint kinematics itself, so no extra forward pass is needed here.
-        if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all():
-            raise RuntimeError('non-finite physical simulation state')
-        sim.steps+=1
-        if contact_crash is not None and sim.crash_detector.event is None:
-            from bike_sim.sim.ride.virtual_rider import CrashEvent
-            sim.crash_detector.event=CrashEvent(contact_crash,time_s,position_m,pitch_rad)
-        sim.crash_detector.check(data,sim.contacts)
-        sim._update_compiled_com_marker()

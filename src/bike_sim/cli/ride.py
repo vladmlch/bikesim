@@ -617,6 +617,14 @@ def _fit_sag(target_pct: float, specs: BikeSpecs, rider: RiderSpecs):
     return controller, coil, {"sag_target_pct": target_pct, "fork_psi": psi, "coil_rate_n_m": rate}
 
 
+def build_physical_simulation_from_args(args):
+    """Resolve the same track/rider and physical builder used by the CLI."""
+    from bike_sim.sim.ride.physical_session import build_physical_simulation
+    road_seed = None if args.research and _is_file_argument(args.track) else args.seed
+    track = resolve_track(args.track,seed=road_seed,length_m=args.length)
+    return build_physical_simulation(track,args,resolve_rider(args))
+
+
 def _headless(
     track: TrackSpec,
     args: argparse.Namespace,

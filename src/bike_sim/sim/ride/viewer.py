@@ -227,7 +227,7 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
     import mujoco.viewer
     from bike_sim.sim.playground import ensure_macos_mjpython
     from bike_sim.sim.ride.physical_session import (
-        PhysicalPreviewCsv,
+        PhysicalLiveCsv,
         configuration_metadata,
         physical_run_dir_name,
     )
@@ -238,9 +238,9 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
     log_dir=physical_run_dir_name(sim.track.name,metadata)
     from pathlib import Path
     csv_path=Path(out_root)/log_dir/"preview.csv"
-    print(f"[bike-ride] physical preview csv: {csv_path}")
-    with PhysicalPreviewCsv(csv_path) as preview_log:
-        with sim.physical.preview_mode(), mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
+    print(f"[bike-ride] physical live csv: {csv_path}")
+    with PhysicalLiveCsv(csv_path) as preview_log:
+        with mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
                                           show_left_ui=False,show_right_ui=False) as viewer:
             session.viewer=viewer
             session.camera.reset_preset()
@@ -264,7 +264,7 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
                 if session.outcome is None:
                     announced=False
                     if now-rate_wall>=.5:
-                        sim.physical.preview_real_time_factor=(sim.time_s-rate_sim)/(now-rate_wall)
+                        sim.physical.live_real_time_factor=(sim.time_s-rate_sim)/(now-rate_wall)
                         rate_wall,rate_sim=now,sim.time_s
                 elif not announced:
                     print(f"\n[RUN ENDED] {session.outcome.describe()}")
@@ -279,13 +279,14 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
                 if session.show_telemetry and now-last_hud>=HUD_REFRESH_INTERVAL_S:
                     session.print_hud();last_hud=now
                 time.sleep(FRAME_SLEEP_S)
+            sim.physical.flush()
             if session.outcome is None:
                 preview_log.write_marker(f"viewer closed; t={sim.time_s:.3f}s x={sim.position_m:.3f}m")
             else:
                 preview_log.write_marker(f"run ended; {session.outcome.describe()}")
     try:
         from bike_sim.viz.ride_plots import load_ride_csv,plot_physical_ride_html
-        print(f"[bike-ride] physical preview html: {plot_physical_ride_html(load_ride_csv(csv_path),csv_path.parent)}")
+        print(f"[bike-ride] physical live html: {plot_physical_ride_html(load_ride_csv(csv_path),csv_path.parent)}")
     except ImportError:
         print("[bike-ride] skipped ride.html (plotly not installed; use `uv run --with plotly`)")
     return 0

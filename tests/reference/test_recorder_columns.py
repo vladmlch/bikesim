@@ -77,6 +77,10 @@ def test_runtime_publishes_owned_channels_and_preserves_previous_samples(tmp_pat
         '--diagnostic-model-limits', '--out', str(tmp_path / 'out')])
     env = research_cli.make_environment(args)
     sim = env.sim
+    from bike_sim.sim.ride.physical_session import configuration_metadata
+    metadata = configuration_metadata(sim)
+    assert metadata['timestep_s'] == .0005
+    assert metadata['controller_interval_s'] == .005
     command = RideControl(motor_torque_nm=0., human_torque_nm=0.)
     published = []
     for _ in range(10):

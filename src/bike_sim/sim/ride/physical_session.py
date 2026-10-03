@@ -16,8 +16,8 @@ from bike_sim.sim.ride.physical_recorder import PhysicalRecorder
 from bike_sim.validation.environment import source_fingerprint, environment_contract
 
 
-class PhysicalPreviewCsv:
-    """Flushes the live physical preview state at a fixed simulated-time interval, as CSV."""
+class PhysicalLiveCsv:
+    """Flushes the live accounted physical state at a fixed simulated-time interval, as CSV."""
 
     def __init__(self, path: Path, interval_s: float = 0.01, *, flush_every: int = 25):
         if interval_s <= 0.0:
@@ -90,6 +90,10 @@ class PhysicalPreviewCsv:
         self.close()
 
 
+# Preserve consumers of the historical live CSV class name.
+PhysicalPreviewCsv = PhysicalLiveCsv
+
+
 def canonical_json(payload):
     return json.dumps(plain(payload),sort_keys=True,separators=(',',':'),allow_nan=False)
 
@@ -150,7 +154,7 @@ def configuration_metadata(sim,seed=None):
         'versions':{'python':platform.python_version(),**{n:importlib.metadata.version(n) for n in ('mujoco','numpy','scipy')}},
         'configuration_sha256':config_hash,'terrain_sha256':terrain_hash,
         'resolved_config':resolved,'seed':seed,'timestep_s':float(sim.model.opt.timestep),
-        'controller_interval_s':float(sim.model.opt.timestep),'tire_backend':sim.physics_config.tires.backend,
+        'controller_interval_s':sim.physical.control_clock.period_s,'tire_backend':sim.physics_config.tires.backend,
         'drive_mode':sim.physics_config.drive_mode,'rider_model':sim.rider.variant,
         'external_speed_controller':sim.physics_config.drive_mode=='ideal_speed_control',
         'calibration_status':'parameterized_unvalidated',
@@ -226,6 +230,8 @@ def run_physical_headless(track,args,seed,rider):
     except (ValueError,RuntimeError,ArithmeticError) as exc:
         reason='simulation_error'
         metadata['failure']=str(exc)
+    sim.physical.flush()
+    recorder.record(sim)
     recorder.write_csv(out/'telemetry.csv')
     recorder.write_jsonl(out/'intervals.jsonl')
     np.save(out/'terrain_vertices.npy',sim.physical.vertices,allow_pickle=False)

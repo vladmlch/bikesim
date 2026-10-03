@@ -115,6 +115,56 @@ def test_headless_tail_failure_preserves_primary_error_and_serializes(tmp_path, 
     assert 'tail publication failure' in summary['tail_failure']
 
 
+@pytest.mark.parametrize('primary_type',[RuntimeError,InvalidReferenceRun])
+def test_research_cleanup_keeps_primary_exception_and_terminal_metadata(primary_type):
+    from collections import deque
+    from bike_sim.sim.research.environment import ResearchEnvironment
+    from bike_sim.sim.ride.control import RideControl
+    env=ResearchEnvironment.__new__(ResearchEnvironment)
+    env.terminated=env.truncated=False;env.reason=env.error=None
+    env.demand_nm=None;env.rider_program=env.rider_behavior=None
+    env._queue=deque();env.delay_steps=0;env.control_steps=env.max_steps=1
+    env._motor_applied=env._applied=RideControl()
+    env.commands_requested=[];env.commands_applied=[]
+    cfg=SimpleNamespace(physics_mode='physical',drive_mode='articulated_effort')
+    def fail(*args,**kwargs):raise primary_type('primary failure')
+    env.sim=SimpleNamespace(steps=0,time_s=0.,physics_config=cfg,
+        rider=SimpleNamespace(variant='articulated_planar'),step=fail,
+        physical=SimpleNamespace(_buffer=SimpleNamespace(_raws=[])))
+    env._consume_completed_samples=lambda **kwargs:(_ for _ in ()).throw(ValueError('cleanup failure'))
+    with pytest.raises(primary_type,match='primary failure') as captured:
+        env.step(RideControl())
+    assert env.terminated
+    assert env.reason == ('invalid_controller' if primary_type is InvalidReferenceRun else 'simulation_error')
+    assert env.error == f'{primary_type.__name__}: primary failure'
+    assert any('cleanup failure' in note for note in captured.value.__notes__)
+
+
+def test_failed_sample_consumption_is_not_retried_or_counted_twice(monkeypatch):
+    from bike_sim.sim.research import environment
+    env=environment.ResearchEnvironment.__new__(environment.ResearchEnvironment)
+    env._sample_cursor=-1;env.dt_s=.0005;env._next_sensor_step=100
+    sample=SimpleNamespace(interval_id=0,time_s=0.,dt_s=.0005,channels={
+        'suspension':{'shock_stroke_m':0.,'fork_travel_m':0.},
+        'drive':{'motor_torque_nm':10.},'control':{'motor_torque_nm':10.}})
+    env.sim=SimpleNamespace(physical=SimpleNamespace(completed_samples=(sample,)))
+    env.max_shock_stroke_m=env.max_fork_travel_m=0.
+    env.torque_requested_nms=env.torque_delivered_nms=0.;env.demand=None
+    truth=SimpleNamespace(road_pitch_rad=0.,pitch_rate_up_rad_s=0.,speed_mps=0.)
+    monkeypatch.setattr(environment,'truth_from_sample',lambda *args:truth)
+    events=[]
+    env.tracker=SimpleNamespace(update=lambda *args,**kwargs:events.append('tracker'))
+    def record(*args,**kwargs):
+        events.append('record')
+        raise RuntimeError('recorder failed after starting its write')
+    env.recorder=SimpleNamespace(record=record)
+    with pytest.raises(RuntimeError,match='recorder failed'):
+        env._consume_completed_samples()
+    env._consume_completed_samples(stop_at_outcome=False)
+    assert events == ['tracker','record']
+    assert env.torque_delivered_nms == env.torque_requested_nms == .005
+
+
 @pytest.mark.slow
 def test_research_rejection_keeps_single_owner_reset_mode_and_saved_failure(tmp_path):
     import json

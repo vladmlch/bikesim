@@ -168,6 +168,7 @@ class ResearchEnvironment:
         self.commands_applied = [dict(time_s=0., step=0, control=asdict(self._applied))]
         self.observations = [self.observation]
         self.trace = []
+        self._sample_cursor = -1
         self.terminated = self.truncated = False
         self.reason = self.error = None
         self.last_truth = None
@@ -210,6 +211,11 @@ class ResearchEnvironment:
 
     def _consume_completed_samples(self, *, stop_at_outcome=True):
         for sample in self.sim.physical.completed_samples:
+            if sample.interval_id <= self._sample_cursor:
+                continue
+            # Claim before any external consumer side effect: a failed write
+            # makes the run invalid and must never replay its partial effects.
+            self._sample_cursor = sample.interval_id
             source_step = round(sample.time_s / self.dt_s)
             if source_step >= self._next_sensor_step:
                 if source_step != self._next_sensor_step:
@@ -308,6 +314,11 @@ class ResearchEnvironment:
                 self._consume_completed_samples()
         except Exception as exc:
             from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
+            self.terminated = True
+            primary_reason = ('invalid_controller' if isinstance(exc, InvalidReferenceRun)
+                              else 'simulation_error')
+            self.reason = primary_reason
+            self.error = f'{type(exc).__name__}: {exc}'
             # Account a partial physical period even when integration or a
             # caller fails, without replacing the originating exception.
             try:
@@ -315,10 +326,12 @@ class ResearchEnvironment:
                     self.sim.physical.flush()
             except Exception as tail_error:
                 exc.add_note(f'trailing interval check: {tail_error}')
-            self._consume_completed_samples(stop_at_outcome=False)
-            self.terminated = True
-            self.reason = 'invalid_controller' if isinstance(exc, InvalidReferenceRun) else 'simulation_error'
-            self.error = f'{type(exc).__name__}: {exc}'
+            try:
+                self._consume_completed_samples(stop_at_outcome=False)
+            except Exception as consumption_error:
+                exc.add_note(f'trailing sample consumption: {consumption_error}')
+            finally:
+                self.reason = primary_reason
             raise  # Never manufacture a successful transition from invalid dynamics.
         if not self.done and self.sim.steps >= self.max_steps:
             self.truncated, self.reason = True, 'duration'

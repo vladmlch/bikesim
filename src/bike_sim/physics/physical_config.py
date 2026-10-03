@@ -352,6 +352,8 @@ class ArticulatedConfig:
     saddle_reserve_weight_fraction: float = .15
     grip_pull_per_hand_n: float = 300.
     link_max_gap_m: float = .005
+    # Bounded road preview the rider planner may see ahead of the front wheel.
+    road_lookahead_m: float = 0.
     joint_strength_path: str | None = None
     pedal_attachment: str = 'flat'
     saddle_attachment: str = 'flat'

@@ -6,9 +6,13 @@ from math import acos, atan2, cos, hypot, isfinite, pi, sin
 import numpy as np
 from bike_sim.physics.checks import array, scalar
 from bike_sim.sim.ride.support_geometry import (
-    _upper_box_face, project_sole_goal, validate_planar_support_model,
+    _box_pad_contact, _upper_box_face, project_sole_goal,
+    validate_planar_support_model,
 )
 from bike_sim.sim.ride.pedal_recovery import PedalRecovery
+from bike_sim.sim.ride.physical_mapping import relative_point_jacobian
+from bike_sim.sim.ride.rider_state import RiderKinematicState
+from bike_sim.physics.tire import _normal_contact
 
 
 _PRESSURE_BLEND_COSINE = .15
@@ -470,6 +474,7 @@ class ArticulatedRiderController:
     def reset_activation(self):
         self.active_state=np.zeros(len(self.joints))
         self.activation_time_s=None
+        self.kinematic_state=None
         self.effort_diagnostics={}
         self.sole_goal_diagnostics = {}
         self.pedal_recovery = {side: PedalRecovery(self.config.pedal_patch_half_length_m,
@@ -533,11 +538,51 @@ class ArticulatedRiderController:
                 data.qpos[qa] = value
         mujoco.mj_forward(model,data)
 
-    def compute(self,model,data,command, *, contact_loads=None, support_available=None,
-                advance=True, dt_s=None, steady_state=False, support_states=None):
+    def _pedal_contact_estimate(self, model, data, side):
+        """Kinematic prediction of the pad support: normal load and vertical force.
+
+        The flat-pad spring law is a declared material property evaluated on
+        the sole/box geometry, so the controller can predict its own support
+        without reading any solved reaction. The same evaluation also covers a
+        sole trapped beneath the pedal (the bottom face then reports a
+        downward force). Welded feet carry the shoe by the coupling, not by a
+        friction cone, so their load prediction is unbounded compression.
+        """
+        cfg = self.config
+        half = cfg.pedal_patch_half_length_m
+        radius = cfg.support_pad_radius_m
+        geom = self.pedal_geoms[side]
+        origin = data.geom_xpos[geom]
+        rotation = data.geom_xmat[geom].reshape(3, 3)
+        foot_rotation = data.xmat[self.feet[side]].reshape(3, 3)
+        sole = data.site_xpos[self.soles[side]]
+        pedal_body = int(model.geom_bodyid[geom])
+        jac_a = np.zeros((3, model.nv)); jac_b = np.zeros((3, model.nv))
+        load = force_z = 0.
+        for sign in (-1., 1.):
+            center = sole + foot_rotation @ np.array([sign*half, 0., radius])
+            contact = _box_pad_contact(center, radius, origin, rotation,
+                                       model.geom_size[geom])
+            if not (contact.within_footprint and contact.gap_m < 0.):
+                continue
+            jrel = relative_point_jacobian(model, data, self.feet[side],
+                                           pedal_body, contact.point_m,
+                                           jac_a, jac_b)
+            normal_speed = float((jrel @ data.qvel) @ contact.normal)
+            normal, _ = _normal_contact(-contact.gap_m, -normal_speed,
+                                        cfg.support_k_n_m/2, cfg.pedal_c_ns_m/2)
+            load += normal
+            force_z += normal*float(contact.normal[2])
+        return load, force_z
+
+    def compute(self,model,data,command, *, kinematic_state=None, support_available=None,
+                advance=True, dt_s=None, steady_state=False, pedal_recovery=False):
         import mujoco
         if not isinstance(command,RiderCommand):
             raise ValueError('expected a RiderCommand')
+        if kinematic_state is not None and not isinstance(kinematic_state,RiderKinematicState):
+            raise ValueError('expected a RiderKinematicState')
+        self.kinematic_state = kinematic_state
         self.command_enabled=command.enabled and self.enabled
         if not self.command_enabled:
             if advance:
@@ -549,14 +594,15 @@ class ArticulatedRiderController:
             return {name:0. for name in self.joints}
         cfg = self.config
         self._active_recovery = self.pedal_recovery if advance else copy.deepcopy(self.pedal_recovery)
-        if support_states is not None and not steady_state and not self.welded:
+        estimates = {side: self._pedal_contact_estimate(model, data, side)
+                     for side in ('front', 'rear')}
+        if pedal_recovery and not steady_state and not self.welded:
             for side in ('front', 'rear'):
                 geom = self.pedal_geoms[side]
                 self._active_recovery[side].observe(data.geom_xpos[geom],
                     data.geom_xmat[geom].reshape(3, 3), model.geom_size[geom],
                     data.site_xpos[self.soles[side]],
-                    (0., 0., support_states.get(side + '_pedal', {}).get('vertical_force_on_rider_n',
-                        support_states.get(side + '_pedal', {}).get('force_on_rider_n', (0., 0., 0.))[2])))
+                    (0., 0., estimates[side][1]))
         posture = command.posture
         from bike_sim.sim.ride.rider_support import pedaling_support_targets
         support = np.zeros(model.nv)
@@ -565,8 +611,12 @@ class ArticulatedRiderController:
         saddle = data.xpos[self.pelvis]+data.xmat[self.pelvis].reshape(3,3)@np.array([0.,0.,-.060])
         grip = data.site_xpos[self.grip_site]
         points = np.array([saddle,data.site_xpos[self.pedals['front']],data.site_xpos[self.pedals['rear']],grip])
-        loads = {} if contact_loads is None else contact_loads
-        availability=loads if support_available is None else support_available
+        # A welded sole cannot measure its coupling: its load prediction is
+        # the rider's own weight (a foot cannot press more than it carries),
+        # and friction requests stay bounded by predicted compression.
+        loads = {side: (weight if self.welded else estimates[side][0])
+                 for side in ('front', 'rear')}
+        availability={} if support_available is None else support_available
         enabled = [bool(availability.get(name,False)) for name in ('saddle','front','rear','grip')]
         enabled[0] = enabled[0] and posture.use_saddle
         frame_R=data.xmat[self.frame].reshape(3,3)

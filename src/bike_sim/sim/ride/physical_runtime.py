@@ -17,6 +17,8 @@ from bike_sim.sim.ride.physical_resistance import ExternalResistanceApplier
 from bike_sim.sim.ride.static_braking import StaticBrakeApplier
 from bike_sim.sim.ride.rider_contacts import RiderContactApplier
 from bike_sim.sim.ride.rider_control import ArticulatedRiderController, RiderCommand
+from bike_sim.sim.ride.physical_mapping import resolve_id
+from bike_sim.sim.ride.rider_state import rider_kinematic_state
 from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
@@ -73,6 +75,9 @@ class PhysicalRuntime:
             pose = geometry_pose(sim.rider,sim.specs)
             self.rider_contacts = RiderContactApplier(m,pose,self.cfg.articulated)
             self.rider_control = ArticulatedRiderController(m,pose,self.cfg.articulated,sim.crank_length_m)
+            self._wheel_bodies = tuple(resolve_id(m,mujoco.mjtObj.mjOBJ_BODY,s+'_wheel')
+                                       for s in ('front','rear'))
+        self.rider_state = None
         self.probe_query = TerrainContactQuery(m)
         self.filters = {s:GroundedFilter(.005) for s in ('front','rear')}
         self.history = WorkHistory()
@@ -214,9 +219,6 @@ class PhysicalRuntime:
                 detailed=not self.interactive_preview))
             observed=(self.rider_contacts.diagnostics if advance else self.rider_contacts.probe_diagnostics)
             enabled=(self.rider_contacts.enabled if advance else self.rider_contacts.probe_enabled)
-            loads = {side:observed.get(side+'_pedal',{}).get('normal_load_n',0.) for side in ('front','rear')}
-            loads['grip'] = enabled.get('grip',False)
-            loads['saddle'] = observed.get('saddle',{}).get('normal_load_n',0.)
             crank_goal = pedaling.target_phase_rad
             if not active and self.drive.ideal_hub is not None:
                 crank_goal = self.cfg.drive.crank_phase_rad
@@ -231,9 +233,17 @@ class PhysicalRuntime:
             # pelvis must actually settle onto the unilateral surface.
             availability['saddle']=bool(enabled.get('saddle',False) and observed.get('saddle',{}).get('in_platform',False))
             availability['grip']=bool(enabled.get('grip',False))
-            self.rider_control.write(d,self.rider_control.compute(m,d,command,contact_loads=loads,
+            # The planner sees kinematics and a bounded road window only.
+            # Solved reactions stay inside the physics layer; flat-pad loads
+            # are predicted from the declared pad law inside compute().
+            self.rider_state = rider_kinematic_state(m,d,
+                vertices=self.vertices,
+                wheel_x_m=tuple(float(d.xpos[b][0]) for b in self._wheel_bodies),
+                lookahead_m=self.cfg.articulated.road_lookahead_m)
+            self.rider_control.write(d,self.rider_control.compute(m,d,command,
+                kinematic_state=self.rider_state,
                 support_available=availability,advance=advance,dt_s=dt,steady_state=not active,
-                support_states=observed if self.cfg.seated_climb.enabled else None))
+                pedal_recovery=self.cfg.seated_climb.enabled))
             acc.add('rider_joint_envelope',self.rider_control.envelope_forces(m,d)[0])
         if self.rider_contacts is None:
             sensed = 0.

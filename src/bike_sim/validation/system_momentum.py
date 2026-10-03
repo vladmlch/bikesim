@@ -76,11 +76,9 @@ def momentum_rig(dt_s,active: bool,*,transmission='geometric_ideal_mid_drive',ri
         mujoco.mj_forward(m,d)
         contact_force=contacts.compute_qfrc(m,d,dt_s)
         observed=contacts.diagnostics
-        loads={side:observed.get(side+'_pedal',{}).get('normal_load_n',0.) for side in ('front','rear')}
-        loads.update(grip=contacts.enabled['grip'],saddle=observed.get('saddle',{}).get('normal_load_n',0.))
         availability={side:contacts.enabled[side+'_pedal'] and observed.get(side+'_pedal',{}).get('in_platform',False) for side in ('front','rear')}
         availability.update(grip=contacts.enabled['grip'],saddle=observed.get('saddle',{}).get('in_platform',False))
-        commands=controller.compute(m,d,RiderCommand(0.,enabled=rider_active),contact_loads=loads,
+        commands=controller.compute(m,d,RiderCommand(0.,enabled=rider_active),
                                     support_available=availability,dt_s=dt_s)
         controller.write(d,commands)
         components=drive.compute_components(m,d,dt_s,speed_mps=0.,control=RideControl(motor_torque_nm=torque,human_torque_nm=0.))

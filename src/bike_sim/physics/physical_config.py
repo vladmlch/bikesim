@@ -343,6 +343,16 @@ class ArticulatedConfig:
     joint_envelope_soft_k_nm_rad: float = 100.
     activation_tau_s: float = 0.
     active_positive_power_limit_w: float | None = None
+    # Reference seated plant budgets (spec S3). support_mu remains for legacy
+    # comparison profiles; the reference gate fixes these per-attachment
+    # values instead of one shared coefficient.
+    foot_mu: float = .9
+    saddle_mu: float = .6
+    pedal_min_normal_n: float = 20.
+    saddle_reserve_weight_fraction: float = .15
+    grip_pull_per_hand_n: float = 300.
+    link_max_gap_m: float = .005
+    joint_strength_path: str | None = None
     pedal_attachment: str = 'flat'
     saddle_attachment: str = 'flat'
     # 'spring' is the releasable compliant grip; 'weld' pins the hands to the
@@ -357,8 +367,11 @@ class ArticulatedConfig:
             raise ValueError('postural support fractions must leave a saddle share')
         if self.joint_envelope_path is not None and (not isinstance(self.joint_envelope_path,str) or not self.joint_envelope_path.strip()):
             raise ValueError('joint_envelope_path must be a nonempty path or None')
+        if self.joint_strength_path is not None and (not isinstance(self.joint_strength_path,str) or not self.joint_strength_path.strip()):
+            raise ValueError('joint_strength_path must be a nonempty path or None')
         for key in self.__dataclass_fields__:
-            if key in ('joint_envelope_path', 'pedal_attachment', 'saddle_attachment',
+            if key in ('joint_envelope_path', 'joint_strength_path',
+                       'pedal_attachment', 'saddle_attachment',
                        'grip_attachment'):
                 continue
             if key in ('grip_pair_force_limit_n','active_positive_power_limit_w') and getattr(self,key) is None:
@@ -366,14 +379,17 @@ class ArticulatedConfig:
             scalar(getattr(self,key),key,minimum=0)
         if self.grip_pair_force_limit_n is not None:
             scalar(self.grip_pair_force_limit_n,'pair grip force limit',positive=True)
-        for key in ('support_pad_radius_m','stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s'):
+        for key in ('support_pad_radius_m','stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s',
+                    'pedal_min_normal_n','grip_pull_per_hand_n','link_max_gap_m'):
             scalar(getattr(self,key),key,positive=True)
+        if self.saddle_reserve_weight_fraction > 1.:
+            raise ValueError('saddle reserve fraction must not exceed one')
         if self.pedal_attachment not in ('flat', 'weld'):
             raise ValueError(
                 f"pedal_attachment must be 'flat' or 'weld', got {self.pedal_attachment!r}")
-        if self.saddle_attachment not in ('flat', 'weld'):
+        if self.saddle_attachment not in ('flat', 'weld', 'pin'):
             raise ValueError(
-                f"saddle_attachment must be 'flat' or 'weld', got {self.saddle_attachment!r}")
+                f"saddle_attachment must be 'flat', 'weld' or 'pin', got {self.saddle_attachment!r}")
         if self.grip_attachment not in ('spring', 'weld'):
             raise ValueError(
                 f"grip_attachment must be 'spring' or 'weld', got {self.grip_attachment!r}")

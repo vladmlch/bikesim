@@ -71,6 +71,11 @@ def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
         raise ValueError('allocation bounds must not be NaN')
     if np.any(lower > upper):
         raise ValueError('reversed allocation bounds')
+    if x0 is not None:
+        x0 = np.asarray(x0, dtype=float)
+        if x0.shape != target.shape or not np.isfinite(x0).all():
+            raise ValueError('warm start must have the target shape and finite values')
+    x = np.clip(target if x0 is None else x0, lower, upper)
     # Equalities first, then linear inequalities, then nonlinear extras: the
     # active-set order affects SLSQP's path, and dynamics rows are the most
     # important to satisfy early.
@@ -82,7 +87,7 @@ def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
         constraints.append({'type': 'ineq', 'fun': lambda x: h-g @ x,
                             'jac': lambda x: -g})
     for constraint in extra_constraints:
-        constraints.extend(_as_old_style(constraint, target))
+        constraints.extend(_as_old_style(constraint, x))
 
     def objective(x):
         return .5 * np.dot(x - target, x - target)
@@ -90,11 +95,6 @@ def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
     def gradient(x):
         return x - target
 
-    if x0 is not None:
-        x0 = np.asarray(x0, dtype=float)
-        if x0.shape != target.shape or not np.isfinite(x0).all():
-            raise ValueError('warm start must have the target shape and finite values')
-    x = np.clip(target if x0 is None else x0, lower, upper)
     # SLSQP occasionally stalls on a line-search step with a nearly feasible
     # iterate; a warm restart from the returned point pushes through without
     # relaxing any residual tolerance.
@@ -116,7 +116,7 @@ def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
     return Allocation(x.copy(), bool(violation <= 1e-7), violation)
 
 
-def _as_old_style(constraint, target):
+def _as_old_style(constraint, start):
     """Avoid SciPy conversion while retaining equality and bound semantics."""
     if not isinstance(constraint, (LinearConstraint, NonlinearConstraint)):
         raise ValueError('unsupported allocation constraint')
@@ -128,7 +128,7 @@ def _as_old_style(constraint, target):
     else:
         fun = lambda x: np.atleast_1d(constraint.fun(x))
         jac = (lambda x: np.atleast_2d(constraint.jac(x))) if callable(constraint.jac) else None
-        shape = np.shape(fun(target))
+        shape = np.shape(fun(start))
     lb = np.broadcast_to(np.asarray(constraint.lb, dtype=float), shape).reshape(-1)
     ub = np.broadcast_to(np.asarray(constraint.ub, dtype=float), shape).reshape(-1)
     equal = np.isfinite(lb) & (lb == ub)

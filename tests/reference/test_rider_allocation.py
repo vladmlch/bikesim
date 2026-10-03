@@ -264,6 +264,19 @@ def test_vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics():
     np.testing.assert_allclose(result.solution, [.8, .2], atol=1e-7)
 
 
+@pytest.mark.parametrize('x0',[None,np.array([1.])])
+def test_nonlinear_constraint_is_evaluated_at_the_bounded_start(x0):
+    # Nonlinear functions can have a domain narrower than the wish. The old
+    # SLSQP conversion saw the clipped start, never an out-of-domain target.
+    extra=NonlinearConstraint(lambda x: math.log(float(x[0])),-np.inf,1.,
+                              jac=lambda x: np.array([1./x[0]]))
+    result=allocate_effort(np.array([-5.]),np.zeros((0,1)),np.zeros(0),
+        np.zeros((0,1)),np.zeros(0),np.array([.1]),np.array([2.]),
+        extra_constraints=[extra],x0=x0)
+    assert result.feasible
+    np.testing.assert_allclose(result.solution,[.1],atol=1e-7)
+
+
 def test_real_grip_problem_changes_from_remembered_pull_to_press():
     from bike_sim.sim.ride.rider_control import ArticulatedRiderController
     controller = ArticulatedRiderController.__new__(ArticulatedRiderController)

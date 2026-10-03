@@ -143,6 +143,7 @@ cadence_smoothing_tau_s = 0.35
 upshift_slip_limit_mps = 0.5
 
 [articulated]
+road_lookahead_m = 2.0
 pedal_attachment = "weld"
 saddle_attachment = "weld"
 grip_attachment = "weld"

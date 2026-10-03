@@ -33,8 +33,17 @@ class RiderIntentResolver:
         self._last_tick_step = -1
         self.intent = SeatedClimbIntent(RiderPosture(), 0.)
 
+    def schedule_pulse(self, start_s, duration_s, amplitude_rad):
+        """Register a bounded torso-thrust wish on the posture program.
+
+        This is a strategy-level schedule entry, not a state command: it
+        only modulates the rate-limited lean intent that reaches the R4
+        allocator, and it is cleared on reset like any program state.
+        """
+        self.policy.program.schedule_pulse(start_s, duration_s, amplitude_rad)
+
     def resolve(self, control: RideControl, signals: SeatedClimbSignals, *, step: int,
-                active: bool = True, advance: bool = True) -> RideControl:
+                road_grade: float, active: bool = True, advance: bool = True) -> RideControl:
         if not isinstance(control, RideControl):
             raise ValueError('expected a rider control')
         if not self.policy.config.enabled or not active:
@@ -44,12 +53,12 @@ class RiderIntentResolver:
         if step < self._last_tick_step:
             raise ValueError('reset rider intention before rewinding physics')
         if not advance:
-            return copy.deepcopy(self).resolve(control, signals, step=step)
+            return copy.deepcopy(self).resolve(control, signals, step=step, road_grade=road_grade)
         if step % self.period_steps == 0 and step != self._last_tick_step:
             expected = 0 if self._last_tick_step < 0 else self._last_tick_step+self.period_steps
             if step != expected:
                 raise ValueError('rider intention clock skipped an acquisition')
-            self.intent = self.policy.update(signals, self.policy.config.period_s)
+            self.intent = self.policy.update(signals, self.policy.config.period_s, road_grade=road_grade)
             self._last_tick_step = step
         if not control.rider_enabled:
             return control

@@ -19,7 +19,7 @@ from bike_sim.sim.ride.static_braking import StaticBrakeApplier
 from bike_sim.sim.ride.rider_contacts import RiderContactApplier
 from bike_sim.sim.ride.rider_control import ArticulatedRiderController, RiderCommand
 from bike_sim.sim.ride.physical_mapping import resolve_id
-from bike_sim.sim.ride.rider_state import rider_kinematic_state
+from bike_sim.sim.ride.rider_state import rider_kinematic_state, road_grade_for_posture
 from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory, freeze
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
@@ -197,11 +197,20 @@ class PhysicalRuntime:
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
         control.validate_for(self.cfg, sim.rider.variant)
+        m,d = sim.model,sim.data
+        control_tick = (not advance or getattr(self, 'initializing', False)
+                        or self.control_clock.is_tick(sim.steps))
+        if self.rider_control is not None and control_tick:
+            self.rider_state = rider_kinematic_state(m,d,
+                vertices=self.vertices,
+                wheel_x_m=tuple(float(d.xpos[b][0]) for b in self._wheel_bodies),
+                lookahead_m=self.cfg.articulated.road_lookahead_m)
         automatic_effort = (active and self.cfg.seated_climb.enabled
                             and control.human_torque_nm is None and control.rider_enabled)
         if self.cfg.seated_climb.enabled:
             control = self.rider_intent.resolve(control, self.rider_intent_signals,
-                step=sim.steps, active=active, advance=advance)
+                step=sim.steps, road_grade=road_grade_for_posture(self.rider_state.road),
+                active=active, advance=advance)
         if advance:
             self.applied_control = control
         if braking is None:
@@ -255,11 +264,7 @@ class PhysicalRuntime:
             # The planner sees kinematics and a bounded road window only.
             # Solved reactions stay inside the physics layer; flat-pad loads
             # are predicted from the declared pad law inside compute().
-            if not advance or getattr(self, 'initializing', False) or self.control_clock.is_tick(sim.steps):
-                self.rider_state = rider_kinematic_state(m,d,
-                    vertices=self.vertices,
-                    wheel_x_m=tuple(float(d.xpos[b][0]) for b in self._wheel_bodies),
-                    lookahead_m=self.cfg.articulated.road_lookahead_m)
+            if control_tick:
                 torques = self.rider_control.compute(m,d,command,
                     kinematic_state=self.rider_state,
                     support_available=availability,advance=advance,

@@ -24,6 +24,13 @@ class RoadSample:
         scalar(self.grade, 'road sample grade')
 
 
+def road_grade_for_posture(road: tuple[RoadSample, ...]) -> float:
+    """Uniform sample mean, including both wheel locations and the preview."""
+    if not road:
+        raise ValueError('posture program needs at least one road sample')
+    return float(sum(sample.grade for sample in road)/len(road))
+
+
 @dataclass(frozen=True)
 class RiderKinematicState:
     """Point-in-time rider input: generalized kinematics and road preview."""

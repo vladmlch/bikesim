@@ -5,6 +5,7 @@ from math import atan2, exp, hypot, pi, sin, cos
 
 from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.rider_posture import RiderPosture
+from bike_sim.physics.rider_program import SeatedPostureProgram
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,10 @@ class SeatedClimbPolicy:
         if not isinstance(config, SeatedClimbConfig):
             raise ValueError('expected a seated climb configuration')
         self.config = config
+        # The lean intent lives in the posture program; this class only
+        # estimates inclination from delayed proprioceptive signals and
+        # shapes the effort ceiling.
+        self.program = SeatedPostureProgram(config)
         self.reset()
 
     def reset(self):
@@ -75,11 +80,13 @@ class SeatedClimbPolicy:
         self.effort_nm = 0.
         self._samples = deque()
         self._delayed = None
+        self.program.reset()
 
-    def update(self, signals: SeatedClimbSignals, dt_s: float) -> SeatedClimbIntent:
+    def update(self, signals: SeatedClimbSignals, dt_s: float, *, road_grade: float) -> SeatedClimbIntent:
         if not isinstance(signals, SeatedClimbSignals):
             raise ValueError('expected finite seated rider signals')
         dt = scalar(dt_s, 'rider intention interval', positive=True)
+        road_grade = scalar(road_grade, 'posture road grade')
         config = self.config
         if not config.enabled:
             return SeatedClimbIntent(RiderPosture(), 0.)
@@ -97,13 +104,10 @@ class SeatedClimbPolicy:
                 difference = atan2(sin(estimate-self.inclination_rad), cos(estimate-self.inclination_rad))
                 self.inclination_rad += (1.-exp(-dt/config.orientation_tau_s))*difference
             self.inclination_rad = atan2(sin(self.inclination_rad), cos(self.inclination_rad))
-            target_lean = max(-config.max_backward_lean_rad,
-                min(config.max_forward_lean_rad, config.lean_gain*self.inclination_rad))
-            self.lean_rad += max(-config.lean_rate_rad_s*dt,
-                min(config.lean_rate_rad_s*dt, target_lean-self.lean_rad))
             target_effort = crank_effort_ceiling(config.target_crank_power_w,
                 config.max_crank_torque_nm, delayed.crank_rate_rad_s)
             self.effort_nm += max(-config.torque_slew_nm_s*dt,
                 min(config.torque_slew_nm_s*dt, target_effort-self.effort_nm))
+        self.lean_rad = self.program.update(self.time_s, road_grade, dt)
         self.time_s += dt
         return SeatedClimbIntent(RiderPosture(torso_lean_rad=self.lean_rad, use_saddle=True), self.effort_nm)

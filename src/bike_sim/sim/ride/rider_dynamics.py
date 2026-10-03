@@ -154,29 +154,45 @@ class ConstraintDynamics:
                 yield tuple(sorted(candidate.items()))
 
 
-def search_constraint_modes(dynamics, wish, solve, *, torque_of=lambda result:result.solution,
+def search_constraint_modes(dynamics, wish, solve, *, torque_of=lambda result: result.solution,
                             max_candidates=256):
     """Cross mode boundaries when the wish's local mechanical mode is infeasible.
 
-    A returned feasible point satisfies that mode's full domain. Exhausting
-    the bounded search is a controller failure, not a proof of mechanical
-    impossibility; the caller reports the count and completion flag explicitly.
+    A returned feasible point satisfies that mode's full domain. Otherwise,
+    ``complete`` means that every reachable mode was tried, not merely that
+    the candidate budget was reached. Neither an exhausted nor a truncated
+    search certifies mechanical impossibility from failed optimizer iterates.
     """
-    from collections import deque
-    first=dynamics.linearize(wish)
-    pending=deque([first.mode]);seen=set();best=None
-    while pending and len(seen)<max_candidates:
-        mode=pending.popleft()
-        if mode in seen:continue
+    from collections import OrderedDict
+
+    if type(max_candidates) is not int or max_candidates < 1:
+        raise ValueError('constraint mode search needs a positive integer candidate budget')
+
+    first = dynamics.linearize(wish)
+    # A mode can be suggested both by a failed iterate and by several neighbors.
+    # Keep one queued entry, so duplicate suggestions cannot falsely signal an
+    # incomplete search when the last distinct mode uses the entire budget.
+    pending = OrderedDict.fromkeys([first.mode])
+    seen = set()
+    best = None
+    while pending and len(seen) < max_candidates:
+        mode, _ = pending.popitem(last=False)
         seen.add(mode)
-        response=dynamics.response_for_mode(mode)
-        result,payload=solve(response)
-        candidate=(result,payload,response)
-        if best is None or result.violation<best[0].violation:best=candidate
-        if result.feasible:return *candidate,len(seen),True
-        # The failed constrained iterate often already points at the missing
-        # adjacent region; still retain neighboring regions for complete search.
-        actual=dynamics.linearize(torque_of(result)).mode
-        if actual not in seen:pending.appendleft(actual)
-        pending.extend(m for m in dynamics.neighboring_modes(mode) if m not in seen)
-    return *best,len(seen),not pending
+        response = dynamics.response_for_mode(mode)
+        result, payload = solve(response)
+        candidate = (result, payload, response)
+        if best is None or result.violation < best[0].violation:
+            best = candidate
+        if result.feasible:
+            return *candidate, len(seen), True
+
+        # Prefer the failed iterate's actual region even if it was queued
+        # earlier. Other neighbors retain their deterministic discovery order.
+        actual = dynamics.linearize(torque_of(result)).mode
+        if actual not in seen:
+            pending.setdefault(actual, None)
+            pending.move_to_end(actual, last=False)
+        for neighbor in dynamics.neighboring_modes(mode):
+            if neighbor not in seen:
+                pending.setdefault(neighbor, None)
+    return *best, len(seen), not pending

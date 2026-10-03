@@ -34,7 +34,11 @@ def allocation_grip_constraints(force_map,direction,*,pulling,limit_n):
     constraints=grip_constraints(force_map,direction,pulling=pulling,
         limit_n=limit_n*(1.-GRIP_RADIUS_GUARD_FRACTION) if pulling else limit_n)
     if not pulling:
-        constraints[0].lb[:]=SUPPORT_FORCE_GUARD_N
+        # SciPy may broadcast scalar bounds into read-only arrays. Construct
+        # the guarded constraint instead of mutating that internal view.
+        sign = constraints[0]
+        constraints[0] = LinearConstraint(sign.A, SUPPORT_FORCE_GUARD_N, sign.ub,
+                                          keep_feasible=sign.keep_feasible)
     return constraints
 
 

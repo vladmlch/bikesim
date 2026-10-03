@@ -21,7 +21,7 @@ from bike_sim.sim.ride.rider_contacts import RiderContactApplier
 from bike_sim.sim.ride.rider_control import ArticulatedRiderController, RiderCommand
 from bike_sim.sim.ride.physical_mapping import resolve_id
 from bike_sim.sim.ride.rider_state import rider_kinematic_state
-from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory
+from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory, freeze
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
 from bike_sim.sim.ride.physical_observations import (
@@ -59,6 +59,7 @@ class PhysicalRuntime:
         self.completed_samples = ()
         self.period_violations = ()
         self.interval_constraints = {}
+        self._held_rider_terms = None
         if self.cfg.seated_climb.enabled and sim.rider.variant != 'articulated_planar':
             raise ValueError('seated climb needs an articulated planar rider')
         self.rider_intent = RiderIntentResolver(self.cfg.seated_climb, float(sim.model.opt.timestep))
@@ -257,6 +258,10 @@ class PhysicalRuntime:
                     pedal_recovery=self.cfg.seated_climb.enabled)
                 if advance:
                     self.control_clock.hold(torques)
+                    if not getattr(self, 'initializing', False):
+                        # One immutable command-term snapshot per control tick,
+                        # shared by its raw intervals even across a manual flush.
+                        self._held_rider_terms = freeze(self.rider_control.last_terms)
             else:
                 torques = self.control_clock.held()
             self.rider_control.write(d,torques)
@@ -295,6 +300,7 @@ class PhysicalRuntime:
         self.completed_samples = ()
         self.period_violations = ()
         self.interval_constraints = {}
+        self._held_rider_terms = None
         sim = self.sim
         self.control_clock.reset()
         if self.rider_control is not None:
@@ -596,6 +602,7 @@ class PhysicalRuntime:
         raw = RawStep(sim.steps,t,float(d.time),q,v,components,attachment_raw,
             solved_actuator_force,solved_passive,tires,
             dict(channels=channels, diagnostics=diagnostics, attachment_errors=attachment_errors,
+                rider_control_terms=self._held_rider_terms,
                 loss_step_j=loss_step, mechanical_energy_j=total, elastic_energy_j=elastic,
                 battery_energy_j=self.drive.battery.energy_j,
                 electrical_power_w=self.drive.last.get('electrical_power_w',0.),
@@ -669,6 +676,8 @@ class PhysicalRuntime:
                 self.rider_contacts.last_attachment_errors = self.attachment_errors
             if self.rider_control is not None:
                 self.rider_control.effort_diagnostics = dict(effort)
+                self.rider_control.last_terms = {name:dict(terms) for name, terms in
+                                                raw.metadata['rider_control_terms'].items()}
                 for name, (_, dof, aid) in self.rider_control.joints.items():
                     delivered = float(raw.actuator_force[aid])
                     self.rider_control.last_terms[name].update(solved_force_nm=delivered,

@@ -122,6 +122,63 @@ def test_held_command_power_and_strength_are_checked_at_each_incoming_state():
 
 
 @pytest.mark.slow
+def test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms(tmp_path):
+    from pathlib import Path
+    from bike_sim.cli import research as research_cli
+    from bike_sim.sim.ride._step_oracle import step_reference
+    from bike_sim.sim.ride.control import RideControl
+    track = tmp_path / 'flat.toml'
+    track.write_text('name="probe"\nlength_m=200.0\nsurface="hardpack"\n'
+                     'grade_profile={knots=[[0.0,0.0],[200.0,0.0]]}\n')
+    args = research_cli.parser().parse_args([
+        '--physics-config', str(Path(__file__).resolve().parents[2] /
+                                'examples/research/viewer_physics_welded.toml'),
+        '--track-file', str(track), '--dt', '.0005', '--duration', '.03',
+        '--control-period', '.0075', '--diagnostic-model-limits',
+        '--out', str(tmp_path / 'out')])
+    env = research_cli.make_environment(args)
+    runtime = env.sim.physical
+    # Put both paths through the identical settled-cache reset path; the first
+    # cold equilibrium solve can leave a different allocator warm-start iterate.
+    env.reset()
+    initial_branch = runtime.rider_control._last_branch
+    initial_solution = runtime.rider_control._last_solution.copy()
+    runtime.set_record_decimation(1)
+    commands = [RideControl(motor_torque_nm=0., human_torque_nm=0. if i < 20 else 5.)
+                for i in range(60)]
+    expected = []
+    for command in commands:
+        step_reference(runtime, control=command)
+        expected.append(runtime.sample)
+    env.reset()
+    assert runtime.rider_control._last_branch == initial_branch
+    np.testing.assert_array_equal(runtime.rider_control._last_solution, initial_solution)
+    runtime.set_record_decimation(1)
+    actual = []
+    for i, command in enumerate(commands):
+        runtime.step(control=command)
+        actual.extend(runtime.completed_samples)
+        if i+1 in (15, 37):
+            runtime.flush()
+            actual.extend(runtime.completed_samples)
+    runtime.flush()
+    actual.extend(runtime.completed_samples)
+    assert len(actual) == len(expected) == 60
+    for scalar, batch in zip(expected, actual):
+        np.testing.assert_allclose(batch.qpos,scalar.qpos,rtol=0.,atol=1e-12)
+        np.testing.assert_allclose(batch.qvel,scalar.qvel,rtol=0.,atol=1e-12)
+        before, after = scalar.channels['rider_control'], batch.channels['rider_control']
+        assert before.keys() == after.keys()
+        for name in before:
+            assert before[name].keys() == after[name].keys()
+            for field, value in before[name].items():
+                if isinstance(value, bool):
+                    assert after[name][field] is value
+                else:
+                    assert after[name][field] == pytest.approx(value,rel=0.,abs=1e-9), (batch.interval_id,name,field)
+
+
+@pytest.mark.slow
 def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
     from pathlib import Path
     from bike_sim.cli import research as research_cli

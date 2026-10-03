@@ -20,7 +20,7 @@ from bike_sim.sim.ride.rider_contacts import RiderContactApplier
 from bike_sim.sim.ride.rider_control import ArticulatedRiderController, RiderCommand
 from bike_sim.sim.ride.physical_mapping import resolve_id
 from bike_sim.sim.ride.rider_state import rider_kinematic_state
-from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory
+from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory, freeze
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
 from bike_sim.sim.ride.physical_observations import (
@@ -197,7 +197,9 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
               'contact_crash_cause':contact_crash}
     self.model_status.observe(sim.steps,t,channels)
     channels['model_status']=self.model_status.as_dict()
-    self.sample=PhysicalSample(sim.steps,t,float(d.time),q,v,components,channels)
+    # Preserve original scalar-channel snapshotting after P4 transfers runtime
+    # ownership instead of freezing channels in PhysicalSample itself.
+    self.sample=PhysicalSample(sim.steps,t,float(d.time),q,v,components,freeze(channels))
     self.history.add(self.sample)
     sim.steps+=1
     if contact_crash is not None and sim.crash_detector.event is None:
@@ -205,4 +207,3 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
         sim.crash_detector.event=CrashEvent(contact_crash,t,float(q[sim.root_x_qposadr]),float(q[sim.root_pitch_qposadr]))
     sim.crash_detector.check(d,sim.contacts)
     sim._update_compiled_com_marker()
-

@@ -51,6 +51,7 @@ def measure_realtime(track_path, physics_path, duration_s, *, out, dt_s=.0005):
     status=subprocess.run(['git','status','--porcelain','--','src/bike_sim','tools/measure_realtime.py'],
                           cwd=root,capture_output=True,text=True,check=True)
     from bike_sim.validation.environment import source_fingerprint
+    model_status=sim.physical.model_status.as_dict()
     report={'steps':int(costs.size),'sim_seconds':float(costs.size*dt),
         'wall_seconds':wall,'startup_seconds':startup,'flush_wall_seconds':flush_wall,
         'factor':float(costs.size*dt/wall),'step_ms_mean':float(costs.mean()*1e3),
@@ -61,7 +62,9 @@ def measure_realtime(track_path, physics_path, duration_s, *, out, dt_s=.0005):
         'requested_duration_s':float(duration_s),'source_timestep_s':source_cfg.timestep_s,
         'effective_timestep_s':dt,'controller_interval_s':sim.physical.control_clock.period_s,
         'record_decimation':args.decimate,'monitor_strict':False,'measurement_path':'accounted_headless',
-        'reason':reason,'model_valid':sim.physical.model_status.as_dict()['model_valid'],
+        'reason':reason,'model_valid':model_status['model_valid'],
+        'numerically_valid':model_status.get('numerically_valid','not_evaluated'),
+        'model_status':model_status,
         'first_failure':sim.physical.reference_monitor.first_failure}
     # Use JSON's canonical lists for first_failure in both return and artifact.
     report=json.loads(json.dumps(report,allow_nan=False))

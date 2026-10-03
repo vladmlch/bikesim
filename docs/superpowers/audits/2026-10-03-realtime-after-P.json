@@ -562,5 +562,10 @@
     ],
     "csv_before": "/private/tmp/mujoco-v2-P4-before.csv",
     "csv_after": "/private/tmp/mujoco-v2-P4-after.csv"
+  },
+  "post_review_corrections": {
+    "viewer_terminal_tail": "Flush before first outcome announcement/HUD/live CSV, plus exceptional exit cleanup preserving primary error; cheap non-tick fake-viewer regressions cover ordering and cleanup failure.",
+    "measurement_status_metadata": "Future tool output includes model_status and numerically_valid. Historical short headless reports recorded model_valid and first_failure only; they are retained without retroactively fabricating full status. Both historical GUI reports include numerical/full status.",
+    "diagnostic_decimation": "Functional GUI smokes explicitly set80; normal CLI currently defaults1. W6 must measure its actually selected viewer decimation."
   }
 }

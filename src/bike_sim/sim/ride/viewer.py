@@ -239,51 +239,61 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
     from pathlib import Path
     csv_path=Path(out_root)/log_dir/"preview.csv"
     print(f"[bike-ride] physical live csv: {csv_path}")
-    with PhysicalLiveCsv(csv_path) as preview_log:
-        with mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
-                                          show_left_ui=False,show_right_ui=False) as viewer:
-            session.viewer=viewer
-            session.camera.reset_preset()
-            previous=time.monotonic();last_hud=last_sync=rate_wall=previous
-            rate_sim=sim.time_s
-            generation=sim.physical.generation
-            announced=False
-            while viewer.is_running():
-                now=time.monotonic()
-                session.process_pending_keys()
-                if sim.physical.generation!=generation:
-                    generation=sim.physical.generation
-                    pacer.reset()
-                    now=previous=rate_wall=time.monotonic()
-                    rate_sim=sim.time_s
-                for _ in range(pacer.steps_for(now-previous)):
-                    if session.step() is not None:
-                        pacer.reset();break
-                previous=now
-                now=time.monotonic()
+    try:
+        with PhysicalLiveCsv(csv_path) as preview_log:
+            with mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
+                                              show_left_ui=False,show_right_ui=False) as viewer:
+                session.viewer=viewer
+                session.camera.reset_preset()
+                previous=time.monotonic();last_hud=last_sync=rate_wall=previous
+                rate_sim=sim.time_s
+                generation=sim.physical.generation
+                announced=False
+                while viewer.is_running():
+                    now=time.monotonic()
+                    session.process_pending_keys()
+                    if sim.physical.generation!=generation:
+                        generation=sim.physical.generation
+                        pacer.reset()
+                        now=previous=rate_wall=time.monotonic()
+                        rate_sim=sim.time_s
+                    for _ in range(pacer.steps_for(now-previous)):
+                        if session.step() is not None:
+                            pacer.reset();break
+                    previous=now
+                    now=time.monotonic()
+                    if session.outcome is None:
+                        announced=False
+                        if now-rate_wall>=.5:
+                            sim.physical.live_real_time_factor=(sim.time_s-rate_sim)/(now-rate_wall)
+                            rate_wall,rate_sim=now,sim.time_s
+                    elif not announced:
+                        sim.physical.flush()
+                        print(f"\n[RUN ENDED] {session.outcome.describe()}")
+                        announced=True
+                    if preview_log.due(sim.time_s,sim.physical.generation):
+                        preview_log.write(sim.time_s,sim.physical.generation,session.hud.preview_log_row(sim))
+                    if now-last_sync>=PHYSICAL_SYNC_INTERVAL_S:
+                        with viewer.lock():
+                            session.camera.update_viewer(viewer,bike_x=sim.position_m,bike_z=float(sim.data.xpos[sim._frame_body_id,2]))
+                        viewer.sync()
+                        last_sync=now
+                    if session.show_telemetry and now-last_hud>=HUD_REFRESH_INTERVAL_S:
+                        session.print_hud();last_hud=now
+                    time.sleep(FRAME_SLEEP_S)
+                sim.physical.flush()
                 if session.outcome is None:
-                    announced=False
-                    if now-rate_wall>=.5:
-                        sim.physical.live_real_time_factor=(sim.time_s-rate_sim)/(now-rate_wall)
-                        rate_wall,rate_sim=now,sim.time_s
-                elif not announced:
-                    print(f"\n[RUN ENDED] {session.outcome.describe()}")
-                    announced=True
-                if preview_log.due(sim.time_s,sim.physical.generation):
-                    preview_log.write(sim.time_s,sim.physical.generation,session.hud.preview_log_row(sim))
-                if now-last_sync>=PHYSICAL_SYNC_INTERVAL_S:
-                    with viewer.lock():
-                        session.camera.update_viewer(viewer,bike_x=sim.position_m,bike_z=float(sim.data.xpos[sim._frame_body_id,2]))
-                    viewer.sync()
-                    last_sync=now
-                if session.show_telemetry and now-last_hud>=HUD_REFRESH_INTERVAL_S:
-                    session.print_hud();last_hud=now
-                time.sleep(FRAME_SLEEP_S)
+                    preview_log.write_marker(f"viewer closed; t={sim.time_s:.3f}s x={sim.position_m:.3f}m")
+                else:
+                    preview_log.write_marker(f"run ended; {session.outcome.describe()}")
+    except BaseException as original:
+        # A valid partial period still belongs to the ledger when the viewer
+        # loop or its context exits exceptionally. Preserve the primary error.
+        try:
             sim.physical.flush()
-            if session.outcome is None:
-                preview_log.write_marker(f"viewer closed; t={sim.time_s:.3f}s x={sim.position_m:.3f}m")
-            else:
-                preview_log.write_marker(f"run ended; {session.outcome.describe()}")
+        except BaseException as cleanup:
+            original.add_note(f'physical interval cleanup also failed: {cleanup}')
+        raise
     try:
         from bike_sim.viz.ride_plots import load_ride_csv,plot_physical_ride_html
         print(f"[bike-ride] physical live html: {plot_physical_ride_html(load_ride_csv(csv_path),csv_path.parent)}")

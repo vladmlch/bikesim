@@ -44,7 +44,8 @@ def test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush(tmp_path
     monitor = SimpleNamespace(strict=True, first_failure=None)
     physical = SimpleNamespace(control_clock=SimpleNamespace(period_s=.005),
         set_record_decimation=recorded.append, reference_monitor=monitor,
-        model_status=SimpleNamespace(as_dict=lambda: {'model_valid':True}),
+        model_status=SimpleNamespace(as_dict=lambda: {'model_valid':True,'numerically_valid':False,
+                                                     'calibration_status':'synthetic'}),
         flush=lambda: recorded.append('flush'))
     sim = SimpleNamespace(model=SimpleNamespace(opt=SimpleNamespace(timestep=.0005)),
         physical=physical,crash=None,position_m=0.,track=SimpleNamespace(length_m=100.),steps=0)
@@ -62,7 +63,100 @@ def test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush(tmp_path
     assert report['sim_seconds'] == .0015
     assert report['effective_timestep_s'] == .0005 and report['source_timestep_s'] == .00125
     assert report['controller_interval_s'] == .005 and report['record_decimation'] == 80
+    assert report['model_valid'] is True and report['numerically_valid'] is False
+    assert report['model_status']['calibration_status'] == 'synthetic'
     assert report['wall_seconds'] >= report['flush_wall_seconds'] >= 0.
     assert report['factor'] == report['sim_seconds']/report['wall_seconds']
     assert recorded == [80,'flush'] and monitor.strict is False
     assert json.loads((tmp_path/'realtime.json').read_text()) == report
+
+
+def _fake_viewer_run(monkeypatch, tmp_path, *, fail=False, cleanup_fail=False):
+    import itertools
+    from contextlib import nullcontext
+    import mujoco.viewer
+    from bike_sim.sim import playground
+    from bike_sim.sim.ride import physical_session
+    from bike_sim.viz import ride_plots
+    state=SimpleNamespace(open=False,pending=0,flushes=0,events=[])
+    runtime=SimpleNamespace(generation=0,live_real_time_factor=None,sample=None,
+        history=SimpleNamespace(duration_s=0.),reference_monitor=SimpleNamespace(first_failure=None))
+    def flush():
+        state.flushes+=1
+        if state.pending:
+            runtime.history.duration_s=.0005
+            runtime.sample=SimpleNamespace(interval_id=0)
+            runtime.reference_monitor.first_failure=(.0005,('terminal.violation',))
+            state.pending=0
+        state.events.append(('flush',state.open))
+        if cleanup_fail:
+            raise RuntimeError('tail cleanup failed')
+    runtime.flush=flush
+    sim=SimpleNamespace(physical=runtime,model=SimpleNamespace(opt=SimpleNamespace(timestep=.0005)),
+        data=SimpleNamespace(xpos=np.zeros((1,3))),track=SimpleNamespace(name='fake'),
+        steps=0,time_s=0.,position_m=0.,_frame_body_id=0)
+    def check_tail(event):
+        assert runtime.sample is not None
+        assert runtime.history.duration_s == .0005
+        assert runtime.reference_monitor.first_failure == (.0005,('terminal.violation',))
+        state.events.append((event,state.open))
+    class Window:
+        def __init__(self):self.running=iter((True,False))
+        def __enter__(self):state.open=True;return self
+        def __exit__(self,*args):state.open=False
+        def is_running(self):return next(self.running)
+        def lock(self):return nullcontext()
+        def sync(self):pass
+    class Log:
+        def __init__(self,*args):pass
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def due(self,*args):return True
+        def write(self,*args):check_tail('live_csv')
+        def write_marker(self,*args):check_tail('marker')
+    def describe():
+        check_tail('announcement')
+        return 'step cap'
+    session=SimpleNamespace(outcome=None,handle_key=lambda key:None,
+        camera=SimpleNamespace(reset_preset=lambda:None,update_viewer=lambda *a,**k:None),
+        process_pending_keys=lambda:None,show_telemetry=True,
+        print_hud=lambda:check_tail('hud'),
+        hud=SimpleNamespace(preview_log_row=lambda sim:check_tail('row') or {}))
+    def step():
+        sim.steps=1;sim.time_s=.0005;state.pending=1
+        if fail:raise RuntimeError('physics step failed')
+        session.outcome=SimpleNamespace(describe=describe)
+        return session.outcome
+    session.step=step
+    monkeypatch.setattr(viewer,'RideSession',lambda sim:session)
+    monkeypatch.setattr(viewer,'RealTimePacer',lambda dt:SimpleNamespace(steps_for=lambda delta:1,reset=lambda:None))
+    monkeypatch.setattr(playground,'ensure_macos_mjpython',lambda:None)
+    monkeypatch.setattr(physical_session,'configuration_metadata',lambda sim:{})
+    monkeypatch.setattr(physical_session,'physical_run_dir_name',lambda *a:'fake')
+    monkeypatch.setattr(physical_session,'PhysicalLiveCsv',Log)
+    monkeypatch.setattr(mujoco.viewer,'launch_passive',lambda *a,**k:Window())
+    monkeypatch.setattr(ride_plots,'load_ride_csv',lambda path:{})
+    monkeypatch.setattr(ride_plots,'plot_physical_ride_html',lambda *args:'fake.html')
+    times=itertools.count(0.,.6)
+    monkeypatch.setattr(viewer.time,'monotonic',lambda:next(times))
+    monkeypatch.setattr(viewer.time,'sleep',lambda delay:None)
+    return sim,state
+
+
+def test_terminal_viewer_tail_is_accounted_before_announcement_hud_and_live_csv(monkeypatch,tmp_path):
+    sim,state=_fake_viewer_run(monkeypatch,tmp_path)
+    assert viewer.run_physical_viewer(sim,out_root=tmp_path) == 0
+    assert ('flush',True) in state.events
+    for event in ('announcement','hud','live_csv'):
+        assert (event,True) in state.events
+    assert state.pending == 0 and not state.open
+
+
+@pytest.mark.parametrize('cleanup_fail',[False,True])
+def test_exceptional_viewer_exit_flushes_tail_without_masking_original_error(monkeypatch,tmp_path,cleanup_fail):
+    sim,state=_fake_viewer_run(monkeypatch,tmp_path,fail=True,cleanup_fail=cleanup_fail)
+    with pytest.raises(RuntimeError,match='physics step failed') as failure:
+        viewer.run_physical_viewer(sim,out_root=tmp_path)
+    assert state.flushes >= 1 and state.pending == 0 and not state.open
+    if cleanup_fail:
+        assert any('tail cleanup failed' in note for note in failure.value.__notes__)

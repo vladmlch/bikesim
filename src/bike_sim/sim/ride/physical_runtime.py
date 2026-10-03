@@ -297,6 +297,7 @@ class PhysicalRuntime:
             self.rider_contacts.restart_clock()
         self.history.reset()
         self.loss_j = self.active_work_j = self.external_work_j = self.solver_work_j = 0.
+        self.attachment_samples,self.attachment_errors={},()
         self.sample = None
         from bike_sim.sim.ride.model_status import ModelStatus
         self.model_status = ModelStatus()
@@ -465,6 +466,11 @@ class PhysicalRuntime:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
         # Read first: efc_force and poses still belong to this solved interval.
         welds={} if self.rider_contacts is None else self.rider_contacts.settle_welds(m,d)
+        if self.rider_contacts is None:
+            self.attachment_samples,self.attachment_errors={},()
+        else:
+            self.attachment_samples=self.rider_contacts.last_attachment_samples
+            self.attachment_errors=self.rider_contacts.last_attachment_errors
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(m,d)
         transmission = self.drive.settle_actuation(m,d)

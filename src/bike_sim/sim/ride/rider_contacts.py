@@ -7,6 +7,7 @@ from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.tire import _brush_step, _normal_contact
 from bike_sim.sim.ride.physical_mapping import resolve_id, relative_point_jacobian
 from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
+from bike_sim.sim.ride.attachment_wrench import attachment_sample
 from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, GripConnect, equality_rows
 
 
@@ -103,6 +104,8 @@ class RiderContactApplier:
         self.pending_release_loss_j=0.
         # (per-support telemetry, crank torque) of the last solve; see settle_welds.
         self._settled_welds=None
+        self.last_attachment_samples={}
+        self.last_attachment_errors=()
 
     def set_enabled(self,name,enabled):
         if name not in self.CONTACTS or not isinstance(enabled,bool):
@@ -244,7 +247,50 @@ class RiderContactApplier:
         if self.welded_pedals:
             # The torque sensor reads this on the next step.
             result['crank_torque_nm']=crank
+        self.last_attachment_samples,self.last_attachment_errors=(
+            self.attachment_samples(model,data))
         return result
+
+    def attachment_samples(self,model,data):
+        """Physical budget sample per solved attachment of this interval.
+
+        Each weld/connect reaction is recovered at the support's patch centre
+        from the solved efc multipliers of the solve that just ran, so it must
+        be called while that efc state is still current (settle_welds timing).
+        An attachment whose solved force cannot be attributed to its rows —
+        rank-deficient or partly out-of-plane — reports an
+        'unobservable_attachment_wrench' error instead of a fake sample.
+        """
+        samples={};errors=[]
+        rows=equality_rows(data)
+        for name,entry in self.supports.items():
+            body,site,bike,_=entry
+            if name=='saddle' and self.welded_saddle:
+                eq_id,rotational=self._saddle_weld.eq_id,True
+                half=self.config.saddle_patch_half_length_m
+            elif name.endswith('_pedal') and self.welded_pedals:
+                eq_id=self._welds.eq_ids[name.split('_')[0]]
+                rotational,half=True,self.config.pedal_patch_half_length_m
+            else:
+                continue
+            normal=np.mean([n for _,_,n,_,_,_ in self._pads(model,data,name,entry)],axis=0)
+            out='foot_'+name.split('_')[0] if name.endswith('_pedal') else 'saddle'
+            try:
+                samples[out]=attachment_sample(model,data,eq_id,body,bike,
+                    np.array(data.site_xpos[site]),normal,out.rsplit('_',1)[0],
+                    rotational=rotational,half_patch_m=half,rows=rows)
+            except ValueError:
+                errors.append(out+':unobservable_attachment_wrench')
+        if self.welded_grip and self.grip_anchor_local is not None:
+            grip=data.xpos[self.steer]+data.xmat[self.steer].reshape(3,3)@self.grip_anchor_local
+            pull=data.xpos[self.pelvis]-grip
+            try:
+                samples['grip']=attachment_sample(model,data,self._grip_connect.eq_id,
+                    self.forearm,self.steer,grip,pull,'grip',rotational=False,
+                    pull_direction=pull,rows=rows)
+            except ValueError:
+                errors.append('grip:unobservable_attachment_wrench')
+        return samples,tuple(errors)
 
     def _settled(self,name):
         """Last settled (force on rider, normal load) of a welded support."""

@@ -53,6 +53,45 @@ def test_constraint_budget_uses_roundoff_floor_when_no_source():
             constraint_work_ok(absolute, source)
 
 
+@pytest.mark.parametrize('source,absolute,allowed', [
+    (1., .0099, True), (1., .0101, False),
+    (0., .99e-8, True), (0., 1.01e-8, False)])
+def test_runtime_constraint_budget_checks_closing_tail_with_fixed_roundoff(source, absolute, allowed):
+    from test_monitor_strictness import runtime_for_raws, neutral_raw
+    from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
+    runtime = runtime_for_raws()
+    # Two opposite-signed closure intervals have zero signed work but the
+    # required absolute work. A partial period must pass the same integral gate.
+    for i, sign in enumerate((1., -1.)):
+        runtime._buffer.push(neutral_raw(i, qvel=[1.], components={
+            'act_rider_probe':np.array([source/.001]),
+            'closure':np.array([sign*absolute/.001])}))
+    if allowed:
+        runtime.flush()
+        assert runtime.reference_monitor.first_failure is None
+    else:
+        with pytest.raises(InvalidReferenceRun, match='energy.constraint_work'):
+            runtime.flush()
+        assert runtime.reference_monitor.first_failure == (.001, ('energy.constraint_work',))
+        assert runtime.completed_samples[0].channels['attachment_violations'] == ()
+    assert runtime.energy['constraint_work_ok'] is allowed
+    assert runtime.energy['constraint_absolute_j'] == pytest.approx(absolute)
+    assert runtime.energy['constraint_signed_j'] == pytest.approx(0.)
+    assert runtime.energy['source_positive_work_j'] == pytest.approx(source)
+    assert runtime.history.duration_s == pytest.approx(.001)
+
+
+def test_runtime_zero_source_tolerance_does_not_grow_with_episode_steps():
+    from test_monitor_strictness import runtime_for_raws, neutral_raw
+    from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
+    runtime = runtime_for_raws()
+    runtime.sim.steps = 100000
+    runtime._buffer.push(neutral_raw(0, qvel=[1.], components={'closure':np.array([1.e-4])}))
+    with pytest.raises(InvalidReferenceRun, match='energy.constraint_work'):
+        runtime.flush()
+    assert runtime.energy['constraint_absolute_j'] == pytest.approx(5.e-8)
+
+
 def _free_body(extra=''):
     return mujoco.MjModel.from_xml_string(
         '<mujoco><option gravity="0 0 -9.81" timestep="0.0005"/>' +

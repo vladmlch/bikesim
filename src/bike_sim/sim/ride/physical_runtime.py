@@ -640,6 +640,7 @@ class PhysicalRuntime:
         return self.completed_samples
 
     def _close_period(self):
+        from bike_sim.physics.energy_ledger import constraint_work_ok
         raws = self._buffer.drain()
         if not raws:
             return
@@ -662,6 +663,13 @@ class PhysicalRuntime:
             self.active_work_j+=work.muscle_signed_j+work.motor_signed_j
             self.external_work_j+=sum(float(components[n]@v)*dt for n in external_names if n in components)
             self.electrical_work_j+=raw.metadata['electrical_power_w']*dt
+            source_positive = self.muscle_positive_j+self.motor_positive_j
+            work_ok = constraint_work_ok(self.constraint_absolute_j, source_positive)
+            # This is an integral criterion, published at the closing physical
+            # interval, including a partial terminal period. S8's zero-source
+            # roundoff budget is absolute; it never grows with step count.
+            if index == len(raws)-1 and not work_ok:
+                violations += ('energy.constraint_work',)
             total=raw.metadata['mechanical_energy_j']; elastic=raw.metadata['elastic_energy_j']
             self.energy={'mechanical_energy_j':total,'elastic_energy_j':elastic,
                 'active_work_j':self.active_work_j,'external_work_j':self.external_work_j,
@@ -670,6 +678,9 @@ class PhysicalRuntime:
                 'motor_signed_j':self.motor_signed_j,'motor_positive_j':self.motor_positive_j,
                 'source_positive_work_j':self.muscle_positive_j+self.motor_positive_j,
                 'constraint_signed_j':self.solver_work_j,'constraint_absolute_j':self.constraint_absolute_j,
+                'constraint_work_ratio':(self.constraint_absolute_j/source_positive
+                                         if source_positive > 0. else None),
+                'constraint_work_ok':work_ok,
                 'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
                 'electrical_work_j':self.electrical_work_j,
                 'electrical_residual_j':(self.initial_battery_j-raw.metadata['battery_energy_j']-self.electrical_work_j

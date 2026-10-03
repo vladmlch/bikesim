@@ -497,7 +497,10 @@ class PhysicalRuntime:
         effort={}
         if self.rider_control is not None:
             from bike_sim.sim.ride.rider_effort import solved_effort
-            effort=solved_effort(self.rider_control,d,v,dt)
+            effort=solved_effort(self.rider_control,d,(q,v),dt)
+            self.step_violations+=tuple(
+                f'rider_strength.{name}'
+                for name in effort.get('rider_strength_violations',()))
         sensors = sensor_channels(self, qvel=v)
         if self.cfg.seated_climb.enabled:
             self.rider_intent_signals = signals_from_channels(sensors)
@@ -505,9 +508,7 @@ class PhysicalRuntime:
         if self.rider_control is not None:
             passive=np.zeros(m.nv)
             for name,(_,dof,aid) in self.rider_control.joints.items():
-                damping=self.rider_control.last_terms[name]['solved_passive_nm']
-                passive[dof]=damping
-                components['act_'+name][dof]-=damping
+                passive[dof]=self.rider_control.last_terms[name]['solved_passive_nm']
             components['rider_passive_damping']=passive
         constraints=constraint_components(m,d)
         if self.drive.ideal_hub is not None:
@@ -520,6 +521,11 @@ class PhysicalRuntime:
         components.update(constraints)
         components.update(self.brake.solved_components(m,d))
         components['engine_passive']=d.qfrc_passive.copy()
+        # Rider tissue damping is a DOF-damping row inside qfrc_passive; the
+        # rider_passive_damping component already accounts for it. Removing
+        # the rows here keeps the loss ledger free of double counting.
+        if self.rider_control is not None:
+            components['engine_passive']-=components['rider_passive_damping']
         sim.last_constraint_snapshot=ConstraintForceSnapshot(t,float(d.time),v,
             {'shock_solver_limit':shock_limit,**self.brake.solved_components(m,d)})
         sim.contacts,self.snapshots=self._contacts(final=True,time_s=t,qvel=v)
@@ -639,7 +645,8 @@ class PhysicalRuntime:
             self.attachment_samples=self.rider_contacts.last_attachment_samples
             self.attachment_errors=self.rider_contacts.last_attachment_errors
             self.step_violations=self._attachment_violations()
-            self.reference_monitor.accept(float(data.time),self.step_violations)
+        else:
+            self.step_violations=()
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(model,data)
         self.drive.settle_actuation(model,data)
@@ -647,7 +654,12 @@ class PhysicalRuntime:
             self.rider_intent_signals = signals_from_channels(sensor_channels(self, qvel=incoming_velocity))
         if self.rider_control is not None:
             from bike_sim.sim.ride.rider_effort import solved_effort
-            solved_effort(self.rider_control,data,incoming_velocity,float(model.opt.timestep))
+            effort=solved_effort(self.rider_control,data,incoming_state,float(model.opt.timestep))
+            self.step_violations+=tuple(
+                f'rider_strength.{name}'
+                for name in effort.get('rider_strength_violations',()))
+        if self.rider_contacts is not None:
+            self.reference_monitor.accept(float(data.time),self.step_violations)
         sim.contacts,self.snapshots=self._contacts(final=True,time_s=time_s,qvel=incoming_velocity)
         equality=_connect_equality_rows(model,data)
         closure=float(np.max(np.abs(data.efc_pos[:data.nefc][equality]))) if np.any(equality) else 0.

@@ -16,6 +16,7 @@ from bike_sim.physics.rider_envelope import (
 ROOT = Path(__file__).resolve().parents[2]
 WELDED = ROOT / 'examples' / 'research' / 'viewer_physics_welded.toml'
 ENVELOPE = ROOT / 'examples' / 'research' / 'rider_joint_envelope_anatomical.json'
+STRENGTH = ROOT / 'examples' / 'research' / 'rider_strength_reference.json'
 
 
 def test_saddle_connection_does_not_constrain_orientation():
@@ -83,6 +84,8 @@ def _pin_config(tmp_path):
     # Config-relative paths resolve against the TOML's own directory.
     text = text.replace('joint_envelope_path = "rider_joint_envelope_anatomical.json"',
                         f'joint_envelope_path = "{ENVELOPE}"')
+    text = text.replace('joint_strength_path = "rider_strength_reference.json"',
+                        f'joint_strength_path = "{STRENGTH}"')
     target.write_text(text)
     return target
 

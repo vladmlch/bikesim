@@ -150,6 +150,12 @@ pedal_c_ns_m = 100.0
 posture_pitch_limit_nm = 120.0
 grip_release_distance_m = 0.30
 joint_envelope_path = "rider_joint_envelope_anatomical.json"
+# Provisional directional strength sheet (verified=false curves). Engineering
+# bounds only; the verified-provenance gate is a separate release decision.
+joint_strength_path = "rider_strength_reference.json"
+# Whole-body positive mechanical power cap: an engineering budget chosen in
+# the requested 400-500 W band, not a physiological claim.
+active_positive_power_limit_w = 450.0
 
 [seated_climb]
 enabled = true

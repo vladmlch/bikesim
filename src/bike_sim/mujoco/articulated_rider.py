@@ -83,8 +83,10 @@ def add_rider_actuators(root, config):
     for joint in root.findall('.//body/joint'):
         name=joint.get('name','')
         if name.startswith('rider_') and not name.startswith('rider_root_'):
+            # Passive damping is a DOF property, not actuator bias: it lands in
+            # qfrc_passive, so actuator_force is purely commanded muscle torque
+            # and positive-power accounting never counts passive work as active.
+            joint.set('damping',f'{config.joint_kd_nms_rad:.17g}')
             limit=format(config.joint_limit_nm,'.17g')
-            ET.SubElement(actuators,'general',name='act_'+name,joint=name,gear='1',
-                          gaintype='fixed',gainprm='1',biastype='affine',
-                          biasprm=f'0 0 {-config.joint_kd_nms_rad:.17g}',
+            ET.SubElement(actuators,'motor',name='act_'+name,joint=name,gear='1',
                           ctrllimited='false',forcelimited='true',forcerange=f'-{limit} {limit}')

@@ -108,6 +108,10 @@ def configuration_metadata(sim,seed=None):
     resolved['joint_envelope_status']='unspecified' if envelope is None else 'declared_unvalidated'
     if envelope is not None:
         resolved['joint_envelope_sha256']=hashlib.sha256(Path(envelope).read_bytes()).hexdigest()
+    strength=sim.physics_config.articulated.joint_strength_path
+    resolved['joint_strength_status']='unspecified' if strength is None else 'declared_unvalidated'
+    if strength is not None:
+        resolved['joint_strength_sha256']=hashlib.sha256(Path(strength).read_bytes()).hexdigest()
     # Effective overrides are recorded, not just geometry defaults.
     resolved['active_suspension']={
         'fork_pressure_psi':sim.controller.air_spring.gauge_pressure_psi,
@@ -139,6 +143,7 @@ def configuration_metadata(sim,seed=None):
         dirty=None
     hashable = dict(resolved, physics=asdict(sim.physics_config))
     hashable['physics']['articulated']['joint_envelope_path'] = resolved.get('joint_envelope_sha256')
+    hashable['physics']['articulated']['joint_strength_path'] = resolved.get('joint_strength_sha256')
     config_hash=hashlib.sha256(canonical_json(hashable).encode()).hexdigest()
     return {'schema_version':2,'physics_revision':sim.physics_revision,
         'model_commit':commit,'model_source_dirty':dirty,'model_source_sha256':source_hash,

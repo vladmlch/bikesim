@@ -227,6 +227,30 @@ class ArticulatedRiderController:
             self.joints[name] = (int(model.jnt_qposadr[jid]),int(model.jnt_dofadr[jid]),aid)
         self.joint_ranges={name:tuple(model.joint(name).range) for name in self.joints
                            if model.joint(name).limited[0]}
+        self.strength=None
+        self.strength_coordinates={}
+        if config.joint_strength_path is not None:
+            from bike_sim.physics.joint_strength import (load_strength_coordinates,
+                load_strength_profile)
+            from bike_sim.physics.rider_envelope import load_joint_envelopes
+            expected=tuple(self.joints)
+            self.strength=load_strength_profile(config.joint_strength_path,expected,
+                require_verified=False)
+            self.strength_coordinates=load_strength_coordinates(
+                config.joint_strength_path,expected)
+            if config.joint_envelope_path is not None:
+                # The strength file and the envelope file must agree on the
+                # q->anatomical mapping, or a curve could silently bound the
+                # wrong anatomical direction.
+                envelopes=load_joint_envelopes(config.joint_envelope_path)
+                for name,coordinate in self.strength_coordinates.items():
+                    if name in envelopes:
+                        envelope=envelopes[name]
+                        if (envelope.direction!=coordinate.direction
+                                or not np.isclose(envelope.neutral_anatomical_rad,
+                                    coordinate.neutral_anatomical_rad)):
+                            raise ValueError(
+                                f'{name}: strength coordinate disagrees with the joint envelope')
         # Aligned envelope vectors let envelope_forces batch all joints into a
         # single soft_edge_response call instead of one numpy ritual per joint.
         self._sync_joint_envelope()
@@ -606,7 +630,8 @@ class ArticulatedRiderController:
                 self.reset_activation()
             self.effort_diagnostics={'rider_active_request_nm':{n:0. for n in self.joints},
                 'rider_active_delivered_nm':{n:0. for n in self.joints},
-                'rider_positive_power_w':0.,'rider_passive_power_w':0.,'rider_activation_saturated':False}
+                'rider_positive_power_w':0.,'rider_passive_power_w':0.,'rider_activation_saturated':False,
+                'rider_strength_limited':(),'rider_strength_violations':()}
             self.last_terms = {name:{'posture_nm':0.,'pedaling_nm':0.,'command_nm':0.,'saturated':False} for name in self.joints}
             return {name:0. for name in self.joints}
         cfg = self.config
@@ -828,20 +853,58 @@ class ArticulatedRiderController:
         return finalize_effort(self,data,result,advance=advance,
             dt_s=float(model.opt.timestep) if dt_s is None else dt_s,steady_state=steady_state)
 
+    def strength_capacity(self, name, angle_rad, velocity_rad_s, torque_nm):
+        """Directional isometric*Hill bound for one joint torque, or inf."""
+        if self.strength is None or torque_nm == 0.:
+            return float('inf')
+        from bike_sim.physics.joint_strength import directional_capacity
+        direction = 1 if torque_nm > 0. else -1
+        curve = self.strength[name][direction]
+        # The soft ROM envelope permits small excursions past the declared
+        # range; outside the documented knots the edge capacity applies --
+        # never an extrapolation, never a crash mid-episode.
+        angle = min(max(angle_rad, curve.angles_rad[0]), curve.angles_rad[-1])
+        return directional_capacity(curve, angle, velocity_rad_s, direction)
+
+    def anatomical_joint_angle(self, name, qpos_value):
+        """Anatomical angle through the strength profile's own convention."""
+        from bike_sim.physics.rider_envelope import anatomical_angle
+        return anatomical_angle(self.strength_coordinates[name], qpos_value)
+
+    def strength_limited(self, torques, qpos, qvel):
+        """Clip active torques to each joint's directional capacity."""
+        if self.strength is None:
+            return np.asarray(torques, float), ()
+        clipped = np.asarray(torques, float).copy()
+        limited = []
+        for index, (name, (qa, dof, _)) in enumerate(self.joints.items()):
+            capacity = self.strength_capacity(name,
+                self.anatomical_joint_angle(name, qpos[qa]), qvel[dof], clipped[index])
+            if abs(clipped[index]) > capacity:
+                clipped[index] = np.copysign(capacity, clipped[index])
+                limited.append(name)
+        return clipped, tuple(limited)
+
+    def strength_violations(self, active_torques, qpos, qvel):
+        """Delivered torques exceeding the directional capacity at a state."""
+        if self.strength is None:
+            return ()
+        violated = []
+        for name, (qa, dof, _) in self.joints.items():
+            torque = active_torques.get(name, 0.)
+            capacity = self.strength_capacity(name,
+                self.anatomical_joint_angle(name, qpos[qa]), qvel[dof], torque)
+            if abs(torque) > capacity * (1. + 1e-6) + 1e-9:
+                violated.append(name)
+        return tuple(violated)
+
     def write(self,data,torques):
         if set(torques) != set(self.joints):
             raise ValueError('incomplete rider actuator command')
         values = {name:scalar(torque,'rider torque') for name,torque in torques.items()}
         for name,torque in values.items():
-            _, dof, aid = self.joints[name]
-            # Disabled means no actuator force at *any* velocity, including
-            # the implicit endpoint; cancelling only its incoming bias leaves
-            # an unrequested damping response during the step.
-            self.model.actuator_biasprm[aid,2]=-self.config.joint_kd_nms_rad if self.command_enabled else 0.
-            if not self.command_enabled:
-                data.ctrl[aid]=0.
-                continue
-            # The affine actuator supplies -kd*v inside MuJoCo's implicit
-            # velocity solve. Offset its current-state bias so the bounded
-            # requested torque is still exactly delivered at q_n, v_n.
-            data.ctrl[aid] = torque+self.config.joint_kd_nms_rad*data.qvel[dof]
+            _, _, aid = self.joints[name]
+            # The actuator is a pure motor: ctrl is the muscle torque itself.
+            # Passive damping lives on the DOF, so a disabled command removes
+            # only active force; tissue damping still acts physically.
+            data.ctrl[aid] = torque if self.command_enabled else 0.

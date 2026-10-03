@@ -298,6 +298,10 @@ class PhysicalRuntime:
         self.history.reset()
         self.loss_j = self.active_work_j = self.external_work_j = self.solver_work_j = 0.
         self.attachment_samples,self.attachment_errors={},()
+        self.step_violations=()
+        from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
+        # The interactive preview is the viewer path: warn once, never fix.
+        self.reference_monitor=ReferenceMonitor(strict=False)
         self.sample = None
         from bike_sim.sim.ride.model_status import ModelStatus
         self.model_status = ModelStatus()
@@ -465,12 +469,14 @@ class PhysicalRuntime:
             if d.warning[int(warning)].number>warning_counts[int(warning)]:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
         # Read first: efc_force and poses still belong to this solved interval.
-        welds={} if self.rider_contacts is None else self.rider_contacts.settle_welds(m,d)
+        # (q, v) are the interval's start state, where MuJoCo built efc_J.
+        welds={} if self.rider_contacts is None else self.rider_contacts.settle_welds(m,d,(q,v))
         if self.rider_contacts is None:
             self.attachment_samples,self.attachment_errors={},()
         else:
             self.attachment_samples=self.rider_contacts.last_attachment_samples
             self.attachment_errors=self.rider_contacts.last_attachment_errors
+        self.step_violations=self._attachment_violations()
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(m,d)
         transmission = self.drive.settle_actuation(m,d)
@@ -553,6 +559,8 @@ class PhysicalRuntime:
                       inclination_rad=self.rider_intent.policy.inclination_rad)
                       if self.cfg.seated_climb.enabled else {}),
                   'mass':mass0,'endpoint_mass':mass,'energy':self.energy,
+                  'attachment_violations':self.step_violations,
+                  'attachment_samples':{n:asdict(s) for n,s in self.attachment_samples.items()},
                   'component_work_j':{n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()},
                   'rider_control':{} if self.rider_control is None else self.rider_control.last_terms,
                   'rider_ik_saturation':{} if self.rider_control is None else self.rider_control.saturated_ik,
@@ -569,13 +577,22 @@ class PhysicalRuntime:
         sim.crash_detector.check(d,sim.contacts)
         sim._update_compiled_com_marker()
 
+    def _attachment_violations(self):
+        """First-order budget check of this interval's attachment samples."""
+        from bike_sim.physics.attachment_budget import attachment_violations
+        violations=list(self.attachment_errors)
+        for name,s in self.attachment_samples.items():
+            violations.extend(f'{name}.{v}' for v in attachment_violations(s))
+        return tuple(violations)
+
     def _step_preview(self, front, rear, external, control):
         """Same force/integration path without research samples or energy audits."""
         sim=self.sim
         self.research_accounting_valid=False
         model,data=sim.model,sim.data
         time_s=float(data.time)
-        incoming_velocity=data.qvel.copy()
+        incoming_state=(data.qpos.copy(),data.qvel.copy())
+        incoming_velocity=incoming_state[1]
         position_m=sim.position_m
         pitch_rad=sim.pitch_rad
         braking = front > 0. or rear > 0.
@@ -589,7 +606,11 @@ class PhysicalRuntime:
             if data.warning[int(warning)].number>warning_counts[int(warning)]:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
         if self.rider_contacts is not None:
-            self.rider_contacts.settle_welds(model,data)
+            self.rider_contacts.settle_welds(model,data,incoming_state)
+            self.attachment_samples=self.rider_contacts.last_attachment_samples
+            self.attachment_errors=self.rider_contacts.last_attachment_errors
+            self.step_violations=self._attachment_violations()
+            self.reference_monitor.accept(float(data.time),self.step_violations)
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(model,data)
         self.drive.settle_actuation(model,data)

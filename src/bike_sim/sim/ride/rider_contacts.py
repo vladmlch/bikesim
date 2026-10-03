@@ -198,8 +198,12 @@ class RiderContactApplier:
                     energy+=.25*cfg.support_k_n_m*max(-gap,0.)**2
         return energy
 
-    def settle_welds(self,model,data):
+    def settle_welds(self,model,data,interval_state=None):
         """Latch the weld/connect reactions of the solve that just ran.
+
+        ``interval_state`` is the optional (qpos, qvel) the solved interval
+        started from — the pose at which MuJoCo built efc_J. Attachment
+        wrenches are then measured on that pose, not on the post-step one.
 
         Call right after a solve with the full applied forces and controls
         (mj_step, or apply_forces followed by mj_forward), while efc_force and
@@ -248,10 +252,24 @@ class RiderContactApplier:
             # The torque sensor reads this on the next step.
             result['crank_torque_nm']=crank
         self.last_attachment_samples,self.last_attachment_errors=(
-            self.attachment_samples(model,data))
+            self.attachment_samples(model,data,interval_state))
         return result
 
-    def attachment_samples(self,model,data):
+    def attachment_samples(self,model,data,interval_state=None):
+        if interval_state is None:
+            return self._attachment_samples(model,data)
+        import mujoco
+        qpos,qvel=interval_state
+        saved_qpos,saved_qvel=data.qpos.copy(),data.qvel.copy()
+        data.qpos[:]=qpos; data.qvel[:]=qvel
+        mujoco.mj_kinematics(model,data); mujoco.mj_comPos(model,data)
+        try:
+            return self._attachment_samples(model,data)
+        finally:
+            data.qpos[:]=saved_qpos; data.qvel[:]=saved_qvel
+            mujoco.mj_kinematics(model,data); mujoco.mj_comPos(model,data)
+
+    def _attachment_samples(self,model,data):
         """Physical budget sample per solved attachment of this interval.
 
         Each weld/connect reaction is recovered at the support's patch centre

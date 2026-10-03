@@ -137,6 +137,10 @@ class ResearchEnvironment:
         if self.rider_behavior is not None:
             self.rider_behavior.reset(self.seed)
         self.recorder = PhysicalRecorder(self.sim, decimate=self.config.record_decimation)
+        from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
+        # Diagnostic mode may keep recording a violating episode; the run's
+        # model_valid flag still goes false and stays false.
+        self.reference_monitor = ReferenceMonitor(strict=self.config.stop_on_model_violation)
         self.tracker = WheelieTracker(persistence_s=self.config.wheelie_persistence_s)
         self.pipeline = SensorPipeline(self.sensor_config, seed=self.seed)
         self.sim.data.qacc_warmstart.fill(0.)
@@ -240,6 +244,10 @@ class ResearchEnvironment:
                 # Brakes are an immediate out-of-band safety input, not queued.
                 self.sim.step(front_brake_demand, rear_brake_demand, control=self._applied)
                 sample = self.sim.physical.sample
+                # Per-step rejection precedes recording: decimation must never
+                # be the thing that hides the first violated budget.
+                self.reference_monitor.accept(sample.end_time_s,
+                    sample.channels.get('attachment_violations', ()))
                 source_step = round(sample.time_s / self.dt_s)
                 if source_step >= self._next_sensor_step:
                     if source_step != self._next_sensor_step:

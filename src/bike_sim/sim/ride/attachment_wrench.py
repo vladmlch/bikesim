@@ -66,6 +66,35 @@ def attachment_wrench(model, data, eq_id, body_a, body_b, point, *,
     return recover_wrench(jac, equality_qfrc(model, data, eq_id))
 
 
+def body_wrench(model, data, qfrc_eq, body, point):
+    """Spatial wrench [Fx, Fy, Fz, Mx, My, Mz] the equality applies to ``body``.
+
+    Recovers the wrench at ``point`` from the equality's generalized force
+    restricted to the body's own DOF support. Unlike a raw residual-space
+    inversion this makes no assumption about the constraint's internal
+    parametrization (the weld's sin(t/2) rotational residual and quaternion
+    correction already live inside qfrc = J^T . lambda), and it is exact at
+    the pose MuJoCo built efc_J -- the interval's start state.
+
+    Returns (wrench, dof_columns). Raises ValueError when the generalized
+    force cannot be explained on the body's DOF support.
+    """
+    jp = np.zeros((3, model.nv)); jr = np.zeros((3, model.nv))
+    mujoco.mj_jac(model, data, jp, jr, np.asarray(point, dtype=float), body)
+    jac = np.vstack((jp, jr))
+    columns = np.flatnonzero(np.abs(jac).max(axis=0) > 0)
+    if columns.size == 0:
+        raise ValueError('attachment body carries no degrees of freedom')
+    wrench, _, _, _ = np.linalg.lstsq(jac[:, columns].T, qfrc_eq[columns],
+                                    rcond=1e-12)
+    if not np.allclose(jac[:, columns].T @ wrench, qfrc_eq[columns],
+                       rtol=1e-8, atol=1e-8):
+        raise ValueError('attachment wrench does not explain generalized force')
+    if np.abs(jac[0, columns]).max() == 0 or np.abs(jac[2, columns]).max() == 0:
+        raise ValueError('in-plane attachment force is not observable')
+    return wrench, columns
+
+
 def attachment_sample(model, data, eq_id, body_rider, body_bike, point,
                       normal, kind, *, rotational, half_patch_m=0.,
                       pull_direction=None, rows=None):
@@ -73,12 +102,24 @@ def attachment_sample(model, data, eq_id, body_rider, body_bike, point,
 
     ``rows`` is an optional {eq_id: indices} map from a single efc pass; the
     geometric gap is the equality's translational residual norm. Forces are
-    the support force on the rider, projected on the support's own normal.
+    the support force on the rider at ``point`` (the patch center), projected
+    on the support's own normal; ``moment_nm`` is the moment about y through
+    that point. The rider and bike DOF supports must be disjoint, the two
+    recovered wrenches must cancel (Newton's third law), and the out-of-plane
+    components must vanish -- any failure is a measurement error, not a sample.
     """
     from bike_sim.physics.attachment_budget import AttachmentSample
-    jac = relative_planar_jacobian(model, data, body_rider, body_bike, point,
-                                   rotational=rotational)
-    wrench = recover_wrench(jac, equality_qfrc(model, data, eq_id))
+    qfrc = equality_qfrc(model, data, eq_id)
+    wrench, cols_rider = body_wrench(model, data, qfrc, body_rider, point)
+    wrench_bike, cols_bike = body_wrench(model, data, qfrc, body_bike, point)
+    if np.intersect1d(cols_rider, cols_bike).size:
+        raise ValueError('attachment bodies share kinematic support')
+    scale = max(1., float(np.linalg.norm(wrench[:3])))
+    if not np.allclose(wrench_bike, -wrench, rtol=1e-4, atol=1e-4*scale):
+        raise ValueError('attachment wrenches fail Newton third law')
+    out_of_plane = np.array([wrench[1], wrench[3], wrench[5]])
+    if not np.all(np.abs(out_of_plane) <= 1e-6*scale):
+        raise ValueError('attachment wrench leaves the planar model')
     n = np.asarray(normal, dtype=float)
     if n.shape != (3,) or not np.isfinite(n).all():
         raise ValueError('attachment sample needs a finite 3D normal')
@@ -88,10 +129,11 @@ def attachment_sample(model, data, eq_id, body_rider, body_bike, point,
         raise ValueError('attachment normal has no planar component')
     normal_xz = normal_xz/length
     tangent_xz = np.array([normal_xz[1], -normal_xz[0]])
-    normal_n = float(wrench[0]*normal_xz[0] + wrench[1]*normal_xz[1])
-    tangent_n = float(wrench[0]*tangent_xz[0] + wrench[1]*tangent_xz[1])
-    moment_nm = float(wrench[2]) if rotational else 0.
+    normal_n = float(wrench[0]*normal_xz[0] + wrench[2]*normal_xz[1])
+    tangent_n = float(wrench[0]*tangent_xz[0] + wrench[2]*tangent_xz[1])
+    moment_nm = float(wrench[4]) if rotational else 0.
     if rows is None:
+        from bike_sim.sim.ride.weld_pedals import equality_rows
         rows = equality_rows(data)
     idx = rows.get(eq_id)
     residual = data.efc_pos if idx is None else data.efc_pos[idx]
@@ -107,8 +149,8 @@ def attachment_sample(model, data, eq_id, body_rider, body_bike, point,
         if length < 1e-12:
             raise ValueError('pull direction has no planar component')
         direction_xz = direction_xz/length
-        force_on_bike = -wrench[:2]
+        force_on_bike = -wrench[[0, 2]]
         if float(force_on_bike @ direction_xz) > 0.:
-            pull_n = float(np.linalg.norm(wrench[:2]))
+            pull_n = float(np.linalg.norm(force_on_bike))
     return AttachmentSample(kind, normal_n, tangent_n, moment_nm, gap_m,
                             pull_n=pull_n, half_patch_m=half_patch_m)

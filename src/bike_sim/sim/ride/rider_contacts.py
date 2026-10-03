@@ -8,7 +8,7 @@ from bike_sim.physics.tire import _brush_step, _normal_contact
 from bike_sim.sim.ride.physical_mapping import resolve_id, relative_point_jacobian
 from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
 from bike_sim.sim.ride.attachment_wrench import attachment_sample
-from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, GripConnect, equality_rows
+from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, SaddlePin, GripConnect, equality_rows
 
 
 def apply_internal_force(model,data,body_a,body_b,point,force,qfrc):
@@ -79,7 +79,10 @@ class RiderContactApplier:
         self.welded_pedals = config.pedal_attachment == 'weld'
         self._welds = PedalWelds(model) if self.welded_pedals else None
         self.welded_saddle = config.saddle_attachment == 'weld'
-        self._saddle_weld = SaddleWeld(model) if self.welded_saddle else None
+        self.pinned_saddle = config.saddle_attachment == 'pin'
+        self.linked_saddle = self.welded_saddle or self.pinned_saddle
+        self._saddle_link = (SaddleWeld(model) if self.welded_saddle
+                             else SaddlePin(model) if self.pinned_saddle else None)
         self.welded_grip = config.grip_attachment == 'weld'
         self._grip_connect = GripConnect(model) if self.welded_grip else None
         self.reset(model,None)
@@ -111,9 +114,9 @@ class RiderContactApplier:
         if name not in self.CONTACTS or not isinstance(enabled,bool):
             raise ValueError('invalid rider contact enable request')
         if not enabled and ((self.welded_pedals and name.endswith('_pedal'))
-                            or (self.welded_saddle and name == 'saddle')
+                            or (self.linked_saddle and name == 'saddle')
                             or (self.welded_grip and name == 'grip')):
-            return True   # a weld cannot be released
+            return True   # a weld or pin cannot be released
         if not enabled and self.enabled[name]:
             if name=='grip':
                 self.pending_release_loss_j+=.5*self.config.grip_k_n_m*float(self.grip_xi_local@self.grip_xi_local)
@@ -190,7 +193,7 @@ class RiderContactApplier:
         energy=.5*cfg.grip_k_n_m*float(self.grip_xi_local@self.grip_xi_local)
         for name,entry in self.supports.items():
             if (self.welded_pedals and name.endswith('_pedal')
-                    or self.welded_saddle and name == 'saddle'):
+                    or self.linked_saddle and name == 'saddle'):
                 continue
             for key,point,n,tangent,gap,inside in self._pads(model,data,name,entry):
                 energy+=.25*cfg.support_tangent_k_n_m*self.states[key].xi**2
@@ -228,8 +231,8 @@ class RiderContactApplier:
         rows=equality_rows(data)
         result={}
         for name,entry in self.supports.items():
-            if name=='saddle' and self.welded_saddle:
-                force=self._saddle_weld.force_on_rider_n(model,data,rows=rows)
+            if name=='saddle' and self.linked_saddle:
+                force=self._saddle_link.force_on_rider_n(model,data,rows=rows)
             elif name.endswith('_pedal') and self.welded_pedals:
                 force=self._welds.force_on_rider_n(model,data,name.split('_')[0],rows=rows)
             else:
@@ -283,8 +286,8 @@ class RiderContactApplier:
         rows=equality_rows(data)
         for name,entry in self.supports.items():
             body,site,bike,_=entry
-            if name=='saddle' and self.welded_saddle:
-                eq_id,rotational=self._saddle_weld.eq_id,True
+            if name=='saddle' and self.linked_saddle:
+                eq_id,rotational=self._saddle_link.eq_id,self.welded_saddle
                 half=self.config.saddle_patch_half_length_m
             elif name.endswith('_pedal') and self.welded_pedals:
                 eq_id=self._welds.eq_ids[name.split('_')[0]]
@@ -347,18 +350,18 @@ class RiderContactApplier:
         # The map stays a local: the probe copy above gets its own inside its
         # recursive call, and the efc layout is rebuilt every step anyway.
         eq_rows=(equality_rows(data)
-                 if self.welded_pedals or self.welded_saddle or self.welded_grip
+                 if self.welded_pedals or self.linked_saddle or self.welded_grip
                  else None)
         qfrc=np.zeros(model.nv)
         energy=0.; loss=self.pending_release_loss_j; radial_power=0.; delivered=0.
         new_states={}; diagnostics={}
         for name,entry in self.supports.items():
             body,site,bike,geom=entry
-            if self.welded_saddle and name == 'saddle':
+            if self.linked_saddle and name == 'saddle':
                 force_on_rider,normal_load=self._settled(name)
                 diagnostics[name]={'enabled':True,'in_platform':True,
                     'normal_load_n':normal_load,
-                    'gap_m':self._saddle_weld.translation_residual_m(model,data,rows=eq_rows),
+                    'gap_m':self._saddle_link.translation_residual_m(model,data,rows=eq_rows),
                     'vertical_force_on_rider_n':float(force_on_rider[2])}
                 if detailed:
                     diagnostics[name].update({'tangent_force_n':np.zeros(3),

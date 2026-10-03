@@ -3,7 +3,8 @@
 With articulated.pedal_attachment = 'weld' the MJCF builder emits one `weld`
 equality per foot (body1 = rider_foot_*, body2 = pedal_*); with
 articulated.saddle_attachment = 'weld' it emits `weld_saddle`
-(body1 = rider_pelvis, body2 = frame); with
+(body1 = rider_pelvis, body2 = frame), while the reference 'pin' emits
+`connect_saddle` between the same bodies; with
 articulated.grip_attachment = 'weld' it emits `connect_grip`
 (body1 = rider_forearm_pair, body2 = steer). This module reads the solved
 constraint multipliers and reports them in the conventions
@@ -127,6 +128,35 @@ class SaddleWeld:
 
     def translation_residual_m(self, model, data, rows=None):
         """Norm of the weld's positional residual — actual pelvis/frame mismatch."""
+        idx = _eq_rows(data, self.eq_id, rows)
+        if idx is None or idx.size == 0:
+            return 0.
+        pos = data.efc_pos[idx]
+        return float(np.linalg.norm(pos[:3]))
+
+
+class SaddlePin:
+    """Solved connect reaction for a pelvis pinned at the saddle.
+
+    Unlike the legacy weld the pin contributes three translational rows only:
+    it cannot carry a saddle couple, so the pelvis keeps a free pitch and the
+    reported force is the signed point reaction on the pelvis.
+    """
+
+    def __init__(self, model):
+        self.eq_id = resolve_id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                'connect_saddle')
+
+    def force_on_rider_n(self, model, data, rows=None):
+        """World force the pin applies to the pelvis, in Newtons."""
+        idx = _eq_rows(data, self.eq_id, rows)
+        if idx is None or idx.size == 0:
+            return np.zeros(3)
+        lam = data.efc_force[idx]
+        return np.asarray(lam[:3], dtype=float)
+
+    def translation_residual_m(self, model, data, rows=None):
+        """Norm of the pin's positional residual — actual pelvis/frame mismatch."""
         idx = _eq_rows(data, self.eq_id, rows)
         if idx is None or idx.size == 0:
             return 0.

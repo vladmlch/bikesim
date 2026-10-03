@@ -54,7 +54,7 @@ def inverse_dynamics_rows(mass, actuation, support_jacobian, bias, known_qforce)
 
 
 def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
-                    extra_constraints=()) -> Allocation:
+                    extra_constraints=(), x0=None) -> Allocation:
     """Nearest feasible point to ``target`` under equalities, bounds and extras.
 
     Feasibility is verified from the returned point itself: the optimizer's
@@ -76,10 +76,13 @@ def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
     # important to satisfy early.
     constraints = []
     if aeq.shape[0]:
-        constraints.append(LinearConstraint(aeq, beq, beq))
+        constraints.append({'type': 'eq', 'fun': lambda x: aeq @ x-beq,
+                            'jac': lambda x: aeq})
     if g.shape[0]:
-        constraints.append(LinearConstraint(g, -np.inf, h))
-    constraints.extend(extra_constraints)
+        constraints.append({'type': 'ineq', 'fun': lambda x: h-g @ x,
+                            'jac': lambda x: -g})
+    for constraint in extra_constraints:
+        constraints.extend(_as_old_style(constraint, target))
 
     def objective(x):
         return .5 * np.dot(x - target, x - target)
@@ -87,7 +90,11 @@ def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
     def gradient(x):
         return x - target
 
-    x = np.clip(target, lower, upper)
+    if x0 is not None:
+        x0 = np.asarray(x0, dtype=float)
+        if x0.shape != target.shape or not np.isfinite(x0).all():
+            raise ValueError('warm start must have the target shape and finite values')
+    x = np.clip(target if x0 is None else x0, lower, upper)
     # SLSQP occasionally stalls on a line-search step with a nearly feasible
     # iterate; a warm restart from the returned point pushes through without
     # relaxing any residual tolerance.
@@ -107,6 +114,39 @@ def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
         return Allocation(np.clip(np.nan_to_num(x), lower, upper), False, float('inf'))
     violation = _residual(x, aeq, beq, g, h, extra_constraints, lower, upper)
     return Allocation(x.copy(), bool(violation <= 1e-7), violation)
+
+
+def _as_old_style(constraint, target):
+    """Avoid SciPy conversion while retaining equality and bound semantics."""
+    if not isinstance(constraint, (LinearConstraint, NonlinearConstraint)):
+        raise ValueError('unsupported allocation constraint')
+    if isinstance(constraint, LinearConstraint):
+        a = np.atleast_2d(np.asarray(constraint.A, dtype=float))
+        fun = lambda x: a @ x
+        jac = lambda x: a
+        shape = (a.shape[0],)
+    else:
+        fun = lambda x: np.atleast_1d(constraint.fun(x))
+        jac = (lambda x: np.atleast_2d(constraint.jac(x))) if callable(constraint.jac) else None
+        shape = np.shape(fun(target))
+    lb = np.broadcast_to(np.asarray(constraint.lb, dtype=float), shape).reshape(-1)
+    ub = np.broadcast_to(np.asarray(constraint.ub, dtype=float), shape).reshape(-1)
+    equal = np.isfinite(lb) & (lb == ub)
+    result = []
+    if equal.any():
+        item = {'type': 'eq', 'fun': lambda x: fun(x)[equal]-lb[equal]}
+        if jac is not None:
+            item['jac'] = lambda x: jac(x)[equal]
+        result.append(item)
+    for mask, bound, sign in ((np.isfinite(lb) & ~equal, lb, 1.),
+                               (np.isfinite(ub) & ~equal, ub, -1.)):
+        if mask.any():
+            item = {'type': 'ineq',
+                'fun': lambda x, mask=mask, bound=bound, sign=sign: sign*(fun(x)[mask]-bound[mask])}
+            if jac is not None:
+                item['jac'] = lambda x, mask=mask, sign=sign: sign*jac(x)[mask]
+            result.append(item)
+    return result
 
 
 def grip_constraints(force_map, pull_direction, *, pulling: bool, limit_n=300.):

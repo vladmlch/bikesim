@@ -191,6 +191,105 @@ def test_candidate_is_preserved_when_infeasible():
 
 # --- adapter: whole-rider balance on the compiled plant ----------------------
 
+def test_warm_start_does_not_change_the_answer():
+    args = (np.array([100., -20.]), np.zeros((0, 2)), np.zeros(0),
+            np.array([[1., 0.]]), np.array([80.]),
+            np.array([0., -50.]), np.array([200., 50.]))
+    cold = allocate_effort(*args)
+    warm = allocate_effort(*args, x0=np.array([79., -19.]))
+    assert cold.feasible and warm.feasible
+    np.testing.assert_allclose(warm.solution, cold.solution, atol=1e-7)
+
+
+def test_warm_start_from_feasible_point_solves_once(monkeypatch):
+    from bike_sim.physics import rider_allocation
+    calls = []
+    original = rider_allocation.minimize
+    def counting(*args, **kwargs):
+        calls.append(1)
+        return original(*args, **kwargs)
+    monkeypatch.setattr(rider_allocation, 'minimize', counting)
+    allocate_effort(np.array([100., -20.]), np.zeros((0, 2)), np.zeros(0),
+                    np.array([[1., 0.]]), np.array([80.]),
+                    np.array([0., -50.]), np.array([200., 50.]),
+                    x0=np.array([80., -20.]))
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize('x0', [np.zeros(3), np.array([np.nan, 0.])])
+def test_invalid_warm_start_is_rejected(x0):
+    with pytest.raises(ValueError, match='warm start'):
+        allocate_effort(np.ones(2), np.zeros((0, 2)), np.zeros(0),
+                        np.zeros((0, 2)), np.zeros(0), -np.ones(2), np.ones(2), x0=x0)
+
+
+def test_branch_memory_preserves_cold_ranking_and_full_fallback():
+    from bike_sim.sim.ride.rider_control import ArticulatedRiderController
+    from bike_sim.physics.rider_allocation import Allocation
+    controller = ArticulatedRiderController.__new__(ArticulatedRiderController)
+    controller._last_branch = controller._last_solution = None
+    target = np.array([0.])
+    calls = []
+    def solve(branch, x0):
+        calls.append(branch)
+        distance = {(True, True): 4., (True, False): 3.,
+                    (False, True): 2., (False, False): 1.}[branch]
+        return Allocation(np.array([distance]), True, 0.)
+    _, branch = controller._select_allocation_branch(target, solve)
+    assert len(calls) == 4 and branch == (False, False)
+    calls.clear()
+    _, branch = controller._select_allocation_branch(target, solve)
+    assert calls == [(False, False)]
+    calls.clear()
+    def switched(branch, x0):
+        result = solve(branch, x0)
+        if branch == (False, False):
+            return Allocation(result.solution, False, 1.)
+        return result
+    _, remembered = controller._select_allocation_branch(target, switched)
+    assert len(calls) == 4
+    controller._last_branch = controller._last_solution = None
+    calls.clear()
+    _, cold = controller._select_allocation_branch(target, switched)
+    assert len(calls) == 4 and remembered == cold == (False, True)
+
+
+def test_vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics():
+    extra = [LinearConstraint(np.array([[1., 1.]]), 1., 1.),
+             NonlinearConstraint(lambda x: x, -np.inf, .8,
+                                 jac=lambda x: np.eye(2))]
+    result = allocate_effort(np.array([2., 0.]), np.zeros((0, 2)), np.zeros(0),
+        np.zeros((0, 2)), np.zeros(0), np.zeros(2), np.ones(2), extra_constraints=extra)
+    assert result.feasible
+    np.testing.assert_allclose(result.solution, [.8, .2], atol=1e-7)
+
+
+def test_real_grip_problem_changes_from_remembered_pull_to_press():
+    from bike_sim.sim.ride.rider_control import ArticulatedRiderController
+    controller = ArticulatedRiderController.__new__(ArticulatedRiderController)
+    controller._last_branch = controller._last_solution = None
+    calls = []
+    def problem(target, prescribed=False):
+        def solve(branch, x0):
+            calls.append(branch)
+            extra = []
+            for i, pulling in enumerate(branch):
+                force_map = np.zeros((2, 2)); force_map[0, i] = 1.
+                extra.extend(grip_constraints(force_map, np.array([1., 0.]), pulling=pulling))
+            return allocate_effort(target, np.eye(2) if prescribed else np.zeros((0, 2)),
+                target if prescribed else np.zeros(0), np.zeros((0, 2)), np.zeros(0),
+                np.full(2, -1000.), np.full(2, 1000.), extra_constraints=extra, x0=x0)
+        return controller._select_allocation_branch(target, solve)
+    first, branch = problem(np.array([-100., -100.]))
+    assert first.feasible and branch == (True, True) and len(calls) == 4
+    calls.clear()
+    second, remembered = problem(np.array([100., 100.]), prescribed=True)
+    assert second.feasible and remembered == (False, False) and len(calls) == 4
+    controller._last_branch = controller._last_solution = None
+    cold, branch = problem(np.array([100., 100.]), prescribed=True)
+    assert branch == remembered and cold.feasible
+    np.testing.assert_allclose(second.solution, cold.solution, atol=1e-7)
+
 def _environment(tmp_path, config=WELDED):
     from bike_sim.cli import research as research_cli
     track = tmp_path / 'track.toml'
@@ -245,9 +344,13 @@ def test_allocated_wrenches_close_the_rider_dynamics(tmp_path):
     assert diagnostics['feasible']
     model, data = env.sim.model, env.sim.data
     sample = physical.sample
-    # Rewind to the pre-step interval state where the QP built its rows.
-    data.qpos[:] = sample.qpos
-    data.qvel[:] = sample.qvel
+    # Allocation is held between control ticks; rebuild dynamics at its actual
+    # incoming tick state rather than the last interval of that period.
+    step = round(diagnostics['solution_time_s']/physical.control_clock.timestep_s)
+    assert physical.control_clock.is_tick(step)
+    assert step == sample.interval_id-sample.interval_id % physical.control_clock.steps_per_period
+    data.qpos[:] = diagnostics['solution_qpos']
+    data.qvel[:] = diagnostics['solution_qvel']
     import mujoco
     mujoco.mj_forward(model, data)
     qddot = np.asarray(diagnostics['solution_qddot'])

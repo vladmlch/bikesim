@@ -527,6 +527,8 @@ class ArticulatedRiderController:
         return target
 
     def reset_activation(self):
+        self._last_branch = None
+        self._last_solution = None
         self.active_state=np.zeros(len(self.joints))
         self.activation_time_s=None
         self.kinematic_state=None
@@ -895,6 +897,8 @@ class ArticulatedRiderController:
             if alloc_diagnostics['feasible']:
                 break
         alloc_diagnostics['invalid_controller']=not alloc_diagnostics['feasible']
+        alloc_diagnostics.update(solution_qpos=data.qpos.copy(), solution_qvel=data.qvel.copy(),
+                                 solution_time_s=float(data.time))
         self.allocation_diagnostics=alloc_diagnostics
         for index,name in enumerate(names):
             _, va, _ = self.joints[name]
@@ -1202,10 +1206,9 @@ class ArticulatedRiderController:
         # Row-normalize equalities for conditioning.
         norms = np.maximum(np.linalg.norm(aeq_x,axis=1),1e-9)
         aeq_x = aeq_x/norms[:,None]; beq_x = beq_x/norms
-        best = None
         scaled_target = target/scales
-        branches = [(p,q) for p in (True,False) for q in (True,False)]
-        for pull_left,pull_right in branches:
+        def solve(branch, x0):
+            pull_left, pull_right = branch
             extra = []
             for side,pulling in (('grip_left',pull_left),('grip_right',pull_right)):
                 if side not in self._alloc_attachments:
@@ -1220,17 +1223,9 @@ class ArticulatedRiderController:
                 force_map[0,i_f.start+2*k] = s_f; force_map[1,i_f.start+2*k+1] = s_f
                 extra.extend(grip_constraints(force_map,direction,pulling=pulling,
                                               limit_n=cfg.grip_pull_per_hand_n))
-            result = allocate_effort(scaled_target,aeq_x,beq_x,g_x,h_x,lo_x,hi_x,
-                                     extra_constraints=extra)
-            intent_error = float(np.dot(result.solution-scaled_target,
-                                        result.solution-scaled_target))
-            # Feasible branches rank by intent error, infeasible by violation:
-            # the pull/press mode is chosen by the physics, not by convenience.
-            key = ((result.feasible, -intent_error) if result.feasible
-                   else (result.feasible, -result.violation))
-            if best is None or key > best[0]:
-                best = (key, result, (pull_left,pull_right))
-        _, result, branch = best
+            return allocate_effort(scaled_target,aeq_x,beq_x,g_x,h_x,lo_x,hi_x,
+                                   extra_constraints=extra,x0=x0)
+        result, branch = self._select_allocation_branch(scaled_target, solve)
         z = result.solution*scales
         return z[i_t], {'feasible':bool(result.feasible),'violation':float(result.violation),
                         'grip_branch':branch,'effort_scale':effort_scale,
@@ -1238,3 +1233,28 @@ class ArticulatedRiderController:
                         'solution_tau':z[i_t].copy(),'solution_power':z[i_p],
                         'solution_base_qacc':qacc_b.copy()}
 
+    def _select_allocation_branch(self, target, solve):
+        """Try remembered mode first; retain full ranking on cold/fallback solves."""
+        branches = [(p,q) for p in (True,False) for q in (True,False)]
+        remembered = self._last_branch
+        if remembered in branches:
+            branches.remove(remembered)
+            branches.insert(0, remembered)
+        x0 = self._last_solution
+        if x0 is not None and x0.shape != target.shape:
+            x0 = None
+        best = None
+        for branch in branches:
+            result = solve(branch, x0)
+            error = float(np.dot(result.solution-target, result.solution-target))
+            key = ((result.feasible, -error) if result.feasible
+                   else (result.feasible, -result.violation))
+            if best is None or key > best[0]:
+                best = key, result, branch
+            if result.feasible and branch == remembered:
+                break
+        _, result, branch = best
+        if result.feasible:
+            self._last_branch = branch
+            self._last_solution = result.solution.copy()
+        return result, branch

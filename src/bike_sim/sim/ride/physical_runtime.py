@@ -2,6 +2,7 @@
 from dataclasses import replace, asdict
 from contextlib import contextmanager
 from bike_sim.sim.ride.control import RideControl
+from bike_sim.sim.ride.control_clock import ControlClock
 from bike_sim.physics.rider_posture import RiderPosture
 import copy
 import mujoco
@@ -51,6 +52,7 @@ class PhysicalRuntime:
     def __init__(self, sim):
         self.sim = sim
         self.cfg = sim.physics_config
+        self.control_clock = ControlClock(float(sim.model.opt.timestep), self.cfg.control_period_s)
         if self.cfg.seated_climb.enabled and sim.rider.variant != 'articulated_planar':
             raise ValueError('seated climb needs an articulated planar rider')
         self.rider_intent = RiderIntentResolver(self.cfg.seated_climb, float(sim.model.opt.timestep))
@@ -236,14 +238,21 @@ class PhysicalRuntime:
             # The planner sees kinematics and a bounded road window only.
             # Solved reactions stay inside the physics layer; flat-pad loads
             # are predicted from the declared pad law inside compute().
-            self.rider_state = rider_kinematic_state(m,d,
-                vertices=self.vertices,
-                wheel_x_m=tuple(float(d.xpos[b][0]) for b in self._wheel_bodies),
-                lookahead_m=self.cfg.articulated.road_lookahead_m)
-            self.rider_control.write(d,self.rider_control.compute(m,d,command,
-                kinematic_state=self.rider_state,
-                support_available=availability,advance=advance,dt_s=dt,steady_state=not active,
-                pedal_recovery=self.cfg.seated_climb.enabled))
+            if not advance or self.control_clock.is_tick(sim.steps):
+                self.rider_state = rider_kinematic_state(m,d,
+                    vertices=self.vertices,
+                    wheel_x_m=tuple(float(d.xpos[b][0]) for b in self._wheel_bodies),
+                    lookahead_m=self.cfg.articulated.road_lookahead_m)
+                torques = self.rider_control.compute(m,d,command,
+                    kinematic_state=self.rider_state,
+                    support_available=availability,advance=advance,
+                    dt_s=self.control_clock.period_s if advance else dt,steady_state=not active,
+                    pedal_recovery=self.cfg.seated_climb.enabled)
+                if advance:
+                    self.control_clock.hold(torques)
+            else:
+                torques = self.control_clock.held()
+            self.rider_control.write(d,torques)
             acc.add('rider_joint_envelope',self.rider_control.envelope_forces(m,d)[0])
         if self.rider_contacts is None:
             sensed = 0.
@@ -276,6 +285,7 @@ class PhysicalRuntime:
     def reset(self):
         from bike_sim.sim.ride.physical_equilibrium import solve_physical_equilibrium
         sim = self.sim
+        self.control_clock.reset()
         self.rider_intent.reset()
         self.rider_intent_signals = SeatedClimbSignals()
         self.applied_control = RideControl()

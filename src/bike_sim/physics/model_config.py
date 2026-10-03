@@ -47,6 +47,7 @@ class SimulationPhysicsConfig:
     physics_mode: str = "legacy"
     drive_mode: str | None = None
     timestep_s: float = 0.0005
+    control_period_s: float = 0.005
     pitch_assist: bool | None = None
     end_stops: EndStopConfig = field(default_factory=EndStopConfig)
     tires: TireBackendConfig = field(default_factory=TireBackendConfig)
@@ -67,6 +68,10 @@ class SimulationPhysicsConfig:
             raise ValueError("unknown physics_mode")
         if not isfinite(self.timestep_s) or self.timestep_s <= 0:
             raise ValueError("timestep_s must be finite and positive")
+        scalar(self.control_period_s, 'control period', positive=True)
+        steps = round(self.control_period_s/self.timestep_s)
+        if steps < 1 or abs(steps*self.timestep_s-self.control_period_s) > 1e-9:
+            raise ValueError('control_period_s must be an integer multiple of timestep_s')
 
         for name in ('equilibrium_refine_after_s', 'equilibrium_refine_period_s'):
             scalar(getattr(self, name), name, positive=True)

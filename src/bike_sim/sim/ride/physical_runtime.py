@@ -7,6 +7,7 @@ import copy
 import mujoco
 import numpy as np
 from bike_sim.physics.checks import scalar
+from bike_sim.physics.energy_ledger import step_work
 from bike_sim.physics.rider_segments import geometry_pose
 from bike_sim.sim.ride.contacts import TerrainContactQuery, TerrainContacts
 from bike_sim.sim.ride.contact_filter import GroundedFilter
@@ -297,6 +298,9 @@ class PhysicalRuntime:
             self.rider_contacts.restart_clock()
         self.history.reset()
         self.loss_j = self.active_work_j = self.external_work_j = self.solver_work_j = 0.
+        self.muscle_signed_j=self.muscle_positive_j=0.
+        self.motor_signed_j=self.motor_positive_j=0.
+        self.constraint_absolute_j=0.
         self.attachment_samples,self.attachment_errors={},()
         self.step_violations=()
         from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
@@ -512,11 +516,22 @@ class PhysicalRuntime:
         tires=tire_channels(self,self.snapshots,qvel=v)
         loss_step=self._loss_increment(components,v,dt)
         self.loss_j+=loss_step
-        active_names={'human_crank','mid_drive'}|{n for n in components if n.startswith('act_rider_')}
         external_names={'external','rear_drive','road_rolling','aerodynamic','native_contact'}
-        self.active_work_j+=sum(float(components[n]@v)*dt for n in active_names if n in components)
+        muscle_power=np.array([float(components[n]@v) for n in components
+                               if n=='human_crank' or n.startswith('act_rider_')])
+        motor_power=float(components.get('mid_drive',np.zeros(m.nv))@v)
+        constraint_power=np.array([float(components[n]@v) for n in
+            ('joint_limits','shock_solver_limit','closure','ideal_transmission')
+            if n in components])
+        work=step_work(muscle_power,motor_power,constraint_power,dt)
+        self.muscle_signed_j+=work.muscle_signed_j
+        self.muscle_positive_j+=work.muscle_positive_j
+        self.motor_signed_j+=work.motor_signed_j
+        self.motor_positive_j+=work.motor_positive_j
+        self.constraint_absolute_j+=work.constraint_absolute_j
+        self.solver_work_j+=work.constraint_signed_j
+        self.active_work_j+=work.muscle_signed_j+work.motor_signed_j
         self.external_work_j+=sum(float(components[n]@v)*dt for n in external_names if n in components)
-        self.solver_work_j+=sum(float(components[n]@v)*dt for n in ('joint_limits','shock_solver_limit','closure','ideal_transmission') if n in components)
         self.electrical_work_j+=self.drive.last.get('electrical_power_w',0.)*dt
         rider={} if self.rider_contacts is None else copy.deepcopy(self.rider_contacts.diagnostics)
         drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]),
@@ -534,6 +549,10 @@ class PhysicalRuntime:
         self.energy={'mechanical_energy_j':total,'elastic_energy_j':elastic,
             'active_work_j':self.active_work_j,'external_work_j':self.external_work_j,
             'loss_j':self.loss_j,'loss_step_j':loss_step,'solver_constraint_work_j':self.solver_work_j,'energy_scale_j':self.energy_scale_j,
+            'muscle_signed_j':self.muscle_signed_j,'muscle_positive_j':self.muscle_positive_j,
+            'motor_signed_j':self.motor_signed_j,'motor_positive_j':self.motor_positive_j,
+            'source_positive_work_j':self.muscle_positive_j+self.motor_positive_j,
+            'constraint_signed_j':self.solver_work_j,'constraint_absolute_j':self.constraint_absolute_j,
             'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
             'electrical_work_j':self.electrical_work_j,
             'electrical_residual_j':(self.initial_battery_j-self.drive.battery.energy_j-self.electrical_work_j

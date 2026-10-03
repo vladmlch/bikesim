@@ -108,7 +108,7 @@ boost_s = 0.4
 enabled = false
 
 [drive.gearing]
-front_teeth = 34
+front_teeth = 30
 rear_teeth = 51
 
 [drive.shifting]

@@ -501,6 +501,11 @@ class PhysicalRuntime:
             self.step_violations+=tuple(
                 f'rider_strength.{name}'
                 for name in effort.get('rider_strength_violations',()))
+            # A QP that cannot find any budget-holding command is a controller
+            # fault: physics may stall, but a silent infeasible command is not
+            # a legitimate stall.
+            if self.rider_control.allocation_diagnostics.get('invalid_controller'):
+                self.step_violations+=('rider_controller.infeasible',)
         sensors = sensor_channels(self, qvel=v)
         if self.cfg.seated_climb.enabled:
             self.rider_intent_signals = signals_from_channels(sensors)
@@ -598,6 +603,11 @@ class PhysicalRuntime:
                   'attachment_samples':{n:asdict(s) for n,s in self.attachment_samples.items()},
                   'component_work_j':{n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()},
                   'rider_control':{} if self.rider_control is None else self.rider_control.last_terms,
+                  'rider_allocation':{} if self.rider_control is None else {
+                      k: (tuple(float(x) for x in v) if isinstance(v, np.ndarray)
+                          else v)
+                      for k, v in self.rider_control.allocation_diagnostics.items()
+                      if not k.startswith('solution_')},
                   'rider_ik_saturation':{} if self.rider_control is None else self.rider_control.saturated_ik,
                   'rider_support_targets':{} if self.rider_control is None else self.rider_control.support_diagnostics,
                   'contact_crash_cause':contact_crash}
@@ -658,6 +668,8 @@ class PhysicalRuntime:
             self.step_violations+=tuple(
                 f'rider_strength.{name}'
                 for name in effort.get('rider_strength_violations',()))
+            if self.rider_control.allocation_diagnostics.get('invalid_controller'):
+                self.step_violations+=('rider_controller.infeasible',)
         if self.rider_contacts is not None:
             self.reference_monitor.accept(float(data.time),self.step_violations)
         sim.contacts,self.snapshots=self._contacts(final=True,time_s=time_s,qvel=incoming_velocity)

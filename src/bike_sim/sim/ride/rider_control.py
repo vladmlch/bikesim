@@ -61,13 +61,12 @@ def feasible_pedal_force(request,normal,mu,measured_normal_n):
     return -compression*n+np.clip(float(f@tangent),-bound,bound)*tangent
 
 
-def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu, *, normal_limit_n=500.):
+def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu):
     """Realize a mean shaft waveform with compressive forces and friction reserve."""
     phase = scalar(phase, 'pedal phase')
     mean = scalar(mean_nm, 'mean pedaling torque', minimum=0.)
     radius = scalar(crank_m, 'crank length', positive=True)
     friction = scalar(mu, 'pedal friction', minimum=0.)
-    normal_limit = scalar(normal_limit_n, 'pedal normal request ceiling', positive=True)
     fraction = min(max(.5+.5*cos(phase)/_PRESSURE_BLEND_COSINE, 0.), 1.)
     front_weight = fraction*fraction*(3.-2.*fraction)
     weights = {'front': front_weight, 'rear': 1.-front_weight}
@@ -83,9 +82,9 @@ def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu, *, norm
         ratio = .8*friction*min(abs(tangent_moment)/radius, 1.)
         capacity = normal_moment+ratio*abs(tangent_moment)
         measured = scalar(loads[side], 'measured pedal pressure', minimum=0.)
-        compression_limit = normal_limit
+        compression_limit = float('inf')
         if normal_moment < 0. and ratio > 0.:
-            compression_limit = min(normal_limit, friction*measured/ratio)
+            compression_limit = friction*measured/ratio
         torque_limit = (normal_moment*compression_limit+abs(tangent_moment)
             *min(ratio*compression_limit, friction*min(compression_limit, measured)))
         geometry[side] = normal, normal_moment, tangent_moment, ratio, capacity, compression_limit, measured
@@ -332,6 +331,8 @@ class ArticulatedRiderController:
             (upper_length+lower_length)*config.arm_reach_fraction,elbow_sign=sign) for sign in (-1,1)]
         neutral,self.neutral_torso_saturated=max(candidates,key=lambda pair:sin(pair[0][0]))
         self.neutral_torso_q=atan2(trunk[2],trunk[0])-neutral[0]
+        self._allocation_setup(model)
+        self.allocation_diagnostics={}
 
     def _targets(self,model,data,side, *, compression_m=None, shear_m=0., clearance_m=0., posture=None):
         hip = data.xpos[self.pelvis]
@@ -633,6 +634,8 @@ class ArticulatedRiderController:
                 'rider_positive_power_w':0.,'rider_passive_power_w':0.,'rider_activation_saturated':False,
                 'rider_strength_limited':(),'rider_strength_violations':()}
             self.last_terms = {name:{'posture_nm':0.,'pedaling_nm':0.,'command_nm':0.,'saturated':False} for name in self.joints}
+            self.allocation_diagnostics={'feasible':True,'violation':0.,
+                'invalid_controller':False}
             return {name:0. for name in self.joints}
         cfg = self.config
         self._active_recovery = self.pedal_recovery if advance else copy.deepcopy(self.pedal_recovery)
@@ -691,8 +694,7 @@ class ArticulatedRiderController:
                 for side, geom in self.pedal_geoms.items()}
             pedal_loads = {side: max(float(loads.get(side, 0.)), 0.) for side in ('front', 'rear')}
             pedaling_requests, pedaling_weights = pedaling_force_requests(phase,
-                command.mean_crank_torque_nm, self.crank_length_m, normals, pedal_loads, cfg.support_mu,
-                normal_limit_n=.75*weight)
+                command.mean_crank_torque_nm, self.crank_length_m, normals, pedal_loads, cfg.support_mu)
         for side,offset in (('front',0.),('rear',pi)):
             load=max(float(loads.get(side,0.)),0.)
             fraction=min(load/cfg.stance_blend_load_n,1.)
@@ -824,6 +826,9 @@ class ArticulatedRiderController:
         tracking_inertia=np.zeros(model.nv)
         mujoco.mj_mulM(model,data,tracking_inertia,desired_acceleration)
         self.last_terms = {}
+        names = tuple(self.joints)
+        requested = {}
+        pedaling_of = {}
         for name, (posture, pedaling) in terms.items():
             _, va, _ = self.joints[name]
             # Joint-only inverse-dynamics bias compensation. No root column is
@@ -838,17 +843,50 @@ class ArticulatedRiderController:
             requested_torque=posture+pedaling
             if not all(isfinite(value) for value in (posture,pedaling,requested_torque,joint_speed)):
                 raise ValueError('non-finite articulated command')
-            command_torque = min(max(requested_torque,-cfg.joint_limit_nm),cfg.joint_limit_nm)
-            if command_torque*joint_speed>0.:
-                if abs(joint_speed)>=cfg.joint_speed_limit_rad_s:
-                    command_torque=0.
-                else:
-                    power_cap=min(cfg.joint_limit_nm,cfg.joint_power_limit_w/abs(joint_speed))
-                    command_torque=min(max(command_torque,-power_cap),power_cap)
+            requested[name]=requested_torque
+            pedaling_of[name]=pedaling
+        tau_intent = np.asarray([requested[n] for n in names])
+        pedaling_part = np.asarray([pedaling_of.get(n,0.) for n in names])
+        # The allocation's wrench intent is the preferred on-rider share of the
+        # support split: preferred, never authoritative. Pedal normals are the
+        # only friction-cone axes; grips use their pull/press branch instead.
+        f_intent=[]
+        normals_alloc={}
+        for name in self._alloc_attachments:
+            if name=='saddle':
+                vec=-np.asarray(support_forces['saddle'],dtype=float)
+            elif name in ('front','rear'):
+                vec=-np.asarray(support_forces[name],dtype=float)
+                _,n3,_=_upper_box_face(data.geom_xpos[self.pedal_geoms[name]],
+                    data.geom_xmat[self.pedal_geoms[name]].reshape(3,3),model.geom_size[self.pedal_geoms[name]])
+                normals_alloc[name]=np.array([n3[0],n3[2]])
+            else:
+                vec=-np.asarray(support_forces['grip'],dtype=float)/2.
+            f_intent.extend((float(vec[0]),float(vec[2])))
+        tau_alloc = None; alloc_diagnostics = {}
+        for effort_scale in (1.,.5,.25):
+            intent = tau_intent-(1.-effort_scale)*pedaling_part
+            tau_alloc,alloc_diagnostics = self.allocate(model,data,intent,
+                np.asarray(f_intent,float),normals_alloc,effort_scale=effort_scale,
+                estimates=estimates)
+            if alloc_diagnostics['feasible']:
+                break
+        alloc_diagnostics['invalid_controller']=not alloc_diagnostics['feasible']
+        self.allocation_diagnostics=alloc_diagnostics
+        for index,name in enumerate(names):
+            _, va, _ = self.joints[name]
+            requested_torque=requested[name]
+            command_torque=float(tau_alloc[index])
             scale = command_torque/requested_torque if requested_torque != 0 else 0.
             result[name] = command_torque
-            self.last_terms[name] = {'requested_nm':requested_torque, 'posture_nm':posture*scale, 'pedaling_nm':pedaling*scale,
-                                    'command_nm':command_torque, 'support_nm':float(support[va])*scale, 'tracking_nm':float(tracking_inertia[va])*scale, 'hip_posture_nm':hip_posture*scale, 'saturated':scale!=1.}
+            hip_posture = -.5*pitch_request if name.startswith('rider_hip_') else 0.
+            self.last_terms[name] = {'requested_nm':requested_torque,
+                'posture_nm':(requested_torque-pedaling_part[index])*scale,
+                'pedaling_nm':pedaling_part[index]*scale,
+                'command_nm':command_torque,
+                'support_nm':float(support[va])*scale,
+                'tracking_nm':float(tracking_inertia[va])*scale,
+                'hip_posture_nm':hip_posture*scale, 'saturated':scale!=1.}
         from bike_sim.sim.ride.rider_effort import finalize_effort
         return finalize_effort(self,data,result,advance=advance,
             dt_s=float(model.opt.timestep) if dt_s is None else dt_s,steady_state=steady_state)
@@ -908,3 +946,265 @@ class ArticulatedRiderController:
             # Passive damping lives on the DOF, so a disabled command removes
             # only active force; tissue damping still acts physically.
             data.ctrl[aid] = torque if self.command_enabled else 0.
+
+    def _allocation_setup(self, model):
+        """Cache the DOF split and per-attachment metadata for the QP."""
+        import mujoco
+        hinge = [self.joints[n][1] for n in self.joints]
+        root = [int(model.joint(n).dofadr[0]) for n in
+                ('rider_root_x','rider_root_z','rider_root_pitch')]
+        self._rider_dofs = np.asarray(root+hinge, dtype=np.intp)
+        self._bike_dofs = np.asarray([d for d in range(model.nv)
+                                      if d not in set(self._rider_dofs)], dtype=np.intp)
+        self._alloc_attachments = {}
+        site_of = {'saddle': 'site_rider_saddle',
+                   'front': 'site_rider_sole_front', 'rear': 'site_rider_sole_rear'}
+        for name, eq_name in (('saddle','weld_saddle'),
+                              ('front','weld_foot_front'),('rear','weld_foot_rear'),
+                              ('grip_left','connect_grip_left'),
+                              ('grip_right','connect_grip_right')):
+            eq = int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_EQUALITY,eq_name))
+            if eq < 0 and name == 'saddle':
+                # 'pin' saddle compiles to connect_saddle instead.
+                eq = int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_EQUALITY,
+                                           'connect_saddle'))
+            if eq >= 0:
+                obj1, obj2 = int(model.eq_obj1id[eq]), int(model.eq_obj2id[eq])
+                self._alloc_attachments[name] = {
+                    'eq': eq,
+                    'weld': int(model.eq_type[eq]) == int(mujoco.mjtEq.mjEQ_WELD),
+                    'rider_body': obj1, 'other_body': obj2,
+                    'anchor_local': np.asarray(model.eq_data[eq][:3], dtype=float).copy()}
+                continue
+            if name in site_of:
+                # A bare pad still applies a real wrench: keep an uncoupled
+                # attachment row at the contact site with the unilateral cone
+                # and the declared pad capacity, and no rigid closure.
+                site_id = int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_SITE,
+                                              site_of[name]))
+                body = int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,
+                    'rider_pelvis' if name == 'saddle' else f'rider_foot_{name}'))
+                if site_id < 0 or body < 0:
+                    continue
+                self._alloc_attachments[name] = {
+                    'eq': -1, 'weld': False, 'site': site_of[name],
+                    'site_id': site_id, 'rider_body': body,
+                    'anchor_local': np.zeros(3)}
+        self._jacp = np.zeros((3,model.nv)); self._jacr = np.zeros((3,model.nv))
+        self._jdp = np.zeros((3,model.nv)); self._jdr = np.zeros((3,model.nv))
+        self._fullM = np.zeros((model.nv,model.nv))
+
+    def _attachment_frames(self, model, data):
+        """Current closure Jacobians and on-rider wrench Jacobians.
+
+        Wrench rows are the x/z force-on-rider block of the rider-body
+        Jacobian at each attach point. Closure rows are the relative
+        Jacobian ``J_rider - J_bike`` pairs (position rows for every coupled
+        attachment, rotation rows for welds) alongside their Jdot mates.
+        Returns ``({name: (2,nv)}, [(jac_row, jacdot_row)])``.
+        """
+        import mujoco
+        wrench = {}
+        closures = []
+        for name, meta in self._alloc_attachments.items():
+            b1 = meta['rider_body']
+            if meta['eq'] < 0:
+                # Bare pad contact: the wrench acts at the declared contact
+                # site; there is no rigid closure to bound.
+                point = np.asarray(data.site_xpos[meta['site_id']])
+                mujoco.mj_jac(model,data,self._jacp,self._jacr,point,b1)
+                wrench[name] = self._jacp.copy()[[0,2],:]
+                continue
+            b2 = meta['other_body']
+            # eq_data[:3] is the anchor in the rider-body frame for both weld
+            # and connect rows; unanchored welds store zeros, i.e. the origin.
+            point = (np.asarray(data.xpos[b1])
+                     + data.xmat[b1].reshape(3,3) @ meta['anchor_local'])
+            mujoco.mj_jac(model,data,self._jacp,self._jacr,point,b1)
+            jacp1, jacr1 = self._jacp.copy(), self._jacr.copy()
+            mujoco.mj_jac(model,data,self._jacp,self._jacr,point,b2)
+            jacp2, jacr2 = self._jacp.copy(), self._jacr.copy()
+            mujoco.mj_jacDot(model,data,self._jdp,self._jdr,point,b1)
+            jdp1, jdr1 = self._jdp.copy(), self._jdr.copy()
+            mujoco.mj_jacDot(model,data,self._jdp,self._jdr,point,b2)
+            rows = [jacp1 - jacp2]
+            dot_rows = [jdp1 - self._jdp]
+            if meta['weld']:
+                rows.append(jacr1 - jacr2)
+                dot_rows.append(jdr1 - self._jdr)
+            closures.extend(zip(np.vstack(rows), np.vstack(dot_rows)))
+            # The wrench acts on the rider body only; the relative Jacobian is
+            # for the closure rows, not for J^T f in the dynamics balance.
+            wrench[name] = jacp1[[0,2],:]
+        return wrench, closures
+
+    def allocate(self, model, data, tau_intent, f_intent, normals, *,
+                 effort_scale=1., estimates=None):
+        """Solve z=[qddot_r,tau,f_attach,p] nearest the intent under dynamics.
+
+        qddot over the rider DOFs, tau the 11 muscle torques, f the planar
+        attachment wrenches on the rider, p the per-joint positive-work
+        epigraph. Closures bound welded point accelerations to the estimated
+        base acceleration window; budgets bound every wrench; the power cap
+        is the engineering budget.
+        """
+        import mujoco
+        from bike_sim.physics.rider_allocation import (
+            allocate_effort, grip_constraints, inverse_dynamics_rows)
+        cfg = self.config
+        if not hasattr(self,'_rider_dofs'):
+            self._allocation_setup(model)
+        rd, bd = self._rider_dofs, self._bike_dofs
+        names = tuple(self.joints)
+        n_r, n_t = len(rd), len(names)
+        attach = tuple(self._alloc_attachments)
+        n_f = 2*len(attach)
+        qacc_b = np.asarray(data.qacc[bd], dtype=float)
+        mujoco.mj_fullM(model,data,self._fullM)
+        mass_r = self._fullM[np.ix_(rd,rd)]
+        bias = np.asarray(data.qfrc_bias[rd]) + self._fullM[np.ix_(rd,bd)] @ qacc_b
+        known = np.zeros(model.nv)
+        known[self._envelope_dof_adrs] += self.envelope_forces(model,data)[0][self._envelope_dof_adrs]
+        hinge_dofs = np.asarray([self.joints[n][1] for n in names], dtype=np.intp)
+        known[hinge_dofs] -= cfg.joint_kd_nms_rad*data.qvel[hinge_dofs]
+        wrench_rows, closures = self._attachment_frames(model,data)
+        jac_att = (np.vstack([wrench_rows[n][:,rd] for n in attach])
+                   if attach else np.zeros((0,n_r)))
+        actuation = np.zeros((n_r,n_t))
+        for i,(name,(qa,dof,aid)) in enumerate(self.joints.items()):
+            actuation[int(np.flatnonzero(rd==dof)[0]),i] = 1.
+        a_dyn,b_dyn = inverse_dynamics_rows(mass_r,actuation,jac_att,bias,known[rd])
+        # z = [qddot_r(n_r), tau(n_t), f(n_f), p(n_t)]
+        n_z = n_r+n_t+n_f+n_t
+        i_q = slice(0,n_r); i_t = slice(n_r,n_r+n_t)
+        i_f = slice(n_r+n_t,n_r+n_t+n_f); i_p = slice(n_r+n_t+n_f,n_z)
+        s_q,s_t,s_f,s_p = 500.,50.,300.,450.
+        scales = np.concatenate([np.full(n_r,s_q),np.full(n_t,s_t),
+                                 np.full(n_f,s_f),np.full(n_t,s_p)])
+        speed = np.asarray([data.qvel[self.joints[n][1]] for n in names])
+        angle = np.asarray([self.anatomical_joint_angle(n,data.qpos[self.joints[n][0]])
+                            for n in names]) if self.strength is not None else None
+        lo = np.full(n_z,-np.inf); hi = np.full(n_z,np.inf)
+        for i,name in enumerate(names):
+            v = speed[i]
+            if self.strength is None:
+                cap_pos = cap_neg = cfg.joint_limit_nm
+            else:
+                cap_pos = self.strength_capacity(name,angle[i],speed[i],1.)
+                cap_neg = self.strength_capacity(name,angle[i],speed[i],-1.)
+            # Positive-power torque (the accelerating direction) keeps the
+            # per-joint speed/power budget; braking stays bounded by strength.
+            if v > 0.:
+                cap_pos = min(cap_pos,cfg.joint_power_limit_w/v)
+                if v >= cfg.joint_speed_limit_rad_s: cap_pos = 0.
+            elif v < 0.:
+                cap_neg = min(cap_neg,-cfg.joint_power_limit_w/v)
+                if -v >= cfg.joint_speed_limit_rad_s: cap_neg = 0.
+            lo[n_r+i],hi[n_r+i] = -cap_neg,cap_pos
+        lo[i_p] = 0.
+        cap = cfg.active_positive_power_limit_w
+        hi[i_p] = cap if cap is not None else np.inf
+        # Closure rows bound the rider's attachment acceleration to the
+        # estimated base window: |J_r qddot_r + J_b qacc_b + Jdot qvel| <= tol.
+        g_rows = []; g_hi = []
+        for jrel, jdot in closures:
+            rhs = -(jrel[bd]@qacc_b + jdot@data.qvel)
+            tol = 50.+.5*abs(rhs)
+            row = np.zeros(n_z); row[i_q] = jrel[rd]
+            g_rows.append(row); g_hi.append(rhs+tol)
+            g_rows.append(-row); g_hi.append(tol-rhs)
+        # Per-attachment friction budgets on the on-rider (Fx,Fz). Coupled
+        # (weld/pin) supports carry a two-sided cone |t| <= mu|n| since the
+        # coupling can pull; a bare pad contact is strictly unilateral,
+        # friction-bounded, and limited by its declared spring capacity.
+        # Grips take their pull/press branch instead of a friction cone.
+        weight = self.rider_mass*float(np.linalg.norm(model.opt.gravity))
+        for k,name in enumerate(attach):
+            if name.startswith('grip'):
+                continue
+            n_hat = normals.get(name)
+            if n_hat is None:
+                n_hat = np.array([0.,1.])  # world +z on the planar (Fx,Fz)
+            t_hat = np.array([-n_hat[1],n_hat[0]])
+            mu = dict(saddle=cfg.saddle_mu,front=cfg.foot_mu,rear=cfg.foot_mu).get(name,cfg.support_mu)
+            i0 = i_f.start+2*k
+            coupled = self._alloc_attachments[name]['eq'] >= 0
+            if coupled:
+                for s_t_,s_n_ in ((1.,1.),(-1.,1.),(1.,-1.),(-1.,-1.)):
+                    row = np.zeros(n_z)
+                    row[i0] = s_t_*t_hat[0]-s_n_*mu*n_hat[0]
+                    row[i0+1] = s_t_*t_hat[1]-s_n_*mu*n_hat[1]
+                    g_rows.append(row); g_hi.append(0.)
+                continue
+            # Bare pad: -mu*fn <= ft <= mu*fn, 0 <= fn <= pad capacity.
+            for s_t_ in (1.,-1.):
+                row = np.zeros(n_z)
+                row[i0] = s_t_*t_hat[0]-mu*n_hat[0]
+                row[i0+1] = s_t_*t_hat[1]-mu*n_hat[1]
+                g_rows.append(row); g_hi.append(0.)
+            row = np.zeros(n_z); row[i0] = -n_hat[0]; row[i0+1] = -n_hat[1]
+            g_rows.append(row)
+            pad_lo = .15*weight if name=='saddle' else 0.
+            g_hi.append(-pad_lo)
+            row = np.zeros(n_z); row[i0] = n_hat[0]; row[i0+1] = n_hat[1]
+            g_rows.append(row)
+            predicted = 0. if estimates is None else float(estimates.get(name,(0.,0.))[0])
+            g_hi.append(predicted+.005*cfg.support_k_n_m)
+        # Positive-work epigraph: p_j >= tau_j*v_j and p_j >= 0; sum(p) <= cap.
+        for i in range(n_t):
+            row = np.zeros(n_z); row[n_r+i] = speed[i]; row[i_p.start+i] = -1.
+            g_rows.append(row); g_hi.append(0.)
+        if cap is not None:
+            row = np.zeros(n_z); row[i_p] = 1.
+            g_rows.append(row); g_hi.append(cap)
+        aeq = np.zeros((0,n_z)); beq = np.zeros(0)
+        dyn = np.zeros((n_r,n_z)); dyn[:,i_q] = a_dyn[:,:n_r]
+        dyn[:,i_t] = a_dyn[:,n_r:n_r+n_t]; dyn[:,i_f] = a_dyn[:,n_r+n_t:]
+        aeq = np.vstack([dyn]); beq = b_dyn
+        target = np.concatenate([np.zeros(n_r),np.asarray(tau_intent,float),
+                                 np.asarray(f_intent,float),np.zeros(n_t)])
+        g = np.asarray(g_rows,float).reshape(-1,n_z); h = np.asarray(g_hi,float)
+        # Dimensionless x = z/scale.
+        S = np.diag(scales)
+        aeq_x = aeq@S; beq_x = beq.copy()
+        g_x = g@S; h_x = h.copy()
+        lo_x = lo/scales; hi_x = hi/scales
+        # Row-normalize equalities for conditioning.
+        norms = np.maximum(np.linalg.norm(aeq_x,axis=1),1e-9)
+        aeq_x = aeq_x/norms[:,None]; beq_x = beq_x/norms
+        best = None
+        scaled_target = target/scales
+        branches = [(p,q) for p in (True,False) for q in (True,False)]
+        for pull_left,pull_right in branches:
+            extra = []
+            for side,pulling in (('grip_left',pull_left),('grip_right',pull_right)):
+                if side not in self._alloc_attachments:
+                    continue
+                site = self.grip_sites[side.split('_')[1]]
+                origin = np.asarray(data.site_xpos[site],dtype=float)
+                pelvis = np.asarray(data.xpos[self.pelvis],dtype=float)
+                direction = pelvis-origin; direction[1]=0.
+                direction = direction[[0,2]]/max(np.linalg.norm(direction[[0,2]]),1e-9)
+                k = attach.index(side)
+                force_map = np.zeros((2,n_z))
+                force_map[0,i_f.start+2*k] = s_f; force_map[1,i_f.start+2*k+1] = s_f
+                extra.extend(grip_constraints(force_map,direction,pulling=pulling,
+                                              limit_n=cfg.grip_pull_per_hand_n))
+            result = allocate_effort(scaled_target,aeq_x,beq_x,g_x,h_x,lo_x,hi_x,
+                                     extra_constraints=extra)
+            intent_error = float(np.dot(result.solution-scaled_target,
+                                        result.solution-scaled_target))
+            # Feasible branches rank by intent error, infeasible by violation:
+            # the pull/press mode is chosen by the physics, not by convenience.
+            key = ((result.feasible, -intent_error) if result.feasible
+                   else (result.feasible, -result.violation))
+            if best is None or key > best[0]:
+                best = (key, result, (pull_left,pull_right))
+        _, result, branch = best
+        z = result.solution*scales
+        return z[i_t], {'feasible':bool(result.feasible),'violation':float(result.violation),
+                        'grip_branch':branch,'effort_scale':effort_scale,
+                        'solution_qddot':z[i_q],'solution_wrenches':z[i_f],
+                        'solution_tau':z[i_t].copy(),'solution_power':z[i_p],
+                        'solution_base_qacc':qacc_b.copy()}
+

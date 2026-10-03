@@ -61,15 +61,24 @@ def test_runtime_holds_ctrl_but_observes_solved_effort_each_step(tmp_path, monke
     start = len(calls)
     ctrl = None
     powers = []
-    for i in range(400):
+    for i in range(403):
         sim.step(control=RideControl(motor_torque_nm=0., human_torque_nm=0.))
         if i % 10:
             np.testing.assert_array_equal(sim.data.ctrl, ctrl)
         ctrl = sim.data.ctrl.copy()
-        sample = sim.physical.sample
-        assert sample.channels['rider_effort_observation'] == 'solved_actuator_force_at_incoming_interval'
-        powers.append(sample.channels['rider_positive_power_w'])
+        for sample in sim.physical.completed_samples:
+            assert sample.channels['rider_effort_observation'] == 'solved_actuator_force_at_incoming_interval'
+            powers.append(sample.channels['rider_positive_power_w'])
     advancing = [dt for advance, dt in calls[start:] if advance]
-    assert len(advancing) == 40
-    assert advancing == [.005]*40
+    assert len(advancing) == 41
+    assert advancing == [.005]*41
+    assert len(powers) == 400
     assert np.isfinite(powers).all()
+    sim.physical.flush()
+    assert len(sim.physical.completed_samples) == 3
+    before_reset = len(calls)
+    sim.reset()
+    assert sim.steps == 0
+    assert all(dt == .0005 for _, dt in calls[before_reset:])
+    sim.step(control=RideControl(motor_torque_nm=0., human_torque_nm=0.))
+    assert calls[-1] == (True, .005)

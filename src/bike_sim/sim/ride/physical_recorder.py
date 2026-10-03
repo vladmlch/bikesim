@@ -30,22 +30,33 @@ class PhysicalRecorder:
             raise ValueError('decimate must be a positive integer')
         self.sim=sim
         self.decimate=decimate
+        sim.physical.set_record_decimation(decimate)
         self.timestep_s=float(sim.model.opt.timestep)
         self.samples=[]
         self._last_id=None
         self._generation=sim.physical.generation
 
-    def record(self,sim):
+    def record(self,sim, *, sample=None):
+        if sample is None:
+            published = getattr(sim.physical, 'completed_samples', ())
+            if published and self._last_id == published[-1].interval_id:
+                return
+            for completed in published:
+                self.record(sim, sample=completed)
+            return
+        self._record_sample(sim, sample)
+
+    def _record_sample(self,sim,sample):
         if sim.physical.interactive_preview or not sim.physical.research_accounting_valid:
             raise ValueError('interactive preview has no research force intervals')
         if sim is not self.sim:
             raise ValueError('recorder belongs to a different simulation')
         if sim.physical.generation != self._generation:
             raise ValueError('reset requires a new recorder')
-        sample=sim.physical.sample
         if sample is None:
             return  # Initial state has no solved force interval.
-        constraints=sim.last_constraint_snapshot
+        constraints=getattr(sim.physical, "interval_constraints", {}).get(
+            sample.interval_id, sim.last_constraint_snapshot)
         if constraints is not None and (
             abs(constraints.interval_start_s-sample.time_s)>1e-12
             or abs(constraints.interval_end_s-sample.end_time_s)>1e-12

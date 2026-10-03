@@ -8,6 +8,51 @@ measurement failure, never a zero-force reading.
 """
 import mujoco
 import numpy as np
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class AttachmentRaw:
+    rider_jac: np.ndarray
+    rider_qfrc: np.ndarray
+    bike_jac: np.ndarray
+    bike_qfrc: np.ndarray
+    observable: bool
+    normal: np.ndarray
+    kind: str
+    rotational: bool
+    half_patch_m: float
+    gap_m: float
+    pull_direction: np.ndarray | None
+
+
+def _body_input(model, data, body, point, qfrc):
+    jp = np.zeros((3, model.nv)); jr = np.zeros((3, model.nv))
+    mujoco.mj_jac(model, data, jp, jr, np.asarray(point, dtype=float), body)
+    jac = np.vstack((jp, jr))
+    cols = np.flatnonzero(np.abs(jac).max(axis=0) > 0)
+    if not cols.size:
+        raise ValueError('attachment body carries no degrees of freedom')
+    observable = bool(np.abs(jac[0, cols]).max() != 0 and np.abs(jac[2, cols]).max() != 0)
+    return jac[:, cols].copy(), qfrc[cols].copy(), cols, observable
+
+
+def attachment_raw(model, data, eq_id, body_rider, body_bike, point, normal, kind,
+                   *, rotational, half_patch_m=0., pull_direction=None, rows=None):
+    """Copy all solved measurement inputs before endpoint forward overwrites EFC."""
+    qfrc = equality_qfrc(model, data, eq_id)
+    jr, qr, cr, obs_r = _body_input(model, data, body_rider, point, qfrc)
+    jb, qb, cb, obs_b = _body_input(model, data, body_bike, point, qfrc)
+    if np.intersect1d(cr, cb).size:
+        raise ValueError('attachment bodies share kinematic support')
+    if rows is None:
+        from bike_sim.sim.ride.weld_pedals import equality_rows
+        rows = equality_rows(data)
+    idx = rows.get(eq_id)
+    gap = 0. if idx is None or idx.size == 0 else float(np.linalg.norm(data.efc_pos[idx][:3]))
+    return AttachmentRaw(jr, qr, jb, qb, obs_r and obs_b, np.array(normal, copy=True),
+        kind, rotational, float(half_patch_m), gap,
+        None if pull_direction is None else np.array(pull_direction, copy=True))
 
 
 def equality_qfrc(model, data, eq_id: int) -> np.ndarray:
@@ -120,6 +165,21 @@ def attachment_sample(model, data, eq_id, body_rider, body_bike, point,
     out_of_plane = np.array([wrench[1], wrench[3], wrench[5]])
     if not np.all(np.abs(out_of_plane) <= 1e-6*scale):
         raise ValueError('attachment wrench leaves the planar model')
+    if rows is None:
+        from bike_sim.sim.ride.weld_pedals import equality_rows
+        rows = equality_rows(data)
+    idx = rows.get(eq_id)
+    residual = data.efc_pos if idx is None else data.efc_pos[idx]
+    gap_m = 0. if idx is None or idx.size == 0 else float(
+        np.linalg.norm(residual[:3]))
+    return decompose_wrench(wrench, normal, kind, rotational=rotational,
+        half_patch_m=half_patch_m, gap_m=gap_m, pull_direction=pull_direction)
+
+
+def decompose_wrench(wrench, normal, kind, *, rotational, half_patch_m=0.,
+                     gap_m=0., pull_direction=None):
+    """Pure support-frame projection shared by scalar and batched recovery."""
+    from bike_sim.physics.attachment_budget import AttachmentSample
     n = np.asarray(normal, dtype=float)
     if n.shape != (3,) or not np.isfinite(n).all():
         raise ValueError('attachment sample needs a finite 3D normal')
@@ -132,13 +192,6 @@ def attachment_sample(model, data, eq_id, body_rider, body_bike, point,
     normal_n = float(wrench[0]*normal_xz[0] + wrench[2]*normal_xz[1])
     tangent_n = float(wrench[0]*tangent_xz[0] + wrench[2]*tangent_xz[1])
     moment_nm = float(wrench[4]) if rotational else 0.
-    if rows is None:
-        from bike_sim.sim.ride.weld_pedals import equality_rows
-        rows = equality_rows(data)
-    idx = rows.get(eq_id)
-    residual = data.efc_pos if idx is None else data.efc_pos[idx]
-    gap_m = 0. if idx is None or idx.size == 0 else float(
-        np.linalg.norm(residual[:3]))
     pull_n = 0.
     if pull_direction is not None:
         direction = np.asarray(pull_direction, dtype=float)

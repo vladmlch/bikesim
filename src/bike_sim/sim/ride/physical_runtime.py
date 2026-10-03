@@ -3,6 +3,7 @@ from dataclasses import replace, asdict
 from contextlib import contextmanager
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.control_clock import ControlClock
+from bike_sim.sim.ride.period_buffer import PeriodBuffer, RawStep, evaluate_period
 from bike_sim.physics.rider_posture import RiderPosture
 import copy
 import mujoco
@@ -53,6 +54,11 @@ class PhysicalRuntime:
         self.sim = sim
         self.cfg = sim.physics_config
         self.control_clock = ControlClock(float(sim.model.opt.timestep), self.cfg.control_period_s)
+        self._buffer = PeriodBuffer(self.control_clock.steps_per_period)
+        self.record_decimation = 1
+        self.completed_samples = ()
+        self.period_violations = ()
+        self.interval_constraints = {}
         if self.cfg.seated_climb.enabled and sim.rider.variant != 'articulated_planar':
             raise ValueError('seated climb needs an articulated planar rider')
         self.rider_intent = RiderIntentResolver(self.cfg.seated_climb, float(sim.model.opt.timestep))
@@ -238,7 +244,7 @@ class PhysicalRuntime:
             # The planner sees kinematics and a bounded road window only.
             # Solved reactions stay inside the physics layer; flat-pad loads
             # are predicted from the declared pad law inside compute().
-            if not advance or self.control_clock.is_tick(sim.steps):
+            if not advance or getattr(self, 'initializing', False) or self.control_clock.is_tick(sim.steps):
                 self.rider_state = rider_kinematic_state(m,d,
                     vertices=self.vertices,
                     wheel_x_m=tuple(float(d.xpos[b][0]) for b in self._wheel_bodies),
@@ -246,7 +252,8 @@ class PhysicalRuntime:
                 torques = self.rider_control.compute(m,d,command,
                     kinematic_state=self.rider_state,
                     support_available=availability,advance=advance,
-                    dt_s=self.control_clock.period_s if advance else dt,steady_state=not active,
+                    dt_s=(self.control_clock.period_s if advance and
+                          not getattr(self, 'initializing', False) else dt),steady_state=not active,
                     pedal_recovery=self.cfg.seated_climb.enabled)
                 if advance:
                     self.control_clock.hold(torques)
@@ -284,8 +291,15 @@ class PhysicalRuntime:
 
     def reset(self):
         from bike_sim.sim.ride.physical_equilibrium import solve_physical_equilibrium
+        self.flush()
+        self.completed_samples = ()
+        self.period_violations = ()
+        self.interval_constraints = {}
         sim = self.sim
         self.control_clock.reset()
+        if self.rider_control is not None:
+            self.rider_control._last_branch = None
+            self.rider_control._last_solution = None
         self.rider_intent.reset()
         self.rider_intent_signals = SeatedClimbSignals()
         self.applied_control = RideControl()
@@ -462,6 +476,16 @@ class PhysicalRuntime:
         return float(loss)
 
     def step(self, front=0., rear=0., external=None, *, control=None):
+        if self.interactive_preview:
+            return self._step_preview(front,rear,external,control or RideControl())
+        self.completed_samples = ()
+        self.period_violations = ()
+        raw = self._advance_physics(front,rear,external,control=control)
+        self._buffer.push(raw)
+        if self._buffer.full or self.sim.crash is not None:
+            self._close_period()
+
+    def _advance_physics(self, front=0., rear=0., external=None, *, control=None):
         if not self.interactive_preview and not self.research_accounting_valid:
             raise RuntimeError('reset is required after interactive preview before research accounting')
         control = RideControl() if control is None else control
@@ -474,8 +498,6 @@ class PhysicalRuntime:
             external=np.array(external,dtype=float,copy=True)
             if external.shape!=(m.nv,) or not np.isfinite(external).all():
                 raise ValueError('invalid generalized force')
-        if self.interactive_preview:
-            return self._step_preview(front,rear,external,control)
         t=float(d.time); q=d.qpos.copy(); v=d.qvel.copy()
         braking = front > 0. or rear > 0.
         hold = self._rollback_brake_demand(sim.speed_mps, control)
@@ -494,28 +516,13 @@ class PhysicalRuntime:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
         # Read first: efc_force and poses still belong to this solved interval.
         # (q, v) are the interval's start state, where MuJoCo built efc_J.
-        welds={} if self.rider_contacts is None else self.rider_contacts.settle_welds(m,d,(q,v))
         if self.rider_contacts is None:
-            self.attachment_samples,self.attachment_errors={},()
+            welds, attachment_raw, attachment_errors = {}, {}, ()
         else:
-            self.attachment_samples=self.rider_contacts.last_attachment_samples
-            self.attachment_errors=self.rider_contacts.last_attachment_errors
-        self.step_violations=self._attachment_violations()
+            welds, attachment_raw, attachment_errors = self.rider_contacts.settle_welds(m,d,(q,v),raw=True)
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(m,d)
         transmission = self.drive.settle_actuation(m,d)
-        effort={}
-        if self.rider_control is not None:
-            from bike_sim.sim.ride.rider_effort import solved_effort
-            effort=solved_effort(self.rider_control,d,(q,v),dt)
-            self.step_violations+=tuple(
-                f'rider_strength.{name}'
-                for name in effort.get('rider_strength_violations',()))
-            # A QP that cannot find any budget-holding command is a controller
-            # fault: physics may stall, but a silent infeasible command is not
-            # a legitimate stall.
-            if self.rider_control.allocation_diagnostics.get('invalid_controller'):
-                self.step_violations+=('rider_controller.infeasible',)
         sensors = sensor_channels(self, qvel=v)
         if self.cfg.seated_climb.enabled:
             self.rider_intent_signals = signals_from_channels(sensors)
@@ -523,7 +530,7 @@ class PhysicalRuntime:
         if self.rider_control is not None:
             passive=np.zeros(m.nv)
             for name,(_,dof,aid) in self.rider_control.joints.items():
-                passive[dof]=self.rider_control.last_terms[name]['solved_passive_nm']
+                passive[dof]=float(d.qfrc_passive[dof])
             components['rider_passive_damping']=passive
         constraints=constraint_components(m,d)
         if self.drive.ideal_hub is not None:
@@ -546,25 +553,7 @@ class PhysicalRuntime:
         sim.contacts,self.snapshots=self._contacts(final=True,time_s=t,qvel=v)
         tires=tire_channels(self,self.snapshots,qvel=v)
         loss_step=self._loss_increment(components,v,dt)
-        self.loss_j+=loss_step
-        external_names={'external','rear_drive','road_rolling','aerodynamic','native_contact'}
-        muscle_power=np.array([float(components[n]@v) for n in components
-                               if n=='human_crank' or n.startswith('act_rider_')])
-        motor_power=float(components.get('mid_drive',np.zeros(m.nv))@v)
-        constraint_power=np.array([float(components[n]@v) for n in
-            ('joint_limits','shock_solver_limit','closure','ideal_transmission')
-            if n in components])
-        work=step_work(muscle_power,motor_power,constraint_power,dt)
-        self.muscle_signed_j+=work.muscle_signed_j
-        self.muscle_positive_j+=work.muscle_positive_j
-        self.motor_signed_j+=work.motor_signed_j
-        self.motor_positive_j+=work.motor_positive_j
-        self.constraint_absolute_j+=work.constraint_absolute_j
-        self.solver_work_j+=work.constraint_signed_j
-        self.active_work_j+=work.muscle_signed_j+work.motor_signed_j
-        self.external_work_j+=sum(float(components[n]@v)*dt for n in external_names if n in components)
-        self.electrical_work_j+=self.drive.last.get('electrical_power_w',0.)*dt
-        rider={} if self.rider_contacts is None else copy.deepcopy(self.rider_contacts.diagnostics)
+        rider={} if self.rider_contacts is None else self.rider_contacts.diagnostics
         drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]),
                    front_brake_demand=front,rear_brake_demand=rear,rollback_brake_demand=hold)
         # Capture all solved quantities before refreshing the endpoint kinematics.
@@ -573,21 +562,12 @@ class PhysicalRuntime:
         connect_rows=_connect_equality_rows(m,d)
         linkage_error=float(np.max(np.abs(d.efc_pos[:d.nefc][connect_rows]))) if np.any(connect_rows) else 0.
         shock_limit_power=float(sim.last_constraint_snapshot.components['shock_solver_limit']@v)
+        solved_actuator_force=d.actuator_force.copy()
+        solved_passive=d.qfrc_passive.copy()
         mujoco.mj_forward(m,d)
         if not np.isfinite(d.qpos).all() or not np.isfinite(d.qvel).all():
             raise RuntimeError('non-finite physical simulation state')
         mass,elastic,total=energy_state(self)
-        self.energy={'mechanical_energy_j':total,'elastic_energy_j':elastic,
-            'active_work_j':self.active_work_j,'external_work_j':self.external_work_j,
-            'loss_j':self.loss_j,'loss_step_j':loss_step,'solver_constraint_work_j':self.solver_work_j,'energy_scale_j':self.energy_scale_j,
-            'muscle_signed_j':self.muscle_signed_j,'muscle_positive_j':self.muscle_positive_j,
-            'motor_signed_j':self.motor_signed_j,'motor_positive_j':self.motor_positive_j,
-            'source_positive_work_j':self.muscle_positive_j+self.motor_positive_j,
-            'constraint_signed_j':self.solver_work_j,'constraint_absolute_j':self.constraint_absolute_j,
-            'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
-            'electrical_work_j':self.electrical_work_j,
-            'electrical_residual_j':(self.initial_battery_j-self.drive.battery.energy_j-self.electrical_work_j
-                                    if self.cfg.drive.battery.enabled else 0.)}
         drive.update(chain_power_w=float(components['chain']@v),
             freehub_power_w=float((components['freehub']+components.get('ideal_transmission',np.zeros(m.nv)))@v),
             front_brake_power_w=float(components['front_static_brake']@v),rear_brake_power_w=float(components['rear_static_brake']@v),
@@ -603,34 +583,129 @@ class PhysicalRuntime:
             'shock_solver_limit_power_w':shock_limit_power,'linkage_closure_max_m':linkage_error,
             'generalized_force_components_n':{n:float(f[sim.applier.fork_dofadr if n.startswith('fork') else sim.applier.shock_dofadr])
                 for n,f in components.items() if n.startswith(('fork_','shock_'))}}
-        channels={**effort,'tires':tires,'drive':drive,'rider':rider,'rider_welds':welds,'suspension':suspension,
-                  'control':asdict(self.applied_control), 'sensors':sensors,
-                  'rider_intent':(dict(asdict(self.rider_intent.intent),
-                      inclination_rad=self.rider_intent.policy.inclination_rad)
-                      if self.cfg.seated_climb.enabled else {}),
-                  'mass':mass0,'endpoint_mass':mass,'energy':self.energy,
-                  'attachment_violations':self.step_violations,
-                  'attachment_samples':{n:asdict(s) for n,s in self.attachment_samples.items()},
-                  'component_work_j':{n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()},
-                  'rider_control':{} if self.rider_control is None else self.rider_control.last_terms,
-                  'rider_allocation':{} if self.rider_control is None else {
-                      k: (tuple(float(x) for x in v) if isinstance(v, np.ndarray)
-                          else v)
-                      for k, v in self.rider_control.allocation_diagnostics.items()
-                      if not k.startswith('solution_')},
-                  'rider_ik_saturation':{} if self.rider_control is None else self.rider_control.saturated_ik,
-                  'rider_support_targets':{} if self.rider_control is None else self.rider_control.support_diagnostics,
-                  'contact_crash_cause':contact_crash}
-        self.model_status.observe(sim.steps,t,channels)
-        channels['model_status']=self.model_status.as_dict()
-        self.sample=PhysicalSample(sim.steps,t,float(d.time),q,v,components,channels)
-        self.history.add(self.sample)
+        full = sim.steps % self.record_decimation == 0 or (sim.steps+1) % self.control_clock.steps_per_period == 0
+        channels = {'tires':tires, 'drive':drive, 'suspension':suspension,
+                    'sensors':sensors, 'mass':mass0, 'contact_crash_cause':contact_crash,
+                    'control':asdict(self.applied_control)}
+        diagnostics = dict(rider=rider,rider_welds=welds,endpoint_mass=mass,
+            rider_intent=self.rider_intent.intent if self.cfg.seated_climb.enabled else None,
+            inclination_rad=self.rider_intent.policy.inclination_rad if self.cfg.seated_climb.enabled else 0.,
+            rider_allocation={} if self.rider_control is None else self.rider_control.allocation_diagnostics,
+            rider_ik_saturation={} if self.rider_control is None else self.rider_control.saturated_ik,
+            rider_support_targets={} if self.rider_control is None else self.rider_control.support_diagnostics)
+        raw = RawStep(sim.steps,t,float(d.time),q,v,components,attachment_raw,
+            solved_actuator_force,solved_passive,tires,
+            dict(channels=channels, diagnostics=diagnostics, attachment_errors=attachment_errors,
+                loss_step_j=loss_step, mechanical_energy_j=total, elastic_energy_j=elastic,
+                battery_energy_j=self.drive.battery.energy_j,
+                electrical_power_w=self.drive.last.get('electrical_power_w',0.),
+                invalid_controller=bool(self.rider_control is not None and
+                    self.rider_control.allocation_diagnostics.get('invalid_controller')),
+                effort_base={} if self.rider_control is None else dict(self.rider_control.effort_diagnostics),
+                constraint_snapshot=sim.last_constraint_snapshot, full=full))
         sim.steps+=1
         if contact_crash is not None and sim.crash_detector.event is None:
             from bike_sim.sim.ride.virtual_rider import CrashEvent
             sim.crash_detector.event=CrashEvent(contact_crash,t,float(q[sim.root_x_qposadr]),float(q[sim.root_pitch_qposadr]))
         sim.crash_detector.check(d,sim.contacts)
         sim._update_compiled_com_marker()
+
+        return raw
+
+    def set_record_decimation(self, n):
+        if type(n) is not int or n < 1:
+            raise ValueError('record decimation must be a positive integer')
+        self.record_decimation = n
+
+    def flush(self):
+        """Evaluate the trailing partial period before termination or reset."""
+        if self._buffer._raws:
+            self._close_period()
+        else:
+            self.completed_samples = ()
+        return self.completed_samples
+
+    def _close_period(self):
+        raws = self._buffer.drain()
+        if not raws:
+            return
+        report = evaluate_period(self, raws)
+        published = []
+        failures = []
+        self.interval_constraints = {}
+        for index, (raw, attachments, violations, work, effort) in enumerate(zip(
+                raws, report.attachments, report.violations_by_step, report.works, report.efforts)):
+            sim = self.sim; dt=self.control_clock.timestep_s; v=raw.qvel
+            components=raw.components
+            loss_step=raw.metadata['loss_step_j']; self.loss_j+=loss_step
+            external_names={'external','rear_drive','road_rolling','aerodynamic','native_contact'}
+            self.muscle_signed_j+=work.muscle_signed_j
+            self.muscle_positive_j+=work.muscle_positive_j
+            self.motor_signed_j+=work.motor_signed_j
+            self.motor_positive_j+=work.motor_positive_j
+            self.constraint_absolute_j+=work.constraint_absolute_j
+            self.solver_work_j+=work.constraint_signed_j
+            self.active_work_j+=work.muscle_signed_j+work.motor_signed_j
+            self.external_work_j+=sum(float(components[n]@v)*dt for n in external_names if n in components)
+            self.electrical_work_j+=raw.metadata['electrical_power_w']*dt
+            total=raw.metadata['mechanical_energy_j']; elastic=raw.metadata['elastic_energy_j']
+            self.energy={'mechanical_energy_j':total,'elastic_energy_j':elastic,
+                'active_work_j':self.active_work_j,'external_work_j':self.external_work_j,
+                'loss_j':self.loss_j,'loss_step_j':loss_step,'solver_constraint_work_j':self.solver_work_j,'energy_scale_j':self.energy_scale_j,
+                'muscle_signed_j':self.muscle_signed_j,'muscle_positive_j':self.muscle_positive_j,
+                'motor_signed_j':self.motor_signed_j,'motor_positive_j':self.motor_positive_j,
+                'source_positive_work_j':self.muscle_positive_j+self.motor_positive_j,
+                'constraint_signed_j':self.solver_work_j,'constraint_absolute_j':self.constraint_absolute_j,
+                'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
+                'electrical_work_j':self.electrical_work_j,
+                'electrical_residual_j':(self.initial_battery_j-raw.metadata['battery_energy_j']-self.electrical_work_j
+                                        if self.cfg.drive.battery.enabled else 0.)}
+            self.attachment_samples = attachments
+            self.attachment_errors = tuple(raw.metadata['attachment_errors']) + tuple(
+                name+':unobservable_attachment_wrench' for name in raw.attachment_raw if name not in attachments)
+            self.step_violations = violations
+            if self.rider_contacts is not None:
+                self.rider_contacts.last_attachment_samples = attachments
+                self.rider_contacts.last_attachment_errors = self.attachment_errors
+            if self.rider_control is not None:
+                self.rider_control.effort_diagnostics = dict(effort)
+                for name, (_, dof, aid) in self.rider_control.joints.items():
+                    delivered = float(raw.actuator_force[aid])
+                    self.rider_control.last_terms[name].update(solved_force_nm=delivered,
+                        solved_active_nm=delivered, solved_passive_nm=float(raw.qfrc_passive[dof]))
+            channels = dict(raw.metadata['channels'], **effort, energy=self.energy,
+                            attachment_violations=violations)
+            full = raw.metadata['full'] or index == len(raws)-1
+            if full:
+                diagnostics = raw.metadata['diagnostics']
+                channels.update(rider=copy.deepcopy(diagnostics['rider']),
+                    rider_welds=copy.deepcopy(diagnostics['rider_welds']),
+                    endpoint_mass=diagnostics['endpoint_mass'],
+                    rider_intent={} if diagnostics['rider_intent'] is None else
+                        dict(asdict(diagnostics['rider_intent']), inclination_rad=diagnostics['inclination_rad']),
+                    rider_allocation={k:tuple(float(x) for x in value) if isinstance(value,np.ndarray) else value
+                        for k,value in diagnostics['rider_allocation'].items() if not k.startswith('solution_')},
+                    rider_ik_saturation=copy.deepcopy(diagnostics['rider_ik_saturation']),
+                    rider_support_targets=copy.deepcopy(diagnostics['rider_support_targets']))
+                channels['attachment_samples'] = {name:asdict(value) for name,value in attachments.items()}
+                channels['component_work_j'] = {n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()}
+                channels['rider_control'] = {} if self.rider_control is None else copy.deepcopy(self.rider_control.last_terms)
+            self.model_status.observe(raw.interval_id,raw.time_s,channels)
+            channels['model_status'] = self.model_status.as_dict()
+            sample = PhysicalSample(raw.interval_id,raw.time_s,raw.end_time_s,
+                                    raw.qpos,raw.qvel,components,channels)
+            self.history.add(sample)
+            published.append(sample)
+            self.interval_constraints[raw.interval_id] = raw.metadata['constraint_snapshot']
+            if violations:
+                failures.append((raw.end_time_s,violations))
+        self.completed_samples = tuple(published)
+        self.sample = published[-1]
+        self.period_violations = tuple(failures)
+        # Strict rejection keeps its originating interval time even though the
+        # whole period has been captured and accounted before publication.
+        for time_s, violations in failures:
+            self.reference_monitor.accept(time_s,violations)
 
     def _attachment_violations(self):
         """First-order budget check of this interval's attachment samples."""

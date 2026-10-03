@@ -7,7 +7,7 @@ from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.tire import _brush_step, _normal_contact
 from bike_sim.sim.ride.physical_mapping import resolve_id, relative_point_jacobian
 from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
-from bike_sim.sim.ride.attachment_wrench import attachment_sample
+from bike_sim.sim.ride.attachment_wrench import attachment_sample, attachment_raw
 from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, SaddlePin, GripConnect, equality_rows
 
 
@@ -213,7 +213,7 @@ class RiderContactApplier:
                     energy+=.25*cfg.support_k_n_m*max(-gap,0.)**2
         return energy
 
-    def settle_welds(self,model,data,interval_state=None):
+    def settle_welds(self,model,data,interval_state=None, *, raw=False):
         """Latch the weld/connect reactions of the solve that just ran.
 
         ``interval_state`` is the optional (qpos, qvel) the solved interval
@@ -269,24 +269,24 @@ class RiderContactApplier:
             # The torque sensor reads this on the next step.
             result['crank_torque_nm']=crank
         self.last_attachment_samples,self.last_attachment_errors=(
-            self.attachment_samples(model,data,interval_state))
-        return result
+            self.attachment_samples(model,data,interval_state,raw=raw))
+        return (result, self.last_attachment_samples, self.last_attachment_errors) if raw else result
 
-    def attachment_samples(self,model,data,interval_state=None):
+    def attachment_samples(self,model,data,interval_state=None, *, raw=False):
         if interval_state is None:
-            return self._attachment_samples(model,data)
+            return self._attachment_samples(model,data,raw=raw)
         import mujoco
         qpos,qvel=interval_state
         saved_qpos,saved_qvel=data.qpos.copy(),data.qvel.copy()
         data.qpos[:]=qpos; data.qvel[:]=qvel
         mujoco.mj_kinematics(model,data); mujoco.mj_comPos(model,data)
         try:
-            return self._attachment_samples(model,data)
+            return self._attachment_samples(model,data,raw=raw)
         finally:
             data.qpos[:]=saved_qpos; data.qvel[:]=saved_qvel
             mujoco.mj_kinematics(model,data); mujoco.mj_comPos(model,data)
 
-    def _attachment_samples(self,model,data):
+    def _attachment_samples(self,model,data, *, raw=False):
         """Physical budget sample per solved attachment of this interval.
 
         Each weld/connect reaction is recovered at the support's patch centre
@@ -297,6 +297,7 @@ class RiderContactApplier:
         'unobservable_attachment_wrench' error instead of a fake sample.
         """
         samples={};errors=[]
+        measure=attachment_raw if raw else attachment_sample
         rows=equality_rows(data)
         for name,entry in self.supports.items():
             body,site,bike,_=entry
@@ -311,7 +312,7 @@ class RiderContactApplier:
             normal=np.mean([n for _,_,n,_,_,_ in self._pads(model,data,name,entry)],axis=0)
             out='foot_'+name.split('_')[0] if name.endswith('_pedal') else 'saddle'
             try:
-                samples[out]=attachment_sample(model,data,eq_id,body,bike,
+                samples[out]=measure(model,data,eq_id,body,bike,
                     np.array(data.site_xpos[site]),normal,out.rsplit('_',1)[0],
                     rotational=rotational,half_patch_m=half,rows=rows)
             except ValueError:
@@ -324,7 +325,7 @@ class RiderContactApplier:
                 grip=data.xpos[self.steer]+data.xmat[self.steer].reshape(3,3)@anchor
                 pull=data.xpos[self.pelvis]-grip
                 try:
-                    samples['grip_'+side]=attachment_sample(model,data,
+                    samples['grip_'+side]=measure(model,data,
                         self._grip_connect[side].eq_id,self.forearms[side],self.steer,
                         grip,pull,'grip',rotational=False,
                         pull_direction=pull,rows=rows)

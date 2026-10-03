@@ -68,12 +68,15 @@ def test_torque_sensor_reads_the_previous_solved_crank_torque(tmp_path):
     """The pedelec torque sensor is the pedal-weld torque solved one step earlier, exactly."""
     env = _environment(tmp_path, 0.)
     physical = env.sim.physical
+    physical.set_record_decimation(1)
     sensed, solved = [], []
     for _ in range(400):
         physical.step(control=RideControl(motor_torque_nm=0., human_torque_nm=40.))
-        channels = physical.sample.channels
-        sensed.append(channels['drive']['human_sensor_nm'])
-        solved.append(channels['rider_welds']['crank_torque_nm'])
+        for sample in physical.completed_samples:
+            channels = sample.channels
+            sensed.append(channels['drive']['human_sensor_nm'])
+            solved.append(channels['rider_welds']['crank_torque_nm'])
+    assert len(sensed) == len(solved) == 400
     assert np.max(np.abs(np.array(sensed[1:]) - np.array(solved[:-1]))) < 1e-9
     assert np.mean(solved[200:]) > 10.
 

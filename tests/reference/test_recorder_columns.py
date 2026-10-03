@@ -43,7 +43,7 @@ def test_column_csv_and_streamed_jsonl_preserve_the_original_interval_row(tmp_pa
         channels = {'mass':dict(mass_kg=100.,com_m=np.array([i,0.,1.]),
                     kinetic_energy_j=2.,gravitational_energy_j=10.),
                     'energy':dict(mechanical_energy_j=12.,residual_j=.01),
-                    'component_work_j':{'f':.5*i}}
+                    'component_work_j':{'f':.5*i},'scalar_array':np.array(1.25)}
         sample = PhysicalSample(i,i*.0005,(i+1)*.0005,np.array([i,0.,.1]),
                                 np.array([2.,0.,0.]),{'f':np.ones(3)},channels)
         samples.append(sample)

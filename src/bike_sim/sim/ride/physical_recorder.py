@@ -18,6 +18,9 @@ def _flatten_into(value,prefix,result):
         for key,item in value.items():
             _flatten_into(item,f'{prefix}.{key}' if prefix else str(key),result)
     elif isinstance(value,(list,tuple,np.ndarray)):
+        if isinstance(value,np.ndarray) and value.ndim == 0:
+            _flatten_into(value.item(),prefix,result)
+            return
         for i,item in enumerate(value):
             _flatten_into(item,f'{prefix}.{i}',result)
     elif isinstance(value,(bool,int,float,np.number,np.bool_)):

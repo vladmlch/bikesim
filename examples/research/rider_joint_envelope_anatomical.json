@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "provenance": "sagittal-plane goniometry bounds vs measured q=0 build pose; adult ROM norms, not subject-measured",
+  "joints": {
+    "rider_torso_hinge": {
+      "neutral_anatomical_rad": 0.732562,
+      "direction": 1,
+      "minimum_anatomical_rad": -0.5,
+      "maximum_anatomical_rad": 1.3,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    },
+    "rider_shoulder": {
+      "neutral_anatomical_rad": 1.186386,
+      "direction": -1,
+      "minimum_anatomical_rad": -0.87,
+      "maximum_anatomical_rad": 2.96,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    },
+    "rider_elbow": {
+      "neutral_anatomical_rad": 0.240227,
+      "direction": -1,
+      "minimum_anatomical_rad": 0.0,
+      "maximum_anatomical_rad": 2.62,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    },
+    "rider_hip_front": {
+      "neutral_anatomical_rad": 1.033011,
+      "direction": -1,
+      "minimum_anatomical_rad": -0.35,
+      "maximum_anatomical_rad": 2.36,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    },
+    "rider_knee_front": {
+      "neutral_anatomical_rad": 1.108838,
+      "direction": 1,
+      "minimum_anatomical_rad": 0.0,
+      "maximum_anatomical_rad": 2.44,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    },
+    "rider_ankle_front": {
+      "neutral_anatomical_rad": 3.065766,
+      "direction": 1,
+      "minimum_anatomical_rad": 0.96,
+      "maximum_anatomical_rad": 3.1,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    },
+    "rider_hip_rear": {
+      "neutral_anatomical_rad": 0.73855,
+      "direction": -1,
+      "minimum_anatomical_rad": -0.35,
+      "maximum_anatomical_rad": 2.36,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    },
+    "rider_knee_rear": {
+      "neutral_anatomical_rad": 1.420899,
+      "direction": 1,
+      "minimum_anatomical_rad": 0.0,
+      "maximum_anatomical_rad": 2.44,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    },
+    "rider_ankle_rear": {
+      "neutral_anatomical_rad": 2.459244,
+      "direction": 1,
+      "minimum_anatomical_rad": 0.96,
+      "maximum_anatomical_rad": 3.1,
+      "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
+    }
+  }
+}

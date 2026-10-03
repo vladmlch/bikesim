@@ -66,8 +66,13 @@ rollback_demand = 1.0
 
 reposition_on_stall = true
 reposition_min_effort_nm = 20.0
-reposition_stall_cadence_rpm = 12.0
-reposition_stall_dwell_s = 0.5
+# Stall = no forward progress: within reposition_stall_window_s neither the
+# crank nor the wheel (crank-equivalent) advanced past
+# reposition_stall_progress_rad. Rocking around a dead spot is not progress.
+# RU: ступор = нет продвижения вперёд. За окно кривош и колесо (в радианах
+# кривоша) продвинулись меньше порога -- качание в мёртвой точке не в счёт.
+reposition_stall_window_s = 1.0
+reposition_stall_progress_rad = 0.5
 reposition_cooldown_s = 1.0
 reposition_back_rate_rad_s = 3.0
 reposition_timeout_s = 3.0
@@ -145,3 +150,8 @@ pedal_c_ns_m = 100.0
 posture_pitch_limit_nm = 120.0
 grip_release_distance_m = 0.30
 joint_envelope_path = "rider_joint_envelope_anatomical.json"
+
+[seated_climb]
+enabled = true
+# lean_gain = 1.3            # по умолчанию 1.0
+# max_forward_lean_rad = 0.5 # по умолчанию 0.35

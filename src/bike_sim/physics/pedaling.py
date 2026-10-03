@@ -23,6 +23,48 @@ class PedalingState:
     target_rate_rad_s: float = 0.
 
 
+class ProgressStallDetector:
+    """Loaded drive that makes no forward progress within a window.
+
+    A low-rate test misses the dead-spot stall that actually happens: the
+    crank rocks back and forth around top/bottom dead centre at several rad/s
+    while going nowhere, so it is never slow for long. Net forward advance of
+    the crank, or of the wheel, since the last progress anchor separates a
+    slow grind from a stall; rocking and rollback both count as no progress.
+    """
+
+    def __init__(self, window_s, crank_progress_rad, wheel_progress_rad):
+        self.window_s = scalar(window_s, 'stall window', positive=True)
+        self.crank_progress_rad = scalar(crank_progress_rad, 'crank stall progress', positive=True)
+        self.wheel_progress_rad = scalar(wheel_progress_rad, 'wheel stall progress', positive=True)
+        self.reset()
+
+    def reset(self):
+        self._crank_rad = 0.
+        self._wheel_rad = 0.
+        self._elapsed_s = None
+
+    def update(self, crank_rad_s, wheel_rad_s, dt, *, loaded):
+        """True once per stall; the next stall needs a fresh full window."""
+        if not loaded:
+            self.reset()
+            return False
+        if self._elapsed_s is None:
+            self._elapsed_s = 0.
+            return False
+        self._crank_rad += crank_rad_s * dt
+        self._wheel_rad += wheel_rad_s * dt
+        if self._crank_rad > self.crank_progress_rad or self._wheel_rad > self.wheel_progress_rad:
+            self.reset()
+            self._elapsed_s = 0.
+            return False
+        self._elapsed_s += dt
+        if self._elapsed_s >= self.window_s:
+            self.reset()
+            return True
+        return False
+
+
 class PedalingPolicy:
     """Rider intention and a bounded stopping goal, independent of torque sensing.
 
@@ -33,7 +75,6 @@ class PedalingPolicy:
     timeout the normal path resumes and effort slews back from zero.
     """
     _APPROACH_TAU_S = .05
-    _STALL_RATE_RAD_S = .3
 
     def __init__(self, config):
         self.config = config
@@ -49,14 +90,18 @@ class PedalingPolicy:
         self._reposition_goal = None
         self._reposition_reason = ''
         self._reposition_elapsed = 0.
-        self._stall_dwell = 0.
+        self._stall = ProgressStallDetector(self.config.reposition_stall_window_s,
+            self.config.reposition_stall_progress_rad, self.config.reposition_stall_progress_rad)
         self._reposition_cooldown = 0.
 
     def update(self, phase_rad, rate_rad_s, required_cadence_rpm, effort_nm, dt,
                *, enabled=True, braking=False, reposition=False):
         phase_rad = scalar(phase_rad, 'crank phase')
         rate_rad_s = scalar(rate_rad_s, 'crank rate')
-        required_cadence_rpm = max(scalar(required_cadence_rpm, 'required cadence'), 0.)
+        required_cadence_rpm = scalar(required_cadence_rpm, 'required cadence')
+        # Signed wheel rate in crank-equivalent units: rollback is not progress.
+        wheel_rad_s = required_cadence_rpm * 2. * pi / 60.
+        required_cadence_rpm = max(required_cadence_rpm, 0.)
         effort_nm = scalar(effort_nm, 'rider effort', minimum=0.)
         dt = scalar(dt, 'pedaling interval', positive=True)
         if not isinstance(enabled, bool) or not isinstance(braking, bool) \
@@ -80,18 +125,13 @@ class PedalingPolicy:
         else:
             self._reposition_armed = True
             request_edge = False
-        # Opt-in stall reflex: commanded effort with neither the crank nor the
-        # wheel moving means the rider is stalled against a dead spot.
-        stalled = (self.config.reposition_on_stall and not braking
-                   and self._reposition_goal is None
-                   and self._reposition_cooldown <= 0.
-                   and effort_nm >= self.config.reposition_min_effort_nm
-                   and abs(rate_rad_s) < self._STALL_RATE_RAD_S
-                   and required_cadence_rpm < self.config.reposition_stall_cadence_rpm)
-        self._stall_dwell = self._stall_dwell+dt if stalled else 0.
-        reflex_edge = self._stall_dwell >= self.config.reposition_stall_dwell_s
-        if reflex_edge:
-            self._stall_dwell = 0.
+        # Opt-in stall reflex: commanded effort while neither the crank nor the
+        # wheel advances means the rider is stalled against a dead spot.
+        loaded = (self.config.reposition_on_stall and not braking
+                  and self._reposition_goal is None
+                  and self._reposition_cooldown <= 0.
+                  and effort_nm >= self.config.reposition_min_effort_nm)
+        reflex_edge = self._stall.update(rate_rad_s, wheel_rad_s, dt, loaded=loaded)
         for edge, source in ((request_edge, 'requested'), (reflex_edge, 'stall_reflex')):
             if (braking or not edge or self._reposition_goal is not None
                     or self._reposition_cooldown > 0.):
@@ -129,10 +169,10 @@ class PedalingPolicy:
                   else 'cadence' if excessive else '')
         if not reason:
             previous = self._effort
-            latch = (self._reposition_armed, self._reposition_cooldown, self._stall_dwell)
+            latch = (self._reposition_armed, self._reposition_cooldown, self._stall)
             self.reset()
             self._effort = previous
-            self._reposition_armed, self._reposition_cooldown, self._stall_dwell = latch
+            self._reposition_armed, self._reposition_cooldown, self._stall = latch
             # Muscle force-velocity is inverted relative to the naive constant
             # effort: as cadence collapses a real rider converts to standing on
             # the pedal, and the available torque rises toward the isometric

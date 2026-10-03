@@ -130,10 +130,13 @@ class PedalingConfig:
     # the rider may backpedal to the top of the power stroke while the motor
     # shaft keeps driving the wheel. The stall reflex below is opt-in; an
     # explicit RideControl.crank_reposition request uses the same machinery.
+    # A stall is loaded effort with no forward progress: within
+    # reposition_stall_window_s neither the crank nor the wheel (in
+    # crank-equivalent radians) advanced past reposition_stall_progress_rad.
     reposition_on_stall: bool = False
     reposition_min_effort_nm: float = 20.
-    reposition_stall_cadence_rpm: float = 12.
-    reposition_stall_dwell_s: float = .5
+    reposition_stall_window_s: float = 1.
+    reposition_stall_progress_rad: float = .5
     reposition_cooldown_s: float = 1.
     reposition_back_rate_rad_s: float = 3.
     reposition_timeout_s: float = 3.
@@ -164,15 +167,18 @@ class PedalingConfig:
             raise ValueError('rollback brake demand must not exceed one')
         if not isinstance(self.reposition_on_stall, bool):
             raise ValueError('reposition_on_stall enable must be a bool')
-        for key in ('reposition_min_effort_nm', 'reposition_stall_cadence_rpm',
-                    'reposition_stall_dwell_s', 'reposition_cooldown_s',
+        for key in ('reposition_min_effort_nm', 'reposition_cooldown_s',
                     'reposition_noop_rad'):
             scalar(getattr(self, key), key, minimum=0.)
         for key in ('reposition_back_rate_rad_s', 'reposition_timeout_s',
-                    'reposition_phase_tolerance_rad'):
+                    'reposition_phase_tolerance_rad', 'reposition_stall_window_s',
+                    'reposition_stall_progress_rad'):
             scalar(getattr(self, key), key, positive=True)
         if self.reposition_noop_rad >= .5*pi:
             raise ValueError('reposition no-op band must be below a quarter crank turn')
+        if self.reposition_stall_progress_rad >= pi:
+            # Half a turn of net advance passes a power stroke: that is progress.
+            raise ValueError('reposition stall progress must be below half a crank turn')
 
 
 @dataclass(frozen=True)

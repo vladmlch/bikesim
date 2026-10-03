@@ -330,6 +330,10 @@ class PhysicalRuntime:
         mujoco.mj_forward(m,d)
         if sim.physical_initial_state is not None:
             sim.physical_initial_state.restore(self)
+        if self.rider_contacts is not None:
+            # Both branches end in apply_forces + mj_forward: the first step
+            # senses the solved t=0 reactions, not the relaxation's last ones.
+            self.rider_contacts.settle_welds(m,d)
         mass,elastic,total=energy_state(self)
         self.initial_energy_j=total
         self.energy_scale_j=max(1.,mass['kinetic_energy_j']+sum(elastic.values()))
@@ -459,6 +463,8 @@ class PhysicalRuntime:
         for warning in (mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,mujoco.mjtWarning.mjWARN_BADQACC):
             if d.warning[int(warning)].number>warning_counts[int(warning)]:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
+        # Read first: efc_force and poses still belong to this solved interval.
+        welds={} if self.rider_contacts is None else self.rider_contacts.settle_welds(m,d)
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(m,d)
         transmission = self.drive.settle_actuation(m,d)
@@ -535,7 +541,7 @@ class PhysicalRuntime:
             'shock_solver_limit_power_w':shock_limit_power,'linkage_closure_max_m':linkage_error,
             'generalized_force_components_n':{n:float(f[sim.applier.fork_dofadr if n.startswith('fork') else sim.applier.shock_dofadr])
                 for n,f in components.items() if n.startswith(('fork_','shock_'))}}
-        channels={**effort,'tires':tires,'drive':drive,'rider':rider,'suspension':suspension,
+        channels={**effort,'tires':tires,'drive':drive,'rider':rider,'rider_welds':welds,'suspension':suspension,
                   'control':asdict(self.applied_control), 'sensors':sensors,
                   'rider_intent':(dict(asdict(self.rider_intent.intent),
                       inclination_rad=self.rider_intent.policy.inclination_rad)
@@ -576,6 +582,8 @@ class PhysicalRuntime:
         for warning in (mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,mujoco.mjtWarning.mjWARN_BADQACC):
             if data.warning[int(warning)].number>warning_counts[int(warning)]:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
+        if self.rider_contacts is not None:
+            self.rider_contacts.settle_welds(model,data)
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(model,data)
         self.drive.settle_actuation(model,data)

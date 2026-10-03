@@ -101,6 +101,8 @@ class RiderContactApplier:
         self.diagnostics={}
         self.last_time_s=None
         self.pending_release_loss_j=0.
+        # (per-support telemetry, crank torque) of the last solve; see settle_welds.
+        self._settled_welds=None
 
     def set_enabled(self,name,enabled):
         if name not in self.CONTACTS or not isinstance(enabled,bool):
@@ -193,6 +195,68 @@ class RiderContactApplier:
                     energy+=.25*cfg.support_k_n_m*max(-gap,0.)**2
         return energy
 
+    def settle_welds(self,model,data):
+        """Latch the weld/connect reactions of the solve that just ran.
+
+        Call right after a solve with the full applied forces and controls
+        (mj_step, or apply_forces followed by mj_forward), while efc_force and
+        the body poses still belong to that solve. The next compute_qfrc
+        reports and senses these reactions: a weld's force exists only after
+        the solve it takes part in, so the causal reading for the coming step
+        is the last solved one. Reading efc_force inside compute_qfrc instead
+        would see the forward pass at the top of apply_forces, which runs with
+        applied forces and controls zeroed and carries almost none of the
+        rider's weight.
+
+        Returns the per-support telemetry of this solve.
+        ``normal_n`` is along the support-surface normal the unilateral pad
+        model uses: positive is the surface pressing on the rider; negative is
+        the weld holding the rider on, i.e. a real saddle or flat pedal would
+        separate (``would_separate``). ``would_slip`` flags shear the pad's
+        Coulomb limit (support_mu x compression) could not hold: on a steep
+        climb the weld keeps the pelvis from sliding back off the saddle even
+        while it still presses on it. The grip is a hand that may pull, so it
+        reports only its force.
+        """
+        rows=equality_rows(data)
+        result={}
+        for name,entry in self.supports.items():
+            if name=='saddle' and self.welded_saddle:
+                force=self._saddle_weld.force_on_rider_n(model,data,rows=rows)
+            elif name.endswith('_pedal') and self.welded_pedals:
+                force=self._welds.force_on_rider_n(model,data,name.split('_')[0],rows=rows)
+            else:
+                continue
+            normals=[];tangents=[]
+            for _,_,n,tangent,_,_ in self._pads(model,data,name,entry):
+                normals.append(n);tangents.append(tangent)
+            n=np.mean(normals,axis=0);n/=max(np.linalg.norm(n),1e-12)
+            tangent=np.mean(tangents,axis=0);tangent/=max(np.linalg.norm(tangent),1e-12)
+            normal=float(force@n);shear=float(force@tangent)
+            result[name]={'force_on_rider_n':force.tolist(),'normal_n':normal,'tangent_n':shear,
+                          'would_separate':normal<0.,
+                          'would_slip':abs(shear)>self.config.support_mu*max(normal,0.)}
+        if self.welded_grip:
+            result['grip']={'force_on_rider_n':self._grip_connect.force_on_rider_n(model,data,rows=rows).tolist()}
+        crank=(self._welds.delivered_crank_torque_nm(model,data,rows=rows)
+               if self.welded_pedals else 0.)
+        self._settled_welds=(copy.deepcopy(result),crank)
+        if self.welded_pedals:
+            # The torque sensor reads this on the next step.
+            result['crank_torque_nm']=crank
+        return result
+
+    def _settled(self,name):
+        """Last settled (force on rider, normal load) of a welded support."""
+        if self._settled_welds is None or name not in self._settled_welds[0]:
+            return np.zeros(3),0.
+        entry=self._settled_welds[0][name]
+        return np.array(entry['force_on_rider_n']),max(entry.get('normal_n',0.),0.)
+
+    def _settled_crank_torque_nm(self):
+        """Last settled pedal-weld torque about the crank (the torque sensor)."""
+        return 0. if self._settled_welds is None else self._settled_welds[1]
+
     def compute_qfrc(self,model,data,dt,*,advance=True,detailed=True):
         dt=scalar(dt,'rider contact dt',positive=True)
         if not advance:
@@ -213,7 +277,9 @@ class RiderContactApplier:
         if self.grip_anchor_local is None:
             raise RuntimeError('initialize rider contact anchors before evaluation')
         cfg=self.config
-        # One efc scan feeds every welded-attachment diagnostic in this call.
+        # One efc scan feeds every welded-attachment residual in this call.
+        # Residuals (efc_pos) depend on pose only, so this zero-input pass
+        # measures them correctly; weld forces come from settle_welds.
         # The map stays a local: the probe copy above gets its own inside its
         # recursive call, and the efc layout is rebuilt every step anyway.
         eq_rows=(equality_rows(data)
@@ -225,10 +291,7 @@ class RiderContactApplier:
         for name,entry in self.supports.items():
             body,site,bike,geom=entry
             if self.welded_saddle and name == 'saddle':
-                force_on_rider=self._saddle_weld.force_on_rider_n(model,data,rows=eq_rows)
-                toward_rider=data.site_xpos[site]-data.geom_xpos[geom]
-                normal_hat=toward_rider/max(np.linalg.norm(toward_rider),1e-9)
-                normal_load=float(max(0.,force_on_rider@normal_hat))
+                force_on_rider,normal_load=self._settled(name)
                 diagnostics[name]={'enabled':True,'in_platform':True,
                     'normal_load_n':normal_load,
                     'gap_m':self._saddle_weld.translation_residual_m(model,data,rows=eq_rows),
@@ -246,10 +309,7 @@ class RiderContactApplier:
                 continue
             if self.welded_pedals and name.endswith('_pedal'):
                 side=name.split('_')[0]
-                force_on_rider=self._welds.force_on_rider_n(model,data,side,rows=eq_rows)
-                toward_foot=data.site_xpos[site]-data.geom_xpos[geom]
-                normal_hat=toward_foot/max(np.linalg.norm(toward_foot),1e-9)
-                normal_load=float(max(0.,force_on_rider@normal_hat))
+                force_on_rider,normal_load=self._settled(name)
                 diagnostics[name]={'enabled':True,'in_platform':True,
                     'normal_load_n':normal_load,
                     'gap_m':self._welds.translation_residual_m(model,data,side,rows=eq_rows),
@@ -325,7 +385,7 @@ class RiderContactApplier:
             diagnostics['grip']={'enabled':True,'reachable':True,
                                  'hand_gap_m':self._grip_connect.translation_residual_m(model,data,rows=eq_rows)}
             if detailed:
-                force=self._grip_connect.force_on_rider_n(model,data,rows=eq_rows)
+                force,_=self._settled('grip')
                 diagnostics['grip'].update({
                                  'overloaded':False,'trial_pair_force_n':float(np.linalg.norm(force)),
                                  'pair_force_limit_n':cfg.grip_pair_force_limit_n,
@@ -342,7 +402,7 @@ class RiderContactApplier:
             self.elastic_energy_j,self.loss_step_j=energy,loss
             self.radial_dissipation_power_w=radial_power
             if self.welded_pedals:
-                delivered=self._welds.delivered_crank_torque_nm(model,data,rows=eq_rows)
+                delivered=self._settled_crank_torque_nm()
             self.delivered_crank_torque_nm=delivered
             self.pending_release_loss_j=0.; self.last_time_s=time
             return qfrc
@@ -389,7 +449,7 @@ class RiderContactApplier:
         self.elastic_energy_j,self.loss_step_j=energy,loss
         self.radial_dissipation_power_w=radial_power
         if self.welded_pedals:
-            delivered=self._welds.delivered_crank_torque_nm(model,data,rows=eq_rows)
+            delivered=self._settled_crank_torque_nm()
         self.delivered_crank_torque_nm=delivered
         self.pending_release_loss_j=0.; self.last_time_s=time
         return qfrc

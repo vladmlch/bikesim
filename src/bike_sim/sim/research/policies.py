@@ -7,6 +7,7 @@ prevents a wheelie; the real policy is the user's to write.
 from dataclasses import replace
 
 from bike_sim.physics.checks import scalar
+from bike_sim.physics.pedaling import ProgressStallDetector
 from bike_sim.sim.ride.control import RideControl
 
 
@@ -63,25 +64,23 @@ def fixed_limit_40_factory():
 class RepositionOnStallPolicy(PassthroughPolicy):
     """Passthrough plus one crank-reposition pulse per detected stall.
 
-    Stalled means the rear wheel and the crank are both nearly stopped while
-    the drive is loaded -- the encoder-only signature of being caught on a
-    dead spot. The pulse is a single rising edge; the plant owns the maneuver
-    itself. Requires the drive.motor_clutch topology or the request is
-    rejected at validation.
+    Stalled means a loaded drive where neither the crank nor the rear wheel
+    advanced past its progress threshold within the window -- the
+    encoder-only signature of being caught on a dead spot, including the
+    rocking variant that never looks slow (see ProgressStallDetector). The
+    pulse is a single rising edge; the plant owns the maneuver itself.
+    Requires the drive.motor_clutch topology or the request is rejected at
+    validation.
     """
-    def __init__(self, wheel_rad_s=.3, crank_rad_s=.3, dwell_s=.5, cooldown_s=2.):
-        for name, value in (('wheel_rad_s', wheel_rad_s), ('crank_rad_s', crank_rad_s),
-                            ('dwell_s', dwell_s), ('cooldown_s', cooldown_s)):
-            if value < 0:
-                raise ValueError(f'{name} must be nonnegative')
-        self.wheel_rad_s = float(wheel_rad_s)
-        self.crank_rad_s = float(crank_rad_s)
-        self.dwell_s = float(dwell_s)
+    def __init__(self, window_s=1., crank_progress_rad=.5, wheel_progress_rad=.3, cooldown_s=2.):
+        if cooldown_s < 0:
+            raise ValueError('cooldown_s must be nonnegative')
+        self.detector = ProgressStallDetector(window_s, crank_progress_rad, wheel_progress_rad)
         self.cooldown_s = float(cooldown_s)
 
     def reset(self, seed):
         super().reset(seed)
-        self._dwell = 0.
+        self.detector.reset()
         self._last_t = None
         self._cooldown_until = -float('inf')
 
@@ -89,14 +88,11 @@ class RepositionOnStallPolicy(PassthroughPolicy):
         control = super().act(observation, demand_nm)
         elapsed = 0. if self._last_t is None else max(0., observation.time_s-self._last_t)
         self._last_t = observation.time_s
-        stalled = (observation.valid
-                   and abs(observation.rear_wheel_rad_s) < self.wheel_rad_s
-                   and abs(observation.crank_rad_s) < self.crank_rad_s
-                   and (demand_nm is None or demand_nm > 0.)
-                   and observation.time_s >= self._cooldown_until)
-        self._dwell = self._dwell+elapsed if stalled else 0.
-        if stalled and self._dwell >= self.dwell_s:
-            self._dwell = 0.
+        loaded = (observation.valid
+                  and (demand_nm is None or demand_nm > 0.)
+                  and observation.time_s >= self._cooldown_until)
+        if self.detector.update(observation.crank_rad_s, observation.rear_wheel_rad_s,
+                                elapsed, loaded=loaded):
             self._cooldown_until = observation.time_s+self.cooldown_s
             return replace(control, crank_reposition=True)
         return control

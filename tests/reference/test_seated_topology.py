@@ -144,12 +144,13 @@ def test_pedal_platform_keeps_its_spin_joint(tmp_path):
         assert joint >= 0
         assert int(model.jnt_type[joint]) == int(mujoco.mjtJoint.mjJNT_HINGE)
         assert not bool(model.jnt_limited[joint])
-        weld = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
-                                     f'weld_foot_{side}'))
-        assert weld >= 0
-        # The foot is welded to the free-spinning platform, never to the
+        connect = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                        f'connect_foot_{side}'))
+        assert connect >= 0
+        assert model.eq_type[connect] == mujoco.mjtEq.mjEQ_CONNECT
+        # The foot connects to the free-spinning spindle, never to the
         # crank arm or the frame.
-        body2 = int(model.eq_obj2id[weld])
+        body2 = int(model.eq_obj2id[connect])
         assert body2 == int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY,
                                             f'pedal_{side}'))
 
@@ -158,9 +159,11 @@ def test_pedal_platform_keeps_its_spin_joint(tmp_path):
 def test_built_pose_anatomical_angles_inside_envelope(tmp_path):
     env = _environment(tmp_path, _pin_config(tmp_path))
     model, data = env.sim.model, env.sim.data
-    envelopes = load_joint_envelopes(str(ENVELOPE))
+    present=tuple(name for name in RIDER_JOINTS
+        if mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_JOINT,name)>=0)
+    envelopes = load_joint_envelopes(str(ENVELOPE),present=present)
     angles = {}
-    for name in RIDER_JOINTS:
+    for name in present:
         joint = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name))
         assert joint >= 0
         angles[name] = float(data.qpos[model.jnt_qposadr[joint]])

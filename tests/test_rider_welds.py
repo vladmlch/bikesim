@@ -1,4 +1,4 @@
-"""Solved weld reactions: what a welded rider would feel on unilateral supports."""
+"""Solved connect reactions on the pinned default; historical channel name is rider_welds."""
 from pathlib import Path
 
 import numpy as np
@@ -41,8 +41,8 @@ def _held_episode(tmp_path, grade, channel='rider_welds'):
 
 
 @pytest.mark.slow
-def test_held_rider_weight_is_carried_by_the_welds(tmp_path):
-    """At rest every attachment together carries exactly the rider's weight, the saddle in compression."""
+def test_held_rider_weight_is_carried_by_the_connects(tmp_path):
+    """At rest every connect attachment together carries the rider's weight, the saddle in compression."""
     samples, weight, supports = _held_episode(tmp_path, 0.)
     vertical = np.mean([sum(w[k]['force_on_rider_n'][2] for k in supports) for w in samples])
     assert vertical == pytest.approx(weight, rel=.01)
@@ -65,7 +65,7 @@ def test_contact_diagnostics_carry_the_solved_weight(tmp_path):
 
 @pytest.mark.slow
 def test_torque_sensor_reads_the_previous_solved_crank_torque(tmp_path):
-    """The pedelec torque sensor is the pedal-weld torque solved one step earlier, exactly."""
+    """The pedelec torque sensor is the pedal-connect torque solved one step earlier, exactly."""
     env = _environment(tmp_path, 0.)
     physical = env.sim.physical
     physical.set_record_decimation(1)

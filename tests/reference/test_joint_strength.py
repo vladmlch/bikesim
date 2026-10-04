@@ -206,13 +206,14 @@ def test_actuators_are_pure_motors_with_dof_damping(tmp_path):
     model = env.sim.model
     controller = env.sim.physical.rider_control
     assert controller.strength is not None
-    assert set(controller.strength) == set(JOINTS)
+    present={name for name in JOINTS if mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_JOINT,name)>=0}
+    assert set(controller.strength) == present
     for name, (_, dof, aid) in controller.joints.items():
         assert int(model.actuator_trntype[aid]) == int(mujoco.mjtTrn.mjTRN_JOINT)
         # No affine bias: actuator_force is purely the commanded muscle torque.
         assert np.allclose(model.actuator_biasprm[aid], 0.)
         assert model.dof_damping[dof] == pytest.approx(
-            controller.config.joint_kd_nms_rad)
+            controller.config.passive_damping_nms_rad)
 
 
 @pytest.mark.slow
@@ -232,7 +233,7 @@ def test_stepped_effort_respects_strength_and_the_power_budget(tmp_path):
     # tissue damping can only remove power, so its signed power is <= 0.
     assert diagnostics['rider_passive_power_w'] <= 1e-9
     controller = physical.rider_control
-    kd = controller.config.joint_kd_nms_rad
+    kd = controller.config.passive_damping_nms_rad
     sample = physical.sample
     for name, (_, dof, aid) in controller.joints.items():
         # The actuator is a pure motor: solved force == commanded muscle

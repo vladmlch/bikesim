@@ -89,8 +89,18 @@ def road_samples(vertices, wheel_x_m, lookahead_m, *, spacing_m=.05):
     count = int(np.floor(lookahead/spacing+1e-12))
     xs.update(front+(k+1)*spacing for k in range(count))
     xs.add(front+lookahead)
-    return tuple(RoadSample(x, _profile_height(verts, x), _profile_grade(verts, x))
-                 for x in sorted(xs))
+    # Query the identical sorted positions together. Scalar np.interp calls
+    # copied both non-contiguous profile columns once per preview point.
+    positions = sorted(xs)
+    profile_x = np.ascontiguousarray(verts[:, 0])
+    profile_z = np.ascontiguousarray(verts[:, 1])
+    heights = np.interp(positions, profile_x, profile_z)
+    segments = np.clip(np.searchsorted(profile_x, positions, side='right')-1,
+                       0, len(profile_x)-2)
+    grades = ((profile_z[segments+1]-profile_z[segments])
+              / (profile_x[segments+1]-profile_x[segments]))
+    return tuple(RoadSample(x, float(height), float(grade))
+                 for x,height,grade in zip(positions,heights,grades))
 
 
 def rider_kinematic_state(model, data, *, vertices, wheel_x_m,

@@ -90,7 +90,7 @@ def prepare_attachment_geometry(model, data, eq_id, body_rider, body_bike, point
         None if pull_direction is None else np.array(pull_direction, copy=True))
 
 
-def attachment_raw_from_geometry(model, data, geometry, *, rows=None):
+def attachment_raw_from_geometry(model, data, geometry, *, rows=None, validate_wrench=True):
     """Combine pre-step geometry with the just-solved equality multiplier.
 
     Keep the validation contract of :func:`attachment_raw`: the fast path is
@@ -100,24 +100,28 @@ def attachment_raw_from_geometry(model, data, geometry, *, rows=None):
     qfrc = equality_qfrc(model, data, geometry.eq_id)
     rider_qfrc = qfrc[geometry.rider_columns]
     bike_qfrc = qfrc[geometry.bike_columns]
-    # Reconstruct spatial wrenches and retain the exact Newton-third-law and
-    # planar-model checks used by the scalar sampler.
-    rider_wrench, *_ = np.linalg.lstsq(geometry.rider_jac.T, rider_qfrc, rcond=1e-12)
-    bike_wrench, *_ = np.linalg.lstsq(geometry.bike_jac.T, bike_qfrc, rcond=1e-12)
-    if not np.allclose(geometry.rider_jac.T @ rider_wrench, rider_qfrc,
-                       rtol=1e-8, atol=1e-8):
-        raise ValueError('attachment wrench does not explain generalized force')
-    if not np.allclose(geometry.bike_jac.T @ bike_wrench, bike_qfrc,
-                       rtol=1e-8, atol=1e-8):
-        raise ValueError('attachment wrench does not explain generalized force')
-    if not geometry.observable:
-        raise ValueError('in-plane attachment force is not observable')
-    scale = max(1., float(np.linalg.norm(rider_wrench[:3])))
-    if not np.allclose(bike_wrench, -rider_wrench, rtol=1e-4, atol=1e-4*scale):
-        raise ValueError('attachment wrenches fail Newton third law')
-    out_of_plane = np.array([rider_wrench[1], rider_wrench[3], rider_wrench[5]])
-    if not np.all(np.abs(out_of_plane) <= 1e-6*scale):
-        raise ValueError('attachment wrench leaves the planar model')
+    # The accounted runtime defers duplicate spatial solves to evaluate_attachments,
+    # which checks every captured interval before publishing its period. Scalar
+    # callers keep the eager validation contract by default.
+    if validate_wrench:
+        # Reconstruct spatial wrenches and retain the exact Newton-third-law and
+        # planar-model checks used by the scalar sampler.
+        rider_wrench, *_ = np.linalg.lstsq(geometry.rider_jac.T, rider_qfrc, rcond=1e-12)
+        bike_wrench, *_ = np.linalg.lstsq(geometry.bike_jac.T, bike_qfrc, rcond=1e-12)
+        if not np.allclose(geometry.rider_jac.T @ rider_wrench, rider_qfrc,
+                           rtol=1e-8, atol=1e-8):
+            raise ValueError('attachment wrench does not explain generalized force')
+        if not np.allclose(geometry.bike_jac.T @ bike_wrench, bike_qfrc,
+                           rtol=1e-8, atol=1e-8):
+            raise ValueError('attachment wrench does not explain generalized force')
+        if not geometry.observable:
+            raise ValueError('in-plane attachment force is not observable')
+        scale = max(1., float(np.linalg.norm(rider_wrench[:3])))
+        if not np.allclose(bike_wrench, -rider_wrench, rtol=1e-4, atol=1e-4*scale):
+            raise ValueError('attachment wrenches fail Newton third law')
+        out_of_plane = np.array([rider_wrench[1], rider_wrench[3], rider_wrench[5]])
+        if not np.all(np.abs(out_of_plane) <= 1e-6*scale):
+            raise ValueError('attachment wrench leaves the planar model')
     if rows is None:
         from bike_sim.sim.ride.weld_pedals import equality_rows
         rows = equality_rows(data)

@@ -304,14 +304,15 @@ class RiderContactApplier:
                 force=self._welds.force_on_rider_n(model,data,name.split('_')[0],rows=rows)
             else:
                 continue
-            normals=[];tangents=[]
-            for _,_,n,tangent,_,_ in self._pads(model,data,name,entry):
-                normals.append(n);tangents.append(tangent)
-            n=np.mean(normals,axis=0);n/=max(np.linalg.norm(n),1e-12)
-            tangent=np.mean(tangents,axis=0);tangent/=max(np.linalg.norm(tangent),1e-12)
             if name.endswith('_pedal') and self.spindle_pedals:
                 n = data.xmat[entry[0]].reshape(3, 3)[:, 2]
                 tangent = np.array([n[2], 0., -n[0]])
+            else:
+                normals=[];tangents=[]
+                for _,_,n,tangent,_,_ in self._pads(model,data,name,entry):
+                    normals.append(n);tangents.append(tangent)
+                n=np.mean(normals,axis=0);n/=max(np.linalg.norm(n),1e-12)
+                tangent=np.mean(tangents,axis=0);tangent/=max(np.linalg.norm(tangent),1e-12)
             normal=float(force@n);shear=float(force@tangent)
             result[name]={'force_on_rider_n':force.tolist(),'normal_n':normal,'tangent_n':shear,
                           'would_separate':normal<0.,
@@ -332,7 +333,7 @@ class RiderContactApplier:
             errors=list(prepared_errors)
             for name,geometry in prepared_raw.items():
                 try:
-                    raw_samples[name]=attachment_raw_from_geometry(model,data,geometry,rows=rows)
+                    raw_samples[name]=attachment_raw_from_geometry(model,data,geometry,rows=rows,validate_wrench=False)
                 except ValueError:
                     errors.append(name+':unobservable_attachment_wrench')
             self.last_attachment_samples,self.last_attachment_errors=raw_samples,tuple(errors)

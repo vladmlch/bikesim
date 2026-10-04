@@ -84,13 +84,15 @@ def evaluate_attachments(raws, *, kinds=None, half_patch_m=None, gap_m=None):
                     [a.rider_qfrc for a in items], full_rank=False)
                 wb, ok_b = _stack_wrenches([a.bike_jac for a in items],
                     [a.bike_qfrc for a in items], full_rank=False)
-                for (i, a), w, bike, good in zip(rows, wr, wb, ok_r & ok_b):
-                    if not good or not a.observable:
-                        continue
-                    scale = max(1., float(np.linalg.norm(w[:3])))
-                    if not np.allclose(bike, -w, rtol=1e-4, atol=1e-4*scale):
-                        continue
-                    if not np.all(np.abs(w[[1, 3, 5]]) <= 1e-6*scale):
+                # Keep the scalar norm arithmetic and all original tolerances;
+                # apply the identical elementwise checks across the group once.
+                scales = np.array([max(1., float(np.linalg.norm(w[:3]))) for w in wr])
+                valid = (ok_r & ok_b & np.array([a.observable for a in items])
+                         & np.all(np.isclose(wb, -wr, rtol=1e-4,
+                                            atol=1e-4*scales[:, None]), axis=1)
+                         & np.all(np.abs(wr[:, [1, 3, 5]]) <= 1e-6*scales[:, None], axis=1))
+                for (i, a), w, good in zip(rows, wr, valid):
+                    if not good:
                         continue
                     result[i][name] = decompose_wrench(w, a.normal, a.kind,
                         rotational=a.rotational, half_patch_m=a.half_patch_m,

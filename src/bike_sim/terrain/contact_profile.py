@@ -39,6 +39,10 @@ class ProfileQuery:
         if np.any(np.diff(vertices[:, 0]) <= 0):
             raise ValueError('profile x must increase strictly')
         self.vertices = array(vertices, 'profile', readonly=True)
+        # Scalar interpolation otherwise copies both strided Nx2 columns on
+        # every tire query. These immutable contiguous axes have identical data.
+        self._profile_x = array(self.vertices[:, 0], 'profile x', readonly=True)
+        self._profile_z = array(self.vertices[:, 1], 'profile z', readonly=True)
         self._segments = np.diff(self.vertices,axis=0)
         self._segment_lengths_sq = np.einsum('ij,ij->i',self._segments,self._segments)
         self._height_changes = np.r_[0,np.cumsum(self._segments[:,1]!=0.)]
@@ -89,10 +93,10 @@ class ProfileQuery:
             or not 0 <= previous_segment < count
         ):
             raise ValueError('invalid previous contact segment')
-        x = self.vertices[:, 0]
+        x = self._profile_x
         if not x[0] <= c[0] <= x[-1]:
             raise ValueError('wheel center is outside profile domain')
-        if c[1] <= np.interp(c[0], x, self.vertices[:, 1]):
+        if c[1] <= np.interp(c[0], x, self._profile_z):
             raise ValueError('wheel center reached or entered solid road')
         lo = max(0, int(np.searchsorted(x, c[0]-radius, side='right'))-2)
         hi = min(count, int(np.searchsorted(x, c[0]+radius, side='right'))+1)

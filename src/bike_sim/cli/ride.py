@@ -139,8 +139,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
              "pedelec (rider plus mid-drive) (default motor, or pedelec for climb_steps)",
     )
     parser.add_argument(
-        "--assist", choices=ASSIST_ORDER, default=None,
-        help="mid-drive assist level for --drive-mode pedelec (default tour, or turbo for climb_steps); E cycles it in the viewer",
+        "--assist", choices=(*ASSIST_ORDER, 'emtb'), default=None,
+        help="assist mode: physical profile supports eco/tour/emtb/turbo; legacy pedelec supports off/eco/tour/sport/turbo",
     )
     parser.add_argument(
         "--gearing", type=_parse_gearing, default=None, metavar="CHAINRINGxCOG",
@@ -212,6 +212,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         parser.error(str(exc))
     args.physics=args.resolved_physics.physics_mode
     args.drive=args.resolved_physics.drive_mode
+    if args.assist is not None and args.physics == 'physical':
+        drive_values['assist'] = {**drive_values.get('assist', {}), 'mode': args.assist}
+        overrides['drive'] = drive_values
+        try:
+            args.resolved_physics = load_physics_config(args.physics_config, overrides)
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
     if args.research:
         if args.physics != 'physical' or args.drive not in ('crank_effort', 'articulated_effort'):
             parser.error('--research requires physical crank_effort or articulated_effort')
@@ -224,7 +231,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     if args.physics=="physical":
         if args.speed is not None and args.drive!="ideal_speed_control":
             parser.error("--speed is only an ideal controller target; use --initial-speed for coast/effort")
-        if args.drive_mode not in (None,"motor") or args.assist is not None or args.visual_pedalling:
+        if args.drive_mode not in (None,"motor") or args.visual_pedalling:
             parser.error("legacy drive/assist/visual flags cannot select physical drivetrain settings; use --drive and TOML")
         if (args.tyre_model not in (None,"sphere") or args.surface is not None
                 or args.tyre_tier is not None or args.tyre_pressure is not None):
@@ -236,7 +243,6 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         if args.drive=="ideal_speed_control" and args.speed is None: args.speed=DEFAULT_TARGET_SPEED_KMH
         args.tyre_model="sphere"
         args.drive_mode="motor"
-        args.assist="tour"
         if args.rider is None and not args.no_rider:
             args.rider="articulated_planar" if args.drive=="articulated_effort" else "lumped"
         if args.drive=="articulated_effort" and (args.no_rider or args.rider!="articulated_planar"):
@@ -244,6 +250,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         if args.headless and args.drive=="coast" and args.resolved_physics.initial_speed_mps==0 and args.duration is None:
             parser.error("a stationary physical coast run needs --duration or nonzero --initial-speed")
     else:
+        if args.assist == 'emtb':
+            parser.error('--assist emtb requires physical mode')
         if any(v is not None for v in (args.initial_speed,args.human_torque,args.assist_gain,args.duration)):
             parser.error("initial-speed, human-torque, assist-gain and duration require --physics physical")
         if args.track == "climb_steps":

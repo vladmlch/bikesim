@@ -465,8 +465,6 @@ class RideHUD:
             "motor_shaft_power_w": float(drive.get("motor_shaft_power_w", 0.0)),
             "motor_enabled": int(bool(drive.get("motor_enabled", False))),
             "assist_pedaling": int(bool(assist.pedaling)),
-            "assist_age_s": float(assist.age),
-            "assist_stall_s": float(drive.get("assist_stall_s", 0.0)),
         })
 
         rider_columns = {

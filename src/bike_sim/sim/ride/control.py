@@ -9,9 +9,9 @@ class RideControl:
     """Torques are N*m at the crank/mid-drive shaft, NOT the rear wheel.
 
     None motor_torque_nm selects the configured pedelec assistance. A numeric
-    value explicitly selects an external research setpoint, bypassing only
-    human/cadence demand gating, never motor lag, slew, torque/power/speed or
-    battery limits. motor_limit_nm is an immediate safety ceiling after the lag
+    value is an external ceiling on that assistance; rider torque and forward
+    crank motion still gate it. Motor lag, slew, torque/power/speed and battery
+    limits remain active. motor_limit_nm is an immediate safety ceiling after the lag
     and before energy limiting. Its removal restarts the normal bounded ramp.
     Commands are not latched by RideSimulation.step; wrappers may hold them.
     """

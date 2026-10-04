@@ -387,7 +387,8 @@ class DrivetrainForceApplier:
             'cadence_rpm':cadence, 'crank_rad_s':omega_crank, 'drive_shaft_rad_s':omega_shaft,
             'human_torque_nm':human, 'human_sensor_nm':sensor,
             'human_setpoint_nm':control.human_torque_nm,
-            'assist_demand_gated':bool(control.motor_torque_nm is None and assist_sensor<=0.),
+            'assist_demand_gated':bool(braking or assist_sensor<=self.assist.engage_torque_nm
+                                       or omega_crank<=self.assist.gate_min_crank_rad_s),
             'assist_sensor_nm':assist_sensor, 'human_command_nm':mean_human,
             'rider_mode':pedaling_state.mode, 'coasting_reason':pedaling_state.reason,
             'required_cadence_rpm':pedaling_state.required_cadence_rpm,
@@ -403,7 +404,7 @@ class DrivetrainForceApplier:
             'motor_shaft_power_w':delivered*omega_shaft, 'electrical_power_w':actual_electrical,
             'battery_energy_j':self.battery.energy_j, 'motor_enabled':enabled,
             'energy_limited':delivered < limited_request, 'battery_empty':self.battery.energy_j==0.,
-            'assist_stall_s':self.assist.stall_s, 'assist_stalled':self.assist.stalled,
+            'assist_mode':self.assist.mode, 'assist_gain':self.assist.last_gain,
         }
         self.last.update(self._shift_diagnostics())
         if not self.simplified:

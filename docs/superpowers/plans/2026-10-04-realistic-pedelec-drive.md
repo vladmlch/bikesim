@@ -330,7 +330,7 @@ git commit -m "feat: declare the Bosch-like assist profile and pedelec permissio
 - Consumes: `PROFILES`, `assist_gain`, `pedelec_cap` из Task 1.
 - Produces: `AssistController(*, gain=2., max_torque=80., max_power=500., tau=.05, slew=400., engage_torque_nm=4., gate_min_crank_rad_s=radians(5), cutoff_mps=25/3.6, taper_width_mps=2/3.6, torque_curve=None, profile=None, mode='turbo')`; атрибуты `.torque`, `.pedaling` (bool: момент > 0), `.profile` (`MotorProfile | None`), `.mode`, `.last_gain`; метод `step(human_nm, cadence_rpm, speed_mps, braking, dt, *, torque_request_nm=None, shaft_rpm=None) -> float`. `AssistConfig` поля: `profile, mode, gain, max_torque, max_power, tau, slew, engage_torque_nm, gate_min_crank_rad_s, cutoff_mps, taper_width_mps, torque_curve`. Удалены: `stop_delay, spin_rpm, stall_timeout_s, boost_s` и атрибуты `age, stall_s, stalled`.
 
-- [ ] **Step 1: Написать падающий тест**
+- [x] **Step 1: Написать падающий тест**
 
 ```python
 """AssistController: Bosch-like support factor through a 40 ms lag, gated as a permission."""
@@ -469,12 +469,12 @@ def test_assist_config_accepts_profile_and_mode():
         AssistConfig(stall_timeout_s=1.)
 ```
 
-- [ ] **Step 2: Запустить, убедиться что падает**
+- [x] **Step 2: Запустить, убедиться что падает**
 
 Run: `uv run python -m pytest tests/reference/test_assist_controller.py -q`
 Expected: FAIL — `TypeError: unexpected keyword argument 'profile'`.
 
-- [ ] **Step 3: Переписать `motor.py`**
+- [x] **Step 3: Переписать `motor.py`**
 
 ```python
 """Torque-sensing mid-drive assist: support factor through a first-order lag,
@@ -598,7 +598,7 @@ class AssistController:
         return torque
 ```
 
-- [ ] **Step 4: `AssistConfig`** в `physical_config.py` (заменить класс целиком):
+- [x] **Step 4: `AssistConfig`** в `physical_config.py` (заменить класс целиком):
 
 ```python
 @dataclass(frozen=True)
@@ -629,13 +629,13 @@ class AssistConfig:
 
 Добавить `from math import radians` к импортам файла (там уже есть `from math import pi`).
 
-- [ ] **Step 5: Потребители удалённых полей.**
+- [x] **Step 5: Потребители удалённых полей.**
   - `drivetrain_forces.py:406`: заменить `'assist_stall_s':self.assist.stall_s, 'assist_stalled':self.assist.stalled,` на `'assist_mode':self.assist.mode, 'assist_gain':self.assist.last_gain,`.
   - `hud.py:468-469`: удалить строки `"assist_age_s"` и `"assist_stall_s"`; выполнить `grep -n "assist_age_s\|assist_stall_s" src/bike_sim/sim/ride/hud.py` и удалить соответствующие заголовки колонок, если есть.
   - `rider_replay.py:185`: `bool(d.get('assist_demand_gated',False))`.
   - `cli/ride.py:206`: после строки с `assist_gain` добавить `if args.assist is not None and args.physics=="physical": drive_values["assist"]={**drive_values.get("assist",{}),"mode":args.assist}`; в строке 227 убрать `or args.assist is not None`. Убедиться, что ветки 256–266 (дефолт `tour`/`turbo` для legacy) не выполняются при `args.physics=="physical"` — иначе `mode` всегда будет подставлен; если выполняются, обернуть их в `if args.physics!="physical":`.
 
-- [ ] **Step 6: Тесты**
+- [x] **Step 6: Тесты**
 
 Run: `uv run python -m pytest tests/reference/test_assist_controller.py tests/reference/test_motor_profile.py -q`
 Expected: PASS.
@@ -643,7 +643,7 @@ Expected: PASS.
 Run: `uv run python -m pytest tests -m 'not slow' -q -x`
 Expected: PASS (welded toml всё ещё содержит `stop_delay`, `boost_s`, `spin_rpm`, `stall_timeout_s` → загрузка упадёт на `unknown AssistConfig parameter(s)`). **Поэтому** в этом же шаге убрать из `examples/research/viewer_physics_welded.toml` строки `tau = 0.3`, `stop_delay = 0.3`, `spin_rpm = 15.0`, `stall_timeout_s = 1.0`, `boost_s = 0.4` и их комментарии; `gain = 4.0` пока оставить (профиль включается в Task 8). Повторить прогон — PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/bike_sim/physics/motor.py src/bike_sim/physics/physical_config.py src/bike_sim/sim/ride/drivetrain_forces.py src/bike_sim/sim/ride/hud.py src/bike_sim/validation/rider_replay.py src/bike_sim/cli/ride.py examples/research/viewer_physics_welded.toml tests/reference/test_assist_controller.py

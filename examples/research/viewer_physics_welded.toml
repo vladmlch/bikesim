@@ -81,8 +81,6 @@ reposition_noop_rad = 0.12
 
 [drive.assist]
 gain = 4.0
-tau = 0.3
-stop_delay = 0.3
 max_torque = 85.0
 max_power = 600.0
 # Torque envelope vs crank rpm. The 600 W shaft cap already binds below
@@ -91,16 +89,8 @@ max_power = 600.0
 # the knee where the power ceiling hands over to the steeper falloff --
 # above 120 rpm shaft torque AND power decline together to zero at 180 rpm.
 torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
-# Torque-sensor engagement: assist follows pedal force even at 0 rpm
-# (hill start), like torque-sensing mid-drives.
+# Sensor threshold; forward crank motion is also required by the pedelec gate.
 engage_torque_nm = 4.0
-# |crank rpm| that counts as shaft rotation for stall accounting.
-spin_rpm = 15.0
-# Max sustained assist torque while the shaft is not turning (thermal/antihold).
-stall_timeout_s = 1.0
-# Extended boost: hold the last assist target briefly after the rider torque
-# drops while the cranks still turn forward (carries the wheel over ledges).
-boost_s = 0.4
 
 [drive.battery]
 # No energy store: electrical power is still metered, but torque is never

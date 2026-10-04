@@ -182,7 +182,7 @@ def resume_evidence(rows: list[dict], *, end_s=8.) -> dict:
         saturated.append(any(t.get('saturated',False) for t in row.get('joint_terms',{}).values()))
         d=row['drive']
         gated.append(tau>0. and d.get('motor_control_source')=='assist' and
-                     bool(d.get('assist_stalled',False) or d.get('assist_demand_gated',False)))
+                     bool(d.get('assist_demand_gated',False)))
     fractions={name:float(np.dot(durations,values)/duration) for name,values in
                [('support_unavailable_fraction',unavailable),('actuator_saturated_fraction',saturated),
                 ('assist_gated_fraction',gated)]}

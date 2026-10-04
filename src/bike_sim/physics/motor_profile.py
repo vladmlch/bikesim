@@ -55,6 +55,11 @@ class MotorProfile:
         if not isinstance(self.provenance, str) or not self.provenance.strip():
             raise ValueError('motor profile requires provenance')
 
+    def __deepcopy__(self, memo):
+        # Force probes copy controller state, while this immutable data can be
+        # shared. MappingProxyType itself cannot be deep-copied/pickled.
+        return self
+
 
 BOSCH_CX_GEN4 = MotorProfile(
     name='bosch_performance_line_cx_gen4',

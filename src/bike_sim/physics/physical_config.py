@@ -5,7 +5,7 @@ interpreted as tire stiffness, and neither a component name nor a low residual
 upgrades these parameters to a measured/calibrated model.
 """
 from dataclasses import dataclass, field
-from math import pi
+from math import pi, radians
 from bike_sim.physics.checks import scalar
 from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.tire_curve import TabulatedTireSpec
@@ -64,16 +64,17 @@ class TireBackendConfig:
 
 @dataclass(frozen=True)
 class AssistConfig:
+    # A named profile owns torque/power/lag/cutoff/taper/gate; explicit values
+    # describe a synthetic motor when no profile is selected.
+    profile: str | None = None
+    mode: str = 'turbo'
     gain: float = 2.
     max_torque: float = 80.
     max_power: float = 500.
     tau: float = .05
     slew: float = 400.
-    stop_delay: float = .2
     engage_torque_nm: float = 4.
-    spin_rpm: float = 15.
-    stall_timeout_s: float = 1.
-    boost_s: float = .4
+    gate_min_crank_rad_s: float = radians(5.)
     cutoff_mps: float = 25/3.6
     taper_width_mps: float = 2/3.6
     torque_curve: tuple[tuple[float,float],...] | None = None
@@ -81,9 +82,17 @@ class AssistConfig:
     def __post_init__(self):
         from dataclasses import asdict
         from bike_sim.physics.motor import AssistController
+        if self.profile is not None and not isinstance(self.profile, str):
+            raise ValueError('assist profile must be a registered name')
         if self.torque_curve is not None:
             object.__setattr__(self,'torque_curve',tuple(tuple(p) for p in self.torque_curve))
         AssistController(**asdict(self))
+
+    @property
+    def effective_max_torque(self):
+        """Actuator limit from the selected profile or the synthetic config."""
+        from bike_sim.physics.motor_profile import PROFILES
+        return self.max_torque if self.profile is None else PROFILES[self.profile].peak_torque_nm
 
 
 @dataclass(frozen=True)

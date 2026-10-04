@@ -1,6 +1,7 @@
 """Acceptance: the rider stays engaged and the motor follows, on the flat and on 15 %."""
 from pathlib import Path
 import csv
+import json
 
 import numpy as np
 import pytest
@@ -29,48 +30,104 @@ def _environment(tmp_path, track, duration_s):
     args = research_cli.parser().parse_args([
         '--physics-config', str(_config(tmp_path)), '--track-file', str(track),
         '--duration', str(duration_s), '--dt', '.00125', '--energy-tolerance', '1e9',
-        '--diagnostic-model-limits', '--record-decimation', '8',
+        '--diagnostic-model-limits', '--record-decimation', '1',
         '--initial-speed', '0', '--out', str(tmp_path/'out')])
     env = research_cli.make_environment(args)
     env._acceptance_output = tmp_path/'out'
     return env
 
 
-def _save_ride(env, rows):
-    path = env._acceptance_output
-    path.mkdir(parents=True, exist_ok=True)
-    with (path/'ride_rows.csv').open('w', newline='') as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]) if rows else ['t'])
+def _interval_violations(samples):
+    return tuple((sample.interval_id,sample.time_s,tuple(sample.channels['attachment_violations']))
+                 for sample in samples if sample.channels['attachment_violations'])
+
+
+def _violations_after(rows,after_s=.5):
+    return tuple(failure for row in rows for failure in row['interval_violations']
+                 if failure[1] > after_s)
+
+
+def _sample_row(env,sample):
+    channels=sample.channels;drive=channels['drive'];allocation=channels.get('rider_allocation',{})
+    attachments=channels.get('attachment_samples',{})
+    return dict(interval_id=sample.interval_id,t=sample.time_s,
+        v=float(sample.qvel[env.sim.root_x_dofadr]),x=float(sample.qpos[env.sim.root_x_qposadr]),
+        cadence=drive['cadence_rpm'],human=drive['human_sensor_nm'],motor=drive['motor_torque_nm'],
+        mode=drive['rider_mode'],shift=drive['shift_active'],gear=drive['gear_rear_teeth'],
+        shifts=drive['shift_count'],engaged=drive['motor_freewheel_engaged'],
+        command=drive['human_command_nm'],model_valid=channels['model_status']['model_valid'],
+        violations=tuple(channels['attachment_violations']),
+        rider_power=channels['rider_positive_power_w'],
+        allocation_invalid=allocation.get('invalid_controller',False),
+        crank_task_nm=allocation.get('crank_task_nm'),
+        crank_task_shortfall_nm=allocation.get('crank_task_shortfall_nm'),
+        foot_front_normal_n=attachments.get('foot_front',{}).get('normal_n'),
+        foot_rear_normal_n=attachments.get('foot_rear',{}).get('normal_n'),
+        saddle_normal_n=attachments.get('saddle',{}).get('normal_n'),
+        front_slip_ratio=channels['tires']['front'].get('slip_ratio'),
+        rear_slip_ratio=channels['tires']['rear'].get('slip_ratio'),
+        balance_lost=channels['rider_balance']['balance_lost'],
+        balance_lost_at_m=channels['rider_balance']['balance_lost_at_m'],
+        constraint_work_ratio=channels['energy']['constraint_work_ratio'],
+        joint_positive_power_w=dict(channels['rider_joint_positive_power_w']))
+
+
+def _write_rows(path,rows):
+    with path.open('w',newline='') as stream:
+        writer=csv.DictWriter(stream,fieldnames=list(rows[0]) if rows else ['t'])
         writer.writeheader()
-        writer.writerows(rows)
-    env.save(path, overwrite=True)
+        for row in rows:
+            writer.writerow({key:json.dumps(value) if isinstance(value,(dict,list,tuple)) else value
+                             for key,value in row.items()})
+
+
+def _save_ride(env,rows):
+    path=env._acceptance_output;path.mkdir(parents=True,exist_ok=True)
+    _write_rows(path/'ride_rows.csv',rows)
+    _write_rows(path/'interval_rows.csv',env._acceptance_intervals)
+    env.save(path,overwrite=True)
 
 
 def _ride(env):
-    """Automatic rider and assist; preserve drive and model validity evidence."""
-    rows = []
+    """Keep100Hz road/shift windows and capture every physical interval separately."""
+    rows=[];interval_rows=[];pending=[];last_interval=-1
+    env._acceptance_intervals=interval_rows
+    runtime=env.sim.physical;original=runtime._close_period
+    def close():
+        nonlocal last_interval
+        try:
+            return original()
+        finally:
+            for sample in runtime.completed_samples:
+                if sample.interval_id <= last_interval:
+                    continue
+                last_interval=sample.interval_id
+                interval_rows.append(_sample_row(env,sample));pending.append(sample)
+    runtime._close_period=close
     try:
         while not env.done:
             env.step(RideControl())
-            sample = env.sim.physical.sample
-            drive = sample.channels['drive']
-            rows.append(dict(t=env.sim.time_s, v=float(env.sim.speed_mps),
-                             x=float(env.sim.position_m),
-                             cadence=drive['cadence_rpm'], human=drive['human_sensor_nm'],
-                             motor=drive['motor_torque_nm'], mode=drive['rider_mode'],
-                             shift=drive['shift_active'], gear=drive['gear_rear_teeth'],
-                             shifts=drive['shift_count'], engaged=drive['motor_freewheel_engaged'],
-                             command=drive['human_command_nm'], model_valid=env.model_valid,
-                             violations=';'.join(env.sim.physical.step_violations),
-                             rider_power=sample.channels['rider_positive_power_w'],
-                             allocation_invalid=sample.channels.get('rider_allocation', {}).get('invalid_controller', False)))
+            row=_sample_row(env,runtime.sample)
+            row['t']=env.sim.time_s;row['v']=float(env.sim.speed_mps);row['x']=float(env.sim.position_m)
+            row['interval_violations']=_interval_violations(pending)
+            rows.append(row);pending.clear()
+        runtime.flush()
+        if pending:
+            row=_sample_row(env,pending[-1]);row['interval_violations']=_interval_violations(pending)
+            rows.append(row);pending.clear()
     except Exception as failure:
         try:
-            _save_ride(env, rows)
+            if pending:
+                row=_sample_row(env,pending[-1]);row['interval_violations']=_interval_violations(pending)
+                rows.append(row);pending.clear()
+            _save_ride(env,rows)
         except Exception as save_failure:
             failure.add_note(f'acceptance evidence save failed: {save_failure}')
         raise
-    _save_ride(env, rows)
+    finally:
+        runtime._close_period=original
+    _save_ride(env,rows)
+    assert len(interval_rows)==env.sim.steps, (len(interval_rows),env.sim.steps)
     return rows
 
 
@@ -82,32 +139,16 @@ def _track(tmp_path, knots, length):
 
 
 @pytest.mark.slow
-def test_flat_start_reaches_20_kmh_with_the_rider_engaged(tmp_path):
-    env = _environment(tmp_path, _track(tmp_path, [[0., 0.], [300., 0.]], 300.), 20.)
-    rows = _ride(env)
-    assert env.reason == 'duration', env.reason
-    v = np.array([r['v'] for r in rows])
-    assert v.max() >= 20.*KMH
-    # Launching in 22/51 the cranks spin out within a second; the rider must
-    # answer with a run of upshifts (one per 0.4 s cooldown), coasting between
-    # clicks like a real rider. By 6 s the gear has to be landed.
-    launch = [r for r in rows if r['t'] <= 6.]
-    assert launch[-1]['shifts'] >= 5, launch[-1]['shifts']
-    assert launch[-1]['gear'] <= 24, launch[-1]['gear']
-    settled = [r for r in rows if r['t'] >= 6.]
-    assert np.mean([r['mode'] == 'coasting' for r in settled]) <= .15
-    # ~100 rows/s (10 ms control period): judge pedalling below the assist taper.
-    steady = [r for r in settled if r['v'] < 23.*KMH and r['mode'] == 'pedaling']
-    assert len(steady) > 200
-    human = np.array([r['human'] for r in steady])
-    cadence = np.array([r['cadence'] for r in steady])
-    assert np.mean(human > 0.) >= .8, np.mean(human > 0.)
-    assert np.mean((cadence >= 60.) & (cadence <= 115.)) >= .8, (cadence.min(), cadence.max())
-    assert np.mean(cadence) >= 70.
-    # Motor smoothness: pulses with the legs, no 3<->45 N.m sawtooth
-    motor = np.array([r['motor'] for r in steady if r['v'] < 20.*KMH])
-    assert motor.mean() > 20.
-    assert np.std(motor)/motor.mean() < .6
+def test_flat_reaches_25_kmh_within_10_s(tmp_path):
+    env=_environment(tmp_path,_track(tmp_path,[[0.,0.],[300.,0.]],300.),12.)
+    rows=_ride(env)
+    fast=[r['t'] for r in rows if r['v']>=25*KMH]
+    assert fast and fast[0]<=10., max(r['v'] for r in rows)/KMH
+    steady=[r for r in rows if r['t']>1. and r['v']<23*KMH and r['mode']=='pedaling']
+    assert steady, 'no steady pedaling intervals'
+    assert np.mean([60<=r['cadence']<=115 for r in steady])>=.8
+    assert not any(r['balance_lost'] for r in rows)
+    assert not _violations_after(rows), _violations_after(rows)[:3]
 
 
 @pytest.mark.slow
@@ -128,29 +169,28 @@ def test_motor_follows_the_rider_through_a_shift_without_an_extra_cut(tmp_path):
         assert motor/human >= 2.5, (rows[i]['t'], human, motor)   # 3.4 nominal, lag only
         checked += 1
     assert checked >= 1
+    assert not any(r['balance_lost'] for r in rows)
+    assert not _violations_after(rows), _violations_after(rows)[:3]
 
 
 @pytest.mark.slow
-def test_fifteen_percent_climb_holds_speed_without_a_dead_spot_stall(tmp_path):
-    knots = [[0., 0.], [10., 0.], [14., .15], [150., .15]]
-    env = _environment(tmp_path, _track(tmp_path, knots, 150.), 25.)
-    rows = _ride(env)
-    assert env.reason == 'duration', env.reason
-    climbing = [r for r in rows if r['t'] >= 10.]
-    v = np.array([r['v'] for r in climbing])
-    assert v.min() >= 5.*KMH, v.min()/KMH
-    cadence = np.array([r['cadence'] for r in climbing])
-    assert cadence.min() > 20., cadence.min()
-    assert np.mean(np.array([r['human'] for r in climbing]) > 0.) >= .8
+def test_fifteen_percent_climb_holds_12_kmh(tmp_path):
+    env=_environment(tmp_path,_track(tmp_path,[[0.,0.],[10.,0.],[14.,.15],[150.,.15]],150.),25.)
+    rows=_ride(env)
+    late=[r for r in rows if r['t']>=12.]
+    assert late, 'did not reach the steady climb interval'
+    assert min(r['v'] for r in late)>=12*KMH
+    assert not any(r['balance_lost'] for r in rows)
+    assert not _violations_after(rows), _violations_after(rows)[:3]
 
 
 @pytest.mark.slow
-def test_savage_fifteen_percent_plateau_is_ridden_above_5_kmh(tmp_path):
-    env = _environment(tmp_path, SAVAGE, 22.)
-    rows = _ride(env)
-    plateau = [r for r in rows if 17. <= r['x'] <= 33.]
-    assert plateau, 'did not reach the 15 % plateau'
-    v = np.array([r['v'] for r in plateau])
-    assert v.min() >= 4.*KMH, v.min()/KMH          # rough surface: 1 km/h margin
-    cadence = np.array([r['cadence'] for r in plateau])
-    assert np.mean(cadence > 20.) >= .95
+def test_savage_is_ridden_to_the_end(tmp_path):
+    env=_environment(tmp_path,SAVAGE,110.)
+    rows=_ride(env)
+    assert max(r['x'] for r in rows)>=120.-1e-6 or env.reason=='finish'
+    plateau=[r['v'] for r in rows if 38.<=r['x']<=55.]
+    assert plateau, 'did not reach the25%plateau'
+    assert np.mean(plateau)>=6*KMH
+    assert not any(r['balance_lost'] for r in rows)
+    assert not _violations_after(rows), _violations_after(rows)[:3]

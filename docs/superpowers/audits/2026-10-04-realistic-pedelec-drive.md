@@ -108,3 +108,31 @@ Ruling: update this necessary validation consumer, outside the plan's filemap,
 so active-motor qualification cannot silently become a passive-only test.
 Cost if wrong: standsensorfixture must be revisited; it does not qualify real
 pedelec sensing, human biomechanics, G5 or road acceptance.
+
+## Task 9 investigation: net preload compensation
+
+Initial20sflat acceptance RED: maximum.8197716m/s=2.95118km/h, not20.
+Mean sensor1.98598Nm despite command57.3535Nm; motormean1.03578Nm,
+positive humanfraction.757, motorengaged.1735, zero shifts in51T. All2000rows
+allocation_invalid=false yet model_valid=false. Recorded violations include
+energy.constraint_work, foot/saddle budgets, positivepower and jointstrength.
+Rawriderpower reaches459.697W; this is recorded invalid, not clipped/accepted.
+Evidence:/private/tmp/pedelec-flat-n2qcwygw/test_flat_start_reaches_20_kmh0/out/.
+
+A separate request-contract defect was source-confirmed: helper allocates net
+waveformT, then caller overwrites recovery force with40N, subtracting signed
+recovery torque after allocation (phase0 mean40/ripple.5:60Nm becomes53Nm).
+Ruling: include preload and its current phase/normal signedtorque in the pure
+helper BEFORE allocating active-foot torque. Preserve recovering-foot exclusions,
+zero-preload behavior, configured netmean ceiling/ripple and all physicalcaps.
+Cost if wrong: request intent needs re-evaluation; this does not qualify solved
+contacts, muscularpower or ridebehavior. Independent reviewer agrees with the
+netwaveform interpretation over the plan's uncompensated snippet.
+
+RED11preload-contract tests failed for missing helperargument; GREEN29focused,
+fullfast308passed41deselected. Tests derive nettorque fromforcevectors at0/pi,
+interior and tilted-normal geometries; excludedfoot, infeasible preload, finite
+zero-load force and inputvalidation covered. No new external actuation.
+Repeated sensor smoke stillRED:5.8151288Nm<10, identity stillpasses. Thus fixing
+the request contract did NOT fix assembledtorquedelivery; no causal claim for
+all prior delivery/speed loss is made. Log:/tmp/pedelec-sensor-compensated.log.

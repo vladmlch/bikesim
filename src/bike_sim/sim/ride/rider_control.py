@@ -72,18 +72,34 @@ def pedal_torque_waveform(mean_nm, phase_rad, ripple):
     return mean*(1.+depth*cos(2.*phase))
 
 
-def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu, *, ripple=.35):
-    """Realize a mean shaft waveform with compressive forces and friction reserve."""
+def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu, *, ripple=.35,
+                            return_foot_preload_n=0., preload_sides=('front', 'rear')):
+    """Request a net shaft waveform, accounting for recovery-leg pressure.
+
+    The preload's signed moment is removed from the active-leg target before
+    allocation. Recovering feet may be excluded by the caller. Infeasible
+    geometry still obeys the pressure/friction bounds, without a negative
+    active torque request or a guarantee of exact net torque.
+    """
     phase = scalar(phase, 'pedal phase')
     mean = scalar(mean_nm, 'mean pedaling torque', minimum=0.)
     radius = scalar(crank_m, 'crank length', positive=True)
     friction = scalar(mu, 'pedal friction', minimum=0.)
+    preload = scalar(return_foot_preload_n, 'return foot preload', minimum=0.)
+    try:
+        preload_sides = frozenset(preload_sides)
+    except TypeError as error:
+        raise ValueError('preload sides must be a sequence of foot names') from error
+    if not preload_sides <= {'front', 'rear'}:
+        raise ValueError('unknown preload foot')
     fraction = min(max(.5+.5*cos(phase)/_PRESSURE_BLEND_COSINE, 0.), 1.)
     front_weight = fraction*fraction*(3.-2.*fraction)
     weights = {'front': front_weight, 'rear': 1.-front_weight}
     total_torque = pedal_torque_waveform(mean, phase, ripple)
     geometry = {}
     capacities = {}
+    recovery_requests = {}
+    recovery_torque = 0.
     for side, offset in (('front', 0.), ('rear', pi)):
         normal = array(normals[side], 'pedal normal', (3,))
         lever_x = radius*cos(phase+offset)
@@ -108,11 +124,16 @@ def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu, *, ripp
                 *min(ratio*compression_limit, friction*min(compression_limit, measured)))
         geometry[side] = normal, normal_moment, tangent_moment, ratio, capacity, compression_limit, measured
         capacities[side] = max(0., torque_limit) if capacity > 1e-10 and weights[side] > 1e-6 else 0.
+        if preload > 0. and side in preload_sides and weights[side] <= 1e-6:
+            recovery_force = feasible_pedal_force(-preload*normal, normal, friction, measured)
+            recovery_requests[side] = recovery_force
+            recovery_torque += lever_z*recovery_force[0]-lever_x*recovery_force[2]
     active_weights = {side: weights[side] if capacities[side] > 0. else 0. for side in weights}
     weight_sum = sum(active_weights.values())
-    torque_targets = {side: (min(capacities[side], total_torque*active_weights[side]/weight_sum)
+    driving_torque = max(0., total_torque-recovery_torque)
+    torque_targets = {side: (min(capacities[side], driving_torque*active_weights[side]/weight_sum)
                             if weight_sum else 0.) for side in weights}
-    remaining = max(0., total_torque-sum(torque_targets.values()))
+    remaining = max(0., driving_torque-sum(torque_targets.values()))
     for side in sorted(weights, key=weights.get, reverse=True):
         addition = min(remaining, capacities[side]-torque_targets[side])
         torque_targets[side] += addition
@@ -122,7 +143,7 @@ def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu, *, ripp
         normal, normal_moment, tangent_moment, ratio, capacity, compression_limit, measured = geometry[side]
         wanted = torque_targets[side]
         if wanted == 0.:
-            requests[side] = np.zeros(3)
+            requests[side] = recovery_requests.get(side, np.zeros(3))
             continue
         threshold = min(compression_limit, friction*measured/ratio) if ratio > 0. else compression_limit
         if wanted <= capacity*threshold+1e-12:
@@ -728,7 +749,9 @@ class ArticulatedRiderController:
             pedal_loads = {side: max(float(loads.get(side, 0.)), 0.) for side in ('front', 'rear')}
             pedaling_requests, pedaling_weights = pedaling_force_requests(phase,
                 command.mean_crank_torque_nm, self.crank_length_m, normals, pedal_loads, cfg.support_mu,
-                ripple=cfg.pedal_torque_ripple)
+                ripple=cfg.pedal_torque_ripple, return_foot_preload_n=cfg.return_foot_preload_n,
+                preload_sides=tuple(side for side in ('front', 'rear')
+                                    if self._active_recovery[side].stage == 'none'))
         # Both feet keep their support objective for the whole cycle: the
         # return foot rides through its backstroke loaded at least the
         # declared minimum instead of being lifted by a control-mode switch.
@@ -757,11 +780,6 @@ class ArticulatedRiderController:
                 # load an absorbing state. Tangential demand remains bounded
                 # by measured Fn in feasible_pedal_force; no adhesion is added.
                 requests[side] = pedaling_requests[side]
-                if not stance[side] and cfg.return_foot_preload_n > 0.:
-                    # Recovery leg presses on the rising pedal; no pulling
-                    # or external crank actuation is introduced.
-                    requests[side] = feasible_pedal_force(
-                        -cfg.return_foot_preload_n*normal, normal, cfg.foot_mu, load)
                 # In its backstroke the foot may scrape with at most the
                 # declared fraction of its friction cone; the downstroke foot
                 # keeps the full budget. This is an intent bound, not a

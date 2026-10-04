@@ -59,3 +59,52 @@ def test_return_foot_preload_is_a_nonnegative_force():
     assert ArticulatedConfig(return_foot_preload_n=40.).return_foot_preload_n == 40.
     with pytest.raises(ValueError):
         ArticulatedConfig(return_foot_preload_n=-1.)
+
+
+@pytest.mark.parametrize('phase', [0., .35, math.pi, math.pi+.35])
+@pytest.mark.parametrize('tilted', [False, True])
+def test_recovery_preload_preserves_the_requested_net_crank_waveform(phase, tilted):
+    normals = ({'front': (.1, 0., math.sqrt(.99)), 'rear': (-.1, 0., math.sqrt(.99))}
+               if tilted else {'front': (0., 0., 1.), 'rear': (0., 0., 1.)})
+    forces, weights = pedaling_force_requests(phase, 40., .175, normals,
+        {'front': 1e4, 'rear': 1e4}, .9, ripple=.5, return_foot_preload_n=40.)
+    net = 0.
+    for side, offset in (('front', 0.), ('rear', math.pi)):
+        lever = np.array([.175*math.cos(phase+offset), 0., -.175*math.sin(phase+offset)])
+        net += np.cross(lever, forces[side])[1]
+        if weights[side] <= 1e-6:
+            assert -forces[side]@np.array(normals[side]) == pytest.approx(40.)
+    assert net == pytest.approx(40.*(1.+.5*math.cos(2.*phase)))
+
+
+def test_recovering_foot_can_be_excluded_from_preload():
+    forces, _ = pedaling_force_requests(0., 40., .175,
+        {'front': (0., 0., 1.), 'rear': (0., 0., 1.)},
+        {'front': 1e4, 'rear': 1e4}, .9, ripple=.5,
+        return_foot_preload_n=40., preload_sides=('front',))
+    assert np.array_equal(forces['rear'], np.zeros(3))
+    assert -.175*forces['front'][2] == pytest.approx(60.)
+
+
+def test_infeasible_preload_geometry_never_requests_negative_drive():
+    forces, _ = pedaling_force_requests(0., .1, .175,
+        {'front': (0., 0., 1.), 'rear': (0., 0., -1.)},
+        {'front': 1e4, 'rear': 1e4}, .9, ripple=0., return_foot_preload_n=40.)
+    # An upside-down recovery pedal's mandatory preload already exceeds the
+    # target; the drive wish is zero, not a pulling or negative moment wish.
+    assert np.array_equal(forces['front'], np.zeros(3))
+    assert forces['rear'][2] == pytest.approx(40.)
+
+
+def test_preload_inputs_are_validated_and_zero_load_stays_bounded():
+    normals = {'front': (1., 0., 0.), 'rear': (1., 0., 0.)}
+    for bad in (-1., math.nan):
+        with pytest.raises(ValueError):
+            pedaling_force_requests(0., 40., .175, normals, {'front': 0., 'rear': 0.},
+                                    .9, return_foot_preload_n=bad)
+    forces, _ = pedaling_force_requests(0., 40., .175, normals,
+        {'front': 0., 'rear': 0.}, .9, return_foot_preload_n=40.)
+    for side in forces:
+        assert np.isfinite(forces[side]).all()
+        tangent = np.array([0., 0., -1.])
+        assert forces[side]@tangent == pytest.approx(0.)

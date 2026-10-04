@@ -457,11 +457,11 @@ class PhysicalRuntime:
             # stationary crank/legs up to wheel speed through the transmission.
             # A genuinely coasting elastic drivetrain remains freewheeling.
             d.qvel[self.address('crank_spin')[1]] = rate
-            # The motor shaft sits between the crank clutch and the wheel
-            # freehub; both engaged at t=0 means it shares the crank rate.
-            shaft = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, 'drive_shaft_spin')
-            if shaft >= 0:
-                d.qvel[int(m.jnt_dofadr[shaft])] = rate
+            # Any motor-side coordinate starts engaged at the crank rate.
+            for name in ('drive_shaft_spin', 'rotor_spin'):
+                shaft = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, name)
+                if shaft >= 0:
+                    d.qvel[int(m.jnt_dofadr[shaft])] = rate
             cassette = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, 'cassette_spin')
             if cassette >= 0:
                 d.qvel[int(m.jnt_dofadr[cassette])] = d.qvel[self.address('rear_wheel_spin')[1]]
@@ -487,6 +487,7 @@ class PhysicalRuntime:
         loss+=self.drive.last.get('chain_dissipation_power_w',0.)*dt
         loss+=self.drive.last.get('freehub_dissipation_power_w',0.)*dt
         loss+=self.drive.last.get('crank_clutch_dissipation_power_w',0.)*dt
+        loss+=self.drive.last.get('motor_freewheel_dissipation_power_w',0.)*dt
         if self.tire is not None:
             loss+=self.tire.brush_loss_step_j+self.tire.radial_dissipation_power_w*dt
         if self.rider_contacts is not None:

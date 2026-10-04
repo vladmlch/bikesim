@@ -668,7 +668,7 @@ git commit -m "feat: profile-driven assist with 40 ms lag and binary pedelec gat
 
 Семантика: в дефолте (ротор безынерционный) обгонная муфта вырождается в `ctrlrange 0..max_torque` на `crank_spin` — ротор без состояния не может ни обогнать, ни быть обогнан. Это **уже существующий** путь `motor_clutch=false`; задача добавляет опциональный инерционный ротор и диагностику.
 
-- [ ] **Step 1: Падающий тест — unit-оракул обгонной муфты на двух инерциях**
+- [x] **Step 1: Падающий тест — unit-оракул обгонной муфты на двух инерциях**
 
 ```python
 """Motor freewheel: the rotor drives the crank, the crank may overrun the rotor, never the reverse."""
@@ -749,12 +749,12 @@ def test_rotor_catches_up_and_reengages_without_lash():
     assert hub.boundary == pytest.approx(hub._relative_angle(data), abs=1e-6)
 ```
 
-- [ ] **Step 2: Запустить**
+- [x] **Step 2: Запустить**
 
 Run: `uv run python -m pytest tests/reference/test_motor_freewheel_topology.py -q`
 Expected: PASS уже сейчас (класс существует) — это оракул семантики, он фиксирует контракт до правки топологии. Если падает — чинить `IdealFreehubConstraint`, не тест.
 
-- [ ] **Step 3: Падающий тест — построение плant'а с ротором и без**
+- [x] **Step 3: Падающий тест — построение плant'а с ротором и без**
 
 Добавить в тот же файл:
 
@@ -836,7 +836,7 @@ def test_rotor_and_legacy_clutch_are_exclusive():
 Run: `uv run python -m pytest tests/reference/test_motor_freewheel_topology.py -q -m slow` и без `-m` для unit-части.
 Expected: FAIL — `unknown PhysicalDriveConfig parameter(s): rotor_inertia_kgm2`.
 
-- [ ] **Step 4: Конфиг.** В `PhysicalDriveConfig` после `motor_clutch`:
+- [x] **Step 4: Конфиг.** В `PhysicalDriveConfig` после `motor_clutch`:
 
 ```python
     # Reflected inertia of the motor rotor at the crank, kg.m^2. 0 (default)
@@ -861,7 +861,7 @@ Expected: FAIL — `unknown PhysicalDriveConfig parameter(s): rotor_inertia_kgm2
 
 В `model_config.py:119` добавить рядом: `if self.drive.rotor_inertia_kgm2 > 0 and self.drive_mode not in ('crank_effort','articulated_effort'): raise ValueError('drive.rotor_inertia_kgm2 requires an effort drive mode')`.
 
-- [ ] **Step 5: Топология.** В `physical_topology.py` после блока `if clutch:` (строки ~77–88, тело `drive_shaft`) добавить:
+- [x] **Step 5: Топология.** В `physical_topology.py` после блока `if clutch:` (строки ~77–88, тело `drive_shaft`) добавить:
 
 ```python
     rotor_inertia=physics_config.drive.rotor_inertia_kgm2
@@ -898,7 +898,7 @@ Expected: FAIL — `unknown PhysicalDriveConfig parameter(s): rotor_inertia_kgm2
 
 Комментарий над `driver_joint` переписать: `# Real mid-drive: the chainring is on the crank spindle, so the freehub driver is crank_spin. The legacy clutch topology keeps the chainring on drive_shaft.`
 
-- [ ] **Step 6: `drivetrain_forces.py`.**
+- [x] **Step 6: `drivetrain_forces.py`.**
   - `__init__`: `self.rotor = config.rotor_inertia_kgm2 > 0.`; `if self.rotor: joint_names += ('rotor_spin',)`; после создания `self.clutch`: `self.freewheel = None` и
 
 ```python
@@ -924,11 +924,11 @@ Expected: FAIL — `unknown PhysicalDriveConfig parameter(s): rotor_inertia_kgm2
   - В словаре `self.last` (~380–406) добавить `'motor_freewheel_engaged': delivered > 0., 'motor_freewheel_torque_nm': delivered,` — безынерционный ротор: «муфта замкнута» ⇔ мотор даёт момент. В роторной топологии `settle_actuation` перезаписывает оба ключа решённым тендонным моментом (см. выше).
   - `physical_runtime.py:489` уже суммирует `crank_clutch_dissipation_power_w`; добавить `+ self.drive.last.get('motor_freewheel_dissipation_power_w',0.)*dt`.
 
-- [ ] **Step 7: `physical_runtime.py:459-464`**: заменить одиночный `shaft = mj_name2id(..., 'drive_shaft_spin')` на цикл по `('drive_shaft_spin','rotor_spin')` с тем же присваиванием `rate`. Комментарий: `# Any motor-side coordinate (legacy shaft or inertial rotor) starts engaged at the crank rate.`
+- [x] **Step 7: `physical_runtime.py:459-464`**: заменить одиночный `shaft = mj_name2id(..., 'drive_shaft_spin')` на цикл по `('drive_shaft_spin','rotor_spin')` с тем же присваиванием `rate`. Комментарий: `# Any motor-side coordinate (legacy shaft or inertial rotor) starts engaged at the crank rate.`
 
-- [ ] **Step 8: Docstring `ideal_freehub.py:10-17`** заменить вторую половину на: `Defaults keep the cassette freehub (crank_spin drives rear_wheel_spin); the motor freewheel reuses the class with rotor_spin -> crank_spin at ratio 1; the legacy crank clutch with crank_spin -> drive_shaft_spin.`
+- [x] **Step 8: Docstring `ideal_freehub.py:10-17`** заменить вторую половину на: `Defaults keep the cassette freehub (crank_spin drives rear_wheel_spin); the motor freewheel reuses the class with rotor_spin -> crank_spin at ratio 1; the legacy crank clutch with crank_spin -> drive_shaft_spin.`
 
-- [ ] **Step 9: Тесты**
+- [x] **Step 9: Тесты**
 
 Run: `uv run python -m pytest tests/reference/test_motor_freewheel_topology.py -q` затем `-m slow` для того же файла (три сборки плant'а, ~1 мин).
 Expected: PASS.
@@ -936,7 +936,7 @@ Expected: PASS.
 Run: `uv run python -m pytest tests -m 'not slow' -q -x`
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add src/bike_sim/mujoco/physical_topology.py src/bike_sim/physics/physical_config.py src/bike_sim/physics/model_config.py src/bike_sim/sim/ride/drivetrain_forces.py src/bike_sim/sim/ride/physical_runtime.py src/bike_sim/sim/ride/ideal_freehub.py tests/reference/test_motor_freewheel_topology.py

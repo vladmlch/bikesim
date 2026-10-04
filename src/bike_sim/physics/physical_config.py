@@ -244,11 +244,13 @@ class PhysicalDriveConfig:
     freehub_c_nms_rad: float = .5
     bearing_c_nms_rad: float = .03
     brake_ceiling_nm: float = 200.
-    # Opt-in split of the mid-drive onto its own shaft: crank -[clutch]->
-    # drive_shaft (motor here) -[existing freehub]-> wheel. The rider can then
-    # backpedal while the motor keeps driving; rollback backdrives the shaft
-    # and motor instead of loading the rider's legs.
+    # Legacy regression topology: crank -[one-way]-> drive_shaft with motor.
+    # Kept for A/B until acceptance; the real mid-drive chainring is on crank.
     motor_clutch: bool = False
+    # Motor inertia reflected to the crank coordinate, kg.m^2. Zero means a
+    # stateless rotor (tau_motor >= 0 on crank); positive builds rotor->crank
+    # freewheel. 0.1–0.3 is an unverified recalled order of magnitude.
+    rotor_inertia_kgm2: float = 0.
     assist: AssistConfig = field(default_factory=AssistConfig)
     battery: BatteryConfig = field(default_factory=BatteryConfig)
     pedaling: PedalingConfig = field(default_factory=PedalingConfig)
@@ -263,6 +265,11 @@ class PhysicalDriveConfig:
             raise ValueError('unknown transmission model')
         if not isinstance(self.motor_clutch, bool):
             raise ValueError('motor clutch enable must be a bool')
+        scalar(self.rotor_inertia_kgm2, 'rotor_inertia_kgm2', minimum=0.)
+        if self.rotor_inertia_kgm2 > 0. and self.motor_clutch:
+            raise ValueError('rotor freewheel and the legacy crank clutch are exclusive')
+        if self.rotor_inertia_kgm2 > 0. and self.transmission_model not in ('ideal_mid_drive','geometric_ideal_mid_drive'):
+            raise ValueError('a motor rotor requires an ideal mid-drive transmission')
         if self.motor_clutch and self.transmission_model not in ('ideal_mid_drive','geometric_ideal_mid_drive'):
             raise ValueError('motor clutch requires an ideal mid-drive transmission')
         if self.pedaling.reposition_on_stall and not self.motor_clutch:

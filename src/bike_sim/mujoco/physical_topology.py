@@ -3,6 +3,8 @@
 Mass is transferred, never duplicated. The rear synthetic core is split into
 15% hub/rotor and 10% cassette, retaining the previous combined mass, CoM and
 locked-assembly inertia exactly. That split is not a measured cassette profile.
+The optional motor rotor adds its declared synthetic 0.3 kg mass and reflected
+inertia; it is separate from these original component budgets.
 """
 import xml.etree.ElementTree as ET
 import numpy as np
@@ -86,6 +88,15 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
                       mass='0',material='mat_metal',contype='0',conaffinity='0')
         _set_inertia(shaft,shaft_mass,np.zeros(3),
                      ring_inertia(shaft_mass,.015,ring_radius,.03))
+    rotor_inertia=physics_config.drive.rotor_inertia_kgm2
+    if rotor_inertia > 0.:
+        # Declared inertia is reflected to crank speed. Nominal 0.3 kg mass
+        # prevents an artificial ring's mass from determining this inertia.
+        frame_body=_find(root,'body','frame')
+        rotor=ET.SubElement(frame_body,'body',name='motor_rotor',pos='0 0 0')
+        ET.SubElement(rotor,'joint',name='rotor_spin',type='hinge',
+                      pos='0 0 0',axis='0 1 0',damping='0')
+        _set_inertia(rotor,.3,np.zeros(3),np.diag([rotor_inertia/2,rotor_inertia,rotor_inertia/2]))
     for side,sign in (('front',-1.),('rear',1.)):
         pedal=_find(root,'body','pedal_'+side)
         joint=_find(pedal,'joint','pedal_spin_'+side)
@@ -154,10 +165,10 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
     if physics_config.drive_mode in ('crank_effort','articulated_effort'):
         ratio=(physics_config.drive.gearing.front_teeth /
                physics_config.drive.gearing.rear_teeth)
-        # With the motor clutch the chainring lives on the drive shaft; the
-        # crank drives it through a second one-way tendon, and the shaft drives
-        # the wheel through the usual cassette freehub.
+        # Real mid-drive: the chainring is on the crank spindle. The legacy
+        # clutch topology instead keeps its chainring on drive_shaft.
         driver_joint='drive_shaft_spin' if clutch else 'crank_spin'
+        motor_joint='rotor_spin' if rotor_inertia > 0. else driver_joint
         tendons = root.find('tendon')
         if physics_config.drive.transmission_model == 'ideal_mid_drive':
             if tendons is None:
@@ -175,10 +186,18 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
                 solreflimit=f'{physics_config.closure_time_constant_s:.17g} 1')
             ET.SubElement(crank_clutch, 'joint', joint='crank_spin', coef='1')
             ET.SubElement(crank_clutch, 'joint', joint='drive_shaft_spin', coef='-1')
+        if rotor_inertia > 0.:
+            if tendons is None:
+                tendons = ET.SubElement(root, 'tendon')
+            freewheel=ET.SubElement(tendons,'fixed',name='motor_freewheel',
+                limited='true',range='-1e12 0',margin='0',
+                solreflimit=f'{physics_config.closure_time_constant_s:.17g} 1')
+            ET.SubElement(freewheel,'joint',joint='rotor_spin',coef='1')
+            ET.SubElement(freewheel,'joint',joint='crank_spin',coef='-1')
         if physics_config.drive.transmission_model == 'geometric_ideal_mid_drive':
             finalize_geometric_transmission(root,physics_config)
-        ET.SubElement(actuators,'motor',name='mid_drive',joint=driver_joint,gear='1',
-                      ctrllimited='true',ctrlrange=f'0 {physics_config.drive.assist.max_torque:.17g}')
+        ET.SubElement(actuators,'motor',name='mid_drive',joint=motor_joint,gear='1',
+                      ctrllimited='true',ctrlrange=f'0 {physics_config.drive.assist.effective_max_torque:.17g}')
     if physics_config.drive_mode=='crank_effort':
         # The request is validated in the configuration. No contact torque cap
         # is imposed here; the wheel can spin through a saturated tire force.

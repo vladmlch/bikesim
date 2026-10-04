@@ -30,6 +30,7 @@ from bike_sim.sim.ride.physical_observations import (
 from bike_sim.sim.ride.physical_energy import mass_observations
 from bike_sim.sim.ride.rider_intent import RiderIntentResolver, signals_from_channels
 from bike_sim.physics.seated_climb import SeatedClimbSignals
+from bike_sim.sim.ride.balance_monitor import BalanceMonitor
 
 
 def _connect_equality_rows(model, data):
@@ -71,6 +72,9 @@ class PhysicalRuntime:
             raise ValueError('seated climb needs an articulated planar rider')
         self.rider_intent = RiderIntentResolver(self.cfg.seated_climb, float(sim.model.opt.timestep))
         self.rider_intent_signals = SeatedClimbSignals()
+        cfg = self.cfg.articulated
+        self.balance_monitor = BalanceMonitor(cfg.balance_floor_kmh/3.6,
+            cfg.balance_dwell_s,cfg.balance_grace_s)
         self.applied_control = RideControl()
         m, d = sim.model, sim.data
         if np.any(m.dof_armature):
@@ -340,6 +344,7 @@ class PhysicalRuntime:
         if self.rider_control is not None:
             self.rider_control.reset_activation()
         self.rider_intent.reset()
+        self.balance_monitor.reset()
         self.rider_intent_signals = SeatedClimbSignals()
         self.applied_control = RideControl()
         self.research_accounting_valid=False
@@ -521,6 +526,12 @@ class PhysicalRuntime:
             loss+=max(0.,-(forces['shock_upper_stop'][sim.applier.shock_dofadr]-elastic)*v)*dt
         return float(loss)
 
+    def _balance_channel(self, front, rear, *, braking, rider_enabled):
+        self.balance_monitor.update(self.sim.time_s,self.sim.position_m,self.sim.speed_mps,
+            riding=bool(self.rider_control is not None and rider_enabled
+                        and front < .5 and rear < .5 and not braking))
+        return self.balance_monitor.observation()
+
     def step(self, front=0., rear=0., external=None, *, control=None):
         self.completed_samples = ()
         self.period_violations = ()
@@ -637,7 +648,9 @@ class PhysicalRuntime:
         full = sim.steps % self.record_decimation == 0 or (sim.steps+1) % self.control_clock.steps_per_period == 0
         channels = {'tires':tires, 'drive':drive, 'suspension':suspension,
                     'sensors':sensors, 'mass':mass0, 'contact_crash_cause':contact_crash,
-                    'control':asdict(self.applied_control)}
+                    'control':asdict(self.applied_control),
+                    'rider_balance':self._balance_channel(front,rear,braking=braking,
+                                                         rider_enabled=control.rider_enabled)}
         if self.rider_control is not None:
             channels['rider_joint_torques'] = dict(self.rider_control.joint_torques_nm)
             channels['rider_joint_capacity_nm'] = dict(self.rider_control.joint_capacity_nm)

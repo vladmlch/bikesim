@@ -10,6 +10,7 @@ def episode_metrics(env):
     duration = env.sim.time_s
     progress = float(env.sim.position_m)-env.start_position_m  # distance travelled, not absolute x
     requested = env.torque_requested_nms
+    balance=env.sim.physical.balance_monitor.event
     return {
         'outcome': env.reason, 'duration_s': duration, 'progress_m': progress,
         'mean_speed_mps': progress/duration if duration > 0. else 0.,
@@ -20,6 +21,8 @@ def episode_metrics(env):
         'operator_intervention': env.run_metadata.get('operator_intervention', False),
         # Delivered/requested only exists when the policy commanded a torque.
         'motor_pass_fraction': env.torque_delivered_nms/requested if requested > 0. else None,
+        'balance_lost':balance is not None,
+        'balance_lost_at_m':None if balance is None else balance.position_m,
         'loop_out': env.reason == 'crash:loop_out',
         'endo': env.reason == 'crash:endo',
         'max_shock_stroke_m': env.max_shock_stroke_m,

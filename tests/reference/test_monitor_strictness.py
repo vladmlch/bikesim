@@ -97,6 +97,8 @@ def test_reset_enters_new_episode_before_preparing_an_explicit_initial_state():
             raise Prepared
     runtime.sim=SimpleNamespace(steps=3,data=SimpleNamespace(time=.0015),physical_initial_state=Seed())
     runtime.rider_intent=SimpleNamespace(reset=lambda:None)
+    from bike_sim.sim.ride.balance_monitor import BalanceMonitor
+    runtime.balance_monitor=BalanceMonitor(4/3.6,.5,3.)
     with pytest.raises(Prepared):
         runtime.reset()
     assert runtime.sim.steps==0 and runtime.sim.data.time==0.

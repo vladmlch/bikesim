@@ -180,9 +180,12 @@ def physical_run_dir_name(track_name,metadata):
 
 def physical_summary(sim,metadata,reason):
     r=sim.physical
+    event=r.balance_monitor.event
     return plain(dict(metadata,first_failure=r.reference_monitor.first_failure,
         outcome={'reason':reason,'time_s':sim.time_s,'position_m':sim.position_m,
-                                       'steps':sim.steps,'crashed':sim.crash is not None},
+                                       'steps':sim.steps,'crashed':sim.crash is not None,
+                                       'balance_lost':event is not None,
+                                       'balance_lost_at_m':None if event is None else event.position_m},
         equilibrium=sim.equilibrium,energy=r.energy,model_status=r.model_status.as_dict(),battery_energy_j=r.drive.battery.energy_j,
         component_work_j=r.history.work_j,airtime_threshold_s=r.history.airtime_s,
         duration_s=r.history.duration_s))

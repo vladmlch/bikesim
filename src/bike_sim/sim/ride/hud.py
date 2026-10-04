@@ -275,6 +275,23 @@ class RideHUD:
             bar_segs.append((arrow, "orange1" if force[2] > 0. else "green"))
             bar_segs.append((f"{np.hypot(force[0],force[2]):3.0f}N", "green"))
         col("bar l/r", *bar_segs)
+        torques = channels.get("rider_joint_torques", {})
+        capacities = channels.get("rider_joint_capacity_nm", {})
+        arm_segments = [("arm=", "green")]
+        for index, (short, joint) in enumerate((("sh", "rider_shoulder_left"),
+                                               ("el", "rider_elbow_left"))):
+            if index:
+                arm_segments.append(("/", "green"))
+            torque, capacity = torques.get(joint), capacities.get(joint)
+            if torque is None:
+                arm_segments.append((f"{short} ----", "dim"))
+            else:
+                saturated = (capacity is not None and capacity > 0.
+                             and abs(torque) >= .9*capacity)
+                arm_segments.append((f"{short} {torque:+4.0f}",
+                                     "orange1" if saturated else "green"))
+        arm_segments.append((" Nm", "green"))
+        col("arm", *arm_segments)
         saddle = rider.get("saddle") or {}
         saddle_n = saddle.get("normal_load_n")
         col("saddle",
@@ -287,7 +304,22 @@ class RideHUD:
         col("lean",
             ("lean=", "green"),
             (f"{lean:+5.1f}" if lean is not None else "-----", "green"),
-            ("deg", "green"))
+            ("deg", "green"),
+            ((f"/lim{degrees(channels['rider_lean_limit_rad']):.0f}°"
+              if channels.get('rider_lean_limit_rad') is not None else "/lim--°"), "green"))
+        balance = channels.get("rider_balance")
+        if balance is None:
+            balance_text, balance_style = "---", "dim"
+        elif balance.get("balance_lost"):
+            position = balance.get("balance_lost_at_m")
+            balance_text = f"LOST@x={position:.0f} m" if position is not None else "LOST"
+            balance_style = "red"
+        elif balance.get("low_speed_s", 0.) > 0.:
+            balance_text = f"low {balance['low_speed_s']:.1f}s"
+            balance_style = "yellow"
+        else:
+            balance_text, balance_style = "ok", "green"
+        col("BAL", ("BAL=", balance_style), (f"{balance_text:<14}", balance_style))
         columns.append(sep)
         kappa_f = tires["front"].get("slip_ratio")
         kappa_r = tires["rear"].get("slip_ratio")

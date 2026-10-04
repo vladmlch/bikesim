@@ -114,9 +114,8 @@ class SeatedPostureProgram:
                 config.front_load_share_target-self._delayed_load_share)*dt
             self.trim_rad = max(-config.lean_trim_limit_rad,
                                 min(config.lean_trim_limit_rad, self.trim_rad))
-        forward_limit = config.max_forward_lean_rad
-        if lean_limit_rad is not None:
-            forward_limit = min(forward_limit, lean_limit_rad)
+        forward_limit = (config.max_forward_lean_rad if lean_limit_rad is None
+                         else lean_limit_rad)
         extra = sum(body_pulse(time_s, start, duration, amplitude)
                     for start, duration, amplitude in self._pulses)
         target = max(-config.max_backward_lean_rad,

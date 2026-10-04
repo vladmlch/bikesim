@@ -66,3 +66,24 @@ def test_zero_tau_keeps_the_raw_hysteresis():
 def test_coast_tau_must_be_nonnegative():
     with pytest.raises(ValueError):
         PedalingConfig(enabled=True, coast_cadence_tau_s=-.1)
+
+
+def test_wheel_implied_cadence_does_not_stop_legs_below_their_limit():
+    policy = PedalingPolicy(PedalingConfig(enabled=True, coast_above_rpm=120.,
+        resume_below_rpm=105., coast_cadence_tau_s=.35, effort_slew_nm_s=0.))
+    state = policy.update(0., 90.*2*math.pi/60, 160., 30., .001)
+    assert state.mode == 'pedaling'
+    assert state.required_cadence_rpm == 160.
+    assert state.effort_nm == 30.
+
+
+def test_stopped_cranks_resume_while_the_open_freehub_wheel_keeps_turning():
+    policy = PedalingPolicy(PedalingConfig(enabled=True, coast_above_rpm=120.,
+        resume_below_rpm=105., coast_cadence_tau_s=.35, effort_slew_nm_s=0.))
+    for _ in range(1500):
+        state = policy.update(0., 160.*2*math.pi/60, 160., 30., .001)
+    assert state.mode == 'coasting'
+    for _ in range(350):
+        state = policy.update(0., 0., 160., 30., .001)
+    assert state.mode == 'pedaling'
+    assert state.required_cadence_rpm == 160.

@@ -53,12 +53,13 @@ class PedalingPolicy:
         if not enabled:
             self.reset()
             return PedalingState('disabled', 'disabled', 0., required_cadence_rpm)
-        cadence = max(abs(rate_rad_s) * 60. / (2. * pi), required_cadence_rpm)
+        actual_cadence = abs(rate_rad_s) * 60. / (2. * pi)
+        cadence = max(actual_cadence, required_cadence_rpm)
         tau = self.config.coast_cadence_tau_s
         if tau > 0. and self._cadence_ema is not None:
-            self._cadence_ema += min(1., dt/tau)*(cadence-self._cadence_ema)
+            self._cadence_ema += min(1., dt/tau)*(actual_cadence-self._cadence_ema)
         else:
-            self._cadence_ema = cadence
+            self._cadence_ema = actual_cadence
         threshold = (self.config.resume_below_rpm if self.coasting
                      else self.config.coast_above_rpm)
         excessive = self.config.enabled and self._cadence_ema >= threshold

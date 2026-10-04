@@ -266,3 +266,11 @@ def test_preview_is_last_sample_and_preserves_exact_endpoint():
     assert samples[-1].x_m == pytest.approx(3.03)
     with pytest.raises(ValueError):
         road_grade_preview(())
+
+
+def test_geometric_limit_replaces_the_legacy_config_ceiling_when_available():
+    program = SeatedPostureProgram(SeatedClimbConfig(enabled=True,
+        lean_rate_rad_s=10., max_forward_lean_rad=.1))
+    assert program.update(0., .5, .1, lean_limit_rad=.4) == pytest.approx(.4)
+    legacy = SeatedPostureProgram(program.config)
+    assert legacy.update(0., .5, .1) == pytest.approx(.1)

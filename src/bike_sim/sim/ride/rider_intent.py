@@ -11,11 +11,16 @@ from bike_sim.sim.ride.control import RideControl
 
 
 def signals_from_channels(channels) -> SeatedClimbSignals:
+    tires = channels.get('tires', {})
+    front = float(tires.get('front', {}).get('normal_load_n', 0.))
+    rear = float(tires.get('rear', {}).get('normal_load_n', 0.))
+    total = front+rear
     return SeatedClimbSignals(
         pitch_rate_up_rad_s=-float(channels['frame_gyro_body_rad_s'][1]),
         specific_force_body_mps2=tuple(channels['frame_specific_force_body_mps2']),
         crank_rate_rad_s=float(channels['encoders_rad_s']['crank']),
-        human_crank_torque_nm=float(channels['human_torque_nm']))
+        human_crank_torque_nm=float(channels['human_torque_nm']),
+        front_load_share=front/total if total > 1. else None)
 
 
 class RiderIntentResolver:
@@ -43,7 +48,8 @@ class RiderIntentResolver:
         self.policy.program.schedule_pulse(start_s, duration_s, amplitude_rad)
 
     def resolve(self, control: RideControl, signals: SeatedClimbSignals, *, step: int,
-                road_grade: float, active: bool = True, advance: bool = True) -> RideControl:
+                road_grade: float, preview_grade=None, lean_limit_rad=None,
+                active: bool = True, advance: bool = True) -> RideControl:
         if not isinstance(control, RideControl):
             raise ValueError('expected a rider control')
         if not self.policy.config.enabled or not active:
@@ -53,12 +59,14 @@ class RiderIntentResolver:
         if step < self._last_tick_step:
             raise ValueError('reset rider intention before rewinding physics')
         if not advance:
-            return copy.deepcopy(self).resolve(control, signals, step=step, road_grade=road_grade)
+            return copy.deepcopy(self).resolve(control, signals, step=step, road_grade=road_grade,
+                preview_grade=preview_grade, lean_limit_rad=lean_limit_rad)
         if step % self.period_steps == 0 and step != self._last_tick_step:
             expected = 0 if self._last_tick_step < 0 else self._last_tick_step+self.period_steps
             if step != expected:
                 raise ValueError('rider intention clock skipped an acquisition')
-            self.intent = self.policy.update(signals, self.policy.config.period_s, road_grade=road_grade)
+            self.intent = self.policy.update(signals, self.policy.config.period_s, road_grade=road_grade,
+                preview_grade=preview_grade, lean_limit_rad=lean_limit_rad)
             self._last_tick_step = step
         if not control.rider_enabled:
             return control

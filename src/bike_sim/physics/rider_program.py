@@ -7,6 +7,7 @@ chooses how much of the friction cone the return foot asks for. Nothing here
 assigns qpos/qvel or brakes the crank from outside the legs.
 """
 from dataclasses import dataclass
+from collections import deque
 import math
 
 
@@ -54,8 +55,8 @@ class SeatedPostureProgram:
 
     Consumes only the allowed rider information: road grade under the wheels
     and in the preview window, the strategy's own parameters, the
-    simulation clock, and scheduled body pulses. It never inspects wheelie
-    outcomes or solved contact reactions, and it produces only a
+    simulation clock, scheduled body pulses, and a delayed front-load-share
+    proxy of proprioception. It produces only a
     rate-limited torso-lean wish inside the declared lean envelope.
     """
 
@@ -65,10 +66,16 @@ class SeatedPostureProgram:
             raise ValueError('expected a seated climb configuration')
         self.config = config
         self.lean_rad = 0.
+        self.trim_rad = 0.
+        self._load_samples = deque()
+        self._delayed_load_share = None
         self._pulses = []
 
     def reset(self):
         self.lean_rad = 0.
+        self.trim_rad = 0.
+        self._load_samples.clear()
+        self._delayed_load_share = None
         self._pulses.clear()
 
     def schedule_pulse(self, start_s, duration_s, amplitude_rad):
@@ -82,18 +89,39 @@ class SeatedPostureProgram:
         self._pulses.append((float(start_s), float(duration_s),
                              float(amplitude_rad)))
 
-    def update(self, time_s, road_grade, dt_s):
+    def update(self, time_s, road_grade, dt_s, *, front_load_share=None,
+               lean_limit_rad=None, dead_time_s=None):
         config = self.config
         if not (math.isfinite(time_s) and math.isfinite(road_grade)):
             raise ValueError('nonfinite posture program input')
         if not (math.isfinite(dt_s) and dt_s > 0.):
             raise ValueError('posture program interval must be positive')
         dt = dt_s
+        delay = config.trim_dead_time_s if dead_time_s is None else dead_time_s
+        if not math.isfinite(delay) or delay < 0.:
+            raise ValueError('posture load delay must be finite and nonnegative')
+        if front_load_share is not None and not (
+                math.isfinite(front_load_share) and 0. <= front_load_share <= 1.):
+            raise ValueError('front load share must be between zero and one')
+        if lean_limit_rad is not None and not (
+                math.isfinite(lean_limit_rad) and lean_limit_rad >= 0.):
+            raise ValueError('lean limit must be finite and nonnegative')
+        self._load_samples.append((time_s, front_load_share))
+        while self._load_samples and self._load_samples[0][0] <= time_s-delay+1e-12:
+            self._delayed_load_share = self._load_samples.popleft()[1]
+        if self._delayed_load_share is not None:
+            self.trim_rad += config.lean_trim_gain_rad_s * (
+                config.front_load_share_target-self._delayed_load_share)*dt
+            self.trim_rad = max(-config.lean_trim_limit_rad,
+                                min(config.lean_trim_limit_rad, self.trim_rad))
+        forward_limit = config.max_forward_lean_rad
+        if lean_limit_rad is not None:
+            forward_limit = min(forward_limit, lean_limit_rad)
         extra = sum(body_pulse(time_s, start, duration, amplitude)
                     for start, duration, amplitude in self._pulses)
         target = max(-config.max_backward_lean_rad,
-            min(config.max_forward_lean_rad,
-                config.lean_gain*math.atan(road_grade) + extra))
+            min(forward_limit,
+                config.lean_gain*math.atan(road_grade) + self.trim_rad + extra))
         self.lean_rad += max(-config.lean_rate_rad_s*dt,
             min(config.lean_rate_rad_s*dt, target-self.lean_rad))
         return self.lean_rad

@@ -239,3 +239,30 @@ def test_pulse_redistributes_load_through_inertia_only(tmp_path):
                                  calm['chest_z_m'])
                        - surged['chest_z_m'][window])
         assert chest_delta.max() > 0.
+
+
+def test_trim_is_delayed_and_increases_forward_lean_for_light_front():
+    cfg = SeatedClimbConfig(enabled=True, lean_rate_rad_s=10., trim_dead_time_s=.2)
+    program = SeatedPostureProgram(cfg)
+    base = math.atan(.15)
+    for i in range(20):
+        lean = program.update(i*.01, .15, .01, front_load_share=.20)
+    assert lean == pytest.approx(base)
+    for i in range(20, 300):
+        lean = program.update(i*.01, .15, .01, front_load_share=.20)
+    assert base+.05 < lean <= base+.15+1e-9
+
+def test_geometric_limit_caps_lean():
+    program = SeatedPostureProgram(SeatedClimbConfig(enabled=True, lean_rate_rad_s=10., max_forward_lean_rad=.8))
+    for i in range(200):
+        lean = program.update(i*.01, .45, .01, lean_limit_rad=.2)
+    assert lean == pytest.approx(.2)
+
+def test_preview_is_last_sample_and_preserves_exact_endpoint():
+    from bike_sim.sim.ride.rider_state import RoadSample, road_grade_preview, road_samples
+    import numpy as np
+    assert road_grade_preview((RoadSample(0.,0.,.1), RoadSample(2.,.4,.3))) == .3
+    samples = road_samples(np.array([[0.,0.], [4.,.4]]), (0.,1.), 2.03)
+    assert samples[-1].x_m == pytest.approx(3.03)
+    with pytest.raises(ValueError):
+        road_grade_preview(())

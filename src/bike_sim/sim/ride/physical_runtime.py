@@ -19,7 +19,7 @@ from bike_sim.sim.ride.static_braking import StaticBrakeApplier
 from bike_sim.sim.ride.rider_contacts import RiderContactApplier
 from bike_sim.sim.ride.rider_control import ArticulatedRiderController, RiderCommand
 from bike_sim.sim.ride.physical_mapping import resolve_id
-from bike_sim.sim.ride.rider_state import rider_kinematic_state, road_grade_for_posture
+from bike_sim.sim.ride.rider_state import rider_kinematic_state, road_grade_for_posture, road_grade_preview
 from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory, freeze
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
@@ -215,6 +215,8 @@ class PhysicalRuntime:
         if self.cfg.seated_climb.enabled:
             control = self.rider_intent.resolve(control, self.rider_intent_signals,
                 step=sim.steps, road_grade=road_grade_for_posture(self.rider_state.road),
+                preview_grade=road_grade_preview(self.rider_state.road),
+                lean_limit_rad=getattr(self.rider_control, 'lean_limit_rad', None),
                 active=active, advance=advance)
         if advance:
             self.applied_control = control

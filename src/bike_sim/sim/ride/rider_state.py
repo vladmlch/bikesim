@@ -31,6 +31,13 @@ def road_grade_for_posture(road: tuple[RoadSample, ...]) -> float:
     return float(sum(sample.grade for sample in road)/len(road))
 
 
+def road_grade_preview(road) -> float:
+    """Grade at the far endpoint of the allowed road preview window."""
+    if not road:
+        raise ValueError('posture program needs at least one road sample')
+    return float(road[-1].grade)
+
+
 @dataclass(frozen=True)
 class RiderKinematicState:
     """Point-in-time rider input: generalized kinematics and road preview."""
@@ -81,6 +88,7 @@ def road_samples(vertices, wheel_x_m, lookahead_m, *, spacing_m=.05):
     xs = set(wheels)
     count = int(np.floor(lookahead/spacing+1e-12))
     xs.update(front+(k+1)*spacing for k in range(count))
+    xs.add(front+lookahead)
     return tuple(RoadSample(x, _profile_height(verts, x), _profile_grade(verts, x))
                  for x in sorted(xs))
 

@@ -323,6 +323,17 @@ class ArticulatedConfig:
     arm_reach_fraction: float = .92
     joint_kp_nm_rad: float = 600.
     joint_kd_nms_rad: float = 15.
+    # Passive tissue damping of the rider hinges (a DOF property, dissipation
+    # in the energy ledger). None keeps the legacy coupling to the controller
+    # derivative gain joint_kd_nms_rad; the realistic profile declares its own
+    # small value because joint viscosity is a few watts, not a muscle gain.
+    joint_passive_damping_nms_rad: float | None = None
+    # Fully coupled rider (pelvis, soles and hands welded): deliver the crank
+    # intent as the response allocator's crank-torque coordinate, carry the
+    # trunk on the bar and keep the arms stiff about the intended posture
+    # instead of Jacobian-transpose force feedforwards. Experimental: see
+    # docs/superpowers/audits/2026-10-04-realistic-pedelec-drive.md.
+    coupled_task_control: bool = False
     joint_limit_nm: float = 100.
     joint_speed_limit_rad_s: float = 20.
     joint_power_limit_w: float = 250.
@@ -361,6 +372,12 @@ class ArticulatedConfig:
     # the torso can still lean over locked hands).
     grip_attachment: str = 'spring'
 
+    @property
+    def passive_damping_nms_rad(self):
+        """Hinge tissue damping actually compiled into the rider model."""
+        return (self.joint_kd_nms_rad if self.joint_passive_damping_nms_rad is None
+                else self.joint_passive_damping_nms_rad)
+
     def __post_init__(self):
         if not 0 < scalar(self.arm_reach_fraction,'arm reach fraction',positive=True) < 1:
             raise ValueError('arm reach fraction must lie strictly between zero and one')
@@ -373,9 +390,10 @@ class ArticulatedConfig:
         for key in self.__dataclass_fields__:
             if key in ('joint_envelope_path', 'joint_strength_path',
                        'pedal_attachment', 'saddle_attachment',
-                       'grip_attachment'):
+                       'grip_attachment', 'coupled_task_control'):
                 continue
-            if key in ('grip_pair_force_limit_n','active_positive_power_limit_w') and getattr(self,key) is None:
+            if key in ('grip_pair_force_limit_n','active_positive_power_limit_w',
+                       'joint_passive_damping_nms_rad') and getattr(self,key) is None:
                 continue
             scalar(getattr(self,key),key,minimum=0)
         if self.grip_pair_force_limit_n is not None:
@@ -385,6 +403,10 @@ class ArticulatedConfig:
             scalar(getattr(self,key),key,positive=True)
         if self.saddle_reserve_weight_fraction > 1.:
             raise ValueError('saddle reserve fraction must not exceed one')
+        if self.joint_passive_damping_nms_rad is not None:
+            scalar(self.joint_passive_damping_nms_rad,'joint_passive_damping_nms_rad',minimum=0)
+        if not isinstance(self.coupled_task_control, bool):
+            raise ValueError('coupled_task_control must be a bool')
         if self.pedal_torque_ripple >= 1.:
             raise ValueError('pedal torque ripple must be below one')
         if self.pedal_scrape_fraction > 1.:

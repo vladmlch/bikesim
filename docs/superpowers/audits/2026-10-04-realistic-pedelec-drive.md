@@ -191,3 +191,90 @@ equality multipliers through the native Jacobian transpose onto `crank_spin`.
 It does not substitute zero when an individual attachment wrench is
 unobservable. The low measured torque is therefore not that proposed fallback;
 the underlying delivery/support problem remains unresolved.
+
+## Independent verification and delivery investigation (2026-10-04, second session)
+
+Verified: 13 commits `3385623..09c6ac4` implement Tasks 0–10 at component
+level; non-slow suite 316 passed (one test needs `python -m pytest` for the
+`tools` import); no pre-existing threshold loosened; no removed-knob leftovers.
+Flat acceptance reproduced on the default welded profile: **2.98 km/h**, zero
+shifts. Slice remains **NOT ACCEPTED**.
+
+### Where the rider's power goes (default profile, flat launch, t > 2 s)
+
+| Quantity | Value |
+|---|---:|
+| Net muscle power (11 actuators) | 161 W |
+| Dissipated in rider hinge damping (`joint_kd_nms_rad` = 15 compiled as DOF damping) | 158 W |
+| Delivered to the crank (sensor × crank rate) | 3–7 W |
+| Mean solved weld crank torque vs command | 1.3 vs 58 N·m |
+
+Pedal forces are large (≈185 N mean each, peaks 700 N) but uncorrelated
+with the request (corr −0.03); the crank lags the wheel 65 % of the time
+(freehub open), so the pedelec gate correctly sees no rider torque and the
+motor stays off. The old boost/stall motor had masked this.
+
+### Ablation (6 s launches, one knob each; sensor mean in N·m)
+
+reference 1.7 · legacy clutch 1.7 · ripple .35/no preload 2.1 · no preload 2.0
+· baseline strength curves 1.5 · 20 N·m effort 2.0 · damping 1.5 → 0.6 ·
+damping 3 → 2.0. Neither the drive topology nor any Task 6–8 parameter is the
+cause; the loss is in the rider controller/plant.
+
+### Mechanism (probes `/tmp/pedelec_alloc_probe.py`, `/tmp/pedelec_binding_probe.py`)
+
+1. The leg command is `PD(IK targets) + Jᵀ·F_request`; in the welded
+   pelvis–leg–pedal–crank chain a Jacobian-transpose feedforward assumes a
+   free foot and saturates the ±100 N·m actuators (intents 400–1000 N·m)
+   instead of turning the crank. The allocator's nearest-intent objective is
+   then dominated by unreachable wishes.
+2. Welded pedal platforms spin freely; the ankle target "level foot" with
+   kp = 600 produces ~900 N·m ankle intents once the platform pitches, and the
+   hip/knee IK (aimed at a level-foot ankle position) fights the chain.
+3. With hands welded, the torso target is unreachable statically: the trunk
+   collapsed to its ROM stop in the initial equilibrium (torso q 0.567 at the
+   0.567 limit, elbows at 105°), demanding −300 N·m forever; the trunk
+   reaction then binds the saddle friction/COP cone, which the binding probe
+   shows as the family that makes a 30–60 N·m crank task infeasible
+   (`saddle_mu` alone unlocks it).
+4. At the control-period level the planned first-step weld torque is exact
+   (|planned − solved| = 0.00, corr 1.000) but drifts within the 5–10 ms
+   period; the pelvis bounces on the saddle weld (0–1900 N) under pedalling.
+
+### Implemented, opt-in (`[articulated] coupled_task_control = true`), default OFF
+
+- `rider_response_allocation.allocate_response(..., crank_torque_nm)`: the
+  predicted weld torque on `crank_spin` (same multipliers and Jᵀ row as the
+  sensor) is one more heavily weighted coordinate (`CRANK_TASK_SCALE_NM` = 1
+  N·m ≡ 50 N·m joint deviation); `linear_region_infeasible` honours an
+  equality block; diagnostics `crank_torque_target_nm`,
+  `solution_crank_torque_nm`.
+- `rider_control`: for the fully coupled rider the crank intent (pedalling
+  waveform or coasting brake) is the task; pedal/support Jᵀ feedforwards are
+  dropped; the hands carry the trunk's gravity moment on the bar; arm IK is
+  solved about the shoulder the *target* torso places (stiff arms).
+- `ArticulatedConfig.joint_passive_damping_nms_rad` (None = legacy coupling to
+  `joint_kd_nms_rad`): tissue damping compiled into the model and the energy
+  ledger apart from the controller gain. Not changed in any profile.
+- Tests: `tests/reference/test_coupled_rider_task.py` (planned = solved
+  first-step weld torque; damping < 30 % of positive power with 0.5 N·m·s/rad;
+  config contracts). Default profile tests unchanged: held rider 4 passed,
+  sensor smoke still 5.815 < 10 N·m (pre-existing).
+
+Measured with the mode on (damping 0.5): launch reaches 5–7 km/h within 1 s
+(vs 1.3 before), then the trunk still migrates to its ROM stop, the saddle
+cone binds, the task is dropped 12 % of ticks, 20 s flat end speed 6.3 km/h.
+An ankle variant (hip/knee IK at the actual ankle anchor, bounded ankle wish)
+removed the 900 N·m intents but left the free pedal platform without a static
+attractor: the initial equilibrium stopped converging (residual 0.73 at
+`rider_ankle_rear`/`pedal_rear_spin`), so it was reverted.
+
+### Ruling and next slice
+
+"Pedalling like reality" is blocked by the rider plant, not by the drive:
+(1) trunk posture/arm support in the doubly welded chain, (2) the welded
+pelvis COP/friction budget for a planar two-leg rider, (3) foot/pedal pitch
+control through the pedal pressure centre, (4) neuromuscular smoothing
+(`activation_tau_s` = 0 today). These are R/G5 plant items (spec S4/S5), to be
+done as one slice with the saddle-contact model, after which the four
+acceptance rides re-run unchanged. No threshold, budget or track was changed.

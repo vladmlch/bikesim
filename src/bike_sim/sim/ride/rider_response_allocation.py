@@ -12,14 +12,34 @@ from bike_sim.sim.ride.support_geometry import _upper_box_face
 SUPPORT_FORCE_GUARD_N=1e-5
 SUPPORT_MOMENT_GUARD_NM=1e-6
 GRIP_RADIUS_GUARD_FRACTION=1e-6
+# One newton-metre of crank torque shortfall weighs as much as a 50 N.m
+# joint-torque deviation: the pedalling task dominates how the limbs share it.
+CRANK_TASK_SCALE_NM=1.
 
 
-def linear_region_infeasible(matrix,bound,lower,upper):
+def linear_region_infeasible(matrix,bound,lower,upper,aeq=None,beq=None):
     """Reject only a proven-empty linear relaxation, at the existing tolerance."""
+    equality={} if aeq is None or not len(aeq) else {'A_eq':aeq,'b_eq':beq}
     result=linprog(np.zeros(len(lower)),A_ub=matrix,b_ub=bound+1e-7,
-        bounds=np.column_stack((lower,upper)),method='highs',
+        bounds=np.column_stack((lower,upper)),method='highs',**equality,
         options={'primal_feasibility_tolerance':1e-9,'dual_feasibility_tolerance':1e-9})
     return result.status==2
+
+
+def crank_torque_rows(controller, kernel):
+    """Select the pedal-weld constraint rows and their crank_spin Jacobian column.
+
+    The welds' multipliers projected through J^T onto crank_spin are exactly
+    the torque the pedelec sensor reads (``WeldedPedals.delivered_crank_torque_nm``),
+    so a torque planned here is the torque that will be measured.
+    """
+    selected=np.zeros(len(kernel.types),dtype=bool)
+    for name in ('front','rear'):
+        meta=controller._alloc_attachments.get(name)
+        if meta is None or meta['eq'] < 0:
+            raise ValueError('crank torque allocation requires welded pedals')
+        selected|=(kernel.types==int(mujoco.mjtConstraint.mjCNSTR_EQUALITY))&(kernel.ids==meta['eq'])
+    return selected,kernel.jacobian[selected,controller.crank_spin_dof]
 
 
 def allocation_support_point(model,data,controller,name,meta):
@@ -58,16 +78,33 @@ def support_rows(force_map, normal, *, kind, config, weight_n, half_length_m=0.)
     return np.asarray(rows),np.asarray(bounds),floor
 
 
-def allocate_response(c, model, data, torque_intent, *, effort_scale=1.,dt_s=None,steady_state=False):
+def allocate_response(c, model, data, torque_intent, *, effort_scale=1.,dt_s=None,steady_state=False,
+                      crank_torque_nm=None):
     """Optimize tau, positive-power epigraph and one fixed affine coordinate.
 
     All body accelerations and support wrenches are consequences of tau under
     the current soft constraint law. They are not independent force wishes.
+
+    ``crank_torque_nm`` is the rider's pedalling task: in the closed
+    pelvis-leg-pedal-crank chain only the component of the muscle torques
+    along the chain's motion reaches the crank, so the predicted weld torque
+    on crank_spin enters the objective as one more coordinate, in units of
+    ``CRANK_TASK_SCALE_NM``, far heavier than a joint-torque deviation (what
+    a rider's force feedback does). Where the flat-pedal cones, strength or
+    power forbid the wish -- the dead spots -- the delivered torque falls
+    short physically instead of the problem turning infeasible. None keeps
+    the pure nearest-intent problem.
     """
     cfg=c.config;names=tuple(c.joints);nt=len(names)
     activation_enabled=cfg.activation_tau_s>0. and not steady_state
     constant=2*nt;base_size=constant+1;nz=base_size+(nt if activation_enabled else 0)
     excitation_indices=np.arange(base_size,nz);torque_indices=np.arange(nt)
+    task_index=None
+    if crank_torque_nm is not None:
+        crank_torque_nm=float(crank_torque_nm)
+        if not np.isfinite(crank_torque_nm):
+            raise ValueError('crank torque target must be finite')
+        task_index=nz;nz+=1
     dofs=np.array([c.joints[name][1] for name in names],dtype=int)
     speeds=np.asarray(data.qvel[dofs])
     scale=50.;power_scale=450.
@@ -97,6 +134,8 @@ def allocate_response(c, model, data, torque_intent, *, effort_scale=1.,dt_s=Non
                     if cfg.active_positive_power_limit_w is not None else np.inf)
     lower[constant]=upper[constant]=1.
     target=np.zeros(nz);target[:nt]=np.asarray(torque_intent)/scale;target[constant]=1.
+    if task_index is not None:
+        target[task_index]=crank_torque_nm/CRANK_TASK_SCALE_NM
     activation=None
     activation_scales=np.ones(nz);activation_scales[:nt]=scale
     if activation_enabled:
@@ -118,6 +157,9 @@ def allocate_response(c, model, data, torque_intent, *, effort_scale=1.,dt_s=Non
         fallback[:nt]=limit_positive_power(fallback[:nt]*scale,speeds,cfg.active_positive_power_limit_w)/scale
     fallback[nt:2*nt]=np.maximum(fallback[:nt]*scale*speeds,0.)/power_scale
     prefilter_rejections=0
+    crank_selected=crank_column=None
+    if task_index is not None:
+        crank_selected,crank_column=crank_torque_rows(c,kernel)
     weight=c.rider_mass*float(np.linalg.norm(model.opt.gravity))
     projected={};normals={};half_lengths={};points={}
     for name,meta in c._alloc_attachments.items():
@@ -154,11 +196,22 @@ def allocate_response(c, model, data, torque_intent, *, effort_scale=1.,dt_s=Non
             row=np.zeros(nz);row[nt:2*nt]=power_scale
             rows.append(row);bounds.append(cfg.active_positive_power_limit_w)
         g=np.asarray(rows).reshape(-1,nz);h=np.asarray(bounds)
+        aeq=np.zeros((0,nz));beq=np.zeros(0)
+        crank_row=None
+        if task_index is not None:
+            # Predicted weld torque on crank_spin is affine in z through the
+            # response multipliers of this mode; the task coordinate equals it.
+            crank_row=np.zeros(nz)
+            crank_row[:nt]=crank_column@response.force_matrix[crank_selected]*scale
+            crank_row[constant]=crank_column@response.force_offset[crank_selected]
+            crank_row[task_index]=-CRANK_TASK_SCALE_NM
+            aeq=crank_row.reshape(1,nz);beq=np.zeros(1)
+            fallback[task_index]=(crank_row[:task_index]@fallback[:task_index])/CRANK_TASK_SCALE_NM
         # Initialization can visit geometries with no legal seated command.
         # Do not spend thousands of nonlinear iterations in an empty region.
         # All physical inequalities remain in the subsequent certification.
-        fallback_error=_residual(fallback,np.zeros((0,nz)),np.zeros(0),g,h,(),lower,upper)
-        base_empty=fallback_error>1e-7 and linear_region_infeasible(g,h,lower,upper)
+        fallback_error=_residual(fallback,aeq,beq,g,h,(),lower,upper)
+        base_empty=fallback_error>1e-7 and linear_region_infeasible(g,h,lower,upper,aeq,beq)
         if base_empty:
             prefilter_rejections+=1
         def solve(branch,x0):
@@ -174,36 +227,39 @@ def allocate_response(c, model, data, torque_intent, *, effort_scale=1.,dt_s=Non
                 extras.extend(allocation_grip_constraints(force_maps[name][:2],direction,pulling=pulling,
                                                 limit_n=cfg.grip_pull_per_hand_n))
             if base_empty:
-                error=_residual(fallback,np.zeros((0,nz)),np.zeros(0),g,h,extras,lower,upper)
+                error=_residual(fallback,aeq,beq,g,h,extras,lower,upper)
                 return Allocation(fallback.copy(),False,error)
             linear=[constraint for constraint in extras if isinstance(constraint,LinearConstraint)]
             if linear:
                 branch_g=np.vstack([g,*[-np.atleast_2d(constraint.A) for constraint in linear]])
                 branch_h=np.r_[h,*[-np.atleast_1d(constraint.lb) for constraint in linear]]
-                branch_error=_residual(fallback,np.zeros((0,nz)),np.zeros(0),branch_g,branch_h,(),lower,upper)
-                if branch_error>1e-7 and linear_region_infeasible(branch_g,branch_h,lower,upper):
+                branch_error=_residual(fallback,aeq,beq,branch_g,branch_h,(),lower,upper)
+                if branch_error>1e-7 and linear_region_infeasible(branch_g,branch_h,lower,upper,aeq,beq):
                     prefilter_rejections+=1
-                    error=_residual(fallback,np.zeros((0,nz)),np.zeros(0),g,h,extras,lower,upper)
+                    error=_residual(fallback,aeq,beq,g,h,extras,lower,upper)
                     return Allocation(fallback.copy(),False,error)
-            result=allocate_effort(target,np.zeros((0,nz)),np.zeros(0),g,h,lower,upper,
+            result=allocate_effort(target,aeq,beq,g,h,lower,upper,
                                    extra_constraints=extras,x0=x0)
             if activation is not None:
                 projected=activation.project(result.solution,torque_indices,excitation_indices,activation_scales)
-                error=_residual(projected,np.zeros((0,nz)),np.zeros(0),g,h,extras,lower,upper)
+                error=_residual(projected,aeq,beq,g,h,extras,lower,upper)
                 result=Allocation(projected,error<=1e-7,error)
             return result
         result,branch=c._select_allocation_branch(target,solve)
-        return result,(branch,force_maps)
+        return result,(branch,force_maps,crank_row)
     result,payload,response,mode_count,complete=search_constraint_modes(
         kernel,target[:nt]*scale,solve_mode,torque_of=lambda result:result.solution[:nt]*scale)
-    branch,force_maps=payload
+    branch,force_maps,crank_row=payload
     torque=result.solution[:nt]*scale
     acceleration=response.acceleration_offset+response.acceleration_matrix@torque
     wrenches={name:matrix@result.solution for name,matrix in force_maps.items()}
     excitation=(torque.copy() if activation is None else result.solution[excitation_indices]*scale)
     activation_state=(torque.copy() if activation is None else activation.latent(excitation))
+    predicted_crank=None if task_index is None else float(result.solution[task_index]*CRANK_TASK_SCALE_NM)
     return torque,dict(feasible=result.feasible,violation=result.violation,grip_branch=branch,
-        effort_scale=effort_scale,saddle_normal_lower_bound_n=cfg.saddle_reserve_weight_fraction*weight,
+        effort_scale=effort_scale,crank_torque_target_nm=crank_torque_nm,
+        solution_crank_torque_nm=predicted_crank,
+        saddle_normal_lower_bound_n=cfg.saddle_reserve_weight_fraction*weight,
         solution_tau=torque.copy(),solution_qddot=acceleration[c._rider_dofs],
         solution_base_qacc=acceleration[c._bike_dofs],solution_power=result.solution[nt:2*nt].copy()*power_scale,
         solution_wrenches=np.concatenate([wrenches[name][:2] for name in c._alloc_attachments]),

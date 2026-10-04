@@ -86,7 +86,7 @@ def add_rider_actuators(root, config):
             # Passive damping is a DOF property, not actuator bias: it lands in
             # qfrc_passive, so actuator_force is purely commanded muscle torque
             # and positive-power accounting never counts passive work as active.
-            joint.set('damping',f'{config.joint_kd_nms_rad:.17g}')
+            joint.set('damping',f'{config.passive_damping_nms_rad:.17g}')
             limit=format(config.joint_limit_nm,'.17g')
             ET.SubElement(actuators,'motor',name='act_'+name,joint=name,gear='1',
                           ctrllimited='false',forcelimited='true',forcerange=f'-{limit} {limit}')

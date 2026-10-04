@@ -16,7 +16,7 @@ def finalize_effort(controller, data, torques, *, advance, dt_s, steady_state):
     from bike_sim.sim.ride.rider_control import bounded_effort
     c=controller; cfg=c.config; names=tuple(c.joints)
     speeds=np.array([data.qvel[c.joints[n][1]] for n in names])
-    passive=-cfg.joint_kd_nms_rad*speeds
+    passive=-cfg.passive_damping_nms_rad*speeds
     # Passive damping is a DOF property solved by the engine: the requested,
     # activated, bounded, and commanded torque are all purely active muscle.
     target=np.array([torques[n] for n in names])

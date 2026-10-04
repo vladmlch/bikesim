@@ -251,6 +251,7 @@ class ArticulatedRiderController:
         self.crank_length_m = scalar(crank_length_m,'crank length',positive=True)
         self.enabled = True
         self.last_terms = {}
+        self.pd_split = {}
         self.saturated_ik = {'front':False,'rear':False}
         # Geometric reach failure only (two-link IK), before envelope clipping.
         # initialize() must reject genuinely unreachable pedals; a clipped
@@ -295,6 +296,9 @@ class ArticulatedRiderController:
         self._sync_joint_envelope()
         self.reset_activation()
         self.pelvis = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,'rider_pelvis')
+        self._torso_joint_id = int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_JOINT,'rider_torso_hinge'))
+        self._ankle_joint_ids = {s:int(mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_JOINT,f'rider_ankle_{s}'))
+                                 for s in ('front','rear')}
         self.feet = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_BODY,f'rider_foot_{s}') for s in ('front','rear')}
         self.soles = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_SITE,f'site_rider_sole_{s}') for s in ('front','rear')}
         self.pedal_geoms = {s:mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_GEOM,f'geom_pedal_{s}') for s in ('front','rear')}
@@ -496,8 +500,23 @@ class ArticulatedRiderController:
         upper_length,lower_length,a0,b0,branch=self.arm_geometry
         targets = {'rider_torso_hinge':torso_q}
         arm_saturated = False
+        if self.welded_grip and self.config.coupled_task_control:
+            # Welded hands close the pelvis-torso-arm chain: arm goals solved
+            # about the actual torso would always be "already met" and give
+            # the trunk no support. A rider's arms are stiff about the posture
+            # they intend, so solve them about the shoulder the *target* torso
+            # angle would place; a sagging trunk then meets elbow stiffness.
+            delta = torso_q-float(data.qpos[self.joints['rider_torso_hinge'][0]])
+            delta = atan2(sin(delta), cos(delta))
+            c_, s_ = cos(delta), sin(delta)
+            rot = np.array([[c_, 0., s_], [0., 1., 0.], [-s_, 0., c_]])
+            hinge = np.asarray(data.xanchor[self._torso_joint_id])
+            torso_R = rot@torso_R
+            shoulders = {side: hinge+rot@(np.asarray(data.xpos[self.upper_arms[side]])-hinge) for side in ('left','right')}
+        else:
+            shoulders = {side: np.asarray(data.xpos[self.upper_arms[side]]) for side in ('left','right')}
         for side in ('left','right'):
-            arm_target = torso_R.T @ (grips[side]-data.xpos[self.upper_arms[side]])
+            arm_target = torso_R.T @ (grips[side]-shoulders[side])
             arm_angles, saturated = _two_link_ik(arm_target[[0,2]],upper_length,lower_length,elbow_sign=branch)
             arm_saturated |= saturated
             targets[f'rider_shoulder_{side}'] = a0-arm_angles[0]
@@ -732,6 +751,17 @@ class ArticulatedRiderController:
             -cfg.posture_pitch_limit_nm,cfg.posture_pitch_limit_nm))
         rotation = data.xmat[self.crank].reshape(3,3)
         phase = atan2(-rotation[2,0],rotation[0,0])
+        # Fully coupled rider (pelvis, both soles and both hands welded): every
+        # attachment reaction is a consequence of the muscle torques through
+        # the response allocator, so the crank intent (pedalling waveform or
+        # coasting brake) is delivered as the allocator's crank-torque
+        # coordinate. Jacobian-transpose force feedforwards assume free limbs
+        # and only saturate the closed chains instead of turning the crank.
+        coupled = (cfg.coupled_task_control and self.welded and self.welded_grip
+                   and cfg.saddle_attachment == 'weld')
+        crank_task = None
+        if command.mean_crank_torque_nm > 0. and coupled:
+            crank_task = pedal_torque_waveform(command.mean_crank_torque_nm, phase, cfg.pedal_torque_ripple)
         blends={}
         requests={}
         stance={}
@@ -740,6 +770,8 @@ class ArticulatedRiderController:
             rate_error = command.crank_target_rate_rad_s-float(data.qvel[self.crank_spin_dof])
             coasting_torque = float(np.clip(cfg.coasting_brake_d_nm_s_rad*rate_error,
                 -cfg.coasting_brake_limit_nm, cfg.coasting_brake_limit_nm))
+            if coupled and crank_task is None:
+                crank_task = coasting_torque
         pedaling_requests = {}
         pedaling_weights = {}
         if command.mean_crank_torque_nm > 0.:
@@ -834,6 +866,8 @@ class ArticulatedRiderController:
             target_q = upper_targets[name]
             target_speed=atan2(sin(future_upper[name]-target_q),cos(future_upper[name]-target_q))/self.target_difference_s
             raw = cfg.joint_kp_nm_rad*(target_q-data.qpos[qa])+cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])
+            self.pd_split[name] = (float(cfg.joint_kp_nm_rad*(target_q-data.qpos[qa])),
+                                   float(cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])))
             terms[name] = (float(raw), 0.)
         rotation = data.xmat[self.crank].reshape(3,3)
         phase = atan2(-rotation[2,0],rotation[0,0])
@@ -871,9 +905,11 @@ class ArticulatedRiderController:
             target_speed=(ahead-behind)/(2.*self.target_difference_s)
             desired_acceleration[va]=(ahead+behind)/self.target_difference_s**2
             pd = cfg.joint_kp_nm_rad*(target-data.qpos[qa])+cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])
+            for n_,p_,d_ in zip(names,cfg.joint_kp_nm_rad*(target-data.qpos[qa]),cfg.joint_kd_nms_rad*(target_speed-data.qvel[va])):
+                self.pd_split[n_] = (float(p_), float(d_))
             jp,jr = self.sole_jacobians[side]
             mujoco.mj_jac(model,data,jp,None,data.site_xpos[self.soles[side]],self.feet[side])
-            feedforward = jp[:,va].T@requested
+            feedforward = np.zeros(3) if coupled else jp[:,va].T@requested
             torque = pd+feedforward
             terms.update({n:(float(p),float(f)) for n,p,f in zip(names,pd,feedforward)})
             if not np.isfinite(torque).all():
@@ -882,15 +918,36 @@ class ArticulatedRiderController:
         # Requested support reactions are realized by the bounded limb torques,
         # never by writing the actual contact force or a root contribution.
         for side in ('front','rear'):
-            if enabled[('front','rear').index(side)+1]:
+            if enabled[('front','rear').index(side)+1] and not coupled:
                 jp,_=self.sole_jacobians[side]
                 support += jp.T@np.array([0.,0.,-support_targets[side]])
         if enabled[3]:
+            if coupled:
+                # Coupled rider: the hands carry the trunk on the bar the way a
+                # leaning rider does -- the vertical hand force that balances
+                # the gravity moment of the torso subtree about the hip hinge,
+                # so trunk muscles only correct posture and the pelvis sees no
+                # trunk reaction the saddle's pressure centre could not hold.
+                # Never a guessed horizontal pedal-reaction balance.
+                hinge = np.asarray(data.xanchor[self._torso_joint_id])
+                trunk_mass = float(model.body_subtreemass[self.torso])
+                trunk_com = np.asarray(data.subtree_com[self.torso])
+                gravity = float(np.linalg.norm(model.opt.gravity))
+                hands = 0.5*(data.site_xpos[self.grip_sites['left']]+data.site_xpos[self.grip_sites['right']])
+                lever = float(hands[0]-hinge[0])
+                moment = trunk_mass*gravity*float(trunk_com[0]-hinge[0])
+                floor = cfg.bar_support_fraction*weight
+                need = moment/lever if lever > .05 else floor
+                hand_force = min(max(need, floor), 2.*cfg.grip_pull_per_hand_n)
+                self.last_hand_force_n = hand_force
+                grip_force_on_bike = np.array([0.,0.,-hand_force])
+            else:
+                grip_force_on_bike = support_forces['grip']
             for side in ('left','right'):
                 jp=np.zeros((3,model.nv))
                 mujoco.mj_jac(model,data,jp,None,
                     data.site_xpos[self.grip_sites[side]],self.forearms[side])
-                support += jp.T@(support_forces['grip']/2.)
+                support += jp.T@(grip_force_on_bike/2.)
         # Convective acceleration of the moving crank targets. Gravity/Coriolis
         # compensation alone cannot track a circular pedal path at cadence.
         # Only limb rows are commanded, still inside the existing effort caps.
@@ -937,11 +994,17 @@ class ArticulatedRiderController:
                 vec=-np.asarray(support_forces['grip'],dtype=float)/2.
             f_intent.extend((float(vec[0]),float(vec[2])))
         tau_alloc = None; alloc_diagnostics = {}
-        for effort_scale in (1.,.5,.25):
+        # The welded allocator carries the crank task as a heavily weighted
+        # coordinate; the effort ladder lowers the wish only if the problem
+        # is otherwise infeasible, and the last rung keeps posture only.
+        ladder = (1.,.5,.25) if crank_task is None else (1.,.5,.25,0.)
+        for effort_scale in ladder:
             intent = tau_intent-(1.-effort_scale)*activation_gain*pedaling_part
             tau_alloc,alloc_diagnostics = self.allocate(model,data,intent,
                 np.asarray(f_intent,float),normals_alloc,effort_scale=effort_scale,
-                estimates=estimates,dt_s=dt_s,steady_state=steady_state)
+                estimates=estimates,dt_s=dt_s,steady_state=steady_state,
+                crank_torque_nm=(None if crank_task is None or effort_scale == 0.
+                                 else crank_task*effort_scale))
             if alloc_diagnostics['feasible']:
                 break
         alloc_diagnostics['invalid_controller']=not alloc_diagnostics['feasible']
@@ -1114,14 +1177,16 @@ class ArticulatedRiderController:
         return wrench, closures
 
     def allocate(self, model, data, tau_intent, f_intent, normals, *,
-                 effort_scale=1., estimates=None,dt_s=None,steady_state=False):
+                 effort_scale=1., estimates=None,dt_s=None,steady_state=False,
+                 crank_torque_nm=None):
         """Solve z=[qddot_r,tau,f_attach,p] nearest the intent under dynamics.
 
         qddot over the rider DOFs, tau the 11 muscle torques, f the planar
         attachment wrenches on the rider, p the per-joint positive-work
         epigraph. Closures bound welded point accelerations to the estimated
         base acceleration window; budgets bound every wrench; the power cap
-        is the engineering budget.
+        is the engineering budget. ``crank_torque_nm`` is honoured by the
+        fully coupled (welded) response allocator only.
         """
         import mujoco
         from bike_sim.physics.rider_allocation import (
@@ -1132,7 +1197,8 @@ class ArticulatedRiderController:
         if all(meta['eq'] >= 0 for meta in self._alloc_attachments.values()):
             from bike_sim.sim.ride.rider_response_allocation import allocate_response
             return allocate_response(self,model,data,tau_intent,effort_scale=effort_scale,
-                                     dt_s=dt_s,steady_state=steady_state)
+                                     dt_s=dt_s,steady_state=steady_state,
+                                     crank_torque_nm=crank_torque_nm)
         rd, bd = self._rider_dofs, self._bike_dofs
         names = tuple(self.joints)
         n_r, n_t = len(rd), len(names)
@@ -1145,7 +1211,7 @@ class ArticulatedRiderController:
         known = np.zeros(model.nv)
         known[self._envelope_dof_adrs] += self.envelope_forces(model,data)[0][self._envelope_dof_adrs]
         hinge_dofs = np.asarray([self.joints[n][1] for n in names], dtype=np.intp)
-        known[hinge_dofs] -= cfg.joint_kd_nms_rad*data.qvel[hinge_dofs]
+        known[hinge_dofs] -= cfg.passive_damping_nms_rad*data.qvel[hinge_dofs]
         wrench_rows, closures = self._attachment_frames(model,data)
         jac_att = (np.vstack([wrench_rows[n][:,rd] for n in attach])
                    if attach else np.zeros((0,n_r)))

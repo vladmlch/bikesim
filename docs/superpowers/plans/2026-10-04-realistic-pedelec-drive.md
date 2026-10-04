@@ -126,7 +126,7 @@ git commit -m "docs: amend v2 spec to the real mid-drive clutch topology"
 **Interfaces:**
 - Produces: `MotorProfile` (frozen dataclass), `BOSCH_CX_GEN4: MotorProfile`, `PROFILES: dict[str, MotorProfile]` с ключом `'bosch_cx_gen4'`, `assist_gain(profile, mode, human_nm) -> float`, `pedelec_cap(human_nm, crank_rad_s, external_cap_nm, *, braking, gate_min_crank_rad_s) -> float` (возвращает `0.`, когда ассист запрещён, иначе `external_cap_nm` или `math.inf`).
 
-- [ ] **Step 1: Написать падающий тест**
+- [x] **Step 1: Написать падающий тест**
 
 ```python
 """Bosch-like assist profile as declared, provenance-tagged data; gate as a binary permission."""
@@ -205,12 +205,12 @@ def test_pedelec_cap_rejects_nonfinite_or_negative_inputs():
         pedelec_cap(1., 1., None, braking=False, gate_min_crank_rad_s=-.1)
 ```
 
-- [ ] **Step 2: Запустить, убедиться что падает**
+- [x] **Step 2: Запустить, убедиться что падает**
 
 Run: `uv run python -m pytest tests/reference/test_motor_profile.py -q`
 Expected: FAIL — `ModuleNotFoundError: bike_sim.physics.motor_profile`
 
-- [ ] **Step 3: Реализация**
+- [x] **Step 3: Реализация**
 
 ```python
 """Mid-drive assist profiles as declared data, and the pedelec permission.
@@ -301,12 +301,12 @@ def pedelec_cap(human_nm, crank_rad_s, external_cap_nm, *, braking, gate_min_cra
     return math.inf if external_cap_nm is None else float(external_cap_nm)
 ```
 
-- [ ] **Step 4: Запустить тесты**
+- [x] **Step 4: Запустить тесты**
 
 Run: `uv run python -m pytest tests/reference/test_motor_profile.py -q`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/bike_sim/physics/motor_profile.py tests/reference/test_motor_profile.py

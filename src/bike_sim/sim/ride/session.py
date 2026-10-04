@@ -31,6 +31,7 @@ import mujoco
 from bike_sim.physics.air_spring import ForkAirSpring
 from bike_sim.physics.damper import BikeSuspensionSystem
 from bike_sim.sim.camera import CameraManager
+from bike_sim.sim.ride.console import info, print_help
 from bike_sim.sim.ride.cruise import MAX_TARGET_SPEED_KMH, MIN_TARGET_SPEED_KMH
 from bike_sim.sim.ride.hud import RideHUD
 from bike_sim.sim.ride.input import RideInputHandler
@@ -185,10 +186,10 @@ class RideSession:
                 or physics.drive_mode != "articulated_effort"
                 or rider != "articulated_planar"
                 or not physics.drive.motor_clutch):
-            print("\n[KEY V] Crank reposition needs drive.motor_clutch and the articulated rider.")
+            info("[KEY V] Crank reposition needs drive.motor_clutch and the articulated rider.")
             return False
         self._reposition_pulse = True
-        print("\n[KEY V] Crank reposition requested (one backpedal to the power phase).")
+        info("[KEY V] Crank reposition requested (one backpedal to the power phase).")
         return True
 
     def adjust_brake_strength(self, delta: float) -> float:
@@ -229,16 +230,15 @@ class RideSession:
         self.livery.set_markers(self.debug_markers)
         mujoco.mj_forward(self.sim.model, self.sim.data)
         if not self.livery.has_markers:
-            print("\n[KEY G] No marker geoms in this model; build it with debug_markers=True.")
+            info("[KEY G] No marker geoms in this model; build it with debug_markers=True.")
         else:
-            print(f"\n[KEY G] Debug pivot markers: {'ON' if self.debug_markers else 'OFF'}")
+            info(f"[KEY G] Debug pivot markers: {'ON' if self.debug_markers else 'OFF'}")
         return self.debug_markers
 
     def print_help(self) -> None:
         """Displays the ride-mode control help in the terminal."""
         if self.sim.physics_config.physics_mode == "physical":
-            print("Physical ride: Space brakes; ,/. brake strength; R reset; V crank reposition; C/1/2 camera; T telemetry; G markers.")
-            print("W/S changes the target only in ideal_speed_control. Material and drive tuning is fixed per run.")
+            print_help()
         else:
             self.hud.print_help()
 

@@ -534,6 +534,11 @@ class PhysicalRuntime:
         if hold:
             front = max(front, hold); rear = max(rear, hold)
         self.apply_forces(front=front,rear=rear,external=external,control=control,braking=braking)
+        # Raw attachment telemetry needs the interval-start geometry and gap.
+        # Capture that before mj_step so the hot path never rewrites qpos/qvel or
+        # runs a second pair of mj_kinematics/mj_comPos calls just for telemetry.
+        attachment_prepared = (None if self.rider_contacts is None else
+                               self.rider_contacts.prepare_attachment_raw(m,d))
         # Save incoming auxiliary energies before the solve overwrites no state.
         mass0=mass_observations(m,d)
         sim.last_force_sample=ForceSample(t,q,v,sim.force_accumulator.components)
@@ -550,7 +555,8 @@ class PhysicalRuntime:
         if self.rider_contacts is None:
             welds, attachment_raw, attachment_errors = {}, {}, ()
         else:
-            welds, attachment_raw, attachment_errors = self.rider_contacts.settle_welds(m,d,(q,v),raw=True)
+            welds, attachment_raw, attachment_errors = self.rider_contacts.settle_welds(
+                m,d,(q,v),raw=True,prepared=attachment_prepared)
         from bike_sim.sim.ride.physical_crash import physical_contact_crash
         contact_crash=physical_contact_crash(m,d)
         transmission = self.drive.settle_actuation(m,d)

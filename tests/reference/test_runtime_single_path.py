@@ -21,7 +21,7 @@ def test_preview_mode_cannot_select_an_unaccounted_path():
             pass
 
 
-def test_accounted_hud_displays_realtime_factor_and_first_failure():
+def test_accounted_hud_displays_realtime_factor_without_repeated_failure(capsys):
     from bike_sim.sim.ride.hud import RideHUD
     hud = RideHUD.__new__(RideHUD)
     sample = SimpleNamespace(time_s=.005, qvel=np.array([1.]), channels={
@@ -32,7 +32,10 @@ def test_accounted_hud_displays_realtime_factor_and_first_failure():
             reference_monitor=SimpleNamespace(first_failure=(.001,('foot_front.friction',)))))
     text = hud.line(sim)
     assert 'RTF=0.75x' in text
-    assert 'foot_front.friction' in text and '0.001' in text
+    assert 'foot_front.friction' not in text
+    hud.print_line(sim); hud.print_line(sim)
+    out = capsys.readouterr().out
+    assert out.count('first failure at t=0.001000s: foot_front.friction') == 1
 
 
 def test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush(tmp_path,monkeypatch):

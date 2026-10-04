@@ -2,7 +2,8 @@ import mujoco
 import numpy as np
 import pytest
 from bike_sim.sim.ride.attachment_wrench import (
-    equality_qfrc, recover_wrench, relative_planar_jacobian)
+    equality_qfrc, recover_wrench, relative_planar_jacobian,
+    prepare_attachment_geometry, attachment_raw_from_geometry, attachment_raw)
 
 
 def test_wrench_preserves_virtual_work():
@@ -164,3 +165,35 @@ def test_contact_rows_do_not_corrupt_equality_selection():
     lam = _lambda(model, data, eq_id)
     np.testing.assert_allclose(wrench[:2], lam[[0, 2]], rtol=1e-8, atol=1e-8)
     np.testing.assert_allclose(wrench[:2], [-55., -70.], rtol=.05, atol=2.)
+
+
+def test_prepared_attachment_raw_matches_interval_state_recovery():
+    model = _pair_model('<weld name="w" body1="rider" body2="bike"/>')
+    data = mujoco.MjData(model)
+    rider = model.body('rider').id
+    bike = model.body('bike').id
+    mujoco.mj_forward(model, data)
+    q0, v0 = data.qpos.copy(), data.qvel.copy()
+    eq_id = model.equality('w').id
+    point = np.array([0., 0., 1.])
+    normal = np.array([0., 0., 1.])
+    rows = {eq_id: np.flatnonzero(
+        (data.efc_type[:data.nefc] == int(mujoco.mjtConstraint.mjCNSTR_EQUALITY)) &
+        (data.efc_id[:data.nefc] == eq_id))}
+    geometry = prepare_attachment_geometry(model, data, eq_id, rider, bike, point, normal,
+        'foot', rotational=True)
+    data.xfrc_applied[rider] = [35., 0., 80., 0., 7., 0.]
+    mujoco.mj_step(model, data)
+    fast = attachment_raw_from_geometry(model, data, geometry, rows=rows)
+    saved_qpos, saved_qvel = data.qpos.copy(), data.qvel.copy()
+    data.qpos[:], data.qvel[:] = q0, v0
+    mujoco.mj_kinematics(model, data); mujoco.mj_comPos(model, data)
+    slow = attachment_raw(model, data, eq_id, rider, bike, point, normal, 'foot',
+        rotational=True, rows=rows)
+    data.qpos[:], data.qvel[:] = saved_qpos, saved_qvel
+    mujoco.mj_kinematics(model, data); mujoco.mj_comPos(model, data)
+    np.testing.assert_allclose(fast.rider_jac, slow.rider_jac, atol=1e-12, rtol=0.)
+    np.testing.assert_allclose(fast.bike_jac, slow.bike_jac, atol=1e-12, rtol=0.)
+    np.testing.assert_allclose(fast.rider_qfrc, slow.rider_qfrc, atol=1e-12, rtol=0.)
+    np.testing.assert_allclose(fast.bike_qfrc, slow.bike_qfrc, atol=1e-12, rtol=0.)
+    assert fast.gap_m == pytest.approx(slow.gap_m, abs=1e-12)

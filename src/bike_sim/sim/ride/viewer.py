@@ -238,8 +238,10 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
     metadata=configuration_metadata(sim)
     log_dir=physical_run_dir_name(sim.track.name,metadata)
     from pathlib import Path
+    from bike_sim.sim.ride.console import info, outcome, print_help
+    print_help()
     csv_path=Path(out_root)/log_dir/"preview.csv"
-    print(f"[bike-ride] physical live csv: {csv_path}")
+    info(f"[bike-ride] physical live csv: {csv_path}")
     try:
         with PhysicalLiveCsv(csv_path) as preview_log:
             with mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
@@ -270,7 +272,7 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
                             rate_wall,rate_sim=now,sim.time_s
                     elif not announced:
                         sim.physical.flush()
-                        print(f"\n[RUN ENDED] {session.outcome.describe()}")
+                        outcome(f"[RUN ENDED] {session.outcome.describe()}")
                         announced=True
                     if preview_log.due(sim.time_s,sim.physical.generation):
                         preview_log.write(sim.time_s,sim.physical.generation,session.hud.preview_log_row(sim))
@@ -297,7 +299,7 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
         raise
     try:
         from bike_sim.viz.ride_plots import load_ride_csv,plot_physical_ride_html
-        print(f"[bike-ride] physical live html: {plot_physical_ride_html(load_ride_csv(csv_path),csv_path.parent)}")
+        info(f"[bike-ride] physical live html: {plot_physical_ride_html(load_ride_csv(csv_path),csv_path.parent)}")
     except ImportError:
-        print("[bike-ride] skipped ride.html (plotly not installed; use `uv run --with plotly`)")
+        info("[bike-ride] skipped ride.html (plotly not installed; use `uv run --with plotly`)")
     return 0

@@ -75,6 +75,17 @@ def allocate_effort(target, aeq, beq, g, h, lower, upper, *,
         x0 = np.asarray(x0, dtype=float)
         if x0.shape != target.shape or not np.isfinite(x0).all():
             raise ValueError('warm start must have the target shape and finite values')
+    # The projection of target onto the box is the closest point allowed by
+    # bounds. If that point also satisfies every other constraint, it is the
+    # exact optimum; avoid starting SLSQP. Checking the bounded point matters
+    # for nonlinear constraints whose function is only defined inside the box.
+    # This is an exact fast path, not an approximation, and intentionally
+    # ignores x0 because a warm start is not necessarily the objective minimum.
+    bounded_target = np.clip(target, lower, upper)
+    target_residual = _residual(bounded_target, aeq, beq, g, h, extra_constraints, lower, upper)
+    if target_residual <= 1e-7:
+        return Allocation(bounded_target.copy(), True, float(target_residual))
+
     x = np.clip(target if x0 is None else x0, lower, upper)
     # Equalities first, then linear inequalities, then nonlinear extras: the
     # active-set order affects SLSQP's path, and dynamics rows are the most

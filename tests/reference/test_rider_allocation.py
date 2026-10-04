@@ -615,3 +615,23 @@ def test_infeasible_intent_keeps_the_physical_bounds(tmp_path):
                    controller.strength_capacity(name, angle[index], speed[index], 1.),
                    controller.strength_capacity(name, angle[index], speed[index], -1.)))
         assert abs(tau[index]) <= cap + 1e-6
+
+
+def test_allocate_effort_returns_target_without_slsqp_when_target_is_feasible(monkeypatch):
+    from bike_sim.physics import rider_allocation as module
+    target = np.array([1., -2.])
+    zeros = np.zeros(0)
+    lower = np.array([-10., -10.])
+    upper = np.array([10., 10.])
+    calls = []
+
+    def fail_minimize(*args, **kwargs):
+        calls.append(True)
+        raise AssertionError('SLSQP must not run for an already-feasible target')
+
+    monkeypatch.setattr(module, 'minimize', fail_minimize)
+    result = module.allocate_effort(target, np.zeros((0, 2)), zeros,
+        np.zeros((0, 2)), zeros, lower, upper)
+    np.testing.assert_array_equal(result.solution, target)
+    assert result.feasible and result.violation == 0.
+    assert not calls

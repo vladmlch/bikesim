@@ -34,8 +34,8 @@ enabled = true
 # Гистерезис "крутит/не крутит": выше coast_above_rpm райдер перестаёт давить
 # на педали (coasting, effort=0), чтобы снова крутить -- каденс должен упасть
 # ниже resume_below_rpm. Зазор между порогами не даёт дёргать режим туда-сюда.
-coast_above_rpm = 110.0
-resume_below_rpm = 90.0
+coast_above_rpm = 150.0
+resume_below_rpm = 130.0
 stop_time_s = 0.35
 # Low-cadence effort ramp: below mash_cadence_rpm the rider presses harder on
 # the pedals and commanded effort ramps linearly toward mash_torque_nm at 0
@@ -108,7 +108,7 @@ boost_s = 0.4
 enabled = false
 
 [drive.gearing]
-front_teeth = 30
+front_teeth = 22
 rear_teeth = 51
 
 [drive.shifting]

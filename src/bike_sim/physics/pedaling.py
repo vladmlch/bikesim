@@ -191,7 +191,8 @@ class PedalingPolicy:
                 base = self._effort
                 effort = max(base-slew*dt, min(base+slew*dt, target))
             self._effort = effort
-            return PedalingState('pedaling', '', effort, required_cadence_rpm)
+            return PedalingState('pedaling', '', effort, required_cadence_rpm,
+                                 None, max(wheel_rad_s, 0.))
         if not self.coasting:
             self.target_phase_rad = phase_rad
             self.target_rate_rad_s = rate_rad_s

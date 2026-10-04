@@ -263,7 +263,8 @@ def run_physical_headless(track,args,seed,rider):
     if not args.no_plots and recorder.rows:
         from bike_sim.viz.ride_plots import plot_physical_ride
         plot_physical_ride(recorder.columns(),out)
-    print(f"[bike-ride] {reason}: {sim.time_s:.6f} s, {sim.position_m:.3f} m -> {out}")
+    from bike_sim.sim.ride.console import outcome
+    outcome(f"[bike-ride] {reason}: {sim.time_s:.6f} s, {sim.position_m:.3f} m -> {out}")
     if reason == 'simulation_error':
         return 1
     if reason == 'invalid_controller' or not sim.physical.model_status.as_dict()['model_valid']:

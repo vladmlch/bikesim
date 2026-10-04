@@ -12,6 +12,22 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class AttachmentGeometry:
+    """Attachment geometry captured at the incoming state before integration."""
+    eq_id: int
+    rider_jac: np.ndarray
+    rider_columns: np.ndarray
+    bike_jac: np.ndarray
+    bike_columns: np.ndarray
+    observable: bool
+    normal: np.ndarray
+    kind: str
+    rotational: bool
+    half_patch_m: float
+    pull_direction: np.ndarray | None
+
+
+@dataclass(frozen=True)
 class AttachmentRaw:
     rider_jac: np.ndarray
     rider_qfrc: np.ndarray
@@ -26,7 +42,7 @@ class AttachmentRaw:
     pull_direction: np.ndarray | None
 
 
-def _body_input(model, data, body, point, qfrc):
+def _body_geometry(model, data, body, point):
     jp = np.zeros((3, model.nv)); jr = np.zeros((3, model.nv))
     mujoco.mj_jac(model, data, jp, jr, np.asarray(point, dtype=float), body)
     jac = np.vstack((jp, jr))
@@ -34,7 +50,71 @@ def _body_input(model, data, body, point, qfrc):
     if not cols.size:
         raise ValueError('attachment body carries no degrees of freedom')
     observable = bool(np.abs(jac[0, cols]).max() != 0 and np.abs(jac[2, cols]).max() != 0)
-    return jac[:, cols].copy(), qfrc[cols].copy(), cols, observable
+    return jac[:, cols].copy(), cols, observable
+
+
+def _body_input(model, data, body, point, qfrc):
+    jac, cols, observable = _body_geometry(model, data, body, point)
+    return jac, qfrc[cols].copy(), cols, observable
+
+
+def prepare_attachment_geometry(model, data, eq_id, body_rider, body_bike, point, normal, kind,
+                                 *, rotational, half_patch_m=0., pull_direction=None):
+    """Capture all pose-dependent raw inputs before a physics step.
+
+    The solved equality force is deliberately not read here: MuJoCo only has
+    the interval's final multiplier after ``mj_step``. Capturing Jacobians and
+    support geometry at the interval-start pose lets the runtime pair them with
+    that multiplier later without rewriting ``qpos/qvel`` or running
+    ``mj_kinematics``/``mj_comPos`` twice. The gap remains the post-step
+    ``efc_pos`` value, matching the existing scalar sampler exactly.
+    """
+    jr, cr, obs_r = _body_geometry(model, data, body_rider, point)
+    jb, cb, obs_b = _body_geometry(model, data, body_bike, point)
+    if np.intersect1d(cr, cb).size:
+        raise ValueError('attachment bodies share kinematic support')
+    return AttachmentGeometry(int(eq_id), jr, cr.copy(), jb, cb.copy(), obs_r and obs_b,
+        np.array(normal, copy=True), kind, rotational, float(half_patch_m),
+        None if pull_direction is None else np.array(pull_direction, copy=True))
+
+
+def attachment_raw_from_geometry(model, data, geometry, *, rows=None):
+    """Combine pre-step geometry with the just-solved equality multiplier.
+
+    Keep the validation contract of :func:`attachment_raw`: the fast path is
+    allowed to change *when* the Jacobians are computed, not what constitutes
+    an observable attachment measurement.
+    """
+    qfrc = equality_qfrc(model, data, geometry.eq_id)
+    rider_qfrc = qfrc[geometry.rider_columns]
+    bike_qfrc = qfrc[geometry.bike_columns]
+    # Reconstruct spatial wrenches and retain the exact Newton-third-law and
+    # planar-model checks used by the scalar sampler.
+    rider_wrench, *_ = np.linalg.lstsq(geometry.rider_jac.T, rider_qfrc, rcond=1e-12)
+    bike_wrench, *_ = np.linalg.lstsq(geometry.bike_jac.T, bike_qfrc, rcond=1e-12)
+    if not np.allclose(geometry.rider_jac.T @ rider_wrench, rider_qfrc,
+                       rtol=1e-8, atol=1e-8):
+        raise ValueError('attachment wrench does not explain generalized force')
+    if not np.allclose(geometry.bike_jac.T @ bike_wrench, bike_qfrc,
+                       rtol=1e-8, atol=1e-8):
+        raise ValueError('attachment wrench does not explain generalized force')
+    if not geometry.observable:
+        raise ValueError('in-plane attachment force is not observable')
+    scale = max(1., float(np.linalg.norm(rider_wrench[:3])))
+    if not np.allclose(bike_wrench, -rider_wrench, rtol=1e-4, atol=1e-4*scale):
+        raise ValueError('attachment wrenches fail Newton third law')
+    out_of_plane = np.array([rider_wrench[1], rider_wrench[3], rider_wrench[5]])
+    if not np.all(np.abs(out_of_plane) <= 1e-6*scale):
+        raise ValueError('attachment wrench leaves the planar model')
+    if rows is None:
+        from bike_sim.sim.ride.weld_pedals import equality_rows
+        rows = equality_rows(data)
+    idx = rows.get(geometry.eq_id)
+    gap_m = 0. if idx is None or idx.size == 0 else float(np.linalg.norm(data.efc_pos[idx][:3]))
+    return AttachmentRaw(geometry.rider_jac, rider_qfrc,
+        geometry.bike_jac, bike_qfrc, geometry.observable,
+        geometry.normal, geometry.kind, geometry.rotational, geometry.half_patch_m,
+        gap_m, geometry.pull_direction)
 
 
 def attachment_raw(model, data, eq_id, body_rider, body_bike, point, normal, kind,

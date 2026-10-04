@@ -7,7 +7,9 @@ from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.tire import _brush_step, _normal_contact
 from bike_sim.sim.ride.physical_mapping import resolve_id, relative_point_jacobian
 from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar_support_model
-from bike_sim.sim.ride.attachment_wrench import attachment_sample, attachment_raw
+from bike_sim.sim.ride.attachment_wrench import (
+    attachment_sample, attachment_raw, prepare_attachment_geometry,
+    attachment_raw_from_geometry)
 from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, SaddlePin, GripConnect, equality_rows
 
 
@@ -214,7 +216,49 @@ class RiderContactApplier:
                     energy+=.25*cfg.support_k_n_m*max(-gap,0.)**2
         return energy
 
-    def settle_welds(self,model,data,interval_state=None, *, raw=False):
+    def prepare_attachment_raw(self, model, data):
+        """Capture attachment geometry at the incoming state for a raw period step.
+
+        Only pose-dependent quantities are computed here. Solved equality forces
+        are intentionally deferred until after ``mj_step``; this keeps the raw
+        telemetry bit-for-bit tied to the same start pose without the old
+        post-step qpos/qvel swap and two kinematics passes.
+        """
+        prepared={}; errors=[]
+        for name,entry in self.supports.items():
+            body,site,bike,_=entry
+            if name=='saddle' and self.linked_saddle:
+                eq_id,rotational=self._saddle_link.eq_id,self.welded_saddle
+                half=self.config.saddle_patch_half_length_m
+            elif name.endswith('_pedal') and self.welded_pedals:
+                eq_id=self._welds.eq_ids[name.split('_')[0]]
+                rotational,half=True,float(model.geom_size[entry[3],0])
+            else:
+                continue
+            normal=np.mean([n for _,_,n,_,_,_ in self._pads(model,data,name,entry)],axis=0)
+            out='foot_'+name.split('_')[0] if name.endswith('_pedal') else 'saddle'
+            try:
+                prepared[out]=prepare_attachment_geometry(model,data,eq_id,body,bike,
+                    np.array(data.site_xpos[site]),normal,out.rsplit('_',1)[0],
+                    rotational=rotational,half_patch_m=half)
+            except ValueError:
+                errors.append(out+':unobservable_attachment_wrench')
+        if self.welded_grip:
+            for side in ('left','right'):
+                anchor=self.grip_anchor_local[side]
+                if anchor is None:
+                    continue
+                grip=data.xpos[self.steer]+data.xmat[self.steer].reshape(3,3)@anchor
+                pull=data.xpos[self.pelvis]-grip
+                try:
+                    prepared['grip_'+side]=prepare_attachment_geometry(model,data,
+                        self._grip_connect[side].eq_id,self.forearms[side],self.steer,grip,
+                        pull,'grip',rotational=False,pull_direction=pull)
+                except ValueError:
+                    errors.append('grip_'+side+':unobservable_attachment_wrench')
+        return prepared,tuple(errors)
+
+    def settle_welds(self,model,data,interval_state=None, *, raw=False, prepared=None):
         """Latch the weld/connect reactions of the solve that just ran.
 
         ``interval_state`` is the optional (qpos, qvel) the solved interval
@@ -269,8 +313,19 @@ class RiderContactApplier:
         if self.welded_pedals:
             # The torque sensor reads this on the next step.
             result['crank_torque_nm']=crank
-        self.last_attachment_samples,self.last_attachment_errors=(
-            self.attachment_samples(model,data,interval_state,raw=raw))
+        if raw and prepared is not None:
+            prepared_raw, prepared_errors = prepared
+            raw_samples={}
+            errors=list(prepared_errors)
+            for name,geometry in prepared_raw.items():
+                try:
+                    raw_samples[name]=attachment_raw_from_geometry(model,data,geometry,rows=rows)
+                except ValueError:
+                    errors.append(name+':unobservable_attachment_wrench')
+            self.last_attachment_samples,self.last_attachment_errors=raw_samples,tuple(errors)
+        else:
+            self.last_attachment_samples,self.last_attachment_errors=(
+                self.attachment_samples(model,data,interval_state,raw=raw))
         return (result, self.last_attachment_samples, self.last_attachment_errors) if raw else result
 
     def attachment_samples(self,model,data,interval_state=None, *, raw=False):
@@ -380,8 +435,13 @@ class RiderContactApplier:
             body,site,bike,geom=entry
             if self.linked_saddle and name == 'saddle':
                 force_on_rider,normal_load=self._settled(name)
+                settled=(self._settled_welds[0].get(name)
+                         if self._settled_welds is not None else None) or {}
                 diagnostics[name]={'enabled':True,'in_platform':True,
                     'normal_load_n':normal_load,
+                    'would_separate':bool(settled.get('would_separate')),
+                    'would_slip':bool(settled.get('would_slip')),
+                    'tangent_n':float(settled.get('tangent_n',0.)),
                     'gap_m':self._saddle_link.translation_residual_m(model,data,rows=eq_rows),
                     'vertical_force_on_rider_n':float(force_on_rider[2])}
                 if detailed:
@@ -398,8 +458,13 @@ class RiderContactApplier:
             if self.welded_pedals and name.endswith('_pedal'):
                 side=name.split('_')[0]
                 force_on_rider,normal_load=self._settled(name)
+                settled=(self._settled_welds[0].get(name)
+                         if self._settled_welds is not None else None) or {}
                 diagnostics[name]={'enabled':True,'in_platform':True,
                     'normal_load_n':normal_load,
+                    'would_separate':bool(settled.get('would_separate')),
+                    'would_slip':bool(settled.get('would_slip')),
+                    'tangent_n':float(settled.get('tangent_n',0.)),
                     'gap_m':self._welds.translation_residual_m(model,data,side,rows=eq_rows),
                     'vertical_force_on_rider_n':float(force_on_rider[2])}
                 if detailed:

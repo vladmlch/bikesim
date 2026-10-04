@@ -552,7 +552,6 @@ class RideHUD:
     SPACE           : Brakes TOGGLE (a passive viewer delivers presses, not key state)
     , / .           : Brake Strength - / + 10 %
     R               : Restart the run from the solved static equilibrium
-    V               : Crank reposition (backpedal to a power phase; needs drive.motor_clutch)
 
   --- PNEUMATIC AIR SPRING (FORK) ---
     [ / ]           : Bottomless Tokens DECREASE / INCREASE (Ramp-up)

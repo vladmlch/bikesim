@@ -90,7 +90,6 @@ class RideSession:
 
         self.braking = False
         self.brake_strength = DEFAULT_BRAKE_STRENGTH
-        self._reposition_pulse = False
         # (time_s, x_m, mode) for every mid-drive switch made while riding. A run with
         # entries here is several experiments in a trench coat: the pedalling spectrum is
         # only meaningful over a stretch with one assist mode.
@@ -172,25 +171,6 @@ class RideSession:
         self.braking = not self.braking
         return self.braking
 
-    def request_crank_reposition(self) -> bool:
-        """
-        Queues one crank-reposition pulse for the next physical step.
-
-        Returns:
-            Whether the request was accepted; the maneuver needs the
-            articulated rider and the drive.motor_clutch topology.
-        """
-        physics = getattr(self.sim, "physics_config", None)
-        rider = getattr(getattr(self.sim, "rider", None), "variant", None)
-        if (physics is None or physics.physics_mode != "physical"
-                or physics.drive_mode != "articulated_effort"
-                or rider != "articulated_planar"
-                or not physics.drive.motor_clutch):
-            info("[KEY V] Crank reposition needs drive.motor_clutch and the articulated rider.")
-            return False
-        self._reposition_pulse = True
-        info("[KEY V] Crank reposition requested (one backpedal to the power phase).")
-        return True
 
     def adjust_brake_strength(self, delta: float) -> float:
         """
@@ -285,10 +265,6 @@ class RideSession:
 
             demand = self.brake_strength if self.braking else 0.0
             control = None
-            if self._reposition_pulse:
-                from bike_sim.sim.ride.control import RideControl
-                control = RideControl(crank_reposition=True)
-                self._reposition_pulse = False
             self.sim.step(demand, demand, control=control)
             return None
 

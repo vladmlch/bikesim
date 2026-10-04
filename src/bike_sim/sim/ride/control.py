@@ -21,10 +21,6 @@ class RideControl:
     crank_target_rate_rad_s: float | None = None
     posture: RiderPosture | None = None
     rider_enabled: bool = True
-    # One crank-reposition maneuver per rising edge: the rider backpedals to
-    # the top of the power stroke while the motor shaft keeps driving. Needs
-    # the articulated rider and the drive.motor_clutch topology.
-    crank_reposition: bool = False
 
     def __post_init__(self):
         for name in ('motor_torque_nm', 'motor_limit_nm', 'human_torque_nm', 'crank_target_rate_rad_s'):
@@ -35,8 +31,6 @@ class RideControl:
             raise ValueError('posture must be a RiderPosture')
         if not isinstance(self.rider_enabled, bool):
             raise ValueError('rider_enabled must be a bool')
-        if not isinstance(self.crank_reposition, bool):
-            raise ValueError('crank_reposition must be a bool')
 
     def validate_for(self, config, rider_variant):
         if config.physics_mode != 'physical':
@@ -47,8 +41,3 @@ class RideControl:
         if (self.posture is not None or not self.rider_enabled
                 or self.crank_target_rate_rad_s is not None) and rider_variant != 'articulated_planar':
             raise ValueError('rider commands require articulated_planar')
-        if self.crank_reposition:
-            if rider_variant != 'articulated_planar' or config.drive_mode != 'articulated_effort':
-                raise ValueError('crank reposition requires articulated_planar + articulated_effort')
-            if not config.drive.motor_clutch:
-                raise ValueError('crank reposition requires drive.motor_clutch')

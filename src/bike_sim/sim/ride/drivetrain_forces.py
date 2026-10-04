@@ -204,7 +204,7 @@ class DrivetrainForceApplier:
         policy = self.pedaling if advance else copy.deepcopy(self.pedaling)
         state = policy.update(float(data.qpos[crank_qpos]), float(data.qvel[crank_dof]),
             required, effort, dt, braking=braking,
-            enabled=enabled, reposition=control.crank_reposition)
+            enabled=enabled)
         if effort_ceiling_nm is not None:
             ceiling = scalar(effort_ceiling_nm, 'automatic rider effort ceiling', minimum=0.)
             state = replace(state, effort_nm=min(state.effort_nm, ceiling))

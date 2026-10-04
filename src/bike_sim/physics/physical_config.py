@@ -135,22 +135,6 @@ class PedalingConfig:
     rollback_engage_mps: float = .25
     rollback_release_mps: float = 0.
     rollback_demand: float = 1.
-    # Crank reposition maneuver: with a crank-side clutch (drive.motor_clutch)
-    # the rider may backpedal to the top of the power stroke while the motor
-    # shaft keeps driving the wheel. The stall reflex below is opt-in; an
-    # explicit RideControl.crank_reposition request uses the same machinery.
-    # A stall is loaded effort with no forward progress: within
-    # reposition_stall_window_s neither the crank nor the wheel (in
-    # crank-equivalent radians) advanced past reposition_stall_progress_rad.
-    reposition_on_stall: bool = False
-    reposition_min_effort_nm: float = 20.
-    reposition_stall_window_s: float = 1.
-    reposition_stall_progress_rad: float = .5
-    reposition_cooldown_s: float = 1.
-    reposition_back_rate_rad_s: float = 3.
-    reposition_timeout_s: float = 3.
-    reposition_phase_tolerance_rad: float = .05
-    reposition_noop_rad: float = .12
 
     def __post_init__(self):
         if not isinstance(self.enabled, bool):
@@ -174,20 +158,6 @@ class PedalingConfig:
         demand = scalar(self.rollback_demand, 'rollback brake demand', minimum=0.)
         if demand > 1.:
             raise ValueError('rollback brake demand must not exceed one')
-        if not isinstance(self.reposition_on_stall, bool):
-            raise ValueError('reposition_on_stall enable must be a bool')
-        for key in ('reposition_min_effort_nm', 'reposition_cooldown_s',
-                    'reposition_noop_rad'):
-            scalar(getattr(self, key), key, minimum=0.)
-        for key in ('reposition_back_rate_rad_s', 'reposition_timeout_s',
-                    'reposition_phase_tolerance_rad', 'reposition_stall_window_s',
-                    'reposition_stall_progress_rad'):
-            scalar(getattr(self, key), key, positive=True)
-        if self.reposition_noop_rad >= .5*pi:
-            raise ValueError('reposition no-op band must be below a quarter crank turn')
-        if self.reposition_stall_progress_rad >= pi:
-            # Half a turn of net advance passes a power stroke: that is progress.
-            raise ValueError('reposition stall progress must be below half a crank turn')
 
 
 @dataclass(frozen=True)
@@ -272,8 +242,6 @@ class PhysicalDriveConfig:
             raise ValueError('a motor rotor requires an ideal mid-drive transmission')
         if self.motor_clutch and self.transmission_model not in ('ideal_mid_drive','geometric_ideal_mid_drive'):
             raise ValueError('motor clutch requires an ideal mid-drive transmission')
-        if self.pedaling.reposition_on_stall and not self.motor_clutch:
-            raise ValueError('the reposition stall reflex requires drive.motor_clutch')
         if not isinstance(self.shifting, ShiftingConfig):
             raise ValueError('shifting needs an immutable ShiftingConfig')
         if self.shifting.enabled:

@@ -962,7 +962,7 @@ git commit -m "feat: optional inertial motor rotor behind a one-way freewheel"
 **Interfaces:**
 - Produces: `PedalingPolicy.update(phase_rad, rate_rad_s, required_cadence_rpm, effort_nm, dt, *, enabled=True, braking=False)`; `PedalingState.mode ∈ {'disabled','pedaling','coasting'}`; `RideControl` без `crank_reposition`; `PolicySession.step(...)` без `crank_reposition`.
 
-- [ ] **Step 1: Падающий тест**
+- [x] **Step 1: Падающий тест**
 
 ```python
 """PedalingPolicy after the reposition removal: a stall is an outcome, not a manoeuvre."""
@@ -1001,7 +1001,7 @@ def test_ride_control_has_no_reposition_field():
 Run: `uv run python -m pytest tests/reference/test_pedaling_policy.py -q`
 Expected: FAIL (`PedalingConfig(reposition_on_stall=True)` принимается).
 
-- [ ] **Step 2: `pedaling.py`.** Удалить класс `ProgressStallDetector` и импорт, если он остаётся неиспользованным. В `PedalingPolicy.reset` удалить `_reposition_*`, `_stall`, `_APPROACH_TAU_S`. В `update` удалить параметр `reposition`, блоки от `self._reposition_cooldown = ...` до `return PedalingState('reposition', ...)` включительно, и упростить `latch`:
+- [x] **Step 2: `pedaling.py`.** Удалить класс `ProgressStallDetector` и импорт, если он остаётся неиспользованным. В `PedalingPolicy.reset` удалить `_reposition_*`, `_stall`, `_APPROACH_TAU_S`. В `update` удалить параметр `reposition`, блоки от `self._reposition_cooldown = ...` до `return PedalingState('reposition', ...)` включительно, и упростить `latch`:
 
 ```python
         if not reason:
@@ -1012,11 +1012,11 @@ Expected: FAIL (`PedalingConfig(reposition_on_stall=True)` принимаетс�
 
 Валидацию булевых оставить: `if not isinstance(enabled, bool) or not isinstance(braking, bool): raise ValueError('pedaling enable and braking must be booleans')`.
 
-- [ ] **Step 3: Конфиги.** Удалить девять `reposition_*` полей и их валидации из `PedalingConfig`, строку `if self.pedaling.reposition_on_stall and not self.motor_clutch` из `PhysicalDriveConfig.__post_init__`, строки 121–122 из `model_config.py`. Комментарий про «Crank reposition maneuver» удалить.
+- [x] **Step 3: Конфиги.** Удалить девять `reposition_*` полей и их валидации из `PedalingConfig`, строку `if self.pedaling.reposition_on_stall and not self.motor_clutch` из `PhysicalDriveConfig.__post_init__`, строки 121–122 из `model_config.py`. Комментарий про «Crank reposition maneuver» удалить.
 
-- [ ] **Step 4: Управление.** `control.py`: удалить поле `crank_reposition`, его проверку в `__post_init__` и блок в `validate_for`. `drivetrain_forces.py`: `policy.update(..., enabled=enabled)`. `session.py`: удалить `_reposition_pulse`, метод `request_crank_reposition` и блок 288–291 (оставить обычный `control`). `input.py:100-102`: удалить привязку клавиши V. `hud.py:557` и `console.py:16`: убрать упоминание V. `research/rider_program.py`: удалить поле `crank_reposition` из `RiderKeyframe`, свойство `owns_crank_reposition`, обработку в блендинге (строки 81–85, 94–103) и ключ `'crank_reposition'` в парсере (119–125). `environment.py`: удалить проверку 114–118 и `crank_reposition=` в 302. `policy_session.py`: удалить параметр и его использование. `policies.py`: удалить `RepositionOnStallPolicy`, `reposition_on_stall_factory` и регистрацию (найти grep'ом), импорт `ProgressStallDetector`. `viewer.py`: удалить параметр `crank_reposition` из `advance_control_ticks`, переменную `reposition`, ветку клавиши V (104–110) и аргумент в 121–124; строку подсказки 75 без «V crank reposition».
+- [x] **Step 4: Управление.** `control.py`: удалить поле `crank_reposition`, его проверку в `__post_init__` и блок в `validate_for`. `drivetrain_forces.py`: `policy.update(..., enabled=enabled)`. `session.py`: удалить `_reposition_pulse`, метод `request_crank_reposition` и блок 288–291 (оставить обычный `control`). `input.py:100-102`: удалить привязку клавиши V. `hud.py:557` и `console.py:16`: убрать упоминание V. `research/rider_program.py`: удалить поле `crank_reposition` из `RiderKeyframe`, свойство `owns_crank_reposition`, обработку в блендинге (строки 81–85, 94–103) и ключ `'crank_reposition'` в парсере (119–125). `environment.py`: удалить проверку 114–118 и `crank_reposition=` в 302. `policy_session.py`: удалить параметр и его использование. `policies.py`: удалить `RepositionOnStallPolicy`, `reposition_on_stall_factory` и регистрацию (найти grep'ом), импорт `ProgressStallDetector`. `viewer.py`: удалить параметр `crank_reposition` из `advance_control_ticks`, переменную `reposition`, ветку клавиши V (104–110) и аргумент в 121–124; строку подсказки 75 без «V crank reposition».
 
-- [ ] **Step 5: Удалить файлы**
+- [x] **Step 5: Удалить файлы**
 
 ```bash
 git rm tests/test_pedaling_stall.py
@@ -1025,7 +1025,7 @@ rm -f examples/research/_diag_boost.toml examples/research/_diag_cadence.toml ex
 
 Из `examples/research/viewer_physics_welded.toml` удалить блок `reposition_on_stall = true` … `reposition_noop_rad = 0.12` с комментариями (иначе конфиг не загрузится).
 
-- [ ] **Step 6: Проверка отсутствия**
+- [x] **Step 6: Проверка отсутствия**
 
 Run: `grep -rn "reposition\|ProgressStallDetector" src tests examples docs/superpowers/plans/2026-10-04-realistic-pedelec-drive.md --include='*.py' --include='*.toml' | grep -v "2026-10-04-realistic"`
 Expected: пусто.
@@ -1033,7 +1033,7 @@ Expected: пусто.
 Run: `uv run python -m pytest tests -m 'not slow' -q -x`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A src tests examples/research/viewer_physics_welded.toml

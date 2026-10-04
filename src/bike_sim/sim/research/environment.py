@@ -111,11 +111,6 @@ class ResearchEnvironment:
         cfg = sim.physics_config
         if cfg.physics_mode != 'physical' or cfg.drive_mode not in ('crank_effort', 'articulated_effort'):
             raise ValueError('research requires a physical effort drive, not a speed controller')
-        if (rider_program is not None and rider_program.owns_crank_reposition
-                and not (cfg.drive.motor_clutch and cfg.drive_mode == 'articulated_effort'
-                         and sim.rider.variant == 'articulated_planar')):
-            raise ValueError('a rider program owning crank_reposition requires '
-                             'drive.motor_clutch and the articulated rider')
         if cfg.pitch_assist or cfg.tires.backend not in ('compliant_2d','distributed_2d_reference') or cfg.tires.surface_mode != 'track':
             raise ValueError('research requires no pitch assist and track-material compliant_2d tires')
         self.dt_s = float(sim.model.opt.timestep)
@@ -298,8 +293,7 @@ class ResearchEnvironment:
                 effective = replace(self._motor_applied,
                     human_torque_nm=rider_control.human_torque_nm,
                     crank_target_rate_rad_s=rider_control.crank_target_rate_rad_s,
-                    posture=rider_control.posture, rider_enabled=rider_control.rider_enabled,
-                    crank_reposition=rider_control.crank_reposition)
+                    posture=rider_control.posture, rider_enabled=rider_control.rider_enabled)
                 if effective != self._applied:
                     self._applied = effective
                     self.commands_applied.append(dict(time_s=self.sim.time_s, step=self.sim.steps,

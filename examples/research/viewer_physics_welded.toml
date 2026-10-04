@@ -64,21 +64,6 @@ rollback_release_mps = 0.0
 # мотор продолжают работать, он просто не даёт укатиться вниз.
 rollback_demand = 1.0
 
-reposition_on_stall = true
-reposition_min_effort_nm = 20.0
-# Stall = no forward progress: within reposition_stall_window_s neither the
-# crank nor the wheel (crank-equivalent) advanced past
-# reposition_stall_progress_rad. Rocking around a dead spot is not progress.
-# RU: ступор = нет продвижения вперёд. За окно кривош и колесо (в радианах
-# кривоша) продвинулись меньше порога -- качание в мёртвой точке не в счёт.
-reposition_stall_window_s = 1.0
-reposition_stall_progress_rad = 0.5
-reposition_cooldown_s = 1.0
-reposition_back_rate_rad_s = 3.0
-reposition_timeout_s = 3.0
-reposition_phase_tolerance_rad = 0.05
-reposition_noop_rad = 0.12
-
 [drive.assist]
 gain = 4.0
 max_torque = 85.0

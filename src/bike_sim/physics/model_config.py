@@ -120,5 +120,3 @@ class SimulationPhysicsConfig:
             raise ValueError('drive.motor_clutch requires an effort drive mode')
         if self.drive.rotor_inertia_kgm2 > 0. and self.drive_mode not in ('crank_effort','articulated_effort'):
             raise ValueError('drive.rotor_inertia_kgm2 requires an effort drive mode')
-        if self.drive.pedaling.reposition_on_stall and self.drive_mode != 'articulated_effort':
-            raise ValueError('the reposition stall reflex requires articulated_effort')

@@ -5,7 +5,7 @@ equality per foot (body1 = rider_foot_*, body2 = pedal_*); with
 articulated.saddle_attachment = 'weld' it emits `weld_saddle`
 (body1 = rider_pelvis, body2 = frame), while the reference 'pin' emits
 `connect_saddle` between the same bodies; with
-articulated.grip_attachment = 'weld' it emits one `connect_grip_<side>`
+articulated.grip_attachment = 'connect' it emits one `connect_grip_<side>`
 per hand (body1 = rider_forearm_<side>, body2 = steer). This module reads the solved
 constraint multipliers and reports them in the conventions
 RiderContactApplier uses for pad supports.
@@ -105,6 +105,20 @@ class PedalWelds:
         qfrc = np.zeros(model.nv)
         mujoco.mj_mulJacTVec(model, data, qfrc, multipliers)
         return float(qfrc[self.crank_dof])
+
+
+class SpindlePins(PedalWelds):
+    """Three-row foot connects at the spindle; no free couple is transmitted.
+
+    The native connect residual is body1 anchor minus body2 anchor in world
+    coordinates. Its translational multipliers therefore apply to the rider
+    with the same sign as the native body1 point Jacobian.
+    """
+
+    def __init__(self, model, sides=SIDES):
+        self.eq_ids = {side: resolve_id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                       f'connect_foot_{side}') for side in sides}
+        self.crank_dof = int(model.joint('crank_spin').dofadr[0])
 
 
 class SaddleWeld:

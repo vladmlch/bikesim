@@ -10,7 +10,7 @@ from bike_sim.sim.ride.support_geometry import _box_pad_contact, validate_planar
 from bike_sim.sim.ride.attachment_wrench import (
     attachment_sample, attachment_raw, prepare_attachment_geometry,
     attachment_raw_from_geometry)
-from bike_sim.sim.ride.weld_pedals import PedalWelds, SaddleWeld, SaddlePin, GripConnect, equality_rows
+from bike_sim.sim.ride.weld_pedals import PedalWelds, SpindlePins, SaddleWeld, SaddlePin, GripConnect, equality_rows
 
 
 def apply_internal_force(model,data,body_a,body_b,point,force,qfrc):
@@ -81,8 +81,10 @@ class RiderContactApplier:
         self.crank_dof=int(model.jnt_dofadr[crank])
         # Per-step Jacobian scratch for the paired-support relative Jacobian.
         self._jac_a=np.empty((3,model.nv)); self._jac_b=np.empty((3,model.nv))
-        self.welded_pedals = config.pedal_attachment == 'weld'
-        self._welds = PedalWelds(model) if self.welded_pedals else None
+        self.spindle_pedals = config.pedal_attachment == 'spindle'
+        self.linked_pedals = config.pedal_attachment in ('weld', 'spindle')
+        self._welds = (SpindlePins(model) if self.spindle_pedals else
+                       PedalWelds(model) if self.linked_pedals else None)
         self.welded_saddle = config.saddle_attachment == 'weld'
         self.pinned_saddle = config.saddle_attachment == 'pin'
         self.linked_saddle = self.welded_saddle or self.pinned_saddle
@@ -123,7 +125,7 @@ class RiderContactApplier:
     def set_enabled(self,name,enabled):
         if name not in self.CONTACTS or not isinstance(enabled,bool):
             raise ValueError('invalid rider contact enable request')
-        if not enabled and ((self.welded_pedals and name.endswith('_pedal'))
+        if not enabled and ((self.linked_pedals and name.endswith('_pedal'))
                             or (self.linked_saddle and name == 'saddle')
                             or (self.welded_grip and name == 'grip')):
             return True   # a weld or pin cannot be released
@@ -207,7 +209,7 @@ class RiderContactApplier:
         energy=sum(.5*cfg.grip_k_n_m*float(self.grip_xi_local[s]@self.grip_xi_local[s])
                    for s in ('left','right'))
         for name,entry in self.supports.items():
-            if (self.welded_pedals and name.endswith('_pedal')
+            if (self.linked_pedals and name.endswith('_pedal')
                     or self.linked_saddle and name == 'saddle'):
                 continue
             for key,point,n,tangent,gap,inside in self._pads(model,data,name,entry):
@@ -230,16 +232,24 @@ class RiderContactApplier:
             if name=='saddle' and self.linked_saddle:
                 eq_id,rotational=self._saddle_link.eq_id,self.welded_saddle
                 half=self.config.saddle_patch_half_length_m
-            elif name.endswith('_pedal') and self.welded_pedals:
+            elif name.endswith('_pedal') and self.linked_pedals:
                 eq_id=self._welds.eq_ids[name.split('_')[0]]
-                rotational,half=True,float(model.geom_size[entry[3],0])
+                rotational = not self.spindle_pedals
+                half = 0. if self.spindle_pedals else float(model.geom_size[entry[3],0])
             else:
                 continue
-            normal=np.mean([n for _,_,n,_,_,_ in self._pads(model,data,name,entry)],axis=0)
+            point = np.array(data.site_xpos[site])
+            if name.endswith('_pedal') and self.spindle_pedals:
+                # Foot bodies are unrotated at qpos0, ankle above spindle:
+                # compression is toward the ankle, i.e. local +z, not -z.
+                normal = data.xmat[body].reshape(3, 3)[:, 2].copy()
+                point = data.xpos[body] + data.xmat[body].reshape(3, 3) @ model.eq_data[eq_id, :3]
+            else:
+                normal=np.mean([n for _,_,n,_,_,_ in self._pads(model,data,name,entry)],axis=0)
             out='foot_'+name.split('_')[0] if name.endswith('_pedal') else 'saddle'
             try:
                 prepared[out]=prepare_attachment_geometry(model,data,eq_id,body,bike,
-                    np.array(data.site_xpos[site]),normal,out.rsplit('_',1)[0],
+                    point,normal,out.rsplit('_',1)[0],
                     rotational=rotational,half_patch_m=half)
             except ValueError:
                 errors.append(out+':unobservable_attachment_wrench')
@@ -290,7 +300,7 @@ class RiderContactApplier:
         for name,entry in self.supports.items():
             if name=='saddle' and self.linked_saddle:
                 force=self._saddle_link.force_on_rider_n(model,data,rows=rows)
-            elif name.endswith('_pedal') and self.welded_pedals:
+            elif name.endswith('_pedal') and self.linked_pedals:
                 force=self._welds.force_on_rider_n(model,data,name.split('_')[0],rows=rows)
             else:
                 continue
@@ -299,6 +309,9 @@ class RiderContactApplier:
                 normals.append(n);tangents.append(tangent)
             n=np.mean(normals,axis=0);n/=max(np.linalg.norm(n),1e-12)
             tangent=np.mean(tangents,axis=0);tangent/=max(np.linalg.norm(tangent),1e-12)
+            if name.endswith('_pedal') and self.spindle_pedals:
+                n = data.xmat[entry[0]].reshape(3, 3)[:, 2]
+                tangent = np.array([n[2], 0., -n[0]])
             normal=float(force@n);shear=float(force@tangent)
             result[name]={'force_on_rider_n':force.tolist(),'normal_n':normal,'tangent_n':shear,
                           'would_separate':normal<0.,
@@ -308,9 +321,9 @@ class RiderContactApplier:
                 force=self._grip_connect[side].force_on_rider_n(model,data,rows=rows)
                 result['grip_'+side]={'force_on_rider_n':force.tolist()}
         crank=(self._welds.delivered_crank_torque_nm(model,data,rows=rows)
-               if self.welded_pedals else 0.)
+               if self.linked_pedals else 0.)
         self._settled_welds=(copy.deepcopy(result),crank)
-        if self.welded_pedals:
+        if self.linked_pedals:
             # The torque sensor reads this on the next step.
             result['crank_torque_nm']=crank
         if raw and prepared is not None:
@@ -360,16 +373,24 @@ class RiderContactApplier:
             if name=='saddle' and self.linked_saddle:
                 eq_id,rotational=self._saddle_link.eq_id,self.welded_saddle
                 half=self.config.saddle_patch_half_length_m
-            elif name.endswith('_pedal') and self.welded_pedals:
+            elif name.endswith('_pedal') and self.linked_pedals:
                 eq_id=self._welds.eq_ids[name.split('_')[0]]
-                rotational,half=True,float(model.geom_size[entry[3],0])
+                rotational = not self.spindle_pedals
+                half = 0. if self.spindle_pedals else float(model.geom_size[entry[3],0])
             else:
                 continue
-            normal=np.mean([n for _,_,n,_,_,_ in self._pads(model,data,name,entry)],axis=0)
+            point = np.array(data.site_xpos[site])
+            if name.endswith('_pedal') and self.spindle_pedals:
+                # Foot bodies are unrotated at qpos0, ankle above spindle:
+                # compression is toward the ankle, i.e. local +z, not -z.
+                normal = data.xmat[body].reshape(3, 3)[:, 2].copy()
+                point = data.xpos[body] + data.xmat[body].reshape(3, 3) @ model.eq_data[eq_id, :3]
+            else:
+                normal=np.mean([n for _,_,n,_,_,_ in self._pads(model,data,name,entry)],axis=0)
             out='foot_'+name.split('_')[0] if name.endswith('_pedal') else 'saddle'
             try:
                 samples[out]=measure(model,data,eq_id,body,bike,
-                    np.array(data.site_xpos[site]),normal,out.rsplit('_',1)[0],
+                    point,normal,out.rsplit('_',1)[0],
                     rotational=rotational,half_patch_m=half,rows=rows)
             except ValueError:
                 errors.append(out+':unobservable_attachment_wrench')
@@ -426,7 +447,7 @@ class RiderContactApplier:
         # The map stays a local: the probe copy above gets its own inside its
         # recursive call, and the efc layout is rebuilt every step anyway.
         eq_rows=(equality_rows(data)
-                 if self.welded_pedals or self.linked_saddle or self.welded_grip
+                 if self.linked_pedals or self.linked_saddle or self.welded_grip
                  else None)
         qfrc=np.zeros(model.nv)
         energy=0.; loss=self.pending_release_loss_j; radial_power=0.; delivered=0.
@@ -455,7 +476,7 @@ class RiderContactApplier:
                 new_states[f"{name}:0"]=_SupportState()
                 new_states[f"{name}:1"]=_SupportState()
                 continue
-            if self.welded_pedals and name.endswith('_pedal'):
+            if self.linked_pedals and name.endswith('_pedal'):
                 side=name.split('_')[0]
                 force_on_rider,normal_load=self._settled(name)
                 settled=(self._settled_welds[0].get(name)
@@ -571,7 +592,7 @@ class RiderContactApplier:
             self.states,self.grip_xi_local,self.diagnostics=new_states,self.grip_xi_local,diagnostics
             self.elastic_energy_j,self.loss_step_j=energy,loss
             self.radial_dissipation_power_w=radial_power
-            if self.welded_pedals:
+            if self.linked_pedals:
                 delivered=self._settled_crank_torque_nm()
             self.delivered_crank_torque_nm=delivered
             self.pending_release_loss_j=0.; self.last_time_s=time
@@ -653,7 +674,7 @@ class RiderContactApplier:
         self.states,self.diagnostics=new_states,diagnostics
         self.elastic_energy_j,self.loss_step_j=energy,loss
         self.radial_dissipation_power_w=radial_power
-        if self.welded_pedals:
+        if self.linked_pedals:
             delivered=self._settled_crank_torque_nm()
         self.delivered_crank_torque_nm=delivered
         self.pending_release_loss_j=0.; self.last_time_s=time

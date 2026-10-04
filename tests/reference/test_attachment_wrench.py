@@ -65,7 +65,7 @@ def test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads(pad_spac
     c.config=ArticulatedConfig(pedal_patch_half_length_m=pad_spacing)
     c.supports={'front_pedal':(model.body('rider').id,model.site('sole').id,
         model.body('bike').id,model.geom('platform').id)}
-    c.linked_saddle=False;c.welded_pedals=True;c.welded_grip=False
+    c.linked_saddle=False;c.linked_pedals=True;c.spindle_pedals=False;c.welded_grip=False
     c._welds=SimpleNamespace(eq_ids={'front':0})
     c._pads=lambda *args:[(None,None,np.array([0.,0.,1.]),None,None,None)]
     samples,errors=c._attachment_samples(model,data)

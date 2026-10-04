@@ -44,7 +44,12 @@ def _connect_equality_rows(model, data):
     if not np.any(rows):
         return rows
     rows = rows.copy()
-    rows[rows] = model.eq_type[data.efc_id[:n][rows]] == mujoco.mjtEq.mjEQ_CONNECT
+    linkage = np.array([
+        model.eq_type[i] == mujoco.mjtEq.mjEQ_CONNECT and not
+        (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_EQUALITY, i) or '').startswith(
+            ('connect_saddle', 'connect_grip_', 'connect_foot_'))
+        for i in range(model.neq)], dtype=bool)
+    rows[rows] = linkage[data.efc_id[:n][rows]]
     return rows
 
 

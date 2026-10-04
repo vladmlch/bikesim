@@ -3,11 +3,9 @@
 
 name = "research_rough_uphill_savage"
 length_m = 120.0
-description = "Savage stepped climb: 120 m loose base, plateaus 15/25/34% into a 45% wet wall; continuous 25 mm roughness, washboard, G-out, roots, rock garden, ledges on the wall; seeds 210+"
+description = "Savage stepped climb on asphalt: 120 m, plateaus 15/25/34% into a 45% wall; continuous 25 mm roughness, washboard, G-out, roots, rock garden, ledges on the wall; seeds 210+. Surface asphalt end to end (2026-10-04)"
 surface = "asphalt"
 grade_profile = { knots = [[0.0, 0.0], [10.0, 0.0], [15.0, 0.15], [33.0, 0.15], [38.0, 0.25], [55.0, 0.25], [60.0, 0.34], [76.0, 0.34], [81.0, 0.45], [98.0, 0.45], [104.0, 0.0], [120.0, 0.0]] }
-surface_sections = [{ start_m = 40.0, end_m = 45.0, surface = "loose" }, { start_m = 80.0, end_m = 98.0, surface = "loose" }]
-#drive.motor_clutch = true
 
 [[obstacles]]
 type = "roughness"

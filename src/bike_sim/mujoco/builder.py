@@ -315,7 +315,7 @@ def generate_mujoco_xml(
     if (physics_config is not None
             and (getattr(physics_config.articulated, 'pedal_attachment', 'flat') == 'weld'
                  or getattr(physics_config.articulated, 'saddle_attachment', 'flat') in ('weld', 'pin')
-                 or getattr(physics_config.articulated, 'grip_attachment', 'spring') == 'weld')
+                 or getattr(physics_config.articulated, 'grip_attachment', 'spring') == 'connect')
             and not (physical and articulated_pose is not None)):
         raise ValueError(
             "non-flat rider attachments (weld/pin) require "
@@ -360,7 +360,7 @@ def generate_mujoco_xml(
             elif physics_config.articulated.saddle_attachment == 'pin':
                 from bike_sim.mujoco.reference_rider import add_saddle_pin
                 add_saddle_pin(root, solref)
-            if physics_config.articulated.grip_attachment == 'weld':
+            if physics_config.articulated.grip_attachment == 'connect':
                 assert equality is not None
                 # A `connect` pins each grip site to the bar point it already
                 # occupies at qpos0: the hand can never leave the bar, but the

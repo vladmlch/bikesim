@@ -17,6 +17,9 @@ from bike_sim.physics.rider_allocation import (
     Allocation, allocate_effort, grip_constraints, inverse_dynamics_rows,
 )
 
+from bike_sim.physics.physical_config import ArticulatedConfig
+BUDGET = ArticulatedConfig().attachment_budget()
+
 ROOT = Path(__file__).resolve().parents[2]
 WELDED = ROOT / 'examples' / 'research' / 'viewer_physics_welded.toml'
 
@@ -78,7 +81,7 @@ def test_saddle_reserve_is_an_actual_configured_lower_bound(monkeypatch,coupled,
     assert np.min(captured['h'][selected]) == pytest.approx(-expected-guard)
     assert diagnostic['saddle_normal_lower_bound_n'] == pytest.approx(expected)
     from bike_sim.physics.attachment_budget import AttachmentSample, attachment_violations
-    assert 'normal' in attachment_violations(AttachmentSample('saddle',0.,0.,0.,0.))
+    assert 'normal' in attachment_violations(AttachmentSample('saddle',0.,0.,0.,0.), BUDGET)
 
 
 @pytest.mark.parametrize('name', ['front', 'rear', 'saddle'])
@@ -123,7 +126,7 @@ def test_support_moment_constraints_reject_cop_outside_the_physical_patch():
         assert np.all(g@np.array([0.,normal,half*normal-1e-5]) <= h+1e-12)
         assert np.any(g@np.array([0.,normal,half*normal+1e-3]) > h)
     from bike_sim.physics.attachment_budget import AttachmentSample,attachment_violations
-    assert attachment_violations(AttachmentSample('foot',100.,90.,5.,0.,half_patch_m=.05)) == ()
+    assert attachment_violations(AttachmentSample('foot',100.,90.,5.,0.,half_patch_m=.05), BUDGET) == ()
 
 
 def test_activation_dynamics_shape_the_wish_before_support_allocation():

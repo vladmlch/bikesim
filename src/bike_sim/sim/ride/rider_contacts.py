@@ -88,7 +88,7 @@ class RiderContactApplier:
         self.linked_saddle = self.welded_saddle or self.pinned_saddle
         self._saddle_link = (SaddleWeld(model) if self.welded_saddle
                              else SaddlePin(model) if self.pinned_saddle else None)
-        self.welded_grip = config.grip_attachment == 'weld'
+        self.welded_grip = config.grip_attachment == 'connect'
         self._grip_connect = ({side:GripConnect(model,side) for side in ('left','right')}
                               if self.welded_grip else None)
         self.reset(model,None)

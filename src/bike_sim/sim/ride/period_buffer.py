@@ -147,7 +147,7 @@ def _effort_observations(runtime, raws):
     return result
 
 
-def evaluate_period(runtime, raws):
+def evaluate_period(runtime, raws, budget):
     from bike_sim.physics.attachment_budget import attachment_violations
     attachments = evaluate_attachments(raws)
     efforts = _effort_observations(runtime, raws)
@@ -159,7 +159,7 @@ def evaluate_period(runtime, raws):
                       for name in raw.attachment_raw if name not in samples)
         for name in raw.attachment_raw:
             if name in samples:
-                errors.extend(f'{name}.{v}' for v in attachment_violations(samples[name]))
+                errors.extend(f'{name}.{v}' for v in attachment_violations(samples[name], budget))
         c = runtime.rider_control
         if c is not None:
             errors.extend(f'rider_strength.{name}' for name in

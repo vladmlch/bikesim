@@ -1,3 +1,5 @@
+from bike_sim.physics.physical_config import ArticulatedConfig
+BUDGET = ArticulatedConfig().attachment_budget()
 import numpy as np
 import pytest
 
@@ -44,7 +46,7 @@ def test_batched_wrench_matches_scalar_and_first_violation():
     for i, (raw, sample) in enumerate(zip(raws, samples)):
         wrench = recover_wrench(jac, raw.attachment_raw['foot_front'][1])
         assert sample['foot_front'].normal_n == pytest.approx(wrench[1], abs=1e-9)
-        if attachment_violations(sample['foot_front']) and first is None:
+        if attachment_violations(sample['foot_front'], BUDGET) and first is None:
             first = i
     assert first == 7
     assert not buffer.full and buffer.drain() == []
@@ -133,7 +135,7 @@ def test_held_command_power_and_strength_are_checked_at_each_incoming_state():
         c.effort_diagnostics = {}
         expected.append(solved_effort(c, SimpleNamespace(actuator_force=raw.actuator_force,
             qfrc_passive=raw.qfrc_passive),(raw.qpos,raw.qvel),.0005))
-    report = evaluate_period(runtime, raws)
+    report = evaluate_period(runtime, raws, BUDGET)
     assert report.efforts == tuple(expected)
     assert [e['rider_positive_power_w'] for e in report.efforts] == [0., 2., 12.]
     assert [e['rider_effort_budget_exceeded'] for e in report.efforts] == [False, False, True]

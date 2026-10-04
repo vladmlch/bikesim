@@ -339,7 +339,7 @@ class ArticulatedRiderController:
                      -np.asarray(self.target_data.xpos[body]))
                 self._weld_sole_offset[side]=np.asarray(
                     self.target_data.xmat[body]).reshape(3,3).T@rel
-        self.welded_grip = config.grip_attachment == 'weld'
+        self.welded_grip = config.grip_attachment == 'connect'
         self._weld_grip_offset = {}
         if self.welded_grip:
             # The connect datum is the steer point each grip site occupies at

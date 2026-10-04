@@ -7,6 +7,7 @@ upgrades these parameters to a measured/calibrated model.
 from dataclasses import dataclass, field
 from math import pi, radians
 from bike_sim.physics.checks import scalar
+from bike_sim.physics.attachment_budget import AttachmentBudget
 from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.tire_curve import TabulatedTireSpec
 from bike_sim.physics.distributed_tire import DistributedTireConfig
@@ -367,10 +368,18 @@ class ArticulatedConfig:
     joint_strength_path: str | None = None
     pedal_attachment: str = 'flat'
     saddle_attachment: str = 'flat'
-    # 'spring' is the releasable compliant grip; 'weld' pins the hands to the
+    # 'spring' is the releasable compliant grip; 'connect' pins the hands to the
     # bar permanently through a connect equality (the wrist DOF stays free, so
     # the torso can still lean over locked hands).
     grip_attachment: str = 'spring'
+    balance_floor_kmh: float = 4.
+    balance_dwell_s: float = .5
+    balance_grace_s: float = 3.
+
+    def attachment_budget(self) -> AttachmentBudget:
+        return AttachmentBudget(self.pedal_min_normal_n, self.foot_mu,
+                                self.saddle_mu, self.grip_pull_per_hand_n,
+                                self.link_max_gap_m)
 
     @property
     def passive_damping_nms_rad(self):
@@ -399,7 +408,8 @@ class ArticulatedConfig:
         if self.grip_pair_force_limit_n is not None:
             scalar(self.grip_pair_force_limit_n,'pair grip force limit',positive=True)
         for key in ('support_pad_radius_m','stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s',
-                    'pedal_min_normal_n','grip_pull_per_hand_n','link_max_gap_m'):
+                    'pedal_min_normal_n','grip_pull_per_hand_n','link_max_gap_m',
+                    'balance_floor_kmh', 'balance_dwell_s'):
             scalar(getattr(self,key),key,positive=True)
         if self.saddle_reserve_weight_fraction > 1.:
             raise ValueError('saddle reserve fraction must not exceed one')
@@ -411,12 +421,14 @@ class ArticulatedConfig:
             raise ValueError('pedal torque ripple must be below one')
         if self.pedal_scrape_fraction > 1.:
             raise ValueError('pedal scrape fraction must not exceed one')
-        if self.pedal_attachment not in ('flat', 'weld'):
+        if self.pedal_attachment not in ('flat', 'weld', 'spindle'):
             raise ValueError(
-                f"pedal_attachment must be 'flat' or 'weld', got {self.pedal_attachment!r}")
+                f"pedal_attachment must be 'flat', 'weld' or 'spindle', got {self.pedal_attachment!r}")
         if self.saddle_attachment not in ('flat', 'weld', 'pin'):
             raise ValueError(
                 f"saddle_attachment must be 'flat', 'weld' or 'pin', got {self.saddle_attachment!r}")
-        if self.grip_attachment not in ('spring', 'weld'):
+        if self.grip_attachment == 'weld':
+            object.__setattr__(self, 'grip_attachment', 'connect')
+        if self.grip_attachment not in ('spring', 'connect'):
             raise ValueError(
-                f"grip_attachment must be 'spring' or 'weld', got {self.grip_attachment!r}")
+                f"grip_attachment must be 'spring' or 'connect', got {self.grip_attachment!r}")

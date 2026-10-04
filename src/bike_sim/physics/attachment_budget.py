@@ -19,7 +19,16 @@ class AttachmentSample:
     half_patch_m: float = 0.0
 
 
-def attachment_violations(s: AttachmentSample) -> tuple[str, ...]:
+@dataclass(frozen=True)
+class AttachmentBudget:
+    foot_min_normal_n: float
+    foot_mu: float
+    saddle_mu: float
+    grip_pull_n: float
+    max_gap_m: float
+
+
+def attachment_violations(s: AttachmentSample, budget: AttachmentBudget) -> tuple[str, ...]:
     if s.kind not in {'foot', 'saddle', 'grip'}:
         raise ValueError('unknown attachment kind')
     values = (s.normal_n, s.tangent_n, s.moment_nm, s.gap_m,
@@ -29,16 +38,16 @@ def attachment_violations(s: AttachmentSample) -> tuple[str, ...]:
     if min(s.gap_m, s.pull_n, s.half_patch_m) < 0:
         return ('invalid_measurement',)
     errors = []
-    if s.gap_m > 0.005:
+    if s.gap_m > budget.max_gap_m:
         errors.append('gap')
     if s.kind == 'grip':
-        if s.pull_n > 300.0:
+        if s.pull_n > budget.grip_pull_n:
             errors.append('pull')
         return tuple(errors)
-    if (s.kind == 'foot' and s.normal_n < 20.0) or (
+    if (s.kind == 'foot' and s.normal_n < budget.foot_min_normal_n) or (
             s.kind == 'saddle' and s.normal_n <= 0.0):
         errors.append('normal')
-    mu = 0.9 if s.kind == 'foot' else 0.6
+    mu = budget.foot_mu if s.kind == 'foot' else budget.saddle_mu
     if abs(s.tangent_n) > mu * max(0.0, s.normal_n):
         errors.append('friction')
     if abs(s.moment_nm) > s.half_patch_m * max(0.0, s.normal_n):

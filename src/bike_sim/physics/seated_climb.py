@@ -21,15 +21,27 @@ class SeatedClimbConfig:
     max_backward_lean_rad: float = .10
     lean_rate_rad_s: float = .5
     orientation_tau_s: float = .5
+    surge_power_w: float = 400.
+    surge_grade: float = .20
+    surge_budget_s: float = 15.
+    surge_recovery_rate: float = 1/3
+    front_load_share_target: float = .30
+    lean_trim_gain_rad_s: float = .3
+    lean_trim_limit_rad: float = .15
 
     def __post_init__(self):
         if not isinstance(self.enabled, bool):
             raise ValueError('seated climb enable must be boolean')
         for name in ('period_s', 'target_crank_power_w', 'max_crank_torque_nm',
-                     'torque_slew_nm_s', 'lean_rate_rad_s', 'orientation_tau_s'):
+                     'torque_slew_nm_s', 'lean_rate_rad_s', 'orientation_tau_s',
+                     'surge_power_w', 'surge_budget_s'):
             scalar(getattr(self, name), name, positive=True)
-        for name in ('reaction_delay_s', 'lean_gain', 'max_forward_lean_rad', 'max_backward_lean_rad'):
+        for name in ('reaction_delay_s', 'lean_gain', 'max_forward_lean_rad', 'max_backward_lean_rad',
+                     'surge_grade', 'surge_recovery_rate', 'front_load_share_target',
+                     'lean_trim_gain_rad_s', 'lean_trim_limit_rad'):
             scalar(getattr(self, name), name, minimum=0.)
+        if self.front_load_share_target > 1.:
+            raise ValueError('front load share target must not exceed one')
         if max(self.max_forward_lean_rad, self.max_backward_lean_rad) > .8:
             raise ValueError('seated lean exceeds the posture envelope')
 

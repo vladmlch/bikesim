@@ -670,7 +670,7 @@ class PhysicalRuntime:
         raws = self._buffer.drain()
         if not raws:
             return
-        report = evaluate_period(self, raws)
+        report = evaluate_period(self, raws, self.cfg.articulated.attachment_budget())
         published = []
         failures = []
         self.interval_constraints = {}
@@ -765,5 +765,5 @@ class PhysicalRuntime:
         from bike_sim.physics.attachment_budget import attachment_violations
         violations=list(self.attachment_errors)
         for name,s in self.attachment_samples.items():
-            violations.extend(f'{name}.{v}' for v in attachment_violations(s))
+            violations.extend(f'{name}.{v}' for v in attachment_violations(s, self.cfg.articulated.attachment_budget()))
         return tuple(violations)

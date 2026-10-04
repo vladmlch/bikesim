@@ -11,12 +11,14 @@ from bike_sim.sim.ride.period_buffer import PeriodBuffer, RawStep
 from bike_sim.sim.ride.physical_runtime import PhysicalRuntime
 from bike_sim.sim.ride.physical_samples import WorkHistory
 from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
+from bike_sim.physics.physical_config import ArticulatedConfig
 
 
 def runtime_for_raws(*, strict=True, decimation=1):
     runtime = PhysicalRuntime.__new__(PhysicalRuntime)
     runtime.sim = SimpleNamespace(steps=0)
-    runtime.cfg = SimpleNamespace(drive=SimpleNamespace(battery=SimpleNamespace(enabled=False)))
+    runtime.cfg = SimpleNamespace(articulated=ArticulatedConfig(),
+        drive=SimpleNamespace(battery=SimpleNamespace(enabled=False)))
     runtime.control_clock = ControlClock(.0005, .005)
     runtime._buffer = PeriodBuffer(10)
     runtime.rider_control = runtime.rider_contacts = None

@@ -25,56 +25,54 @@ mu = 1.1
 mu = 1.1
 
 [drive]
+# Real mid-drive topology: the chainring sits on the crank spindle (rigid
+# crank/chainring through the torque sensor); the motor pushes through a
+# one-way freewheel; the cassette freehub is the only other one-way element.
+# RU: шатун жёстко со звездой, мотор через обгонную муфту. motor_clutch=true —
+# legacy-топология (муфта шатун→вал) только для регрессионного A/B.
 transmission_model = "ideal_mid_drive"
-human_torque_nm = 20.0
-motor_clutch = true
+motor_clutch = false
+# Reflected rotor inertia at the crank, kg*m^2. 0 = stateless rotor (the
+# freewheel degenerates to tau_motor >= 0). ~0.1-0.3 is the recalled order of
+# magnitude for a mid-drive (unverified); set >0 for an inertial-rotor A/B.
+rotor_inertia_kgm2 = 0.0
 
 [drive.pedaling]
 enabled = true
-# Гистерезис "крутит/не крутит": выше coast_above_rpm райдер перестаёт давить
-# на педали (coasting, effort=0), чтобы снова крутить -- каденс должен упасть
-# ниже resume_below_rpm. Зазор между порогами не даёт дёргать режим туда-сюда.
-coast_above_rpm = 150.0
-resume_below_rpm = 130.0
+# Coast/resume hysteresis on the EMA-filtered cadence (tau below): above
+# coast_above_rpm the rider stops pressing, pedalling resumes below
+# resume_below_rpm. RU: накат выше 120, возврат ниже 105; EMA убирает
+# дёрганье от двух пульсаций момента за оборот.
+coast_above_rpm = 120.0
+resume_below_rpm = 105.0
+coast_cadence_tau_s = 0.35
 stop_time_s = 0.35
-# Low-cadence effort ramp: below mash_cadence_rpm the rider presses harder on
-# the pedals and commanded effort ramps linearly toward mash_torque_nm at 0
-# rpm. The ceiling is limited to what the articulated leg drive can actually
-# transmit; higher values deepen pedal-stroke torque oscillation.
-# RU: "давит в горку". Ниже mash_cadence_rpm райдер встаёт на педаль, и effort
-# линейно растёт от human_torque_nm до mash_torque_nm на 0 rpm. Надбавка
-# никогда не снижает усилие ниже базового.
+# Legacy low-cadence ramp; inactive while seated_climb supplies the effort.
 mash_cadence_rpm = 45.0
 mash_torque_nm = 60.0
-# Rider force development rate: a mash builds over ~0.1s, not instantly.
-# RU: максимальная скорость нарастания усилия, Нм/с. Мышцы не выдают силу
-# мгновенно -- рывок до mash_torque_nm строится за ~0.1 с, а не за один шаг.
-# 0 отключает ограничение.
 effort_slew_nm_s = 300.0
+# Rider's hand on the brake during rollback (until hill-hold D4 replaces it).
+# RU: при откате быстрее 0.25 м/с райдер зажимает тормоза до остановки отката.
 rollback_brake = true
-# Hill-hold reflex: sustained rollback faster than rollback_engage_mps grabs
-# the wheel brakes until forward motion resumes (rollback_release_mps). This
-# is a physical restraint -- it does not gate pedaling or assist intent.
-# RU: рефлекс удержания на подъёме. Если байк едет назад быстрее
-# rollback_engage_mps (speed < -0.25), тормоза зажимаются с силой
 rollback_engage_mps = 0.25
 rollback_release_mps = 0.0
-# rollback_demand (1.0 = в пол) и держатся, пока откат не остановится
-# (speed > -rollback_release_mps). Это физический тормоз: педалирование и
-# мотор продолжают работать, он просто не даёт укатиться вниз.
 rollback_demand = 1.0
 
 [drive.assist]
-gain = 4.0
-max_torque = 85.0
-max_power = 600.0
-# Torque envelope vs crank rpm. The 600 W shaft cap already binds below
-# 120 rpm (85 N*m * 12.57 rad/s = 1068 W > 600 W), so the curve's plateau
-# just documents capability; the drop to 47.7 N*m = 600 W at 120 rpm puts
-# the knee where the power ceiling hands over to the steeper falloff --
-# above 120 rpm shaft torque AND power decline together to zero at 180 rpm.
+# Bosch Performance Line CX Gen 4 (no ABS), recalled from memory, unverified:
+# 85 N*m, 600 W peak, 40 ms torque lag, Eco 0.6 / Tour 1.4 / eMTB 1.4-3.4 /
+# Turbo 3.4, taper 23-25 km/h. The profile owns those numbers; only the
+# cadence envelope and the engagement threshold are declared here.
+# RU: режим ассиста: eco | tour | emtb | turbo. Мотор = множитель x момент
+# на педалях через лаг 40 мс; ассист только при шатуне вперёд > 5 град/с и
+# моменте стопы > engage_torque_nm. Stall-отсечки и boost нет.
+profile = "bosch_cx_gen4"
+mode = "turbo"
+# Torque envelope vs crank rpm (crank == motor shaft with the rigid
+# chainring). Plateau documents capability; above 120 rpm support declines
+# to zero at 180 rpm.
 torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
-# Sensor threshold; forward crank motion is also required by the pedelec gate.
+# Sensor noise floor: measured pedal torque below this is "not pedalling".
 engage_torque_nm = 4.0
 
 [drive.battery]
@@ -89,32 +87,17 @@ rear_teeth = 51
 [drive.shifting]
 enabled = true
 cassette = [10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51]
-# RU: целевая полоса каденса райдера, об/мин. Выше max (крутит слишком
-# быстро) -- переключение на меньшую звезду (тяжелее передача), ниже min
-# (давит с трудом) -- на большую звезду (легче). Внутри полосы ничего
-# не делает.
-target_cadence_min_rpm = 80.0
+# RU: полоса каденса шатуна. Ниже 75 — на большую звезду (легче), выше 110 —
+# на меньшую (тяжелее). Решение только по каденсу шатуна (EMA ниже);
+# колёсный каденс используется лишь для проверки посадки на новую передачу.
+target_cadence_min_rpm = 75.0
 target_cadence_max_rpm = 110.0
-# RU: минимальная пауза между переключениями, чтобы система не щёлкала
-# передачами туда-сюда каждый шаг симуляции.
 shift_cooldown_s = 0.4
-# RU: длительность "срезки" момента при переключении. Как на реальном байке:
-# на мгновение ослабляешь нажим, иначе цепь перекидывается под нагрузкой.
+# RU: на время переключения райдер сбрасывает усилие до 30%; мотор НЕ
+# режется — он следует за моментом райдера через свой лаг (спека S6).
 shift_cut_duration_s = 0.2
-# RU: во сколько раз срезается момент на время shift_cut_duration_s.
-# 0.3 = остаётся 30% усилия на педалях и моторе, пока цепь переходит
-# на новую звезду. 1.0 отключает срезку, 0.0 -- полное снятие тяги.
 torque_factor = 0.3
-# Shift decisions use a filtered crank rate so a single power-stroke spike
-# cannot trigger an upshift under climbing load.
-# RU: постоянная времени экспоненциального фильтра (EMA) каденса, с.
-# Момент на педалях пульсирует дважды за оборот, поэтому "сырой" каденс
-# дёргается; без фильтра один сильный толчок ногой на подъёме дал бы
-# кратковременный всплеск rpm и вызвал ложный upshift. 0 отключает фильтрацию.
 cadence_smoothing_tau_s = 0.35
-# RU: верхний предел пробуксовки заднего колеса, м/с, при котором апшифт
-# запрещён. Буксующее колесо раскручивается без разгона байка и завышает
-# implied каденс — реальный райдер не переключается вверх на пробуксовке.
 upshift_slip_limit_mps = 0.5
 
 [articulated]
@@ -132,8 +115,17 @@ joint_strength_path = "rider_strength_reference.json"
 # Whole-body positive mechanical power cap: an engineering budget chosen in
 # the requested 400-500 W band, not a physiological claim.
 active_positive_power_limit_w = 450.0
+# Two-leg torque waveform depth mean*(1 + 0.5 cos 2phi): peak ~1.5x mean,
+# dead spots ~0.5x. The bike's flywheel carries the cranks through the dead
+# spots now that crank and chainring are rigid.
+pedal_torque_ripple = 0.5
+# Residual recovery-leg load on the rising pedal (recreational rider ~40-100 N,
+# lower bound used; engineering estimate). Keeps the welded flat-pedal foot in
+# compression -- a real foot cannot pull a flat pedal.
+return_foot_preload_n = 40.0
 
 [seated_climb]
 enabled = true
-# lean_gain = 1.3            # по умолчанию 1.0
-# max_forward_lean_rad = 0.5 # по умолчанию 0.35
+# Rider holds ~250 W at the crank, torque-capped at 60 N*m (grinds below ~40 rpm).
+target_crank_power_w = 250.0
+max_crank_torque_nm = 60.0

@@ -74,3 +74,20 @@ Actual120rpm/no-saturation pedaling is therefore PENDING, not qualified by the
 pure directional-capacity tests. No vmax25escalation: failure is a support gate,
 not evidence of insufficient directional strength. Logs: /tmp/pedelec-120.log,
 /tmp/pedelec-strength.log, /tmp/pedelec-baseline120.log.
+
+## Task 8
+
+Approved realistic TOML activated: rigidcrank/statelessrotor, BoschTurbo,
+120/105coast EMA.35s,75–110shiftband,rider250W/60Nm,ripple.5,returnpreload40N.
+ConfigRED3failed, GREEN3passed; canonical297passed37deselected in1.29s.
+Torque-sensor smoke **FAILED**1test in14.44s: previous-step identity passed
+at<1e-9Nm, but mean solvedtorque overlast200samples is6.903736Nm, below10Nm.
+A400step diagnostic reproduced this: all200late samples arepedaling,
+cadence13.33–18.73rpm, commandedhuman51.67–54.00Nm. Coasting does not explain
+it. Baseline aadcba1 archive same400steps gives16.505119Nm,
+allpedaling, cadence11.91–14.32rpm, command51.38–54.27Nm. This delivery loss is
+new under the approved config/topology/ripple/preload; it is not mislabeled
+baseline-green. No assertion, gain, preload or physicalgate was changed to
+make the smoke pass. Assembled acceptance must diagnose this alongwithG5.
+Logs /tmp/pedelec-sensor.log,/tmp/pedelec-sensor-diag.log,
+/tmp/pedelec-sensor-baseline.log; CSVs/private/tmp/pedelec-sensor-{current,baseline}/sensor.csv.

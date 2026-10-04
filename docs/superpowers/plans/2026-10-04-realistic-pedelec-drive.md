@@ -1437,7 +1437,7 @@ git commit -m "feat: widen the leg force-velocity envelope to 120 rpm pedalling"
 - Modify: `examples/research/viewer_physics_welded.toml:27-164`
 - Test: `tests/reference/test_welded_profile_config.py`
 
-- [ ] **Step 1: Падающий тест**
+- [x] **Step 1: Падающий тест**
 
 ```python
 """The welded preview profile is the realistic pedelec default."""
@@ -1488,7 +1488,7 @@ def test_rider_numbers(cfg):
 Run: `uv run python -m pytest tests/reference/test_welded_profile_config.py -q`
 Expected: FAIL (`motor_clutch is True`, `profile None`, ...).
 
-- [ ] **Step 2: Переписать блоки TOML** (строки от `[drive]` до `[drive.shifting]` включительно и `[seated_climb]`, `[articulated]` дополнить). Итоговый текст:
+- [x] **Step 2: Переписать блоки TOML** (строки от `[drive]` до `[drive.shifting]` включительно и `[seated_climb]`, `[articulated]` дополнить). Итоговый текст:
 
 ```toml
 [drive]
@@ -1593,12 +1593,12 @@ max_crank_torque_nm = 60.0
 
 Удалить `human_torque_nm = 20.0` и `gain = 4.0` (если ещё остались).
 
-- [ ] **Step 3: Тесты**
+- [x] **Step 3: Тесты**
 
 Run: `uv run python -m pytest tests/reference/test_welded_profile_config.py -q && uv run python -m pytest tests -m 'not slow' -q`
 Expected: PASS. Затем один медленный смоук: `uv run python -m pytest tests/test_rider_welds.py -q -m slow -k torque_sensor` — PASS (сенсор остался weld-моментом с лагом в шаг).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add examples/research/viewer_physics_welded.toml tests/reference/test_welded_profile_config.py

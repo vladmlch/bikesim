@@ -1052,7 +1052,7 @@ git commit -m "refactor: remove crank reposition; a stall is a legitimate outcom
 **Interfaces:**
 - Produces: `CadenceShifter.update(cadence_rpm, required_cadence_rpm, dt, *, pedaling, braking, rear_in_contact, rear_slip_mps)` — решение по EMA `cadence_rpm` (шатун); `required_cadence_rpm` используется только для landing-проверки и для отказа при отрицательном значении. Удалены `DrivetrainForceApplier.shift_motor_limit_nm`, диагностики `shift_motor_limit_nm`, `shift_limited`.
 
-- [ ] **Step 1: Падающий тест**
+- [x] **Step 1: Падающий тест**
 
 ```python
 """CadenceShifter decides on the crank cadence alone; the motor is never cut by a shift."""
@@ -1131,7 +1131,7 @@ def test_ema_filters_a_single_stroke_spike():
 Run: `uv run python -m pytest tests/reference/test_cadence_shifter.py -q`
 Expected: FAIL на `test_a_wheel_implied_spike_alone_never_upshifts` (старый `max`).
 
-- [ ] **Step 2: `shifting.py`.** Строку `cadence = max(self.cadence_ema, self.required_ema)` заменить на `cadence = self.cadence_ema`. Комментарий над EMA переписать:
+- [x] **Step 2: `shifting.py`.** Строку `cadence = max(self.cadence_ema, self.required_ema)` заменить на `cadence = self.cadence_ema`. Комментарий над EMA переписать:
 
 ```python
         # The decision follows the crank: with a rigid crank/chainring the
@@ -1141,16 +1141,16 @@ Expected: FAIL на `test_a_wheel_implied_spike_alone_never_upshifts` (стар�
         # landing cadence of a candidate gear.
 ```
 
-- [ ] **Step 3: `drivetrain_forces.py`.** Удалить `self.shift_motor_limit_nm` (init 74, reset 133, строка 191, `_shift_diagnostics` 159–160), блок 350–352 (`limited_request = min(..., self.shift_motor_limit_nm)`) → `limited_request = safety_request`, и диагностику `'shift_limited'` (402). Комментарий у `torque_factor` в `prepare_pedaling` (200): `# Only the rider unloads for the shift; the motor follows the rider's torque through its own lag (spec S6, Gen 4 with a mechanical derailleur).`
+- [x] **Step 3: `drivetrain_forces.py`.** Удалить `self.shift_motor_limit_nm` (init 74, reset 133, строка 191, `_shift_diagnostics` 159–160), блок 350–352 (`limited_request = min(..., self.shift_motor_limit_nm)`) → `limited_request = safety_request`, и диагностику `'shift_limited'` (402). Комментарий у `torque_factor` в `prepare_pedaling` (200): `# Only the rider unloads for the shift; the motor follows the rider's torque through its own lag (spec S6, Gen 4 with a mechanical derailleur).`
 
 Run: `grep -rn "shift_motor_limit_nm\|shift_limited" src tests` → пусто.
 
-- [ ] **Step 4: Тесты**
+- [x] **Step 4: Тесты**
 
 Run: `uv run python -m pytest tests/reference/test_cadence_shifter.py tests -m 'not slow' -q -x`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/bike_sim/physics/shifting.py src/bike_sim/sim/ride/drivetrain_forces.py tests/reference/test_cadence_shifter.py

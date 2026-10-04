@@ -76,7 +76,6 @@ class DrivetrainForceApplier:
         self.pedaling = PedalingPolicy(config.pedaling)
         self.shifting = CadenceShifter(config.gearing, config.shifting)
         self.shift_time_s = None
-        self.shift_motor_limit_nm = None
         self.assist = AssistController(**asdict(config.assist))
         self.battery = Battery(config.battery.energy_j)
         self.last_time_s = None
@@ -132,7 +131,6 @@ class DrivetrainForceApplier:
         mujoco.mj_kinematics(model, data)
         self.shifting.reset()
         self.shift_time_s = None
-        self.shift_motor_limit_nm = None
         if self.simplified:
             self.angles = (self._angle(data,'crank'),)
             self.reference = 0.
@@ -176,8 +174,6 @@ class DrivetrainForceApplier:
             'shift_count':self.shifting.shift_count,
             'shift_time_s':self.shift_time_s,
             'shift_torque_factor':self.shifting.torque_factor,
-            'shift_motor_limit_nm':(self.shift_motor_limit_nm
-                                    if self.shifting.torque_factor < 1. else None),
         }
 
     def prepare_pedaling(self, data, dt, control, *, active=True, advance=True, braking=False,
@@ -199,7 +195,6 @@ class DrivetrainForceApplier:
             if shifted:
                 self.ideal_hub.set_ratio(model, data, self.shifting.gear_ratio)
                 self.shift_time_s = float(data.time)
-                self.shift_motor_limit_nm = self.assist.torque * self.config.shifting.torque_factor
             required = float(data.qvel[wheel_dof]) / self.shifting.gear_ratio * 60. / (2. * pi)
         policy = self.pedaling if advance else copy.deepcopy(self.pedaling)
         state = policy.update(float(data.qpos[crank_qpos]), float(data.qvel[crank_dof]),
@@ -208,6 +203,8 @@ class DrivetrainForceApplier:
         if effort_ceiling_nm is not None:
             ceiling = scalar(effort_ceiling_nm, 'automatic rider effort ceiling', minimum=0.)
             state = replace(state, effort_nm=min(state.effort_nm, ceiling))
+        # Only the rider unloads for the shift; the motor follows measured
+        # rider torque through its own lag, without another cut (spec S6).
         return replace(state, effort_nm=state.effort_nm * self.shifting.torque_factor)
 
     def stored_energy(self, model, data):
@@ -370,8 +367,6 @@ class DrivetrainForceApplier:
         budget = self.battery.energy_j/dt
         safety_request = request if control.motor_limit_nm is None else min(request, control.motor_limit_nm)
         limited_request = safety_request
-        if self.shifting.torque_factor < 1. and self.shift_motor_limit_nm is not None:
-            limited_request = min(limited_request, self.shift_motor_limit_nm)
         delivered = (limit_torque_by_energy(limited_request,omega_shaft,a,b,idle,budget)
                      if battery_cfg.enabled else limited_request)
         enabled = active and delivered > 0. and not braking
@@ -423,7 +418,6 @@ class DrivetrainForceApplier:
             'motor_limit_nm':control.motor_limit_nm,
             'motor_control_source':'assist' if control.motor_torque_nm is None else 'external_request',
             'safety_limited':safety_request < request,
-            'shift_limited':limited_request < safety_request,
             'motor_shaft_power_w':delivered*omega_shaft, 'electrical_power_w':actual_electrical,
             'battery_energy_j':self.battery.energy_j, 'motor_enabled':enabled,
             'energy_limited':delivered < limited_request, 'battery_empty':self.battery.energy_j==0.,

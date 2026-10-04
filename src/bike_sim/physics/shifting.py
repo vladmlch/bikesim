@@ -33,11 +33,9 @@ class CadenceShifter:
         dt = scalar(dt, 'shift interval', positive=True)
         if rear_slip_mps is not None:
             rear_slip_mps = scalar(rear_slip_mps, 'rear tire slip')
-        # Both inputs are smoothed: a rider reacts to sustained cadence, not to a
-        # transient. The crank rate carries pedal-stroke ripple; the wheel-implied
-        # required cadence carries slip and impact spikes (an obstacle crossing can
-        # spin the wheel 84->110+ rpm in ~40 ms -- faster than anyone could notice,
-        # let alone decide to shift). Neither may read as a sustained spin-up.
+        # The decision follows the crank; a slipping or bouncing wheel
+        # must not read as a rider spin-up. Wheel-implied cadence only
+        # predicts the landing cadence of a candidate gear.
         tau = self.config.cadence_smoothing_tau_s
         alpha = 1. if tau <= 0. else min(1., dt/tau)
         if self.cadence_ema is None:
@@ -51,7 +49,7 @@ class CadenceShifter:
         if (not self.config.enabled or not pedaling or braking or not rear_in_contact
                 or self.cooldown_s > 1e-12 or min(cadence_rpm, required_cadence_rpm) < 0.):
             return False
-        cadence = max(self.cadence_ema, self.required_ema)
+        cadence = self.cadence_ema
         if cadence > self.config.target_cadence_max_rpm:
             candidates = [teeth for teeth in self.config.cassette if teeth < self.rear_teeth]
             selected = max(candidates) if candidates else self.rear_teeth

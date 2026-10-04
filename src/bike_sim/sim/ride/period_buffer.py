@@ -136,7 +136,9 @@ def _effort_observations(runtime, raws):
     for i, raw in enumerate(raws):
         active = dict(zip(names, map(float, delivered[i])))
         violations = c.strength_violations(active, raw.qpos, raw.qvel)
-        result.append(dict(raw.metadata['effort_base'],
+        from bike_sim.sim.ride.rider_effort import joint_effort_limits
+        joint_limits=joint_effort_limits(active,dict(zip(names,speeds[i])),c.config)
+        result.append(dict(raw.metadata['effort_base'], **joint_limits,
             rider_active_delivered_nm=active, rider_positive_power_w=float(positive[i]),
             rider_passive_power_w=float(damping_power[i]),
             rider_positive_work_step_j=float(positive[i])*dt,
@@ -164,6 +166,8 @@ def evaluate_period(runtime, raws, budget):
         if c is not None:
             errors.extend(f'rider_strength.{name}' for name in
                           effort['rider_strength_violations'])
+            errors.extend(f'rider_power.{name}' for name in effort['rider_joint_power_violations'])
+            errors.extend(f'rider_speed.{name}' for name in effort['rider_joint_speed_violations'])
             if effort['rider_effort_budget_exceeded']:
                 errors.append('rider_power.positive')
             if raw.metadata.get('invalid_controller'):

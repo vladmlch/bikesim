@@ -41,3 +41,8 @@ def test_rider_numbers(cfg):
     assert cfg.articulated.pedal_torque_ripple == .5
     assert cfg.articulated.return_foot_preload_n == 40.
     assert cfg.articulated.active_positive_power_limit_w == 450.
+    assert cfg.articulated.pedal_attachment == 'spindle'
+    assert cfg.articulated.saddle_attachment == 'pin'
+    assert cfg.articulated.grip_attachment == 'connect'
+    assert cfg.articulated.joint_passive_damping_nms_rad == 0.
+    assert cfg.seated_climb.surge_power_w == 400.

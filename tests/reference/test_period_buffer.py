@@ -123,7 +123,8 @@ def test_held_command_power_and_strength_are_checked_at_each_incoming_state():
     from bike_sim.sim.ride.period_buffer import evaluate_period
     from bike_sim.sim.ride.rider_effort import solved_effort
     c = SimpleNamespace(joints={'joint':(0, 0, 0)}, last_terms={'joint':{}},
-        config=SimpleNamespace(active_positive_power_limit_w=10.), effort_diagnostics={},
+        config=SimpleNamespace(active_positive_power_limit_w=10.,
+            joint_power_limit_w=250.,joint_speed_limit_rad_s=20.), effort_diagnostics={},
         strength_violations=lambda active, q, v: ('joint',) if q[0] >= 2. else ())
     runtime = SimpleNamespace(rider_control=c, control_clock=SimpleNamespace(timestep_s=.0005))
     raws, expected = [], []
@@ -141,6 +142,26 @@ def test_held_command_power_and_strength_are_checked_at_each_incoming_state():
     assert [e['rider_effort_budget_exceeded'] for e in report.efforts] == [False, False, True]
     assert report.violations_by_step == ((), (), ('rider_strength.joint','rider_power.positive'))
     assert report.first_failure == (.0015, ('rider_strength.joint','rider_power.positive'))
+
+
+def test_held_intervals_reject_joint_power_and_speed_between_control_ticks():
+    from types import SimpleNamespace
+    from bike_sim.sim.ride.period_buffer import evaluate_period
+    c = SimpleNamespace(joints={'joint':(0,0,0)},
+        config=SimpleNamespace(active_positive_power_limit_w=450.,
+            joint_power_limit_w=250.,joint_speed_limit_rad_s=20.),
+        strength_violations=lambda *args: ())
+    runtime = SimpleNamespace(rider_control=c, control_clock=SimpleNamespace(timestep_s=.0005))
+    raws = []
+    for i,(torque,speed) in enumerate([(25.,10.),(26.,10.),(-2.,21.)]):
+        raws.append(RawStep(i,i*.0005,(i+1)*.0005,np.zeros(1),np.array([speed]),
+            {'act_rider_joint':np.array([torque])},{},np.array([torque]),np.zeros(1),{},
+            {'effort_base':{},'numerical_constraint_power_w':{}}))
+    report = evaluate_period(runtime,raws,BUDGET)
+    assert report.violations_by_step == ((),('rider_power.joint',),('rider_speed.joint',))
+    assert report.first_failure == (.001,('rider_power.joint',))
+    assert report.efforts[1]['rider_joint_positive_power_w'] == {'joint':260.}
+    assert report.efforts[2]['rider_joint_speed_violations'] == ('joint',)
 
 
 @pytest.mark.slow

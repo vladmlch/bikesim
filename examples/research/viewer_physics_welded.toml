@@ -1,8 +1,6 @@
-# PREVIEW ONLY: single-contact tire and no geometric drive/suspension coupling.
-# Always unvalidated; never a reference or safety-control acceptance profile.
-# Fast variant of viewer_physics.toml for interactive inspection.
-# Synthetic preview profile: idealized mid-drive removes high-frequency chain and
-# freehub states; use the strict file for drivetrain and energy studies.
+# Welded-rider research profile: pinned seated rider (saddle pin, spindle foot
+# connects, bar connects), ideal mid-drive, Bosch CX Gen 4 assist
+# (recalled, unverified). Default for bike-ride and the acceptance rides.
 physics_mode = "physical"
 drive_mode = "articulated_effort"
 timestep_s = 0.00125
@@ -101,13 +99,14 @@ cadence_smoothing_tau_s = 0.35
 upshift_slip_limit_mps = 0.5
 
 [articulated]
+joint_passive_damping_nms_rad = 0.0
+balance_floor_kmh = 4.0
+balance_dwell_s = 0.5
+balance_grace_s = 3.0
 road_lookahead_m = 2.0
-pedal_attachment = "weld"
-saddle_attachment = "weld"
-grip_attachment = "weld"
-pedal_c_ns_m = 100.0
-posture_pitch_limit_nm = 120.0
-grip_release_distance_m = 0.30
+pedal_attachment = "spindle"
+saddle_attachment = "pin"
+grip_attachment = "connect"
 joint_envelope_path = "rider_joint_envelope_anatomical.json"
 # Provisional directional strength sheet (verified=false curves). Engineering
 # bounds only; the verified-provenance gate is a separate release decision.
@@ -129,3 +128,11 @@ enabled = true
 # Rider holds ~250 W at the crank, torque-capped at 60 N*m (grinds below ~40 rpm).
 target_crank_power_w = 250.0
 max_crank_torque_nm = 60.0
+surge_power_w = 400.0
+surge_grade = 0.20
+surge_budget_s = 15.0
+surge_recovery_rate = 0.3333333333333333
+front_load_share_target = 0.30
+lean_trim_gain_rad_s = 0.3
+lean_trim_limit_rad = 0.15
+trim_dead_time_s = 0.2

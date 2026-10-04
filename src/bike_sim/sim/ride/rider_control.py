@@ -382,10 +382,34 @@ class ArticulatedRiderController:
             (upper_length+lower_length)*config.arm_reach_fraction,elbow_sign=sign) for sign in (-1,1)]
         neutral,self.neutral_torso_saturated=max(candidates,key=lambda pair:sin(pair[0][0]))
         self.neutral_torso_q=atan2(trunk[2],trunk[0])-neutral[0]
-        self._allocation_setup(model)
+        self.lean_limit_rad = None
+        self.joint_torques_nm = {name: 0. for name in self.joints}
+        self.joint_capacity_nm = {name: 0. for name in self.joints}
+        if self.spindle:
+            from bike_sim.sim.ride.leg_loop import leg_loop_geometry
+            self.leg_geometry = {side: leg_loop_geometry(pose, side) for side in ('front','rear')}
+            self.neutral_torso_q = 0.
+            if config.joint_envelope_path is not None:
+                from bike_sim.physics.rider_envelope import load_joint_envelopes
+                from bike_sim.sim.ride.lean_limit import lean_limit_rad
+                self.lean_limit_rad = lean_limit_rad(pose,
+                    load_joint_envelopes(config.joint_envelope_path, present=tuple(self.joints)),
+                    crank_m=self.crank_length_m, tdc_phase_rad=-pi/2)
+        else:
+            self._allocation_setup(model)
         self.allocation_diagnostics={}
 
     def _targets(self,model,data,side, *, compression_m=None, shear_m=0., clearance_m=0., posture=None):
+        if self.spindle:
+            from bike_sim.sim.ride.leg_loop import leg_joint_q
+            rotation = data.xmat[self.pelvis].reshape(3,3)
+            pitch = atan2(rotation[0,2], rotation[0,0])
+            hip = data.xanchor[self.model.joint('rider_hip_'+side).id][[0,2]]
+            spindle = data.site_xpos[self.pedals[side]]
+            self.sole_targets[side] = spindle.copy()
+            self.sole_goal_diagnostics[side] = {'spindle':True,'saturated':False,'limiting_reasons':[]}
+            self.ik_reach_limited[side] = self.saturated_ik[side] = False
+            return np.array(leg_joint_q(self.leg_geometry[side], hip, spindle[[0,2]], pitch))
         hip = data.xpos[self.pelvis]
         if posture is not None and posture.pelvis_offset_m is not None:
             x, z = posture.pelvis_offset_m
@@ -505,11 +529,15 @@ class ArticulatedRiderController:
         # in that direction through the equal actuator reaction. The hands
         # follow the actual bar separately, through the two arm joints.
         torso_q = self.neutral_torso_q + (0. if posture is None else posture.torso_lean_rad)
+        if self.spindle:
+            frame_pitch = atan2(frame_R[0,2],frame_R[0,0])
+            pelvis_pitch = atan2(pelvis_R[0,2],pelvis_R[0,0])
+            torso_q += atan2(sin(frame_pitch-pelvis_pitch),cos(frame_pitch-pelvis_pitch))
         torso_R = data.xmat[self.torso].reshape(3,3)
         upper_length,lower_length,a0,b0,branch=self.arm_geometry
         targets = {'rider_torso_hinge':torso_q}
         arm_saturated = False
-        if self.welded_grip and self.config.coupled_task_control:
+        if self.welded_grip and (self.spindle or self.config.coupled_task_control):
             # Welded hands close the pelvis-torso-arm chain: arm goals solved
             # about the actual torso would always be "already met" and give
             # the trunk no support. A rider's arms are stiff about the posture
@@ -699,7 +727,122 @@ class ArticulatedRiderController:
             force_z += normal*float(contact.normal[2])
         return load, force_z
 
+    def _directional_limit(self, name, data, sign):
+        qa,dof,_ = self.joints[name]
+        if self.strength is None:
+            return self.config.joint_limit_nm  # temporary non-reference fallback
+        return self.strength_capacity(name,
+            self.anatomical_joint_angle(name, data.qpos[qa]), data.qvel[dof], sign)
+
+    def limit_torques(self, torques, data):
+        """Directional muscle, accelerating-speed and positive-power bounds."""
+        from bike_sim.sim.ride.crank_split import scale_to_power_budget
+        limited = {}
+        speeds = {}
+        for name,(_,dof,_) in self.joints.items():
+            torque = scalar(torques[name], name+' requested torque')
+            speed = scalar(data.qvel[dof], name+' speed')
+            cap = self._directional_limit(name, data, 1. if torque >= 0. else -1.)
+            torque = float(np.clip(torque,-cap,cap))
+            if abs(speed) >= self.config.joint_speed_limit_rad_s and torque*speed > 0.:
+                torque = 0.
+            limited[name],speeds[name] = torque,speed
+        # No configured whole-body ceiling means only the per-joint ceiling.
+        total = self.config.active_positive_power_limit_w
+        if total is None:
+            total = self.config.joint_power_limit_w*len(limited)
+        return scale_to_power_budget(limited,speeds,self.config.joint_power_limit_w,total)
+
     def compute(self,model,data,command, *, kinematic_state=None, support_available=None,
+                advance=True, dt_s=None, steady_state=False, pedal_recovery=False):
+        if not self.spindle:
+            return self._compute_legacy(model,data,command,kinematic_state=kinematic_state,
+                support_available=support_available,advance=advance,dt_s=dt_s,
+                steady_state=steady_state,pedal_recovery=pedal_recovery)
+        from bike_sim.sim.ride.crank_split import leg_crank_targets,leg_shares,split_joint_torques
+        from bike_sim.sim.ride.leg_loop import leg_loop_jacobian
+        from bike_sim.physics.rider_activation import activation_step
+        from bike_sim.sim.ride.rider_effort import finalize_effort
+        if not isinstance(command,RiderCommand):
+            raise ValueError('expected a RiderCommand')
+        if kinematic_state is not None and not isinstance(kinematic_state,RiderKinematicState):
+            raise ValueError('expected a RiderKinematicState')
+        self.kinematic_state = kinematic_state
+        self.saturated_ik = {}
+        self.command_enabled = command.enabled and self.enabled
+        dt = float(model.opt.timestep) if dt_s is None else dt_s
+        if not self.command_enabled:
+            if advance:
+                self.reset_activation()
+            requested = {name:0. for name in self.joints}
+            total = 0.
+            jacobians = {}
+            self.support_diagnostics = {'stance':{'front':False,'rear':False}}
+        else:
+            cfg = self.config
+            frame_R = data.xmat[self.frame].reshape(3,3)
+            pelvis_R = data.xmat[self.pelvis].reshape(3,3)
+            relative_R = frame_R.T@pelvis_R
+            pelvis_pitch = atan2(relative_R[0,2],relative_R[0,0])
+            crank_world = data.xanchor[model.joint('crank_spin').id]
+            spindles = {side:(frame_R.T@(data.xpos[model.body('pedal_'+side).id]-crank_world))[[0,2]]
+                        for side in ('front','rear')}
+            phase = atan2(-spindles['front'][1],spindles['front'][0])
+            rate = float(data.qvel[self.crank_spin_dof])
+            total = (pedal_torque_waveform(command.mean_crank_torque_nm,phase,cfg.pedal_torque_ripple)
+                     if command.mean_crank_torque_nm > 0. else
+                     float(np.clip(cfg.coasting_brake_d_nm_s_rad*(command.crank_target_rate_rad_s-rate),
+                                   -cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm)))
+            crank = np.zeros(2)
+            leg_targets = leg_crank_targets(total,phase,spindles,crank,
+                cfg.return_foot_preload_n if command.mean_crank_torque_nm > 0. else 0.)
+            requested = {}; jacobians = {}
+            for side in ('front','rear'):
+                hip = (frame_R.T@(data.xanchor[model.joint('rider_hip_'+side).id]-crank_world))[[0,2]]
+                jac = leg_loop_jacobian(self.leg_geometry[side],hip,crank,
+                    self.crank_length_m,phase,pelvis_pitch)
+                jacobians[side] = jac
+                capacity = lambda joint,sign: self._directional_limit('rider_'+joint+'_'+side,data,sign)
+                torques = split_joint_torques(leg_targets[side],jac,capacity)
+                requested.update({'rider_'+joint+'_'+side:torque for joint,torque in zip(('hip','knee'),torques)})
+            upper = self._upper_targets(data,command.posture)
+            for name,target in upper.items():
+                qa,dof,_ = self.joints[name]
+                if name == 'rider_torso_hinge':
+                    # Positive hinge torque applies the restoring -y reaction
+                    # to the pelvis; native constrained-response test fixes sign.
+                    root_dof = int(model.joint('rider_root_pitch').dofadr[0])
+                    frame_dof = int(model.joint('root_pitch').dofadr[0])
+                    torque = (cfg.joint_kp_nm_rad*pelvis_pitch
+                              +cfg.joint_kd_nms_rad*(data.qvel[root_dof]-data.qvel[frame_dof]))
+                else:
+                    error = atan2(sin(target-data.qpos[qa]),cos(target-data.qpos[qa]))
+                    torque = cfg.joint_kp_nm_rad*error-cfg.joint_kd_nms_rad*data.qvel[dof]
+                requested[name] = float(torque+data.qfrc_bias[dof])
+            self.support_diagnostics = {'stance':{side:share >= .5 for side,share in leg_shares(phase).items()}}
+        excitation = self.limit_torques(requested,data)
+        activated = (excitation if steady_state or not self.command_enabled else
+            dict(zip(self.joints,activation_step(self.active_state,
+                [excitation[n] for n in self.joints],dt,self.config.activation_tau_s))))
+        final = self.limit_torques(activated,data)
+        upper_names = {n for n in self.joints if not n.startswith(('rider_hip_','rider_knee_'))}
+        self.last_terms = {name:{'requested_nm':requested[name],
+            'command_nm':final[name], 'posture_nm':requested[name] if name in upper_names else 0.,
+            'pedaling_nm':requested[name] if name not in upper_names else 0.,
+            'saturated':not np.isclose(final[name],requested[name],rtol=1e-9,atol=1e-9)}
+            for name in self.joints}
+        projected = sum(final['rider_'+joint+'_'+side]*jac[i]
+                        for side,jac in jacobians.items() for i,joint in enumerate(('hip','knee')))
+        self.allocation_diagnostics = {'invalid_controller':False,'crank_task_nm':total,
+            'crank_task_shortfall_nm':total-projected,
+            'solution_excitation_nm':np.array([excitation[n] for n in self.joints])}
+        final = finalize_effort(self,data,final,advance=advance,dt_s=dt,steady_state=steady_state)
+        self.joint_torques_nm = dict(final)
+        self.joint_capacity_nm = {name:self._directional_limit(name,data,1. if torque >= 0. else -1.)
+                                  for name,torque in final.items()}
+        return final
+
+    def _compute_legacy(self,model,data,command, *, kinematic_state=None, support_available=None,
                 advance=True, dt_s=None, steady_state=False, pedal_recovery=False):
         import mujoco
         if not isinstance(command,RiderCommand):

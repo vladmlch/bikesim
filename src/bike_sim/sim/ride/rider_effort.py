@@ -37,9 +37,13 @@ def finalize_effort(controller, data, torques, *, advance, dt_s, steady_state):
                 cfg.joint_speed_limit_rad_s,cfg.joint_power_limit_w)
             excitation,_=c.strength_limited(excitation,data.qpos,data.qvel)
         excitation=np.asarray(excitation)
-        activated=(excitation.copy() if steady_state else
+        activated=(excitation.copy() if steady_state or
+                   (getattr(c,'spindle',False) and not c.command_enabled) else
                    activation_step(c.active_state,excitation,dt_s,cfg.activation_tau_s))
-        if 'solution_active_lower_nm' in certificate:
+        if getattr(c,'spindle',False):
+            active=np.array(list(c.limit_torques(dict(zip(names,activated)),data).values()))
+            _,strength_limited=c.strength_limited(activated,data.qpos,data.qvel)
+        elif 'solution_active_lower_nm' in certificate:
             active=np.clip(activated,certificate['solution_active_lower_nm'],certificate['solution_active_upper_nm'])
             _,strength_limited=c.strength_limited(activated,data.qpos,data.qvel)
         else:
@@ -50,7 +54,7 @@ def finalize_effort(controller, data, torques, *, advance, dt_s, steady_state):
         if not np.allclose(active,target,rtol=1e-9,atol=1e-7):
             raise ArithmeticError('allocated rider torque is outside final actuator limits')
         if advance:
-            c.active_state=activated.copy()
+            c.active_state=(active.copy() if getattr(c,'spindle',False) else activated.copy())
             # Without an activation time constant there is no filter state to
             # protect from a repeated call at the same timestamp.
             c.activation_time_s=(None if steady_state or cfg.activation_tau_s==0
@@ -77,6 +81,16 @@ def finalize_effort(controller, data, torques, *, advance, dt_s, steady_state):
     return torques
 
 
+def joint_effort_limits(active, speeds, config):
+    """Solved per-joint positive power and absolute speed, without clipping truth."""
+    positive = {name:max(float(torque)*float(speeds[name]),0.) for name,torque in active.items()}
+    return dict(rider_joint_positive_power_w=positive,
+        rider_joint_power_violations=tuple(name for name,power in positive.items()
+            if power > config.joint_power_limit_w+1e-9),
+        rider_joint_speed_violations=tuple(name for name in active
+            if abs(float(speeds[name])) > config.joint_speed_limit_rad_s+1e-9))
+
+
 def solved_effort(controller, data, incoming_state, dt_s):
     """Use solved actuator forces, not ctrl, and the same interval velocity.
 
@@ -97,6 +111,8 @@ def solved_effort(controller, data, incoming_state, dt_s):
                                   solved_active_nm=delivered,solved_passive_nm=damping)
     strength_violations=c.strength_violations(active,incoming_qpos,incoming_velocity)
     limit=c.config.active_positive_power_limit_w
+    c.effort_diagnostics.update(joint_effort_limits(active,
+        {name:incoming_velocity[dof] for name,(_,dof,_) in c.joints.items()},c.config))
     c.effort_diagnostics.update(rider_active_delivered_nm=active,rider_positive_power_w=positive,
         rider_passive_power_w=passive_power,rider_positive_work_step_j=positive*dt_s,
         rider_passive_work_step_j=passive_power*dt_s,

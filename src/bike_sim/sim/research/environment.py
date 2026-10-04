@@ -145,9 +145,8 @@ class ResearchEnvironment:
             control=RideControl(motor_torque_nm=0., human_torque_nm=0.))
         mujoco.mj_forward(self.sim.model, self.sim.data)
         if self.sim.physics_config.seated_climb.enabled:
-            from bike_sim.sim.ride.rider_intent import signals_from_channels
             from bike_sim.sim.ride.physical_observations import sensor_channels
-            self.sim.physical.rider_intent_signals = signals_from_channels(sensor_channels(
+            self.sim.physical.update_rider_intent_signals(sensor_channels(
                 self.sim.physical, drive_channels=self.sim.physical.drive.probe_last))
         initial = raw_observation(self.sim)
         self.pipeline.reset(initial)

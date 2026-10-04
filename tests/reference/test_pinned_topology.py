@@ -42,7 +42,7 @@ def _compiled(tmp_path):
     rider = RiderSpecs(variant='articulated_planar')
     model = mujoco.MjModel.from_xml_string(generate_mujoco_xml(
         specs, mode='ride', rider=rider, crank_joint=True, physics_config=cfg))
-    controller = ArticulatedRiderController(model, geometry_pose(rider, specs), cfg.articulated, .17)
+    controller = ArticulatedRiderController(model, geometry_pose(rider, specs), cfg.articulated, specs.crank_length/1000.)
     return model, controller
 
 

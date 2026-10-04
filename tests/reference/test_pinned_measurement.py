@@ -9,10 +9,12 @@ from bike_sim.sim.ride.rider_contacts import RiderContactApplier
 from bike_sim.sim.ride.weld_pedals import equality_rows
 
 
-def test_spindle_force_sign_and_torque_match_native_body_jacobians(tmp_path):
+@pytest.mark.parametrize('gap_m', [0., .001])
+def test_spindle_force_sign_and_torque_match_native_body_jacobians(tmp_path, gap_m):
     from bike_sim.sim.ride.weld_pedals import SpindlePins
     model, controller = _compiled(tmp_path)
     data = mujoco.MjData(model)
+    data.qpos[model.joint('rider_root_x').qposadr[0]] += gap_m
     mujoco.mj_forward(model, data)
     reader = SpindlePins(model)
     rows = equality_rows(data)
@@ -23,11 +25,12 @@ def test_spindle_force_sign_and_torque_match_native_body_jacobians(tmp_path):
         body = int(model.eq_obj1id[eq])
         bike = int(model.eq_obj2id[eq])
         point = data.xpos[body] + data.xmat[body].reshape(3, 3) @ model.eq_data[eq, :3]
+        bike_point = data.xpos[bike] + data.xmat[bike].reshape(3, 3) @ model.eq_data[eq, 3:6]
         # At qpos0 the ankle lies above the spindle: compression is +local z.
-        force = np.array([20., 0., 100.])
+        force = np.array([20., 0., 100. if side == 'front' else 70.])
         data.efc_force[rows[eq]] = force
         mujoco.mj_applyFT(model, data, force, np.zeros(3), point, body, expected)
-        mujoco.mj_applyFT(model, data, -force, np.zeros(3), point, bike, expected)
+        mujoco.mj_applyFT(model, data, -force, np.zeros(3), bike_point, bike, expected)
         assert np.allclose(reader.force_on_rider_n(model, data, side), force)
     multipliers = np.zeros(data.nefc)
     for eq in reader.eq_ids.values():
@@ -35,6 +38,7 @@ def test_spindle_force_sign_and_torque_match_native_body_jacobians(tmp_path):
     native = np.zeros(model.nv)
     mujoco.mj_mulJacTVec(model, data, native, multipliers)
     assert np.allclose(native, expected, atol=1e-10)
+    assert abs(expected[reader.crank_dof]) > 1.
     assert reader.delivered_crank_torque_nm(model, data) == pytest.approx(expected[reader.crank_dof])
     contacts = RiderContactApplier(model, controller.pose, controller.config)
     contacts.reset(model, data)
@@ -42,10 +46,11 @@ def test_spindle_force_sign_and_torque_match_native_body_jacobians(tmp_path):
     assert not errors
     for side in ('front', 'rear'):
         sample = samples[f'foot_{side}']
-        assert sample.normal_n == pytest.approx(100.)
+        assert sample.normal_n == pytest.approx(100. if side == 'front' else 70.)
         assert sample.tangent_n == pytest.approx(20.)
         assert sample.moment_nm == 0.
         assert sample.half_patch_m == 0.
+        assert sample.gap_m == pytest.approx(gap_m)
     prepared = contacts.prepare_attachment_raw(model, data)
     contacts.settle_welds(model, data, raw=True, prepared=prepared)
     assert set(contacts.last_attachment_samples) == {'foot_front', 'foot_rear', 'saddle', 'grip_left', 'grip_right'}

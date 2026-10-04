@@ -338,8 +338,7 @@ class PhysicalRuntime:
         sim.steps=0
         sim.data.time=0.
         if self.rider_control is not None:
-            self.rider_control._last_branch = None
-            self.rider_control._last_solution = None
+            self.rider_control.reset_activation()
         self.rider_intent.reset()
         self.rider_intent_signals = SeatedClimbSignals()
         self.applied_control = RideControl()
@@ -426,8 +425,15 @@ class PhysicalRuntime:
         sim._update_compiled_com_marker()
         self.research_accounting_valid=True
         if self.cfg.seated_climb.enabled:
-            self.rider_intent_signals = signals_from_channels(sensor_channels(self,
+            self.update_rider_intent_signals(sensor_channels(self,
                 drive_channels=getattr(self.drive, 'probe_last', self.drive.last)))
+
+    def update_rider_intent_signals(self, sensors, tires=None):
+        """Keep proprioceptive wheel loads inside the rider boundary."""
+        if tires is None:
+            tires = {side:{'normal_load_n':snapshot.normal_load_n}
+                     for side,snapshot in self.snapshots.items()}
+        self.rider_intent_signals = signals_from_channels(dict(sensors,tires=tires))
 
     def _initial_speed(self):
         sim=self.sim; m,d=sim.model,sim.data
@@ -569,8 +575,6 @@ class PhysicalRuntime:
         contact_crash=physical_contact_crash(m,d)
         transmission = self.drive.settle_actuation(m,d)
         sensors = sensor_channels(self, qvel=v)
-        if self.cfg.seated_climb.enabled:
-            self.rider_intent_signals = signals_from_channels(sensors)
         components.update(actuator_components(m,d))
         if self.rider_control is not None:
             passive=np.zeros(m.nv)
@@ -597,6 +601,8 @@ class PhysicalRuntime:
             {'shock_solver_limit':shock_limit,**self.brake.solved_components(m,d)})
         sim.contacts,self.snapshots=self._contacts(final=True,time_s=t,qvel=v)
         tires=tire_channels(self,self.snapshots,qvel=v)
+        if self.cfg.seated_climb.enabled:
+            self.update_rider_intent_signals(sensors,tires)
         loss_step=self._loss_increment(components,v,dt)
         rider={} if self.rider_contacts is None else self.rider_contacts.diagnostics
         drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]),
@@ -632,6 +638,10 @@ class PhysicalRuntime:
         channels = {'tires':tires, 'drive':drive, 'suspension':suspension,
                     'sensors':sensors, 'mass':mass0, 'contact_crash_cause':contact_crash,
                     'control':asdict(self.applied_control)}
+        if self.rider_control is not None:
+            channels['rider_joint_torques'] = dict(self.rider_control.joint_torques_nm)
+            channels['rider_joint_capacity_nm'] = dict(self.rider_control.joint_capacity_nm)
+            channels['rider_lean_limit_rad'] = self.rider_control.lean_limit_rad
         diagnostics = dict(rider=rider,rider_welds=welds,endpoint_mass=mass,
             rider_intent=self.rider_intent.intent if self.cfg.seated_climb.enabled else None,
             inclination_rad=self.rider_intent.policy.inclination_rad if self.cfg.seated_climb.enabled else 0.,

@@ -58,6 +58,17 @@ def _body_input(model, data, body, point, qfrc):
     return jac, qfrc[cols].copy(), cols, observable
 
 
+def _attachment_points(model, data, eq_id, rider, bike, point, rotational):
+    if not rotational and model.eq_type[eq_id] == mujoco.mjtEq.mjEQ_CONNECT:
+        # A soft connect's force acts at each body's own anchor. Evaluating
+        # both at the rider point invents a bike couple F x gap and falsely
+        # rejects observable forces whenever the permitted residual is nonzero.
+        return tuple(data.xpos[body]+data.xmat[body].reshape(3,3)@offset
+            for body,offset in ((rider,model.eq_data[eq_id,:3]),
+                                (bike,model.eq_data[eq_id,3:6])))
+    return point,point
+
+
 def prepare_attachment_geometry(model, data, eq_id, body_rider, body_bike, point, normal, kind,
                                  *, rotational, half_patch_m=0., pull_direction=None):
     """Capture all pose-dependent raw inputs before a physics step.
@@ -69,8 +80,9 @@ def prepare_attachment_geometry(model, data, eq_id, body_rider, body_bike, point
     ``mj_kinematics``/``mj_comPos`` twice. The gap remains the post-step
     ``efc_pos`` value, matching the existing scalar sampler exactly.
     """
-    jr, cr, obs_r = _body_geometry(model, data, body_rider, point)
-    jb, cb, obs_b = _body_geometry(model, data, body_bike, point)
+    rider_point,bike_point = _attachment_points(model,data,eq_id,body_rider,body_bike,point,rotational)
+    jr, cr, obs_r = _body_geometry(model, data, body_rider, rider_point)
+    jb, cb, obs_b = _body_geometry(model, data, body_bike, bike_point)
     if np.intersect1d(cr, cb).size:
         raise ValueError('attachment bodies share kinematic support')
     return AttachmentGeometry(int(eq_id), jr, cr.copy(), jb, cb.copy(), obs_r and obs_b,
@@ -121,8 +133,9 @@ def attachment_raw(model, data, eq_id, body_rider, body_bike, point, normal, kin
                    *, rotational, half_patch_m=0., pull_direction=None, rows=None):
     """Copy all solved measurement inputs before endpoint forward overwrites EFC."""
     qfrc = equality_qfrc(model, data, eq_id)
-    jr, qr, cr, obs_r = _body_input(model, data, body_rider, point, qfrc)
-    jb, qb, cb, obs_b = _body_input(model, data, body_bike, point, qfrc)
+    rider_point,bike_point = _attachment_points(model,data,eq_id,body_rider,body_bike,point,rotational)
+    jr, qr, cr, obs_r = _body_input(model, data, body_rider, rider_point, qfrc)
+    jb, qb, cb, obs_b = _body_input(model, data, body_bike, bike_point, qfrc)
     if np.intersect1d(cr, cb).size:
         raise ValueError('attachment bodies share kinematic support')
     if rows is None:
@@ -235,8 +248,9 @@ def attachment_sample(model, data, eq_id, body_rider, body_bike, point,
     """
     from bike_sim.physics.attachment_budget import AttachmentSample
     qfrc = equality_qfrc(model, data, eq_id)
-    wrench, cols_rider = body_wrench(model, data, qfrc, body_rider, point)
-    wrench_bike, cols_bike = body_wrench(model, data, qfrc, body_bike, point)
+    rider_point,bike_point = _attachment_points(model,data,eq_id,body_rider,body_bike,point,rotational)
+    wrench, cols_rider = body_wrench(model, data, qfrc, body_rider, rider_point)
+    wrench_bike, cols_bike = body_wrench(model, data, qfrc, body_bike, bike_point)
     if np.intersect1d(cols_rider, cols_bike).size:
         raise ValueError('attachment bodies share kinematic support')
     scale = max(1., float(np.linalg.norm(wrench[:3])))

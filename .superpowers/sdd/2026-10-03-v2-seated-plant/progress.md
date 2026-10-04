@@ -1,6 +1,19 @@
 # SDD ledger — plan: docs/superpowers/plans/2026-10-03-v2-seated-plant.md
 
-## Current archive continuation - G5.M complete (2026-10-03)
+## Current continuation: realistic pedelec drive (2026-10-04)
+
+Latest explicit authorization executes only the realistic-pedelec plan Tasks
+0–10 in this checkout, without waiting for G5 acceptance (Q15). Source work,
+reviews and required checks are recorded below; physical closure remains OPEN.
+Historical archive/pause notes below describe older requests, not this task.
+
+Fast tests:316 passed/41 deselected. Final selected slow group:3 passed/11 failed.
+All four road rides and seven strict cycles failed. The requested default is
+configured but is not physically qualified. No merge/push/release was performed.
+B/R, remaining D and W phases were not started as part of this slice.
+
+
+## Historical archive continuation - G5.M complete (2026-10-03)
 
 Latest user authorization: finish one logical part from the supplied offline
 archive. Completed G5.M bounded mechanical-mode search and its guarded grip
@@ -124,5 +137,5 @@ G5 fixround1 in progress: individualconstraint work, mechanical-mode transition 
 Parent retained exact uncommitted reviewedsource72afbe9c tree0a3d50f46246d15f3639eadec9155dbde599638f using isolatedreviewobjectstore+temporaryindex (actualGitindex/head/objects unchanged). After finalG5commit, run `UV_CACHE_DIR=/private/tmp/uv-cache-mujoco-v2 uv run python .superpowers/sdd/2026-10-03-v2-seated-plant/review_g5_correction.py COMMIT` to generate truly SCOPED fixdiff against reviewer snapshot, rather than repeating entireG5diff. Store/script/treefile in sameworkspace; source/report-finalverdict pending.
 
 Ruling (2026-10-04): crank→motor-shaft one-way clutch is NOT the real Bosch topology (chainring is on the crank spindle; the freewheel sits between motor output and chainring). Spec S6 and S0 amended; D3 rewritten as D3'. Slice "realistic pedelec drive" (plan docs/superpowers/plans/2026-10-04-realistic-pedelec-drive.md) = D1-assist + D3' + W3-reposition + new R9 (power/cadence rider envelope), executed BEFORE B/R and WITHOUT waiting for G5 acceptance — user decision Q15; G5's constraint-work gate is orthogonal and loses one unilateral constraint. Cost if wrong: G5 first-period attribution must be re-run on the new topology before W6.
-Slice status: Task 0 docs — in progress.
+Slice status (2026-10-04): source/tests committed (3385623 cab324b 57db0b7 a7ea77e c809f12 c08639f 6865cb7 e6ba479 2d38513 cd8c6af 09b04cd 152563f 0ce81be); NOT ACCEPTED. Non-slow: 316 passed, 41 deselected. Selected slow: 3 passed, 11 failed, 14 deselected, 4 warnings, 698.68 s at physical source 09b04cd. All four drive rides FAILED: flat max 2.98185 km/h, zero shifts, synthetic climb rolls back and never reaches the full 15% plateau, savage never reaches the checked plateau. Seven strict cycles FAILED support/observability/energy gates. Torque-load smoke remains RED at 5.815129 Nm against >10 Nm. D1-assist SOURCE/UNIT DONE; D1-sensors PENDING; D3' unit/topology DONE (engagement-energy oracle pending); W3-reposition DONE; W3-initializer PENDING; R9 SOURCE/CURVES DONE, ASSEMBLED ACCEPTANCE OPEN. Legacy clutch retained until W6. G5 attribution must be rerun on rigid topology before W6. No budget, solver setting, track or acceptance threshold was weakened. Audit: docs/superpowers/audits/2026-10-04-realistic-pedelec-drive.md.
 Baseline for this slice: HEAD aadcba1; canonical non-slow suite 208 passed, 30 deselected in 1.96 s. Supplied untracked plans/specs retained; no plant runs in parallel. W3 topology reference amended now to avoid reintroducing motor_clutch=true.

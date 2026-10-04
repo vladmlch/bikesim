@@ -1609,12 +1609,14 @@ git commit -m "feat: make the realistic pedelec drive the welded default"
 
 ### Task 9: Приёмочные прогоны
 
+> Статус исполнения: тесты написаны, запущены последовательно и закоммичены; физическая приёмка НЕ пройдена (4 дорожных отказа).
+
 **Files:**
 - Test: `tests/reference/test_realistic_pedelec_acceptance.py`
 
 Критерии из интервью (Q6): (1) ровный старт 0→20 км/ч: каденс в полосе, сенсор > 0 на ≥ 80 % цикла; (2) 15 % подъём: скорость не ниже ~5 км/ч, без rocking stall; (3) момент мотора без пилы 3↔45 Н·м. 34 % вне скоупа. Запускать строго по одному (`-p no:xdist`, не параллелить с другими прогонами).
 
-- [ ] **Step 1: Написать тесты**
+- [x] **Step 1: Написать тесты**
 
 ```python
 """Acceptance: the rider stays engaged and the motor follows, on the flat and on 15 %."""
@@ -1754,7 +1756,7 @@ def test_savage_fifteen_percent_plateau_is_ridden_above_5_kmh(tmp_path):
 
 Если какой-то ключ канала называется иначе (`shift_active`, `rider_mode`, `motor_freewheel_engaged`), сверить с `DrivetrainForceApplier.last` в `drivetrain_forces.py` и `_shift_diagnostics`, не придумывать новых.
 
-- [ ] **Step 2: Запустить по одному**
+- [x] **Step 2: Запустить по одному**
 
 ```bash
 uv run python -m pytest tests/reference/test_realistic_pedelec_acceptance.py -q -m slow -k flat_start
@@ -1768,7 +1770,7 @@ Expected: PASS каждый (1–3 мин на прогон). Любой FAIL �
   - шифтер не успевает за разгоном в 22/51 (меньше 5 апшифтов к 6 с, передача > 24T) → проверить, что `prepare_pedaling` передаёт `pedaling=True` во время наката по каденсу (командное усилие от seated_climb > 0) и что landing-проверка не отвергает апшифт из-за `required_ema`, завышенного стартовой передачей; cooldown 0.4 с не трогать без записи в ledger;
   - пила мотора → `assist_gain`, `engage_torque_nm` против амплитуды сенсора в мёртвых точках (при ripple 0.5 минимум сенсора = 0.5×среднего > 4 Н·м при среднем > 8 Н·м).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/reference/test_realistic_pedelec_acceptance.py
@@ -1779,11 +1781,13 @@ git commit -m "test: acceptance rides for the realistic pedelec drive"
 
 ### Task 10: Закрыть слайс в ledger и пересчитать базу
 
+> Статус исполнения: проверки и ledger обновлены; закрытие слайса ЗАБЛОКИРОВАНО физическими отказами. Галочки отмечают выполненные действия, не зелёную приёмку.
+
 **Files:**
 - Modify: `.superpowers/sdd/2026-10-03-v2-seated-plant/progress.md`
 - Modify: `docs/superpowers/plans/2026-10-03-v2-05-release.md` (W3: пометить reposition-часть выполненной)
 
-- [ ] **Step 1: Полный быстрый прогон и медленные приёмки**
+- [x] **Step 1: Полный быстрый прогон и медленные приёмки**
 
 ```bash
 uv run python -m pytest tests -m 'not slow' -q
@@ -1791,15 +1795,15 @@ uv run python -m pytest tests/reference/test_motor_freewheel_topology.py tests/r
 ```
 Записать числа passed/failed.
 
-- [ ] **Step 2: Ledger.** Заменить строку `Slice status: Task 0 docs — in progress.` на:
+- [x] **Step 2: Ledger.** Заменить строку `Slice status: Task 0 docs — in progress.` на:
 
 ```markdown
 Slice status (2026-10-04): Tasks 0–9 committed: <hashes>. Non-slow suite: <N passed>. Slow acceptance: flat 0→20 km/h, shift-no-cut, synthetic 15 %, savage 15 % plateau — <results>. D1-assist DONE; D1-sensors PENDING; D3' DONE (engagement_energy_loss oracle pending); W3-reposition DONE; W3-initializer PENDING; R9 DONE. Legacy motor_clutch=true kept until W6; delete there. G5 constraint-work attribution must be re-run on the rigid topology before W6.
 ```
 
-- [ ] **Step 3: W3 в `2026-10-03-v2-05-release.md`**: у пункта про удаление `reposition_*` добавить `(выполнено планом 2026-10-04-realistic-pedelec-drive.md Task 4)`.
+- [x] **Step 3: W3 в `2026-10-03-v2-05-release.md`**: у пункта про удаление `reposition_*` добавить `(выполнено планом 2026-10-04-realistic-pedelec-drive.md Task 4)`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .superpowers/sdd/2026-10-03-v2-seated-plant/progress.md docs/superpowers/plans/2026-10-03-v2-05-release.md

@@ -23,7 +23,7 @@ road criteria remain red. Diagnostic rides preserve `model_valid=false`.
 | Welded default config | 3 tests; requested topology and numbers |
 | Airborne momentum consumer | 2 slow tests; actual motor work, passive zero work, original conservation limits |
 
-Final fast suite: **316 passed, 41 deselected**, in 1.33 s. Selected slow
+Final fast suite: **316 passed, 41 deselected**, in 1.52 s. Selected slow
 group: **3 passed, 11 failed, 14 deselected**, 4 warnings, in 698.68 s.
 The slow group ran at physical source `09b04cd`; later replay-only refusal
 changes do not alter the tested plant. No passed physical acceptance is claimed.
@@ -184,3 +184,10 @@ Tasks 9 and 10 have executed their checks and recorded evidence; physical
 acceptance and slice closure remain **OPEN**. A failing mean-torque smoke is a
 new delivery blocker, while baseline COP/energy defects remain G5 prerequisites.
 No single physical knob has been proved responsible for the whole delivery loss.
+
+A final source check rules out one narrower measurement hypothesis:
+`WeldedPedals.delivered_crank_torque_nm` projects the actual selected pedal
+equality multipliers through the native Jacobian transpose onto `crank_spin`.
+It does not substitute zero when an individual attachment wrench is
+unobservable. The low measured torque is therefore not that proposed fallback;
+the underlying delivery/support problem remains unresolved.

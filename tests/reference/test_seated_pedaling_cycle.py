@@ -152,14 +152,14 @@ def test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue(
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('cadence_rpm',[40.,80.,110.])
+@pytest.mark.parametrize('cadence_rpm',[40.,80.,110.,120.])
 def test_full_crank_revolutions_keep_both_feet_loaded(tmp_path,cadence_rpm,record_property):
     from bike_sim.sim.ride.control import RideControl
     env=_environment(tmp_path/f'{cadence_rpm:.0f}')
     runtime=env.sim.physical;controller=runtime.rider_control
     rows=_observe_all_intervals(runtime)
     while not env.done:
-        env.step(RideControl(motor_torque_nm=0.,human_torque_nm=30.,
+        env.step(RideControl(motor_torque_nm=0.,human_torque_nm=20. if cadence_rpm == 120. else 30.,
             crank_target_rate_rad_s=cadence_rpm*2*math.pi/60.))
     _assert_physical_intervals(rows)
     assert len(rows) == env.sim.steps

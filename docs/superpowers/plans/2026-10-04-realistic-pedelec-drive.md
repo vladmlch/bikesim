@@ -1366,7 +1366,7 @@ git commit -m "feat: filtered coast decision and configurable pedal torque rippl
 
 Арифметика: на 120 об/мин шатун 12.57 рад/с; колено с размахом ~70° → амплитуда 0.61 рад → пик 7.7 рад/с; при vmax 22, c 0.35: s = 0.35 → фактор (1−0.35)/(1+0.35/0.35) = 0.325 → 140 × 0.325 ≈ 45 Н·м разгибания колена. Нужно для 20 Н·м на шатуне (~114 Н на педали, плечо ≲ 0.35 м) ≤ 40 Н·м. Бедро на 0.9 рад при 5 рад/с: s 0.23 → 0.77/1.65 = 0.47 → 85 Н·м.
 
-- [ ] **Step 1: Падающий тест** (добавить в `test_joint_strength.py`):
+- [x] **Step 1: Падающий тест** (добавить в `test_joint_strength.py`):
 
 ```python
 def test_leg_curves_span_a_120_rpm_pedalling_envelope():
@@ -1392,7 +1392,7 @@ def test_leg_curves_span_a_120_rpm_pedalling_envelope():
 Run: `uv run python -m pytest tests/reference/test_joint_strength.py -q -k envelope`
 Expected: FAIL (`vmax 10 < 20`).
 
-- [ ] **Step 2: JSON.** Для шести суставов ног и обоих направлений: `"vmax_rad_s": 22.0`, `"hill_c": 0.35`, `source` дополнить строкой выше. Сделать скриптом, чтобы не ошибиться:
+- [x] **Step 2: JSON.** Для шести суставов ног и обоих направлений: `"vmax_rad_s": 22.0`, `"hill_c": 0.35`, `source` дополнить строкой выше. Сделать скриптом, чтобы не ошибиться:
 
 ```bash
 uv run python - <<'EOF'
@@ -1412,9 +1412,9 @@ EOF
 ```
 Проверить `git diff --stat examples/research/rider_strength_reference.json` — если файл был в компактном формате (одна кривая на строку), привести к прежнему форматированию вручную или оставить `indent=1`, но убедиться, что тесты `test_joint_strength.py` не сравнивают текст побайтово.
 
-- [ ] **Step 3: Параметр 120 об/мин** в `test_seated_pedaling_cycle.py:155`: добавить `120.` в `@pytest.mark.parametrize('cadence_rpm', ...)`.
+- [x] **Step 3: Параметр 120 об/мин** в `test_seated_pedaling_cycle.py:155`: добавить `120.` в `@pytest.mark.parametrize('cadence_rpm', ...)`.
 
-- [ ] **Step 4: Тесты**
+- [x] **Step 4: Тесты**
 
 Run: `uv run python -m pytest tests/reference/test_joint_strength.py -q`
 Expected: PASS.
@@ -1422,7 +1422,7 @@ Expected: PASS.
 Run: `uv run python -m pytest tests/reference/test_seated_pedaling_cycle.py -q -m slow -k "120"`
 Expected: PASS (один прогон ~1–2 мин). Если падает по `rider_strength_violations` — это сигнал, что конверт всё ещё связывающий; не ослаблять тест, а поднять `vmax` до 25 и зафиксировать это в S0-строке «Усилие райдера» (Task 0 — дописать).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add examples/research/rider_strength_reference.json tests/reference/test_joint_strength.py tests/reference/test_seated_pedaling_cycle.py

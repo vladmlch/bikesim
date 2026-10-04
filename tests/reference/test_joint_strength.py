@@ -267,3 +267,23 @@ def test_directional_capacity_bounds_the_commanded_torque(tmp_path):
             data.qvel[dof], 1e4)
         assert clipped[index] == pytest.approx(capacity)
         assert capacity < 1e4
+
+
+def test_leg_curves_span_a_120_rpm_pedalling_envelope():
+    """At 120 rpm the knee peaks near 7.7 rad/s and must still hold ~40 N.m; the hip ~60 N.m at 5 rad/s."""
+    # {joint: {+1: curve, -1: curve}} keyed by the sign of the bounded q-torque;
+    # JSON "positive" -> +1, "negative" -> -1.
+    profile = load_strength_profile(str(STRENGTH), JOINTS, require_verified=False)
+    for side in ('front', 'rear'):
+        for joint in ('hip', 'knee', 'ankle'):
+            for direction in (1, -1):
+                curve = profile[f'rider_{joint}_{side}'][direction]
+                assert curve.vmax_rad_s >= 20., (joint, side, direction)
+                assert curve.hill_c >= .3, (joint, side, direction)
+                assert 'unverified' in curve.source
+        knee = profile[f'rider_knee_{side}'][-1]          # knee extension ("negative")
+        assert directional_capacity(knee, 1.0, -7.7, -1) >= 40.
+        hip = profile[f'rider_hip_{side}'][1]             # hip extension ("positive")
+        assert directional_capacity(hip, .9, 5., 1) >= 60.
+    torso = profile['rider_torso_hinge'][1]
+    assert torso.vmax_rad_s == 8.                          # untouched

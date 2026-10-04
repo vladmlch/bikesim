@@ -59,3 +59,18 @@ explicitly requires. Keep the strict preload test red and mark solved preload
 compression pending. The reproduced startup failure is outside the drive
 slice; declaring the preload physically accepted would be unsupported.
 Cost if wrong: fixing G5 may reveal an additional preload/allocator failure.
+
+## Task 7
+
+Exactly12leg direction curves changed: vmax22rad/s, hill_c.35, provenance
+marked engineering/unverified. Upper body, angle/torque knots, and verification
+flags unchanged; compact formatting retained (12lines changed).
+RED envelope test1failed/1passed, missing vmax. Full joint-strength module
+GREEN15passed in20.41s; its diagnostic episode still warns energy.constraint_work.
+The added120rpm case requests20Nm (other pre-existing cases retain30Nm).
+Strict full-cycle case:1failed/12deselected in28.74s, saddle.cop at.0015s.
+Disposable aadcba1 with same120rpm/20Nm also reports saddle.cop at.0015s.
+Actual120rpm/no-saturation pedaling is therefore PENDING, not qualified by the
+pure directional-capacity tests. No vmax25escalation: failure is a support gate,
+not evidence of insufficient directional strength. Logs: /tmp/pedelec-120.log,
+/tmp/pedelec-strength.log, /tmp/pedelec-baseline120.log.

@@ -62,7 +62,17 @@ def feasible_pedal_force(request,normal,mu,measured_normal_n):
     return -compression*n+np.clip(float(f@tangent),-bound,bound)*tangent
 
 
-def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu):
+def pedal_torque_waveform(mean_nm, phase_rad, ripple):
+    """Two-leg crank torque: mean*(1+ripple*cos(2*phase)), ripple in [0,1)."""
+    mean = scalar(mean_nm, 'mean pedaling torque', minimum=0.)
+    phase = scalar(phase_rad, 'pedal phase')
+    depth = scalar(ripple, 'pedal torque ripple', minimum=0.)
+    if depth >= 1.:
+        raise ValueError('pedal torque ripple must be below one')
+    return mean*(1.+depth*cos(2.*phase))
+
+
+def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu, *, ripple=.35):
     """Realize a mean shaft waveform with compressive forces and friction reserve."""
     phase = scalar(phase, 'pedal phase')
     mean = scalar(mean_nm, 'mean pedaling torque', minimum=0.)
@@ -71,7 +81,7 @@ def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu):
     fraction = min(max(.5+.5*cos(phase)/_PRESSURE_BLEND_COSINE, 0.), 1.)
     front_weight = fraction*fraction*(3.-2.*fraction)
     weights = {'front': front_weight, 'rear': 1.-front_weight}
-    total_torque = mean*(1.+.35*cos(2.*phase))
+    total_torque = pedal_torque_waveform(mean, phase, ripple)
     geometry = {}
     capacities = {}
     for side, offset in (('front', 0.), ('rear', pi)):
@@ -86,8 +96,16 @@ def pedaling_force_requests(phase, mean_nm, crank_m, normals, loads, mu):
         compression_limit = float('inf')
         if normal_moment < 0. and ratio > 0.:
             compression_limit = friction*measured/ratio
-        torque_limit = (normal_moment*compression_limit+abs(tangent_moment)
-            *min(ratio*compression_limit, friction*min(compression_limit, measured)))
+        if np.isinf(compression_limit):
+            # Avoid 0*inf at a horizontal power stroke. A positive normal
+            # lever allows an unbounded request; the allocator still enforces
+            # actual joint/support budgets. With no normal lever, only the
+            # measured-load friction can contribute torque.
+            torque_limit = (float('inf') if normal_moment > 0. else
+                            abs(tangent_moment)*friction*measured)
+        else:
+            torque_limit = (normal_moment*compression_limit+abs(tangent_moment)
+                *min(ratio*compression_limit, friction*min(compression_limit, measured)))
         geometry[side] = normal, normal_moment, tangent_moment, ratio, capacity, compression_limit, measured
         capacities[side] = max(0., torque_limit) if capacity > 1e-10 and weights[side] > 1e-6 else 0.
     active_weights = {side: weights[side] if capacities[side] > 0. else 0. for side in weights}
@@ -709,7 +727,8 @@ class ArticulatedRiderController:
                 for side, geom in self.pedal_geoms.items()}
             pedal_loads = {side: max(float(loads.get(side, 0.)), 0.) for side in ('front', 'rear')}
             pedaling_requests, pedaling_weights = pedaling_force_requests(phase,
-                command.mean_crank_torque_nm, self.crank_length_m, normals, pedal_loads, cfg.support_mu)
+                command.mean_crank_torque_nm, self.crank_length_m, normals, pedal_loads, cfg.support_mu,
+                ripple=cfg.pedal_torque_ripple)
         # Both feet keep their support objective for the whole cycle: the
         # return foot rides through its backstroke loaded at least the
         # declared minimum instead of being lifted by a control-mode switch.
@@ -738,6 +757,11 @@ class ArticulatedRiderController:
                 # load an absorbing state. Tangential demand remains bounded
                 # by measured Fn in feasible_pedal_force; no adhesion is added.
                 requests[side] = pedaling_requests[side]
+                if not stance[side] and cfg.return_foot_preload_n > 0.:
+                    # Recovery leg presses on the rising pedal; no pulling
+                    # or external crank actuation is introduced.
+                    requests[side] = feasible_pedal_force(
+                        -cfg.return_foot_preload_n*normal, normal, cfg.foot_mu, load)
                 # In its backstroke the foot may scrape with at most the
                 # declared fraction of its friction cone; the downstroke foot
                 # keeps the full budget. This is an intent bound, not a

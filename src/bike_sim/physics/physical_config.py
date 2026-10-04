@@ -119,6 +119,9 @@ class PedalingConfig:
     coast_above_rpm: float = 110.
     resume_below_rpm: float = 90.
     stop_time_s: float = .35
+    # Coast on a sustained cadence rise, filtering the two strokes per turn.
+    # Zero retains raw hysteresis.
+    coast_cadence_tau_s: float = 0.
     # Low-cadence effort ramp: a rider grinding to a stall presses harder on
     # the pedal, so commanded effort rises toward a low-cadence ceiling instead
     # of fading. The ceiling is capped near what the articulated leg drive can
@@ -142,6 +145,7 @@ class PedalingConfig:
         scalar(self.coast_above_rpm, 'coasting cadence', positive=True)
         scalar(self.resume_below_rpm, 'resume cadence', minimum=0.)
         scalar(self.stop_time_s, 'coasting stop time', positive=True)
+        scalar(self.coast_cadence_tau_s, 'coast cadence tau', minimum=0.)
         if self.resume_below_rpm >= self.coast_above_rpm:
             raise ValueError('resume cadence must be below coasting cadence')
         scalar(self.mash_torque_nm, 'mash torque', minimum=0.)
@@ -341,6 +345,11 @@ class ArticulatedConfig:
     # backstroke. Both are intents, never physical guarantees.
     pedal_ankle_amplitude_rad: float = .1
     pedal_scrape_fraction: float = .5
+    # Two-leg waveform: mean*(1+ripple*cos(2*phase)), an engineering choice.
+    pedal_torque_ripple: float = .35
+    # Residual recovery-leg load on the rising flat pedal; 40–100 N is
+    # an unverified engineering estimate. Zero disables this intent.
+    return_foot_preload_n: float = 0.
     link_max_gap_m: float = .005
     # Bounded road preview the rider planner may see ahead of the front wheel.
     road_lookahead_m: float = 0.
@@ -376,6 +385,8 @@ class ArticulatedConfig:
             scalar(getattr(self,key),key,positive=True)
         if self.saddle_reserve_weight_fraction > 1.:
             raise ValueError('saddle reserve fraction must not exceed one')
+        if self.pedal_torque_ripple >= 1.:
+            raise ValueError('pedal torque ripple must be below one')
         if self.pedal_scrape_fraction > 1.:
             raise ValueError('pedal scrape fraction must not exceed one')
         if self.pedal_attachment not in ('flat', 'weld'):

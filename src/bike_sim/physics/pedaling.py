@@ -23,8 +23,6 @@ class PedalingState:
     target_rate_rad_s: float = 0.
 
 
-
-
 class PedalingPolicy:
     """Rider effort and bounded coast intent; a stall is an outcome."""
 
@@ -38,6 +36,7 @@ class PedalingPolicy:
         self.target_rate_rad_s = 0.
         self.deceleration_rad_s2 = 0.
         self._effort = 0.
+        self._cadence_ema = None
 
     def update(self, phase_rad, rate_rad_s, required_cadence_rpm, effort_nm, dt,
                *, enabled=True, braking=False):
@@ -55,15 +54,20 @@ class PedalingPolicy:
             self.reset()
             return PedalingState('disabled', 'disabled', 0., required_cadence_rpm)
         cadence = max(abs(rate_rad_s) * 60. / (2. * pi), required_cadence_rpm)
+        tau = self.config.coast_cadence_tau_s
+        if tau > 0. and self._cadence_ema is not None:
+            self._cadence_ema += min(1., dt/tau)*(cadence-self._cadence_ema)
+        else:
+            self._cadence_ema = cadence
         threshold = (self.config.resume_below_rpm if self.coasting
                      else self.config.coast_above_rpm)
-        excessive = self.config.enabled and cadence >= threshold
+        excessive = self.config.enabled and self._cadence_ema >= threshold
         reason = ('braking' if braking else 'no_effort' if effort_nm == 0.
                   else 'cadence' if excessive else '')
         if not reason:
-            previous = self._effort
+            previous, ema = self._effort, self._cadence_ema
             self.reset()
-            self._effort = previous
+            self._effort, self._cadence_ema = previous, ema
             # Muscle force-velocity is inverted relative to the naive constant
             # effort: as cadence collapses a real rider converts to standing on
             # the pedal, and the available torque rises toward the isometric

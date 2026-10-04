@@ -35,3 +35,34 @@ def test_rider_program_rejects_the_removed_reposition_command():
     from bike_sim.sim.research.rider_program import RiderProgram
     with pytest.raises(ValueError, match='unknown or malformed rider keyframe'):
         RiderProgram.from_dict({'keyframes': [{'time_s': 0., 'crank_reposition': True}]})
+
+
+def test_coast_decision_filters_a_single_stroke_spike_with_ema():
+    cfg = PedalingConfig(enabled=True, coast_above_rpm=120., resume_below_rpm=105.,
+                         coast_cadence_tau_s=.35, effort_slew_nm_s=0.)
+    policy = PedalingPolicy(cfg)
+    rpm = 2*math.pi/60
+    for _ in range(100):
+        assert policy.update(0., 90.*rpm, 90., 30., .001).mode == 'pedaling'
+    for _ in range(50):                                   # 50 ms spike to 160 rpm
+        assert policy.update(0., 160.*rpm, 90., 30., .001).mode == 'pedaling'
+    for _ in range(1500):                                 # sustained 160 rpm
+        state = policy.update(0., 160.*rpm, 160., 30., .001)
+    assert state.mode == 'coasting' and state.reason == 'cadence'
+    for _ in range(1500):                                 # back below resume
+        state = policy.update(0., 95.*rpm, 95., 30., .001)
+    assert state.mode == 'pedaling'
+
+
+def test_zero_tau_keeps_the_raw_hysteresis():
+    cfg = PedalingConfig(enabled=True, coast_above_rpm=120., resume_below_rpm=105.,
+                         coast_cadence_tau_s=0., effort_slew_nm_s=0.)
+    policy = PedalingPolicy(cfg)
+    rpm = 2*math.pi/60
+    assert policy.update(0., 90.*rpm, 90., 30., .001).mode == 'pedaling'
+    assert policy.update(0., 121.*rpm, 90., 30., .001).mode == 'coasting'
+
+
+def test_coast_tau_must_be_nonnegative():
+    with pytest.raises(ValueError):
+        PedalingConfig(enabled=True, coast_cadence_tau_s=-.1)

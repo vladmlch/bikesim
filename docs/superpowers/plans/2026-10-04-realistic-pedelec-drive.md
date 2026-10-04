@@ -1172,7 +1172,7 @@ git commit -m "fix: shift on crank cadence only and never cut the motor"
 
 О `return_foot_preload_n`. Это остаточная нагрузка возвратной ноги на поднимающуюся педаль. У живого велосипедиста-любителя на плоской педали она составляет порядка 40–100 Н (часть веса ноги) и даёт отрицательный момент на возвратной стороне — отсюда глубокие провалы двуногого момента в мёртвых точках. Кроме того, стопа на плоской педали не может тянуть, а weld может: заданный прижим держит сварку в физически допустимом сжатии вместо численного блуждания вокруг нуля. Значение 40 Н — инженерная оценка (нижняя граница диапазона), помечается как таковая. Реализация — по ветке `wip/pedaling-rhythm` (`rider_control.py`, блок `if not stance[side] and cfg.return_foot_preload_n > 0.`), переписывается заново, не cherry-pick.
 
-- [ ] **Step 1: Падающие тесты.** Добавить в `test_pedaling_policy.py`:
+- [x] **Step 1: Падающие тесты.** Добавить в `test_pedaling_policy.py`:
 
 ```python
 def test_coast_decision_filters_a_single_stroke_spike_with_ema():
@@ -1262,7 +1262,7 @@ def test_return_foot_preload_is_a_nonnegative_force():
 Run: `uv run python -m pytest tests/reference/test_pedaling_policy.py tests/reference/test_pedal_waveform.py -q`
 Expected: FAIL (`unknown parameter coast_cadence_tau_s`, `ImportError pedal_torque_waveform`).
 
-- [ ] **Step 2: Конфиг.** `PedalingConfig`: после `stop_time_s` добавить
+- [x] **Step 2: Конфиг.** `PedalingConfig`: после `stop_time_s` добавить
 
 ```python
     # EMA time constant for the coast/resume decision. The crank rate ripples
@@ -1293,7 +1293,7 @@ Expected: FAIL (`unknown parameter coast_cadence_tau_s`, `ImportError pedal_torq
 ```
 и `scalar(self.return_foot_preload_n,'return foot preload',minimum=0.)`.
 
-- [ ] **Step 3: `pedaling.py`.** В `reset`: `self._cadence_ema = None`. В `update` заменить
+- [x] **Step 3: `pedaling.py`.** В `reset`: `self._cadence_ema = None`. В `update` заменить
 
 ```python
         cadence = max(abs(rate_rad_s) * 60. / (2. * pi), required_cadence_rpm)
@@ -1315,7 +1315,7 @@ Expected: FAIL (`unknown parameter coast_cadence_tau_s`, `ImportError pedal_torq
 ```
 и в блоке `if not reason:` сохранить EMA через latch: `previous, ema = self._effort, self._cadence_ema; self.reset(); self._effort, self._cadence_ema = previous, ema`. Mash-рампу оставить (legacy-путь без seated_climb).
 
-- [ ] **Step 4: `rider_control.py`.** Перед `pedaling_force_requests` добавить
+- [x] **Step 4: `rider_control.py`.** Перед `pedaling_force_requests` добавить
 
 ```python
 def pedal_torque_waveform(mean_nm, phase_rad, ripple):
@@ -1341,12 +1341,12 @@ def pedal_torque_waveform(mean_nm, phase_rad, ripple):
 ```
 (выше по циклу `stance[side]` уже вычислен как «доля стороны в раздаче момента > 1e-6»). Проверить, что ветка scrape-ограничения ниже (`if pedaling_weights.get(side,0.) < .5`) по-прежнему применяется после прижима.
 
-- [ ] **Step 5: Тесты**
+- [x] **Step 5: Тесты**
 
 Run: `uv run python -m pytest tests/reference/test_pedaling_policy.py tests/reference/test_pedal_waveform.py -q && uv run python -m pytest tests -m 'not slow' -q -x`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/bike_sim/physics/physical_config.py src/bike_sim/physics/pedaling.py src/bike_sim/sim/ride/rider_control.py tests/reference/test_pedaling_policy.py tests/reference/test_pedal_waveform.py

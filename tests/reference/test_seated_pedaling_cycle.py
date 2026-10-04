@@ -248,3 +248,35 @@ def test_free_coast_is_an_intent_not_a_crank_lock(tmp_path):
     assert coast_missing == 0
     _assert_physical_intervals(rows)
     assert cadence_before > 1.
+
+
+@pytest.mark.slow
+def test_return_foot_preload_keeps_recovery_foot_in_compression(tmp_path):
+    from bike_sim.sim.ride.control import RideControl
+    import re
+    text = WELDED.read_text()
+    for name in ('joint_envelope_path', 'joint_strength_path'):
+        text = text.replace(f'{name} = "', f'{name} = "{WELDED.parent}/')
+    if 'return_foot_preload_n =' in text:
+        text = re.sub(r'^return_foot_preload_n = .*$', 'return_foot_preload_n = 40.0', text, flags=re.M)
+    else:
+        text = text.replace('[articulated]\n', '[articulated]\nreturn_foot_preload_n = 40.0\n')
+    path = tmp_path/'preload.toml'
+    path.write_text(text)
+    env = _environment(tmp_path/'ride', config=path, duration_s=2.)
+    rows = _observe_all_intervals(env.sim.physical)
+    while not env.done:
+        env.step(RideControl(motor_torque_nm=0., human_torque_nm=20.,
+                            crank_target_rate_rad_s=80.*2*math.pi/60.))
+    _assert_physical_intervals(rows)
+    checked = 0
+    for sample in rows:
+        # Stance is the support intent, not an allocator solution field.
+        stance = sample.channels['rider_support_targets']['stance']
+        for side in ('front', 'rear'):
+            if not stance[side]:
+                normal = sample.channels['attachment_samples'][f'foot_{side}']['normal_n']
+                assert normal >= 30., (sample.interval_id, side, normal)
+                checked += 1
+    assert checked > 0
+    assert env.reason == 'duration', env.reason

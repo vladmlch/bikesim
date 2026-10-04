@@ -1,5 +1,8 @@
 # Realistic pedelec drive: implementation and acceptance
 
+
+Продолжение: [closed-form seated rider audit](2026-10-04-seated-rider-closed-form.md), 2026-10-04. Новый pin/connect профиль и приёмка 120 м supersede старую allocator+saddle-contact траекторию; физическая приёмка остаётся открытой до зелёных гейтов.
+
 Plan: `docs/superpowers/plans/2026-10-04-realistic-pedelec-drive.md`.
 Branch: `implementation/seated-plant-v2`; initial source: `aadcba1`.
 All Python commands use `uv run`. Plant runs were sequential. Bosch values

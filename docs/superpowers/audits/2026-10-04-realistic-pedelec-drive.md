@@ -91,3 +91,20 @@ baseline-green. No assertion, gain, preload or physicalgate was changed to
 make the smoke pass. Assembled acceptance must diagnose this alongwithG5.
 Logs /tmp/pedelec-sensor.log,/tmp/pedelec-sensor-diag.log,
 /tmp/pedelec-sensor-baseline.log; CSVs/private/tmp/pedelec-sensor-{current,baseline}/sensor.csv.
+
+## Momentum validation consumer
+
+The airborne active-motor stand silently delivered zero after numeric torque
+became a ceiling: it set syntheticgain0, sensor0 and riderintent0. RED1failed,
+1passed; prescribedpositive sensoralone stillfailed because riderintent selected
+coasting. The stand now explicitly declares synthetic10Nm intent AND sensor,
+uses gain2, and its independent articulated-joint command remains zeroeffort.
+No direct riderforce is introduced; no productiongate is bypassed.
+Bounds now reject zero peak/work in active runs; passive runs require zero.
+GREEN2slowtests passed in.56s: peak>10Nm, positive motorwork, no jointwork/root
+actuation, conserved momentum at existingbounds, no terraincontact. Fastsuite
+297passed37deselected. ResearchCLIhelp now describes ceiling semantics.
+Ruling: update this necessary validation consumer, outside the plan's filemap,
+so active-motor qualification cannot silently become a passive-only test.
+Cost if wrong: standsensorfixture must be revisited; it does not qualify real
+pedelec sensing, human biomechanics, G5 or road acceptance.

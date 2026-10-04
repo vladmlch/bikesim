@@ -259,7 +259,11 @@ class ArticulatedRiderController:
         self.ik_reach_limited = {'front':False,'rear':False}
         self.joints = {}
         from bike_sim.mujoco.reference_rider import reference_joint_names
+        self.locked_joints = tuple(name for name in reference_joint_names()
+            if mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name) < 0)
         for name in reference_joint_names():
+            if name in self.locked_joints:
+                continue
             jid = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_JOINT,name)
             aid = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_ACTUATOR,'act_'+name)
             if jid < 0 or aid < 0:
@@ -282,7 +286,7 @@ class ArticulatedRiderController:
                 # The strength file and the envelope file must agree on the
                 # q->anatomical mapping, or a curve could silently bound the
                 # wrong anatomical direction.
-                envelopes=load_joint_envelopes(config.joint_envelope_path)
+                envelopes=load_joint_envelopes(config.joint_envelope_path, present=expected)
                 for name,coordinate in self.strength_coordinates.items():
                     if name in envelopes:
                         envelope=envelopes[name]
@@ -328,6 +332,9 @@ class ArticulatedRiderController:
             raise ValueError('incomplete rider interface topology')
         mujoco.mj_kinematics(model,self.target_data)
         self.welded=config.pedal_attachment=='weld'
+        self.spindle=config.pedal_attachment=='spindle'
+        self.leg_joint_names = {side: tuple(joint for joint in ('hip', 'knee', 'ankle')
+            if f'rider_{joint}_{side}' in self.joints) for side in ('front', 'rear')}
         self._weld_pedal_bodies={}
         self._weld_sole_offset={}
         if self.welded:
@@ -356,7 +363,7 @@ class ArticulatedRiderController:
         self.sole_jacobians={}
         for side in ('front','rear'):
             upper=getattr(pose,f'knee_{side}')-pose.hip
-            lower=getattr(pose,f'ankle_{side}')-getattr(pose,f'knee_{side}')
+            lower=getattr(pose,f'pedal_{side}' if self.spindle else f'ankle_{side}')-getattr(pose,f'knee_{side}')
             upper_angle=atan2(upper[2],upper[0])
             lower_angle=atan2(lower[2],lower[0])
             self.leg_geometry[side]=(float(np.linalg.norm(upper)),float(np.linalg.norm(lower)),
@@ -420,7 +427,8 @@ class ArticulatedRiderController:
             else:
                 sole_goal = recovery_goal
                 goal_diagnostic = {'saturated': False, 'limiting_reasons': [], 'recovery': True}
-        ankle_goal = sole_goal+ankle_offset-np.array([0.,0.,.008])
+        ankle_goal = (data.site_xpos[self.pedals[side]] if self.spindle
+                      else sole_goal+ankle_offset-np.array([0.,0.,.008]))
         self.sole_targets[side] = sole_goal
         self.sole_goal_diagnostics[side] = goal_diagnostic
         target = R.T@(ankle_goal-hip)
@@ -445,10 +453,11 @@ class ArticulatedRiderController:
             abs(float(data.qvel[self.crank_spin_dof])),
             ankle_amplitude_rad=self.config.pedal_ankle_amplitude_rad,
             scrape_fraction=self.config.pedal_scrape_fraction).ankle_offset_rad
-        current=np.array([data.qpos[self.joints[f'rider_{joint}_{side}'][0]] for joint in ('hip','knee','ankle')])
+        targets = targets[:len(self.leg_joint_names[side])]
+        current=np.array([data.qpos[self.joints[f'rider_{joint}_{side}'][0]] for joint in self.leg_joint_names[side]])
         # Equivalent +/-2*pi IK representations must not cause torque impulses.
         result=current + np.arctan2(np.sin(targets-current),np.cos(targets-current))
-        for i,joint in enumerate(('hip','knee','ankle')):
+        for i,joint in enumerate(self.leg_joint_names[side]):
             name=f'rider_{joint}_{side}'
             if name in self.joint_ranges:
                 lo,hi=self.joint_ranges[name]
@@ -568,7 +577,7 @@ class ArticulatedRiderController:
             previous_target = self._targets(model, previous, side)
             velocity = np.arctan2(np.sin(next_target-previous_target),
                                  np.cos(next_target-previous_target)) / (2.*self.target_difference_s)
-            for joint, rate in zip(('hip', 'knee', 'ankle'), velocity):
+            for joint, rate in zip(self.leg_joint_names[side], velocity):
                 data.qvel[self.joints[f'rider_{joint}_{side}'][1]] = rate
 
     def _coasting_target_state(self, model, data, command, *, follow_motion=True):
@@ -648,7 +657,7 @@ class ArticulatedRiderController:
                                     compression_m=0. if welded else None)
             if self.ik_reach_limited[side]:
                 raise ValueError(f'initial {side} pedal is unreachable')
-            for joint,value in zip(('hip','knee','ankle'),targets):
+            for joint,value in zip(self.leg_joint_names[side],targets):
                 qa,_,_ = self.joints[f'rider_{joint}_{side}']
                 data.qpos[qa] = value
         mujoco.mj_forward(model,data)
@@ -872,7 +881,7 @@ class ArticulatedRiderController:
         rotation = data.xmat[self.crank].reshape(3,3)
         phase = atan2(-rotation[2,0],rotation[0,0])
         for side,offset in (('front',0.),('rear',pi)):
-            names = [f'rider_{joint}_{side}' for joint in ('hip','knee','ankle')]
+            names = [f'rider_{joint}_{side}' for joint in self.leg_joint_names[side]]
             qa = [self.joints[n][0] for n in names]
             va = [self.joints[n][1] for n in names]
             requested=requests[side]
@@ -909,7 +918,7 @@ class ArticulatedRiderController:
                 self.pd_split[n_] = (float(p_), float(d_))
             jp,jr = self.sole_jacobians[side]
             mujoco.mj_jac(model,data,jp,None,data.site_xpos[self.soles[side]],self.feet[side])
-            feedforward = np.zeros(3) if coupled else jp[:,va].T@requested
+            feedforward = np.zeros(len(names)) if coupled else jp[:,va].T@requested
             torque = pd+feedforward
             terms.update({n:(float(p),float(f)) for n,p,f in zip(names,pd,feedforward)})
             if not np.isfinite(torque).all():

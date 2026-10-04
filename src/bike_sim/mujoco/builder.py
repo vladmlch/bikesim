@@ -313,7 +313,7 @@ def generate_mujoco_xml(
     build_sensors(root, mode=mode, seated_rider=(rider_specs.variant == "seated"))
 
     if (physics_config is not None
-            and (getattr(physics_config.articulated, 'pedal_attachment', 'flat') == 'weld'
+            and (getattr(physics_config.articulated, 'pedal_attachment', 'flat') in ('weld', 'spindle')
                  or getattr(physics_config.articulated, 'saddle_attachment', 'flat') in ('weld', 'pin')
                  or getattr(physics_config.articulated, 'grip_attachment', 'spring') == 'connect')
             and not (physical and articulated_pose is not None)):
@@ -335,7 +335,9 @@ def generate_mujoco_xml(
             envelopes=None if envelope_path is None else load_joint_envelopes(envelope_path)
             build_articulated_rider(worldbody, articulated_pose,
                 split_paired_arm_masses(segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg)),
-                envelopes=envelopes)
+                envelopes=envelopes,
+                locked_joints=('rider_ankle_front', 'rider_ankle_rear')
+                if physics_config.articulated.pedal_attachment == 'spindle' else ())
             add_rider_actuators(root, physics_config.articulated)
             solref = max(2. * physics_config.timestep_s,
                          physics_config.closure_time_constant_s)
@@ -347,6 +349,17 @@ def generate_mujoco_xml(
                         'name': f'weld_foot_{side}',
                         'body1': f'rider_foot_{side}',
                         'body2': f'pedal_{side}',
+                        'solref': f'{solref:.17g} 1',
+                    })
+            if physics_config.articulated.pedal_attachment == 'spindle':
+                from bike_sim.physics.rider import ANKLE_ABOVE_PEDAL_M
+                assert equality is not None
+                for side in ('front', 'rear'):
+                    ET.SubElement(equality, 'connect', {
+                        'name': f'connect_foot_{side}',
+                        'body1': f'rider_foot_{side}',
+                        'body2': f'pedal_{side}',
+                        'anchor': f'0 0 {-ANKLE_ABOVE_PEDAL_M:.17g}',
                         'solref': f'{solref:.17g} 1',
                     })
             if physics_config.articulated.saddle_attachment == 'weld':

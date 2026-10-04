@@ -43,3 +43,9 @@ def test_surge_and_trim_are_validated_in_climb_config():
     for field in ('surge_grade', 'surge_recovery_rate', 'front_load_share_target', 'lean_trim_gain_rad_s', 'lean_trim_limit_rad'):
         with pytest.raises(ValueError):
             SeatedClimbConfig(**{field: -1.})
+
+
+@pytest.mark.parametrize('value', [-1., float('nan'), float('inf')])
+def test_balance_grace_must_be_finite_and_nonnegative(value):
+    with pytest.raises(ValueError):
+        ArticulatedConfig(balance_grace_s=value)

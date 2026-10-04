@@ -77,7 +77,7 @@ def reference_rom_check(joint_angles_rad, envelopes) -> tuple[str, ...]:
     return tuple(violations)
 
 
-def load_joint_envelopes(path: str) -> dict[str,JointEnvelope]:
+def load_joint_envelopes(path: str, present=None) -> dict[str,JointEnvelope]:
     payload=json.loads(Path(path).read_text())
     if not isinstance(payload,dict):
         raise ValueError('joint profile must be an object')
@@ -96,8 +96,11 @@ def load_joint_envelopes(path: str) -> dict[str,JointEnvelope]:
         else:
             raise ValueError('unknown joint profile schema')
         payload=payload['joints']
-    if not isinstance(payload,dict) or set(payload)!=set(names):
-        raise ValueError(f'profile must cover exactly {len(names)} internal rider joints, never root joints')
+    requested = set(names) if present is None else set(present)
+    if (not isinstance(payload,dict) or not requested <= set(payload)
+            or not set(payload) <= set(names) or not requested <= set(names)):
+        raise ValueError(f'profile must cover present internal rider joints, never root joints')
+    names = tuple(name for name in names if name in requested)
     try:
         return {name:JointEnvelope(**payload[name]) for name in names}
     except TypeError as exc:

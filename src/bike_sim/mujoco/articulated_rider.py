@@ -10,7 +10,7 @@ def _vec(value):
 
 
 def build_articulated_rider(worldbody, pose, masses, *, pedal_lateral_m=.115,
-                            arm_lateral_m=ARM_LATERAL_OFFSET_M, envelopes=None):
+                            arm_lateral_m=ARM_LATERAL_OFFSET_M, envelopes=None, locked_joints: tuple[str, ...] = ()):
     expected={'pelvis','torso','head'} | {
         f'{part}_{side}' for side in ('left','right') for part in ('upper_arm','forearm')} | {
         f'{part}_{side}' for side in ('front','rear') for part in ('thigh','shank','foot')}
@@ -24,7 +24,7 @@ def build_articulated_rider(worldbody, pose, masses, *, pedal_lateral_m=.115,
         origin=np.zeros(3) if parent is worldbody else centers[parent.get('name')]
         body=ET.SubElement(parent,'body',name='rider_'+key,pos=_vec(start-origin))
         centers['rider_'+key]=start
-        if joint:
+        if joint and joint not in locked_joints:
             attrs={}
             if envelopes is not None:
                 from bike_sim.physics.rider_envelope import joint_q_range
@@ -87,6 +87,5 @@ def add_rider_actuators(root, config):
             # qfrc_passive, so actuator_force is purely commanded muscle torque
             # and positive-power accounting never counts passive work as active.
             joint.set('damping',f'{config.passive_damping_nms_rad:.17g}')
-            limit=format(config.joint_limit_nm,'.17g')
             ET.SubElement(actuators,'motor',name='act_'+name,joint=name,gear='1',
-                          ctrllimited='false',forcelimited='true',forcerange=f'-{limit} {limit}')
+                          ctrllimited='false',forcelimited='false')

@@ -111,8 +111,8 @@ def load_strength_profile(path: str, expected_joints: tuple[str, ...], *,
     if set(payload) != {'schema_version', 'topology', 'provenance', 'joints'}:
         raise ValueError('strength profile has unknown or missing fields')
     joints = payload['joints']
-    if not isinstance(joints, dict) or set(joints) != set(expected_joints):
-        raise ValueError('strength profile must cover exactly the internal rider joints')
+    if not isinstance(joints, dict) or not set(expected_joints) <= set(joints):
+        raise ValueError('strength profile must cover the present internal rider joints')
     result = {}
     for name in expected_joints:
         entry = joints[name]
@@ -161,7 +161,7 @@ def load_strength_coordinates(path: str,
     """Per-joint q->anatomical mapping carried inside the strength file."""
     payload = json.loads(Path(path).read_text())
     joints = payload['joints']
-    if set(joints) != set(expected_joints):
-        raise ValueError('strength profile must cover exactly the internal rider joints')
+    if not set(expected_joints) <= set(joints):
+        raise ValueError('strength profile must cover the present internal rider joints')
     return {name: load_strength_coordinate(joints[name], name)
             for name in expected_joints}

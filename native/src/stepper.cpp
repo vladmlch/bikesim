@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <stdexcept>
+#include "config.hpp"
+#include "writers/suspension.hpp"
 
 namespace {
 // Same check for every incoming span — one place only (the binding converts
@@ -32,6 +34,27 @@ Stepper::Stepper(const std::string& mjb_path) {
     mj_forward(m_, d_);
 }
 
+Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
+    : Stepper(mjb_path) {
+    // Config-parse or writer-construction failure must not leak m_/d_:
+    // ~Stepper never runs for an object whose constructor throws.
+    try {
+        if (config.empty())
+            return;   // no sections → every writer stays disabled
+        nativecfg::NativeConfig cfg =
+            nativecfg::native_config_from_dict(config);
+        if (cfg.suspension)
+            suspension_ =
+                std::make_unique<SuspensionWriter>(m_, *cfg.suspension);
+    } catch (...) {
+        mj_deleteData(d_);
+        mj_deleteModel(m_);
+        d_ = nullptr;
+        m_ = nullptr;
+        throw;
+    }
+}
+
 Stepper::~Stepper() { if (d_) mj_deleteData(d_); if (m_) mj_deleteModel(m_); }
 
 void Stepper::set_state(std::span<const double> qpos,
@@ -51,4 +74,13 @@ void Stepper::set_state(std::span<const double> qpos,
     copy_in(act, d_->act);
     copy_in(warmstart, d_->qacc_warmstart);
     d_->time = time;
+}
+
+std::vector<std::pair<std::string, std::vector<double>>>
+Stepper::suspension_components() const {
+    if (!suspension_)
+        throw std::logic_error(
+            "suspension_components: Stepper was built without a suspension "
+            "config (pass the dict from tools.native_config.project)");
+    return suspension_->components(d_);
 }

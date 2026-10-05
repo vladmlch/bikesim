@@ -24,15 +24,19 @@ find_package(nanobind CONFIG REQUIRED)
 # PROTECT_STACK: nanobind otherwise appends -fno-stack-protector in Release
 # configs, which would silently nullify -fstack-protector-strong below.
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
-  src/binding.cpp src/stepper.cpp)
+  src/binding.cpp src/stepper.cpp src/writers/suspension.cpp)
 
 # Strict flags are PRIVATE to our TUs: nanobind's own static-lib sources are
 # not expected to survive this warning set under -Werror.
+# -ffp-contract=off: clang's default (on) fuses mul+add into FMA on arm64 —
+# one rounding instead of two, breaking bitwise parity with the Python
+# oracle, whose interpreter rounds every operation separately.
 target_compile_options(bike_native PRIVATE
   -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion
   -Wdouble-promotion -Wshadow -Wcast-qual -Wformat=2 -Wundef
   -Wimplicit-fallthrough -Wnon-virtual-dtor -Wold-style-cast
   -Woverloaded-virtual -Wnull-dereference -Wunsafe-buffer-usage
+  -ffp-contract=off
   -fstack-protector-strong -ftrivial-auto-var-init=zero -fvisibility=hidden
   -mbranch-protection=standard)
 target_include_directories(bike_native SYSTEM PRIVATE "${MJ_DIR}/include")

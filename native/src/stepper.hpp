@@ -1,13 +1,23 @@
 // stepper.hpp — owns mjModel/mjData; buffers never escape ownership.
 #pragma once
 #include <mujoco/mujoco.h>
+#include <memory>
 #include <ranges>
 #include <span>
 #include <string>
+#include <utility>
+#include <vector>
+#include <nanobind/nanobind.h>
+
+class SuspensionWriter;
 
 class Stepper {
 public:
     explicit Stepper(const std::string& mjb_path);
+    // Config-bridge ctor: the dict from tools.native_config.project(env)
+    // (or an empty dict — every writer stays disabled). The dict is read
+    // ONCE here; nothing keeps a reference into Python objects.
+    Stepper(const std::string& mjb_path, const nanobind::dict& config);
     ~Stepper();
     Stepper(const Stepper&) = delete;
     Stepper& operator=(const Stepper&) = delete;
@@ -39,7 +49,13 @@ public:
     [[nodiscard]] std::span<const double> efc_force() const {
         return std::views::counted(d_->efc_force, d_->nefc); }
     [[nodiscard]] double time() const { return d_->time; }
+    // compute_qfrc_components on the CURRENT mjData — insertion-ordered
+    // (name, nv-vector) pairs, identical to the Python dict. Throws
+    // std::logic_error when constructed without a suspension config.
+    [[nodiscard]] std::vector<std::pair<std::string, std::vector<double>>>
+        suspension_components() const;
 private:
     mjModel* m_;
     mjData* d_;
+    std::unique_ptr<SuspensionWriter> suspension_;
 };

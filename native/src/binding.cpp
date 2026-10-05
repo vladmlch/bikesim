@@ -8,9 +8,11 @@
 // The solved-quantity views (qacc, qfrc_constraint, efc_force) follow
 // the same rule; efc_force's length is d->nefc, which varies per
 // forward — a stored view is not refreshed, re-read the property.
+#include <algorithm>
 #include <cstddef>
 #include <ranges>
 #include <span>
+#include <vector>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/string.h>
@@ -34,11 +36,25 @@ as_view(std::span<const double> v) {
     return nb::ndarray<nb::numpy, const double, nb::shape<-1>>(
         v.data(), {v.size()}, nb::handle());
 }
+// Owning float64 ndarray: the buffer is freed when the array is GC'd, so
+// dict values outlive both the writer's temporaries and the Stepper.
+nb::ndarray<nb::numpy, double, nb::shape<-1>>
+as_owned(std::vector<double> v) {
+    auto* buf = new double[v.size()];
+    std::ranges::copy(v, buf);
+    nb::capsule owner(buf, [](void* p) noexcept {
+        delete[] static_cast<double*>(p);
+    });
+    return nb::ndarray<nb::numpy, double, nb::shape<-1>>(
+        buf, {v.size()}, owner);
+}
 } // namespace
 
 NB_MODULE(bike_native, m) {
     nb::class_<Stepper>(m, "Stepper")
         .def(nb::init<const std::string&>())
+        .def(nb::init<const std::string&, const nb::dict&>(),
+             nb::arg("mjb_path"), nb::arg("config"))
         .def("step", &Stepper::step)
         .def("forward", &Stepper::forward)
         .def("set_state", [](Stepper& s,
@@ -62,6 +78,12 @@ NB_MODULE(bike_native, m) {
         })
         .def_prop_ro("efc_force", [](Stepper& s) {
             return as_view(s.efc_force());
+        })
+        .def("suspension_components", [](Stepper& s) {
+            nb::dict out;
+            for (auto& [name, vec] : s.suspension_components())
+                out[name.c_str()] = as_owned(std::move(vec));
+            return out;
         })
         .def_prop_ro("time", &Stepper::time);
 }

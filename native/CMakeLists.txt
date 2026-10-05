@@ -33,7 +33,8 @@ target_compile_options(bike_native PRIVATE
   -Wdouble-promotion -Wshadow -Wcast-qual -Wformat=2 -Wundef
   -Wimplicit-fallthrough -Wnon-virtual-dtor -Wold-style-cast
   -Woverloaded-virtual -Wnull-dereference -Wunsafe-buffer-usage
-  -fstack-protector-strong -ftrivial-auto-var-init=zero -fvisibility=hidden)
+  -fstack-protector-strong -ftrivial-auto-var-init=zero -fvisibility=hidden
+  -mbranch-protection=standard)
 target_include_directories(bike_native SYSTEM PRIVATE "${MJ_DIR}/include")
 target_compile_definitions(bike_native PRIVATE
   _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST)

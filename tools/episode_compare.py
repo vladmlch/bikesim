@@ -2,6 +2,12 @@
 
 Layer-2 of the correctness bar: same applied controls in, all recorder
 channels out, plus identical first monitor failure (ADR 0001 §6).
+
+Constraint: `EpisodeArtifact.initial` (qpos/qvel/act/ctrl/warmstart) is
+captured but NOT applied here — replay reaches t=0 through the same
+deterministic equilibrium reset as capture, which is bitwise-true
+Python↔Python. The NATIVE replay path (P2+) must apply `ep.initial`
+explicitly or goldens captured from non-fresh states diverge at step 0.
 """
 import inspect
 

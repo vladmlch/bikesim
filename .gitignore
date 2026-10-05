@@ -7,6 +7,8 @@ results/
 *.png
 output/plots/*.png
 output/models/*.xml
+output/divergence_*.json
+output/divergence_*.toml
 MUJOCO_LOG.TXT
 
 # Offline bundles (built artifacts — published as GitHub Releases)

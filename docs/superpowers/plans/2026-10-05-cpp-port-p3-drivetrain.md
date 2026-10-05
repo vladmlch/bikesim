@@ -45,7 +45,7 @@
 - `pedaling`: the eight fields actually read by `PedalingPolicy` (`enabled`, `coast_above_rpm`, `resume_below_rpm`, `stop_time_s`, `coast_cadence_tau_s`, `mash_cadence_rpm`, `mash_torque_nm`, `effort_slew_nm_s`).
 - `shifting`: all `ShiftingConfig` fields, including the cassette list and signed/magnitude slip mode.
 - `assist`: resolved `gain`, `max_torque`, `max_power`, `tau`, `slew`, `engage_torque_nm`, `gate_min_crank_rad_s`, `cutoff_mps`, `taper_width_mps`, optional torque-curve rows, and `mode`; optional profile contains resolved four mode gains and `emtb_full_gain_at_nm`. Serialize runtime `drive.assist` values after profile overrides, not authored synthetic defaults.
-- `battery`: all `BatteryConfig` fields; `hub_stiffness_nm_rad`, `hub_damping_nm_s` from `drive.cfg`.
+- `battery`: all `BatteryConfig` fields; `hub_stiffness_nm_rad`, `hub_damping_nm_s` from `drive.config.freehub_k_nm_rad` and `drive.config.freehub_c_nms`.
 
 The public diagnostic class is `bike_native.DrivePolicies(config: dict)`. It owns typed policies and implements:
 
@@ -56,7 +56,7 @@ policies.pedaling_update(phase_rad, rate_rad_s, required_cadence_rpm,
 policies.shifting_update(cadence_rpm, required_cadence_rpm, dt,
                          pedaling=True, braking=False, rear_in_contact=True,
                          rear_slip_mps=None)  # bool
-policies.shifting_diagnostics()  # same keys/values as Python diagnostics()
+policies.shifting_diagnostics()  # shifter fields plus gear_ratio and torque_factor
 policies.assist_ceiling(shaft_rpm, speed_mps)  # (ceiling, taper)
 policies.assist_step(human_nm, cadence_rpm, speed_mps, braking, dt,
                     torque_request_nm=None, shaft_rpm=None)  # float
@@ -136,7 +136,7 @@ git commit -m "feat(native): port scalar drivetrain policies with bitwise oracle
 
 **Interfaces:**
 
-The drive section contains Task 1 policy config fields plus `transmission_model`, `human_torque_nm`, `human_ripple`, `crank_phase_rad`, `chain_stiffness_n_m`, `chain_damping_ns_m`, `bearing_c_nms`, and `motor_clutch`. Runtime model topology determines actuator IDs and optional rotor, with authored rotor inertia serialized/validated as needed. Names and supported topologies are those resolved by the Python applier. No live model, actuator, or policy object crosses the bridge.
+The drive section contains Task 1 policy config fields plus `drive_mode`, `transmission_model`, `human_torque_nm`, `torque_ripple`, `crank_phase_rad`, `chain_k_n_m`, `chain_c_ns_m`, `bearing_c_nms`, and `motor_clutch`. Runtime model topology determines actuator IDs and optional rotor, with authored rotor inertia serialized/validated as needed. `drive_mode` is the applier's construction-time mode, not a per-call switch. Names and supported topologies are those resolved by the Python applier. No live model, actuator, or policy object crosses the bridge.
 
 `DrivetrainWriter` consumes `mjModel*`, `mjData*`, typed config, and Task 1 policies. It exposes typed methods underlying:
 
@@ -146,7 +146,7 @@ stepper.drive_restart_clock()
 stepper.drive_prepare_pedaling(control, dt, braking=False, active=True,
     advance=True, rear_in_contact=True, rear_slip_mps=None, effort_ceiling_nm=None)
 stepper.drive_components(control, dt, speed_mps, braking=False, active=True,
-    drive_mode='crank_effort', advance=True, sensed_human_torque_nm=0.,
+    advance=True, sensed_human_torque_nm=0.,
     pedaling_state=None, rear_in_contact=True, rear_slip_mps=None)
 # dict of owning arrays, exactly Python compute() component names
 stepper.drive_settle_actuation()  # owning f64[nv] solved transmission force
@@ -164,8 +164,8 @@ Preserve optional policy times/angles/reference/pending-actuation sentinel; mode
 - [ ] **Step 1: Write failing layer-one and solved-interval tests.** Use compiled small scalar planar models with frame/crank/wheels/pedals; add cassette for elastic-chain mode, fixed tendon for ideal mode, and one coefficient per scalar dof for geometric mode. Use the real builder's compiled model helper where practical without invoking slow equilibrium relaxation. Save MJB, load a separate native owner, initialize identical state and clock. Examples for force staging:
 
 ```python
-expected = python_drive.compute(control, dt, speed_mps, braking,
-                                active=True, drive_mode='crank_effort')
+expected = python_drive.compute_components(python_model, python_data, dt,
+    speed_mps=speed_mps, braking=braking, active=True, control=control)
 actual = native.drive_components(control_dict, dt, speed_mps, braking)
 assert set(actual) == set(expected)
 for name in expected:

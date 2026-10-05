@@ -21,6 +21,9 @@ actually read, as a versioned dict::
               'rear': {...},
               'surface_map': {'surface': {...SurfaceSpec fields...},
                               'sections': [{start_m, end_m, surface}]}},
+     'rider_forces': {'paths': [{joint, stiffness_n_m, damping_ns_m,
+                                 preload_deflection_m, unilateral,
+                                 offset_m}, ...]},
     }
 
 The 'tire' section is emitted only for ``backend == 'compliant_2d'`` — the
@@ -30,6 +33,17 @@ is a different, unported writer and is rejected). The material must be a
 ``TireSpec``; a ``TabulatedTireSpec`` follows a different force law the
 native writer does not implement and is rejected here. The surface map is
 serialized with every named surface resolved to its numeric fields.
+
+The 'rider_forces' section is emitted only while
+``sim.rider_forces.active`` — on rider variants without a seated pose
+(e.g. ``articulated_planar``) the applier is inert and no section appears.
+Each entry carries the resolved per-path spring parameters the writer's
+``compute`` reads, plus ``offset_m`` — the current pedal offset
+``set_pedal_offsets`` left on the path (construction state, applied before
+``project`` runs; the config carries effective values, not the crank
+derivation). ``preload_deflection_m`` is emitted evaluated — the body's
+property computes preload/stiffness, and the resulting double is what the
+writer's compute reads.
 
 Every leaf is a builtin int/float/bool/str so the dict crosses nanobind without
 pickle or numpy types. ``schema`` versions the layout: the C++ bridge rejects
@@ -210,6 +224,17 @@ def project(env) -> dict:
         # writer captured an equal-valued one at construction — content is
         # what crosses the boundary.
         out['tire'] = _tire_section(tires, sim.track.surface_map)
+    if sim.rider_forces.active:
+        # _paths order is apply()'s order. Joint names re-resolve through
+        # _resolve_slide on the native side, like the suspension joints.
+        out['rider_forces'] = {'paths': [
+            {'joint': _joint_name(sim.model, p.qposadr),
+             'stiffness_n_m': float(p.body.stiffness_n_m),
+             'damping_ns_m': float(p.body.damping_ns_m),
+             'preload_deflection_m': float(p.body.preload_deflection_m),
+             'unilateral': bool(p.body.unilateral),
+             'offset_m': float(p.offset_m)}
+            for p in sim.rider_forces._paths]}
     return out
 
 

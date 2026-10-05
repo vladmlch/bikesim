@@ -13,6 +13,7 @@ class SuspensionWriter;
 class BrakeWriter;
 class ResistanceWriter;
 class TireWriter;
+class RiderForcesWriter;
 struct TireSideInput;
 
 class Stepper {
@@ -88,6 +89,18 @@ public:
     // The writer itself — snapshots()/diagnostics() are read here by the
     // binding. nullptr without a tire config (callers gate on it).
     [[nodiscard]] const TireWriter* tire() const { return tire_.get(); }
+    // RiderForceApplier.apply on the CURRENT mjData, read back as a vector:
+    // zeros(nv) + each path's force at its dofadr — the 'seated_interfaces'
+    // accumulator row. Throws std::logic_error without a rider_forces
+    // config.
+    [[nodiscard]] std::vector<double> rider_forces_qfrc() const;
+    // ForceAccumulator.total() (force_accumulator.py:47-51): zero-init,
+    // then sequential in-place adds in the GIVEN order — the P2 ordering
+    // contract the native step loop replicates. Each component is checked
+    // like acc.add (width nv, all-finite) before it joins the fold —
+    // std::invalid_argument on violation. Available on every Stepper.
+    [[nodiscard]] std::vector<double>
+        total(std::span<const std::vector<double>> components) const;
 private:
     mjModel* m_;
     mjData* d_;
@@ -95,4 +108,5 @@ private:
     std::unique_ptr<BrakeWriter> brake_;
     std::unique_ptr<ResistanceWriter> resistance_;
     std::unique_ptr<TireWriter> tire_;
+    std::unique_ptr<RiderForcesWriter> rider_forces_;
 };

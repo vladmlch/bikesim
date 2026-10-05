@@ -176,6 +176,37 @@ NB_MODULE(bike_native, m) {
                 out[name.c_str()] = as_owned(std::move(vec));
             return out;
         })
+        .def("rider_forces_qfrc", [](Stepper& s) {
+            return as_owned(s.rider_forces_qfrc());
+        })
+        .def("total", [](Stepper& s, const nb::dict& components) {
+            // Insertion order is the contract: PyDict_Keys preserves it,
+            // and the fold inside Stepper::total mirrors
+            // ForceAccumulator.total() exactly. A value that is not a 1-D
+            // float64 buffer is rejected here, before the fold — acc.add
+            // raises ValueError on malformed components too.
+            std::vector<std::vector<double>> vecs;
+            const nb::list keys = components.keys();
+            vecs.reserve(keys.size());
+            for (nb::handle key : keys) {
+                const std::string name = nb::cast<std::string>(key);
+                const nb::object value = components[key];
+                try {
+                    const auto a = nb::cast<nb::ndarray<
+                        const double, nb::shape<-1>, nb::c_contig>>(value);
+                    const std::span<const double> sv =
+                        std::views::counted(
+                            a.data(),
+                            static_cast<std::ptrdiff_t>(a.size()));
+                    vecs.emplace_back(sv.begin(), sv.end());
+                } catch (const nb::cast_error&) {
+                    throw std::invalid_argument(
+                        "total: component '" + name +
+                        "' must be a 1-D float64 array");
+                }
+            }
+            return as_owned(s.total(vecs));
+        })
         .def("set_tire_state", [](Stepper& s,
                 const std::vector<std::string>& names,
                 const nb::ndarray<const double, nb::shape<-1>,

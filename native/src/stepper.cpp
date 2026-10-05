@@ -1,10 +1,12 @@
 #include "stepper.hpp"
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <stdexcept>
 #include "config.hpp"
 #include "writers/brake.hpp"
 #include "writers/resistance.hpp"
+#include "writers/rider_forces.hpp"
 #include "writers/suspension.hpp"
 #include "writers/tire.hpp"
 
@@ -56,6 +58,9 @@ Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
                 std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
         if (cfg.tire)
             tire_ = std::make_unique<TireWriter>(m_, d_, *cfg.tire);
+        if (cfg.rider_forces)
+            rider_forces_ =
+                std::make_unique<RiderForcesWriter>(m_, *cfg.rider_forces);
     } catch (...) {
         mj_deleteData(d_);
         mj_deleteModel(m_);
@@ -149,4 +154,30 @@ std::vector<double> Stepper::tire_state() const {
 
 const std::vector<std::string>& Stepper::tire_state_names() const {
     return TireWriter::state_names();
+}
+
+std::vector<double> Stepper::rider_forces_qfrc() const {
+    if (!rider_forces_)
+        throw std::logic_error(
+            "rider_forces_qfrc: Stepper was built without a rider_forces "
+            "config (pass the dict from tools.native_config.project)");
+    return rider_forces_->qfrc(d_);
+}
+
+std::vector<double>
+Stepper::total(std::span<const std::vector<double>> components) const {
+    // force_accumulator.py: np.zeros(nv) then `result += value` per
+    // component, in order — one rounded add per element per component.
+    // acc.add's validation (force_accumulator.py:20-22) runs BEFORE the
+    // component joins the fold; same message so pytest.raises can match.
+    std::vector<double> result(static_cast<std::size_t>(m_->nv), 0.0);
+    for (const std::vector<double>& c : components) {
+        if (c.size() != result.size() ||
+            !std::ranges::all_of(
+                c, [](double v) { return std::isfinite(v); }))
+            throw std::invalid_argument("invalid generalized force");
+        for (std::size_t i = 0; i < result.size(); ++i)
+            result[i] += c[i];
+    }
+    return result;
 }

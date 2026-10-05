@@ -165,11 +165,28 @@ struct TireConfig {
     std::optional<SurfaceMap> surface_map;
 };
 
+// RiderForceApplier per-path state (rider_forces.py:35-76): the body's
+// resolved spring params plus the construction-time pedal offset
+// (set_pedal_offsets is applied before project() runs — the config carries
+// the effective offset_m, not the crank derivation). `joint` re-resolves to
+// qposadr/dofadr through _resolve_slide's checks.
+struct RiderPathConfig {
+    std::string joint;
+    double stiffness_n_m, damping_ns_m;
+    double preload_deflection_m, offset_m;
+    bool unilateral;
+};
+
+struct RiderForcesConfig {
+    std::vector<RiderPathConfig> paths;   // _paths order
+};
+
 struct NativeConfig {
     std::optional<SuspensionConfig> suspension;
     std::optional<BrakeConfig> brake;
     std::optional<ResistanceConfig> resistance;
     std::optional<TireConfig> tire;
+    std::optional<RiderForcesConfig> rider_forces;
 };
 
 // --- dict readers ----------------------------------------------------------
@@ -469,6 +486,33 @@ inline TireConfig tire_from_dict(const nb::dict& top) {
     return c;
 }
 
+inline RiderForcesConfig rider_forces_from_dict(const nb::dict& top) {
+    const char* s = "rider_forces";
+    const nb::dict d = detail::req_dict(top, "config", s);
+    RiderForcesConfig c;
+    const nb::object raw = detail::req(d, s, "paths");
+    if (!nb::isinstance<nb::list>(raw) && !nb::isinstance<nb::tuple>(raw))
+        throw std::invalid_argument(
+            "native config: 'rider_forces.paths' must be a sequence of "
+            "dicts");
+    for (nb::handle item : nb::borrow<nb::sequence>(raw)) {
+        if (!nb::isinstance<nb::dict>(item))
+            throw std::invalid_argument(
+                "native config: 'rider_forces.paths' entries must be dicts");
+        const nb::dict p = nb::borrow<nb::dict>(item);
+        const char* sp = "rider_forces.paths";
+        c.paths.push_back({
+            detail::req_str(p, sp, "joint"),
+            detail::req_f64(p, sp, "stiffness_n_m"),
+            detail::req_f64(p, sp, "damping_ns_m"),
+            detail::req_f64(p, sp, "preload_deflection_m"),
+            detail::req_f64(p, sp, "offset_m"),
+            detail::req_bool(p, sp, "unilateral"),
+        });
+    }
+    return c;
+}
+
 // Whole-config reader: an empty dict disables every writer (checked by the
 // caller before this runs); a non-empty one must name the schema and may
 // carry each writer's section.
@@ -486,6 +530,8 @@ inline NativeConfig native_config_from_dict(const nb::dict& d) {
         c.resistance = resistance_from_dict(d);
     if (d.contains("tire"))
         c.tire = tire_from_dict(d);
+    if (d.contains("rider_forces"))
+        c.rider_forces = rider_forces_from_dict(d);
     return c;
 }
 

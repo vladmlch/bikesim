@@ -19,6 +19,7 @@
 // numpy may use, so scalar loops stay bitwise-correct.
 #include "resistance.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <ranges>
@@ -211,14 +212,14 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
             cfg_.wind_world_mps[static_cast<std::size_t>(i)];
 
     // external_resistance.py:37-42 — _drag_force: planar gate, then
-    // -.5*rho*cda*norm(v)*v with norm = sqrt(add.reduce(v*v)). For a
-    // 3-vector numpy's reduce is a sequential fold ((0+s0)+s1)+s2 and
-    // np.sqrt is libm sqrt — both reproduced scalar here.
+    // -.5*rho*cda*norm(v)*v. np.linalg.norm's fast path on a real 1-D
+    // vector is `x.dot(x)` → cblas_ddot (numpy/linalg/_linalg.py:2767),
+    // not a sequential fold — same-libcall contract applies here too.
+    // np.sqrt is libm sqrt.
     if (relative[1] != 0.0)
         throw std::invalid_argument("drag velocity must be planar X-Z");
     const double norm = std::sqrt(
-        (relative[0] * relative[0] + relative[1] * relative[1]) +
-        relative[2] * relative[2]);
+        cblas_ddot(3, relative.data(), 1, relative.data(), 1));
     const double t =
         ((-0.5 * cfg_.rho_kg_m3) * cfg_.cda_m2) * norm;
     std::array<double, 3> force;

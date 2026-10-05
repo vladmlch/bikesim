@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 import mujoco
-import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'native' / 'build'))
@@ -17,5 +16,6 @@ def test_native_step_matches_python_bitwise():
     mujoco.mj_forward(ref, data)
     for _ in range(200):
         native.step(); mujoco.mj_step(ref, data)
-    assert np.array_equal(native.qpos, data.qpos)   # bitwise, not isclose
-    assert np.array_equal(native.qvel, data.qvel)
+    from _bits import assert_bitwise_equal
+    assert_bitwise_equal(native.qpos, data.qpos, 'qpos')
+    assert_bitwise_equal(native.qvel, data.qvel, 'qvel')

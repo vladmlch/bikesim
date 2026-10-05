@@ -49,7 +49,8 @@ int actuator_id(const mjModel* m, const char* name) {
     const int id = mj_name2id(m, mjOBJ_ACTUATOR, name);
     if (id < 0)
         throw std::invalid_argument("model has no actuator '" +
-                                    std::string(name) + "'");
+                                    std::string(name) +
+                                    "'; the ride torque path needs it");
     return id;
 }
 

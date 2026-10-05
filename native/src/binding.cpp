@@ -112,9 +112,12 @@ NB_MODULE(bike_native, m) {
         .def("brake_torques", &Stepper::brake_torques)
         .def("apply_brake", &Stepper::apply_brake)
         .def("resistance_components", [](Stepper& s, const nb::dict& snaps) {
+            // Named locals in Python's dict order — arg eval order is
+            // unspecified, so on malformed input the 'front' error must win.
+            TireSideInput front = side_input(snaps, "front");
+            TireSideInput rear = side_input(snaps, "rear");
             nb::dict out;
-            for (auto& [name, vec] : s.resistance_components(
-                     side_input(snaps, "front"), side_input(snaps, "rear")))
+            for (auto& [name, vec] : s.resistance_components(front, rear))
                 out[name.c_str()] = as_owned(std::move(vec));
             return out;
         })

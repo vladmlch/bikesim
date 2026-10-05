@@ -17,6 +17,7 @@ struct CruiseState;
 class ResistanceWriter;
 class TireWriter;
 class RiderForcesWriter;
+namespace drivetrain { class DrivetrainWriter; }
 struct TireSideInput;
 
 class Stepper {
@@ -31,6 +32,18 @@ public:
     Stepper& operator=(const Stepper&) = delete;
     void step() { mj_step(m_, d_); }
     void forward() { mj_forward(m_, d_); }
+    // Internal typed access for the private per-call drivetrain oracle adapter.
+    [[nodiscard]] mjModel* model() const { return m_; }
+    [[nodiscard]] mjData* data() const { return d_; }
+    drivetrain::DrivetrainWriter& drive() const;
+    void set_inputs(std::span<const double> ctrl,
+                    std::span<const double> force);
+    [[nodiscard]] std::span<const double> qfrc_applied() const {
+        return std::views::counted(d_->qfrc_applied, m_->nv);
+    }
+    [[nodiscard]] std::span<const double> actuator_force() const {
+        return std::views::counted(d_->actuator_force, m_->nu);
+    }
     // Restore a solver-relevant snapshot (qpos/qvel/act/qacc_warmstart/time)
     // exactly as `mj_resetData` + buffer writes do in Python. Widths are
     // checked against the model BEFORE reset — a bad argument must not
@@ -126,4 +139,5 @@ private:
     std::unique_ptr<ResistanceWriter> resistance_;
     std::unique_ptr<TireWriter> tire_;
     std::unique_ptr<RiderForcesWriter> rider_forces_;
+    std::unique_ptr<drivetrain::DrivetrainWriter> drive_;
 };

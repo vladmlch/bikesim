@@ -10,6 +10,7 @@
 #include "writers/rider_forces.hpp"
 #include "writers/suspension.hpp"
 #include "writers/tire.hpp"
+#include "writers/drivetrain.hpp"
 
 namespace {
 // Same check for every incoming span — one place only (the binding converts
@@ -64,7 +65,10 @@ Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
         if (cfg.rider_forces)
             rider_forces_ =
                 std::make_unique<RiderForcesWriter>(m_, *cfg.rider_forces);
+        if (cfg.drive)
+            drive_ = std::make_unique<DrivetrainWriter>(m_, d_, *cfg.drive);
     } catch (...) {
+        drive_.reset();
         mj_deleteData(d_);
         mj_deleteModel(m_);
         d_ = nullptr;
@@ -73,7 +77,31 @@ Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
     }
 }
 
-Stepper::~Stepper() { if (d_) mj_deleteData(d_); if (m_) mj_deleteModel(m_); }
+Stepper::~Stepper() {
+    drive_.reset();
+    if (d_) mj_deleteData(d_);
+    if (m_) mj_deleteModel(m_);
+}
+
+drivetrain::DrivetrainWriter& Stepper::drive() const {
+    if (!drive_)
+        throw std::logic_error("Stepper was built without a drive config");
+    return *drive_;
+}
+void Stepper::set_inputs(std::span<const double> ctrl,
+                         std::span<const double> force) {
+    check_width(ctrl, "ctrl", m_->nu);
+    check_width(force, "qfrc_applied", m_->nv);
+    for (double x : ctrl)
+        if (!std::isfinite(x)) throw std::invalid_argument("non-finite ctrl");
+    for (double x : force)
+        if (!std::isfinite(x))
+            throw std::invalid_argument("non-finite qfrc_applied");
+    const std::vector<double> saved_ctrl(ctrl.begin(), ctrl.end());
+    const std::vector<double> saved_force(force.begin(), force.end());
+    copy_in(saved_ctrl, d_->ctrl);
+    copy_in(saved_force, d_->qfrc_applied);
+}
 
 CruiseWriter& Stepper::require_cruise() const {
     if (!cruise_)

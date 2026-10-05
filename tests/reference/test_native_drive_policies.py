@@ -1,5 +1,6 @@
 """Scalar policies: unchanged Python oracles, complete snapshots, atomic replay."""
 import copy
+import os
 from dataclasses import asdict, replace
 import gc
 from pathlib import Path
@@ -18,6 +19,11 @@ from bike_sim.sim.ride.drivetrain_forces import DrivetrainForceApplier
 from _bits import assert_bitwise_equal
 
 BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
+selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
+if selected not in ('', 'asan'):
+    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or asan')
+if selected == 'asan':
+    BUILD /= 'asan'
 sys.path.insert(0, str(BUILD))
 import bike_native
 assert Path(bike_native.__file__).resolve().parent == BUILD.resolve()

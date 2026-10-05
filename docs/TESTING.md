@@ -119,3 +119,72 @@ explicit FMA yield `0x1.37a0be82fa0bfp+6`. The port uses explicit `std::fma` onl
 in interpolation; `-ffp-contract=off` stays active for Python scalar equations.
 A different NumPy build or platform requires repeating the bytewise gate.
 These scalar checks do not establish whole-episode drivetrain equivalence.
+
+### P3 model-owned drivetrain
+
+Task 2 follows the scalar-policy gate: first chain geometry and the typed
+ideal/geometric transmission per-call gate, then the writer, complete snapshots,
+and solved energy accounting. `_drive_core` is a private per-call test adapter
+on the existing Stepper owner; it reuses `Transmission` and the writer snapshot
+conversion. It does not introduce a simulation owner or a step loop.
+
+```bash
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_drivetrain.py tests/reference/test_native_drive_policies.py -q
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target check_frontends
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build/asan -j4
+```
+
+Run the same two test modules against `native/build/asan`, with
+`NATIVE_TEST_BUILD_DIR=asan`, `ASAN_OPTIONS=detect_leaks=0`, and the toolchain
+ASan dylib in `DYLD_INSERT_LIBRARIES` passed through `uv run env ... python`.
+Prepend that build directory before importing and assert the extension path.
+The policy and drivetrain tests accept exactly the regular or explicitly
+selected sanitizer build; neither permits an arbitrary extension fallback.
+
+All three transmission models (`elastic_chain`, `ideal_mid_drive`,
+`geometric_ideal_mid_drive`) support the four construction-time drive modes.
+Effort modes require `mid_drive`; articulated effort excludes `human_crank`.
+Passive modes permit no human or motor actuator. Ideal effort modes support
+an optional legacy crank clutch or an inertial rotor freewheel, exclusively.
+Elastic mode needs cassette/rear-wheel sibling bodies; geometric mode needs
+one fixed-tendon coefficient per scalar coordinate, and planar sprocket frames.
+Automatic shifting needs an ideal transmission. Rotor/clutch passive modes
+and unknown modes/models fail explicitly. Projection copies initial config
+gearing; it does not serialize the shifter's changed rear sprocket as reset gear.
+
+`drive_state()` has exactly these top-level fields:
+`policies`, `shift_time_s`, `last_time_s`, `reference`, `psi`, `angles`, `last`,
+`probe_last`, `pending_actuation`, `ideal_hub`, `clutch`, and `freewheel`.
+`policies` uses the five scalar schemas above; its `hub` is `None` for ideal
+models. Angles are `None` before initialization, otherwise one crank angle for
+ideal models or crank/cassette angles for elastic models. Optional clocks,
+reference, psi, pending actuation, probe diagnostics, and absent transmissions
+retain `None`. Pending actuation contains `requested`, `omega`, `dt`, `enabled`.
+
+Each transmission snapshot contains `ratio`, `rear_teeth`, `boundary`,
+`prepared`, `diagnostics`, `shift_pending`, `shift_parameter_work_j`,
+`shift_constraint_work_j`, `last_tension_n`, `range` (two model tendon limits),
+and `coefficients` (one driver coefficient for ideal, nv coefficients for
+geometric). Geometric `prepared` contains `phi`, `time`, `jacobian` and `qpos`;
+the two vectors are nv wide. Every field is owning. Restoration parses and
+validates all sections, enum/bool/integer/numeric types, vector widths and
+positive ratios before changing policies or model coefficients/limits.
+Detached `mjData` handles model constants and endpoint geometry. No derived
+solver arrays or Python engine addresses are restored across the FFI.
+
+Coverage compares every force channel, control, diagnostic and mutable state
+with unchanged Python algorithms, including forward multi-turn angles,
+shifts, probes, reset/restart, injected state and both effort modes. Genuine
+8–10-step solves cover dense/sparse Jacobians, unrelated joint-limit rows,
+wheel/rotor overrun, both clutch topologies, actual motor delivery below its
+request, disabled/depleted batteries, and energy ceilings. `set_inputs` accepts
+finite nu/nv arrays and snapshots both before either write, including crossed
+aliases. Probe diagnostics are separate while live policy/transmission state
+is preserved; force/control writes follow Python behavior.
+
+These gates establish per-call and short solved-interval parity on the pinned
+MuJoCo/libm/NumPy/Accelerate platform. They do not establish long episode
+acceptance, an allocation-free P4 tick, viewer integration, or a speedup.
+After task reviews the controller runs the quick profile once; the previously
+measured eight-minute full suite is not repeated in this increment.

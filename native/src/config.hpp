@@ -19,6 +19,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
+#include "drivetrain/drive_binding.hpp"
 
 namespace nb = nanobind;
 
@@ -189,6 +190,7 @@ struct RiderForcesConfig {
 };
 
 struct NativeConfig {
+    std::optional<drivetrain::DriveConfig> drive;
     std::optional<CruiseConfig> cruise;
     std::optional<SuspensionConfig> suspension;
     std::optional<BrakeConfig> brake;
@@ -530,6 +532,8 @@ inline NativeConfig native_config_from_dict(const nb::dict& d) {
         throw std::invalid_argument(
             "native config: unsupported schema " + std::to_string(schema));
     NativeConfig c;
+    if (d.contains("drive"))
+        c.drive = parse_drive_config(detail::req_dict(d, "config", "drive"));
     if (d.contains("cruise")) {
         const auto section = detail::req_dict(d, "config", "cruise");
         c.cruise = CruiseConfig{

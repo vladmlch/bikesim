@@ -177,6 +177,17 @@ def project_drive_policies(drive) -> dict:
     }
 
 
+def project_drive(drive) -> dict:
+    """Own construction-time drivetrain setup; runtime snapshots are separate."""
+    cfg = drive.config
+    return {**project_drive_policies(drive), 'drive_mode':str(drive.drive_mode),
+            'transmission_model':str(cfg.transmission_model),
+            'motor_clutch':bool(cfg.motor_clutch),
+            **{key:float(getattr(cfg,key)) for key in
+               ('human_torque_nm','torque_ripple','crank_phase_rad','chain_k_n_m',
+                'chain_c_ns_m','bearing_c_nms_rad','rotor_inertia_kgm2')}}
+
+
 def project(env) -> dict:
     """Emit the native config dict for env (or a bare RideSimulation)."""
     sim = getattr(env, 'sim', env)
@@ -286,7 +297,11 @@ def project(env) -> dict:
             'ki_nm_per_mps_s': float(cruise.ki_nm_per_mps_s),
             'torque_ceiling_nm': float(cruise.torque_ceiling_nm),
         }
+    physical = getattr(sim, 'physical', None)
+    drive = getattr(physical, 'drive', None)
+    if drive is not None:
+        out['drive'] = project_drive(drive)
     return out
 
 
-__all__ = ['project', 'project_drive_policies', 'SCHEMA']
+__all__ = ['project', 'project_drive_policies', 'project_drive', 'SCHEMA']

@@ -23,6 +23,7 @@
 #include <nanobind/stl/vector.h>
 #include "stepper.hpp"
 #include "drivetrain/policy_binding.hpp"
+#include "drivetrain/drive_binding.hpp"
 #include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
 #include "writers/tire.hpp"
@@ -144,7 +145,8 @@ OwnedTireSideInput side_input(const nb::dict& snaps, const char* side) {
 
 NB_MODULE(bike_native, m) {
     bind_drive_policies(m);
-    nb::class_<Stepper>(m, "Stepper")
+    auto stepper_class = nb::class_<Stepper>(m, "Stepper");
+    stepper_class
         .def(nb::init<const std::string&>())
         .def(nb::init<const std::string&, const nb::dict&>(),
              nb::arg("mjb_path"), nb::arg("config"))
@@ -334,4 +336,5 @@ NB_MODULE(bike_native, m) {
             return out;
         })
         .def_prop_ro("time", &Stepper::time);
+    bind_drivetrain(m, stepper_class);
 }

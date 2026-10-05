@@ -522,10 +522,14 @@ git commit -m "feat(tools): divergence-horizon measurement — bounds the determ
 
 ```python
 """Native mj_step is bitwise-identical to Python mj_step — same dylib."""
+import sys
+from pathlib import Path
+
 import mujoco
 import numpy as np
 import pytest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'native' / 'build'))
 MJB = 'tools/proto_native_bench/artifacts/model.mjb'
 
 def test_native_step_matches_python_bitwise():
@@ -555,6 +559,9 @@ project(bike_native CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Pin the SDK the toolchain understands — the CLT ld cannot parse arm64e.x1
+# in the 27.0 SDK's .tbd (hit during the microbench build).
+set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk")
 
 execute_process(COMMAND python -c "import mujoco,os;print(os.path.dirname(mujoco.__file__))"
   OUTPUT_VARIABLE MJ_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)

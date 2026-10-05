@@ -10,12 +10,15 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 
 namespace nb = nanobind;
 
@@ -95,8 +98,31 @@ struct SuspensionConfig {
     EndStopConfig end_stops;
 };
 
+// BrakeController fields (braking.py:39-65): ceiling and taper band. The
+// wheel/actuator names it resolves are literals in the Python source, so
+// they live in the writer, not the config.
+struct BrakeConfig {
+    double torque_ceiling_nm;
+    double taper_radps;
+};
+
+// ResistanceConfig fields ExternalResistanceApplier reads (physical_config.
+// py:266-284), plus the body names its __init__ resolves — literals there
+// too, emitted so a differently-named model stays describable.
+struct ResistanceConfig {
+    double crr;
+    double rolling_taper_rad_s;
+    double rho_kg_m3;
+    double cda_m2;
+    std::array<double, 3> wind_world_mps;
+    std::array<double, 3> point_body_m;
+    std::string frame_body, front_wheel_body, rear_wheel_body;
+};
+
 struct NativeConfig {
     std::optional<SuspensionConfig> suspension;
+    std::optional<BrakeConfig> brake;
+    std::optional<ResistanceConfig> resistance;
 };
 
 // --- dict readers ----------------------------------------------------------
@@ -133,6 +159,25 @@ inline bool req_bool(const nb::dict& d, const char* s, const char* k) {
 }
 inline std::string req_str(const nb::dict& d, const char* s, const char* k) {
     return nb::cast<std::string>(req(d, s, k));
+}
+
+// Exactly-three-floats sequence reader (wind_world_mps / point_body_m). A
+// non-sequence or wrong length raises naming the key, like req_* above.
+inline std::array<double, 3> req_vec3(const nb::dict& d, const char* s,
+                                      const char* k) {
+    std::vector<double> v;
+    try {
+        v = nb::cast<std::vector<double>>(req(d, s, k));
+    } catch (const nb::cast_error&) {
+        throw std::invalid_argument(
+            "native config: '" + std::string(s) + "." + k +
+            "' must be a sequence of 3 floats");
+    }
+    if (v.size() != 3)
+        throw std::invalid_argument(
+            "native config: '" + std::string(s) + "." + k +
+            "' must have exactly 3 elements");
+    return {v[0], v[1], v[2]};
 }
 
 inline DamperCore damper_core(const nb::dict& d, const char* s) {
@@ -245,6 +290,33 @@ inline SuspensionConfig suspension_from_dict(const nb::dict& top) {
     return c;
 }
 
+inline BrakeConfig brake_from_dict(const nb::dict& top) {
+    const char* s = "brake";
+    const nb::dict d = detail::req_dict(top, "config", s);
+    BrakeConfig c;
+    c.torque_ceiling_nm = detail::req_f64(d, s, "torque_ceiling_nm");
+    c.taper_radps = detail::req_f64(d, s, "taper_radps");
+    return c;
+}
+
+inline ResistanceConfig resistance_from_dict(const nb::dict& top) {
+    const char* s = "resistance";
+    const nb::dict d = detail::req_dict(top, "config", s);
+    ResistanceConfig c;
+    c.crr = detail::req_f64(d, s, "crr");
+    c.rolling_taper_rad_s = detail::req_f64(d, s, "rolling_taper_rad_s");
+    c.rho_kg_m3 = detail::req_f64(d, s, "rho_kg_m3");
+    c.cda_m2 = detail::req_f64(d, s, "cda_m2");
+    c.wind_world_mps = detail::req_vec3(d, s, "wind_world_mps");
+    c.point_body_m = detail::req_vec3(d, s, "point_body_m");
+    const nb::dict b = detail::req_dict(d, s, "bodies");
+    const char* sb = "resistance.bodies";
+    c.frame_body = detail::req_str(b, sb, "frame");
+    c.front_wheel_body = detail::req_str(b, sb, "front_wheel");
+    c.rear_wheel_body = detail::req_str(b, sb, "rear_wheel");
+    return c;
+}
+
 // Whole-config reader: an empty dict disables every writer (checked by the
 // caller before this runs); a non-empty one must name the schema and may
 // carry each writer's section.
@@ -256,6 +328,10 @@ inline NativeConfig native_config_from_dict(const nb::dict& d) {
     NativeConfig c;
     if (d.contains("suspension"))
         c.suspension = suspension_from_dict(d);
+    if (d.contains("brake"))
+        c.brake = brake_from_dict(d);
+    if (d.contains("resistance"))
+        c.resistance = resistance_from_dict(d);
     return c;
 }
 

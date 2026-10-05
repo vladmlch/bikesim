@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <stdexcept>
 #include "config.hpp"
+#include "writers/brake.hpp"
+#include "writers/resistance.hpp"
 #include "writers/suspension.hpp"
 
 namespace {
@@ -46,6 +48,11 @@ Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
         if (cfg.suspension)
             suspension_ =
                 std::make_unique<SuspensionWriter>(m_, *cfg.suspension);
+        if (cfg.brake)
+            brake_ = std::make_unique<BrakeWriter>(m_, *cfg.brake);
+        if (cfg.resistance)
+            resistance_ =
+                std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
     } catch (...) {
         mj_deleteData(d_);
         mj_deleteModel(m_);
@@ -83,4 +90,31 @@ Stepper::suspension_components() const {
             "suspension_components: Stepper was built without a suspension "
             "config (pass the dict from tools.native_config.project)");
     return suspension_->components(d_);
+}
+
+std::pair<double, double>
+Stepper::brake_torques(double front_demand, double rear_demand) const {
+    if (!brake_)
+        throw std::logic_error(
+            "brake_torques: Stepper was built without a brake config (pass "
+            "the dict from tools.native_config.project)");
+    return brake_->torques(d_, front_demand, rear_demand);
+}
+
+void Stepper::apply_brake(double front_demand, double rear_demand) {
+    if (!brake_)
+        throw std::logic_error(
+            "apply_brake: Stepper was built without a brake config (pass "
+            "the dict from tools.native_config.project)");
+    brake_->apply(d_, front_demand, rear_demand);
+}
+
+std::vector<std::pair<std::string, std::vector<double>>>
+Stepper::resistance_components(const TireSideInput& front,
+                               const TireSideInput& rear) const {
+    if (!resistance_)
+        throw std::logic_error(
+            "resistance_components: Stepper was built without a resistance "
+            "config (pass the dict from tools.native_config.project)");
+    return resistance_->components(d_, front, rear);
 }

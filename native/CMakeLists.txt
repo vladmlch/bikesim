@@ -24,7 +24,8 @@ find_package(nanobind CONFIG REQUIRED)
 # PROTECT_STACK: nanobind otherwise appends -fno-stack-protector in Release
 # configs, which would silently nullify -fstack-protector-strong below.
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
-  src/binding.cpp src/stepper.cpp src/writers/suspension.cpp)
+  src/binding.cpp src/stepper.cpp src/writers/suspension.cpp
+  src/writers/brake.cpp src/writers/resistance.cpp)
 
 # Strict flags are PRIVATE to our TUs: nanobind's own static-lib sources are
 # not expected to survive this warning set under -Werror.
@@ -53,6 +54,12 @@ if(NATIVE_SANITIZE)
 endif()
 
 target_link_libraries(bike_native PRIVATE "${MJ_DIR}/libmujoco.3.12.0.dylib")
+
+# The resistance writer calls the legacy CBLAS symbols numpy's `@`/`np.dot`
+# resolve to on this platform (numpy's BLAS is Apple Accelerate — see
+# writers/resistance.cpp). The symbols stay exported; only the SDK headers
+# deprecate them, so the TU declares the prototypes itself.
+target_link_libraries(bike_native PRIVATE "-framework Accelerate")
 
 # The dylib's install name (@rpath/mujoco.framework/...) is unresolvable on
 # its own — the wheel ships the dylib flat under mujoco/, with no framework

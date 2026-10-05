@@ -10,6 +10,9 @@
 #include <nanobind/nanobind.h>
 
 class SuspensionWriter;
+class BrakeWriter;
+class ResistanceWriter;
+struct TireSideInput;
 
 class Stepper {
 public:
@@ -48,14 +51,30 @@ public:
     // (mjModel has no nefc member; do not look there.)
     [[nodiscard]] std::span<const double> efc_force() const {
         return std::views::counted(d_->efc_force, d_->nefc); }
+    // d.ctrl is an actuator INPUT buffer (nu wide) — the brake writer's
+    // output surface; kept readable so tests can verify the write path.
+    [[nodiscard]] std::span<const double> ctrl() const {
+        return std::views::counted(d_->ctrl, m_->nu); }
     [[nodiscard]] double time() const { return d_->time; }
     // compute_qfrc_components on the CURRENT mjData — insertion-ordered
     // (name, nv-vector) pairs, identical to the Python dict. Throws
     // std::logic_error when constructed without a suspension config.
     [[nodiscard]] std::vector<std::pair<std::string, std::vector<double>>>
         suspension_components() const;
+    // BrakeController.compute — (front, rear) torques at the current qvel.
+    [[nodiscard]] std::pair<double, double>
+        brake_torques(double front_demand, double rear_demand) const;
+    // compute() + the ctrl writes (ride_sim.py:530-534).
+    void apply_brake(double front_demand, double rear_demand);
+    // ExternalResistanceApplier.compute_components — 'road_rolling' +
+    // 'aerodynamic' for the given per-side tire snapshots.
+    [[nodiscard]] std::vector<std::pair<std::string, std::vector<double>>>
+        resistance_components(const TireSideInput& front,
+                              const TireSideInput& rear) const;
 private:
     mjModel* m_;
     mjData* d_;
     std::unique_ptr<SuspensionWriter> suspension_;
+    std::unique_ptr<BrakeWriter> brake_;
+    std::unique_ptr<ResistanceWriter> resistance_;
 };

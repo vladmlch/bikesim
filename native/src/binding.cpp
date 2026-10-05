@@ -12,11 +12,14 @@
 #include <cstddef>
 #include <ranges>
 #include <span>
+#include <stdexcept>
 #include <vector>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 #include "stepper.hpp"
+#include "writers/resistance.hpp"
 
 namespace nb = nanobind;
 
@@ -48,6 +51,32 @@ as_owned(std::vector<double> v) {
     return nb::ndarray<nb::numpy, double, nb::shape<-1>>(
         buf, {v.size()}, owner);
 }
+// One tire-snapshot side, flat-array schema:
+// {'patch_loads': f64[n], 'patch_working': bool[n], 'eff_radius': float}.
+// Spans alias the caller's numpy arrays — valid for the call's duration.
+TireSideInput side_input(const nb::dict& snaps, const char* side) {
+    if (!snaps.contains(side))
+        throw std::invalid_argument(
+            "resistance_components: missing side '" + std::string(side) +
+            "'");
+    const nb::dict d = nb::cast<nb::dict>(snaps[side]);
+    const auto arr = [&d, side](const char* key) -> nb::object {
+        if (!d.contains(key))
+            throw std::invalid_argument(
+                "resistance_components: '" + std::string(side) + "." + key +
+                "' is required");
+        return d[key];
+    };
+    using F64 = nb::ndarray<const double, nb::shape<-1>, nb::c_contig>;
+    using B1 = nb::ndarray<const bool, nb::shape<-1>, nb::c_contig>;
+    const F64 loads = nb::cast<F64>(arr("patch_loads"));
+    const B1 working = nb::cast<B1>(arr("patch_working"));
+    return {std::views::counted(loads.data(),
+                              static_cast<std::ptrdiff_t>(loads.size())),
+            std::views::counted(working.data(),
+                              static_cast<std::ptrdiff_t>(working.size())),
+            nb::cast<double>(arr("eff_radius"))};
+}
 } // namespace
 
 NB_MODULE(bike_native, m) {
@@ -78,6 +107,16 @@ NB_MODULE(bike_native, m) {
         })
         .def_prop_ro("efc_force", [](Stepper& s) {
             return as_view(s.efc_force());
+        })
+        .def_prop_ro("ctrl", [](Stepper& s) { return as_view(s.ctrl()); })
+        .def("brake_torques", &Stepper::brake_torques)
+        .def("apply_brake", &Stepper::apply_brake)
+        .def("resistance_components", [](Stepper& s, const nb::dict& snaps) {
+            nb::dict out;
+            for (auto& [name, vec] : s.resistance_components(
+                     side_input(snaps, "front"), side_input(snaps, "rear")))
+                out[name.c_str()] = as_owned(std::move(vec));
+            return out;
         })
         .def("suspension_components", [](Stepper& s) {
             nb::dict out;

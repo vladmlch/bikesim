@@ -1,0 +1,189 @@
+"""Native brake + resistance writers are bitwise-equal to the Python writers.
+
+Dual-run oracle per stored golden state (mirrors the T2 oracle): a fresh
+``MjData`` on the saved ``model.mjb`` is reset to ``state_*[k]`` and forwarded,
+then the PYTHON writer objects from the capturing env
+(``env.sim.brakes`` / ``env.sim.physical.resistance``) run on it — this
+exercises input-derivation too, not just the artifact. The native writers run
+through ``Stepper(path, project(env))``.
+"""
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
+import mujoco
+import numpy as np
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'native' / 'build'))
+
+from _bits import assert_bitwise_equal
+
+MJB = 'tools/proto_native_bench/artifacts/model.mjb'
+
+# Demand sweep: interior points, both ends, and out-of-range values for the
+# clamp path (braking.py:102 clamps into [0, 1] rather than rejecting).
+DEMANDS = (0.0, 0.3, 0.7, 1.0, -0.2, 1.5)
+
+
+def _golden(tmp_path, steps=40):
+    from bike_sim.cli import research as research_cli
+    from test_pinned_topology import _pinned_config
+    from tools.golden_episode import capture_episode, save
+    from bike_sim.sim.ride.control import RideControl
+    args = research_cli.parser().parse_args([
+        '--physics-config', str(_pinned_config(tmp_path)),
+        '--track-file', 'examples/research/rough_uphill_savage.toml',
+        '--duration', '1', '--dt', '.00125', '--diagnostic-model-limits',
+        '--out', str(tmp_path/'out')])
+    env = research_cli.make_environment(args)
+    ep = capture_episode(env, steps, RideControl(human_torque_nm=35.))
+    save(ep, tmp_path/'g', env.sim.model)
+    return env, tmp_path/'g'
+
+
+def _restore(model, data, ep, k):
+    mujoco.mj_resetData(model, data)
+    data.qpos[:] = ep.state_qpos[k]
+    data.qvel[:] = ep.state_qvel[k]
+    data.act[:] = ep.state_act[k]
+    data.qacc_warmstart[:] = ep.state_warmstart[k]
+    data.time = float(ep.state_time[k])
+    mujoco.mj_forward(model, data)
+
+
+def _py_snapshots(row):
+    """Manifest tire-snapshot row -> duck-typed objects for
+    ``compute_components``: SimpleNamespace with ``patches`` /
+    ``effective_radius_m``; patches carry ``normal_load_n`` /
+    ``working_surface``."""
+    out = {}
+    for side, snap in row.items():
+        out[side] = SimpleNamespace(
+            effective_radius_m=float(snap['effective_radius_m']),
+            patches=[SimpleNamespace(
+                normal_load_n=float(p['normal_load_n']),
+                working_surface=bool(p['working_surface']))
+                for p in snap['patches']])
+    return out
+
+
+def _native_snapshots(row):
+    """The same row in the flat-array schema the binding consumes:
+    ``{side: {'patch_loads': f64[n], 'patch_working': bool[n],
+    'eff_radius': float}}``."""
+    out = {}
+    for side, snap in row.items():
+        out[side] = {
+            'patch_loads': np.array([float(p['normal_load_n'])
+                                     for p in snap['patches']]),
+            'patch_working': np.array([bool(p['working_surface'])
+                                       for p in snap['patches']]),
+            'eff_radius': float(snap['effective_radius_m']),
+        }
+    return out
+
+
+@pytest.mark.slow
+def test_brake_torques_and_apply_bitwise(tmp_path):
+    bike_native = pytest.importorskip('bike_native')
+    from tools.golden_episode import load_episode
+    from tools.native_config import project
+    env, g = _golden(tmp_path)
+    ep = load_episode(g)
+    ref = mujoco.MjModel.from_binary_path(str(g/'model.mjb'))
+    dref = mujoco.MjData(ref)
+    st = bike_native.Stepper(str(g/'model.mjb'), project(env))
+    brake = env.sim.brakes     # BrakeController — the braking.py writer
+    front_adr = mujoco.mj_name2id(ref, mujoco.mjtObj.mjOBJ_ACTUATOR,
+                                  'front_brake')
+    rear_adr = mujoco.mj_name2id(ref, mujoco.mjtObj.mjOBJ_ACTUATOR,
+                                 'rear_brake')
+    for k in range(len(ep.state_qpos)):
+        _restore(ref, dref, ep, k)
+        st.set_state(ep.state_qpos[k], ep.state_qvel[k], ep.state_act[k],
+                     ep.state_warmstart[k], float(ep.state_time[k]))
+        st.forward()
+        # The episode was captured with front=rear=0: the golden ctrl rows
+        # verify the write path only trivially — every brake adr is 0.
+        assert ep.ctrl_written[k][front_adr] == 0.0
+        assert ep.ctrl_written[k][rear_adr] == 0.0
+        for f in DEMANDS:
+            for r in DEMANDS:
+                ef, er = brake.compute(dref, f, r)
+                nf, nr = st.brake_torques(f, r)
+                assert_bitwise_equal(np.asarray([nf, nr]),
+                                     np.asarray([ef, er]),
+                                     f'brake_torques({f},{r}) step {k}')
+                # apply_brake must write the SAME torques into d.ctrl at the
+                # two brake actuator addresses — and nothing else. Both sides
+                # sit on freshly reset data (ctrl all-zero apart from these
+                # slots: mj_resetData clears it, and only the two brake
+                # addresses are ever written between restores).
+                dref.ctrl.fill(0.)
+                dref.ctrl[front_adr] = ef
+                dref.ctrl[rear_adr] = er
+                st.apply_brake(f, r)
+                assert_bitwise_equal(np.asarray(st.ctrl),
+                                     np.asarray(dref.ctrl),
+                                     f'apply_brake({f},{r}) step {k}')
+
+
+@pytest.mark.slow
+def test_resistance_components_bitwise(tmp_path):
+    bike_native = pytest.importorskip('bike_native')
+    from tools.golden_episode import load_episode
+    from tools.native_config import project
+    env, g = _golden(tmp_path)
+    ep = load_episode(g)
+    ref = mujoco.MjModel.from_binary_path(str(g/'model.mjb'))
+    dref = mujoco.MjData(ref)
+    st = bike_native.Stepper(str(g/'model.mjb'), project(env))
+    resistance = env.sim.physical.resistance   # ExternalResistanceApplier
+    for k in range(len(ep.state_qpos)):
+        _restore(ref, dref, ep, k)
+        st.set_state(ep.state_qpos[k], ep.state_qvel[k], ep.state_act[k],
+                     ep.state_warmstart[k], float(ep.state_time[k]))
+        st.forward()
+        row = ep.manifest['tire_snapshots'][k]
+        pyc = resistance.compute_components(ref, dref, _py_snapshots(row))
+        nat = st.resistance_components(_native_snapshots(row))
+        assert list(nat) == list(pyc) == ['road_rolling', 'aerodynamic']
+        for name, expected in pyc.items():
+            assert_bitwise_equal(nat[name], expected,
+                                 f'{name} oracle step {k}')
+            # Same vectors must also equal the artifact's recorded
+            # acc.add rows for this step.
+            i = ep.force_names.index(name)
+            assert_bitwise_equal(nat[name], ep.forces[k][i],
+                                 f'{name} golden step {k}')
+
+
+def test_brake_resistance_require_config():
+    bike_native = pytest.importorskip('bike_native')
+    # Both writers stay disabled without their config sections; each call
+    # raises std::logic_error, which nanobind surfaces as RuntimeError —
+    # reached once the input conversion itself succeeds.
+    empty_side = {'patch_loads': np.empty(0),
+                  'patch_working': np.empty(0, dtype=bool),
+                  'eff_radius': 0.3}
+    for st in (bike_native.Stepper(MJB), bike_native.Stepper(MJB, {})):
+        with pytest.raises(RuntimeError):
+            st.brake_torques(0.0, 0.0)
+        with pytest.raises(RuntimeError):
+            st.apply_brake(0.0, 0.0)
+        with pytest.raises(RuntimeError):
+            st.resistance_components({'front': empty_side,
+                                      'rear': empty_side})
+        # Input validation precedes the core call: a malformed snapshot
+        # dict fails as ValueError even on a disabled writer.
+        with pytest.raises(ValueError, match='front'):
+            st.resistance_components({})
+
+
+def test_brake_resistance_missing_key_names_it():
+    bike_native = pytest.importorskip('bike_native')
+    with pytest.raises(ValueError, match='torque_ceiling_nm'):
+        bike_native.Stepper(MJB, {'schema': 1, 'brake': {}})
+    with pytest.raises(ValueError, match='crr'):
+        bike_native.Stepper(MJB, {'schema': 1, 'resistance': {}})

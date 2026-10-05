@@ -1,13 +1,19 @@
 """Project a ride environment into the plain-data config the native port reads.
 
 The C++ writers cannot consume live Python objects; ``project(env)`` walks the
-public attributes of ``env.sim.applier`` (the ``SuspensionForceApplier``) and
-emits only the fields the ported writers actually read, as a versioned dict::
+public attributes of ``env.sim.applier`` (the ``SuspensionForceApplier``),
+``env.sim.brakes`` (the ``BrakeController``) and
+``physics_config.resistance``, and emits only the fields the ported writers
+actually read, as a versioned dict::
 
     {'schema': 1,
      'suspension': {'physics_mode': ..., 'joints': ..., 'air_spring': ...,
                     'fork_damper': ..., 'shock_damper': ..., 'coil': ...,
-                    'end_stops': ...}}
+                    'end_stops': ...},
+     'brake': {'torque_ceiling_nm': ..., 'taper_radps': ...},
+     'resistance': {'crr': ..., 'rolling_taper_rad_s': ..., 'rho_kg_m3': ...,
+                    'cda_m2': ..., 'wind_world_mps': [...],
+                    'point_body_m': [...], 'bodies': {...}}}
 
 Every leaf is a builtin int/float/bool/str so the dict crosses nanobind without
 pickle or numpy types. ``schema`` versions the layout: the C++ bridge rejects
@@ -54,8 +60,26 @@ def project(env) -> dict:
     shock = ap.controller.suspension_system.shock_damper
     coil = ap.coil_shock.specs
     cfg = ap.physics_config
+    res = cfg.resistance
     return {
         'schema': SCHEMA,
+        'brake': {
+            'torque_ceiling_nm': float(sim.brakes.torque_ceiling_nm),
+            'taper_radps': float(sim.brakes.taper_radps),
+        },
+        # The body names are literals in ExternalResistanceApplier.__init__
+        # ('frame', '<side>_wheel'); emitted so a renamed model stays
+        # describable.
+        'resistance': {
+            'crr': float(res.crr),
+            'rolling_taper_rad_s': float(res.rolling_taper_rad_s),
+            'rho_kg_m3': float(res.rho_kg_m3),
+            'cda_m2': float(res.cda_m2),
+            'wind_world_mps': [float(x) for x in res.wind_world_mps],
+            'point_body_m': [float(x) for x in res.point_body_m],
+            'bodies': {'frame': 'frame', 'front_wheel': 'front_wheel',
+                       'rear_wheel': 'rear_wheel'},
+        },
         'suspension': {
             'physics_mode': str(cfg.physics_mode),
             'joints': {

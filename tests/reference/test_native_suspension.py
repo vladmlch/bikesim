@@ -7,6 +7,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'native' / 'build'))
 
+from _bits import assert_bitwise_equal
+
 MJB = 'tools/proto_native_bench/artifacts/model.mjb'
 
 
@@ -30,8 +32,8 @@ def _golden(tmp_path, steps=40):
 def test_suspension_components_bitwise(tmp_path):
     # Bitwise contract: every `**` in the Python source reaches libm pow()
     # via pyfloat::pow, and -ffp-contract=off keeps clang from fusing
-    # mul+add into FMA — verified: all 8 components × 40 states are
-    # np.array_equal, zero ulp budget consumed.
+    # mul+add into FMA — verified: all 8 components × 40 states compare
+    # byte-identical, zero ulp budget consumed.
     bike_native = pytest.importorskip('bike_native')
     from tools.golden_episode import load_episode
     from tools.native_config import project
@@ -50,8 +52,8 @@ def test_suspension_components_bitwise(tmp_path):
         assert list(comp) == [n for n in ep.force_names if n in sus]
         for i, name in enumerate(ep.force_names):
             if name in sus:
-                assert np.array_equal(comp[name], ep.forces[k][i]), (
-                    f'{name} step {k}')
+                assert_bitwise_equal(comp[name], ep.forces[k][i],
+                                     f'{name} step {k}')
 
 
 @pytest.mark.slow
@@ -93,8 +95,9 @@ def test_suspension_components_bitwise_legacy(tmp_path):
                             'shock_upper_stop'}
         assert list(comp) == list(ref)
         for name, expected in ref.items():
-            assert np.array_equal(comp[name], expected), (
-                f'{name} @ travel={travel_mm} stroke={stroke_mm}')
+            assert_bitwise_equal(comp[name], expected,
+                                 f'{name} @ travel={travel_mm} '
+                                 f'stroke={stroke_mm}')
 
 
 def test_suspension_components_require_config():

@@ -7,6 +7,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'native' / 'build'))
 
+from _bits import assert_bitwise_equal
+
 def _golden(tmp_path, steps=8):
     from bike_sim.cli import research as research_cli
     from test_pinned_topology import _pinned_config
@@ -40,9 +42,9 @@ def test_forward_on_stored_state_is_bitwise(tmp_path):
         st.set_state(ep.state_qpos[k], ep.state_qvel[k], ep.state_act[k],
                      ep.state_warmstart[k], float(ep.state_time[k]))
         st.forward()
-        assert np.array_equal(st.qacc, dref.qacc)
-        assert np.array_equal(st.qfrc_constraint, dref.qfrc_constraint)
-        assert np.array_equal(st.efc_force, dref.efc_force)
+        assert_bitwise_equal(st.qacc, dref.qacc)
+        assert_bitwise_equal(st.qfrc_constraint, dref.qfrc_constraint)
+        assert_bitwise_equal(st.efc_force, dref.efc_force)
 
 @pytest.mark.slow
 def test_set_state_size_mismatch_raises_and_keeps_state(tmp_path):
@@ -61,4 +63,4 @@ def test_set_state_size_mismatch_raises_and_keeps_state(tmp_path):
                      ep.state_warmstart[0], float(ep.state_time[0]))
     # The rejected call must not clobber the previously restored state:
     # every span is width-checked before mj_resetData runs.
-    assert np.array_equal(np.asarray(st.qacc), before)
+    assert_bitwise_equal(np.asarray(st.qacc), before)

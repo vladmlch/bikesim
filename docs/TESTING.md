@@ -62,6 +62,90 @@ For a direct native test invocation, set the same import path:
 PYTHONPATH="$PWD/native/build${PYTHONPATH:+:$PYTHONPATH}" uv run python -m pytest tests/reference/test_native_suspension.py -q
 ```
 
+## Static analysis and sanitizer builds
+
+The `native` profile runs the full verification chain: build, then every
+sweep, then tests — a green run cannot rest on a stale `.so`. Each sweep is
+also a standalone CMake target driven by `native/build/compile_commands.json`:
+
+```bash
+cmake --build native/build --target check_frontends   # gcc -fsyntax-only + -fanalyzer (second frontend)
+cmake --build native/build --target check_tidy        # clang-tidy, checks in native/.clang-tidy
+cmake --build native/build --target check_analyzer    # clang --analyze, stable+optin block; alpha report-only
+cmake --build native/build --target check_cppcheck    # cppcheck third engine (brew install cppcheck)
+cmake --build native/build --target check_odr         # g++ -flto -Wodr merge — cross-TU type conflicts
+cmake --build native/build --target check_scripts     # shellcheck over tools/*.sh
+```
+
+`check_analyzer` and `check_tidy` use the keg-only brew LLVM
+(`/opt/homebrew/opt/llvm/bin`) — Apple clang lacks several checkers. The
+analyzer's alpha pass prints findings without failing; they are unstable by
+upstream contract, so review them when they appear instead of gating on them.
+`check_odr` compiles every TU with `-flto` and merges with `-Wodr` — the only
+phase that can see a type defined differently across translation units.
+
+`NATIVE_TEST_BUILD_DIR` selects the extension subdirectory the native test
+files import from `native/build/`: empty (default build), `asan`, `coverage`,
+or `rtsan`. There is no fallback — the imported module's path is asserted.
+
+Sanitizer build:
+
+```bash
+cmake -S native -B native/build/asan -DNATIVE_SANITIZE=ON
+uv run cmake --build native/build/asan -j4
+```
+
+The sanitizer set is `address,undefined,local-bounds,float-cast-overflow`
+with `-fno-sanitize-recover=all`. Run the native suite against it with the
+toolchain ASan dylib injected — invoke `.venv/bin/python` directly: `uv run`
+drops `DYLD_INSERT_LIBRARIES` before exec and the interceptors fail to install.
+
+```bash
+ASAN_LIB="$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib)"
+NATIVE_TEST_BUILD_DIR=asan ASAN_OPTIONS=detect_leaks=0:detect_stack_use_after_return=1 \
+  DYLD_INSERT_LIBRARIES="$ASAN_LIB" PYTHONMALLOC=malloc \
+  .venv/bin/python -m pytest tests/reference/test_native_*.py -q
+```
+
+RTSan (`-fsanitize=realtime`) verifies the marked hot path never allocates or
+locks — the mechanical half of the allocation-free tick requirement. It needs
+the brew clang (Apple clang rejects the flag):
+
+```bash
+cmake -S native -B native/build/rtsan \
+  -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DNATIVE_RTSAN=ON
+uv run cmake --build native/build/rtsan -j4
+RTSAN_LIB="$(/opt/homebrew/opt/llvm/bin/clang -print-file-name=libclang_rt.rtsan_osx_dynamic.dylib)"
+NATIVE_TEST_BUILD_DIR=rtsan DYLD_INSERT_LIBRARIES="$RTSAN_LIB" \
+  .venv/bin/python -m pytest tests/reference/test_native_*.py -q
+```
+
+`Stepper::step`/`forward` carry `BIKE_NONBLOCKING` (rtsan.hpp); the full
+native suite runs under RTSan with zero reports — mj_step/mj_forward are
+verified allocation-free. Marked functions that start allocating abort the
+test with a report.
+
+Coverage:
+
+```bash
+cmake -S native -B native/build/coverage -DNATIVE_COVERAGE=ON
+tools/native_coverage.sh            # builds, tests, prints llvm-cov summary
+```
+
+The script merges profraw into `native/build/coverage/coverage.profdata`;
+`xcrun llvm-cov show` on the .so with that profdata gives per-line detail.
+Xcode's llvm-cov is used because it matches the producing Apple clang.
+
+The launcher sets `PYTHONDEVMODE=1` everywhere and `MallocScribble`,
+`MallocPreScribble`, `MallocGuardEdges` on quick/native (not `full`, which
+measures realtime). With `NATIVE_TEST_BUILD_DIR=asan` it also exports
+`PYTHONMALLOC=malloc` and the documented `ASAN_OPTIONS` additions, so the
+`native` profile alone is a valid asan run.
+
+`tests/reference/test_native_state_fuzz.py` mutates genuine state snapshots
+through Hypothesis and asserts the restore parsers only ever raise the
+contracted error types and never corrupt live state on rejection.
+
 ## Timing and current acceptance
 
 Prior measurements were approximately 2 seconds for `-m 'not slow'`, 6 seconds

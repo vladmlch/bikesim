@@ -11,10 +11,8 @@
 #include <cmath>
 
 namespace pyfloat {
-
-inline double pow(double base, double exp) {
-    static double (*const volatile fn)(double, double) = &std::pow;
-    return fn(base, exp);
-}
-
-}  // namespace pyfloat
+    inline double pow(double base, double exp) {
+        static double (*const volatile fn)(double, double) = &std::pow;
+        return fn(base, exp);
+    }
+} // namespace pyfloat

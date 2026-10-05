@@ -20,14 +20,14 @@ public:
     // `_resolve_compression_joint` checks and validates the config the
     // way the component constructors do (coil spec, HBO zones, travel).
     // Throws std::invalid_argument on any violation.
-    SuspensionWriter(const mjModel* m, nativecfg::SuspensionConfig config);
+    SuspensionWriter(const mjModel *m, nativecfg::SuspensionConfig config);
 
-    using Component = std::pair<std::string, std::vector<double>>;
+    using Component = std::pair<std::string, std::vector<double> >;
 
     // compute_qfrc_components: nv-vectors in the Python dict's insertion
     // order ('shock_hbo' last, physical mode only). The result depends
     // only on d->qpos/d->qvel at the two slide coordinates.
-    [[nodiscard]] std::vector<Component> components(const mjData* d) const;
+    [[nodiscard]] std::vector<Component> components(const mjData *d) const;
 
 private:
     // Mirrors SuspensionForceApplier's `self.*_n` scalars and
@@ -37,6 +37,7 @@ private:
         double fork_spring_n, fork_damper_n, fork_total_n;
         double shock_spring_n, shock_bumper_n, shock_damper_n;
         double shock_top_out_n, shock_upper_stop_n, shock_total_n;
+
         struct {
             double shock_coil, shock_bumper, shock_top_out, shock_upper_stop;
         } potential_energy_j;

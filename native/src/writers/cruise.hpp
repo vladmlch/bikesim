@@ -16,21 +16,28 @@ struct CruiseState {
 
 class CruiseWriter {
 public:
-    CruiseWriter(const mjModel* model, nativecfg::CruiseConfig config);
-    [[nodiscard]] double compute(const mjData* data, bool rear_in_contact,
+    CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config);
+
+    [[nodiscard]] double compute(const mjData *data, bool rear_in_contact,
                                  bool traction_limited,
                                  std::optional<bool> controller_grounded);
+
     void reset();
+
     void set_target_speed(double value_kmh);
+
     [[nodiscard]] double set_assist_compensation(double support_factor);
+
     [[nodiscard]] CruiseState state() const { return state_; }
-    void set_state(const CruiseState& state);
+
+    void set_state(const CruiseState &state);
 
 private:
     void validate_scale(double scale) const;
+
     nativecfg::CruiseConfig cfg_;
     mjtSize nv_;
-    int root_dof_;
+    int root_dof_{0};
     double timestep_;
     CruiseState state_;
 };

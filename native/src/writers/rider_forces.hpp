@@ -21,14 +21,14 @@ public:
     // Resolves every configured path's joint through rider_forces.py's
     // _resolve_slide checks (named joint, unlimited slide). Throws
     // std::invalid_argument on any violation, like the Python ctor.
-    RiderForcesWriter(const mjModel* m, nativecfg::RiderForcesConfig config);
+    RiderForcesWriter(const mjModel *m, const nativecfg::RiderForcesConfig &config);
 
     // apply() read back as a vector: zeros(nv) with each path's computed
     // force at its dofadr — the same surface
     // acc.add('seated_interfaces', d.qfrc_applied.copy()) captures (the
     // buffer is zeroed before apply and touched by no other writer in
     // between). Pure for d.
-    [[nodiscard]] std::vector<double> qfrc(const mjData* d) const;
+    [[nodiscard]] std::vector<double> qfrc(const mjData *d) const;
 
 private:
     // _JointPath.__slots__ resolved: the body's spring params, the joint's
@@ -39,6 +39,7 @@ private:
         double preload_deflection_m, offset_m;
         bool unilateral;
     };
+
     // _JointPath.force_n / .gap_m — a per-call snapshot kept for a future
     // telemetry surface (interface_loads_n, recorder), like
     // SuspensionWriter's last_; it does not feed qfrc().

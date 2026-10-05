@@ -32,18 +32,18 @@ public:
     // shared (3,nv) Jacobian scratch. The ResistanceConfig.__post_init__
     // validation (physical_config.py:275-284) lives here too — config
     // object construction is where Python puts it.
-    ResistanceWriter(const mjModel* m, nativecfg::ResistanceConfig config);
+    ResistanceWriter(const mjModel *m, nativecfg::ResistanceConfig config);
 
-    using Component = std::pair<std::string, std::vector<double>>;
+    using Component = std::pair<std::string, std::vector<double> >;
 
     // compute_components (physical_resistance.py:20-42): 'road_rolling'
     // then 'aerodynamic', the Python dict's insertion order.
     [[nodiscard]] std::vector<Component> components(
-        const mjData* d, const TireSideInput& front,
-        const TireSideInput& rear) const;
+        const mjData *d, const TireSideInput &front,
+        const TireSideInput &rear) const;
 
 private:
-    const mjModel* m_;   // non-owning; the Stepper outlives the writer
+    const mjModel *m_; // non-owning; the Stepper outlives the writer
     nativecfg::ResistanceConfig cfg_;
     int nv_;
     int frame_, front_wheel_, rear_wheel_;

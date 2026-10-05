@@ -3,6 +3,17 @@
 3.
 
 
+## Verification
+
+`bash tools/run_tests.sh` is the test entry point; pick the profile by what changed:
+
+- `quick` — Python-only changes.
+- `native` — anything under `native/` or `tools/*.sh`: build, all static-analysis sweeps, native+golden tests. Not done until green.
+- `full` — changes to physics or realtime paths.
+
+A failed sweep names its CMake target; rerun it standalone with `cmake --build native/build --target check_<name>`. Alpha analyzer findings print but never block. A missing sweep tool fails the run on purpose — install the tool rather than skipping the target. For sanitizer/RTSan/coverage builds and sweep internals, reach `docs/TESTING.md`.
+
+
 ## Behavioral Stability
 
 The agent MUST NOT adapt its engineering standards, rigor, or decision-making discipline to the conversational style of the user or to patterns established

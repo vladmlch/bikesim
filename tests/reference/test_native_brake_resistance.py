@@ -7,6 +7,7 @@ then the PYTHON writer objects from the capturing env
 exercises input-derivation too, not just the artifact. The native writers run
 through ``Stepper(path, project(env))``.
 """
+import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -15,7 +16,13 @@ import mujoco
 import numpy as np
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'native' / 'build'))
+BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
+selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
+if selected not in ('', 'asan', 'coverage', 'rtsan'):
+    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
+if selected:
+    BUILD /= selected
+sys.path.insert(0, str(BUILD))
 
 from _bits import assert_bitwise_equal
 

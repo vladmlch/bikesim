@@ -13,58 +13,62 @@
 #include "writers/drivetrain.hpp"
 
 namespace {
-// Same check for every incoming span — one place only (the binding converts
-// ndarray→span and forwards; widths live on the model, which only the core
-// can see). Width is mjtSize (int64) in mjModel; the cast is the explicit,
-// always-safe direction (a negative width can never equal a size, so it
-// still throws).
-void check_width(std::span<const double> src, const char* name,
-                 mjtSize width) {
-    if (src.size() != static_cast<std::size_t>(width))
-        throw std::invalid_argument(
-            "set_state: " + std::string(name) + " has " +
-            std::to_string(src.size()) + " elements; model expects " +
-            std::to_string(width));
-}
-// Empty spans are skipped, not memcpy'd: d_->act is nullptr when na==0.
-void copy_in(std::span<const double> src, mjtNum* dst) {
-    if (!src.empty())
-        std::ranges::copy(src, dst);
-}
+    // Same check for every incoming span — one place only (the binding converts
+    // ndarray→span and forwards; widths live on the model, which only the core
+    // can see). Width is mjtSize (int64) in mjModel; the cast is the explicit,
+    // always-safe direction (a negative width can never equal a size, so it
+    // still throws).
+    void check_width(std::span<const double> src, const char *name,
+                     mjtSize width) {
+        if (src.size() != static_cast<std::size_t>(width))
+            throw std::invalid_argument(
+                "set_state: " + std::string(name) + " has " +
+                std::to_string(src.size()) + " elements; model expects " +
+                std::to_string(width));
+    }
+
+    // Empty spans are skipped, not memcpy'd: d_->act is nullptr when na==0.
+    void copy_in(std::span<const double> src, mjtNum *dst) {
+        if (!src.empty())
+            std::ranges::copy(src, dst);
+    }
 } // namespace
 
-Stepper::Stepper(const std::string& mjb_path) {
-    m_ = mj_loadModel(mjb_path.c_str(), nullptr);   // mjb: no VFS needed
+Stepper::Stepper(const std::string &mjb_path) : m_(mj_loadModel(mjb_path.c_str(), nullptr)) {
+    // mjb: no VFS needed
     if (!m_) throw std::runtime_error("mj_loadModel failed: " + mjb_path);
     d_ = mj_makeData(m_);
-    if (!d_) { mj_deleteModel(m_); throw std::runtime_error("mj_makeData"); }
+    if (!d_) {
+        mj_deleteModel(m_);
+        throw std::runtime_error("mj_makeData");
+    }
     mj_forward(m_, d_);
 }
 
-Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
+Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
     : Stepper(mjb_path) {
     // Config-parse or writer-construction failure must not leak m_/d_:
     // ~Stepper never runs for an object whose constructor throws.
     try {
         if (config.empty())
-            return;   // no sections → every writer stays disabled
+            return; // no sections → every writer stays disabled
         nativecfg::NativeConfig cfg =
-            nativecfg::native_config_from_dict(config);
+                nativecfg::native_config_from_dict(config);
         if (cfg.cruise)
             cruise_ = std::make_unique<CruiseWriter>(m_, *cfg.cruise);
         if (cfg.suspension)
             suspension_ =
-                std::make_unique<SuspensionWriter>(m_, *cfg.suspension);
+                    std::make_unique<SuspensionWriter>(m_, *cfg.suspension);
         if (cfg.brake)
             brake_ = std::make_unique<BrakeWriter>(m_, *cfg.brake);
         if (cfg.resistance)
             resistance_ =
-                std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
+                    std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
         if (cfg.tire)
             tire_ = std::make_unique<TireWriter>(m_, d_, *cfg.tire);
         if (cfg.rider_forces)
             rider_forces_ =
-                std::make_unique<RiderForcesWriter>(m_, *cfg.rider_forces);
+                    std::make_unique<RiderForcesWriter>(m_, *cfg.rider_forces);
         if (cfg.drive)
             drive_ = std::make_unique<DrivetrainWriter>(m_, d_, *cfg.drive);
     } catch (...) {
@@ -83,18 +87,19 @@ Stepper::~Stepper() {
     if (m_) mj_deleteModel(m_);
 }
 
-drivetrain::DrivetrainWriter& Stepper::drive() const {
+drivetrain::DrivetrainWriter &Stepper::drive() const {
     if (!drive_)
         throw std::logic_error("Stepper was built without a drive config");
     return *drive_;
 }
+
 void Stepper::set_inputs(std::span<const double> ctrl,
                          std::span<const double> force) {
     check_width(ctrl, "ctrl", m_->nu);
     check_width(force, "qfrc_applied", m_->nv);
-    for (double x : ctrl)
+    for (double const x: ctrl)
         if (!std::isfinite(x)) throw std::invalid_argument("non-finite ctrl");
-    for (double x : force)
+    for (double const x: force)
         if (!std::isfinite(x))
             throw std::invalid_argument("non-finite qfrc_applied");
     const std::vector<double> saved_ctrl(ctrl.begin(), ctrl.end());
@@ -103,7 +108,7 @@ void Stepper::set_inputs(std::span<const double> ctrl,
     copy_in(saved_force, d_->qfrc_applied);
 }
 
-CruiseWriter& Stepper::require_cruise() const {
+CruiseWriter &Stepper::require_cruise() const {
     if (!cruise_)
         throw std::logic_error("Stepper was built without a cruise config");
     return *cruise_;
@@ -116,14 +121,18 @@ double Stepper::cruise_compute(bool rear_in_contact, bool traction_limited,
 }
 
 void Stepper::cruise_reset() { require_cruise().reset(); }
+
 void Stepper::cruise_set_target_speed(double value_kmh) {
     require_cruise().set_target_speed(value_kmh);
 }
+
 double Stepper::cruise_set_assist_compensation(double support_factor) {
     return require_cruise().set_assist_compensation(support_factor);
 }
+
 CruiseState Stepper::cruise_state() const { return require_cruise().state(); }
-void Stepper::set_cruise_state(const CruiseState& state) {
+
+void Stepper::set_cruise_state(const CruiseState &state) {
     require_cruise().set_state(state);
 }
 
@@ -153,7 +162,7 @@ void Stepper::set_state(std::span<const double> qpos,
     d_->time = time;
 }
 
-std::vector<std::pair<std::string, std::vector<double>>>
+std::vector<std::pair<std::string, std::vector<double> > >
 Stepper::suspension_components() const {
     if (!suspension_)
         throw std::logic_error(
@@ -179,9 +188,9 @@ void Stepper::apply_brake(double front_demand, double rear_demand) {
     brake_->apply(d_, front_demand, rear_demand);
 }
 
-std::vector<std::pair<std::string, std::vector<double>>>
-Stepper::resistance_components(const TireSideInput& front,
-                               const TireSideInput& rear) const {
+std::vector<std::pair<std::string, std::vector<double> > >
+Stepper::resistance_components(const TireSideInput &front,
+                               const TireSideInput &rear) const {
     if (!resistance_)
         throw std::logic_error(
             "resistance_components: Stepper was built without a resistance "
@@ -190,9 +199,9 @@ Stepper::resistance_components(const TireSideInput& front,
 }
 
 namespace {
-constexpr const char* kNoTire =
-    "tire writer: Stepper was built without a tire config (pass the dict "
-    "from tools.native_config.project)";
+    constexpr const char *kNoTire =
+            "tire writer: Stepper was built without a tire config (pass the dict "
+            "from tools.native_config.project)";
 } // namespace
 
 std::vector<double> Stepper::tire_qfrc(double dt) {
@@ -214,7 +223,7 @@ std::vector<double> Stepper::tire_state() const {
     return tire_->state();
 }
 
-const std::vector<std::string>& Stepper::tire_state_names() const {
+const std::vector<std::string> &Stepper::tire_state_names() const {
     return TireWriter::state_names();
 }
 
@@ -233,7 +242,7 @@ Stepper::total(std::span<const std::vector<double>> components) const {
     // acc.add's validation (force_accumulator.py:20-22) runs BEFORE the
     // component joins the fold; same message so pytest.raises can match.
     std::vector<double> result(static_cast<std::size_t>(m_->nv), 0.0);
-    for (const std::vector<double>& c : components) {
+    for (const std::vector<double> &c: components) {
         if (c.size() != result.size() ||
             !std::ranges::all_of(
                 c, [](double v) { return std::isfinite(v); }))

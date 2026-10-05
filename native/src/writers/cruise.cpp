@@ -8,26 +8,26 @@
 #include <string>
 
 namespace {
-void finite(double value, const char* name) {
-    if (!std::isfinite(value))
-        throw std::invalid_argument(std::string(name) + " must be finite");
-}
+    void finite(double value, const char *name) {
+        if (!std::isfinite(value))
+            throw std::invalid_argument(std::string(name) + " must be finite");
+    }
 
-void positive(double value, const char* name) {
-    finite(value, name);
-    if (value <= 0.0)
-        throw std::invalid_argument(std::string(name) + " must be positive");
-}
+    void positive(double value, const char *name) {
+        finite(value, name);
+        if (value <= 0.0)
+            throw std::invalid_argument(std::string(name) + " must be positive");
+    }
 
-double clamp(double value, double limit) {
-    // Python keeps the first argument on ties (including signed zero).
-    return std::max(-limit, std::min(limit, value));
-}
-}  // namespace
+    double clamp(double value, double limit) {
+        // Python keeps the first argument on ties (including signed zero).
+        return std::max(-limit, std::min(limit, value));
+    }
+} // namespace
 
-CruiseWriter::CruiseWriter(const mjModel* model, nativecfg::CruiseConfig config)
-    : cfg_(config), nv_(model->nv), root_dof_(0),
-      timestep_(model->opt.timestep), state_{0.0} {
+CruiseWriter::CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config)
+    : cfg_(config), nv_(model->nv),
+      timestep_(model->opt.timestep), state_{.target_speed_mps = 0.0} {
     positive(cfg_.kp_nm_per_mps, "kp_nm_per_mps");
     positive(cfg_.ki_nm_per_mps_s, "ki_nm_per_mps_s");
     positive(cfg_.torque_ceiling_nm, "torque_ceiling_nm");
@@ -36,18 +36,18 @@ CruiseWriter::CruiseWriter(const mjModel* model, nativecfg::CruiseConfig config)
     if (joint < 0)
         throw std::invalid_argument("model has no joint 'root_x'");
     const std::span<const int> types =
-        std::views::counted(model->jnt_type, model->njnt);
+            std::views::counted(model->jnt_type, model->njnt);
     const auto index = static_cast<std::size_t>(joint);
     if (types[index] != mjJNT_SLIDE && types[index] != mjJNT_HINGE)
         throw std::invalid_argument("root_x must be a scalar slide or hinge joint");
     const std::span<const int> dofs =
-        std::views::counted(model->jnt_dofadr, model->njnt);
+            std::views::counted(model->jnt_dofadr, model->njnt);
     root_dof_ = dofs[index];
 }
 
-double CruiseWriter::compute(const mjData* data, bool rear_in_contact,
-                              bool traction_limited,
-                              std::optional<bool> controller_grounded) {
+double CruiseWriter::compute(const mjData *data, bool rear_in_contact,
+                             bool traction_limited,
+                             std::optional<bool> controller_grounded) {
     // cruise.py compute: preserve every operation and branch in source order.
     state_.engaged = controller_grounded.value_or(rear_in_contact);
     const std::span<const mjtNum> qvel = std::views::counted(data->qvel, nv_);
@@ -62,11 +62,11 @@ double CruiseWriter::compute(const mjData* data, bool rear_in_contact,
     const double proportional = kp * error;
     double demand = proportional + ki * state_.integral_mps_s;
     const bool pushing_further =
-        std::abs(demand) >= cfg_.torque_ceiling_nm &&
-        (demand > 0.0) == (error > 0.0);
+            std::abs(demand) >= cfg_.torque_ceiling_nm &&
+            (demand > 0.0) == (error > 0.0);
     if (!pushing_further && !traction_limited) {
         state_.integral_mps_s = clamp(state_.integral_mps_s + error * timestep_,
-                                     cfg_.torque_ceiling_nm / ki);
+                                      cfg_.torque_ceiling_nm / ki);
         demand = proportional + ki * state_.integral_mps_s;
     }
     state_.torque_nm = clamp(demand, cfg_.torque_ceiling_nm);
@@ -101,7 +101,7 @@ double CruiseWriter::set_assist_compensation(double support_factor) {
     return scale;
 }
 
-void CruiseWriter::set_state(const CruiseState& state) {
+void CruiseWriter::set_state(const CruiseState &state) {
     finite(state.target_speed_mps, "target_speed_mps");
     finite(state.integral_mps_s, "integral_mps_s");
     finite(state.torque_nm, "torque_nm");

@@ -5,9 +5,10 @@ channel row, plus the first monitor failure — the layer-2 contract a native
 port must reproduce (ADR 0001 §6).
 
 v2 additionally captures, per physics step, the mjData state at the entry of
-``runtime.apply_forces`` (qpos/qvel/act/warmstart/time), the ``d.ctrl`` buffer
-it leaves behind, every named force component in ``acc.add`` insertion order,
-and the flattened tire brush states the call consumes — the inputs/outputs
+``runtime.apply_forces`` (qpos/qvel/act/warmstart/time), the ``d.ctrl`` and
+``d.qfrc_applied`` buffers it leaves behind, every named force component in
+``acc.add`` insertion order, and the flattened tire brush states the call
+consumes — the inputs/outputs
 per-call writer-equivalence checks replay.
 """
 import json
@@ -41,6 +42,9 @@ class EpisodeArtifact:
     forces: np.ndarray = field(default_factory=lambda: np.empty((0, 0, 0)))
     tire_state: np.ndarray = field(default_factory=lambda: np.empty((0, 0)))
     tire_state_names: list = field(default_factory=list)
+    # Independent live apply_forces-exit total, never rebuilt from forces.
+    # Old v1/v2 files load an empty array to mark the observation unavailable.
+    qfrc_applied: np.ndarray = field(default_factory=lambda: np.empty((0, 0)))
 
 
 def _tire_state_row(tire) -> dict:
@@ -85,7 +89,7 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
     # and advance=True settling iterations inside solve_physical_equilibrium);
     # none of them are episode physics steps. Within the loop each advance=True
     # call opens a record: entry state snapshot, acc.add components in call
-    # order, exit ctrl snapshot. advance=False calls never create records.
+    # order, exit ctrl/applied-total snapshots. advance=False creates no record.
     records: list[dict] = []
     stray_adds: dict[str, np.ndarray] = {}   # acc.add with no open step record
     acc = sim.force_accumulator
@@ -103,6 +107,7 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
         record = {'qpos': d.qpos.copy(), 'qvel': d.qvel.copy(),
                   'act': d.act.copy(), 'warmstart': d.qacc_warmstart.copy(),
                   'time': float(d.time), 'components': {}, 'ctrl': None,
+                  'qfrc_applied': None,
                   # The brush states compute_qfrc consumes on THIS call —
                   # captured at entry so tire_state[k] restores the state
                   # that produced forces[k], mirroring state_qpos[k].
@@ -113,6 +118,7 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
             return orig_apply(**kw)
         finally:
             record['ctrl'] = d.ctrl.copy()
+            record['qfrc_applied'] = d.qfrc_applied.copy()
             record['open'] = False
 
     acc.add = spied_add
@@ -133,6 +139,9 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
 
     nq, nv, na, nu = sim.model.nq, sim.model.nv, sim.model.na, sim.model.nu
     k = len(records)
+    if k != len(tire_snapshots):
+        raise RuntimeError('capture_episode: physics records and tire snapshot '
+                           'rows must have equal length')
     def stack(key, width):
         return (np.array([r[key] for r in records]) if records
                 else np.empty((0, width)))
@@ -180,6 +189,7 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
                            state_time=(np.array([r['time'] for r in records])
                                        if records else np.empty(0)),
                            ctrl_written=stack('ctrl', nu),
+                           qfrc_applied=stack('qfrc_applied', nv),
                            force_names=force_names, forces=forces,
                            tire_state=tire_state,
                            tire_state_names=tire_state_names)
@@ -256,6 +266,7 @@ def save(ep: EpisodeArtifact, out_dir: Path, model):
              state_qpos=ep.state_qpos, state_qvel=ep.state_qvel,
              state_act=ep.state_act, state_warmstart=ep.state_warmstart,
              state_time=ep.state_time, ctrl_written=ep.ctrl_written,
+             qfrc_applied=ep.qfrc_applied,
              force_names=np.array(ep.force_names, dtype=str),
              forces=ep.forces,
              tire_state=ep.tire_state,
@@ -303,6 +314,7 @@ def load_episode(d: Path) -> EpisodeArtifact:
         state_warmstart=opt('state_warmstart', (0, nv)),
         state_time=opt('state_time', (0,)),
         ctrl_written=opt('ctrl_written', (0, dim('ctrl'))),
+        qfrc_applied=opt('qfrc_applied', (0, nv)),
         force_names=([str(n) for n in z['force_names']]
                      if 'force_names' in z.files else []),
         forces=opt('forces', (0, 0, nv)),

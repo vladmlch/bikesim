@@ -1,9 +1,11 @@
 // writers/rider_forces.hpp — port of RiderForceApplier
 // (src/bike_sim/sim/ride/rider_forces.py): one spring-damper per rider
 // slide DOF, written into qfrc_applied and recorded by the accumulator as
-// 'seated_interfaces' (physical_runtime.py:256-259). set_pedal_offsets is
-// construction state — the config carries the resolved offset_m
-// (ride_sim.py:587), there is no per-call offset input.
+// 'seated_interfaces' (physical_runtime.py:256-259). The config's offset_m is
+// a projection-time snapshot of mutable pedal offsets: Python _follow_cranks
+// updates set_pedal_offsets during legacy stepping (ride_sim.py:573-587).
+// P3/P4 must port those updates and feed current offsets to this writer before
+// claiming step-loop equivalence; P2 verifies only the projected values.
 // FP operation order follows the Python source expression-for-expression —
 // that order is the bitwise contract.
 #pragma once
@@ -30,7 +32,7 @@ public:
 
 private:
     // _JointPath.__slots__ resolved: the body's spring params, the joint's
-    // addresses, and the construction-time pedal offset_m.
+    // addresses, and the projection-time pedal offset_m.
     struct Path {
         int qposadr, dofadr;
         double stiffness_n_m, damping_ns_m;

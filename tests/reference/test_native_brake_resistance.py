@@ -187,3 +187,50 @@ def test_brake_resistance_missing_key_names_it():
         bike_native.Stepper(MJB, {'schema': 1, 'brake': {}})
     with pytest.raises(ValueError, match='crr'):
         bike_native.Stepper(MJB, {'schema': 1, 'resistance': {}})
+
+
+@pytest.mark.parametrize('layout', ('contiguous', 'strided', 'reversed'))
+@pytest.mark.parametrize('converted_dtype', (False, True))
+def test_resistance_snapshot_array_conversion_lifetime(layout, converted_dtype):
+    """Converted front AND rear buffers must stay alive until the writer reads
+    them. Exercise their reads under ASan and compare converted values in
+    ordinary builds."""
+    bike_native = pytest.importorskip('bike_native')
+    cfg = {'schema': 1, 'resistance': {
+        'crr': 0.01, 'rolling_taper_rad_s': 0.5, 'rho_kg_m3': 1.2,
+        'cda_m2': 0.4, 'wind_world_mps': [0., 0., 0.],
+        'point_body_m': [0., 0., 0.],
+        'bodies': {'frame': 'frame', 'front_wheel': 'front_wheel',
+                   'rear_wheel': 'rear_wheel'}}}
+    model = mujoco.MjModel.from_binary_path(MJB)
+    data = mujoco.MjData(model)
+    data.qvel[:] = np.linspace(0.2, 1.2, model.nv)
+    st = bike_native.Stepper(MJB, cfg)
+    st.set_state(data.qpos, data.qvel, data.act, data.qacc_warmstart, 0.)
+    st.forward()
+
+    def array(values, dtype):
+        a = np.array(values, dtype=dtype)
+        if layout == 'strided':
+            storage = np.repeat(a, 2)
+            return storage[::2]
+        if layout == 'reversed':
+            return a[::-1].copy()[::-1]
+        return a
+
+    loads_dtype, working_dtype = ((np.float32, np.uint8) if converted_dtype
+                                  else (np.float64, np.bool_))
+    snaps = {side: {'patch_loads': array([100., 900., 300.], loads_dtype),
+                    'patch_working': array([1, 0, 1], working_dtype),
+                    'eff_radius': radius}
+             for side, radius in (('front', 0.3), ('rear', 0.35))}
+    canonical = {side: {'patch_loads': np.array([100., 900., 300.]),
+                        'patch_working': np.array([True, False, True]),
+                        'eff_radius': snap['eff_radius']}
+                 for side, snap in snaps.items()}
+    want = st.resistance_components(canonical)
+    assert np.any(want['road_rolling'] != 0.0)
+    for _ in range(8):
+        got = st.resistance_components(snaps)
+        for name in want:
+            assert_bitwise_equal(got[name], want[name], f'{name} {layout}')

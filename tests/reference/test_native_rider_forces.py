@@ -12,7 +12,7 @@ the live applier's ``apply`` on a restored ``MjData`` vs
 ``Stepper.rider_forces_qfrc()`` on the same (qpos, qvel), sweeping each
 path across the spring's active range — loaded, lifted off, the exact
 deflection==0 boundary, and the damper-dominated clamp — with the
-construction-time pedal offsets (``set_pedal_offsets``,
+projection-time pedal offsets (``set_pedal_offsets``,
 ride_sim.py:587) carried through the config.
 """
 import sys
@@ -125,7 +125,7 @@ def _sweep_states(model, rf, qpos0):
 def test_rider_forces_qfrc_bitwise(tmp_path):
     bike_native = pytest.importorskip('bike_native')
     model, rf, mjb = _plant(tmp_path)
-    # Construction-time pedal offsets (ride_sim.py:573-587 sets them once
+    # Projection-time pedal offsets (ride_sim.py:573-587 sets them once
     # per _follow_cranks): applied before projection so the config carries
     # the resolved offset_m like the ruling specifies.
     rf.set_pedal_offsets(0.023, -0.031)
@@ -292,11 +292,27 @@ def test_accumulator_total_validates():
         st.total({'bad': np.full(nv, np.inf)})
     with pytest.raises(ValueError, match='invalid generalized force'):
         st.total({'bad': np.full(nv, np.nan)})
-    # Not a 1-D float64 buffer at all — conversion rejected at the edge.
+    # Wrong rank or a non-convertible value — rejected at the edge.
     with pytest.raises(ValueError):
         st.total({'bad': np.zeros((nv, 1))})
     with pytest.raises(ValueError):
         st.total({'bad': 'not an array'})
+
+
+@pytest.mark.parametrize('layout', ('contiguous', 'strided', 'reversed'))
+@pytest.mark.parametrize('dtype', (np.float64, np.float32, np.int32))
+def test_accumulator_total_accepts_array_conversion(layout, dtype):
+    bike_native = pytest.importorskip('bike_native')
+    nv = int(mujoco.MjModel.from_binary_path(MJB).nv)
+    values = np.arange(nv, dtype=dtype)
+    if layout == 'strided':
+        values = np.repeat(values, 2)[::2]
+    elif layout == 'reversed':
+        values = values[::-1]
+    components = {'converted': values, 'second': np.ones(nv)}
+    st = bike_native.Stepper(MJB)
+    assert_bitwise_equal(st.total(components), _acc_total(components, nv),
+                         f'total converts {dtype} {layout}')
 
 
 @pytest.mark.slow
@@ -304,7 +320,7 @@ def test_accumulator_order_golden(tmp_path):
     """Ordering gate on the recorded acc matrix: for every stored step the
     native total() folds force_names-ordered components — ported ones
     computed by the native writers, the rest recorded — bitwise-equal to
-    ForceAccumulator.total() on the same mapping."""
+    the independent apply_forces-exit qfrc_applied captured from mjData."""
     bike_native = pytest.importorskip('bike_native')
     from test_native_brake_resistance import _golden
     from tools.golden_episode import load_episode
@@ -312,13 +328,12 @@ def test_accumulator_order_golden(tmp_path):
     env, g = _golden(tmp_path)
     ep = load_episode(g)
     st = bike_native.Stepper(str(g/'model.mjb'), project(env))
-    nv = ep.forces.shape[2]
+    assert ep.qfrc_applied.shape == (len(ep.forces), ep.forces.shape[2])
     # FINDING: the canonical episode (articulated rider) never records
     # 'seated_interfaces' — the rider writer is inert there, so the golden
     # matrix cannot oracle it; the sweep above is the oracle instead.
     assert 'seated_interfaces' not in ep.force_names
     assert 'rider_forces' not in project(env)
-    sus_names = {n for n in ep.force_names if n.startswith(('fork_', 'shock_'))}
     tire_names = list(ep.tire_state_names)
     dt = float(ep.manifest['dt_s'])
     for k in range(len(ep.forces)):
@@ -328,10 +343,9 @@ def test_accumulator_order_golden(tmp_path):
         st.set_tire_state(tire_names, ep.tire_state[k])
         ported = dict(st.suspension_components())
         ported['tires'] = st.tire_qfrc(dt)
+        ported.update(st.resistance_components(st.tire_snapshots()))
         comp = {}
         for i, name in enumerate(ep.force_names):
-            comp[name] = (ported[name]
-                          if name in sus_names or name == 'tires'
-                          else ep.forces[k][i])
-        assert_bitwise_equal(st.total(comp), _acc_total(comp, nv),
+            comp[name] = ported.get(name, ep.forces[k][i])
+        assert_bitwise_equal(st.total(comp), ep.qfrc_applied[k],
                              f'acc.total step {k}')

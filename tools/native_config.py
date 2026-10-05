@@ -39,9 +39,11 @@ The 'rider_forces' section is emitted only while
 (e.g. ``articulated_planar``) the applier is inert and no section appears.
 Each entry carries the resolved per-path spring parameters the writer's
 ``compute`` reads, plus ``offset_m`` — the current pedal offset
-``set_pedal_offsets`` left on the path (construction state, applied before
-``project`` runs; the config carries effective values, not the crank
-derivation). ``preload_deflection_m`` is emitted evaluated — the body's
+``set_pedal_offsets`` left on the path at projection time. These offsets are
+mutable: legacy ``_follow_cranks`` updates them during stepping, so P3/P4 must
+port those updates and supply current offsets before step-loop equivalence.
+The P2 config captures effective values, not the crank derivation.
+``preload_deflection_m`` is emitted evaluated — the body's
 property computes preload/stiffness, and the resulting double is what the
 writer's compute reads.
 

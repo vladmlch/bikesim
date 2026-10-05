@@ -31,7 +31,9 @@ public:
     // Restore a solver-relevant snapshot (qpos/qvel/act/qacc_warmstart/time)
     // exactly as `mj_resetData` + buffer writes do in Python. Widths are
     // checked against the model BEFORE reset — a bad argument must not
-    // clobber previously restored state. Empty `act` is legal (na==0).
+    // clobber previously restored state. Inputs are snapshotted before reset,
+    // so views of this Stepper (including cross-buffer aliases) are accepted.
+    // Empty `act` is legal (na==0).
     void set_state(std::span<const double> qpos,
                    std::span<const double> qvel,
                    std::span<const double> act,
@@ -81,6 +83,8 @@ public:
     // flatten_row schema ('front.tangent.0' style; leaf 'front.tangent'
     // columns also decode, all-NaN vector -> unset field). Restoring
     // clears the once-per-timestamp clock like `last_time_s = None`.
+    // A segment is NaN (unset) or a finite integer in int's range; invalid
+    // input leaves both brush state and clock unchanged.
     void set_tire_state(std::span<const std::string> names,
                         std::span<const double> row);
     [[nodiscard]] std::vector<double> tire_state() const;

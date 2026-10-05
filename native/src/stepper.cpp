@@ -83,11 +83,18 @@ void Stepper::set_state(std::span<const double> qpos,
     check_width(qvel, "qvel", m_->nv);
     check_width(act, "act", m_->na);
     check_width(warmstart, "warmstart", m_->nv);
+    // Callers may pass our own views, including cross-buffer aliases (e.g.
+    // qacc as warmstart). Snapshot EVERY input before resetting any mjData
+    // buffer. Allocation failures also leave the old state intact.
+    const std::vector<double> saved_qpos(qpos.begin(), qpos.end());
+    const std::vector<double> saved_qvel(qvel.begin(), qvel.end());
+    const std::vector<double> saved_act(act.begin(), act.end());
+    const std::vector<double> saved_warmstart(warmstart.begin(), warmstart.end());
     mj_resetData(m_, d_);
-    copy_in(qpos, d_->qpos);
-    copy_in(qvel, d_->qvel);
-    copy_in(act, d_->act);
-    copy_in(warmstart, d_->qacc_warmstart);
+    copy_in(saved_qpos, d_->qpos);
+    copy_in(saved_qvel, d_->qvel);
+    copy_in(saved_act, d_->act);
+    copy_in(saved_warmstart, d_->qacc_warmstart);
     d_->time = time;
 }
 

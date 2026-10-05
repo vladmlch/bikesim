@@ -433,6 +433,15 @@ void TireWriter::set_state(std::span<const std::string> names,
                 throw std::invalid_argument(
                     "set_tire_state: duplicate column '" + name + "'");
             seg_seen[s] = true;
+            if (!std::isnan(v) &&
+                (!std::isfinite(v) || std::trunc(v) != v ||
+                 v < static_cast<double>(std::numeric_limits<int>::min()) ||
+                 v > static_cast<double>(std::numeric_limits<int>::max())))
+                throw std::invalid_argument(
+                    "set_tire_state: '" + name +
+                    "' must be NaN or a finite integer in int range");
+            // Cast only after validation; next is committed after the whole
+            // row validates, so rejection preserves states_ and the clock.
             next[s].segment = std::isnan(v)
                 ? std::nullopt
                 : std::optional<int>(static_cast<int>(v));

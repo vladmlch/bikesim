@@ -102,8 +102,23 @@ nb::dict snapshot_dict(const TireSnapshot& s) {
 }
 // One tire-snapshot side, flat-array schema:
 // {'patch_loads': f64[n], 'patch_working': bool[n], 'eff_radius': float}.
-// Spans alias the caller's numpy arrays — valid for the call's duration.
-TireSideInput side_input(const nb::dict& snaps, const char* side) {
+// Dtype and layout conversions are accepted. Keep their ndarray owners alive
+// through the writer call: a span alone cannot retain a conversion temporary.
+struct OwnedTireSideInput {
+    nb::ndarray<const double, nb::shape<-1>, nb::c_contig> loads;
+    nb::ndarray<const bool, nb::shape<-1>, nb::c_contig> working;
+    double effective_radius_m;
+
+    [[nodiscard]] TireSideInput view() const {
+        return {std::views::counted(loads.data(),
+                                   static_cast<std::ptrdiff_t>(loads.size())),
+                std::views::counted(working.data(),
+                                   static_cast<std::ptrdiff_t>(working.size())),
+                effective_radius_m};
+    }
+};
+
+OwnedTireSideInput side_input(const nb::dict& snaps, const char* side) {
     if (!snaps.contains(side))
         throw std::invalid_argument(
             "resistance_components: missing side '" + std::string(side) +
@@ -120,11 +135,7 @@ TireSideInput side_input(const nb::dict& snaps, const char* side) {
     using B1 = nb::ndarray<const bool, nb::shape<-1>, nb::c_contig>;
     const F64 loads = nb::cast<F64>(arr("patch_loads"));
     const B1 working = nb::cast<B1>(arr("patch_working"));
-    return {std::views::counted(loads.data(),
-                              static_cast<std::ptrdiff_t>(loads.size())),
-            std::views::counted(working.data(),
-                              static_cast<std::ptrdiff_t>(working.size())),
-            nb::cast<double>(arr("eff_radius"))};
+    return {loads, working, nb::cast<double>(arr("eff_radius"))};
 }
 } // namespace
 
@@ -163,13 +174,16 @@ NB_MODULE(bike_native, m) {
         .def("resistance_components", [](Stepper& s, const nb::dict& snaps) {
             // Named locals in Python's dict order — arg eval order is
             // unspecified, so on malformed input the 'front' error must win.
-            TireSideInput front = side_input(snaps, "front");
-            TireSideInput rear = side_input(snaps, "rear");
+            const OwnedTireSideInput front = side_input(snaps, "front");
+            const OwnedTireSideInput rear = side_input(snaps, "rear");
             nb::dict out;
-            for (auto& [name, vec] : s.resistance_components(front, rear))
+            for (auto& [name, vec] :
+                 s.resistance_components(front.view(), rear.view()))
                 out[name.c_str()] = as_owned(std::move(vec));
             return out;
-        })
+        }, nb::arg("snapshots"),
+        "Compute resistance from snapshot arrays; 1-D loads/working arrays "
+        "may be converted to contiguous float64/bool for this call.")
         .def("suspension_components", [](Stepper& s) {
             nb::dict out;
             for (auto& [name, vec] : s.suspension_components())
@@ -182,12 +196,10 @@ NB_MODULE(bike_native, m) {
         .def("total", [](Stepper& s, const nb::dict& components) {
             // Insertion order is the contract: PyDict_Keys preserves it,
             // and the fold inside Stepper::total mirrors
-            // ForceAccumulator.total() exactly. A value that is not a 1-D
-            // float64 C-contiguous buffer is rejected here, before the
-            // fold — acc.add raises ValueError on malformed components
-            // too, but also accepts non-contiguous array-likes that this
-            // binding deliberately narrows (P2 review minor: documented
-            // divergence, unhit by any real caller).
+            // ForceAccumulator.total() exactly. Nanobind may convert a 1-D
+            // ndarray's dtype/layout to contiguous float64. Copy each array
+            // into vecs while its owner is alive; reject wrong-rank or
+            // non-convertible values before the fold.
             std::vector<std::vector<double>> vecs;
             const nb::list keys = components.keys();
             vecs.reserve(keys.size());
@@ -209,7 +221,9 @@ NB_MODULE(bike_native, m) {
                 }
             }
             return as_owned(s.total(vecs));
-        })
+        }, nb::arg("components"),
+        "Sum finite nv-wide 1-D arrays in dict insertion order; ndarray "
+        "dtype/layout conversion to contiguous float64 is accepted.")
         .def("set_tire_state", [](Stepper& s,
                 const std::vector<std::string>& names,
                 const nb::ndarray<const double, nb::shape<-1>,

@@ -9,6 +9,34 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'native' / 'build')
 
 from _bits import assert_bitwise_equal
 
+
+def test_set_state_snapshots_own_views_before_reset():
+    bike_native = pytest.importorskip('bike_native')
+    mjb = 'tools/proto_native_bench/artifacts/model.mjb'
+    model = mujoco.MjModel.from_binary_path(mjb)
+    data = mujoco.MjData(model)
+    data.qpos[0] += 0.37
+    data.qvel[:] = np.linspace(-0.2, 0.4, model.nv)
+    st = bike_native.Stepper(mjb)
+    st.set_state(data.qpos, data.qvel, data.act, data.qacc_warmstart, 0.125)
+    st.forward()
+    # qacc is another owned buffer resetData clears: aliases are not limited
+    # to the destination with the same name.
+    qpos, qvel, warm = st.qpos, st.qvel, st.qacc
+    saved = [a.copy() for a in (qpos, qvel, warm)]
+    assert np.any(saved[2] != 0.0)
+    st.set_state(qpos, qvel, data.act, warm, 0.25)
+    assert_bitwise_equal(st.qpos, saved[0], 'aliased qpos restore')
+    assert_bitwise_equal(st.qvel, saved[1], 'aliased qvel restore')
+    assert st.time == 0.25
+    mujoco.mj_resetData(model, data)
+    data.qpos[:], data.qvel[:], data.qacc_warmstart[:] = saved
+    data.time = 0.25
+    mujoco.mj_forward(model, data)
+    st.forward()
+    assert_bitwise_equal(st.qacc, data.qacc, 'aliased warmstart restore')
+    assert_bitwise_equal(st.qfrc_constraint, data.qfrc_constraint)
+
 def _golden(tmp_path, steps=8):
     from bike_sim.cli import research as research_cli
     from test_pinned_topology import _pinned_config

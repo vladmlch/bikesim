@@ -250,6 +250,46 @@ def test_tire_set_state_validation():
         st.set_tire_state(('bogus.xi',) + CANONICAL_NAMES[1:], row)
 
 
+@pytest.mark.parametrize('side', ('front', 'rear'))
+@pytest.mark.parametrize('segment', (np.inf, -np.inf, 0.5, -0.5,
+                                     2147483648., -2147483649.,
+                                     np.finfo(np.float64).max))
+def test_tire_segment_rejects_invalid_without_mutation(side, segment):
+    bike_native = pytest.importorskip('bike_native')
+    st = bike_native.Stepper(MJB, _tire_cfg())
+    model = mujoco.MjModel.from_binary_path(MJB)
+    data = mujoco.MjData(model)
+    data.qpos[0] += 0.6
+    data.qpos[14] += 0.6
+    st.set_state(data.qpos, data.qvel, data.act, data.qacc_warmstart, 0.)
+    st.forward()
+    row = np.zeros(len(CANONICAL_NAMES))
+    st.set_tire_state(CANONICAL_NAMES, row)
+    st.tire_qfrc(0.00125)
+    before = st.tire_state().copy()
+    bad = before.copy()
+    bad[0] += 0.123  # rejected late fields must not commit earlier fields
+    bad[CANONICAL_NAMES.index(f'{side}.segment')] = segment
+    with pytest.raises(ValueError, match=f'{side}.segment'):
+        st.set_tire_state(CANONICAL_NAMES, bad)
+    assert_bitwise_equal(st.tire_state(), before, 'rejected segment state')
+    # The once-per-timestamp clock is part of the strong guarantee too.
+    with pytest.raises(ValueError, match='once per increasing timestamp'):
+        st.tire_qfrc(0.00125)
+
+
+@pytest.mark.parametrize('side', ('front', 'rear'))
+@pytest.mark.parametrize('segment', (-2147483648., -1., 0.,
+                                     2147483647., np.nan))
+def test_tire_segment_int_boundaries_and_unset_roundtrip(side, segment):
+    bike_native = pytest.importorskip('bike_native')
+    st = bike_native.Stepper(MJB, _tire_cfg())
+    row = np.zeros(len(CANONICAL_NAMES))
+    idx = CANONICAL_NAMES.index(f'{side}.segment')
+    row[idx] = segment
+    st.set_tire_state(CANONICAL_NAMES, row)
+    assert_bitwise_equal(st.tire_state(), row, 'segment roundtrip')
+
 def test_tire_qfrc_happy_path_and_clock():
     """Non-slow smoke on the pinned model: slide root_x/rider_root_x +0.6 so
     both wheels sit over the road, then tire_qfrc advances once per time."""

@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include "config.hpp"
 #include "writers/brake.hpp"
+#include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
 #include "writers/rider_forces.hpp"
 #include "writers/suspension.hpp"
@@ -48,6 +49,8 @@ Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
             return;   // no sections → every writer stays disabled
         nativecfg::NativeConfig cfg =
             nativecfg::native_config_from_dict(config);
+        if (cfg.cruise)
+            cruise_ = std::make_unique<CruiseWriter>(m_, *cfg.cruise);
         if (cfg.suspension)
             suspension_ =
                 std::make_unique<SuspensionWriter>(m_, *cfg.suspension);
@@ -71,6 +74,30 @@ Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
 }
 
 Stepper::~Stepper() { if (d_) mj_deleteData(d_); if (m_) mj_deleteModel(m_); }
+
+CruiseWriter& Stepper::require_cruise() const {
+    if (!cruise_)
+        throw std::logic_error("Stepper was built without a cruise config");
+    return *cruise_;
+}
+
+double Stepper::cruise_compute(bool rear_in_contact, bool traction_limited,
+                               std::optional<bool> controller_grounded) {
+    return require_cruise().compute(d_, rear_in_contact, traction_limited,
+                                    controller_grounded);
+}
+
+void Stepper::cruise_reset() { require_cruise().reset(); }
+void Stepper::cruise_set_target_speed(double value_kmh) {
+    require_cruise().set_target_speed(value_kmh);
+}
+double Stepper::cruise_set_assist_compensation(double support_factor) {
+    return require_cruise().set_assist_compensation(support_factor);
+}
+CruiseState Stepper::cruise_state() const { return require_cruise().state(); }
+void Stepper::set_cruise_state(const CruiseState& state) {
+    require_cruise().set_state(state);
+}
 
 void Stepper::set_state(std::span<const double> qpos,
                         std::span<const double> qvel,

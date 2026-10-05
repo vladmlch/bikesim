@@ -237,6 +237,14 @@ def project(env) -> dict:
              'unilateral': bool(p.body.unilateral),
              'offset_m': float(p.offset_m)}
             for p in sim.rider_forces._paths]}
+    cruise = getattr(sim, 'cruise', None)
+    if cruise is not None:
+        out['cruise'] = {
+            'target_speed_kmh': float(cruise.target_speed_kmh),
+            'kp_nm_per_mps': float(cruise.kp_nm_per_mps),
+            'ki_nm_per_mps_s': float(cruise.ki_nm_per_mps_s),
+            'torque_ceiling_nm': float(cruise.torque_ceiling_nm),
+        }
     return out
 
 

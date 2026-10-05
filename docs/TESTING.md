@@ -30,6 +30,7 @@ pytest directly; the native profile always selects all native and golden files:
 ```bash
 uv run python -m pytest tests/reference/test_native_suspension.py -q --durations=10
 uv run python -m pytest tests/reference/test_native_suspension.py::test_suspension_components_bitwise -q
+uv run python -m pytest tests/reference/test_native_cruise.py -q
 ```
 
 ## Native prerequisite
@@ -40,6 +41,14 @@ running native checks:
 ```bash
 uv run cmake --build native/build -j4
 ```
+
+The cruise module uses a tiny local model and compares each controller call and
+PI state against the unchanged Python controller by raw float64 bytes. It does
+not run physical episodes. `Stepper.set_state` restores only mjData; cruise PI
+state survives it. Use `cruise_state` and `set_cruise_state` to replay controller
+state explicitly, and `cruise_reset` to clear its integral, torque and engaged
+flag while preserving the target and assist scale. Cruise computes a scalar
+torque; runtime actuator writes and the force loop are later port increments.
 
 The native profile prepends the absolute `native/build` directory to `PYTHONPATH`,
 preserving an existing value. It imports `bike_native` and prints the imported

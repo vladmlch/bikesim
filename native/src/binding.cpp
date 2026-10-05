@@ -18,9 +18,11 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/pair.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include "stepper.hpp"
+#include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
 #include "writers/tire.hpp"
 
@@ -171,6 +173,50 @@ NB_MODULE(bike_native, m) {
         .def_prop_ro("ctrl", [](Stepper& s) { return as_view(s.ctrl()); })
         .def("brake_torques", &Stepper::brake_torques)
         .def("apply_brake", &Stepper::apply_brake)
+        .def("cruise_compute", &Stepper::cruise_compute,
+             nb::arg("rear_in_contact"), nb::arg("traction_limited") = false,
+             nb::arg("controller_grounded") = nb::none())
+        .def("cruise_reset", &Stepper::cruise_reset)
+        .def("cruise_set_target_speed", &Stepper::cruise_set_target_speed,
+             nb::arg("value_kmh"))
+        .def("cruise_set_assist_compensation",
+             &Stepper::cruise_set_assist_compensation, nb::arg("support_factor"))
+        .def("cruise_state", [](const Stepper& s) {
+            const CruiseState state = s.cruise_state();
+            nb::dict out;
+            out["target_speed_mps"] = state.target_speed_mps;
+            out["integral_mps_s"] = state.integral_mps_s;
+            out["torque_nm"] = state.torque_nm;
+            out["engaged"] = state.engaged;
+            out["gain_scale"] = state.gain_scale;
+            return out;
+        })
+        .def("set_cruise_state", [](Stepper& s, const nb::dict& state) {
+            // Disabled controller errors precede candidate parsing, as for
+            // the other controller APIs. All reads finish before mutation.
+            static_cast<void>(s.cruise_state());
+            if (state.size() != 5)
+                throw std::invalid_argument(
+                    "cruise state requires exactly target_speed_mps, "
+                    "integral_mps_s, torque_nm, engaged, gain_scale");
+            const auto number = [&state](const char* key) {
+                try {
+                    return nativecfg::detail::req_f64(state, "cruise_state", key);
+                } catch (const nb::cast_error&) {
+                    throw std::invalid_argument(std::string(key) + " must be numeric");
+                }
+            };
+            CruiseState candidate{number("target_speed_mps")};
+            candidate.integral_mps_s = number("integral_mps_s");
+            candidate.torque_nm = number("torque_nm");
+            const nb::object engaged =
+                nativecfg::detail::req(state, "cruise_state", "engaged");
+            if (!nb::isinstance<nb::bool_>(engaged))
+                throw std::invalid_argument("engaged must be bool");
+            candidate.engaged = nb::cast<bool>(engaged);
+            candidate.gain_scale = number("gain_scale");
+            s.set_cruise_state(candidate);
+        }, nb::arg("state"))
         .def("resistance_components", [](Stepper& s, const nb::dict& snaps) {
             // Named locals in Python's dict order — arg eval order is
             // unspecified, so on malformed input the 'front' error must win.

@@ -2,6 +2,7 @@
 #pragma once
 #include <mujoco/mujoco.h>
 #include <memory>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <string>
@@ -11,6 +12,8 @@
 
 class SuspensionWriter;
 class BrakeWriter;
+class CruiseWriter;
+struct CruiseState;
 class ResistanceWriter;
 class TireWriter;
 class RiderForcesWriter;
@@ -70,6 +73,14 @@ public:
         brake_torques(double front_demand, double rear_demand) const;
     // compute() + the ctrl writes (ride_sim.py:530-534).
     void apply_brake(double front_demand, double rear_demand);
+    // Standalone PI state survives mjData set_state; no actuator writes.
+    [[nodiscard]] double cruise_compute(bool rear_in_contact,
+        bool traction_limited, std::optional<bool> controller_grounded);
+    void cruise_reset();
+    void cruise_set_target_speed(double value_kmh);
+    [[nodiscard]] double cruise_set_assist_compensation(double support_factor);
+    [[nodiscard]] CruiseState cruise_state() const;
+    void set_cruise_state(const CruiseState& state);
     // ExternalResistanceApplier.compute_components — 'road_rolling' +
     // 'aerodynamic' for the given per-side tire snapshots.
     [[nodiscard]] std::vector<std::pair<std::string, std::vector<double>>>
@@ -110,6 +121,8 @@ private:
     mjData* d_;
     std::unique_ptr<SuspensionWriter> suspension_;
     std::unique_ptr<BrakeWriter> brake_;
+    std::unique_ptr<CruiseWriter> cruise_;
+    [[nodiscard]] CruiseWriter& require_cruise() const;
     std::unique_ptr<ResistanceWriter> resistance_;
     std::unique_ptr<TireWriter> tire_;
     std::unique_ptr<RiderForcesWriter> rider_forces_;

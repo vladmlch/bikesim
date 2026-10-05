@@ -106,6 +106,13 @@ struct BrakeConfig {
     double taper_radps;
 };
 
+struct CruiseConfig {
+    double target_speed_kmh;
+    double kp_nm_per_mps;
+    double ki_nm_per_mps_s;
+    double torque_ceiling_nm;
+};
+
 // ResistanceConfig fields ExternalResistanceApplier reads (physical_config.
 // py:266-284), plus the body names its __init__ resolves — literals there
 // too, emitted so a differently-named model stays describable.
@@ -182,6 +189,7 @@ struct RiderForcesConfig {
 };
 
 struct NativeConfig {
+    std::optional<CruiseConfig> cruise;
     std::optional<SuspensionConfig> suspension;
     std::optional<BrakeConfig> brake;
     std::optional<ResistanceConfig> resistance;
@@ -522,6 +530,14 @@ inline NativeConfig native_config_from_dict(const nb::dict& d) {
         throw std::invalid_argument(
             "native config: unsupported schema " + std::to_string(schema));
     NativeConfig c;
+    if (d.contains("cruise")) {
+        const auto section = detail::req_dict(d, "config", "cruise");
+        c.cruise = CruiseConfig{
+            detail::req_f64(section, "cruise", "target_speed_kmh"),
+            detail::req_f64(section, "cruise", "kp_nm_per_mps"),
+            detail::req_f64(section, "cruise", "ki_nm_per_mps_s"),
+            detail::req_f64(section, "cruise", "torque_ceiling_nm")};
+    }
     if (d.contains("suspension"))
         c.suspension = suspension_from_dict(d);
     if (d.contains("brake"))

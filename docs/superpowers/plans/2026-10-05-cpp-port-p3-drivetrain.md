@@ -124,6 +124,8 @@ git commit -m "feat(native): port scalar drivetrain policies with bitwise oracle
 
 ### Task 2: Model-owned drivetrain and solved transmission accounting
 
+**Execution checkpoints:** The same implementer continues this task in two stages: 2a chain geometry and typed ideal/geometric transmission core, then 2b writer, bindings, complete state, and solved accounting. Use independent per-call oracle tests at checkpoint 2a; any test-only adapter belongs at the FFI boundary and must reuse the core without creating a second simulation owner or production stepping architecture. Record the exact core interfaces before 2b. The full Task 2 acceptance gate and sanitizer run remain after 2b; neither checkpoint alone completes this task.
+
 **Files:**
 - Create: `native/src/drivetrain/chain.hpp`, `chain.cpp` — chain geometry/gradient, tension and planar geometry/Jacobian helpers.
 - Create: `native/src/drivetrain/transmission.hpp`, `transmission.cpp` — ideal and geometric fixed-tendon ratchets, optional crank clutch/motor rotor freewheel, solved force extraction.

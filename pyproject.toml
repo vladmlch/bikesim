@@ -32,3 +32,8 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 markers = ["slow: multi-second full-plant episodes; deselect with -m 'not slow'"]
+
+[dependency-groups]
+dev = [
+    "nanobind>=3.1.0",
+]

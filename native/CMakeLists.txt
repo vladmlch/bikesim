@@ -26,7 +26,9 @@ find_package(nanobind CONFIG REQUIRED)
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp src/stepper.cpp src/writers/suspension.cpp
   src/writers/brake.cpp src/writers/cruise.cpp src/writers/resistance.cpp
-  src/writers/rider_forces.cpp src/writers/tire.cpp src/tyre/profile.cpp)
+  src/writers/rider_forces.cpp src/writers/tire.cpp src/tyre/profile.cpp
+  src/drivetrain/pedaling.cpp src/drivetrain/shifting.cpp
+  src/drivetrain/motor.cpp src/drivetrain/freehub.cpp src/drivetrain/policy_binding.cpp)
 
 # Strict flags are PRIVATE to our TUs: nanobind's own static-lib sources are
 # not expected to survive this warning set under -Werror.

@@ -136,6 +136,47 @@ def _tire_section(cfg_tires, surface_map) -> dict:
     return out
 
 
+def project_drive_policies(drive) -> dict:
+    """Copy resolved runtime drive policies into owning plain data."""
+    a = drive.assist
+    profile = None
+    if a.profile is not None:
+        profile = {
+            'mode_gains': {key: [float(x) for x in value] if isinstance(value, tuple)
+                           else float(value) for key, value in a.profile.mode_gains.items()},
+            'emtb_full_gain_at_nm': float(a.profile.emtb_full_gain_at_nm),
+        }
+    return {
+        'gearing': {'front_teeth': int(drive.config.gearing.front_teeth),
+                    'rear_teeth': int(drive.config.gearing.rear_teeth),
+                    'chain_pitch_m': float(drive.config.gearing.chain_pitch_m)},
+        'pedaling': {'enabled': bool(drive.pedaling.config.enabled),
+                     **{key: float(getattr(drive.pedaling.config, key)) for key in
+                        ('coast_above_rpm', 'resume_below_rpm', 'stop_time_s',
+                         'coast_cadence_tau_s', 'mash_cadence_rpm', 'mash_torque_nm',
+                         'effort_slew_nm_s')}},
+        'shifting': {'enabled': bool(drive.shifting.config.enabled),
+                     'cassette': [int(x) for x in drive.shifting.config.cassette],
+                     'upshift_slip_mode': str(drive.shifting.config.upshift_slip_mode),
+                     **{key: float(getattr(drive.shifting.config, key)) for key in
+                        ('target_cadence_min_rpm', 'target_cadence_max_rpm',
+                         'shift_cooldown_s', 'shift_cut_duration_s', 'torque_factor',
+                         'cadence_smoothing_tau_s', 'upshift_slip_limit_mps')}},
+        'assist': {**{key: float(getattr(a, key)) for key in
+                     ('gain', 'max_torque', 'max_power', 'tau', 'slew',
+                      'engage_torque_nm', 'gate_min_crank_rad_s')},
+                   'cutoff_mps': float(a.cutoff), 'taper_width_mps': float(a.width),
+                   'mode': str(a.mode), 'profile': profile,
+                   'torque_curve': None if a.torque_curve is None else
+                       [[float(x) for x in row] for row in a.torque_curve]},
+        'battery': {'enabled': bool(drive.config.battery.enabled),
+                    **{key: float(getattr(drive.config.battery, key)) for key in
+                       ('energy_j', 'copper_w_per_nm2', 'speed_w_per_rad_s2', 'idle_w')}},
+        'hub_stiffness_nm_rad': float(drive.config.freehub_k_nm_rad),
+        'hub_damping_nm_s': float(drive.config.freehub_c_nms_rad),
+    }
+
+
 def project(env) -> dict:
     """Emit the native config dict for env (or a bare RideSimulation)."""
     sim = getattr(env, 'sim', env)
@@ -248,4 +289,4 @@ def project(env) -> dict:
     return out
 
 
-__all__ = ['project', 'SCHEMA']
+__all__ = ['project', 'project_drive_policies', 'SCHEMA']

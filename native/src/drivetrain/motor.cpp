@@ -60,7 +60,7 @@ double AssistController::step(double human, double rpm, double speed, bool braki
     const double target = std::min(gain * sensed * taper, limit);
     double candidate = state_.torque - std::expm1(-dt / config_.tau) * (target - state_.torque);
     candidate = std::max(state_.torque - config_.slew * dt, std::min(state_.torque + config_.slew * dt, candidate));
-    const double crank = rpm * 2. * std::numbers::pi / 60.;
+    const double crank = finite(rpm * 2. * std::numbers::pi / 60., "crank rate");
     const double cap = crank <= config_.gate_min_crank_rad_s || sensed <= 0. ? 0. : request.value_or(std::numeric_limits<double>::infinity());
     const double torque = finite(std::max(0., std::min({candidate, limit, cap})), "delivered assist torque");
     state_.torque = torque; state_.pedaling = torque > 0.;

@@ -467,3 +467,38 @@ def test_unrepresentable_count_restore_is_atomic(config):
     with pytest.raises(ValueError):
         native.set_state(bad)
     assert_tree(native.state(),old)
+
+
+@pytest.mark.parametrize('profile,mode', [(None,'turbo'), ('bosch_cx_gen4','emtb')])
+@pytest.mark.parametrize('cadence', [-1e308, 1e308])
+@pytest.mark.parametrize('shaft', [None, 80.])
+def test_assist_computed_crank_overflow_matches_python_state(profile, mode, cadence, shaft):
+    from tools.native_config import project_drive_policies
+    drive = applier(assist=AssistConfig(profile=profile,mode=mode))
+    native = bike_native.DrivePolicies(project_drive_policies(drive))
+    assert_bitwise_equal(native.assist_step(30.,80.,0.,False,.01),
+                         drive.assist.step(30.,80.,0.,False,.01))
+    drive.assist.last_gain = 123.
+    native.set_state(snapshot(drive))
+    previous = snapshot(drive)['assist']
+    with pytest.raises(ValueError, match='crank rate'):
+        drive.assist.step(11.,cadence,0.,False,.01,shaft_rpm=shaft)
+    # The late permission validation changes last_gain but retains delivered state.
+    assert drive.assist.last_gain != previous['last_gain']
+    assert_bitwise_equal(drive.assist.torque,previous['torque'])
+    assert drive.assist.pedaling == previous['pedaling']
+    with pytest.raises(ValueError, match='crank rate'):
+        native.assist_step(11.,cadence,0.,False,.01,shaft_rpm=shaft)
+    check(native,drive)
+    assert_bitwise_equal(native.assist_step(20.,80.,0.,False,.01),
+                         drive.assist.step(20.,80.,0.,False,.01))
+    check(native,drive)
+
+
+def test_assist_braking_resets_before_computed_crank_overflow(config, drive):
+    native = bike_native.DrivePolicies(config)
+    assert_bitwise_equal(native.assist_step(30.,80.,0.,False,.01),
+                         drive.assist.step(30.,80.,0.,False,.01))
+    assert_bitwise_equal(native.assist_step(30.,1e308,0.,True,.01),
+                         drive.assist.step(30.,1e308,0.,True,.01))
+    check(native,drive)

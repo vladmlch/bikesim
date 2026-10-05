@@ -1,0 +1,5 @@
+# clangd picks compile_commands.json from native/build automatically; the
+# warning contract and .clang-tidy both flow through. Only -Werror is dropped
+# so editor diagnostics don't double-gate what the sweeps already enforce.
+CompileFlags:
+  Remove: [-Werror]

@@ -1,0 +1,47 @@
+# Signal-maximizing set, mirroring the compiler-warning contract in
+# CMakeLists: everything that finds defects, minus the style/noise tier.
+# cert-* overlaps bugprone-/cppcoreguidelines- via aliases but also carries
+# unique checkers, so the occasional duplicate diagnostic is accepted.
+#
+# Disabled, with rationale (all measured on first sweep, not guessed):
+#   readability-*            style linter; the codebase is deliberately compact
+#   pro-bounds-*             gsl::at is unavailable; operator[]/span indexing is
+#                            the designed idiom (849+69 hits, all idiomatic)
+#   non-private-member-vars  aggregate configs/snapshots mirror Python
+#                            dataclasses — the port's architecture
+#   avoid-pragma-once        #pragma once is the project-wide convention
+#   include-cleaner          399 transitive-include notes: hygiene, not defects
+#   use-nodiscard            errors surface as exceptions, not return codes
+#   use-auto                 explicit types document the port's numerics
+#   macro-usage              our macros are pragma wrappers — the sanctioned use
+#   cplusplus.Move           false positive inside nanobind's std::array caster;
+#                            NOLINT cannot reach a third-party header
+Checks: >
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  clang-analyzer-optin.core.*,
+  clang-analyzer-optin.cplusplus.*,
+  clang-analyzer-optin.taint.*,
+  concurrency-*,
+  cppcoreguidelines-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -misc-non-private-member-variables-in-classes,
+  -portability-avoid-pragma-once,
+  -misc-include-cleaner,
+  -modernize-use-nodiscard,
+  -modernize-use-auto,
+  -cppcoreguidelines-macro-usage,
+  -clang-analyzer-cplusplus.Move
+
+# Only flag findings inside our tree — nanobind/mujoco/Python headers are
+# outside the warning contract (same rule as NB_SUPPRESS_WARNINGS).
+HeaderFilterRegex: '.*cpp-port-p2/native/src/.*'

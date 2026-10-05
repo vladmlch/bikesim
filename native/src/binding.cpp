@@ -183,8 +183,11 @@ NB_MODULE(bike_native, m) {
             // Insertion order is the contract: PyDict_Keys preserves it,
             // and the fold inside Stepper::total mirrors
             // ForceAccumulator.total() exactly. A value that is not a 1-D
-            // float64 buffer is rejected here, before the fold — acc.add
-            // raises ValueError on malformed components too.
+            // float64 C-contiguous buffer is rejected here, before the
+            // fold — acc.add raises ValueError on malformed components
+            // too, but also accepts non-contiguous array-likes that this
+            // binding deliberately narrows (P2 review minor: documented
+            // divergence, unhit by any real caller).
             std::vector<std::vector<double>> vecs;
             const nb::list keys = components.keys();
             vecs.reserve(keys.size());

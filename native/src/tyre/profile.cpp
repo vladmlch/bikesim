@@ -166,6 +166,9 @@ double np_interp(double xq, std::span<const double> xs,
     const std::size_t n = xs.size();
     const double lval = ys.front();
     const double rval = ys.back();
+    // NaN-query note: np.interp returns NaN early without searching; this
+    // falls through upper_bound to j=-1 → lval. Out of contract — all
+    // callers gate non-finite queries upstream (profile.cpp:~441).
     // binary_search_with_guess(len, key, arr, 1): for an in-range key this
     // is the largest j with arr[j] <= key — upper_bound(key) - 1.
     int j;

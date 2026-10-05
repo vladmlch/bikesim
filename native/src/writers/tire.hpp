@@ -88,10 +88,11 @@ public:
 
     // Artifact-row restore: names follow `tire_state_names` ('front.xi',
     // 'front.tangent.0', ..., leaf 'front.tangent' tolerated as a NaN
-    // column). Missing sides/fields decode to the _BrushState defaults.
-    // Resets the timestamp clock — a restored state has not yet been
-    // advanced under any interval (mirrors the Python test oracle's
-    // `last_time_s = None`).
+    // column). All 22 canonical columns are required — missing ones throw
+    // naming the column (the artifact contract is canonical-schema, not
+    // partial decode). Resets the timestamp clock — a restored state has
+    // not yet been advanced under any interval (mirrors the Python test
+    // oracle's `last_time_s = None`).
     void set_state(std::span<const std::string> names,
                    std::span<const double> row);
 

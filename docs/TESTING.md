@@ -188,3 +188,46 @@ MuJoCo/libm/NumPy/Accelerate platform. They do not establish long episode
 acceptance, an allocation-free P4 tick, viewer integration, or a speedup.
 After task reviews the controller runs the quick profile once; the previously
 measured eight-minute full suite is not repeated in this increment.
+
+### P3 finite rider support geometry and grip laws
+
+```bash
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_rider_contact_math.py tests/reference/test_native_tire.py -q
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target check_frontends
+```
+
+The contact math test asserts the exact regular extension directory or the
+explicit `NATIVE_TEST_BUILD_DIR=asan` selection. Finite box faces, edges,
+corners, medial ties, footprint boundaries, sole height/projection, and grip
+energy/release use the unchanged Python implementations as raw float64 byte
+oracles. It retains unreachable targets as a native `UnreachableSoleTarget`
+subclass of `ValueError`, and retains target nonconvergence as `RuntimeError`.
+The 32-iteration height solve and 18-iteration goal projection are unchanged.
+Diagnostic vectors and dictionaries own their storage; array inputs accept
+numeric dtype and layout conversions. Native sole diagnostics require finite
+scalars, nonnegative pad half length, positive pad radius, and a proper planar
+box. Compression and shear may be signed.
+
+Matrix/vector and dot operations call the same Accelerate operation shapes as
+NumPy on this platform. Both occurrences of the grip velocity dot product
+retain Python's expression order. The tire writer and downstream rider writer use the
+same typed `contactlaw::normal_contact` and `contactlaw::brush_step`; the tire
+calculation and finite/passivity guards are preserved by literal extraction.
+
+CPython 3.14's `math.hypot` uses exact products, compensated accumulation, and
+a square-root differential correction. The typed port follows that algorithm
+for both two-coordinate contact distances and three-coordinate distances.
+System two-argument `hypot` differs by one ULP for the corner delta
+`(-0x1.999999999999ap-4, -0x1.47ae147ae1475p-6)` (system result ends in `32`,
+Python in `31`); C++ three-argument `hypot` also loses the subnormal norm of
+`(5e-324, 5e-324, 5e-324)`. The suite retains these regressions and tests
+three-coordinate norms across subnormal/normal/large ranges. Explicit FMA
+computes the product error only; `-ffp-contract=off` remains active.
+
+The private `_rider_hypot3` diagnostic observes the typed compensated helper.
+`_rider_validate_support_model(stepper, geom_ids)` uses the existing Stepper's
+owned compiled model and current data. Real tiny models cover planar hinge and
+slide topology, unrelated nonplanar bodies, invalid joint topology, non-box
+supports, improper support frames, and out-of-range geom IDs. These are local
+per-call gates; whole-episode contact and P4 runtime acceptance remain separate.

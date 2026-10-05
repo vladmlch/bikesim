@@ -22,6 +22,7 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include "stepper.hpp"
+#include "rider/contact_binding.hpp"
 #include "drivetrain/policy_binding.hpp"
 #include "drivetrain/drive_binding.hpp"
 #include "writers/cruise.hpp"
@@ -337,4 +338,5 @@ NB_MODULE(bike_native, m) {
         })
         .def_prop_ro("time", &Stepper::time);
     bind_drivetrain(m, stepper_class);
+    bind_rider_contact_math(m);
 }

@@ -44,6 +44,10 @@ class Transmission {
     void restore(TransmissionSnapshot state);
     const Diagnostics &diagnostics() const { return state_.diagnostics; }
     int driven_dof() const { return driven_dof_; }
+    // Private FFI regression diagnostics read storage identity, not snapshots.
+    const PreparedTransmission *prepared_storage() const {
+        return geometric_ ? &prepared_storage_ : nullptr;
+    }
 
   private:
     mjModel *model_;
@@ -55,6 +59,8 @@ class Transmission {
     OwnedData constant_, endpoint_;
     GeometryWorkspace geometry_;
     TransmissionSnapshot state_;
+    PreparedTransmission prepared_storage_;
+    bool prepared_valid_{};
     std::vector<double> force_, multipliers_, displacement_;
     double relative(const mjData *data) const;
     double geometry(mjData *data);

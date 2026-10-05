@@ -56,13 +56,13 @@ class DrivetrainWriter {
     Diagnostics stored_energy();
     DriveSnapshot state() const;
     void restore(const DriveSnapshot &snapshot);
+    const Transmission *transmission_storage() const { return ideal_hub_.get(); }
 
   private:
     mjModel *model_;
     mjData *data_;
     DriveConfig config_;
     bool simplified_, effort_;
-    OwnedData scratch_;
     GeometryWorkspace geometry_;
     int frame_, crank_, rear_, cassette_{};
     struct Joint {

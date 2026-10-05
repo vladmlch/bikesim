@@ -10,6 +10,10 @@ Transmission::Transmission(mjModel *model, GearingConfig gear, bool geometric,
     : model_(model), gear_(gear), geometric_(geometric),
       tendon_(resolve(model, mjOBJ_TENDON, tendon)), constant_(mj_makeData(model)),
       endpoint_(geometric ? mj_makeData(model) : nullptr), geometry_(model->nv),
+      prepared_storage_{
+          0., 0.,
+          std::vector<double>(static_cast<std::size_t>(geometric ? model->nv : 0)),
+          std::vector<double>(static_cast<std::size_t>(geometric ? model->nv : 0))},
       force_(static_cast<std::size_t>(model->nv)),
       multipliers_(static_cast<std::size_t>(model->njmax > 0 ? model->njmax : 0)),
       displacement_(force_.size()) {
@@ -92,8 +96,11 @@ void Transmission::linearize(mjData *d, double phi) {
         mj_setConst(model_, constant_.get());
     buffer(model_->tendon_range,
            2 * model_->ntendon)[static_cast<std::size_t>(2 * tendon_ + 1)] = upper;
-    state_.prepared = PreparedTransmission{phi, d->time, geometry_.jacobian,
-                                           std::vector<double>(q.begin(), q.end())};
+    prepared_storage_.phi = phi;
+    prepared_storage_.time = d->time;
+    std::ranges::copy(geometry_.jacobian, prepared_storage_.jacobian.begin());
+    std::ranges::copy(q, prepared_storage_.qpos.begin());
+    prepared_valid_ = true;
 }
 void Transmission::reset(mjData *d) {
     state_.boundary = geometric_ ? geometry(d) : relative(d);
@@ -171,9 +178,9 @@ std::span<const double> Transmission::solved(mjData *d) {
         mj_mulJacTVec(model_, d, force_.data(), multipliers_.data());
     if (!geometric_)
         return force_;
-    if (!state_.prepared)
+    if (!prepared_valid_)
         throw std::runtime_error("prepare the geometric transmission before solving");
-    const auto &p = *state_.prepared;
+    const auto &p = prepared_storage_;
     std::ranges::copy(buffer(d->qpos, model_->nq), endpoint_->qpos);
     const double endpoint = geometry(endpoint_.get());
     const auto q = buffer(d->qpos, model_->nq);
@@ -206,6 +213,8 @@ std::span<const double> Transmission::solved(mjData *d) {
 }
 TransmissionSnapshot Transmission::state() const {
     auto s = state_;
+    if (prepared_valid_)
+        s.prepared = prepared_storage_;
     const auto range = buffer(model_->tendon_range, 2 * model_->ntendon)
                            .subspan(static_cast<std::size_t>(2 * tendon_), 2);
     s.range = {range[0], range[1]};
@@ -244,6 +253,17 @@ void Transmission::validate(const TransmissionSnapshot &s) const {
 }
 void Transmission::restore(TransmissionSnapshot s) {
     validate(s);
+    // Widths are already checked. Copy into construction-owned buffers without
+    // allocations; snapshot buffers remain owning and detached at the FFI edge.
+    prepared_valid_ = s.prepared.has_value();
+    if (s.prepared) {
+        const auto &prepared = *s.prepared;
+        prepared_storage_.phi = prepared.phi;
+        prepared_storage_.time = prepared.time;
+        std::ranges::copy(prepared.jacobian, prepared_storage_.jacobian.begin());
+        std::ranges::copy(prepared.qpos, prepared_storage_.qpos.begin());
+    }
+    s.prepared.reset();
     state_ = std::move(s);
     const auto &restored = state_;
     gear_.rear_teeth = restored.rear_teeth;

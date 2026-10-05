@@ -497,3 +497,63 @@ def test_genuine_wheel_and_rotor_overrun(tmp_path,kind):
         assert_bitwise_equal(n.drive_settle_actuation(),p.settle_actuation(m,d))
         assert_tree(n.drive_state(),python_state(p,m))
         assert n.drive_diagnostics()['freehub_torque_nm']==0.
+
+
+@pytest.mark.parametrize('operation', ['prepare', 'reset', 'shift', 'restore'])
+def test_geometric_prepared_buffers_reuse_storage(tmp_path, operation):
+    shifting = ShiftingConfig(enabled=True, cadence_smoothing_tau_s=0.,
+        shift_cooldown_s=.3, shift_cut_duration_s=.1)
+    m,d,p,n = pair(tmp_path, 'geometric_ideal_mid_drive', shifting=shifting)
+    # Force an actual shift in the shift case; other cases retain the normal gear.
+    if operation == 'shift':
+        d.qvel[m.joint('crank_spin').dofadr[0]] = 15.
+        d.qvel[m.joint('rear_wheel_spin').dofadr[0]] = 25.
+        n.set_state(d.qpos,d.qvel,d.act,d.qacc_warmstart,d.time);n.forward()
+        mujoco.mj_forward(m,d)
+    if operation == 'restore':
+        n.set_drive_state(copy.deepcopy(n.drive_state()))
+    baseline = n._drive_prepared_storage()
+    assert baseline['jacobian_address'] and baseline['qpos_address']
+    assert baseline['jacobian_capacity'] >= m.nv
+    assert baseline['qpos_capacity'] >= m.nv
+    initial_teeth = p.shifting.rear_teeth
+    if operation in ('prepare', 'restore'):
+        # Sequential live preparations in genuine solved intervals.
+        for _ in range(8):
+            expected = p.compute_components(m,d,.0002,speed_mps=2.)
+            assert_tree(n.drive_components({},.0002,2.),expected)
+            assert n._drive_prepared_storage() == baseline
+            assert_tree(n.drive_state(),python_state(p,m))
+            d.qfrc_applied[:]=sum(expected.values());n.set_inputs(d.ctrl,d.qfrc_applied)
+            mujoco.mj_step(m,d);n.step()
+            assert_bitwise_equal(n.drive_settle_actuation(),p.settle_actuation(m,d))
+    elif operation == 'reset':
+        for _ in range(8):
+            p.reset(m,d);n.drive_reset()
+            assert n._drive_prepared_storage() == baseline
+            assert_tree(n.drive_state(),python_state(p,m))
+    else:
+        expected=p.prepare_pedaling(d,.15,RideControl(),model=m)
+        assert_tree(n.drive_prepare_pedaling({},.15),asdict(expected))
+        assert p.shifting.rear_teeth != initial_teeth
+        assert n._drive_prepared_storage() == baseline
+        assert_tree(n.drive_state(),python_state(p,m))
+
+
+def test_geometric_prepared_sentinel_owns_reused_storage(tmp_path):
+    m,d,p,n = pair(tmp_path, 'geometric_ideal_mid_drive')
+    baseline=n._drive_prepared_storage()
+    state=n.drive_state();old_jacobian=state['ideal_hub']['prepared']['jacobian'].copy()
+    # Public snapshot arrays do not share either private native working buffer.
+    assert state['ideal_hub']['prepared']['jacobian'].ctypes.data != baseline['jacobian_address']
+    assert state['ideal_hub']['prepared']['qpos'].ctypes.data != baseline['qpos_address']
+    none_state=copy.deepcopy(state);none_state['ideal_hub']['prepared']=None
+    n.set_drive_state(none_state);assert n.drive_state()['ideal_hub']['prepared'] is None
+    assert n._drive_prepared_storage()==baseline
+    with pytest.raises(RuntimeError,match='before solving'):n.drive_settle_actuation()
+    n.set_drive_state(state)
+    assert_tree(n.drive_state(),state);assert n._drive_prepared_storage()==baseline
+    state['ideal_hub']['prepared']['jacobian'][:]=99.
+    assert_bitwise_equal(n.drive_state()['ideal_hub']['prepared']['jacobian'],old_jacobian)
+    p.reset(m,d);n.drive_reset()
+    assert_tree(n.drive_state(),python_state(p,m));assert n._drive_prepared_storage()==baseline

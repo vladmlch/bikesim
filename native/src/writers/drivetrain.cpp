@@ -9,8 +9,8 @@ DrivetrainWriter::DrivetrainWriter(mjModel *m, mjData *d, DriveConfig c)
       simplified_(config_.transmission_model != "elastic_chain"),
       effort_(config_.drive_mode == "crank_effort" ||
               config_.drive_mode == "articulated_effort"),
-      scratch_(mj_makeData(m)), geometry_(m->nv),
-      frame_(resolve(m, mjOBJ_BODY, "frame")), crank_(resolve(m, mjOBJ_BODY, "crank")),
+      geometry_(m->nv), frame_(resolve(m, mjOBJ_BODY, "frame")),
+      crank_(resolve(m, mjOBJ_BODY, "crank")),
       rear_(resolve(m, mjOBJ_BODY, "rear_wheel")),
       human_actuator_(mj_name2id(m, mjOBJ_ACTUATOR, "human_crank")),
       motor_actuator_(mj_name2id(m, mjOBJ_ACTUATOR, "mid_drive")),
@@ -18,8 +18,6 @@ DrivetrainWriter::DrivetrainWriter(mjModel *m, mjData *d, DriveConfig c)
       shifting_(config_.policies.gearing, config_.policies.shifting),
       assist_(config_.policies.assist), battery_(config_.policies.battery.energy_j),
       transmission_(static_cast<std::size_t>(m->nv)) {
-    if (!scratch_)
-        throw std::runtime_error("mj_makeData");
     if (m->nq != m->nv)
         throw std::invalid_argument(
             "physical chain supports scalar planar coordinates only (nq == nv)");

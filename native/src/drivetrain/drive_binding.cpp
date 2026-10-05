@@ -3,6 +3,7 @@
 #include "chain.hpp"
 #include "policy_binding.hpp"
 #include "transmission.hpp"
+#include <cstdint>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/optional.h>
@@ -451,6 +452,19 @@ DriveConfig parse_drive_config(const nb::dict &d) {
 }
 
 void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
+    cls.def("_drive_prepared_storage", [](Stepper &owner) {
+        const auto *transmission = owner.drive().transmission_storage();
+        const auto *storage = transmission ? transmission->prepared_storage() : nullptr;
+        if (!storage)
+            return nb::object(nb::none());
+        nb::dict result;
+        result["jacobian_address"] =
+            reinterpret_cast<std::uintptr_t>(storage->jacobian.data());
+        result["qpos_address"] = reinterpret_cast<std::uintptr_t>(storage->qpos.data());
+        result["jacobian_capacity"] = storage->jacobian.capacity();
+        result["qpos_capacity"] = storage->qpos.capacity();
+        return nb::object(result);
+    });
     nb::exception<ArithmeticError>(module, "DriveArithmeticError",
                                    PyExc_ArithmeticError);
     module.def("chain_geometry", [](Vec2 cf, Vec2 cr, double rf, double rr, Vec2 up,

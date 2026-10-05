@@ -9,6 +9,7 @@
 // the same rule; efc_force's length is d->nefc, which varies per
 // forward — a stored view is not refreshed, re-read the property.
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <ranges>
 #include <span>
@@ -18,8 +19,10 @@
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 #include "stepper.hpp"
 #include "writers/resistance.hpp"
+#include "writers/tire.hpp"
 
 namespace nb = nanobind;
 
@@ -50,6 +53,52 @@ as_owned(std::vector<double> v) {
     });
     return nb::ndarray<nb::numpy, double, nb::shape<-1>>(
         buf, {v.size()}, owner);
+}
+// Owning bool ndarray — the patch_working array in the resistance schema.
+nb::ndarray<nb::numpy, bool, nb::shape<-1>>
+as_owned_bool(std::vector<char> v) {
+    auto* buf = new bool[v.size()];
+    const std::span<bool> view = std::views::counted(
+        buf, static_cast<std::ptrdiff_t>(v.size()));
+    for (std::size_t i = 0; i < v.size(); ++i)
+        view[i] = v[i] != 0;
+    nb::capsule owner(buf, [](void* p) noexcept {
+        delete[] static_cast<bool*>(p);
+    });
+    return nb::ndarray<nb::numpy, bool, nb::shape<-1>>(
+        buf, {v.size()}, owner);
+}
+// One TireSnapshot as a dict carrying BOTH consumers' schemas: the
+// manifest's readable digest keys (what the artifact serializes in
+// tools/golden_episode._tire_snapshot_row) and the flat-array keys
+// resistance_components's side_input reads.
+nb::dict snapshot_dict(const TireSnapshot& s) {
+    nb::dict d;
+    d["time_s"] = s.time_s;
+    d["interval_id"] = s.interval_id;
+    d["backend"] = s.backend;
+    d["geometric_contact"] = s.geometric_contact;
+    d["effective_radius_m"] = s.effective_radius_m;
+    std::vector<double> loads;
+    std::vector<char> working;
+    loads.reserve(s.patches.size());
+    working.reserve(s.patches.size());
+    nb::list patches;
+    for (const TirePatch& p : s.patches) {
+        loads.push_back(p.normal_load_n);
+        working.push_back(static_cast<char>(p.working_surface));
+        nb::dict pd;
+        pd["normal_load_n"] = p.normal_load_n;
+        pd["tangent_force_n"] = p.tangent_force_n;
+        pd["slip_mps"] = p.slip_mps;
+        pd["working_surface"] = p.working_surface;
+        patches.append(pd);
+    }
+    d["patches"] = std::move(patches);
+    d["patch_loads"] = as_owned(std::move(loads));
+    d["patch_working"] = as_owned_bool(std::move(working));
+    d["eff_radius"] = s.effective_radius_m;
+    return d;
 }
 // One tire-snapshot side, flat-array schema:
 // {'patch_loads': f64[n], 'patch_working': bool[n], 'eff_radius': float}.
@@ -125,6 +174,67 @@ NB_MODULE(bike_native, m) {
             nb::dict out;
             for (auto& [name, vec] : s.suspension_components())
                 out[name.c_str()] = as_owned(std::move(vec));
+            return out;
+        })
+        .def("set_tire_state", [](Stepper& s,
+                const std::vector<std::string>& names,
+                const nb::ndarray<const double, nb::shape<-1>,
+                                  nb::c_contig>& row) {
+            s.set_tire_state(names, as_span(row));
+        })
+        .def("tire_state", [](Stepper& s) {
+            return as_owned(s.tire_state());
+        })
+        .def_prop_ro("tire_state_names", [](Stepper& s) {
+            return s.tire_state_names();
+        })
+        .def("tire_qfrc", [](Stepper& s, double dt) {
+            return as_owned(s.tire_qfrc(dt));
+        })
+        .def("tire_snapshots", [](Stepper& s) {
+            const TireWriter* t = s.tire();
+            if (!t)
+                throw std::logic_error(
+                    "tire writer: Stepper was built without a tire config "
+                    "(pass the dict from tools.native_config.project)");
+            nb::dict out;
+            const auto& snaps = t->snapshots();
+            const std::array<const char*, 2> sides = {"front", "rear"};
+            for (std::size_t i = 0; i < 2; ++i)
+                if (snaps[i])
+                    out[sides[i]] = snapshot_dict(*snaps[i]);
+            return out;
+        })
+        .def("tire_diagnostics", [](Stepper& s) {
+            const TireWriter* t = s.tire();
+            if (!t)
+                throw std::logic_error(
+                    "tire writer: Stepper was built without a tire config "
+                    "(pass the dict from tools.native_config.project)");
+            nb::dict out;
+            const auto& diags = t->diagnostics();
+            const std::array<const char*, 2> sides = {"front", "rear"};
+            for (std::size_t i = 0; i < 2; ++i) {
+                if (!diags[i])
+                    continue;
+                const TireDiagnostics& g = *diags[i];
+                nb::dict d;
+                d["multi_support"] = g.multi_support;
+                d["penetration_m"] = g.penetration_m;
+                d["normal_speed_mps"] = g.normal_speed_mps;
+                d["slip_mps"] = g.slip_mps;
+                d["normal_load_n"] = g.normal_load_n;
+                d["tangent_force_n"] = g.tangent_force_n;
+                d["friction_coefficient"] = g.friction_coefficient;
+                d["surface"] = g.surface;
+                d["branch_release_loss_j"] = g.branch_release_loss_j;
+                d["brush_loss_j"] = g.brush_loss_j;
+                d["radial_energy_j"] = g.radial_energy_j;
+                d["shear_energy_j"] = g.shear_energy_j;
+                d["outside_material_load_range"] =
+                    g.outside_material_load_range;
+                out[sides[i]] = d;
+            }
             return out;
         })
         .def_prop_ro("time", &Stepper::time);

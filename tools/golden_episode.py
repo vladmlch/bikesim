@@ -6,8 +6,9 @@ port must reproduce (ADR 0001 §6).
 
 v2 additionally captures, per physics step, the mjData state at the entry of
 ``runtime.apply_forces`` (qpos/qvel/act/warmstart/time), the ``d.ctrl`` buffer
-it leaves behind, and every named force component in ``acc.add`` insertion
-order — the inputs/outputs per-call writer-equivalence checks replay.
+it leaves behind, every named force component in ``acc.add`` insertion order,
+and the flattened tire brush states the call consumes — the inputs/outputs
+per-call writer-equivalence checks replay.
 """
 import json
 from dataclasses import asdict, dataclass, field
@@ -102,6 +103,10 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
         record = {'qpos': d.qpos.copy(), 'qvel': d.qvel.copy(),
                   'act': d.act.copy(), 'warmstart': d.qacc_warmstart.copy(),
                   'time': float(d.time), 'components': {}, 'ctrl': None,
+                  # The brush states compute_qfrc consumes on THIS call —
+                  # captured at entry so tire_state[k] restores the state
+                  # that produced forces[k], mirroring state_qpos[k].
+                  'tire_state': _tire_state_row(runtime.tire),
                   'open': True}
         records.append(record)
         try:
@@ -112,14 +117,13 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
 
     acc.add = spied_add
     runtime.apply_forces = spied_apply
-    controls, rows, tire_rows, tire_snapshots = [], [], [], []
+    controls, rows, tire_snapshots = [], [], []
     tire = runtime.tire
     try:
         for _ in range(steps):
             runtime.step(control=control)
             controls.append(asdict(runtime.applied_control))
             rows.extend(s.as_dict() for s in runtime.completed_samples)
-            tire_rows.append(_tire_state_row(tire))
             tire_snapshots.append(_tire_snapshot_row(tire))
     finally:
         # Removing the instance attributes restores the class-bound methods.
@@ -143,11 +147,11 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
         for name, qfrc in r['components'].items():
             forces[i, force_index[name]] = qfrc
     tire_state_names = list(dict.fromkeys(
-        n for r in tire_rows for n in r))
+        n for r in records for n in r['tire_state']))
     tire_state = np.full((k, len(tire_state_names)), np.nan)
-    for i, r in enumerate(tire_rows):
+    for i, r in enumerate(records):
         for j, n in enumerate(tire_state_names):
-            v = r.get(n)
+            v = r['tire_state'].get(n)
             if isinstance(v, (int, float)):
                 tire_state[i, j] = float(v)   # None/sentinels stay NaN
     manifest = {

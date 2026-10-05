@@ -119,10 +119,57 @@ struct ResistanceConfig {
     std::string frame_body, front_wheel_body, rear_wheel_body;
 };
 
+// TireSpec fields (physics/tire.py:31-50) — the linear radial material the
+// compliant_2d path reads, plus the load-range declaration its validity flag
+// consumes. `provenance`/`pressure_pa_gauge` ride along for completeness; the
+// writer only validates them the way TireSpec.__post_init__ does.
+struct TireMaterial {
+    double radial_k_n_m, radial_c_ns_m, pressure_pa_gauge;
+    std::string provenance;
+    std::array<double, 2> valid_load_range_n;
+};
+
+// TireParameters (physical_config.py:23-35).
+struct TireParams {
+    TireMaterial material;
+    double tangent_k_n_m, mu, relaxation_length_m;
+};
+
+// SurfaceSpec (terrain/surface.py:31-88) with the registry name already
+// resolved — the writer only ever calls mu(slip) and reads .name.
+struct SurfaceSpec {
+    std::string name;
+    double mu_peak, mu_slide, slip_stiffness_per_load, stribeck_speed_mps;
+};
+
+// SurfaceSection — a half-open material interval on the track axis.
+struct SurfaceSection {
+    double start_m, end_m;
+    SurfaceSpec surface;
+};
+
+// SurfaceMap (terrain/surface.py:160-206): a default material plus sorted
+// non-overlapping sections; `at` scans sections then falls back to default.
+struct SurfaceMap {
+    SurfaceSpec surface;
+    std::vector<SurfaceSection> sections;
+};
+
+// TireBackendConfig (physical_config.py:38-63), restricted to the backend the
+// native port implements: 'compliant_2d'.
+struct TireConfig {
+    std::string backend;
+    std::string surface_mode;   // 'configured' | 'track'
+    TireParams front, rear;
+    double significant_delta_m, significance_fraction, distinct_normal_deg;
+    std::optional<SurfaceMap> surface_map;
+};
+
 struct NativeConfig {
     std::optional<SuspensionConfig> suspension;
     std::optional<BrakeConfig> brake;
     std::optional<ResistanceConfig> resistance;
+    std::optional<TireConfig> tire;
 };
 
 // --- dict readers ----------------------------------------------------------
@@ -178,6 +225,24 @@ inline std::array<double, 3> req_vec3(const nb::dict& d, const char* s,
             "native config: '" + std::string(s) + "." + k +
             "' must have exactly 3 elements");
     return {v[0], v[1], v[2]};
+}
+
+// Two-float sequence reader (tire valid_load_range_n).
+inline std::array<double, 2> req_vec2(const nb::dict& d, const char* s,
+                                      const char* k) {
+    std::vector<double> v;
+    try {
+        v = nb::cast<std::vector<double>>(req(d, s, k));
+    } catch (const nb::cast_error&) {
+        throw std::invalid_argument(
+            "native config: '" + std::string(s) + "." + k +
+            "' must be a sequence of 2 floats");
+    }
+    if (v.size() != 2)
+        throw std::invalid_argument(
+            "native config: '" + std::string(s) + "." + k +
+            "' must have exactly 2 elements");
+    return {v[0], v[1]};
 }
 
 inline DamperCore damper_core(const nb::dict& d, const char* s) {
@@ -317,6 +382,93 @@ inline ResistanceConfig resistance_from_dict(const nb::dict& top) {
     return c;
 }
 
+inline SurfaceSpec surface_spec_from_dict(const nb::dict& d, const char* s) {
+    SurfaceSpec c;
+    c.name = detail::req_str(d, s, "name");
+    c.mu_peak = detail::req_f64(d, s, "mu_peak");
+    c.mu_slide = detail::req_f64(d, s, "mu_slide");
+    c.slip_stiffness_per_load =
+        detail::req_f64(d, s, "slip_stiffness_per_load");
+    c.stribeck_speed_mps = detail::req_f64(d, s, "stribeck_speed_mps");
+    return c;
+}
+
+inline TireParams tire_params_from_dict(const nb::dict& d, const char* s) {
+    TireParams p;
+    {
+        const nb::dict m = detail::req_dict(d, s, "material");
+        const char* sm = "tire.material";
+        p.material = {
+            detail::req_f64(m, sm, "radial_k_n_m"),
+            detail::req_f64(m, sm, "radial_c_ns_m"),
+            detail::req_f64(m, sm, "pressure_pa_gauge"),
+            detail::req_str(m, sm, "provenance"),
+            detail::req_vec2(m, sm, "valid_load_range_n"),
+        };
+    }
+    p.tangent_k_n_m = detail::req_f64(d, s, "tangent_k_n_m");
+    p.mu = detail::req_f64(d, s, "mu");
+    p.relaxation_length_m = detail::req_f64(d, s, "relaxation_length_m");
+    return p;
+}
+
+inline TireConfig tire_from_dict(const nb::dict& top) {
+    const char* s = "tire";
+    const nb::dict d = detail::req_dict(top, "config", s);
+    TireConfig c;
+    c.backend = detail::req_str(d, s, "backend");
+    // Only compliant_2d is ported; the config layer is the honest place to
+    // say so (project() never emits another backend).
+    if (c.backend != "compliant_2d")
+        throw std::invalid_argument(
+            "native config: tire.backend must be 'compliant_2d'");
+    c.surface_mode = detail::req_str(d, s, "surface_mode");
+    if (c.surface_mode != "configured" && c.surface_mode != "track")
+        throw std::invalid_argument(
+            "native config: tire.surface_mode must be 'configured' or "
+            "'track'");
+    c.front = tire_params_from_dict(
+        detail::req_dict(d, s, "front"), "tire.front");
+    c.rear = tire_params_from_dict(
+        detail::req_dict(d, s, "rear"), "tire.rear");
+    c.significant_delta_m = detail::req_f64(d, s, "significant_delta_m");
+    c.significance_fraction =
+        detail::req_f64(d, s, "significance_fraction");
+    c.distinct_normal_deg = detail::req_f64(d, s, "distinct_normal_deg");
+    if (c.surface_mode == "track") {
+        const nb::dict sm =
+            detail::req_dict(d, s, "surface_map");
+        const char* smn = "tire.surface_map";
+        SurfaceMap map;
+        map.surface = surface_spec_from_dict(
+            detail::req_dict(sm, smn, "surface"),
+            "tire.surface_map.surface");
+        const nb::object raw = detail::req(sm, smn, "sections");
+        if (!nb::isinstance<nb::list>(raw) &&
+            !nb::isinstance<nb::tuple>(raw))
+            throw std::invalid_argument(
+                "native config: 'tire.surface_map.sections' must be a "
+                "sequence of dicts");
+        for (nb::handle item : nb::borrow<nb::sequence>(raw)) {
+            if (!nb::isinstance<nb::dict>(item))
+                throw std::invalid_argument(
+                    "native config: 'tire.surface_map.sections' entries "
+                    "must be dicts");
+            const nb::dict sec = nb::borrow<nb::dict>(item);
+            const char* ss = "tire.surface_map.sections";
+            map.sections.push_back({
+                detail::req_f64(sec, ss, "start_m"),
+                detail::req_f64(sec, ss, "end_m"),
+                surface_spec_from_dict(
+                    detail::req_dict(sec, ss, "surface"),
+                    "tire.surface_map.sections.surface"),
+            });
+        }
+        c.surface_map = std::move(map);
+    }
+    return c;
+}
+
 // Whole-config reader: an empty dict disables every writer (checked by the
 // caller before this runs); a non-empty one must name the schema and may
 // carry each writer's section.
@@ -332,6 +484,8 @@ inline NativeConfig native_config_from_dict(const nb::dict& d) {
         c.brake = brake_from_dict(d);
     if (d.contains("resistance"))
         c.resistance = resistance_from_dict(d);
+    if (d.contains("tire"))
+        c.tire = tire_from_dict(d);
     return c;
 }
 

@@ -12,6 +12,7 @@
 class SuspensionWriter;
 class BrakeWriter;
 class ResistanceWriter;
+class TireWriter;
 struct TireSideInput;
 
 class Stepper {
@@ -71,10 +72,27 @@ public:
     [[nodiscard]] std::vector<std::pair<std::string, std::vector<double>>>
         resistance_components(const TireSideInput& front,
                               const TireSideInput& rear) const;
+    // TireForceApplier.compute_qfrc advance=True on the CURRENT mjData —
+    // restores no brush state on its own; call set_tire_state first when
+    // replaying. Throws std::logic_error without a tire config.
+    [[nodiscard]] std::vector<double> tire_qfrc(double dt);
+    // The artifact's flattened brush-state encoding: names follow the
+    // flatten_row schema ('front.tangent.0' style; leaf 'front.tangent'
+    // columns also decode, all-NaN vector -> unset field). Restoring
+    // clears the once-per-timestamp clock like `last_time_s = None`.
+    void set_tire_state(std::span<const std::string> names,
+                        std::span<const double> row);
+    [[nodiscard]] std::vector<double> tire_state() const;
+    [[nodiscard]] const std::vector<std::string>&
+        tire_state_names() const;
+    // The writer itself — snapshots()/diagnostics() are read here by the
+    // binding. nullptr without a tire config (callers gate on it).
+    [[nodiscard]] const TireWriter* tire() const { return tire_.get(); }
 private:
     mjModel* m_;
     mjData* d_;
     std::unique_ptr<SuspensionWriter> suspension_;
     std::unique_ptr<BrakeWriter> brake_;
     std::unique_ptr<ResistanceWriter> resistance_;
+    std::unique_ptr<TireWriter> tire_;
 };

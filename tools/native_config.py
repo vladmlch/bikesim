@@ -13,7 +13,23 @@ actually read, as a versioned dict::
      'brake': {'torque_ceiling_nm': ..., 'taper_radps': ...},
      'resistance': {'crr': ..., 'rolling_taper_rad_s': ..., 'rho_kg_m3': ...,
                     'cda_m2': ..., 'wind_world_mps': [...],
-                    'point_body_m': [...], 'bodies': {...}}}
+                    'point_body_m': [...], 'bodies': {...}},
+     'tire': {'backend': ..., 'surface_mode': ...,
+              'significant_delta_m': ..., 'significance_fraction': ...,
+              'distinct_normal_deg': ...,
+              'front': {material, tangent_k_n_m, mu, relaxation_length_m},
+              'rear': {...},
+              'surface_map': {'surface': {...SurfaceSpec fields...},
+                              'sections': [{start_m, end_m, surface}]}},
+    }
+
+The 'tire' section is emitted only for ``backend == 'compliant_2d'`` — the
+only backend the native port implements (``native_reference`` produces no
+tire writer in Python either, so no section; ``distributed_2d_reference``
+is a different, unported writer and is rejected). The material must be a
+``TireSpec``; a ``TabulatedTireSpec`` follows a different force law the
+native writer does not implement and is rejected here. The surface map is
+serialized with every named surface resolved to its numeric fields.
 
 Every leaf is a builtin int/float/bool/str so the dict crosses nanobind without
 pickle or numpy types. ``schema`` versions the layout: the C++ bridge rejects
@@ -50,6 +66,60 @@ def _damper_core(d):
     }
 
 
+def _surface_spec(spec) -> dict:
+    """SurfaceSpec -> the numeric fields the mu(v) curve and diagnostics read."""
+    return {'name': str(spec.name), 'mu_peak': float(spec.mu_peak),
+            'mu_slide': float(spec.mu_slide),
+            'slip_stiffness_per_load': float(spec.slip_stiffness_per_load),
+            'stribeck_speed_mps': float(spec.stribeck_speed_mps)}
+
+
+def _tire_side(params) -> dict:
+    """TireParameters -> the fields compute_qfrc reads (TireSpec only)."""
+    from bike_sim.physics.tire import TireSpec
+    material = params.material
+    if not isinstance(material, TireSpec):
+        raise ValueError('native tire port requires TireSpec material, '
+                         f'got {type(material).__name__}')
+    lo, hi = material.valid_load_range_n
+    return {
+        'material': {
+            'radial_k_n_m': float(material.radial_k_n_m),
+            'radial_c_ns_m': float(material.radial_c_ns_m),
+            'pressure_pa_gauge': float(material.pressure_pa_gauge),
+            'provenance': str(material.provenance),
+            'valid_load_range_n': [float(lo), float(hi)],
+        },
+        'tangent_k_n_m': float(params.tangent_k_n_m),
+        'mu': float(params.mu),
+        'relaxation_length_m': float(params.relaxation_length_m),
+    }
+
+
+def _tire_section(cfg_tires, surface_map) -> dict:
+    """TireBackendConfig + SurfaceMap -> the tire writer's section."""
+    out = {
+        'backend': str(cfg_tires.backend),
+        'surface_mode': str(cfg_tires.surface_mode),
+        'significant_delta_m': float(cfg_tires.significant_delta_m),
+        'significance_fraction': float(cfg_tires.significance_fraction),
+        'distinct_normal_deg': float(cfg_tires.distinct_normal_deg),
+        'front': _tire_side(cfg_tires.front),
+        'rear': _tire_side(cfg_tires.rear),
+    }
+    if cfg_tires.surface_mode == 'track':
+        if surface_map is None:
+            raise ValueError('surface_mode track requires a track surface map')
+        from bike_sim.terrain.surface import get_surface
+        out['surface_map'] = {
+            'surface': _surface_spec(surface_map._surface),
+            'sections': [{'start_m': float(s.start_m), 'end_m': float(s.end_m),
+                          'surface': _surface_spec(get_surface(s.surface))}
+                         for s in surface_map.sections],
+        }
+    return out
+
+
 def project(env) -> dict:
     """Emit the native config dict for env (or a bare RideSimulation)."""
     sim = getattr(env, 'sim', env)
@@ -61,7 +131,11 @@ def project(env) -> dict:
     coil = ap.coil_shock.specs
     cfg = ap.physics_config
     res = cfg.resistance
-    return {
+    # sim.physics_config is the object the runtime's tire writer read.
+    tires = sim.physics_config.tires
+    if tires.backend not in ('compliant_2d', 'native_reference'):
+        raise ValueError(f"native tire backend '{tires.backend}' is not ported")
+    out = {
         'schema': SCHEMA,
         'brake': {
             'torque_ceiling_nm': float(sim.brakes.torque_ceiling_nm),
@@ -131,6 +205,12 @@ def project(env) -> dict:
             },
         },
     }
+    if tires.backend == 'compliant_2d':
+        # sim.track.surface_map is a fresh SurfaceMap per access; the tire
+        # writer captured an equal-valued one at construction — content is
+        # what crosses the boundary.
+        out['tire'] = _tire_section(tires, sim.track.surface_map)
+    return out
 
 
 __all__ = ['project', 'SCHEMA']

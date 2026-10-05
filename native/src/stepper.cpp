@@ -6,6 +6,7 @@
 #include "writers/brake.hpp"
 #include "writers/resistance.hpp"
 #include "writers/suspension.hpp"
+#include "writers/tire.hpp"
 
 namespace {
 // Same check for every incoming span — one place only (the binding converts
@@ -53,6 +54,8 @@ Stepper::Stepper(const std::string& mjb_path, const nanobind::dict& config)
         if (cfg.resistance)
             resistance_ =
                 std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
+        if (cfg.tire)
+            tire_ = std::make_unique<TireWriter>(m_, d_, *cfg.tire);
     } catch (...) {
         mj_deleteData(d_);
         mj_deleteModel(m_);
@@ -117,4 +120,33 @@ Stepper::resistance_components(const TireSideInput& front,
             "resistance_components: Stepper was built without a resistance "
             "config (pass the dict from tools.native_config.project)");
     return resistance_->components(d_, front, rear);
+}
+
+namespace {
+constexpr const char* kNoTire =
+    "tire writer: Stepper was built without a tire config (pass the dict "
+    "from tools.native_config.project)";
+} // namespace
+
+std::vector<double> Stepper::tire_qfrc(double dt) {
+    if (!tire_)
+        throw std::logic_error(kNoTire);
+    return tire_->qfrc(d_, dt);
+}
+
+void Stepper::set_tire_state(std::span<const std::string> names,
+                             std::span<const double> row) {
+    if (!tire_)
+        throw std::logic_error(kNoTire);
+    tire_->set_state(names, row);
+}
+
+std::vector<double> Stepper::tire_state() const {
+    if (!tire_)
+        throw std::logic_error(kNoTire);
+    return tire_->state();
+}
+
+const std::vector<std::string>& Stepper::tire_state_names() const {
+    return TireWriter::state_names();
 }

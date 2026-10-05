@@ -134,6 +134,7 @@ git commit -m "feat(native): port scalar drivetrain policies with bitwise oracle
 - Modify: `native/src/config.hpp`, `stepper.hpp`, `stepper.cpp`, `binding.cpp`, `native/CMakeLists.txt` — optional typed drive config, writer ownership, registration.
 - Modify: `tools/native_config.py` — `project_drive(drive)` reuses `project_drive_policies`; `project()` emits optional `drive` only when `sim.physical.drive` exists.
 - Test: `tests/reference/test_native_drivetrain.py`.
+- Modify: `tests/reference/test_native_drive_policies.py` — permit an explicitly selected local sanitizer build while still asserting exact extension provenance, for the combined ASAN acceptance run.
 - Modify: `docs/TESTING.md` — stage ordering, supported configurations and acceptance limits.
 
 **Interfaces:**

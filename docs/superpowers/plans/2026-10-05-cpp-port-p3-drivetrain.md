@@ -45,7 +45,7 @@
 - `pedaling`: the eight fields actually read by `PedalingPolicy` (`enabled`, `coast_above_rpm`, `resume_below_rpm`, `stop_time_s`, `coast_cadence_tau_s`, `mash_cadence_rpm`, `mash_torque_nm`, `effort_slew_nm_s`).
 - `shifting`: all `ShiftingConfig` fields, including the cassette list and signed/magnitude slip mode.
 - `assist`: resolved `gain`, `max_torque`, `max_power`, `tau`, `slew`, `engage_torque_nm`, `gate_min_crank_rad_s`, `cutoff_mps`, `taper_width_mps`, optional torque-curve rows, and `mode`; optional profile contains resolved four mode gains and `emtb_full_gain_at_nm`. Serialize runtime `drive.assist` values after profile overrides, not authored synthetic defaults.
-- `battery`: all `BatteryConfig` fields; `hub_stiffness_nm_rad`, `hub_damping_nm_s` from `drive.config.freehub_k_nm_rad` and `drive.config.freehub_c_nms`.
+- `battery`: all `BatteryConfig` fields; `hub_stiffness_nm_rad`, `hub_damping_nm_s` from `drive.config.freehub_k_nm_rad` and `drive.config.freehub_c_nms_rad`.
 
 The public diagnostic class is `bike_native.DrivePolicies(config: dict)`. It owns typed policies and implements:
 
@@ -136,7 +136,7 @@ git commit -m "feat(native): port scalar drivetrain policies with bitwise oracle
 
 **Interfaces:**
 
-The drive section contains Task 1 policy config fields plus `drive_mode`, `transmission_model`, `human_torque_nm`, `torque_ripple`, `crank_phase_rad`, `chain_k_n_m`, `chain_c_ns_m`, `bearing_c_nms`, and `motor_clutch`. Runtime model topology determines actuator IDs and optional rotor, with authored rotor inertia serialized/validated as needed. `drive_mode` is the applier's construction-time mode, not a per-call switch. Names and supported topologies are those resolved by the Python applier. No live model, actuator, or policy object crosses the bridge.
+The drive section contains Task 1 policy config fields plus `drive_mode`, `transmission_model`, `human_torque_nm`, `torque_ripple`, `crank_phase_rad`, `chain_k_n_m`, `chain_c_ns_m`, `bearing_c_nms_rad`, and `motor_clutch`. Runtime model topology determines actuator IDs and optional rotor, with authored rotor inertia serialized/validated as needed. `drive_mode` is the applier's construction-time mode, not a per-call switch. Names and supported topologies are those resolved by the Python applier. No live model, actuator, or policy object crosses the bridge.
 
 `DrivetrainWriter` consumes `mjModel*`, `mjData*`, typed config, and Task 1 policies. It exposes typed methods underlying:
 
@@ -150,7 +150,7 @@ stepper.drive_components(control, dt, speed_mps, braking=False, active=True,
     pedaling_state=None, rear_in_contact=True, rear_slip_mps=None)
 # dict of owning arrays, exactly Python compute() component names
 stepper.drive_settle_actuation()  # owning f64[nv] solved transmission force
-stepper.drive_diagnostics()  # owning dict of latest live or probe diagnostics
+stepper.drive_diagnostics(probe=False)  # owning dict of live or probe diagnostics
 stepper.drive_stored_energy()  # same dict as Python stored_energy()
 stepper.drive_state()  # every mutable writer/policy/transmission field
 stepper.set_drive_state(state)  # atomic, complete restoration

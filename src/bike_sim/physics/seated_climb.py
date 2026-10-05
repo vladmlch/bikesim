@@ -5,6 +5,7 @@ from math import atan2, exp, hypot, pi, sin, cos
 
 from bike_sim.physics.checks import array, scalar
 from bike_sim.physics.rider_posture import RiderPosture
+from bike_sim.physics.rider_program import SeatedPostureProgram
 
 
 @dataclass(frozen=True)
@@ -20,15 +21,28 @@ class SeatedClimbConfig:
     max_backward_lean_rad: float = .10
     lean_rate_rad_s: float = .5
     orientation_tau_s: float = .5
+    surge_power_w: float = 400.
+    surge_grade: float = .20
+    surge_budget_s: float = 15.
+    surge_recovery_rate: float = 1/3
+    front_load_share_target: float = .30
+    lean_trim_gain_rad_s: float = .3
+    lean_trim_limit_rad: float = .15
+    trim_dead_time_s: float = .2
 
     def __post_init__(self):
         if not isinstance(self.enabled, bool):
             raise ValueError('seated climb enable must be boolean')
         for name in ('period_s', 'target_crank_power_w', 'max_crank_torque_nm',
-                     'torque_slew_nm_s', 'lean_rate_rad_s', 'orientation_tau_s'):
+                     'torque_slew_nm_s', 'lean_rate_rad_s', 'orientation_tau_s',
+                     'surge_power_w', 'surge_budget_s'):
             scalar(getattr(self, name), name, positive=True)
-        for name in ('reaction_delay_s', 'lean_gain', 'max_forward_lean_rad', 'max_backward_lean_rad'):
+        for name in ('reaction_delay_s', 'lean_gain', 'max_forward_lean_rad', 'max_backward_lean_rad',
+                     'surge_grade', 'surge_recovery_rate', 'front_load_share_target',
+                     'lean_trim_gain_rad_s', 'lean_trim_limit_rad', 'trim_dead_time_s'):
             scalar(getattr(self, name), name, minimum=0.)
+        if self.front_load_share_target > 1.:
+            raise ValueError('front load share target must not exceed one')
         if max(self.max_forward_lean_rad, self.max_backward_lean_rad) > .8:
             raise ValueError('seated lean exceeds the posture envelope')
 
@@ -39,12 +53,17 @@ class SeatedClimbSignals:
     specific_force_body_mps2: tuple[float, float, float] = (0., 0., 0.)
     crank_rate_rad_s: float = 0.
     human_crank_torque_nm: float = 0.
+    front_load_share: float | None = None
 
     def __post_init__(self):
         for name in ('pitch_rate_up_rad_s', 'crank_rate_rad_s', 'human_crank_torque_nm'):
             scalar(getattr(self, name), name)
         acceleration = array(self.specific_force_body_mps2, 'rider specific force', (3,))
         object.__setattr__(self, 'specific_force_body_mps2', tuple(map(float, acceleration)))
+        if self.front_load_share is not None:
+            scalar(self.front_load_share, 'front load share', minimum=0.)
+            if self.front_load_share > 1.:
+                raise ValueError('front load share must not exceed one')
 
 
 @dataclass(frozen=True)
@@ -66,6 +85,10 @@ class SeatedClimbPolicy:
         if not isinstance(config, SeatedClimbConfig):
             raise ValueError('expected a seated climb configuration')
         self.config = config
+        # The lean intent lives in the posture program; this class only
+        # estimates inclination from delayed proprioceptive signals and
+        # shapes the effort ceiling.
+        self.program = SeatedPostureProgram(config)
         self.reset()
 
     def reset(self):
@@ -75,14 +98,34 @@ class SeatedClimbPolicy:
         self.effort_nm = 0.
         self._samples = deque()
         self._delayed = None
+        self.surge_budget_s_left = self.config.surge_budget_s
+        self.program.reset()
 
-    def update(self, signals: SeatedClimbSignals, dt_s: float) -> SeatedClimbIntent:
+    def power_target_w(self, preview_grade, dt_s):
+        """Spend finite surge time on steep ground; restore it on gentler ground."""
+        grade = scalar(preview_grade, 'surge preview grade')
+        dt = scalar(dt_s, 'surge interval', positive=True)
+        cfg = self.config
+        if grade >= cfg.surge_grade:
+            if self.surge_budget_s_left+1e-12 >= dt:
+                self.surge_budget_s_left = max(0., self.surge_budget_s_left-dt)
+                return cfg.surge_power_w
+        else:
+            self.surge_budget_s_left = min(cfg.surge_budget_s,
+                self.surge_budget_s_left+cfg.surge_recovery_rate*dt)
+        return cfg.target_crank_power_w
+
+    def update(self, signals: SeatedClimbSignals, dt_s: float, *, road_grade: float,
+               preview_grade=None, lean_limit_rad=None) -> SeatedClimbIntent:
         if not isinstance(signals, SeatedClimbSignals):
             raise ValueError('expected finite seated rider signals')
         dt = scalar(dt_s, 'rider intention interval', positive=True)
+        road_grade = scalar(road_grade, 'posture road grade')
+        preview_grade = road_grade if preview_grade is None else scalar(preview_grade, 'posture preview grade')
         config = self.config
         if not config.enabled:
             return SeatedClimbIntent(RiderPosture(), 0.)
+        power_target = self.power_target_w(preview_grade, dt)
         self._samples.append((self.time_s, signals))
         ready_time = self.time_s - config.reaction_delay_s
         while self._samples and self._samples[0][0] <= ready_time + 1e-12:
@@ -97,13 +140,11 @@ class SeatedClimbPolicy:
                 difference = atan2(sin(estimate-self.inclination_rad), cos(estimate-self.inclination_rad))
                 self.inclination_rad += (1.-exp(-dt/config.orientation_tau_s))*difference
             self.inclination_rad = atan2(sin(self.inclination_rad), cos(self.inclination_rad))
-            target_lean = max(-config.max_backward_lean_rad,
-                min(config.max_forward_lean_rad, config.lean_gain*self.inclination_rad))
-            self.lean_rad += max(-config.lean_rate_rad_s*dt,
-                min(config.lean_rate_rad_s*dt, target_lean-self.lean_rad))
-            target_effort = crank_effort_ceiling(config.target_crank_power_w,
+            target_effort = crank_effort_ceiling(power_target,
                 config.max_crank_torque_nm, delayed.crank_rate_rad_s)
             self.effort_nm += max(-config.torque_slew_nm_s*dt,
                 min(config.torque_slew_nm_s*dt, target_effort-self.effort_nm))
+        self.lean_rad = self.program.update(self.time_s, preview_grade, dt,
+            front_load_share=signals.front_load_share, lean_limit_rad=lean_limit_rad)
         self.time_s += dt
         return SeatedClimbIntent(RiderPosture(torso_lean_rad=self.lean_rad, use_saddle=True), self.effort_nm)

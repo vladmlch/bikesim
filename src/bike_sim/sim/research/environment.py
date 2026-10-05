@@ -111,11 +111,6 @@ class ResearchEnvironment:
         cfg = sim.physics_config
         if cfg.physics_mode != 'physical' or cfg.drive_mode not in ('crank_effort', 'articulated_effort'):
             raise ValueError('research requires a physical effort drive, not a speed controller')
-        if (rider_program is not None and rider_program.owns_crank_reposition
-                and not (cfg.drive.motor_clutch and cfg.drive_mode == 'articulated_effort'
-                         and sim.rider.variant == 'articulated_planar')):
-            raise ValueError('a rider program owning crank_reposition requires '
-                             'drive.motor_clutch and the articulated rider')
         if cfg.pitch_assist or cfg.tires.backend not in ('compliant_2d','distributed_2d_reference') or cfg.tires.surface_mode != 'track':
             raise ValueError('research requires no pitch assist and track-material compliant_2d tires')
         self.dt_s = float(sim.model.opt.timestep)
@@ -137,6 +132,10 @@ class ResearchEnvironment:
         if self.rider_behavior is not None:
             self.rider_behavior.reset(self.seed)
         self.recorder = PhysicalRecorder(self.sim, decimate=self.config.record_decimation)
+        # Diagnostic mode may keep recording a violating episode; the run's
+        # model_valid flag still goes false and stays false.
+        self.sim.physical.set_strict(self.config.stop_on_model_violation)
+        self.sim.physical.set_record_decimation(self.config.record_decimation)
         self.tracker = WheelieTracker(persistence_s=self.config.wheelie_persistence_s)
         self.pipeline = SensorPipeline(self.sensor_config, seed=self.seed)
         self.sim.data.qacc_warmstart.fill(0.)
@@ -146,9 +145,8 @@ class ResearchEnvironment:
             control=RideControl(motor_torque_nm=0., human_torque_nm=0.))
         mujoco.mj_forward(self.sim.model, self.sim.data)
         if self.sim.physics_config.seated_climb.enabled:
-            from bike_sim.sim.ride.rider_intent import signals_from_channels
             from bike_sim.sim.ride.physical_observations import sensor_channels
-            self.sim.physical.rider_intent_signals = signals_from_channels(sensor_channels(
+            self.sim.physical.update_rider_intent_signals(sensor_channels(
                 self.sim.physical, drive_channels=self.sim.physical.drive.probe_last))
         initial = raw_observation(self.sim)
         self.pipeline.reset(initial)
@@ -164,6 +162,7 @@ class ResearchEnvironment:
         self.commands_applied = [dict(time_s=0., step=0, control=asdict(self._applied))]
         self.observations = [self.observation]
         self.trace = []
+        self._sample_cursor = -1
         self.terminated = self.truncated = False
         self.reason = self.error = None
         self.last_truth = None
@@ -188,6 +187,10 @@ class ResearchEnvironment:
         return self.terminated or self.truncated
 
     @property
+    def reference_monitor(self):
+        return self.sim.physical.reference_monitor
+
+    @property
     def model_valid(self):
         return self.sim.physical.model_status.as_dict()['model_valid']
 
@@ -199,6 +202,63 @@ class ResearchEnvironment:
         self.sim.reset()
         self._begin_episode()
         return self.observation
+
+    def _consume_completed_samples(self, *, stop_at_outcome=True):
+        for sample in self.sim.physical.completed_samples:
+            if sample.interval_id <= self._sample_cursor:
+                continue
+            # Claim before any external consumer side effect: a failed write
+            # makes the run invalid and must never replay its partial effects.
+            self._sample_cursor = sample.interval_id
+            source_step = round(sample.time_s / self.dt_s)
+            if source_step >= self._next_sensor_step:
+                if source_step != self._next_sensor_step:
+                    raise RuntimeError('sensor acquisition skipped a physical sample')
+                raw = raw_observation(self.sim, sample)
+                self.pipeline.push(raw)
+                self._sensor_time = raw.source_time_s
+                self._next_sensor_step += self.sensor_steps
+            self.last_truth = truth_from_sample(self.sim, sample)
+            suspension = sample.channels['suspension']
+            self.max_shock_stroke_m = max(self.max_shock_stroke_m, abs(suspension['shock_stroke_m']))
+            self.max_fork_travel_m = max(self.max_fork_travel_m, abs(suspension['fork_travel_m']))
+            delivered = float(sample.channels['drive'].get('motor_torque_nm', 0.))
+            if self.demand is not None:
+                self.demand_integral_nms += self.demand.at(sample.time_s)*sample.dt_s
+            applied = sample.channels['control']['motor_torque_nm']
+            if applied is not None:
+                self.torque_requested_nms += applied*sample.dt_s
+            self.torque_delivered_nms += delivered*sample.dt_s
+            self.tracker.update(self.last_truth, sample.dt_s, context={
+                'delivered_motor_nm': delivered, 'applied_motor_nm': applied,
+                'road_pitch_rad': self.last_truth.road_pitch_rad,
+                'pitch_rate_up_rad_s': self.last_truth.pitch_rate_up_rad_s,
+                'speed_mps': self.last_truth.speed_mps})
+            self.recorder.record(self.sim, sample=sample)
+            quality = energy_quality(sample.channels['energy'],
+                maximum_ratio=self.config.maximum_energy_residual_ratio)
+            self.max_energy_residual_ratio = max(self.max_energy_residual_ratio, quality.residual_ratio)
+            if not quality.acceptable:
+                self.numerically_valid = False
+                self.truncated = True
+                self.reason = 'numerical_quality'
+                if stop_at_outcome:
+                    break
+            if self.config.stop_on_model_violation and not sample.channels['model_status']['model_valid']:
+                self.truncated = True
+                self.reason = 'model_violation'
+                if stop_at_outcome:
+                    break
+            if self.sim.crash is not None and self.sim.crash.time_s <= sample.end_time_s:
+                self.terminated = True
+                self.reason = crash_reason(self.sim.crash)
+                if stop_at_outcome:
+                    break
+            if self.last_truth.position_m >= self.sim.track.length_m:
+                self.terminated = True
+                self.reason = 'finish'
+                if stop_at_outcome:
+                    break
 
     def step(self, control, *, front_brake_demand=0., rear_brake_demand=0.):
         if self.done:
@@ -231,64 +291,41 @@ class ResearchEnvironment:
                                  if self.rider_program is not None else control)
                 effective = replace(self._motor_applied,
                     human_torque_nm=rider_control.human_torque_nm,
-                    posture=rider_control.posture, rider_enabled=rider_control.rider_enabled,
-                    crank_reposition=rider_control.crank_reposition)
+                    crank_target_rate_rad_s=rider_control.crank_target_rate_rad_s,
+                    posture=rider_control.posture, rider_enabled=rider_control.rider_enabled)
                 if effective != self._applied:
                     self._applied = effective
                     self.commands_applied.append(dict(time_s=self.sim.time_s, step=self.sim.steps,
                                                        control=asdict(self._applied)))
                 # Brakes are an immediate out-of-band safety input, not queued.
                 self.sim.step(front_brake_demand, rear_brake_demand, control=self._applied)
-                sample = self.sim.physical.sample
-                source_step = round(sample.time_s / self.dt_s)
-                if source_step >= self._next_sensor_step:
-                    if source_step != self._next_sensor_step:
-                        raise RuntimeError('sensor acquisition skipped a physical sample')
-                    raw = raw_observation(self.sim, sample)
-                    self.pipeline.push(raw)
-                    self._sensor_time = raw.source_time_s
-                    self._next_sensor_step += self.sensor_steps
-                self.last_truth = truth_from_sample(self.sim, sample)
-                suspension = sample.channels['suspension']
-                self.max_shock_stroke_m = max(self.max_shock_stroke_m, abs(suspension['shock_stroke_m']))
-                self.max_fork_travel_m = max(self.max_fork_travel_m, abs(suspension['fork_travel_m']))
-                delivered = float(sample.channels['drive'].get('motor_torque_nm', 0.))
-                if self.demand is not None:
-                    self.demand_integral_nms += self.demand.at(sample.time_s)*sample.dt_s
-                applied = self._applied.motor_torque_nm
-                if applied is not None:
-                    self.torque_requested_nms += applied*sample.dt_s
-                self.torque_delivered_nms += delivered*sample.dt_s
-                self.tracker.update(self.last_truth, sample.dt_s, context={
-                    'delivered_motor_nm': delivered, 'applied_motor_nm': applied,
-                    'road_pitch_rad': self.last_truth.road_pitch_rad,
-                    'pitch_rate_up_rad_s': self.last_truth.pitch_rate_up_rad_s,
-                    'speed_mps': self.last_truth.speed_mps})
-                self.recorder.record(self.sim)
-                quality = energy_quality(self.sim.physical.energy,
-                    maximum_ratio=self.config.maximum_energy_residual_ratio)
-                self.max_energy_residual_ratio = max(self.max_energy_residual_ratio, quality.residual_ratio)
-                if not quality.acceptable:
-                    self.numerically_valid = False
-                    self.truncated = True
-                    self.reason = 'numerical_quality'
+                self._consume_completed_samples()
+                if self.done:
                     break
-                if self.config.stop_on_model_violation and not self.sim.physical.model_status.as_dict()['model_valid']:
-                    self.truncated = True
-                    self.reason = 'model_violation'
-                    break
-                if self.sim.crash is not None:
-                    self.terminated = True
-                    self.reason = crash_reason(self.sim.crash)
-                    break
-                if self.sim.position_m >= self.sim.track.length_m:
-                    self.terminated = True
-                    self.reason = 'finish'
-                    break
+            # End of the external policy window can leave a partial period.
+            if self.sim.physical._buffer._raws:
+                self.sim.physical.flush()
+                self._consume_completed_samples()
         except Exception as exc:
+            from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
             self.terminated = True
-            self.reason = 'simulation_error'
+            primary_reason = ('invalid_controller' if isinstance(exc, InvalidReferenceRun)
+                              else 'simulation_error')
+            self.reason = primary_reason
             self.error = f'{type(exc).__name__}: {exc}'
+            # Account a partial physical period even when integration or a
+            # caller fails, without replacing the originating exception.
+            try:
+                if self.sim.physical._buffer._raws:
+                    self.sim.physical.flush()
+            except Exception as tail_error:
+                exc.add_note(f'trailing interval check: {tail_error}')
+            try:
+                self._consume_completed_samples(stop_at_outcome=False)
+            except Exception as consumption_error:
+                exc.add_note(f'trailing sample consumption: {consumption_error}')
+            finally:
+                self.reason = primary_reason
             raise  # Never manufacture a successful transition from invalid dynamics.
         if not self.done and self.sim.steps >= self.max_steps:
             self.truncated, self.reason = True, 'duration'

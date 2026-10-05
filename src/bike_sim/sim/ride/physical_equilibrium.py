@@ -77,7 +77,10 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     while not cache_hit and steps < max_steps:
         for _ in range(min(cycle, max_steps-steps)):
             runtime.apply_forces(active=False, advance=True, front=sim.physics_config.initial_front_brake, rear=sim.physics_config.initial_rear_brake)
+            interval_state = (data.qpos.copy(), data.qvel.copy())
             mujoco.mj_step(model, data)
+            if runtime.rider_contacts is not None:
+                runtime.rider_contacts.settle_welds(model, data, interval_state)
             steps += 1
             if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all():
                 raise RuntimeError('non-finite physical equilibrium state')

@@ -35,7 +35,7 @@ def airborne_internal_actuation(dt):
     maximum=work=absolute_work=peak=0.
     for _ in range(round(2./dt)):
         mujoco.mj_forward(model,data)
-        commands=controller.compute(model,data,RiderCommand(20.),contact_loads={},support_available={})
+        commands=controller.compute(model,data,RiderCommand(20.),support_available={})
         controller.write(data,commands)
         velocity=data.qvel.copy()
         mujoco.mj_step(model,data)

@@ -39,7 +39,7 @@ cp "$WORK/dist/$WHEEL" "$WORK/wheelhouse/"
 
 copy_project() {
     rsync -a \
-      --exclude '.git' --exclude '.venv' --exclude 'output' --exclude 'dist*' \
+      --exclude '.git' --exclude '.venv' --exclude 'output' --exclude '/dist*/' \
       --exclude '__pycache__' --exclude '.pytest_cache' --exclude '*.egg-info' \
       --exclude '.DS_Store' --exclude '.idea' --exclude '.agents' --exclude '.claude' \
       --exclude '.codex' --exclude '.junie' --exclude '.superpowers' --exclude '.ai' \

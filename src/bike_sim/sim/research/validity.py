@@ -30,6 +30,9 @@ def channel_violations(channels: Mapping, maximum_compression_fraction=.15,
     error = channels.get('suspension', {}).get('linkage_closure_max_m', 0.)
     if not isfinite(error) or error > maximum_linkage_error_m:
         reasons.append('linkage:closure_error')
+    # Per-step attachment budgets measured from the solved interval (V1/V2).
+    # A violated support makes the whole run invalid, not a clipped sample.
+    reasons.extend(channels.get('attachment_violations', ()))
     return tuple(reasons)
 
 

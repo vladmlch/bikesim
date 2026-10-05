@@ -12,7 +12,9 @@ import json
 import time
 import traceback
 import numpy as np
-from bike_sim.validation.rider_replay import write_report,resume_schedule,open_loop_schedule
+from bike_sim.validation.rider_replay import (
+    write_report, resume_schedule, open_loop_schedule, MOTOR_ONLY_OPEN_LOOP_UNSUPPORTED,
+)
 
 TIME_STEPS=(.00125,.000625,.0003125)
 ROAD_STEPS=(.01,.005,.0025)
@@ -128,6 +130,8 @@ def case_control(case,time_s):
 
 
 def case_physics(case,dt_s,backend,station_count,transmission,physics_path=None):
+    if case == 'motor_ramp_grade':
+        raise ValueError(MOTOR_ONLY_OPEN_LOOP_UNSUPPORTED)
     import tomllib
     from bike_sim.physics.resolution import resolve_physics_config,resolve_config_paths
     path=Path(physics_path) if physics_path is not None else Path(__file__).resolve().parents[3]/'examples/research/plant_reference_open_loop.toml'

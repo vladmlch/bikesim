@@ -51,14 +51,16 @@ class PhysicalSample:
         end = scalar(self.end_time_s, 'interval end', minimum=0)
         if end <= t:
             raise ValueError('force interval must have positive duration')
-        q, v = array(self.qpos, 'sample qpos'), array(self.qvel, 'sample qvel')
+        q, v = array(self.qpos, 'sample qpos', readonly=True), array(self.qvel, 'sample qvel', readonly=True)
         if q.ndim != 1 or v.ndim != 1:
             raise ValueError('sample coordinates must be vectors')
         forces = {name: array(f, name, v.shape, readonly=True) for name, f in self.forces.items()}
-        object.__setattr__(self, 'qpos', freeze(q))
-        object.__setattr__(self, 'qvel', freeze(v))
+        object.__setattr__(self, 'qpos', q)
+        object.__setattr__(self, 'qvel', v)
         object.__setattr__(self, 'forces', MappingProxyType(forces))
-        object.__setattr__(self, 'channels', freeze(self.channels))
+        # Ownership is transferred by the runtime; it builds a fresh channels
+        # mapping and never mutates the sample after publication.
+        object.__setattr__(self, 'channels', self.channels if isinstance(self.channels, Mapping) else dict(self.channels))
 
     @property
     def dt_s(self):

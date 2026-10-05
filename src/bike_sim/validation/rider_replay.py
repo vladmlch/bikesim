@@ -1,7 +1,8 @@
-"""Traceable drive/coast/resume and open-loop torque experiments.
+"""Traceable rider drive/coast/resume experiments.
 
 Uses the ordinary physical runtime. Commands depend on time only; no wheelie
 label, pitch signal or front load is fed back into motor or rider demand.
+Motor-only open-loop torque replay is unsupported by the pedelec gate.
 """
 from dataclasses import replace
 from math import isfinite,pi
@@ -12,6 +13,10 @@ import json
 import numpy as np
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.physical_samples import plain
+
+MOTOR_ONLY_OPEN_LOOP_UNSUPPORTED = (
+    'motor-only open-loop replay is unsupported by the pedelec gate; '
+    'use rider-assisted ceiling commands or the declared airborne momentum stand')
 
 
 def _time(value):
@@ -26,9 +31,8 @@ def resume_schedule(time_s: float) -> RideControl:
 
 
 def open_loop_schedule(time_s: float) -> RideControl:
-    t=_time(time_s)
-    torque=0. if t<1. or t>=4. else 40.*(t-1.) if t<2. else 40.
-    return RideControl(motor_torque_nm=torque,human_torque_nm=0.)
+    _time(time_s)
+    raise ValueError(MOTOR_ONLY_OPEN_LOOP_UNSUPPORTED)
 
 
 def automatic_schedule(time_s: float) -> RideControl:
@@ -182,7 +186,7 @@ def resume_evidence(rows: list[dict], *, end_s=8.) -> dict:
         saturated.append(any(t.get('saturated',False) for t in row.get('joint_terms',{}).values()))
         d=row['drive']
         gated.append(tau>0. and d.get('motor_control_source')=='assist' and
-                     bool(d.get('assist_stalled',False) or d.get('assist_demand_gated',False)))
+                     bool(d.get('assist_demand_gated',False)))
     fractions={name:float(np.dot(durations,values)/duration) for name,values in
                [('support_unavailable_fraction',unavailable),('actuator_saturated_fraction',saturated),
                 ('assist_gated_fraction',gated)]}
@@ -243,6 +247,8 @@ def run_replay(physics_path,track_path,*,duration_s=8.,mode='human-only',timeste
     rows=[]
     sim=None
     try:
+        if mode == 'open-loop':
+            raise ValueError(MOTOR_ONLY_OPEN_LOOP_UNSUPPORTED)
         sim=build_sim(physics_path,track_path,timestep_s,physics_overrides=overrides)
         report.update(configuration_metadata(sim),equilibrium=sim.equilibrium)
         replay(sim,schedule,duration_s,row_sink=rows.append)
@@ -250,7 +256,8 @@ def run_replay(physics_path,track_path,*,duration_s=8.,mode='human-only',timeste
             end_time_s=sim.time_s,end_position_m=sim.position_m,crash=None if sim.crash is None else str(sim.crash),
             completed_requested_duration=abs(sim.time_s-duration_s)<1e-8)
     except (ValueError,RuntimeError,ArithmeticError) as exc:
-        report.update(error=f'{type(exc).__name__}: {exc}',diagnosis='mixed_or_unresolved',
+        report.update(error=f'{type(exc).__name__}: {exc}',
+                      diagnosis='unsupported_experiment' if mode == 'open-loop' else 'mixed_or_unresolved',
                       completed_requested_duration=False)
     finally:
         report['rows']=rows

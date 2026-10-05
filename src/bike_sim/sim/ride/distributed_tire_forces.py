@@ -74,7 +74,9 @@ class DistributedTireForceApplier:
             probe = copy.copy(self)
             probe.states = copy.deepcopy(self.states)
             probe.last_time_s = None
-            return probe.compute_qfrc(model,data,dt)
+            force=probe.compute_qfrc(model,data,dt)
+            self.probe_snapshots=probe.snapshots
+            return force
         dt = scalar(dt, 'distributed tire interval', positive=True)
         time = float(data.time)
         if self.last_time_s is not None and time <= self.last_time_s:

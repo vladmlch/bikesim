@@ -14,7 +14,7 @@ from bike_sim.terrain.trackfile import track_to_dict
 from bike_sim.validation.environment import source_fingerprint
 
 
-CACHE_VERSION = 3
+CACHE_VERSION = 4
 
 
 def _serializable(value):
@@ -66,6 +66,10 @@ def _cache_path(runtime):
 
 def _state_arrays(runtime):
     state = {}
+    for name in ('ideal_hub','clutch'):
+        constraint=getattr(runtime.drive,name)
+        if constraint is not None:
+            state['state_drive_'+name+'_boundary']=np.array([constraint.boundary],dtype=float)
     rider = runtime.rider_contacts
     if rider is not None:
         keys = tuple(rider.states)
@@ -78,7 +82,9 @@ def _state_arrays(runtime):
         state['state_rider_tangent_valid'] = np.asarray([
             value.tangent is not None for value in (rider.states[key] for key in keys)
         ], dtype=bool)
-        state['state_rider_grip_xi'] = np.asarray(rider.grip_xi_local, dtype=float)
+        # One shear vector per hand, stacked left-then-right.
+        state['state_rider_grip_xi'] = np.asarray(
+            [rider.grip_xi_local[side] for side in ('left', 'right')], dtype=float)
         state['state_rider_enabled'] = np.asarray([
             rider.enabled[name] for name in rider.CONTACTS
         ], dtype=bool)
@@ -119,6 +125,14 @@ def _state_arrays(runtime):
 
 
 def restore_state(runtime, state):
+    drive_boundaries=[]
+    for name in ('ideal_hub','clutch'):
+        constraint=getattr(runtime.drive,name)
+        if constraint is not None:
+            value=np.asarray(state.get('state_drive_'+name+'_boundary',()),dtype=float)
+            if value.shape != (1,) or not np.isfinite(value).all():
+                return False
+            drive_boundaries.append((constraint,float(value[0])))
     rider = runtime.rider_contacts
     if rider is not None:
         required = {
@@ -143,9 +157,11 @@ def restore_state(runtime, state):
         if enabled.shape != (len(rider.CONTACTS),):
             return False
         rider.enabled = dict(zip(rider.CONTACTS, map(bool, enabled)))
-        rider.grip_xi_local = np.array(state['state_rider_grip_xi'], dtype=float, copy=True)
-        if rider.grip_xi_local.shape != (3,):
+        grip_xi = np.array(state['state_rider_grip_xi'], dtype=float, copy=True)
+        if grip_xi.shape != (2, 3):
             return False
+        rider.grip_xi_local = {side: grip_xi[index].copy()
+                               for index, side in enumerate(('left', 'right'))}
         pending = state['state_rider_pending_release_loss']
         if pending.shape != (1,):
             return False
@@ -200,6 +216,9 @@ def restore_state(runtime, state):
             )
     elif any(key.startswith('state_tire_') for key in state):
         return False
+    for constraint,boundary in drive_boundaries:
+        constraint.boundary=boundary
+        runtime.sim.model.tendon_range[constraint.tendon_id,1]=boundary
     return True
 
 

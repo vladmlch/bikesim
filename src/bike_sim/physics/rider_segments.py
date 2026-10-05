@@ -7,6 +7,8 @@ from dataclasses import dataclass, replace
 import numpy as np
 from bike_sim.physics.checks import array, scalar
 
+ARM_LATERAL_OFFSET_M = .10  # each hand grasps its own bar half-width
+
 DE_LEVA_MASS_FRACTIONS = {
     'head': .0694, 'trunk_upper': .1596, 'trunk_middle': .1633,
     'trunk_lower': .1117, 'upper_arm': .0271, 'forearm': .0162,
@@ -32,6 +34,21 @@ def segment_masses(total_kg,helmet_kg):
             result[f'{segment}_{side}'] = f[segment]*body
     if not np.isclose(sum(result.values()),total,rtol=0,atol=1e-10):
         raise ArithmeticError('anatomical mass budget does not close')
+    return result
+
+
+def split_paired_arm_masses(masses):
+    """Halve the pair budget into two independently bounded arms.
+
+    No mass or strength is created: each side gets exactly half of each
+    paired segment. The hand's mass stays inside its forearm; a wrist segment
+    is not added.
+    """
+    result = dict(masses)
+    for part in ('upper_arm', 'forearm'):
+        pair = result.pop(part + '_pair')
+        for side in ('left', 'right'):
+            result[part + '_' + side] = pair / 2.0
     return result
 
 

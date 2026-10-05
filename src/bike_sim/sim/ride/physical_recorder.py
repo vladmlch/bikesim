@@ -9,43 +9,64 @@ from bike_sim.sim.ride.physical_samples import plain
 
 def flatten_numbers(value,prefix=''):
     result={}
+    _flatten_into(value,prefix,result)
+    return result
+
+
+def _flatten_into(value,prefix,result):
     if isinstance(value,Mapping):
         for key,item in value.items():
-            result.update(flatten_numbers(item,f'{prefix}.{key}' if prefix else str(key)))
+            _flatten_into(item,f'{prefix}.{key}' if prefix else str(key),result)
     elif isinstance(value,(list,tuple,np.ndarray)):
+        if isinstance(value,np.ndarray) and value.ndim == 0:
+            _flatten_into(value.item(),prefix,result)
+            return
         for i,item in enumerate(value):
-            result.update(flatten_numbers(item,f'{prefix}.{i}'))
-    elif isinstance(value,(bool,int,float,np.number)):
+            _flatten_into(item,f'{prefix}.{i}',result)
+    elif isinstance(value,(bool,int,float,np.number,np.bool_)):
         result[prefix]=float(value)
-    return result
 
 
 class PhysicalRecorder:
     schema_version=2
 
-    def __init__(self,sim,decimate=1):
+    def __init__(self,sim,decimate=1, *, keep_intervals=True):
         if sim.physical.interactive_preview or not sim.physical.research_accounting_valid:
             raise ValueError('interactive preview has no research force intervals')
         if isinstance(decimate,bool) or not isinstance(decimate,int) or decimate<1:
             raise ValueError('decimate must be a positive integer')
         self.sim=sim
         self.decimate=decimate
+        sim.physical.set_record_decimation(decimate)
         self.timestep_s=float(sim.model.opt.timestep)
         self.samples=[]
+        self.keep_intervals=keep_intervals
+        self._columns={}
+        self._length=0
         self._last_id=None
         self._generation=sim.physical.generation
 
-    def record(self,sim):
+    def record(self,sim, *, sample=None):
+        if sample is None:
+            published = getattr(sim.physical, 'completed_samples', ())
+            if published and self._last_id == published[-1].interval_id:
+                return
+            for completed in published:
+                self.record(sim, sample=completed)
+            return
+        self._record_sample(sim, sample)
+
+    def _record_sample(self,sim,sample):
         if sim.physical.interactive_preview or not sim.physical.research_accounting_valid:
             raise ValueError('interactive preview has no research force intervals')
         if sim is not self.sim:
             raise ValueError('recorder belongs to a different simulation')
         if sim.physical.generation != self._generation:
             raise ValueError('reset requires a new recorder')
-        sample=sim.physical.sample
         if sample is None:
             return  # Initial state has no solved force interval.
-        constraints=sim.last_constraint_snapshot
+        constraints=getattr(sim.physical, "interval_constraints", {}).get(
+            sample.interval_id, sim.last_constraint_snapshot)
         if constraints is not None and (
             abs(constraints.interval_start_s-sample.time_s)>1e-12
             or abs(constraints.interval_end_s-sample.end_time_s)>1e-12
@@ -58,11 +79,13 @@ class PhysicalRecorder:
             return
         self._last_id=sample.interval_id
         if sample.interval_id%self.decimate==0:
-            self.samples.append(sample)
+            self.append_columns(self._row(sample))
+            if self.keep_intervals:
+                self.samples.append(sample.as_dict())
 
     @property
     def rows(self):
-        return len(self.samples)
+        return self._length
 
     @property
     def sample_interval_s(self):
@@ -78,7 +101,10 @@ class PhysicalRecorder:
         return {} if sample is None else sample.powers_w
 
     def _row(self,sample):
-        row=flatten_numbers(sample.as_dict())
+        powers=sample.powers_w
+        row=flatten_numbers({'schema_version':2,'interval_id':sample.interval_id,
+            'time_s':sample.time_s,'interval_end_s':sample.end_time_s,'dt_s':sample.dt_s,
+            'qpos':sample.qpos,'qvel':sample.qvel,'powers_w':powers,**sample.channels})
         row['x_m']=float(sample.qpos[self.sim.root_x_qposadr])
         row['speed_mps']=float(sample.qvel[self.sim.root_x_dofadr])
         row['pitch_rad']=float(sample.qpos[self.sim.root_pitch_qposadr])
@@ -87,7 +113,7 @@ class PhysicalRecorder:
         row['interval_dt_s']=sample.dt_s
         for i,value in enumerate(sample.qpos): row[f'prestep_qpos_{i}']=float(value)
         for i,value in enumerate(sample.qvel): row[f'prestep_qvel_{i}']=float(value)
-        for name,power in sample.powers_w.items():
+        for name,power in powers.items():
             row['power_'+name+'_w']=power
             row[name+'_power_w']=power
         for name,work in sample.channels.get('component_work_j',{}).items():row[name+'_work_j']=float(work)
@@ -100,10 +126,15 @@ class PhysicalRecorder:
         row['energy_residual_j']=float(sample.channels['energy']['residual_j'])
         return row
 
+    def append_columns(self, flat):
+        for key in flat.keys()-self._columns.keys():
+            self._columns[key]=[float('nan')]*self._length
+        for key, column in self._columns.items():
+            column.append(float(flat.get(key,float('nan'))))
+        self._length+=1
+
     def columns(self):
-        rows=[self._row(s) for s in self.samples]
-        names=sorted(set().union(*(row.keys() for row in rows))) if rows else []
-        return {name:np.array([row.get(name,np.nan) for row in rows]) for name in names}
+        return {key:np.asarray(self._columns[key],dtype=float) for key in sorted(self._columns)}
 
     def column(self,name):
         return self.columns()[name]
@@ -114,16 +145,18 @@ class PhysicalRecorder:
 
     def write_csv(self,path):
         path=Path(path); path.parent.mkdir(parents=True,exist_ok=True)
-        rows=[self._row(s) for s in self.samples]
-        names=sorted(set().union(*(row.keys() for row in rows))) if rows else ['schema_version','time_s']
+        columns=self.columns()
+        names=sorted(columns) if columns else ['schema_version','time_s']
         with path.open('w',newline='',encoding='utf-8') as stream:
-            writer=csv.DictWriter(stream,fieldnames=names)
-            writer.writeheader();writer.writerows(rows)
+            writer=csv.writer(stream)
+            writer.writerow(names)
+            for i in range(self._length):
+                writer.writerow(['' if np.isnan(columns[name][i]) else repr(float(columns[name][i])) for name in names])
         return path
 
     def write_jsonl(self,path):
         path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
         with path.open('w',encoding='utf-8') as stream:
-            for sample in self.samples:
-                stream.write(json.dumps(sample.as_dict(),sort_keys=True,allow_nan=False)+'\n')
+            for payload in self.samples:
+                stream.write(json.dumps(payload,sort_keys=True,allow_nan=False)+'\n')
         return path

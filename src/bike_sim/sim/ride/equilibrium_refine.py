@@ -25,11 +25,16 @@ def refine_equilibrium(runtime, *, max_evaluations=80, acceleration_tolerance=.0
     if runtime.rider_contacts is not None:
         for state in runtime.rider_contacts.states.values():
             auxiliary.append((state,'xi',None))
-        for axis in (0,2):
-            auxiliary.append((runtime.rider_contacts,'grip_xi_local',axis))
+        # Each hand carries its own shear spring vector (x,z); index into the
+        # live dict because each force evaluation replaces its arrays.
+        for side in ('left','right'):
+            for axis in (0,2):
+                auxiliary.append((runtime.rider_contacts,'grip_xi_local',(side,axis)))
     def get(obj,key,index):
         value=getattr(obj,key)
-        return float(value if index is None else value[index])
+        if index is None: return float(value)
+        if isinstance(index,tuple): return float(value[index[0]][index[1]])
+        return float(value[index])
     q0=d.qpos.copy()
     qids=np.array([i for i in range(m.nq) if i!=sim.root_x_qposadr])
     x0=np.r_[q0[qids],[get(*item) for item in auxiliary]]
@@ -47,6 +52,7 @@ def refine_equilibrium(runtime, *, max_evaluations=80, acceleration_tolerance=.0
         d.qvel.fill(0.)
         for value,(obj,key,index) in zip(x[len(qids):],auxiliary):
             if index is None: setattr(obj,key,float(value))
+            elif isinstance(index,tuple): getattr(obj,key)[index[0]][index[1]]=value
             else: getattr(obj,key)[index]=value
         if candidate is not None:
             candidate(m,d,incoming_boundary)

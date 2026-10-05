@@ -80,9 +80,10 @@ def load_physics_config(path=None,overrides=None):
 def resolve_config_paths(values, directory):
     """Resolve external model data relative to the TOML, never process cwd."""
     result=copy.deepcopy(values)
-    path=result.get('articulated',{}).get('joint_envelope_path')
-    if path is not None:
-        file=Path(path)
-        if not file.is_absolute():
-            result['articulated']['joint_envelope_path']=str((Path(directory)/file).resolve())
+    for key in ('joint_envelope_path','joint_strength_path'):
+        path=result.get('articulated',{}).get(key)
+        if path is not None:
+            file=Path(path)
+            if not file.is_absolute():
+                result['articulated'][key]=str((Path(directory)/file).resolve())
     return result

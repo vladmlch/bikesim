@@ -11,9 +11,9 @@ class IdealFreehubConstraint:
 
     The tendon measures ``ratio*driver - driven``; the upper boundary ratchets
     down with any relative overrun so forward re-engagement has zero lash.
-    Defaults keep the historical cassette freehub (crank_spin drives
-    rear_wheel_spin); the crank-side motor clutch reuses the same class with
-    crank_spin -> drive_shaft_spin at ratio 1.
+    Defaults keep the cassette freehub (crank_spin drives rear_wheel_spin).
+    The motor freewheel reuses this class with rotor_spin -> crank_spin at
+    ratio 1; the legacy crank clutch uses crank_spin -> drive_shaft_spin.
     """
     def __init__(self, model, ratio, *, tendon_name='ideal_mid_drive_freehub',
                  driver='crank_spin', driven='rear_wheel_spin'):

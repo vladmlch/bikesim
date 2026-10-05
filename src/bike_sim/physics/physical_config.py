@@ -5,8 +5,9 @@ interpreted as tire stiffness, and neither a component name nor a low residual
 upgrades these parameters to a measured/calibrated model.
 """
 from dataclasses import dataclass, field
-from math import pi
+from math import pi, radians
 from bike_sim.physics.checks import scalar
+from bike_sim.physics.attachment_budget import AttachmentBudget
 from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.tire_curve import TabulatedTireSpec
 from bike_sim.physics.distributed_tire import DistributedTireConfig
@@ -64,16 +65,17 @@ class TireBackendConfig:
 
 @dataclass(frozen=True)
 class AssistConfig:
+    # A named profile owns torque/power/lag/cutoff/taper/gate; explicit values
+    # describe a synthetic motor when no profile is selected.
+    profile: str | None = None
+    mode: str = 'turbo'
     gain: float = 2.
     max_torque: float = 80.
     max_power: float = 500.
     tau: float = .05
     slew: float = 400.
-    stop_delay: float = .2
     engage_torque_nm: float = 4.
-    spin_rpm: float = 15.
-    stall_timeout_s: float = 1.
-    boost_s: float = .4
+    gate_min_crank_rad_s: float = radians(5.)
     cutoff_mps: float = 25/3.6
     taper_width_mps: float = 2/3.6
     torque_curve: tuple[tuple[float,float],...] | None = None
@@ -81,9 +83,17 @@ class AssistConfig:
     def __post_init__(self):
         from dataclasses import asdict
         from bike_sim.physics.motor import AssistController
+        if self.profile is not None and not isinstance(self.profile, str):
+            raise ValueError('assist profile must be a registered name')
         if self.torque_curve is not None:
             object.__setattr__(self,'torque_curve',tuple(tuple(p) for p in self.torque_curve))
         AssistController(**asdict(self))
+
+    @property
+    def effective_max_torque(self):
+        """Actuator limit from the selected profile or the synthetic config."""
+        from bike_sim.physics.motor_profile import PROFILES
+        return self.max_torque if self.profile is None else PROFILES[self.profile].peak_torque_nm
 
 
 @dataclass(frozen=True)
@@ -110,6 +120,9 @@ class PedalingConfig:
     coast_above_rpm: float = 110.
     resume_below_rpm: float = 90.
     stop_time_s: float = .35
+    # Coast on a sustained cadence rise, filtering the two strokes per turn.
+    # Zero retains raw hysteresis.
+    coast_cadence_tau_s: float = 0.
     # Low-cadence effort ramp: a rider grinding to a stall presses harder on
     # the pedal, so commanded effort rises toward a low-cadence ceiling instead
     # of fading. The ceiling is capped near what the articulated leg drive can
@@ -126,19 +139,6 @@ class PedalingConfig:
     rollback_engage_mps: float = .25
     rollback_release_mps: float = 0.
     rollback_demand: float = 1.
-    # Crank reposition maneuver: with a crank-side clutch (drive.motor_clutch)
-    # the rider may backpedal to the top of the power stroke while the motor
-    # shaft keeps driving the wheel. The stall reflex below is opt-in; an
-    # explicit RideControl.crank_reposition request uses the same machinery.
-    reposition_on_stall: bool = False
-    reposition_min_effort_nm: float = 20.
-    reposition_stall_cadence_rpm: float = 12.
-    reposition_stall_dwell_s: float = .5
-    reposition_cooldown_s: float = 1.
-    reposition_back_rate_rad_s: float = 3.
-    reposition_timeout_s: float = 3.
-    reposition_phase_tolerance_rad: float = .05
-    reposition_noop_rad: float = .12
 
     def __post_init__(self):
         if not isinstance(self.enabled, bool):
@@ -146,6 +146,7 @@ class PedalingConfig:
         scalar(self.coast_above_rpm, 'coasting cadence', positive=True)
         scalar(self.resume_below_rpm, 'resume cadence', minimum=0.)
         scalar(self.stop_time_s, 'coasting stop time', positive=True)
+        scalar(self.coast_cadence_tau_s, 'coast cadence tau', minimum=0.)
         if self.resume_below_rpm >= self.coast_above_rpm:
             raise ValueError('resume cadence must be below coasting cadence')
         scalar(self.mash_torque_nm, 'mash torque', minimum=0.)
@@ -162,17 +163,6 @@ class PedalingConfig:
         demand = scalar(self.rollback_demand, 'rollback brake demand', minimum=0.)
         if demand > 1.:
             raise ValueError('rollback brake demand must not exceed one')
-        if not isinstance(self.reposition_on_stall, bool):
-            raise ValueError('reposition_on_stall enable must be a bool')
-        for key in ('reposition_min_effort_nm', 'reposition_stall_cadence_rpm',
-                    'reposition_stall_dwell_s', 'reposition_cooldown_s',
-                    'reposition_noop_rad'):
-            scalar(getattr(self, key), key, minimum=0.)
-        for key in ('reposition_back_rate_rad_s', 'reposition_timeout_s',
-                    'reposition_phase_tolerance_rad'):
-            scalar(getattr(self, key), key, positive=True)
-        if self.reposition_noop_rad >= .5*pi:
-            raise ValueError('reposition no-op band must be below a quarter crank turn')
 
 
 @dataclass(frozen=True)
@@ -229,11 +219,13 @@ class PhysicalDriveConfig:
     freehub_c_nms_rad: float = .5
     bearing_c_nms_rad: float = .03
     brake_ceiling_nm: float = 200.
-    # Opt-in split of the mid-drive onto its own shaft: crank -[clutch]->
-    # drive_shaft (motor here) -[existing freehub]-> wheel. The rider can then
-    # backpedal while the motor keeps driving; rollback backdrives the shaft
-    # and motor instead of loading the rider's legs.
+    # Legacy regression topology: crank -[one-way]-> drive_shaft with motor.
+    # Kept for A/B until acceptance; the real mid-drive chainring is on crank.
     motor_clutch: bool = False
+    # Motor inertia reflected to the crank coordinate, kg.m^2. Zero means a
+    # stateless rotor (tau_motor >= 0 on crank); positive builds rotor->crank
+    # freewheel. 0.1–0.3 is an unverified recalled order of magnitude.
+    rotor_inertia_kgm2: float = 0.
     assist: AssistConfig = field(default_factory=AssistConfig)
     battery: BatteryConfig = field(default_factory=BatteryConfig)
     pedaling: PedalingConfig = field(default_factory=PedalingConfig)
@@ -248,10 +240,13 @@ class PhysicalDriveConfig:
             raise ValueError('unknown transmission model')
         if not isinstance(self.motor_clutch, bool):
             raise ValueError('motor clutch enable must be a bool')
+        scalar(self.rotor_inertia_kgm2, 'rotor_inertia_kgm2', minimum=0.)
+        if self.rotor_inertia_kgm2 > 0. and self.motor_clutch:
+            raise ValueError('rotor freewheel and the legacy crank clutch are exclusive')
+        if self.rotor_inertia_kgm2 > 0. and self.transmission_model not in ('ideal_mid_drive','geometric_ideal_mid_drive'):
+            raise ValueError('a motor rotor requires an ideal mid-drive transmission')
         if self.motor_clutch and self.transmission_model not in ('ideal_mid_drive','geometric_ideal_mid_drive'):
             raise ValueError('motor clutch requires an ideal mid-drive transmission')
-        if self.pedaling.reposition_on_stall and not self.motor_clutch:
-            raise ValueError('the reposition stall reflex requires drive.motor_clutch')
         if not isinstance(self.shifting, ShiftingConfig):
             raise ValueError('shifting needs an immutable ShiftingConfig')
         if self.shifting.enabled:
@@ -329,6 +324,17 @@ class ArticulatedConfig:
     arm_reach_fraction: float = .92
     joint_kp_nm_rad: float = 600.
     joint_kd_nms_rad: float = 15.
+    # Passive tissue damping of the rider hinges (a DOF property, dissipation
+    # in the energy ledger). None keeps the legacy coupling to the controller
+    # derivative gain joint_kd_nms_rad; the realistic profile declares its own
+    # small value because joint viscosity is a few watts, not a muscle gain.
+    joint_passive_damping_nms_rad: float | None = None
+    # Fully coupled rider (pelvis, soles and hands welded): deliver the crank
+    # intent as the response allocator's crank-torque coordinate, carry the
+    # trunk on the bar and keep the arms stiff about the intended posture
+    # instead of Jacobian-transpose force feedforwards. Experimental: see
+    # docs/superpowers/audits/2026-10-04-realistic-pedelec-drive.md.
+    coupled_task_control: bool = False
     joint_limit_nm: float = 100.
     joint_speed_limit_rad_s: float = 20.
     joint_power_limit_w: float = 250.
@@ -337,12 +343,49 @@ class ArticulatedConfig:
     joint_envelope_soft_k_nm_rad: float = 100.
     activation_tau_s: float = 0.
     active_positive_power_limit_w: float | None = None
+    # Reference seated plant budgets (spec S3). support_mu remains for legacy
+    # comparison profiles; the reference gate fixes these per-attachment
+    # values instead of one shared coefficient.
+    foot_mu: float = .9
+    saddle_mu: float = .6
+    pedal_min_normal_n: float = 20.
+    saddle_reserve_weight_fraction: float = .15
+    grip_pull_per_hand_n: float = 300.
+    # Seated pedaling-cycle strategy knobs (R5): the ankle rocks with the
+    # crank phase inside the joint envelope, and the return foot may ask for
+    # up to this fraction of its friction cone while scraping through the
+    # backstroke. Both are intents, never physical guarantees.
+    pedal_ankle_amplitude_rad: float = .1
+    pedal_scrape_fraction: float = .5
+    # Two-leg waveform: mean*(1+ripple*cos(2*phase)), an engineering choice.
+    pedal_torque_ripple: float = .35
+    # Residual recovery-leg load on the rising flat pedal; 40–100 N is
+    # an unverified engineering estimate. Zero disables this intent.
+    return_foot_preload_n: float = 0.
+    link_max_gap_m: float = .005
+    # Bounded road preview the rider planner may see ahead of the front wheel.
+    road_lookahead_m: float = 0.
+    joint_strength_path: str | None = None
     pedal_attachment: str = 'flat'
     saddle_attachment: str = 'flat'
-    # 'spring' is the releasable compliant grip; 'weld' pins the hands to the
+    # 'spring' is the releasable compliant grip; 'connect' pins the hands to the
     # bar permanently through a connect equality (the wrist DOF stays free, so
     # the torso can still lean over locked hands).
     grip_attachment: str = 'spring'
+    balance_floor_kmh: float = 4.
+    balance_dwell_s: float = .5
+    balance_grace_s: float = 3.
+
+    def attachment_budget(self) -> AttachmentBudget:
+        return AttachmentBudget(self.pedal_min_normal_n, self.foot_mu,
+                                self.saddle_mu, self.grip_pull_per_hand_n,
+                                self.link_max_gap_m)
+
+    @property
+    def passive_damping_nms_rad(self):
+        """Hinge tissue damping actually compiled into the rider model."""
+        return (self.joint_kd_nms_rad if self.joint_passive_damping_nms_rad is None
+                else self.joint_passive_damping_nms_rad)
 
     def __post_init__(self):
         if not 0 < scalar(self.arm_reach_fraction,'arm reach fraction',positive=True) < 1:
@@ -351,23 +394,41 @@ class ArticulatedConfig:
             raise ValueError('postural support fractions must leave a saddle share')
         if self.joint_envelope_path is not None and (not isinstance(self.joint_envelope_path,str) or not self.joint_envelope_path.strip()):
             raise ValueError('joint_envelope_path must be a nonempty path or None')
+        if self.joint_strength_path is not None and (not isinstance(self.joint_strength_path,str) or not self.joint_strength_path.strip()):
+            raise ValueError('joint_strength_path must be a nonempty path or None')
         for key in self.__dataclass_fields__:
-            if key in ('joint_envelope_path', 'pedal_attachment', 'saddle_attachment',
-                       'grip_attachment'):
+            if key in ('joint_envelope_path', 'joint_strength_path',
+                       'pedal_attachment', 'saddle_attachment',
+                       'grip_attachment', 'coupled_task_control'):
                 continue
-            if key in ('grip_pair_force_limit_n','active_positive_power_limit_w') and getattr(self,key) is None:
+            if key in ('grip_pair_force_limit_n','active_positive_power_limit_w',
+                       'joint_passive_damping_nms_rad') and getattr(self,key) is None:
                 continue
             scalar(getattr(self,key),key,minimum=0)
         if self.grip_pair_force_limit_n is not None:
             scalar(self.grip_pair_force_limit_n,'pair grip force limit',positive=True)
-        for key in ('support_pad_radius_m','stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s'):
+        for key in ('support_pad_radius_m','stance_blend_load_n','support_k_n_m','support_tangent_k_n_m','support_length_m','grip_k_n_m','grip_release_distance_m','joint_speed_limit_rad_s',
+                    'pedal_min_normal_n','grip_pull_per_hand_n','link_max_gap_m',
+                    'balance_floor_kmh', 'balance_dwell_s'):
             scalar(getattr(self,key),key,positive=True)
-        if self.pedal_attachment not in ('flat', 'weld'):
+        if self.saddle_reserve_weight_fraction > 1.:
+            raise ValueError('saddle reserve fraction must not exceed one')
+        if self.joint_passive_damping_nms_rad is not None:
+            scalar(self.joint_passive_damping_nms_rad,'joint_passive_damping_nms_rad',minimum=0)
+        if not isinstance(self.coupled_task_control, bool):
+            raise ValueError('coupled_task_control must be a bool')
+        if self.pedal_torque_ripple >= 1.:
+            raise ValueError('pedal torque ripple must be below one')
+        if self.pedal_scrape_fraction > 1.:
+            raise ValueError('pedal scrape fraction must not exceed one')
+        if self.pedal_attachment not in ('flat', 'weld', 'spindle'):
             raise ValueError(
-                f"pedal_attachment must be 'flat' or 'weld', got {self.pedal_attachment!r}")
-        if self.saddle_attachment not in ('flat', 'weld'):
+                f"pedal_attachment must be 'flat', 'weld' or 'spindle', got {self.pedal_attachment!r}")
+        if self.saddle_attachment not in ('flat', 'weld', 'pin'):
             raise ValueError(
-                f"saddle_attachment must be 'flat' or 'weld', got {self.saddle_attachment!r}")
-        if self.grip_attachment not in ('spring', 'weld'):
+                f"saddle_attachment must be 'flat', 'weld' or 'pin', got {self.saddle_attachment!r}")
+        if self.grip_attachment == 'weld':
+            object.__setattr__(self, 'grip_attachment', 'connect')
+        if self.grip_attachment not in ('spring', 'connect'):
             raise ValueError(
-                f"grip_attachment must be 'spring' or 'weld', got {self.grip_attachment!r}")
+                f"grip_attachment must be 'spring' or 'connect', got {self.grip_attachment!r}")

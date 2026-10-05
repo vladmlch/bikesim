@@ -60,50 +60,8 @@ def fixed_limit_40_factory():
     return FixedLimitPolicy()
 
 
-class RepositionOnStallPolicy(PassthroughPolicy):
-    """Passthrough plus one crank-reposition pulse per detected stall.
-
-    Stalled means the rear wheel and the crank are both nearly stopped while
-    the drive is loaded -- the encoder-only signature of being caught on a
-    dead spot. The pulse is a single rising edge; the plant owns the maneuver
-    itself. Requires the drive.motor_clutch topology or the request is
-    rejected at validation.
-    """
-    def __init__(self, wheel_rad_s=.3, crank_rad_s=.3, dwell_s=.5, cooldown_s=2.):
-        for name, value in (('wheel_rad_s', wheel_rad_s), ('crank_rad_s', crank_rad_s),
-                            ('dwell_s', dwell_s), ('cooldown_s', cooldown_s)):
-            if value < 0:
-                raise ValueError(f'{name} must be nonnegative')
-        self.wheel_rad_s = float(wheel_rad_s)
-        self.crank_rad_s = float(crank_rad_s)
-        self.dwell_s = float(dwell_s)
-        self.cooldown_s = float(cooldown_s)
-
-    def reset(self, seed):
-        super().reset(seed)
-        self._dwell = 0.
-        self._last_t = None
-        self._cooldown_until = -float('inf')
-
-    def act(self, observation, demand_nm):
-        control = super().act(observation, demand_nm)
-        elapsed = 0. if self._last_t is None else max(0., observation.time_s-self._last_t)
-        self._last_t = observation.time_s
-        stalled = (observation.valid
-                   and abs(observation.rear_wheel_rad_s) < self.wheel_rad_s
-                   and abs(observation.crank_rad_s) < self.crank_rad_s
-                   and (demand_nm is None or demand_nm > 0.)
-                   and observation.time_s >= self._cooldown_until)
-        self._dwell = self._dwell+elapsed if stalled else 0.
-        if stalled and self._dwell >= self.dwell_s:
-            self._dwell = 0.
-            self._cooldown_until = observation.time_s+self.cooldown_s
-            return replace(control, crank_reposition=True)
-        return control
 
 
-def reposition_on_stall_factory():
-    return RepositionOnStallPolicy()
 
 
 class TractionControlPolicy(PassthroughPolicy):
@@ -123,15 +81,14 @@ class TractionControlPolicy(PassthroughPolicy):
     else (a pure pedelec base) the measured applied torque. Reaching that
     level disengages the cap back to a plain passthrough.
 
-    A stopped rear wheel under a numeric base demand releases
-    ``motor_torque_nm`` to None after ``standstill_release_s``: a numeric
-    demand, even 0, keeps the plant's `pressing` alive and could wedge its
-    stall latch. The release holds while the wheel stays stopped and the
-    base demand is restored the tick the wheel moves again.
+    A stopped rear wheel releases the base external ceiling to None after
+    ``standstill_release_s``; this restores automatic support without that
+    ceiling. Permission still requires forward cranks and positive sensed
+    rider torque. The release holds while the wheel stays stopped and the
+    base ceiling is restored the tick the wheel moves again.
 
     Rider fields are never owned: only ``motor_torque_nm`` and
-    ``motor_limit_nm`` are written; ``crank_reposition`` and everything else
-    pass through from the base unchanged.
+    ``motor_limit_nm`` are written; rider inputs pass through unchanged.
     """
     def __init__(self, base=None, *, front_radius_m=.372, rear_radius_m=.352,
                  slip_target_mps=.2, cut_gain_nm_s_per_mps=200.,

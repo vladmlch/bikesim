@@ -20,7 +20,8 @@ def make_ride_session(track, args, rider):
     experiment = ExperimentConfig(
         duration_s=90. if args.duration is None else args.duration,
         control_period_s=args.control_period, actuator_delay_s=args.actuator_delay,
-        seed=0 if args.seed is None else args.seed, record_decimation=args.decimate)
+        seed=0 if args.seed is None else args.seed, record_decimation=args.decimate,
+        stop_on_model_violation=args.headless)
     sensors = SensorConfig(sample_period_s=args.sensor_period, latency_s=args.sensor_delay)
     program = None if args.rider_program is None else RiderProgram.load(args.rider_program)
     demand = None if args.demand is None else DemandProgram.constant(args.demand)
@@ -30,21 +31,20 @@ def make_ride_session(track, args, rider):
     return PolicySession(env, policy, reference=reference)
 
 
-def advance_control_ticks(session, count, *, brake_demand=0., crank_reposition=False):
+def advance_control_ticks(session, count, *, brake_demand=0.):
     if type(count) is not int or count < 0:
         raise ValueError('control tick count must be a nonnegative integer')
     completed = 0
     for tick_index in range(count):
         if session.env.done:
             break
-        session.advance(front_brake_demand=brake_demand, rear_brake_demand=brake_demand,
-                        crank_reposition=crank_reposition and tick_index == 0)
+        session.advance(front_brake_demand=brake_demand, rear_brake_demand=brake_demand)
         completed += 1
     return completed
 
 
 def run_research_viewer(session, output_dir):
-    """Space pauses, R saves/resets, B toggles brakes, V repositions the crank,
+    """Space pauses, R saves/resets, B toggles brakes,
     C changes camera, Q ends."""
     import mujoco.viewer
     from bike_sim.sim.camera import CameraManager
@@ -60,7 +60,6 @@ def run_research_viewer(session, output_dir):
     saved = False
     paused = False
     braking = False
-    reposition = False
     stop = False
 
     def save_episode():
@@ -71,7 +70,7 @@ def run_research_viewer(session, output_dir):
             print(f'[bike-ride research] {env.reason}: {destination}', flush=True)
             saved = True
 
-    print('[bike-ride research] Space pause | R reset | B brakes | V crank reposition | C camera | Q stop', flush=True)
+    print('[bike-ride research] Space pause | R reset | B brakes | C camera | Q stop', flush=True)
     try:
         with mujoco.viewer.launch_passive(
                 sim.model, sim.data, key_callback=keys.put,
@@ -98,15 +97,6 @@ def run_research_viewer(session, output_dir):
                         rate_sim = sim.time_s
                     elif key == ord('B'):
                         braking = not braking
-                    elif key == ord('V'):
-                        physics = sim.physics_config
-                        if (physics.drive.motor_clutch and physics.drive_mode == 'articulated_effort'
-                                and sim.rider.variant == 'articulated_planar'):
-                            reposition = True
-                            print('\n[bike-ride research] crank reposition requested', flush=True)
-                        else:
-                            print('\n[bike-ride research] crank reposition needs drive.motor_clutch '
-                                  'and the articulated rider', flush=True)
                     elif key == ord('C'):
                         camera.cycle_mode()
                     elif key in (ord('Q'), 256):
@@ -115,12 +105,8 @@ def run_research_viewer(session, output_dir):
                         print('[bike-ride research] Change physical parameters in the config before a new run.', flush=True)
                 now = time.monotonic()
                 if not paused and not env.done and not stop:
-                    completed = advance_control_ticks(session, pacer.steps_for(now-previous),
-                                                      brake_demand=.5 if braking else 0.,
-                                                      crank_reposition=reposition)
-                    # A press between pacer ticks survives until a tick runs.
-                    if completed:
-                        reposition = False
+                    advance_control_ticks(session, pacer.steps_for(now-previous),
+                                          brake_demand=.5 if braking else 0.)
                 previous = now
                 if env.done:
                     save_episode()

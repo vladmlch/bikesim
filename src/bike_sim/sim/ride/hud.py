@@ -21,7 +21,9 @@ from typing import TYPE_CHECKING, Optional, Tuple
 
 import mujoco
 import numpy as np
+from rich.text import Text
 
+from bike_sim.sim.ride.console import console, event, styled
 from bike_sim.sim.ride.cruise import KMH_PER_MPS, MAX_TARGET_SPEED_KMH, MIN_TARGET_SPEED_KMH
 from bike_sim.sim.ride.wheels import resolve_wheel_spin
 
@@ -33,6 +35,31 @@ if TYPE_CHECKING:
 PITCH_NOSE_DOWN = "nose-dn"
 PITCH_NOSE_UP = "nose-up"
 PITCH_LEVEL = "level"
+
+# Dynamic-flag thresholds on the physical HUD: a wheel pressing with less than
+# this is airborne for display purposes; a |kappa| past this is sliding.
+_AIRBORNE_N = 5.0
+_SLIP_WARN = 0.25
+# Sentinel for "no legend printed yet": physical.generation may be 0, which a
+# falsy default would treat as already seen.
+_UNSET = object()
+
+_FORCE_ARROWS = ("→", "↘", "↓", "↙", "←", "↖", "↑", "↗")
+
+
+def _force_arrow(forward_n: float, vertical_n: float) -> str:
+    """
+    Picks the nearest of the eight compass arrows for a planar force.
+
+    Args:
+        forward_n: Forward (+x) component of the force, in newtons.
+        vertical_n: Up (+z) component of the force, in newtons.
+
+    Returns:
+        One arrow; ``↓`` is weight pressing down, ``↑`` is a pull upward.
+    """
+    sector = round(degrees(atan2(-vertical_n, forward_n)) / 45.0) % 8
+    return _FORCE_ARROWS[sector]
 
 
 def pitch_label(pitch_rad: float) -> str:
@@ -107,31 +134,9 @@ class RideHUD:
             One line of text, without a trailing newline.
         """
         if getattr(sim,"physical",None) is not None:
-            if sim.physical.interactive_preview:
-                drive=sim.physical.drive.last
-                factor=sim.physical.preview_real_time_factor
-                rate='measuring' if factor is None else f'{factor:.2f}x'
-                return (f"[PHYSICAL PREVIEW|{sim.physics_config.drive_mode}] t={sim.time_s:.3f}s "
-                        f"RTF={rate} "
-                        f"v={sim.speed_mps*KMH_PER_MPS:.2f}km/h "
-                        f"Fn={sim.contacts.front_load_n:.1f}/{sim.contacts.rear_load_n:.1f}N "
-                        f"cadence={drive.get('cadence_rpm',0.):.1f}rpm "
-                        f"motor={drive.get('motor_shaft_power_w',0.):.1f}W "
-                        f"model_valid={sim.physical.model_status.as_dict()['model_valid']} "
-                        f"UNVALIDATED planar/experimental; energy audit: off")
-            sample=sim.physical.sample
-            if sample is None:
-                return f"[PHYSICAL|{sim.physics_config.drive_mode}] initial condition"
-            channels=sample.channels
-            tires=channels["tires"];drive=channels["drive"];energy=channels["energy"]
-            return (f"[PHYSICAL|{sim.physics_config.drive_mode}] t={sample.time_s:.4f}s "
-                    f"v={sample.qvel[sim.root_x_dofadr]*3.6:.2f}km/h "
-                    f"Fn={tires['front']['normal_load_n']:.1f}/{tires['rear']['normal_load_n']:.1f}N "
-                    f"cadence={drive.get('cadence_rpm',0.):.1f}rpm "
-                    f"motor={drive.get('motor_shaft_power_w',0.):.1f}W "
-                    f"battery={drive.get('battery_energy_j',0.)/3600.:.2f}Wh "
-                    f"energy residual={energy['residual_j']:.5f}J "
-                    f"model_valid={channels.get('model_status',{}).get('model_valid','not_evaluated')} UNVALIDATED")
+            return "".join(
+                text for _, segments in self._physical_columns(sim) for text, _ in segments
+            )
         obstacle = nearest_obstacle(sim.track, sim.position_m)
         obstacle_str = "--" if obstacle is None else f"{obstacle[0]} {obstacle[1]:+.1f}m"
 
@@ -188,6 +193,172 @@ class RideHUD:
             f"{tyre_str}"
         )
 
+    def _physical_columns(self, sim: "RideSimulation") -> list:
+        """Ordered (legend, [(text, style)]) columns of the physical HUD line.
+
+        Every column has a fixed width so each value sits under the value of
+        the line above; an over-range value overflows rather than being
+        clipped, and a missing channel is a same-width dash placeholder. The
+        styles are a channel map -- tires blue, crank cyan, rider green, drive
+        magenta, slip yellow -- plus dynamic flags: RTF grades green/yellow/
+        red, an airborne wheel is red, |kappa| past SLIP_WARN is red, a support
+        pulling against its weld is orange1, a slipping one red.
+        """
+        physical = sim.physical
+        factor = physical.live_real_time_factor
+        rate = "----x" if factor is None else f"{factor:.2f}x"
+        rtf_style = ("dim" if factor is None else "green" if factor >= .95
+                     else "yellow" if factor >= .5 else "red")
+        if physical.sample is None:
+            return [("PHYS", [(f"[PHYS|{sim.physics_config.drive_mode}]", "bold cyan")]),
+                    ("", [(" initial condition", ""), (f" RTF={rate}", rtf_style)])]
+        channels = physical.sample.channels
+        tires = channels["tires"]; drive = channels["drive"]
+        rider = channels.get("rider", {})
+        front_angle = degrees(drive.get("crank_phase_rad", 0.)) % 360.
+        columns = []
+        sep = ("", [(" | ", "")])
+
+        def col(legend, *segments):
+            # One space between columns of a group; " | " between groups.
+            leading = [(" ", "")] if columns and columns[-1] is not sep else []
+            columns.append((legend, leading + list(segments)))
+
+        col("PHYS", (f"[PHYS|{sim.physics_config.drive_mode}]", "bold cyan"))
+        col("time", (f"t={physical.sample.time_s:7.2f}s", ""))
+        col("rtf", (f"RTF={rate}", rtf_style))
+        col("speed", (f"v={physical.sample.qvel[sim.root_x_dofadr]*3.6:+6.2f}km/h", ""))
+        normal_f = float(tires["front"].get("normal_load_n", 0.))
+        normal_r = float(tires["rear"].get("normal_load_n", 0.))
+        col("Fn f/r",
+            ("Fn=", "blue"),
+            (f"{normal_f:4.0f}", "red" if normal_f < _AIRBORNE_N else "blue"),
+            ("/", "blue"),
+            (f"{normal_r:4.0f}", "red" if normal_r < _AIRBORNE_N else "blue"),
+            ("N", "blue"))
+        columns.append(sep)
+        col("crank f/r",
+            (f"crk F@{front_angle:3.0f}deg R@{(front_angle+180.)%360.:3.0f}deg", "cyan"))
+        pedal_values = []
+        for side in ("front", "rear"):
+            pedal = rider.get(f"{side}_pedal") or {}
+            force = pedal.get("vertical_force_on_rider_n")
+            if force is None:
+                pedal_values.append(("----", "dim"))
+                continue
+            normal = float(pedal.get("normal_load_n", 0.))
+            style = ("red" if pedal.get("would_slip") else
+                     "orange1" if normal < 0. else "green")
+            pedal_values.append((f"{float(force):+4.0f}", style))
+        col("pedals f/r",
+            ("ped=", "green"), pedal_values[0], ("/", "green"),
+            pedal_values[1], ("N", "green"))
+        col("cadence", (f"cad={drive.get('cadence_rpm',0.):+5.1f}rpm", "cyan"))
+        gear_f, gear_r = drive.get("gear_front_teeth"), drive.get("gear_rear_teeth")
+        col("gear", (f"gear={f'{gear_f:2d}/{gear_r:2d}' if gear_f and gear_r else '--/--'}T", "cyan"))
+        col("human", (f"hum={drive.get('human_sensor_nm',0.):5.1f}Nm", "magenta"))
+        col("motor", (f"mot={drive.get('motor_torque_nm',0.):5.1f}Nm", "magenta"))
+        columns.append(sep)
+        bar_segs = [("bar=", "green")]
+        for index, side in enumerate(("left", "right")):
+            force = (rider.get(f"grip_{side}") or {}).get("force_on_bike_n")
+            if index:
+                bar_segs.append((" ", "green"))
+            bar_segs.append((f"{side[0].upper()}", "green"))
+            if force is None:
+                bar_segs.append(("-----N", "dim"))
+                continue
+            arrow = _force_arrow(force[0], force[2])
+            # An up-pulling hand means the grip is carrying weight, like a
+            # clipless pedal pulling on the backstroke: same color as the
+            # weld-pull flags on the other two supports.
+            bar_segs.append((arrow, "orange1" if force[2] > 0. else "green"))
+            bar_segs.append((f"{np.hypot(force[0],force[2]):3.0f}N", "green"))
+        col("bar l/r", *bar_segs)
+        torques = channels.get("rider_joint_torques", {})
+        capacities = channels.get("rider_joint_capacity_nm", {})
+        arm_segments = [("arm=", "green")]
+        for index, (short, joint) in enumerate((("sh", "rider_shoulder_left"),
+                                               ("el", "rider_elbow_left"))):
+            if index:
+                arm_segments.append(("/", "green"))
+            torque, capacity = torques.get(joint), capacities.get(joint)
+            if torque is None:
+                arm_segments.append((f"{short} ----", "dim"))
+            else:
+                saturated = (capacity is not None and capacity > 0.
+                             and abs(torque) >= .9*capacity)
+                arm_segments.append((f"{short} {torque:+4.0f}",
+                                     "orange1" if saturated else "green"))
+        arm_segments.append((" Nm", "green"))
+        col("arm", *arm_segments)
+        saddle = rider.get("saddle") or {}
+        saddle_n = saddle.get("normal_load_n")
+        col("saddle",
+            ("saddle=", "green"),
+            (f"{saddle_n:4.0f}" if saddle_n is not None else "----",
+             "orange1" if (saddle_n or 0.) < 0. else "green"),
+            ("N", "green"))
+        torso_pitch = self._rider_body_pitch_deg(sim, "rider_torso")
+        lean = None if torso_pitch is None else torso_pitch - degrees(sim.pitch_rad)
+        col("lean",
+            ("lean=", "green"),
+            (f"{lean:+5.1f}" if lean is not None else "-----", "green"),
+            ("deg", "green"),
+            ((f"/lim{degrees(channels['rider_lean_limit_rad']):.0f}°"
+              if channels.get('rider_lean_limit_rad') is not None else "/lim--°"), "green"))
+        balance = channels.get("rider_balance")
+        if balance is None:
+            balance_text, balance_style = "---", "dim"
+        elif balance.get("balance_lost"):
+            position = balance.get("balance_lost_at_m")
+            balance_text = f"LOST@x={position:.0f} m" if position is not None else "LOST"
+            balance_style = "red"
+        elif balance.get("low_speed_s", 0.) > 0.:
+            balance_text = f"low {balance['low_speed_s']:.1f}s"
+            balance_style = "yellow"
+        else:
+            balance_text, balance_style = "ok", "green"
+        col("BAL", ("BAL=", balance_style), (f"{balance_text:<14}", balance_style))
+        columns.append(sep)
+        kappa_f = tires["front"].get("slip_ratio")
+        kappa_r = tires["rear"].get("slip_ratio")
+        kappa_segs = [("κ=", "yellow")]
+        for index, kappa in enumerate((kappa_f, kappa_r)):
+            if index:
+                kappa_segs.append(("/", "yellow"))
+            if kappa is None:
+                kappa_segs.append(("-----", "dim"))
+            else:
+                kappa_segs.append((f"{kappa:+5.2f}",
+                                   "red" if abs(kappa) > _SLIP_WARN else "yellow"))
+        col("slip f/r", *kappa_segs)
+        coast = (drive.get("coasting_reason")
+                 or ("" if drive.get("freehub_engaged", True) else "freehub"))
+        col("coast", (f"coast={(coast or '-'):<12}", "yellow" if coast else "dim"))
+        columns.append(sep)
+        col("shaft W", (f"motor={drive.get('motor_shaft_power_w',0.):+5.0f}W", "magenta"))
+        return columns
+
+    def styled_line(self, sim: "RideSimulation") -> "Text":
+        """The physical HUD line as styled rich Text."""
+        return styled(
+            segment for _, segments in self._physical_columns(sim) for segment in segments
+        )
+
+    def physical_legend(self, sim: "RideSimulation") -> "Text":
+        """Dim legend row whose names sit at the start of each column."""
+        parts = []
+        for legend, segments in self._physical_columns(sim):
+            width = sum(len(text) for text, _ in segments)
+            blanks = 0
+            for text, _ in segments:
+                if text.strip():
+                    break
+                blanks += len(text)
+            parts.append(" " * blanks + legend.ljust(width - blanks))
+        return Text("".join(parts), style="dim")
+
     def print_line(
         self,
         sim: "RideSimulation",
@@ -195,15 +366,62 @@ class RideHUD:
         brake_strength: float = 0.0,
     ) -> None:
         """
-        Writes the HUD line over the current terminal line.
+        Writes the HUD line; physical runs log one styled line per refresh,
+        legacy runs rewrite the current terminal line in place.
 
         Args:
             sim: Simulation to read.
             braking: Whether the brake toggle is currently engaged.
             brake_strength: Brake lever position the toggle applies, in [0, 1].
         """
+        physical = getattr(sim, "physical", None)
+        if physical is not None:
+            self._report_physical_events(sim)
+            generation = getattr(physical, "generation", None)
+            if generation != getattr(self, "_legend_generation", _UNSET):
+                # A new run re-prints its column legend so a scrolled-back log
+                # still carries its key.
+                self._legend_generation = generation
+                console.print(self.physical_legend(sim))
+            if sys.stdout.isatty():
+                # Line-per-refresh log, not an in-place HUD: the physical viewer
+                # doubles as a console trace, and a \r-rewritten line is
+                # impossible to scroll back, grep or copy.
+                console.print(self.styled_line(sim))
+                return
+            text = self.line(sim, braking, brake_strength)
+            t = physical.sample.time_s if physical.sample is not None else 0.0
+            last = getattr(self, "_file_print_s", None)
+            if last is None or t < last or t - last >= 1.0:
+                self._file_print_s = t
+                sys.stdout.write(text + "\n")
+                sys.stdout.flush()
+            return
         sys.stdout.write("\r" + self.line(sim, braking, brake_strength))
         sys.stdout.flush()
+
+    def _report_physical_events(self, sim: "RideSimulation") -> None:
+        """Prints one latched line for the reference monitor's first failure."""
+        monitor = getattr(sim.physical, "reference_monitor", None)
+        failure = getattr(monitor, "first_failure", None)
+        if failure is None or getattr(self, "_reported_failure", None) is failure:
+            return
+        self._reported_failure = failure
+        event(f"[PHYS|event] first failure at t={failure[0]:.6f}s: {', '.join(failure[1])}")
+
+    def _rider_body_pitch_deg(self, sim: "RideSimulation", body_name: str):
+        """World pitch of an articulated-rider body, or None when it is absent."""
+        try:
+            body_id = self._cached_lookup(
+                sim, ("body", body_name),
+                lambda: int(mujoco.mj_name2id(
+                    sim.model, mujoco.mjtObj.mjOBJ_BODY, body_name)))
+        except Exception:
+            return None
+        if body_id < 0:
+            return None
+        rotation = sim.data.xmat[body_id].reshape(3, 3)
+        return degrees(atan2(-rotation[2, 0], rotation[0, 0]))
 
     def _cached_lookup(self, sim: "RideSimulation", key, resolve):
         """Memoize a model-name resolution; the compiled model never changes."""
@@ -223,7 +441,7 @@ class RideHUD:
         emitted as empty strings, so every preview CSV shares one schema.
         """
         row = {"time_s": float(sim.time_s)}
-        if getattr(sim, "physical", None) is None or not sim.physical.interactive_preview:
+        if getattr(sim, "physical", None) is None:
             return row
         drive = sim.physical.drive.last
         assist = sim.physical.drive.assist
@@ -236,7 +454,7 @@ class RideHUD:
                  else 100.0 * sim.track.grade_profile.slope(sim.position_m))
         row.update({
             "x_m": float(sim.position_m),
-            "rtf": sim.physical.preview_real_time_factor,
+            "rtf": sim.physical.live_real_time_factor,
             "speed_kmh": float(sim.speed_mps) * KMH_PER_MPS,
             "pitch_deg": float(degrees(sim.pitch_rad)),
             "grade_pct": float(grade),
@@ -279,8 +497,6 @@ class RideHUD:
             "motor_shaft_power_w": float(drive.get("motor_shaft_power_w", 0.0)),
             "motor_enabled": int(bool(drive.get("motor_enabled", False))),
             "assist_pedaling": int(bool(assist.pedaling)),
-            "assist_age_s": float(assist.age),
-            "assist_stall_s": float(drive.get("assist_stall_s", 0.0)),
         })
 
         rider_columns = {
@@ -368,7 +584,6 @@ class RideHUD:
     SPACE           : Brakes TOGGLE (a passive viewer delivers presses, not key state)
     , / .           : Brake Strength - / + 10 %
     R               : Restart the run from the solved static equilibrium
-    V               : Crank reposition (backpedal to a power phase; needs drive.motor_clutch)
 
   --- PNEUMATIC AIR SPRING (FORK) ---
     [ / ]           : Bottomless Tokens DECREASE / INCREASE (Ramp-up)

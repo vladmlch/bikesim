@@ -16,8 +16,8 @@ from bike_sim.sim.ride.physical_recorder import PhysicalRecorder
 from bike_sim.validation.environment import source_fingerprint, environment_contract
 
 
-class PhysicalPreviewCsv:
-    """Flushes the live physical preview state at a fixed simulated-time interval, as CSV."""
+class PhysicalLiveCsv:
+    """Flushes the live accounted physical state at a fixed simulated-time interval, as CSV."""
 
     def __init__(self, path: Path, interval_s: float = 0.01, *, flush_every: int = 25):
         if interval_s <= 0.0:
@@ -90,6 +90,10 @@ class PhysicalPreviewCsv:
         self.close()
 
 
+# Preserve consumers of the historical live CSV class name.
+PhysicalPreviewCsv = PhysicalLiveCsv
+
+
 def canonical_json(payload):
     return json.dumps(plain(payload),sort_keys=True,separators=(',',':'),allow_nan=False)
 
@@ -108,6 +112,10 @@ def configuration_metadata(sim,seed=None):
     resolved['joint_envelope_status']='unspecified' if envelope is None else 'declared_unvalidated'
     if envelope is not None:
         resolved['joint_envelope_sha256']=hashlib.sha256(Path(envelope).read_bytes()).hexdigest()
+    strength=sim.physics_config.articulated.joint_strength_path
+    resolved['joint_strength_status']='unspecified' if strength is None else 'declared_unvalidated'
+    if strength is not None:
+        resolved['joint_strength_sha256']=hashlib.sha256(Path(strength).read_bytes()).hexdigest()
     # Effective overrides are recorded, not just geometry defaults.
     resolved['active_suspension']={
         'fork_pressure_psi':sim.controller.air_spring.gauge_pressure_psi,
@@ -129,6 +137,13 @@ def configuration_metadata(sim,seed=None):
     }
     resolved['compiled_equality_solref'] = sim.model.eq_solref.tolist()
     resolved['compiled_equality_solimp'] = sim.model.eq_solimp.tolist()
+    from bike_sim.sim.ride.rider_response_allocation import SUPPORT_FORCE_GUARD_N,SUPPORT_MOMENT_GUARD_NM,GRIP_RADIUS_GUARD_FRACTION
+    resolved['allocation_numerical_guards']={
+        'support_force_n':SUPPORT_FORCE_GUARD_N,'support_moment_nm':SUPPORT_MOMENT_GUARD_NM,
+        'grip_radius_fraction':GRIP_RADIUS_GUARD_FRACTION}
+    resolved['pedal_support_half_length_m'] = {
+        side:float(sim.model.geom_size[sim.model.geom('geom_pedal_'+side).id,0])
+        for side in ('front','rear')}
     source_root=Path(__file__).resolve().parents[2]
     source_hash=source_fingerprint(source_root)
     try:
@@ -139,13 +154,14 @@ def configuration_metadata(sim,seed=None):
         dirty=None
     hashable = dict(resolved, physics=asdict(sim.physics_config))
     hashable['physics']['articulated']['joint_envelope_path'] = resolved.get('joint_envelope_sha256')
+    hashable['physics']['articulated']['joint_strength_path'] = resolved.get('joint_strength_sha256')
     config_hash=hashlib.sha256(canonical_json(hashable).encode()).hexdigest()
     return {'schema_version':2,'physics_revision':sim.physics_revision,
         'model_commit':commit,'model_source_dirty':dirty,'model_source_sha256':source_hash,
         'versions':{'python':platform.python_version(),**{n:importlib.metadata.version(n) for n in ('mujoco','numpy','scipy')}},
         'configuration_sha256':config_hash,'terrain_sha256':terrain_hash,
         'resolved_config':resolved,'seed':seed,'timestep_s':float(sim.model.opt.timestep),
-        'controller_interval_s':float(sim.model.opt.timestep),'tire_backend':sim.physics_config.tires.backend,
+        'controller_interval_s':sim.physical.control_clock.period_s,'tire_backend':sim.physics_config.tires.backend,
         'drive_mode':sim.physics_config.drive_mode,'rider_model':sim.rider.variant,
         'external_speed_controller':sim.physics_config.drive_mode=='ideal_speed_control',
         'calibration_status':'parameterized_unvalidated',
@@ -164,8 +180,12 @@ def physical_run_dir_name(track_name,metadata):
 
 def physical_summary(sim,metadata,reason):
     r=sim.physical
-    return plain(dict(metadata,outcome={'reason':reason,'time_s':sim.time_s,'position_m':sim.position_m,
-                                       'steps':sim.steps,'crashed':sim.crash is not None},
+    event=r.balance_monitor.event
+    return plain(dict(metadata,first_failure=r.reference_monitor.first_failure,
+        outcome={'reason':reason,'time_s':sim.time_s,'position_m':sim.position_m,
+                                       'steps':sim.steps,'crashed':sim.crash is not None,
+                                       'balance_lost':event is not None,
+                                       'balance_lost_at_m':None if event is None else event.position_m},
         equilibrium=sim.equilibrium,energy=r.energy,model_status=r.model_status.as_dict(),battery_energy_j=r.drive.battery.energy_j,
         component_work_j=r.history.work_j,airtime_threshold_s=r.history.airtime_s,
         duration_s=r.history.duration_s))
@@ -198,7 +218,9 @@ def build_physical_simulation(track,args,rider):
 
 
 def run_physical_headless(track,args,seed,rider):
+    from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
     sim=build_physical_simulation(track,args,rider)
+    sim.physical.set_strict(True)
     metadata=configuration_metadata(sim,seed)
     out=Path(args.out)/physical_run_dir_name(track.name,metadata)
     out.mkdir(parents=True,exist_ok=True)
@@ -218,9 +240,23 @@ def run_physical_headless(track,args,seed,rider):
             if time.monotonic()>deadline:
                 reason='wall_clock_cap';break
             sim.step();recorder.record(sim)
+        sim.physical.flush()
+        recorder.record(sim)
+    except InvalidReferenceRun as exc:
+        reason='invalid_controller'
+        metadata['failure']=str(exc)
+        recorder.record(sim)
     except (ValueError,RuntimeError,ArithmeticError) as exc:
         reason='simulation_error'
         metadata['failure']=str(exc)
+        try:
+            sim.physical.flush()
+        except InvalidReferenceRun as invalid:
+            reason='invalid_controller'
+            metadata['tail_failure']=str(invalid)
+        except (ValueError, RuntimeError, ArithmeticError) as tail_error:
+            metadata['tail_failure']=f'{type(tail_error).__name__}: {tail_error}'
+        recorder.record(sim)
     recorder.write_csv(out/'telemetry.csv')
     recorder.write_jsonl(out/'intervals.jsonl')
     np.save(out/'terrain_vertices.npy',sim.physical.vertices,allow_pickle=False)
@@ -230,9 +266,10 @@ def run_physical_headless(track,args,seed,rider):
     if not args.no_plots and recorder.rows:
         from bike_sim.viz.ride_plots import plot_physical_ride
         plot_physical_ride(recorder.columns(),out)
-    print(f"[bike-ride] {reason}: {sim.time_s:.6f} s, {sim.position_m:.3f} m -> {out}")
+    from bike_sim.sim.ride.console import outcome
+    outcome(f"[bike-ride] {reason}: {sim.time_s:.6f} s, {sim.position_m:.3f} m -> {out}")
     if reason == 'simulation_error':
         return 1
-    if not sim.physical.model_status.as_dict()['model_valid']:
+    if reason == 'invalid_controller' or not sim.physical.model_status.as_dict()['model_valid']:
         return 2
     return 0 if reason in ('duration_reached','end_of_track') else 1

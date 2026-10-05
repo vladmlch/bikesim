@@ -3,9 +3,10 @@
 With articulated.pedal_attachment = 'weld' the MJCF builder emits one `weld`
 equality per foot (body1 = rider_foot_*, body2 = pedal_*); with
 articulated.saddle_attachment = 'weld' it emits `weld_saddle`
-(body1 = rider_pelvis, body2 = frame); with
-articulated.grip_attachment = 'weld' it emits `connect_grip`
-(body1 = rider_forearm_pair, body2 = steer). This module reads the solved
+(body1 = rider_pelvis, body2 = frame), while the reference 'pin' emits
+`connect_saddle` between the same bodies; with
+articulated.grip_attachment = 'connect' it emits one `connect_grip_<side>`
+per hand (body1 = rider_forearm_<side>, body2 = steer). This module reads the solved
 constraint multipliers and reports them in the conventions
 RiderContactApplier uses for pad supports.
 
@@ -106,6 +107,20 @@ class PedalWelds:
         return float(qfrc[self.crank_dof])
 
 
+class SpindlePins(PedalWelds):
+    """Three-row foot connects at the spindle; no free couple is transmitted.
+
+    The native connect residual is body1 anchor minus body2 anchor in world
+    coordinates. Its translational multipliers therefore apply to the rider
+    with the same sign as the native body1 point Jacobian.
+    """
+
+    def __init__(self, model, sides=SIDES):
+        self.eq_ids = {side: resolve_id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                       f'connect_foot_{side}') for side in sides}
+        self.crank_dof = int(model.joint('crank_spin').dofadr[0])
+
+
 class SaddleWeld:
     """Solved weld reaction for a pelvis rigidly attached at the saddle.
 
@@ -134,6 +149,35 @@ class SaddleWeld:
         return float(np.linalg.norm(pos[:3]))
 
 
+class SaddlePin:
+    """Solved connect reaction for a pelvis pinned at the saddle.
+
+    Unlike the legacy weld the pin contributes three translational rows only:
+    it cannot carry a saddle couple, so the pelvis keeps a free pitch and the
+    reported force is the signed point reaction on the pelvis.
+    """
+
+    def __init__(self, model):
+        self.eq_id = resolve_id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
+                                'connect_saddle')
+
+    def force_on_rider_n(self, model, data, rows=None):
+        """World force the pin applies to the pelvis, in Newtons."""
+        idx = _eq_rows(data, self.eq_id, rows)
+        if idx is None or idx.size == 0:
+            return np.zeros(3)
+        lam = data.efc_force[idx]
+        return np.asarray(lam[:3], dtype=float)
+
+    def translation_residual_m(self, model, data, rows=None):
+        """Norm of the pin's positional residual — actual pelvis/frame mismatch."""
+        idx = _eq_rows(data, self.eq_id, rows)
+        if idx is None or idx.size == 0:
+            return 0.
+        pos = data.efc_pos[idx]
+        return float(np.linalg.norm(pos[:3]))
+
+
 class GripConnect:
     """Solved connect reaction for a hand pinned to the handlebar.
 
@@ -142,9 +186,10 @@ class GripConnect:
     releasable spring grip cannot produce once disabled.
     """
 
-    def __init__(self, model):
+    def __init__(self, model, side):
+        self.side = side
         self.eq_id = resolve_id(model, mujoco.mjtObj.mjOBJ_EQUALITY,
-                                'connect_grip')
+                                f'connect_grip_{side}')
 
     def force_on_rider_n(self, model, data, rows=None):
         """World force the pin applies to the hand, in Newtons."""

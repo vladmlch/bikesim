@@ -33,6 +33,10 @@ def momentum_rig(dt_s,active: bool,*,transmission='geometric_ideal_mid_drive',ri
     and yaw freedoms imply plane-constraint moments, reported separately; only
     the free pitch momentum is tested as conserved, never the full 3D vector. Suspension, drivetrain and
     rider-contact forces are applied as their ordinary internal Newton pairs.
+    Declared synthetic rider intent and sensor input of 10 N.m permit the
+    active motor pulse; neither applies rider force. The stand's separate
+    joint controller still receives zero pedal effort. This tests momentum,
+    not real pedal sensing or pedelec engagement.
     """
     if type(active) is not bool:raise ValueError('active must be a bool')
     if rider_active is None:rider_active=active
@@ -53,7 +57,7 @@ def momentum_rig(dt_s,active: bool,*,transmission='geometric_ideal_mid_drive',ri
     from bike_sim.physics.suspension_config import build_suspension_components
     cfg=SimulationPhysicsConfig('physical',drive_mode='articulated_effort',timestep_s=dt_s,
         closure_time_constant_s=.0025,drive=PhysicalDriveConfig(transmission_model=transmission,
-        human_torque_nm=0.,gearing=DrivetrainSpecs(34,51),assist=AssistConfig(gain=0.,tau=.03)))
+        human_torque_nm=0.,gearing=DrivetrainSpecs(34,51),assist=AssistConfig(gain=2.,tau=.03)))
     specs=BikeSpecs();rider=RiderSpecs(variant='articulated_planar');pose=geometry_pose(rider,specs)
     m=mujoco.MjModel.from_xml_string(generate_mujoco_xml(mode='ride',specs=specs,rider=rider,physics_config=cfg))
     d=mujoco.MjData(m);controller=ArticulatedRiderController(m,pose,cfg.articulated,specs.crank_length/1000.)
@@ -76,14 +80,15 @@ def momentum_rig(dt_s,active: bool,*,transmission='geometric_ideal_mid_drive',ri
         mujoco.mj_forward(m,d)
         contact_force=contacts.compute_qfrc(m,d,dt_s)
         observed=contacts.diagnostics
-        loads={side:observed.get(side+'_pedal',{}).get('normal_load_n',0.) for side in ('front','rear')}
-        loads.update(grip=contacts.enabled['grip'],saddle=observed.get('saddle',{}).get('normal_load_n',0.))
         availability={side:contacts.enabled[side+'_pedal'] and observed.get(side+'_pedal',{}).get('in_platform',False) for side in ('front','rear')}
         availability.update(grip=contacts.enabled['grip'],saddle=observed.get('saddle',{}).get('in_platform',False))
-        commands=controller.compute(m,d,RiderCommand(0.,enabled=rider_active),contact_loads=loads,
+        commands=controller.compute(m,d,RiderCommand(0.,enabled=rider_active),
                                     support_available=availability,dt_s=dt_s)
         controller.write(d,commands)
-        components=drive.compute_components(m,d,dt_s,speed_mps=0.,control=RideControl(motor_torque_nm=torque,human_torque_nm=0.))
+        sensor_fixture_nm = 10. if torque > 0. else 0.
+        components=drive.compute_components(m,d,dt_s,speed_mps=0.,
+            sensed_human_nm=sensor_fixture_nm,
+            control=RideControl(motor_torque_nm=torque,human_torque_nm=sensor_fixture_nm))
         d.qfrc_applied[:]=sum(components.values(),np.zeros(m.nv))+contact_force+suspension.compute_qfrc(m,d)
         velocity=d.qvel.copy();mujoco.mj_step(m,d);drive.settle_actuation(m,d)
         for name in ('root_x','root_z','root_pitch','rider_root_x','rider_root_z','rider_root_pitch'):
@@ -114,6 +119,10 @@ def momentum_rig(dt_s,active: bool,*,transmission='geometric_ideal_mid_drive',ri
             'motor_shaft_work_j':motor_work,'joint_positive_work_j':joint_work,'peak_motor_torque_nm':peak,
             'shaft_power_identity_error_w':power_error,'root_actuator_force_n':root_actuation,
             'ground_contact_count':ground_contacts,'constraint_defect_m':max_defect,
-            'duration_s':duration,'mass_kg':mass}, {'impulse_residual_ratio':(0.,.001),
+            'duration_s':duration,'mass_kg':mass,
+            'synthetic_sensor_torque_nm':10. if active else 0.,
+            'synthetic_rider_intent_nm':10. if active else 0.}, {'impulse_residual_ratio':(0.,.001),
             'angular_residual_ratio':(0.,.001),'shaft_power_identity_error_w':(0.,1e-10),
-            'root_actuator_force_n':(0.,0.),'ground_contact_count':(0.,0.)}
+            'root_actuator_force_n':(0.,0.),'ground_contact_count':(0.,0.),
+            'peak_motor_torque_nm':(1e-8,20.) if active else (0.,0.),
+            'motor_shaft_work_j':(1e-8,np.inf) if active else (0.,0.)}

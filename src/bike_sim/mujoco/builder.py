@@ -313,12 +313,12 @@ def generate_mujoco_xml(
     build_sensors(root, mode=mode, seated_rider=(rider_specs.variant == "seated"))
 
     if (physics_config is not None
-            and (getattr(physics_config.articulated, 'pedal_attachment', 'flat') == 'weld'
-                 or getattr(physics_config.articulated, 'saddle_attachment', 'flat') == 'weld'
-                 or getattr(physics_config.articulated, 'grip_attachment', 'spring') == 'weld')
+            and (getattr(physics_config.articulated, 'pedal_attachment', 'flat') in ('weld', 'spindle')
+                 or getattr(physics_config.articulated, 'saddle_attachment', 'flat') in ('weld', 'pin')
+                 or getattr(physics_config.articulated, 'grip_attachment', 'spring') == 'connect')
             and not (physical and articulated_pose is not None)):
         raise ValueError(
-            "pedal_attachment/saddle_attachment/grip_attachment='weld' requires "
+            "non-flat rider attachments (weld/pin) require "
             "physics_mode='physical' and rider='articulated_planar'")
 
     if physical:
@@ -326,7 +326,7 @@ def generate_mujoco_xml(
         finish_physical_topology(root, specs, mass_specs, physics_config)
         if articulated_pose is not None:
             from bike_sim.mujoco.articulated_rider import build_articulated_rider, add_rider_actuators
-            from bike_sim.physics.rider_segments import segment_masses
+            from bike_sim.physics.rider_segments import segment_masses, split_paired_arm_masses
             for geom in list(frame.findall("geom")):
                 if geom.get("name", "").startswith("geom_rider_"):
                     frame.remove(geom)
@@ -334,7 +334,10 @@ def generate_mujoco_xml(
             envelope_path=physics_config.articulated.joint_envelope_path
             envelopes=None if envelope_path is None else load_joint_envelopes(envelope_path)
             build_articulated_rider(worldbody, articulated_pose,
-                segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg),envelopes=envelopes)
+                split_paired_arm_masses(segment_masses(rider_specs.mass_kg, rider_specs.helmet_mass_kg)),
+                envelopes=envelopes,
+                locked_joints=('rider_ankle_front', 'rider_ankle_rear')
+                if physics_config.articulated.pedal_attachment == 'spindle' else ())
             add_rider_actuators(root, physics_config.articulated)
             solref = max(2. * physics_config.timestep_s,
                          physics_config.closure_time_constant_s)
@@ -348,6 +351,17 @@ def generate_mujoco_xml(
                         'body2': f'pedal_{side}',
                         'solref': f'{solref:.17g} 1',
                     })
+            if physics_config.articulated.pedal_attachment == 'spindle':
+                from bike_sim.physics.rider import ANKLE_ABOVE_PEDAL_M
+                assert equality is not None
+                for side in ('front', 'rear'):
+                    ET.SubElement(equality, 'connect', {
+                        'name': f'connect_foot_{side}',
+                        'body1': f'rider_foot_{side}',
+                        'body2': f'pedal_{side}',
+                        'anchor': f'0 0 {-ANKLE_ABOVE_PEDAL_M:.17g}',
+                        'solref': f'{solref:.17g} 1',
+                    })
             if physics_config.articulated.saddle_attachment == 'weld':
                 assert equality is not None
                 ET.SubElement(equality, 'weld', {
@@ -356,22 +370,26 @@ def generate_mujoco_xml(
                     'body2': 'frame',
                     'solref': f'{solref:.17g} 1',
                 })
-            if physics_config.articulated.grip_attachment == 'weld':
+            elif physics_config.articulated.saddle_attachment == 'pin':
+                from bike_sim.mujoco.reference_rider import add_saddle_pin
+                add_saddle_pin(root, solref)
+            if physics_config.articulated.grip_attachment == 'connect':
                 assert equality is not None
-                # A `connect` pins the grip site to the bar point it already
+                # A `connect` pins each grip site to the bar point it already
                 # occupies at qpos0: the hand can never leave the bar, but the
                 # wrist keeps rotating and the torso keeps its lean-over-hands
                 # DOF. A full `weld` here would freeze the whole arm+torso
                 # loop rigid to the frame.
-                site = root.find(".//site[@name='site_rider_grip']")
-                assert site is not None
-                ET.SubElement(equality, 'connect', {
-                    'name': 'connect_grip',
-                    'body1': 'rider_forearm_pair',
-                    'body2': 'steer',
-                    'anchor': site.get('pos'),
-                    'solref': f'{solref:.17g} 1',
-                })
+                for side in ('left', 'right'):
+                    site = root.find(f".//site[@name='site_rider_grip_{side}']")
+                    assert site is not None
+                    ET.SubElement(equality, 'connect', {
+                        'name': f'connect_grip_{side}',
+                        'body1': f'rider_forearm_{side}',
+                        'body2': 'steer',
+                        'anchor': site.get('pos'),
+                        'solref': f'{solref:.17g} 1',
+                    })
             # Dedicated crash mask: no invisible rider/bike or rider/rider contacts.
             for name in ("geom_rider_head", "geom_rider_pelvis", "geom_rider_torso"):
                 geom = root.find(f".//geom[@name='{name}']")

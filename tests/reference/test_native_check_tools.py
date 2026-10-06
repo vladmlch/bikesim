@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -9,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+import tools.native_checks as native_checks
 from tools.native_checks import load_context, load_entries, run_sweep
 
 
@@ -40,15 +42,25 @@ def write_fixture(
             }
         )
     )
+    suppression_manifest = source_root / "analysis_suppressions.json"
+    suppression_manifest.write_text(json.dumps({"schema_version": 1, "suppressions": []}))
     context = {
         "schema_version": 1,
         "source_roots": [str(source_root.resolve())],
         "compiler": {"path": sys.executable, "id": "fixture", "version": "1"},
         "sdk": str(tmp_path.resolve()),
+        "sdk_requested": str(tmp_path.resolve()),
+        "sdk_source": "explicit",
+        "libcpp_hardening": {
+            "supported": True,
+            "mode": "EXTENSIVE",
+            "requested_mode": "EXTENSIVE",
+        },
         "include_paths": [str(path.resolve()) for path in include_paths or []],
         "library_paths": [],
         "required_files": [],
         "python_executable": sys.executable,
+        "analysis_suppressions_manifest": str(suppression_manifest.resolve()),
         "tool_defaults": {
             "tidy": "clang-tidy",
             "analyzer": "clang++",
@@ -58,6 +70,8 @@ def write_fixture(
         "tool_overrides": {},
         "target_contexts": {
             target: {
+                "cxx_standard": 23,
+                "cxx_extensions": False,
                 "include_directories": [],
                 "compile_definitions": [],
                 "compile_options": [],
@@ -448,3 +462,544 @@ def test_gxx_context_default_runs_without_environment_override(
     monkeypatch.delenv("GXX", raising=False)
 
     assert run_sweep(kind, build) == 0
+
+
+def run_header_control(root: Path, *, diagnostic_in_header: bool = True) -> subprocess.CompletedProcess[str]:
+    repository = Path(__file__).resolve().parents[2]
+    source_dir = root / "native" / "src"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    header = source_dir / "control.hpp"
+    source = source_dir / "control.cpp"
+    if diagnostic_in_header:
+        header.write_text(
+            "namespace control { inline double divide(int a, int b) { return a / b; } }\n"
+        )
+        source.write_text(
+            '#include "control.hpp"\nint main() { return static_cast<int>(control::divide(1, 2)); }\n'
+        )
+    else:
+        header.write_text("namespace control { inline int value() { return 0; } }\n")
+        source.write_text(
+            '#include "control.hpp"\ndouble divide(int a, int b) { return a / b; }\n'
+            'int main() { return static_cast<int>(divide(1, 2) + control::value()); }\n'
+        )
+
+    configured_build = repository / "native" / "build"
+    context = json.loads((configured_build / "native_check_context.json").read_text())
+    database = json.loads((configured_build / "compile_commands.json").read_text())
+    configured_source = repository / "native" / "src" / "binding.cpp"
+    compile_entry = next(
+        entry
+        for entry in database
+        if Path(entry["file"]).resolve() == configured_source.resolve()
+    )
+    argv = (
+        list(compile_entry["arguments"])
+        if "arguments" in compile_entry
+        else shlex.split(compile_entry["command"])
+    )
+    object_path = "CMakeFiles/bike_native.dir/src/control.cpp.o"
+    relocated_args: list[str] = []
+    position = 0
+    while position < len(argv):
+        argument = argv[position]
+        if argument == "-o" and position + 1 < len(argv):
+            relocated_args.extend(["-o", object_path])
+            position += 2
+            continue
+        if not argument.startswith("-"):
+            try:
+                if Path(argument).resolve() == configured_source.resolve():
+                    relocated_args.append(str(source.resolve()))
+                    position += 1
+                    continue
+            except OSError:
+                pass
+        relocated_args.append(argument)
+        position += 1
+    relocated_args.extend(["-I", str(source_dir.resolve())])
+
+    build = root / "build"
+    build.mkdir(parents=True, exist_ok=True)
+    (build / "native_sources.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "first_party_roots": [str((root / "native").resolve())],
+                "sources": [
+                    {
+                        "path": str(source.resolve()),
+                        "target": "bike_native",
+                        "context": "bike_native:relocated-header-control",
+                    }
+                ],
+            }
+        )
+    )
+    context["source_roots"] = [str((root / "native").resolve())]
+    context["include_paths"] = [
+        *context["include_paths"],
+        str(source_dir.resolve()),
+    ]
+    (build / "native_check_context.json").write_text(json.dumps(context))
+    (build / "compile_commands.json").write_text(
+        json.dumps(
+            [
+                {
+                    "directory": compile_entry["directory"],
+                    "file": str(source.resolve()),
+                    "output": object_path,
+                    "arguments": relocated_args,
+                }
+            ]
+        )
+    )
+
+    configured_tidy = re.search(
+        r"^HeaderFilterRegex:\s*(.+)$",
+        (repository / "native" / ".clang-tidy").read_text(),
+        re.MULTILINE,
+    )
+    assert configured_tidy is not None
+    (root / "native" / ".clang-tidy").write_text(
+        "Checks: 'bugprone-integer-division'\n"
+        f"HeaderFilterRegex: {configured_tidy.group(1)}\n"
+    )
+
+    environment = os.environ.copy()
+    environment["CLANG_TIDY"] = (
+        context["tool_overrides"].get("CLANG_TIDY")
+        or context["tool_defaults"]["tidy"]
+    )
+    return subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            str(repository / "tools" / "native_checks.py"),
+            "--kind",
+            "tidy",
+            "--build",
+            str(build),
+        ],
+        cwd=repository,
+        env=environment,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=120,
+    )
+
+
+@pytest.mark.parametrize("root_name", ["original-root", "renamed-root"])
+def test_header_filter_is_portable(tmp_path: Path, root_name: str) -> None:
+    result = run_header_control(tmp_path / root_name)
+
+    assert result.returncode != 0
+    assert "bugprone-integer-division" in result.stdout + result.stderr
+
+
+def test_header_filter_keeps_main_file_diagnostics(tmp_path: Path) -> None:
+    result = run_header_control(tmp_path / "main-file-control", diagnostic_in_header=False)
+
+    assert result.returncode != 0
+    assert "bugprone-integer-division" in result.stdout + result.stderr
+
+
+def configure_native(
+    tmp_path: Path, *cmake_options: str
+) -> tuple[subprocess.CompletedProcess[str], Path]:
+    repository = Path(__file__).resolve().parents[2]
+    build = tmp_path / "native-configure"
+    command = [
+        "uv",
+        "run",
+        "cmake",
+        "-S",
+        str(repository / "native"),
+        "-B",
+        str(build),
+        *cmake_options,
+    ]
+    completed = subprocess.run(
+        command,
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=120,
+    )
+    return completed, build
+
+
+def test_explicit_sdk_alias_is_retained_and_canonicalized(tmp_path: Path) -> None:
+    repository = Path(__file__).resolve().parents[2]
+    current_context = json.loads(
+        (repository / "native" / "build" / "native_check_context.json").read_text()
+    )
+    current_sdk = Path(current_context["sdk"])
+    explicit_alias = current_sdk.parent / "MacOSX26.5.sdk"
+    assert explicit_alias.is_dir()
+
+    configured, build = configure_native(
+        tmp_path,
+        f"-DCMAKE_OSX_SYSROOT={explicit_alias}",
+        f"-DCMAKE_CXX_COMPILER={current_context['compiler']['path']}",
+    )
+
+    assert configured.returncode == 0, configured.stdout + configured.stderr
+    context = json.loads((build / "native_check_context.json").read_text())
+    assert context["sdk_requested"] == str(explicit_alias)
+    assert Path(context["sdk"]).resolve() == explicit_alias.resolve()
+    compilation_commands = json.loads((build / "compile_commands.json").read_text())
+    selected_sysroots = []
+    for entry in compilation_commands:
+        if not Path(entry["file"]).resolve().is_relative_to(repository / "native"):
+            continue
+        argv = entry.get("arguments") or shlex.split(entry["command"])
+        for index, argument in enumerate(argv[:-1]):
+            if argument == "-isysroot":
+                selected_sysroots.append(Path(argv[index + 1]).resolve())
+    assert selected_sysroots
+    assert set(selected_sysroots) == {explicit_alias.resolve()}
+
+
+def test_missing_explicit_sdk_fails_without_default_fallback(tmp_path: Path) -> None:
+    repository = Path(__file__).resolve().parents[2]
+    context = json.loads(
+        (repository / "native" / "build" / "native_check_context.json").read_text()
+    )
+    missing_sdk = tmp_path / "missing-explicit-sdk"
+
+    configured, _ = configure_native(
+        tmp_path,
+        f"-DCMAKE_OSX_SYSROOT={missing_sdk}",
+        f"-DCMAKE_CXX_COMPILER={context['compiler']['path']}",
+    )
+
+    assert configured.returncode != 0
+    assert str(missing_sdk) in configured.stdout + configured.stderr
+
+
+def test_default_sdk_is_resolved_from_xcrun(tmp_path: Path) -> None:
+    repository = Path(__file__).resolve().parents[2]
+    current_context = json.loads(
+        (repository / "native" / "build" / "native_check_context.json").read_text()
+    )
+    xcrun = subprocess.run(
+        ["xcrun", "--sdk", "macosx", "--show-sdk-path"],
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    configured, build = configure_native(
+        tmp_path,
+    )
+
+    assert configured.returncode == 0, configured.stdout + configured.stderr
+    context = json.loads((build / "native_check_context.json").read_text())
+    assert context["sdk_source"] == "default"
+    assert Path(context["sdk"]).resolve() == Path(xcrun.stdout.strip()).resolve()
+    assert Path(context["compiler"]["path"]).resolve() == Path(
+        current_context["compiler"]["path"]
+    ).resolve()
+
+
+def test_empty_build_type_defaults_to_extensive_hardening(tmp_path: Path) -> None:
+    repository = Path(__file__).resolve().parents[2]
+    current_context = json.loads(
+        (repository / "native" / "build" / "native_check_context.json").read_text()
+    )
+
+    configured, build = configure_native(
+        tmp_path,
+        f"-DCMAKE_CXX_COMPILER={current_context['compiler']['path']}",
+        f"-DCMAKE_OSX_SYSROOT={current_context['sdk']}",
+    )
+
+    assert configured.returncode == 0, configured.stdout + configured.stderr
+    context = json.loads((build / "native_check_context.json").read_text())
+    assert context["libcpp_hardening"]["mode"] == "EXTENSIVE"
+    assert context["libcpp_hardening"]["supported"] is True
+
+
+def test_fast_hardening_is_available_as_an_explicit_comparison(tmp_path: Path) -> None:
+    repository = Path(__file__).resolve().parents[2]
+    current_context = json.loads(
+        (repository / "native" / "build" / "native_check_context.json").read_text()
+    )
+
+    configured, build = configure_native(
+        tmp_path,
+        f"-DCMAKE_CXX_COMPILER={current_context['compiler']['path']}",
+        f"-DCMAKE_OSX_SYSROOT={current_context['sdk']}",
+        "-DBIKE_LIBCPP_HARDENING=FAST",
+    )
+
+    assert configured.returncode == 0, configured.stdout + configured.stderr
+    context = json.loads((build / "native_check_context.json").read_text())
+    assert context["libcpp_hardening"]["mode"] == "FAST"
+    entries = json.loads((build / "compile_commands.json").read_text())
+    native_entries = [
+        entry
+        for entry in entries
+        if Path(entry["file"]).resolve().is_relative_to(repository / "native")
+    ]
+    assert native_entries
+    assert all(
+        "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST"
+        in (entry.get("arguments") or shlex.split(entry["command"]))
+        for entry in native_entries
+    )
+
+
+def test_first_party_compile_commands_use_iso_cpp23(tmp_path: Path) -> None:
+    repository = Path(__file__).resolve().parents[2]
+    current_context = json.loads(
+        (repository / "native" / "build" / "native_check_context.json").read_text()
+    )
+
+    configured, build = configure_native(
+        tmp_path,
+        f"-DCMAKE_CXX_COMPILER={current_context['compiler']['path']}",
+        f"-DCMAKE_OSX_SYSROOT={current_context['sdk']}",
+    )
+
+    assert configured.returncode == 0, configured.stdout + configured.stderr
+    entries = json.loads((build / "compile_commands.json").read_text())
+    native_entries = [
+        entry
+        for entry in entries
+        if Path(entry["file"]).resolve().is_relative_to(repository / "native")
+    ]
+    assert native_entries
+    for entry in native_entries:
+        argv = entry.get("arguments") or shlex.split(entry["command"])
+        assert "-std=c++23" in argv
+        assert "-std=gnu++23" not in argv
+
+
+def test_unsupported_hardening_name_fails_configuration(tmp_path: Path) -> None:
+    configured, _ = configure_native(tmp_path, "-DBIKE_LIBCPP_HARDENING=INVALID")
+
+    assert configured.returncode != 0
+    assert "BIKE_LIBCPP_HARDENING" in configured.stdout + configured.stderr
+
+
+def run_controller_kind(kind: str, *, timeout: int = 180) -> subprocess.CompletedProcess[str]:
+    repository = Path(__file__).resolve().parents[2]
+    return subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            str(repository / "tools" / "native_checks.py"),
+            "--kind",
+            kind,
+            "--build",
+            str(repository / "native" / "build"),
+        ],
+        cwd=repository,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=timeout,
+    )
+
+
+def test_standalone_header_sweep_compiles_first_party_headers() -> None:
+    result = run_controller_kind("headers", timeout=240)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    summary = json.loads(
+        (
+            Path(__file__).resolve().parents[2]
+            / "native"
+            / "build"
+            / "native_check_summaries"
+            / "headers.json"
+        ).read_text()
+    )
+    assert summary["tool_health"] == "ok"
+    assert summary["finding_status"] == "none"
+    assert summary["header_count"] > 0
+
+
+def test_diagnostic_controls_cover_warning_families_and_move() -> None:
+    result = run_controller_kind("diagnostic-controls", timeout=240)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    summary = json.loads(
+        (
+            Path(__file__).resolve().parents[2]
+            / "native"
+            / "build"
+            / "native_check_summaries"
+            / "diagnostic-controls.json"
+        ).read_text()
+    )
+    assert summary["tool_health"] == "ok"
+    assert {control["name"] for control in summary["controls"]} == {
+        "discarded_nodiscard",
+        "bitwise_instead_of_logical",
+        "extra_semicolon",
+        "signed_bounds",
+        "first_party_use_after_move",
+        "libcpp_probe_rejects_missing_mode",
+    }
+    move = next(
+        control for control in summary["controls"] if control["name"] == "first_party_use_after_move"
+    )
+    assert any("cplusplus.Move" in line for line in move["diagnostics"])
+    assert move["suppressed_diagnostics"] == []
+
+
+def test_context_control_records_sdk_hardening_and_timing_evidence() -> None:
+    result = run_controller_kind("context", timeout=360)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    summary = json.loads(
+        (
+            Path(__file__).resolve().parents[2]
+            / "native"
+            / "build"
+            / "native_check_summaries"
+            / "context.json"
+        ).read_text()
+    )
+    assert summary["tool_health"] == "ok"
+    assert summary["sdk_controls"]["explicit_sdk"] == "passed"
+    assert summary["sdk_controls"]["missing_sdk"] == "rejected"
+    assert summary["sdk_controls"]["default_sdk"] == "passed"
+    assert {item["build_type"] for item in summary["hardening_evidence"]} == {
+        "Debug",
+        "Release",
+        "default",
+    }
+    assert all(
+        item["sizeof"]["EXTENSIVE"] == item["sizeof"]["FAST"]
+        for item in summary["hardening_evidence"]
+    )
+    assert all(
+        all(item["timings_ns"][mode] for mode in ("EXTENSIVE", "FAST"))
+        for item in summary["hardening_evidence"]
+    )
+    assert all(item["assertion_active"]["EXTENSIVE"] for item in summary["hardening_evidence"])
+    assert all("FAST" in item["assertion_active"] for item in summary["hardening_evidence"])
+    assert all(
+        item["assertion_evidence"]["EXTENSIVE"]["signal"] == "SIGTRAP"
+        and item["assertion_evidence"]["EXTENSIVE"]["category"]
+        == "libc++ std::vector element access"
+        for item in summary["hardening_evidence"]
+    )
+
+
+def test_analyzer_suppression_manifest_has_complete_records() -> None:
+    repository = Path(__file__).resolve().parents[2]
+    manifest = json.loads(
+        (repository / "native" / "analysis_suppressions.json").read_text()
+    )
+
+    assert manifest["schema_version"] == 1
+    assert isinstance(manifest["suppressions"], list)
+    required_fields = {
+        "checker",
+        "origin",
+        "message",
+        "tool_version",
+        "reason",
+        "reproducer",
+        "remove_when",
+    }
+    assert all(required_fields <= suppression.keys() for suppression in manifest["suppressions"])
+
+
+def test_suppression_requires_matching_checker_origin_message_and_tool_version() -> None:
+    filter_diagnostics = getattr(native_checks, "apply_suppressions", None)
+    assert callable(filter_diagnostics)
+    suppression = {
+        "checker": "cplusplus.Move",
+        "origin": r"/nanobind/include/nanobind/stl/detail/nb_list\.h$",
+        "message": "documented array-caster lifetime false positive",
+        "tool_version": "23.1.2",
+        "reason": "reproduced false positive in a third-party nanobind header",
+        "reproducer": "tests/reference/test_native_check_tools.py::test_diagnostic_controls_cover_warning_families_and_move",
+        "remove_when": "the installed analyzer no longer reports this diagnostic",
+    }
+    matching = (
+        "/venv/site-packages/nanobind/include/nanobind/stl/detail/nb_list.h:67:4: "
+        "warning: documented array-caster lifetime false positive [cplusplus.Move]"
+    )
+    first_party = (
+        "/repo/native/src/binding.cpp:67:4: warning: documented array-caster lifetime false positive [cplusplus.Move]"
+    )
+    other_message = (
+        "/venv/site-packages/nanobind/include/nanobind/stl/detail/nb_list.h:67:4: "
+        "warning: another move diagnostic [cplusplus.Move]"
+    )
+    other_checker = (
+        "/venv/site-packages/nanobind/include/nanobind/stl/detail/nb_list.h:67:4: "
+        "warning: documented array-caster lifetime false positive [bugprone-use-after-move]"
+    )
+
+    remaining, suppressed = filter_diagnostics(
+        [matching, first_party, other_message, other_checker],
+        "Homebrew LLVM version 23.1.2",
+        [suppression],
+    )
+
+    assert [item["diagnostic"] for item in suppressed] == [matching]
+    assert remaining == [first_party, other_message, other_checker]
+    version_mismatch, version_suppressed = filter_diagnostics(
+        [matching], "Homebrew LLVM version 24.0.0", [suppression]
+    )
+    assert version_mismatch == [matching]
+    assert version_suppressed == []
+
+
+def test_clang_tidy_move_suppression_is_limited_to_nanobind_origin(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    build, expected = write_fixture(tmp_path)
+    source = next(iter(expected))
+    third_party = (
+        "/venv/lib/python3.14/site-packages/nanobind/include/nanobind/stl/detail/nb_array.h:34:17: "
+        "warning: Method called on moved-from object 'value' of type 'std::array' "
+        "[clang-analyzer-cplusplus.Move]"
+    )
+    first_party = (
+        f"{source}:4:5: warning: Method called on moved-from object 'value' "
+        "of type 'std::array' [clang-analyzer-cplusplus.Move]"
+    )
+    suppression_path = build.parent / "native" / "src" / "analysis_suppressions.json"
+    suppression_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "suppressions": [
+                    {
+                        "checker": "clang-analyzer-cplusplus.Move",
+                        "origin": r"(?:^|/)nanobind/include/nanobind/stl/detail/nb_array\.h$",
+                        "message": "Method called on moved-from object 'value' of type 'std::array'",
+                        "tool_version": "1",
+                        "reason": "specific third-party false-positive control",
+                        "reproducer": "test_clang_tidy_move_suppression_is_limited_to_nanobind_origin",
+                        "remove_when": "the installed checker no longer emits this diagnostic",
+                    }
+                ],
+            }
+        )
+    )
+    fake_tidy = tmp_path / "mock-tidy"
+    write_fake_tool(
+        fake_tidy,
+        stable_text=f"{third_party}\n{first_party}",
+    )
+    monkeypatch.setenv("CLANG_TIDY", str(fake_tidy))
+
+    assert run_sweep("tidy", build) == 1
+    summary = json.loads((build / "native_check_summaries" / "tidy.json").read_text())
+    assert summary["suppression_counts"] == {"clang-analyzer-cplusplus.Move": 1}
+    assert summary["records"][0]["diagnostics"] == [third_party, first_party]
+    assert summary["records"][0]["unsuppressed_diagnostics"] == [first_party]

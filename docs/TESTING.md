@@ -99,6 +99,49 @@ The controller can also be invoked directly, for example
 The same configured source manifest is used by each standalone target and by
 the native profile; wrappers do not glob `native/src` or hide process status.
 
+V2 adds three focused controls:
+
+```bash
+uv run python tools/native_checks.py --kind headers --build native/build
+uv run python tools/native_checks.py --kind diagnostic-controls --build native/build
+uv run python tools/native_checks.py --kind context --build native/build
+```
+
+The `headers` control compiles each first-party header by itself with its
+configured target flags. `diagnostic-controls` verifies that the selected
+compiler still reports discarded `nodiscard` values, bitwise logical tests,
+extra semicolons, signed bounds, and first-party use after move. It also
+verifies that libc++ hardening configuration rejects a missing mode macro.
+`context` tests explicit, missing, and default SDK selection, then records
+container sizes, active bounds assertions, and timings for FAST and EXTENSIVE
+libc++ modes in Debug, Release, and the empty build type.
+
+First-party targets use strict ISO C++23. The `.clang-tidy` header filter is
+checkout independent and covers `native/src`, `native/tests`, and
+`tools/proto_native_bench`. First-party Move findings remain blocking. The
+only current third-party exception is in
+`native/analysis_suppressions.json`: it matches the observed Move diagnostic
+from nanobind's fixed size `std::array` caster by checker, header path, message,
+and analyzer version. The controller prints each suppression count.
+
+`CMAKE_OSX_SYSROOT` and `CMAKE_CXX_COMPILER` cache values supplied by the
+caller are retained and checked during configuration. If no SDK is supplied,
+CMake probes the `xcrun` default and installed SDK candidates by compiling and
+linking against Accelerate. An explicit missing or incompatible SDK fails
+configuration. libc++ hardening defaults to EXTENSIVE in every build type;
+FAST is an explicit comparison option:
+
+```bash
+uv run cmake -S native -B native/build-fast -DBIKE_LIBCPP_HARDENING=FAST
+```
+
+The timing control uses five samples of three million indexed reads per build
+type and hardening mode. It records representative container sizes, whether
+bounds assertions fired, each timing sample, and the median for Debug, Release,
+and the empty build type. Read the current compiler, SDK, run ID, and measured
+values in `native/build/native_check_summaries/context.json`; these local
+measurements are evidence for the selected toolchain, not a performance floor.
+
 `check_analyzer` and `check_tidy` use the keg-only brew LLVM
 (`/opt/homebrew/opt/llvm/bin`) — Apple clang lacks several checkers. The
 analyzer's alpha pass prints findings without failing; they are unstable by

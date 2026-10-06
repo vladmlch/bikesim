@@ -14,8 +14,6 @@
 #   use-nodiscard            errors surface as exceptions, not return codes
 #   use-auto                 explicit types document the port's numerics
 #   macro-usage              our macros are pragma wrappers — the sanctioned use
-#   cplusplus.Move           false positive inside nanobind's std::array caster;
-#                            NOLINT cannot reach a third-party header
 Checks: >
   bugprone-*,
   cert-*,
@@ -39,9 +37,8 @@ Checks: >
   -misc-include-cleaner,
   -modernize-use-nodiscard,
   -modernize-use-auto,
-  -cppcoreguidelines-macro-usage,
-  -clang-analyzer-cplusplus.Move
+  -cppcoreguidelines-macro-usage
 
-# Only flag findings inside our tree — nanobind/mujoco/Python headers are
-# outside the warning contract (same rule as NB_SUPPRESS_WARNINGS).
-HeaderFilterRegex: '.*cpp-port-p2/native/src/.*'
+# Analyze first-party diagnostics after relocating the checkout. Third-party
+# headers remain outside this filter and are handled by scoped CSA suppressions.
+HeaderFilterRegex: '(^|/)(native/(src|tests)|tools/proto_native_bench)/'

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "suppressions": [
+    {
+      "checker": "cplusplus.Move",
+      "origin": "(?:^|/)nanobind/include/nanobind/stl/detail/nb_array\\.h$",
+      "message": "Method called on moved-from object 'value' of type 'std::array'",
+      "tool_version": "23.1.2",
+      "reason": "CSA reports the reusable fixed-size nanobind array caster as moved-from at nb_array.h:34. Its from_python loop assigns every std::array element before extracting the completed value; the fixed-size array remains writable after the trivial element-wise move.",
+      "reproducer": "uv run python tools/native_checks.py --kind analyzer --build native/build; cplusplus.Move at native/src/rider/contact_binding.cpp:33 and nanobind/stl/detail/nb_array.h:34",
+      "remove_when": "Remove when CSA no longer emits this exact cplusplus.Move diagnostic at nb_array.h:34 for the contact_binding.cpp matrix conversion, or nanobind stops reusing the fixed-size element caster."
+    },
+    {
+      "checker": "clang-analyzer-cplusplus.Move",
+      "origin": "(?:^|/)nanobind/include/nanobind/stl/detail/nb_array\\.h$",
+      "message": "Method called on moved-from object 'value' of type 'std::array'",
+      "tool_version": "23.1.2",
+      "reason": "clang-tidy reports the same CSA false positive at the reusable fixed-size nanobind array caster assignment in nb_array.h:34; each from_python call overwrites every std::array element before extraction.",
+      "reproducer": "uv run cmake --build native/build --target check_tidy; clang-analyzer-cplusplus.Move at native/src/rider/contact_binding.cpp:33 and nanobind/stl/detail/nb_array.h:34",
+      "remove_when": "Remove when clang-tidy no longer emits this exact cplusplus.Move diagnostic at nb_array.h:34 for the contact_binding.cpp matrix conversion, or nanobind stops reusing the fixed-size element caster."
+    }
+  ]
+}

@@ -1,12 +1,159 @@
 cmake_minimum_required(VERSION 3.24)
-# Pin the SDK the toolchain understands — the CLT ld cannot parse arm64e.x1
-# in the 27.0 SDK's .tbd (hit during the microbench build). Must precede
-# project(): the compiler check links against the default CLT SDK otherwise.
-set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk")
+# CMake performs its compiler link check during project(), so resolve a default
+# SDK before that call. Never replace an SDK or compiler supplied by the caller.
+if(NOT DEFINED CMAKE_OSX_SYSROOT OR CMAKE_OSX_SYSROOT STREQUAL "")
+  execute_process(
+    COMMAND xcrun --sdk macosx --show-sdk-path
+    RESULT_VARIABLE _native_default_sdk_result
+    OUTPUT_VARIABLE _native_default_sdk
+    ERROR_VARIABLE _native_default_sdk_error
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(_native_sdk_source "default")
+  set(_native_sdk_requested "")
+  set(_native_sdk_candidates "")
+  if(_native_default_sdk_result EQUAL 0 AND IS_DIRECTORY "${_native_default_sdk}")
+    list(APPEND _native_sdk_candidates "${_native_default_sdk}")
+  endif()
+  execute_process(
+    COMMAND xcode-select -p
+    RESULT_VARIABLE _native_developer_dir_result
+    OUTPUT_VARIABLE _native_developer_dir
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(_native_developer_dir_result EQUAL 0)
+    file(GLOB _native_xcode_sdks LIST_DIRECTORIES TRUE
+      "${_native_developer_dir}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX*.sdk")
+    list(SORT _native_xcode_sdks COMPARE NATURAL ORDER DESCENDING)
+    list(APPEND _native_sdk_candidates ${_native_xcode_sdks})
+  endif()
+  file(GLOB _native_command_line_sdks LIST_DIRECTORIES TRUE
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX*.sdk")
+  list(APPEND _native_sdk_candidates ${_native_command_line_sdks})
+  if(NOT _native_default_sdk_result EQUAL 0)
+    message(STATUS "xcrun's default macOS SDK was unavailable: ${_native_default_sdk_error}")
+  endif()
+else()
+  set(_native_sdk_source "explicit")
+  set(_native_sdk_requested "${CMAKE_OSX_SYSROOT}")
+  if(IS_DIRECTORY "${CMAKE_OSX_SYSROOT}")
+    get_filename_component(_native_explicit_sdk "${CMAKE_OSX_SYSROOT}" REALPATH)
+  elseif(CMAKE_OSX_SYSROOT MATCHES "^[A-Za-z0-9_.-]+$")
+    execute_process(
+      COMMAND xcrun --sdk "${CMAKE_OSX_SYSROOT}" --show-sdk-path
+      RESULT_VARIABLE _native_explicit_sdk_result
+      OUTPUT_VARIABLE _native_explicit_sdk
+      ERROR_VARIABLE _native_explicit_sdk_error
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _native_explicit_sdk_result EQUAL 0 OR NOT IS_DIRECTORY "${_native_explicit_sdk}")
+      message(FATAL_ERROR
+        "Explicit CMAKE_OSX_SYSROOT '${CMAKE_OSX_SYSROOT}' is unavailable: ${_native_explicit_sdk_error}")
+    endif()
+    get_filename_component(_native_explicit_sdk "${_native_explicit_sdk}" REALPATH)
+  else()
+    message(FATAL_ERROR "Explicit CMAKE_OSX_SYSROOT does not exist: ${CMAKE_OSX_SYSROOT}")
+  endif()
+  set(_native_sdk_candidates "${_native_explicit_sdk}")
+endif()
+
+if(CMAKE_CXX_COMPILER)
+  set(_native_sdk_probe_compiler "${CMAKE_CXX_COMPILER}")
+else()
+  find_program(_native_sdk_probe_compiler NAMES c++ clang++ REQUIRED)
+endif()
+separate_arguments(_native_sdk_probe_compiler_arg1 NATIVE_COMMAND "${CMAKE_CXX_COMPILER_ARG1}")
+separate_arguments(_native_sdk_probe_flags NATIVE_COMMAND "${CMAKE_CXX_FLAGS}")
+set(_native_sdk_probe_source "${CMAKE_BINARY_DIR}/native_check_work/sdk-compat.cpp")
+get_filename_component(_native_sdk_probe_source_dir "${_native_sdk_probe_source}" DIRECTORY)
+file(MAKE_DIRECTORY "${_native_sdk_probe_source_dir}")
+file(WRITE "${_native_sdk_probe_source}"
+  "#include <Accelerate/Accelerate.h>\n"
+  "int main() { double x = 1.0; double y = 2.0; cblas_daxpy(1, 1.0, &x, 1, &y, 1); return y == 3.0 ? 0 : 1; }\n")
+set(_native_sdk_probe_arch_args "")
+foreach(_architecture IN LISTS CMAKE_OSX_ARCHITECTURES)
+  list(APPEND _native_sdk_probe_arch_args -arch "${_architecture}")
+endforeach()
+set(_native_sdk_probe_launcher ${CMAKE_CXX_COMPILER_LAUNCHER})
+set(_native_sdk_probe_failures "")
+set(_native_seen_sdk_paths "")
+set(_native_sdk_probe_index 0)
+foreach(_sdk_candidate IN LISTS _native_sdk_candidates)
+  get_filename_component(_sdk_candidate_real "${_sdk_candidate}" REALPATH)
+  if(NOT IS_DIRECTORY "${_sdk_candidate_real}")
+    continue()
+  endif()
+  list(FIND _native_seen_sdk_paths "${_sdk_candidate_real}" _native_seen_index)
+  if(NOT _native_seen_index EQUAL -1)
+    continue()
+  endif()
+  list(APPEND _native_seen_sdk_paths "${_sdk_candidate_real}")
+  math(EXPR _native_sdk_probe_index "${_native_sdk_probe_index} + 1")
+  set(_native_sdk_probe_binary "${CMAKE_BINARY_DIR}/native_check_work/sdk-compat-probe-${_native_sdk_probe_index}")
+  execute_process(
+    COMMAND ${_native_sdk_probe_launcher} "${_native_sdk_probe_compiler}"
+      ${_native_sdk_probe_compiler_arg1} ${_native_sdk_probe_flags}
+      -std=c++23 ${_native_sdk_probe_arch_args}
+      -isysroot "${_sdk_candidate_real}" "${_native_sdk_probe_source}"
+      -framework Accelerate -o "${_native_sdk_probe_binary}"
+    RESULT_VARIABLE _native_sdk_probe_result
+    OUTPUT_VARIABLE _native_sdk_probe_output
+    ERROR_VARIABLE _native_sdk_probe_error)
+  if(_native_sdk_probe_result EQUAL 0)
+    set(_native_sdk_path "${_sdk_candidate_real}")
+    if(_native_sdk_source STREQUAL "default")
+      set(CMAKE_OSX_SYSROOT "${_native_sdk_path}" CACHE PATH "macOS SDK for bike_native" FORCE)
+      set(_native_sdk_requested "${_native_sdk_path}")
+    else()
+      # Resolve SDK names for compile commands while preserving the caller's
+      # cache value and the exact request in the generated context.
+      set(CMAKE_OSX_SYSROOT "${_native_sdk_path}")
+    endif()
+    break()
+  endif()
+  string(APPEND _native_sdk_probe_failures
+    "\nSDK ${_sdk_candidate_real}: ${_native_sdk_probe_error}${_native_sdk_probe_output}")
+endforeach()
+if(NOT _native_sdk_path)
+  if(_native_sdk_source STREQUAL "explicit")
+    message(FATAL_ERROR
+      "Explicit CMAKE_OSX_SYSROOT '${_native_sdk_requested}' is incompatible with compiler '${_native_sdk_probe_compiler}':${_native_sdk_probe_failures}")
+  endif()
+  message(FATAL_ERROR
+    "No installed macOS SDK is compatible with compiler '${_native_sdk_probe_compiler}':${_native_sdk_probe_failures}")
+endif()
+
 project(bike_native CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(BIKE_LIBCPP_HARDENING "EXTENSIVE" CACHE STRING "libc++ hardening mode")
+set_property(CACHE BIKE_LIBCPP_HARDENING PROPERTY STRINGS EXTENSIVE FAST)
+if(NOT BIKE_LIBCPP_HARDENING STREQUAL "EXTENSIVE" AND NOT BIKE_LIBCPP_HARDENING STREQUAL "FAST")
+  message(FATAL_ERROR "BIKE_LIBCPP_HARDENING must be EXTENSIVE or FAST, got '${BIKE_LIBCPP_HARDENING}'")
+endif()
+
+# The compiler identification check above is not enough: compile a source that
+# includes an SDK header with the selected compiler and sysroot.
+set(_native_sdk_probe_dir "${CMAKE_BINARY_DIR}/native_check_work/sdk-compat")
+file(MAKE_DIRECTORY "${_native_sdk_probe_dir}")
+set(_native_sdk_probe_source "${_native_sdk_probe_dir}/sdk_compat.cpp")
+file(WRITE "${_native_sdk_probe_source}"
+  "#include <Availability.h>\n"
+  "#ifndef __MAC_OS_X_VERSION_MIN_REQUIRED\n#error No compatible macOS SDK selected\n#endif\n"
+  "int main() { return __MAC_OS_X_VERSION_MIN_REQUIRED > 0 ? 0 : 1; }\n")
+unset(_native_sdk_compatible CACHE)
+try_compile(_native_sdk_compatible
+  "${_native_sdk_probe_dir}/build"
+  SOURCES "${_native_sdk_probe_source}"
+  CMAKE_FLAGS
+    "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
+    "-DCMAKE_CXX_STANDARD:STRING=23"
+    "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+  OUTPUT_VARIABLE _native_sdk_probe_output)
+if(NOT _native_sdk_compatible)
+  message(FATAL_ERROR
+    "Configured C++ compiler '${CMAKE_CXX_COMPILER}' is incompatible with SDK '${CMAKE_OSX_SYSROOT}':\n${_native_sdk_probe_output}")
+endif()
 
 # Resolve the interpreter first so mujoco/nanobind paths below are queried from
 # the SAME python we compile against (uv run exposes .venv via VIRTUAL_ENV).
@@ -18,6 +165,57 @@ execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
   OUTPUT_VARIABLE NB_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
+
+set(_native_hardening_probe_dir "${CMAKE_BINARY_DIR}/native_check_work/libcpp-hardening")
+file(MAKE_DIRECTORY "${_native_hardening_probe_dir}")
+set(_native_libcpp_probe_source "${_native_hardening_probe_dir}/detect_libcpp.cpp")
+file(WRITE "${_native_libcpp_probe_source}"
+  "#include <__config>\n"
+  "#ifndef _LIBCPP_VERSION\n#error The configured standard library is not libc++\n#endif\n"
+  "int main() { return 0; }\n")
+unset(_native_uses_libcpp CACHE)
+try_compile(_native_uses_libcpp
+  "${_native_hardening_probe_dir}/detect-build"
+  SOURCES "${_native_libcpp_probe_source}"
+  CMAKE_FLAGS
+    "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
+    "-DCMAKE_CXX_STANDARD:STRING=23"
+    "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+  OUTPUT_VARIABLE _native_libcpp_detection_output)
+
+set(_native_libcpp_hardening_supported FALSE)
+if(_native_uses_libcpp)
+  set(_native_hardening_mode_probe_source "${_native_hardening_probe_dir}/check_hardening_mode.cpp")
+  file(WRITE "${_native_hardening_mode_probe_source}"
+    "#include <__config>\n"
+    "#ifndef _LIBCPP_HARDENING_MODE_${BIKE_LIBCPP_HARDENING}\n"
+    "#error libc++ omitted the selected hardening mode macro\n#endif\n"
+    "#ifndef _LIBCPP_HARDENING_MODE\n#error libc++ omitted the hardening mode selection\n#endif\n"
+    "#if _LIBCPP_HARDENING_MODE != _LIBCPP_HARDENING_MODE_${BIKE_LIBCPP_HARDENING}\n"
+    "#error libc++ did not accept the selected hardening mode\n#endif\n"
+    "int main() { return 0; }\n")
+  unset(_native_libcpp_mode_probe_result)
+  unset(_native_libcpp_mode_probe_result CACHE)
+  try_compile(_native_libcpp_mode_probe_result
+    "${_native_hardening_probe_dir}/mode-build"
+    SOURCES "${_native_hardening_mode_probe_source}"
+    CMAKE_FLAGS
+      "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
+      "-DCMAKE_CXX_STANDARD:STRING=23"
+      "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+    COMPILE_DEFINITIONS
+      "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_${BIKE_LIBCPP_HARDENING}"
+    OUTPUT_VARIABLE _native_libcpp_hardening_output)
+  if(NOT _native_libcpp_mode_probe_result)
+    message(FATAL_ERROR
+      "Configured libc++ does not support hardening mode ${BIKE_LIBCPP_HARDENING}:\n${_native_libcpp_hardening_output}")
+  endif()
+  set(_native_libcpp_hardening_supported TRUE)
+  set(_native_libcpp_hardening_mode "${BIKE_LIBCPP_HARDENING}")
+else()
+  message(STATUS "libc++ hardening is not applied: configured standard library is not libc++")
+  set(_native_libcpp_hardening_mode "NOT_APPLICABLE")
+endif()
 
 # NB_SUPPRESS_WARNINGS: nanobind/Python headers land as SYSTEM includes —
 # third-party TU internals stay outside our warning contract.
@@ -32,6 +230,8 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp src/drivetrain/drive_binding.cpp
   src/writers/drivetrain.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp src/rider/contact_binding.cpp)
+
+set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
 # Strict flags are PRIVATE to our TUs: nanobind's own static-lib sources are
 # not expected to survive this warning set under -Werror.
@@ -105,11 +305,13 @@ target_compile_options(bike_native PRIVATE
   -fvisibility-inlines-hidden -fstrict-flex-arrays=3
   -mbranch-protection=standard)
 target_include_directories(bike_native SYSTEM PRIVATE "${MJ_DIR}/include")
-# libc++ hardening: EXTENSIVE under Debug (still ABI-stable), FAST elsewhere.
-# DEBUG mode is deliberately avoided — it changes libc++ layout, which would
-# ODR-clash with mujoco/nanobind built without hardening.
-target_compile_definitions(bike_native PRIVATE
-  "_LIBCPP_HARDENING_MODE=$<IF:$<CONFIG:Debug>,_LIBCPP_HARDENING_MODE_EXTENSIVE,_LIBCPP_HARDENING_MODE_FAST>")
+# libc++ hardening modes do not change container layout. Keep the selected mode
+# consistent across this target's TUs; EXTENSIVE is the default in every build
+# type, while FAST is an explicit comparison option.
+if(_native_libcpp_hardening_supported)
+  target_compile_definitions(bike_native PRIVATE
+    "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_${BIKE_LIBCPP_HARDENING}")
+endif()
 target_link_options(bike_native PRIVATE -headerpad_max_install_names)
 
 option(NATIVE_SANITIZE "ASan+UBSan build" OFF)
@@ -246,11 +448,6 @@ function(_native_json_array output)
   set(${output} "${_json}" PARENT_SCOPE)
 endfunction()
 
-get_filename_component(_native_sdk_path "${CMAKE_OSX_SYSROOT}" REALPATH)
-if(NOT IS_DIRECTORY "${_native_sdk_path}")
-  message(FATAL_ERROR "Configured SDK does not exist: ${CMAKE_OSX_SYSROOT}")
-endif()
-
 execute_process(
   COMMAND "${Python_EXECUTABLE}" -m nanobind --include_dir
   RESULT_VARIABLE _native_nb_include_result
@@ -272,6 +469,7 @@ set(_native_required_includes
   "${_native_robin_include}"
   "${MJ_DIR}/include")
 set(_native_required_files
+  "${CMAKE_CURRENT_SOURCE_DIR}/analysis_suppressions.json"
   "${_native_python_include}/Python.h"
   "${_native_nb_include}/nanobind/nanobind.h"
   "${_native_robin_include}/tsl/robin_map.h"
@@ -331,11 +529,24 @@ foreach(_target IN LISTS _native_targets)
   get_target_property(_target_options "${_target}" COMPILE_OPTIONS)
   get_target_property(_target_link_dirs "${_target}" LINK_DIRECTORIES)
   get_target_property(_target_link_libs "${_target}" LINK_LIBRARIES)
+  get_target_property(_target_standard "${_target}" CXX_STANDARD)
+  get_target_property(_target_extensions "${_target}" CXX_EXTENSIONS)
   foreach(_target_property _target_includes _target_definitions _target_options _target_link_dirs _target_link_libs)
     if(NOT ${_target_property} OR "${${_target_property}}" MATCHES "-NOTFOUND$")
       set(${_target_property} "")
     endif()
   endforeach()
+  if(NOT _target_standard OR _target_standard MATCHES "-NOTFOUND$")
+    set(_target_standard "${CMAKE_CXX_STANDARD}")
+  endif()
+  if(NOT DEFINED _target_extensions OR _target_extensions MATCHES "-NOTFOUND$")
+    set(_target_extensions "${CMAKE_CXX_EXTENSIONS}")
+  endif()
+  if(_target_extensions)
+    set(_target_extensions_json "true")
+  else()
+    set(_target_extensions_json "false")
+  endif()
   set(_resolved_target_includes "")
   foreach(_include IN LISTS _target_includes)
     if(_include MATCHES "^\\$<")
@@ -352,7 +563,7 @@ foreach(_target IN LISTS _native_targets)
   _native_json_array(_target_link_libs_json ${_target_link_libs})
   _native_json_quote(_target_name_json "${_target}")
   string(APPEND _native_target_contexts
-    "${_native_target_separator}${_target_name_json}:{\"configuration\":\"${_native_configuration}\",\"include_directories\":${_target_includes_json},\"compile_definitions\":${_target_definitions_json},\"compile_options\":${_target_options_json},\"link_directories\":${_target_link_dirs_json},\"link_libraries\":${_target_link_libs_json}}")
+    "${_native_target_separator}${_target_name_json}:{\"configuration\":\"${_native_configuration}\",\"cxx_standard\":${_target_standard},\"cxx_extensions\":${_target_extensions_json},\"include_directories\":${_target_includes_json},\"compile_definitions\":${_target_definitions_json},\"compile_options\":${_target_options_json},\"link_directories\":${_target_link_dirs_json},\"link_libraries\":${_target_link_libs_json}}")
   set(_native_target_separator ",")
 endforeach()
 string(APPEND _native_source_entries "]")
@@ -367,10 +578,22 @@ _native_json_quote(_native_compiler_id_json "${CMAKE_CXX_COMPILER_ID}")
 _native_json_quote(_native_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION}")
 _native_json_array(_native_compiler_launcher_json ${CMAKE_CXX_COMPILER_LAUNCHER})
 _native_json_quote(_native_sdk_json "${_native_sdk_path}")
+_native_json_quote(_native_sdk_requested_json "${_native_sdk_requested}")
+_native_json_quote(_native_sdk_source_json "${_native_sdk_source}")
+_native_json_quote(_native_suppressions_manifest_json "${CMAKE_CURRENT_SOURCE_DIR}/analysis_suppressions.json")
 _native_json_quote(_native_python_json "${Python_EXECUTABLE}")
 _native_json_array(_native_include_paths_json ${_native_required_includes})
 _native_json_array(_native_library_paths_json "${_native_mujoco_library}" "${_native_sdk_path}/System/Library/Frameworks/Accelerate.framework")
 _native_json_array(_native_required_files_json ${_native_required_files})
+if(_native_libcpp_hardening_supported)
+  set(_native_libcpp_hardening_supported_json "true")
+else()
+  set(_native_libcpp_hardening_supported_json "false")
+endif()
+_native_json_quote(_native_libcpp_hardening_mode_json "${_native_libcpp_hardening_mode}")
+_native_json_quote(_native_libcpp_hardening_requested_json "${BIKE_LIBCPP_HARDENING}")
+set(_native_libcpp_hardening_json
+  "{\"supported\":${_native_libcpp_hardening_supported_json},\"mode\":${_native_libcpp_hardening_mode_json},\"requested_mode\":${_native_libcpp_hardening_requested_json}}")
 
 set(_native_tool_defaults "{\"tidy\":\"/opt/homebrew/opt/llvm/bin/clang-tidy\",\"analyzer\":\"/opt/homebrew/opt/llvm/bin/clang++\",\"cppcheck\":\"cppcheck\",\"gxx\":\"g++-16\"}")
 set(_native_tool_overrides "{")
@@ -388,4 +611,4 @@ string(APPEND _native_tool_overrides "}")
 file(WRITE "${CMAKE_BINARY_DIR}/native_sources.json"
   "{\"schema_version\":1,\"first_party_roots\":${_native_source_roots_json},\"sources\":${_native_source_entries}}\n")
 file(WRITE "${CMAKE_BINARY_DIR}/native_check_context.json"
-  "{\"schema_version\":1,\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"sdk\":${_native_sdk_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
+  "{\"schema_version\":1,\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"sdk\":${_native_sdk_json},\"sdk_requested\":${_native_sdk_requested_json},\"sdk_source\":${_native_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")

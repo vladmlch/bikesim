@@ -282,6 +282,12 @@ def test_tire_segment_int_boundaries_and_unset_roundtrip(side, segment):
     row = np.zeros(len(CANONICAL_NAMES))
     idx = CANONICAL_NAMES.index(f'{side}.segment')
     row[idx] = segment
+    if np.isnan(segment):
+        # An unset segment is only emitted inside a fully-unset contact group —
+        # a stored tangent without its segment is now a rejected partial group.
+        for i, name in enumerate(CANONICAL_NAMES):
+            if name.startswith(f'{side}.') and name != f'{side}.xi':
+                row[i] = np.nan
     st.set_tire_state(CANONICAL_NAMES, row)
     assert_bitwise_equal(st.tire_state(), row, 'segment roundtrip')
 

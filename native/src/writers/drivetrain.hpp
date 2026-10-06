@@ -44,6 +44,12 @@ namespace drivetrain {
         std::optional<TransmissionSnapshot> ideal_hub, clutch, freewheel;
     };
 
+    // Snapshot↔config relational invariants. restore() runs this before any
+    // member is staged: a candidate state must agree with the selected config
+    // and with itself, not merely carry field-valid values.
+    void validate(const DriveSnapshot &snapshot, const DriveConfig &config,
+                  const mjModel &model);
+
     using ForceComponents = std::vector<std::pair<std::string, std::vector<double> > >;
 
     class DrivetrainWriter {

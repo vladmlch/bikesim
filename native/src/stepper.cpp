@@ -1,5 +1,6 @@
 #include "stepper.hpp"
 #include "engine_call.hpp"
+#include "validation.hpp"
 #include <bit>
 #include <algorithm>
 #include <cmath>
@@ -22,14 +23,23 @@ namespace {
     // ndarray→span and forwards; widths live on the model, which only the core
     // can see). Width is mjtSize (int64) in mjModel; the cast is the explicit,
     // always-safe direction (a negative width can never equal a size, so it
-    // still throws).
-    void check_width(std::span<const double> src, const char *name,
-                     mjtSize width) {
-        if (src.size() != static_cast<std::size_t>(width))
+    // still throws). The api.field names mirror the Python call signature.
+    void check_width(std::span<const double> values, std::string_view api,
+                     std::string_view field, mjtSize expected) {
+        if (values.size() != static_cast<std::size_t>(expected))
             throw std::invalid_argument(
-                "set_state: " + std::string(name) + " has " +
-                std::to_string(src.size()) + " elements; model expects " +
-                std::to_string(width));
+                std::string(api) + "." + std::string(field) + ": has " +
+                std::to_string(values.size()) + " elements; model expects " +
+                std::to_string(expected));
+    }
+
+    void check_finite(std::span<const double> values, std::string_view api,
+                      std::string_view field) {
+        for (const double value: values)
+            if (!std::isfinite(value))
+                throw std::invalid_argument(
+                    std::string(api) + "." + std::string(field) +
+                    ": expected finite values");
     }
 
     // Empty spans are skipped, not memcpy'd: d_->act is nullptr when na==0.
@@ -242,13 +252,10 @@ drivetrain::DrivetrainWriter &Stepper::drive() const {
 void Stepper::set_inputs(std::span<const double> ctrl,
                          std::span<const double> force) {
     require_healthy();
-    check_width(ctrl, "ctrl", m_->nu);
-    check_width(force, "qfrc_applied", m_->nv);
-    for (double const x: ctrl)
-        if (!std::isfinite(x)) throw std::invalid_argument("non-finite ctrl");
-    for (double const x: force)
-        if (!std::isfinite(x))
-            throw std::invalid_argument("non-finite qfrc_applied");
+    check_width(ctrl, "set_inputs", "ctrl", m_->nu);
+    check_width(force, "set_inputs", "qfrc_applied", m_->nv);
+    check_finite(ctrl, "set_inputs", "ctrl");
+    check_finite(force, "set_inputs", "qfrc_applied");
     const std::vector<double> saved_ctrl(ctrl.begin(), ctrl.end());
     const std::vector<double> saved_force(force.begin(), force.end());
     copy_in(saved_ctrl, d_->ctrl);
@@ -296,12 +303,17 @@ void Stepper::set_state(std::span<const double> qpos,
                         std::span<const double> warmstart,
                         double time) {
     require_unmarked_time_callback();
-    // All width checks first (strong guarantee), then the same sequence the
+    // All domain checks first (strong guarantee), then the same sequence the
     // Python oracle runs: mj_resetData + buffer writes + mj_forward.
-    check_width(qpos, "qpos", m_->nq);
-    check_width(qvel, "qvel", m_->nv);
-    check_width(act, "act", m_->na);
-    check_width(warmstart, "warmstart", m_->nv);
+    check_width(qpos, "set_state", "qpos", m_->nq);
+    check_width(qvel, "set_state", "qvel", m_->nv);
+    check_width(act, "set_state", "act", m_->na);
+    check_width(warmstart, "set_state", "warmstart", m_->nv);
+    check_finite(qpos, "set_state", "qpos");
+    check_finite(qvel, "set_state", "qvel");
+    check_finite(act, "set_state", "act");
+    check_finite(warmstart, "set_state", "warmstart");
+    validation::nonnegative(time, "set_state.time");
     // Callers may pass our own views, including cross-buffer aliases (e.g.
     // qacc as warmstart). Snapshot EVERY input before resetting any mjData
     // buffer. Allocation failures also leave the old state intact.

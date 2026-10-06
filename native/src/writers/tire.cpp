@@ -402,6 +402,9 @@ void TireWriter::set_state(std::span<const std::string> names,
             if (xi_seen[s])
                 throw std::invalid_argument(
                     "set_tire_state: duplicate column '" + name + "'");
+            if (!std::isfinite(v))
+                throw std::invalid_argument(
+                    "set_tire_state: '" + name + "' must be finite");
             xi_seen[s] = true;
             next[s].xi = v;
         } else if (field == "segment") {
@@ -465,6 +468,11 @@ void TireWriter::set_state(std::span<const std::string> names,
             out = std::nullopt;
             return;
         }
+        if (!std::isfinite(a.comp[0]) || !std::isfinite(a.comp[1]) ||
+            !std::isfinite(a.comp[2]))
+            throw std::invalid_argument(
+                "set_tire_state: '" + std::string(label) +
+                "' components must be finite or all-NaN");
         out = Vec3{a.comp[0], a.comp[1], a.comp[2]};
     };
     for (std::size_t s = 0; s < 2; ++s) {
@@ -472,6 +480,14 @@ void TireWriter::set_state(std::span<const std::string> names,
         fold(tangent[s], next[s].tangent, side + ".tangent");
         fold(point[s], next[s].point, side + ".point");
         fold(center[s], next[s].center, side + ".center");
+        // Sentinel group: a stored tangent is only meaningful with the
+        // contact point and profile segment it was produced from — the
+        // Python oracle dereferences both unconditionally (TypeError).
+        if (next[s].tangent && (!next[s].point || !next[s].segment))
+            throw std::invalid_argument(
+                "set_tire_state: '" + side +
+                ".tangent' requires '" + side + ".point' and '" + side +
+                ".segment'");
     }
     states_ = next;
     // A restored state has not advanced under any interval yet — mirrors

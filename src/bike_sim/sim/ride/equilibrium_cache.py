@@ -129,11 +129,15 @@ def restore_state(runtime, state):
     for name in ('ideal_hub','clutch'):
         constraint=getattr(runtime.drive,name)
         if constraint is not None:
-            value=np.asarray(state.get('state_drive_'+name+'_boundary',()),dtype=float)
+            try:
+                value=np.asarray(state.get('state_drive_'+name+'_boundary',()),dtype=float)
+            except (ValueError,TypeError):
+                return False
             if value.shape != (1,) or not np.isfinite(value).all():
                 return False
             drive_boundaries.append((constraint,float(value[0])))
     rider = runtime.rider_contacts
+    rider_update=None
     if rider is not None:
         required = {
             'state_rider_keys', 'state_rider_xi', 'state_rider_tangent',
@@ -142,33 +146,37 @@ def restore_state(runtime, state):
         }
         if not required.issubset(state):
             return False
-        keys = tuple(str(value) for value in state['state_rider_keys'])
+        try:
+            keys = tuple(str(value) for value in state['state_rider_keys'])
+            xi = np.asarray(state['state_rider_xi'],dtype=float)
+            tangent = np.asarray(state['state_rider_tangent'],dtype=float)
+            valid = np.asarray(state['state_rider_tangent_valid'],dtype=bool)
+            enabled = np.asarray(state['state_rider_enabled'],dtype=bool)
+            grip_xi = np.asarray(state['state_rider_grip_xi'],dtype=float)
+            pending = np.asarray(state['state_rider_pending_release_loss'],dtype=float)
+        except (ValueError,TypeError):
+            return False
         if keys != tuple(rider.states):
             return False
-        xi = state['state_rider_xi']
-        tangent = state['state_rider_tangent']
-        valid = state['state_rider_tangent_valid']
-        if xi.shape != (len(keys),) or tangent.shape != (len(keys), 3) or valid.shape != (len(keys),):
+        if (xi.shape != (len(keys),) or tangent.shape != (len(keys), 3)
+                or valid.shape != (len(keys),)
+                or enabled.shape != (len(rider.CONTACTS),)
+                or grip_xi.shape != (2, 3) or pending.shape != (1,)):
             return False
-        for index, key in enumerate(keys):
-            value = tangent[index].copy() if valid[index] else None
-            rider.states[key] = type(rider.states[key])(float(xi[index]), value)
-        enabled = state['state_rider_enabled']
-        if enabled.shape != (len(rider.CONTACTS),):
+        if (not np.isfinite(xi).all() or not np.isfinite(tangent[valid]).all()
+                or not np.isfinite(grip_xi).all() or not np.isfinite(pending).all()):
             return False
-        rider.enabled = dict(zip(rider.CONTACTS, map(bool, enabled)))
-        grip_xi = np.array(state['state_rider_grip_xi'], dtype=float, copy=True)
-        if grip_xi.shape != (2, 3):
-            return False
-        rider.grip_xi_local = {side: grip_xi[index].copy()
-                               for index, side in enumerate(('left', 'right'))}
-        pending = state['state_rider_pending_release_loss']
-        if pending.shape != (1,):
-            return False
-        rider.pending_release_loss_j = float(pending[0])
+        rider_update=(
+            {key:type(rider.states[key])(float(xi[index]),
+                tangent[index].copy() if valid[index] else None)
+             for index,key in enumerate(keys)},
+            dict(zip(rider.CONTACTS,map(bool,enabled))),
+            {side:grip_xi[index].copy() for index,side in enumerate(('left','right'))},
+            float(pending[0]))
     elif any(key.startswith('state_rider_') for key in state):
         return False
     tire = runtime.tire
+    tire_update=None
     if tire is not None:
         required = {
             'state_tire_sides', 'state_tire_xi', 'state_tire_tangent',
@@ -188,34 +196,55 @@ def restore_state(runtime, state):
             return False
         if distributed and (any(not isinstance(key,tuple) or len(key)!=2 or key[0] not in ('front','rear') or type(key[1]) is not int or not 0<=key[1]<tire.config.distributed.station_count for key in sides) or len(set(sides)) != len(sides)):
             return False
-        xi = state['state_tire_xi']
-        tangent = state['state_tire_tangent']
-        tangent_valid = state['state_tire_tangent_valid']
-        point = state['state_tire_point']
-        point_valid = state['state_tire_point_valid']
-        segment = state['state_tire_segment']
-        center = state['state_tire_center']
-        center_valid = state['state_tire_center_valid']
+        try:
+            xi = np.asarray(state['state_tire_xi'],dtype=float)
+            tangent = np.asarray(state['state_tire_tangent'],dtype=float)
+            tangent_valid = np.asarray(state['state_tire_tangent_valid'],dtype=bool)
+            point = np.asarray(state['state_tire_point'],dtype=float)
+            point_valid = np.asarray(state['state_tire_point_valid'],dtype=bool)
+            segment = np.asarray(state['state_tire_segment'],dtype=float)
+            center = np.asarray(state['state_tire_center'],dtype=float)
+            center_valid = np.asarray(state['state_tire_center_valid'],dtype=bool)
+        except (ValueError,TypeError):
+            return False
         count = len(sides)
         if (xi.shape != (count,) or tangent.shape != (count, 3)
                 or tangent_valid.shape != (count,) or point.shape != (count, 3)
                 or point_valid.shape != (count,) or segment.shape != (count,)
                 or center.shape != (count, 3) or center_valid.shape != (count,)):
             return False
-        if distributed:
-            tire.states.clear()
+        if (not np.isfinite(xi).all() or not np.isfinite(segment).all()
+                or (segment != np.trunc(segment)).any()
+                or not np.isfinite(tangent[tangent_valid]).all()
+                or not np.isfinite(point[point_valid]).all()
+                or not np.isfinite(center[center_valid]).all()
+                or (tangent_valid & (~point_valid | (segment < 0))).any()):
+            return False
+        from bike_sim.sim.ride.tire_forces import _BrushState
+        updates={}
         for index, side in enumerate(sides):
-            from bike_sim.sim.ride.tire_forces import _BrushState
-            value = tire.states.get(side,_BrushState())
-            tire.states[side] = type(value)(
+            value = _BrushState() if distributed else tire.states.get(side,_BrushState())
+            updates[side] = type(value)(
                 float(xi[index]),
                 tangent[index].copy() if tangent_valid[index] else None,
                 point[index].copy() if point_valid[index] else None,
                 None if segment[index] < 0 else int(segment[index]),
                 center[index].copy() if center_valid[index] else None,
             )
+        tire_update=(distributed,updates)
     elif any(key.startswith('state_tire_') for key in state):
         return False
+    if rider_update is not None:
+        states,enabled,grip_xi,pending = rider_update
+        rider.states.update(states)
+        rider.enabled = enabled
+        rider.grip_xi_local = grip_xi
+        rider.pending_release_loss_j = pending
+    if tire_update is not None:
+        distributed,updates = tire_update
+        if distributed:
+            tire.states.clear()
+        tire.states.update(updates)
     for constraint,boundary in drive_boundaries:
         constraint.boundary=boundary
         runtime.sim.model.tendon_range[constraint.tendon_id,1]=boundary

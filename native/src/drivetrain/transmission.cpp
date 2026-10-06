@@ -264,6 +264,13 @@ namespace drivetrain {
             finite(c, "transmission coefficient");
         for (double const r: s.range)
             finite(r, "transmission range");
+        // Only a geometric shift sets shift_pending (linearize runs in the
+        // same call), and only geometric transmissions own a prepared slot.
+        if (s.shift_pending && (!geometric_ || !s.prepared))
+            throw std::invalid_argument("transmission shift_pending");
+        // An ideal transmission's single wrap coefficient IS the ratio.
+        if (!geometric_ && s.coefficients[0] != s.ratio)
+            throw std::invalid_argument("transmission coefficient/ratio mismatch");
         if (s.prepared) {
             const auto &p = *s.prepared;
             if (!geometric_ || !s.boundary || p.qpos.size() != force_.size() ||

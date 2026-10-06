@@ -389,6 +389,8 @@ namespace {
                 .requested = num(p, "requested"), .omega = num(p, "omega"),
                 .dt = num(p, "dt"), .enabled = boolean(p, "enabled")
             };
+            if (s.pending_actuation->dt <= 0.)
+                wire::invalid(p.child("dt"), "dt must be positive");
         }
         s.ideal_hub = parse_transmission(field(d, "ideal_hub"), d.child("ideal_hub"));
         s.clutch = parse_transmission(field(d, "clutch"), d.child("clutch"));

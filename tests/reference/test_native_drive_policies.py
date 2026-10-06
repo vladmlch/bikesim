@@ -313,9 +313,13 @@ def test_restored_finite_snapshots_preserve_bits(config):
     native = bike_native.DrivePolicies(config)
     state = native.state()
     state['pedaling'].update(target_phase_rad=-1000., target_rate_rad_s=-0., _cadence_ema=-10.)
-    state['shifting'].update(rear_teeth=31, from_teeth=37, cadence_ema=-3., required_ema=-5.)
+    # Relational restore rejects teeth outside the cassette; in-cassette values
+    # still exercise bit-preserving restores of arbitrary state.
+    state['shifting'].update(rear_teeth=51, from_teeth=45, cadence_ema=-3., required_ema=-5.)
     state['assist'].update(torque=1e8, last_gain=1e9)
-    state['battery'].update(initial_energy_j=0., energy_j=1e9, drawn_energy_j=1e8)
+    # initial_energy_j is fixed by the config; energy/drawn stay within it.
+    initial = state['battery']['initial_energy_j']
+    state['battery'].update(energy_j=initial * .5, drawn_energy_j=initial * .75)
     state['hub'].update(boundary=-1e9, torque_nm=1e9)
     native.set_state(state)
     assert_tree(native.state(), state)
@@ -448,7 +452,8 @@ def test_invalid_human_torque(mean,phase,ripple):
 def test_shifter_count_boundary_rejects_successful_increment_atomically(config):
     native = bike_native.DrivePolicies(config)
     state = native.state()
-    state['shifting']['shift_count'] = 2**31 - 1
+    # count>0 is only emitted with a recorded direction.
+    state['shifting'].update(shift_count=2**31 - 1, direction='up')
     native.set_state(state)
     with pytest.raises(OverflowError, match='shift_count'):
         native.shifting_update(100.,100.,.01)

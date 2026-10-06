@@ -9,6 +9,65 @@
 namespace drivetrain {
     ArithmeticError::~ArithmeticError() = default;
 
+    void validate(const DriveSnapshot &s, const DriveConfig &config,
+                  const mjModel &model) {
+        const bool simplified = config.transmission_model != "elastic_chain",
+                effort = config.drive_mode == "crank_effort" ||
+                         config.drive_mode == "articulated_effort";
+        // Topology is selected by the config, not discovered from the snapshot.
+        if (s.hub.has_value() == simplified)
+            throw std::invalid_argument("hub topology");
+        if (s.ideal_hub.has_value() != (simplified && effort) ||
+            s.clutch.has_value() != (simplified && effort && config.motor_clutch) ||
+            s.freewheel.has_value() != (simplified && effort && config.rotor_inertia_kgm2 > 0.))
+            throw std::invalid_argument("transmission topology");
+        // A pending actuation exists only after a compute that also set the clock.
+        if (s.pending_actuation && !s.last_time_s)
+            throw std::invalid_argument("pending actuation without a live interval");
+        // Shift counters, direction, cooldowns and the shift clock are set
+        // together on a shift and cleared together on reset.
+        const bool shifted = s.shifting.shift_count > 0;
+        if (s.shift_time_s.has_value() != shifted ||
+            (s.shifting.direction != "none") != shifted ||
+            (!shifted && (s.shifting.cooldown_s != 0. || s.shifting.cut_remaining_s != 0.)))
+            throw std::invalid_argument("shift clock/count mismatch");
+        const auto &cassette = config.policies.shifting.cassette;
+        if (config.policies.shifting.enabled &&
+            (!std::ranges::contains(cassette, s.shifting.rear_teeth) ||
+             !std::ranges::contains(cassette, s.shifting.from_teeth)))
+            throw std::invalid_argument("shifter teeth outside the cassette");
+        // The store is sized by the config and only ever drains.
+        if (s.battery.initial_energy_j != config.policies.battery.energy_j ||
+            s.battery.energy_j > s.battery.initial_energy_j ||
+            s.battery.drawn_energy_j > s.battery.initial_energy_j)
+            throw std::invalid_argument("battery energy outside the configured store");
+        // Auxiliary transmissions are fixed 1:1 one-way clutches.
+        for (const auto *aux: {s.clutch ? &*s.clutch : nullptr,
+                               s.freewheel ? &*s.freewheel : nullptr})
+            if (aux && (aux->ratio != 1. || aux->rear_teeth != 3 ||
+                        aux->coefficients.size() != 1 || aux->coefficients[0] != 1.))
+                throw std::invalid_argument("auxiliary transmission topology");
+        if (!s.ideal_hub)
+            return;
+        const TransmissionSnapshot &hub = *s.ideal_hub;
+        // The ideal-hub ratio is always the shifter's current gear.
+        if (hub.ratio != static_cast<double>(config.policies.gearing.front_teeth) /
+                         s.shifting.rear_teeth)
+            throw std::invalid_argument("transmission ratio/gear mismatch");
+        if (config.transmission_model == "geometric_ideal_mid_drive") {
+            if (hub.rear_teeth != s.shifting.rear_teeth)
+                throw std::invalid_argument("transmission rear-teeth mismatch");
+            if (hub.coefficients.size() != static_cast<std::size_t>(model.nv))
+                throw std::invalid_argument("transmission coefficient width");
+            // A prepared snapshot carries the linearized Jacobian that the
+            // live wrap coefficients were synced from.
+            if (hub.prepared && hub.coefficients != hub.prepared->jacobian)
+                throw std::invalid_argument("transmission coefficients/prepared Jacobian mismatch");
+        } else if (hub.rear_teeth != config.policies.gearing.rear_teeth) {
+            throw std::invalid_argument("transmission rear-teeth mismatch");
+        }
+    }
+
     DrivetrainWriter::DrivetrainWriter(mjModel *m, mjData *d, DriveConfig c)
         : model_(m), data_(d), config_(std::move(c)),
           simplified_(config_.transmission_model != "elastic_chain"),
@@ -558,6 +617,7 @@ namespace drivetrain {
     }
 
     void DrivetrainWriter::restore(const DriveSnapshot &s) {
+        validate(s, config_, *model_);
         auto p = pedaling_;
         auto sh = shifting_;
         auto a = assist_;

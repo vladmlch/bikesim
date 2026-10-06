@@ -114,13 +114,14 @@ namespace {
                 .target_rate_rad_s = num(p, "target_rate_rad_s"), .deceleration_rad_s2 = num(p, "deceleration_rad_s2"),
                 .effort = num(p, "_effort"), .cadence_ema = optional_num(p, "_cadence_ema")
             });
-            next.shifting.set_state({
+            const ShiftingSnapshot shift{
                 .rear_teeth = integer(s, "rear_teeth"), .from_teeth = integer(s, "from_teeth"),
                 .shift_count = integer(s, "shift_count"),
                 .cooldown_s = num(s, "cooldown_s"), .cut_remaining_s = num(s, "cut_remaining_s"),
                 .direction = string(s, "direction"), .cadence_ema = optional_num(s, "cadence_ema"),
                 .required_ema = optional_num(s, "required_ema")
-            });
+            };
+            next.shifting.set_state(shift);
             next.assist.set_state({
                 .torque = num(a, "torque"), .last_gain = num(a, "last_gain"), .pedaling = boolean(a, "pedaling")
             });
@@ -137,6 +138,21 @@ namespace {
             wire::exact(a, wire::keys("torque", "pedaling", "last_gain"));
             wire::exact(b, wire::keys("initial_energy_j", "energy_j", "drawn_energy_j"));
             wire::exact(h, wire::keys("boundary", "energy_j", "torque_nm"));
+            // Relational checks: a candidate must agree with the config and
+            // with itself, not merely carry field-valid values.
+            const bool shifted = shift.shift_count > 0;
+            if ((shift.direction != "none") != shifted ||
+                (!shifted && (shift.cooldown_s != 0. || shift.cut_remaining_s != 0.)))
+                throw std::invalid_argument("shift count/direction mismatch");
+            const auto &cassette = config.shifting.cassette;
+            if (config.shifting.enabled &&
+                (!std::ranges::contains(cassette, shift.rear_teeth) ||
+                 !std::ranges::contains(cassette, shift.from_teeth)))
+                throw std::invalid_argument("shifter teeth outside the cassette");
+            const auto &batt = next.battery.state();
+            if (batt.initial_energy_j != config.battery.energy_j ||
+                batt.energy_j > batt.initial_energy_j || batt.drawn_energy_j > batt.initial_energy_j)
+                throw std::invalid_argument("battery energy outside the configured store");
             *this = std::move(next);
         }
 

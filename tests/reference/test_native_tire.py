@@ -320,3 +320,77 @@ def test_tire_qfrc_happy_path_and_clock():
     st.tire_qfrc(dt)
     with pytest.raises(ValueError, match='once per increasing timestamp'):
         st.tire_qfrc(dt)
+
+
+@pytest.mark.parametrize('side', ('front', 'rear'))
+@pytest.mark.parametrize('blanked', ('point', 'segment'))
+def test_tire_partial_sentinel_group_rejects_atomically(side, blanked):
+    """A stored tangent only makes sense with the contact point and profile
+    segment it was produced from — the Python oracle dereferences both."""
+    st = bike_native.Stepper(MJB, _tire_cfg())
+    model = mujoco.MjModel.from_binary_path(MJB)
+    data = mujoco.MjData(model)
+    data.qpos[0] += 0.6
+    data.qpos[14] += 0.6
+    st.set_state(data.qpos, data.qvel, data.act, data.qacc_warmstart, 0.)
+    st.forward()
+    st.set_tire_state(CANONICAL_NAMES, np.zeros(len(CANONICAL_NAMES)))
+    st.tire_qfrc(0.00125)
+    before = st.tire_state().copy()
+    # tangent stays fully set; blank one sibling the sentinel group requires.
+    bad = np.zeros(len(CANONICAL_NAMES))
+    if blanked == 'point':
+        for i in range(3):
+            bad[CANONICAL_NAMES.index(f'{side}.point.{i}')] = np.nan
+    else:
+        bad[CANONICAL_NAMES.index(f'{side}.segment')] = np.nan
+    with pytest.raises(ValueError, match=f'{side}.tangent'):
+        st.set_tire_state(CANONICAL_NAMES, bad)
+    assert_bitwise_equal(st.tire_state(), before, 'rejected sentinel group')
+    # The once-per-timestamp clock is part of the same strong guarantee.
+    with pytest.raises(ValueError, match='once per increasing timestamp'):
+        st.tire_qfrc(0.00125)
+
+
+def test_tire_xi_and_mixed_vector_rejections_preserve_state():
+    st = bike_native.Stepper(MJB, _tire_cfg())
+    st.set_tire_state(CANONICAL_NAMES, np.zeros(len(CANONICAL_NAMES)))
+    before = st.tire_state().copy()
+    bad = np.zeros(len(CANONICAL_NAMES))
+    bad[CANONICAL_NAMES.index('front.xi')] = np.nan
+    with pytest.raises(ValueError, match='front.xi'):
+        st.set_tire_state(CANONICAL_NAMES, bad)
+    # A real vector column can carry a stray NaN and still decodes — but a
+    # mixed finite/NaN vector is neither set nor unset.
+    bad = np.zeros(len(CANONICAL_NAMES))
+    bad[CANONICAL_NAMES.index('rear.point.1')] = np.nan
+    with pytest.raises(ValueError, match='finite or all-NaN'):
+        st.set_tire_state(CANONICAL_NAMES, bad)
+    assert_bitwise_equal(st.tire_state(), before,
+                         'rejected rows preserve state')
+
+
+def test_tire_all_unset_state_accepted_and_first_advance_works():
+    """All-NaN component columns plus a NaN segment encode an unset brush
+    state; the restore clears the clock so the first advance runs."""
+    st = bike_native.Stepper(MJB, _tire_cfg())
+    model = mujoco.MjModel.from_binary_path(MJB)
+    data = mujoco.MjData(model)
+    data.qpos[0] += 0.6
+    data.qpos[14] += 0.6
+    st.set_state(data.qpos, data.qvel, data.act, data.qacc_warmstart, 0.)
+    st.forward()
+    row = np.full(len(CANONICAL_NAMES), np.nan)
+    row[CANONICAL_NAMES.index('front.xi')] = 0.
+    row[CANONICAL_NAMES.index('rear.xi')] = 0.
+    st.set_tire_state(CANONICAL_NAMES, row)
+    got = st.tire_state()
+    for name in CANONICAL_NAMES:
+        idx = CANONICAL_NAMES.index(name)
+        if name.endswith('.xi'):
+            assert got[idx] == 0., name
+        else:
+            assert np.isnan(got[idx]), name
+    assert st.tire_qfrc(0.00125).shape == (model.nv,)
+    with pytest.raises(ValueError, match='once per increasing timestamp'):
+        st.tire_qfrc(0.00125)

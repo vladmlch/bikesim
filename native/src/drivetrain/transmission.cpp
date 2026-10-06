@@ -1,6 +1,7 @@
 #include "transmission.hpp"
 #include "../engaged.hpp"
 #include "../engine_call.hpp"
+#include "../model_topology.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -21,10 +22,18 @@ namespace drivetrain {
           force_(static_cast<std::size_t>(model->nv)),
           multipliers_(static_cast<std::size_t>(model->njmax > 0 ? model->njmax : 0)),
           displacement_(force_.size()) {
+        drivetrain::validate(gear_);
         if (!constant_ || (geometric && !endpoint_))
             throw std::runtime_error("mj_makeData");
         const int dj = resolve(model, mjOBJ_JOINT, driver),
                 wj = resolve(model, mjOBJ_JOINT, driven);
+        if (geometric) {
+            topology::joint(model, dj, driver, mjJNT_HINGE, {0., 1., 0.});
+            topology::joint(model, wj, driven, mjJNT_HINGE, {0., 1., 0.});
+        } else {
+            topology::scalar_joint(model, dj, driver);
+            topology::scalar_joint(model, wj, driven);
+        }
         driver_qpos_ =
                 buffer(model->jnt_qposadr, model->njnt)[static_cast<std::size_t>(dj)];
         driver_dof_ = buffer(model->jnt_dofadr, model->njnt)[static_cast<std::size_t>(dj)];
@@ -90,7 +99,7 @@ namespace drivetrain {
 
     void Transmission::linearize(mjData *d, double phi) {
         const auto q = buffer(d->qpos, model_->nq);
-        const double upper = engaged(state_.boundary) - phi + dot(geometry_.jacobian, q);
+        const double upper = validation::derived(engaged(state_.boundary) - phi + dot(geometry_.jacobian, q), "transmission.upper_bound");
         bool changed = false;
         auto const prm = buffer(model_->wrap_prm, model_->nwrap);
         for (std::size_t i = 0; i < coefficients_.size(); ++i) {

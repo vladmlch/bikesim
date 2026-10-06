@@ -12,6 +12,8 @@ so a held brake at a standstill does nothing instead of reversing the bike.
 from typing import Tuple
 
 import mujoco
+from bike_sim.physics.checks import derived, scalar
+from bike_sim.sim.ride.wheels import validate_actuator_target
 
 from bike_sim.sim.ride.wheels import (
     WheelSpin,
@@ -51,6 +53,8 @@ class BrakeController:
         Raises:
             ValueError: If the ceiling is negative or the taper band is not positive.
         """
+        scalar(torque_ceiling_nm, "BrakeController.torque_ceiling_nm", minimum=0.)
+        scalar(taper_radps, "BrakeController.taper_radps", positive=True)
         if torque_ceiling_nm < 0.0:
             raise ValueError(f"torque_ceiling_nm must be non-negative, got {torque_ceiling_nm}")
         if taper_radps <= 0.0:
@@ -61,6 +65,8 @@ class BrakeController:
         self.front_wheel: WheelSpin = resolve_wheel_spin(model, "front_wheel_spin", "geom_front_contact")
         self.rear_wheel: WheelSpin = resolve_wheel_spin(model, "rear_wheel_spin", "geom_rear_contact")
 
+        validate_actuator_target(model, "front_brake", "front_wheel_spin")
+        validate_actuator_target(model, "rear_brake", "rear_wheel_spin")
         self.front_torque_nm = 0.0
         self.rear_torque_nm = 0.0
 
@@ -82,8 +88,9 @@ class BrakeController:
             Tuple of (front torque, rear torque) in N.m, ready to be written to the
             `front_brake` and `rear_brake` actuators.
         """
-        self.front_torque_nm = self._wheel_torque(data, self.front_wheel, front_demand)
-        self.rear_torque_nm = self._wheel_torque(data, self.rear_wheel, rear_demand)
+        front = self._wheel_torque(data, self.front_wheel, front_demand)
+        rear = self._wheel_torque(data, self.rear_wheel, rear_demand)
+        self.front_torque_nm, self.rear_torque_nm = front, rear
         return self.front_torque_nm, self.rear_torque_nm
 
     def _wheel_torque(self, data: mujoco.MjData, wheel: WheelSpin, demand: float) -> float:
@@ -99,7 +106,9 @@ class BrakeController:
         Returns:
             Generalized torque in N.m, opposing the wheel's rotation.
         """
-        clamped = min(max(float(demand), 0.0), 1.0)
+        scalar(self.torque_ceiling_nm, "BrakeController.torque_ceiling_nm", minimum=0.)
+        scalar(self.taper_radps, "BrakeController.taper_radps", positive=True)
+        clamped = min(max(scalar(demand, "BrakeController.demand"), 0.0), 1.0)
         return opposing_torque(
             magnitude_nm=clamped * self.torque_ceiling_nm,
             omega_radps=wheel.omega_radps(data),

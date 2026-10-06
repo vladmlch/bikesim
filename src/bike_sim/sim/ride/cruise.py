@@ -18,6 +18,8 @@ The wheel brakes are a separate, sign-aware path (`braking.py`).
 """
 
 import mujoco
+import numpy as np
+from bike_sim.physics.checks import boolean, derived, scalar
 
 from bike_sim.sim.ride.contacts import TerrainContacts
 
@@ -77,6 +79,9 @@ class CruiseController:
             ValueError: If a gain or the ceiling is not positive, if `root_x` is missing, or
                 if the target speed is outside the adjustable band.
         """
+        scalar(kp_nm_per_mps, "CruiseController.kp_nm_per_mps", positive=True)
+        scalar(ki_nm_per_mps_s, "CruiseController.ki_nm_per_mps_s", positive=True)
+        scalar(torque_ceiling_nm, "CruiseController.torque_ceiling_nm", positive=True)
         if kp_nm_per_mps <= 0.0 or ki_nm_per_mps_s <= 0.0:
             raise ValueError(
                 f"cruise gains must be positive, got kp={kp_nm_per_mps}, ki={ki_nm_per_mps_s}"
@@ -87,6 +92,8 @@ class CruiseController:
         jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_x")
         if jid < 0:
             raise ValueError("model has no joint 'root_x'; cruise control regulates chassis speed")
+        if model.jnt_type[jid] != mujoco.mjtJoint.mjJNT_SLIDE or not np.array_equal(model.jnt_axis[jid], [1., 0., 0.]):
+            raise ValueError("CruiseController.root_x: requires slide about local +X")
         self.root_x_dofadr = int(model.jnt_dofadr[jid])
 
         self.kp_nm_per_mps = float(kp_nm_per_mps)
@@ -124,6 +131,7 @@ class CruiseController:
                 is the range over which the shipped track's kicker works; a target outside
                 it is a mis-specified experiment, not a clamp to apply silently.
         """
+        value = scalar(value, "CruiseController.target_speed_kmh")
         if not MIN_TARGET_SPEED_KMH <= value <= MAX_TARGET_SPEED_KMH:
             raise ValueError(
                 f"target speed {value:.1f} km/h is outside the adjustable band "
@@ -161,32 +169,44 @@ class CruiseController:
         Returns:
             Drive torque in N.m for the `rear_drive` actuator, within +/- the ceiling.
         """
-        self.engaged = (
+        for name in ('kp_nm_per_mps', 'ki_nm_per_mps_s', 'torque_ceiling_nm', 'gain_scale'):
+            scalar(getattr(self, name), f'CruiseController.{name}', positive=True)
+        boolean(contacts.rear_in_contact, 'CruiseController.rear_in_contact')
+        boolean(traction_limited, 'CruiseController.traction_limited')
+        if controller_grounded is not None:
+            boolean(controller_grounded, 'CruiseController.controller_grounded')
+        engaged = (
             contacts.rear_in_contact if controller_grounded is None else controller_grounded
         )
         error_mps = self._target_speed_mps - float(data.qvel[self.root_x_dofadr])
 
-        if not self.engaged:
+        if not engaged:
             # A gated step contributes nothing to the integral: accumulating error while the
             # torque cannot be delivered is precisely the wind-up that lands violently.
             self.torque_nm = 0.0
+            self.engaged = False
             return self.torque_nm
 
-        kp = self.kp_nm_per_mps * self.gain_scale
-        ki = self.ki_nm_per_mps_s * self.gain_scale
-        proportional_nm = kp * error_mps
-        demand_nm = proportional_nm + ki * self.integral_mps_s
+        kp = derived(self.kp_nm_per_mps * self.gain_scale, "CruiseController.kp")
+        ki = derived(self.ki_nm_per_mps_s * self.gain_scale, "CruiseController.ki")
+        if ki <= 0.:
+            raise ValueError('CruiseController.ki: scaled denominator must be positive')
+        integral = self.integral_mps_s
+        proportional_nm = derived(kp * error_mps, "CruiseController.proportional_torque")
+        demand_nm = derived(proportional_nm + ki * self.integral_mps_s, "CruiseController.demand")
         pushing_further_into_saturation = (
             abs(demand_nm) >= self.torque_ceiling_nm and (demand_nm > 0.0) == (error_mps > 0.0)
         )
         if not pushing_further_into_saturation and not traction_limited:
-            self.integral_mps_s = _clamp(
-                self.integral_mps_s + error_mps * float(model.opt.timestep),
+            integral = _clamp(
+                derived(integral + derived(error_mps * scalar(model.opt.timestep, 'CruiseController.timestep', positive=True), 'CruiseController.integral_delta'), 'CruiseController.integral'),
                 self.torque_ceiling_nm / ki,
             )
-            demand_nm = proportional_nm + ki * self.integral_mps_s
+            demand_nm = derived(proportional_nm + ki * integral, "CruiseController.demand")
 
         self.torque_nm = _clamp(demand_nm, self.torque_ceiling_nm)
+        self.integral_mps_s = integral
+        self.engaged = engaged
         return self.torque_nm
 
     def set_assist_compensation(self, support_factor: float) -> float:
@@ -200,7 +220,7 @@ class CruiseController:
         Returns:
             The scale now in force.
         """
-        self.gain_scale = 1.0 / (1.0 + max(0.0, float(support_factor)))
+        self.gain_scale = 1.0 / (1.0 + max(0.0, scalar(support_factor, "CruiseController.support_factor")))
         return self.gain_scale
 
     def reset(self) -> None:

@@ -1,8 +1,37 @@
 """Small shared validation helpers for the physical SI components."""
 from math import isfinite
-from numbers import Real
+from numbers import Integral, Real
+from operator import index
 from collections.abc import Mapping, Sequence
 import numpy as np
+
+
+def integer(value, name: str, *, minimum=None, positive=False) -> int:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral):
+        raise ValueError(f'{name}: expected integer')
+    result = index(value)
+    if (minimum is not None and result < minimum) or (positive and result <= 0):
+        raise ValueError(f'{name}: invalid integer domain')
+    return result
+
+
+def boolean(value, name: str) -> bool:
+    if type(value) is not bool:
+        raise ValueError(f'{name}: expected bool')
+    return value
+
+
+def derived(value, name: str) -> float:
+    result = float(value)
+    if not isfinite(result):
+        raise OverflowError(f'{name}: non-finite derived value')
+    return result
+
+
+def derived_array(value, name: str):
+    if not np.isfinite(value).all():
+        raise OverflowError(f'{name}: non-finite derived array')
+    return value
 
 
 def scalar(value, name: str, *, minimum=None, positive=False) -> float:
@@ -25,6 +54,14 @@ def scalar(value, name: str, *, minimum=None, positive=False) -> float:
     if not isfinite(value) or (minimum is not None and value < minimum) or (positive and value <= 0):
         raise ValueError(f'invalid {name}')
     return value
+
+
+def sequence(value, name: str) -> tuple:
+    if isinstance(value, (str, bytes, Mapping)) or not isinstance(value, (Sequence, np.ndarray)):
+        raise ValueError(f'{name}: expected ordered sequence')
+    if isinstance(value, np.ndarray) and value.ndim == 0:
+        raise ValueError(f'{name}: expected ordered sequence')
+    return tuple(value)
 
 
 def array(value, name: str, shape=None, *, readonly=False) -> np.ndarray:

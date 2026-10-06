@@ -6,6 +6,10 @@ namespace drivetrain {
     class CadenceShifter {
     public:
         CadenceShifter(GearingConfig gearing, ShiftingConfig config) : gearing_(gearing), config_(std::move(config)) {
+            validate(gearing_);
+            validate(config_);
+            if (config_.enabled && std::ranges::find(config_.cassette, gearing_.rear_teeth) == config_.cassette.end())
+                throw std::invalid_argument("CadenceShifter.rear_teeth");
             reset();
         }
 

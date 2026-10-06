@@ -6,6 +6,7 @@ namespace drivetrain {
     class AssistController {
     public:
         explicit AssistController(AssistConfig config) : config_(std::move(config)) {
+            validate(config_);
         }
 
         void reset() { state_ = {}; }

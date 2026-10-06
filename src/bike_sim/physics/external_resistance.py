@@ -6,7 +6,7 @@ wheel body using mj_applyFT; applying it only on the hinge loses root reaction.
 """
 from math import tanh
 import numpy as np
-from bike_sim.physics.checks import array, scalar
+from bike_sim.physics.checks import array, derived, derived_array, scalar
 
 
 def rolling_moment(crr, Fn, radius, omega_abs, taper):
@@ -15,12 +15,12 @@ def rolling_moment(crr, Fn, radius, omega_abs, taper):
     radius = scalar(radius, 'wheel radius', positive=True)
     speed = scalar(omega_abs, 'signed absolute wheel speed')
     taper = scalar(taper, 'rolling regularization speed', positive=True)
-    return scalar(-crr*load*radius*tanh(speed/taper), 'rolling torque')
+    return derived(-crr*load*radius*tanh(speed/taper), 'rolling_moment.torque')
 
 
 def _rolling_moment(crr, load, radius, speed, taper):
     """Core of `rolling_moment` for callers that already validated inputs."""
-    return -crr*load*radius*tanh(speed/taper)
+    return derived(-crr*load*radius*tanh(speed/taper), "rolling_moment.torque")
 
 
 def drag_force(velocity_relative, rho, cda):
@@ -31,7 +31,7 @@ def drag_force(velocity_relative, rho, cda):
         raise ValueError('drag velocity must be planar X-Z')
     with np.errstate(over='ignore', invalid='ignore'):
         force = -.5*rho*cda*np.linalg.norm(v)*v
-    return array(force, 'aerodynamic force', (3,))
+    return derived_array(force, 'drag_force.force')
 
 
 def _drag_force(v, rho, cda):
@@ -39,4 +39,4 @@ def _drag_force(v, rho, cda):
     if v[1] != 0:
         raise ValueError('drag velocity must be planar X-Z')
     with np.errstate(over='ignore', invalid='ignore'):
-        return -.5*rho*cda*np.linalg.norm(v)*v
+        return derived_array(-.5*rho*cda*np.linalg.norm(v)*v, "drag_force.force")

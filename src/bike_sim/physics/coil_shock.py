@@ -19,6 +19,8 @@ it engages, and it reaches its peak exactly at full stroke.
 from dataclasses import dataclass
 from math import isfinite
 from typing import Optional
+from bike_sim.physics.checks import boolean, derived, scalar
+from bike_sim.physics.domain_validation import coil_specs
 
 
 @dataclass
@@ -44,6 +46,9 @@ class CoilShockSpecs:
     bumper_length_mm: float = 10.0
     bumper_peak_n: float = 7000.0
 
+    def __post_init__(self):
+        coil_specs(self)
+
     @property
     def bumper_engage_mm(self) -> float:
         """Shaft stroke at which the bumper first touches, in mm."""
@@ -59,7 +64,8 @@ class CoilShock:
         self, specs: Optional[CoilShockSpecs] = None, *, legacy_behavior: bool = False
     ) -> None:
         self.specs = specs if specs is not None else CoilShockSpecs()
-        self.legacy_behavior = legacy_behavior
+        self.legacy_behavior = boolean(legacy_behavior, "CoilShock.legacy_behavior")
+        coil_specs(self.specs)
         s = self.specs
         if (
             not all(isfinite(x) for x in (
@@ -84,10 +90,12 @@ class CoilShock:
         Returns:
             Coil force in N, including the preload offset.
         """
-        compression_mm = float(stroke_mm) + self.specs.preload_mm
+        coil_specs(self.specs)
+        boolean(self.legacy_behavior, "CoilShock.legacy_behavior")
+        compression_mm = scalar(stroke_mm, "CoilShock.stroke_mm") + self.specs.preload_mm
         if not self.legacy_behavior:
             compression_mm = max(0.0, compression_mm)
-        return float(self.specs.rate_n_m * compression_mm / 1000.0)
+        return derived(self.specs.rate_n_m * compression_mm / 1000.0, "CoilShock.spring_force")
 
     def compute_bumper_force(self, stroke_mm: float) -> float:
         """
@@ -100,8 +108,9 @@ class CoilShock:
             Bumper force in N: exactly zero until the bumper engages, then quadratic in
             engagement depth, reaching `bumper_peak_n` at full stroke.
         """
-        excess_mm = max(0.0, float(stroke_mm) - self.specs.bumper_engage_mm)
-        return float(self.specs.bumper_peak_n * (excess_mm / self.specs.bumper_length_mm) ** 2)
+        coil_specs(self.specs)
+        excess_mm = max(0.0, scalar(stroke_mm, "CoilShock.stroke_mm") - self.specs.bumper_engage_mm)
+        return derived(self.specs.bumper_peak_n * (excess_mm / self.specs.bumper_length_mm) ** 2, "CoilShock.bumper_force")
 
     def compute_axial_force(self, stroke_mm: float) -> float:
         """
@@ -114,7 +123,7 @@ class CoilShock:
             Coil plus bumper force in N. This is the generalized force the ride-mode force
             path writes onto the `shock_stroke` coordinate; no leverage ratio is applied.
         """
-        return self.compute_spring_force(stroke_mm) + self.compute_bumper_force(stroke_mm)
+        return derived(self.compute_spring_force(stroke_mm) + self.compute_bumper_force(stroke_mm), "CoilShock.axial_force")
 
 
 __all__ = ["CoilShockSpecs", "CoilShock"]

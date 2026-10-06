@@ -8,24 +8,16 @@ Synthetic material parameters are not experimental calibration.
 from dataclasses import dataclass
 from math import isfinite
 from numbers import Real
+from bike_sim.physics.checks import scalar
 
 
 def _scalar(value: float, name: str) -> float:
-    """Accept finite real scalars, not strings, booleans or mutable arrays."""
-    if isinstance(value, bool) or not isinstance(value, Real):
-        raise ValueError(f"{name} must be a finite real scalar")
-    try:
-        result = float(value)
-    except (ValueError, OverflowError) as exc:
-        raise ValueError(f"{name} must be a finite real scalar") from exc
-    if not isfinite(result):
-        raise ValueError(f"{name} must be finite")
-    return result
+    return scalar(value, name)
 
 
 def _finite_result(*values: float) -> None:
     if not all(isfinite(value) for value in values):
-        raise ArithmeticError("tire calculation exceeds finite floating-point range")
+        raise OverflowError("tire calculation exceeds finite floating-point range")
 
 
 @dataclass(frozen=True)
@@ -72,12 +64,14 @@ class TireSpec:
         self, penetration_m: float, penetration_rate_m_s: float
     ) -> tuple[float, float]:
         """Evaluate this instance's parameters; return force [N], energy [J]."""
+        self.validate()
         return normal_contact(
             penetration_m, penetration_rate_m_s,
             self.radial_k_n_m, self.radial_c_ns_m,
         )
 
     def elastic_response(self, penetration_m: float) -> tuple[float, float]:
+        self.validate()
         penetration = max(0., _scalar(penetration_m, 'tire deflection'))
         force = self.radial_k_n_m * penetration
         energy = .5 * self.radial_k_n_m * penetration**2
@@ -86,9 +80,21 @@ class TireSpec:
 
     def is_load_in_valid_range(self, load_n: float) -> bool:
         """Report applicability without modifying physical force or pressure."""
+        self.validate()
         load = _scalar(load_n, "load_n")
         lower, upper = self.valid_load_range_n
         return lower <= load <= upper
+
+    def validate(self) -> None:
+        scalar(self.radial_k_n_m, 'TireSpec.radial_k_n_m', positive=True)
+        scalar(self.radial_c_ns_m, 'TireSpec.radial_c_ns_m', minimum=0.)
+        scalar(self.pressure_pa_gauge, 'TireSpec.pressure_pa_gauge', minimum=0.)
+        if not isinstance(self.provenance, str) or not self.provenance.strip():
+            raise ValueError('TireSpec.provenance: nonblank description required')
+        from bike_sim.physics.checks import array
+        lower, upper = array(self.valid_load_range_n, 'TireSpec.valid_load_range_n', (2,))
+        if not 0. <= lower < upper:
+            raise ValueError('TireSpec.valid_load_range_n: expected 0 <= lower < upper')
 
 
 def normal_contact(

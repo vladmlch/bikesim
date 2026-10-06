@@ -6,7 +6,7 @@ from math import isfinite
 from bike_sim.physics.physical_config import (
     TireBackendConfig, PhysicalDriveConfig, ResistanceConfig, ArticulatedConfig,
 )
-from bike_sim.physics.checks import scalar
+from bike_sim.physics.checks import derived, scalar
 from bike_sim.physics.seated_climb import SeatedClimbConfig
 
 
@@ -21,23 +21,19 @@ class EndStopConfig:
     provenance: str = "synthetic"
 
     def __post_init__(self) -> None:
-        if (
-            not all(isfinite(x) for x in (
-                self.reference_force_n, self.reference_deflection_m,
-                self.damping_n_s_m, self.overtravel_m,
-            ))
-            or self.reference_force_n <= 0
-            or self.reference_deflection_m <= 0
-            or self.damping_n_s_m < 0
-            or self.overtravel_m <= 0
-        ):
-            raise ValueError("invalid end-stop calibration")
+        scalar(self.reference_force_n, "EndStopConfig.reference_force_n", minimum=0.)
+        scalar(self.reference_deflection_m, "EndStopConfig.reference_deflection_m", positive=True)
+        scalar(self.damping_n_s_m, "EndStopConfig.damping_n_s_m", minimum=0.)
+        scalar(self.overtravel_m, "EndStopConfig.overtravel_m", positive=True)
         if self.overtravel_m < self.reference_deflection_m:
-            raise ValueError("end-stop overtravel must reach the reference deflection")
+            raise ValueError("EndStopConfig.overtravel_m: must reach reference deflection")
 
     @property
     def stiffness_n_m(self) -> float:
-        return self.reference_force_n / self.reference_deflection_m
+        self.__post_init__()
+        stiffness = self.reference_force_n / self.reference_deflection_m
+        derived(stiffness, 'EndStopConfig.stiffness_n_m')
+        return stiffness
 
 
 @dataclass(frozen=True)

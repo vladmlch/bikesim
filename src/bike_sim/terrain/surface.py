@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
 import numpy as np
+from bike_sim.physics.checks import array, derived, derived_array, scalar
 
 DEFAULT_STRIBECK_SPEED_MPS = 4.5
 
@@ -62,6 +63,7 @@ class SurfaceSpec:
             ("slip_stiffness_per_load", self.slip_stiffness_per_load),
             ("stribeck_speed_mps", self.stribeck_speed_mps),
         ):
+            scalar(value, f"SurfaceSpec.{label}", positive=True)
             if not value > 0.0:
                 raise ValueError(f"surface '{self.name}': {label} must be positive, got {value}")
         if self.mu_slide > self.mu_peak:
@@ -83,8 +85,11 @@ class SurfaceSpec:
         Returns:
             The coefficient, with the argument's shape (a float for a scalar).
         """
+        self.__post_init__()
+        array(sliding_speed_mps, "SurfaceSpec.sliding_speed_mps")
         decay = np.exp(-np.abs(sliding_speed_mps) / self.stribeck_speed_mps)
         value = self.mu_slide + (self.mu_peak - self.mu_slide) * decay
+        derived_array(value, 'SurfaceSpec.mu')
         return float(value) if np.ndim(value) == 0 else value
 
 
@@ -198,12 +203,26 @@ class SurfaceMap:
         Args:
             x_m: Contact position along the track in metres.
         """
-        if not np.isfinite(x_m):
-            raise ValueError('material query must be finite')
+        self.validate()
+        scalar(x_m, 'SurfaceMap.x_m')
         for section in self.sections:
             if section.start_m <= x_m < section.end_m:
                 return get_surface(section.surface)
         return self._surface
+
+    def validate(self) -> None:
+        if not isinstance(self._surface, SurfaceSpec):
+            raise ValueError('SurfaceMap.surface: expected SurfaceSpec')
+        self._surface.__post_init__()
+        previous = 0.
+        for section in self.sections:
+            if not isinstance(section, SurfaceSection):
+                raise ValueError('SurfaceMap.sections: expected SurfaceSection')
+            section.__post_init__()
+            get_surface(section.surface).__post_init__()
+            if section.start_m < previous:
+                raise ValueError('SurfaceMap.sections: unordered or overlapping intervals')
+            previous = section.end_m
 
     @property
     def surfaces(self) -> Tuple[SurfaceSpec, ...]:

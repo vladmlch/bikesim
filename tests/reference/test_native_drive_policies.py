@@ -52,7 +52,7 @@ def applier(**overrides):
     names = [('frame', 'root_x'), ('crank', 'crank_spin'), ('cassette', 'cassette_spin'),
              ('rear_wheel', 'rear_wheel_spin'), ('front_wheel', 'front_wheel_spin'),
              ('pedal_front', 'pedal_front_spin'), ('pedal_rear', 'pedal_rear_spin')]
-    bodies = ''.join(f'<body name="{body}"><joint name="{joint}"/><geom type="sphere" size=".1" mass="1"/></body>' for body, joint in names)
+    bodies = ''.join(f'<body name="{body}"><joint name="{joint}" axis="0 1 0"/><geom type="sphere" size=".1" mass="1"/></body>' for body, joint in names)
     model = mujoco.MjModel.from_xml_string(f'<mujoco><worldbody>{bodies}</worldbody><tendon><fixed name="ideal_mid_drive_freehub"><joint joint="crank_spin" coef="1.4166666666666667"/><joint joint="rear_wheel_spin" coef="-1"/></fixed></tendon><actuator><motor name="human_crank" joint="crank_spin"/><motor name="mid_drive" joint="crank_spin"/></actuator></mujoco>')
     drive = DrivetrainForceApplier(model, cfg, 'crank_effort')
     drive.hub = Freehub(cfg.freehub_k_nm_rad, cfg.freehub_c_nms_rad)
@@ -480,13 +480,13 @@ def test_assist_computed_crank_overflow_matches_python_state(profile, mode, cade
     drive.assist.last_gain = 123.
     native.set_state(snapshot(drive))
     previous = snapshot(drive)['assist']
-    with pytest.raises(ValueError, match='crank rate'):
+    with pytest.raises(OverflowError):
         drive.assist.step(11.,cadence,0.,False,.01,shaft_rpm=shaft)
-    # The late permission validation changes last_gain but retains delivered state.
-    assert drive.assist.last_gain != previous['last_gain']
+    # Derived overflow is rejected before publishing gain or delivered state.
+    assert drive.assist.last_gain == previous['last_gain']
     assert_bitwise_equal(drive.assist.torque,previous['torque'])
     assert drive.assist.pedaling == previous['pedaling']
-    with pytest.raises(ValueError, match='crank rate'):
+    with pytest.raises(OverflowError):
         native.assist_step(11.,cadence,0.,False,.01,shaft_rpm=shaft)
     check(native,drive)
     assert_bitwise_equal(native.assist_step(20.,80.,0.,False,.01),

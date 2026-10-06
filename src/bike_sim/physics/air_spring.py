@@ -9,6 +9,8 @@ with dual air chambers (positive and negative), automatic equalization at top-ou
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
+from bike_sim.physics.checks import derived, derived_array, integer, scalar
+from bike_sim.physics.domain_validation import air_specs
 
 
 PSI_TO_PA = 6894.757293168
@@ -32,28 +34,35 @@ class AirSpringSpecs:
     gamma: float = 1.40                     # Adiabatic index for diatomic air
     atm_pressure_pa: float = ATM_PA         # Atmospheric reference pressure in Pa
 
+    def __post_init__(self):
+        air_specs(self)
+
     @property
     def piston_area_m2(self) -> float:
         """Piston cross-sectional area in square meters."""
+        air_specs(self)
         r_m = (self.stanchion_inner_diam_mm / 2.0) / 1000.0
-        return float(np.pi * (r_m ** 2))
+        return derived(np.pi * (r_m ** 2), "AirSpringSpecs.piston_area_m2")
 
     @property
     def token_volume_m3(self) -> float:
         """Volume of one token in cubic meters."""
-        return float(self.token_volume_cm3 * 1e-6)
+        air_specs(self)
+        return derived(self.token_volume_cm3 * 1e-6, 'AirSpringSpecs.token_volume_m3')
 
     @property
     def base_pos_volume_m3(self) -> float:
         """Nominal uncompressed positive chamber volume with 0 tokens in m^3."""
+        air_specs(self)
         l_pos_m = self.pos_chamber_length_mm / 1000.0
-        return float(self.piston_area_m2 * l_pos_m)
+        return derived(self.piston_area_m2 * l_pos_m, 'AirSpringSpecs.base_pos_volume_m3')
 
     @property
     def base_neg_volume_m3(self) -> float:
         """Nominal uncompressed negative chamber volume at top-out in m^3."""
+        air_specs(self)
         l_neg_m = self.neg_chamber_length_mm / 1000.0
-        return float(self.piston_area_m2 * l_neg_m)
+        return derived(self.piston_area_m2 * l_neg_m, 'AirSpringSpecs.base_neg_volume_m3')
 
 
 class ForkAirSpring:
@@ -68,27 +77,34 @@ class ForkAirSpring:
         gauge_pressure_psi: float = 82.0,
     ) -> None:
         self.specs = specs if specs is not None else AirSpringSpecs()
+        air_specs(self.specs)
         self.num_tokens = num_tokens if num_tokens is not None else self.specs.default_tokens
-        self.num_tokens = max(0, min(self.specs.max_tokens, self.num_tokens))
-        self.gauge_pressure_psi = float(gauge_pressure_psi)
+        self.num_tokens = max(0, min(self.specs.max_tokens, integer(self.num_tokens, "ForkAirSpring.num_tokens")))
+        self.gauge_pressure_psi = scalar(gauge_pressure_psi, "ForkAirSpring.gauge_pressure_psi", minimum=0.)
 
     @property
     def abs_pressure_pa(self) -> float:
         """Initial equalized absolute pressure at top-out in Pa."""
-        return float(self.gauge_pressure_psi * PSI_TO_PA + self.specs.atm_pressure_pa)
+        air_specs(self.specs)
+        scalar(self.gauge_pressure_psi, 'ForkAirSpring.gauge_pressure_psi', minimum=0.)
+        return derived(self.gauge_pressure_psi * PSI_TO_PA + self.specs.atm_pressure_pa, 'ForkAirSpring.abs_pressure_pa')
 
     @property
     def gauge_pressure_bar(self) -> float:
         """Gauge pressure in bar."""
-        return float(self.gauge_pressure_psi * PSI_TO_PA * PA_TO_BAR)
+        air_specs(self.specs)
+        scalar(self.gauge_pressure_psi, 'ForkAirSpring.gauge_pressure_psi', minimum=0.)
+        return derived(self.gauge_pressure_psi * PSI_TO_PA * PA_TO_BAR, 'ForkAirSpring.gauge_pressure_bar')
 
     def set_tokens(self, n_tokens: int) -> None:
         """Sets active token count constrained within [0, max_tokens]."""
-        self.num_tokens = max(0, min(self.specs.max_tokens, int(n_tokens)))
+        air_specs(self.specs)
+        self.num_tokens = max(0, min(self.specs.max_tokens, integer(n_tokens, "ForkAirSpring.num_tokens")))
 
     def set_pressure_psi(self, psi: float) -> None:
         """Sets gauge air pressure in PSI."""
-        self.gauge_pressure_psi = max(10.0, float(psi))
+        air_specs(self.specs)
+        self.gauge_pressure_psi = max(10.0, scalar(psi, "ForkAirSpring.gauge_pressure_psi", minimum=0.))
 
     def compute_volumes(
         self,
@@ -98,15 +114,19 @@ class ForkAirSpring:
         """
         Computes instantaneous positive and negative chamber volumes in m^3 at travel x (mm).
         """
-        tokens = self.num_tokens if num_tokens is None else max(0, min(self.specs.max_tokens, num_tokens))
-        travel_m = max(0.0, min(self.specs.total_travel_mm, float(travel_mm))) / 1000.0
+        air_specs(self.specs)
+        tokens = max(0, min(self.specs.max_tokens, integer(self.num_tokens if num_tokens is None else num_tokens, "ForkAirSpring.num_tokens")))
+        travel_m = max(0.0, min(self.specs.total_travel_mm, scalar(travel_mm, "ForkAirSpring.travel_mm"))) / 1000.0
 
         v_pos_0 = self.specs.base_pos_volume_m3 - (tokens * self.specs.token_volume_m3)
         v_neg_0 = self.specs.base_neg_volume_m3
 
         v_disp = self.specs.piston_area_m2 * travel_m
+        derived(v_disp, 'ForkAirSpring.displaced_volume')
 
-        if v_disp >= v_pos_0:
+        derived(v_pos_0, "ForkAirSpring.initial_positive_volume")
+        derived(v_neg_0, "ForkAirSpring.initial_negative_volume")
+        if v_pos_0 <= 0. or v_neg_0 <= 0. or v_disp >= v_pos_0:
             raise ValueError(
                 f"Pneumatic volume exhausted at travel={travel_mm:.1f} mm with {tokens} tokens "
                 f"(displaced volume {v_disp*1e6:.1f} cm³ >= initial chamber volume {v_pos_0*1e6:.1f} cm³)."
@@ -114,7 +134,9 @@ class ForkAirSpring:
 
         v_pos = v_pos_0 - v_disp
         v_neg = v_neg_0 + v_disp
-        return float(v_pos), float(v_neg)
+        if v_pos <= 0. or v_neg <= 0.:
+            raise ValueError("ForkAirSpring.volumes: chamber volumes must be positive")
+        return derived(v_pos, "ForkAirSpring.positive_volume"), derived(v_neg, "ForkAirSpring.negative_volume")
 
     def compute_pressures_pa(
         self,
@@ -125,9 +147,12 @@ class ForkAirSpring:
         """
         Computes absolute pressures P_pos and P_neg in Pa at travel x (mm).
         """
-        tokens = self.num_tokens if num_tokens is None else num_tokens
+        air_specs(self.specs)
+        tokens = max(0, min(self.specs.max_tokens, integer(self.num_tokens if num_tokens is None else num_tokens, "ForkAirSpring.num_tokens")))
         psi = self.gauge_pressure_psi if p_gauge_psi is None else p_gauge_psi
+        scalar(psi, "ForkAirSpring.gauge_pressure_psi", minimum=0.)
         p_abs_0 = psi * PSI_TO_PA + self.specs.atm_pressure_pa
+        derived(p_abs_0, "ForkAirSpring.absolute_pressure")
 
         v_pos_0 = self.specs.base_pos_volume_m3 - (tokens * self.specs.token_volume_m3)
         v_neg_0 = self.specs.base_neg_volume_m3
@@ -137,7 +162,7 @@ class ForkAirSpring:
         gamma = self.specs.gamma
         p_pos = p_abs_0 * ((v_pos_0 / v_pos_x) ** gamma)
         p_neg = p_abs_0 * ((v_neg_0 / v_neg_x) ** gamma)
-        return float(p_pos), float(p_neg)
+        return derived(p_pos, "ForkAirSpring.positive_pressure"), derived(p_neg, "ForkAirSpring.negative_pressure")
 
     def compute_axial_force(
         self,
@@ -151,7 +176,7 @@ class ForkAirSpring:
         p_pos, p_neg = self.compute_pressures_pa(travel_mm, p_gauge_psi, num_tokens)
         area = self.specs.piston_area_m2
         net_force = area * (p_pos - p_neg)
-        return float(max(0.0, net_force))
+        return max(0.0, derived(net_force, "ForkAirSpring.axial_force"))
 
     def compute_instantaneous_stiffness(
         self,
@@ -163,12 +188,15 @@ class ForkAirSpring:
         """
         Computes the instantaneous tangent spring rate k(x) = dF/dx in N/mm (or kN/m).
         """
-        x = float(travel_mm)
+        scalar(delta_mm, "ForkAirSpring.delta_mm", positive=True)
+        x = scalar(travel_mm, "ForkAirSpring.travel_mm")
         x1 = max(0.0, x - delta_mm)
         x2 = min(self.specs.total_travel_mm, x + delta_mm)
         f1 = self.compute_axial_force(x1, p_gauge_psi, num_tokens)
         f2 = self.compute_axial_force(x2, p_gauge_psi, num_tokens)
-        return float((f2 - f1) / (x2 - x1))
+        if x2 == x1:
+            raise ValueError("ForkAirSpring.delta_mm: zero finite difference interval")
+        return derived((f2 - f1) / (x2 - x1), "ForkAirSpring.stiffness")
 
     def calibrate_psi_for_sag(
         self,
@@ -179,7 +207,9 @@ class ForkAirSpring:
         """
         Analytically calibrates and sets the required gauge PSI to achieve exact target sag.
         """
-        tokens = self.num_tokens if num_tokens is None else num_tokens
+        air_specs(self.specs)
+        scalar(target_axial_force_n, 'ForkAirSpring.target_axial_force_n', minimum=0.)
+        tokens = max(0, min(self.specs.max_tokens, integer(self.num_tokens if num_tokens is None else num_tokens, "ForkAirSpring.num_tokens")))
 
         v_pos_0 = self.specs.base_pos_volume_m3 - (tokens * self.specs.token_volume_m3)
         v_neg_0 = self.specs.base_neg_volume_m3
@@ -189,6 +219,7 @@ class ForkAirSpring:
         pos_ratio = (v_pos_0 / v_pos_sag) ** gamma
         neg_ratio = (v_neg_0 / v_neg_sag) ** gamma
         delta_ratio = pos_ratio - neg_ratio
+        derived(delta_ratio, 'ForkAirSpring.calibration_ratio')
 
         if delta_ratio <= 0.0:
             raise ValueError(
@@ -197,10 +228,15 @@ class ForkAirSpring:
             )
 
         area = self.specs.piston_area_m2
-        p_abs_0_required = target_axial_force_n / (area * delta_ratio)
+        denominator = area * delta_ratio
+        derived(denominator, 'ForkAirSpring.calibration_denominator')
+        p_abs_0_required = target_axial_force_n / denominator
+        derived(p_abs_0_required, 'ForkAirSpring.calibration_absolute_pressure')
         p_gauge_pa = p_abs_0_required - self.specs.atm_pressure_pa
-        calibrated_psi = max(10.0, float(p_gauge_pa * PA_TO_PSI))
+        derived(p_gauge_pa, 'ForkAirSpring.calibration_gauge_pressure')
+        calibrated_psi = max(10.0, derived(p_gauge_pa * PA_TO_PSI, 'ForkAirSpring.calibration_raw_psi'))
 
+        derived(calibrated_psi, "ForkAirSpring.calibrated_pressure")
         self.gauge_pressure_psi = calibrated_psi
         return calibrated_psi
 
@@ -237,6 +273,7 @@ class ForkAirSpring:
             [0.0],
             np.cumsum(np.diff(travel_m) * (force_arr[1:] + force_arr[:-1]) * 0.5),
         ))
+        derived_array(energy_arr, 'ForkAirSpring.energy_j')
 
         return {
             "travel_mm": travel_array,
@@ -250,7 +287,7 @@ class ForkAirSpring:
             "stiffness_at_0_n_mm": float(stiffness_list[0]),
             "stiffness_at_sag_n_mm": float(self.compute_instantaneous_stiffness(54.0, p_gauge_psi, num_tokens)),
             "stiffness_at_bottom_n_mm": float(stiffness_list[-1]),
-            "progressivity_pct": float(((stiffness_list[-1] - stiffness_list[0]) / max(0.1, stiffness_list[0])) * 100.0),
+            "progressivity_pct": derived(((stiffness_list[-1] - stiffness_list[0]) / max(0.1, stiffness_list[0])) * 100.0, 'ForkAirSpring.progressivity_pct'),
         }
 
     def fit_polynomial_mjcf(

@@ -27,6 +27,9 @@ class MotorProfile:
     provenance: str
 
     def __post_init__(self):
+        object.__setattr__(self, "mode_gains", MappingProxyType(self.validate()))
+
+    def validate(self):
         for name in ('peak_torque_nm', 'rated_power_w', 'peak_power_w', 'torque_tau_s',
                      'emtb_full_gain_at_nm', 'cadence_support_max_rpm', 'cutoff_mps',
                      'taper_width_mps', 'gate_min_crank_rad_s'):
@@ -50,10 +53,9 @@ class MotorProfile:
                 gains[mode] = (low, high)
             else:
                 gains[mode] = scalar(gain, f'{mode} gain', minimum=0.)
-        # Freeze a defensive copy: dataclass freezing alone leaves dicts mutable.
-        object.__setattr__(self, 'mode_gains', MappingProxyType(gains))
         if not isinstance(self.provenance, str) or not self.provenance.strip():
             raise ValueError('motor profile requires provenance')
+        return gains
 
     def __deepcopy__(self, memo):
         # Force probes copy controller state, while this immutable data can be
@@ -75,6 +77,7 @@ PROFILES = {'bosch_cx_gen4': BOSCH_CX_GEN4}
 
 def assist_gain(profile: MotorProfile, mode: str, human_nm: float) -> float:
     """Return fixed support or the declared eMTB ramp with rider torque."""
+    profile.validate()
     human = scalar(human_nm, 'human torque')
     if not isinstance(mode, str) or mode not in profile.mode_gains:
         raise ValueError(f'unknown assist mode {mode!r}')

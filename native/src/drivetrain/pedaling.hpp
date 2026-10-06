@@ -12,6 +12,7 @@ namespace drivetrain {
     class PedalingPolicy {
     public:
         explicit PedalingPolicy(PedalingConfig config) : config_(config) {
+            validate(config_);
         }
 
         void reset() { state_ = {}; }

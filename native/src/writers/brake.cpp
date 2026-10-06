@@ -3,6 +3,9 @@
 // time of porting. Python min()/max() map to std::min/std::max — same
 // two-argument keep-first-on-tie semantics, including the NaN cases.
 #include "brake.hpp"
+#include "../config_validation.hpp"
+#include "../model_topology.hpp"
+#include "../validation.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -22,6 +25,7 @@ namespace {
             throw std::invalid_argument(
                 "model has no joint '" + std::string(joint_name) +
                 "'; ride-mode wheel torques need it");
+        topology::joint(m, jid, joint_name, mjJNT_HINGE, {0., 1., 0.});
         const int gid = mj_name2id(m, mjOBJ_GEOM, contact_geom);
         if (gid < 0)
             throw std::invalid_argument(
@@ -73,6 +77,9 @@ namespace {
 
 BrakeWriter::BrakeWriter(const mjModel *m, nativecfg::BrakeConfig config)
     : cfg_(config), nv_(m->nv), nu_(m->nu) {
+    validation::nonnegative(cfg_.torque_ceiling_nm, "BrakeWriter.torque_ceiling_nm");
+    validation::positive(cfg_.taper_radps, "BrakeWriter.taper_radps");
+    nativecfg::validate(cfg_);
     // braking.py:54-57 — ctor validation.
     if (cfg_.torque_ceiling_nm < 0.0)
         throw std::invalid_argument(
@@ -92,12 +99,15 @@ BrakeWriter::BrakeWriter(const mjModel *m, nativecfg::BrakeConfig config)
     // ride_sim.py:330-331.
     front_ctrl_adr_ = actuator_id(m, "front_brake");
     rear_ctrl_adr_ = actuator_id(m, "rear_brake");
+    topology::actuator(m, front_ctrl_adr_, "front_brake", mj_name2id(m, mjOBJ_JOINT, "front_wheel_spin"));
+    topology::actuator(m, rear_ctrl_adr_, "rear_brake", mj_name2id(m, mjOBJ_JOINT, "rear_wheel_spin"));
 }
 
 // braking.py:89-107 — _wheel_torque; WheelSpin.omega_radps is the qvel read
 // (wheels.py:35-37).
 double BrakeWriter::wheel_torque(const mjData *d, const WheelSpin &wheel,
                                  double demand) const {
+    validation::finite(demand, "BrakeWriter.demand");
     const double clamped = std::min(std::max(demand, 0.0), 1.0);
     const std::span<const mjtNum> qvel = std::views::counted(d->qvel, nv_);
     const double omega = qvel[static_cast<std::size_t>(wheel.dofadr)];

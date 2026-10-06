@@ -5,7 +5,7 @@ command. An insufficient idle budget disables the motor without erasing the
 nonzero battery remainder. There is no implicit regenerative braking.
 """
 from math import sqrt
-from bike_sim.physics.checks import scalar
+from bike_sim.physics.checks import derived, scalar
 
 
 class Battery:
@@ -21,7 +21,7 @@ class Battery:
     def draw(self,requested_power_w,dt):
         power = scalar(requested_power_w,'battery power',minimum=0)
         dt = scalar(dt,'battery timestep',positive=True)
-        requested = scalar(power*dt,'requested battery energy',minimum=0)
+        requested = derived(power*dt, 'Battery.requested_energy')
         delivered = min(self.energy_j,requested)
         self.energy_j = max(0.,self.energy_j-delivered)
         self.drawn_energy_j += delivered
@@ -35,7 +35,7 @@ def motor_electrical_power(torque,omega,a,b,idle,enabled):
         raise ValueError('motor enable must be a bool')
     if not enabled:
         return 0.
-    return scalar(max(torque*omega,0.)+a*torque**2+b*omega**2+idle,'electrical power')
+    return derived(max(derived(torque*omega, 'motor_electrical_power.mechanical_power'),0.)+a*torque**2+b*omega**2+idle, 'motor_electrical_power.power')
 
 
 def limit_torque_by_energy(request,omega,a,b,idle,budget_w):
@@ -43,16 +43,18 @@ def limit_torque_by_energy(request,omega,a,b,idle,budget_w):
     omega = scalar(omega,'shaft speed')
     a,b,idle,budget = (scalar(v,n,minimum=0) for v,n in zip(
         (a,b,idle,budget_w),('copper coefficient','speed loss coefficient','idle loss','power budget')))
-    overhead = scalar(b*omega**2+idle,'motor overhead')
+    overhead = derived(b*omega**2+idle, 'limit_torque_by_energy.overhead')
     available = budget-overhead
     if available <= 0:
         return 0.
     w = max(omega,0.)
     if a > 0:
-        discriminant = scalar(w*w+4*a*available,'torque budget discriminant')
-        cap = 2*available/(w+sqrt(discriminant))
+        discriminant = derived(w*w+4*a*available, 'limit_torque_by_energy.discriminant')
+        numerator = derived(2*available, 'limit_torque_by_energy.numerator')
+        denominator = derived(w+sqrt(discriminant), 'limit_torque_by_energy.denominator')
+        cap = derived(numerator/denominator, 'limit_torque_by_energy.cap')
     elif w > 0:
-        cap = available/w
+        cap = derived(available/w, 'limit_torque_by_energy.cap')
     else:
         cap = request
     return min(request,cap)

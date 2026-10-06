@@ -6,7 +6,7 @@ upgrades these parameters to a measured/calibrated model.
 """
 from dataclasses import dataclass, field
 from math import pi, radians
-from bike_sim.physics.checks import scalar
+from bike_sim.physics.checks import integer, scalar, sequence
 from bike_sim.physics.attachment_budget import AttachmentBudget
 from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.tire_curve import TabulatedTireSpec
@@ -29,6 +29,8 @@ class TireParameters:
     def __post_init__(self):
         if not isinstance(self.material, (TireSpec, TabulatedTireSpec)):
             raise ValueError('tire material must be a TireSpec or TabulatedTireSpec')
+        if isinstance(self.material, TireSpec):
+            self.material.validate()
         for key in ('tangent_k_n_m','relaxation_length_m'):
             scalar(getattr(self,key),key,positive=True)
         scalar(self.mu,'tire friction',minimum=0)
@@ -56,6 +58,8 @@ class TireBackendConfig:
             raise ValueError('distributed tire configuration must be explicit')
         if not isinstance(self.front,TireParameters) or not isinstance(self.rear,TireParameters):
             raise ValueError('front and rear tires need explicit TireParameters')
+        self.front.__post_init__()
+        self.rear.__post_init__()
         scalar(self.significant_delta_m,'significant penetration',minimum=0)
         fraction = scalar(self.significance_fraction,'significance fraction',minimum=0)
         angle = scalar(self.distinct_normal_deg,'distinct normal angle',positive=True)
@@ -183,11 +187,8 @@ class ShiftingConfig:
             raise ValueError('unknown upshift slip mode')
         if not isinstance(self.enabled, bool):
             raise ValueError('automatic shifting enable must be a bool')
-        try:
-            cassette = tuple(self.cassette)
-        except TypeError as exc:
-            raise ValueError('cassette needs a sequence of integer tooth counts') from exc
-        if not cassette or any(type(teeth) is not int or teeth < 3 for teeth in cassette):
+        cassette = tuple(integer(tooth, 'ShiftingConfig.cassette', minimum=3) for tooth in sequence(self.cassette, 'ShiftingConfig.cassette'))
+        if not cassette:
             raise ValueError('cassette needs integer tooth counts of at least three')
         if len(set(cassette)) != len(cassette):
             raise ValueError('cassette tooth counts must be distinct')
@@ -234,8 +235,12 @@ class PhysicalDriveConfig:
     def __post_init__(self):
         if not isinstance(self.gearing,DrivetrainSpecs) or not isinstance(self.assist,AssistConfig) or not isinstance(self.battery,BatteryConfig):
             raise ValueError('invalid drivetrain configuration object')
+        self.gearing.__post_init__()
+        self.assist.__post_init__()
+        self.battery.__post_init__()
         if not isinstance(self.pedaling, PedalingConfig):
             raise ValueError('pedaling needs an immutable PedalingConfig')
+        self.pedaling.__post_init__()
         if self.transmission_model not in ('elastic_chain', 'ideal_mid_drive', 'geometric_ideal_mid_drive'):
             raise ValueError('unknown transmission model')
         if not isinstance(self.motor_clutch, bool):
@@ -249,6 +254,7 @@ class PhysicalDriveConfig:
             raise ValueError('motor clutch requires an ideal mid-drive transmission')
         if not isinstance(self.shifting, ShiftingConfig):
             raise ValueError('shifting needs an immutable ShiftingConfig')
+        self.shifting.__post_init__()
         if self.shifting.enabled:
             if self.transmission_model not in ('ideal_mid_drive','geometric_ideal_mid_drive'):
                 raise ValueError('automatic physical shifting requires ideal_mid_drive')

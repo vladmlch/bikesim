@@ -183,6 +183,10 @@ class SuspensionForceApplier:
         shock_total = (
             shock_spring + shock_bumper + shock_damper + shock_top_out + shock_upper_stop
         )
+        from bike_sim.physics.checks import derived
+        for value in (fork_total, shock_total, top_out_force, top_out_energy, upper_force, upper_energy,
+                      bumper_energy, coil_energy):
+            derived(value, 'SuspensionForceApplier.force_or_energy')
 
         # Both coordinates increase with compression, so a resisting force is a negative
         # generalized force. The construction-time range check guarantees that convention.

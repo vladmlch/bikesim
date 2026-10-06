@@ -1,6 +1,7 @@
 #pragma once
 #include "../config_types.hpp"
 #include "../validation.hpp"
+#include "../config_validation.hpp"
 
 namespace drivetrain {
     using validation::finite;

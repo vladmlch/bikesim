@@ -18,6 +18,7 @@
 // below; elementwise ops keep IEEE per-element semantics under any SIMD
 // numpy may use, so scalar loops stay bitwise-correct.
 #include "resistance.hpp"
+#include "../config_validation.hpp"
 
 #include <algorithm>
 #include <array>
@@ -71,7 +72,7 @@ namespace {
     // physical_mapping.py:6-11 — resolve_id.
     int resolve_id(const mjModel *m, mjtObj kind, const char *name) {
         const int result = mj_name2id(m, kind, name);
-        if (result < 0)
+        if (result < 0 || (kind == mjOBJ_BODY && result == 0))
             throw std::invalid_argument("model has no '" + std::string(name) +
                                         "'");
         return result;
@@ -81,7 +82,7 @@ namespace {
     // math.tanh is libm tanh, same as std::tanh here.
     double rolling_moment(double crr, double load, double radius, double speed,
                           double taper) {
-        return -crr * load * radius * std::tanh(speed / taper);
+        return validation::derived(-crr * load * radius * std::tanh(speed / taper), "rolling_moment.torque");
     }
 
     // physical_mapping.py:24-37 — point_jacobian_into's checks + the jacp-only
@@ -102,6 +103,7 @@ ResistanceWriter::ResistanceWriter(const mjModel *m,
                                    nativecfg::ResistanceConfig config)
     : m_(m), cfg_(std::move(config)),
       nv_(static_cast<int>(m->nv)) {
+    nativecfg::validate(cfg_);
     // ResistanceConfig.__post_init__ (physical_config.py:275-284): scalars
     // finite + bounds, both 3-vectors finite and planar ([1] == 0).
     if (!std::isfinite(cfg_.crr) || cfg_.crr < 0.0)
@@ -164,7 +166,7 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
         const TireSideInput &snap = *snap_p;
         // Fn = sum(p.normal_load_n for p in snapshot.patches
         //          if p.working_surface)
-        const double Fn = py_sum(snap.patch_loads, snap.patch_working);
+        const double Fn = validation::derived(py_sum(snap.patch_loads, snap.patch_working), "ExternalResistanceApplier.normal_load");
         // axis = data.xmat[body].reshape(3, 3)[:, 1] — the body's world
         // y-axis, column 1 of the row-major 3x3 block.
         const std::array<double, 3> axis = {
@@ -202,6 +204,7 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
     for (int i = 0; i < 3; ++i)
         point[static_cast<std::size_t>(i)] =
                 at(xpos, 3 * frame_ + i) + rotp[static_cast<std::size_t>(i)];
+    validation::derived_array(point, "ExternalResistanceApplier.point");
     point_jacobian_into(m_, d, frame_, point, jp_.data());
     // velocity = self._jp @ data.qvel
     std::array<double, 3> velocity{};
@@ -223,17 +226,21 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
         throw std::invalid_argument("drag velocity must be planar X-Z");
     const double norm = std::sqrt(
         cblas_ddot(3, relative.data(), 1, relative.data(), 1));
+    validation::derived(norm, "ExternalResistanceApplier.velocity_norm");
     const double t =
             ((-0.5 * cfg_.rho_kg_m3) * cfg_.cda_m2) * norm;
     std::array<double, 3> force{};
     for (int i = 0; i < 3; ++i)
         force[static_cast<std::size_t>(i)] =
                 t * relative[static_cast<std::size_t>(i)];
+    validation::derived_array(force, "ExternalResistanceApplier.drag_force");
 
     // 'aerodynamic': self._jp.T @ force (same gemv-trans path as row above)
     std::vector<double> aerodynamic(static_cast<std::size_t>(nv_));
     cblas_dgemv(kCblasRowMajor, kCblasTrans, 3, nv_, 1.0, jp_.data(), nv_,
                 force.data(), 1, 0.0, aerodynamic.data(), 1);
+    validation::derived_array(rolling, "ExternalResistanceApplier.rolling");
+    validation::derived_array(aerodynamic, "ExternalResistanceApplier.aerodynamic");
     return {
         {"road_rolling", std::move(rolling)},
         {"aerodynamic", std::move(aerodynamic)}

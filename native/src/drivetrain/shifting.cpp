@@ -41,8 +41,8 @@ namespace drivetrain {
             next.cadence_ema = cadence;
             next.required_ema = required;
         } else {
-            engaged(next.cadence_ema) += alpha * (cadence - engaged(next.cadence_ema));
-            engaged(next.required_ema) += alpha * (required - engaged(next.required_ema));
+            engaged(next.cadence_ema) = validation::derived(engaged(next.cadence_ema) + alpha * validation::derived(cadence - engaged(next.cadence_ema), "CadenceShifter.cadence_delta"), "CadenceShifter.cadence_ema");
+            engaged(next.required_ema) = validation::derived(engaged(next.required_ema) + alpha * validation::derived(required - engaged(next.required_ema), "CadenceShifter.required_delta"), "CadenceShifter.required_ema");
         }
         next.cooldown_s = std::max(0., next.cooldown_s - dt);
         next.cut_remaining_s = std::max(0., next.cut_remaining_s - dt);
@@ -62,7 +62,7 @@ namespace drivetrain {
         if (selected == next.rear_teeth) return finish(false);
         if (slip && config_.upshift_slip_mode == "magnitude") slip = std::abs(*slip);
         if (direction == "up" && slip && *slip > config_.upshift_slip_limit_mps) return finish(false);
-        const double landing = engaged(next.required_ema) * selected / next.rear_teeth;
+        const double landing = validation::derived(engaged(next.required_ema) * selected / next.rear_teeth, "CadenceShifter.landing_cadence");
         if ((direction == "up" && landing < config_.target_cadence_min_rpm) || (
                 direction == "down" && landing > config_.target_cadence_max_rpm)) return finish(false);
         if (next.shift_count == std::numeric_limits<int>::max()) throw std::overflow_error("shift_count");

@@ -39,7 +39,8 @@ class SuspensionController:
         f_air = self.air_spring.compute_axial_force(travel_mm)
         f_damp = self.suspension_system.fork_damper.compute_damping_force(velocity_mps, travel_mm)
         f_total = f_air + f_damp
-        return f_total, f_air, f_damp
+        from bike_sim.physics.checks import derived
+        return derived(f_total, 'SuspensionController.fork_total'), f_air, f_damp
 
     def compute_shock_force(self, stroke_mm: float, velocity_mps: float) -> Tuple[float, float, float]:
         """

@@ -1,4 +1,7 @@
 #include "cruise.hpp"
+#include "../config_validation.hpp"
+#include "../model_topology.hpp"
+#include "../validation.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -28,6 +31,7 @@ namespace {
 CruiseWriter::CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config)
     : cfg_(config), nv_(model->nv),
       timestep_(model->opt.timestep), state_{.target_speed_mps = 0.0} {
+    nativecfg::validate(cfg_);
     positive(cfg_.kp_nm_per_mps, "kp_nm_per_mps");
     positive(cfg_.ki_nm_per_mps_s, "ki_nm_per_mps_s");
     positive(cfg_.torque_ceiling_nm, "torque_ceiling_nm");
@@ -38,7 +42,8 @@ CruiseWriter::CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config)
     const std::span<const int> types =
             std::views::counted(model->jnt_type, model->njnt);
     const auto index = static_cast<std::size_t>(joint);
-    if (types[index] != mjJNT_SLIDE && types[index] != mjJNT_HINGE)
+    topology::joint(model, joint, "CruiseWriter.root_x", mjJNT_SLIDE, {1., 0., 0.});
+    if (types[index] != mjJNT_SLIDE)
         throw std::invalid_argument("root_x must be a scalar slide or hinge joint");
     const std::span<const int> dofs =
             std::views::counted(model->jnt_dofadr, model->njnt);
@@ -48,29 +53,33 @@ CruiseWriter::CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config)
 double CruiseWriter::compute(const mjData *data, bool rear_in_contact,
                              bool traction_limited,
                              std::optional<bool> controller_grounded) {
+    auto next = state_;
     // cruise.py compute: preserve every operation and branch in source order.
-    state_.engaged = controller_grounded.value_or(rear_in_contact);
+    next.engaged = controller_grounded.value_or(rear_in_contact);
     const std::span<const mjtNum> qvel = std::views::counted(data->qvel, nv_);
-    const double error = state_.target_speed_mps -
+    const double error = next.target_speed_mps -
                          qvel[static_cast<std::size_t>(root_dof_)];
-    if (!state_.engaged) {
-        state_.torque_nm = 0.0;
-        return state_.torque_nm;
+    if (!next.engaged) {
+        next.torque_nm = 0.0;
+        state_ = next;
+        return next.torque_nm;
     }
-    const double kp = cfg_.kp_nm_per_mps * state_.gain_scale;
-    const double ki = cfg_.ki_nm_per_mps_s * state_.gain_scale;
-    const double proportional = kp * error;
-    double demand = proportional + ki * state_.integral_mps_s;
+    const double kp = validation::derived(cfg_.kp_nm_per_mps * next.gain_scale, "CruiseWriter.kp");
+    const double ki = validation::derived(cfg_.ki_nm_per_mps_s * next.gain_scale, "CruiseWriter.ki");
+    positive(ki, "CruiseWriter.ki");
+    const double proportional = validation::derived(kp * error, "CruiseWriter.proportional_torque");
+    double demand = validation::derived(proportional + ki * next.integral_mps_s, "CruiseWriter.demand");
     const bool pushing_further =
             std::abs(demand) >= cfg_.torque_ceiling_nm &&
             (demand > 0.0) == (error > 0.0);
     if (!pushing_further && !traction_limited) {
-        state_.integral_mps_s = clamp(state_.integral_mps_s + error * timestep_,
+        next.integral_mps_s = clamp(validation::derived(next.integral_mps_s + validation::derived(error * timestep_, "CruiseWriter.integral_delta"), "CruiseWriter.integral"),
                                       cfg_.torque_ceiling_nm / ki);
-        demand = proportional + ki * state_.integral_mps_s;
+        demand = validation::derived(proportional + ki * next.integral_mps_s, "CruiseWriter.demand");
     }
-    state_.torque_nm = clamp(demand, cfg_.torque_ceiling_nm);
-    return state_.torque_nm;
+    next.torque_nm = clamp(demand, cfg_.torque_ceiling_nm);
+    state_ = next;
+    return next.torque_nm;
 }
 
 void CruiseWriter::reset() {

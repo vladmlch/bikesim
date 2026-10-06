@@ -25,6 +25,7 @@ from math import acos, cos, degrees, pi, radians, sin, sqrt
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+from bike_sim.physics.checks import boolean, derived, scalar
 
 from bike_sim.geometry.cockpit import (
     MAX_EXPOSED_SEATPOST_M,
@@ -390,6 +391,12 @@ class RiderBody:
     unilateral: bool
     interface: str
 
+    def __post_init__(self):
+        scalar(self.stiffness_n_m, 'RiderBody.stiffness_n_m', minimum=0.)
+        scalar(self.damping_ns_m, 'RiderBody.damping_ns_m', minimum=0.)
+        scalar(self.supported_mass_kg, 'RiderBody.supported_mass_kg', minimum=0.)
+        boolean(self.unilateral, 'RiderBody.unilateral')
+
     @property
     def mass(self) -> float:
         """Body mass in kg: the sum of its geoms."""
@@ -404,12 +411,23 @@ class RiderBody:
     @property
     def preload_n(self) -> float:
         """Spring force at the design pose, in N."""
-        return self.supported_mass_kg * GRAVITY_MPS2
+        scalar(self.supported_mass_kg, "RiderBody.supported_mass_kg", minimum=0.)
+        preload = self.supported_mass_kg * GRAVITY_MPS2
+        derived(preload, "RiderBody.preload_n")
+        return preload
 
     @property
     def preload_deflection_m(self) -> float:
         """Spring compression at the design pose, in m: the joint travel that unloads it."""
-        return self.preload_n / self.stiffness_n_m
+        stiffness = self.stiffness_n_m
+        scalar(stiffness, "RiderBody.stiffness_n_m", minimum=0.)
+        preload = self.preload_n
+        if stiffness == 0.:
+            if preload != 0.: raise ValueError("RiderBody.stiffness_n_m: zero stiffness cannot carry preload")
+            return 0.
+        deflection = preload / stiffness
+        derived(deflection, "RiderBody.preload_deflection_m")
+        return deflection
 
 
 @dataclass(frozen=True)

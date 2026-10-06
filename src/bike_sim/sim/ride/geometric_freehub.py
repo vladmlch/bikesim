@@ -11,18 +11,18 @@ from bike_sim.physics.checks import scalar
 from bike_sim.physics.transmission_constraint import transmission_geometry,linearized_upper_bound,constraint_reaction
 from bike_sim.sim.ride.ideal_freehub import IdealFreehubConstraint
 from bike_sim.sim.ride.physical_mapping import resolve_id
+from bike_sim.sim.ride.wheels import resolve_hinge
 
 
 class GeometricFreehubConstraint(IdealFreehubConstraint):
     def __init__(self,model,gearing,*,driver='crank_spin',driver_body='crank'):
+        gearing.__post_init__()
         self.gearing=gearing
         self.front_body=driver_body
         self.ratio=gearing.front_teeth/gearing.rear_teeth
         self.tendon_id=resolve_id(model,mujoco.mjtObj.mjOBJ_TENDON,'geometric_mid_drive_freehub')
-        self.driver_qpos=int(model.joint(driver).qposadr[0])
-        self.driver_dof=int(model.joint(driver).dofadr[0])
-        self.driven_qpos=int(model.joint('rear_wheel_spin').qposadr[0])
-        self.driven_dof=int(model.joint('rear_wheel_spin').dofadr[0])
+        self.driver_qpos,self.driver_dof=resolve_hinge(model,driver)
+        self.driven_qpos,self.driven_dof=resolve_hinge(model,'rear_wheel_spin')
         start=int(model.tendon_adr[self.tendon_id]);end=start+int(model.tendon_num[self.tendon_id])
         self.coefficients={}
         for index in range(start,end):

@@ -13,6 +13,8 @@ therefore tapered through a small speed band rather than switched on `sign()`.
 from dataclasses import dataclass
 
 import mujoco
+import numpy as np
+from bike_sim.physics.checks import scalar, derived
 
 
 @dataclass(frozen=True)
@@ -58,6 +60,9 @@ def resolve_wheel_spin(model: mujoco.MjModel, joint_name: str, contact_geom: str
     if jid < 0:
         raise ValueError(f"model has no joint '{joint_name}'; ride-mode wheel torques need it")
 
+    if model.jnt_type[jid] != mujoco.mjtJoint.mjJNT_HINGE or not np.array_equal(model.jnt_axis[jid], [0., 1., 0.]):
+        raise ValueError(f'resolve_wheel_spin.{joint_name}: requires hinge about local +Y')
+
     gid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, contact_geom)
     if gid < 0:
         raise ValueError(f"model has no geom '{contact_geom}'; ride-mode wheel torques need its radius")
@@ -89,12 +94,37 @@ def opposing_torque(magnitude_nm: float, omega_radps: float, taper_radps: float)
         ValueError: If the taper band is not positive, which would divide by zero and
             restore the discontinuity the taper exists to remove.
     """
+    scalar(magnitude_nm, 'opposing_torque.magnitude_nm', minimum=0.)
+    scalar(omega_radps, 'opposing_torque.omega_radps')
+    scalar(taper_radps, 'opposing_torque.taper_radps', positive=True)
     if taper_radps <= 0.0:
         raise ValueError(f"taper_radps must be positive, got {taper_radps}")
     if omega_radps == 0.0:
         return 0.0
     scale = min(abs(omega_radps) / taper_radps, 1.0)
-    return -abs(magnitude_nm) * scale * (1.0 if omega_radps > 0.0 else -1.0)
+    return derived(-abs(magnitude_nm) * scale * (1.0 if omega_radps > 0.0 else -1.0), "opposing_torque.torque")
 
 
 __all__ = ["WheelSpin", "resolve_wheel_spin", "opposing_torque"]
+
+
+def validate_actuator_target(model, name, joint_name):
+    aid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, name)
+    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
+    if aid < 0 or jid < 0 or model.actuator_trntype[aid] != mujoco.mjtTrn.mjTRN_JOINT or model.actuator_trnid[aid, 0] != jid:
+        raise ValueError(f'{name}: missing actuator or wrong joint target')
+    return aid
+
+
+def resolve_hinge(model, name):
+    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
+    if jid < 0 or model.jnt_type[jid] != mujoco.mjtJoint.mjJNT_HINGE or not np.array_equal(model.jnt_axis[jid], [0., 1., 0.]):
+        raise ValueError(f'{name}: requires hinge about local +Y')
+    return int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid])
+
+
+def resolve_scalar_joint(model, name):
+    jid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)
+    if jid < 0 or int(model.jnt_type[jid]) not in (int(mujoco.mjtJoint.mjJNT_HINGE), int(mujoco.mjtJoint.mjJNT_SLIDE)):
+        raise ValueError(f'{name}: requires scalar hinge or slide joint')
+    return int(model.jnt_qposadr[jid]), int(model.jnt_dofadr[jid])

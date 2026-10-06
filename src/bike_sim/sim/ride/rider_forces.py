@@ -28,6 +28,7 @@ included, for the same reason `virtual_rider.py` gives.
 from typing import Dict, List, Optional, Tuple
 
 import mujoco
+from bike_sim.physics.checks import boolean, derived, scalar
 
 from bike_sim.physics.rider import RiderBody, SeatedPose
 
@@ -61,7 +62,15 @@ class _JointPath:
             the body coming down onto it would.
         """
         b = self.body
+        scalar(b.stiffness_n_m, 'RiderForceApplier.stiffness_n_m', minimum=0.)
+        scalar(b.damping_ns_m, 'RiderForceApplier.damping_ns_m', minimum=0.)
+        scalar(b.preload_deflection_m, 'RiderForceApplier.preload_deflection_m', minimum=0.)
+        scalar(self.offset_m, 'RiderForceApplier.offset_m')
+        scalar(q, 'RiderForceApplier.q')
+        scalar(qd, 'RiderForceApplier.qd')
+        boolean(b.unilateral, 'RiderForceApplier.unilateral')
         deflection = b.preload_deflection_m + self.offset_m - q
+        derived(deflection, "RiderForceApplier.deflection")
         if b.unilateral:
             if deflection <= 0.0:
                 self.gap_m = -deflection
@@ -69,10 +78,14 @@ class _JointPath:
                 return 0.0
             self.gap_m = 0.0
             # The damper cannot pull the body back onto the saddle or the pedal either.
-            self.force_n = max(0.0, b.stiffness_n_m * deflection - b.damping_ns_m * qd)
+            force = b.stiffness_n_m * deflection - b.damping_ns_m * qd
+            derived(force, "RiderForceApplier.force")
+            self.force_n = max(0.0, force)
             return self.force_n
         self.gap_m = 0.0
-        self.force_n = b.stiffness_n_m * deflection - b.damping_ns_m * qd
+        force = b.stiffness_n_m * deflection - b.damping_ns_m * qd
+        derived(force, "RiderForceApplier.force")
+        self.force_n = force
         return self.force_n
 
 
@@ -133,6 +146,8 @@ class RiderForceApplier:
                 positive upward.
             rear_m: Same for the rear pedal.
         """
+        scalar(front_m, "RiderForceApplier.front_offset_m")
+        scalar(rear_m, "RiderForceApplier.rear_offset_m")
         front = self._by_name.get("rider_leg_front")
         rear = self._by_name.get("rider_leg_rear")
         if front is not None:

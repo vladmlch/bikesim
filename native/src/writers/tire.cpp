@@ -11,6 +11,7 @@
 // to-nearest-even mode; `min`/`max` are std::min/std::max (identical
 // `b<a?b:a` / `a<b?b:a` semantics, NaN included).
 #include "tire.hpp"
+#include "../config_validation.hpp"
 
 #include "../contact/laws.hpp"
 #include "../diag.hpp"
@@ -190,6 +191,7 @@ namespace {
 TireWriter::TireWriter(const mjModel *m, const mjData *d,
                        nativecfg::TireConfig config)
     : m_(m), cfg_(std::move(config)), nv_(static_cast<int>(m->nv)) {
+    nativecfg::validate(cfg_);
     // Dataclass __post_init__ validation happened when Python built the
     // config — before TireForceApplier.__init__ — so these checks precede
     // the ctor body like they do in the Python flow.
@@ -678,6 +680,9 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
     }
     // Commit persistent state only after both wheels evaluate successfully
     // (tire_forces.py:201-205).
+    validation::derived_array(qfrc, "TireWriter.qfrc");
+    for (const double value: {energy, loss, radial_loss_power})
+        validation::derived(value, "TireWriter.energy_or_power");
     states_ = new_states;
     snapshots_ = std::move(snapshots);
     diagnostics_ = std::move(diagnostics);

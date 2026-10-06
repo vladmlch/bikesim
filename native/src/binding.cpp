@@ -263,16 +263,29 @@ NB_MODULE(bike_native, m) {
                 return as_view(s.efc_force());
             })
             .def_prop_ro("ctrl", [](Stepper &s) { return as_view(s.ctrl()); })
-            .def("brake_torques", &Stepper::brake_torques)
-            .def("apply_brake", &Stepper::apply_brake)
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed front/rear Python signature
+            .def("brake_torques", [](Stepper &s, nb::handle front, nb::handle rear) {
+                const double checked_front = wire::finite_real(front, "brake_torques.front_demand");
+                const double checked_rear = wire::finite_real(rear, "brake_torques.rear_demand");
+                return s.brake_torques(checked_front, checked_rear);
+            }, nb::arg("front_demand").none(), nb::arg("rear_demand").none())
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed front/rear Python signature
+            .def("apply_brake", [](Stepper &s, nb::handle front, nb::handle rear) {
+                const double checked_front = wire::finite_real(front, "apply_brake.front_demand");
+                const double checked_rear = wire::finite_real(rear, "apply_brake.rear_demand");
+                s.apply_brake(checked_front, checked_rear);
+            }, nb::arg("front_demand").none(), nb::arg("rear_demand").none())
             .def("cruise_compute", &Stepper::cruise_compute,
                  nb::arg("rear_in_contact"), nb::arg("traction_limited") = false,
                  nb::arg("controller_grounded") = nb::none())
             .def("cruise_reset", &Stepper::cruise_reset)
-            .def("cruise_set_target_speed", &Stepper::cruise_set_target_speed,
-                 nb::arg("value_kmh"))
+            .def("cruise_set_target_speed", [](Stepper &s, nb::handle value) {
+                s.cruise_set_target_speed(wire::finite_real(value, "cruise_set_target_speed.value_kmh"));
+            }, nb::arg("value_kmh").none())
             .def("cruise_set_assist_compensation",
-                 &Stepper::cruise_set_assist_compensation, nb::arg("support_factor"))
+                 [](Stepper &s, nb::handle value) {
+                     return s.cruise_set_assist_compensation(wire::finite_real(value, "cruise_set_assist_compensation.support_factor"));
+                 }, nb::arg("support_factor").none())
             .def("cruise_state", [](const Stepper &s) {
                 const CruiseState state = s.cruise_state();
                 nb::dict out;

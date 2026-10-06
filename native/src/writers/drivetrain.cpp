@@ -1,5 +1,6 @@
 #include "drivetrain.hpp"
 #include "../engaged.hpp"
+#include "../model_topology.hpp"
 #include "pyfloat.hpp"
 #include <algorithm>
 #include <numbers>
@@ -22,6 +23,7 @@ namespace drivetrain {
           shifting_(config_.policies.gearing, config_.policies.shifting),
           assist_(config_.policies.assist), battery_(config_.policies.battery.energy_j),
           transmission_(static_cast<std::size_t>(m->nv)) {
+        drivetrain::validate(config_);
         if (m->nq != m->nv)
             throw std::invalid_argument(
                 "physical chain supports scalar planar coordinates only (nq == nv)");
@@ -30,6 +32,7 @@ namespace drivetrain {
                  "pedal_front_spin", "pedal_rear_spin"
              }) {
             const int id = resolve(m, mjOBJ_JOINT, name);
+            topology::joint(m, id, name, mjJNT_HINGE, {0., 1., 0.});
             Joint const j{
                 .qpos = buffer(m->jnt_qposadr, m->njnt)[static_cast<std::size_t>(id)],
                 .dof = buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)]
@@ -43,6 +46,7 @@ namespace drivetrain {
                 (key == "drive_shaft_spin" && config_.motor_clutch) ||
                 (key == "rotor_spin" && config_.rotor_inertia_kgm2 > 0.)) {
                 const int id = resolve(m, mjOBJ_JOINT, name);
+                topology::joint(m, id, name, mjJNT_HINGE, {0., 1., 0.});
                 Joint const j{
                     .qpos = buffer(m->jnt_qposadr, m->njnt)[static_cast<std::size_t>(id)],
                     .dof = buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)]
@@ -56,6 +60,13 @@ namespace drivetrain {
                 "articulated effort must not have a human_crank actuator");
         if (effort_ && motor_actuator_ < 0)
             throw std::invalid_argument("physical effort needs a mid_drive actuator");
+        if (human_actuator_ >= 0)
+            topology::actuator(m, human_actuator_, "human_crank", resolve(m, mjOBJ_JOINT, "crank_spin"));
+        if (motor_actuator_ >= 0) {
+            const char *target = config_.rotor_inertia_kgm2 > 0. ? "rotor_spin" :
+                                 config_.motor_clutch ? "drive_shaft_spin" : "crank_spin";
+            topology::actuator(m, motor_actuator_, "mid_drive", resolve(m, mjOBJ_JOINT, target));
+        }
         if (!simplified_) {
             cassette_ = resolve(m, mjOBJ_BODY, "cassette");
             const auto parents = buffer(m->body_parentid, m->nbody);
@@ -306,16 +317,16 @@ namespace drivetrain {
         }
         for (auto const j: bearing_joints_)
             components_[2].second[static_cast<std::size_t>(j.dof)] =
-                    -config_.bearing_c_nms_rad * v[static_cast<std::size_t>(j.dof)];
+                    validation::derived(-config_.bearing_c_nms_rad * v[static_cast<std::size_t>(j.dof)], "DrivetrainWriter.bearing_force");
         const double omega_crank = v[static_cast<std::size_t>(crank.dof)],
-                cadence = omega_crank * 60. / (2. * std::numbers::pi);
+                cadence = validation::derived(omega_crank * 60. / (2. * std::numbers::pi), "DrivetrainWriter.cadence");
         const auto shaft = joints_.contains("drive_shaft_spin")
                                ? joints_.at("drive_shaft_spin")
                                : joints_.contains("rotor_spin")
                                      ? joints_.at("rotor_spin")
                                      : crank;
         const double omega = v[static_cast<std::size_t>(shaft.dof)],
-                rpm = omega * 60. / (2. * std::numbers::pi);
+                rpm = validation::derived(omega * 60. / (2. * std::numbers::pi), "DrivetrainWriter.shaft_rpm");
         const double human =
                 active && config_.drive_mode == "crank_effort"
                     ? human_crank_torque(ps.effort_nm, q[static_cast<std::size_t>(crank.qpos)],
@@ -345,6 +356,12 @@ namespace drivetrain {
             throw ArithmeticError("delivered motor torque exceeds the battery budget");
         if (active && live_.pending_actuation)
             throw std::runtime_error("previous motor interval was not settled");
+        for (const auto &component: components_)
+            validation::derived_array(component.second, "DrivetrainWriter.force");
+        const double chain_loss = std::max(0., validation::derived(
+            (tension - config_.chain_k_n_m * std::max(extension, 0.)) * rate, "DrivetrainWriter.chain_dissipation"));
+        const double hub_loss = simplified_ ? 0. : std::max(0., validation::derived(
+            (torque - config_.policies.hub_stiffness_nm_rad * deflection) * relative_rate, "DrivetrainWriter.freehub_dissipation"));
         live_.pending_actuation =
                 active
                     ? std::optional<PendingActuation>{
@@ -373,8 +390,7 @@ namespace drivetrain {
             {"chain_energy_j", energy},
             {
                 "chain_dissipation_power_w",
-                std::max(0.,
-                         (tension - config_.chain_k_n_m * std::max(extension, 0.)) * rate)
+                chain_loss
             },
             {"freehub_torque_nm", simplified_ ? 0. : torque},
             {"freehub_energy_j", simplified_ ? 0. : engaged(hub_).state().energy_j},
@@ -382,11 +398,7 @@ namespace drivetrain {
             {"freehub_deflection_rad", deflection},
             {
                 "freehub_dissipation_power_w",
-                simplified_
-                    ? 0.
-                    : std::max(0., (torque - config_.policies.hub_stiffness_nm_rad *
-                                    deflection) *
-                                   relative_rate)
+                hub_loss
             },
             {"cadence_rpm", cadence},
             {"crank_rad_s", omega_crank},

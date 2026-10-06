@@ -163,17 +163,17 @@ DrivePolicyConfig parse_drive_policy_config(const nb::dict &raw, std::span<const
     wire::exact(b, wire::keys("enabled","energy_j","copper_w_per_nm2","speed_w_per_rad_s2","idle_w"), wire::keys());
     out.gearing = {
         .front_teeth = integer(g, "front_teeth"), .rear_teeth = integer(g, "rear_teeth"),
-        .chain_pitch_m = positive(num(g, "chain_pitch_m"), "chain_pitch_m")
+        .chain_pitch_m = positive(num(g, "chain_pitch_m"), g.child("chain_pitch_m"))
     };
-    if (out.gearing.front_teeth < 3 || out.gearing.rear_teeth < 3) throw std::invalid_argument("gearing teeth");
+    if (out.gearing.front_teeth < 3 || out.gearing.rear_teeth < 3) throw std::invalid_argument(g.path);
     out.pedaling = {
-        .enabled = boolean(p, "enabled"), .coast_above_rpm = positive(num(p, "coast_above_rpm"), "coast_above_rpm"),
-        .resume_below_rpm = nonnegative(num(p, "resume_below_rpm"), "resume_below_rpm"),
-        .stop_time_s = positive(num(p, "stop_time_s"), "stop_time_s"),
-        .coast_cadence_tau_s = nonnegative(num(p, "coast_cadence_tau_s"), "coast_cadence_tau_s"),
-        .mash_cadence_rpm = nonnegative(num(p, "mash_cadence_rpm"), "mash_cadence_rpm"),
-        .mash_torque_nm = nonnegative(num(p, "mash_torque_nm"), "mash_torque_nm"),
-        .effort_slew_nm_s = nonnegative(num(p, "effort_slew_nm_s"), "effort_slew_nm_s")
+        .enabled = boolean(p, "enabled"), .coast_above_rpm = positive(num(p, "coast_above_rpm"), p.child("coast_above_rpm")),
+        .resume_below_rpm = nonnegative(num(p, "resume_below_rpm"), p.child("resume_below_rpm")),
+        .stop_time_s = positive(num(p, "stop_time_s"), p.child("stop_time_s")),
+        .coast_cadence_tau_s = nonnegative(num(p, "coast_cadence_tau_s"), p.child("coast_cadence_tau_s")),
+        .mash_cadence_rpm = nonnegative(num(p, "mash_cadence_rpm"), p.child("mash_cadence_rpm")),
+        .mash_torque_nm = nonnegative(num(p, "mash_torque_nm"), p.child("mash_torque_nm")),
+        .effort_slew_nm_s = nonnegative(num(p, "effort_slew_nm_s"), p.child("effort_slew_nm_s"))
     };
     if (out.pedaling.resume_below_rpm >= out.pedaling.coast_above_rpm || (
             out.pedaling.mash_torque_nm > 0. && out.pedaling.mash_cadence_rpm <= 0.)) throw std::invalid_argument(
@@ -182,49 +182,49 @@ DrivePolicyConfig parse_drive_policy_config(const nb::dict &raw, std::span<const
     sh.enabled = boolean(s, "enabled");
     for (nb::handle const value: sequence(field(s, "cassette"), s.child("cassette").c_str())) {
         const int teeth = integer(value, s.child("cassette").c_str());
-        if (teeth < 3) throw std::invalid_argument("cassette");
+        if (teeth < 3) throw std::invalid_argument(s.child("cassette"));
         sh.cassette.push_back(teeth);
     }
     std::ranges::sort(sh.cassette);
     if (sh.cassette.empty() || std::ranges::adjacent_find(sh.cassette) != sh.cassette.end()) throw
-            std::invalid_argument("cassette");
-    sh.target_cadence_min_rpm = positive(num(s, "target_cadence_min_rpm"), "target_cadence_min_rpm");
-    sh.target_cadence_max_rpm = positive(num(s, "target_cadence_max_rpm"), "target_cadence_max_rpm");
-    sh.shift_cooldown_s = nonnegative(num(s, "shift_cooldown_s"), "shift_cooldown_s");
-    sh.shift_cut_duration_s = nonnegative(num(s, "shift_cut_duration_s"), "shift_cut_duration_s");
-    sh.torque_factor = nonnegative(num(s, "torque_factor"), "torque_factor");
-    sh.cadence_smoothing_tau_s = nonnegative(num(s, "cadence_smoothing_tau_s"), "cadence_smoothing_tau_s");
-    sh.upshift_slip_limit_mps = nonnegative(num(s, "upshift_slip_limit_mps"), "upshift_slip_limit_mps");
+            std::invalid_argument(s.child("cassette"));
+    sh.target_cadence_min_rpm = positive(num(s, "target_cadence_min_rpm"), s.child("target_cadence_min_rpm"));
+    sh.target_cadence_max_rpm = positive(num(s, "target_cadence_max_rpm"), s.child("target_cadence_max_rpm"));
+    sh.shift_cooldown_s = nonnegative(num(s, "shift_cooldown_s"), s.child("shift_cooldown_s"));
+    sh.shift_cut_duration_s = nonnegative(num(s, "shift_cut_duration_s"), s.child("shift_cut_duration_s"));
+    sh.torque_factor = nonnegative(num(s, "torque_factor"), s.child("torque_factor"));
+    sh.cadence_smoothing_tau_s = nonnegative(num(s, "cadence_smoothing_tau_s"), s.child("cadence_smoothing_tau_s"));
+    sh.upshift_slip_limit_mps = nonnegative(num(s, "upshift_slip_limit_mps"), s.child("upshift_slip_limit_mps"));
     sh.upshift_slip_mode = string(s, "upshift_slip_mode");
     if (sh.upshift_slip_mode != "legacy_signed" && sh.upshift_slip_mode != "magnitude")
         wire::invalid(s.child("upshift_slip_mode"), "unsupported mode");
     if (sh.target_cadence_max_rpm <= sh.target_cadence_min_rpm || sh.shift_cut_duration_s > sh.shift_cooldown_s ||
-        sh.torque_factor > 1.) throw std::invalid_argument("shifting config");
+        sh.torque_factor > 1.) throw std::invalid_argument(s.path);
     if (sh.enabled && std::ranges::find(sh.cassette, out.gearing.rear_teeth) == sh.cassette.end()) throw
-            std::invalid_argument("initial rear teeth");
+            std::invalid_argument(g.child("rear_teeth"));
     auto &ac = out.assist;
-    ac.gain = nonnegative(num(a, "gain"), "gain");
-    ac.max_torque = nonnegative(num(a, "max_torque"), "max_torque");
-    ac.max_power = nonnegative(num(a, "max_power"), "max_power");
-    ac.tau = positive(num(a, "tau"), "tau");
-    ac.slew = positive(num(a, "slew"), "slew");
-    ac.engage_torque_nm = nonnegative(num(a, "engage_torque_nm"), "engage_torque_nm");
-    ac.gate_min_crank_rad_s = nonnegative(num(a, "gate_min_crank_rad_s"), "gate_min_crank_rad_s");
-    ac.cutoff_mps = nonnegative(num(a, "cutoff_mps"), "cutoff_mps");
-    ac.taper_width_mps = positive(num(a, "taper_width_mps"), "taper_width_mps");
+    ac.gain = nonnegative(num(a, "gain"), a.child("gain"));
+    ac.max_torque = nonnegative(num(a, "max_torque"), a.child("max_torque"));
+    ac.max_power = nonnegative(num(a, "max_power"), a.child("max_power"));
+    ac.tau = positive(num(a, "tau"), a.child("tau"));
+    ac.slew = positive(num(a, "slew"), a.child("slew"));
+    ac.engage_torque_nm = nonnegative(num(a, "engage_torque_nm"), a.child("engage_torque_nm"));
+    ac.gate_min_crank_rad_s = nonnegative(num(a, "gate_min_crank_rad_s"), a.child("gate_min_crank_rad_s"));
+    ac.cutoff_mps = nonnegative(num(a, "cutoff_mps"), a.child("cutoff_mps"));
+    ac.taper_width_mps = positive(num(a, "taper_width_mps"), a.child("taper_width_mps"));
     ac.mode = string(a, "mode");
-    if (ac.taper_width_mps > ac.cutoff_mps) throw std::invalid_argument("taper_width_mps");
+    if (ac.taper_width_mps > ac.cutoff_mps) throw std::invalid_argument(a.child("taper_width_mps"));
     if (a.contains("torque_curve") && !a["torque_curve"].is_none()) {
         std::vector<std::array<double, 2> > rows;
         for (nb::handle const row: sequence(a["torque_curve"], a.child("torque_curve").c_str())) {
             const auto values = sequence(row, a.child("torque_curve").c_str());
-            if (values.size() != 2) throw std::invalid_argument("torque_curve row");
-            const double rpm = nonnegative(number(values[0], a.child("torque_curve").c_str()), "curve rpm");
-            const double torque = nonnegative(number(values[1], a.child("torque_curve").c_str()), "curve torque");
-            if (!rows.empty() && rpm <= rows.back()[0]) throw std::invalid_argument("curve rpm order");
+            if (values.size() != 2) throw std::invalid_argument(a.child("torque_curve"));
+            const double rpm = nonnegative(number(values[0], a.child("torque_curve").c_str()), a.child("torque_curve"));
+            const double torque = nonnegative(number(values[1], a.child("torque_curve").c_str()), a.child("torque_curve"));
+            if (!rows.empty() && rpm <= rows.back()[0]) throw std::invalid_argument(a.child("torque_curve"));
             rows.push_back({rpm, torque});
         }
-        if (rows.size() < 2) throw std::invalid_argument("torque_curve");
+        if (rows.size() < 2) throw std::invalid_argument(a.child("torque_curve"));
         ac.torque_curve = std::move(rows);
     }
     if (a.contains("profile") && !a["profile"].is_none()) {
@@ -232,13 +232,13 @@ DrivePolicyConfig parse_drive_policy_config(const nb::dict &raw, std::span<const
         const auto emtb = sequence(field(gains, "emtb"), gains.child("emtb").c_str());
         wire::exact(profile, wire::keys("mode_gains", "emtb_full_gain_at_nm"));
         wire::exact(gains, wire::keys("eco", "tour", "emtb", "turbo"));
-        if (emtb.size() != 2) throw std::invalid_argument("mode_gains");
+        if (emtb.size() != 2) throw std::invalid_argument(gains.child("emtb"));
         ac.profile = MotorProfile{
-            .eco = nonnegative(num(gains, "eco"), "eco"), .tour = nonnegative(num(gains, "tour"), "tour"),
-            .emtb_low = nonnegative(number(emtb[0], gains.child("emtb").c_str()), "emtb low"),
-            .emtb_high = nonnegative(number(emtb[1], gains.child("emtb").c_str()), "emtb high"),
-            .turbo = nonnegative(num(gains, "turbo"), "turbo"),
-            .emtb_full_gain_at_nm = positive(num(profile, "emtb_full_gain_at_nm"), "emtb_full_gain_at_nm")
+            .eco = nonnegative(num(gains, "eco"), gains.child("eco")), .tour = nonnegative(num(gains, "tour"), gains.child("tour")),
+            .emtb_low = nonnegative(number(emtb[0], gains.child("emtb").c_str()), gains.child("emtb")),
+            .emtb_high = nonnegative(number(emtb[1], gains.child("emtb").c_str()), gains.child("emtb")),
+            .turbo = nonnegative(num(gains, "turbo"), gains.child("turbo")),
+            .emtb_full_gain_at_nm = positive(num(profile, "emtb_full_gain_at_nm"), profile.child("emtb_full_gain_at_nm"))
         };
         if (ac.mode != "eco" && ac.mode != "tour" && ac.mode != "emtb" && ac.mode != "turbo")
             wire::invalid(a.child("mode"), "unsupported profiled mode");
@@ -246,13 +246,13 @@ DrivePolicyConfig parse_drive_policy_config(const nb::dict &raw, std::span<const
             wire::invalid(gains.child("emtb"), "unordered mode gains");
     }
     out.battery = {
-        .enabled = boolean(b, "enabled"), .energy_j = nonnegative(num(b, "energy_j"), "energy_j"),
-        .copper_w_per_nm2 = nonnegative(num(b, "copper_w_per_nm2"), "copper_w_per_nm2"),
-        .speed_w_per_rad_s2 = nonnegative(num(b, "speed_w_per_rad_s2"), "speed_w_per_rad_s2"),
-        .idle_w = nonnegative(num(b, "idle_w"), "idle_w")
+        .enabled = boolean(b, "enabled"), .energy_j = nonnegative(num(b, "energy_j"), b.child("energy_j")),
+        .copper_w_per_nm2 = nonnegative(num(b, "copper_w_per_nm2"), b.child("copper_w_per_nm2")),
+        .speed_w_per_rad_s2 = nonnegative(num(b, "speed_w_per_rad_s2"), b.child("speed_w_per_rad_s2")),
+        .idle_w = nonnegative(num(b, "idle_w"), b.child("idle_w"))
     };
-    out.hub_stiffness_nm_rad = positive(num(input, "hub_stiffness_nm_rad"), "hub_stiffness_nm_rad");
-    out.hub_damping_nm_s = nonnegative(num(input, "hub_damping_nm_s"), "hub_damping_nm_s");
+    out.hub_stiffness_nm_rad = positive(num(input, "hub_stiffness_nm_rad"), input.child("hub_stiffness_nm_rad"));
+    out.hub_damping_nm_s = nonnegative(num(input, "hub_damping_nm_s"), input.child("hub_damping_nm_s"));
     return out;
 }
 

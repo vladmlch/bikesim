@@ -7,7 +7,7 @@ brush state twice at the same timestamp is an error; telemetry is read-only.
 from dataclasses import dataclass
 import copy
 import numpy as np
-from bike_sim.physics.checks import array, scalar
+from bike_sim.physics.checks import array, derived, derived_array, scalar
 from bike_sim.physics.tire import TireSpec, _brush_step, _normal_contact
 from bike_sim.terrain.contact_profile import ProfileQuery
 from bike_sim.sim.ride.physical_mapping import (
@@ -64,6 +64,7 @@ def effective_friction(tire, surface_map, contact_x_m, slip_mps):
 class TireForceApplier:
     def __init__(self, model, vertices_xz, config, surface_map=None):
         import mujoco
+        config.__post_init__()
         self.config = config
         self.surface_map = surface_map if config.surface_mode == 'track' else None
         if config.surface_mode == 'track' and self.surface_map is None:
@@ -103,6 +104,7 @@ class TireForceApplier:
 
     def stored_energy(self, model, data):
         """Energy of current geometry and existing shear, without advancing it."""
+        self.config.__post_init__()
         if self.config.backend != 'compliant_2d':
             return 0.
         energy = 0.
@@ -111,9 +113,12 @@ class TireForceApplier:
             contact = self.profile.contact(data.geom_xpos[geom][[0, 2]], self.radii[side], state.segment)
             energy += cfg.material.elastic_response(contact.delta)[1]
             energy += .5*cfg.tangent_k_n_m*state.xi**2
-        return energy
+        return derived(energy, 'TireForceApplier.stored_energy')
 
     def compute_qfrc(self, model, data, dt, *, advance=True):
+        self.config.__post_init__()
+        if self.surface_map is not None:
+            self.surface_map.validate()
         if not advance:
             probe = copy.copy(self)
             probe.states = copy.deepcopy(self.states)
@@ -199,6 +204,9 @@ class TireForceApplier:
             }
             new_states[side] = _BrushState(xi_new, tangent.copy(), p.copy(), contact.segment_id, center.copy())
         # Commit persistent state only after both wheels have evaluated successfully.
+        derived_array(qfrc, 'TireForceApplier.qfrc')
+        for value in (energy, loss, radial_loss_power):
+            derived(value, 'TireForceApplier.energy_or_power')
         self.states, self.snapshots, self.diagnostics = new_states, snapshots, diagnostics
         self.elastic_energy_j, self.brush_loss_step_j = energy, loss
         self.radial_dissipation_power_w = radial_loss_power

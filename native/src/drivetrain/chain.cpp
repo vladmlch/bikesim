@@ -47,8 +47,8 @@ namespace drivetrain {
             throw std::invalid_argument("chain up cannot be zero");
         const double difference = rf - rr;
         const Vec2 vector = {rear[0] - front[0], rear[1] - front[1]};
-        const double distance = std::sqrt(dot(vector, vector));
-        if (!std::isfinite(distance) || distance <= std::abs(difference))
+        const double distance = validation::derived(std::sqrt(dot(vector, vector)), "chain_geometry.distance");
+        if (distance <= std::abs(difference))
             throw std::invalid_argument("sprockets have no valid external tangent");
         const Vec2 direction = {vector[0] / distance, vector[1] / distance};
         const Vec2 perpendicular = {direction[1], -direction[0]};
@@ -65,7 +65,7 @@ namespace drivetrain {
         if (reference)
             psi = unwrap(psi, *reference);
         return {
-            .length = finite(std::sqrt(distance * distance - difference * difference) +
+            .length = validation::derived(std::sqrt(distance * distance - difference * difference) +
                              difference * psi,
                              "chain geometric coordinate"),
             .psi = psi
@@ -82,10 +82,12 @@ namespace drivetrain {
                 normal = {std::cos(psi), std::sin(psi)};
         const double sign = dot(normal, perpendicular) >= 0. ? 1. : -1.;
         const double radial = D / root - sign * difference * difference / (D * root);
-        return {
+        const Vec2 result = {
             radial * a[0] / D + difference * (-a[1]) / (D * D),
             radial * a[1] / D + difference * a[0] / (D * D)
         };
+        validation::derived_array(result, "chain_center_gradient");
+        return result;
     }
 
     std::pair<double, double> chain_tension(double e, double rate, double k, double c) {
@@ -96,8 +98,8 @@ namespace drivetrain {
         if (e <= 0.)
             return {0., 0.};
         return {
-            finite(std::max(0., k * e + c * rate), "chain tension"),
-            finite(.5 * k * e * e, "chain energy")
+            validation::derived(std::max(0., validation::derived(k * e + c * rate, "chain raw tension")), "chain tension"),
+            validation::derived(.5 * k * e * e, "chain energy")
         };
     }
 
@@ -109,8 +111,10 @@ namespace drivetrain {
 
     double GeometryWorkspace::angle(const mjModel *m, const mjData *d, int body,
                                     bool accumulated) {
+        if (body <= 0 || body >= m->nbody) throw std::invalid_argument("geometry.body: requires physical body ID");
         const auto rotation =
                 buffer(d->xmat, 9 * m->nbody).subspan(9 * static_cast<std::size_t>(body), 9);
+        for (const double value: rotation) finite(value, "geometry.rotation");
         const double raw = std::atan2(-rotation[6], rotation[0]);
         if (!accumulated)
             return raw;
@@ -161,6 +165,8 @@ namespace drivetrain {
                 };
         const double rf = gear.chain_pitch_m * gear.front_teeth / (2. * std::numbers::pi),
                 rr = gear.chain_pitch_m * gear.rear_teeth / (2. * std::numbers::pi);
+        validation::derived(rf, "geometry.front_radius");
+        validation::derived(rr, "geometry.rear_radius");
         const auto geometry = chain_geometry(f, r, rf, rr, up, reference);
         psi = geometry.psi;
         const auto gradient = chain_center_gradient(f, r, rf, rr, up, psi);
@@ -175,6 +181,7 @@ namespace drivetrain {
                     static_cast<int>(n), gradient.data(), 1, 0., jacobian.data(), 1);
         for (std::size_t i = 0; i < n; ++i)
             jacobian[i] = jacobian[i] + rf * jr_f[n + i] - rr * jr_r[n + i];
-        return geometry.length + rf * theta_f - rr * theta_r;
+        validation::derived_array(jacobian, "geometry.jacobian");
+        return validation::derived(geometry.length + rf * theta_f - rr * theta_r, "geometry.coordinate");
     }
 } // namespace drivetrain

@@ -11,6 +11,8 @@ from enum import Enum
 from math import isfinite
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
+from bike_sim.physics.checks import boolean, derived, integer, scalar
+from bike_sim.physics.domain_validation import damper_core, damper
 
 
 class DamperPreset(Enum):
@@ -100,14 +102,14 @@ class BaseDamper:
         v_knee_comp: float,
         v_knee_reb: float,
     ) -> None:
-        self.max_hsc = max_hsc
-        self.max_lsc = max_lsc
-        self.max_reb = max_reb
-        self.total_travel_mm = float(total_travel_mm)
+        self.max_hsc = integer(max_hsc, 'BaseDamper.max_hsc', positive=True)
+        self.max_lsc = integer(max_lsc, 'BaseDamper.max_lsc', positive=True)
+        self.max_reb = integer(max_reb, 'BaseDamper.max_reb', positive=True)
+        self.total_travel_mm = scalar(total_travel_mm, "BaseDamper.total_travel_mm", positive=True)
 
-        self.hsc_clicks = max(0, min(self.max_hsc, int(hsc_clicks)))
-        self.lsc_clicks = max(0, min(self.max_lsc, int(lsc_clicks)))
-        self.rebound_clicks = max(0, min(self.max_reb, int(rebound_clicks)))
+        self.hsc_clicks = max(0, min(self.max_hsc, integer(hsc_clicks, "BaseDamper.hsc_clicks")))
+        self.lsc_clicks = max(0, min(self.max_lsc, integer(lsc_clicks, "BaseDamper.lsc_clicks")))
+        self.rebound_clicks = max(0, min(self.max_reb, integer(rebound_clicks, "BaseDamper.rebound_clicks")))
 
         self.c_lsc_min = c_lsc_min
         self.c_lsc_max = c_lsc_max
@@ -118,12 +120,14 @@ class BaseDamper:
 
         self.v_knee_comp = v_knee_comp
         self.v_knee_reb = v_knee_reb
+        damper_core(self)
 
     def _calc_fractions_and_coeffs(self) -> Tuple[float, float, float, float, float, float]:
         """Calculates click ratios and interpolated damping rates."""
-        frac_lsc = self.lsc_clicks / float(self.max_lsc)
-        frac_hsc = self.hsc_clicks / float(self.max_hsc)
-        frac_reb = self.rebound_clicks / float(self.max_reb)
+        damper(self)
+        frac_lsc = max(0, min(self.max_lsc, self.lsc_clicks)) / float(self.max_lsc)
+        frac_hsc = max(0, min(self.max_hsc, self.hsc_clicks)) / float(self.max_hsc)
+        frac_reb = max(0, min(self.max_reb, self.rebound_clicks)) / float(self.max_reb)
 
         c_lsc = self.c_lsc_min + (self.c_lsc_max - self.c_lsc_min) * (frac_lsc ** 1.25)
         c_hsc = self.c_hsc_min + (self.c_hsc_max - self.c_hsc_min) * (frac_hsc ** 1.15)
@@ -164,6 +168,7 @@ class Charger3Damper(BaseDamper):
         *,
         legacy_behavior: bool = False,
     ) -> None:
+        scalar(total_travel_mm, 'Charger3Damper.total_travel_mm', positive=True)
         if not isfinite(total_travel_mm) or total_travel_mm <= 0.0:
             raise ValueError("fork travel must be finite and positive")
         if not legacy_behavior and total_travel_mm < 20.0:
@@ -195,12 +200,13 @@ class Charger3Damper(BaseDamper):
 
     def set_clicks(self, hsc: Optional[int] = None, lsc: Optional[int] = None, reb: Optional[int] = None) -> None:
         """Sets damper click adjustments."""
+        damper(self)
         if hsc is not None:
-            self.hsc_clicks = max(0, min(self.max_hsc, int(hsc)))
+            self.hsc_clicks = max(0, min(self.max_hsc, integer(hsc, "set_clicks.hsc")))
         if lsc is not None:
-            self.lsc_clicks = max(0, min(self.max_lsc, int(lsc)))
+            self.lsc_clicks = max(0, min(self.max_lsc, integer(lsc, "set_clicks.lsc")))
         if reb is not None:
-            self.rebound_clicks = max(0, min(self.max_reb, int(reb)))
+            self.rebound_clicks = max(0, min(self.max_reb, integer(reb, "set_clicks.reb")))
 
     def get_effective_coefficients(self) -> Dict[str, float]:
         """Calculates instantaneous damping rates based on active clicks."""
@@ -216,15 +222,19 @@ class Charger3Damper(BaseDamper):
 
     def compute_damping_force(self, velocity_mps: float, travel_mm: float = 50.0) -> float:
         """Computes instantaneous hydraulic damping force in Newtons."""
-        v = float(velocity_mps)
+        damper(self)
+        v = scalar(velocity_mps, f"{type(self).__name__}.velocity_mps")
         coeffs = self.get_effective_coefficients()
         f_damp = self._compute_base_damping(v, coeffs["c_lsc"], coeffs["c_hsc"], coeffs["c_reb"])
 
+        scalar(travel_mm, "Charger3Damper.travel_mm")
         if travel_mm > self.hbo_start_mm and v > 0.0:
+            if self.total_travel_mm == self.hbo_start_mm:
+                raise ValueError("Charger3Damper.hbo_start_mm: activated zero HBO denominator")
             hbo_prog = max(0.0, min(1.0, (travel_mm - self.hbo_start_mm) / (self.total_travel_mm - self.hbo_start_mm)))
             f_damp += self.c_hbo_base * (hbo_prog ** 2.0) * v
 
-        return float(f_damp)
+        return derived(f_damp, f"{type(self).__name__}.force")
 
     def compute_dyno_curve(self, v_max: float = 2.5, n_points: int = 101, travel_mm: float = 90.0) -> Dict[str, np.ndarray]:
         """Generates full force vs velocity dyno sweep curve across [-v_max, +v_max]."""
@@ -254,6 +264,7 @@ class SuperDeluxeDamper(BaseDamper):
         total_stroke_mm: float = 65.0,
         legacy_behavior: bool = False,
     ) -> None:
+        scalar(total_stroke_mm, 'SuperDeluxeDamper.total_stroke_mm', positive=True)
         if not isfinite(total_stroke_mm) or total_stroke_mm <= 0.0:
             raise ValueError("shock stroke must be finite and positive")
         super().__init__(
@@ -275,9 +286,9 @@ class SuperDeluxeDamper(BaseDamper):
         )
         self.max_hbo = 4
         self.total_stroke_mm = float(total_stroke_mm)
-        self.hbo_clicks = max(0, min(self.max_hbo, int(hbo_clicks)))
-        self.lockout_firm = bool(lockout_firm)
-        self.legacy_behavior = bool(legacy_behavior)
+        self.hbo_clicks = max(0, min(self.max_hbo, integer(hbo_clicks, "BaseDamper.hbo_clicks")))
+        self.lockout_firm = boolean(lockout_firm, "SuperDeluxeDamper.lockout_firm")
+        self.legacy_behavior = boolean(legacy_behavior, "SuperDeluxeDamper.legacy_behavior")
 
         self.hbo_start_mm = 52.0 if legacy_behavior else 0.8 * total_stroke_mm
         if not legacy_behavior and not 0.0 < total_stroke_mm - self.hbo_start_mm <= total_stroke_mm:
@@ -296,26 +307,28 @@ class SuperDeluxeDamper(BaseDamper):
         lockout: Optional[bool] = None,
     ) -> None:
         """Sets rear shock click adjustments."""
+        damper(self)
         if hsc is not None:
-            self.hsc_clicks = max(0, min(self.max_hsc, int(hsc)))
+            self.hsc_clicks = max(0, min(self.max_hsc, integer(hsc, "set_clicks.hsc")))
         if lsc is not None:
-            self.lsc_clicks = max(0, min(self.max_lsc, int(lsc)))
+            self.lsc_clicks = max(0, min(self.max_lsc, integer(lsc, "set_clicks.lsc")))
         if reb is not None:
-            self.rebound_clicks = max(0, min(self.max_reb, int(reb)))
+            self.rebound_clicks = max(0, min(self.max_reb, integer(reb, "set_clicks.reb")))
         if hbo is not None:
-            self.hbo_clicks = max(0, min(self.max_hbo, int(hbo)))
+            self.hbo_clicks = max(0, min(self.max_hbo, integer(hbo, "set_clicks.hbo")))
         if lockout is not None:
-            self.lockout_firm = bool(lockout)
+            self.lockout_firm = boolean(lockout, "SuperDeluxeDamper.lockout_firm")
 
     def toggle_lockout(self) -> bool:
         """Toggles threshold lockout state between Open and Firm."""
+        damper(self)
         self.lockout_firm = not self.lockout_firm
         return self.lockout_firm
 
     def get_effective_coefficients(self) -> Dict[str, float]:
         """Calculates instantaneous damping rates based on active clicks."""
         frac_lsc, frac_hsc, frac_reb, c_lsc, c_hsc, c_reb = self._calc_fractions_and_coeffs()
-        frac_hbo = self.hbo_clicks / float(self.max_hbo)
+        frac_hbo = max(0, min(self.max_hbo, self.hbo_clicks)) / float(self.max_hbo)
         c_hbo = self.c_hbo_min + (self.c_hbo_max - self.c_hbo_min) * (frac_hbo ** 1.30)
 
         return {
@@ -342,7 +355,8 @@ class SuperDeluxeDamper(BaseDamper):
         """Distinct passive base-valving and hydraulic-bottom-out forces."""
         if self.legacy_behavior:
             return {'base_n': self._compute_legacy_damping_force(velocity_mps, stroke_mm), 'hbo_n': 0.0}
-        v = float(velocity_mps)
+        damper(self)
+        v = scalar(velocity_mps, f"{type(self).__name__}.velocity_mps")
         if not np.isfinite([v,stroke_mm]).all():
             raise ValueError('non-finite shock damper state')
         coeffs = self.get_effective_coefficients()
@@ -356,28 +370,34 @@ class SuperDeluxeDamper(BaseDamper):
             f_damp = self._compute_base_damping(v, coeffs["c_lsc"], coeffs["c_hsc"], coeffs["c_reb"])
 
         hbo = 0.0
+        scalar(stroke_mm, "SuperDeluxeDamper.stroke_mm")
         if stroke_mm > self.hbo_start_mm and v > 0.0:
             fraction = min(1.0, (stroke_mm - self.hbo_start_mm) / (self.total_stroke_mm - self.hbo_start_mm))
             hbo = coeffs["c_hbo"] * fraction ** 2 * v
 
-        return {"base_n": float(f_damp), "hbo_n": float(hbo)}
+        return {"base_n": derived(f_damp, 'SuperDeluxeDamper.base_n'),
+                "hbo_n": derived(hbo, 'SuperDeluxeDamper.hbo_n')}
 
     def _compute_legacy_damping_force(self, velocity_mps: float, stroke_mm: float = 20.0) -> float:
-        v = float(velocity_mps)
+        damper(self)
+        v = scalar(velocity_mps, f"{type(self).__name__}.velocity_mps")
         coeffs = self.get_effective_coefficients()
 
         if self.lockout_firm and v > 0.0:
             if v < 0.03:
-                return float(self.lockout_stiffness * v)
-            return float(self.lockout_preload_n + (coeffs["c_hsc"] * 1.8) * (v - 0.03))
+                return derived(self.lockout_stiffness * v, 'SuperDeluxeDamper.lockout_force')
+            return derived(self.lockout_preload_n + (coeffs["c_hsc"] * 1.8) * (v - 0.03), 'SuperDeluxeDamper.lockout_force')
 
         f_damp = self._compute_base_damping(v, coeffs["c_lsc"], coeffs["c_hsc"], coeffs["c_reb"])
 
+        scalar(stroke_mm, "SuperDeluxeDamper.stroke_mm")
         if stroke_mm > self.hbo_start_mm and v > 0.0:
+            if self.total_stroke_mm == self.hbo_start_mm:
+                raise ValueError("SuperDeluxeDamper.hbo_start_mm: activated zero HBO denominator")
             hbo_prog = max(0.0, min(1.0, (stroke_mm - self.hbo_start_mm) / (self.total_stroke_mm - self.hbo_start_mm)))
             f_damp += coeffs["c_hbo"] * (hbo_prog ** 2.0) * v
 
-        return float(f_damp)
+        return derived(f_damp, f"{type(self).__name__}.force")
 
     def compute_dyno_curve(self, v_max: float = 2.0, n_points: int = 101, stroke_mm: float = 30.0) -> Dict[str, np.ndarray]:
         """Generates full force vs velocity dyno sweep curve across [-v_max, +v_max]."""

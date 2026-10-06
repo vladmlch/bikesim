@@ -19,7 +19,7 @@ out of scope.
 """
 from math import expm1, pi, radians
 import numpy as np
-from bike_sim.physics.checks import array, scalar
+from bike_sim.physics.checks import array, boolean, derived, scalar
 from bike_sim.physics.motor_profile import PROFILES, MotorProfile, assist_gain, pedelec_cap
 
 
@@ -37,6 +37,7 @@ class AssistController:
             else:
                 raise ValueError(f'unknown motor profile {profile!r}')
             p = self.profile
+            p.validate()
             max_torque,max_power,tau = p.peak_torque_nm,p.peak_power_w,p.torque_tau_s
             cutoff_mps,taper_width_mps = p.cutoff_mps,p.taper_width_mps
             gate_min_crank_rad_s = p.gate_min_crank_rad_s
@@ -57,7 +58,9 @@ class AssistController:
         if self.profile is not None:
             # The declared 40 ms lag must dominate: a 400 N.m/s slew would turn
             # the first-order response into a 170 ms ramp to 68 N.m.
-            slew = max(slew, self.profile.peak_torque_nm/self.profile.torque_tau_s)
+            profile_slew = self.profile.peak_torque_nm/self.profile.torque_tau_s
+            derived(profile_slew, 'AssistController.profile_slew')
+            slew = max(slew, profile_slew)
         self.gain,self.max_torque,self.max_power = gain,max_torque,max_power
         self.tau,self.slew,self.engage_torque_nm = tau,slew,engage_torque_nm
         self.gate_min_crank_rad_s = gate_min_crank_rad_s
@@ -72,6 +75,25 @@ class AssistController:
             self.torque_curve = curve
         self.reset()
 
+    def _validate(self):
+        for name in ('gain', 'max_torque', 'max_power', 'engage_torque_nm', 'gate_min_crank_rad_s', 'cutoff'):
+            scalar(getattr(self, name), f'AssistController.{name}', minimum=0.)
+        for name in ('tau', 'slew', 'width'):
+            scalar(getattr(self, name), f'AssistController.{name}', positive=True)
+        if self.width > self.cutoff:
+            raise ValueError('AssistController.width: taper exceeds cutoff')
+        if self.profile is not None:
+            p = self.profile
+            if not isinstance(p, MotorProfile):
+                raise ValueError('AssistController.profile: expected MotorProfile')
+            p.validate()
+            if self.mode not in self.profile.mode_gains:
+                raise ValueError('AssistController.mode: unknown profile mode')
+        if self.torque_curve is not None:
+            curve = array(self.torque_curve, 'AssistController.torque_curve')
+            if curve.ndim != 2 or curve.shape[1] != 2 or len(curve) < 2 or np.any(curve < 0) or np.any(np.diff(curve[:, 0]) <= 0):
+                raise ValueError('AssistController.torque_curve: invalid curve')
+
     def reset(self):
         self.torque = 0.
         self.pedaling = False
@@ -79,7 +101,11 @@ class AssistController:
 
     def ceiling(self, shaft_rpm, speed_mps):
         """Instantaneous shaft limit: peak, curve over shaft rpm, power, speed taper."""
+        self._validate()
+        scalar(shaft_rpm, "AssistController.shaft_rpm")
+        scalar(speed_mps, "AssistController.speed_mps")
         omega = shaft_rpm*2*pi/60
+        derived(omega, "AssistController.shaft_speed")
         ceiling = self.max_torque
         if self.torque_curve is not None:
             ceiling = min(ceiling,float(np.interp(shaft_rpm,self.torque_curve[:,0],self.torque_curve[:,1])))
@@ -90,11 +116,12 @@ class AssistController:
 
     def step(self,human_nm,cadence_rpm,speed_mps,braking,dt, *,
              torque_request_nm=None,shaft_rpm=None):
+        self._validate()
         human = scalar(human_nm,'human torque')
         rpm = scalar(cadence_rpm,'cadence')
         speed = scalar(speed_mps,'road speed')
         dt = scalar(dt,'assist timestep',positive=True)
-        if not isinstance(braking,(bool,np.bool_)):
+        if type(braking) is not bool:
             raise ValueError('braking must be a bool')
         if torque_request_nm is not None:
             torque_request_nm = scalar(torque_request_nm,'motor setpoint',minimum=0.)
@@ -106,15 +133,24 @@ class AssistController:
             return 0.
         sensed = human if human > self.engage_torque_nm else 0.
         gain = assist_gain(self.profile,self.mode,sensed) if self.profile is not None else self.gain
-        self.last_gain = gain
         ceiling,taper = self.ceiling(shaft,speed)
         # Support itself fades toward the cutoff, not only the hard ceiling.
-        target = min(gain*sensed*taper,ceiling)
+        demand = gain*sensed*taper
+        derived(demand, 'AssistController.target')
+        target = min(demand,ceiling)
         candidate = self.torque-expm1(-dt/self.tau)*(target-self.torque)
-        candidate = max(self.torque-self.slew*dt,min(self.torque+self.slew*dt,candidate))
-        cap = pedelec_cap(sensed,rpm*2*pi/60,torque_request_nm,braking=bool(braking),
+        derived(candidate, 'AssistController.filtered_torque')
+        delta = self.slew*dt
+        derived(delta, 'AssistController.slew_delta')
+        lower = self.torque-delta
+        upper = self.torque+delta
+        derived(lower, 'AssistController.slew_lower')
+        derived(upper, 'AssistController.slew_upper')
+        candidate = max(lower,min(upper,candidate))
+        cap = pedelec_cap(sensed,derived(rpm*2*pi/60, 'AssistController.crank_rate'),torque_request_nm,braking=bool(braking),
                           gate_min_crank_rad_s=self.gate_min_crank_rad_s)
-        torque = scalar(max(0.,min(candidate,ceiling,cap)),'delivered assist torque')
+        torque = derived(max(0.,min(candidate,ceiling,cap)),'delivered assist torque')
+        self.last_gain = gain
         self.torque = torque
         self.pedaling = torque > 0.
         return torque

@@ -22,7 +22,7 @@ NUMERIC = ('target_speed_mps', 'integral_mps_s', 'torque_nm', 'gain_scale')
 def _model(tmp_path, name='root_x', kind='slide'):
     model = mujoco.MjModel.from_xml_string(f'''
         <mujoco><option timestep="0.0005"/><worldbody><body>
-        <joint name="{name}" type="{kind}"/>
+        <joint name="{name}" type="{kind}" axis="1 0 0"/>
         <geom type="sphere" size=".1" mass="1"/>
         </body></worldbody></mujoco>''')
     path = tmp_path / 'cruise.mjb'
@@ -192,11 +192,12 @@ def test_root_joint_validation(tmp_path, name, kind):
         bike_native.Stepper(str(path), {'schema': 1, 'cruise': CONFIG})
 
 
-def test_hinge_root_is_supported(tmp_path):
+def test_hinge_root_is_rejected(tmp_path):
     model, path = _model(tmp_path, kind='hinge')
-    pair = (model, mujoco.MjData(model), CruiseController(model, **CONFIG),
-            bike_native.Stepper(str(path), {'schema': 1, 'cruise': CONFIG}))
-    _run(pair, [(6.8, True, False, None)])
+    with pytest.raises(ValueError, match='root_x'):
+        CruiseController(model, **CONFIG)
+    with pytest.raises(ValueError, match='root_x'):
+        bike_native.Stepper(str(path), {'schema': 1, 'cruise': CONFIG})
 
 
 @pytest.mark.parametrize('value', [np.nan, np.inf, -np.inf])

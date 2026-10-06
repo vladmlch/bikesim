@@ -1,9 +1,13 @@
 """Cadence-based rider gear selection without prescribing crank or wheel motion."""
-from bike_sim.physics.checks import scalar
+from bike_sim.physics.checks import boolean, derived, scalar
+from bike_sim.physics.domain_validation import shifting_config
 
 
 class CadenceShifter:
     def __init__(self, gearing, config):
+        shifting_config(config, gearing)
+        if config.enabled and gearing.rear_teeth not in config.cassette:
+            raise ValueError("CadenceShifter.rear_teeth: gear must belong to cassette")
         self.gearing = gearing
         self.config = config
         self.reset()
@@ -28,6 +32,9 @@ class CadenceShifter:
 
     def update(self, cadence_rpm, required_cadence_rpm, dt, *, pedaling=True,
                braking=False, rear_in_contact=True, rear_slip_mps=None):
+        shifting_config(self.config, self.gearing)
+        for value, name in ((pedaling, "pedaling"), (braking, "braking"), (rear_in_contact, "rear_in_contact")):
+            boolean(value, f"CadenceShifter.{name}")
         cadence_rpm = scalar(cadence_rpm, 'shift cadence')
         required_cadence_rpm = scalar(required_cadence_rpm, 'wheel-required shift cadence')
         dt = scalar(dt, 'shift interval', positive=True)
@@ -42,8 +49,14 @@ class CadenceShifter:
             self.cadence_ema = cadence_rpm
             self.required_ema = required_cadence_rpm
         else:
-            self.cadence_ema += alpha*(cadence_rpm-self.cadence_ema)
-            self.required_ema += alpha*(required_cadence_rpm-self.required_ema)
+            cadence_change, required_change = cadence_rpm-self.cadence_ema, required_cadence_rpm-self.required_ema
+            derived(cadence_change, 'CadenceShifter.cadence_delta')
+            derived(required_change, 'CadenceShifter.required_delta')
+            cadence = self.cadence_ema + alpha*cadence_change
+            required = self.required_ema + alpha*required_change
+            derived(cadence, 'CadenceShifter.cadence_ema')
+            derived(required, 'CadenceShifter.required_ema')
+            self.cadence_ema, self.required_ema = cadence, required
         self.cooldown_s = max(0., self.cooldown_s - dt)
         self.cut_remaining_s = max(0., self.cut_remaining_s - dt)
         if (not self.config.enabled or not pedaling or braking or not rear_in_contact
@@ -74,6 +87,7 @@ class CadenceShifter:
         # hunting: an upshift while grinding throws the next required cadence
         # below the minimum and forces an immediate shift back.
         landing = self.required_ema*selected/self.rear_teeth
+        derived(landing, "CadenceShifter.landing_cadence")
         if (direction == 'up' and landing < self.config.target_cadence_min_rpm) \
                 or (direction == 'down' and landing > self.config.target_cadence_max_rpm):
             return False

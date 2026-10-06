@@ -3,6 +3,7 @@
 // cite file:line at the time of porting. Python max(a, b) maps to std::max —
 // same two-argument keep-first-on-tie semantics, including the NaN cases.
 #include "rider_forces.hpp"
+#include "../config_validation.hpp"
 
 #include <algorithm>
 #include <ranges>
@@ -45,6 +46,7 @@ namespace {
 RiderForcesWriter::RiderForcesWriter(const mjModel *m,
                                      const nativecfg::RiderForcesConfig &config)
     : nq_(m->nq), nv_(m->nv) {
+    nativecfg::validate(config);
     // rider_forces.py:98-106 — one _JointPath per pose body, resolved in
     // order; an empty paths list is the inert pose=None case (qfrc stays
     // all-zero, mirroring apply()'s no-op on a zeroed buffer).
@@ -72,7 +74,7 @@ std::vector<double> RiderForcesWriter::qfrc(const mjData *d) const {
         const double q = qpos[static_cast<std::size_t>(p.qposadr)];
         const double qd = qvel[static_cast<std::size_t>(p.dofadr)];
         // rider_forces.py:64-76 — _JointPath.compute.
-        const double deflection = p.preload_deflection_m + p.offset_m - q;
+        const double deflection = validation::derived(p.preload_deflection_m + p.offset_m - q, "RiderForcesWriter.deflection");
         if (p.unilateral) {
             if (deflection <= 0.0) {
                 t.gap_m = -deflection;
@@ -82,12 +84,12 @@ std::vector<double> RiderForcesWriter::qfrc(const mjData *d) const {
                 // The damper cannot pull the body back onto the saddle or
                 // the pedal either (rider_forces.py:71-72).
                 t.force_n = std::max(
-                    0.0, p.stiffness_n_m * deflection - p.damping_ns_m * qd);
+                    0.0, validation::derived(p.stiffness_n_m * deflection - p.damping_ns_m * qd, "RiderForcesWriter.force"));
             }
         } else {
             t.gap_m = 0.0;
             t.force_n =
-                    p.stiffness_n_m * deflection - p.damping_ns_m * qd;
+                    validation::derived(p.stiffness_n_m * deflection - p.damping_ns_m * qd, "RiderForcesWriter.force");
         }
         out[static_cast<std::size_t>(p.dofadr)] = t.force_n;
     }

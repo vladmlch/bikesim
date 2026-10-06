@@ -4,6 +4,7 @@ import numpy as np
 
 from bike_sim.physics.checks import scalar
 from bike_sim.sim.ride.physical_mapping import resolve_id
+from bike_sim.sim.ride.wheels import resolve_scalar_joint
 
 
 class IdealFreehubConstraint:
@@ -19,10 +20,8 @@ class IdealFreehubConstraint:
                  driver='crank_spin', driven='rear_wheel_spin'):
         self.ratio = scalar(ratio, 'gear ratio', positive=True)
         self.tendon_id = resolve_id(model, mujoco.mjtObj.mjOBJ_TENDON, tendon_name)
-        self.driver_qpos = int(model.joint(driver).qposadr[0])
-        self.driver_dof = int(model.joint(driver).dofadr[0])
-        self.driven_qpos = int(model.joint(driven).qposadr[0])
-        self.driven_dof = int(model.joint(driven).dofadr[0])
+        self.driver_qpos, self.driver_dof = resolve_scalar_joint(model, driver)
+        self.driven_qpos, self.driven_dof = resolve_scalar_joint(model, driven)
         driver_joint = model.joint(driver).id
         path_start = int(model.tendon_adr[self.tendon_id])
         path_end = path_start + int(model.tendon_num[self.tendon_id])

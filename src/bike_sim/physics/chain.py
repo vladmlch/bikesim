@@ -7,7 +7,7 @@ not add a second T*r wheel or crank torque after this mapping.
 from dataclasses import dataclass
 from math import atan2, cos, pi, sin, sqrt
 import numpy as np
-from bike_sim.physics.checks import array, scalar
+from bike_sim.physics.checks import array, derived, derived_array, integer, scalar
 
 
 @dataclass(frozen=True)
@@ -17,17 +17,19 @@ class DrivetrainSpecs:
     chain_pitch_m: float = .0127
 
     def __post_init__(self):
-        if any(type(z) is not int or z < 3 for z in (self.front_teeth,self.rear_teeth)):
-            raise ValueError('sprockets need integer tooth counts of at least three')
+        for key in ('front_teeth', 'rear_teeth'):
+            integer(getattr(self, key), f'DrivetrainSpecs.{key}', minimum=3)
         object.__setattr__(self,'chain_pitch_m',scalar(self.chain_pitch_m,'chain pitch',positive=True))
 
     @property
     def front_radius_m(self):
-        return self.chain_pitch_m*self.front_teeth/(2*pi)
+        self.__post_init__()
+        return derived(self.chain_pitch_m*self.front_teeth/(2*pi), 'DrivetrainSpecs.front_radius_m')
 
     @property
     def rear_radius_m(self):
-        return self.chain_pitch_m*self.rear_teeth/(2*pi)
+        self.__post_init__()
+        return derived(self.chain_pitch_m*self.rear_teeth/(2*pi), 'DrivetrainSpecs.rear_radius_m')
 
 
 def chain_geometry(cf,cr,rf,rr,*,up_xz=None,psi_reference=None):
@@ -39,8 +41,8 @@ def chain_geometry(cf,cr,rf,rr,*,up_xz=None,psi_reference=None):
         raise ValueError('chain up cannot be zero')
     difference = rf-rr
     vector = cr-cf
-    distance = float(np.linalg.norm(vector))
-    if not np.isfinite(distance) or distance <= abs(difference):
+    distance = derived(np.linalg.norm(vector), 'chain_geometry.distance')
+    if distance <= abs(difference):
         raise ValueError('sprockets have no valid external tangent')
     direction = vector/distance
     perpendicular = np.array([direction[1],-direction[0]])
@@ -53,7 +55,7 @@ def chain_geometry(cf,cr,rf,rr,*,up_xz=None,psi_reference=None):
         ref = scalar(psi_reference,'angular unwrap reference')
         psi = ref+atan2(sin(psi-ref),cos(psi-ref))
     length = sqrt(distance*distance-difference*difference)+difference*psi
-    return scalar(length,'chain geometric coordinate'),psi
+    return derived(length,'chain geometric coordinate'),psi
 
 
 def chain_extension(cf,cr,rf,rr,theta_f,theta_r,reference,*,up_xz=None,psi_reference=None):
@@ -61,7 +63,7 @@ def chain_extension(cf,cr,rf,rr,theta_f,theta_r,reference,*,up_xz=None,psi_refer
     theta_r = scalar(theta_r,'absolute cassette angle')
     reference = scalar(reference,'chain reference')
     length,_ = chain_geometry(cf,cr,rf,rr,up_xz=up_xz,psi_reference=psi_reference)
-    return scalar(length+rf*theta_f-rr*theta_r-reference,'chain extension')
+    return derived(length+rf*theta_f-rr*theta_r-reference,'chain extension')
 
 
 def chain_jacobian(q,evaluate,epsilon=1e-7):
@@ -86,7 +88,7 @@ def chain_tension(extension_m,extension_rate_mps,stiffness_n_m,damping_ns_m):
     c = scalar(damping_ns_m,'chain damping',minimum=0)
     if e <= 0:
         return 0.,0.
-    return scalar(max(0.,k*e+c*rate),'chain tension'), scalar(.5*k*e*e,'chain energy')
+    return derived(max(0.,derived(k*e+c*rate, 'chain raw tension')),'chain tension'), derived(.5*k*e*e,'chain energy')
 
 
 def chain_center_gradient(cf, cr, rf, rr, *, up_xz=None, psi_reference=None):
@@ -102,4 +104,4 @@ def chain_center_gradient(cf, cr, rf, rr, *, up_xz=None, psi_reference=None):
     perpendicular=np.array([a[1],-a[0]])/D
     sign=1. if np.array([np.cos(psi),np.sin(psi)])@perpendicular>=0 else -1.
     radial=D/root-sign*difference*difference/(D*root)
-    return radial*a/D+difference*np.array([-a[1],a[0]])/(D*D)
+    return derived_array(radial*a/D+difference*np.array([-a[1],a[0]])/(D*D), 'chain_center_gradient')

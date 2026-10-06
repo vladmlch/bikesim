@@ -679,3 +679,147 @@ present in the process's dyld image list on every import. The final log is
 UV_CACHE_DIR=/private/tmp/e1-uv NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native \
   -k 'native_input_contracts or native_cruise or native_rider_forces or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_state_restore or native_state_fuzz'
 ```
+
+## F2 physical numeric domains and topology
+
+Python's shared scalar/integer/boolean predicates and the Python-free
+`native/src/config_validation.hpp` enforce the S4 configuration domains in
+constructors and the Python evaluation paths that consume mutable attributes.
+`native/src/model_topology.hpp` checks scalar joint kind/axis and joint-actuator
+targets. The native classes validate their typed configurations as well as
+the wire readers' original input types. Field errors retain the public
+section/field path; derived nonfinite values raise `OverflowError` before
+force, control, energy or geometry publication.
+
+| Area | Validation and retained behavior | Main controls |
+|---|---|---|
+| Air | Positive geometry/gamma/atmosphere; nonnegative pressure/token volume; integer counts; positive evaluated chambers; finite pressure/force/calibration/curve energy | Suspension scalar matrix, mutable properties/setters, pressure/energy overflow, calibration retry |
+| Damper/coil/end stops | Positive click denominators/knees/stroke; ordered nonnegative damping; exact flags; coil geometry; finite raw stop force before unilateral clipping | Constructor and mutation matrices, activated zero HBO denominator, unloading stop overflow, modern/legacy goldens |
+| Brake/rider | Nonnegative physical parameters and finite offsets; scalar/type checks before normalization; finite raw force | Rider matrix, original bool/array rejection at brake bindings, derived-force controls |
+| Resistance | Nonnegative coefficients, positive taper, finite planar vectors, physical resolved body IDs; finite mapped point and forces | Body-ID controls, rolling/drag overflow, bitwise resistance goldens |
+| Tire/surface | Positive material/brush coefficients, valid loads/provenance, surface bounds, nonoverlapping intervals; mutable material/map revalidation; finite accumulated energy/loss/force | Field/relationship matrices, Unicode blank provenance, mutated tire/map controls, two-wheel loss overflow, tire goldens |
+| Pedaling/shifting/gearing | Positive required denominators, ordered thresholds/timings, unique integer cassette, enabled-gear membership, closed slip modes; finite filter/slew/coast/landing results | Paired policies, 0-D cassette rejection, zero-disable and historical NumPy controls |
+| Assist/battery/freehub | Positive lag/slew/taper/full-gain denominators, nonnegative physical limits/losses, ordered curves/profile bounds, positive hub stiffness; finite demand/filter/cap/energy results | Battery cap numerator overflow, mutated profile/assist controls, crank conversion and freehub overflow |
+| Topology | Cruise slide about local +X; physical wheel/drivetrain spin hinges about local +Y; brake/human/motor actuators target the corresponding joint; generic ideal one-way coupling retains scalar hinge/slide coordinates | Wrong kind/axis/target models plus valid plain/clutch/rotor, generic +Z-hinge/+X-slide preload and solved bitwise controls |
+
+Integer click/token clipping remains intentional normalization. Air pressure
+setters/calibration retain their 10 psi floor after domain/derived-value checks.
+Declared unreachable air travel is permitted when the evaluated chamber is
+usable. Legacy HBO may start beyond travel and keeps its negative-denominator
+clamped branch; an activated zero denominator is rejected. Zero coast/filter
+and rider-effort slew values retain their existing disabled branches; assist
+lag/slew/taper denominators remain positive. Zero physical damping, torque,
+power and energy limits are retained where their existing branches permit them.
+The cruise integral clamp bound can be infinite at the valid extreme support
+control; its actual integral update and published torque must remain finite.
+The native tire backend remains `compliant_2d`; configured and track surface
+modes are retained.
+
+New checks do not replace operands before arithmetic that previously used a
+NumPy scalar/array. Validation is separate from the original scalar conversion
+boundaries. A bounded audit loads exact `957e4f0` Python source in isolated
+modules and compares dtype, shape and bytes with the current implementation:
+34 controls across builtin float, `np.float32`, `np.float64`, damper HBO/stations,
+air pressure/calibration/stiffness, assist ceiling/taper, pedaling coast,
+shifting landing, rider preload/path, end stops, surface scalar/array laws and
+surface-map branch selection
+have no mismatch. The audit script/log are
+`/private/tmp/f2-numpy-final-audit.py` and `/private/tmp/f2-numpy-final-audit.log`.
+The captured historical NumPy regressions retain F1's expected force values;
+existing numerical goldens were not rewritten.
+
+`test_native_numeric_domains.py` and `test_native_numeric_completion.py` hold
+the paired matrices, mutation/overflow/topology controls and explicit valid
+normalization controls. The standalone typed-validator probe uses the selected
+build's compiler and SDK and includes only Python-free config/validation
+headers. A bounded constructor audit of 60 string/huge-real/bool inputs across
+20 constructors reported no unexpected error class after the fixes; log
+`/private/tmp/f2-constructor-audit.log`. Review findings were reproduced before
+their fixes, with separate logs under `/private/tmp/f2-*-red.log`.
+
+| Checker | Narrow origin and reason | Reproducer | Remove when |
+|---|---|---|---|
+| `bugprone-easily-swappable-parameters` | `PedalingPolicy::update` and the brake binding lambdas retain the fixed positional Python signatures; every raw binding argument has its own field-path reader. Internal topology helpers separate same-type arguments without suppression. | Pedaling sequences, brake demand/bitwise controls and original bool/array rejection cases | The public signatures can use distinct argument types without breaking compatibility. |
+
+F2's scope follows the validation plan's F2 lane. State/control shapes,
+relational restore and clock/interval/live-timestep requirements remain in
+F3/F5. Allocation/boxing failure atomicity, complete transactional boundaries,
+view/private-hook ownership and realtime allocation/performance work remain
+in their E/C/R tasks. These requirements are not marked complete by F2.
+E1's upstream model-loader cleanup limitation and the master final full gate
+remain open under the documented user decision.
+
+F2 task verification is complete on the frozen implementation; the master
+full gate remains red on the 24 documented baseline failures. The focused command is:
+
+```bash
+UV_CACHE_DIR=/private/tmp/e1-uv uv run --frozen --group native python -m pytest \
+  tests/reference/test_native_numeric_completion.py \
+  tests/reference/test_native_numeric_domains.py \
+  tests/reference/test_native_input_contracts.py \
+  tests/reference/test_native_drive_policies.py \
+  tests/reference/test_native_drivetrain.py \
+  tests/reference/test_native_cruise.py \
+  tests/reference/test_native_suspension.py \
+  tests/reference/test_native_brake_resistance.py \
+  tests/reference/test_native_rider_forces.py \
+  tests/reference/test_native_tire.py \
+  tests/reference/test_energy_ledger.py -q --tb=short
+```
+
+Result: 1,297 passed, eight warnings in 48.13 seconds; log
+`/private/tmp/f2-focused-preload-final.log`. Six warnings are the existing
+reference-monitor warnings; two are intentional overflowing NumPy operations
+in the bearing and force-curve rejection probes.
+
+Final normal verification uses Python 3.14.3, MuJoCo 3.12.0, nanobind 3.1.0,
+NumPy 2.5.2, CMake 4.4.3 and Apple clang 21.0.0 on arm64, with the explicitly
+selected Xcode SDK. The locked native group and
+`UV_CACHE_DIR=/private/tmp/e1-uv` are used throughout.
+
+Final `bash tools/run_tests.sh native` passed 1,654 tests with 17 warnings in
+122.26 seconds. All mandatory sweeps selected 23 translation units and
+reported healthy execution; headers 35/105, diagnostic/context controls,
+shellcheck and CTest passed. Alpha analyzer findings remained report-only.
+The test process imported the selected
+`native/build/bike_native.cpython-314-darwin.so`; log
+`/private/tmp/f2-native-preload-final.log`. The 17 warnings include the two deliberate
+NumPy overflow probes and 15 existing native/golden reference warnings.
+
+The first full run found 25 failures: the 24 baseline IDs and one new generic
+preload case. Its log/comparison are retained in
+`/private/tmp/f2-full-preload-regression.log` and
+`/private/tmp/f2-full-preload-regression-comparison.json`. The cause was an
+axis restriction applied to the generic scalar one-way coupling; the original
+slide-joint cache test now passes unchanged, with explicit +Z-hinge and
++X-slide controls retaining solver preload. Physical wheel-axis validation
+stays at the owning drivetrain/brake lookup.
+
+Final `bash tools/run_tests.sh full --tb=short` completed with 2,101 passed,
+24 failed and 50 warnings in 705.74 seconds. Its failed-ID set exactly matches
+the 24 independently reproduced baseline IDs above, with no new or missing
+ID. The generic preload regression is absent. The final log/comparison are
+`/private/tmp/f2-full-final.log` and
+`/private/tmp/f2-full-baseline-comparison.json`. **The full gate remains red**
+on the documented baseline failures.
+
+Selected ASan/UBSan passed 1,297 affected tests, with 378 deselected and eight
+warnings in 103.43 seconds. Mandatory sweeps, 35/105 header controls,
+diagnostic/context controls, CTest and selected-artifact checks passed.
+The process imported `native/build/asan/bike_native.cpython-314-darwin.so`;
+the shared loader required the selected Apple clang 21 ASan runtime to be
+mapped in that Python process on every import. A separate explicit import
+proof also confirmed the extension and mapped runtime, recorded at
+`/private/tmp/f2-asan-runtime-proof.log`. The selected-build provenance is
+`native/build/asan/native_test_provenance.json`; the final run log is
+`/private/tmp/f2-asan-final.log`. Reproduce with:
+
+```bash
+UV_CACHE_DIR=/private/tmp/e1-uv NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native \
+  tests/reference/test_energy_ledger.py \
+  -k 'native_numeric_domains or native_numeric_completion or native_input_contracts or native_cruise or native_rider_forces or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_brake_resistance or energy_ledger'
+```
+
+F2 is ready for root review/integration. No child commit was made. The user
+requested a stop before the next task, so no F3/F4/F5/E/C/R task follows this
+handoff. E1 and the master final full gate remain open.

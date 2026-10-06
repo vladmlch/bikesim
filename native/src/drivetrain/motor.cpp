@@ -37,7 +37,7 @@ namespace drivetrain {
     std::pair<double, double> AssistController::ceiling(double rpm, double speed) const {
         finite(rpm, "shaft rpm");
         finite(speed, "speed");
-        const double omega = rpm * 2. * std::numbers::pi / 60.;
+        const double omega = validation::derived(rpm * 2. * std::numbers::pi / 60., "AssistController.shaft_speed");
         double limit = config_.max_torque;
         if (config_.torque_curve) limit = std::min(limit, interp(rpm, *config_.torque_curve));
         if (omega > 0.) limit = std::min(limit, config_.max_power / omega);
@@ -72,16 +72,19 @@ namespace drivetrain {
                 gain = p.emtb_low + (p.emtb_high - p.emtb_low) * fraction;
             }
         }
-        state_.last_gain = gain;
         const auto [limit, taper] = ceiling(shaft.value_or(rpm), speed);
-        const double target = std::min(gain * sensed * taper, limit);
-        double candidate = state_.torque - std::expm1(-dt / config_.tau) * (target - state_.torque);
-        candidate = std::max(state_.torque - config_.slew * dt, std::min(state_.torque + config_.slew * dt, candidate));
-        const double crank = finite(rpm * 2. * std::numbers::pi / 60., "crank rate");
+        const double target = std::min(validation::derived(gain * sensed * taper, "AssistController.target"), limit);
+        double candidate = validation::derived(state_.torque - std::expm1(-dt / config_.tau) * (target - state_.torque), "AssistController.filtered_torque");
+        const double delta = validation::derived(config_.slew * dt, "AssistController.slew_delta");
+        const double lower = validation::derived(state_.torque - delta, "AssistController.slew_lower");
+        const double upper = validation::derived(state_.torque + delta, "AssistController.slew_upper");
+        candidate = std::max(lower, std::min(upper, candidate));
+        const double crank = validation::derived(rpm * 2. * std::numbers::pi / 60., "crank rate");
         const double cap = crank <= config_.gate_min_crank_rad_s || sensed <= 0.
                                ? 0.
                                : request.value_or(std::numeric_limits<double>::infinity());
-        const double torque = finite(std::max(0., std::min({candidate, limit, cap})), "delivered assist torque");
+        const double torque = validation::derived(std::max(0., std::min({candidate, limit, cap})), "delivered assist torque");
+        state_.last_gain = gain;
         state_.torque = torque;
         state_.pedaling = torque > 0.;
         return torque;
@@ -97,7 +100,7 @@ namespace drivetrain {
     double Battery::draw(double power, double dt) {
         nonnegative(power, "battery power");
         positive(dt, "battery timestep");
-        const double requested = nonnegative(power * dt, "requested battery energy");
+        const double requested = validation::derived(power * dt, "Battery.requested_energy");
         const double delivered = std::min(state_.energy_j, requested);
         state_.energy_j = std::max(0., state_.energy_j - delivered);
         state_.drawn_energy_j += delivered;
@@ -111,7 +114,7 @@ namespace drivetrain {
         nonnegative(b, "speed loss coefficient");
         nonnegative(idle, "idle loss");
         if (!enabled) return 0.;
-        return finite(std::max(torque * omega, 0.) + a * pyfloat::pow(torque, 2.) + b * pyfloat::pow(omega, 2.) + idle,
+        return validation::derived(std::max(validation::derived(torque * omega, "motor_electrical_power.mechanical_power"), 0.) + a * pyfloat::pow(torque, 2.) + b * pyfloat::pow(omega, 2.) + idle,
                       "electrical power");
     }
 
@@ -123,15 +126,17 @@ namespace drivetrain {
         nonnegative(b, "speed loss coefficient");
         nonnegative(idle, "idle loss");
         nonnegative(budget, "power budget");
-        const double overhead = finite(b * pyfloat::pow(omega, 2.) + idle, "motor overhead");
+        const double overhead = validation::derived(b * pyfloat::pow(omega, 2.) + idle, "motor overhead");
         const double available = budget - overhead;
         if (available <= 0.) return 0.;
         const double w = std::max(omega, 0.);
         double cap = std::numeric_limits<double>::quiet_NaN();
         if (a > 0.) {
-            const double discriminant = finite(w * w + 4. * a * available, "torque budget discriminant");
-            cap = 2. * available / (w + std::sqrt(discriminant));
-        } else if (w > 0.) cap = available / w;
+            const double discriminant = validation::derived(w * w + 4. * a * available, "torque budget discriminant");
+            const double numerator = validation::derived(2. * available, "limit_torque_by_energy.numerator");
+            const double denominator = validation::derived(w + std::sqrt(discriminant), "limit_torque_by_energy.denominator");
+            cap = validation::derived(numerator / denominator, "limit_torque_by_energy.cap");
+        } else if (w > 0.) cap = validation::derived(available / w, "limit_torque_by_energy.cap");
         else cap = request;
         return std::min(request, cap);
     }

@@ -22,7 +22,8 @@ import mujoco
 import numpy as np
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'native' / 'build'))
+from native_loader import load_native
+bike_native = load_native()
 
 from _bits import assert_bitwise_equal
 
@@ -123,7 +124,6 @@ def _sweep_states(model, rf, qpos0):
 
 
 def test_rider_forces_qfrc_bitwise(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     model, rf, mjb = _plant(tmp_path)
     # Projection-time pedal offsets (ride_sim.py:573-587 sets them once
     # per _follow_cranks): applied before projection so the config carries
@@ -151,7 +151,6 @@ def test_project_emits_resolved_paths(tmp_path):
     _paths order, only while the applier is active. RideSimulation()'s
     default variant is 'seated' (DEFAULT_RIDER_VARIANT), so its
     rider_forces is active — unlike the canonical articulated env."""
-    bike_native = pytest.importorskip('bike_native')
     from bike_sim.sim.ride_sim import RideSimulation
     from tools.native_config import project
     sim = RideSimulation()
@@ -188,7 +187,6 @@ def _rf_cfg(**over):
 
 
 def test_rider_forces_hand_built_smoke():
-    bike_native = pytest.importorskip('bike_native')
     st = bike_native.Stepper(MJB, _rf_cfg())
     got = st.rider_forces_qfrc()
     nv = mujoco.MjModel.from_binary_path(MJB).nv
@@ -200,14 +198,12 @@ def test_rider_forces_hand_built_smoke():
 
 
 def test_rider_forces_requires_config():
-    bike_native = pytest.importorskip('bike_native')
     for st in (bike_native.Stepper(MJB), bike_native.Stepper(MJB, {})):
         with pytest.raises(RuntimeError):
             st.rider_forces_qfrc()
 
 
 def test_rider_forces_missing_key_names_it():
-    bike_native = pytest.importorskip('bike_native')
     with pytest.raises(ValueError, match='paths'):
         bike_native.Stepper(MJB, {'schema': 1, 'rider_forces': {}})
     for key in ('joint', 'stiffness_n_m', 'damping_ns_m',
@@ -223,7 +219,6 @@ def test_rider_forces_missing_key_names_it():
 
 
 def test_rider_forces_joint_validation():
-    bike_native = pytest.importorskip('bike_native')
     # Missing joint, non-slide joint (a hinge), and a LIMITED slide — the
     # three _resolve_slide rejections (rider_forces.py:109-115).
     for joint, match in [('no_such_joint', 'no joint'),
@@ -247,7 +242,6 @@ def test_accumulator_order_bitwise():
     """The P2 ordering gate: Stepper.total(dict) folds in dict insertion
     order, bitwise-equal to ForceAccumulator.total() — the contract P4's
     step loop replicates."""
-    bike_native = pytest.importorskip('bike_native')
     nv = int(mujoco.MjModel.from_binary_path(MJB).nv)
     st = bike_native.Stepper(MJB)
     # Order-sensitive triple: 1e20 absorbs 1.0 mid-fold, so (a,b,c) sums to
@@ -279,7 +273,6 @@ def test_accumulator_order_bitwise():
 
 
 def test_accumulator_total_validates():
-    bike_native = pytest.importorskip('bike_native')
     nv = int(mujoco.MjModel.from_binary_path(MJB).nv)
     st = bike_native.Stepper(MJB)
     # acc.add's contract: shape != (nv,) or non-finite -> ValueError
@@ -302,7 +295,6 @@ def test_accumulator_total_validates():
 @pytest.mark.parametrize('layout', ('contiguous', 'strided', 'reversed'))
 @pytest.mark.parametrize('dtype', (np.float64, np.float32, np.int32))
 def test_accumulator_total_accepts_array_conversion(layout, dtype):
-    bike_native = pytest.importorskip('bike_native')
     nv = int(mujoco.MjModel.from_binary_path(MJB).nv)
     values = np.arange(nv, dtype=dtype)
     if layout == 'strided':
@@ -321,7 +313,6 @@ def test_accumulator_order_golden(tmp_path):
     native total() folds force_names-ordered components — ported ones
     computed by the native writers, the rest recorded — bitwise-equal to
     the independent apply_forces-exit qfrc_applied captured from mjData."""
-    bike_native = pytest.importorskip('bike_native')
     from test_native_brake_resistance import _golden
     from tools.golden_episode import load_episode
     from tools.native_config import project

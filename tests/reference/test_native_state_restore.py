@@ -6,19 +6,13 @@ import mujoco
 import numpy as np
 import pytest
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
+from native_loader import load_native
+bike_native = load_native()
 
 from _bits import assert_bitwise_equal
 
 
 def test_set_state_snapshots_own_views_before_reset():
-    bike_native = pytest.importorskip('bike_native')
     mjb = 'tools/proto_native_bench/artifacts/model.mjb'
     model = mujoco.MjModel.from_binary_path(mjb)
     data = mujoco.MjData(model)
@@ -61,7 +55,6 @@ def _golden(tmp_path, steps=8):
 
 @pytest.mark.slow
 def test_forward_on_stored_state_is_bitwise(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     from tools.golden_episode import load_episode
     ep = load_episode(_golden(tmp_path))
     ref = mujoco.MjModel.from_binary_path(str(tmp_path/'g'/'model.mjb'))
@@ -83,7 +76,6 @@ def test_forward_on_stored_state_is_bitwise(tmp_path):
 
 @pytest.mark.slow
 def test_set_state_size_mismatch_raises_and_keeps_state(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     from tools.golden_episode import load_episode
     g = _golden(tmp_path)
     ep = load_episode(g)

@@ -6,13 +6,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
+from native_loader import load_native
+bike_native = load_native()
 
 from _bits import assert_bitwise_equal
 
@@ -41,7 +36,6 @@ def test_suspension_components_bitwise(tmp_path):
     # via pyfloat::pow, and -ffp-contract=off keeps clang from fusing
     # mul+add into FMA — verified: all 8 components × 40 states compare
     # byte-identical, zero ulp budget consumed.
-    bike_native = pytest.importorskip('bike_native')
     from tools.golden_episode import load_episode
     from tools.native_config import project
     env, g = _golden(tmp_path)
@@ -68,7 +62,6 @@ def test_suspension_components_bitwise_legacy(tmp_path):
     """The legacy physics mode (default SimulationPhysicsConfig) emits the
     7-component dict — no shock_hbo, legacy coil/damper branches — and the
     native writer must match it bitwise as well."""
-    bike_native = pytest.importorskip('bike_native')
     import mujoco
     from bike_sim.sim.ride_sim import RideSimulation
     from tools.native_config import project
@@ -108,7 +101,6 @@ def test_suspension_components_bitwise_legacy(tmp_path):
 
 
 def test_suspension_components_require_config():
-    bike_native = pytest.importorskip('bike_native')
     # Both the one-argument form and an explicitly empty config leave the
     # suspension writer disabled: the method raises std::logic_error,
     # which nanobind surfaces as RuntimeError.
@@ -118,7 +110,6 @@ def test_suspension_components_require_config():
 
 
 def test_config_missing_key_names_it():
-    bike_native = pytest.importorskip('bike_native')
     with pytest.raises(ValueError, match='schema'):
         bike_native.Stepper(MJB, {'suspension': {}})
     with pytest.raises(ValueError, match='physics_mode'):

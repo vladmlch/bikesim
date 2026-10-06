@@ -18,15 +18,8 @@ from bike_sim.sim.ride.ideal_freehub import IdealFreehubConstraint
 from bike_sim.sim.ride.geometric_freehub import GeometricFreehubConstraint
 from test_native_drive_policies import assert_tree, oracle_config, KEYS
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
-import bike_native
-assert Path(bike_native.__file__).resolve().parent == BUILD.resolve()
+from native_loader import load_native
+bike_native = load_native()
 
 
 def model_xml(kind, mode='crank_effort', topology='plain', sparse=False):

@@ -16,13 +16,8 @@ import mujoco
 import numpy as np
 import pytest
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
+from native_loader import load_native
+bike_native = load_native()
 
 from _bits import assert_bitwise_equal
 
@@ -93,7 +88,6 @@ def _native_snapshots(row):
 
 @pytest.mark.slow
 def test_brake_torques_and_apply_bitwise(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     from tools.golden_episode import load_episode
     from tools.native_config import project
     env, g = _golden(tmp_path)
@@ -138,7 +132,6 @@ def test_brake_torques_and_apply_bitwise(tmp_path):
 
 @pytest.mark.slow
 def test_resistance_components_bitwise(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     from tools.golden_episode import load_episode
     from tools.native_config import project
     env, g = _golden(tmp_path)
@@ -167,7 +160,6 @@ def test_resistance_components_bitwise(tmp_path):
 
 
 def test_brake_resistance_require_config():
-    bike_native = pytest.importorskip('bike_native')
     # Both writers stay disabled without their config sections; each call
     # raises std::logic_error, which nanobind surfaces as RuntimeError —
     # reached once the input conversion itself succeeds.
@@ -189,7 +181,6 @@ def test_brake_resistance_require_config():
 
 
 def test_brake_resistance_missing_key_names_it():
-    bike_native = pytest.importorskip('bike_native')
     with pytest.raises(ValueError, match='torque_ceiling_nm'):
         bike_native.Stepper(MJB, {'schema': 1, 'brake': {}})
     with pytest.raises(ValueError, match='crr'):
@@ -202,7 +193,6 @@ def test_resistance_snapshot_array_conversion_lifetime(layout, converted_dtype):
     """Converted front AND rear buffers must stay alive until the writer reads
     them. Exercise their reads under ASan and compare converted values in
     ordinary builds."""
-    bike_native = pytest.importorskip('bike_native')
     cfg = {'schema': 1, 'resistance': {
         'crr': 0.01, 'rolling_taper_rad_s': 0.5, 'rho_kg_m3': 1.2,
         'cda_m2': 0.4, 'wind_world_mps': [0., 0., 0.],

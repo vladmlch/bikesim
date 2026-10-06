@@ -10,13 +10,8 @@ import pytest
 
 from bike_sim.sim.ride.cruise import CruiseController
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
+from native_loader import load_native
+bike_native = load_native()
 from _bits import assert_bitwise_equal
 
 CONFIG = dict(target_speed_kmh=25., kp_nm_per_mps=180.,
@@ -37,7 +32,7 @@ def _model(tmp_path, name='root_x', kind='slide'):
 
 @pytest.fixture
 def pair(tmp_path):
-    native = pytest.importorskip('bike_native')
+    native = bike_native
     model, path = _model(tmp_path)
     return (model, mujoco.MjData(model), CruiseController(model, **CONFIG),
             native.Stepper(str(path), {'schema': 1, 'cruise': CONFIG}))
@@ -146,7 +141,6 @@ def test_snapshot_replay_and_mjdata_restore_is_independent(pair):
 
 @pytest.mark.parametrize('config', [None, {}, {'schema': 1}])
 def test_every_api_requires_config(tmp_path, config):
-    bike_native = pytest.importorskip('bike_native')
     _, path = _model(tmp_path)
     native = (bike_native.Stepper(str(path)) if config is None else
               bike_native.Stepper(str(path), config))
@@ -160,7 +154,6 @@ def test_every_api_requires_config(tmp_path, config):
 
 @pytest.mark.parametrize('key', CONFIG)
 def test_missing_config_keys(tmp_path, key):
-    bike_native = pytest.importorskip('bike_native')
     _, path = _model(tmp_path)
     config = {k: v for k, v in CONFIG.items() if k != key}
     with pytest.raises(ValueError, match=key):
@@ -170,7 +163,6 @@ def test_missing_config_keys(tmp_path, key):
 @pytest.mark.parametrize('config', [{'cruise': CONFIG}, {'schema': 2, 'cruise': CONFIG},
                                    {'schema': 1, 'cruise': []}])
 def test_schema_and_section_validation(tmp_path, config):
-    bike_native = pytest.importorskip('bike_native')
     _, path = _model(tmp_path)
     with pytest.raises(ValueError):
         bike_native.Stepper(str(path), config)
@@ -179,7 +171,6 @@ def test_schema_and_section_validation(tmp_path, config):
 @pytest.mark.parametrize('key', CONFIG)
 @pytest.mark.parametrize('value', [0., -1., np.nan, np.inf, -np.inf])
 def test_invalid_config(tmp_path, key, value):
-    bike_native = pytest.importorskip('bike_native')
     _, path = _model(tmp_path)
     with pytest.raises(ValueError, match=key):
         bike_native.Stepper(str(path), {'schema': 1, 'cruise': {**CONFIG, key: value}})
@@ -187,7 +178,6 @@ def test_invalid_config(tmp_path, key, value):
 
 @pytest.mark.parametrize('target', [14.999, 45.001])
 def test_config_target_band(tmp_path, target):
-    bike_native = pytest.importorskip('bike_native')
     _, path = _model(tmp_path)
     with pytest.raises(ValueError):
         bike_native.Stepper(str(path), {'schema': 1, 'cruise':
@@ -197,14 +187,12 @@ def test_config_target_band(tmp_path, target):
 @pytest.mark.parametrize('name,kind', [('other', 'slide'), ('root_x', 'ball'),
                                       ('root_x', 'free')])
 def test_root_joint_validation(tmp_path, name, kind):
-    bike_native = pytest.importorskip('bike_native')
     _, path = _model(tmp_path, name, kind)
     with pytest.raises(ValueError, match='root_x'):
         bike_native.Stepper(str(path), {'schema': 1, 'cruise': CONFIG})
 
 
 def test_hinge_root_is_supported(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     model, path = _model(tmp_path, kind='hinge')
     pair = (model, mujoco.MjData(model), CruiseController(model, **CONFIG),
             bike_native.Stepper(str(path), {'schema': 1, 'cruise': CONFIG}))
@@ -283,7 +271,6 @@ def test_exact_saturation_freezes_nonzero_error(pair, sign):
 
 
 def test_negative_zero_output_bitwise(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     model, path = _model(tmp_path)
     config = {**CONFIG, 'kp_nm_per_mps': 1e-300, 'ki_nm_per_mps_s': 1e-300}
     oracle = CruiseController(model, **config)
@@ -317,7 +304,6 @@ def test_nonnumeric_restore_preserves_state(pair, key, value):
 
 
 def test_support_underflow_preserves_state(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     _, path = _model(tmp_path)
     native = bike_native.Stepper(str(path), {'schema': 1, 'cruise':
                                 {**CONFIG, 'ki_nm_per_mps_s': 1e-300}})
@@ -333,7 +319,6 @@ def test_support_underflow_preserves_state(tmp_path):
 def test_projection_optional_cruise(tmp_path):
     from bike_sim.sim.ride_sim import RideSimulation
     from tools.native_config import project
-    bike_native = pytest.importorskip('bike_native')
     sim = RideSimulation()
     sim.cruise.target_speed_kmh = 45.
     sim.cruise.integral_mps_s = 123.

@@ -6,17 +6,11 @@ from pathlib import Path
 import mujoco
 import pytest
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
+from native_loader import load_native
+bike_native = load_native()
 MJB = 'tools/proto_native_bench/artifacts/model.mjb'
 
 def test_native_step_matches_python_bitwise():
-    bike_native = pytest.importorskip('bike_native')
     native = bike_native.Stepper(MJB)
     ref = mujoco.MjModel.from_binary_path(MJB)
     data = mujoco.MjData(ref)

@@ -9,10 +9,15 @@ bash tools/run_tests.sh native   # native extension and golden episode checks
 bash tools/run_tests.sh full     # includes slow physics and realtime episodes
 ```
 
-Use `quick` for ordinary edits and the final fast regression check. Use `native`
-for work on the C++ implementation and its Python bridge. Use `full` explicitly
-when evaluating complete physical episodes or realtime acceptance. The launcher
-resolves its repository root, so it also works when invoked from another directory.
+Use `quick` for ordinary Python edits and the final fast regression check. It
+excludes direct native extension tests but keeps native-check controller tests.
+Use `native` for C++ implementation, Python bridge, and verification-tool work.
+Use `full` for complete physical episodes or realtime acceptance. Both `native`
+and `full` configure/build the selected native directory, run every configured
+sweep plus the V2 header/diagnostic/context controls, run CTest, and then invoke
+pytest once. The launcher fails if pytest selection leaves zero direct native
+extension test items. It resolves its repository root, so it also works when
+invoked from another directory.
 
 All profiles run serially with `-q --durations=10`, forward additional arguments
 to pytest, and return pytest's exit status. For example:
@@ -35,8 +40,9 @@ uv run python -m pytest tests/reference/test_native_cruise.py -q
 
 ## Native prerequisite
 
-Build the extension in an already configured `native/build` directory before
-running native checks:
+`native` and `full` configure and build the selected directory before checking
+or importing the extension. For a standalone native test command, first build
+the desired directory:
 
 ```bash
 uv run cmake --build native/build -j4
@@ -50,26 +56,44 @@ state explicitly, and `cruise_reset` to clear its integral, torque and engaged
 flag while preserving the target and assist scale. Cruise computes a scalar
 torque; runtime actuator writes and the force loop are later port increments.
 
-The native profile prepends the absolute `native/build` directory to `PYTHONPATH`,
-preserving an existing value. It imports `bike_native` and prints the imported
-module's path before starting pytest. If import fails, the launcher exits with
-the import command's failure status and pytest does not start. This makes a
-missing or broken extension visible before native tests can be skipped.
+Set `NATIVE_TEST_BUILD_PATH` to an absolute build directory. The legacy
+`NATIVE_TEST_BUILD_DIR` selector still accepts `''`, `asan`, `rtsan`, and
+`coverage`; simultaneous selectors must resolve to the same directory. The
+shared `tests/reference/native_loader.py` inserts that directory, requires one
+`bike_native` extension artifact there, and verifies the imported module's
+resolved path. Missing/ambiguous artifacts and an earlier import from another
+build fail immediately. Native/full print the selected extension path and the
+number of direct native extension test items collected after pytest
+deselection. Tool-controller and loader test items do not satisfy this gate.
 
-For a direct native test invocation, set the same import path:
+`native_contract_tests` is registered with CTest and links a PIC Python-free
+drivetrain object shared with `bike_native`. Its `require` helper throws even
+when `NDEBUG` is defined. The loader suite invokes its deliberate failure mode
+against the selected build and requires a nonzero exit. To check both Debug and
+Release, build each directory and run the same focused control against each:
 
 ```bash
-PYTHONPATH="$PWD/native/build${PYTHONPATH:+:$PYTHONPATH}" uv run python -m pytest tests/reference/test_native_suspension.py -q
+NATIVE_TEST_BUILD_PATH="$PWD/native/build/v3-debug" uv run python -m pytest tests/reference/test_native_loader.py::test_native_contract_require_control_fails_in_selected_build -q
+NATIVE_TEST_BUILD_PATH="$PWD/native/build/v3-release" uv run python -m pytest tests/reference/test_native_loader.py::test_native_contract_require_control_fails_in_selected_build -q
+```
+
+The contract source is included in the CMake analysis manifest.
+
+For a direct native test invocation, select the build in the same way:
+
+```bash
+NATIVE_TEST_BUILD_PATH="$PWD/native/build" uv run python -m pytest tests/reference/test_native_suspension.py -q
 ```
 
 ## Static analysis and sanitizer builds
 
-The `native` profile runs the full verification chain: build, then every
-sweep, then tests — a green run cannot rest on a stale `.so`. Each sweep is
-also a standalone CMake target. CMake writes `native/build/native_sources.json`
-from the first-party sources attached to configured targets and
-`native/build/native_check_context.json` with the compiler, SDK, Python,
-dependency paths, target compile contexts, and configured tool overrides.
+The `native` and `full` profiles share the full verification preflight:
+configure, build, every CMake sweep, the standalone header/diagnostic/context
+controls, CTest, and an exact selected-extension import before pytest. Each
+configured sweep is also a standalone CMake target. CMake writes
+`<selected-build>/native_sources.json` from the first-party sources attached to
+configured targets and `<selected-build>/native_check_context.json` with the
+compiler, SDK, Python, dependency paths, target compile contexts, and tool overrides.
 `tools/native_checks.py` checks those manifests against
 `compile_commands.json` before starting any analyzer. It rejects an empty,
 missing, duplicate, unexpected, or malformed first-party selection and missing
@@ -149,28 +173,27 @@ upstream contract, so review them when they appear instead of gating on them.
 `check_odr` compiles every TU with `-flto` and merges with `-Wodr` — the only
 phase that can see a type defined differently across translation units.
 
-`NATIVE_TEST_BUILD_DIR` selects the extension subdirectory the native test
-files import from `native/build/`: empty (default build), `asan`, `coverage`,
-or `rtsan`. There is no fallback — the imported module's path is asserted.
+`NATIVE_TEST_BUILD_PATH` may select any absolute configured build directory.
+`NATIVE_TEST_BUILD_DIR` remains a compatibility selector for `''`, `asan`,
+`coverage`, or `rtsan` under `native/build`. The shared loader checks artifact
+cardinality and import provenance in both profiles.
 
 Sanitizer build:
 
 ```bash
 cmake -S native -B native/build/asan -DNATIVE_SANITIZE=ON
 uv run cmake --build native/build/asan -j4
+NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native
 ```
 
 The sanitizer set is `address,undefined,local-bounds,float-cast-overflow`
-with `-fno-sanitize-recover=all`. Run the native suite against it with the
-toolchain ASan dylib injected — invoke `.venv/bin/python` directly: `uv run`
-drops `DYLD_INSERT_LIBRARIES` before exec and the interceptors fail to install.
-
-```bash
-ASAN_LIB="$(clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib)"
-NATIVE_TEST_BUILD_DIR=asan ASAN_OPTIONS=detect_leaks=0:detect_stack_use_after_return=1 \
-  DYLD_INSERT_LIBRARIES="$ASAN_LIB" PYTHONMALLOC=malloc \
-  .venv/bin/python -m pytest tests/reference/test_native_*.py -q
-```
+with `-fno-sanitize-recover=all`. The launcher reads the compiler from the
+selected build's cache, resolves its ASan runtime, then injects it into CTest
+and the Python process after `uv` starts. It also sets `PYTHONMALLOC=malloc`
+and the documented ASan options in those child processes. Before importing the
+extension, the loader checks the selected runtime's actual dyld image list (or
+`/proc/self/maps` on Linux); an environment variable alone does not count as
+runtime evidence.
 
 RTSan (`-fsanitize=realtime`) verifies the marked hot path never allocates or
 locks — the mechanical half of the allocation-free tick requirement. It needs
@@ -180,9 +203,7 @@ the brew clang (Apple clang rejects the flag):
 cmake -S native -B native/build/rtsan \
   -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DNATIVE_RTSAN=ON
 uv run cmake --build native/build/rtsan -j4
-RTSAN_LIB="$(/opt/homebrew/opt/llvm/bin/clang -print-file-name=libclang_rt.rtsan_osx_dynamic.dylib)"
-NATIVE_TEST_BUILD_DIR=rtsan DYLD_INSERT_LIBRARIES="$RTSAN_LIB" \
-  .venv/bin/python -m pytest tests/reference/test_native_*.py -q
+NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native
 ```
 
 `Stepper::step`/`forward` carry `BIKE_NONBLOCKING` (rtsan.hpp); the full
@@ -203,9 +224,8 @@ Xcode's llvm-cov is used because it matches the producing Apple clang.
 
 The launcher sets `PYTHONDEVMODE=1` everywhere and `MallocScribble`,
 `MallocPreScribble`, `MallocGuardEdges` on quick/native (not `full`, which
-measures realtime). With `NATIVE_TEST_BUILD_DIR=asan` it also exports
-`PYTHONMALLOC=malloc` and the documented `ASAN_OPTIONS` additions, so the
-`native` profile alone is a valid asan run.
+measures realtime). It resolves the selected ASan or RTSan runtime from the
+selected compiler and passes it to CTest and pytest after `uv` launches them.
 
 `tests/reference/test_native_state_fuzz.py` mutates genuine state snapshots
 through Hypothesis and asserts the restore parsers only ever raise the
@@ -284,12 +304,12 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target chec
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build/asan -j4
 ```
 
-Run the same two test modules against `native/build/asan`, with
-`NATIVE_TEST_BUILD_DIR=asan`, `ASAN_OPTIONS=detect_leaks=0`, and the toolchain
-ASan dylib in `DYLD_INSERT_LIBRARIES` passed through `uv run env ... python`.
-Prepend that build directory before importing and assert the extension path.
-The policy and drivetrain tests accept exactly the regular or explicitly
-selected sanitizer build; neither permits an arbitrary extension fallback.
+Run the same two test modules against `native/build/asan` with
+`NATIVE_TEST_BUILD_DIR=asan`; pass `DYLD_INSERT_LIBRARIES`, `ASAN_OPTIONS`,
+and `PYTHONMALLOC` after `uv` starts via `uv run env ... python`. The shared
+loader selects and verifies the extension path. The policy and drivetrain
+tests accept exactly the regular or explicitly selected sanitizer build;
+neither permits an arbitrary extension fallback.
 
 All three transmission models (`elastic_chain`, `ideal_mid_drive`,
 `geometric_ideal_mid_drive`) support the four construction-time drive modes.
@@ -380,3 +400,64 @@ owned compiled model and current data. Real tiny models cover planar hinge and
 slide topology, unrelated nonplanar bodies, invalid joint topology, non-box
 supports, improper support frames, and out-of-range geom IDs. These are local
 per-call gates; whole-episode contact and P4 runtime acceptance remain separate.
+
+## V3 verification record
+
+Verification was run from the V3 tree based on `1ccdfcb28244dd14af6e584f958a40d3dbc04918`.
+The normal native profile passed all preflight gates: 22 selected translation
+units, 27 headers across 54 header TUs, six diagnostic controls, all SDK and
+hardening controls, and CTest 1/1. Pytest collected 690 native extension
+items and completed 758 passed with 15 runtime warnings. The selected artifact
+was `native/build/bike_native.cpython-314-darwin.so`.
+
+The selected ASan smoke used `native/build/asan`, passed the same preflight,
+verified the selected dylib in the Python process's dyld image list, and passed
+the wrong-preload control, one Stepper extension test, and the deliberate C++
+`require` failure control: 6 passed, 752 deselected. The `require` control also
+passed against separately configured Debug and Release builds.
+
+The current `full` profile completed with 1,205 passed, 24 failed, and 48
+warnings in 611.29 seconds. To establish whether the failures predated V3, the
+24 failing node IDs were rerun from an isolated archive of commit `1ccdfcb` in
+`/private/tmp/cpp-port-p2-baseline-1ccdfcb`. That tree used the shared locked
+Python environment with `PYTHONPATH` pointing at its own `src` and
+`native/build`; `bike_sim`, `bike_native`, and all 21 source-manifest entries
+resolved inside the baseline directory. The selected baseline run produced
+24 failed and 15 warnings in 579.75 seconds. Its `.pytest_cache/lastfailed`
+set exactly matched the current full run's set. These are baseline failures;
+the full profile is not green.
+
+Representative baseline traces were: the flat-launch motor threshold observed
+0.5875 against a required 0.8; two coupled-rider tests raised `TOMLDecodeError`
+for a duplicate key at line 104; the scalar/batch period comparison differed
+by about `8.72e-5 J`; the planar-arm model lacked
+`rider_ankle_front`/`rider_ankle_rear`; and a weld-equilibrium run stopped at
+40,000 steps with residual `0.197922`. Rider-weld load checks measured about
+632 N against a 785 N rider weight.
+
+The 24 failing node IDs, identical in the baseline and current full run, are:
+
+- `tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque`
+- `tests/reference/test_coupled_rider_task.py::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step`
+- `tests/reference/test_coupled_rider_task.py::test_tissue_damping_does_not_eat_the_muscle_budget`
+- `tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget`
+- `tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms`
+- `tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush`
+- `tests/reference/test_planar_arms.py::test_compiled_topology_has_two_arms_and_two_grip_sites`
+- `tests/reference/test_realistic_pedelec_acceptance.py::test_flat_reaches_25_kmh_within_10_s`
+- `tests/reference/test_realistic_pedelec_acceptance.py::test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`
+- `tests/reference/test_realistic_pedelec_acceptance.py::test_fifteen_percent_climb_holds_12_kmh`
+- `tests/reference/test_realistic_pedelec_acceptance.py::test_savage_is_ridden_to_the_end`
+- `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]`
+- `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]`
+- `tests/reference/test_rider_allocation.py::test_healthy_step_allocates_a_feasible_command`
+- `tests/reference/test_rider_allocation.py::test_allocated_wrenches_close_the_rider_dynamics`
+- `tests/reference/test_rider_allocation.py::test_infeasible_intent_keeps_the_physical_bounds`
+- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]`
+- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[40.0]`
+- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]`
+- `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock`
+- `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only`
+- `tests/test_rider_welds.py::test_held_rider_weight_is_carried_by_the_connects`
+- `tests/test_rider_welds.py::test_contact_diagnostics_carry_the_solved_weight`
+- `tests/test_rider_welds.py::test_steep_grade_saddle_shear_exceeds_friction`

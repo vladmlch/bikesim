@@ -489,6 +489,14 @@ def _validate_target_context(
             for pos in range(len(arguments))
         )
         if not include_present:
+            include_present = any(
+                argument.startswith(prefix)
+                and argument != prefix
+                and str(_canonical(argument[len(prefix) :], directory)) == resolved
+                for argument in arguments
+                for prefix in ("-isystem", "-iquote", "-idirafter", "-I")
+            )
+        if not include_present:
             raise CheckError(
                 f"compilation database entry {index} omits target {target} include {resolved}"
             )

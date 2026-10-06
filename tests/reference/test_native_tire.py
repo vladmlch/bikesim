@@ -17,13 +17,8 @@ import mujoco
 import numpy as np
 import pytest
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
+from native_loader import load_native
+bike_native = load_native()
 
 from _bits import assert_bitwise_equal
 from test_native_brake_resistance import _golden, _restore
@@ -115,7 +110,6 @@ def _live_applier(env, ref):
 
 @pytest.mark.slow
 def test_tire_qfrc_bitwise(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     from tools.golden_episode import load_episode
     from tools.native_config import project
     env, g = _golden(tmp_path)
@@ -164,7 +158,6 @@ def test_tire_qfrc_bitwise(tmp_path):
 
 @pytest.mark.slow
 def test_tire_state_roundtrip_and_clock(tmp_path):
-    bike_native = pytest.importorskip('bike_native')
     from tools.golden_episode import load_episode
     from tools.native_config import project
     env, g = _golden(tmp_path)
@@ -213,7 +206,6 @@ def _tire_cfg(*missing):
 
 
 def test_tire_requires_config():
-    bike_native = pytest.importorskip('bike_native')
     row = np.zeros(22)
     for st in (bike_native.Stepper(MJB), bike_native.Stepper(MJB, {})):
         with pytest.raises(RuntimeError):
@@ -227,7 +219,6 @@ def test_tire_requires_config():
 
 
 def test_tire_config_missing_key_names_it():
-    bike_native = pytest.importorskip('bike_native')
     with pytest.raises(ValueError, match='backend'):
         bike_native.Stepper(MJB, {'schema': 1, 'tire': {}})
     with pytest.raises(ValueError, match='surface_mode'):
@@ -245,7 +236,6 @@ def test_tire_config_missing_key_names_it():
 
 
 def test_tire_set_state_validation():
-    bike_native = pytest.importorskip('bike_native')
     st = bike_native.Stepper(MJB, _tire_cfg())
     row = np.zeros(len(CANONICAL_NAMES))
     st.set_tire_state(CANONICAL_NAMES, row)
@@ -262,7 +252,6 @@ def test_tire_set_state_validation():
                                      2147483648., -2147483649.,
                                      np.finfo(np.float64).max))
 def test_tire_segment_rejects_invalid_without_mutation(side, segment):
-    bike_native = pytest.importorskip('bike_native')
     st = bike_native.Stepper(MJB, _tire_cfg())
     model = mujoco.MjModel.from_binary_path(MJB)
     data = mujoco.MjData(model)
@@ -289,7 +278,6 @@ def test_tire_segment_rejects_invalid_without_mutation(side, segment):
 @pytest.mark.parametrize('segment', (-2147483648., -1., 0.,
                                      2147483647., np.nan))
 def test_tire_segment_int_boundaries_and_unset_roundtrip(side, segment):
-    bike_native = pytest.importorskip('bike_native')
     st = bike_native.Stepper(MJB, _tire_cfg())
     row = np.zeros(len(CANONICAL_NAMES))
     idx = CANONICAL_NAMES.index(f'{side}.segment')
@@ -300,7 +288,6 @@ def test_tire_segment_int_boundaries_and_unset_roundtrip(side, segment):
 def test_tire_qfrc_happy_path_and_clock():
     """Non-slow smoke on the pinned model: slide root_x/rider_root_x +0.6 so
     both wheels sit over the road, then tire_qfrc advances once per time."""
-    bike_native = pytest.importorskip('bike_native')
     m = mujoco.MjModel.from_binary_path(MJB)
     d = mujoco.MjData(m)
     d.qpos[0] += 0.6

@@ -166,6 +166,21 @@ execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
+# Resolve standalone third-party header roots before adding the direct-contract
+# targets; their header sweep compiles every first-party native/src header.
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -m nanobind --include_dir
+  RESULT_VARIABLE _native_nb_include_result
+  OUTPUT_VARIABLE _native_nb_include
+  ERROR_VARIABLE _native_nb_include_error
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT _native_nb_include_result EQUAL 0 OR NOT IS_DIRECTORY "${_native_nb_include}")
+  message(FATAL_ERROR "Cannot resolve nanobind include directory: ${_native_nb_include_error}")
+endif()
+get_filename_component(_native_nb_package "${_native_nb_include}/.." REALPATH)
+get_filename_component(_native_robin_include "${_native_nb_package}/ext/robin_map/include" REALPATH)
+get_filename_component(_native_python_include "${Python_INCLUDE_DIRS}" REALPATH)
+
 set(_native_hardening_probe_dir "${CMAKE_BINARY_DIR}/native_check_work/libcpp-hardening")
 file(MAKE_DIRECTORY "${_native_hardening_probe_dir}")
 set(_native_libcpp_probe_source "${_native_hardening_probe_dir}/detect_libcpp.cpp")
@@ -225,7 +240,7 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp src/stepper.cpp src/writers/suspension.cpp
   src/writers/brake.cpp src/writers/cruise.cpp src/writers/resistance.cpp
   src/writers/rider_forces.cpp src/writers/tire.cpp src/tyre/profile.cpp
-  src/drivetrain/pedaling.cpp src/drivetrain/shifting.cpp
+  src/drivetrain/shifting.cpp
   src/drivetrain/motor.cpp src/drivetrain/freehub.cpp src/drivetrain/policy_binding.cpp
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp src/drivetrain/drive_binding.cpp
   src/writers/drivetrain.cpp
@@ -362,6 +377,60 @@ if(NATIVE_COVERAGE)
   target_link_options(bike_native PRIVATE -fprofile-instr-generate)
 endif()
 
+# Share Python-free drivetrain code with direct native contract tests. The
+# object is compiled once with the extension's complete warning, hardening,
+# sanitizer, and coverage context, and remains PIC for module linkage.
+add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp)
+set_target_properties(bike_native_contract_core PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+get_target_property(_native_contract_compile_options bike_native COMPILE_OPTIONS)
+get_target_property(_native_contract_compile_definitions bike_native COMPILE_DEFINITIONS)
+get_target_property(_native_contract_include_directories bike_native INCLUDE_DIRECTORIES)
+if(_native_contract_compile_options)
+  target_compile_options(bike_native_contract_core PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_native_contract_core PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_include_directories)
+  target_include_directories(bike_native_contract_core SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_native_contract_core SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+target_link_libraries(bike_native PRIVATE bike_native_contract_core)
+
+add_executable(native_contract_tests tests/test_contracts.cpp)
+set_target_properties(native_contract_tests PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(native_contract_tests PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(native_contract_tests PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_include_directories)
+  target_include_directories(native_contract_tests SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(native_contract_tests SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+get_target_property(_native_contract_link_options bike_native LINK_OPTIONS)
+if(_native_contract_link_options)
+  target_link_options(native_contract_tests PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core)
+
+include(CTest)
+if(BUILD_TESTING)
+  add_test(NAME native_contract_tests COMMAND native_contract_tests)
+endif()
+
 target_link_libraries(bike_native PRIVATE "${MJ_DIR}/libmujoco.3.12.0.dylib")
 
 # The resistance writer calls the legacy CBLAS symbols numpy's `@`/`np.dot`
@@ -448,19 +517,7 @@ function(_native_json_array output)
   set(${output} "${_json}" PARENT_SCOPE)
 endfunction()
 
-execute_process(
-  COMMAND "${Python_EXECUTABLE}" -m nanobind --include_dir
-  RESULT_VARIABLE _native_nb_include_result
-  OUTPUT_VARIABLE _native_nb_include
-  ERROR_VARIABLE _native_nb_include_error
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(NOT _native_nb_include_result EQUAL 0 OR NOT IS_DIRECTORY "${_native_nb_include}")
-  message(FATAL_ERROR "Cannot resolve nanobind include directory: ${_native_nb_include_error}")
-endif()
-get_filename_component(_native_nb_package "${_native_nb_include}/.." REALPATH)
-get_filename_component(_native_robin_include "${_native_nb_package}/ext/robin_map/include" REALPATH)
 get_filename_component(_native_mujoco_library "${MJ_DIR}/libmujoco.3.12.0.dylib" REALPATH)
-get_filename_component(_native_python_include "${Python_INCLUDE_DIRS}" REALPATH)
 
 set(_native_required_includes
   "${CMAKE_CURRENT_SOURCE_DIR}/src"

@@ -14,14 +14,8 @@ import sys
 import numpy as np
 import pytest
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
-import bike_native
+from native_loader import load_native
+bike_native = load_native()
 
 hypothesis = pytest.importorskip('hypothesis')
 from hypothesis import HealthCheck, given, settings, strategies as st

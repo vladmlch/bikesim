@@ -200,6 +200,31 @@ def test_shared_source_with_distinct_target_contexts_is_selected_twice(tmp_path:
     assert {entry["source"] for entry in selected} == {source.resolve()}
 
 
+@pytest.mark.parametrize("include_flag", ["-I", "-isystem", "-iquote", "-idirafter"])
+def test_target_context_accepts_joined_include_flags(tmp_path: Path, include_flag: str) -> None:
+    source = tmp_path / "native" / "src" / "one.cpp"
+    include_directory = tmp_path / "target-include"
+    include_directory.mkdir()
+    entry = compile_entry(
+        source,
+        tmp_path,
+        arguments=True,
+        extra=[f"{include_flag}{include_directory}"],
+    )
+    build, expected = write_fixture(tmp_path, entries=[entry])
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["target_contexts"]["bike_native"]["include_directories"] = [
+        str(include_directory.resolve())
+    ]
+    context_path.write_text(json.dumps(context))
+
+    selected = load_entries(build, expected)
+
+    assert len(selected) == 1
+    assert selected[0]["source"] == source.resolve()
+
+
 def test_empty_compilation_database_fails_for_expected_sources(tmp_path: Path) -> None:
     source = tmp_path / "native" / "src" / "one.cpp"
     build, expected = write_fixture(tmp_path, entries=[])

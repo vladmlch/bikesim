@@ -18,15 +18,8 @@ from bike_sim.physics.physical_config import PhysicalDriveConfig, PedalingConfig
 from bike_sim.sim.ride.drivetrain_forces import DrivetrainForceApplier
 from _bits import assert_bitwise_equal
 
-BUILD = Path(__file__).resolve().parents[2] / 'native' / 'build'
-selected = os.environ.get('NATIVE_TEST_BUILD_DIR', '')
-if selected not in ('', 'asan', 'coverage', 'rtsan'):
-    raise ValueError('NATIVE_TEST_BUILD_DIR must be empty or a known build dir')
-if selected:
-    BUILD /= selected
-sys.path.insert(0, str(BUILD))
-import bike_native
-assert Path(bike_native.__file__).resolve().parent == BUILD.resolve()
+from native_loader import load_native
+bike_native = load_native()
 
 # Exact snapshot keys are Python vars(), excluding immutable setup objects.
 KEYS = {

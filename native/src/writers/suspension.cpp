@@ -318,7 +318,9 @@ SuspensionWriter::SuspensionWriter(const mjModel *m,
     if (!std::isfinite(f.total_travel_mm) || f.total_travel_mm <= 0.0)
         throw std::invalid_argument(
             "fork travel must be finite and positive");
-    if (!(0.0 < f.total_travel_mm - f.hbo_start_mm &&
+    if (!std::isfinite(f.hbo_start_mm) || f.hbo_start_mm < 0.0)
+        throw std::invalid_argument("config.suspension.fork_damper.hbo_start_mm: invalid HBO start");
+    if (!f.legacy_behavior && !(0.0 < f.total_travel_mm - f.hbo_start_mm &&
           f.total_travel_mm - f.hbo_start_mm <= f.total_travel_mm))
         throw std::invalid_argument(
             "fork HBO zone must be positive and no longer than travel");

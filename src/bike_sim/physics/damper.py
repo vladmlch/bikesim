@@ -185,6 +185,9 @@ class Charger3Damper(BaseDamper):
             v_knee_comp=0.18,
             v_knee_reb=0.22,
         )
+        if type(legacy_behavior) is not bool:
+            raise ValueError("Charger3Damper.legacy_behavior: expected bool")
+        self.legacy_behavior = legacy_behavior
         self.hbo_start_mm = 160.0 if legacy_behavior else total_travel_mm - 20.0
         if not legacy_behavior and not 0.0 < total_travel_mm - self.hbo_start_mm <= total_travel_mm:
             raise ValueError("fork HBO zone must be positive and no longer than travel")

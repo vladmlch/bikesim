@@ -35,6 +35,8 @@ public:
     // ONCE here; nothing keeps a reference into Python objects.
     Stepper(const std::string &mjb_path, const nanobind::dict &config);
 
+    Stepper(const std::string &mjb_path, nanobind::handle config);
+
     ~Stepper();
 
     Stepper(const Stepper &) = delete;

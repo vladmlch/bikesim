@@ -1,12 +1,13 @@
 // config.hpp — the config bridge: nanobind dict → typed writer configs.
 //
-// `tools.native_config.project(env)` emits {'schema': 1, '<writer>': {...}}
+// `tools.native_config.project(env)` emits {'schema': 2, '<writer>': {...}}
 // carrying ONLY the fields the ported writers read. An empty dict leaves
 // every writer disabled (the Stepper(path) contract stays intact). Every
 // required key that is missing raises std::invalid_argument naming the
 // key — nanobind's default exception translator surfaces it as ValueError.
-// Type/semantic validation beyond key presence lives in the writers'
-// constructors, mirroring where Python puts it (dataclass vs __init__).
+// Readers validate exact keys, original scalar/sequence types and finiteness.
+// Physical invariants also remain enforced by each typed writer constructor.
+// Schema 1 migrates resolved fork metadata without reconstructing defaults.
 #pragma once
 
 #include <algorithm>
@@ -20,189 +21,139 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include "diag.hpp"
+#include "config_types.hpp"
+#include "binding_readers.hpp"
 #include "drivetrain/drive_binding.hpp"
 
 namespace nb = nanobind;
 
 namespace nativecfg {
-    // --- typed configs (mirror the Python objects' used attributes) -----------
-
-    // AirSpringSpecs fields the force path reads; the "properties" are the same
-    // expressions as physics/air_spring.py so derived values are bitwise-equal.
-    struct AirSpringSpec {
-        double stanchion_inner_diam_mm;
-        double total_travel_mm;
-        double pos_chamber_length_mm;
-        double neg_chamber_length_mm;
-        double token_volume_cm3;
-        int max_tokens;
-        double gamma;
-        double atm_pressure_pa;
-    };
-
-    struct AirSpringConfig {
-        AirSpringSpec specs;
-        int num_tokens;
-        double gauge_pressure_psi;
-    };
-
-    // BaseDamper resolved fields. `total_travel_mm` is NOT here: Charger 3 reads
-    // it, Super Deluxe reads `total_stroke_mm` instead — each subclass section
-    // carries the name its methods use, like the Python classes do.
-    struct DamperCore {
-        int max_hsc, max_lsc, max_reb;
-        int hsc_clicks, lsc_clicks, rebound_clicks; // ctor-clamped below
-        double c_lsc_min, c_lsc_max;
-        double c_hsc_min, c_hsc_max;
-        double c_reb_min, c_reb_max;
-        double v_knee_comp, v_knee_reb;
-    };
-
-    struct Charger3Config {
-        DamperCore core;
-        double total_travel_mm;
-        double hbo_start_mm;
-        double c_hbo_base;
-    };
-
-    struct SuperDeluxeConfig {
-        DamperCore core;
-        double total_stroke_mm;
-        int max_hbo, hbo_clicks;
-        bool lockout_firm;
-        bool legacy_behavior;
-        double hbo_start_mm;
-        double c_hbo_min, c_hbo_max;
-        double lockout_preload_n, lockout_stiffness;
-    };
-
-    struct CoilConfig {
-        double rate_n_m, preload_mm, stroke_mm;
-        double bumper_length_mm, bumper_peak_n;
-        bool legacy_behavior;
-
-        [[nodiscard]] double bumper_engage_mm() const {
-            return stroke_mm - bumper_length_mm;
-        }
-    };
-
-    struct EndStopConfig {
-        double stiffness_n_m, damping_n_s_m;
-    };
-
-    struct SuspensionConfig {
-        std::string physics_mode;
-        std::string fork_joint, shock_joint;
-        AirSpringConfig air_spring{};
-        Charger3Config fork_damper{};
-        SuperDeluxeConfig shock_damper{};
-        CoilConfig coil{};
-        EndStopConfig end_stops{};
-    };
-
-    // BrakeController fields (braking.py:39-65): ceiling and taper band. The
-    // wheel/actuator names it resolves are literals in the Python source, so
-    // they live in the writer, not the config.
-    struct BrakeConfig {
-        double torque_ceiling_nm;
-        double taper_radps;
-    };
-
-    struct CruiseConfig {
-        double target_speed_kmh;
-        double kp_nm_per_mps;
-        double ki_nm_per_mps_s;
-        double torque_ceiling_nm;
-    };
-
-    // ResistanceConfig fields ExternalResistanceApplier reads (physical_config.
-    // py:266-284), plus the body names its __init__ resolves — literals there
-    // too, emitted so a differently-named model stays describable.
-    struct ResistanceConfig {
-        double crr{};
-        double rolling_taper_rad_s{};
-        double rho_kg_m3{};
-        double cda_m2{};
-        std::array<double, 3> wind_world_mps{};
-        std::array<double, 3> point_body_m{};
-        std::string frame_body, front_wheel_body, rear_wheel_body;
-    };
-
-    // TireSpec fields (physics/tire.py:31-50) — the linear radial material the
-    // compliant_2d path reads, plus the load-range declaration its validity flag
-    // consumes. `provenance`/`pressure_pa_gauge` ride along for completeness; the
-    // writer only validates them the way TireSpec.__post_init__ does.
-    struct TireMaterial {
-        double radial_k_n_m{}, radial_c_ns_m{}, pressure_pa_gauge{};
-        std::string provenance;
-        std::array<double, 2> valid_load_range_n{};
-    };
-
-    // TireParameters (physical_config.py:23-35).
-    struct TireParams {
-        TireMaterial material;
-        double tangent_k_n_m{}, mu{}, relaxation_length_m{};
-    };
-
-    // SurfaceSpec (terrain/surface.py:31-88) with the registry name already
-    // resolved — the writer only ever calls mu(slip) and reads .name.
-    struct SurfaceSpec {
-        std::string name;
-        double mu_peak{}, mu_slide{}, slip_stiffness_per_load{}, stribeck_speed_mps{};
-    };
-
-    // SurfaceSection — a half-open material interval on the track axis.
-    struct SurfaceSection {
-        double start_m, end_m;
-        SurfaceSpec surface;
-    };
-
-    // SurfaceMap (terrain/surface.py:160-206): a default material plus sorted
-    // non-overlapping sections; `at` scans sections then falls back to default.
-    struct SurfaceMap {
-        SurfaceSpec surface;
-        std::vector<SurfaceSection> sections;
-    };
-
-    // TireBackendConfig (physical_config.py:38-63), restricted to the backend the
-    // native port implements: 'compliant_2d'.
-    struct TireConfig {
-        std::string backend;
-        std::string surface_mode; // 'configured' | 'track'
-        TireParams front, rear;
-        double significant_delta_m{}, significance_fraction{}, distinct_normal_deg{};
-        std::optional<SurfaceMap> surface_map;
-    };
-
-    // RiderForceApplier per-path state (rider_forces.py:35-76): the body's
-    // resolved spring params plus the construction-time pedal offset
-    // (set_pedal_offsets is applied before project() runs — the config carries
-    // the effective offset_m, not the crank derivation). `joint` re-resolves to
-    // qposadr/dofadr through _resolve_slide's checks.
-    struct RiderPathConfig {
-        std::string joint;
-        double stiffness_n_m, damping_ns_m;
-        double preload_deflection_m, offset_m;
-        bool unilateral;
-    };
-
-    struct RiderForcesConfig {
-        std::vector<RiderPathConfig> paths; // _paths order
-    };
-
-    struct NativeConfig {
-        std::optional<drivetrain::DriveConfig> drive;
-        std::optional<CruiseConfig> cruise;
-        std::optional<SuspensionConfig> suspension;
-        std::optional<BrakeConfig> brake;
-        std::optional<ResistanceConfig> resistance;
-        std::optional<TireConfig> tire;
-        std::optional<RiderForcesConfig> rider_forces;
-    };
-
     // --- dict readers ----------------------------------------------------------
 
     namespace detail {
+        inline void section_keys(const nb::dict &d, std::string_view name, std::string_view public_path = {}) {
+            if (name == "config") {
+                constexpr auto required = wire::keys("schema");
+                constexpr auto optional = wire::keys("drive", "cruise", "suspension", "brake", "resistance", "tire", "rider_forces");
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "suspension") {
+                constexpr auto required = wire::keys("physics_mode", "joints", "air_spring", "fork_damper", "shock_damper", "coil", "end_stops");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "suspension.joints") {
+                constexpr auto required = wire::keys("fork", "shock");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "suspension.air_spring") {
+                constexpr auto required = wire::keys("stanchion_inner_diam_mm", "total_travel_mm", "pos_chamber_length_mm", "neg_chamber_length_mm", "token_volume_cm3", "max_tokens", "gamma", "atm_pressure_pa", "num_tokens", "gauge_pressure_psi");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "suspension.fork_damper") {
+                constexpr auto required = wire::keys("max_hsc", "max_lsc", "max_reb", "hsc_clicks", "lsc_clicks", "rebound_clicks", "c_lsc_min", "c_lsc_max", "c_hsc_min", "c_hsc_max", "c_reb_min", "c_reb_max", "v_knee_comp", "v_knee_reb", "total_travel_mm", "hbo_start_mm", "c_hbo_base");
+                constexpr auto optional = wire::keys("legacy_behavior");
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "suspension.shock_damper") {
+                constexpr auto required = wire::keys("max_hsc", "max_lsc", "max_reb", "hsc_clicks", "lsc_clicks", "rebound_clicks", "c_lsc_min", "c_lsc_max", "c_hsc_min", "c_hsc_max", "c_reb_min", "c_reb_max", "v_knee_comp", "v_knee_reb", "total_stroke_mm", "max_hbo", "hbo_clicks", "lockout_firm", "legacy_behavior", "hbo_start_mm", "c_hbo_min", "c_hbo_max", "lockout_preload_n", "lockout_stiffness");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "suspension.coil") {
+                constexpr auto required = wire::keys("rate_n_m", "preload_mm", "stroke_mm", "bumper_length_mm", "bumper_peak_n", "legacy_behavior");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "suspension.end_stops") {
+                constexpr auto required = wire::keys("stiffness_n_m", "damping_n_s_m");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "brake") {
+                constexpr auto required = wire::keys("torque_ceiling_nm", "taper_radps");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "cruise") {
+                constexpr auto required = wire::keys("target_speed_kmh", "kp_nm_per_mps", "ki_nm_per_mps_s", "torque_ceiling_nm");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "resistance") {
+                constexpr auto required = wire::keys("crr", "rolling_taper_rad_s", "rho_kg_m3", "cda_m2", "wind_world_mps", "point_body_m", "bodies");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "resistance.bodies") {
+                constexpr auto required = wire::keys("frame", "front_wheel", "rear_wheel");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire") {
+                constexpr auto required = wire::keys("backend", "surface_mode", "front", "rear", "significant_delta_m", "significance_fraction", "distinct_normal_deg");
+                constexpr auto optional = wire::keys("surface_map");
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.front" || name == "tire.rear") {
+                constexpr auto required = wire::keys("material", "tangent_k_n_m", "mu", "relaxation_length_m");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.front.material" || name == "tire.rear.material") {
+                constexpr auto required = wire::keys("radial_k_n_m", "radial_c_ns_m", "pressure_pa_gauge", "provenance", "valid_load_range_n");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name.ends_with(".surface")) {
+                constexpr auto required = wire::keys("name", "mu_peak", "mu_slide", "slip_stiffness_per_load", "stribeck_speed_mps");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.surface_map") {
+                constexpr auto required = wire::keys("surface", "sections");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.surface_map.sections") {
+                constexpr auto required = wire::keys("start_m", "end_m", "surface");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "rider_forces") {
+                constexpr auto required = wire::keys("paths");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "rider_forces.paths") {
+                constexpr auto required = wire::keys("joint", "stiffness_n_m", "damping_ns_m", "preload_deflection_m", "offset_m", "unilateral");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+        }
+
         inline nb::object req(const nb::dict &d, const char *section,
                               const char *key) {
             if (!d.contains(key))
@@ -219,60 +170,33 @@ namespace nativecfg {
                 throw std::invalid_argument(
                     "native config: '" + std::string(section) + "." + key +
                     "' must be a dict");
-            return nb::borrow<nb::dict>(v);
+            const auto result = nb::borrow<nb::dict>(v);
+            const std::string name = std::string(section) == "config" ? key : std::string(section) + "." + key;
+            section_keys(result, name);
+            return result;
+        }
+
+        inline std::string path(const char *s, const char *k) {
+            return std::string(s).starts_with("config") ? std::string(s) + "." + k : "config." + std::string(s) + "." + k;
         }
 
         inline double req_f64(const nb::dict &d, const char *s, const char *k) {
-            return nb::cast<double>(req(d, s, k));
+            return wire::finite_real(req(d, s, k), path(s, k));
         }
-
         inline int req_int(const nb::dict &d, const char *s, const char *k) {
-            return nb::cast<int>(req(d, s, k));
+            return wire::integer32(req(d, s, k), path(s, k));
         }
-
         inline bool req_bool(const nb::dict &d, const char *s, const char *k) {
-            return nb::cast<bool>(req(d, s, k));
+            return wire::boolean(req(d, s, k), path(s, k));
         }
-
         inline std::string req_str(const nb::dict &d, const char *s, const char *k) {
-            return nb::cast<std::string>(req(d, s, k));
+            return wire::string(req(d, s, k), path(s, k));
         }
-
-        // Exactly-three-floats sequence reader (wind_world_mps / point_body_m). A
-        // non-sequence or wrong length raises naming the key, like req_* above.
-        inline std::array<double, 3> req_vec3(const nb::dict &d, const char *s,
-                                              const char *k) {
-            std::vector<double> v;
-            try {
-                v = nb::cast<std::vector<double> >(req(d, s, k));
-            } catch (const nb::cast_error &) {
-                throw std::invalid_argument(
-                    "native config: '" + std::string(s) + "." + k +
-                    "' must be a sequence of 3 floats");
-            }
-            if (v.size() != 3)
-                throw std::invalid_argument(
-                    "native config: '" + std::string(s) + "." + k +
-                    "' must have exactly 3 elements");
-            return {v[0], v[1], v[2]};
+        inline std::array<double, 3> req_vec3(const nb::dict &d, const char *s, const char *k) {
+            return wire::fixed<3>(req(d, s, k), path(s, k));
         }
-
-        // Two-float sequence reader (tire valid_load_range_n).
-        inline std::array<double, 2> req_vec2(const nb::dict &d, const char *s,
-                                              const char *k) {
-            std::vector<double> v;
-            try {
-                v = nb::cast<std::vector<double> >(req(d, s, k));
-            } catch (const nb::cast_error &) {
-                throw std::invalid_argument(
-                    "native config: '" + std::string(s) + "." + k +
-                    "' must be a sequence of 2 floats");
-            }
-            if (v.size() != 2)
-                throw std::invalid_argument(
-                    "native config: '" + std::string(s) + "." + k +
-                    "' must have exactly 2 elements");
-            return {v[0], v[1]};
+        inline std::array<double, 2> req_vec2(const nb::dict &d, const char *s, const char *k) {
+            return wire::fixed<2>(req(d, s, k), path(s, k));
         }
 
         // Returns the parsed struct by value deliberately; -Wlarge-by-value-copy
@@ -305,14 +229,14 @@ namespace nativecfg {
         NATIVE_DIAG_POP
     } // namespace detail
 
-    inline SuspensionConfig suspension_from_dict(const nb::dict &top) {
+    inline SuspensionConfig suspension_from_dict(const nb::dict &top, int schema) {
         const char *s = "suspension";
         const nb::dict d = detail::req_dict(top, "config", s);
         SuspensionConfig c;
         c.physics_mode = detail::req_str(d, s, "physics_mode");
         if (c.physics_mode != "legacy" && c.physics_mode != "physical")
             throw std::invalid_argument(
-                "native config: suspension.physics_mode must be 'legacy' or "
+                "config.suspension.physics_mode must be 'legacy' or "
                 "'physical'");
         {
             const nb::dict j = detail::req_dict(d, s, "joints");
@@ -346,6 +270,12 @@ namespace nativecfg {
             c.fork_damper.total_travel_mm = detail::req_f64(f, sf, "total_travel_mm");
             c.fork_damper.hbo_start_mm = detail::req_f64(f, sf, "hbo_start_mm");
             c.fork_damper.c_hbo_base = detail::req_f64(f, sf, "c_hbo_base");
+            if (schema == 1 && f.contains("legacy_behavior"))
+                wire::invalid("config.suspension.fork_damper.legacy_behavior", "unknown schema-1 key");
+            // Schema 1 retains the historical resolved branch; never reconstruct defaults.
+            c.fork_damper.legacy_behavior = schema == 1
+                ? c.fork_damper.hbo_start_mm == 160.0
+                : detail::req_bool(f, sf, "legacy_behavior");
         }
         {
             const nb::dict h = detail::req_dict(d, s, "shock_damper");
@@ -418,6 +348,7 @@ namespace nativecfg {
     }
 
     inline SurfaceSpec surface_spec_from_dict(const nb::dict &d, const char *s) {
+        detail::section_keys(d, s);
         SurfaceSpec c;
         c.name = detail::req_str(d, s, "name");
         c.mu_peak = detail::req_f64(d, s, "mu_peak");
@@ -429,10 +360,12 @@ namespace nativecfg {
     }
 
     inline TireParams tire_params_from_dict(const nb::dict &d, const char *s) {
+        detail::section_keys(d, s);
         TireParams p;
         {
             const nb::dict m = detail::req_dict(d, s, "material");
-            const char *sm = "tire.material";
+            const std::string sm_path = std::string(s) + ".material";
+            const char *sm = sm_path.c_str();
             p.material = {
                 .radial_k_n_m = detail::req_f64(m, sm, "radial_k_n_m"),
                 .radial_c_ns_m = detail::req_f64(m, sm, "radial_c_ns_m"),
@@ -456,11 +389,11 @@ namespace nativecfg {
         // say so (project() never emits another backend).
         if (c.backend != "compliant_2d")
             throw std::invalid_argument(
-                "native config: tire.backend must be 'compliant_2d'");
+                "config.tire.backend must be 'compliant_2d'");
         c.surface_mode = detail::req_str(d, s, "surface_mode");
         if (c.surface_mode != "configured" && c.surface_mode != "track")
             throw std::invalid_argument(
-                "native config: tire.surface_mode must be 'configured' or "
+                "config.tire.surface_mode must be 'configured' or "
                 "'track'");
         c.front = tire_params_from_dict(
             detail::req_dict(d, s, "front"), "tire.front");
@@ -470,7 +403,7 @@ namespace nativecfg {
         c.significance_fraction =
                 detail::req_f64(d, s, "significance_fraction");
         c.distinct_normal_deg = detail::req_f64(d, s, "distinct_normal_deg");
-        if (c.surface_mode == "track") {
+        if (c.surface_mode == "track" || d.contains("surface_map")) {
             const nb::dict sm =
                     detail::req_dict(d, s, "surface_map");
             const char *smn = "tire.surface_map";
@@ -479,24 +412,23 @@ namespace nativecfg {
                 detail::req_dict(sm, smn, "surface"),
                 "tire.surface_map.surface");
             const nb::object raw = detail::req(sm, smn, "sections");
-            if (!nb::isinstance<nb::list>(raw) &&
-                !nb::isinstance<nb::tuple>(raw))
-                throw std::invalid_argument(
-                    "native config: 'tire.surface_map.sections' must be a "
-                    "sequence of dicts");
-            for (nb::handle const item: nb::borrow<nb::sequence>(raw)) {
+            const auto sections = wire::sequence(raw, "config.tire.surface_map.sections");
+            std::size_t section_index = 0;
+            for (nb::handle const item: sections) {
                 if (!nb::isinstance<nb::dict>(item))
                     throw std::invalid_argument(
                         "native config: 'tire.surface_map.sections' entries "
                         "must be dicts");
                 const nb::dict sec = nb::borrow<nb::dict>(item);
-                const char *ss = "tire.surface_map.sections";
+                const std::string section_path = "tire.surface_map.sections." + std::to_string(section_index++);
+                const char *ss = section_path.c_str();
+                detail::section_keys(sec, "tire.surface_map.sections", "config." + section_path);
                 map.sections.push_back({
                     .start_m = detail::req_f64(sec, ss, "start_m"),
                     .end_m = detail::req_f64(sec, ss, "end_m"),
                     .surface = surface_spec_from_dict(
                         detail::req_dict(sec, ss, "surface"),
-                        "tire.surface_map.sections.surface"),
+                        (section_path + ".surface").c_str()),
                 });
             }
             c.surface_map = std::move(map);
@@ -509,16 +441,16 @@ namespace nativecfg {
         const nb::dict d = detail::req_dict(top, "config", s);
         RiderForcesConfig c;
         const nb::object raw = detail::req(d, s, "paths");
-        if (!nb::isinstance<nb::list>(raw) && !nb::isinstance<nb::tuple>(raw))
-            throw std::invalid_argument(
-                "native config: 'rider_forces.paths' must be a sequence of "
-                "dicts");
-        for (nb::handle const item: nb::borrow<nb::sequence>(raw)) {
+        const auto paths = wire::sequence(raw, "config.rider_forces.paths");
+        std::size_t path_index = 0;
+        for (nb::handle const item: paths) {
             if (!nb::isinstance<nb::dict>(item))
                 throw std::invalid_argument(
                     "native config: 'rider_forces.paths' entries must be dicts");
             const nb::dict p = nb::borrow<nb::dict>(item);
-            const char *sp = "rider_forces.paths";
+            const std::string path = "rider_forces.paths." + std::to_string(path_index++);
+            const char *sp = path.c_str();
+            detail::section_keys(p, "rider_forces.paths", "config." + path);
             c.paths.push_back({
                 .joint = detail::req_str(p, sp, "joint"),
                 .stiffness_n_m = detail::req_f64(p, sp, "stiffness_n_m"),
@@ -535,10 +467,11 @@ namespace nativecfg {
     // caller before this runs); a non-empty one must name the schema and may
     // carry each writer's section.
     inline NativeConfig native_config_from_dict(const nb::dict &d) {
+        detail::section_keys(d, "config");
         const int schema = detail::req_int(d, "config", "schema");
-        if (schema != 1)
+        if (schema != 1 && schema != 2)
             throw std::invalid_argument(
-                "native config: unsupported schema " + std::to_string(schema));
+                "config.schema: unsupported schema " + std::to_string(schema));
         NativeConfig c;
         if (d.contains("drive"))
             c.drive = parse_drive_config(detail::req_dict(d, "config", "drive"));
@@ -552,7 +485,7 @@ namespace nativecfg {
             };
         }
         if (d.contains("suspension"))
-            c.suspension = suspension_from_dict(d);
+            c.suspension = suspension_from_dict(d, schema);
         if (d.contains("brake"))
             c.brake = brake_from_dict(d);
         if (d.contains("resistance"))

@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "../config.hpp"
+#include "../config_types.hpp"
 
 class SuspensionWriter {
 public:

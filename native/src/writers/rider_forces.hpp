@@ -14,7 +14,7 @@
 
 #include <vector>
 
-#include "../config.hpp"
+#include "../config_types.hpp"
 
 class RiderForcesWriter {
 public:

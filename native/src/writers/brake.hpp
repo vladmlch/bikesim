@@ -12,7 +12,7 @@
 
 #include <utility>
 
-#include "../config.hpp"
+#include "../config_types.hpp"
 
 class BrakeWriter {
 public:

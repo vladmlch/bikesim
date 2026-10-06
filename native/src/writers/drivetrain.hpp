@@ -20,14 +20,6 @@ namespace drivetrain {
         ArithmeticError &operator=(ArithmeticError &&) = default;
     };
 
-    struct DriveConfig {
-        DrivePolicyConfig policies;
-        std::string drive_mode, transmission_model;
-        double human_torque_nm{}, torque_ripple{}, crank_phase_rad{}, chain_k_n_m{},
-                chain_c_ns_m{}, bearing_c_nms_rad{}, rotor_inertia_kgm2{};
-        bool motor_clutch{};
-    };
-
     struct RideControl {
         std::optional<double> motor_torque_nm, motor_limit_nm, human_torque_nm;
         bool rider_enabled = true;

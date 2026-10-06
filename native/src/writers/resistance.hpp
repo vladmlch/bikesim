@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "../config.hpp"
+#include "../config_types.hpp"
 
 // One side's tire snapshot, flattened for the binding boundary: the fields
 // compute_components reads (per-patch normal_load_n / working_surface in

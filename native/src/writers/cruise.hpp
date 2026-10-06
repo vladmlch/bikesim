@@ -4,7 +4,7 @@
 #include <mujoco/mujoco.h>
 #include <optional>
 
-#include "../config.hpp"
+#include "../config_types.hpp"
 
 struct CruiseState {
     double target_speed_mps;

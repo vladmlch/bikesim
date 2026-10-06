@@ -39,6 +39,9 @@ namespace {
     }
 } // namespace
 
+Stepper::Stepper(const std::string &mjb_path, nanobind::handle config)
+    : Stepper(mjb_path, wire::mapping(config, "config")) {}
+
 Stepper::Stepper(const std::string &mjb_path) : m_(nullptr), d_(nullptr) {
     // Reject raw C timers before any engine operation can call them while a
     // fatal-error jump frame is active. Stock Python trampolines catch their

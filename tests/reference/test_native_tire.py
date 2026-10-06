@@ -305,7 +305,7 @@ def test_tire_qfrc_happy_path_and_clock():
     st.forward()
     with pytest.raises(ValueError, match='tire interval'):
         st.tire_qfrc(0.0)
-    with pytest.raises(ValueError, match='tire interval'):
+    with pytest.raises(ValueError, match='tire_qfrc.dt'):
         st.tire_qfrc(float('nan'))
     # Time advanced: the interval check passes and compute runs again —
     # then the same-timestamp call errors once more.

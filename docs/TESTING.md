@@ -550,9 +550,9 @@ internal `mjModel` and then call its fatal handler before returning any pointer
 to the caller. A model with an invalid equality type reproduces a recoverable
 `mujoco.FatalError` at `mj_validateReferences`, but the native owner cannot
 free MuJoCo's unreturned partial model. The same applies to a late allocation
-failure inside that loader. This S5 cleanup requirement remains open pending
-an owned loader API or an approved scope change; process survival does not
-prove leak-free loading.
+failure inside that loader. The user chose to document this upstream limit,
+keep the S5 cleanup requirement and overall gate open, and continue independent
+plan tasks. Process survival does not prove leak-free loading.
 
 MuJoCo's stock `MjData` installs a C-level `mjcb_time = GetTime`, so that slot
 is supported. Its module origin is checked and its lazy clock epoch is warmed
@@ -600,3 +600,82 @@ During RTSan verification, the context
 checker was corrected to retain the C++ driver symlink and to allow the
 default-SDK control to choose its own compiler; the launcher now reads CMake's
 `UNINITIALIZED` compiler cache entry as well as `FILEPATH` and `STRING`.
+
+## F1 strict wire readers and native config schema 2
+
+`tools.native_config.project` now emits schema 2. The fork damper carries an
+exact `legacy_behavior` boolean; Python `Charger3Damper` retains that flag.
+Schema 2 requires it. Schema 1 remains supported and infers the historical
+fork branch only when the already resolved `hbo_start_mm == 160.0`. Migration
+keeps every resolved click, coefficient, velocity knee, travel and HBO value;
+it never reconstructs a damper using defaults. This also preserves the
+ambiguous modern 180 mm fork, whose resolved force law is identical. A schema
+1 fork rejects schema 2's new metadata key.
+
+Config types and numeric predicates are available independently of Python in
+`native/src/config_types.hpp` and `native/src/validation.hpp`. The nanobind
+readers use exact keys, full public field paths, exact builtin booleans and
+Python/NumPy real and integral scalar classification. Numeric fields and
+numeric sequences reject booleans before conversion. Lists, tuples and
+promised ordered sequence interfaces remain supported; unordered sets and
+bare iterators are rejected. Genuine allocation failures retain their normal
+memory exception. Resolved Python projection values are checked before
+builtin conversion, including attributes changed after construction.
+
+The existing disabled-writer convention is retained: an empty root dict
+turns off all writers; an absent optional writer section disables that
+writer; a present section must satisfy its complete schema. Profile-less
+custom assist modes and optional sparse diagnostic restore fields remain
+valid. Tire row sentinels are checked by their existing named-field domain;
+wire validation checks their original numeric types before passing them on.
+
+`tests/reference/test_native_input_contracts.py` covers recursive config and
+runtime dictionary paths, malformed keys/types, populated pending/prepared
+states, projection mutation, and schema migration. Existing drivetrain,
+policy, suspension and state controls retain numerical bitwise expectations.
+The shared owning ndarray helpers keep a `unique_ptr` until capsule creation
+succeeds, then transfer ownership to that capsule.
+
+| Checker | Narrow origin and reason | Reproducer | Remove when |
+|---|---|---|---|
+| `cppcoreguidelines-avoid-c-arrays`, `modernize-avoid-c-arrays` | The two `make_unique<T[]>` factories in `binding_arrays.hpp` allocate the runtime-sized primitive storage required by NumPy. `vector<bool>` does not provide contiguous bool storage. | Native suspension, resistance dtype/layout, drive-state arrays and selected ASan input controls | Nanobind supplies an owning contiguous primitive-array factory with the same lifetime and failure guarantees. |
+| `cppcoreguidelines-owning-memory` | The two capsule deleters in `binding_arrays.hpp` release the exact array transferred from the preceding `unique_ptr`. | The same owning ndarray controls and selected ASan run | The owning ndarray factory replaces the raw `void*` capsule callback contract. |
+| `bugprone-easily-swappable-parameters` | FFI lambdas in `binding.cpp`, `drive_binding.cpp`, and `bind_drive_policies` have the fixed Python argument order. Raw handles are needed to check original types before conversion; every argument has a named field-path reader. | Policy/drivetrain numerical parity plus invalid scalar/array/control input tests | A binding API can expose these Python signatures through distinct typed argument wrappers while preserving strict type checks. |
+
+F1's final normal verification used Python 3.14.3, MuJoCo 3.12.0,
+nanobind 3.1.0, NumPy 2.5.2 and Apple clang 21.0.0 on arm64. Commands used
+`UV_CACHE_DIR=/private/tmp/e1-uv` and the locked native dependency group.
+The focused input/policy/drivetrain/writer/state suite passed 529 tests with
+six existing runtime warnings. A bounded paired audit of 46 real, integer,
+boolean and sequence cases had no mismatches; separate Unicode and huge
+integer controls passed. Standalone Python-free config headers compiled with
+`clang++ -std=c++23 -pedantic-errors -fsyntax-only`.
+
+`bash tools/run_tests.sh native` passed 912 tests with 15 existing warnings.
+All sweeps selected 23 translation units with healthy execution; 33 headers
+across 99 header TUs, six diagnostic controls, SDK/hardening controls and
+CTest 1/1 passed. The imported extension was the selected
+`native/build/bike_native.cpython-314-darwin.so`. The final log is
+`/private/tmp/f1-native-final.log`.
+
+`bash tools/run_tests.sh full -q --tb=no` completed with 1,359 passed and
+exactly the same 24 failing IDs as the independently reproduced baseline,
+with 48 existing runtime warnings. The extra quiet flag suppresses pytest's
+numeric summary; the complete progress lines contain 1,383 items, and the
+24 final `FAILED` IDs were compared directly. No new or missing failing IDs
+were found. The log and comparison are `/private/tmp/f1-full-final.log` and
+`/private/tmp/f1-full-baseline-comparison.json`. **The full gate remains red**;
+the 24 baseline failures above remain open.
+
+The selected ASan/UBSan profile passed 529 affected tests, with 383
+deselected and six existing warnings in 57.03 seconds. Its mandatory sweeps,
+33/99 header controls, diagnostic/context controls and CTest passed. The
+test process imported `native/build/asan/bike_native.cpython-314-darwin.so`;
+the shared loader required the selected Apple clang 21 ASan runtime to be
+present in the process's dyld image list on every import. The final log is
+`/private/tmp/f1-asan-final.log`. Reproduce with:
+
+```bash
+UV_CACHE_DIR=/private/tmp/e1-uv NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native \
+  -k 'native_input_contracts or native_cruise or native_rider_forces or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_state_restore or native_state_fuzz'
+```

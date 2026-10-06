@@ -276,14 +276,15 @@ def test_accumulator_total_validates():
     nv = int(mujoco.MjModel.from_binary_path(MJB).nv)
     st = bike_native.Stepper(MJB)
     # acc.add's contract: shape != (nv,) or non-finite -> ValueError
-    # 'invalid generalized force' — including a bad LATE component.
+    # Model-width errors retain 'invalid generalized force'; the wire reader
+    # names non-finite components by their full public field path.
     with pytest.raises(ValueError, match='invalid generalized force'):
         st.total({'bad': np.zeros(nv + 1)})
     with pytest.raises(ValueError, match='invalid generalized force'):
         st.total({'ok': np.zeros(nv), 'bad': np.zeros(nv + 1)})
-    with pytest.raises(ValueError, match='invalid generalized force'):
+    with pytest.raises(ValueError, match='total.bad'):
         st.total({'bad': np.full(nv, np.inf)})
-    with pytest.raises(ValueError, match='invalid generalized force'):
+    with pytest.raises(ValueError, match='total.bad'):
         st.total({'bad': np.full(nv, np.nan)})
     # Wrong rank or a non-convertible value — rejected at the edge.
     with pytest.raises(ValueError):

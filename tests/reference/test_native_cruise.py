@@ -160,7 +160,7 @@ def test_missing_config_keys(tmp_path, key):
         bike_native.Stepper(str(path), {'schema': 1, 'cruise': config})
 
 
-@pytest.mark.parametrize('config', [{'cruise': CONFIG}, {'schema': 2, 'cruise': CONFIG},
+@pytest.mark.parametrize('config', [{'cruise': CONFIG}, {'schema': 3, 'cruise': CONFIG},
                                    {'schema': 1, 'cruise': []}])
 def test_schema_and_section_validation(tmp_path, config):
     _, path = _model(tmp_path)

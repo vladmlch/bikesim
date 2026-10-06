@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "../config.hpp"
+#include "../config_types.hpp"
 #include "../tyre/profile.hpp"
 
 // ContactPatch (contact_state.py:19-76) — tire patches always carry

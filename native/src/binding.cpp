@@ -23,6 +23,9 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include "stepper.hpp"
+#include "config.hpp"
+#include "binding_readers.hpp"
+#include "binding_arrays.hpp"
 #include "engine_call.hpp"
 #include "diag.hpp"
 #include "rider/contact_binding.hpp"
@@ -47,16 +50,6 @@ namespace {
         }
     }
 
-    // 1-D C-contiguous float64 ndarray → span. Shape and contiguity are
-    // enforced by the parameter type; model-width checks live in the core
-    // (set_state) — one place only. size() is size_t; counted wants the
-    // signed iter_difference_t, hence the cast.
-    std::span<const double> as_span(
-        const nb::ndarray<const double, nb::shape<-1>, nb::c_contig> &a) {
-        return std::views::counted(a.data(),
-                                   static_cast<std::ptrdiff_t>(a.size()));
-    }
-
     // Read-only numpy view over a Stepper span — shared by every prop_ro.
     nb::ndarray<nb::numpy, const double, nb::shape<-1> >
     as_view(std::span<const double> v) {
@@ -64,34 +57,12 @@ namespace {
             v.data(), {v.size()}, nb::handle());
     }
 
-    // Owning float64 ndarray: the buffer is freed when the array is GC'd, so
-    // dict values outlive both the writer's temporaries and the Stepper.
-    nb::ndarray<nb::numpy, double, nb::shape<-1> >
-    as_owned(std::vector<double> v) {
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) the capsule takes ownership below
-        auto *buf = new double[v.size()];
-        std::ranges::copy(v, buf);
-        nb::capsule const owner(buf, [](void *p) noexcept {
-            delete[] static_cast<double *>(p); // NOLINT(cppcoreguidelines-owning-memory) capsule destructor is the release path
-        });
-        return nb::ndarray<nb::numpy, double, nb::shape<-1> >(
-            buf, {v.size()}, owner);
+    nb::ndarray<nb::numpy, double, nb::shape<-1>> as_owned(std::vector<double> values) {
+        return wire::owned_array<double>(values);
     }
 
-    // Owning bool ndarray — the patch_working array in the resistance schema.
-    nb::ndarray<nb::numpy, bool, nb::shape<-1> >
-    as_owned_bool(std::vector<char> v) {
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) the capsule takes ownership below
-        auto *buf = new bool[v.size()];
-        const std::span<bool> view = std::views::counted(
-            buf, static_cast<std::ptrdiff_t>(v.size()));
-        for (std::size_t i = 0; i < v.size(); ++i)
-            view[i] = v[i] != 0;
-        nb::capsule const owner(buf, [](void *p) noexcept {
-            delete[] static_cast<bool *>(p); // NOLINT(cppcoreguidelines-owning-memory) capsule destructor is the release path
-        });
-        return nb::ndarray<nb::numpy, bool, nb::shape<-1> >(
-            buf, {v.size()}, owner);
+    nb::ndarray<nb::numpy, bool, nb::shape<-1>> as_owned_bool(std::vector<char> values) {
+        return wire::owned_flags(values);
     }
 
     // One TireSnapshot as a dict carrying BOTH consumers' schemas: the
@@ -152,7 +123,29 @@ namespace {
             throw std::invalid_argument(
                 "resistance_components: missing side '" + std::string(side) +
                 "'");
-        const nb::dict d = nb::cast<nb::dict>(snaps[side]);
+        const wire::Dict root{.value = snaps, .path = "resistance_components"};
+        const auto parsed = wire::section(root, side);
+        constexpr auto required = wire::keys("patch_loads", "patch_working", "eff_radius");
+        constexpr auto optional = wire::keys("time_s", "interval_id", "backend", "geometric_contact", "effective_radius_m", "patches");
+        wire::exact(parsed, required, optional);
+        if (parsed.contains("patches")) {
+            const auto patches = wire::sequence(parsed["patches"], parsed.child("patches"));
+            std::size_t index = 0;
+            for (nb::handle const value: patches) {
+                const std::string patch_path = parsed.child("patches") + "." + std::to_string(index++);
+                const wire::Dict patch{.value = wire::mapping(value, patch_path), .path = patch_path};
+                wire::exact(patch, wire::keys("normal_load_n", "tangent_force_n", "slip_mps", "working_surface"));
+                for (const char *key: {"normal_load_n", "tangent_force_n", "slip_mps"})
+                    static_cast<void>(wire::finite_real(patch[key], patch.child(key)));
+                static_cast<void>(wire::boolean(patch["working_surface"], patch.child("working_surface")));
+            }
+        }
+        for (const char *key: {"time_s", "effective_radius_m"})
+            if (parsed.contains(key)) static_cast<void>(wire::finite_real(parsed[key], parsed.child(key)));
+        if (parsed.contains("interval_id")) static_cast<void>(wire::integer(parsed["interval_id"], parsed.child("interval_id")));
+        if (parsed.contains("backend")) static_cast<void>(wire::string(parsed["backend"], parsed.child("backend")));
+        if (parsed.contains("geometric_contact")) static_cast<void>(wire::boolean(parsed["geometric_contact"], parsed.child("geometric_contact")));
+        const nb::dict d = parsed.value;
         const auto arr = [&d, side](const char *key) -> nb::object {
             if (!d.contains(key))
                 throw std::invalid_argument(
@@ -162,9 +155,15 @@ namespace {
         };
         using F64 = nb::ndarray<const double, nb::shape<-1>, nb::c_contig>;
         using B1 = nb::ndarray<const bool, nb::shape<-1>, nb::c_contig>;
-        const F64 loads = nb::cast<F64>(arr("patch_loads"));
-        const B1 working = nb::cast<B1>(arr("patch_working"));
-        return {.loads = loads, .working = working, .effective_radius_m = nb::cast<double>(arr("eff_radius"))};
+        const auto raw_loads = arr("patch_loads");
+        static_cast<void>(wire::vector(raw_loads, parsed.child("patch_loads")));
+        F64 loads;
+        try { loads = nb::cast<F64>(raw_loads); }
+        catch (const nb::cast_error &) { wire::invalid(parsed.child("patch_loads"), "expected 1-D numeric array"); }
+        B1 working;
+        try { working = nb::cast<B1>(arr("patch_working")); }
+        catch (const nb::cast_error &) { wire::invalid(parsed.child("patch_working"), "expected 1-D flag array"); }
+        return {.loads = loads, .working = working, .effective_radius_m = wire::finite_real(arr("eff_radius"), parsed.child("eff_radius"))};
     }
 } // namespace
 
@@ -239,24 +238,21 @@ NB_MODULE(bike_native, m) {
     });
     stepper_class
             .def(nb::init<const std::string &>())
-            .def(nb::init<const std::string &, const nb::dict &>(),
-                 nb::arg("mjb_path"), nb::arg("config"))
+            .def(nb::init<const std::string &, nb::handle>(),
+                 nb::arg("mjb_path"), nb::arg("config").none())
             .def("step", &Stepper::step)
             .def("forward", &Stepper::forward)
             .def("reset", &Stepper::reset)
-            .def("set_state", [](Stepper &s,
-                                 const nb::ndarray<const double, nb::shape<-1>,
-                                     nb::c_contig> &qpos,
-                                 const nb::ndarray<const double, nb::shape<-1>,
-                                     nb::c_contig> &qvel,
-                                 const nb::ndarray<const double, nb::shape<-1>,
-                                     nb::c_contig> &act,
-                                 const nb::ndarray<const double, nb::shape<-1>,
-                                     nb::c_contig> &warmstart,
-                                 double time) {
-                s.set_state(as_span(qpos), as_span(qvel), as_span(act),
-                            as_span(warmstart), time);
-            })
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python state-array signature
+            .def("set_state", [](Stepper &s, nb::handle qpos, nb::handle qvel,
+                                 nb::handle act, nb::handle warmstart, nb::handle time) {
+                const auto qp = wire::vector(qpos, "set_state.qpos");
+                const auto qv = wire::vector(qvel, "set_state.qvel");
+                const auto a = wire::vector(act, "set_state.act");
+                const auto w = wire::vector(warmstart, "set_state.warmstart");
+                s.set_state(qp, qv, a, w, wire::finite_real(time, "set_state.time"));
+            }, nb::arg("qpos").none(), nb::arg("qvel").none(), nb::arg("act").none(),
+               nb::arg("warmstart").none(), nb::arg("time").none())
             .def_prop_ro("qpos", [](Stepper &s) { return as_view(s.qpos()); })
             .def_prop_ro("qvel", [](Stepper &s) { return as_view(s.qvel()); })
             .def_prop_ro("qacc", [](Stepper &s) { return as_view(s.qacc()); })
@@ -287,10 +283,12 @@ NB_MODULE(bike_native, m) {
                 out["gain_scale"] = state.gain_scale;
                 return out;
             })
-            .def("set_cruise_state", [](Stepper &s, const nb::dict &state) {
+            .def("set_cruise_state", [](Stepper &s, nb::handle raw) {
+                const nb::dict state = wire::mapping(raw, "cruise_state");
                 // Disabled controller errors precede candidate parsing, as for
                 // the other controller APIs. All reads finish before mutation.
                 static_cast<void>(s.cruise_state());
+                wire::exact_keys(state, wire::keys("target_speed_mps", "integral_mps_s", "torque_nm", "engaged", "gain_scale"), {}, "cruise_state");
                 if (state.size() != 5)
                     throw std::invalid_argument(
                         "cruise state requires exactly target_speed_mps, "
@@ -312,10 +310,12 @@ NB_MODULE(bike_native, m) {
                 candidate.engaged = nb::cast<bool>(engaged);
                 candidate.gain_scale = number("gain_scale");
                 s.set_cruise_state(candidate);
-            }, nb::arg("state"))
-            .def("resistance_components", [](Stepper &s, const nb::dict &snaps) {
+            }, nb::arg("state").none())
+            .def("resistance_components", [](Stepper &s, nb::handle raw) {
+                     const nb::dict snaps = wire::mapping(raw, "resistance_components");
                      // Named locals in Python's dict order — arg eval order is
                      // unspecified, so on malformed input the 'front' error must win.
+                     wire::exact_keys(snaps, wire::keys("front", "rear"), {}, "resistance_components");
                      const OwnedTireSideInput front = side_input(snaps, "front");
                      const OwnedTireSideInput rear = side_input(snaps, "rear");
                      nb::dict out;
@@ -335,7 +335,8 @@ NB_MODULE(bike_native, m) {
             .def("rider_forces_qfrc", [](Stepper &s) {
                 return as_owned(s.rider_forces_qfrc());
             })
-            .def("total", [](Stepper &s, const nb::dict &components) {
+            .def("total", [](Stepper &s, nb::handle raw) {
+                     const nb::dict components = wire::mapping(raw, "total");
                      // Insertion order is the contract: PyDict_Keys preserves it,
                      // and the fold inside Stepper::total mirrors
                      // ForceAccumulator.total() exactly. Nanobind may convert a 1-D
@@ -346,40 +347,35 @@ NB_MODULE(bike_native, m) {
                      const nb::list keys = components.keys();
                      vecs.reserve(keys.size());
                      for (nb::handle const key: keys) {
-                         const std::string name = nb::cast<std::string>(key);
+                         const std::string name = wire::string(key, "total");
                          const nb::object value = components[key];
-                         try {
-                             const auto a = nb::cast<nb::ndarray<
-                                 const double, nb::shape<-1>, nb::c_contig> >(value);
-                             const std::span<const double> sv =
-                                     std::views::counted(
-                                         a.data(),
-                                         static_cast<std::ptrdiff_t>(a.size()));
-                             vecs.emplace_back(sv.begin(), sv.end());
-                         } catch (const nb::cast_error &) {
-                             throw std::invalid_argument(
-                                 "total: component '" + name +
-                                 "' must be a 1-D float64 array");
-                         }
+                         vecs.push_back(wire::vector(value, "total." + name));
                      }
                      return as_owned(s.total(vecs));
                  }, nb::arg("components"),
                  "Sum finite nv-wide 1-D arrays in dict insertion order; ndarray "
                  "dtype/layout conversion to contiguous float64 is accepted.")
-            .def("set_tire_state", [](Stepper &s,
-                                      const std::vector<std::string> &names,
-                                      const nb::ndarray<const double, nb::shape<-1>,
-                                          nb::c_contig> &row) {
-                s.set_tire_state(names, as_span(row));
-            })
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python state-array signature
+            .def("set_tire_state", [](Stepper &s, nb::handle raw_names, nb::handle raw_row) {
+                const auto sequence = wire::sequence(raw_names, "set_tire_state.names");
+                std::vector<std::string> names;
+                names.reserve(sequence.size());
+                for (nb::handle const value: sequence) names.push_back(wire::string(value, "set_tire_state.names"));
+                const auto row_values = wire::sequence(raw_row, "set_tire_state.row");
+                std::vector<double> row;
+                row.reserve(row_values.size());
+                // Tire state owns the named sentinel domain; the wire reader checks original types only.
+                for (nb::handle const value: row_values) row.push_back(wire::real(value, "set_tire_state.row"));
+                s.set_tire_state(names, row);
+            }, nb::arg("names").none(), nb::arg("row").none())
             .def("tire_state", [](Stepper &s) {
                 return as_owned(s.tire_state());
             })
             .def_prop_ro("tire_state_names", [](Stepper &s) {
                 return s.tire_state_names();
             })
-            .def("tire_qfrc", [](Stepper &s, double dt) {
-                return as_owned(s.tire_qfrc(dt));
+            .def("tire_qfrc", [](Stepper &s, nb::handle dt) {
+                return as_owned(s.tire_qfrc(wire::finite_real(dt, "tire_qfrc.dt")));
             })
             .def("tire_snapshots", [](Stepper &s) {
                 const TireWriter *t = s.tire();

@@ -80,6 +80,11 @@ public:
 
     drivetrain::DrivetrainWriter &drive() const;
 
+    // Nonthrowing presence check for the installed drive writer — private
+    // hooks use it to refuse mutating the live model behind the writer's
+    // caches (drive() itself throws when the config is absent).
+    [[nodiscard]] bool has_drive() const { return drive_ != nullptr; }
+
     void set_inputs(std::span<const double> ctrl,
                     std::span<const double> force);
 
@@ -123,8 +128,11 @@ public:
         return std::views::counted(d_->qfrc_constraint, m_->nv);
     }
 
-    // nefc is a RUNTIME mjData field — the view's size varies per forward.
-    // (mjModel has no nefc member; do not look there.)
+    // nefc is a RUNTIME mjData field — the span's size varies per forward.
+    // (mjModel has no nefc member; do not look there.) d->efc_force lives
+    // in mjData's constraint arena, whose contents rewind and whose offset
+    // moves whenever the contact set changes — the binding copies this
+    // into an owned snapshot rather than exposing a live view.
     [[nodiscard]] std::span<const double> efc_force() const {
         return std::views::counted(d_->efc_force, d_->nefc);
     }

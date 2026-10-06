@@ -83,12 +83,17 @@ namespace drivetrain {
         const Transmission *transmission_storage() const { return ideal_hub_.get(); }
 
     private:
-        mjModel *model_;
-        mjData *data_;
+        mjModel *model_ = nullptr;
+        mjData *data_ = nullptr;
         DriveConfig config_;
-        bool simplified_, effort_;
+        bool simplified_ = false, effort_ = false;
         GeometryWorkspace geometry_;
-        int frame_, crank_, rear_, cassette_{};
+        // frame_/crank_/rear_ resolve unconditionally in the ctor; cassette_
+        // resolves only for the elastic-chain model, so it needs a named
+        // invalid sentinel — 0 would silently be the world body. Dereferences
+        // go through cassette_body() below.
+        int frame_ = absent_id, crank_ = absent_id, rear_ = absent_id,
+                cassette_ = absent_id;
 
         struct Joint {
             int qpos{}, dof{};
@@ -96,7 +101,7 @@ namespace drivetrain {
 
         std::map<std::string, Joint> joints_;
         std::vector<Joint> bearing_joints_;
-        int human_actuator_, motor_actuator_;
+        int human_actuator_ = absent_id, motor_actuator_ = absent_id;
         PedalingPolicy pedaling_;
         CadenceShifter shifting_;
         AssistController assist_;
@@ -106,6 +111,16 @@ namespace drivetrain {
         DriveSnapshot live_;
         ForceComponents components_;
         std::vector<double> transmission_;
+
+        // cassette_ resolves only under the elastic-chain topology; the
+        // absent_id sentinel makes every other mode honest, and this throws
+        // like engaged() does for the same compiler-invisible invariant.
+        [[nodiscard]] int cassette_body() const {
+            if (cassette_ == absent_id)
+                throw std::logic_error(
+                    "cassette body is absent outside the elastic_chain model");
+            return cassette_;
+        }
 
         double angle(int body, std::optional<double> reference = std::nullopt);
 

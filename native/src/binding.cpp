@@ -1,13 +1,16 @@
 // binding.cpp — nanobind FFI edge for the native Stepper.
 //
-// qpos/qvel return zero-copy, NON-OWNING numpy views directly onto
-// mjData's buffers: the empty nb::handle() owner is deliberate — the
-// view keeps no reference to the Stepper, so the Stepper must outlive
-// any array taken from it (views of a dead Stepper dangle). Rebuild
-// the array or keep the Stepper referenced for the view's lifetime.
-// The solved-quantity views (qacc, qfrc_constraint, efc_force) follow
-// the same rule; efc_force's length is d->nefc, which varies per
-// forward — a stored view is not refreshed, re-read the property.
+// qpos/qvel/qacc/qfrc_constraint/ctrl (and qfrc_applied/actuator_force
+// in drive_binding.cpp) return zero-copy read-only numpy views onto
+// mjData's FIXED buffers — their addresses are stable for the mjData
+// lifetime. The declared owner policy is nb::rv_policy::reference_internal:
+// the array's base retains the Stepper, so a view can never outlive its
+// model/data. Views are LIVE windows — contents change with each
+// forward/step — re-read the property rather than caching the array.
+// efc_force is the exception: d->efc_force is a per-frame constraint
+// arena allocation whose address and length move whenever the contact
+// set changes, so the property returns an OWNED snapshot copy instead
+// (writeable; frozen at access time — see the prop for the policy).
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -50,7 +53,10 @@ namespace {
         }
     }
 
-    // Read-only numpy view over a Stepper span — shared by every prop_ro.
+    // Read-only numpy view over a Stepper span — shared by every view
+    // prop_ro. The empty nb::handle() owner pairs with the declared
+    // nb::rv_policy::reference_internal at each def site, which makes the
+    // Stepper the array's owner (the view keeps its Stepper alive).
     nb::ndarray<nb::numpy, const double, nb::shape<-1> >
     as_view(std::span<const double> v) {
         return nb::ndarray<nb::numpy, const double, nb::shape<-1> >(
@@ -253,16 +259,27 @@ NB_MODULE(bike_native, m) {
                 s.set_state(qp, qv, a, w, wire::finite_real(time, "set_state.time"));
             }, nb::arg("qpos").none(), nb::arg("qvel").none(), nb::arg("act").none(),
                nb::arg("warmstart").none(), nb::arg("time").none())
-            .def_prop_ro("qpos", [](Stepper &s) { return as_view(s.qpos()); })
-            .def_prop_ro("qvel", [](Stepper &s) { return as_view(s.qvel()); })
-            .def_prop_ro("qacc", [](Stepper &s) { return as_view(s.qacc()); })
+            .def_prop_ro("qpos", [](Stepper &s) { return as_view(s.qpos()); },
+                         nb::rv_policy::reference_internal)
+            .def_prop_ro("qvel", [](Stepper &s) { return as_view(s.qvel()); },
+                         nb::rv_policy::reference_internal)
+            .def_prop_ro("qacc", [](Stepper &s) { return as_view(s.qacc()); },
+                         nb::rv_policy::reference_internal)
             .def_prop_ro("qfrc_constraint", [](Stepper &s) {
                 return as_view(s.qfrc_constraint());
-            })
+            }, nb::rv_policy::reference_internal)
+            // Owned snapshot, NOT a view: efc_force points into mjData's
+            // constraint arena, which rewinds and reallocates its offset
+            // whenever the contact set changes — a view would silently go
+            // stale (or dangle) after the next forward. The capsule-owned
+            // copy is frozen at access time and writeable; the capsule is
+            // the owner, so automatic_reference keeps it (reference_internal
+            // would reject an ndarray that already has an owner).
             .def_prop_ro("efc_force", [](Stepper &s) {
-                return as_view(s.efc_force());
-            })
-            .def_prop_ro("ctrl", [](Stepper &s) { return as_view(s.ctrl()); })
+                return wire::owned_array<double>(s.efc_force());
+            }, nb::rv_policy::automatic_reference)
+            .def_prop_ro("ctrl", [](Stepper &s) { return as_view(s.ctrl()); },
+                         nb::rv_policy::reference_internal)
             // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed front/rear Python signature
             .def("brake_torques", [](Stepper &s, nb::handle front, nb::handle rear) {
                 const double checked_front = wire::finite_real(front, "brake_torques.front_demand");

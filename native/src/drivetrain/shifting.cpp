@@ -4,12 +4,6 @@
 #include <limits>
 
 namespace drivetrain {
-    void CadenceShifter::reset() {
-        state_ = {};
-        state_.rear_teeth = gearing_.rear_teeth;
-        state_.from_teeth = state_.rear_teeth;
-    }
-
     void CadenceShifter::set_state(const ShiftingSnapshot &s) {
         if (s.rear_teeth < 3 || s.from_teeth < 3 || s.shift_count < 0) throw std::invalid_argument(
             "shifter teeth/count");

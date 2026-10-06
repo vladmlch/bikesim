@@ -483,11 +483,13 @@ void TireWriter::set_state(std::span<const std::string> names,
         // Sentinel group: a stored tangent is only meaningful with the
         // contact point and profile segment it was produced from — the
         // Python oracle dereferences both unconditionally (TypeError).
-        if (next[s].tangent && (!next[s].point || !next[s].segment))
-            throw std::invalid_argument(
-                "set_tire_state: '" + side +
-                ".tangent' requires '" + side + ".point' and '" + side +
-                ".segment'");
+        if (next[s].tangent && (!next[s].point || !next[s].segment)) {
+            std::string message = "set_tire_state: '" + side;
+            message += ".tangent' requires '" + side;
+            message += ".point' and '" + side;
+            message += ".segment'";
+            throw std::invalid_argument(message);
+        }
     }
     states_ = next;
     // A restored state has not advanced under any interval yet — mirrors

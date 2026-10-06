@@ -43,10 +43,13 @@ public:
         const TireSideInput &rear) const;
 
 private:
-    const mjModel *m_; // non-owning; the Stepper outlives the writer
+    const mjModel *m_ = nullptr; // non-owning; the Stepper outlives the writer
     nativecfg::ResistanceConfig cfg_;
-    int nv_;
-    int frame_, front_wheel_, rear_wheel_;
+    int nv_ = 0;
+    // Resolved unconditionally in the ctor via resolve_id (throws on a
+    // missing body); -1 is the declared "not resolved" state — 0 is the
+    // world body and must never mean absent.
+    int frame_ = -1, front_wheel_ = -1, rear_wheel_ = -1;
     // self._jr / self._jp — per-step scratch shared by the rolling and drag
     // maps, fully rewritten by mj_jac on every use.
     mutable std::vector<mjtNum> jr_, jp_;

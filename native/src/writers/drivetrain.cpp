@@ -9,6 +9,16 @@
 namespace drivetrain {
     ArithmeticError::~ArithmeticError() = default;
 
+    namespace {
+        // The member-init list consumes transmission_model/drive_mode before
+        // the ctor body could run, so the typed config is validated in the
+        // init expression itself — still before any field is used.
+        DriveConfig checked_config(DriveConfig config) {
+            validate(config);
+            return config;
+        }
+    }
+
     void validate(const DriveSnapshot &s, const DriveConfig &config,
                   const mjModel &model) {
         const bool simplified = config.transmission_model != "elastic_chain",
@@ -69,7 +79,7 @@ namespace drivetrain {
     }
 
     DrivetrainWriter::DrivetrainWriter(mjModel *m, mjData *d, DriveConfig c)
-        : model_(m), data_(d), config_(std::move(c)),
+        : model_(m), data_(d), config_(checked_config(std::move(c))),
           simplified_(config_.transmission_model != "elastic_chain"),
           effort_(config_.drive_mode == "crank_effort" ||
                   config_.drive_mode == "articulated_effort"),
@@ -82,7 +92,6 @@ namespace drivetrain {
           shifting_(config_.policies.gearing, config_.policies.shifting),
           assist_(config_.policies.assist), battery_(config_.policies.battery.energy_j),
           transmission_(static_cast<std::size_t>(m->nv)) {
-        drivetrain::validate(config_);
         if (m->nq != m->nv)
             throw std::invalid_argument(
                 "physical chain supports scalar planar coordinates only (nq == nv)");
@@ -199,9 +208,11 @@ namespace drivetrain {
             if (freewheel_)
                 freewheel_->reset(data_);
         } else {
-            live_.angles = std::vector<double>{angle(crank_), angle(cassette_)};
+            live_.angles = std::vector<double>{
+                angle(crank_), angle(cassette_body())};
             live_.reference = geometry_.evaluate(
-                model_, data_, config_.policies.gearing, crank_, cassette_, frame_,
+                model_, data_, config_.policies.gearing, crank_, cassette_body(),
+                frame_,
                 Vec2{(*live_.angles)[0], (*live_.angles)[1]}, std::nullopt, false);
             live_.psi = geometry_.psi;
             engaged(hub_).reset();
@@ -346,10 +357,10 @@ namespace drivetrain {
         if (!simplified_) {
             angles = {
                 angle(crank_, engaged(live_.angles)[0]),
-                angle(cassette_, engaged(live_.angles)[1])
+                angle(cassette_body(), engaged(live_.angles)[1])
             };
             extension = geometry_.evaluate(model_, data_, config_.policies.gearing, crank_,
-                                           cassette_, frame_, Vec2{angles[0], angles[1]},
+                                           cassette_body(), frame_, Vec2{angles[0], angles[1]},
                                            live_.psi, false) -
                         engaged(live_.reference);
             psi = geometry_.psi;
@@ -585,7 +596,8 @@ namespace drivetrain {
         if (!live_.reference || !live_.angles)
             throw std::runtime_error("initialize the drivetrain before reading energy");
         const double e =
-                geometry_.evaluate(model_, data_, config_.policies.gearing, crank_, cassette_,
+                geometry_.evaluate(model_, data_, config_.policies.gearing, crank_,
+                                   cassette_body(),
                                    frame_, Vec2{(*live_.angles)[0], (*live_.angles)[1]},
                                    live_.psi, false) -
                 *live_.reference;

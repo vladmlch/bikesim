@@ -7,7 +7,7 @@
 #include "../config_types.hpp"
 
 struct CruiseState {
-    double target_speed_mps;
+    double target_speed_mps = 0.0;
     double integral_mps_s = 0.0;
     double torque_nm = 0.0;
     bool engaged = false;
@@ -36,8 +36,8 @@ private:
     void validate_scale(double scale) const;
 
     nativecfg::CruiseConfig cfg_;
-    mjtSize nv_;
+    mjtSize nv_ = 0;
     int root_dof_{0};
-    double timestep_;
+    double timestep_ = 0.0;
     CruiseState state_;
 };

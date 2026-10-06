@@ -129,9 +129,9 @@ public:
     }
 
 private:
-    const mjModel *m_; // non-owning; the Stepper outlives it
+    const mjModel *m_ = nullptr; // non-owning; the Stepper outlives it
     nativecfg::TireConfig cfg_;
-    int nv_;
+    int nv_ = 0;
     // optional so the ctor can honor __init__'s validation order: the
     // surface_map gate (tire_forces.py:68-70) precedes the profile build.
     std::optional<biketyre::ProfileQuery> profile_;

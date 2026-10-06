@@ -509,7 +509,9 @@ def test_geometric_prepared_buffers_reuse_storage(tmp_path, operation):
     if operation == 'restore':
         n.set_drive_state(copy.deepcopy(n.drive_state()))
     baseline = n._drive_prepared_storage()
-    assert baseline['jacobian_address'] and baseline['qpos_address']
+    assert set(baseline) == {'jacobian_generation', 'qpos_generation',
+                           'jacobian_capacity', 'qpos_capacity'}
+    assert baseline['jacobian_generation'] and baseline['qpos_generation']
     assert baseline['jacobian_capacity'] >= m.nv
     assert baseline['qpos_capacity'] >= m.nv
     initial_teeth = p.shifting.rear_teeth
@@ -540,9 +542,12 @@ def test_geometric_prepared_sentinel_owns_reused_storage(tmp_path):
     m,d,p,n = pair(tmp_path, 'geometric_ideal_mid_drive')
     baseline=n._drive_prepared_storage()
     state=n.drive_state();old_jacobian=state['ideal_hub']['prepared']['jacobian'].copy()
-    # Public snapshot arrays do not share either private native working buffer.
-    assert state['ideal_hub']['prepared']['jacobian'].ctypes.data != baseline['jacobian_address']
-    assert state['ideal_hub']['prepared']['qpos'].ctypes.data != baseline['qpos_address']
+    # Diagnostics expose storage generations/capacities only — no raw
+    # address crosses the bridge, so public snapshots cannot alias the
+    # private native working buffers.
+    assert set(baseline) == {'jacobian_generation', 'qpos_generation',
+                           'jacobian_capacity', 'qpos_capacity'}
+    assert baseline['jacobian_generation'] and baseline['qpos_generation']
     none_state=copy.deepcopy(state);none_state['ideal_hub']['prepared']=None
     n.set_drive_state(none_state);assert n.drive_state()['ideal_hub']['prepared'] is None
     assert n._drive_prepared_storage()==baseline

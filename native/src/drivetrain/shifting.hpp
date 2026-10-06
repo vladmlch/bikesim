@@ -13,7 +13,11 @@ namespace drivetrain {
             reset();
         }
 
-        void reset();
+        void reset() {
+            state_ = {};
+            state_.rear_teeth = gearing_.rear_teeth;
+            state_.from_teeth = state_.rear_teeth;
+        }
 
         bool update(double cadence_rpm, double required_cadence_rpm, double dt,
                     bool pedaling = true, bool braking = false, bool rear_in_contact = true,

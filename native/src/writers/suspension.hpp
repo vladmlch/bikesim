@@ -34,18 +34,21 @@ private:
     // `potential_energy_j` (forces.py:207-221) — a snapshot kept per call
     // for a future telemetry surface; it does not feed `components()`.
     struct Telemetry {
-        double fork_spring_n, fork_damper_n, fork_total_n;
-        double shock_spring_n, shock_bumper_n, shock_damper_n;
-        double shock_top_out_n, shock_upper_stop_n, shock_total_n;
+        double fork_spring_n = 0.0, fork_damper_n = 0.0, fork_total_n = 0.0;
+        double shock_spring_n = 0.0, shock_bumper_n = 0.0,
+                shock_damper_n = 0.0;
+        double shock_top_out_n = 0.0, shock_upper_stop_n = 0.0,
+                shock_total_n = 0.0;
 
         struct {
-            double shock_coil, shock_bumper, shock_top_out, shock_upper_stop;
+            double shock_coil = 0.0, shock_bumper = 0.0,
+                    shock_top_out = 0.0, shock_upper_stop = 0.0;
         } potential_energy_j;
     };
 
     nativecfg::SuspensionConfig cfg_;
-    bool physical_;
-    mjtSize nq_, nv_;
+    bool physical_ = false;
+    mjtSize nq_ = 0, nv_ = 0;
     int fork_qposadr_ = 0, fork_dofadr_ = 0;
     int shock_qposadr_ = 0, shock_dofadr_ = 0;
     mutable Telemetry last_{};

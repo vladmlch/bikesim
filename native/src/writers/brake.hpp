@@ -38,17 +38,20 @@ private:
     // WheelSpin fields; radius_m is resolved but unused by compute (see ctor
     // comment).
     struct WheelSpin {
-        int dofadr;
-        double radius_m;
+        int dofadr = -1;
+        double radius_m = 0.0;
     };
 
     double wheel_torque(const mjData *d, const WheelSpin &wheel,
                         double demand) const;
 
     nativecfg::BrakeConfig cfg_;
-    mjtSize nv_, nu_;
+    mjtSize nv_ = 0, nu_ = 0;
     WheelSpin front_{}, rear_{};
-    int front_ctrl_adr_, rear_ctrl_adr_;
+    // The ctor resolves both actuators unconditionally (it throws on a
+    // missing name); -1 is the declared "not resolved" state, matching
+    // mj_name2id's miss sentinel.
+    int front_ctrl_adr_ = -1, rear_ctrl_adr_ = -1;
     // Mirrors the controller's last-reported self.front/rear_torque_nm —
     // a snapshot for a future telemetry surface, like SuspensionWriter's.
     mutable std::pair<double, double> last_{0.0, 0.0};

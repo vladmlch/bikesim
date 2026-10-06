@@ -18,7 +18,10 @@ namespace drivetrain {
         void set_state(const FreehubSnapshot &state);
 
     private:
-        double k_, c_;
+        // The ctor init list stores the validated values; 0 keeps a
+        // half-formed member deterministic without pretending to be a valid
+        // spring constant (validate requires positive/nonnegative).
+        double k_ = 0., c_ = 0.;
         FreehubSnapshot state_;
     };
 }

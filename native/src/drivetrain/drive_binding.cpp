@@ -445,12 +445,14 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
         const auto *storage = transmission ? transmission->prepared_storage() : nullptr;
         if (!storage)
             return nb::object(nb::none());
+        const auto [jacobian_generation, qpos_generation] =
+                transmission->prepared_generations();
         nb::dict const result;
-        // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast) the API exposes storage addresses
-        result["jacobian_address"] =
-                reinterpret_cast<std::uintptr_t>(storage->jacobian.data());
-        result["qpos_address"] = reinterpret_cast<std::uintptr_t>(storage->qpos.data());
-        // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+        // Storage identity crosses the FFI as generation counters, never
+        // as raw addresses: a generation bumps only when its buffer's
+        // data() pointer changes (see Transmission::prepared_storage).
+        result["jacobian_generation"] = jacobian_generation;
+        result["qpos_generation"] = qpos_generation;
         result["jacobian_capacity"] = storage->jacobian.capacity();
         result["qpos_capacity"] = storage->qpos.capacity();
         return nb::object(result);
@@ -551,21 +553,41 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                 const auto forces = wire::vector(force, "set_inputs.qfrc_applied");
                 s.set_inputs(controls, forces);
             }, nb::arg("ctrl").none(), nb::arg("qfrc_applied").none())
+            // Zero-copy views over mjData's fixed buffers — same declared
+            // owner policy as the views in binding.cpp: reference_internal
+            // makes the Stepper the array's owner (see the header comment
+            // there for the live-window contract).
             .def_prop_ro("qfrc_applied",
                          [](Stepper &s) {
                              auto const v = s.qfrc_applied();
                              return nb::ndarray<nb::numpy, const double, nb::shape<-1> >(
                                  v.data(), {v.size()}, nb::handle());
-                         })
+                         }, nb::rv_policy::reference_internal)
             .def_prop_ro("actuator_force", [](Stepper &s) {
                 auto const v = s.actuator_force();
                 return nb::ndarray<nb::numpy, const double, nb::shape<-1> >(
                     v.data(), {v.size()}, nb::handle());
-            });
+            }, nb::rv_policy::reference_internal);
     cls.def(
         "_drive_core",
         [](Stepper &owner, const std::string &kind, const std::string &operation,
            double ratio) {
+            // Private per-call oracle adapter. The kind set is closed —
+            // the transient Transmission maps exactly onto the two ideal
+            // models; anything else (including 'elastic_chain') is an
+            // argument error, never a silent ideal fallback.
+            if (kind != "ideal_mid_drive" && kind != "geometric_ideal_mid_drive")
+                throw std::invalid_argument(
+                    "_drive_core kind must be 'ideal_mid_drive' or "
+                    "'geometric_ideal_mid_drive'");
+            // reset/prepare/set_ratio mutate the shared model (wrap_prm,
+            // tendon_range, mj_setConst): on a Stepper with an installed
+            // drive writer the transient Transmission would desynchronize
+            // the writer's caches. Bare Steppers remain legal.
+            if (owner.has_drive())
+                throw std::logic_error(
+                    "_drive_core mutates the live model behind the installed "
+                    "drive writer; use a bare Stepper (no drive config)");
             return owner.mutate([&] {
                 const bool geometric = kind == "geometric_ideal_mid_drive";
                 Transmission t(owner.model(), {.front_teeth = 34, .rear_teeth = 24, .chain_pitch_m = .0127}, geometric,

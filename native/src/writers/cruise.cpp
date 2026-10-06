@@ -31,10 +31,9 @@ namespace {
 CruiseWriter::CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config)
     : cfg_(config), nv_(model->nv),
       timestep_(model->opt.timestep), state_{.target_speed_mps = 0.0} {
+    // The shared validator owns the config domain (positive kp/ki/ceiling,
+    // finite target speed in [15, 45]) — checked before any use here.
     nativecfg::validate(cfg_);
-    positive(cfg_.kp_nm_per_mps, "kp_nm_per_mps");
-    positive(cfg_.ki_nm_per_mps_s, "ki_nm_per_mps_s");
-    positive(cfg_.torque_ceiling_nm, "torque_ceiling_nm");
     set_target_speed(cfg_.target_speed_kmh);
     const int joint = mj_name2id(model, mjOBJ_JOINT, "root_x");
     if (joint < 0)

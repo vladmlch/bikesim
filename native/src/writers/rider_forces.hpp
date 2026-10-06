@@ -34,20 +34,20 @@ private:
     // _JointPath.__slots__ resolved: the body's spring params, the joint's
     // addresses, and the projection-time pedal offset_m.
     struct Path {
-        int qposadr, dofadr;
-        double stiffness_n_m, damping_ns_m;
-        double preload_deflection_m, offset_m;
-        bool unilateral;
+        int qposadr = 0, dofadr = 0;
+        double stiffness_n_m = 0.0, damping_ns_m = 0.0;
+        double preload_deflection_m = 0.0, offset_m = 0.0;
+        bool unilateral = false;
     };
 
     // _JointPath.force_n / .gap_m — a per-call snapshot kept for a future
     // telemetry surface (interface_loads_n, recorder), like
     // SuspensionWriter's last_; it does not feed qfrc().
     struct Telemetry {
-        double force_n, gap_m;
+        double force_n = 0.0, gap_m = 0.0;
     };
 
     std::vector<Path> paths_;
-    mjtSize nq_, nv_;
+    mjtSize nq_ = 0, nv_ = 0;
     mutable std::vector<Telemetry> last_;
 };

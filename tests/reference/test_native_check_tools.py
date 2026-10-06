@@ -341,6 +341,18 @@ def test_context_library_path_directories_must_be_frameworks(tmp_path: Path) -> 
         load_context(build)
 
 
+def test_context_preserves_cpp_driver_symlink_spelling(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path)
+    driver = tmp_path / 'clang++'
+    driver.symlink_to(sys.executable)
+    context_path = build / 'native_check_context.json'
+    context = json.loads(context_path.read_text())
+    context['compiler']['path'] = str(driver)
+    context_path.write_text(json.dumps(context))
+
+    assert load_context(build)['compiler']['path'] == str(driver)
+
+
 def test_missing_build_directory_fails_before_selection(tmp_path: Path) -> None:
     missing_build = tmp_path / "not-configured"
 

@@ -335,6 +335,50 @@ def _validate_ctest_contracts(build: Path) -> dict[str, Any]:
 
 def _check_pending_rules(repo_root: Path, sources: dict[str, Any]) -> dict[str, dict[str, str]]:
     source_entries = sources.get('sources', [])
+    native_src = repo_root / 'native' / 'src'
+    engine_source = native_src / 'engine_call.cpp'
+    engine_header = native_src / 'engine_call.hpp'
+    engine_abi = native_src / 'engine_abi_312.hpp'
+    engine_files = (engine_source, engine_header, engine_abi)
+    if any(path.exists() for path in engine_files):
+        if not all(path.is_file() for path in engine_files):
+            raise ContractError('installed engine-call boundary is missing a source or ABI header')
+        matches = [
+            entry for entry in source_entries
+            if isinstance(entry, dict)
+            and Path(str(entry.get('path', ''))).resolve() == engine_source.resolve()
+            and entry.get('target') == 'bike_native_engine'
+        ]
+        if len(matches) != 1:
+            raise ContractError('engine_call.cpp is not uniquely manifested in bike_native_engine')
+        header_text = engine_header.read_text()
+        required_wrappers = (
+            'invoke', 'load_model', 'make_data', 'forward', 'step',
+            'reset_data', 'set_const', 'try_forward', 'try_step',
+        )
+        missing = [
+            name for name in required_wrappers
+            if re.search(rf'\b{re.escape(name)}\s*\(', header_text) is None
+        ]
+        if missing:
+            raise ContractError('engine-call interface is missing wrappers: ' + ', '.join(missing))
+        fatal_calls = re.compile(r'\bmj_(?:loadModel(?:Buffer)?|makeData|forward|step|resetData|setConst)\s*\(')
+        unguarded = [
+            str(path.relative_to(repo_root)) for path in native_src.rglob('*.cpp')
+            if path.resolve() != engine_source.resolve()
+            and fatal_calls.search(path.read_text()) is not None
+        ]
+        if unguarded:
+            raise ContractError('unguarded fatal-capable MuJoCo calls: ' + ', '.join(unguarded))
+        engine_status = {
+            'status': 'passed',
+            'detail': 'pinned engine-call wrappers are manifested; direct fatal-capable calls are confined to engine_call.cpp',
+        }
+    else:
+        engine_status = {
+            'status': 'pending',
+            'detail': 'no engine-call wrapper declaration manifest exists yet',
+        }
     benchmark_targets = {
         entry.get('target')
         for entry in source_entries
@@ -363,10 +407,7 @@ def _check_pending_rules(repo_root: Path, sources: dict[str, Any]) -> dict[str, 
             'detail': 'no configured proto_native_bench target exists yet',
         }
     return {
-        'engine_call_wrappers': {
-            'status': 'pending',
-            'detail': 'no engine-call wrapper declaration manifest exists yet',
-        },
+        'engine_call_wrappers': engine_status,
         'benchmark_manifest_membership': benchmark_status,
     }
 

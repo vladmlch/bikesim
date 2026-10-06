@@ -159,12 +159,44 @@ endif()
 # the SAME python we compile against (uv run exposes .venv via VIRTUAL_ENV).
 find_package(Python 3.13 REQUIRED COMPONENTS Interpreter Development.Module)
 
+execute_process(COMMAND "${Python_EXECUTABLE}" -c "import mujoco; print(mujoco.__version__)"
+  RESULT_VARIABLE _native_mujoco_version_result
+  OUTPUT_VARIABLE _native_mujoco_version
+  ERROR_VARIABLE _native_mujoco_version_error
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT _native_mujoco_version_result EQUAL 0 OR NOT _native_mujoco_version STREQUAL "3.12.0")
+  message(FATAL_ERROR
+    "bike_native requires the pinned MuJoCo 3.12.0 error ABI; configured Python '${Python_EXECUTABLE}' found '${_native_mujoco_version}': ${_native_mujoco_version_error}")
+endif()
+
 execute_process(COMMAND "${Python_EXECUTABLE}" -c "import mujoco,os;print(os.path.dirname(mujoco.__file__))"
   OUTPUT_VARIABLE MJ_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
   OUTPUT_VARIABLE NB_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
+
+# The stock 3.12.0 Python binding uses these private TLS functions. Check both
+# declarations and linked symbols against the installed wheel before building
+# any target that could otherwise fall back to MuJoCo's process-exiting handler.
+include(CheckCXXSourceCompiles)
+set(CMAKE_REQUIRED_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src" "${MJ_DIR}/include")
+set(CMAKE_REQUIRED_LIBRARIES "${MJ_DIR}/libmujoco.3.12.0.dylib")
+unset(BIKE_MUJOCO_ERROR_ABI_312 CACHE)
+check_cxx_source_compiles([=[
+#include "engine_abi_312.hpp"
+int main() {
+  mjfLogHandler previous = _mjPRIVATE_setTlsLogHandler(nullptr);
+  (void) _mjPRIVATE_setTlsLogHandler(previous);
+  void (*volatile raw_data)(mjData**, const mjModel*) = &mj_makeRawData;
+  return _mjPRIVATE_getGlobalLogHandler() == nullptr || raw_data == nullptr;
+}
+]=] BIKE_MUJOCO_ERROR_ABI_312)
+unset(CMAKE_REQUIRED_INCLUDES)
+unset(CMAKE_REQUIRED_LIBRARIES)
+if(NOT BIKE_MUJOCO_ERROR_ABI_312)
+  message(FATAL_ERROR "MuJoCo 3.12.0 private TLS error-handler ABI is unavailable for ${Python_EXECUTABLE}")
+endif()
 
 # Resolve standalone third-party header roots before adding the direct-contract
 # targets; their header sweep compiles every first-party native/src header.
@@ -403,6 +435,29 @@ target_include_directories(bike_native_contract_core SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 target_link_libraries(bike_native PRIVATE bike_native_contract_core)
 
+# The pinned error interceptor is compiled once and shared by the extension,
+# direct C++ contracts, and the later native benchmark target.
+add_library(bike_native_engine STATIC src/engine_call.cpp)
+set_target_properties(bike_native_engine PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(bike_native_engine PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_native_engine PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_include_directories)
+  target_include_directories(bike_native_engine SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_native_engine SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+target_link_libraries(bike_native_engine PUBLIC "${MJ_DIR}/libmujoco.3.12.0.dylib")
+target_link_libraries(bike_native PRIVATE bike_native_engine)
+
 add_executable(native_contract_tests tests/test_contracts.cpp)
 set_target_properties(native_contract_tests PROPERTIES
   CXX_STANDARD 23
@@ -424,7 +479,13 @@ get_target_property(_native_contract_link_options bike_native LINK_OPTIONS)
 if(_native_contract_link_options)
   target_link_options(native_contract_tests PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core)
+target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core bike_native_engine)
+add_custom_command(TARGET native_contract_tests POST_BUILD
+  COMMAND install_name_tool -change
+    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+    "${MJ_DIR}/libmujoco.3.12.0.dylib"
+    "$<TARGET_FILE:native_contract_tests>"
+  VERBATIM)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -432,7 +493,7 @@ if(BUILD_TESTING)
 endif()
 
 add_custom_target(check_native_contracts
-  COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../tools/check_native_contracts.py"
+  COMMAND uv run --frozen --group native python "${CMAKE_SOURCE_DIR}/../tools/check_native_contracts.py"
           --build "${CMAKE_BINARY_DIR}"
   COMMENT "native structural contract checks"
   VERBATIM)

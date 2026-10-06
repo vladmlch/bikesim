@@ -20,6 +20,10 @@ NATIVE_TEST_BUILD_DIR values '', asan, rtsan, and coverage remain supported.
 EOF
 }
 
+native_uv() {
+  uv run --frozen --group native "$@"
+}
+
 profile="${1:-quick}"
 if (($# > 0)); then
   shift
@@ -86,7 +90,9 @@ resolve_native_runtime() {
     return 1
   fi
 
-  compiler="$(sed -n 's/^CMAKE_CXX_COMPILER:FILEPATH=//p; s/^CMAKE_CXX_COMPILER:STRING=//p' "$cache_file" | head -n 1)"
+  # CMake keeps a command-line -DCMAKE_CXX_COMPILER entry UNINITIALIZED in
+  # some configured builds, including the LLVM clang++ RTSan build.
+  compiler="$(sed -n 's/^CMAKE_CXX_COMPILER:FILEPATH=//p; s/^CMAKE_CXX_COMPILER:STRING=//p; s/^CMAKE_CXX_COMPILER:UNINITIALIZED=//p' "$cache_file" | head -n 1)"
   if [[ -z "$compiler" || ! -x "$compiler" ]]; then
     printf 'cannot resolve selected build compiler from %s\n' "$cache_file" >&2
     return 1
@@ -141,9 +147,9 @@ resolve_native_runtime() {
 
 run_with_native_runtime() {
   if ((${#native_runtime_env[@]})); then
-    uv run env "${native_runtime_env[@]}" "$@"
+    native_uv env "${native_runtime_env[@]}" "$@"
   else
-    uv run "$@"
+    native_uv "$@"
   fi
 }
 
@@ -155,13 +161,14 @@ preflight_native() {
     export NATIVE_TEST_PROVENANCE_PATH="$build_dir/native_test_provenance.json"
   fi
   printf 'selected native build: %s\n' "$build_dir"
-  uv run cmake -S "$REPO_ROOT/native" -B "$build_dir"
-  uv run cmake --build "$build_dir"
+  native_uv python -c 'import mujoco, nanobind, sys; sys.exit(0 if mujoco.__version__ == "3.12.0" else f"native build requires MuJoCo 3.12.0, found {mujoco.__version__}")'
+  native_uv cmake -S "$REPO_ROOT/native" -B "$build_dir"
+  native_uv cmake --build "$build_dir"
   for target in frontends tidy analyzer cppcheck odr scripts; do
-    uv run cmake --build "$build_dir" --target "check_$target"
+    native_uv cmake --build "$build_dir" --target "check_$target"
   done
   for kind in headers diagnostic-controls context; do
-    uv run python "$REPO_ROOT/tools/native_checks.py" --kind "$kind" --build "$build_dir"
+    native_uv python "$REPO_ROOT/tools/native_checks.py" --kind "$kind" --build "$build_dir"
   done
 
   resolve_native_runtime "$build_dir"
@@ -174,7 +181,7 @@ preflight_native() {
 
 if [[ "$profile" == native || "$profile" == full ]]; then
   export PYTHONPATH="$REPO_ROOT/tests/reference${PYTHONPATH:+:$PYTHONPATH}"
-  selected_build="$(uv run python -c 'import os, sys; sys.path.insert(0, "tests/reference"); from native_loader import selected_build; print(selected_build(os.environ))')"
+  selected_build="$(native_uv python -c 'import os, sys; sys.path.insert(0, "tests/reference"); from native_loader import selected_build; print(selected_build(os.environ))')"
   export NATIVE_TEST_BUILD_PATH="$selected_build"
   preflight_native "$selected_build"
   pytest_args+=(-p native_test_reporter)

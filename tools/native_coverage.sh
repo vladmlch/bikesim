@@ -58,14 +58,14 @@ LLVM_PROFDATA="$(resolve_tool LLVM_PROFDATA llvm-profdata)"
 LLVM_COV="$(resolve_tool LLVM_COV llvm-cov)"
 
 cd "$REPO_ROOT"
-run_logged configure uv run cmake -S "$REPO_ROOT/native" -B "$BUILD_DIR" -DNATIVE_COVERAGE=ON
+run_logged configure uv run --frozen --group native cmake -S "$REPO_ROOT/native" -B "$BUILD_DIR" -DNATIVE_COVERAGE=ON
 
 unset NATIVE_TEST_BUILD_DIR
 export NATIVE_TEST_BUILD_PATH="$BUILD_DIR"
 export NATIVE_TEST_PROVENANCE_PATH="$RUN_DIR/test_native_provenance.json"
 export LLVM_PROFILE_FILE="$PROFILE_DIR/%p.profraw"
 run_logged native-tests bash "$REPO_ROOT/tools/run_tests.sh" native
-run_logged coverage-report uv run python "$REPO_ROOT/tools/native_coverage.py" \
+run_logged coverage-report uv run --frozen --group native python "$REPO_ROOT/tools/native_coverage.py" \
   --build "$BUILD_DIR" \
   --run-dir "$RUN_DIR" \
   --llvm-profdata "$LLVM_PROFDATA" \

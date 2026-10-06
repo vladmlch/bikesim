@@ -516,3 +516,87 @@ The 24 failing node IDs, identical in the baseline and current full run, are:
 - `tests/test_rider_welds.py::test_held_rider_weight_is_carried_by_the_connects`
 - `tests/test_rider_welds.py::test_contact_diagnostics_carry_the_solved_weight`
 - `tests/test_rider_welds.py::test_steep_grade_saddle_shear_exceeds_friction`
+
+## E1 recoverable MuJoCo errors
+
+The native dependency group in `pyproject.toml` pins MuJoCo 3.12.0 and
+nanobind >=3.1.0. Native launchers use `uv run --frozen --group native`; CMake
+checks the imported MuJoCo version and compile/links the private TLS handler
+ABI before building the extension. The exact upstream 3.12.0 tag is commit
+`13827e9ee56f097f57acf69ae52b078f9839682d`.
+
+`native/src/engine_call.cpp` owns the pinned private ABI. A thread-local,
+fixed-storage frame catches fatal `mj_loadModelBuffer`, private raw-data
+allocation, `mj_forward`, `mj_step`, `mj_resetData`, and `mj_setConst` calls
+without unwinding through C frames, then restores the previous handler.
+Nonfatal messages reach the outer frame's forwarding destination, including
+native/stock/native nesting without warning recursion.
+The extension exports the actual `mujoco.FatalError` class; a fatal runtime
+error poisons its Stepper until a guarded `reset` or valid `set_state` succeeds.
+Recovery also resets owned drivetrain pending work/clocks and tire/cruise
+state before clearing poison. Read-only state views remain accessible while
+poisoned. Native model loading reads a local MJB into owned bytes before
+entering the error frame; resource-provider paths and plugin-bearing models
+are unsupported. The plugin count is checked against the pinned 3.12.0 MJB
+header before `mj_loadModelBuffer`, since sensor plugins can execute during
+load. A value-initialized, owned `mjData` is passed to the pinned private
+`mj_makeRawData`, so partial raw-data allocations can be released after a
+fatal error. Reset then runs through a separate guarded call. Invalid
+history/timestep combinations are rejected before data allocation. Constructor
+resources are held by local owners until initial forward succeeds.
+
+One pinned-library cleanup limit remains: `mj_loadModelBuffer` can allocate an
+internal `mjModel` and then call its fatal handler before returning any pointer
+to the caller. A model with an invalid equality type reproduces a recoverable
+`mujoco.FatalError` at `mj_validateReferences`, but the native owner cannot
+free MuJoCo's unreturned partial model. The same applies to a late allocation
+failure inside that loader. This S5 cleanup requirement remains open pending
+an owned loader API or an approved scope change; process survival does not
+prove leak-free loading.
+
+MuJoCo's stock `MjData` installs a C-level `mjcb_time = GetTime`, so that slot
+is supported. Its module origin is checked and its lazy clock epoch is warmed
+outside marked realtime regions when the callback pointer changes. Stock Python
+time callback errors retain their Python exception during unmarked
+construction; an installed `ctypes.CFuncPtr` timer is rejected before any
+native constructor engine call. An installed Python timer callback is rejected before runtime
+`step`/`forward` with `ValueError`. Direct C++ callers of `try_step`/`try_forward`
+must call `refresh_time_callback_policy` outside their realtime loop after
+callback changes. Other installed `mjcb_*` and legacy allocator/log callbacks
+are rejected before an owner mutation or native engine call; they have no validated cleanup-safe
+boundary for this owner. Concurrent owners use separate Stepper instances; do
+not mutate process-global callbacks concurrently with a native engine call.
+
+The closed solver enum is validated in the fixed-storage realtime status path.
+An invalid solver returns a fatal status before entering MuJoCo's formatter:
+the latter calls `snprintf`, which takes a libc lock under RTSan. The general
+interceptor still handles other fatal engine errors. Arbitrary future MuJoCo
+fatal formatting inside a marked realtime call is not claimed RTSan-safe;
+adding such a path requires a separate precheck or a changed engine contract.
+
+| Checker | Narrow origin and reason | Reproducer | Remove when |
+|---|---|---|---|
+| `-Wreserved-identifier` | Two declarations in `engine_abi_312.hpp` use MuJoCo's exact exported private names. | CMake `BIKE_MUJOCO_ERROR_ABI_312` probe | A public per-thread error API replaces these symbols. |
+| `cert-err52-cpp`, `modernize-avoid-setjmp-longjmp`, array-to-pointer decay | The two jump calls in `engine_call.cpp` cross only trivial C frames; C++ unwinding through MuJoCo is undefined. | `test_native_engine_errors.py` fatal subprocess cases | MuJoCo provides a recoverable public error API. |
+| `cppcoreguidelines-avoid-non-const-global-variables`, `misc-const-correctness` | One thread-local frame pointer and its mutable jump buffer are required for nested handlers. | `native_contract_tests` nested, concurrent, and handler-restoration cases | A public scoped handler removes the local frame. |
+| cppcheck `danglingLifetime` | `engine_call.cpp` points at a stack frame only while `invoke` runs; both normal and jump exits restore its predecessor before return. | `native_contract_tests` nested/concurrent/handler-restoration cases | A public scoped handler removes the frame or cppcheck follows both exits. |
+| `bugprone-bitwise-pointer-cast` | `stepper.cpp` passes the stock timer's function address to Apple's `dladdr`; the pinned Apple arm64 ABI has equal-sized function and object pointers and C++ offers no portable `dladdr` argument conversion. | `test_stock_timer_installed_after_native_construction_is_allowed` and the ctypes constructor rejection control | MuJoCo exposes stock timer identity or a portable timer callback query. |
+| `cppcoreguidelines-pro-type-vararg`, compiler format-buffer warning | One `test_contracts.cpp` call uses MuJoCo's variadic error API with a NUL-terminated literal. | `native_contract_tests` fatal-status case | A typed test error entry point replaces the variadic call. |
+| `cppcoreguidelines-owning-memory`, `cppcoreguidelines-no-malloc` | The isolated late-allocation contract implements MuJoCo's raw `void*` allocator/free callback pair; ownership is counted and checked after cleanup. | `test_actual_engine_allocation_error_is_caught_in_c_contract[--late-data-allocation-failure]` | A typed allocator injection point replaces the C callbacks. |
+
+E1 focused controls live in `tests/reference/test_native_engine_errors.py`. The
+selected ASan/UBSan and RTSan builds run them with the matching runtime loaded
+in the Python process. The master plan's separate E2-E4 atomicity gates and the
+24 pre-existing full-suite failures above remain open.
+
+E1 verification snapshot on the final local code (2026-10-06):
+`bash tools/run_tests.sh native` passed 816 tests with 15 existing runtime
+warnings. Selected `native/build/asan` and `native/build/rtsan` profiles each
+passed 30 engine-error tests, CTest, artifact/runtime provenance, and mandatory
+sweeps. `full -q --tb=no` completed with exactly the same 24 failing node IDs
+listed above and no new IDs; its output is retained at
+`/private/tmp/e1-full-after-review.log`. The overall `full` gate remains red.
+During RTSan verification, the context
+checker was corrected to retain the C++ driver symlink and to allow the
+default-SDK control to choose its own compiler; the launcher now reads CMake's
+`UNINITIALIZED` compiler cache entry as well as `FILEPATH` and `STRING`.

@@ -31,6 +31,10 @@ dev = [
     { name = "hypothesis" },
     { name = "nanobind" },
 ]
+native = [
+    { name = "mujoco" },
+    { name = "nanobind" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -47,6 +51,10 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "hypothesis", specifier = ">=6.168.4" },
+    { name = "nanobind", specifier = ">=3.1.0" },
+]
+native = [
+    { name = "mujoco", specifier = "==3.12.0" },
     { name = "nanobind", specifier = ">=3.1.0" },
 ]
 

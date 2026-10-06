@@ -1,8 +1,13 @@
 #include "stepper.hpp"
+#include "engine_call.hpp"
+#include <bit>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <dlfcn.h>
+#include <filesystem>
 #include <stdexcept>
+#include <nanobind/stl/string.h>
 #include "config.hpp"
 #include "writers/brake.hpp"
 #include "writers/cruise.hpp"
@@ -34,15 +39,22 @@ namespace {
     }
 } // namespace
 
-Stepper::Stepper(const std::string &mjb_path) : m_(mj_loadModel(mjb_path.c_str(), nullptr)) {
-    // mjb: no VFS needed
-    if (!m_) throw std::runtime_error("mj_loadModel failed: " + mjb_path);
-    d_ = mj_makeData(m_);
-    if (!d_) {
-        mj_deleteModel(m_);
-        throw std::runtime_error("mj_makeData");
-    }
-    mj_forward(m_, d_);
+Stepper::Stepper(const std::string &mjb_path) : m_(nullptr), d_(nullptr) {
+    // Reject raw C timers before any engine operation can call them while a
+    // fatal-error jump frame is active. Stock Python trampolines catch their
+    // own errors and are allowed here, outside the marked realtime region.
+    require_unmarked_time_callback();
+    // Keep both allocations locally owned until the fatal-capable forward
+    // succeeds. A throwing constructor has no Stepper destructor to clean up.
+    std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+        engine::load_model(mjb_path.c_str()), &mj_deleteModel);
+    if (!model) throw std::runtime_error("mj_loadModel failed: " + mjb_path);
+    std::unique_ptr<mjData, decltype(&mj_deleteData)> data(
+        engine::make_data(model.get()), &mj_deleteData);
+    if (!data) throw std::runtime_error("mj_makeData");
+    engine::forward(model.get(), data.get());
+    m_ = model.release();
+    d_ = data.release();
 }
 
 Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
@@ -87,6 +99,137 @@ Stepper::~Stepper() {
     if (m_) mj_deleteModel(m_);
 }
 
+void Stepper::require_healthy() const {
+    if (poisoned_)
+        throw std::logic_error(
+            "Stepper is poisoned after a fatal MuJoCo error; call reset");
+}
+
+void Stepper::require_unmarked_time_callback() {
+    refresh_time_callback_policy();
+    if (!unmarked_time_callback_safe_)
+        throw std::invalid_argument(
+            "unsupported installed MuJoCo callback: mjcb_time");
+    engine::require_supported_callbacks();
+}
+
+void Stepper::refresh_time_callback_policy() {
+    const mjfTime current = mjcb_time;
+    if (time_callback_policy_ready_ && current == observed_time_callback_)
+        return;
+    const auto record = [this, current](mjfTime allowed, bool unmarked_safe) noexcept {
+        allowed_time_callback_ = allowed;
+        observed_time_callback_ = current;
+        unmarked_time_callback_safe_ = unmarked_safe;
+        time_callback_policy_ready_ = true;
+    };
+    if (current == nullptr) {
+        record(nullptr, true);
+        return;
+    }
+
+    const nanobind::gil_scoped_acquire gil;
+    const nanobind::object callback =
+        nanobind::module_::import_("mujoco").attr("get_mjcb_time")();
+    if (!callback.is_none()) {
+        const nanobind::object cfunc_type =
+            nanobind::module_::import_("ctypes").attr("_CFuncPtr");
+        const bool raw_c_callback = nanobind::cast<bool>(
+            nanobind::module_::import_("builtins").attr("isinstance")(
+                callback, cfunc_type));
+        record(nullptr, !raw_c_callback);
+        return;
+    }
+
+    // structs_wrappers.cc in MuJoCo 3.12.0 installs GetTime from _structs
+    // after constructing a stock MjData. Identify that exact module before
+    // calling it; direct foreign C timer pointers are not part of this owner.
+    static_assert(sizeof(mjfTime) == sizeof(const void *));
+    Dl_info image{};
+    // dladdr requires an object pointer on Apple platforms; this pinned ABI
+    // uses equal-sized function and object pointers for module identification.
+    // NOLINTNEXTLINE(bugprone-bitwise-pointer-cast)
+    const auto address = std::bit_cast<const void *>(current);
+    if (dladdr(address, &image) == 0 || image.dli_fname == nullptr) {
+        record(nullptr, false);
+        return;
+    }
+    const nanobind::object structs =
+        nanobind::module_::import_("mujoco._structs");
+    const std::string expected = nanobind::cast<std::string>(structs.attr("__file__"));
+    if (!std::filesystem::equivalent(image.dli_fname, expected)) {
+        record(nullptr, false);
+        return;
+    }
+
+    // GetTime initializes a static steady-clock epoch. Do that before
+    // entering BIKE_NONBLOCKING: its first call takes a C++ guard lock.
+    static_cast<void>(current());
+    record(current, true);
+}
+
+bool Stepper::try_step(engine::ErrorBuffer &error) noexcept {
+    if (poisoned_) {
+        engine::set_poisoned_error(error);
+        return false;
+    }
+    if (mjcb_time != nullptr && mjcb_time != allowed_time_callback_) {
+        engine::set_unsupported_callback_error(error, "mjcb_time");
+        return false;
+    }
+    const bool succeeded = engine::try_step(m_, d_, error);
+    if (!succeeded && error.kind == engine::ErrorKind::fatal)
+        poisoned_ = true;
+    return succeeded;
+}
+
+bool Stepper::try_forward(engine::ErrorBuffer &error) noexcept {
+    if (poisoned_) {
+        engine::set_poisoned_error(error);
+        return false;
+    }
+    if (mjcb_time != nullptr && mjcb_time != allowed_time_callback_) {
+        engine::set_unsupported_callback_error(error, "mjcb_time");
+        return false;
+    }
+    const bool succeeded = engine::try_forward(m_, d_, error);
+    if (!succeeded && error.kind == engine::ErrorKind::fatal)
+        poisoned_ = true;
+    return succeeded;
+}
+
+void Stepper::step() {
+    if (!poisoned_) refresh_time_callback_policy();
+    engine::ErrorBuffer error;
+    if (!try_step(error)) engine::throw_failure(error);
+}
+
+void Stepper::forward() {
+    if (!poisoned_) refresh_time_callback_policy();
+    engine::ErrorBuffer error;
+    if (!try_forward(error)) engine::throw_failure(error);
+}
+
+void Stepper::reset() {
+    require_unmarked_time_callback();
+    bool data_reset = false;
+    try {
+        engine::reset_data(m_, d_);
+        data_reset = true;
+        engine::forward(m_, d_);
+        if (drive_) drive_->reset();
+        if (tire_) tire_->reset();
+        if (cruise_) cruise_->reset();
+        poisoned_ = false;
+    } catch (const engine::EngineFailure &) {
+        poisoned_ = true;
+        throw;
+    } catch (...) {
+        if (data_reset) poisoned_ = true;
+        throw;
+    }
+}
+
 drivetrain::DrivetrainWriter &Stepper::drive() const {
     if (!drive_)
         throw std::logic_error("Stepper was built without a drive config");
@@ -95,6 +238,7 @@ drivetrain::DrivetrainWriter &Stepper::drive() const {
 
 void Stepper::set_inputs(std::span<const double> ctrl,
                          std::span<const double> force) {
+    require_healthy();
     check_width(ctrl, "ctrl", m_->nu);
     check_width(force, "qfrc_applied", m_->nv);
     for (double const x: ctrl)
@@ -116,23 +260,30 @@ CruiseWriter &Stepper::require_cruise() const {
 
 double Stepper::cruise_compute(bool rear_in_contact, bool traction_limited,
                                std::optional<bool> controller_grounded) {
+    require_healthy();
     return require_cruise().compute(d_, rear_in_contact, traction_limited,
                                     controller_grounded);
 }
 
-void Stepper::cruise_reset() { require_cruise().reset(); }
+void Stepper::cruise_reset() {
+    require_healthy();
+    require_cruise().reset();
+}
 
 void Stepper::cruise_set_target_speed(double value_kmh) {
+    require_healthy();
     require_cruise().set_target_speed(value_kmh);
 }
 
 double Stepper::cruise_set_assist_compensation(double support_factor) {
+    require_healthy();
     return require_cruise().set_assist_compensation(support_factor);
 }
 
 CruiseState Stepper::cruise_state() const { return require_cruise().state(); }
 
 void Stepper::set_cruise_state(const CruiseState &state) {
+    require_healthy();
     require_cruise().set_state(state);
 }
 
@@ -141,6 +292,7 @@ void Stepper::set_state(std::span<const double> qpos,
                         std::span<const double> act,
                         std::span<const double> warmstart,
                         double time) {
+    require_unmarked_time_callback();
     // All width checks first (strong guarantee), then the same sequence the
     // Python oracle runs: mj_resetData + buffer writes + mj_forward.
     check_width(qpos, "qpos", m_->nq);
@@ -154,12 +306,29 @@ void Stepper::set_state(std::span<const double> qpos,
     const std::vector<double> saved_qvel(qvel.begin(), qvel.end());
     const std::vector<double> saved_act(act.begin(), act.end());
     const std::vector<double> saved_warmstart(warmstart.begin(), warmstart.end());
-    mj_resetData(m_, d_);
+    const bool recovering = poisoned_;
+    try {
+        engine::reset_data(m_, d_);
+    } catch (const engine::EngineFailure &) {
+        poisoned_ = true;
+        throw;
+    }
     copy_in(saved_qpos, d_->qpos);
     copy_in(saved_qvel, d_->qvel);
     copy_in(saved_act, d_->act);
     copy_in(saved_warmstart, d_->qacc_warmstart);
     d_->time = time;
+    if (recovering) {
+        try {
+            if (drive_) drive_->reset();
+            if (tire_) tire_->reset();
+            if (cruise_) cruise_->reset();
+        } catch (...) {
+            poisoned_ = true;
+            throw;
+        }
+    }
+    poisoned_ = false;
 }
 
 std::vector<std::pair<std::string, std::vector<double> > >
@@ -181,6 +350,7 @@ Stepper::brake_torques(double front_demand, double rear_demand) const {
 }
 
 void Stepper::apply_brake(double front_demand, double rear_demand) {
+    require_healthy();
     if (!brake_)
         throw std::logic_error(
             "apply_brake: Stepper was built without a brake config (pass "
@@ -205,6 +375,7 @@ namespace {
 } // namespace
 
 std::vector<double> Stepper::tire_qfrc(double dt) {
+    require_healthy();
     if (!tire_)
         throw std::logic_error(kNoTire);
     return tire_->qfrc(d_, dt);
@@ -212,6 +383,7 @@ std::vector<double> Stepper::tire_qfrc(double dt) {
 
 void Stepper::set_tire_state(std::span<const std::string> names,
                              std::span<const double> row) {
+    require_healthy();
     if (!tire_)
         throw std::logic_error(kNoTire);
     tire_->set_state(names, row);
@@ -228,6 +400,7 @@ const std::vector<std::string> &Stepper::tire_state_names() const {
 }
 
 std::vector<double> Stepper::rider_forces_qfrc() const {
+    require_healthy();
     if (!rider_forces_)
         throw std::logic_error(
             "rider_forces_qfrc: Stepper was built without a rider_forces "

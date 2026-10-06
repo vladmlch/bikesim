@@ -414,6 +414,10 @@ def test_native_contract_executable_lists_registered_cases() -> None:
     assert result.stdout.splitlines() == [
         'human_crank_torque',
         'pedaling_policy_valid_transition',
+        'engine_fatal_status_and_reuse',
+        'nested_engine_frames',
+        'thread_local_engine_frames',
+        'previous_tls_handler_restored',
     ]
 
 

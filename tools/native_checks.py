@@ -138,10 +138,15 @@ def apply_suppressions(
     return remaining, matched
 
 
-def _require_existing_path(value: Any, label: str, *, executable: bool = False) -> Path:
+def _require_existing_path(
+    value: Any, label: str, *, executable: bool = False, preserve_symlink: bool = False
+) -> Path:
     if not isinstance(value, str) or not value:
         raise CheckError(f"{label} is missing or is not a path")
-    path = Path(value).expanduser().resolve()
+    expanded = Path(value).expanduser()
+    # A C++ driver may be a symlink to the C driver binary. Its invocation
+    # basename controls C++ runtime linking, so keep that spelling when used.
+    path = expanded.absolute() if preserve_symlink else expanded.resolve()
     if not path.exists():
         raise CheckError(f"missing {label}: {path}")
     if executable and (not path.is_file() or not os.access(path, os.X_OK)):
@@ -162,7 +167,8 @@ def load_context(build: Path) -> dict[str, Any]:
     if not isinstance(compiler, dict):
         raise CheckError("native check context has no compiler record")
     compiler_path = _require_existing_path(
-        compiler.get("path"), "configured C++ compiler", executable=True
+        compiler.get("path"), "configured C++ compiler", executable=True,
+        preserve_symlink=True,
     )
     compiler["path"] = str(compiler_path)
 
@@ -1456,14 +1462,18 @@ def run_context_checks(build: Path) -> int:
     )
     try:
         default_context = configured_context(default_build)
+        # This case deliberately omits CMAKE_CXX_COMPILER; an RTSan build may
+        # use LLVM clang++ while the default control selects AppleClang.
         default_ok = (
             default_record["returncode"] == 0
             and default_context["sdk_source"] == "default"
             and Path(default_context["sdk"]).is_dir()
-            and Path(default_context["compiler"]["path"]).resolve() == compiler.resolve()
         )
         sdk_controls["default_sdk"] = "passed" if default_ok else "failed"
-        sdk_details["default_sdk"] = {"selected": default_context["sdk"]}
+        sdk_details["default_sdk"] = {
+            "selected": default_context["sdk"],
+            "compiler": default_context["compiler"]["path"],
+        }
     except (CheckError, KeyError, TypeError) as error:
         sdk_controls["default_sdk"] = "failed"
         sdk_details["default_sdk"] = {"error": str(error)}

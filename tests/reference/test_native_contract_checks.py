@@ -366,6 +366,49 @@ def _run_contract_checker(fixture: dict[str, Path]) -> subprocess.CompletedProce
     )
 
 
+def _install_engine_fixture(fixture: dict[str, Path], *, manifest: bool = True) -> None:
+    source_root = fixture['repository'] / 'native' / 'src'
+    engine_source = source_root / 'engine_call.cpp'
+    engine_source.write_text('void engine_operation() {}\n')
+    (source_root / 'engine_abi_312.hpp').write_text('#pragma once\n')
+    (source_root / 'engine_call.hpp').write_text(
+        'bool invoke();\nvoid* load_model();\nvoid* make_data();\n'
+        'void forward();\nvoid step();\nvoid reset_data();\n'
+        'void set_const();\nbool try_forward();\nbool try_step();\n'
+    )
+    if not manifest:
+        return
+    build = fixture['build']
+    manifest_path = build / 'native_sources.json'
+    source_manifest = json.loads(manifest_path.read_text())
+    source_manifest['sources'].append({
+        'path': str(engine_source.resolve()),
+        'target': 'bike_native_engine',
+        'context': 'bike_native_engine:fixture',
+    })
+    manifest_path.write_text(json.dumps(source_manifest))
+    context_path = build / 'native_check_context.json'
+    context = json.loads(context_path.read_text())
+    template = context['target_contexts']['bike_native']
+    context['target_contexts']['bike_native_engine'] = dict(template)
+    context_path.write_text(json.dumps(context))
+    database_path = build / 'compile_commands.json'
+    database = json.loads(database_path.read_text())
+    compiler = context['compiler']['path']
+    sdk = context['sdk']
+    hardening = '_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE'
+    output = 'CMakeFiles/bike_native_engine.dir/engine_call.cpp.o'
+    database.append({
+        'directory': str(build.parent.resolve()),
+        'file': str(engine_source.resolve()),
+        'output': output,
+        'arguments': [compiler, '-std=c++23', '-isysroot', sdk,
+                      f'-D{hardening}', '-c', str(engine_source.resolve()),
+                      '-o', output],
+    })
+    database_path.write_text(json.dumps(database))
+
+
 def test_contract_checker_requires_manifested_ctest_contract_cases(tmp_path: Path) -> None:
     fixture = _write_contract_fixture(tmp_path)
     ctest_file = fixture['build'] / 'CTestTestfile.cmake'
@@ -399,6 +442,38 @@ def test_contract_checker_marks_future_engine_and_benchmark_rules_pending(tmp_pa
     assert summary['status'] == 'passed'
     assert summary['checks']['engine_call_wrappers']['status'] == 'pending'
     assert summary['checks']['benchmark_manifest_membership']['status'] == 'pending'
+
+
+@pytest.mark.parametrize('call', [
+    'mj_forward(nullptr, nullptr)',
+    'mj_loadModelBuffer(nullptr, 0)',
+])
+def test_contract_checker_enforces_installed_engine_boundary(tmp_path: Path, call: str) -> None:
+    fixture = _write_contract_fixture(tmp_path)
+    _install_engine_fixture(fixture)
+
+    passed = _run_contract_checker(fixture)
+
+    assert passed.returncode == 0, passed.stderr
+    summary = json.loads((fixture['build'] / 'native_check_summaries' / 'contracts.json').read_text())
+    assert summary['checks']['engine_call_wrappers']['status'] == 'passed'
+
+    (fixture['repository'] / 'native' / 'src' / 'one.cpp').write_text(
+        f'void unguarded() {{ {call}; }}\n'
+    )
+    failed = _run_contract_checker(fixture)
+    assert failed.returncode != 0
+    assert 'unguarded fatal-capable MuJoCo calls' in failed.stderr
+
+
+def test_contract_checker_rejects_unmanifested_engine_boundary(tmp_path: Path) -> None:
+    fixture = _write_contract_fixture(tmp_path)
+    _install_engine_fixture(fixture, manifest=False)
+
+    result = _run_contract_checker(fixture)
+
+    assert result.returncode != 0
+    assert 'engine_call.cpp is not uniquely manifested' in result.stderr
 
 
 def test_contract_checker_rejects_missing_configured_hardening_definition(tmp_path: Path) -> None:

@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <exception>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -22,6 +23,7 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include "stepper.hpp"
+#include "engine_call.hpp"
 #include "diag.hpp"
 #include "rider/contact_binding.hpp"
 #include "drivetrain/policy_binding.hpp"
@@ -33,6 +35,18 @@
 namespace nb = nanobind;
 
 namespace {
+    void translate_engine_failure(const std::exception_ptr &exception,
+                                  void *python_class) {
+        try {
+            std::rethrow_exception(exception);
+        } catch (const engine::EngineFailure &failure) {
+            // A stock MuJoCo Python callback can set its original Python
+            // error before raising mju_error. Keep that exception intact.
+            if (!PyErr_Occurred())
+                PyErr_SetString(static_cast<PyObject *>(python_class), failure.what());
+        }
+    }
+
     // 1-D C-contiguous float64 ndarray → span. Shape and contiguity are
     // enforced by the parameter type; model-width checks live in the core
     // (set_state) — one place only. size() is size_t; counted wants the
@@ -159,14 +173,77 @@ namespace {
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 NB_MODULE(bike_native, m) {
+    nb::object fatal_error = nb::module_::import_("mujoco").attr("FatalError");
+    m.attr("FatalError") = fatal_error;
+    // Nanobind retains the translator for the interpreter lifetime; keep its
+    // payload alive even if module attributes are changed by Python code.
+    Py_INCREF(fatal_error.ptr());
+    nb::register_exception_translator(&translate_engine_failure,
+                                      fatal_error.ptr());
     bind_drive_policies(m);
     auto stepper_class = nb::class_<Stepper>(m, "Stepper");
+    // Isolated fatal-path test hook. It restores the model option before the
+    // exception reaches Python, while Stepper retains its poisoned state.
+    m.def("_engine_test_forward_failure", [](Stepper &stepper) {
+        stepper.mutate([&] {
+            mjModel *model = stepper.model();
+            const int previous_solver = model->opt.solver;
+            model->opt.solver = 99;
+            try {
+                stepper.forward();
+            } catch (...) {
+                model->opt.solver = previous_solver;
+                throw;
+            }
+            model->opt.solver = previous_solver;
+        });
+    });
+    m.def("_engine_test_set_const_failure", [](Stepper &stepper) {
+        stepper.mutate([&] {
+            mjModel *model = stepper.model();
+            if (model->nbody < 2)
+                throw std::invalid_argument("setConst test needs a nonworld body");
+            const auto ipos = std::views::counted(model->body_ipos, 3 * model->nbody);
+            const auto simple = std::views::counted(model->body_simple, model->nbody);
+            const auto sameframe = std::views::counted(model->body_sameframe, model->nbody);
+            const auto previous_ipos = ipos[3];
+            const auto previous_simple = simple[1];
+            const auto previous_sameframe = sameframe[1];
+            simple[1] = 1;
+            ipos[3] = previous_ipos + .123;
+            try {
+                engine::set_const(model, stepper.data());
+            } catch (...) {
+                ipos[3] = previous_ipos;
+                simple[1] = previous_simple;
+                sameframe[1] = previous_sameframe;
+                throw;
+            }
+            ipos[3] = previous_ipos;
+            simple[1] = previous_simple;
+            sameframe[1] = previous_sameframe;
+        });
+    });
+    m.def("_engine_test_try_status", [](Stepper &stepper, bool step) {
+        return stepper.mutate([&] {
+            stepper.refresh_time_callback_policy();
+            mjModel *model = stepper.model();
+            const int previous_solver = model->opt.solver;
+            model->opt.solver = 99;
+            engine::ErrorBuffer error;
+            const bool succeeded = step ? stepper.try_step(error)
+                                        : stepper.try_forward(error);
+            model->opt.solver = previous_solver;
+            return std::pair{succeeded, std::string(error.message.data())};
+        });
+    });
     stepper_class
             .def(nb::init<const std::string &>())
             .def(nb::init<const std::string &, const nb::dict &>(),
                  nb::arg("mjb_path"), nb::arg("config"))
             .def("step", &Stepper::step)
             .def("forward", &Stepper::forward)
+            .def("reset", &Stepper::reset)
             .def("set_state", [](Stepper &s,
                                  const nb::ndarray<const double, nb::shape<-1>,
                                      nb::c_contig> &qpos,

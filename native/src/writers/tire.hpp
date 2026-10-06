@@ -80,6 +80,10 @@ public:
     TireWriter(const mjModel *m, const mjData *d,
                nativecfg::TireConfig config);
 
+    // Reset persistent brush state, diagnostics, energy and the advance clock
+    // when an owning Stepper recovers from a fatal engine operation.
+    void reset();
+
     // compute_qfrc(advance=True) (tire_forces.py:116-206). Mutates the
     // brush states; raises std::invalid_argument on the same-timestamp
     // double-advance, and leaves state untouched when either wheel's

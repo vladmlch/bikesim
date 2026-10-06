@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <nanobind/nanobind.h>
+#include "engine_call.hpp"
 #include "rtsan.hpp"
 
 class SuspensionWriter;
@@ -46,10 +47,31 @@ public:
 
     Stepper &operator=(Stepper &&) = delete;
 
-    // BIKE_NONBLOCKING: the RTSan build proves no malloc/lock hides in
-    // mj_step/mj_forward — the seed of the allocation-free P4 tick.
-    void step() BIKE_NONBLOCKING { mj_step(m_, d_); }
-    void forward() BIKE_NONBLOCKING { mj_forward(m_, d_); }
+    // Fixed-storage status paths are marked for RTSan. Public methods build
+    // Python-visible exceptions only after leaving those marked regions.
+    [[nodiscard]] bool try_step(engine::ErrorBuffer &error) noexcept BIKE_NONBLOCKING;
+    [[nodiscard]] bool try_forward(engine::ErrorBuffer &error) noexcept BIKE_NONBLOCKING;
+    void step();
+    void forward();
+    void reset();
+    // Refresh outside a marked region after process-global callback changes.
+    // A direct C++ try_* caller must invoke this before its realtime loop.
+    void refresh_time_callback_policy();
+
+    // Binding wrappers use this boundary for writer mutations that can call
+    // mj_setConst indirectly. Read-only diagnostics remain available after a
+    // fatal engine error.
+    template <typename Action>
+    decltype(auto) mutate(Action &&action) {
+        require_healthy();
+        require_unmarked_time_callback();
+        try {
+            return std::forward<Action>(action)();
+        } catch (const engine::EngineFailure &) {
+            poisoned_ = true;
+            throw;
+        }
+    }
     // Internal typed access for the private per-call drivetrain oracle adapter.
     [[nodiscard]] mjModel *model() const { return m_; }
     [[nodiscard]] mjData *data() const { return d_; }
@@ -184,6 +206,13 @@ public:
 private:
     mjModel *m_;
     mjData *d_;
+    bool poisoned_ = false;
+    mjfTime allowed_time_callback_ = nullptr;
+    mjfTime observed_time_callback_ = nullptr;
+    bool time_callback_policy_ready_ = false;
+    bool unmarked_time_callback_safe_ = true;
+    void require_healthy() const;
+    void require_unmarked_time_callback();
     std::unique_ptr<SuspensionWriter> suspension_;
     std::unique_ptr<BrakeWriter> brake_;
     std::unique_ptr<CruiseWriter> cruise_;

@@ -1,5 +1,6 @@
 #include "transmission.hpp"
 #include "../engaged.hpp"
+#include "../engine_call.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -10,8 +11,8 @@ namespace drivetrain {
                                const char *tendon, const char *driver, const char *driven,
                                const char *front)
         : model_(model), gear_(gear), geometric_(geometric),
-          tendon_(resolve(model, mjOBJ_TENDON, tendon)), constant_(mj_makeData(model)),
-          endpoint_(geometric ? mj_makeData(model) : nullptr), geometry_(model->nv),
+          tendon_(resolve(model, mjOBJ_TENDON, tendon)), constant_(engine::make_data(model)),
+          endpoint_(geometric ? engine::make_data(model) : nullptr), geometry_(model->nv),
           prepared_storage_{
               .phi = 0., .time = 0.,
               .jacobian = std::vector<double>(static_cast<std::size_t>(geometric ? model->nv : 0)),
@@ -100,7 +101,7 @@ namespace drivetrain {
             }
         }
         if (changed)
-            mj_setConst(model_, constant_.get());
+            engine::set_const(model_, constant_.get());
         buffer(model_->tendon_range,
                2 * model_->ntendon)[2 * static_cast<std::size_t>(tendon_) + 1] = upper;
         prepared_storage_.phi = phi;
@@ -144,7 +145,7 @@ namespace drivetrain {
             state_.ratio = ratio;
             buffer(model_->wrap_prm,
                    model_->nwrap)[static_cast<std::size_t>(coefficients_.front())] = ratio;
-            mj_setConst(model_, constant_.get());
+            engine::set_const(model_, constant_.get());
             const double current = relative(d);
             state_.boundary =
                     state_.boundary ? *state_.boundary + current - previous : current;
@@ -287,7 +288,7 @@ namespace drivetrain {
         auto const prm = buffer(model_->wrap_prm, model_->nwrap);
         for (std::size_t i = 0; i < coefficients_.size(); ++i)
             prm[static_cast<std::size_t>(coefficients_[i])] = restored.coefficients[i];
-        mj_setConst(model_, constant_.get());
+        engine::set_const(model_, constant_.get());
         std::ranges::copy(restored.range,
                           buffer(model_->tendon_range, 2 * model_->ntendon)
                           .subspan(2 * static_cast<std::size_t>(tendon_), 2)

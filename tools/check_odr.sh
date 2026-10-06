@@ -7,4 +7,4 @@ if (($# < 4)); then
 fi
 BUILD_DIR="$1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec uv run python "$SCRIPT_DIR/native_checks.py" --kind odr --build "$BUILD_DIR"
+exec uv run --frozen --group native python "$SCRIPT_DIR/native_checks.py" --kind odr --build "$BUILD_DIR"

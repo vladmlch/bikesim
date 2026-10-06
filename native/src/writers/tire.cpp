@@ -314,6 +314,16 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
     // hold these values; no snapshots/diagnostics until the first compute.
 }
 
+void TireWriter::reset() {
+    states_ = {};
+    snapshots_.fill(std::nullopt);
+    diagnostics_.fill(std::nullopt);
+    elastic_energy_j_ = 0.;
+    brush_loss_step_j_ = 0.;
+    radial_dissipation_power_w_ = 0.;
+    last_time_s_.reset();
+}
+
 const std::vector<std::string> &TireWriter::state_names() {
     // flatten_row(asdict(_BrushState)) schema per side: vector fields emit
     // component columns only (the leaf 'front.tangent' form decodes but is

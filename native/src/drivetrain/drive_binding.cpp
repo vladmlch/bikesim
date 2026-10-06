@@ -529,18 +529,24 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
         return std::pair{g.length, g.psi};
     });
     module.def("chain_center_gradient", &chain_center_gradient);
-    cls.def("drive_reset", [](Stepper &s) { s.drive().reset(); })
-            .def("drive_restart_clock", [](Stepper &s) { s.drive().restart_clock(); })
+    cls.def("drive_reset", [](Stepper &s) {
+                s.mutate([&] { s.drive().reset(); });
+            })
+            .def("drive_restart_clock", [](Stepper &s) {
+                s.mutate([&] { s.drive().restart_clock(); });
+            })
             .def(
                 "drive_prepare_pedaling",
                 // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional kwargs mirror the Python def
                 [](Stepper &s, nb::handle raw, double dt, nb::handle braking,
                    nb::handle active, nb::handle advance, nb::handle contact,
                    std::optional<double> slip, std::optional<double> ceiling) {
-                    return result_dict(s.drive().prepare(
-                        control(raw), dt, boolean(braking, "braking"),
-                        boolean(active, "active"), boolean(advance, "advance"),
-                        boolean(contact, "rear_in_contact"), slip, ceiling));
+                    return s.mutate([&] {
+                        return result_dict(s.drive().prepare(
+                            control(raw), dt, boolean(braking, "braking"),
+                            boolean(active, "active"), boolean(advance, "advance"),
+                            boolean(contact, "rear_in_contact"), slip, ceiling));
+                    });
                 },
                 nb::arg("control"), nb::arg("dt"), nb::arg("braking") = false,
                 nb::arg("active") = true, nb::arg("advance") = true,
@@ -552,20 +558,22 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                    nb::handle active, nb::handle advance, double sensed, nb::handle ps,
                    nb::handle contact, std::optional<double> slip) {
                     // NOLINTEND(bugprone-easily-swappable-parameters)
-                    std::optional<PedalingState> state;
-                    if (!ps.is_none()) {
-                        if (!nb::isinstance<nb::dict>(ps))
-                            throw std::invalid_argument("pedaling_state");
-                        state = parse_result(nb::borrow<nb::dict>(ps));
-                    }
-                    const auto &result = s.drive().components(
-                        control(raw), dt, speed, boolean(braking, "braking"),
-                        boolean(active, "active"), boolean(advance, "advance"), sensed,
-                        state, boolean(contact, "rear_in_contact"), slip);
-                    nb::dict out;
-                    for (const auto &[key, value]: result)
-                        out[key.c_str()] = owned(value);
-                    return out;
+                    return s.mutate([&] {
+                        std::optional<PedalingState> state;
+                        if (!ps.is_none()) {
+                            if (!nb::isinstance<nb::dict>(ps))
+                                throw std::invalid_argument("pedaling_state");
+                            state = parse_result(nb::borrow<nb::dict>(ps));
+                        }
+                        const auto &result = s.drive().components(
+                            control(raw), dt, speed, boolean(braking, "braking"),
+                            boolean(active, "active"), boolean(advance, "advance"), sensed,
+                            state, boolean(contact, "rear_in_contact"), slip);
+                        nb::dict out;
+                        for (const auto &[key, value]: result)
+                            out[key.c_str()] = owned(value);
+                        return out;
+                    });
                 },
                 nb::arg("control"), nb::arg("dt"), nb::arg("speed_mps"),
                 nb::arg("braking") = false, nb::arg("active") = true,
@@ -573,7 +581,9 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                 nb::arg("pedaling_state") = nb::none(), nb::arg("rear_in_contact") = true,
                 nb::arg("rear_slip_mps") = nb::none())
             .def("drive_settle_actuation",
-                 [](Stepper &s) { return owned(s.drive().settle()); })
+                 [](Stepper &s) {
+                     return s.mutate([&] { return owned(s.drive().settle()); });
+                 })
             .def(
                 "drive_diagnostics",
                 [](Stepper &s, nb::handle probe) {
@@ -586,7 +596,7 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
             .def(
                 "set_drive_state",
                 [](Stepper &s, const nb::dict &state) {
-                    s.drive().restore(parse_state(state));
+                    s.mutate([&] { s.drive().restore(parse_state(state)); });
                 },
                 nb::arg("state"))
             .def(
@@ -616,21 +626,23 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
         "_drive_core",
         [](Stepper &owner, const std::string &kind, const std::string &operation,
            double ratio) {
-            const bool geometric = kind == "geometric_ideal_mid_drive";
-            Transmission t(owner.model(), {.front_teeth = 34, .rear_teeth = 24, .chain_pitch_m = .0127}, geometric,
-                           geometric
-                               ? "geometric_mid_drive_freehub"
-                               : "ideal_mid_drive_freehub");
-            if (operation == "reset")
-                t.reset(owner.data());
-            else if (operation == "prepare")
-                t.prepare(owner.data());
-            else if (operation == "ratio") {
-                t.reset(owner.data());
-                t.set_ratio(owner.data(), ratio);
-            } else
-                throw std::invalid_argument("core operation");
-            return transmission_dict(t.state());
+            return owner.mutate([&] {
+                const bool geometric = kind == "geometric_ideal_mid_drive";
+                Transmission t(owner.model(), {.front_teeth = 34, .rear_teeth = 24, .chain_pitch_m = .0127}, geometric,
+                               geometric
+                                   ? "geometric_mid_drive_freehub"
+                                   : "ideal_mid_drive_freehub");
+                if (operation == "reset")
+                    t.reset(owner.data());
+                else if (operation == "prepare")
+                    t.prepare(owner.data());
+                else if (operation == "ratio") {
+                    t.reset(owner.data());
+                    t.set_ratio(owner.data(), ratio);
+                } else
+                    throw std::invalid_argument("core operation");
+                return transmission_dict(t.state());
+            });
         },
         nb::arg("kind"), nb::arg("operation"), nb::arg("ratio") = 34. / 24.);
 }

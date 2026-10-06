@@ -183,6 +183,7 @@ add_custom_command(TARGET bike_native POST_BUILD
 # Multi-compiler sweep: same TU set through GCC's frontend, warnings-as-errors.
 add_custom_target(check_frontends
   COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_native_frontends.sh
+          "${CMAKE_BINARY_DIR}"
           "${CMAKE_SOURCE_DIR}/src" "${MJ_DIR}/include"
   COMMENT "gcc -fsyntax-only sweep (second frontend)")
 
@@ -212,6 +213,7 @@ add_custom_target(check_cppcheck
 # link time does.
 add_custom_target(check_odr
   COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_odr.sh
+          "${CMAKE_BINARY_DIR}"
           "${CMAKE_SOURCE_DIR}/src" "${MJ_DIR}/include"
           "${Python_EXECUTABLE}"
   COMMENT "gcc -flto -Wodr sweep (cross-TU type conflicts)")
@@ -221,3 +223,169 @@ add_custom_target(check_scripts
   COMMAND ${CMAKE_SOURCE_DIR}/../tools/check_scripts.sh
           "${CMAKE_SOURCE_DIR}/../tools"
   COMMENT "shellcheck sweep (tools/*.sh)")
+
+# Emit the source and environment contract from the configured build graph.
+# Wrappers consume these files instead of independently globbing src/.
+function(_native_json_quote output value)
+  string(REPLACE "\\" "\\\\" _escaped "${value}")
+  string(REPLACE "\"" "\\\"" _escaped "${_escaped}")
+  string(REPLACE "\n" "\\n" _escaped "${_escaped}")
+  string(REPLACE "\r" "\\r" _escaped "${_escaped}")
+  set(${output} "\"${_escaped}\"" PARENT_SCOPE)
+endfunction()
+
+function(_native_json_array output)
+  set(_json "[")
+  set(_separator "")
+  foreach(_value IN LISTS ARGN)
+    _native_json_quote(_quoted "${_value}")
+    string(APPEND _json "${_separator}${_quoted}")
+    set(_separator ",")
+  endforeach()
+  string(APPEND _json "]")
+  set(${output} "${_json}" PARENT_SCOPE)
+endfunction()
+
+get_filename_component(_native_sdk_path "${CMAKE_OSX_SYSROOT}" REALPATH)
+if(NOT IS_DIRECTORY "${_native_sdk_path}")
+  message(FATAL_ERROR "Configured SDK does not exist: ${CMAKE_OSX_SYSROOT}")
+endif()
+
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -m nanobind --include_dir
+  RESULT_VARIABLE _native_nb_include_result
+  OUTPUT_VARIABLE _native_nb_include
+  ERROR_VARIABLE _native_nb_include_error
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT _native_nb_include_result EQUAL 0 OR NOT IS_DIRECTORY "${_native_nb_include}")
+  message(FATAL_ERROR "Cannot resolve nanobind include directory: ${_native_nb_include_error}")
+endif()
+get_filename_component(_native_nb_package "${_native_nb_include}/.." REALPATH)
+get_filename_component(_native_robin_include "${_native_nb_package}/ext/robin_map/include" REALPATH)
+get_filename_component(_native_mujoco_library "${MJ_DIR}/libmujoco.3.12.0.dylib" REALPATH)
+get_filename_component(_native_python_include "${Python_INCLUDE_DIRS}" REALPATH)
+
+set(_native_required_includes
+  "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  "${_native_python_include}"
+  "${_native_nb_include}"
+  "${_native_robin_include}"
+  "${MJ_DIR}/include")
+set(_native_required_files
+  "${_native_python_include}/Python.h"
+  "${_native_nb_include}/nanobind/nanobind.h"
+  "${_native_robin_include}/tsl/robin_map.h"
+  "${MJ_DIR}/include/mujoco/mujoco.h"
+  "${_native_mujoco_library}")
+foreach(_required_path IN LISTS _native_required_includes _native_required_files)
+  if(NOT EXISTS "${_required_path}")
+    message(FATAL_ERROR "Required native check dependency is missing: ${_required_path}")
+  endif()
+endforeach()
+
+if(CMAKE_BUILD_TYPE)
+  set(_native_configuration "${CMAKE_BUILD_TYPE}")
+else()
+  set(_native_configuration "default")
+endif()
+
+set(_native_source_entries "[")
+set(_native_source_separator "")
+set(_native_target_contexts "{")
+set(_native_target_separator "")
+get_property(_native_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+foreach(_target IN LISTS _native_targets)
+  get_target_property(_target_type "${_target}" TYPE)
+  if(NOT _target_type MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
+    continue()
+  endif()
+
+  get_target_property(_target_sources "${_target}" SOURCES)
+  if(NOT _target_sources OR _target_sources MATCHES "-NOTFOUND$")
+    continue()
+  endif()
+  foreach(_source IN LISTS _target_sources)
+    if(_source MATCHES "^\\$<")
+      continue()
+    endif()
+    get_filename_component(_source_absolute "${_source}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    cmake_path(IS_PREFIX CMAKE_CURRENT_SOURCE_DIR "${_source_absolute}" NORMALIZE _source_is_first_party)
+    if(NOT _source_is_first_party OR NOT _source_absolute MATCHES "\\.(cpp|cc|cxx|C)$")
+      continue()
+    endif()
+    get_filename_component(_source_path "${_source_absolute}" REALPATH)
+    if(NOT EXISTS "${_source_path}")
+      message(FATAL_ERROR "CMake target ${_target} has a missing first-party source: ${_source_path}")
+    endif()
+    _native_json_quote(_source_json "${_source_path}")
+    _native_json_quote(_target_json "${_target}")
+    set(_source_context "${_target}:${_native_configuration}")
+    _native_json_quote(_source_context_json "${_source_context}")
+    string(APPEND _native_source_entries
+      "${_native_source_separator}{\"path\":${_source_json},\"target\":${_target_json},\"context\":${_source_context_json}}")
+    set(_native_source_separator ",")
+  endforeach()
+
+  get_target_property(_target_includes "${_target}" INCLUDE_DIRECTORIES)
+  get_target_property(_target_definitions "${_target}" COMPILE_DEFINITIONS)
+  get_target_property(_target_options "${_target}" COMPILE_OPTIONS)
+  get_target_property(_target_link_dirs "${_target}" LINK_DIRECTORIES)
+  get_target_property(_target_link_libs "${_target}" LINK_LIBRARIES)
+  foreach(_target_property _target_includes _target_definitions _target_options _target_link_dirs _target_link_libs)
+    if(NOT ${_target_property} OR "${${_target_property}}" MATCHES "-NOTFOUND$")
+      set(${_target_property} "")
+    endif()
+  endforeach()
+  set(_resolved_target_includes "")
+  foreach(_include IN LISTS _target_includes)
+    if(_include MATCHES "^\\$<")
+      list(APPEND _resolved_target_includes "${_include}")
+    else()
+      get_filename_component(_include_absolute "${_include}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+      list(APPEND _resolved_target_includes "${_include_absolute}")
+    endif()
+  endforeach()
+  _native_json_array(_target_includes_json ${_resolved_target_includes})
+  _native_json_array(_target_definitions_json ${_target_definitions})
+  _native_json_array(_target_options_json ${_target_options})
+  _native_json_array(_target_link_dirs_json ${_target_link_dirs})
+  _native_json_array(_target_link_libs_json ${_target_link_libs})
+  _native_json_quote(_target_name_json "${_target}")
+  string(APPEND _native_target_contexts
+    "${_native_target_separator}${_target_name_json}:{\"configuration\":\"${_native_configuration}\",\"include_directories\":${_target_includes_json},\"compile_definitions\":${_target_definitions_json},\"compile_options\":${_target_options_json},\"link_directories\":${_target_link_dirs_json},\"link_libraries\":${_target_link_libs_json}}")
+  set(_native_target_separator ",")
+endforeach()
+string(APPEND _native_source_entries "]")
+string(APPEND _native_target_contexts "}")
+if(_native_source_separator STREQUAL "")
+  message(FATAL_ERROR "No first-party C++ translation units were found in configured CMake targets")
+endif()
+
+_native_json_array(_native_source_roots_json "${CMAKE_CURRENT_SOURCE_DIR}")
+_native_json_quote(_native_compiler_path_json "${CMAKE_CXX_COMPILER}")
+_native_json_quote(_native_compiler_id_json "${CMAKE_CXX_COMPILER_ID}")
+_native_json_quote(_native_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION}")
+_native_json_array(_native_compiler_launcher_json ${CMAKE_CXX_COMPILER_LAUNCHER})
+_native_json_quote(_native_sdk_json "${_native_sdk_path}")
+_native_json_quote(_native_python_json "${Python_EXECUTABLE}")
+_native_json_array(_native_include_paths_json ${_native_required_includes})
+_native_json_array(_native_library_paths_json "${_native_mujoco_library}" "${_native_sdk_path}/System/Library/Frameworks/Accelerate.framework")
+_native_json_array(_native_required_files_json ${_native_required_files})
+
+set(_native_tool_defaults "{\"tidy\":\"/opt/homebrew/opt/llvm/bin/clang-tidy\",\"analyzer\":\"/opt/homebrew/opt/llvm/bin/clang++\",\"cppcheck\":\"cppcheck\",\"gxx\":\"g++-16\"}")
+set(_native_tool_overrides "{")
+set(_native_tool_separator "")
+foreach(_tool_override CLANG_TIDY ANALYZER_CLANG CPPCHECK GXX)
+  if(DEFINED ENV{${_tool_override}} AND NOT "$ENV{${_tool_override}}" STREQUAL "")
+    _native_json_quote(_tool_name_json "${_tool_override}")
+    _native_json_quote(_tool_value_json "$ENV{${_tool_override}}")
+    string(APPEND _native_tool_overrides "${_native_tool_separator}${_tool_name_json}:${_tool_value_json}")
+    set(_native_tool_separator ",")
+  endif()
+endforeach()
+string(APPEND _native_tool_overrides "}")
+
+file(WRITE "${CMAKE_BINARY_DIR}/native_sources.json"
+  "{\"schema_version\":1,\"first_party_roots\":${_native_source_roots_json},\"sources\":${_native_source_entries}}\n")
+file(WRITE "${CMAKE_BINARY_DIR}/native_check_context.json"
+  "{\"schema_version\":1,\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"sdk\":${_native_sdk_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")

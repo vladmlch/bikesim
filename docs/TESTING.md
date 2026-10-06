@@ -66,16 +66,38 @@ PYTHONPATH="$PWD/native/build${PYTHONPATH:+:$PYTHONPATH}" uv run python -m pytes
 
 The `native` profile runs the full verification chain: build, then every
 sweep, then tests — a green run cannot rest on a stale `.so`. Each sweep is
-also a standalone CMake target driven by `native/build/compile_commands.json`:
+also a standalone CMake target. CMake writes `native/build/native_sources.json`
+from the first-party sources attached to configured targets and
+`native/build/native_check_context.json` with the compiler, SDK, Python,
+dependency paths, target compile contexts, and configured tool overrides.
+`tools/native_checks.py` checks those manifests against
+`compile_commands.json` before starting any analyzer. It rejects an empty,
+missing, duplicate, unexpected, or malformed first-party selection and missing
+include/library dependencies. The output reports both unique source and
+translation-unit counts, so a source compiled for distinct targets remains
+visible as multiple contexts.
+
+Every run writes `native/build/native_check_summaries/<kind>.json`; complete
+stdout and stderr are retained under `native/build/native_check_logs/<kind>/`.
+The summary separates tool health from findings. Stable diagnostics block even
+when the analyzer exits zero. Alpha findings are marked `report-only`, while an
+alpha tool crash or other nonzero exit fails tool health. Tool executables can
+be overridden with `CLANG_TIDY`, `ANALYZER_CLANG`, `CPPCHECK`, and `GXX`; each
+override is resolved and checked before the sweep runs.
 
 ```bash
-cmake --build native/build --target check_frontends   # gcc -fsyntax-only + -fanalyzer (second frontend)
-cmake --build native/build --target check_tidy        # clang-tidy, checks in native/.clang-tidy
-cmake --build native/build --target check_analyzer    # clang --analyze, stable+optin block; alpha report-only
-cmake --build native/build --target check_cppcheck    # cppcheck third engine (brew install cppcheck)
-cmake --build native/build --target check_odr         # g++ -flto -Wodr merge — cross-TU type conflicts
-cmake --build native/build --target check_scripts     # shellcheck over tools/*.sh
+uv run cmake --build native/build --target check_frontends   # gcc -fsyntax-only + -fanalyzer (second frontend)
+uv run cmake --build native/build --target check_tidy        # clang-tidy, checks in native/.clang-tidy
+uv run cmake --build native/build --target check_analyzer    # clang --analyze, stable+optin block; alpha report-only
+uv run cmake --build native/build --target check_cppcheck    # cppcheck third engine
+uv run cmake --build native/build --target check_odr         # g++ -flto -Wodr merge — cross-TU type conflicts
+uv run cmake --build native/build --target check_scripts     # shellcheck over tools/*.sh
 ```
+
+The controller can also be invoked directly, for example
+`uv run python tools/native_checks.py --kind tidy --build native/build`.
+The same configured source manifest is used by each standalone target and by
+the native profile; wrappers do not glob `native/src` or hide process status.
 
 `check_analyzer` and `check_tidy` use the keg-only brew LLVM
 (`/opt/homebrew/opt/llvm/bin`) — Apple clang lacks several checkers. The

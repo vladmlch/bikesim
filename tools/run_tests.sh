@@ -151,6 +151,9 @@ preflight_native() {
   local build_dir="$1"
   local target
 
+  if [[ -z "${NATIVE_TEST_PROVENANCE_PATH:-}" ]]; then
+    export NATIVE_TEST_PROVENANCE_PATH="$build_dir/native_test_provenance.json"
+  fi
   printf 'selected native build: %s\n' "$build_dir"
   uv run cmake -S "$REPO_ROOT/native" -B "$build_dir"
   uv run cmake --build "$build_dir"
@@ -166,6 +169,7 @@ preflight_native() {
   local extension_path
   extension_path="$(run_with_native_runtime python -c 'from native_loader import load_native; print(load_native().__file__)')"
   printf 'selected native extension: %s\n' "$extension_path"
+  run_with_native_runtime cmake --build "$build_dir" --target check_native_contracts
 }
 
 if [[ "$profile" == native || "$profile" == full ]]; then

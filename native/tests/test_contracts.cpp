@@ -83,8 +83,12 @@ int main(int argc, char **argv) {
         }
         return 0;
     }
+    if (arguments.size() == 2 && std::string_view(arguments[1]) == "--list") {
+        for (const TestCase &test_case : cases) std::cout << test_case.name << '\n';
+        return 0;
+    }
     if (arguments.size() > 2) {
-        std::cerr << "usage: native_contract_tests [case-name|--require-failure]\n";
+        std::cerr << "usage: native_contract_tests [case-name|--list|--require-failure]\n";
         return 2;
     }
 

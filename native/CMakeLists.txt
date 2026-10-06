@@ -431,6 +431,12 @@ if(BUILD_TESTING)
   add_test(NAME native_contract_tests COMMAND native_contract_tests)
 endif()
 
+add_custom_target(check_native_contracts
+  COMMAND "${Python_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/../tools/check_native_contracts.py"
+          --build "${CMAKE_BINARY_DIR}"
+  COMMENT "native structural contract checks"
+  VERBATIM)
+
 target_link_libraries(bike_native PRIVATE "${MJ_DIR}/libmujoco.3.12.0.dylib")
 
 # The resistance writer calls the legacy CBLAS symbols numpy's `@`/`np.dot`

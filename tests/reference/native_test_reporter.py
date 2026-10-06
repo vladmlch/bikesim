@@ -5,7 +5,11 @@ from __future__ import annotations
 import pytest
 
 
-_NATIVE_TOOL_MODULES = {'test_native_check_tools.py', 'test_native_loader.py'}
+_NATIVE_TOOL_MODULES = {
+    'test_native_check_tools.py',
+    'test_native_contract_checks.py',
+    'test_native_loader.py',
+}
 
 
 def pytest_collection_finish(session: object) -> None:
@@ -23,3 +27,6 @@ def pytest_collection_finish(session: object) -> None:
             'native/full profile collected zero native extension test items',
             returncode=pytest.ExitCode.NO_TESTS_COLLECTED,
         )
+    from native_loader import record_native_provenance
+
+    record_native_provenance(native_test_count=native_count)

@@ -1,31 +1,72 @@
 #!/usr/bin/env bash
-# llvm-cov source coverage over the native TUs: builds the instrumented
-# extension (configure the dir with -DNATIVE_COVERAGE=ON), runs the native
-# oracle tests against it, merges profraw, prints the summary report.
-#
-#   cmake -S native -B native/build/coverage -DNATIVE_COVERAGE=ON
-#   tools/native_coverage.sh [build_dir]
-#
-# The build dir name must be 'coverage' — NATIVE_TEST_BUILD_DIR resolves
-# native/build/<name> and asserts the imported .so lives there.
-# Xcode's llvm-cov/llvm-profdata deliberately: they match the producing
-# Apple clang's profile format; do not substitute the brew llvm pair.
+# Build and measure one native test run without mixing its LLVM profiles with
+# earlier runs. Logs and profile artifacts stay under the run directory.
 set -euo pipefail
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 BUILD_DIR="${1:-$REPO_ROOT/native/build/coverage}"
-PROF_DIR="$(mktemp -d -t native_cov)"; trap 'rm -rf "$PROF_DIR"' EXIT
+if (($# > 1)); then
+  printf 'usage: tools/native_coverage.sh [build_dir]\n' >&2
+  exit 2
+fi
+mkdir -p "$BUILD_DIR"
+BUILD_DIR="$(cd "$BUILD_DIR" && pwd -P)"
+RUNS_DIR="$BUILD_DIR/native_coverage_runs"
+mkdir -p "$RUNS_DIR"
+RUN_DIR="$(mktemp -d "$RUNS_DIR/run.XXXXXX")"
+PROFILE_DIR="$RUN_DIR/profiles"
+LOG_DIR="$RUN_DIR/logs"
+mkdir -p "$PROFILE_DIR" "$LOG_DIR"
 
-cmake --build "$BUILD_DIR" -j"$(sysctl -n hw.ncpu)"
+run_logged() {
+  local name="$1"
+  shift
+  local log_path="$LOG_DIR/$name.log"
+  local status=0
+  "$@" >"$log_path" 2>&1 || status=$?
+  cat "$log_path"
+  if ((status != 0)); then
+    printf '%s failed with exit %s; log retained at %s\n' "$name" "$status" "$log_path" >&2
+    return "$status"
+  fi
+}
+
+resolve_tool() {
+  local variable_name="$1"
+  local tool_name="$2"
+  local value="${!variable_name:-}"
+  if [[ -z "$value" ]]; then
+    if command -v xcrun >/dev/null 2>&1; then
+      local resolve_log="$LOG_DIR/xcrun-$tool_name.log"
+      if ! value="$(xcrun --find "$tool_name" 2>"$resolve_log")"; then
+        cat "$resolve_log" >&2
+        printf 'xcrun could not resolve %s; log retained at %s\n' "$tool_name" "$resolve_log" >&2
+        return 1
+      fi
+    else
+      value="$(command -v "$tool_name" || true)"
+    fi
+  fi
+  if [[ -z "$value" || ! -x "$value" ]]; then
+    printf '%s must resolve to an executable file (set %s)\n' "$tool_name" "$variable_name" >&2
+    return 1
+  fi
+  printf '%s\n' "$value"
+}
+
+LLVM_PROFDATA="$(resolve_tool LLVM_PROFDATA llvm-profdata)"
+LLVM_COV="$(resolve_tool LLVM_COV llvm-cov)"
+
 cd "$REPO_ROOT"
-# %p: a profraw per process, so concurrent pytest workers cannot collide.
-NATIVE_TEST_BUILD_DIR=coverage \
-LLVM_PROFILE_FILE="$PROF_DIR/%p.profraw" \
-  uv run python -m pytest tests/reference/test_native_*.py \
-    tests/reference/test_golden_episode*.py -q --durations=5
+run_logged configure uv run cmake -S "$REPO_ROOT/native" -B "$BUILD_DIR" -DNATIVE_COVERAGE=ON
 
-xcrun llvm-profdata merge -sparse "$PROF_DIR"/*.profraw \
-  -o "$BUILD_DIR/coverage.profdata"
-SO=$(echo "$BUILD_DIR"/bike_native.*.so)
-xcrun llvm-cov report "$SO" -instr-profile="$BUILD_DIR/coverage.profdata"
-echo
-echo "per-line detail: xcrun llvm-cov show $SO -instr-profile=$BUILD_DIR/coverage.profdata"
+unset NATIVE_TEST_BUILD_DIR
+export NATIVE_TEST_BUILD_PATH="$BUILD_DIR"
+export NATIVE_TEST_PROVENANCE_PATH="$RUN_DIR/test_native_provenance.json"
+export LLVM_PROFILE_FILE="$PROFILE_DIR/%p.profraw"
+run_logged native-tests bash "$REPO_ROOT/tools/run_tests.sh" native
+run_logged coverage-report uv run python "$REPO_ROOT/tools/native_coverage.py" \
+  --build "$BUILD_DIR" \
+  --run-dir "$RUN_DIR" \
+  --llvm-profdata "$LLVM_PROFDATA" \
+  --llvm-cov "$LLVM_COV"

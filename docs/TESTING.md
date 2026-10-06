@@ -14,9 +14,10 @@ excludes direct native extension tests but keeps native-check controller tests.
 Use `native` for C++ implementation, Python bridge, and verification-tool work.
 Use `full` for complete physical episodes or realtime acceptance. Both `native`
 and `full` configure/build the selected native directory, run every configured
-sweep plus the V2 header/diagnostic/context controls, run CTest, and then invoke
-pytest once. The launcher fails if pytest selection leaves zero direct native
-extension test items. It resolves its repository root, so it also works when
+sweep plus the V2 header/diagnostic/context controls and V4 structural contract
+checks, run CTest, and then invoke pytest once. The launcher fails if pytest
+selection leaves zero direct native extension test items. It resolves its
+repository root, so it also works when
 invoked from another directory.
 
 All profiles run serially with `-q --durations=10`, forward additional arguments
@@ -140,6 +141,31 @@ verifies that libc++ hardening configuration rejects a missing mode macro.
 container sizes, active bounds assertions, and timings for FAST and EXTENSIVE
 libc++ modes in Debug, Release, and the empty build type.
 
+V4 adds `check_native_contracts` to native/full preflight. It checks the CMake
+source manifest against the compilation database, strict ISO C++23 and the
+configured hardening mode, the `.clang-tidy` Move/header policy, selected-loader
+use by direct native tests, and the contract source's manifest and CTest
+registration. It asks the contract executable to list and run each registered
+case. These are structural and focused behavioral checks; they do not claim to
+prove exception safety for every native operation. Engine-call wrapper checks
+and benchmark membership remain marked pending until their planned declarations
+and `native_bench` target exist.
+
+After the selected extension has been loaded and recorded, the target can be
+rerun directly for a regular build:
+
+```bash
+NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
+NATIVE_TEST_PROVENANCE_PATH="$PWD/native/build/native_test_provenance.json" \
+PYTHONPATH="$PWD/tests/reference" \
+  uv run python -c 'from native_loader import load_native; load_native()'
+uv run cmake --build native/build --target check_native_contracts
+```
+
+For ASan or RTSan builds, use `tools/run_tests.sh native`; it resolves and
+passes the selected sanitizer runtime to the contract executable's child
+processes.
+
 First-party targets use strict ISO C++23. The `.clang-tidy` header filter is
 checkout independent and covers `native/src`, `native/tests`, and
 `tools/proto_native_bench`. First-party Move findings remain blocking. The
@@ -214,13 +240,42 @@ test with a report.
 Coverage:
 
 ```bash
-cmake -S native -B native/build/coverage -DNATIVE_COVERAGE=ON
-tools/native_coverage.sh            # builds, tests, prints llvm-cov summary
+tools/native_coverage.sh
+tools/native_coverage.sh /tmp/native-coverage-build
 ```
 
-The script merges profraw into `native/build/coverage/coverage.profdata`;
-`xcrun llvm-cov show` on the .so with that profdata gives per-line detail.
-Xcode's llvm-cov is used because it matches the producing Apple clang.
+The wrapper configures coverage for the selected build, runs the native profile
+against that absolute build, and writes artifacts under a unique
+`<build>/native_coverage_runs/run.*` directory. It merges only that run's
+nonempty `.profraw` files and reports against the exact extension recorded by
+the loader. `coverage_provenance.json` records the selected build, imported and
+reported object, collected native test count, profile count, LLVM tool versions,
+merged profile, and text/JSON report paths. Logs remain in the run directory
+when configuration, tests, or reporting fails. On macOS the wrapper resolves
+the matching Xcode tools through `xcrun`; set `LLVM_PROFDATA` and `LLVM_COV` to
+executable paths to select another compatible pair.
+
+Coverage finalization is also available directly for an existing run:
+
+```bash
+uv run python tools/native_coverage.py \
+  --build native/build/coverage \
+  --run-dir native/build/coverage/native_coverage_runs/run.ID \
+  --llvm-profdata "$(xcrun --find llvm-profdata)" \
+  --llvm-cov "$(xcrun --find llvm-cov)"
+```
+
+V4 verification snapshot (2026-10-06): the regular native profile passed with
+782 tests and 15 warnings; `full --collect-only` collected 1,253 tests without
+executing them. The ASan native preflight and contract target also passed. The
+custom build at `native/build/v4-custom-coverage`, run `run.wazeIy`, merged 17
+profiles from 690 native test items. Its imported extension, report object, and
+object path were identical. Apple LLVM 21.0.0 reported 91.63% line and 78.00%
+branch coverage for that run. The real one-file control reported 3/4 lines and
+1/2 branches covered, exercising both a covered and an uncovered path. These
+are observed counts, not minimum coverage thresholds. Engine-call wrapper
+checks remain pending on E1; benchmark manifest membership remains pending
+until R2 adds the `native_bench` target. The slow `full` profile was not run.
 
 The launcher sets `PYTHONDEVMODE=1` everywhere and `MallocScribble`,
 `MallocPreScribble`, `MallocGuardEdges` on quick/native (not `full`, which

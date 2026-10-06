@@ -26,6 +26,7 @@ def _child_env(
     if clear_selectors:
         environment.pop('NATIVE_TEST_BUILD_PATH', None)
         environment.pop('NATIVE_TEST_BUILD_DIR', None)
+    environment.pop('NATIVE_TEST_PROVENANCE_PATH', None)
     current_pythonpath = environment.get('PYTHONPATH', '')
     pythonpath = [str(REFERENCE_ROOT)]
     if current_pythonpath:
@@ -126,6 +127,146 @@ def test_selected_build_loads_the_exact_imported_extension() -> None:
     assert Path(selected).resolve() == expected_build.resolve()
     assert Path(imported).resolve().parent == expected_build.resolve()
     assert Path(imported).resolve() == _selected_extension(expected_build).resolve()
+
+
+def test_load_native_records_selected_build_and_imported_extension(tmp_path: Path) -> None:
+    provenance_path = tmp_path / 'test-native-provenance.json'
+    result = _run_child(
+        "from native_loader import load_native; load_native()",
+        _child_env(
+            {'NATIVE_TEST_PROVENANCE_PATH': str(provenance_path)},
+            clear_selectors=False,
+        ),
+    )
+
+    assert result.returncode == 0, result.stderr
+    provenance = json.loads(provenance_path.read_text())
+    expected_build = selected_build(os.environ).resolve()
+    assert provenance['selected_build'] == str(expected_build)
+    assert Path(provenance['imported_extension']).resolve() == _selected_extension(expected_build).resolve()
+
+
+def test_pytest_reporter_records_selected_native_count_and_provenance(tmp_path: Path) -> None:
+    provenance_path = tmp_path / 'pytest-native-provenance.json'
+    environment = _child_env(
+        {'NATIVE_TEST_PROVENANCE_PATH': str(provenance_path)},
+        clear_selectors=False,
+    )
+    result = _run_python_command(
+        [
+            'python',
+            '-m',
+            'pytest',
+            '-p',
+            'native_test_reporter',
+            'tests/reference/test_native_stepper.py',
+            '--collect-only',
+            '-q',
+        ],
+        environment,
+    )
+
+    assert result.returncode == 0, result.stderr
+    provenance = json.loads(provenance_path.read_text())
+    assert provenance['native_test_count'] > 0
+    assert Path(provenance['imported_extension']).resolve().parent == selected_build(os.environ).resolve()
+
+    followup = _run_child('from native_loader import load_native; load_native()', environment)
+
+    assert followup.returncode == 0, followup.stderr
+    preserved = json.loads(provenance_path.read_text())
+    assert preserved['native_test_count'] == provenance['native_test_count']
+
+
+def test_pytest_reporter_does_not_count_native_tool_tests() -> None:
+    result = _run_python_command(
+        [
+            'python',
+            '-m',
+            'pytest',
+            '-p',
+            'native_test_reporter',
+            'tests/reference/test_native_contract_checks.py',
+            '--collect-only',
+            '-q',
+        ],
+        _child_env(clear_selectors=False),
+    )
+
+    assert result.returncode == pytest.ExitCode.NO_TESTS_COLLECTED
+    assert 'native extension test items collected: 0' in result.stdout
+
+
+def test_repeated_load_after_collection_preserves_native_count(tmp_path: Path) -> None:
+    provenance_path = tmp_path / 'repeated-load-provenance.json'
+    test_path = tmp_path / 'test_native_repeated_load.py'
+    test_path.write_text(
+        'from native_loader import load_native\n'
+        'bike_native = load_native()\n'
+        '\n'
+        'def test_load_after_collection_preserves_count():\n'
+        '    import json\n'
+        '    import os\n'
+        '    from pathlib import Path\n'
+        '    load_native()\n'
+        '    provenance_path = Path(os.environ["NATIVE_TEST_PROVENANCE_PATH"])\n'
+        '    provenance = json.loads(provenance_path.read_text())\n'
+        '    assert provenance["native_test_count"] == 1\n'
+    )
+    result = _run_python_command(
+        ['python', '-m', 'pytest', '-p', 'native_test_reporter', str(test_path), '-q'],
+        _child_env(
+            {'NATIVE_TEST_PROVENANCE_PATH': str(provenance_path)},
+            clear_selectors=False,
+        ),
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    provenance = json.loads(provenance_path.read_text())
+    assert provenance['native_test_count'] == 1
+
+
+@pytest.mark.parametrize(
+    ('stale_build_matches', 'stale_extension_matches', 'stale_count'),
+    [
+        (False, True, 7),
+        (True, False, 7),
+        (True, True, True),
+    ],
+)
+def test_loader_discards_invalid_or_other_artifact_test_counts(
+    tmp_path: Path,
+    stale_build_matches: bool,
+    stale_extension_matches: bool,
+    stale_count: object,
+) -> None:
+    build = selected_build(os.environ).resolve()
+    extension = _selected_extension(build).resolve()
+    provenance_path = tmp_path / 'prior-run-provenance.json'
+    provenance_path.write_text(
+        json.dumps(
+            {
+                'schema_version': 1,
+                'selected_build': str(build if stale_build_matches else build / 'different-build'),
+                'imported_extension': str(
+                    extension if stale_extension_matches else extension.with_name('different-extension.so')
+                ),
+                'native_test_count': stale_count,
+            }
+        )
+    )
+
+    result = _run_child(
+        'from native_loader import load_native; load_native()',
+        _child_env(
+            {'NATIVE_TEST_PROVENANCE_PATH': str(provenance_path)},
+            clear_selectors=False,
+        ),
+    )
+
+    assert result.returncode == 0, result.stderr
+    refreshed = json.loads(provenance_path.read_text())
+    assert 'native_test_count' not in refreshed
 
 
 def test_custom_absolute_build_path_loads_its_extension(tmp_path: Path) -> None:
@@ -256,6 +397,24 @@ def test_native_contract_require_control_fails_in_selected_build() -> None:
 
     assert result.returncode != 0
     assert 'deliberate require failure' in result.stderr
+
+
+def test_native_contract_executable_lists_registered_cases() -> None:
+    executable = selected_build(os.environ) / 'native_contract_tests'
+
+    result = subprocess.run(
+        [str(executable), '--list'],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        'human_crank_torque',
+        'pedaling_policy_valid_transition',
+    ]
 
 
 def test_contract_executable_source_is_in_cmake_manifest() -> None:

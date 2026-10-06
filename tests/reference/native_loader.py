@@ -6,6 +6,7 @@ from collections.abc import Mapping
 import ctypes
 import importlib
 import importlib.machinery
+import json
 import os
 from pathlib import Path
 import sys
@@ -20,6 +21,7 @@ _LEGACY_BUILD_DIRS = {
     'rtsan': _BUILD_ROOT / 'rtsan',
     'coverage': _BUILD_ROOT / 'coverage',
 }
+_RECORDED_NATIVE_PROVENANCE: set[tuple[Path, Path, Path]] = set()
 
 
 def selected_build(environ: Mapping[str, str]) -> Path:
@@ -117,6 +119,86 @@ def verify_sanitizer_runtime(environ: Mapping[str, str] | None = None) -> Path |
     return runtime
 
 
+def record_native_provenance(*, native_test_count: int | None = None) -> Path | None:
+    """Atomically record the selected module and, after collection, its native test count."""
+    provenance_value = os.environ.get('NATIVE_TEST_PROVENANCE_PATH')
+    if provenance_value is None:
+        return None
+    provenance_path = Path(provenance_value)
+    if not provenance_path.is_absolute():
+        raise RuntimeError(f'NATIVE_TEST_PROVENANCE_PATH must be absolute: {provenance_path}')
+
+    build = selected_build(os.environ)
+    artifacts = _extension_artifacts(build)
+    if len(artifacts) != 1:
+        raise RuntimeError(
+            f'expected exactly one bike_native extension in {build}, found {len(artifacts)}'
+        )
+    expected = artifacts[0].resolve()
+    module = sys.modules.get('bike_native')
+    if module is None:
+        raise RuntimeError('cannot record native provenance before importing bike_native')
+    _check_imported_module(module, expected, build)
+
+    provenance: dict[str, object] = {
+        'schema_version': 1,
+        'selected_build': str(build),
+        'imported_extension': str(expected),
+    }
+    if native_test_count is not None:
+        if isinstance(native_test_count, bool) or not isinstance(native_test_count, int) or native_test_count < 0:
+            raise ValueError('native_test_count must be a nonnegative integer')
+    else:
+        native_test_count = _matching_existing_native_test_count(provenance_path, build, expected)
+    if native_test_count is not None:
+        provenance['native_test_count'] = native_test_count
+
+    provenance_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = provenance_path.with_name(f'{provenance_path.name}.tmp')
+    temporary_path.write_text(json.dumps(provenance, indent=2, sort_keys=True) + '\n')
+    os.replace(temporary_path, provenance_path)
+    return provenance_path
+
+
+def _matching_existing_native_test_count(
+    provenance_path: Path, build: Path, expected: Path
+) -> int | None:
+    try:
+        previous = json.loads(provenance_path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(previous, dict):
+        return None
+    schema_version = previous.get('schema_version')
+    if isinstance(schema_version, bool) or not isinstance(schema_version, int) or schema_version != 1:
+        return None
+    if previous.get('selected_build') != str(build):
+        return None
+    if previous.get('imported_extension') != str(expected):
+        return None
+    native_test_count = previous.get('native_test_count')
+    if (
+        isinstance(native_test_count, bool)
+        or not isinstance(native_test_count, int)
+        or native_test_count < 0
+    ):
+        return None
+    return native_test_count
+
+
+def _record_native_import_provenance_once(expected: Path, build: Path) -> None:
+    provenance_value = os.environ.get('NATIVE_TEST_PROVENANCE_PATH')
+    if provenance_value is None:
+        return
+    provenance_path = Path(provenance_value).resolve()
+    provenance_key = (provenance_path, build.resolve(), expected.resolve())
+    if provenance_key in _RECORDED_NATIVE_PROVENANCE and provenance_path.is_file():
+        return
+    recorded_path = record_native_provenance()
+    if recorded_path is not None:
+        _RECORDED_NATIVE_PROVENANCE.add(provenance_key)
+
+
 def _check_imported_module(module: ModuleType, expected: Path, build: Path) -> ModuleType:
     actual = _module_path(module)
     if actual != expected:
@@ -146,6 +228,7 @@ def load_native() -> ModuleType:
                 'pre-imported bike_native module does not match selected build: '
                 f'selected={build}, expected={expected}, imported={actual}'
             )
+        _record_native_import_provenance_once(expected, build)
         return imported
 
     build_text = str(build)
@@ -156,4 +239,6 @@ def load_native() -> ModuleType:
     ]
     sys.path.insert(0, build_text)
     module = importlib.import_module('bike_native')
-    return _check_imported_module(module, expected, build)
+    module = _check_imported_module(module, expected, build)
+    _record_native_import_provenance_once(expected, build)
+    return module

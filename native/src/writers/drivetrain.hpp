@@ -52,6 +52,45 @@ namespace drivetrain {
 
     using ForceComponents = std::vector<std::pair<std::string, std::vector<double> > >;
 
+    struct PrepareInputs {
+        RideControl control;
+        double dt{};
+        bool braking = false, active = true, advance = true, contact = true;
+        std::optional<double> slip, ceiling;
+    };
+
+    struct TickInputs {
+        RideControl control;
+        double dt{}, speed{}, sensed{};
+        bool braking = false, active = true, advance = true, contact = true;
+        std::optional<PedalingState> pedaling;
+        std::optional<double> slip;
+    };
+
+    // A fully evaluated, still-unpublished drivetrain tick. stage_prepare /
+    // stage_components build every candidate up front — policy snapshots,
+    // force rows, actuator writes, diagnostics and (through E2's
+    // TransmissionUpdate) the staged model updates for hub/clutch/freewheel —
+    // so a rejection anywhere publishes nothing. commit() runs the guarded
+    // model writes first, then publishes the memory-only remainder.
+    struct PreparedTick {
+        DriveSnapshot snapshot;
+        PedalingState result{};
+        PedalingSnapshot pedaling;
+        ShiftingSnapshot shifting;
+        AssistSnapshot assist;
+        BatterySnapshot battery;
+        std::optional<FreehubSnapshot> hub;
+        ForceComponents components;
+        // Candidate actuator writes as (ctrl index, value) pairs; the live
+        // data->ctrl row is touched only at commit.
+        std::vector<std::pair<int, double> > ctrl;
+        std::optional<TransmissionUpdate> ideal_hub, clutch, freewheel;
+        // advance publishes the whole candidate; probe publishes only the
+        // declared probe telemetry (components + probe_last diagnostics).
+        bool advance = false, probe = false;
+    };
+
     class DrivetrainWriter {
     public:
         DrivetrainWriter(mjModel *model, mjData *data, DriveConfig config);
@@ -69,6 +108,16 @@ namespace drivetrain {
                                           bool advance, double sensed,
                                           const std::optional<PedalingState> &pedaling,
                                           bool contact, std::optional<double> slip);
+
+        // Stage → commit: all runtime/pending/time checks run first, every
+        // policy advance is computed on detached candidates, model updates
+        // stay inside staged TransmissionUpdates, and the caller may box the
+        // result (FFI) before commit publishes anything.
+        [[nodiscard]] PreparedTick stage_prepare(const PrepareInputs &inputs);
+
+        [[nodiscard]] PreparedTick stage_components(const TickInputs &inputs);
+
+        void commit(PreparedTick &tick);
 
         std::span<const double> settle();
 
@@ -124,11 +173,19 @@ namespace drivetrain {
 
         double angle(int body, std::optional<double> reference = std::nullopt);
 
-        void shifts(Diagnostics &d) const;
+        void shifts(Diagnostics &d, const ShiftingSnapshot &state,
+                    std::optional<double> shift_time_s) const;
 
-        const ForceComponents &compute(const RideControl &, double, double, bool, bool,
-                                       bool, double, std::optional<PedalingState>, bool,
-                                       std::optional<double>);
+        // Shared prepare staging: the shifter and pedaling updates run on the
+        // supplied candidate policies; a staged gear change composes onto the
+        // tick's already-staged ideal-hub update. Nothing live is written.
+        void stage_pedal_advance(PreparedTick &tick, const PrepareInputs &inputs,
+                                 PedalingPolicy &pedaling);
+
+        // Re-runs each policy's set_state validation on the staged candidate
+        // snapshots; staged TransmissionUpdates were already validated inside
+        // stage_* by evaluate_candidate().
+        void validate_tick(const PreparedTick &tick) const;
     };
 } // namespace drivetrain
 using drivetrain::DrivetrainWriter;

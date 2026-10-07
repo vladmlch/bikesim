@@ -8,6 +8,9 @@
 #include "../src/engine_abi_312.hpp"
 #include "../src/diag.hpp"
 #include "../src/interval_clock.hpp"
+#include "../src/model_access.hpp"
+#include "../src/tyre/profile.hpp"
+#include "../src/rider/support_geometry.hpp"
 #include "../src/writers/cruise.hpp"
 
 #include <algorithm>
@@ -1154,7 +1157,435 @@ namespace {
                                          std::nullopt));
     }
 
-    constexpr std::array<TestCase, 18> cases{{
+    // C2: model_access extent/ID/product gates plus the readonly-element
+    // compile-time contract and the drivetrain::buffer delegation alias.
+    void test_model_access_contracts() {
+        static_assert(std::is_same_v<
+                      decltype(model_access::readonly_buffer(
+                          std::declval<const double *>(), 0)),
+                      std::span<const double>>,
+                      "readonly_buffer keeps the const element type");
+        static_assert(std::is_same_v<
+                      decltype(model_access::mutable_buffer(
+                          std::declval<double *>(), 0)),
+                      std::span<double>>,
+                      "mutable_buffer keeps the mutable element type");
+        static_assert(std::is_same_v<
+                      decltype(drivetrain::buffer(
+                          std::declval<const double *>(), 0)),
+                      std::span<const double>>,
+                      "drivetrain::buffer delegates readonly reads");
+        static_assert(std::is_same_v<
+                      decltype(drivetrain::buffer(std::declval<double *>(), 0)),
+                      std::span<double>>,
+                      "drivetrain::buffer delegates mutable reads");
+        require(model_access::readonly_buffer(
+                    static_cast<const double *>(nullptr), 0)
+                .empty(),
+                "null pointer with a zero extent is the empty buffer");
+        require_throws<std::invalid_argument>(
+            [] {
+                static_cast<void>(model_access::readonly_buffer(
+                    static_cast<const double *>(nullptr), 1));
+            }, "null pointer with positive extent must be rejected");
+        require_throws<std::invalid_argument>(
+            [] {
+                static_cast<void>(model_access::mutable_buffer(
+                    static_cast<double *>(nullptr), -1));
+            }, "negative mutable extent must be rejected");
+        const std::array storage{1., 2.};
+        const auto view =
+                model_access::readonly_buffer(storage.data(), 2);
+        require(view.size() == 2 && view[0] == 1. && view[1] == 2.,
+                "positive extent exposes the underlying storage");
+        require_throws<std::invalid_argument>(
+            [&] {
+                static_cast<void>(
+                    model_access::readonly_buffer(storage.data(), -1));
+            }, "negative readonly extent must be rejected");
+        require_throws<std::invalid_argument>(
+            [] { model_access::require_id(-1, 5, "id"); },
+            "require_id rejects -1");
+        require_throws<std::invalid_argument>(
+            [] { model_access::require_id(5, 5, "id"); },
+            "require_id rejects the one-past-end ID");
+        require_throws<std::invalid_argument>(
+            [] { model_access::require_id(0, -1, "id"); },
+            "require_id rejects a negative extent");
+        model_access::require_id(0, 5, "id");
+        model_access::require_id(4, 5, "id"); // boundary in-range controls
+        require(model_access::checked_product(3, 4, 12) == 12,
+                "product inside the storage limit");
+        require(model_access::checked_product(0, 99, 0) == 0,
+                "a zero factor stays inside a zero limit");
+        require_throws<std::invalid_argument>(
+            [] {
+                static_cast<void>(
+                    model_access::checked_product(3, 5, 12));
+            }, "product beyond the storage limit must be rejected");
+        require(model_access::checked_sum(4, 8, 12) == 12,
+                "sum inside the storage limit");
+        require_throws<std::invalid_argument>(
+            [] {
+                static_cast<void>(model_access::checked_sum(9, 4, 12));
+            }, "sum beyond the storage limit must be rejected");
+        require_throws<std::invalid_argument>(
+            [] {
+                static_cast<void>(model_access::checked_sum(13, 0, 12));
+            }, "base beyond the storage limit must be rejected");
+    }
+
+    // C2: geometry evaluate() rejects non-scalar topology (nq != nv is a
+    // rejected model shape, not a qpos-width overflow) and every sprocket/
+    // frame ID goes through require_id before any model row is indexed.
+    constexpr std::string_view free_topology_xml = R"XML(
+<mujoco><worldbody>
+<body name="floater"><joint type="free"/><geom type="sphere" size=".05" mass="1"/></body>
+</worldbody></mujoco>
+)XML";
+
+    void test_geometry_topology_and_ids() {
+        const drivetrain::GearingConfig gear{
+            .front_teeth = 34, .rear_teeth = 18, .chain_pitch_m = .0127};
+        {   // free joint: nq=7, nv=6 — nq >= nv is valid elsewhere but is
+            // not the scalar planar topology geometry requires.
+            const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+                load_xml_model(free_topology_xml), &mj_deleteModel);
+            const drivetrain::OwnedData data(
+                engine::make_data(model.get()));
+            require(data != nullptr, "free-topology contract data");
+            require(model->nq != model->nv,
+                    "free joint fixture must have nq != nv");
+            drivetrain::GeometryWorkspace workspace(model->nv);
+            require_throws<std::invalid_argument>(
+                [&] {
+                    static_cast<void>(workspace.evaluate(
+                        model.get(), data.get(), gear, 1, 1, 1));
+                }, "nq != nv topology must be rejected as a model shape");
+        }
+        {   // Scalar planar control model (geometric fixture): invalid
+            // sprocket/frame IDs are rejected before any array index.
+            const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+                load_xml_model(geometric_freehub_xml), &mj_deleteModel);
+            const drivetrain::OwnedData data(
+                engine::make_data(model.get()));
+            require(data != nullptr, "geometric contract data");
+            require(model->nq == model->nv,
+                    "geometric fixture keeps the scalar topology");
+            drivetrain::GeometryWorkspace workspace(model->nv);
+            for (const int bad: {-1, static_cast<int>(model->nbody)}) {
+                require_throws<std::invalid_argument>(
+                    [&] {
+                        static_cast<void>(workspace.evaluate(
+                            model.get(), data.get(), gear, bad, 3, 1,
+                            std::nullopt, std::nullopt, false));
+                    }, "out-of-range front ID must be rejected");
+                require_throws<std::invalid_argument>(
+                    [&] {
+                        static_cast<void>(workspace.evaluate(
+                            model.get(), data.get(), gear, 2, bad, 1,
+                            std::nullopt, std::nullopt, false));
+                    }, "out-of-range rear ID must be rejected");
+                require_throws<std::invalid_argument>(
+                    [&] {
+                        static_cast<void>(workspace.evaluate(
+                            model.get(), data.get(), gear, 2, 3, bad,
+                            std::nullopt, std::nullopt, false));
+                    }, "out-of-range frame ID must be rejected");
+            }
+            require_throws<std::invalid_argument>(
+                [&] {
+                    static_cast<void>(
+                        workspace.angle(model.get(), data.get(), 0, false));
+                }, "the world body is not a sprocket body");
+        }
+    }
+
+    // C2: nonfinite transform entries are rejected before the planar-frame
+    // tolerance comparisons — NaN would otherwise slip through |x| > eps.
+    void test_geometry_nonfinite_transform() {
+        const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+            load_xml_model(geometric_freehub_xml), &mj_deleteModel);
+        const drivetrain::OwnedData data(engine::make_data(model.get()));
+        require(data != nullptr, "geometric contract data");
+        mj_forward(model.get(), data.get());
+        const int crank = mj_name2id(model.get(), mjOBJ_BODY, "crank");
+        require(crank > 0, "crank body resolves");
+        drivetrain::GeometryWorkspace workspace(model->nv);
+        static_cast<void>(workspace.angle(model.get(), data.get(), crank,
+                                          false));
+        const auto xmat =
+                model_access::mutable_buffer(data->xmat, 9 * model->nbody);
+        const std::size_t base = 9 * static_cast<std::size_t>(crank);
+        const mjtNum saved = xmat[base];
+        xmat[base] = std::numeric_limits<mjtNum>::quiet_NaN();
+        require_throws<std::invalid_argument>(
+            [&] {
+                static_cast<void>(
+                    workspace.angle(model.get(), data.get(), crank, false));
+            }, "a NaN rotation entry must be rejected before tolerances");
+        xmat[base] = saved;
+        xmat[base + 4] = std::numeric_limits<mjtNum>::infinity();
+        require_throws<std::invalid_argument>(
+            [&] {
+                static_cast<void>(
+                    workspace.angle(model.get(), data.get(), crank, false));
+            }, "an infinite rotation entry must be rejected");
+        xmat[base + 4] = 1.;
+        static_cast<void>(workspace.angle(model.get(), data.get(), crank,
+                                          false));
+    }
+
+    // C2: interpolation/candidate/heightfield boundaries — empty or
+    // mismatched tables are explicit rejections, np.arange(lo, hi) declares
+    // hi <= lo the empty interval, and raster extents go through checked
+    // products/sums against nhfielddata (engine mjtSize limits).
+    constexpr std::string_view hfield_xml = R"XML(
+<mujoco><asset><hfield name="hf" nrow="3" ncol="4" size="1 1 .1 .1"/></asset>
+<worldbody><geom name="terrain" type="hfield" hfield="hf"/></worldbody></mujoco>
+)XML";
+
+    void test_profile_contract_boundaries() {
+        {   // np_interp boundary: empty or width-mismatched tables.
+            const std::array xs{0., 1.}, ys{0., 2.};
+            require(biketyre::np_interp(.5, xs, ys) == 1.,
+                    "valid interpolation control");
+            const std::span<const double> empty;
+            require_throws<std::invalid_argument>(
+                [&] {
+                    static_cast<void>(biketyre::np_interp(.5, empty, ys));
+                }, "empty interpolation table must be rejected");
+            const std::array short_ys{0.};
+            require_throws<std::invalid_argument>(
+                [&] {
+                    static_cast<void>(
+                        biketyre::np_interp(.5, xs, short_ys));
+                }, "mismatched interpolation widths must be rejected");
+        }
+        {   // ProfileQuery ctor validates the profile shape once; the
+            // contact path then runs the unchecked inner loop.
+            const biketyre::ProfileQuery control({0., 1., 2.}, {0., 0., 0.},
+                                                 .001, .5, 30.);
+            static_cast<void>(control);
+            require_throws<std::invalid_argument>(
+                [] {
+                    const biketyre::ProfileQuery q({0., 1.}, {0.}, .001, .5,
+                                                   30.);
+                }, "mismatched profile widths must be rejected");
+            require_throws<std::invalid_argument>(
+                [] {
+                    const biketyre::ProfileQuery q({0.}, {0.}, .001, .5, 30.);
+                }, "a single-point profile must be rejected");
+            require_throws<std::invalid_argument>(
+                [] {
+                    const biketyre::ProfileQuery q({0., 0., 1.}, {0., 0., 0.},
+                                                   .001, .5, 30.);
+                }, "nonmonotonic abscissas must be rejected");
+            require_throws<std::invalid_argument>(
+                [] {
+                    const biketyre::ProfileQuery q(
+                        {0., std::numeric_limits<double>::quiet_NaN(), 1.},
+                        {0., 0., 0.}, .001, .5, 30.);
+                }, "nonfinite vertices must be rejected");
+        }
+        {   // detail::candidates interval contract: hi <= lo is the declared
+            // empty interval (np.arange semantics), never a negative reserve.
+            const std::array px{0., 1., 2.}, pz{0., 0., 0.};
+            const std::array sx{1., 1.}, sz{0., 0.}, sl{1., 1.};
+            auto empty = biketyre::detail::candidates(px, pz, sx, sz, sl,
+                                                    {.5, 1.}, 2, 1);
+            require(empty.ids.empty() && empty.t.empty() &&
+                    empty.points.empty() && empty.distances.empty(),
+                    "lo > hi is the declared empty interval");
+            empty = biketyre::detail::candidates(px, pz, sx, sz, sl,
+                                                 {.5, 1.}, 1, 1);
+            require(empty.ids.empty(), "lo == hi is the empty interval");
+            const auto cand = biketyre::detail::candidates(
+                px, pz, sx, sz, sl, {.5, 1.}, 0, 2);
+            require(cand.ids.size() == 2,
+                    "full window produces one candidate per segment");
+            require_throws<std::invalid_argument>(
+                [&] {
+                    static_cast<void>(biketyre::detail::candidates(
+                        px, pz, sx, sz, sl, {.5, 1.}, -1, 2));
+                }, "a window below the table must be rejected");
+            require_throws<std::invalid_argument>(
+                [&] {
+                    static_cast<void>(biketyre::detail::candidates(
+                        px, pz, sx, sz, sl, {.5, 1.}, 0, 3));
+                }, "a window past the table must be rejected");
+            const std::array mismatch{1.};
+            require_throws<std::invalid_argument>(
+                [&] {
+                    static_cast<void>(biketyre::detail::candidates(
+                        px, pz, mismatch, sz, sl, {.5, 1.}, 0, 1));
+                }, "mismatched candidate tables must be rejected");
+            const std::span<const double> blank;
+            require_throws<std::invalid_argument>(
+                [&] {
+                    static_cast<void>(biketyre::detail::candidates(
+                        blank, blank, blank, blank, blank, {.5, 1.}, 0, 1));
+                }, "empty candidate tables must be rejected");
+        }
+        {   // Heightfield extents: checked product/sum against nhfielddata,
+            // invalid geom/data IDs, and the non-hfield rejection.
+            const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+                load_xml_model(hfield_xml), &mj_deleteModel);
+            const drivetrain::OwnedData data(
+                engine::make_data(model.get()));
+            require(data != nullptr, "heightfield contract data");
+            mj_forward(model.get(), data.get());
+            const auto vertices = biketyre::compiled_profile_vertices(
+                model.get(), data.get(), "terrain");
+            require(vertices.size() == 4,
+                    "valid heightfield control yields ncol vertices");
+            const int geom = mj_name2id(model.get(), mjOBJ_GEOM, "terrain");
+            require(geom >= 0, "terrain geom resolves");
+            // Each mutation runs inside the lambda so the saved originals
+            // are restored for the next case — invalid models exist only
+            // inside this test. Model-field access itself goes through the
+            // checked buffers (-Wunsafe-buffer-usage).
+            const auto nrow_buf = model_access::mutable_buffer(
+                model->hfield_nrow, model->nhfield);
+            const auto ncol_buf = model_access::mutable_buffer(
+                model->hfield_ncol, model->nhfield);
+            const auto adr_buf = model_access::mutable_buffer(
+                model->hfield_adr, model->nhfield);
+            const auto type_buf = model_access::mutable_buffer(
+                model->geom_type, model->ngeom);
+            const auto dataid_buf = model_access::mutable_buffer(
+                model->geom_dataid, model->ngeom);
+            const std::size_t gi = static_cast<std::size_t>(geom);
+            const auto rejected = [&](const auto &mutate) {
+                const int rows = nrow_buf[0];
+                const int cols = ncol_buf[0];
+                const int adr = adr_buf[0];
+                const int type = type_buf[gi];
+                const int dataid = dataid_buf[gi];
+                mutate();
+                require_throws<std::invalid_argument>(
+                    [&] {
+                        static_cast<void>(biketyre::compiled_profile_vertices(
+                            model.get(), data.get(), "terrain"));
+                    }, "corrupt heightfield extents must be rejected");
+                nrow_buf[0] = rows;
+                ncol_buf[0] = cols;
+                adr_buf[0] = adr;
+                type_buf[gi] = type;
+                dataid_buf[gi] = dataid;
+            };
+            rejected([&] { nrow_buf[0] = -2; });
+            rejected([&] { ncol_buf[0] = 1; });
+            rejected([&] { ncol_buf[0] = std::numeric_limits<int>::max(); });
+            rejected([&] { adr_buf[0] = -1; });
+            rejected([&] {
+                adr_buf[0] = static_cast<int>(model->nhfielddata);
+            });
+            rejected([&] { type_buf[gi] = mjGEOM_SPHERE; });
+            rejected([&] { dataid_buf[gi] = -1; });
+        }
+    }
+
+    // C2: the support-model walk validates every geom/body ID and enforces
+    // the ordered-parent invariant 0 <= parent < body — a corrupt or cyclic
+    // parent chain is a bounded rejection, never an unbounded loop — and
+    // nonfinite joint axes fail before the axis-layout tolerances.
+    constexpr std::string_view support_xml = R"XML(
+<mujoco><default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/></default>
+<worldbody>
+<body name="frame"><joint name="root_x" type="slide" axis="1 0 0"/><geom/>
+  <body name="pedal"><joint name="pedal_z" type="slide" axis="0 0 1"/>
+    <geom name="pedal_geom" type="box" size=".1 .05 .01"/></body>
+</body></worldbody></mujoco>
+)XML";
+
+    void test_support_geometry_parent_contracts() {
+        const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+            load_xml_model(support_xml), &mj_deleteModel);
+        const drivetrain::OwnedData data(engine::make_data(model.get()));
+        require(data != nullptr, "support contract data");
+        mj_forward(model.get(), data.get());
+        const int geom = mj_name2id(model.get(), mjOBJ_GEOM, "pedal_geom");
+        require(geom >= 0, "pedal geom resolves");
+        const std::array good{geom};
+        rider::validate_planar_support_model(model.get(), data.get(), good);
+        for (const int bad: {-1, static_cast<int>(model->ngeom)}) {
+            const std::array ids{bad};
+            require_throws<std::invalid_argument>(
+                [&] {
+                    rider::validate_planar_support_model(model.get(),
+                                                         data.get(), ids);
+                }, "out-of-range support geom must be rejected");
+        }
+        const int pedal = mj_name2id(model.get(), mjOBJ_BODY, "pedal");
+        require(pedal > 0, "pedal body resolves");
+        const std::size_t pi = static_cast<std::size_t>(pedal);
+        const std::size_t gi = static_cast<std::size_t>(geom);
+        const auto parent_buf = model_access::mutable_buffer(
+            model->body_parentid, model->nbody);
+        const auto geom_body_buf = model_access::mutable_buffer(
+            model->geom_bodyid, model->ngeom);
+        {   // Self-parent: parent >= body violates the ordered invariant.
+            const int saved = parent_buf[pi];
+            parent_buf[pi] = pedal;
+            require_throws<std::invalid_argument>(
+                [&] {
+                    rider::validate_planar_support_model(model.get(),
+                                                         data.get(), good);
+                }, "a cyclic body parent must be rejected");
+            parent_buf[pi] = saved;
+        }
+        {   // Parent outside the body table is invalid, not an OOB index.
+            const int saved = parent_buf[pi];
+            parent_buf[pi] = -2;
+            require_throws<std::invalid_argument>(
+                [&] {
+                    rider::validate_planar_support_model(model.get(),
+                                                         data.get(), good);
+                }, "an invalid body parent must be rejected");
+            parent_buf[pi] = saved;
+        }
+        {   // geom_bodyid pointing outside nbody fails before indexing.
+            const int saved = geom_body_buf[gi];
+            geom_body_buf[gi] = static_cast<int>(model->nbody);
+            require_throws<std::invalid_argument>(
+                [&] {
+                    rider::validate_planar_support_model(model.get(),
+                                                         data.get(), good);
+                }, "an out-of-range geom body must be rejected");
+            geom_body_buf[gi] = saved;
+        }
+        const auto xaxis =
+                model_access::mutable_buffer(data->xaxis, 3 * model->njnt);
+        {   // A NaN axis entry on an ancestor joint is rejected before the
+            // axis-layout tolerance comparisons.
+            const mjtNum saved = xaxis[0];
+            xaxis[0] = std::numeric_limits<mjtNum>::quiet_NaN();
+            require_throws<std::invalid_argument>(
+                [&] {
+                    rider::validate_planar_support_model(model.get(),
+                                                         data.get(), good);
+                }, "a nonfinite joint axis must be rejected");
+            xaxis[0] = saved;
+        }
+        {   // A nonfinite geom transform entry fails via validate_box.
+            const auto gxmat = model_access::mutable_buffer(
+                data->geom_xmat, 9 * model->ngeom);
+            const std::size_t base = 9 * static_cast<std::size_t>(geom);
+            const mjtNum saved = gxmat[base];
+            gxmat[base] = std::numeric_limits<mjtNum>::infinity();
+            require_throws<std::invalid_argument>(
+                [&] {
+                    rider::validate_planar_support_model(model.get(),
+                                                         data.get(), good);
+                }, "a nonfinite geom transform must be rejected");
+            gxmat[base] = saved;
+        }
+        // Restored model remains a valid control.
+        rider::validate_planar_support_model(model.get(), data.get(), good);
+    }
+
+    constexpr std::array<TestCase, 23> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -1173,6 +1604,11 @@ namespace {
         {.name = "transmission_staged_ratio_atomicity", .run = test_transmission_staged_ratio_atomicity},
         {.name = "interval_clock_contracts", .run = test_interval_clock_contracts},
         {.name = "cruise_live_timestep", .run = test_cruise_live_timestep},
+        {.name = "model_access_contracts", .run = test_model_access_contracts},
+        {.name = "geometry_topology_and_ids", .run = test_geometry_topology_and_ids},
+        {.name = "geometry_nonfinite_transform", .run = test_geometry_nonfinite_transform},
+        {.name = "profile_contract_boundaries", .run = test_profile_contract_boundaries},
+        {.name = "support_geometry_parent_contracts", .run = test_support_geometry_parent_contracts},
     }};
 
     int run_case(const TestCase &test_case) {

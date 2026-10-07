@@ -1,10 +1,10 @@
 #include "support_geometry.hpp"
 
 #include "../diag.hpp"
+#include "../model_access.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <ranges>
 #include <set>
 
 namespace rider {
@@ -273,35 +273,54 @@ namespace rider {
     }
 
     void validate_planar_support_model(const mjModel *model, const mjData *data, std::span<const int> geoms) {
-        const auto body_of = std::views::counted(model->geom_bodyid, model->ngeom);
-        const auto parents = std::views::counted(model->body_parentid, model->nbody);
+        const auto body_of = model_access::readonly_buffer(model->geom_bodyid, model->ngeom);
+        const auto parents = model_access::readonly_buffer(model->body_parentid, model->nbody);
         std::set<int> ancestors;
         for (int const geom: geoms) {
-            if (geom < 0 || geom >= model->ngeom) throw std::invalid_argument("invalid rider support geom");
+            model_access::require_id(geom, model->ngeom,
+                                     "invalid rider support geom");
             int body = body_of[static_cast<std::size_t>(geom)];
-            while (body != 0) {
+            model_access::require_id(body, model->nbody, "rider support body");
+            // Ordered-parent walk: MuJoCo's kinematic tree stores
+            // 0 <= parent < body for every non-root body, so a valid chain
+            // strictly decreases and cannot cycle — a violated invariant or
+            // a run past nbody steps is an invalid/cyclic model, not a loop.
+            for (mjtSize steps = 0; body != 0; ++steps) {
+                if (steps >= model->nbody)
+                    throw std::invalid_argument(
+                        "invalid or cyclic rider support parent chain");
+                const int parent = parents[static_cast<std::size_t>(body)];
+                if (parent < 0 || parent >= body)
+                    throw std::invalid_argument(
+                        "invalid or cyclic rider support parent chain");
                 ancestors.insert(body);
-                body = parents[static_cast<std::size_t>(body)];
+                body = parent;
             }
         }
-        const auto joint_bodies = std::views::counted(model->jnt_bodyid, model->njnt);
-        const auto joint_types = std::views::counted(model->jnt_type, model->njnt);
-        const auto axes = std::views::counted(data->xaxis, 3 * model->njnt);
+        const auto joint_bodies = model_access::readonly_buffer(model->jnt_bodyid, model->njnt);
+        const auto joint_types = model_access::readonly_buffer(model->jnt_type, model->njnt);
+        const auto axes = model_access::readonly_buffer(data->xaxis, 3 * model->njnt);
         for (std::size_t joint = 0; joint < joint_bodies.size(); ++joint) {
             if (!ancestors.contains(joint_bodies[joint])) continue;
             const auto type = joint_types[joint];
             if (type != mjJNT_HINGE && type != mjJNT_SLIDE)
                 throw std::invalid_argument("rider supports require scalar planar joint topology");
+            // Nonfinite axis entries are rejected before the axis-layout
+            // tolerance comparisons — NaN would otherwise escape |x| > eps.
+            for (std::size_t axis = 0; axis < 3; ++axis)
+                if (!std::isfinite(axes[3 * joint + axis]))
+                    throw std::invalid_argument(
+                        "rider supports require finite joint axes");
             for (std::size_t axis = 0; axis < 3; ++axis) {
                 if ((type == mjJNT_HINGE && std::abs(std::abs(axes[3 * joint + axis]) - (axis == 1 ? 1. : 0.)) > 1e-9)
                     || (type == mjJNT_SLIDE && axis == 1 && std::abs(axes[3 * joint + axis]) > 1e-9))
                     throw std::invalid_argument("rider supports require scalar planar joint topology");
             }
         }
-        const auto geom_types = std::views::counted(model->geom_type, model->ngeom);
-        const auto positions = std::views::counted(data->geom_xpos, 3 * model->ngeom);
-        const auto rotations = std::views::counted(data->geom_xmat, 9 * model->ngeom);
-        const auto sizes = std::views::counted(model->geom_size, 3 * model->ngeom);
+        const auto geom_types = model_access::readonly_buffer(model->geom_type, model->ngeom);
+        const auto positions = model_access::readonly_buffer(data->geom_xpos, 3 * model->ngeom);
+        const auto rotations = model_access::readonly_buffer(data->geom_xmat, 9 * model->ngeom);
+        const auto sizes = model_access::readonly_buffer(model->geom_size, 3 * model->ngeom);
         for (int const geom: geoms) {
             const auto id = static_cast<std::size_t>(geom);
             if (geom_types[id] != mjGEOM_BOX) throw std::invalid_argument("rider support geometry must be a box");

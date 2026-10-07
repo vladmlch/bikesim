@@ -4,9 +4,9 @@
 // same two-argument keep-first-on-tie semantics, including the NaN cases.
 #include "rider_forces.hpp"
 #include "../config_validation.hpp"
+#include "../model_access.hpp"
 
 #include <algorithm>
-#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -21,25 +21,29 @@ namespace {
             throw std::invalid_argument(
                 "model has no joint '" + joint_name +
                 "'; the seated rider's forces cannot be applied");
-        // views::counted everywhere — -Wunsafe-buffer-usage rejects raw
+        // Checked extents everywhere — -Wunsafe-buffer-usage rejects raw
         // indexing into mjModel pointer fields (same pattern as suspension.cpp).
+        model_access::require_id(jid, m->njnt, "rider slide joint");
         const std::span<const int> jnt_type =
-                std::views::counted(m->jnt_type, m->njnt);
+                model_access::readonly_buffer(m->jnt_type, m->njnt);
         const std::span<const mjtBool> limited =
-                std::views::counted(m->jnt_limited, m->njnt);
+                model_access::readonly_buffer(m->jnt_limited, m->njnt);
         if (jnt_type[static_cast<std::size_t>(jid)] != mjJNT_SLIDE ||
             limited[static_cast<std::size_t>(jid)])
             throw std::invalid_argument(
                 "joint '" + joint_name +
                 "' must be an unlimited slide for the rider force path");
         const std::span<const int> qposadr =
-                std::views::counted(m->jnt_qposadr, m->njnt);
+                model_access::readonly_buffer(m->jnt_qposadr, m->njnt);
         const std::span<const int> dofadr =
-                std::views::counted(m->jnt_dofadr, m->njnt);
-        return {
-            qposadr[static_cast<std::size_t>(jid)],
-            dofadr[static_cast<std::size_t>(jid)]
-        };
+                model_access::readonly_buffer(m->jnt_dofadr, m->njnt);
+        const int qadr = qposadr[static_cast<std::size_t>(jid)];
+        const int vadr = dofadr[static_cast<std::size_t>(jid)];
+        // The stored addresses index d->qpos[nq] / d->qvel[nv] on every
+        // apply — a corrupt model table is rejected here, not at the read.
+        model_access::require_id(qadr, m->nq, "rider slide qpos address");
+        model_access::require_id(vadr, m->nv, "rider slide dof address");
+        return {qadr, vadr};
     }
 } // namespace
 
@@ -62,15 +66,22 @@ RiderForcesWriter::RiderForcesWriter(const mjModel *m,
     }
 }
 
+// Caller precondition (raw boundary): `d` is the live mjData of the model
+// this writer was built on, driven by the single owning Stepper — widths
+// are validated, model/data pairing is not derivable from them.
 std::vector<double> RiderForcesWriter::qfrc(const mjData *d) const {
     // rider_forces.py:151-154 — apply(): reads qpos/qvel only; assign, not
     // accumulate.
-    const std::span<const mjtNum> qpos = std::views::counted(d->qpos, nq_);
-    const std::span<const mjtNum> qvel = std::views::counted(d->qvel, nv_);
+    const std::span<const mjtNum> qpos =
+            model_access::readonly_buffer(d->qpos, nq_);
+    const std::span<const mjtNum> qvel =
+            model_access::readonly_buffer(d->qvel, nv_);
     std::vector<double> out(static_cast<std::size_t>(nv_), 0.0);
     for (std::size_t i = 0; i < paths_.size(); ++i) {
         const Path &p = paths_[i];
         Telemetry &t = last_[i];
+        model_access::require_id(p.qposadr, nq_, "rider slide qpos address");
+        model_access::require_id(p.dofadr, nv_, "rider slide dof address");
         const double q = qpos[static_cast<std::size_t>(p.qposadr)];
         const double qd = qvel[static_cast<std::size_t>(p.dofadr)];
         // rider_forces.py:64-76 — _JointPath.compute.

@@ -15,7 +15,10 @@ namespace drivetrain {
 
         const FreehubSnapshot &state() const { return state_; }
 
-        void set_state(const FreehubSnapshot &state);
+        // By value so transaction commits can move the candidate into
+        // place — validation runs on the argument, then the publish is a
+        // memory-only move.
+        void set_state(FreehubSnapshot state);
 
     private:
         // The ctor init list stores the validated values; 0 keeps a

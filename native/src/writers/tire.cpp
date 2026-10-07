@@ -18,6 +18,7 @@
 #include "../diag.hpp"
 #include "../engaged.hpp"
 #include "../interval_clock.hpp"
+#include "../model_access.hpp"
 
 #include <algorithm>
 #include <array>
@@ -63,16 +64,27 @@ namespace {
         return result;
     }
 
-    // physical_mapping.py:24-37 — point_jacobian_into (jacp only).
+    // physical_mapping.py:24-37 — point_jacobian_into (jacp only). The
+    // destination is a checked span of exactly 3*nv elements; the engine
+    // ABI receives .data() only after the width contract verifies.
     void point_jacobian_into(const mjModel *m, const mjData *d, int body_id,
-                             const Vec3 &point, mjtNum *jp) {
+                             const Vec3 &point, std::span<mjtNum> jp) {
         if (!std::ranges::all_of(point,
                                  [](double v) { return std::isfinite(v); }))
             throw std::invalid_argument("invalid world point");
-        if (!(0 < body_id && body_id < m->nbody))
+        model_access::require_id(body_id, m->nbody, "point Jacobian body");
+        if (body_id == 0)
             throw std::invalid_argument(
                 "point Jacobian requires a physical body");
-        mj_jac(m, d, jp, nullptr, point.data(), body_id);
+        if (m->nv < 0)
+            throw std::invalid_argument(
+                "point Jacobian needs a nonnegative model width");
+        if (jp.size() != model_access::checked_product(
+                3, static_cast<std::size_t>(m->nv),
+                std::numeric_limits<std::size_t>::max()))
+            throw std::invalid_argument(
+                "point Jacobian destination must be 3*nv elements");
+        mj_jac(m, d, jp.data(), nullptr, point.data(), body_id);
     }
 
     // np.linalg.norm(v) on a (3,) — sqrt(ddot(v,v)), the same-libcall form.
@@ -190,9 +202,16 @@ namespace {
     }
 } // namespace
 
+// Caller preconditions (documented at the raw boundary): `d` must be an
+// mjData created from `m` — dimension equality is a width check, never a
+// pairing proof — and a single Stepper context owns the writer for the
+// model's lifetime so `m_`/`d` outlive every call.
 TireWriter::TireWriter(const mjModel *m, const mjData *d,
                        nativecfg::TireConfig config)
     : m_(m), cfg_(std::move(config)), nv_(static_cast<int>(m->nv)) {
+    if (m->nv < 0 || m->nv > std::numeric_limits<int>::max())
+        throw std::invalid_argument(
+            "tire writer needs a model width in int range");
     nativecfg::validate(cfg_);
     // Dataclass __post_init__ validation happened when Python built the
     // config — before TireForceApplier.__init__ — so these checks precede
@@ -289,10 +308,11 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
         resolve_id(m, mjOBJ_GEOM, "geom_rear_contact")
     };
     const std::span<const int> body_of =
-            std::views::counted(m->geom_bodyid, m->ngeom);
+            model_access::readonly_buffer(m->geom_bodyid, m->ngeom);
     const std::span<const mjtNum> gsize =
-            std::views::counted(m->geom_size, 3 * m->ngeom);
+            model_access::readonly_buffer(m->geom_size, 3 * m->ngeom);
     for (std::size_t i = 0; i < 2; ++i) {
+        model_access::require_id(geoms_[i], m->ngeom, "tire contact geom");
         bodies_[i] = body_of[static_cast<std::size_t>(geoms_[i])];
         radii_[i] = gsize[3 * static_cast<std::size_t>(geoms_[i])];
     }
@@ -303,9 +323,9 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
     // tire_forces.py:84-88 — every geom on each wheel body must be
     // collision-disabled for the compliant_2d backend.
     const std::span<const int> contype =
-            std::views::counted(m->geom_contype, m->ngeom);
+            model_access::readonly_buffer(m->geom_contype, m->ngeom);
     const std::span<const int> conaffinity =
-            std::views::counted(m->geom_conaffinity, m->ngeom);
+            model_access::readonly_buffer(m->geom_conaffinity, m->ngeom);
     for (const int body: bodies_)
         for (int g = 0; g < m->ngeom; ++g)
             if (body_of[static_cast<std::size_t>(g)] == body &&
@@ -519,6 +539,9 @@ std::vector<double> TireWriter::state() const {
     return out;
 }
 
+// Caller precondition: `d` is the live mjData of the model this writer
+// was built on, driven by the single owning Stepper — no model/data
+// pairing check is derivable from widths here.
 std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
     // tire_forces.py:125-131 — scalar(dt,'tire interval',positive=True)
     // and the double-advance gate precede all force work.
@@ -537,9 +560,9 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
     std::array<std::optional<TireSnapshot>, 2> snapshots;
     std::array<std::optional<TireDiagnostics>, 2> diagnostics;
     const std::span<const mjtNum> xpos =
-            std::views::counted(d->geom_xpos, 3 * m_->ngeom);
+            model_access::readonly_buffer(d->geom_xpos, 3 * m_->ngeom);
     const std::span<const mjtNum> qvel =
-            std::views::counted(d->qvel, m_->nv);
+            model_access::readonly_buffer(d->qvel, m_->nv);
     const double normal_cosine = std::cos(
         cfg_.distinct_normal_deg * (std::numbers::pi / 180.0));
     std::vector<double> tmp(static_cast<std::size_t>(nv_));
@@ -558,8 +581,8 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
         const Vec3 p = {contact.point[0], 0.0, contact.point[1]};
         const Vec3 n = {contact.normal[0], 0.0, contact.normal[1]};
         const Vec3 tangent = {n[2], 0.0, -n[0]};
-        point_jacobian_into(m_, d, body, p, jac_contact_.data());
-        point_jacobian_into(m_, d, body, center, jac_center_.data());
+        point_jacobian_into(m_, d, body, p, jac_contact_);
+        point_jacobian_into(m_, d, body, center, jac_center_);
         // velocity = jac @ qvel / center_velocity = jac_center @ qvel
         Vec3 velocity, center_velocity;
         cblas_dgemv(kCblasRowMajor, kCblasNoTrans, 3, nv_, 1.0,

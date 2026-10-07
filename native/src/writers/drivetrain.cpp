@@ -176,19 +176,20 @@ namespace drivetrain {
         return reference ? unwrap(raw, *reference) : raw;
     }
 
-    void DrivetrainWriter::shifts(Diagnostics &d) const {
-        const auto &s = shifting_.state();
+    void DrivetrainWriter::shifts(Diagnostics &d, const ShiftingSnapshot &s,
+                                  std::optional<double> shift_time_s) const {
         d["gear_front_teeth"] = config_.policies.gearing.front_teeth;
         d["gear_rear_teeth"] = s.rear_teeth;
-        d["gear_ratio"] = shifting_.gear_ratio();
+        d["gear_ratio"] = static_cast<double>(config_.policies.gearing.front_teeth) /
+                          s.rear_teeth;
         d["shift_active"] = s.cut_remaining_s > 0.;
         d["shift_direction"] = s.direction;
         d["shift_from_teeth"] = s.from_teeth;
         d["shift_count"] = s.shift_count;
-        d["shift_time_s"] = live_.shift_time_s
-                                ? DiagnosticValue(*live_.shift_time_s)
-                                : DiagnosticValue(std::monostate{});
-        d["shift_torque_factor"] = shifting_.torque_factor();
+        d["shift_time_s"] = shift_time_s ? DiagnosticValue(*shift_time_s)
+                                         : DiagnosticValue(std::monostate{});
+        d["shift_torque_factor"] =
+                s.cut_remaining_s > 0. ? config_.policies.shifting.torque_factor : 1.;
     }
 
     void DrivetrainWriter::reset() {
@@ -233,7 +234,7 @@ namespace drivetrain {
             {"motor_freewheel_torque_nm", 0.},
             {"motor_freewheel_dissipation_power_w", 0.}
         };
-        shifts(live_.last);
+        shifts(live_.last, shifting_.state(), live_.shift_time_s);
     }
 
     void DrivetrainWriter::restart_clock() {
@@ -248,44 +249,11 @@ namespace drivetrain {
                                             bool contact, std::optional<double> slip,
                                             std::optional<double> ceiling) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
-        if (advance && live_.last_time_s && data_->time <= *live_.last_time_s)
-            throw std::invalid_argument(
-                "drivetrain state can advance only once per timestamp");
-        const auto crank = joints_.at("crank_spin"), wheel = joints_.at("rear_wheel_spin");
-        const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
-        double required = v[static_cast<std::size_t>(wheel.dof)] / shifting_.gear_ratio() *
-                          60. / (2. * std::numbers::pi);
-        const double effort = control.human_torque_nm.value_or(config_.human_torque_nm);
-        const bool enabled = active && control.rider_enabled && effort_;
-        if (advance && active && config_.policies.shifting.enabled && effort_) {
-            if (!ideal_hub_)
-                throw std::invalid_argument(
-                    "automatic shifting needs the live ideal_mid_drive model");
-            // The shifter and the transmission update stage together: a
-            // rejected ratio rolls back the whole advance — EMAs, counters,
-            // gear — while a clean staging commits it in one move.
-            auto shifter = shifting_;
-            const bool shifted = shifter.update(
-                v[static_cast<std::size_t>(crank.dof)] * 60. / (2. * std::numbers::pi),
-                required, dt, enabled && effort > 0., braking, contact, slip);
-            if (shifted) {
-                auto update = ideal_hub_->stage_ratio(data_, shifter.gear_ratio());
-                ideal_hub_->commit(update);
-                live_.shift_time_s = data_->time;
-            }
-            shifting_ = std::move(shifter);
-            required = v[static_cast<std::size_t>(wheel.dof)] / shifting_.gear_ratio() *
-                       60. / (2. * std::numbers::pi);
-        }
-        auto policy = pedaling_;
-        auto result = (advance ? pedaling_ : policy)
-                .update(q[static_cast<std::size_t>(crank.qpos)],
-                        v[static_cast<std::size_t>(crank.dof)], required, effort,
-                        dt, enabled, braking);
-        if (ceiling)
-            result.effort_nm = std::min(
-                result.effort_nm, nonnegative(*ceiling, "automatic rider effort ceiling"));
-        result.effort_nm *= shifting_.torque_factor();
+        auto tick = stage_prepare(
+            {.control = control, .dt = dt, .braking = braking, .active = active,
+             .advance = advance, .contact = contact, .slip = slip, .ceiling = ceiling});
+        const auto result = tick.result;
+        commit(tick);
         return result;
     }
 
@@ -294,66 +262,150 @@ namespace drivetrain {
                                  bool braking, bool active, bool advance, double sensed,
                                  const std::optional<PedalingState> &pedaling, bool contact,
                                  std::optional<double> slip) {
-        positive(dt, "drivetrain interval");
-        finite(speed, "bike speed");
-        finite(sensed, "measured pedal torque");
-        if (!live_.reference)
-            throw std::runtime_error("initialize the drivetrain before applying forces");
-        if (advance && live_.last_time_s && data_->time <= *live_.last_time_s)
-            throw std::invalid_argument(
-                "drivetrain state can advance only once per timestamp");
-        if (advance)
-            return compute(c, dt, speed, braking, active, true, sensed, pedaling, contact,
-                           slip);
-        // Probe policies are detached typed copies; transmission helpers are never touched.
-        const auto saved = live_;
-        auto const saved_p = pedaling_;
-        auto saved_s = shifting_;
-        auto saved_a = assist_;
-        auto const saved_b = battery_;
-        auto const saved_h = hub_;
-        live_.pending_actuation.reset();
-        live_.last_time_s.reset();
-        try {
-            compute(c, dt, speed, braking, active, false, sensed, pedaling, contact, slip);
-            const auto probe = live_.last;
-            live_ = saved;
-            live_.probe_last = probe;
-        } catch (...) {
-            live_ = saved;
-            pedaling_ = saved_p;
-            shifting_ = std::move(saved_s);
-            assist_ = std::move(saved_a);
-            battery_ = saved_b;
-            hub_ = saved_h;
-            throw;
-        }
-        pedaling_ = saved_p;
-        shifting_ = std::move(saved_s);
-        assist_ = std::move(saved_a);
-        battery_ = saved_b;
-        hub_ = saved_h;
+        auto tick = stage_components(
+            {.control = c, .dt = dt, .speed = speed, .sensed = sensed, .braking = braking,
+             .active = active, .advance = advance, .contact = contact, .pedaling = pedaling,
+             .slip = slip});
+        commit(tick);
         return components_;
     }
 
-    const ForceComponents &
-    DrivetrainWriter::compute(const RideControl &c, double dt, double speed, bool braking,
-                              bool active, bool advance, double sensed,
-                              std::optional<PedalingState> state, bool contact,
-                              std::optional<double> slip) {
-        if (advance) {
-            if (ideal_hub_)
-                ideal_hub_->prepare(data_);
-            if (clutch_)
-                clutch_->prepare(data_);
-            if (freewheel_)
-                freewheel_->prepare(data_);
+    PreparedTick DrivetrainWriter::stage_prepare(const PrepareInputs &in) {
+        if (in.advance && live_.last_time_s && data_->time <= *live_.last_time_s)
+            throw std::invalid_argument(
+                "drivetrain state can advance only once per timestamp");
+        PreparedTick tick;
+        tick.advance = in.advance;
+        tick.snapshot = live_;
+        tick.shifting = shifting_.state();
+        tick.assist = assist_.state();
+        tick.battery = battery_.state();
+        tick.hub = hub_ ? std::optional(hub_->state()) : std::nullopt;
+        // The pedaling policy always advances on a detached candidate; only a
+        // committed tick publishes it back.
+        auto pedaling = pedaling_;
+        stage_pedal_advance(tick, in, pedaling);
+        tick.pedaling = pedaling.state();
+        validate_tick(tick);
+        return tick;
+    }
+
+    // Every candidate is validated while staged so commit()'s publication is
+    // genuinely memory-only: set_state() validation can never throw there.
+    void DrivetrainWriter::validate_tick(const PreparedTick &tick) const {
+        auto pedaling = pedaling_;
+        pedaling.set_state(tick.pedaling);
+        auto shifter = shifting_;
+        shifter.set_state(tick.shifting);
+        auto assist = assist_;
+        assist.set_state(tick.assist);
+        auto battery = battery_;
+        battery.set_state(tick.battery);
+        if (hub_) {
+            auto hub = hub_;
+            engaged(hub).set_state(engaged(tick.hub));
         }
-        const auto ps =
-                state
-                    ? *state
-                    : prepare(c, dt, braking, active, advance, contact, slip, std::nullopt);
-        for (auto &component: components_)
+    }
+
+    void DrivetrainWriter::stage_pedal_advance(PreparedTick &tick,
+                                               const PrepareInputs &in,
+                                               PedalingPolicy &pedaling) {
+        const auto crank = joints_.at("crank_spin"), wheel = joints_.at("rear_wheel_spin");
+        const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
+        double required = v[static_cast<std::size_t>(wheel.dof)] / shifting_.gear_ratio() *
+                          60. / (2. * std::numbers::pi);
+        const double effort = in.control.human_torque_nm.value_or(config_.human_torque_nm);
+        const bool enabled = in.active && in.control.rider_enabled && effort_;
+        double torque_factor = shifting_.torque_factor();
+        if (in.advance && in.active && config_.policies.shifting.enabled && effort_) {
+            if (!ideal_hub_)
+                throw std::invalid_argument(
+                    "automatic shifting needs the live ideal_mid_drive model");
+            // The shifter and the transmission update stage together: a
+            // rejected ratio discards the whole candidate — EMAs, counters,
+            // gear — and the commit lands both in one move. When the tick
+            // already carries a staged prepare, the ratio staging composes
+            // onto it (sequential prepare→set_ratio order preserved).
+            auto shifter = shifting_;
+            const bool shifted = shifter.update(
+                v[static_cast<std::size_t>(crank.dof)] * 60. / (2. * std::numbers::pi),
+                required, in.dt, enabled && effort > 0., in.braking, in.contact, in.slip);
+            if (shifted) {
+                tick.ideal_hub = tick.ideal_hub
+                                     ? ideal_hub_->stage_ratio(data_, shifter.gear_ratio(),
+                                                               std::move(*tick.ideal_hub))
+                                     : ideal_hub_->stage_ratio(data_, shifter.gear_ratio());
+                tick.snapshot.shift_time_s = data_->time;
+            }
+            tick.shifting = shifter.state();
+            required = v[static_cast<std::size_t>(wheel.dof)] / shifter.gear_ratio() *
+                       60. / (2. * std::numbers::pi);
+            torque_factor = shifter.torque_factor();
+        }
+        auto result = pedaling.update(q[static_cast<std::size_t>(crank.qpos)],
+                                      v[static_cast<std::size_t>(crank.dof)], required,
+                                      effort, in.dt, enabled, in.braking);
+        if (in.ceiling)
+            result.effort_nm = std::min(
+                result.effort_nm,
+                nonnegative(*in.ceiling, "automatic rider effort ceiling"));
+        result.effort_nm *= torque_factor;
+        tick.result = std::move(result);
+    }
+
+    PreparedTick DrivetrainWriter::stage_components(const TickInputs &in) {
+        positive(in.dt, "drivetrain interval");
+        finite(in.speed, "bike speed");
+        finite(in.sensed, "measured pedal torque");
+        if (!live_.reference)
+            throw std::runtime_error("initialize the drivetrain before applying forces");
+        if (in.advance && live_.last_time_s && data_->time <= *live_.last_time_s)
+            throw std::invalid_argument(
+                "drivetrain state can advance only once per timestamp");
+        PreparedTick tick;
+        tick.advance = in.advance;
+        tick.probe = !in.advance;
+        tick.snapshot = live_;
+        tick.pedaling = pedaling_.state();
+        tick.shifting = shifting_.state();
+        tick.assist = assist_.state();
+        tick.battery = battery_.state();
+        tick.hub = hub_ ? std::optional(hub_->state()) : std::nullopt;
+        if (!in.advance) {
+            // Probe evaluation runs on the detached candidate: pending
+            // settlement and the interval clock are cleared only there.
+            tick.snapshot.pending_actuation.reset();
+            tick.snapshot.last_time_s.reset();
+        }
+        // An unsettled actuation rejects before any policy advance or model
+        // staging — repeated rejected calls cannot creep EMAs or effort.
+        if (in.active && tick.snapshot.pending_actuation)
+            throw std::runtime_error("previous motor interval was not settled");
+        if (in.advance) {
+            if (ideal_hub_)
+                tick.ideal_hub = ideal_hub_->stage_prepare(data_);
+            if (clutch_)
+                tick.clutch = clutch_->stage_prepare(data_);
+            if (freewheel_)
+                tick.freewheel = freewheel_->stage_prepare(data_);
+        }
+        PedalingState ps;
+        if (in.pedaling) {
+            ps = *in.pedaling;
+            tick.result = ps;
+        } else {
+            auto pedaling = pedaling_;
+            stage_pedal_advance(tick,
+                                {.control = in.control, .dt = in.dt, .braking = in.braking,
+                                 .active = in.active, .advance = in.advance,
+                                 .contact = in.contact, .slip = in.slip,
+                                 .ceiling = std::nullopt},
+                                pedaling);
+            tick.pedaling = pedaling.state();
+            ps = tick.result;
+        }
+        tick.components = components_;
+        for (auto &component: tick.components)
             std::ranges::fill(component.second, 0.);
         const auto crank = joints_.at("crank_spin"), wheel = joints_.at("rear_wheel_spin");
         const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
@@ -363,12 +415,12 @@ namespace drivetrain {
         std::optional<double> psi;
         if (!simplified_) {
             angles = {
-                angle(crank_, engaged(live_.angles)[0]),
-                angle(cassette_body(), engaged(live_.angles)[1])
+                angle(crank_, engaged(tick.snapshot.angles)[0]),
+                angle(cassette_body(), engaged(tick.snapshot.angles)[1])
             };
             extension = geometry_.evaluate(model_, data_, config_.policies.gearing, crank_,
                                            cassette_body(), frame_, Vec2{angles[0], angles[1]},
-                                           live_.psi, false) -
+                                           tick.snapshot.psi, false) -
                         engaged(live_.reference);
             psi = geometry_.psi;
             rate = dot(geometry_.jacobian, v);
@@ -377,23 +429,25 @@ namespace drivetrain {
             tension = t.first;
             energy = t.second;
             for (std::size_t i = 0; i < transmission_.size(); ++i)
-                components_[0].second[i] = -tension * geometry_.jacobian[i];
+                tick.components[0].second[i] = -tension * geometry_.jacobian[i];
             const auto cassette = joints_.at("cassette_spin");
-            torque = engaged(hub_).update(q[static_cast<std::size_t>(cassette.qpos)],
-                                          q[static_cast<std::size_t>(wheel.qpos)],
-                                          v[static_cast<std::size_t>(cassette.dof)],
-                                          v[static_cast<std::size_t>(wheel.dof)]);
-            components_[1].second[static_cast<std::size_t>(wheel.dof)] = torque;
-            components_[1].second[static_cast<std::size_t>(cassette.dof)] = -torque;
+            auto hub = hub_;
+            torque = engaged(hub).update(q[static_cast<std::size_t>(cassette.qpos)],
+                                         q[static_cast<std::size_t>(wheel.qpos)],
+                                         v[static_cast<std::size_t>(cassette.dof)],
+                                         v[static_cast<std::size_t>(wheel.dof)]);
+            tick.hub = engaged(hub).state();
+            tick.components[1].second[static_cast<std::size_t>(wheel.dof)] = torque;
+            tick.components[1].second[static_cast<std::size_t>(cassette.dof)] = -torque;
             relative_rate = v[static_cast<std::size_t>(cassette.dof)] -
                             v[static_cast<std::size_t>(wheel.dof)];
             deflection = std::max(q[static_cast<std::size_t>(cassette.qpos)] -
                                   q[static_cast<std::size_t>(wheel.qpos)] -
-                                  engaged(engaged(hub_).state().boundary),
+                                  engaged(tick.hub->boundary),
                                   0.);
         }
         for (auto const j: bearing_joints_)
-            components_[2].second[static_cast<std::size_t>(j.dof)] =
+            tick.components[2].second[static_cast<std::size_t>(j.dof)] =
                     validation::derived(-config_.bearing_c_nms_rad * v[static_cast<std::size_t>(j.dof)], "DrivetrainWriter.bearing_force");
         const double omega_crank = v[static_cast<std::size_t>(crank.dof)],
                 cadence = validation::derived(omega_crank * 60. / (2. * std::numbers::pi), "DrivetrainWriter.cadence");
@@ -405,60 +459,60 @@ namespace drivetrain {
         const double omega = v[static_cast<std::size_t>(shaft.dof)],
                 rpm = validation::derived(omega * 60. / (2. * std::numbers::pi), "DrivetrainWriter.shaft_rpm");
         const double human =
-                active && config_.drive_mode == "crank_effort"
+                in.active && config_.drive_mode == "crank_effort"
                     ? human_crank_torque(ps.effort_nm, q[static_cast<std::size_t>(crank.qpos)],
                                          config_.torque_ripple)
                     : 0.;
-        const double sensor = config_.drive_mode == "crank_effort" ? human : sensed,
+        const double sensor = config_.drive_mode == "crank_effort" ? human : in.sensed,
                 assist_sensor = ps.mode == "pedaling" ? sensor : 0.;
-        const double request = active && effort_
-                                   ? assist_.step(assist_sensor, cadence, speed, braking,
-                                                  dt, c.motor_torque_nm, rpm)
-                                   : 0.;
+        double request = 0.;
+        if (in.active && effort_) {
+            auto assist = assist_;
+            request = assist.step(assist_sensor, cadence, in.speed, in.braking, in.dt,
+                                  in.control.motor_torque_nm, rpm);
+            tick.assist = assist.state();
+        }
         const auto &b = config_.policies.battery;
-        const double budget = battery_.state().energy_j / dt,
+        const double budget = tick.battery.energy_j / in.dt,
                 safety =
-                        c.motor_limit_nm ? std::min(request, *c.motor_limit_nm) : request;
+                        in.control.motor_limit_nm
+                            ? std::min(request, *in.control.motor_limit_nm)
+                            : request;
         double delivered =
                 b.enabled
                     ? limit_torque_by_energy(safety, omega, b.copper_w_per_nm2,
                                              b.speed_w_per_rad_s2, b.idle_w, budget)
                     : safety;
-        const bool enabled = active && delivered > 0. && !braking;
+        const bool enabled = in.active && delivered > 0. && !in.braking;
         if (!enabled)
             delivered = 0.;
         const double electrical = motor_electrical_power(
             delivered, omega, b.copper_w_per_nm2, b.speed_w_per_rad_s2, b.idle_w, enabled);
         if (b.enabled && electrical > budget + std::max(1e-10, std::abs(budget) * 1e-12))
             throw ArithmeticError("delivered motor torque exceeds the battery budget");
-        if (active && live_.pending_actuation)
-            throw std::runtime_error("previous motor interval was not settled");
-        for (const auto &component: components_)
+        for (const auto &component: tick.components)
             validation::derived_array(component.second, "DrivetrainWriter.force");
         const double chain_loss = std::max(0., validation::derived(
             (tension - config_.chain_k_n_m * std::max(extension, 0.)) * rate, "DrivetrainWriter.chain_dissipation"));
         const double hub_loss = simplified_ ? 0. : std::max(0., validation::derived(
             (torque - config_.policies.hub_stiffness_nm_rad * deflection) * relative_rate, "DrivetrainWriter.freehub_dissipation"));
-        live_.pending_actuation =
-                active
+        tick.snapshot.pending_actuation =
+                in.active
                     ? std::optional<PendingActuation>{
-                        {.requested = delivered, .omega = omega, .dt = dt, .enabled = enabled}
+                        {.requested = delivered, .omega = omega, .dt = in.dt,
+                         .enabled = enabled}
                     }
                     : std::nullopt;
-        auto const ctrl = buffer(data_->ctrl, model_->nu);
         if (human_actuator_ >= 0)
-            ctrl[static_cast<std::size_t>(human_actuator_)] = human;
+            tick.ctrl.emplace_back(human_actuator_, human);
         if (motor_actuator_ >= 0)
-            ctrl[static_cast<std::size_t>(motor_actuator_)] = delivered;
-        if (effort_) {
-            auto s = assist_.state();
-            s.torque = delivered;
-            assist_.set_state(s);
-        }
+            tick.ctrl.emplace_back(motor_actuator_, delivered);
+        if (effort_)
+            tick.assist.torque = delivered;
         auto const opt = [](std::optional<double> x) -> DiagnosticValue {
             return x ? DiagnosticValue(*x) : DiagnosticValue(std::monostate{});
         };
-        live_.last = {
+        tick.snapshot.last = {
             {"transmission_model", config_.transmission_model},
             {"omits_suspension_coupling", config_.transmission_model == "ideal_mid_drive"},
             {"chain_extension_m", extension},
@@ -470,7 +524,7 @@ namespace drivetrain {
                 chain_loss
             },
             {"freehub_torque_nm", simplified_ ? 0. : torque},
-            {"freehub_energy_j", simplified_ ? 0. : engaged(hub_).state().energy_j},
+            {"freehub_energy_j", simplified_ ? 0. : engaged(tick.hub).energy_j},
             {"freehub_engaged", simplified_ ? false : torque > 0.},
             {"freehub_deflection_rad", deflection},
             {
@@ -482,10 +536,10 @@ namespace drivetrain {
             {"drive_shaft_rad_s", omega},
             {"human_torque_nm", human},
             {"human_sensor_nm", sensor},
-            {"human_setpoint_nm", opt(c.human_torque_nm)},
+            {"human_setpoint_nm", opt(in.control.human_torque_nm)},
             {
                 "assist_demand_gated",
-                braking || assist_sensor <= config_.policies.assist.engage_torque_nm ||
+                in.braking || assist_sensor <= config_.policies.assist.engage_torque_nm ||
                 omega_crank <= config_.policies.assist.gate_min_crank_rad_s
             },
             {"assist_sensor_nm", assist_sensor},
@@ -501,31 +555,100 @@ namespace drivetrain {
             {"motor_freewheel_torque_nm", delivered},
             {"motor_freewheel_dissipation_power_w", 0.},
             {"motor_limited_request_nm", safety},
-            {"motor_setpoint_nm", opt(c.motor_torque_nm)},
-            {"motor_limit_nm", opt(c.motor_limit_nm)},
+            {"motor_setpoint_nm", opt(in.control.motor_torque_nm)},
+            {"motor_limit_nm", opt(in.control.motor_limit_nm)},
             {
                 "motor_control_source",
-                std::string(c.motor_torque_nm ? "external_request" : "assist")
+                std::string(in.control.motor_torque_nm ? "external_request" : "assist")
             },
             {"safety_limited", safety < request},
             {"motor_shaft_power_w", delivered * omega},
             {"electrical_power_w", 0.},
-            {"battery_energy_j", battery_.state().energy_j},
+            {"battery_energy_j", tick.battery.energy_j},
             {"motor_enabled", enabled},
             {"energy_limited", delivered < safety},
-            {"battery_empty", battery_.state().energy_j == 0.},
+            {"battery_empty", tick.battery.energy_j == 0.},
             {"assist_mode", config_.policies.assist.mode},
-            {"assist_gain", assist_.state().last_gain}
+            {"assist_gain", tick.assist.last_gain}
         };
-        shifts(live_.last);
+        shifts(tick.snapshot.last, tick.shifting, tick.snapshot.shift_time_s);
         if (simplified_)
-            live_.angles = std::vector<double>{angle(crank_, engaged(live_.angles)[0])};
+            tick.snapshot.angles =
+                    std::vector<double>{angle(crank_, engaged(tick.snapshot.angles)[0])};
         else {
-            live_.angles = angles;
-            live_.psi = psi;
+            tick.snapshot.angles = angles;
+            tick.snapshot.psi = psi;
         }
-        live_.last_time_s = data_->time;
-        return components_;
+        tick.snapshot.last_time_s = data_->time;
+        validate_tick(tick);
+        return tick;
+    }
+
+    void DrivetrainWriter::commit(PreparedTick &tick) {
+        if (tick.probe) {
+            // Probe ticks publish only their declared telemetry: the force
+            // rows the caller applies and the probe diagnostics channel.
+            // Policy, clock, pending and model state stay untouched.
+            if (!tick.components.empty())
+                for (std::size_t i = 0; i < components_.size(); ++i)
+                    std::ranges::copy(tick.components[i].second,
+                                      components_[i].second.begin());
+            {
+                const auto ctrl = buffer(data_->ctrl, model_->nu);
+                for (const auto &[index, value]: tick.ctrl)
+                    ctrl[static_cast<std::size_t>(index)] = value;
+            }
+            live_.probe_last = std::move(tick.snapshot.last);
+            return;
+        }
+        if (!tick.advance)
+            return;
+        // Guarded live-model writes first (E1 boundary inside each
+        // Transmission::commit): an engine failure propagates and poisons the
+        // owning Stepper before any logical publication. A staged update
+        // exists only when the transmission does — staging adds them under
+        // the same topology guard.
+        if (tick.ideal_hub)
+            ideal_hub_->commit(*tick.ideal_hub);
+        if (tick.clutch)
+            clutch_->commit(*tick.clutch);
+        if (tick.freewheel)
+            freewheel_->commit(*tick.freewheel);
+        // Memory-only publication: every candidate was fully evaluated and
+        // validated during staging, so the writes below are moves into live
+        // storage or copies into preallocated extents.
+        {
+            const auto ctrl = buffer(data_->ctrl, model_->nu);
+            for (const auto &[index, value]: tick.ctrl)
+                ctrl[static_cast<std::size_t>(index)] = value;
+        }
+        if (!tick.components.empty())
+            for (std::size_t i = 0; i < components_.size(); ++i)
+                std::ranges::copy(tick.components[i].second,
+                                  components_[i].second.begin());
+        pedaling_.set_state(tick.pedaling);
+        shifting_.set_state(std::move(tick.shifting));
+        assist_.set_state(tick.assist);
+        battery_.set_state(tick.battery);
+        if (hub_)
+            engaged(hub_).set_state(engaged(tick.hub));
+        // Keep the snapshot's embedded policy mirrors coherent with the
+        // committed policies: state() refreshes them anyway, but restore()
+        // moves a snapshot into live_ verbatim and expects consistency.
+        tick.snapshot.pedaling = pedaling_.state();
+        tick.snapshot.shifting = shifting_.state();
+        tick.snapshot.assist = assist_.state();
+        tick.snapshot.battery = battery_.state();
+        if (hub_)
+            tick.snapshot.hub = engaged(hub_).state();
+        for (const auto &[transmission, mirror]: {
+                 std::pair{ideal_hub_.get(), &tick.snapshot.ideal_hub},
+                 std::pair{clutch_.get(), &tick.snapshot.clutch},
+                 std::pair{freewheel_.get(), &tick.snapshot.freewheel}
+             })
+            if (transmission)
+                *mirror = transmission->state();
+        live_ = std::move(tick.snapshot);
     }
 
     std::span<const double> DrivetrainWriter::settle() {

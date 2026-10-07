@@ -3,7 +3,7 @@
 #include <algorithm>
 
 namespace drivetrain {
-    void Freehub::set_state(const FreehubSnapshot &s) {
+    void Freehub::set_state(FreehubSnapshot s) {
         finite_optional(s.boundary, "boundary");
         nonnegative(s.energy_j, "energy_j");
         nonnegative(s.torque_nm, "torque_nm");

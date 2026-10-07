@@ -6,13 +6,13 @@
 // Python's two-argument builtins element-for-element (incl. ±0/NaN cases).
 #include "suspension.hpp"
 #include "../config_validation.hpp"
+#include "../model_access.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <format>
 #include <numbers>
-#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <tuple>
@@ -271,14 +271,15 @@ namespace {
                 "model has no joint '" + joint_name +
                 "'; suspension forces cannot be applied");
 
-        // views::counted everywhere — -Wunsafe-buffer-usage rejects raw
+        // Checked extents everywhere — -Wunsafe-buffer-usage rejects raw
         // indexing into mjModel pointer fields (same pattern as stepper.hpp).
+        model_access::require_id(jid, m->njnt, "suspension joint");
         const std::span<const mjtNum> range =
-                std::views::counted(m->jnt_range, 2 * m->njnt);
+                model_access::readonly_buffer(m->jnt_range, 2 * m->njnt);
         const double lo = range[2 * static_cast<std::size_t>(jid)];
         const double hi = range[2 * static_cast<std::size_t>(jid) + 1];
         const std::span<const mjtBool> limited =
-                std::views::counted(m->jnt_limited, m->njnt);
+                model_access::readonly_buffer(m->jnt_limited, m->njnt);
         const bool lower_valid =
                 std::abs(lo) <= 1e-9 ||
                 (allow_negative_lower && joint_name == "shock_stroke" && lo < 0.0);
@@ -289,13 +290,17 @@ namespace {
                 joint_name, lo, hi));
 
         const std::span<const int> qposadr =
-                std::views::counted(m->jnt_qposadr, m->njnt);
+                model_access::readonly_buffer(m->jnt_qposadr, m->njnt);
         const std::span<const int> dofadr =
-                std::views::counted(m->jnt_dofadr, m->njnt);
-        return {
-            qposadr[static_cast<std::size_t>(jid)],
-            dofadr[static_cast<std::size_t>(jid)]
-        };
+                model_access::readonly_buffer(m->jnt_dofadr, m->njnt);
+        const int qadr = qposadr[static_cast<std::size_t>(jid)];
+        const int vadr = dofadr[static_cast<std::size_t>(jid)];
+        // The stored addresses index d->qpos[nq] / d->qvel[nv] on every
+        // components() call — a corrupt model table is rejected here, not
+        // at the read.
+        model_access::require_id(qadr, m->nq, "suspension qpos address");
+        model_access::require_id(vadr, m->nv, "suspension dof address");
+        return {qadr, vadr};
     }
     // The member-init list consumes physics_mode before the ctor body could
     // run, so the typed config is validated in the init expression itself —
@@ -357,13 +362,22 @@ SuspensionWriter::SuspensionWriter(const mjModel *m,
             "shock HBO zone must be positive and no longer than stroke");
 }
 
+// Caller precondition (raw boundary): `d` is the live mjData of the model
+// this writer was built on, driven by the single owning Stepper — widths
+// are validated, model/data pairing is not derivable from them.
 std::vector<SuspensionWriter::Component>
 SuspensionWriter::components(const mjData *d) const {
     // forces.py:127-131 — SuspensionController.compute_fork_force
     // (controllers.py:32-42). counted spans, not raw indexing
     // (-Wunsafe-buffer-usage).
-    const std::span<const mjtNum> qpos = std::views::counted(d->qpos, nq_);
-    const std::span<const mjtNum> qvel = std::views::counted(d->qvel, nv_);
+    const std::span<const mjtNum> qpos =
+            model_access::readonly_buffer(d->qpos, nq_);
+    const std::span<const mjtNum> qvel =
+            model_access::readonly_buffer(d->qvel, nv_);
+    model_access::require_id(fork_qposadr_, nq_, "fork qpos address");
+    model_access::require_id(fork_dofadr_, nv_, "fork dof address");
+    model_access::require_id(shock_qposadr_, nq_, "shock qpos address");
+    model_access::require_id(shock_dofadr_, nv_, "shock dof address");
     const double travel_mm =
             qpos[static_cast<std::size_t>(fork_qposadr_)] * 1000.0;
     const double fork_velocity_mps =

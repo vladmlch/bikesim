@@ -1,9 +1,10 @@
 #include "chain.hpp"
+#include "../model_access.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <numbers>
-#include <ranges>
+#include <utility>
 
 extern "C" {
 double cblas_ddot(int, const double *, int, const double *, int);
@@ -11,6 +12,37 @@ double cblas_ddot(int, const double *, int, const double *, int);
 void cblas_dgemv(int, int, int, int, double, const double *, int, const double *, int,
                  double, double *, int);
 }
+
+namespace {
+    // Workspace-width allocation bound: nv is the caller-declared model
+    // width; a negative extent is rejected before the first allocation.
+    std::size_t checked_geometry_width(mjtSize nv, std::size_t factor) {
+        if (nv < 0)
+            throw std::invalid_argument(
+                "geometry workspace needs nonnegative nv");
+        return static_cast<std::size_t>(nv) * factor;
+    }
+
+    // mj_jac destination contract: jacp/jacr are (3,nv) row-major blocks
+    // and the query point is exactly 3 doubles. The engine ABI call
+    // receives .data() only after every extent checks out.
+    void body_jacobian(const mjModel *m, const mjData *d,
+                       std::span<mjtNum> jacp, std::span<mjtNum> jacr,
+                       std::span<const mjtNum> point, int body) {
+        model_access::require_id(body, m->nbody, "geometry body");
+        if (m->nv < 0)
+            throw std::invalid_argument(
+                "geometry Jacobian needs a nonnegative model width");
+        const std::size_t width = model_access::checked_product(
+            3, static_cast<std::size_t>(m->nv),
+            std::numeric_limits<std::size_t>::max());
+        if (jacp.size() != width || jacr.size() != width ||
+            point.size() != 3)
+            throw std::invalid_argument(
+                "body Jacobian destinations must be 3*nv blocks");
+        mj_jac(m, d, jacp.data(), jacr.data(), point.data(), body);
+    }
+} // namespace
 
 namespace drivetrain {
     double dot(std::span<const double> a, std::span<const double> b) {
@@ -104,16 +136,26 @@ namespace drivetrain {
     }
 
     GeometryWorkspace::GeometryWorkspace(mjtSize nv)
-        : jp_f(static_cast<std::size_t>(3 * nv)), jr_f(jp_f.size()), jp_r(jp_f.size()),
-          jr_r(jp_f.size()), jacobian(static_cast<std::size_t>(nv)),
-          difference(static_cast<std::size_t>(2 * nv)), coordinates(jacobian.size()) {
+        : jp_f(checked_geometry_width(nv, 3)), jr_f(jp_f.size()), jp_r(jp_f.size()),
+          jr_r(jp_f.size()), jacobian(checked_geometry_width(nv, 1)),
+          difference(checked_geometry_width(nv, 2)), coordinates(jacobian.size()) {
     }
 
     double GeometryWorkspace::angle(const mjModel *m, const mjData *d, int body,
                                     bool accumulated) {
-        if (body <= 0 || body >= m->nbody) throw std::invalid_argument("geometry.body: requires physical body ID");
+        model_access::require_id(body, m->nbody, "geometry.body");
+        if (body == 0)
+            throw std::invalid_argument("geometry.body: requires physical body ID");
+        // mj_jac writes 3*nv into the jp/jr scratch — a workspace narrower
+        // than the model is rejected before the destination is formed.
+        if (m->nv < 0 || std::cmp_greater(m->nv, jacobian.size()))
+            throw std::invalid_argument(
+                "geometry workspace is narrower than the model");
         const auto rotation =
-                buffer(d->xmat, 9 * m->nbody).subspan(9 * static_cast<std::size_t>(body), 9);
+                model_access::readonly_buffer(d->xmat, 9 * m->nbody)
+                .subspan(9 * static_cast<std::size_t>(body), 9);
+        // Nonfinite rotation entries are rejected before any tolerance
+        // comparison — a NaN would silently pass a `|x| > eps` predicate.
         for (const double value: rotation) finite(value, "geometry.rotation");
         const double raw = std::atan2(-rotation[6], rotation[0]);
         if (!accumulated)
@@ -122,12 +164,15 @@ namespace drivetrain {
             std::abs(rotation[7]) > 1e-9)
             throw std::invalid_argument(
                 "geometric transmission requires planar sprocket frames");
-        mj_jac(m, d, jp_f.data(), jr_f.data(),
-               buffer(d->xpos, 3 * m->nbody)
-               .subspan(3 * static_cast<std::size_t>(body), 3)
-               .data(),
-               body);
-        const auto q = buffer(d->qpos, m->nq), q0 = buffer(m->qpos0, m->nq);
+        body_jacobian(m, d, jp_f, jr_f,
+                      model_access::readonly_buffer(d->xpos, 3 * m->nbody)
+                      .subspan(3 * static_cast<std::size_t>(body), 3),
+                      body);
+        const auto q = model_access::readonly_buffer(d->qpos, m->nq),
+                q0 = model_access::readonly_buffer(m->qpos0, m->nq);
+        if (q.size() < coordinates.size())
+            throw std::invalid_argument(
+                "geometry.qpos: model coordinates below workspace width");
         for (std::size_t i = 0; i < coordinates.size(); ++i)
             coordinates[i] = q[i] - q0[i];
         return unwrap(raw, dot(std::span<const double>(jr_f).subspan(coordinates.size(),
@@ -139,11 +184,17 @@ namespace drivetrain {
                                        const GearingConfig &gear, int front, int rear,
                                        int frame, std::optional<Vec2> angles,
                                        std::optional<double> reference, bool accumulated) {
+        // Supported scalar topology first: nq != nv is a rejected model
+        // shape, never a qpos-width overflow — nq >= nv models are valid
+        // elsewhere but not scalar-planar here.
         if (m->nq != m->nv)
             throw std::invalid_argument(
                 "transmission geometry needs scalar planar coordinates");
+        model_access::require_id(front, m->nbody, "geometry.front");
+        model_access::require_id(rear, m->nbody, "geometry.rear");
+        model_access::require_id(frame, m->nbody, "geometry.frame");
         if (accumulated)
-            for (int const t: buffer(m->jnt_type, m->njnt))
+            for (int const t: model_access::readonly_buffer(m->jnt_type, m->njnt))
                 if (t != mjJNT_HINGE && t != mjJNT_SLIDE)
                     throw std::invalid_argument(
                         "transmission geometry needs scalar planar coordinates");
@@ -155,7 +206,8 @@ namespace drivetrain {
         }
         if (accumulated)
             reference = std::numbers::pi / 2. - angle(m, d, frame, true);
-        const auto pos = buffer(d->xpos, 3 * m->nbody), rot = buffer(d->xmat, 9 * m->nbody);
+        const auto pos = model_access::readonly_buffer(d->xpos, 3 * m->nbody),
+                rot = model_access::readonly_buffer(d->xmat, 9 * m->nbody);
         const auto cf = pos.subspan(3 * static_cast<std::size_t>(front), 3),
                 cr = pos.subspan(3 * static_cast<std::size_t>(rear), 3);
         const Vec2 f = {cf[0], cf[2]}, r = {cr[0], cr[2]},
@@ -170,8 +222,8 @@ namespace drivetrain {
         const auto geometry = chain_geometry(f, r, rf, rr, up, reference);
         psi = geometry.psi;
         const auto gradient = chain_center_gradient(f, r, rf, rr, up, psi);
-        mj_jac(m, d, jp_f.data(), jr_f.data(), cf.data(), front);
-        mj_jac(m, d, jp_r.data(), jr_r.data(), cr.data(), rear);
+        body_jacobian(m, d, jp_f, jr_f, cf, front);
+        body_jacobian(m, d, jp_r, jr_r, cr, rear);
         const auto n = jacobian.size();
         for (std::size_t i = 0; i < n; ++i) {
             difference[i] = jp_r[i] - jp_f[i];

@@ -271,12 +271,12 @@ endif()
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp src/stepper.cpp src/writers/suspension.cpp
   src/writers/brake.cpp src/writers/resistance.cpp
-  src/writers/rider_forces.cpp src/writers/tire.cpp src/tyre/profile.cpp
+  src/writers/rider_forces.cpp src/writers/tire.cpp
   src/drivetrain/shifting.cpp
   src/drivetrain/motor.cpp src/drivetrain/freehub.cpp src/drivetrain/policy_binding.cpp
   src/drivetrain/drive_binding.cpp
   src/writers/drivetrain.cpp
-  src/rider/contact_math.cpp src/rider/support_geometry.cpp src/rider/contact_binding.cpp)
+  src/rider/contact_binding.cpp)
 
 set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
@@ -419,7 +419,8 @@ endif()
 # including -ffp-contract=off, as when they were listed on the module itself.
 add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp
-  src/writers/cruise.cpp)
+  src/writers/cruise.cpp src/tyre/profile.cpp
+  src/rider/contact_math.cpp src/rider/support_geometry.cpp)
 set_target_properties(bike_native_contract_core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   CXX_STANDARD 23

@@ -28,7 +28,7 @@ namespace drivetrain {
         }
     }
 
-    void AssistController::set_state(const AssistSnapshot &s) {
+    void AssistController::set_state(AssistSnapshot s) {
         nonnegative(s.torque, "torque");
         nonnegative(s.last_gain, "last_gain");
         state_ = s;
@@ -90,7 +90,7 @@ namespace drivetrain {
         return torque;
     }
 
-    void Battery::set_state(const BatterySnapshot &s) {
+    void Battery::set_state(BatterySnapshot s) {
         nonnegative(s.initial_energy_j, "initial_energy_j");
         nonnegative(s.energy_j, "energy_j");
         nonnegative(s.drawn_energy_j, "drawn_energy_j");

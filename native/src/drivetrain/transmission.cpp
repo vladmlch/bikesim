@@ -199,11 +199,11 @@ namespace drivetrain {
         return update;
     }
 
-    int Transmission::validated_rear_teeth(double ratio) const {
-        const double teeth = std::nearbyint(gear_.front_teeth / ratio);
+    int Transmission::validated_rear_teeth(int front_teeth, double ratio) const {
+        const double teeth = std::nearbyint(front_teeth / ratio);
         if (teeth < 3. || teeth > std::numeric_limits<int>::max() ||
-            std::abs(ratio - gear_.front_teeth / teeth) >
-            1e-12 * std::abs(gear_.front_teeth / teeth))
+            std::abs(ratio - front_teeth / teeth) >
+            1e-12 * std::abs(front_teeth / teeth))
             throw std::invalid_argument(
                 "geometric ratio must identify an integer rear sprocket");
         return static_cast<int>(teeth);
@@ -279,13 +279,22 @@ namespace drivetrain {
     }
 
     TransmissionUpdate Transmission::stage_ratio(mjData *data, double ratio) {
+        return stage_ratio(data, ratio, make_update_from_current());
+    }
+
+    TransmissionUpdate Transmission::stage_ratio(mjData *data, double ratio,
+                                                 TransmissionUpdate update) {
         positive(ratio, "gear ratio");
-        auto update = make_update_from_current();
-        if (ratio == state_.ratio)
+        if (ratio == update.state.ratio)
             return update;
+        // The seed candidate's gear/state supply every pre-shift read, so a
+        // staged prepare composes under the ratio change exactly as the
+        // sequential live order did.
+        const double from = update.state.ratio;
+        const GearingConfig base_gear = update.gear;
         update.state.ratio = ratio;
         if (!geometric_) {
-            const double previous = relative(data);
+            const double previous = relative(data, from);
             update.coefficients[0] = ratio;
             update.state.coefficients = update.coefficients;
             const double current = relative(data, ratio);
@@ -297,9 +306,9 @@ namespace drivetrain {
             evaluate_candidate(data, update);
             return update;
         }
-        update.gear.rear_teeth = validated_rear_teeth(ratio);
+        update.gear.rear_teeth = validated_rear_teeth(base_gear.front_teeth, ratio);
         update.state.rear_teeth = update.gear.rear_teeth;
-        const double old_phi = candidate_geometry(data, gear_);
+        const double old_phi = candidate_geometry(data, base_gear);
         const double old_gap =
                 update.state.boundary ? *update.state.boundary - old_phi : 0.;
         const double phi = candidate_geometry(data, update.gear);

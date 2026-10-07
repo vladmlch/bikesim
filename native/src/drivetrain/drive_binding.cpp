@@ -160,6 +160,15 @@ namespace {
         return out;
     }
 
+    // Result boxing runs on the staged candidate BEFORE commit — an ndarray
+    // or dict allocation failure cannot leave the tick half published.
+    nb::dict box_components(const ForceComponents &components) {
+        nb::dict out;
+        for (const auto &[key, value]: components)
+            out[key.c_str()] = owned(value);
+        return out;
+    }
+
     nb::dict result_dict(const PedalingState &s) {
         nb::dict d;
         d["mode"] = s.mode;
@@ -490,10 +499,18 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                    nb::handle active, nb::handle advance, nb::handle contact,
                    nb::handle slip, nb::handle ceiling) {
                     return s.mutate([&] {
-                        return result_dict(s.drive().prepare(
-                            control(raw), wire::finite_real(dt, "drive_prepare_pedaling.dt"), boolean(braking, "drive_prepare_pedaling.braking"),
-                            boolean(active, "drive_prepare_pedaling.active"), boolean(advance, "drive_prepare_pedaling.advance"),
-                            boolean(contact, "drive_prepare_pedaling.rear_in_contact"), wire::optional_real(slip, "drive_prepare_pedaling.rear_slip_mps"), wire::optional_real(ceiling, "drive_prepare_pedaling.effort_ceiling_nm")));
+                        auto tick = s.drive().stage_prepare(
+                            {.control = control(raw),
+                             .dt = wire::finite_real(dt, "drive_prepare_pedaling.dt"),
+                             .braking = boolean(braking, "drive_prepare_pedaling.braking"),
+                             .active = boolean(active, "drive_prepare_pedaling.active"),
+                             .advance = boolean(advance, "drive_prepare_pedaling.advance"),
+                             .contact = boolean(contact, "drive_prepare_pedaling.rear_in_contact"),
+                             .slip = wire::optional_real(slip, "drive_prepare_pedaling.rear_slip_mps"),
+                             .ceiling = wire::optional_real(ceiling, "drive_prepare_pedaling.effort_ceiling_nm")});
+                        nb::dict const out = result_dict(tick.result);
+                        s.drive().commit(tick);
+                        return out;
                     });
                 },
                 nb::arg("control").none(), nb::arg("dt").none(), nb::arg("braking").none() = false,
@@ -513,13 +530,19 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                                 throw std::invalid_argument("pedaling_state");
                             state = parse_result({.value = nb::borrow<nb::dict>(ps), .path = "pedaling_state"});
                         }
-                        const auto &result = s.drive().components(
-                            control(raw), wire::finite_real(dt, "drive_components.dt"), wire::finite_real(speed, "drive_components.speed_mps"), boolean(braking, "drive_components.braking"),
-                            boolean(active, "drive_components.active"), boolean(advance, "drive_components.advance"), wire::finite_real(sensed, "drive_components.sensed_human_torque_nm"),
-                            state, boolean(contact, "drive_components.rear_in_contact"), wire::optional_real(slip, "drive_components.rear_slip_mps"));
-                        nb::dict out;
-                        for (const auto &[key, value]: result)
-                            out[key.c_str()] = owned(value);
+                        auto tick = s.drive().stage_components(
+                            {.control = control(raw),
+                             .dt = wire::finite_real(dt, "drive_components.dt"),
+                             .speed = wire::finite_real(speed, "drive_components.speed_mps"),
+                             .sensed = wire::finite_real(sensed, "drive_components.sensed_human_torque_nm"),
+                             .braking = boolean(braking, "drive_components.braking"),
+                             .active = boolean(active, "drive_components.active"),
+                             .advance = boolean(advance, "drive_components.advance"),
+                             .contact = boolean(contact, "drive_components.rear_in_contact"),
+                             .pedaling = state,
+                             .slip = wire::optional_real(slip, "drive_components.rear_slip_mps")});
+                        nb::dict const out = box_components(tick.components);
+                        s.drive().commit(tick);
                         return out;
                     });
                 },

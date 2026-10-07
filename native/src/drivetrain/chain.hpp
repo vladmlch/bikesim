@@ -1,10 +1,11 @@
 #pragma once
+#include "../model_access.hpp"
 #include "policy_config.hpp"
 #include <array>
 #include <mujoco/mujoco.h>
 #include <optional>
-#include <ranges>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 namespace drivetrain {
@@ -31,9 +32,17 @@ namespace drivetrain {
 
     int resolve(const mjModel *m, mjtObj kind, const char *name);
 
+    // Thin alias retained for TUs that adopted it before model_access.hpp
+    // existed — it delegates to the checked helpers, so negative extents
+    // and null positive-extent buffers throw std::invalid_argument before
+    // any span is formed. New code calls model_access helpers directly.
     template<class T>
     auto buffer(T *p, mjtSize count) {
-        return std::span<T>(std::views::counted(p, count));
+        if constexpr (std::is_const_v<T>) {
+            return model_access::readonly_buffer(p, count);
+        } else {
+            return model_access::mutable_buffer(p, count);
+        }
     }
 
     struct GeometryWorkspace {

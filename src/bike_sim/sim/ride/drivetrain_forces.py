@@ -196,14 +196,24 @@ class DrivetrainForceApplier:
                 and self.drive_mode in ('crank_effort', 'articulated_effort')):
             if model is None or self.ideal_hub is None:
                 raise ValueError('automatic shifting needs the live ideal_mid_drive model')
-            shifted = self.shifting.update(float(data.qvel[crank_dof]) * 60. / (2. * pi),
+            # The shifter advance is computed on a detached candidate: a
+            # rejected gear change leaves the hub's own staging rolled back,
+            # so the candidate (EMAs, counters, gear) is published only after
+            # the hub commit succeeds.
+            shifter = copy.deepcopy(self.shifting)
+            shifted = shifter.update(float(data.qvel[crank_dof]) * 60. / (2. * pi),
                 required, dt, pedaling=enabled and effort > 0., braking=braking,
                 rear_in_contact=rear_in_contact, rear_slip_mps=rear_slip_mps)
             if shifted:
-                self.ideal_hub.set_ratio(model, data, self.shifting.gear_ratio)
+                self.ideal_hub.set_ratio(model, data, shifter.gear_ratio)
+            self.shifting = shifter
+            if shifted:
                 self.shift_time_s = float(data.time)
             required = float(data.qvel[wheel_dof]) / self.shifting.gear_ratio * 60. / (2. * pi)
-        policy = self.pedaling if advance else copy.deepcopy(self.pedaling)
+        # The pedaling policy advances on a detached candidate; a rejected
+        # ceiling (or a mid-update failure) leaves the live policy untouched
+        # and cannot accumulate effort across retries.
+        policy = copy.deepcopy(self.pedaling)
         state = policy.update(float(data.qpos[crank_qpos]), float(data.qvel[crank_dof]),
             required, effort, dt, braking=braking,
             enabled=enabled)
@@ -212,7 +222,10 @@ class DrivetrainForceApplier:
             state = replace(state, effort_nm=min(state.effort_nm, ceiling))
         # Only the rider unloads for the shift; the motor follows measured
         # rider torque through its own lag, without another cut (spec S6).
-        return replace(state, effort_nm=state.effort_nm * self.shifting.torque_factor)
+        state = replace(state, effort_nm=state.effort_nm * self.shifting.torque_factor)
+        if advance:
+            self.pedaling = policy
+        return state
 
     def stored_energy(self, model, data):
         self.config.__post_init__()
@@ -320,6 +333,10 @@ class DrivetrainForceApplier:
     def _compute_components(self, model, data, dt, *, speed_mps, braking,
                             sensed_human_nm, active, advance, control, pedaling_state):
         time = float(data.time)
+        # An unsettled actuation rejects the tick before any policy advance
+        # or model staging, so retries cannot accumulate state.
+        if active and self.pending_actuation is not None:
+            raise RuntimeError('previous motor interval was not settled')
         if advance:
             if self.ideal_hub is not None:
                 self.ideal_hub.prepare(model, data)
@@ -330,6 +347,10 @@ class DrivetrainForceApplier:
         if pedaling_state is None:
             pedaling_state = self.prepare_pedaling(data, dt, control,
                 active=active, advance=advance, braking=braking, model=model)
+        # Policies advance on detached candidates; every live attribute is
+        # published only after components, diagnostics and ctrl rows exist.
+        hub = self.hub if self.simplified else copy.deepcopy(self.hub)
+        assist = copy.deepcopy(self.assist)
         qf, vf = self.joints['crank_spin']
         qw, vw = self.joints['rear_wheel_spin']
         human=0.
@@ -349,8 +370,8 @@ class DrivetrainForceApplier:
                                                    self.config.chain_k_n_m,self.config.chain_c_ns_m)
             components['chain']=-tension*J
             qc, vc = self.joints['cassette_spin']
-            torque = self.hub.update(float(data.qpos[qc]),float(data.qpos[qw]),
-                                     float(data.qvel[vc]),float(data.qvel[vw]))
+            torque = hub.update(float(data.qpos[qc]),float(data.qpos[qw]),
+                                float(data.qvel[vc]),float(data.qvel[vw]))
             hub_force = np.zeros(model.nv); hub_force[vw] = torque; hub_force[vc] = -torque
             components['freehub'] = hub_force
         bearing = np.zeros(model.nv)
@@ -368,8 +389,8 @@ class DrivetrainForceApplier:
                  if active and self.drive_mode=='crank_effort' else 0.)
         sensor = human if self.drive_mode=='crank_effort' else sensed_human_nm
         assist_sensor = sensor if pedaling_state.mode == 'pedaling' else 0.
-        request = (self.assist.step(assist_sensor,cadence,speed_mps,braking,dt,
-                                    torque_request_nm=control.motor_torque_nm,shaft_rpm=shaft_rpm)
+        request = (assist.step(assist_sensor,cadence,speed_mps,braking,dt,
+                               torque_request_nm=control.motor_torque_nm,shaft_rpm=shaft_rpm)
                    if active and self.drive_mode in ('crank_effort','articulated_effort') else 0.)
         battery_cfg = self.config.battery
         a,b,idle = battery_cfg.copper_w_per_nm2,battery_cfg.speed_w_per_rad_s2,battery_cfg.idle_w
@@ -389,34 +410,30 @@ class DrivetrainForceApplier:
             derived_array(force, f'DrivetrainForceApplier.{name}')
         if not self.simplified:
             relative_rate = float(data.qvel[vc]-data.qvel[vw])
-            deflection = max(float(data.qpos[qc]-data.qpos[qw])-self.hub.boundary,0.)
+            deflection = max(float(data.qpos[qc]-data.qpos[qw])-hub.boundary,0.)
         chain_loss = max(0., derived((tension-self.config.chain_k_n_m*max(extension,0.))*extension_rate, 'DrivetrainForceApplier.chain_dissipation'))
-        hub_loss = (0. if self.simplified else max(0., derived((torque-self.hub.k*deflection)*relative_rate, 'DrivetrainForceApplier.freehub_dissipation')))
-        if active and self.pending_actuation is not None:
-            raise RuntimeError('previous motor interval was not settled')
-        self.pending_actuation = (delivered, omega_shaft, dt, enabled) if active else None
-        for name,value in (('human_crank',human),('mid_drive',delivered)):
-            aid = self.actuators[name]
-            if aid >= 0:
-                data.ctrl[aid] = value
+        hub_loss = (0. if self.simplified else max(0., derived((torque-hub.k*deflection)*relative_rate, 'DrivetrainForceApplier.freehub_dissipation')))
+        pending = (delivered, omega_shaft, dt, enabled) if active else None
+        ctrl_writes = [(self.actuators[name], value)
+                       for name, value in (('human_crank',human),('mid_drive',delivered))]
         if self.simplified:
             components['ideal_transmission']=np.zeros(model.nv)
         if self.drive_mode in ('crank_effort','articulated_effort'):
-            self.assist.torque = delivered
-        self.last = {
+            assist.torque = delivered
+        last = {
             'transmission_model':self.config.transmission_model,
             'omits_suspension_coupling':self.config.transmission_model=='ideal_mid_drive',
             'chain_extension_m':extension, 'chain_extension_rate_mps':0. if self.simplified else extension_rate,
             'chain_tension_n':tension, 'chain_energy_j':chain_energy,
             'chain_dissipation_power_w':chain_loss,
-            'freehub_torque_nm':0. if self.simplified else torque, 'freehub_energy_j':0. if self.simplified else self.hub.energy_j,
+            'freehub_torque_nm':0. if self.simplified else torque, 'freehub_energy_j':0. if self.simplified else hub.energy_j,
             'freehub_engaged':False if self.simplified else torque > 0., 'freehub_deflection_rad':0. if self.simplified else deflection,
             'freehub_dissipation_power_w':hub_loss,
             'cadence_rpm':cadence, 'crank_rad_s':omega_crank, 'drive_shaft_rad_s':omega_shaft,
             'human_torque_nm':human, 'human_sensor_nm':sensor,
             'human_setpoint_nm':control.human_torque_nm,
-            'assist_demand_gated':bool(braking or assist_sensor<=self.assist.engage_torque_nm
-                                       or omega_crank<=self.assist.gate_min_crank_rad_s),
+            'assist_demand_gated':bool(braking or assist_sensor<=assist.engage_torque_nm
+                                       or omega_crank<=assist.gate_min_crank_rad_s),
             'assist_sensor_nm':assist_sensor, 'human_command_nm':mean_human,
             'rider_mode':pedaling_state.mode, 'coasting_reason':pedaling_state.reason,
             'required_cadence_rpm':pedaling_state.required_cadence_rpm,
@@ -433,12 +450,24 @@ class DrivetrainForceApplier:
             'motor_shaft_power_w':delivered*omega_shaft, 'electrical_power_w':actual_electrical,
             'battery_energy_j':self.battery.energy_j, 'motor_enabled':enabled,
             'energy_limited':delivered < limited_request, 'battery_empty':self.battery.energy_j==0.,
-            'assist_mode':self.assist.mode, 'assist_gain':self.assist.last_gain,
+            'assist_mode':assist.mode, 'assist_gain':assist.last_gain,
         }
-        self.last.update(self._shift_diagnostics())
+        last.update(self._shift_diagnostics())
+        next_angles = ((self._angle(data,'crank',self.angles[0]),) if self.simplified
+            else (angles, psi))
+        # Publish: every candidate above was fully built, so the swaps below
+        # cannot leave the tick half applied. A mid-tick rejection discards
+        # the detached policies and leaves all live state untouched.
+        for aid, value in ctrl_writes:
+            if aid >= 0:
+                data.ctrl[aid] = value
+        self.assist = assist
         if not self.simplified:
-            self.angles,self.psi = angles,psi
+            self.hub = hub
+            self.angles, self.psi = next_angles
         else:
-            self.angles=(self._angle(data,'crank',self.angles[0]),)
+            self.angles = next_angles
+        self.pending_actuation = pending
+        self.last = last
         self.last_time_s = time
         return components

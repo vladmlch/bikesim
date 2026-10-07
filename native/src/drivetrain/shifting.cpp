@@ -4,7 +4,7 @@
 #include <limits>
 
 namespace drivetrain {
-    void CadenceShifter::set_state(const ShiftingSnapshot &s) {
+    void CadenceShifter::set_state(ShiftingSnapshot s) {
         if (s.rear_teeth < 3 || s.from_teeth < 3 || s.shift_count < 0) throw std::invalid_argument(
             "shifter teeth/count");
         if (s.direction != "none" && s.direction != "up" && s.direction != "down") throw std::invalid_argument(
@@ -14,7 +14,7 @@ namespace drivetrain {
         finite_optional(s.cadence_ema, "cadence_ema");
         finite_optional(s.required_ema, "required_ema");
         if (s.cadence_ema.has_value() != s.required_ema.has_value()) throw std::invalid_argument("shifter EMAs");
-        state_ = s;
+        state_ = std::move(s);
     }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror shifting.py

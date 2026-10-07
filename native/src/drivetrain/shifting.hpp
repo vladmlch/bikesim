@@ -27,7 +27,10 @@ namespace drivetrain {
         double torque_factor() const { return state_.cut_remaining_s > 0. ? config_.torque_factor : 1.; }
         const ShiftingSnapshot &state() const { return state_; }
 
-        void set_state(const ShiftingSnapshot &state);
+        // By value so transaction commits can move the candidate into
+        // place — validation runs on the argument, then the publish is a
+        // memory-only move (the direction string never re-allocates).
+        void set_state(ShiftingSnapshot state);
 
     private:
         GearingConfig gearing_;

@@ -430,6 +430,11 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'transmission_staged_ratio_atomicity',
         'interval_clock_contracts',
         'cruise_live_timestep',
+        'model_access_contracts',
+        'geometry_topology_and_ids',
+        'geometry_nonfinite_transform',
+        'profile_contract_boundaries',
+        'support_geometry_parent_contracts',
     ]
 
 

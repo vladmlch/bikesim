@@ -12,7 +12,7 @@ namespace drivetrain {
         return validation::derived(mean_nm * (1. - ripple * std::cos(validation::derived(2. * phase_rad, "human_crank_torque.phase"))), "human_crank_torque.torque");
     }
 
-    void PedalingPolicy::set_state(const PedalingSnapshot &s) {
+    void PedalingPolicy::set_state(PedalingSnapshot s) {
         finite_optional(s.target_phase_rad, "target_phase_rad");
         finite_optional(s.cadence_ema, "_cadence_ema");
         finite(s.target_rate_rad_s, "target_rate_rad_s");

@@ -4,13 +4,13 @@
 // two-argument keep-first-on-tie semantics, including the NaN cases.
 #include "brake.hpp"
 #include "../config_validation.hpp"
+#include "../model_access.hpp"
 #include "../model_topology.hpp"
 #include "../validation.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <format>
-#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -31,20 +31,26 @@ namespace {
             throw std::invalid_argument(
                 "model has no geom '" + std::string(contact_geom) +
                 "'; ride-mode wheel torques need its radius");
-        // views::counted everywhere — -Wunsafe-buffer-usage rejects raw
+        // Checked extents everywhere — -Wunsafe-buffer-usage rejects raw
         // indexing into mjModel pointer fields (same pattern as suspension.cpp).
+        model_access::require_id(gid, m->ngeom, "wheel contact geom");
         const std::span<const int> geom_type =
-                std::views::counted(m->geom_type, m->ngeom);
+                model_access::readonly_buffer(m->geom_type, m->ngeom);
         if (geom_type[static_cast<std::size_t>(gid)] != mjGEOM_SPHERE)
             throw std::invalid_argument(
                 "geom '" + std::string(contact_geom) +
                 "' is not a sphere, so its size is not a wheel radius");
+        model_access::require_id(jid, m->njnt, "wheel spin joint");
         const std::span<const int> dofadr =
-                std::views::counted(m->jnt_dofadr, m->njnt);
+                model_access::readonly_buffer(m->jnt_dofadr, m->njnt);
         const std::span<const mjtNum> geom_size =
-                std::views::counted(m->geom_size, 3 * m->ngeom);
+                model_access::readonly_buffer(m->geom_size, 3 * m->ngeom);
+        const int adr = dofadr[static_cast<std::size_t>(jid)];
+        // The stored dof address indexes d->qvel[nv] on every apply — a
+        // corrupt model table is rejected here, not at the read.
+        model_access::require_id(adr, m->nv, "wheel spin dof address");
         return {
-            dofadr[static_cast<std::size_t>(jid)],
+            adr,
             geom_size[3 * static_cast<std::size_t>(gid)]
         };
     }
@@ -105,11 +111,16 @@ BrakeWriter::BrakeWriter(const mjModel *m, nativecfg::BrakeConfig config)
 
 // braking.py:89-107 — _wheel_torque; WheelSpin.omega_radps is the qvel read
 // (wheels.py:35-37).
+// Caller precondition (raw boundary): `d` is the live mjData of the model
+// this writer was built on, driven by the single owning Stepper — widths
+// are validated, model/data pairing is not derivable from them.
 double BrakeWriter::wheel_torque(const mjData *d, const WheelSpin &wheel,
                                  double demand) const {
     validation::finite(demand, "BrakeWriter.demand");
     const double clamped = std::min(std::max(demand, 0.0), 1.0);
-    const std::span<const mjtNum> qvel = std::views::counted(d->qvel, nv_);
+    const std::span<const mjtNum> qvel =
+            model_access::readonly_buffer(d->qvel, nv_);
+    model_access::require_id(wheel.dofadr, nv_, "wheel spin dof address");
     const double omega = qvel[static_cast<std::size_t>(wheel.dofadr)];
     return opposing_torque(clamped * cfg_.torque_ceiling_nm, omega,
                            cfg_.taper_radps);
@@ -125,11 +136,16 @@ std::pair<double, double> BrakeWriter::torques(const mjData *d,
     return last_;
 }
 
+// Same model/data pairing + single-Stepper ownership precondition as
+// wheel_torque; `d` is written through d->ctrl after both IDs validate.
 void BrakeWriter::apply(mjData *d, double front_demand,
                         double rear_demand) const {
     const auto [front_torque, rear_torque] =
             torques(d, front_demand, rear_demand);
-    const std::span<mjtNum> ctrl = std::views::counted(d->ctrl, nu_);
+    const std::span<mjtNum> ctrl =
+            model_access::mutable_buffer(d->ctrl, nu_);
+    model_access::require_id(front_ctrl_adr_, nu_, "front brake actuator");
+    model_access::require_id(rear_ctrl_adr_, nu_, "rear brake actuator");
     ctrl[static_cast<std::size_t>(front_ctrl_adr_)] = front_torque;
     ctrl[static_cast<std::size_t>(rear_ctrl_adr_)] = rear_torque;
 }

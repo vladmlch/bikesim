@@ -89,6 +89,13 @@ namespace drivetrain {
         // lands atomically (guarded model writes, then memory-only swaps).
         [[nodiscard]] TransmissionUpdate stage_ratio(mjData *data, double ratio);
 
+        // Composed staging: `base` carries an already-staged candidate (e.g.
+        // the tick's staged prepare) whose gear/state/coefficients/range seed
+        // the update, so the sequential prepare→set_ratio order is preserved
+        // bitwise while both changes publish in a single commit.
+        [[nodiscard]] TransmissionUpdate stage_ratio(mjData *data, double ratio,
+                                                     TransmissionUpdate base);
+
         [[nodiscard]] TransmissionUpdate stage_prepare(mjData *data);
 
         [[nodiscard]] TransmissionUpdate stage_reset(mjData *data);
@@ -206,6 +213,6 @@ namespace drivetrain {
 
         [[nodiscard]] TransmissionUpdate make_update_from_current() const;
 
-        [[nodiscard]] int validated_rear_teeth(double ratio) const;
+        [[nodiscard]] int validated_rear_teeth(int front_teeth, double ratio) const;
     };
 } // namespace drivetrain

@@ -19,7 +19,10 @@ namespace drivetrain {
 
         const AssistSnapshot &state() const { return state_; }
 
-        void set_state(const AssistSnapshot &state);
+        // By value so transaction commits can move the candidate into
+        // place — validation runs on the argument, then the publish is a
+        // memory-only move.
+        void set_state(AssistSnapshot state);
 
     private:
         AssistConfig config_;
@@ -42,7 +45,10 @@ namespace drivetrain {
 
         const BatterySnapshot &state() const { return state_; }
 
-        void set_state(const BatterySnapshot &state);
+        // By value so transaction commits can move the candidate into
+        // place — validation runs on the argument, then the publish is a
+        // memory-only move.
+        void set_state(BatterySnapshot state);
 
     private:
         BatterySnapshot state_;

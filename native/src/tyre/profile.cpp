@@ -17,11 +17,12 @@
 //   `round()`                           → std::nearbyint (banker's, default FP)
 #include "profile.hpp"
 
+#include "../model_access.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <numbers>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -166,6 +167,12 @@ namespace biketyre {
 
     double np_interp(double xq, std::span<const double> xs,
                      std::span<const double> ys) {
+        // Exported boundary: an empty table or an xs/ys width mismatch is
+        // an explicit rejection (np.interp raises on an empty table too);
+        // the interpolation math below is the validated-table inner loop.
+        if (xs.empty() || xs.size() != ys.size())
+            throw std::invalid_argument(
+                "interp tables must be nonempty and equally wide");
         // numpy/_core/multiarray/compiled_base.c: np_interp with lenxp > 1,
         // needs_right = 0 (float64/float64 arrays carry no NaN mask here).
         const std::size_t n = xs.size();
@@ -211,32 +218,45 @@ namespace biketyre {
         if (geom < 0)
             throw std::invalid_argument("model has no '" +
                                         std::string(terrain_name) + "'");
+        model_access::require_id(geom, model->ngeom, "terrain geom");
         const std::size_t g = static_cast<std::size_t>(geom);
-        const std::span<const int> geom_type =
-                std::views::counted(model->geom_type, model->ngeom);
-        const std::span<const int> geom_dataid =
-                std::views::counted(model->geom_dataid, model->ngeom);
+        const std::span<const int> geom_type = model_access::readonly_buffer(
+            model->geom_type, model->ngeom);
+        const std::span<const int> geom_dataid = model_access::readonly_buffer(
+            model->geom_dataid, model->ngeom);
         if (geom_type[g] != mjGEOM_HFIELD)
             throw std::invalid_argument(
                 "compliant_2d requires the compiled terrain heightfield");
         const int hfield = geom_dataid[g];
+        model_access::require_id(hfield, model->nhfield,
+                                 "terrain heightfield ID");
         const std::size_t hf = static_cast<std::size_t>(hfield);
-        const std::span<const int> nrow =
-                std::views::counted(model->hfield_nrow, model->nhfield);
-        const std::span<const int> ncol =
-                std::views::counted(model->hfield_ncol, model->nhfield);
-        const std::span<const int> adr =
-                std::views::counted(model->hfield_adr, model->nhfield);
+        const std::span<const int> nrow = model_access::readonly_buffer(
+            model->hfield_nrow, model->nhfield);
+        const std::span<const int> ncol = model_access::readonly_buffer(
+            model->hfield_ncol, model->nhfield);
+        const std::span<const int> adr = model_access::readonly_buffer(
+            model->hfield_adr, model->nhfield);
         const int rows = nrow[hf];
         const int cols = ncol[hf];
         const int start = adr[hf];
-        if (cols < 2 || rows < 2 || start < 0 ||
-            start + rows * cols > model->nhfielddata)
+        if (cols < 2 || rows < 2 || start < 0)
             throw std::invalid_argument("invalid compiled heightfield raster");
-        const std::span<const float> hfield_data = std::views::counted(
-            model->hfield_data, model->nhfielddata);
+        const std::span<const float> hfield_data =
+                model_access::readonly_buffer(model->hfield_data,
+                                              model->nhfielddata);
+        // Positive rows/cols are cast to the element width before the
+        // multiply; the storage limit is the engine's mjtSize
+        // (nhfielddata), never an int intermediate product.
+        const std::size_t raster_count = model_access::checked_product(
+            static_cast<std::size_t>(rows), static_cast<std::size_t>(cols),
+            hfield_data.size());
+        const std::size_t raster_end = model_access::checked_sum(
+            static_cast<std::size_t>(start), raster_count,
+            hfield_data.size());
+        const std::size_t raster_first = static_cast<std::size_t>(start);
         const std::span<const float> raster = hfield_data.subspan(
-            static_cast<std::size_t>(start), static_cast<std::size_t>(rows) * static_cast<std::size_t>(cols));
+            raster_first, raster_end - raster_first);
         const std::size_t cs = static_cast<std::size_t>(cols);
         for (const float v: raster)
             if (!std::isfinite(v))
@@ -252,15 +272,29 @@ namespace biketyre {
                     throw std::invalid_argument(
                         "compliant_2d does not support lateral terrain "
                         "variation");
-        const std::span<const mjtNum> hsize = std::views::counted(
-            model->hfield_size, 4 * model->nhfield);
+        const std::span<const mjtNum> hsize =
+                model_access::readonly_buffer(model->hfield_size,
+                                              4 * model->nhfield);
         const double sx = hsize[4 * static_cast<std::size_t>(hfield)];
         const double sz = hsize[4 * static_cast<std::size_t>(hfield) + 2];
         const std::span<const mjtNum> xmat =
-                std::views::counted(data->geom_xmat, 9 * model->ngeom);
+                model_access::readonly_buffer(data->geom_xmat,
+                                              9 * model->ngeom);
         const std::span<const mjtNum> xpos =
-                std::views::counted(data->geom_xpos, 3 * model->ngeom);
+                model_access::readonly_buffer(data->geom_xpos,
+                                              3 * model->ngeom);
         const std::size_t gs = static_cast<std::size_t>(geom);
+        // Nonfinite transform entries are rejected before the tolerance
+        // comparisons — NaN must fail as "invalid transform", not just fall
+        // out of an allclose predicate.
+        for (int k = 0; k < 9; ++k)
+            if (!std::isfinite(xmat[9 * gs + static_cast<std::size_t>(k)]))
+                throw std::invalid_argument(
+                    "invalid terrain transform: non-finite entry");
+        for (int k = 0; k < 3; ++k)
+            if (!std::isfinite(xpos[3 * gs + static_cast<std::size_t>(k)]))
+                throw std::invalid_argument(
+                    "invalid terrain transform: non-finite entry");
         // np.allclose(R[:, 1], [0,1,0], rtol=0, atol=1e-10)
         if (!(std::abs(xmat[9 * gs + 1]) <= 1e-10 &&
               std::abs(xmat[9 * gs + 4] - 1.0) <= 1e-10 &&
@@ -379,43 +413,74 @@ namespace biketyre {
                 std::cos(normal_angle_deg * (std::numbers::pi / 180.0));
     }
 
-    ProfileQuery::Candidates
-    ProfileQuery::candidates(std::array<double, 2> c, int lo, int hi) const {
-        // _candidates (contact_profile.py:59-68): ids = arange(lo, hi), project
-        // c onto every window segment, clip t into [0,1], measure the gap.
-        Candidates out;
-        const std::size_t n = static_cast<std::size_t>(hi - lo);
-        out.ids.reserve(n);
-        out.t.reserve(n);
-        out.points.reserve(n);
-        out.distances.reserve(n);
-        for (int i = lo; i < hi; ++i) {
-            const std::size_t u = static_cast<std::size_t>(i);
-            out.ids.push_back(i);
-            const double ox = c[0] - px_[u], oz = c[1] - pz_[u];
-            // einsum('ij,ij->i', c-a, d): seeded per-row accumulation.
-            double num = 0.0;
-            num += ox * seg_x_[u];
-            num += oz * seg_z_[u];
-            const double t = clip01(num / seg_len_sq_[u]);
-            out.t.push_back(t);
-            // points = a + t[:, None]*d  (mul, then add — two roundings)
-            const double ptx = px_[u] + t * seg_x_[u];
-            const double ptz = pz_[u] + t * seg_z_[u];
-            out.points.push_back({ptx, ptz});
-            const double dx = c[0] - ptx, dz = c[1] - ptz;
-            // sqrt(einsum('ij,ij->i', diff, diff))
-            double dsq = 0.0;
-            dsq += dx * dx;
-            dsq += dz * dz;
-            out.distances.push_back(std::sqrt(dsq));
+    namespace detail {
+        Candidates candidates(std::span<const double> px,
+                              std::span<const double> pz,
+                              std::span<const double> seg_x,
+                              std::span<const double> seg_z,
+                              std::span<const double> seg_len_sq,
+                              std::array<double, 2> c, int lo, int hi) {
+            // Table-shape boundary first: the projection loop indexes
+            // px[u]/seg_x[u]/seg_len_sq[u] for u in [lo, hi), so a
+            // mismatched or empty table is an explicit rejection, not an
+            // unchecked read.
+            const std::size_t segs = seg_x.size();
+            if (px.size() != pz.size() || px.size() != segs + 1 ||
+                seg_z.size() != segs || seg_len_sq.size() != segs)
+                throw std::invalid_argument(
+                    "candidate tables must come from one validated profile");
+            // Interval contract (np.arange semantics): hi <= lo is the
+            // declared empty interval — zero candidates, never a negative
+            // reserve. A nonempty window must lie inside the segment table.
+            if (hi <= lo)
+                return {};
+            if (lo < 0 || std::cmp_greater(hi, segs))
+                throw std::invalid_argument(
+                    "candidate window outside segment range");
+            // _candidates (contact_profile.py:59-68): ids = arange(lo, hi),
+            // project c onto every window segment, clip t into [0,1],
+            // measure the gap. Inner loop stays unchecked — the ctor's
+            // validated profile plus the window bounds above cover it.
+            Candidates out;
+            const std::size_t n = static_cast<std::size_t>(hi - lo);
+            out.ids.reserve(n);
+            out.t.reserve(n);
+            out.points.reserve(n);
+            out.distances.reserve(n);
+            for (int i = lo; i < hi; ++i) {
+                const std::size_t u = static_cast<std::size_t>(i);
+                out.ids.push_back(i);
+                const double ox = c[0] - px[u], oz = c[1] - pz[u];
+                // einsum('ij,ij->i', c-a, d): seeded per-row accumulation.
+                double num = 0.0;
+                num += ox * seg_x[u];
+                num += oz * seg_z[u];
+                const double t = clip01(num / seg_len_sq[u]);
+                out.t.push_back(t);
+                // points = a + t[:, None]*d  (mul, then add — two roundings)
+                const double ptx = px[u] + t * seg_x[u];
+                const double ptz = pz[u] + t * seg_z[u];
+                out.points.push_back({ptx, ptz});
+                const double dx = c[0] - ptx, dz = c[1] - ptz;
+                // sqrt(einsum('ij,ij->i', diff, diff))
+                double dsq = 0.0;
+                dsq += dx * dx;
+                dsq += dz * dz;
+                out.distances.push_back(std::sqrt(dsq));
+            }
+            return out;
         }
-        return out;
+    } // namespace detail
+
+    detail::Candidates
+    ProfileQuery::candidates(std::array<double, 2> c, int lo, int hi) const {
+        return detail::candidates(px_, pz_, seg_x_, seg_z_, seg_len_sq_, c,
+                                  lo, hi);
     }
 
     std::vector<bool>
     ProfileQuery::endpoint_keep(std::array<double, 2> c,
-                                const Candidates &cand) const {
+                                const detail::Candidates &cand) const {
         // _endpoint_keep (contact_profile.py:70-85): an endpoint projection is
         // not a separate support when a neighbour's direction of travel moves
         // closer to the wheel.
@@ -516,7 +581,7 @@ namespace biketyre {
                                 radius - distance, segment, false);
         }
         // candidates path (contact_profile.py:122-165).
-        Candidates cand = candidates(c, lo, hi);
+        detail::Candidates cand = candidates(c, lo, hi);
         if (cand.ids.empty() || min_elt(cand.distances) >= radius) {
             int search_lo = 0, search_hi = 0;
             if (!cand.ids.empty()) {

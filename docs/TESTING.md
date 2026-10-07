@@ -458,6 +458,48 @@ slide topology, unrelated nonplanar bodies, invalid joint topology, non-box
 supports, improper support frames, and out-of-range geom IDs. These are local
 per-call gates; whole-episode contact and P4 runtime acceptance remain separate.
 
+### T2a equality reactions and DGELSD least squares
+
+```bash
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_attachment_wrench.py -q
+```
+
+`Stepper::rider_equality_qfrc(eq_id)` and the `_rider_equality_rows`,
+`_rider_equality_reaction`, `_rider_equalities_qfrc_at` hooks read the
+Stepper-owned EFC arena on every call: `efc_type`/`efc_id` masks are
+re-derived, equality rows are grouped by id with a stable ascending order,
+and a missing equality is a zero measurement — force `zeros(3)`, residual
+`0.`, qfrc `zeros(nv)`. `equality_qfrc` zero-fills its output before
+`mj_mulJacTVec`, whose `nefc == 0` early return never touches the result.
+Row membership is never cached; contact/limit/friction rows interleaving or
+colliding on `efc_id` cannot shadow an equality because the type half of
+the mask selects first. Outputs are capsule-owned copies — writeable,
+unshared storage on every call.
+
+`_rider_least_squares(a, b, rcond)` drives Accelerate ILP64
+`_dgelsd$NEWLAPACK$ILP64` — the same undefined import numpy's
+`_umath_linalg` carries — with numpy's buffer contract (LDA = max(1, m),
+LDB = max(1, m, n), one LWORK = -1 query, the queried optimum passed
+verbatim) and numpy's output contract: `x` is `(n,)` for a 1-D `b` and
+`(n, k)` for 2-D, `resids` is empty unless `rank == n` and `m > n`, `s` is
+`min(m, n)` singular values, and `rank` is DGELSD's count. Nonfinite inputs
+flow into DGELSD unscreened; a nonzero `info` or a pre-set FE_INVALID flag
+raises `LeastSquaresError` (a ValueError subclass) with numpy's
+"SVD did not converge in Linear Least Squares" message. Shape violations
+raise ValueError before any copy; a row-count mismatch raises
+"Incompatible dimensions" like the oracle. A `(m, 0)` target still runs
+the SVD (rank/s populated) and emits the empty `x`/`resids`. Non-float64
+inputs convert to float64 before solving — numpy would dispatch f32 to
+`sgelsd`, so the bitwise oracle there is `lstsq` on the widened inputs.
+
+Two parity subtleties the tests pin: numpy's gufunc binary was compiled
+with FP contraction, so its tail-row `res += el*el` fused multiply-adds —
+the port reproduces that rounding with an explicit `std::fma` even under
+`-ffp-contract=off`; and `np.linalg.norm`'s 1-D fast path is `x.dot(x)`
+through Accelerate `ddot`, which the residual reader calls directly rather
+than re-associating.
+
 ## V3 verification record
 
 Verification was run from the V3 tree based on `1ccdfcb28244dd14af6e584f958a40d3dbc04918`.

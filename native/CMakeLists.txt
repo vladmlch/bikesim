@@ -272,7 +272,9 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp src/stepper.cpp
   src/drivetrain/policy_binding.cpp
   src/drivetrain/drive_binding.cpp
-  src/rider/contact_binding.cpp)
+  src/rider/attachment_binding.cpp
+  src/rider/contact_binding.cpp
+  src/rider/equality_reactions.cpp)
 
 set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
@@ -422,6 +424,7 @@ add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/drivetrain/freehub.cpp src/writers/drivetrain.cpp
   src/writers/cruise.cpp src/tyre/profile.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp
+  src/rider/least_squares.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
   src/writers/tire.cpp)

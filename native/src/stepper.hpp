@@ -12,6 +12,7 @@
 #include <nanobind/nanobind.h>
 #include "engine_call.hpp"
 #include "rtsan.hpp"
+#include "rider/equality_reactions.hpp"
 #include "writers/writer_types.hpp"
 
 class SuspensionWriter;
@@ -207,6 +208,18 @@ public:
     // config.
     [[nodiscard]] std::vector<double> rider_forces_qfrc() const;
 
+    // attachment_wrench.py equality_qfrc on the CURRENT mjData: zeros(nv),
+    // then J^T times the solved multipliers of the equality rows whose
+    // efc_id matches — so a missing equality is exactly zeros(nv). The
+    // row membership is re-derived from the live arena on every call.
+    [[nodiscard]] std::vector<double> rider_equality_qfrc(int eq_id) const;
+
+    // Internal typed access for the binding's equality diagnostics: the
+    // Stepper-owned EqualityReactions workspace (lazy — materialized on
+    // first use, borrowed pointer, never a second owner). Runs
+    // require_healthy() like every read path.
+    [[nodiscard]] rider::EqualityReactions &rider_equalities() const;
+
     // ForceAccumulator.total() (force_accumulator.py:47-51): zero-init,
     // then sequential in-place adds in the GIVEN order — the P2 ordering
     // contract the native step loop replicates. Each component is checked
@@ -247,4 +260,8 @@ private:
     mutable std::array<ForceComponentView, 2> resistance_views_{};
     mutable std::vector<double> rider_out_;
     std::vector<double> tire_out_;
+    // Lazy per-Stepper scratch for rider_equality_qfrc — the reusable
+    // nefc multiplier / nv qfrc buffers behind it. Null until the first
+    // call; the arena contents are still re-derived on every call.
+    mutable std::unique_ptr<rider::EqualityReactions> equality_scratch_;
 };

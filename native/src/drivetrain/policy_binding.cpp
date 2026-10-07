@@ -53,8 +53,10 @@ namespace {
 
     nb::dict result_dict(const PedalingState &s) {
         nb::dict d;
-        d["mode"] = s.mode;
-        d["reason"] = s.reason;
+        // Closed enums materialize their wire strings only here at the
+        // FFI boundary — the core carries PedalMode/CoastReason ordinals.
+        d["mode"] = std::string(pedal_mode_name(s.mode));
+        d["reason"] = std::string(coast_reason_name(s.reason));
         d["effort_nm"] = s.effort_nm;
         d["required_cadence_rpm"] = s.required_cadence_rpm;
         d["target_phase_rad"] = nb::cast(s.target_phase_rad);

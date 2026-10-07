@@ -42,3 +42,26 @@ namespace allocation_faults {
         ~Guard() { disarm(); }
     };
 } // namespace allocation_faults
+
+// Always-on companion to the injector above: the same replacement operators
+// keep a second pair of thread_local counters that increment on EVERY
+// allocation and deallocation call — armed or not, successful or throwing.
+// The warm-core zero-allocation contract reads these: E4's `allocated()`
+// only measures allocations performed under an armed budget, while
+// count()/freed() see every call the test binary's own TUs make, including
+// aligned and sized forms (library images still bind their own operators).
+namespace allocation_counter {
+    // Zero both counters. Test cases reset AFTER fixtures, output buffers
+    // and the measured warmup are fully built so the core-path window sees
+    // only per-tick activity.
+    void reset() noexcept;
+
+    // operator new calls since the most recent reset(), including calls
+    // that went on to throw — a throwing attempt is still allocation
+    // activity the warm core must not contain.
+    [[nodiscard]] std::size_t count() noexcept;
+
+    // operator delete calls since the most recent reset(), nullptr
+    // releases included.
+    [[nodiscard]] std::size_t freed() noexcept;
+} // namespace allocation_counter

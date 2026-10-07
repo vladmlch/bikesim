@@ -17,6 +17,7 @@
 #include "../contact/laws.hpp"
 #include "../diag.hpp"
 #include "../engaged.hpp"
+#include "../engine_call.hpp"
 #include "../interval_clock.hpp"
 #include "../model_access.hpp"
 
@@ -24,13 +25,16 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <exception>
 #include <initializer_list>
 #include <limits>
+#include <new>
 #include <numbers>
 #include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -79,11 +83,12 @@ namespace {
 
     // CPython builtin sum() on floats: Neumaier compensated summation — see
     // writers/resistance.cpp for the derivation. `sum(iterable)` with no
-    // explicit start seeds int 0 (compares equal to 0.0 downstream).
-    double py_sum(std::span<const double> values) {
-        double f_result = 0.0;
-        double c_sum = 0.0;
-        for (const double x: values) {
+    // explicit start seeds int 0 (compares equal to 0.0 downstream). The
+    // accumulator form exists so loops that produced a scratch vector just
+    // to reduce it can feed the same per-element sequence inline — the
+    // operation order, and therefore the rounding, is unchanged.
+    struct NeumaierSum {
+        void add(double x) {
             const double t = f_result + x;
             if (std::isfinite(t)) {
                 if (std::abs(f_result) >= std::abs(x))
@@ -93,8 +98,12 @@ namespace {
             }
             f_result = t;
         }
-        return f_result + c_sum;
-    }
+
+        [[nodiscard]] double total() const { return f_result + c_sum; }
+
+        double f_result = 0.0;
+        double c_sum = 0.0;
+    };
 
     // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide)*exp(-|v|/str).
     double surface_mu(const nativecfg::SurfaceSpec &s, double slip) {
@@ -159,23 +168,24 @@ namespace {
     NATIVE_DIAG_POP
 
     // WheelContactSnapshot.effective_radius_m (contact_state.py:172-181).
+    // R1: terms/weights were two heap vectors reduced by py_sum — fused
+    // into the same sequential Neumaier accumulators (identical operation
+    // order and rounding, no per-tick scratch).
     double effective_radius(const std::vector<TirePatch> &patches,
                             const Vec3 &axis) {
         if (patches.empty())
             return 0.0;
         const bool any_loaded = std::ranges::any_of(
             patches, [](const TirePatch &p) { return p.normal_load_n > 0.0; });
-        std::vector<double> terms, weights;
-        terms.reserve(patches.size());
-        weights.reserve(patches.size());
+        NeumaierSum terms, weights;
         for (const TirePatch &p: patches) {
             const double w = any_loaded ? p.normal_load_n : 1.0;
             // float(np.dot(p.point_m - axis, p.normal)) → ddot
             const double drop = -dot3(sub(p.point_m, axis), p.normal);
-            terms.push_back(w * drop);
-            weights.push_back(w);
+            terms.add(w * drop);
+            weights.add(w);
         }
-        return std::max(0.0, py_sum(terms) / py_sum(weights));
+        return std::max(0.0, terms.total() / weights.total());
     }
 } // namespace
 
@@ -298,6 +308,32 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
                         static_cast<std::size_t>(nv_));
     jac_center_.resize(static_cast<std::size_t>(model_access::kXYZ) *
                        static_cast<std::size_t>(nv_));
+    // R1: the former per-call qfrc/tmp vectors and the snapshot staging
+    // slots are construction-sized members — compute fills this capacity.
+    tmp_.resize(static_cast<std::size_t>(nv_));
+    qfrc_out_.resize(static_cast<std::size_t>(nv_));
+    for (TireSnapshot &stage: snapshot_stage_)
+        stage.patches.reserve(kMaxSnapshotPatches);
+    // The committed slots carry the same construction sizing: an
+    // optional-engagement commit would construct the patch vector and
+    // surface string inside the marked compute (RTSan flagged exactly
+    // that on the first call). `surface` capacity covers every configured
+    // material name plus the 'configured' fallback — the longest name a
+    // diagnostics commit can ever assign.
+    std::size_t surface_name_capacity =
+            std::string_view("configured").size();
+    if (surface_map_) {
+        surface_name_capacity = std::max(
+                surface_name_capacity, surface_map_->surface.name.size());
+        for (const nativecfg::SurfaceSection &sec: surface_map_->sections)
+            surface_name_capacity =
+                    std::max(surface_name_capacity, sec.surface.name.size());
+    }
+    for (std::size_t s = 0; s < 2; ++s) {
+        snapshots_[s].patches.reserve(kMaxSnapshotPatches);
+        diagnostics_[s].surface.reserve(surface_name_capacity);
+        diagnostics_stage_[s].surface.reserve(surface_name_capacity);
+    }
     // tire_forces.py:84-88 — every geom on each wheel body must be
     // collision-disabled for the compliant_2d backend.
     const std::span<const int> contype =
@@ -318,8 +354,18 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
 
 void TireWriter::reset() {
     states_ = {};
-    snapshots_.fill(std::nullopt);
-    diagnostics_.fill(std::nullopt);
+    // Copy-assign from a const empty (not fill(std::nullopt)/move-assign):
+    // the empty source keeps every destination's patch vector and surface
+    // string capacity — the committed slots stay construction-sized for
+    // the marked commit, and `committed_` carries the observable
+    // "empty until the first advancing compute" state.
+    static const TireSnapshot empty_snapshot;
+    static const TireDiagnostics empty_diagnostics{};
+    for (TireSnapshot &snap: snapshots_)
+        snap = empty_snapshot;
+    for (TireDiagnostics &diag: diagnostics_)
+        diag = empty_diagnostics;
+    committed_ = false;
     elastic_energy_j_ = 0.;
     brush_loss_step_j_ = 0.;
     radial_dissipation_power_w_ = 0.;
@@ -522,7 +568,60 @@ std::vector<double> TireWriter::state() const {
 // Caller precondition: `d` is the live mjData of the model this writer
 // was built on, driven by the single owning Stepper — no model/data
 // pairing check is derivable from widths here.
-std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
+void TireWriter::compute_into(const mjData *d, double dt,
+                              std::span<double> out) {
+    if (d == nullptr)
+        throw std::invalid_argument("tire compute needs a live mjData");
+    if (out.size() != static_cast<std::size_t>(nv_) ||
+        (out.data() == nullptr && !out.empty()))
+        throw std::invalid_argument("tire output width");
+    accumulate_validated(d, dt, out);
+}
+
+// The warm-core twin of compute_into: the same precondition gates plus
+// the interval/double-advance gates report CoreStatus::invalid_input
+// instead of throwing, and residual kernel rejections are caught and
+// mapped so no exception escapes — noexcept is proved by the catch-all.
+// The kernel's own throw construction stays on the failure path only.
+// biketyre::ProfileQuery::contact now refills its construction-sized
+// member scratch, so a valid tick allocates nothing end to end and this
+// entry carries BIKE_NONBLOCKING (declared in tire.hpp).
+CoreStatus TireWriter::try_compute_into(const mjData *d, double dt,
+                                        std::span<double> out) noexcept {
+    if (d == nullptr || out.size() != static_cast<std::size_t>(nv_) ||
+        (out.data() == nullptr && !out.empty()) ||
+        !std::isfinite(dt) || dt <= 0.0 ||
+        (last_time_s_.has_value() &&
+         static_cast<double>(d->time) <= *last_time_s_))
+        return CoreStatus::invalid_input;
+    try {
+        accumulate_validated(d, dt, out);
+    } catch (const std::bad_alloc &) {
+        return CoreStatus::engine_failure;
+    } catch (const engine::EngineFailure &) {
+        // EngineFailure derives std::exception — it must be caught before
+        // the generic mapping classifies an engine error as bad input.
+        return CoreStatus::engine_failure;
+    } catch (const std::exception &) {
+        return CoreStatus::invalid_input;
+    } catch (...) {
+        return CoreStatus::engine_failure;
+    }
+    return CoreStatus::ok;
+}
+
+std::vector<double> TireWriter::qfrc(const mjData *d, double dt) {
+    compute_into(d, dt, qfrc_out_);
+    return qfrc_out_;
+}
+
+// Extracted unchanged from the original qfrc() body — including the
+// interval/double-advance gates, the model-table require_id guards, and
+// the derived() overflow gates, whose exception types are part of the
+// observable contract. The staged snapshot/diagnostics locals became the
+// persistent stage members; the commit at the end is unchanged.
+void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
+                                      std::span<double> out) {
     // tire_forces.py:125-131 — scalar(dt,'tire interval',positive=True)
     // and the double-advance gate precede all force work.
     if (!std::isfinite(dt_arg) || dt_arg <= 0.0)
@@ -534,18 +633,15 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
             "tire state can advance only once per increasing timestamp");
     // backend != 'compliant_2d' is rejected by the config reader, so the
     // zero-return path (line 129-131) is unreachable here.
-    std::vector<double> qfrc(static_cast<std::size_t>(nv_), 0.0);
+    std::ranges::fill(out, 0.0);
     double energy = 0.0, loss = 0.0, radial_loss_power = 0.0;
     std::array<BrushState, 2> new_states;
-    std::array<std::optional<TireSnapshot>, 2> snapshots;
-    std::array<std::optional<TireDiagnostics>, 2> diagnostics;
     const std::span<const mjtNum> xpos = model_access::readonly_buffer(
         d->geom_xpos, model_access::kXYZ * m_->ngeom);
     const std::span<const mjtNum> qvel =
             model_access::readonly_buffer(d->qvel, m_->nv);
     const double normal_cosine = std::cos(
         cfg_.distinct_normal_deg * (std::numbers::pi / 180.0));
-    std::vector<double> tmp(static_cast<std::size_t>(nv_));
     for (std::size_t s = 0; s < 2; ++s) {
         const nativecfg::TireParams &pcfg =
                 s == 0 ? cfg_.front : cfg_.rear;
@@ -617,9 +713,11 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
                 xi = transported;
             }
         }
-        // effective_friction (tire_forces.py:56-61).
+        // effective_friction (tire_forces.py:56-61). material_name stays
+        // a view — assigning it into the persistent diagnostics stage
+        // reuses string capacity instead of building a fresh string.
         double mu = std::numeric_limits<double>::quiet_NaN();
-        std::string material_name;
+        std::string_view material_name;
         if (!surface_map_) {
             mu = pcfg.mu;
             material_name = "configured";
@@ -643,25 +741,32 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
         blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
                     model_access::kXYZ, nv_, 1.0,
                     jac_contact_.data(), nv_, force_world.data(), 1, 0.0,
-                    tmp.data(), 1);
+                    tmp_.data(), 1);
         for (int i = 0; i < nv_; ++i)
-            qfrc[static_cast<std::size_t>(i)] +=
-                    tmp[static_cast<std::size_t>(i)];
+            out[static_cast<std::size_t>(i)] +=
+                    tmp_[static_cast<std::size_t>(i)];
         // WheelContactSnapshot args evaluate before __post_init__ checks:
         // the patch tuple (tire_forces.py:212) and interval_id(time, dt)
         // (line 215) run first — the helper owns the S4 interval domain
         // (finite nonnegative time, finite positive dt), FE-mode-
         // independent half-even rounding, and the exact int64 bound —
         // then the snapshot's own time/interval validation runs.
-        snapshots[s].emplace();
-        TireSnapshot &snap = engaged(snapshots[s]);
+        // The persistent stage slot replaces the per-tick emplace —
+        // patches.clear() gives the fresh-vector starting state while
+        // retaining construction-reserved capacity.
+        TireSnapshot &snap = snapshot_stage_[s];
+        snap.patches.clear();
         snap.time_s = time;
         snap.backend = "compliant_2d";
         snap.geometric_contact = contact.delta > 0.0;
         snap.wheel_axis_m = center;
-        if (contact.delta > 0.0)
+        if (contact.delta > 0.0) {
+            if (snap.patches.size() >= kMaxSnapshotPatches)
+                throw std::invalid_argument(
+                    "tire snapshot patch capacity exceeded");
             snap.patches.push_back(
                 make_patch(p, n, normal, force, slip));
+        }
         snap.interval_id = interval_clock::interval_id(time, dt);
         // WheelContactSnapshot.__post_init__ (contact_state.py:90-113).
         if (!std::isfinite(time) || time < 0.0)
@@ -681,37 +786,43 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
                 contact.delta > 0.0 ? std::max(radial_loss, 0.0) : 0.0;
         energy += radial_energy + 0.5 * tk * xi_new * xi_new;
         loss += std::max(release_loss, 0.0) + brush_loss;
-        // diagnostics[side] (tire_forces.py:190-199).
-        const TireDiagnostics diag = {
-            .multi_support = contact.multi_support,
-            .penetration_m = contact.delta,
-            .normal_speed_mps = -delta_dot,
-            .slip_mps = slip,
-            .normal_load_n = normal,
-            .tangent_force_n = force,
-            .friction_coefficient = mu,
-            .surface = material_name,
-            .branch_release_loss_j = std::max(release_loss, 0.0),
-            .brush_loss_j = brush_loss,
-            .radial_energy_j = radial_energy,
-            .shear_energy_j = 0.5 * tk * xi_new * xi_new,
-            .outside_material_load_range = !(pcfg.material.valid_load_range_n[0] <= normal &&
-                                             normal <= pcfg.material.valid_load_range_n[1]),
-        };
-        diagnostics[s] = diag;
+        // diagnostics[side] (tire_forces.py:190-199) — written field by
+        // field into the persistent stage slot so its `surface` string
+        // keeps capacity across ticks.
+        TireDiagnostics &diag = diagnostics_stage_[s];
+        diag.multi_support = contact.multi_support;
+        diag.penetration_m = contact.delta;
+        diag.normal_speed_mps = -delta_dot;
+        diag.slip_mps = slip;
+        diag.normal_load_n = normal;
+        diag.tangent_force_n = force;
+        diag.friction_coefficient = mu;
+        diag.surface = material_name;
+        diag.branch_release_loss_j = std::max(release_loss, 0.0);
+        diag.brush_loss_j = brush_loss;
+        diag.radial_energy_j = radial_energy;
+        diag.shear_energy_j = 0.5 * tk * xi_new * xi_new;
+        diag.outside_material_load_range = !(pcfg.material.valid_load_range_n[0] <= normal &&
+                                             normal <= pcfg.material.valid_load_range_n[1]);
         new_states[s] = {.xi = xi_new, .tangent = tangent, .point = p, .segment = contact.segment_id, .center = center};
     }
     // Commit persistent state only after both wheels evaluate successfully
-    // (tire_forces.py:201-205).
-    validation::derived_array(qfrc, "TireWriter.qfrc");
+    // (tire_forces.py:201-205). The stage members copy-assign into the
+    // committed slots — capacity-reserved at construction, so the marked
+    // path never allocates — and `committed_` flips the observable
+    // published state. A throwing evaluation still never mutates the
+    // published state.
+    validation::derived_array(out, "TireWriter.qfrc");
     for (const double value: {energy, loss, radial_loss_power})
         validation::derived(value, "TireWriter.energy_or_power");
     states_ = new_states;
-    snapshots_ = std::move(snapshots);
-    diagnostics_ = std::move(diagnostics);
+    for (std::size_t s = 0; s < 2; ++s) {
+        snapshots_[s] = snapshot_stage_[s];
+        diagnostics_[s] = diagnostics_stage_[s];
+    }
+    committed_ = true;
     elastic_energy_j_ = energy;
     brush_loss_step_j_ = loss;
     radial_dissipation_power_w_ = radial_loss_power;
     last_time_s_ = time;
-    return qfrc;
 }

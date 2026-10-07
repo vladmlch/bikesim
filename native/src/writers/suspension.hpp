@@ -8,11 +8,15 @@
 
 #include <mujoco/mujoco.h>
 
+#include <cstddef>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "../config_types.hpp"
+#include "../rtsan.hpp"
+#include "writer_types.hpp"
 
 class SuspensionWriter {
 public:
@@ -24,10 +28,40 @@ public:
 
     using Component = std::pair<std::string, std::vector<double> >;
 
+    // Insertion-order component counts ('shock_hbo' exists only in
+    // physical mode) — construction-time constants like the Python dict.
+    static constexpr std::size_t kLegacyComponentCount = 7;
+    static constexpr std::size_t kPhysicalComponentCount = 8;
+
     // compute_qfrc_components: nv-vectors in the Python dict's insertion
     // order ('shock_hbo' last, physical mode only). The result depends
     // only on d->qpos/d->qvel at the two slide coordinates.
     [[nodiscard]] std::vector<Component> components(const mjData *d) const;
+
+    // R1 allocation-free face. components_into fills `out` with one
+    // ForceComponentView per named component — 7 legacy / 8 physical
+    // views in components()' insertion order, each
+    // ForceKind::suspension — over
+    // persistent member storage valid until the next compute.
+    // components_into is the checked convenience boundary:
+    // std::invalid_argument on a null mjData or wrong view count, then
+    // components()' arithmetic verbatim. try_components_into is the
+    // prevalidated warm-core entry: same preconditions through
+    // CoreStatus, no throw/string construction or allocation in its own
+    // code (residual kernel rejections are caught and mapped — see the
+    // .cpp), so it is proved noexcept.
+    void components_into(const mjData *d,
+                         std::span<ForceComponentView> out) const;
+    [[nodiscard]] CoreStatus
+    try_components_into(const mjData *d, std::span<ForceComponentView> out)
+            const noexcept BIKE_NONBLOCKING;
+
+    // The serialized component names in components()' insertion order —
+    // a prefix sized to the active physics mode (7 legacy / 8 physical).
+    // Stepper's boxed convenience surface serializes views under these
+    // names instead of calling the allocating components().
+    [[nodiscard]] std::span<const std::string_view>
+    component_names() const noexcept;
 
 private:
     nativecfg::SuspensionConfig cfg_;
@@ -40,4 +74,19 @@ private:
     // computed and validated inside components(), but nothing outside that
     // call ever read the stored copy — every components() call is
     // scratch-free and const in observable effect.
+
+    // components()'s arithmetic verbatim on the member component buffers
+    // — the scalar pipeline, the derived() validation, then per name the
+    // zero-fill + negated dofadr write. Kept throwing so both boundaries
+    // share one kernel and the original rejection types reach the caller.
+    void compute_validated(const mjData *d) const;
+
+    // Publish the insertion-ordered views over the member components.
+    // noexcept: spans over construction-sized storage only.
+    void export_views(std::span<ForceComponentView> out) const noexcept;
+
+    // The per-call component nv-vectors — construction-sized (7 legacy /
+    // 8 physical entries of nv each), rewritten in place every compute.
+    // export_views borrows them, so they must never resize.
+    mutable std::vector<std::vector<double> > components_;
 };

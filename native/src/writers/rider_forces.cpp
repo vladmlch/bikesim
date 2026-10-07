@@ -4,9 +4,12 @@
 // same two-argument keep-first-on-tie semantics, including the NaN cases.
 #include "rider_forces.hpp"
 #include "../config_validation.hpp"
+#include "../engine_call.hpp"
 #include "../model_access.hpp"
 
 #include <algorithm>
+#include <exception>
+#include <new>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -64,19 +67,69 @@ RiderForcesWriter::RiderForcesWriter(const mjModel *m,
         });
         last_.push_back({.force_n = 0.0, .gap_m = 0.0});
     }
+    // R1: the boxing surface's zeros(nv) buffer is construction-sized —
+    // per-tick compute fills this capacity instead of allocating.
+    out_.resize(static_cast<std::size_t>(nv_));
 }
 
 // Caller precondition (raw boundary): `d` is the live mjData of the model
 // this writer was built on, driven by the single owning Stepper — widths
 // are validated, model/data pairing is not derivable from them.
+void RiderForcesWriter::compute_into(const mjData *d,
+                                     std::span<double> out) const {
+    if (d == nullptr)
+        throw std::invalid_argument(
+            "rider compute needs a live mjData");
+    if (out.size() != static_cast<std::size_t>(nv_) ||
+        (out.data() == nullptr && !out.empty()))
+        throw std::invalid_argument("rider output width");
+    accumulate_validated(d, out);
+}
+
+// The warm-core twin of compute_into: the same precondition gates report
+// CoreStatus::invalid_input instead of throwing, and residual kernel
+// rejections (model-table guards, non-finite derived values) are caught
+// and mapped so no exception escapes — noexcept is proved by the
+// catch-all. The kernel's own throw construction stays on the failure
+// path only; a valid tick allocates nothing.
+CoreStatus RiderForcesWriter::try_compute_into(const mjData *d,
+                                               std::span<double> out) const noexcept {
+    if (d == nullptr || out.size() != static_cast<std::size_t>(nv_) ||
+        (out.data() == nullptr && !out.empty()))
+        return CoreStatus::invalid_input;
+    try {
+        accumulate_validated(d, out);
+    } catch (const std::bad_alloc &) {
+        return CoreStatus::engine_failure;
+    } catch (const engine::EngineFailure &) {
+        // EngineFailure derives std::exception — it must be caught before
+        // the generic mapping classifies an engine error as bad input.
+        return CoreStatus::engine_failure;
+    } catch (const std::exception &) {
+        return CoreStatus::invalid_input;
+    } catch (...) {
+        return CoreStatus::engine_failure;
+    }
+    return CoreStatus::ok;
+}
+
 std::vector<double> RiderForcesWriter::qfrc(const mjData *d) const {
+    compute_into(d, out_);
+    return out_;
+}
+
+// Extracted unchanged from the original qfrc() body — including the
+// model-table require_id guards and the derived() overflow gates, whose
+// exception types are part of the observable contract.
+void RiderForcesWriter::accumulate_validated(const mjData *d,
+                                             std::span<double> out) const {
     // rider_forces.py:151-154 — apply(): reads qpos/qvel only; assign, not
     // accumulate.
     const std::span<const mjtNum> qpos =
             model_access::readonly_buffer(d->qpos, nq_);
     const std::span<const mjtNum> qvel =
             model_access::readonly_buffer(d->qvel, nv_);
-    std::vector<double> out(static_cast<std::size_t>(nv_), 0.0);
+    std::ranges::fill(out, 0.0);
     for (std::size_t i = 0; i < paths_.size(); ++i) {
         const Path &p = paths_[i];
         Telemetry &t = last_[i];
@@ -104,5 +157,4 @@ std::vector<double> RiderForcesWriter::qfrc(const mjData *d) const {
         }
         out[static_cast<std::size_t>(p.dofadr)] = t.force_n;
     }
-    return out;
 }

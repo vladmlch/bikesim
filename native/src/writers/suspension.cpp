@@ -6,15 +6,20 @@
 // Python's two-argument builtins element-for-element (incl. ±0/NaN cases).
 #include "suspension.hpp"
 #include "../config_validation.hpp"
+#include "../engine_call.hpp"
 #include "../model_access.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <exception>
 #include <limits>
 #include <format>
+#include <new>
 #include <numbers>
 #include <span>
 #include <stdexcept>
+#include <string_view>
 #include <tuple>
 
 #include "pyfloat.hpp"
@@ -310,6 +315,16 @@ namespace {
         nativecfg::validate(config);
         return config;
     }
+
+    // compute_qfrc_components' dict keys in insertion order — serialized
+    // only at the Python-boxing surface; the typed interface carries
+    // ForceKind::suspension instead.
+    constexpr std::array<std::string_view,
+                         SuspensionWriter::kPhysicalComponentCount>
+            kComponentNames = {
+        "fork_spring", "fork_damper", "shock_coil", "shock_bumper",
+        "shock_damper", "shock_top_out", "shock_upper_stop", "shock_hbo"
+    };
 } // namespace
 
 SuspensionWriter::SuspensionWriter(const mjModel *m,
@@ -360,13 +375,86 @@ SuspensionWriter::SuspensionWriter(const mjModel *m,
           h.total_stroke_mm - h.hbo_start_mm <= h.total_stroke_mm))
         throw std::invalid_argument(
             "shock HBO zone must be positive and no longer than stroke");
+
+    // R1: the former per-call component nv-vectors are construction-sized
+    // members — compute fills this capacity, never resizes.
+    components_.resize(physical_ ? kPhysicalComponentCount
+                                 : kLegacyComponentCount);
+    for (std::vector<double> &v: components_)
+        v.assign(static_cast<std::size_t>(nv_), 0.0);
 }
 
 // Caller precondition (raw boundary): `d` is the live mjData of the model
 // this writer was built on, driven by the single owning Stepper — widths
 // are validated, model/data pairing is not derivable from them.
+void SuspensionWriter::components_into(const mjData *d,
+                                       std::span<ForceComponentView> out) const {
+    if (d == nullptr)
+        throw std::invalid_argument(
+            "suspension compute needs a live mjData");
+    if (out.size() != components_.size())
+        throw std::invalid_argument("suspension component view count");
+    compute_validated(d);
+    export_views(out);
+}
+
+// The warm-core twin of components_into: the same precondition gates
+// report CoreStatus::invalid_input instead of throwing, and residual
+// kernel rejections are caught and mapped so no exception escapes —
+// noexcept is proved by the catch-all. The kernel's own throw
+// construction stays on the failure path only; a valid tick allocates
+// nothing.
+CoreStatus SuspensionWriter::try_components_into(
+        const mjData *d, std::span<ForceComponentView> out) const noexcept {
+    if (d == nullptr || out.size() != components_.size())
+        return CoreStatus::invalid_input;
+    try {
+        compute_validated(d);
+    } catch (const std::bad_alloc &) {
+        return CoreStatus::engine_failure;
+    } catch (const engine::EngineFailure &) {
+        // EngineFailure derives std::exception — it must be caught before
+        // the generic mapping classifies an engine error as bad input.
+        return CoreStatus::engine_failure;
+    } catch (const std::exception &) {
+        return CoreStatus::invalid_input;
+    } catch (...) {
+        return CoreStatus::engine_failure;
+    }
+    export_views(out);
+    return CoreStatus::ok;
+}
+
+std::span<const std::string_view>
+SuspensionWriter::component_names() const noexcept {
+    return std::span<const std::string_view>(kComponentNames)
+            .first(components_.size());
+}
+
+void SuspensionWriter::export_views(
+        std::span<ForceComponentView> out) const noexcept {
+    for (std::size_t i = 0; i < components_.size(); ++i)
+        out[i] = {.kind = ForceKind::suspension, .values = components_[i]};
+}
+
+// Python-boxed surface: the typed compute plus the named-component copy —
+// identical values and insertion order to the original components().
 std::vector<SuspensionWriter::Component>
 SuspensionWriter::components(const mjData *d) const {
+    compute_validated(d);
+    std::vector<Component> out;
+    out.reserve(components_.size());
+    for (std::size_t i = 0; i < components_.size(); ++i)
+        out.emplace_back(std::string(kComponentNames[i]), components_[i]);
+    return out;
+}
+
+// Extracted unchanged from the original components() body — including the
+// model-table require_id guards and the derived() overflow gates, whose
+// exception types are part of the observable contract. The `vector`
+// lambda's zero+negated-write fills the persistent member buffers in the
+// same insertion order.
+void SuspensionWriter::compute_validated(const mjData *d) const {
     // forces.py:127-131 — SuspensionController.compute_fork_force
     // (controllers.py:32-42). counted spans, not raw indexing
     // (-Wunsafe-buffer-usage).
@@ -460,25 +548,22 @@ SuspensionWriter::components(const mjData *d) const {
         validation::derived(value, "SuspensionWriter.force_or_energy");
 
     // vector(dofadr, force) — compression-positive coordinates take the
-    // negated force (forces.py:189-192).
-    const auto vector = [this](int dofadr, double force_n) {
-        std::vector<double> qfrc(static_cast<std::size_t>(nv_), 0.0);
+    // negated force (forces.py:189-192). The member buffer takes the same
+    // zero-fill + negated write as the original fresh vector.
+    const auto vector = [this](std::size_t slot, // NOLINT(bugprone-easily-swappable-parameters) slot+dofadr order is pinned by the call sites below
+                               int dofadr, double force_n) {
+        std::vector<double> &qfrc = components_[slot];
+        std::ranges::fill(qfrc, 0.0);
         qfrc[static_cast<std::size_t>(dofadr)] = -force_n;
-        return qfrc;
     };
 
-    std::vector<Component> out;
-    out.reserve(physical_ ? 8 : 7);
-    out.emplace_back("fork_spring", vector(fork_dofadr_, fork_spring));
-    out.emplace_back("fork_damper", vector(fork_dofadr_, fork_damper));
-    out.emplace_back("shock_coil", vector(shock_dofadr_, shock_spring));
-    out.emplace_back("shock_bumper", vector(shock_dofadr_, shock_bumper));
-    out.emplace_back("shock_damper",
-                     vector(shock_dofadr_, shock_damper - shock_hbo));
-    out.emplace_back("shock_top_out", vector(shock_dofadr_, shock_top_out));
-    out.emplace_back("shock_upper_stop",
-                     vector(shock_dofadr_, shock_upper_stop));
+    vector(0, fork_dofadr_, fork_spring);
+    vector(1, fork_dofadr_, fork_damper);
+    vector(2, shock_dofadr_, shock_spring);
+    vector(3, shock_dofadr_, shock_bumper);
+    vector(4, shock_dofadr_, shock_damper - shock_hbo);
+    vector(5, shock_dofadr_, shock_top_out);
+    vector(6, shock_dofadr_, shock_upper_stop);
     if (physical_)
-        out.emplace_back("shock_hbo", vector(shock_dofadr_, shock_hbo));
-    return out;
+        vector(7, shock_dofadr_, shock_hbo);
 }

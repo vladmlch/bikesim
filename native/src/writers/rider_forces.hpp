@@ -12,9 +12,12 @@
 
 #include <mujoco/mujoco.h>
 
+#include <span>
 #include <vector>
 
 #include "../config_types.hpp"
+#include "../rtsan.hpp"
+#include "writer_types.hpp"
 
 class RiderForcesWriter {
 public:
@@ -29,6 +32,19 @@ public:
     // buffer is zeroed before apply and touched by no other writer in
     // between). Pure for d.
     [[nodiscard]] std::vector<double> qfrc(const mjData *d) const;
+
+    // R1 allocation-free face. compute_into is the checked convenience
+    // boundary — std::invalid_argument on a null sink, a null mjData, or a
+    // wrong output width — then runs qfrc()'s arithmetic verbatim on the
+    // caller-owned span. try_compute_into is the prevalidated warm-core
+    // entry: identical preconditions reported through CoreStatus, and no
+    // throw/string construction or allocation in its own code (residual
+    // kernel rejections are caught and mapped — see the .cpp), so the
+    // function is proved noexcept.
+    void compute_into(const mjData *d, std::span<double> out) const;
+    [[nodiscard]] CoreStatus
+    try_compute_into(const mjData *d, std::span<double> out)
+            const noexcept BIKE_NONBLOCKING;
 
 private:
     // _JointPath.__slots__ resolved: the body's spring params, the joint's
@@ -52,7 +68,17 @@ private:
         double force_n = 0.0, gap_m = 0.0;
     };
 
+    // qfrc()'s body verbatim on caller-owned storage: zero-fill, then the
+    // per-path spring-damper dofadr writes (assign, not accumulate) and
+    // the live last_ telemetry updates. Kept throwing so both boundaries
+    // share one kernel and the original rejection types reach the caller.
+    void accumulate_validated(const mjData *d, std::span<double> out) const;
+
     std::vector<Path> paths_;
     mjtSize nq_ = 0, nv_ = 0;
     mutable std::vector<Telemetry> last_;
+    // qfrc()'s output buffer — the former per-call zeros(nv) vector moved
+    // to a construction-sized member; compute_into fills it, the returned
+    // copy is the Python-boxing allocation. Never resized per tick.
+    mutable std::vector<double> out_;
 };

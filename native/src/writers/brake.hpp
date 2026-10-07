@@ -10,9 +10,13 @@
 
 #include <mujoco/mujoco.h>
 
+#include <cstddef>
+#include <span>
 #include <utility>
 
 #include "../config_types.hpp"
+#include "../rtsan.hpp"
+#include "writer_types.hpp"
 
 class BrakeWriter {
 public:
@@ -34,6 +38,22 @@ public:
     // the resolved actuator addresses, front first.
     void apply(mjData *d, double front_demand, double rear_demand) const;
 
+    // R1 allocation-free face. compute_into writes the (front, rear)
+    // torque pair into caller storage — the checked convenience boundary,
+    // std::invalid_argument on a null sink/mjData or wrong width — then
+    // runs torques()' arithmetic verbatim. try_compute_into is the
+    // prevalidated warm-core entry: same preconditions through CoreStatus,
+    // no throw/string construction or allocation in its own code
+    // (residual kernel rejections are caught and mapped — see the .cpp),
+    // so it is proved noexcept.
+    static constexpr std::size_t kTorqueCount = 2;
+    void compute_into(const mjData *d, double front_demand,
+                      double rear_demand, std::span<double> out) const;
+    [[nodiscard]] CoreStatus
+    try_compute_into(const mjData *d, double front_demand,
+                     double rear_demand,
+                     std::span<double> out) const noexcept BIKE_NONBLOCKING;
+
 private:
     // WheelSpin fields; radius_m is resolved but unused by compute (see ctor
     // comment).
@@ -44,6 +64,12 @@ private:
 
     double wheel_torque(const mjData *d, const WheelSpin &wheel,
                         double demand) const;
+
+    // torques()' body verbatim on caller-owned storage: front wheel first,
+    // like the Python source. Kept throwing so both boundaries share one
+    // kernel and the original rejection types reach the caller.
+    void accumulate_validated(const mjData *d, double front_demand,
+                              double rear_demand, std::span<double> out) const;
 
     nativecfg::BrakeConfig cfg_;
     mjtSize nv_ = 0, nu_ = 0;

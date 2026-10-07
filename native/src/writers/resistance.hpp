@@ -9,12 +9,15 @@
 
 #include <mujoco/mujoco.h>
 
+#include <cstddef>
 #include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "../config_types.hpp"
+#include "../rtsan.hpp"
+#include "writer_types.hpp"
 
 // One side's tire snapshot, flattened for the binding boundary: the fields
 // compute_components reads (per-patch normal_load_n / working_surface in
@@ -42,6 +45,34 @@ public:
         const mjData *d, const TireSideInput &front,
         const TireSideInput &rear) const;
 
+    // R1 allocation-free face. components_into fills `out` with one
+    // ForceComponentView per named component — kComponentCount views in
+    // compute_components' insertion order, each ForceKind::resistance —
+    // over persistent member storage valid until the next compute.
+    // components_into is the checked convenience boundary:
+    // std::invalid_argument on a null mjData or wrong view count, then
+    // components()' arithmetic verbatim. try_components_into is the
+    // prevalidated warm-core entry: same preconditions (plus the
+    // per-side patch-shape gate) through CoreStatus, no throw/string
+    // construction or allocation in its own code (residual kernel
+    // rejections are caught and mapped — see the .cpp), so it is proved
+    // noexcept.
+    static constexpr std::size_t kComponentCount = 2;
+    void components_into(const mjData *d, const TireSideInput &front,
+                         const TireSideInput &rear,
+                         std::span<ForceComponentView> out) const;
+    [[nodiscard]] CoreStatus
+    try_components_into(const mjData *d, const TireSideInput &front,
+                        const TireSideInput &rear,
+                        std::span<ForceComponentView> out)
+            const noexcept BIKE_NONBLOCKING;
+
+    // The serialized component names in compute_components' insertion
+    // order — Stepper's boxed convenience surface serializes views under
+    // these names instead of calling the allocating components().
+    [[nodiscard]] static std::span<const std::string_view>
+    component_names() noexcept;
+
 private:
     const mjModel *m_ = nullptr; // non-owning; the Stepper outlives the writer
     nativecfg::ResistanceConfig cfg_;
@@ -58,4 +89,23 @@ private:
     // writer across contexts requires external synchronization outside
     // realtime code.
     mutable std::vector<mjtNum> jr_, jp_;
+
+    // components()'s arithmetic verbatim on the member buffers — the
+    // patch-shape gate, rolling-moment and drag computation, and the
+    // derived() validation — filling rolling_/aerodynamic_ (row_ is the
+    // shared per-side row). Kept throwing so both boundaries share one
+    // kernel and the original rejection types reach the caller.
+    void compute_validated(const mjData *d, const TireSideInput &front,
+                           const TireSideInput &rear) const;
+
+    // Publish the insertion-ordered views over the member components.
+    // noexcept: spans over construction-sized storage only.
+    void export_views(std::span<ForceComponentView> out) const noexcept;
+
+    // The per-call 'rolling'/'aerodynamic'/per-side 'row' vectors of
+    // compute_components — construction-sized (nv), rewritten in place
+    // every compute. export_views borrows rolling_/aerodynamic_, so they
+    // must never resize; row_ is shared scratch fully overwritten by
+    // each side's gemv (beta = 0).
+    mutable std::vector<double> rolling_, aerodynamic_, row_;
 };

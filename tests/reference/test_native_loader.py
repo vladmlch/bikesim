@@ -440,6 +440,9 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'cblas_and_norm',
         'closed_mode_enums',
         'force_component_layout',
+        'warm_core_zero_allocation',
+        'rtsan_invalid_status_control',
+        'warm_allocation_matrix',
     ]
 
 

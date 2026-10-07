@@ -232,7 +232,9 @@ uv run cmake --build native/build/rtsan -j4
 NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native
 ```
 
-`Stepper::step`/`forward` carry `BIKE_NONBLOCKING` (rtsan.hpp); the full
+`Stepper::try_step`/`try_forward` and every writer `try_*`/`try_*_into`
+warm-core entry carry `BIKE_NONBLOCKING` (rtsan.hpp); the throwing
+`step`/`forward` wrappers reach the marked functions underneath. The full
 native suite runs under RTSan with zero reports — mj_step/mj_forward are
 verified allocation-free. Marked functions that start allocating abort the
 test with a report.
@@ -823,3 +825,243 @@ UV_CACHE_DIR=/private/tmp/e1-uv NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.
 F2 is ready for root review/integration. No child commit was made. The user
 requested a stop before the next task, so no F3/F4/F5/E/C/R task follows this
 handoff. E1 and the master final full gate remain open.
+
+## R1 warm-core allocation contract and realtime measurement
+
+R1 removes the per-tick C++ allocations earlier phases sized but still
+performed. Each marked warm-core entry point is `noexcept`, returns
+`CoreStatus` instead of throwing, and carries `BIKE_NONBLOCKING`
+(`native/src/rtsan.hpp`, `[[clang::nonblocking]]` under RTSan-capable
+Clang, empty otherwise):
+
+| Marked entry | Status surface |
+|---|---|
+| `SuspensionWriter::try_components_into` | `ok`, `invalid_input` |
+| `BrakeWriter::try_compute_into` | `ok`, `invalid_input` |
+| `ResistanceWriter::try_components_into` | `ok`, `invalid_input` |
+| `RiderForcesWriter::try_compute_into` | `ok`, `invalid_input` |
+| `TireWriter::try_compute_into` | `ok`, `invalid_input` |
+| `drivetrain::DrivetrainWriter::try_components_into` | `ok`, `invalid_input`, `invalid_geometry`, `pending_actuation` |
+| `Stepper::try_step` / `Stepper::try_forward` | engine `ErrorBuffer` (fixed storage) |
+| `DrivetrainWriter::stage_settle` + `commit(PreparedSettlement&)` | the settlement pair the binding interleaves; the commit is `noexcept`, the stage can still reject |
+
+The throwing convenience surfaces (`components()`, `qfrc()`, `torques()`,
+the boxed `Stepper` methods) route through the same `*_into` writers over
+construction-sized member scratch (`Stepper::suspension_views_`,
+`resistance_views_`, `tire_out_`, `rider_out_`); their only allocation is
+the returned boxed object. Writer scratch is sized at construction:
+`ProfileQuery` owns its candidate/keep-mask/near/normal/dot vectors, the
+tire writer owns output/Jacobian/staging buffers, and the drivetrain owns
+two alternating tick banks plus two settlement banks whose candidate
+slots engage once.
+
+### Allocation counters
+
+`native/tests/allocation_faults.{hpp,cpp}` overrides the throwing global
+`new`/`delete` forms in the contract executable only — never in a shipped
+target. Two thread-local counters record every scalar, array, aligned,
+sized, and sized-aligned call; allocation attempts count even when they
+throw, and delete calls count including null releases.
+
+**Counter scope boundary:** the counters see C++ `operator new`/`delete`
+only. MuJoCo's internal `mju_malloc`/`mju_free` calls — in particular the
+scratch-model copies inside `mj_copyModel` — are C allocations outside
+counter scope. RTSan, by contrast, intercepts the malloc family, so a
+path can show zero on the matrix yet still trip a realtime check.
+
+### Contract cases
+
+`native_contract_tests` registers three R1 cases (all also listed in
+`tests/reference/test_native_loader.py`):
+
+- `warm_core_zero_allocation` — a suspension(physical)+tire(track) rig on
+  a bump-terrain model runs four warm ticks through every marked entry
+  plus the advance/settle pair, then one tick over a changing contact
+  (frame moved across the bump edge inside scratch extents). Zero
+  allocation/deallocation activity is required.
+- `rtsan_invalid_status_control` — every declared `CoreStatus` control
+  flow (invalid_input gates on every writer, the drivetrain's
+  pending_actuation, double-advance and invalid_geometry paths) must
+  return through the status value with zero allocation/deallocation.
+  Assertion text is built lazily so it cannot contaminate the measured
+  window. This is the always-on twin of the RTSan build's coverage.
+- `warm_allocation_matrix` — the matrix below.
+
+### Allocation matrix
+
+`warm_allocation_matrix` measures each writer/topology combination across
+construction, warmup, core rows, operation rows, and the boxed row. Core
+rows assert zero allocation **and** zero deallocation;
+construction/warmup/op/boxed rows are recorded, not asserted. Observed
+counts (Apple clang 21, arm64, `native/build`):
+
+| Row | allocs (frees) | Claim |
+|---|---|---|
+| drive/*/core_advance, core_probe, core_settle | 0 (0) | asserted zero |
+| drive/geometric_ideal_mid_drive/core_advance_coefficient_delta | 0 (0) | recorded — see limitations |
+| drive/elastic_chain op_reset / op_restore | 0 / 1 (1) | recorded — out of claim |
+| drive/ideal_mid_drive op_reset / op_restore | 1 / 4 (5) | recorded — out of claim |
+| drive/geometric_ideal_mid_drive op_reset / op_restore | 7 / 10 (13) | recorded — out of claim |
+| drive/*/boxed | 0 (0–2 freed) | recorded — boxed surface |
+| suspension_legacy core / boxed | 0 / 8 (8) | core asserted, boxed recorded |
+| suspension_physical core / boxed | 0 / 9 (9) | core asserted, boxed recorded |
+| brake core / boxed | 0 / 0 | core asserted, boxed recorded |
+| resistance core / boxed | 0 / 5 (5) | core asserted, boxed recorded |
+| rider core / boxed | 0 / 1 (1) | core asserted, boxed recorded |
+| tire_configured, tire_track core / boxed | 0 / 1 (1) | core asserted, boxed recorded |
+| engine/forward | 0 (0) | asserted zero |
+| */construction | nonzero | recorded — scratch and first-engagement sizing live here |
+| drive/ideal_mid_drive, drive/geometric_ideal_mid_drive warmup | 1 (0) | recorded — see multipliers limitation |
+| all other */warmup | 0 (0) | recorded — the committed-slot storage below never engages inside marked code |
+
+Warmup rows are unasserted, but after the lazy-engagement fixes below
+every warmup is C++-quiet except one: `Transmission::multipliers_` grows
+once from its `njmax` construction hint to the observed `nefc` inside
+`stage_solved_into` (`native/src/drivetrain/transmission.cpp`,
+"assign() grows once to the observed extent"). That grow lives in
+`stage_settle` — an unmarked stage entry, not a `BIKE_NONBLOCKING`
+function — so the RTSan sweep is silent on it; the asserted
+`core_settle` row still measures zero.
+
+Two warmup cycles per fixture are required: the drivetrain alternates its
+tick and settlement banks, so each bank's candidate slot engages once
+before steady state.
+
+### Lazy-engagement fixes (RTSan-found)
+
+RTSan flagged what the C++ counters could not: a `malloc` inside the
+marked `TireWriter::try_compute_into` on its first call — the committed
+`snapshots_`/`diagnostics_` optionals were intentionally disengaged until
+the first advancing compute (the observable `tire_snapshots() == {}`
+contract), so first engagement constructed the patch vector and surface
+string inside the marked path. The same first-commit shape existed in the
+drivetrain:
+
+- `TireWriter` keeps the committed slots engaged for life behind a
+  `committed_` flag; the accessors project `nullopt`/value from that
+  flag. `patches` reserves `kMaxSnapshotPatches` and `diagnostics.surface`
+  reserves the longest configured material name at construction, so the
+  marked commit is assign-into-capacity only (`writers/tire.hpp:129-152`,
+  `writers/tire.cpp:315-336`, `:355-372`).
+- `Transmission::commit` swaps the old live `state_` into the staged bank
+  slot; the first swap poisoned the slot with a capacity-0
+  `coefficients`, which the next marked `make_update_into` reallocated.
+  The constructor now reserves `state_.coefficients` to the topology's
+  coefficient width, so both sides of the swap always hold capacity
+  (`drivetrain/transmission.cpp:112-118`).
+- Settlement banks were seeded with an engaged `prepared` mirror the
+  first `stage_solved_into` assign destroyed (two frees per bank); the
+  seed now drops `s.state.prepared` to the post-commit disengaged shape
+  (`writers/drivetrain.cpp:442-467`).
+- `DriveTelemetry` open-label lanes (`coasting_reason`,
+  `assist_mode`) are the only telemetry strings a marked tick can grow;
+  `reset()` calls `ensure_open_capacity` on the staged snapshot and every
+  tick bank (`writers/drivetrain.cpp:361-373`, `:385-395`).
+
+### Measured limitations and deviations
+
+- **Coefficient-delta drivetrain ticks are outside the marked claim.** A
+  tick whose staged transmission coefficients change rehearse-commits on
+  a scratch model (`Transmission::evaluate_candidate` →
+  `refresh_scratch_model` (`mj_copyModel`) + `engine::set_const`), which
+  performs MuJoCo-internal allocation the counters cannot see — and which
+  RTSan would flag inside a marked region. For the **geometric**
+  transmission the staged coefficients *are* the geometry Jacobian, so
+  any tick after qpos moves produces a delta: geometric advance ticks are
+  not realtime-safe. Ideal and elastic transmissions rehearse only when a
+  shift or external model mutation actually changes the wrap row. The
+  `core_advance_coefficient_delta` matrix row exercises this path and
+  proves the C++ surface itself allocates nothing (0/0); the exemption is
+  documented at `native/src/writers/drivetrain.hpp:321-325`.
+- **`op_reset`/`op_restore` size their own buffers** (bank reseed and
+  snapshot capture) and are recorded, not claimed.
+- **`boxed` rows** are the intentional serialization copies — the Python
+  boxing surface. Tire/suspension boxed paths also free a moved-from
+  temporary, visible as small `freed` counts.
+- **`warm_core_zero_allocation` measures the declared warm tick**, not
+  construction, reset, restore, or state capture.
+- **`multipliers_` grows once per transmission** from its `njmax`
+  construction hint to the observed `nefc` (models with an unlimited
+  constraint arena report `njmax <= 0`, so the hint starts empty). The
+  grow happens inside `stage_settle` — unmarked by design — and shows as
+  the `warmup = 1` rows above.
+- **`stage_settle` is deliberately unmarked**: the settlement pair
+  (`stage_settle` + `commit(PreparedSettlement&)`) is part of the tick
+  cycle the binding interleaves, but only the commit is `noexcept`; the
+  stage may throw on policy/pending checks. Its first-engagement costs
+  are warmup-absorbed and the asserted `core_settle` row is zero.
+- **The first `probe_last` publication can allocate** when an open-label
+  telemetry string exceeds the small-string buffer: `live_.probe_last`
+  must serialize `None` until the first probe commit (wire parity), so it
+  cannot be pre-engaged, and the engaging copy-construct allocates per
+  over-long lane. `coasting_reason` is bounded by its closed label set
+  (≤ 9 chars); `assist_mode` comes from the config — over-long mode names
+  are the only trigger. All shipped/test configurations are unaffected.
+- **`warmup` rows are measured, not asserted** — first-engagement sizing
+  that cannot move to construction (like `multipliers_`'s data-dependent
+  `nefc` extent) lands here by design.
+
+### RTSan scope
+
+RTSan (`-fsanitize=realtime`, brew clang only) builds the contract
+executable and the extension with the same instrumentation: every
+`BIKE_NONBLOCKING` entry runs under `[[clang::nonblocking]]`, so the same
+31 contract cases (including the three R1 cases) verify the marked paths
+against malloc-family interception, and the Python suite exercises
+`step`/`forward`. As of the lazy-engagement fixes above, the RTSan
+contract run reports **zero** unsafe-library-call findings across all 31
+cases — including the `warm_allocation_matrix` warmup ticks, the probe
+commits, and the tire first-commit path that previously tripped malloc
+interception. Excluded by design: coefficient-delta drivetrain ticks
+(above), unmarked stage entries (`stage_settle`, `stage_components`,
+`stage_prepare` — only the `try_*` wrappers and noexcept commits are
+marked), MuJoCo fatal-error formatting paths that take libc locks (the
+closed solver enum is prevalidated ahead of `snprintf` for this reason —
+see E1), and any callback/FFI surface outside the marked functions.
+
+```bash
+cmake -S native -B native/build/rtsan \
+  -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DNATIVE_RTSAN=ON
+uv run cmake --build native/build/rtsan -j4
+NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native
+```
+
+**macOS launcher caveat:** `DYLD_INSERT_LIBRARIES` does not survive the
+`uv run` process chain — the runtime lands in the `uv` launcher, not the
+spawned interpreter — so `load_native()`'s `verify_sanitizer_runtime()`
+correctly rejects the pytest leg of
+`NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native` with
+"selected sanitizer runtime is not loaded in this Python process". The
+contract-binary leg is unaffected (`native_contract_tests` links
+`-fsanitize=realtime` itself). To run the Python suite against the
+instrumented extension, invoke the venv interpreter directly:
+
+```bash
+DYLD_INSERT_LIBRARIES=/opt/homebrew/opt/llvm/lib/clang/23/lib/darwin/libclang_rt.rtsan_osx_dynamic.dylib \
+NATIVE_TEST_BUILD_DIR=rtsan \
+NATIVE_TEST_SANITIZER_RUNTIME=/opt/homebrew/opt/llvm/lib/clang/23/lib/darwin/libclang_rt.rtsan_osx_dynamic.dylib \
+PYTHONPATH=tests/reference .venv/bin/python -m pytest tests/reference/test_native_tire.py -x -q
+```
+
+### Realtime measurement report
+
+`tools/measure_realtime.py` writes `realtime.json` with per-step
+percentiles (`step_ms_p50`, `step_ms_p95`, `step_ms_p99`, plus the mean),
+the accounted wall/factor figures, and a `provenance` block: Python,
+`bike_sim`, MuJoCo and NumPy versions, the resolved native build
+directory, and — when CMake's `native_check_context.json` exists — the
+compiler (path/id/version), SDK, libc++ hardening mode, the `bike_native`
+target configuration/C++ standard/compile options, sanitizer options read
+from `CMakeCache.txt`, the injected sanitizer runtime, and the extension
+path actually imported by the interpreter. `--baseline PATH` compares
+against a previous report and emits per-metric deltas
+(`factor`, `step_ms_*`, `wall_seconds`, `steps`, `sim_seconds`) plus a
+`comparability` block flagging input, revision, timestep, duration and
+machine mismatches, so cross-run deltas cannot be mistaken for
+like-for-like evidence:
+
+```bash
+uv run python tools/measure_realtime.py --track <track.toml> \
+  --physics-config <physics.toml> --duration 20 \
+  --baseline output/previous/realtime.json --out output/realtime
+```

@@ -1,6 +1,7 @@
 // stepper.hpp — owns mjModel/mjData; buffers never escape ownership.
 #pragma once
 #include <mujoco/mujoco.h>
+#include <array>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -11,6 +12,7 @@
 #include <nanobind/nanobind.h>
 #include "engine_call.hpp"
 #include "rtsan.hpp"
+#include "writers/writer_types.hpp"
 
 class SuspensionWriter;
 class BrakeWriter;
@@ -233,4 +235,16 @@ private:
     std::unique_ptr<TireWriter> tire_;
     std::unique_ptr<RiderForcesWriter> rider_forces_;
     std::unique_ptr<drivetrain::DrivetrainWriter> drive_;
+
+    // R1 warm-core scratch for the convenience faces above: the boxed
+    // methods route through the writers' *_into APIs over these members —
+    // the writer side allocates nothing and the serialized copy out is the
+    // only per-call allocation (it IS the boxing surface). The view arrays
+    // are sized to each writer's maximum component count (static_asserts in
+    // stepper.cpp pin them to the writer constants); the nv buffers are
+    // sized in the config ctor when its writer is built.
+    mutable std::array<ForceComponentView, 8> suspension_views_{};
+    mutable std::array<ForceComponentView, 2> resistance_views_{};
+    mutable std::vector<double> rider_out_;
+    std::vector<double> tire_out_;
 };

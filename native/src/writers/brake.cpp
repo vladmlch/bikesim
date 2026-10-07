@@ -4,13 +4,17 @@
 // two-argument keep-first-on-tie semantics, including the NaN cases.
 #include "brake.hpp"
 #include "../config_validation.hpp"
+#include "../engine_call.hpp"
 #include "../model_access.hpp"
 #include "../model_topology.hpp"
 #include "../validation.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <exception>
 #include <format>
+#include <new>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -133,15 +137,70 @@ double BrakeWriter::wheel_torque(const mjData *d, const WheelSpin &wheel,
                            cfg_.taper_radps);
 }
 
+// Caller precondition (raw boundary): `d` is the live mjData of the model
+// this writer was built on, driven by the single owning Stepper — widths
+// are validated, model/data pairing is not derivable from them.
+void BrakeWriter::compute_into(const mjData *d, double front_demand,
+                               double rear_demand,
+                               std::span<double> out) const {
+    if (d == nullptr)
+        throw std::invalid_argument("brake compute needs a live mjData");
+    if (out.size() != kTorqueCount ||
+        (out.data() == nullptr && !out.empty()))
+        throw std::invalid_argument("brake output width");
+    accumulate_validated(d, front_demand, rear_demand, out);
+}
+
+// The warm-core twin of compute_into: the same precondition gates report
+// CoreStatus::invalid_input instead of throwing (non-finite demands are
+// checked here too, mirroring wheel_torque's finite() gate), and residual
+// kernel rejections are caught and mapped so no exception escapes —
+// noexcept is proved by the catch-all. The kernel's own throw
+// construction stays on the failure path only; a valid tick allocates
+// nothing.
+CoreStatus BrakeWriter::try_compute_into(const mjData *d,
+                                         double front_demand,
+                                         double rear_demand,
+                                         std::span<double> out) const noexcept {
+    if (d == nullptr || !std::isfinite(front_demand) ||
+        !std::isfinite(rear_demand) || out.size() != kTorqueCount ||
+        (out.data() == nullptr && !out.empty()))
+        return CoreStatus::invalid_input;
+    try {
+        accumulate_validated(d, front_demand, rear_demand, out);
+    } catch (const std::bad_alloc &) {
+        return CoreStatus::engine_failure;
+    } catch (const engine::EngineFailure &) {
+        // EngineFailure derives std::exception — it must be caught before
+        // the generic mapping classifies an engine error as bad input.
+        return CoreStatus::engine_failure;
+    } catch (const std::exception &) {
+        return CoreStatus::invalid_input;
+    } catch (...) {
+        return CoreStatus::engine_failure;
+    }
+    return CoreStatus::ok;
+}
+
 std::pair<double, double> BrakeWriter::torques(const mjData *d,
                                                double front_demand,
                                                double rear_demand) const {
     // Front computed first, like the Python source — the pair is a local
     // result now that the write-only last_torque snapshot is gone.
-    return {
-        wheel_torque(d, front_, front_demand),
-        wheel_torque(d, rear_, rear_demand)
-    };
+    std::array<double, kTorqueCount> out{};
+    compute_into(d, front_demand, rear_demand, out);
+    return {out[0], out[1]};
+}
+
+// Extracted unchanged from the original torques() body — front wheel
+// first — including wheel_torque's finite() and dof guards, whose
+// exception types are part of the observable contract.
+void BrakeWriter::accumulate_validated(const mjData *d,
+                                       double front_demand,
+                                       double rear_demand,
+                                       std::span<double> out) const {
+    out[0] = wheel_torque(d, front_, front_demand);
+    out[1] = wheel_torque(d, rear_, rear_demand);
 }
 
 // Same model/data pairing + single-Stepper ownership precondition as

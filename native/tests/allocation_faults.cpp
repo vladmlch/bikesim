@@ -24,6 +24,15 @@ namespace {
     // threads and library-internal allocations never consult it.
     thread_local Budget budget; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables) the injector IS thread-local mutable state
 
+    struct Activity {
+        std::size_t allocated = 0;
+        std::size_t freed = 0;
+    };
+    // The allocation_counter window: separate thread_local counters bumped
+    // unconditionally by allocate()/release() so the zero-allocation cases
+    // measure the warm core without touching the injector's budget state.
+    thread_local Activity activity; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables) same contract as budget above
+
     constexpr std::size_t default_alignment = __STDCPP_DEFAULT_NEW_ALIGNMENT__;
 
     // aligned_alloc requires size % alignment == 0; round up and keep the
@@ -34,8 +43,10 @@ namespace {
     }
 
     void *allocate(std::size_t size, std::size_t alignment) {
+        ++activity.allocated; // unconditional: attempts count too
         if (budget.armed) {
-            if (budget.remaining == 0) throw std::bad_alloc();
+            if (budget.remaining == 0)
+                throw std::bad_alloc();
             --budget.remaining;
             ++budget.performed;
         }
@@ -51,7 +62,11 @@ namespace {
 
     // The matching raw release for every replacement delete overload —
     // NOLINTNEXTLINE applies per line because each operator needs its own.
-    void release(void *pointer) noexcept { std::free(pointer); }         // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+    // nullptr releases count too: a delete call is still allocator activity.
+    void release(void *pointer) noexcept {
+        ++activity.freed;
+        std::free(pointer);                                              // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+    }
 } // namespace
 
 void allocation_faults::arm(std::size_t successful_allocations) {
@@ -61,6 +76,12 @@ void allocation_faults::arm(std::size_t successful_allocations) {
 void allocation_faults::disarm() noexcept { budget.armed = false; }
 
 std::size_t allocation_faults::allocated() noexcept { return budget.performed; }
+
+void allocation_counter::reset() noexcept { activity = {}; }
+
+std::size_t allocation_counter::count() noexcept { return activity.allocated; }
+
+std::size_t allocation_counter::freed() noexcept { return activity.freed; }
 
 void *operator new(std::size_t size) { return allocate(size, default_alignment); }
 void *operator new[](std::size_t size) { return allocate(size, default_alignment); }

@@ -21,11 +21,14 @@
 #include "resistance.hpp"
 #include "../cblas_abi.hpp"
 #include "../config_validation.hpp"
+#include "../engine_call.hpp"
 #include "../model_access.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <exception>
+#include <new>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -123,11 +126,97 @@ ResistanceWriter::ResistanceWriter(const mjModel *m,
                static_cast<std::size_t>(nv_));
     jp_.resize(static_cast<std::size_t>(model_access::kXYZ) *
                static_cast<std::size_t>(nv_));
+    // R1: the former per-call rolling/aerodynamic/per-side row vectors
+    // are construction-sized members — compute fills this capacity.
+    rolling_.resize(static_cast<std::size_t>(nv_));
+    aerodynamic_.resize(static_cast<std::size_t>(nv_));
+    row_.resize(static_cast<std::size_t>(nv_));
 }
 
+// Caller precondition (raw boundary): `d` is the live mjData of the model
+// this writer was built on, driven by the single owning Stepper — widths
+// are validated, model/data pairing is not derivable from them.
+void ResistanceWriter::components_into(const mjData *d,
+                                       const TireSideInput &front,
+                                       const TireSideInput &rear,
+                                       std::span<ForceComponentView> out) const {
+    if (d == nullptr)
+        throw std::invalid_argument(
+            "resistance compute needs a live mjData");
+    if (out.size() != kComponentCount)
+        throw std::invalid_argument("resistance component view count");
+    compute_validated(d, front, rear);
+    export_views(out);
+}
+
+// The warm-core twin of components_into: the same precondition gates
+// (plus the per-side patch-shape gate the kernel also enforces) report
+// CoreStatus::invalid_input instead of throwing, and residual kernel
+// rejections are caught and mapped so no exception escapes — noexcept is
+// proved by the catch-all. The kernel's own throw construction stays on
+// the failure path only; a valid tick allocates nothing.
+CoreStatus ResistanceWriter::try_components_into(
+        const mjData *d, const TireSideInput &front,
+        const TireSideInput &rear,
+        std::span<ForceComponentView> out) const noexcept {
+    if (d == nullptr || out.size() != kComponentCount ||
+        front.patch_loads.size() != front.patch_working.size() ||
+        rear.patch_loads.size() != rear.patch_working.size())
+        return CoreStatus::invalid_input;
+    try {
+        compute_validated(d, front, rear);
+    } catch (const std::bad_alloc &) {
+        return CoreStatus::engine_failure;
+    } catch (const engine::EngineFailure &) {
+        // EngineFailure derives std::exception — it must be caught before
+        // the generic mapping classifies an engine error as bad input.
+        return CoreStatus::engine_failure;
+    } catch (const std::exception &) {
+        return CoreStatus::invalid_input;
+    } catch (...) {
+        return CoreStatus::engine_failure;
+    }
+    export_views(out);
+    return CoreStatus::ok;
+}
+
+std::span<const std::string_view>
+ResistanceWriter::component_names() noexcept {
+    static constexpr std::array<std::string_view, kComponentCount> names{
+        "road_rolling", "aerodynamic"
+    };
+    return names;
+}
+
+void ResistanceWriter::export_views(
+        std::span<ForceComponentView> out) const noexcept {
+    out[0] = {.kind = ForceKind::resistance, .values = rolling_};
+    out[1] = {.kind = ForceKind::resistance, .values = aerodynamic_};
+}
+
+// Python-boxed surface: the typed compute plus the named-component copy —
+// identical values and insertion order to the original components().
 std::vector<ResistanceWriter::Component> ResistanceWriter::components(
     const mjData *d, const TireSideInput &front,
     const TireSideInput &rear) const {
+    std::array<ForceComponentView, kComponentCount> views;
+    components_into(d, front, rear, views);
+    return {
+        {"road_rolling",
+         std::vector<double>(views[0].values.begin(),
+                             views[0].values.end())},
+        {"aerodynamic",
+         std::vector<double>(views[1].values.begin(),
+                             views[1].values.end())}
+    };
+}
+
+// Extracted unchanged from the original components() body — including the
+// patch-shape gate and the derived() overflow gates, whose exception
+// types are part of the observable contract.
+void ResistanceWriter::compute_validated(const mjData *d,
+                                         const TireSideInput &front,
+                                         const TireSideInput &rear) const {
     if (front.patch_loads.size() != front.patch_working.size() ||
         rear.patch_loads.size() != rear.patch_working.size())
         throw std::invalid_argument(
@@ -145,7 +234,7 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
         return s[static_cast<std::size_t>(i)];
     };
 
-    std::vector<double> rolling(static_cast<std::size_t>(nv_), 0.0);
+    std::ranges::fill(rolling_, 0.0);
     // self.wheels = {'front': ..., 'rear': ...} — iteration order matters:
     // both sides accumulate into the same vector.
     const std::array<std::pair<const TireSideInput *, int>, 2> sides{
@@ -167,14 +256,14 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
         };
         mj_jac(m_, d, nullptr, jr_.data(), &at(xpos, model_access::kXYZ * body),
                body);
-        // row = self._jr.T @ axis (F-order operand → gemv-trans path)
-        std::vector<double> row(static_cast<std::size_t>(nv_));
+        // row = self._jr.T @ axis (F-order operand → gemv-trans path);
+        // row_ is the shared per-side member — beta = 0 overwrites it.
         blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
                     model_access::kXYZ, nv_, 1.0, jr_.data(), nv_,
-                    axis.data(), 1, 0.0, row.data(), 1);
+                    axis.data(), 1, 0.0, row_.data(), 1);
         // omega = float(row @ data.qvel)
         const double omega =
-                blas::ddot(nv_, row.data(), 1, qvel.data(), 1);
+                blas::ddot(nv_, row_.data(), 1, qvel.data(), 1);
         const double radius = snap.effective_radius_m;
         if (Fn > 0.0 && radius > 0.0) {
             const double moment =
@@ -183,8 +272,8 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
             // rolling += moment * row — two separately-rounded elementwise
             // ops in numpy (temp product, then in-place add).
             for (int i = 0; i < nv_; ++i)
-                rolling[static_cast<std::size_t>(i)] +=
-                        moment * row[static_cast<std::size_t>(i)];
+                rolling_[static_cast<std::size_t>(i)] +=
+                        moment * row_[static_cast<std::size_t>(i)];
         }
     }
 
@@ -235,15 +324,11 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
                 t * relative[static_cast<std::size_t>(i)];
     validation::derived_array(force, "ExternalResistanceApplier.drag_force");
 
-    // 'aerodynamic': self._jp.T @ force (same gemv-trans path as row above)
-    std::vector<double> aerodynamic(static_cast<std::size_t>(nv_));
+    // 'aerodynamic': self._jp.T @ force (same gemv-trans path as row_
+    // above); beta = 0 fully overwrites the member like the fresh vector.
     blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
                 model_access::kXYZ, nv_, 1.0, jp_.data(), nv_,
-                force.data(), 1, 0.0, aerodynamic.data(), 1);
-    validation::derived_array(rolling, "ExternalResistanceApplier.rolling");
-    validation::derived_array(aerodynamic, "ExternalResistanceApplier.aerodynamic");
-    return {
-        {"road_rolling", std::move(rolling)},
-        {"aerodynamic", std::move(aerodynamic)}
-    };
+                force.data(), 1, 0.0, aerodynamic_.data(), 1);
+    validation::derived_array(rolling_, "ExternalResistanceApplier.rolling");
+    validation::derived_array(aerodynamic_, "ExternalResistanceApplier.aerodynamic");
 }

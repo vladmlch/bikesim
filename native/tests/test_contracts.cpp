@@ -15,6 +15,11 @@
 #include "../src/numeric_norm.hpp"
 #include "../src/writers/cruise.hpp"
 #include "../src/writers/drivetrain.hpp"
+#include "../src/writers/brake.hpp"
+#include "../src/writers/resistance.hpp"
+#include "../src/writers/rider_forces.hpp"
+#include "../src/writers/suspension.hpp"
+#include "../src/writers/tire.hpp"
 #include "allocation_faults.hpp"
 
 #include <algorithm>
@@ -71,7 +76,8 @@ namespace {
         };
         drivetrain::PedalingPolicy policy(config);
         const drivetrain::PedalingState state = policy.update(0., 0., 30., 20., .01);
-        require(state.mode == "pedaling", "pedaling policy mode");
+        require(state.mode == drivetrain::PedalMode::pedaling,
+                "pedaling policy mode");
         require(state.effort_nm == 20., "pedaling policy effort");
         require(!state.target_phase_rad, "pedaling policy target phase");
     }
@@ -969,6 +975,11 @@ namespace {
     // E2: a staged ratio whose candidate geometry is invalid leaves the
     // transmission snapshot AND the live model byte-identical, a repeated
     // attempt raises the same rejection, and staging alone never publishes.
+    // The typed telemetry lanes make TransmissionSnapshot/Transmission
+    // several KB each; test scaffolding is exempt from the 8KB frame
+    // contract that targets the per-step realtime path.
+    NATIVE_DIAG_PUSH
+    NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     void test_transmission_staged_ratio_atomicity() {
         const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
             load_xml_model(geometric_freehub_xml), &mj_deleteModel);
@@ -1050,6 +1061,7 @@ namespace {
         require(ideal.state().ratio == 1.5 && ideal.state().coefficients[0] == 1.5,
                 "committed ideal staged ratio publishes coefficient and ratio");
     }
+    NATIVE_DIAG_POP
 
     template <typename Exception, typename F>
     void require_throws(const F &f, std::string_view message) {
@@ -1634,12 +1646,29 @@ namespace {
             },
             a, b);
     }
-    bool same(const drivetrain::Diagnostics &a,
-              const drivetrain::Diagnostics &b) {
-        if (a.size() != b.size())
+    // Typed-telemetry comparator: presence bits first, then each present
+    // field's wire scalar through at() — the same content the former map
+    // comparison checked, key set included.
+    bool same(const drivetrain::DriveTelemetry &a,
+              const drivetrain::DriveTelemetry &b) {
+        bool equal = true;
+        for (std::size_t i = 0; i < drivetrain::telemetry_field_count; ++i) {
+            const auto field = static_cast<drivetrain::TelemetryField>(i);
+            if (a.presence(field) != b.presence(field))
+                return false;
+            if (a.presence(field) != 0 &&
+                !same(a.at(drivetrain::telemetry_spec(field).name),
+                      b.at(drivetrain::telemetry_spec(field).name)))
+                equal = false;
+        }
+        return equal;
+    }
+    bool same(const drivetrain::DriveAngles &a,
+              const drivetrain::DriveAngles &b) {
+        if (a.count != b.count)
             return false;
-        for (auto ia = a.begin(), ib = b.begin(); ia != a.end(); ++ia, ++ib)
-            if (ia->first != ib->first || !same(ia->second, ib->second))
+        for (std::size_t i = 0; i < a.count; ++i)
+            if (!same(a.values[i], b.values[i]))
                 return false;
         return true;
     }
@@ -1921,86 +1950,130 @@ namespace {
 
     // Operation digests — staged calls with the result boxed between stage
     // and commit, mirroring each binding's actual transaction boundary.
-    Digest prepare_op(DriveFixture &fixture) {
-        auto tick = fixture.writer.stage_prepare(
+    // The sweep reuses one warmed Digest per run: clear() retains vector
+    // capacity and every boxed name fits libc++'s short-string buffer, so
+    // the measured count is the writer's own allocation surface.
+    void prepare_op(DriveFixture &fixture, Digest &digest) {
+        digest.numbers.clear();
+        digest.strings.clear();
+        const auto tick = fixture.writer.stage_prepare(
             {.control = {}, .dt = .002, .braking = false, .active = true,
              .advance = true, .contact = true, .slip = std::nullopt,
              .ceiling = std::nullopt});
-        Digest digest{
-            .numbers = {tick.result.effort_nm,
-                        tick.result.required_cadence_rpm,
-                        tick.result.target_phase_rad ? 1. : 0.,
-                        tick.result.target_phase_rad.value_or(0.),
-                        tick.result.target_rate_rad_s},
-            .strings = {tick.result.mode, tick.result.reason}};
+        digest.numbers = {tick.result.effort_nm,
+                          tick.result.required_cadence_rpm,
+                          tick.result.target_phase_rad ? 1. : 0.,
+                          tick.result.target_phase_rad.value_or(0.),
+                          tick.result.target_rate_rad_s};
+        digest.strings = {std::string(
+                              drivetrain::pedal_mode_name(tick.result.mode)),
+                          std::string(
+                              drivetrain::coast_reason_name(
+                                  tick.result.reason))};
         fixture.writer.commit(tick);
-        return digest;
     }
-    Digest components_op(DriveFixture &fixture, bool advance) {
-        auto tick = fixture.writer.stage_components(
+    void components_op(DriveFixture &fixture, bool advance, Digest &digest) {
+        digest.numbers.clear();
+        digest.strings.clear();
+        const auto tick = fixture.writer.stage_components(
             {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
              .braking = false, .active = true, .advance = advance,
              .contact = true, .pedaling = std::nullopt, .slip = std::nullopt});
-        Digest digest;
-        for (const auto &[name, row]: tick.components) {
-            digest.strings.push_back(name);
-            digest.numbers.insert(digest.numbers.end(), row.begin(), row.end());
+        for (std::size_t i = 0; i < tick.components.size(); ++i) {
+            digest.strings.emplace_back(tick.component_names[i]);
+            const auto row = tick.components[i].values;
+            digest.numbers.insert(digest.numbers.end(), row.begin(),
+                                  row.end());
         }
         fixture.writer.commit(tick);
-        return digest;
     }
-    Digest advance_op(DriveFixture &fixture) {
-        return components_op(fixture, true);
+    void advance_op(DriveFixture &fixture, Digest &digest) {
+        components_op(fixture, true, digest);
     }
-    Digest probe_op(DriveFixture &fixture) {
-        return components_op(fixture, false);
+    void probe_op(DriveFixture &fixture, Digest &digest) {
+        components_op(fixture, false, digest);
     }
-    Digest settle_op(DriveFixture &fixture) {
+    void settle_op(DriveFixture &fixture, Digest &digest) {
+        digest.numbers.clear();
+        digest.strings.clear();
         auto settlement = fixture.writer.stage_settle();
-        Digest digest;
         digest.numbers.assign(settlement.force.begin(),
                               settlement.force.end());
         fixture.writer.commit(settlement);
-        return digest;
     }
-    Digest reset_op(DriveFixture &fixture) {
+    void reset_op(DriveFixture &fixture, Digest &digest) {
+        digest.numbers.clear();
+        digest.strings.clear();
         fixture.writer.reset();
-        return {};
     }
 
     // The enumeration driver from the plan: run the control once, measure
     // the operation's allocation surface once, then inject at every position
     // — each failure must publish nothing, and the disarmed retry must match
-    // the control bitwise.
+    // the control bitwise. The armed/control/pre snapshots are several KB
+    // each now — test scaffolding stays exempt from the frame contract.
+    NATIVE_DIAG_PUSH
+    NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     template <typename Op>
     void sweep_allocations(std::string_view label, DriveFixture &fixture,
                            const drivetrain::DriveSnapshot &armed,
                            const Op &op) {
-        const auto fail = [&label](const char *what) {
+        const auto fail = [&label](const std::string &what) {
             require(false, std::string(label) + ": " + what);
         };
         fixture.writer.restore(armed);
-        const Digest control_result = op(fixture);
+        // NOLINTNEXTLINE(misc-const-correctness) op() writes scratch through its Digest& out-parameter every run
+        Digest scratch;
+        const Digest control_result = [&fixture, &op] {
+            Digest d;
+            op(fixture, d);
+            return d;
+        }();
         const drivetrain::DriveSnapshot control_post = fixture.writer.state();
         const ModelRows control_model = model_rows(*fixture.model);
         const std::vector<double> control_ctrl =
                 rows(fixture.data->ctrl, fixture.model->nu);
+        // Warm the scratch digest's own capacity unarmed — the counted
+        // window below then reports only the writer's allocations.
+        fixture.writer.restore(armed);
+        op(fixture, scratch);
+        if (!(same(scratch, control_result) &&
+              same(fixture.writer.state(), control_post) &&
+              same(model_rows(*fixture.model), control_model) &&
+              rows(fixture.data->ctrl, fixture.model->nu) == control_ctrl))
+            fail("the unarmed scratch warm-up deviates from the control");
         std::size_t count = 0;
         fixture.writer.restore(armed);
         {
             const allocation_faults::Guard guard;
             allocation_faults::arm(std::numeric_limits<std::size_t>::max());
-            const Digest measured = op(fixture);
+            op(fixture, scratch);
             count = allocation_faults::allocated();
-            if (!(same(measured, control_result) &&
+            if (!(same(scratch, control_result) &&
                   same(fixture.writer.state(), control_post) &&
                   same(model_rows(*fixture.model), control_model) &&
                   rows(fixture.data->ctrl, fixture.model->nu) == control_ctrl))
                 fail("the armed measurement run deviates from the control");
         }
-        if (count == 0)
-            fail("the operation exposes no enumerable allocations");
-        // Compact positions table for the enumeration report.
+        // Counter sanity: an armed deliberate allocation must fault, so a
+        // zero-count result below cannot pass because the injector is dead.
+        // R1's target IS zero — construction banks and persistent scratch
+        // leave a warm operation with no positions to enumerate.
+        {
+            const allocation_faults::Guard guard;
+            allocation_faults::arm(0);
+            bool threw = false;
+            try {
+                const std::vector<double> probe(8, 0.);
+                static_cast<void>(probe);
+            } catch (const std::bad_alloc &) {
+                threw = true;
+            }
+            if (!threw)
+                fail("the allocation injector failed to arm");
+        }
+        // Compact positions table for the enumeration report — zero is a
+        // valid, desired count for a fully banked warm operation.
         std::cout << "  positions " << label << " = " << count << '\n';
         for (std::size_t fail_at = 0; fail_at < count; ++fail_at) {
             fixture.writer.restore(armed);
@@ -2015,19 +2088,24 @@ namespace {
                 const allocation_faults::Guard guard;
                 allocation_faults::arm(fail_at);
                 try {
-                    static_cast<void>(op(fixture));
+                    op(fixture, scratch);
                 } catch (const std::bad_alloc &) {
                     injected = true;
                 }
             }
             if (!injected)
                 fail("an armed allocation position ran to completion");
-            if (!(same(fixture.writer.state(), pre) &&
-                  same(model_rows(*fixture.model), pre_model) &&
-                  rows(fixture.data->ctrl, fixture.model->nu) == pre_ctrl))
-                fail("an injected failure published partial state");
-            const Digest retry = op(fixture);
-            if (!(same(retry, control_result) &&
+            if (!same(fixture.writer.state(), pre))
+                fail("an injected failure published partial state (snapshot) at position " +
+                     std::to_string(fail_at));
+            if (!same(model_rows(*fixture.model), pre_model))
+                fail("an injected failure published partial state (model) at position " +
+                     std::to_string(fail_at));
+            if (rows(fixture.data->ctrl, fixture.model->nu) != pre_ctrl)
+                fail("an injected failure published partial state (ctrl) at position " +
+                     std::to_string(fail_at));
+            op(fixture, scratch);
+            if (!(same(scratch, control_result) &&
                   same(fixture.writer.state(), control_post) &&
                   same(model_rows(*fixture.model), control_model) &&
                   rows(fixture.data->ctrl, fixture.model->nu) == control_ctrl))
@@ -2056,13 +2134,14 @@ namespace {
                 fixture->writer.state().pending_actuation,
                 "sparse restore leaves last={} with the pending reserved");
         // The clean control: one settlement, one debit, pending released.
-        static_cast<void>(settle_op(*fixture));
+        Digest digest;
+        settle_op(*fixture, digest);
         const drivetrain::DriveSnapshot settled = fixture->writer.state();
         require(settled.battery.drawn_energy_j > 0. &&
                 !settled.pending_actuation && !settled.last.empty(),
                 "control settlement debits once and releases pending");
         const double drawn_once = settled.battery.drawn_energy_j;
-        static_cast<void>(settle_op(*fixture));
+        settle_op(*fixture, digest);
         require(fixture->writer.state().battery.drawn_energy_j == drawn_once,
                 "a settlement with no pending actuation debits nothing");
         sweep_allocations("sparse last settlement", *fixture, armed,
@@ -2130,9 +2209,10 @@ namespace {
             // restore() commits a pending-bearing candidate onto a clean
             // baseline — the revert-and-retry shape the enumeration needs.
             sweep_allocations(prefix + " restore", *fixture, armed_clean,
-                              [&armed_primed](DriveFixture &f) -> Digest {
+                              [&armed_primed](DriveFixture &f, Digest &d) {
+                                  d.numbers.clear();
+                                  d.strings.clear();
                                   f.writer.restore(armed_primed);
-                                  return {};
                               });
             sweep_allocations(prefix + " prepare", *fixture, armed_clean,
                               prepare_op);
@@ -2151,6 +2231,7 @@ namespace {
                               armed_sparse, settle_op);
         }
     }
+    NATIVE_DIAG_POP
 
     void test_cblas_and_norm() {
         // The typed enum faces must reach the linked CBLAS symbols —
@@ -2402,7 +2483,7 @@ namespace {
             const auto fixture = std::make_unique<DriveFixture>(
                 "elastic_chain", "plain",
                 drive_config("elastic_chain", "plain", true, false));
-            auto tick = fixture->writer.stage_components(
+            const auto tick = fixture->writer.stage_components(
                 {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
                  .braking = false, .active = true, .advance = true,
                  .contact = true, .pedaling = std::nullopt,
@@ -2410,8 +2491,8 @@ namespace {
             require(tick.components.size() == 3,
                     "elastic chain emits exactly three component rows");
             for (std::size_t i = 0; i < tick.components.size(); ++i)
-                require(tick.components[i].first ==
-                                std::string(force_component_specs[i].name),
+                require(tick.component_names[i] ==
+                                force_component_specs[i].name,
                         "emitted name matches the declared table slot");
             // qvel rear_wheel_spin = 5 → bearing force -0.03*5 at its dof.
             const int wheel = joint_dof(fixture->model.get(),
@@ -2419,7 +2500,7 @@ namespace {
             const auto &bearings =
                     tick.components[force_component_index(
                                         ForceComponent::drive_bearings)]
-                        .second;
+                        .values;
             require(bearings[static_cast<std::size_t>(wheel)] < 0.,
                     "bearing row carries force at the wheel dof");
             // The snapshot telemetry keeps the wire strings — enum plumbing
@@ -2435,25 +2516,832 @@ namespace {
             const auto fixture = std::make_unique<DriveFixture>(
                 "ideal_mid_drive", "plain",
                 drive_config("ideal_mid_drive", "plain", true, false));
-            auto tick = fixture->writer.stage_components(
+            const auto tick = fixture->writer.stage_components(
                 {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
                  .braking = false, .active = true, .advance = true,
                  .contact = true, .pedaling = std::nullopt,
                  .slip = std::nullopt});
             require(tick.components.size() == 4 &&
-                        tick.components[force_component_index(
-                                            ForceComponent::ideal_transmission)]
-                                    .first == "ideal_transmission",
+                        tick.component_names[force_component_index(
+                                                 ForceComponent::ideal_transmission)] ==
+                                "ideal_transmission",
                     "simplified model appends the ideal_transmission row");
             for (std::size_t i = 0; i < tick.components.size(); ++i)
-                require(tick.components[i].first ==
-                                std::string(force_component_specs[i].name),
+                require(tick.component_names[i] ==
+                                force_component_specs[i].name,
                         "emitted order follows the declared table");
             fixture->writer.commit(tick);
         }
     }
 
-    constexpr std::array<TestCase, 28> cases{{
+    // ---------- R1: warm-core allocation measurement ---------------------
+
+    // Combined warm-path model: the drivetrain's ideal-mid-drive topology
+    // (frame/crank/rear_wheel bodies, the freehub tendon, the effort
+    // actuators) plus every name the remaining try_* entries resolve —
+    // collision-disabled sphere contact geoms on both wheel bodies (brake
+    // and tire), brake actuators on the wheel spins, the limited
+    // suspension slides, an unlimited rider slide, and the compiled
+    // 'terrain' hfield. The raster is patched after load so the front
+    // wheel's contact window covers a height change and measured ticks
+    // run ProfileQuery's candidate path — never the flat-window early
+    // return; the rear wheel stays on the flat path.
+    constexpr std::string_view warm_xml = R"XML(
+<mujoco><option timestep=".0002" gravity="0 0 0"/>
+<default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/><joint damping="0"/></default>
+<asset><hfield name="hf" nrow="2" ncol="41" size="4 1 .1 .1"/></asset>
+<worldbody>
+<geom name="terrain" type="hfield" hfield="hf"/>
+<body name="frame"><joint name="root_x" type="slide" axis="1 0 0"/><joint name="frame_pitch" axis="0 1 0"/><geom/>
+  <body name="crank"><joint name="crank_spin" axis="0 1 0"/><geom/></body>
+  <body name="rear_wheel" pos="-.5 0 .04"><joint name="rear_carrier" type="slide" axis="0 0 1" limited="true" range="-.01 .01"/><joint name="rear_wheel_spin" axis="0 1 0"/><geom name="geom_rear_contact"/></body>
+  <body name="front_wheel" pos=".6 0 .04"><joint name="front_wheel_spin" axis="0 1 0"/><geom name="geom_front_contact"/></body>
+  <body name="pedal_front"><joint name="pedal_front_spin" axis="0 1 0"/><geom/></body>
+  <body name="pedal_rear"><joint name="pedal_rear_spin" axis="0 1 0"/><geom/></body>
+  <body name="fork"><joint name="fork_stroke" type="slide" axis="0 0 1" limited="true" range="0 .15"/><geom/></body>
+  <body name="shock"><joint name="shock_stroke" type="slide" axis="0 0 1" limited="true" range="0 .075"/><geom/></body>
+  <body name="saddle"><joint name="saddle_z" type="slide" axis="0 0 1"/><geom/></body>
+</body></worldbody>
+<tendon><fixed name="ideal_mid_drive_freehub" limited="true" range="-100 0"><joint joint="crank_spin" coef="1.4166666666666667"/><joint joint="rear_wheel_spin" coef="-1"/></fixed></tendon>
+<actuator><motor name="human_crank" joint="crank_spin"/><motor name="mid_drive" joint="crank_spin"/><motor name="front_brake" joint="front_wheel_spin"/><motor name="rear_brake" joint="rear_wheel_spin"/></actuator>
+</mujoco>
+)XML";
+
+    // Validated fixture configs — the smallest set covering every try_*
+    // kernel (physical suspension covers the extra 'shock_hbo' row; the
+    // track surface map exercises the per-tick surface query and the
+    // diagnostics name write). Field values follow physical_config.py's
+    // magnitude so forces stay finite and in-range. The damper core is a
+    // shared constexpr: POD storage, no pass-by-value copy.
+    constexpr nativecfg::DamperCore kWarmDamperCore{
+        .max_hsc = 12, .max_lsc = 12, .max_reb = 20,
+        .hsc_clicks = 4, .lsc_clicks = 4, .rebound_clicks = 8,
+        .c_lsc_min = 0., .c_lsc_max = 50.,
+        .c_hsc_min = 0., .c_hsc_max = 80.,
+        .c_reb_min = 0., .c_reb_max = 60.,
+        .v_knee_comp = .5, .v_knee_reb = .5};
+
+    nativecfg::SuspensionConfig warm_suspension(std::string_view mode) {
+        return {
+            .physics_mode = std::string(mode),
+            .fork_joint = "fork_stroke", .shock_joint = "shock_stroke",
+            .air_spring = {
+                .specs = {.stanchion_inner_diam_mm = 34.,
+                          .total_travel_mm = 150.,
+                          .pos_chamber_length_mm = 60.,
+                          .neg_chamber_length_mm = 15.,
+                          .token_volume_cm3 = 2., .max_tokens = 4,
+                          .gamma = 1.2, .atm_pressure_pa = 101325.},
+                .num_tokens = 2, .gauge_pressure_psi = 80.},
+            .fork_damper = {.core = kWarmDamperCore,
+                            .total_travel_mm = 150., .hbo_start_mm = 20.,
+                            .c_hbo_base = 40., .legacy_behavior = false},
+            .shock_damper = {.core = kWarmDamperCore,
+                             .total_stroke_mm = 60., .max_hbo = 4,
+                             .hbo_clicks = 1, .lockout_firm = false,
+                             .legacy_behavior = false, .hbo_start_mm = 10.,
+                             .c_hbo_min = 0., .c_hbo_max = 50.,
+                             .lockout_preload_n = 0.,
+                             .lockout_stiffness = 0.},
+            .coil = {.rate_n_m = 50000., .preload_mm = 2.,
+                     .stroke_mm = 75., .bumper_length_mm = 10.,
+                     .bumper_peak_n = 4000., .legacy_behavior = false},
+            .end_stops = {.stiffness_n_m = 50000.,
+                          .damping_n_s_m = 100.}};
+    }
+
+    nativecfg::TireParams warm_tire_params() {
+        return {.material = {.radial_k_n_m = 150000.,
+                             .radial_c_ns_m = 800.,
+                             .pressure_pa_gauge = 250000.,
+                             .provenance = "contract-test",
+                             .valid_load_range_n = {0., 3000.}},
+                .tangent_k_n_m = 90000., .mu = 1.2,
+                .relaxation_length_m = .35};
+    }
+
+    nativecfg::TireConfig warm_tire(bool track) {
+        nativecfg::TireConfig cfg{
+            .backend = "compliant_2d",
+            .surface_mode = track ? "track" : "configured",
+            .front = warm_tire_params(), .rear = warm_tire_params(),
+            .significant_delta_m = .0005, .significance_fraction = .3,
+            .distinct_normal_deg = 12., .surface_map = std::nullopt};
+        if (track) {
+            // One material interval under the front wheel's contact x —
+            // short names stay inside the diagnostics string's capacity so
+            // a steady tick never re-allocates it.
+            cfg.surface_map = nativecfg::SurfaceMap{
+                .surface = {.name = "dry", .mu_peak = 1.1,
+                            .mu_slide = .9,
+                            .slip_stiffness_per_load = .02,
+                            .stribeck_speed_mps = .1},
+                .sections = {{.start_m = .3, .end_m = .9,
+                              .surface = {.name = "wet", .mu_peak = .8,
+                                          .mu_slide = .6,
+                                          .slip_stiffness_per_load = .02,
+                                          .stribeck_speed_mps = .1}}}};
+        }
+        return cfg;
+    }
+
+    nativecfg::ResistanceConfig warm_resistance() {
+        return {.crr = .004, .rolling_taper_rad_s = 1.,
+                .rho_kg_m3 = 1.2, .cda_m2 = .5,
+                .wind_world_mps = {0., 0., 0.},
+                .point_body_m = {.4, 0., 1.},
+                .frame_body = "frame", .front_wheel_body = "front_wheel",
+                .rear_wheel_body = "rear_wheel"};
+    }
+
+    nativecfg::RiderForcesConfig warm_rider() {
+        return {.paths = {{.joint = "saddle_z", .stiffness_n_m = 9000.,
+                           .damping_ns_m = 200.,
+                           .preload_deflection_m = .01, .offset_m = .002,
+                           .unilateral = false}}};
+    }
+
+    // Model + data seeded to a steady ride pose — carrier sag, spinning
+    // crank/wheels, compressed suspension and a settled rider — so every
+    // warm tick sees nonzero inputs. The forward runs before the hfield
+    // patch: the profile compile reads geom transforms from the data,
+    // while the bump only changes raster VALUES.
+    struct WarmContext {
+        drivetrain::OwnedModel model;
+        drivetrain::OwnedData data;
+
+        WarmContext()
+            : model(load_xml_model(warm_xml)),
+              data(engine::make_data(model.get())) {
+            require(data != nullptr, "warm context data");
+            const auto qpos = drivetrain::buffer(data->qpos, model->nq);
+            const auto qvel = drivetrain::buffer(data->qvel, model->nv);
+            qpos[static_cast<std::size_t>(
+                     joint_qpos(model.get(), "rear_carrier"))] = .005;
+            qpos[static_cast<std::size_t>(
+                     joint_qpos(model.get(), "fork_stroke"))] = .04;
+            qpos[static_cast<std::size_t>(
+                     joint_qpos(model.get(), "shock_stroke"))] = .02;
+            qpos[static_cast<std::size_t>(
+                     joint_qpos(model.get(), "saddle_z"))] = .005;
+            qvel[static_cast<std::size_t>(
+                     joint_dof(model.get(), "root_x"))] = 2.;
+            qvel[static_cast<std::size_t>(
+                     joint_dof(model.get(), "crank_spin"))] = 4.;
+            qvel[static_cast<std::size_t>(
+                     joint_dof(model.get(), "rear_wheel_spin"))] = 5.;
+            qvel[static_cast<std::size_t>(
+                     joint_dof(model.get(), "front_wheel_spin"))] = 4.;
+            engine::forward(model.get(), data.get());
+            // Tent bump under the front wheel: raster columns 22-24 rise
+            // {0.01, 0.03, 0.01} m so the wheel's [0.55,0.65] contact
+            // window covers a height change every tick. Both raster rows
+            // get identical columns — compliant_2d rejects lateral
+            // terrain variation.
+            const std::span<float> raster =
+                    model_access::mutable_buffer(
+                        model->hfield_data, model->nhfielddata);
+            require(raster.size() == std::size_t{2} * 41,
+                    "warm terrain raster shape");
+            for (const auto &[column, value]:
+                 std::array<std::pair<std::size_t, float>, 3>{
+                     std::pair{22, .1f}, {23, .3f}, {24, .1f}}) {
+                raster[column] = value;
+                raster[41 + column] = value;
+            }
+        }
+    };
+
+    // Every try_* writer over the shared context plus the
+    // construction-sized caller buffers the Stepper member scratch
+    // mirrors — the measured tick never sizes storage inside the window.
+    struct WarmRig {
+        WarmContext context;
+        drivetrain::DrivetrainWriter drive;
+        SuspensionWriter suspension;
+        BrakeWriter brake;
+        ResistanceWriter resistance;
+        TireWriter tire;
+        RiderForcesWriter rider;
+        std::array<ForceComponentView, 4> drive_views{};
+        std::array<ForceComponentView,
+                   SuspensionWriter::kPhysicalComponentCount>
+                suspension_views{};
+        std::array<ForceComponentView, ResistanceWriter::kComponentCount>
+                resistance_views{};
+        std::array<double, BrakeWriter::kTorqueCount> brake_out{};
+        std::vector<double> tire_out, rider_out;
+        std::array<double, 1> front_loads{180.}, rear_loads{220.};
+        std::array<bool, 1> front_working{true}, rear_working{true};
+
+        WarmRig(nativecfg::SuspensionConfig suspension_cfg,
+                nativecfg::TireConfig tire_cfg)
+            : context(),
+              drive(context.model.get(), context.data.get(),
+                    drive_config("ideal_mid_drive", "plain", true, false)),
+              suspension(context.model.get(), std::move(suspension_cfg)),
+              brake(context.model.get(),
+                    {.torque_ceiling_nm = 200., .taper_radps = 5.}),
+              resistance(context.model.get(), warm_resistance()),
+              tire(context.model.get(), context.data.get(),
+                   std::move(tire_cfg)),
+              rider(context.model.get(), warm_rider()) {
+            drive.reset();
+            const std::size_t nv =
+                    static_cast<std::size_t>(context.model->nv);
+            tire_out.resize(nv);
+            rider_out.resize(nv);
+        }
+    };
+
+    drivetrain::TickInputs warm_tick_inputs(double dt, bool advance = true,
+                                            bool active = true) {
+        return {.control = {}, .dt = dt, .speed = 2., .sensed = 20.,
+                .braking = false, .active = active, .advance = advance,
+                .contact = true, .pedaling = std::nullopt,
+                .slip = std::nullopt};
+    }
+
+    // One production-shaped warm cycle: the drivetrain advance + settle
+    // pair (pending actuation is primed and drained each cycle so
+    // repeated ticks never trip the pending gate), then every other
+    // writer's marked entry on the current data.
+    CoreStatus warm_tick(WarmRig &rig, double dt) {
+        rig.context.data->time += dt;
+        CoreStatus status =
+                rig.drive.try_components_into(warm_tick_inputs(dt),
+                                              rig.drive_views);
+        if (status != CoreStatus::ok) return status;
+        auto settlement = rig.drive.stage_settle();
+        rig.drive.commit(settlement);
+        status = rig.suspension.try_components_into(
+                rig.context.data.get(), rig.suspension_views);
+        if (status != CoreStatus::ok)
+            return status;
+        status = rig.brake.try_compute_into(
+            rig.context.data.get(), .5, .5, rig.brake_out);
+        if (status != CoreStatus::ok)
+            return status;
+        const TireSideInput front{
+            .patch_loads = rig.front_loads,
+            .patch_working = rig.front_working,
+            .effective_radius_m = .3};
+        const TireSideInput rear{
+            .patch_loads = rig.rear_loads,
+            .patch_working = rig.rear_working,
+            .effective_radius_m = .3};
+        status = rig.resistance.try_components_into(
+            rig.context.data.get(), front, rear, rig.resistance_views);
+        if (status != CoreStatus::ok)
+            return status;
+        status = rig.tire.try_compute_into(
+            rig.context.data.get(), dt, rig.tire_out);
+        if (status != CoreStatus::ok)
+            return status;
+        return rig.rider.try_compute_into(rig.context.data.get(),
+                                          rig.rider_out);
+    }
+
+    // The R1 zero-allocation contract: a warmed rig runs repeated steady
+    // ticks through every BIKE_NONBLOCKING entry — plus the advance/settle
+    // transaction pair the binding interleaves — and the always-on
+    // allocation and deallocation counters must stay at zero inside the
+    // window.
+    void test_warm_core_zero_allocation() {
+        const auto rig = std::make_unique<WarmRig>(warm_suspension("physical"),
+                                                   warm_tire(true));
+        // Two warmup ticks — the drivetrain's tick and settlement banks
+        // alternate, so each needs a first engagement before measurement.
+        for (int warmup = 0; warmup < 2; ++warmup)
+            require(warm_tick(*rig, .002) == CoreStatus::ok,
+                    "warm rig warmup ticks");
+        allocation_counter::reset();
+        for (int tick = 0; tick < 4; ++tick)
+            require(warm_tick(*rig, .002) == CoreStatus::ok,
+                    "steady warm tick must succeed");
+        // A changing contact inside configured capacities: shifting the
+        // frame +x moves the front wheel across the bump edge — a new
+        // support set inside the same scratch extents.
+        drivetrain::buffer(rig->context.data->qpos,
+                           rig->context.model->nq)
+            [static_cast<std::size_t>(
+                 joint_qpos(rig->context.model.get(), "root_x"))] += .06;
+        engine::forward(rig->context.model.get(),
+                        rig->context.data.get());
+        require(warm_tick(*rig, .002) == CoreStatus::ok,
+                "warm tick over a changing contact must succeed");
+        require(allocation_counter::count() == 0 &&
+                    allocation_counter::freed() == 0,
+                "the warm core tick allocated or released storage");
+    }
+
+    // The marked entry points' rejection surface: every declared
+    // CoreStatus control flow — invalid_input, pending_actuation and
+    // invalid_geometry — must be returned through the status value with
+    // zero allocation/deallocation activity, because inside an RTSan
+    // region no exception or string may be constructed. This case is the
+    // always-on twin of the RTSan build's coverage: the same paths run
+    // here under the counters and there under [[clang::nonblocking]].
+    void test_rtsan_invalid_status_control() {
+        const auto rig = std::make_unique<WarmRig>(warm_suspension("physical"),
+                                                   warm_tire(true));
+        // Two warmup cycles — the drivetrain's tick and settlement banks
+        // alternate, so each needs a first engagement before measurement.
+        for (int warmup = 0; warmup < 2; ++warmup)
+            require(warm_tick(*rig, .002) == CoreStatus::ok,
+                    "status-control warmup ticks");
+        // require()'s message is evaluated eagerly, so any std::string
+        // concatenation would itself allocate inside the measured window —
+        // assertion text is built only on the failing branch.
+        const auto expect = [](std::string_view label, CoreStatus got,
+                               CoreStatus want) {
+            if (got != want)
+                throw std::runtime_error(
+                        std::string(label) + ": unexpected status");
+            if (allocation_counter::count() != 0 ||
+                allocation_counter::freed() != 0)
+                throw std::runtime_error(
+                        std::string(label) +
+                        ": allocation in the marked status path");
+            allocation_counter::reset();
+        };
+        const mjData *d = rig->context.data.get();
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        allocation_counter::reset();
+
+        // Suspension gates — null data, wrong view count.
+        expect("suspension/null",
+               rig->suspension.try_components_into(nullptr,
+                                                   rig->suspension_views),
+               CoreStatus::invalid_input);
+        expect("suspension/views",
+               rig->suspension.try_components_into(
+                   d, std::span{rig->suspension_views}.first(1)),
+               CoreStatus::invalid_input);
+
+        // Brake gates — null data, non-finite demands, wrong width.
+        expect("brake/null",
+               rig->brake.try_compute_into(nullptr, .5, .5, rig->brake_out),
+               CoreStatus::invalid_input);
+        expect("brake/nonfinite",
+               rig->brake.try_compute_into(d, nan, .5, rig->brake_out),
+               CoreStatus::invalid_input);
+        expect("brake/width",
+               rig->brake.try_compute_into(
+                   d, .5, .5, std::span{rig->brake_out}.first(1)),
+               CoreStatus::invalid_input);
+
+        // Resistance gates — null data, wrong view count, mismatched
+        // patch widths.
+        const TireSideInput front{
+            .patch_loads = rig->front_loads,
+            .patch_working = rig->front_working,
+            .effective_radius_m = .3};
+        const TireSideInput rear{
+            .patch_loads = rig->rear_loads,
+            .patch_working = rig->rear_working,
+            .effective_radius_m = .3};
+        expect("resistance/null",
+               rig->resistance.try_components_into(
+                   nullptr, front, rear, rig->resistance_views),
+               CoreStatus::invalid_input);
+        expect("resistance/views",
+               rig->resistance.try_components_into(
+                   d, front, rear,
+                   std::span{rig->resistance_views}.first(1)),
+               CoreStatus::invalid_input);
+        const std::array<double, 2> two_loads{180., 200.};
+        const TireSideInput mismatched{
+            .patch_loads = two_loads,
+            .patch_working = rig->front_working,
+            .effective_radius_m = .3};
+        expect("resistance/patch-shape",
+               rig->resistance.try_components_into(
+                   d, mismatched, rear, rig->resistance_views),
+               CoreStatus::invalid_input);
+
+        // Rider gates — null data, wrong output width.
+        expect("rider/null",
+               rig->rider.try_compute_into(nullptr, rig->rider_out),
+               CoreStatus::invalid_input);
+        expect("rider/width",
+               rig->rider.try_compute_into(
+                   d, std::span{rig->rider_out}.first(
+                          rig->rider_out.size() - 1)),
+               CoreStatus::invalid_input);
+
+        // Tire gates — null data, wrong width, dt domain, double advance
+        // (the warmup tick committed this timestamp).
+        expect("tire/null",
+               rig->tire.try_compute_into(nullptr, .002, rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("tire/width",
+               rig->tire.try_compute_into(
+                   d, .002, std::span{rig->tire_out}.first(3)),
+               CoreStatus::invalid_input);
+        expect("tire/dt",
+               rig->tire.try_compute_into(d, -1., rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("tire/dt-nan",
+               rig->tire.try_compute_into(d, nan, rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("tire/double-advance",
+               rig->tire.try_compute_into(d, .002, rig->tire_out),
+               CoreStatus::invalid_input);
+
+        // Drivetrain gates — wrong view count, non-finite fields.
+        expect("drive/views",
+               rig->drive.try_components_into(
+                   warm_tick_inputs(.002),
+                   std::span{rig->drive_views}.first(2)),
+               CoreStatus::invalid_input);
+        auto bad_dt = warm_tick_inputs(.002);
+        bad_dt.dt = nan;
+        expect("drive/dt",
+               rig->drive.try_components_into(bad_dt, rig->drive_views),
+               CoreStatus::invalid_input);
+        auto bad_speed = warm_tick_inputs(.002);
+        bad_speed.speed = nan;
+        expect("drive/speed",
+               rig->drive.try_components_into(bad_speed, rig->drive_views),
+               CoreStatus::invalid_input);
+        auto bad_sensed = warm_tick_inputs(.002);
+        bad_sensed.sensed = nan;
+        expect("drive/sensed",
+               rig->drive.try_components_into(bad_sensed, rig->drive_views),
+               CoreStatus::invalid_input);
+
+        // pending_actuation — an active tick commits pending; the next
+        // active advance is refused until a settlement drains it.
+        rig->context.data->time += .002;
+        expect("drive/prime",
+               rig->drive.try_components_into(warm_tick_inputs(.002),
+                                              rig->drive_views),
+               CoreStatus::ok);
+        rig->context.data->time += .002;
+        expect("drive/pending",
+               rig->drive.try_components_into(warm_tick_inputs(.002),
+                                              rig->drive_views),
+               CoreStatus::pending_actuation);
+        {
+            auto settlement = rig->drive.stage_settle();
+            rig->drive.commit(settlement);
+        }
+
+        // Double advance — a committed passive tick fixes last_time_s,
+        // and the pending gate is skipped (no active reservation), so the
+        // same timestamp hits the interval gate.
+        rig->context.data->time += .002;
+        expect("drive/passive",
+               rig->drive.try_components_into(
+                   warm_tick_inputs(.002, true, false), rig->drive_views),
+               CoreStatus::ok);
+        expect("drive/double-advance",
+               rig->drive.try_components_into(
+                   warm_tick_inputs(.002, true, false), rig->drive_views),
+               CoreStatus::invalid_input);
+
+        // invalid_geometry — a constructed-but-never-reset writer has no
+        // evaluated reference; the gates ahead of the geometry check all
+        // pass on a clean input. Heap: a full writer exceeds the frame
+        // budget several times over. Its construction is measured as
+        // construction, not as part of the status probe, so the window
+        // re-arms after it.
+        const auto unreset = std::make_unique<drivetrain::DrivetrainWriter>(
+            rig->context.model.get(), rig->context.data.get(),
+            drive_config("ideal_mid_drive", "plain", true, false));
+        allocation_counter::reset();
+        expect("drive/geometry",
+               unreset->try_components_into(warm_tick_inputs(.002),
+                                            rig->drive_views),
+               CoreStatus::invalid_geometry);
+    }
+
+    // The R1 allocation matrix: for each warm surface row — fixture
+    // construction, warmup, core tick, and the boxed convenience surface
+    // — the always-on counters record the exact call count. Construction
+    // and boxing rows are EXPECTED to allocate (that is where the scratch
+    // and the Python copies live); every core-tick row asserts the zero
+    // contract the marked entries declare.
+    NATIVE_DIAG_PUSH
+    NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+    void test_warm_allocation_matrix() {
+        const auto report = [](std::string_view row) {
+            std::cout << "  matrix " << row << " = "
+                      << allocation_counter::count() << " ("
+                      << allocation_counter::freed() << " freed)\n";
+        };
+        const auto core_row = [&report](std::string_view row, auto &&op) {
+            allocation_counter::reset();
+            static_cast<void>(op());
+            report(row);
+            if (allocation_counter::count() != 0 ||
+                allocation_counter::freed() != 0)
+                throw std::runtime_error(
+                        std::string(row) + " allocated in the warm core");
+        };
+        const auto measured_row = [&report](std::string_view row, auto &&op) {
+            allocation_counter::reset();
+            static_cast<void>(op());
+            report(row);
+        };
+
+        // Drivetrain rows — all three transmission kinds through their
+        // own fixtures (each topology resolves a different model).
+        for (const char *kind:
+             {"elastic_chain", "ideal_mid_drive",
+              "geometric_ideal_mid_drive"}) {
+            const std::string prefix = std::string("drive/") + kind;
+            std::unique_ptr<DriveFixture> fixture;
+            measured_row(prefix + "/construction", [&] {
+                fixture = std::make_unique<DriveFixture>(
+                    kind, "plain",
+                    drive_config(kind, "plain", true, false));
+            });
+            require(fixture != nullptr, "matrix fixture construction");
+            // Component view count is the topology's row count — the
+            // physical chain emits the declared 3 rows, the simplified
+            // models append ideal_transmission for 4.
+            const std::size_t view_count =
+                    std::string_view(kind) == "elastic_chain" ? 3 : 4;
+            std::array<ForceComponentView, 4> views{};
+            // Two cycles through the same warm path: the tick and
+            // settlement banks alternate, so each needs a first
+            // engagement before the measured rows.
+            measured_row(prefix + "/warmup", [&] {
+                for (int cycle = 0; cycle < 2; ++cycle) {
+                    fixture->data->time += .002;
+                    static_cast<void>(fixture->writer.try_components_into(
+                        warm_tick_inputs(.002),
+                        std::span{views}.first(view_count)));
+                    auto s = fixture->writer.stage_settle();
+                    fixture->writer.commit(s);
+                }
+            });
+            core_row(prefix + "/core_advance", [&] {
+                fixture->data->time += .002;
+                require(fixture->writer.try_components_into(
+                            warm_tick_inputs(.002),
+                            std::span{views}.first(view_count)) ==
+                            CoreStatus::ok,
+                        "advance tick must succeed");
+                auto s = fixture->writer.stage_settle();
+                fixture->writer.commit(s);
+            });
+            core_row(prefix + "/core_probe", [&] {
+                fixture->data->time += .002;
+                require(fixture->writer.try_components_into(
+                            warm_tick_inputs(.002, false),
+                            std::span{views}.first(view_count)) ==
+                            CoreStatus::ok,
+                        "probe tick must succeed");
+            });
+            core_row(prefix + "/core_settle", [&] {
+                auto s = fixture->writer.stage_settle();
+                fixture->writer.commit(s);
+            });
+            // Geometric transmissions stage the Jacobian AS their wrap
+            // coefficients, so a moved crank forces the coefficient-delta
+            // branch — evaluate_candidate's scratch-model rehearse-commit
+            // (refresh_scratch_model + engine::set_const). That path is
+            // the documented exception to the marked zero-allocation
+            // claim: MuJoCo's own mju_malloc inside mj_copyModel is
+            // invisible to these counters, so this row only proves the
+            // C++ surface of the rehearsal stays allocation-free.
+            if (std::string_view(kind) == "geometric_ideal_mid_drive")
+                measured_row(prefix + "/core_advance_coefficient_delta", [&] {
+                    fixture->data->time += .002;
+                    drivetrain::buffer(fixture->data->qpos, fixture->model->nq)
+                        [static_cast<std::size_t>(
+                             joint_qpos(fixture->model.get(),
+                                        "crank_spin"))] += .05;
+                    require(fixture->writer.try_components_into(
+                                warm_tick_inputs(.002),
+                                std::span{views}.first(view_count)) ==
+                                CoreStatus::ok,
+                            "coefficient-delta tick must succeed");
+                    auto s = fixture->writer.stage_settle();
+                    fixture->writer.commit(s);
+                });
+            // Out-of-realtime configuration paths — recorded, not
+            // asserted (state capture/restore sizes its own buffers).
+            const drivetrain::DriveSnapshot armed =
+                    fixture->writer.state();
+            measured_row(prefix + "/op_reset",
+                         [&] { fixture->writer.reset(); });
+            measured_row(prefix + "/op_restore",
+                         [&] { fixture->writer.restore(armed); });
+            // The boxing surface — components() returns owned containers.
+            measured_row(prefix + "/boxed", [&] {
+                fixture->data->time += .002;
+                static_cast<void>(fixture->writer.components(
+                    {}, .002, 2., false, true, true, 20., std::nullopt,
+                    true, std::nullopt));
+                auto s = fixture->writer.stage_settle();
+                fixture->writer.commit(s);
+            });
+        }
+
+        // Shared-model writer rows: each writer constructs/warms/ticks on
+        // the same context — construction is measured per writer, warmup
+        // covers the first-commit string/vector capacities, the core row
+        // asserts zero, and the boxed row records the Python convenience
+        // surface's intentional copy.
+        WarmContext context;
+        const auto rig_row = [&](std::string_view name, auto &&build,
+                                 auto &&warmup, auto &&core, auto &&boxed) {
+            measured_row(std::string(name) + "/construction", build);
+            measured_row(std::string(name) + "/warmup", warmup);
+            core_row(std::string(name) + "/core", core);
+            measured_row(std::string(name) + "/boxed", boxed);
+        };
+        {
+            std::unique_ptr<SuspensionWriter> writer;
+            std::array<ForceComponentView,
+                       SuspensionWriter::kLegacyComponentCount>
+                    views{};
+            rig_row(
+                "suspension_legacy",
+                [&] {
+                    writer = std::make_unique<SuspensionWriter>(
+                        context.model.get(), warm_suspension("legacy"));
+                },
+                [&] {
+                    static_cast<void>(writer->try_components_into(
+                        context.data.get(), views));
+                    static_cast<void>(writer->try_components_into(
+                        context.data.get(), views));
+                },
+                [&] {
+                    require(writer->try_components_into(
+                                context.data.get(), views) ==
+                                CoreStatus::ok,
+                            "suspension legacy tick");
+                },
+                [&] {
+                    static_cast<void>(writer->components(
+                        context.data.get()));
+                });
+        }
+        {
+            std::unique_ptr<SuspensionWriter> writer;
+            std::array<ForceComponentView,
+                       SuspensionWriter::kPhysicalComponentCount>
+                    views{};
+            rig_row(
+                "suspension_physical",
+                [&] {
+                    writer = std::make_unique<SuspensionWriter>(
+                        context.model.get(), warm_suspension("physical"));
+                },
+                [&] {
+                    static_cast<void>(writer->try_components_into(
+                        context.data.get(), views));
+                    static_cast<void>(writer->try_components_into(
+                        context.data.get(), views));
+                },
+                [&] {
+                    require(writer->try_components_into(
+                                context.data.get(), views) ==
+                                CoreStatus::ok,
+                            "suspension physical tick");
+                },
+                [&] {
+                    static_cast<void>(writer->components(
+                        context.data.get()));
+                });
+        }
+        {
+            std::unique_ptr<BrakeWriter> writer;
+            std::array<double, BrakeWriter::kTorqueCount> out{};
+            rig_row(
+                "brake",
+                [&] {
+                    writer = std::make_unique<BrakeWriter>(
+                        context.model.get(),
+                        nativecfg::BrakeConfig{
+                            .torque_ceiling_nm = 200.,
+                            .taper_radps = 5.});
+                },
+                [&] {
+                    static_cast<void>(writer->try_compute_into(
+                        context.data.get(), .5, .5, out));
+                    static_cast<void>(writer->try_compute_into(
+                        context.data.get(), .5, .5, out));
+                },
+                [&] {
+                    require(writer->try_compute_into(
+                                context.data.get(), .5, .5, out) ==
+                                CoreStatus::ok,
+                            "brake tick");
+                },
+                [&] {
+                    static_cast<void>(writer->torques(
+                        context.data.get(), .5, .5));
+                });
+        }
+        {
+            std::unique_ptr<ResistanceWriter> writer;
+            std::array<ForceComponentView,
+                       ResistanceWriter::kComponentCount>
+                    views{};
+            const std::array<double, 1> loads{200.};
+            const std::array<bool, 1> working{true};
+            const TireSideInput side{
+                .patch_loads = loads, .patch_working = working,
+                .effective_radius_m = .3};
+            rig_row(
+                "resistance",
+                [&] {
+                    writer = std::make_unique<ResistanceWriter>(
+                        context.model.get(), warm_resistance());
+                },
+                [&] {
+                    static_cast<void>(writer->try_components_into(
+                        context.data.get(), side, side, views));
+                    static_cast<void>(writer->try_components_into(
+                        context.data.get(), side, side, views));
+                },
+                [&] {
+                    require(writer->try_components_into(
+                                context.data.get(), side, side, views) ==
+                                CoreStatus::ok,
+                            "resistance tick");
+                },
+                [&] {
+                    static_cast<void>(writer->components(
+                        context.data.get(), side, side));
+                });
+        }
+        {
+            std::unique_ptr<RiderForcesWriter> writer;
+            std::vector<double> out(
+                static_cast<std::size_t>(context.model->nv));
+            rig_row(
+                "rider",
+                [&] {
+                    writer = std::make_unique<RiderForcesWriter>(
+                        context.model.get(), warm_rider());
+                },
+                [&] {
+                    static_cast<void>(writer->try_compute_into(
+                        context.data.get(), out));
+                    static_cast<void>(writer->try_compute_into(
+                        context.data.get(), out));
+                },
+                [&] {
+                    require(writer->try_compute_into(
+                                context.data.get(), out) ==
+                                CoreStatus::ok,
+                            "rider tick");
+                },
+                [&] {
+                    static_cast<void>(writer->qfrc(context.data.get()));
+                });
+        }
+        for (const bool track: {false, true}) {
+            std::unique_ptr<TireWriter> writer;
+            std::vector<double> out(
+                static_cast<std::size_t>(context.model->nv));
+            const std::string name =
+                    track ? "tire_track" : "tire_configured";
+            rig_row(
+                name,
+                [&] {
+                    writer = std::make_unique<TireWriter>(
+                        context.model.get(), context.data.get(),
+                        warm_tire(track));
+                },
+                [&] {
+                    context.data->time += .002;
+                    static_cast<void>(writer->try_compute_into(
+                        context.data.get(), .002, out));
+                    context.data->time += .002;
+                    static_cast<void>(writer->try_compute_into(
+                        context.data.get(), .002, out));
+                },
+                [&] {
+                    context.data->time += .002;
+                    require(writer->try_compute_into(
+                                context.data.get(), .002, out) ==
+                                CoreStatus::ok,
+                            "tire tick");
+                },
+                [&] {
+                    context.data->time += .002;
+                    static_cast<void>(writer->qfrc(
+                        context.data.get(), .002));
+                });
+        }
+        // The engine boundary row: forward inside the window must be
+        // allocation-free (the invoke frame is stack state).
+        core_row("engine/forward", [&] {
+            engine::forward(context.model.get(), context.data.get());
+        });
+    }
+    NATIVE_DIAG_POP
+
+    constexpr std::array<TestCase, 31> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -2482,6 +3370,9 @@ namespace {
         {.name = "cblas_and_norm", .run = test_cblas_and_norm},
         {.name = "closed_mode_enums", .run = test_closed_mode_enums},
         {.name = "force_component_layout", .run = test_force_component_layout},
+        {.name = "warm_core_zero_allocation", .run = test_warm_core_zero_allocation},
+        {.name = "rtsan_invalid_status_control", .run = test_rtsan_invalid_status_control},
+        {.name = "warm_allocation_matrix", .run = test_warm_allocation_matrix},
     }};
 
     int run_case(const TestCase &test_case) {

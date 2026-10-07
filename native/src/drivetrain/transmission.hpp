@@ -1,5 +1,6 @@
 #pragma once
 #include "chain.hpp"
+#include "../writers/writer_types.hpp"
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -7,6 +8,9 @@
 #include <variant>
 
 namespace drivetrain {
+    // DiagnosticValue/Diagnostics now live with the telemetry types in
+    // writers/writer_types.hpp (identical aliases); they stay the FFI-edge
+    // representation — core state uses DriveTelemetry lanes instead.
     using DiagnosticValue = std::variant<std::monostate, double, int, bool, std::string>;
     using Diagnostics = std::map<std::string, DiagnosticValue>;
 
@@ -37,7 +41,10 @@ namespace drivetrain {
         int rear_teeth{};
         std::optional<double> boundary;
         std::optional<PreparedTransmission> prepared;
-        Diagnostics diagnostics;
+        // Typed telemetry lanes (R1) — same closed schema as live_.last;
+        // copy/assign reuses lane storage, so staged mirrors never allocate
+        // nodes the way the former map did.
+        DriveTelemetry diagnostics;
         bool shift_pending{};
         double shift_parameter_work_j{}, shift_constraint_work_j{}, last_tension_n{};
         std::array<double, 2> range{};
@@ -114,6 +121,19 @@ namespace drivetrain {
 
         [[nodiscard]] TransmissionUpdate stage_reset(mjData *data);
 
+        // Into-forms for the writer's fixed stage banks (R1): the caller
+        // owns the candidate storage, make_update_into reseeds it from the
+        // live state, and the staged candidates stay bank-resident so a warm
+        // tick reuses — never re-allocates — their vectors and telemetry
+        // lanes. stage_ratio_into composes onto whatever the caller seeded
+        // into `update` (a fresh make_update_into or an earlier staged
+        // prepare), matching the by-value overloads bitwise.
+        void make_update_into(TransmissionUpdate &update) const;
+        void stage_prepare_into(mjData *data, TransmissionUpdate &update);
+        void stage_reset_into(mjData *data, TransmissionUpdate &update);
+        void stage_ratio_into(mjData *data, double ratio,
+                              TransmissionUpdate &update);
+
         // Publishes a staged update. Guarded live model writes run first —
         // an engine failure there propagates and poisons the owning Stepper
         // while no logical state has been published — then the no-throw
@@ -126,7 +146,13 @@ namespace drivetrain {
         // not even the solve's own telemetry.
         [[nodiscard]] SolvedTransmission stage_solved(mjData *data);
 
-        // Memory-only and noexcept: the whole candidate state swaps in.
+        // Bank-resident staging twin — fills `solved` (state copy-assign
+        // reuses its storage; force_ is this transmission's own scratch) so
+        // a warm settlement allocates nothing.
+        void stage_solved_into(mjData *data, SolvedTransmission &solved);
+
+        // Memory-only and noexcept: state_ swaps with the candidate, so the
+        // staged bank slot keeps its storage for the next settlement.
         void commit(SolvedTransmission &solved) noexcept;
 
         // Convenience: stage + commit, returning the persistent force span.
@@ -136,11 +162,16 @@ namespace drivetrain {
 
         TransmissionSnapshot state() const;
 
+        // state() into caller storage — copy-assigns into the snapshot so a
+        // bank-resident mirror reuses its lanes/vectors instead of building
+        // a fresh value per call.
+        void state_into(TransmissionSnapshot &snapshot) const;
+
         void validate(const TransmissionSnapshot &state) const;
 
         void restore(TransmissionSnapshot state);
 
-        const Diagnostics &diagnostics() const { return state_.diagnostics; }
+        const DriveTelemetry &diagnostics() const { return state_.diagnostics; }
         int driven_dof() const { return driven_dof_; }
         // Private FFI regression diagnostics read storage identity, not
         // snapshots: each generation counter bumps when its buffer's

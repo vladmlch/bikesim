@@ -269,9 +269,7 @@ endif()
 # PROTECT_STACK: nanobind otherwise appends -fno-stack-protector in Release
 # configs, which would silently nullify -fstack-protector-strong below.
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
-  src/binding.cpp src/stepper.cpp src/writers/suspension.cpp
-  src/writers/brake.cpp src/writers/resistance.cpp
-  src/writers/rider_forces.cpp src/writers/tire.cpp
+  src/binding.cpp src/stepper.cpp
   src/drivetrain/policy_binding.cpp
   src/drivetrain/drive_binding.cpp
   src/rider/contact_binding.cpp)
@@ -407,20 +405,26 @@ if(NATIVE_COVERAGE)
   target_link_options(bike_native PRIVATE -fprofile-instr-generate)
 endif()
 
-# Share Python-free drivetrain code with direct native contract tests. The
-# object is compiled once with the extension's complete warning, hardening,
-# sanitizer, and coverage context, and remains PIC for module linkage.
-# The contract binary links these objects directly, so each drivetrain TU
-# keeps exactly one translation unit across all targets (the ODR sweep links
-# every selected TU into a single image). bike_native picks them up through
-# the existing target_link_libraries edge below — same COMPILE_OPTIONS,
-# including -ffp-contract=off, as when they were listed on the module itself.
+# Share Python-free core code with direct native contract tests: the
+# drivetrain/policy TUs plus the owning writer cores (suspension, brake,
+# resistance, rider_forces, tire) whose warm-core entries the R1 contract
+# cases exercise. The object is compiled once with the extension's complete
+# warning, hardening, sanitizer, and coverage context, and remains PIC for
+# module linkage. The contract binary links these objects directly, so each
+# TU keeps exactly one translation unit across all targets (the ODR sweep
+# links every selected TU into a single image). bike_native picks them up
+# through the existing target_link_libraries edge below — same
+# COMPILE_OPTIONS, including -ffp-contract=off, as when they were listed on
+# the module itself.
 add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp
   src/drivetrain/shifting.cpp src/drivetrain/motor.cpp
   src/drivetrain/freehub.cpp src/writers/drivetrain.cpp
   src/writers/cruise.cpp src/tyre/profile.cpp
-  src/rider/contact_math.cpp src/rider/support_geometry.cpp)
+  src/rider/contact_math.cpp src/rider/support_geometry.cpp
+  src/writers/suspension.cpp src/writers/brake.cpp
+  src/writers/resistance.cpp src/writers/rider_forces.cpp
+  src/writers/tire.cpp)
 set_target_properties(bike_native_contract_core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   CXX_STANDARD 23

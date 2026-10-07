@@ -51,110 +51,84 @@ namespace {
         return d;
     }
 
-    Diagnostics parse_diagnostics(const wire::Dict &d) {
-        Diagnostics out;
-        const std::set<std::string> bools = {
-            "omits_suspension_coupling",
-            "freehub_engaged",
-            "assist_demand_gated",
-            "motor_freewheel_engaged",
-            "safety_limited",
-            "motor_enabled",
-            "energy_limited",
-            "battery_empty",
-            "shift_active",
-            "crank_clutch_engaged"
-        };
-        const std::set<std::string> integers = {
-            "gear_front_teeth", "gear_rear_teeth",
-            "shift_from_teeth", "shift_count"
-        };
-        const std::set<std::string> strings = {
-            "transmission_model", "rider_mode", "coasting_reason",
-            "motor_control_source", "assist_mode", "shift_direction",
-            "transmission_reference_status"
-        };
-        const std::set<std::string> optional = {
-            "human_setpoint_nm", "crank_target_phase_rad", "motor_setpoint_nm",
-            "motor_limit_nm", "shift_time_s"
-        };
-        const std::set<std::string> numeric = {
-            "chain_extension_m",
-            "chain_extension_rate_mps",
-            "chain_tension_n",
-            "chain_energy_j",
-            "chain_dissipation_power_w",
-            "freehub_torque_nm",
-            "freehub_energy_j",
-            "freehub_deflection_rad",
-            "freehub_dissipation_power_w",
-            "cadence_rpm",
-            "crank_rad_s",
-            "drive_shaft_rad_s",
-            "human_torque_nm",
-            "human_sensor_nm",
-            "assist_sensor_nm",
-            "human_command_nm",
-            "required_cadence_rpm",
-            "crank_target_rate_rad_s",
-            "motor_request_nm",
-            "motor_torque_nm",
-            "motor_freewheel_torque_nm",
-            "motor_freewheel_dissipation_power_w",
-            "motor_limited_request_nm",
-            "motor_shaft_power_w",
-            "electrical_power_w",
-            "battery_energy_j",
-            "assist_gain",
-            "gear_ratio",
-            "shift_torque_factor",
-            "crank_clutch_torque_nm",
-            "crank_clutch_dissipation_power_w",
-            "transmission_phi_m",
-            "transmission_boundary_m",
-            "transmission_gap_m",
-            "transmission_tension_n",
-            "transmission_constraint_defect_m",
-            "transmission_interval_work_j",
-            "transmission_reaction_error_n",
-            "shift_parameter_work_j",
-            "shift_interval_constraint_work_j",
-            "shift_constraint_work_cumulative_j"
-        };
+    // Typed-telemetry twin — iterates the declared lanes in schema order,
+    // the same sequence the former map's sorted iteration produced, so the
+    // wire dict is identical without materializing the map.
+    nb::dict diagnostic_dict(const DriveTelemetry &values) {
+        nb::dict d;
+        values.for_each([&](TelemetryField field, const TelemetryScalar &v) {
+            const TelemetrySpec &spec = telemetry_spec(field);
+            const auto key = std::string(spec.name);
+            std::visit(
+                [&](const auto &x) {
+                    using T = std::decay_t<decltype(x)>;
+                    if constexpr (std::is_same_v<T, std::monostate>)
+                        d[key.c_str()] = nb::none();
+                    else if constexpr (std::is_same_v<T, std::int32_t>)
+                        d[key.c_str()] = nb::cast(static_cast<int>(x));
+                    else if constexpr (std::is_same_v<T, std::uint8_t>)
+                        d[key.c_str()] = nb::cast(
+                            std::string(telemetry_label_name(field, x)));
+                    else if constexpr (std::is_same_v<T, std::string_view>)
+                        d[key.c_str()] = nb::cast(std::string(x));
+                    else
+                        d[key.c_str()] = nb::cast(x);
+                },
+                v);
+        });
+        return d;
+    }
+
+    // Schema-driven twin of the former map parser: kind, integer floor and
+    // closed-label domains all come from telemetry_spec, so a schema change
+    // cannot desync the parser. Unknown keys are rejected exactly like the
+    // former key sets; open lanes (assist_mode, coasting_reason) keep their
+    // unchecked-string semantics, label lanes their closed domains.
+    DriveTelemetry parse_telemetry(const wire::Dict &d) {
+        DriveTelemetry out;
         for (auto const item: d.value) {
             const std::string k = wire::string(item.first, d.path);
             const auto v = item.second;
-            if (!bools.contains(k) && !integers.contains(k) && !strings.contains(k) &&
-                !optional.contains(k) && !numeric.contains(k))
+            const std::optional<TelemetryField> field = telemetry_field(k);
+            if (!field)
                 wire::invalid(d.child(k.c_str()), "unknown diagnostic key");
-            if (bools.contains(k))
-                out[k] = boolean(v, d.child(k.c_str()).c_str());
-            else if (integers.contains(k)) {
+            const TelemetrySpec &spec = telemetry_spec(*field);
+            switch (spec.kind) {
+            case TelemetryKind::flag:
+                out.set(*field, boolean(v, d.child(k.c_str()).c_str()));
+                break;
+            case TelemetryKind::integer: {
                 const int value = integer(d, k.c_str());
-                if (value < (k == "shift_count" ? 0 : 3))
+                if (value < spec.integer_min)
                     throw std::invalid_argument("diagnostic integer range");
-                out[k] = value;
-            } else if (strings.contains(k)) {
+                out.set(*field, static_cast<std::int32_t>(value));
+                break;
+            }
+            case TelemetryKind::label: {
                 const auto value = string(d, k.c_str());
-                if ((k == "shift_direction" && value != "none" && value != "up" &&
-                     value != "down") ||
-                    (k == "transmission_model" && value != "elastic_chain" &&
-                     value != "ideal_mid_drive" && value != "geometric_ideal_mid_drive") ||
-                    (k == "rider_mode" && value != "disabled" && value != "pedaling" &&
-                     value != "coasting") ||
-                    (k == "motor_control_source" && value != "assist" &&
-                     value != "external_request") ||
-                    (k == "transmission_reference_status" &&
-                     value != "experimental_geometric_reduction"))
+                const std::optional<std::uint8_t> ordinal =
+                        telemetry_label(*field, value);
+                if (!ordinal)
                     throw std::invalid_argument("diagnostic enum");
-                out[k] = value;
-            } else if (v.is_none() && optional.contains(k))
-                out[k] = std::monostate{};
-            else {
+                out.set_label(*field, *ordinal);
+                break;
+            }
+            case TelemetryKind::open:
+                out.set_open(*field, string(d, k.c_str()));
+                break;
+            case TelemetryKind::optional:
+                if (v.is_none()) {
+                    out.set_none(*field);
+                    break;
+                }
+                [[fallthrough]];
+            case TelemetryKind::real: {
                 const double value = number(v, d.child(k.c_str()).c_str());
                 if (k == "gear_ratio")
                     positive(value, "diagnostic gear ratio");
-                out[k] = value;
+                out.set(*field, value);
+                break;
+            }
             }
         }
         return out;
@@ -162,17 +136,21 @@ namespace {
 
     // Result boxing runs on the staged candidate BEFORE commit — an ndarray
     // or dict allocation failure cannot leave the tick half published.
-    nb::dict box_components(const ForceComponents &components) {
+    nb::dict box_components(std::span<const ForceComponentView> components,
+                            std::span<const std::string_view> names) {
         nb::dict out;
-        for (const auto &[key, value]: components)
-            out[key.c_str()] = owned(value);
+        for (std::size_t i = 0; i < components.size(); ++i)
+            out[nb::str(names[i].data(), names[i].size())] =
+                    owned(components[i].values);
         return out;
     }
 
+    // Enum→wire conversions live only at this boundary — the core carries
+    // PedalMode/CoastReason ordinals.
     nb::dict result_dict(const PedalingState &s) {
         nb::dict d;
-        d["mode"] = s.mode;
-        d["reason"] = s.reason;
+        d["mode"] = std::string(pedal_mode_name(s.mode));
+        d["reason"] = std::string(coast_reason_name(s.reason));
         d["effort_nm"] = s.effort_nm;
         d["required_cadence_rpm"] = s.required_cadence_rpm;
         d["target_phase_rad"] = nb::cast(s.target_phase_rad);
@@ -182,16 +160,20 @@ namespace {
 
     PedalingState parse_result(const wire::Dict &d) {
         wire::exact(d, wire::keys("mode", "reason", "effort_nm", "required_cadence_rpm", "target_phase_rad", "target_rate_rad_s"));
+        const std::optional<PedalMode> mode = pedal_mode(string(d, "mode"));
+        const std::optional<CoastReason> reason =
+                coast_reason(string(d, "reason"));
+        if (!mode)
+            throw std::invalid_argument("pedaling mode");
+        if (!reason)
+            throw std::invalid_argument("coasting reason");
         PedalingState s{
-            .mode = string(d, "mode"),
-            .reason = string(d, "reason"),
+            .mode = *mode, .reason = *reason,
             .effort_nm = num(d, "effort_nm"),
             .required_cadence_rpm = num(d, "required_cadence_rpm"),
             .target_phase_rad = optional_num(d, "target_phase_rad"),
             .target_rate_rad_s = num(d, "target_rate_rad_s")
         };
-        if (s.mode != "pedaling" && s.mode != "coasting" && s.mode != "disabled")
-            throw std::invalid_argument("pedaling mode");
         nonnegative(s.effort_nm, "pedaling effort");
         return s;
     }
@@ -329,7 +311,7 @@ namespace {
         s.ratio = num(d, "ratio");
         s.rear_teeth = integer(d, "rear_teeth");
         s.boundary = optional_num(d, "boundary");
-        s.diagnostics = parse_diagnostics(section(d, "diagnostics"));
+        s.diagnostics = parse_telemetry(section(d, "diagnostics"));
         s.shift_pending = boolean(d, "shift_pending");
         s.shift_parameter_work_j = num(d, "shift_parameter_work_j");
         s.shift_constraint_work_j = num(d, "shift_constraint_work_j");
@@ -358,7 +340,16 @@ namespace {
         d["last_time_s"] = nb::cast(s.last_time_s);
         d["reference"] = nb::cast(s.reference);
         d["psi"] = nb::cast(s.psi);
-        d["angles"] = nb::cast(s.angles);
+        // The fixed-width mirror expands back into the wire's variable
+        // list — 1 entry for the simplified models, 2 for elastic_chain.
+        if (s.angles) {
+            const auto values = std::span<const double>(s.angles->values)
+                                    .first(s.angles->count);
+            d["angles"] = nb::cast(
+                std::vector<double>(values.begin(), values.end()));
+        } else {
+            d["angles"] = nb::none();
+        }
         d["last"] = diagnostic_dict(s.last);
         d["probe_last"] = s.probe_last
                               ? nb::object(diagnostic_dict(*s.probe_last))
@@ -386,11 +377,17 @@ namespace {
         s.last_time_s = optional_num(d, "last_time_s");
         s.reference = optional_num(d, "reference");
         s.psi = optional_num(d, "psi");
-        if (!field(d, "angles").is_none())
-            s.angles = vector(field(d, "angles"), d.child("angles").c_str());
-        s.last = parse_diagnostics(section(d, "last"));
+        if (!field(d, "angles").is_none()) {
+            const auto a = vector(field(d, "angles"), d.child("angles").c_str());
+            DriveAngles angles{.count = a.size()};
+            if (a.size() > angles.values.size())
+                throw std::invalid_argument("drive angle width");
+            std::ranges::copy(a, angles.values.begin());
+            s.angles = angles;
+        }
+        s.last = parse_telemetry(section(d, "last"));
         if (!field(d, "probe_last").is_none())
-            s.probe_last = parse_diagnostics(section(d, "probe_last"));
+            s.probe_last = parse_telemetry(section(d, "probe_last"));
         if (!field(d, "pending_actuation").is_none()) {
             const auto p = section(d, "pending_actuation");
             wire::exact(p, wire::keys("requested", "omega", "dt", "enabled"));
@@ -499,7 +496,7 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                    nb::handle active, nb::handle advance, nb::handle contact,
                    nb::handle slip, nb::handle ceiling) {
                     return s.mutate([&] {
-                        auto tick = s.drive().stage_prepare(
+                        const auto tick = s.drive().stage_prepare(
                             {.control = control(raw),
                              .dt = wire::finite_real(dt, "drive_prepare_pedaling.dt"),
                              .braking = boolean(braking, "drive_prepare_pedaling.braking"),
@@ -530,7 +527,7 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                                 throw std::invalid_argument("pedaling_state");
                             state = parse_result({.value = nb::borrow<nb::dict>(ps), .path = "pedaling_state"});
                         }
-                        auto tick = s.drive().stage_components(
+                        const auto tick = s.drive().stage_components(
                             {.control = control(raw),
                              .dt = wire::finite_real(dt, "drive_components.dt"),
                              .speed = wire::finite_real(speed, "drive_components.speed_mps"),
@@ -541,7 +538,8 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                              .contact = boolean(contact, "drive_components.rear_in_contact"),
                              .pedaling = state,
                              .slip = wire::optional_real(slip, "drive_components.rear_slip_mps")});
-                        nb::dict const out = box_components(tick.components);
+                        nb::dict const out = box_components(tick.components,
+                                                            tick.component_names);
                         s.drive().commit(tick);
                         return out;
                     });

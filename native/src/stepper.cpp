@@ -18,6 +18,14 @@
 #include "writers/tire.hpp"
 #include "writers/drivetrain.hpp"
 
+// The stepper.hpp view scratch is literal-sized (the writer constants live
+// in headers stepper.hpp cannot include without pulling writer bodies into
+// its boundary) — pin the literal values here.
+static_assert(SuspensionWriter::kPhysicalComponentCount == 8 &&
+              "suspension_views_ must cover the physical-mode count");
+static_assert(ResistanceWriter::kComponentCount == 2 &&
+              "resistance_views_ must cover kComponentCount");
+
 namespace {
     // Same check for every incoming span — one place only (the binding converts
     // ndarray→span and forwards; widths live on the model, which only the core
@@ -89,11 +97,18 @@ Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
         if (cfg.resistance)
             resistance_ =
                     std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
-        if (cfg.tire)
+        if (cfg.tire) {
             tire_ = std::make_unique<TireWriter>(m_, d_, *cfg.tire);
-        if (cfg.rider_forces)
+            // Construction-sized convenience scratch — the boxed tire_qfrc
+            // reroutes through compute_into instead of copying qfrc()'s
+            // member out per call.
+            tire_out_.resize(static_cast<std::size_t>(m_->nv));
+        }
+        if (cfg.rider_forces) {
             rider_forces_ =
                     std::make_unique<RiderForcesWriter>(m_, *cfg.rider_forces);
+            rider_out_.resize(static_cast<std::size_t>(m_->nv));
+        }
         if (cfg.drive)
             drive_ = std::make_unique<drivetrain::DrivetrainWriter>(m_, d_, *cfg.drive);
     } catch (...) {
@@ -346,13 +361,40 @@ void Stepper::set_state(std::span<const double> qpos,
     poisoned_ = false;
 }
 
+namespace {
+    // Serialize a ForceComponentView prefix as the boxed (name, values)
+    // list components() used to return — identical names/values/insertion
+    // order, but the names come from the writer's constant table and the
+    // values copy from the writer's own persistent component storage, so
+    // the writer side never allocates: only this serialization copy does,
+    // and it IS the boxing surface the caller asked for.
+    [[nodiscard]] std::vector<std::pair<std::string, std::vector<double> > >
+    box_views(std::span<const std::string_view> names,
+              std::span<const ForceComponentView> views) {
+        std::vector<std::pair<std::string, std::vector<double> > > out;
+        out.reserve(views.size());
+        for (std::size_t i = 0; i < views.size(); ++i)
+            out.emplace_back(std::string(names[i]),
+                             std::vector<double>(views[i].values.begin(),
+                                                 views[i].values.end()));
+        return out;
+    }
+} // namespace
+
 std::vector<std::pair<std::string, std::vector<double> > >
 Stepper::suspension_components() const {
     if (!suspension_)
         throw std::logic_error(
             "suspension_components: Stepper was built without a suspension "
             "config (pass the dict from tools.native_config.project)");
-    return suspension_->components(d_);
+    // Route through the non-allocating writer face over member scratch —
+    // the serialized copy below is the only allocation, and it is the
+    // return value itself.
+    const std::span<const std::string_view> names =
+            suspension_->component_names();
+    suspension_->components_into(
+            d_, std::span{suspension_views_}.first(names.size()));
+    return box_views(names, std::span{suspension_views_}.first(names.size()));
 }
 
 std::pair<double, double>
@@ -380,7 +422,12 @@ Stepper::resistance_components(const TireSideInput &front,
         throw std::logic_error(
             "resistance_components: Stepper was built without a resistance "
             "config (pass the dict from tools.native_config.project)");
-    return resistance_->components(d_, front, rear);
+    // Same routing as suspension_components: non-allocating writer face,
+    // member scratch, one serialization copy out.
+    const std::span<const std::string_view> names =
+            ResistanceWriter::component_names();
+    resistance_->components_into(d_, front, rear, resistance_views_);
+    return box_views(names, resistance_views_);
 }
 
 namespace {
@@ -393,7 +440,10 @@ std::vector<double> Stepper::tire_qfrc(double dt) {
     require_healthy();
     if (!tire_)
         throw std::logic_error(kNoTire);
-    return tire_->qfrc(d_, dt);
+    // compute_into writes the caller-owned construction-sized scratch —
+    // same advance+commit pipeline as qfrc(), no writer-side copy.
+    tire_->compute_into(d_, dt, tire_out_);
+    return tire_out_;
 }
 
 void Stepper::set_tire_state(std::span<const std::string> names,
@@ -420,7 +470,8 @@ std::vector<double> Stepper::rider_forces_qfrc() const {
         throw std::logic_error(
             "rider_forces_qfrc: Stepper was built without a rider_forces "
             "config (pass the dict from tools.native_config.project)");
-    return rider_forces_->qfrc(d_);
+    rider_forces_->compute_into(d_, rider_out_);
+    return rider_out_;
 }
 
 std::vector<double>

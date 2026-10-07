@@ -109,6 +109,13 @@ namespace drivetrain {
                     "model coordinate exactly once");
         } else if (coefficients_.size() != 1)
             throw std::invalid_argument("ideal freehub needs one driver joint coefficient");
+        // The first commit's state_⇄update.state swap hands the live
+        // snapshot's storage to the staged bank slot. Reserving here keeps
+        // that hand-off capacity-sized so the next marked
+        // make_update_into() assigns coefficients into capacity instead of
+        // allocating on the cold slot (RTSan flagged the swap-poisoned
+        // slot on the first warm tick).
+        state_.coefficients.reserve(coefficients_.size());
     }
 
     double Transmission::relative(const mjData *d) const {
@@ -178,11 +185,23 @@ namespace drivetrain {
         update.state.prepared = update.prepared;
     }
 
-    TransmissionUpdate Transmission::make_update_from_current() const {
-        TransmissionUpdate update;
+    // Reseeds caller-owned candidate storage from the live state. Every
+    // assignment is a copy-assign into the update's existing vectors, lanes
+    // and optionals, so a bank-resident update reaches steady state after
+    // one warmup — libc++/MSVC/libstdc++ assign-into-capacity never
+    // reallocates when the source fits.
+    // state_.prepared is disengaged by invariant, so the whole-state
+    // copy-assign would DESTROY the bank slot's engaged prepared vectors
+    // (two frees) only for the re-engagement below to rebuild them (two
+    // news) — the same churn commit() avoids by swapping the slot back.
+    // Lift the engaged slot into a keep-alive optional across the assign
+    // and swap it back in, preserving the bank's storage verbatim.
+    void Transmission::make_update_into(TransmissionUpdate &update) const {
         update.gear = gear_;
+        std::optional<PreparedTransmission> keep;
+        keep.swap(update.state.prepared);
         update.state = state_;
-        update.coefficients.reserve(coefficients_.size());
+        update.coefficients.clear();
         const auto prm = buffer(model_->wrap_prm, model_->nwrap);
         for (int const index: coefficients_)
             update.coefficients.push_back(prm[static_cast<std::size_t>(index)]);
@@ -192,10 +211,28 @@ namespace drivetrain {
         update.range = {range[0], range[1]};
         update.state.range = update.range;
         if (prepared_valid_) {
+            PreparedTransmission &slot = keep ? *keep : keep.emplace();
+            slot = prepared_storage_;
+            update.state.prepared.swap(keep);
             update.prepared = prepared_storage_;
-            update.state.prepared = prepared_storage_;
             update.prepared_valid = true;
+        } else {
+            update.prepared.phi = update.prepared.time = 0.;
+            update.prepared.jacobian.clear();
+            update.prepared.qpos.clear();
+            // A bank slot can arrive here holding stale prepared storage
+            // only when prepared_valid_ dropped (a restore() that detached
+            // the prepared candidate) — an out-of-claim event. The lifted
+            // storage dies with `keep`; the slot stays disengaged like the
+            // non-geometric banks, which never engaged it at all.
+            update.state.prepared.reset();
+            update.prepared_valid = false;
         }
+    }
+
+    TransmissionUpdate Transmission::make_update_from_current() const {
+        TransmissionUpdate update;
+        make_update_into(update);
         return update;
     }
 
@@ -241,8 +278,9 @@ namespace drivetrain {
                           .subspan(2 * static_cast<std::size_t>(tendon_), 2).begin());
     }
 
-    TransmissionUpdate Transmission::stage_reset(mjData *data) {
-        auto update = make_update_from_current();
+    void Transmission::stage_reset_into(mjData *data,
+                                        TransmissionUpdate &update) {
+        make_update_into(update);
         if (geometric_) {
             const double phi = candidate_geometry(data, update.gear);
             update.state.boundary = phi;
@@ -257,11 +295,17 @@ namespace drivetrain {
             update.state.range = update.range;
         }
         evaluate_candidate(data, update);
+    }
+
+    TransmissionUpdate Transmission::stage_reset(mjData *data) {
+        TransmissionUpdate update;
+        stage_reset_into(data, update);
         return update;
     }
 
-    TransmissionUpdate Transmission::stage_prepare(mjData *data) {
-        auto update = make_update_from_current();
+    void Transmission::stage_prepare_into(mjData *data,
+                                          TransmissionUpdate &update) {
+        make_update_into(update);
         if (geometric_) {
             const double phi = candidate_geometry(data, update.gear);
             update.state.boundary =
@@ -275,18 +319,32 @@ namespace drivetrain {
             update.state.range = update.range;
         }
         evaluate_candidate(data, update);
+    }
+
+    TransmissionUpdate Transmission::stage_prepare(mjData *data) {
+        TransmissionUpdate update;
+        stage_prepare_into(data, update);
         return update;
     }
 
     TransmissionUpdate Transmission::stage_ratio(mjData *data, double ratio) {
-        return stage_ratio(data, ratio, make_update_from_current());
+        TransmissionUpdate update;
+        make_update_into(update);
+        stage_ratio_into(data, ratio, update);
+        return update;
     }
 
     TransmissionUpdate Transmission::stage_ratio(mjData *data, double ratio,
-                                                 TransmissionUpdate update) {
+                                                 TransmissionUpdate base) {
+        stage_ratio_into(data, ratio, base);
+        return base;
+    }
+
+    void Transmission::stage_ratio_into(mjData *data, double ratio,
+                                        TransmissionUpdate &update) {
         positive(ratio, "gear ratio");
         if (ratio == update.state.ratio)
-            return update;
+            return;
         // The seed candidate's gear/state supply every pre-shift read, so a
         // staged prepare composes under the ratio change exactly as the
         // sequential live order did.
@@ -304,7 +362,7 @@ namespace drivetrain {
             update.range[1] = *update.state.boundary;
             update.state.range = update.range;
             evaluate_candidate(data, update);
-            return update;
+            return;
         }
         update.gear.rear_teeth = validated_rear_teeth(base_gear.front_teeth, ratio);
         update.state.rear_teeth = update.gear.rear_teeth;
@@ -319,7 +377,6 @@ namespace drivetrain {
         update.state.shift_pending = true;
         linearize_candidate(data, update, phi);
         evaluate_candidate(data, update);
-        return update;
     }
 
     void Transmission::commit(TransmissionUpdate &update) {
@@ -344,9 +401,13 @@ namespace drivetrain {
         // disengaged; the candidate lands in the construction-owned storage
         // element-by-element so vector identity (prepared_generations) is
         // preserved — resize only repairs a width drift, never reallocates.
+        // The state swap (not a move) hands the old live snapshot back into
+        // the caller's storage, and the second swap returns the staged
+        // prepared mirror into the update's slot — bank-resident candidates
+        // keep every vector/lane allocation for the next stage.
         gear_ = update.gear;
-        update.state.prepared.reset();
-        state_ = std::move(update.state);
+        std::swap(state_, update.state);
+        update.state.prepared.swap(state_.prepared);
         prepared_valid_ = update.prepared_valid;
         if (update.prepared_valid) {
             if (prepared_storage_.jacobian.size() != update.prepared.jacobian.size())
@@ -376,14 +437,28 @@ namespace drivetrain {
     }
 
     SolvedTransmission Transmission::stage_solved(mjData *d) {
+        SolvedTransmission solved;
+        stage_solved_into(d, solved);
+        return solved;
+    }
+
+    void Transmission::stage_solved_into(mjData *d,
+                                         SolvedTransmission &solved) {
         // The candidate detaches the live snapshot up front; everything the
         // solve used to publish now lands on `solved.state`, so a throw in
         // any step below leaves state_ byte-identical. Scratch writes
         // (force_, multipliers_, endpoint_, displacement_, geometry_) are
         // not logical state and may partially complete on a throw — the
-        // next staging run overwrites them wholesale.
-        SolvedTransmission solved{.force = {}, .state = state_};
+        // next staging run overwrites them wholesale. The copy-assign seeds
+        // caller-owned storage — vectors and telemetry lanes reuse their
+        // capacity, so a bank-resident solve allocates nothing per settle.
+        solved.state = state_;
         std::ranges::fill(force_, 0.);
+        // multipliers_ was sized to model_->njmax at construction; models
+        // with an unlimited constraint arena (njmax <= 0) can exceed that
+        // hint — assign() grows once to the observed extent, then every
+        // warm solve reuses the established capacity. Steady state is
+        // allocation-free; the size stays nefc for the loop below.
         multipliers_.assign(static_cast<std::size_t>(d->nefc), 0.);
         const auto type = buffer(d->efc_type, d->nefc), ids = buffer(d->efc_id, d->nefc);
         const auto ef = buffer(d->efc_force, d->nefc);
@@ -399,7 +474,7 @@ namespace drivetrain {
             mj_mulJacTVec(model_, d, force_.data(), multipliers_.data());
         solved.force = force_;
         if (!geometric_)
-            return solved;
+            return;
         if (!prepared_valid_)
             throw std::runtime_error("prepare the geometric transmission before solving");
         const auto &p = prepared_storage_;
@@ -419,33 +494,43 @@ namespace drivetrain {
         for (std::size_t i = 0; i < force_.size(); ++i)
             error = std::max(
                 error, std::abs(force_[i] - (-std::max(0., tension) * p.jacobian[i])));
-        solved.state.diagnostics = {
-            {"transmission_phi_m", p.phi},
-            {"transmission_boundary_m", engaged(state_.boundary)},
-            {"transmission_gap_m", engaged(state_.boundary) - p.phi},
-            {"transmission_tension_n", tension},
-            {"transmission_constraint_defect_m", defect},
-            {"transmission_interval_work_j", work},
-            {"transmission_reaction_error_n", error},
-            {"shift_parameter_work_j", state_.shift_parameter_work_j},
-            {"shift_interval_constraint_work_j", state_.shift_pending ? work : 0.},
-            {"shift_constraint_work_cumulative_j", solved.state.shift_constraint_work_j},
-            {
-                "transmission_reference_status",
-                std::string("experimental_geometric_reduction")
-            }
-        };
+        // Fixed-lane telemetry replaces the per-solve map build: clear()
+        // drops the seeded lanes wholesale (the old map assignment's
+        // replace semantics), then the eleven declared fields write in
+        // place — no node allocations at any point.
+        DriveTelemetry &diag = solved.state.diagnostics;
+        diag.clear();
+        diag.set(TelemetryField::transmission_phi_m, p.phi);
+        diag.set(TelemetryField::transmission_boundary_m,
+                 engaged(state_.boundary));
+        diag.set(TelemetryField::transmission_gap_m,
+                 engaged(state_.boundary) - p.phi);
+        diag.set(TelemetryField::transmission_tension_n, tension);
+        diag.set(TelemetryField::transmission_constraint_defect_m, defect);
+        diag.set(TelemetryField::transmission_interval_work_j, work);
+        diag.set(TelemetryField::transmission_reaction_error_n, error);
+        diag.set(TelemetryField::shift_parameter_work_j,
+                 state_.shift_parameter_work_j);
+        diag.set(TelemetryField::shift_interval_constraint_work_j,
+                 state_.shift_pending ? work : 0.);
+        diag.set(TelemetryField::shift_constraint_work_cumulative_j,
+                 solved.state.shift_constraint_work_j);
+        diag.set_label(TelemetryField::transmission_reference_status,
+                       /*experimental_geometric_reduction*/ 0);
         solved.state.last_tension_n = tension;
         solved.state.shift_pending = false;
-        return solved;
     }
 
     void Transmission::commit(SolvedTransmission &solved) noexcept {
         // Every member of TransmissionSnapshot is noexcept-movable, so the
         // whole candidate swaps in without a single allocation — this runs
-        // inside the settlement's noexcept commit.
-        static_assert(std::is_nothrow_move_assignable_v<TransmissionSnapshot>);
-        state_ = std::move(solved.state);
+        // inside the settlement's noexcept commit. std::swap (not move)
+        // additionally hands the old live snapshot back into the staged
+        // slot, preserving the bank's lanes/vector capacity for the next
+        // settle.
+        static_assert(std::is_nothrow_move_assignable_v<TransmissionSnapshot> &&
+                      std::is_nothrow_move_constructible_v<TransmissionSnapshot>);
+        std::swap(state_, solved.state);
     }
 
     std::span<const double> Transmission::solved(mjData *d) {
@@ -455,10 +540,20 @@ namespace drivetrain {
         return force;
     }
 
-    TransmissionSnapshot Transmission::state() const {
-        auto s = state_;
-        if (prepared_valid_)
-            s.prepared = prepared_storage_;
+    void Transmission::state_into(TransmissionSnapshot &s) const {
+        // Same bank-storage preservation as make_update_into(): the live
+        // state's prepared is disengaged, so a whole-snapshot copy-assign
+        // would destroy an engaged destination slot that the re-engagement
+        // below immediately rebuilds — lift it out, assign, swap back.
+        std::optional<PreparedTransmission> keep;
+        keep.swap(s.prepared);
+        s = state_;
+        if (prepared_valid_) {
+            PreparedTransmission &slot = keep ? *keep : keep.emplace();
+            slot = prepared_storage_;
+            s.prepared.swap(keep);
+        } else
+            s.prepared.reset();
         const auto range = buffer(model_->tendon_range, 2 * model_->ntendon)
                 .subspan(2 * static_cast<std::size_t>(tendon_), 2);
         s.range = {range[0], range[1]};
@@ -466,6 +561,11 @@ namespace drivetrain {
         for (int const index: coefficients_)
             s.coefficients.push_back(
                 buffer(model_->wrap_prm, model_->nwrap)[static_cast<std::size_t>(index)]);
+    }
+
+    TransmissionSnapshot Transmission::state() const {
+        TransmissionSnapshot s;
+        state_into(s);
         return s;
     }
 

@@ -348,15 +348,29 @@ namespace biketyre {
         // np.cos(np.deg2rad(angle)) — deg2rad is x*(pi/180), cos is libm cos.
         normal_cosine_ =
                 std::cos(normal_angle_deg * (std::numbers::pi / 180.0));
+        // Warm-contact scratch: contact() refills this storage every call
+        // instead of allocating per query like the Python original. A
+        // candidates window never exceeds the segment count, so px_.size()
+        // bounds every row the scratch can hold.
+        const std::size_t bound = px_.size();
+        cand_scratch_.ids.reserve(bound);
+        cand_scratch_.t.reserve(bound);
+        cand_scratch_.points.reserve(bound);
+        cand_scratch_.distances.reserve(bound);
+        keep_scratch_.resize(bound);
+        near_scratch_.reserve(bound);
+        normals_scratch_.resize(2 * bound);
+        dots_scratch_.resize(bound);
     }
 
     namespace detail {
-        Candidates candidates(std::span<const double> px,
-                              std::span<const double> pz,
-                              std::span<const double> seg_x,
-                              std::span<const double> seg_z,
-                              std::span<const double> seg_len_sq,
-                              std::array<double, 2> c, int lo, int hi) {
+        void candidates_into(std::span<const double> px,
+                             std::span<const double> pz,
+                             std::span<const double> seg_x,
+                             std::span<const double> seg_z,
+                             std::span<const double> seg_len_sq,
+                             std::array<double, 2> c, int lo, int hi,
+                             Candidates &out) {
             // Table-shape boundary first: the projection loop indexes
             // px[u]/seg_x[u]/seg_len_sq[u] for u in [lo, hi), so a
             // mismatched or empty table is an explicit rejection, not an
@@ -366,11 +380,15 @@ namespace biketyre {
                 seg_z.size() != segs || seg_len_sq.size() != segs)
                 throw std::invalid_argument(
                     "candidate tables must come from one validated profile");
+            out.ids.clear();
+            out.t.clear();
+            out.points.clear();
+            out.distances.clear();
             // Interval contract (np.arange semantics): hi <= lo is the
             // declared empty interval — zero candidates, never a negative
             // reserve. A nonempty window must lie inside the segment table.
             if (hi <= lo)
-                return {};
+                return;
             if (lo < 0 || std::cmp_greater(hi, segs))
                 throw std::invalid_argument(
                     "candidate window outside segment range");
@@ -378,7 +396,8 @@ namespace biketyre {
             // project c onto every window segment, clip t into [0,1],
             // measure the gap. Inner loop stays unchecked — the ctor's
             // validated profile plus the window bounds above cover it.
-            Candidates out;
+            // reserve() is a no-op once the owner's capacity covers the
+            // bound, so warm calls never reach the allocator.
             const std::size_t n = static_cast<std::size_t>(hi - lo);
             out.ids.reserve(n);
             out.t.reserve(n);
@@ -405,24 +424,37 @@ namespace biketyre {
                 dsq += dz * dz;
                 out.distances.push_back(std::sqrt(dsq));
             }
+        }
+
+        Candidates candidates(std::span<const double> px,
+                              std::span<const double> pz,
+                              std::span<const double> seg_x,
+                              std::span<const double> seg_z,
+                              std::span<const double> seg_len_sq,
+                              std::array<double, 2> c, int lo, int hi) {
+            Candidates out;
+            candidates_into(px, pz, seg_x, seg_z, seg_len_sq, c, lo, hi,
+                            out);
             return out;
         }
     } // namespace detail
 
-    detail::Candidates
-    ProfileQuery::candidates(std::array<double, 2> c, int lo, int hi) const {
-        return detail::candidates(px_, pz_, seg_x_, seg_z_, seg_len_sq_, c,
-                                  lo, hi);
+    void ProfileQuery::candidates_into(std::array<double, 2> c, int lo,
+                                       int hi,
+                                       detail::Candidates &out) const {
+        detail::candidates_into(px_, pz_, seg_x_, seg_z_, seg_len_sq_, c,
+                                lo, hi, out);
     }
 
-    std::vector<bool>
-    ProfileQuery::endpoint_keep(std::array<double, 2> c,
-                                const detail::Candidates &cand) const {
+    void ProfileQuery::endpoint_keep_into(
+        std::array<double, 2> c, const detail::Candidates &cand,
+        std::vector<bool> &out) const {
         // _endpoint_keep (contact_profile.py:70-85): an endpoint projection is
         // not a separate support when a neighbour's direction of travel moves
-        // closer to the wheel.
-        std::vector<bool> keep(cand.ids.size(), true);
+        // closer to the wheel. Written into the caller's mask — only the
+        // cand.ids.size() prefix is touched.
         for (std::size_t i = 0; i < cand.ids.size(); ++i) {
+            out[i] = true;
             const double t = cand.t[i];
             if (t != 0.0 && t != 1.0)
                 continue; // not an endpoint projection
@@ -434,14 +466,13 @@ namespace biketyre {
             dl += ox * left_x_[v];
             dl += oz * left_z_[v];
             if (dl > 1e-14)
-                keep[i] = false;
+                out[i] = false;
             double dr = 0.0;
             dr += ox * right_x_[v];
             dr += oz * right_z_[v];
             if (dr > 1e-14)
-                keep[i] = false;
+                out[i] = false;
         }
-        return keep;
     }
 
     ProfileContact ProfileQuery::contact(
@@ -519,12 +550,15 @@ namespace biketyre {
                                 },
                                 radius - distance, segment, false);
         }
-        // candidates path (contact_profile.py:122-165).
-        detail::Candidates cand = candidates(c, lo, hi);
-        if (cand.ids.empty() || min_elt(cand.distances) >= radius) {
+        // candidates path (contact_profile.py:122-165) — the member scratch
+        // vectors replace the Python temporaries; their construction-sized
+        // capacity keeps steady-state queries off the allocator.
+        candidates_into(c, lo, hi, cand_scratch_);
+        if (cand_scratch_.ids.empty() ||
+            min_elt(cand_scratch_.distances) >= radius) {
             int search_lo = 0, search_hi = 0;
-            if (!cand.ids.empty()) {
-                const double best = min_elt(cand.distances);
+            if (!cand_scratch_.ids.empty()) {
+                const double best = min_elt(cand_scratch_.distances);
                 const double vertical_lower =
                         std::max(0.0, c[1] - maximum_z_);
                 const double reach = std::sqrt(std::max(
@@ -536,60 +570,74 @@ namespace biketyre {
                 search_lo = 0;
                 search_hi = count;
             }
-            cand = candidates(c, search_lo, search_hi);
+            candidates_into(c, search_lo, search_hi, cand_scratch_);
         }
-        if (cand.ids.empty() || min_elt(cand.distances) <= 1e-12)
+        if (cand_scratch_.ids.empty() ||
+            min_elt(cand_scratch_.distances) <= 1e-12)
             throw std::invalid_argument(
                 "unsupported or degenerate contact geometry");
-        const std::vector<bool> keep = endpoint_keep(c, cand);
+        endpoint_keep_into(c, cand_scratch_, keep_scratch_);
         // np.argmin(distances): first index of the minimum.
         std::size_t winner = 0;
-        for (std::size_t i = 1; i < cand.distances.size(); ++i)
-            if (cand.distances[i] < cand.distances[winner])
+        for (std::size_t i = 1; i < cand_scratch_.distances.size(); ++i)
+            if (cand_scratch_.distances[i] < cand_scratch_.distances[winner])
                 winner = i;
         if (previous_segment) {
             // same = flatnonzero((ids == prev) & keep); same[0] if it exists.
-            for (std::size_t i = 0; i < cand.ids.size(); ++i)
-                if (cand.ids[i] == *previous_segment && keep[i]) {
-                    if (std::abs(cand.distances[i] - cand.distances[winner]) <=
+            for (std::size_t i = 0; i < cand_scratch_.ids.size(); ++i)
+                if (cand_scratch_.ids[i] == *previous_segment &&
+                    keep_scratch_[i]) {
+                    if (std::abs(cand_scratch_.distances[i] -
+                                 cand_scratch_.distances[winner]) <=
                         1e-12)
                         winner = i;
                     break;
                 }
         }
-        const double delta_winner = radius - cand.distances[winner];
+        const double delta_winner = radius - cand_scratch_.distances[winner];
         const std::array<double, 2> normal_winner = {
-            (c[0] - cand.points[winner][0]) / cand.distances[winner],
-            (c[1] - cand.points[winner][1]) / cand.distances[winner]
+            (c[0] - cand_scratch_.points[winner][0]) /
+                cand_scratch_.distances[winner],
+            (c[1] - cand_scratch_.points[winner][1]) /
+                cand_scratch_.distances[winner]
         };
         const double threshold =
                 std::max(significant_delta_m_,
                          significance_fraction_ * std::max(delta_winner, 0.0));
-        std::vector<int> near;
-        for (std::size_t i = 0; i < cand.ids.size(); ++i)
-            if (radius - cand.distances[i] >= threshold && keep[i])
-                near.push_back(static_cast<int>(i));
+        near_scratch_.clear();
+        for (std::size_t i = 0; i < cand_scratch_.ids.size(); ++i)
+            if (radius - cand_scratch_.distances[i] >= threshold &&
+                keep_scratch_[i])
+                near_scratch_.push_back(static_cast<int>(i));
         bool multi = false;
-        if (!near.empty()) {
+        if (!near_scratch_.empty()) {
+            const std::size_t near_n = near_scratch_.size();
             // normals = (c - points[near]) / distances[near, None]
-            std::vector<double> normals(2 * near.size());
-            for (std::size_t j = 0; j < near.size(); ++j) {
-                const std::size_t i = static_cast<std::size_t>(near[j]);
-                normals[2 * j] = (c[0] - cand.points[i][0]) / cand.distances[i];
-                normals[2 * j + 1] =
-                        (c[1] - cand.points[i][1]) / cand.distances[i];
+            const std::span<double> normals =
+                    std::span{normals_scratch_}.first(2 * near_n);
+            for (std::size_t j = 0; j < near_n; ++j) {
+                const std::size_t i =
+                        static_cast<std::size_t>(near_scratch_[j]);
+                normals[2 * j] = (c[0] - cand_scratch_.points[i][0]) /
+                                     cand_scratch_.distances[i];
+                normals[2 * j + 1] = (c[1] - cand_scratch_.points[i][1]) /
+                                         cand_scratch_.distances[i];
             }
             // different = normals @ normal_winner < normal_cosine — a
             // (k,2)@(2,) matmul → gemv path, not a per-row manual dot.
-            std::vector<double> dots(near.size());
+            const std::span<double> dots =
+                    std::span{dots_scratch_}.first(near_n);
             blas::dgemv(blas::Order::row_major, blas::Transpose::no,
-                        static_cast<int>(near.size()), 2, 1.0,
+                        static_cast<int>(near_n), 2, 1.0,
                         normals.data(), 2, normal_winner.data(), 1, 0.0,
                         dots.data(), 1);
-            for (std::size_t j = 0; j < near.size(); ++j) {
-                const std::size_t i = static_cast<std::size_t>(near[j]);
-                const double ex = cand.points[i][0] - cand.points[winner][0];
-                const double ez = cand.points[i][1] - cand.points[winner][1];
+            for (std::size_t j = 0; j < near_n; ++j) {
+                const std::size_t i =
+                        static_cast<std::size_t>(near_scratch_[j]);
+                const double ex = cand_scratch_.points[i][0] -
+                                      cand_scratch_.points[winner][0];
+                const double ez = cand_scratch_.points[i][1] -
+                                      cand_scratch_.points[winner][1];
                 // np.linalg.norm(..., axis=1) on (k,2): elementwise sqrt(x²+y²).
                 const bool separated = std::sqrt(ex * ex + ez * ez) > 1e-10;
                 if (dots[j] < normal_cosine_ && separated) {
@@ -598,7 +646,7 @@ namespace biketyre {
                 }
             }
         }
-        return make_contact(cand.points[winner], normal_winner, delta_winner,
-                            cand.ids[winner], multi);
+        return make_contact(cand_scratch_.points[winner], normal_winner,
+                            delta_winner, cand_scratch_.ids[winner], multi);
     }
 } // namespace biketyre

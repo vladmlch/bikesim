@@ -35,7 +35,7 @@ namespace drivetrain {
         if (!enabled) {
             reset();
             return {
-                .mode = "disabled", .reason = "disabled", .effort_nm = 0., .required_cadence_rpm = required,
+                .mode = PedalMode::disabled, .reason = CoastReason::disabled, .effort_nm = 0., .required_cadence_rpm = required,
                 .target_phase_rad = std::nullopt, .target_rate_rad_s = 0.
             };
         }
@@ -46,8 +46,12 @@ namespace drivetrain {
         else state_.cadence_ema = actual;
         const double threshold = state_.coasting ? config_.resume_below_rpm : config_.coast_above_rpm;
         const bool excessive = config_.enabled && engaged(state_.cadence_ema) >= threshold;
-        const std::string reason = braking ? "braking" : effort == 0. ? "no_effort" : excessive ? "cadence" : "";
-        if (reason.empty()) {
+        const CoastReason reason =
+                braking    ? CoastReason::braking :
+                effort == 0. ? CoastReason::no_effort :
+                excessive  ? CoastReason::cadence :
+                             CoastReason::none;
+        if (reason == CoastReason::none) {
             const double previous = state_.effort;
             const auto ema = state_.cadence_ema;
             reset();
@@ -64,7 +68,7 @@ namespace drivetrain {
             }
             state_.effort = effort;
             return {
-                .mode = "pedaling", .reason = "", .effort_nm = effort, .required_cadence_rpm = required,
+                .mode = PedalMode::pedaling, .reason = CoastReason::none, .effort_nm = effort, .required_cadence_rpm = required,
                 .target_phase_rad = std::nullopt, .target_rate_rad_s = std::max(wheel, 0.)
             };
         }
@@ -81,7 +85,7 @@ namespace drivetrain {
         engaged(state_.target_phase_rad) = validation::derived(engaged(state_.target_phase_rad) + .5 * validation::derived(previous + state_.target_rate_rad_s, "PedalingPolicy.rate_sum") * dt, "PedalingPolicy.target_phase_rad");
         state_.effort = 0.;
         return {
-            .mode = "coasting", .reason = reason, .effort_nm = 0., .required_cadence_rpm = required,
+            .mode = PedalMode::coasting, .reason = reason, .effort_nm = 0., .required_cadence_rpm = required,
             .target_phase_rad = state_.target_phase_rad, .target_rate_rad_s = state_.target_rate_rad_s
         };
     }

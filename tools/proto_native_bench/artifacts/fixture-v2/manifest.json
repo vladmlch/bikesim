@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "bundle_format": {
+    "magic": "BIKEST02",
+    "version": 2
+  },
+  "model": {
+    "nq": 26,
+    "nv": 26,
+    "na": 0,
+    "nu": 12,
+    "nbody": 28,
+    "timestep": 0.0005
+  },
+  "source": {
+    "track": "examples/research/rough_uphill_extreme.toml",
+    "physics_config": "examples/research/viewer_physics_welded.toml",
+    "warmup_steps": 400
+  },
+  "generator": {
+    "script": "tools/proto_native_bench/dump_model.py",
+    "python": "3.14.3",
+    "mujoco": "3.12.0",
+    "commit": "9ff5cd93deccc926538971d14e8258944c377475",
+    "worktree_dirty": true
+  },
+  "checksums": {
+    "model_mjb_crc64": "0x7acbed488d0750b7",
+    "state_payload_crc64": "0x855f5bc6d4de14b9",
+    "model_mjb_sha256": "09072b246bec2f35c95450b6c38b8c90bc82c31cbbe55d2403082fe8359c6e19",
+    "state_bin_sha256": "99d6d86398c915c1aa558d8cf66d81fc7e4b8c170fd26069b398f4e17bc902ff",
+    "state_npz_sha256": "2b6187b05a511c844b159390178ea13ceba7a7e3bfc12c5b0deb8aa698893932"
+  },
+  "workload": {
+    "format": 1,
+    "seed": "0x42f0e1eba9ea3693",
+    "warmup_steps": 500,
+    "writers": 8,
+    "channels": 100,
+    "name_lookups_max": 10,
+    "efc_buckets": 8,
+    "efc_rows_max": 200,
+    "attachment_count": 5,
+    "points_per_attachment": 7,
+    "record_churn": 6,
+    "ledger_terms": [
+      "spring",
+      "damper",
+      "bias",
+      "applied",
+      "constraint",
+      "actuator"
+    ],
+    "batch": {
+      "period": 10,
+      "batches": 6,
+      "iterations": 16,
+      "width": 3
+    },
+    "regularization": 1e-06,
+    "solve_eta": 1e-09,
+    "forwards_per_step": 2
+  }
+}

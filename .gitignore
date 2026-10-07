@@ -29,6 +29,14 @@ bike_model.xml
 bike_playground*.xml
 coordinates.json
 
+# Generated native-bench state bundles — regenerable via
+# `uv run python tools/proto_native_bench/dump_model.py`. The tracked fixture
+# is artifacts/fixture-v2/ + artifacts/current.json (plus artifacts/model.mjb,
+# the shared compiled model other suites load); auto-named v2-* dirs and
+# ad-hoc sim output stay untracked.
+tools/proto_native_bench/artifacts/v2-*/
+tools/proto_native_bench/artifacts/run*/
+
 # Tooling / IDE
 .idea/
 .DS_Store

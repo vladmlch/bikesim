@@ -8,7 +8,7 @@ from bike_sim.physics.checks import scalar
 DAMPER = ('max_hsc max_lsc max_reb hsc_clicks lsc_clicks rebound_clicks '
           'c_lsc_min c_lsc_max c_hsc_min c_hsc_max c_reb_min c_reb_max v_knee_comp v_knee_reb')
 SCHEMAS = {
-    'config': ('schema', 'drive cruise suspension brake resistance tire rider_forces'),
+    'config': ('schema', 'drive cruise suspension brake resistance tire rider_forces rider_contacts'),
     'suspension': ('physics_mode joints air_spring fork_damper shock_damper coil end_stops', ''),
     'suspension.joints': ('fork shock', ''),
     'suspension.air_spring': ('stanchion_inner_diam_mm total_travel_mm pos_chamber_length_mm neg_chamber_length_mm token_volume_cm3 max_tokens gamma atm_pressure_pa num_tokens gauge_pressure_psi', ''),
@@ -37,10 +37,11 @@ SCHEMAS = {
     'drive.assist.profile': ('mode_gains emtb_full_gain_at_nm', ''),
     'drive.assist.profile.mode_gains': ('eco tour emtb turbo', ''),
     'drive.battery': ('enabled energy_j copper_w_per_nm2 speed_w_per_rad_s2 idle_w', ''),
+    'rider_contacts': ('arm_reach_m saddle_patch_half_length_m pedal_patch_half_length_m support_pad_radius_m support_k_n_m support_c_ns_m pedal_c_ns_m support_tangent_k_n_m support_mu support_length_m grip_k_n_m grip_c_ns_m grip_release_distance_m grip_capture_distance_m grip_capture_speed_mps pedal_attachment saddle_attachment grip_attachment', 'grip_pair_force_limit_n'),
 }
 BOOLEAN = frozenset('enabled lockout_firm legacy_behavior unilateral motor_clutch'.split())
 INTEGER = frozenset('schema max_tokens num_tokens max_hsc max_lsc max_reb hsc_clicks lsc_clicks rebound_clicks max_hbo hbo_clicks front_teeth rear_teeth'.split())
-STRING = frozenset('physics_mode fork shock frame front_wheel rear_wheel provenance name backend surface_mode joint drive_mode transmission_model upshift_slip_mode mode'.split())
+STRING = frozenset('physics_mode fork shock frame front_wheel rear_wheel provenance name backend surface_mode joint drive_mode transmission_model upshift_slip_mode mode pedal_attachment saddle_attachment grip_attachment'.split())
 WIDTHS = {'wind_world_mps': 3, 'point_body_m': 3, 'valid_load_range_n': 2, 'emtb': 2}
 
 
@@ -114,6 +115,9 @@ def validate_mapping(value, name, path):
         elif key == 'cassette':
             for index, number in enumerate(sequence(item, child)):
                 integer(number, f'{child}.{index}')
+        elif key == 'grip_pair_force_limit_n':
+            if item is not None:
+                scalar(item, child)
         elif key == 'torque_curve':
             if item is not None:
                 for index, row in enumerate(sequence(item, child)):
@@ -149,6 +153,34 @@ def validate_policy_modes(drive, path):
 def validate_drive_policies(config):
     validate_mapping(config, 'policies', 'config.drive')
     validate_policy_modes(config, 'config.drive')
+
+
+def validate_rider_contacts(contacts, path='config.rider_contacts'):
+    """Domain checks for the optional rider_contacts section.
+
+    Mirrors ArticulatedConfig.__post_init__ (physical_config.py): every copied
+    scalar is finite and nonnegative, the structural lengths and stiffnesses
+    its second loop names are positive, and the attachment discriminators are
+    closed sets. The resolved arm reach is positive like the segment lengths
+    it sums.
+    """
+    if contacts['pedal_attachment'] not in ('flat', 'weld', 'spindle'):
+        raise ValueError(f'{path}.pedal_attachment: unsupported attachment')
+    if contacts['saddle_attachment'] not in ('flat', 'weld', 'pin'):
+        raise ValueError(f'{path}.saddle_attachment: unsupported attachment')
+    if contacts['grip_attachment'] not in ('spring', 'connect'):
+        raise ValueError(f'{path}.grip_attachment: unsupported attachment')
+    scalar(contacts['arm_reach_m'], f'{path}.arm_reach_m', positive=True)
+    for key in ('support_pad_radius_m', 'support_k_n_m', 'support_tangent_k_n_m',
+                'support_length_m', 'grip_k_n_m', 'grip_release_distance_m'):
+        scalar(contacts[key], f'{path}.{key}', positive=True)
+    for key in ('saddle_patch_half_length_m', 'pedal_patch_half_length_m',
+                'support_c_ns_m', 'pedal_c_ns_m', 'support_mu', 'grip_c_ns_m',
+                'grip_capture_distance_m', 'grip_capture_speed_mps'):
+        scalar(contacts[key], f'{path}.{key}', minimum=0.)
+    limit = contacts.get('grip_pair_force_limit_n')
+    if limit is not None:
+        scalar(limit, f'{path}.grip_pair_force_limit_n', positive=True)
 
 
 def validate_config(config):
@@ -188,6 +220,9 @@ def validate_config(config):
         if drive['transmission_model'] not in ('elastic_chain', 'ideal_mid_drive', 'geometric_ideal_mid_drive'):
             raise ValueError('config.drive.transmission_model: unsupported model')
         validate_policy_modes(drive, 'config.drive')
+    rider_contacts = config.get('rider_contacts')
+    if rider_contacts:
+        validate_rider_contacts(rider_contacts)
 
 
 def plain(value, key=None):

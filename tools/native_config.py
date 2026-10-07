@@ -24,6 +24,9 @@ actually read, as a versioned dict::
      'rider_forces': {'paths': [{joint, stiffness_n_m, damping_ns_m,
                                  preload_deflection_m, unilateral,
                                  offset_m}, ...]},
+     'rider_contacts': {'arm_reach_m': ..., 'pedal_attachment': ...,
+                        'saddle_attachment': ..., 'grip_attachment': ...,
+                        <resolved ArticulatedConfig contact fields>},
     }
 
 The 'tire' section is emitted only for ``backend == 'compliant_2d'`` — the
@@ -33,6 +36,13 @@ is a different, unported writer and is rejected). The material must be a
 ``TireSpec``; a ``TabulatedTireSpec`` follows a different force law the
 native writer does not implement and is rejected here. The surface map is
 serialized with every named surface resolved to its numeric fields.
+
+The 'rider_contacts' section is emitted only when ``sim.physical`` owns a
+``RiderContactApplier`` (an ``articulated_planar`` rider; ``None`` otherwise
+or without a physical runtime). ``arm_reach_m`` carries the applier's
+pose-resolved reach — ``ArticulatedConfig.arm_reach_fraction`` is a build-time
+knob, not a wire field — and ``grip_pair_force_limit_n`` keeps the dataclass's
+``float | None`` optionality on the wire.
 
 The 'rider_forces' section is emitted only while
 ``sim.rider_forces.active`` — on rider variants without a seated pose
@@ -303,10 +313,41 @@ def _project(env) -> dict:
     drive = getattr(physical, 'drive', None)
     if drive is not None:
         out['drive'] = project_drive(drive)
+    rider_contacts = getattr(physical, 'rider_contacts', None)
+    if rider_contacts is not None:
+        out['rider_contacts'] = project_rider_contacts(rider_contacts)
     return out
 
 
-__all__ = ['project', 'project_drive_policies', 'project_drive', 'SCHEMA']
+def _project_rider_contacts(applier) -> dict:
+    """Copy the RiderContactApplier's resolved contact setup.
+
+    The section mirrors the ArticulatedConfig fields compute_qfrc/_pads read
+    (rider_contacts.py) plus the reach the applier resolved from the pose.
+    Mutable contact material state belongs to snapshots, not this section.
+    """
+    cfg = applier.config
+    return {
+        'arm_reach_m': applier.arm_reach,
+        **{key: getattr(cfg, key) for key in (
+            'saddle_patch_half_length_m', 'pedal_patch_half_length_m',
+            'support_pad_radius_m', 'support_k_n_m', 'support_c_ns_m',
+            'pedal_c_ns_m', 'support_tangent_k_n_m', 'support_mu',
+            'support_length_m', 'grip_k_n_m', 'grip_c_ns_m',
+            'grip_release_distance_m', 'grip_pair_force_limit_n',
+            'grip_capture_distance_m', 'grip_capture_speed_mps',
+            'pedal_attachment', 'saddle_attachment', 'grip_attachment')},
+    }
+
+
+def project_rider_contacts(applier) -> dict:
+    out = _project_rider_contacts(applier)
+    validate_config({'schema': SCHEMA, 'rider_contacts': out})
+    return plain(out)
+
+
+__all__ = ['project', 'project_drive_policies', 'project_drive',
+           'project_rider_contacts', 'SCHEMA']
 
 def project_drive_policies(drive) -> dict:
     out = _project_drive_policies(drive)

@@ -34,7 +34,7 @@ namespace nativecfg {
         inline void section_keys(const nb::dict &d, std::string_view name, std::string_view public_path = {}) {
             if (name == "config") {
                 constexpr auto required = wire::keys("schema");
-                constexpr auto optional = wire::keys("drive", "cruise", "suspension", "brake", "resistance", "tire", "rider_forces");
+                constexpr auto optional = wire::keys("drive", "cruise", "suspension", "brake", "resistance", "tire", "rider_forces", "rider_contacts");
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
                 return;
             }
@@ -149,6 +149,12 @@ namespace nativecfg {
             if (name == "rider_forces.paths") {
                 constexpr auto required = wire::keys("joint", "stiffness_n_m", "damping_ns_m", "preload_deflection_m", "offset_m", "unilateral");
                 constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "rider_contacts") {
+                constexpr auto required = wire::keys("arm_reach_m", "saddle_patch_half_length_m", "pedal_patch_half_length_m", "support_pad_radius_m", "support_k_n_m", "support_c_ns_m", "pedal_c_ns_m", "support_tangent_k_n_m", "support_mu", "support_length_m", "grip_k_n_m", "grip_c_ns_m", "grip_release_distance_m", "grip_capture_distance_m", "grip_capture_speed_mps", "pedal_attachment", "saddle_attachment", "grip_attachment");
+                constexpr auto optional = wire::keys("grip_pair_force_limit_n");
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
                 return;
             }
@@ -494,6 +500,11 @@ namespace nativecfg {
             c.tire = tire_from_dict(d);
         if (d.contains("rider_forces"))
             c.rider_forces = rider_forces_from_dict(d);
+        // rider_contacts is a declared wire section without a consuming
+        // writer yet — validate its key shape so an unknown or missing key
+        // still fails here; the typed parse arrives with the writer binding.
+        if (d.contains("rider_contacts"))
+            static_cast<void>(detail::req_dict(d, "config", "rider_contacts"));
         return c;
     }
 } // namespace nativecfg

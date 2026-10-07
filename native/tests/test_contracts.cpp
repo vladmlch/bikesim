@@ -10,6 +10,7 @@
 #include "../src/interval_clock.hpp"
 #include "../src/model_access.hpp"
 #include "../src/tyre/profile.hpp"
+#include "../src/rider/contact_config.hpp"
 #include "../src/rider/support_geometry.hpp"
 #include "../src/cblas_abi.hpp"
 #include "../src/numeric_norm.hpp"
@@ -3341,7 +3342,107 @@ namespace {
     }
     NATIVE_DIAG_POP
 
-    constexpr std::array<TestCase, 31> cases{{
+    rider::RiderContactsConfig valid_rider_contacts_config() {
+        return {
+            .arm_reach_m = .62,
+            .saddle_patch_half_length_m = .045,
+            .pedal_patch_half_length_m = .025,
+            .support_pad_radius_m = .02,
+            .support_k_n_m = 100000.,
+            .support_c_ns_m = 500.,
+            .pedal_c_ns_m = 100.,
+            .support_tangent_k_n_m = 20000.,
+            .support_mu = .8,
+            .support_length_m = .1,
+            .grip_k_n_m = 4000.,
+            .grip_c_ns_m = 150.,
+            .grip_release_distance_m = .12,
+            .grip_pair_force_limit_n = std::nullopt,
+            .grip_capture_distance_m = .02,
+            .grip_capture_speed_mps = .2,
+            .pedal_attachment = rider::PedalAttachment::spindle,
+            .saddle_attachment = rider::SaddleAttachment::pin,
+            .grip_attachment = rider::GripAttachment::connect,
+        };
+    }
+
+    // The rider_contacts wire section's typed twin: domain checks mirror
+    // ArticulatedConfig.__post_init__ and the attachment enums are closed —
+    // each maps exactly its wire labels and rejects a smuggled ordinal.
+    void test_rider_contacts_config_domain() {
+        {   // Valid controls: the linked pinned profile and an explicit
+            // pair-force limit both pass.
+            rider::validate(valid_rider_contacts_config());
+            auto limited = valid_rider_contacts_config();
+            limited.grip_pair_force_limit_n = 600.;
+            rider::validate(limited);
+            auto flat = valid_rider_contacts_config();
+            flat.pedal_attachment = rider::PedalAttachment::flat;
+            flat.saddle_attachment = rider::SaddleAttachment::flat;
+            flat.grip_attachment = rider::GripAttachment::spring;
+            rider::validate(flat);
+        }
+        {   // A never-parsed config is all defaults — the positive domains
+            // reject it, which is how a missing required field surfaces here.
+            require_throws_invalid_argument(
+                [] { rider::validate(rider::RiderContactsConfig{}); },
+                "default-constructed rider contacts config must be rejected");
+        }
+        const auto invalid = [](auto mutate) {
+            auto config = valid_rider_contacts_config();
+            mutate(config);
+            require_throws_invalid_argument(
+                [&] { rider::validate(config); },
+                "rider contacts config must reject the mutated domain");
+        };
+        invalid([](auto &c) { c.arm_reach_m = 0.; });
+        invalid([](auto &c) { c.arm_reach_m = -1.; });
+        invalid([](auto &c) { c.arm_reach_m = std::numeric_limits<double>::quiet_NaN(); });
+        invalid([](auto &c) { c.saddle_patch_half_length_m = -1e-3; });
+        invalid([](auto &c) { c.support_pad_radius_m = 0.; });
+        invalid([](auto &c) { c.support_k_n_m = -1.; });
+        invalid([](auto &c) { c.support_c_ns_m = std::numeric_limits<double>::infinity(); });
+        invalid([](auto &c) { c.pedal_c_ns_m = -1.; });
+        invalid([](auto &c) { c.support_tangent_k_n_m = 0.; });
+        invalid([](auto &c) { c.support_mu = -1.; });
+        invalid([](auto &c) { c.support_length_m = 0.; });
+        invalid([](auto &c) { c.grip_k_n_m = 0.; });
+        invalid([](auto &c) { c.grip_c_ns_m = -1.; });
+        invalid([](auto &c) { c.grip_release_distance_m = 0.; });
+        invalid([](auto &c) { c.grip_pair_force_limit_n = 0.; });
+        invalid([](auto &c) { c.grip_pair_force_limit_n = -300.; });
+        invalid([](auto &c) { c.grip_capture_distance_m = -1e-3; });
+        invalid([](auto &c) { c.grip_capture_speed_mps = -1e-3; });
+        // A corrupted ordinal (e.g. a smuggled cast at a later parse) is the
+        // one way a scoped enum leaves its closed set — validate must reject
+        // it. bit_cast keeps the probe free of a literal out-of-range cast.
+        invalid([](auto &c) {
+            c.pedal_attachment = std::bit_cast<rider::PedalAttachment>(std::uint8_t{0xfe}); });
+        invalid([](auto &c) {
+            c.saddle_attachment = std::bit_cast<rider::SaddleAttachment>(std::uint8_t{0xfe}); });
+        invalid([](auto &c) {
+            c.grip_attachment = std::bit_cast<rider::GripAttachment>(std::uint8_t{0xfe}); });
+        static_assert(rider::pedal_attachment("flat") == rider::PedalAttachment::flat &&
+                      rider::pedal_attachment("weld") == rider::PedalAttachment::weld &&
+                      rider::pedal_attachment("spindle") == rider::PedalAttachment::spindle &&
+                      !rider::pedal_attachment("pin") && !rider::pedal_attachment(""),
+                      "pedal_attachment maps exactly flat|weld|spindle");
+        static_assert(rider::saddle_attachment("flat") == rider::SaddleAttachment::flat &&
+                      rider::saddle_attachment("weld") == rider::SaddleAttachment::weld &&
+                      rider::saddle_attachment("pin") == rider::SaddleAttachment::pin &&
+                      !rider::saddle_attachment("spindle") && !rider::saddle_attachment(""),
+                      "saddle_attachment maps exactly flat|weld|pin");
+        static_assert(rider::grip_attachment("spring") == rider::GripAttachment::spring &&
+                      rider::grip_attachment("connect") == rider::GripAttachment::connect &&
+                      !rider::grip_attachment("weld") && !rider::grip_attachment(""),
+                      "grip_attachment maps exactly spring|connect (weld is normalized away)");
+        static_assert(noexcept(rider::pedal_attachment(std::string_view{})) &&
+                      noexcept(rider::saddle_attachment(std::string_view{})) &&
+                      noexcept(rider::grip_attachment(std::string_view{})),
+                      "attachment parsers stay noexcept");
+    }
+
+    constexpr std::array<TestCase, 32> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -3373,6 +3474,7 @@ namespace {
         {.name = "warm_core_zero_allocation", .run = test_warm_core_zero_allocation},
         {.name = "rtsan_invalid_status_control", .run = test_rtsan_invalid_status_control},
         {.name = "warm_allocation_matrix", .run = test_warm_allocation_matrix},
+        {.name = "rider_contacts_config_domain", .run = test_rider_contacts_config_domain},
     }};
 
     int run_case(const TestCase &test_case) {

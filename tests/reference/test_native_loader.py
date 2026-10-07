@@ -443,6 +443,7 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'warm_core_zero_allocation',
         'rtsan_invalid_status_control',
         'warm_allocation_matrix',
+        'rider_contacts_config_domain',
     ]
 
 

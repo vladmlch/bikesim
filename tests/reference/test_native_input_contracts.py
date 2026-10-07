@@ -61,10 +61,12 @@ def test_recursive_config_key_contract(resolved, mutation):
         candidate = copy.deepcopy(original)
         section = at(candidate, location)
         if mutation == 'missing':
-            # Root writer sections and profile/curve/surface_map are optional.
+            # Root writer sections and profile/curve/surface_map/pair-limit
+            # are optional.
             keys = set(section) - ({'drive', 'cruise', 'suspension', 'brake',
-                'resistance', 'tire', 'rider_forces'} if not location else
-                {'profile', 'torque_curve', 'surface_map'})
+                'resistance', 'tire', 'rider_forces', 'rider_contacts'}
+                if not location else
+                {'profile', 'torque_curve', 'surface_map', 'grip_pair_force_limit_n'})
             if not keys:
                 continue
             key = sorted(keys)[0]
@@ -78,7 +80,7 @@ def test_recursive_config_key_contract(resolved, mutation):
                 reader(candidate)
 
 
-@pytest.mark.parametrize('section', ['drive', 'cruise', 'suspension', 'brake', 'resistance', 'tire', 'rider_forces'])
+@pytest.mark.parametrize('section', ['drive', 'cruise', 'suspension', 'brake', 'resistance', 'tire', 'rider_forces', 'rider_contacts'])
 def test_present_empty_writer_requires_its_schema(resolved, section):
     from tools.native_config import validate_config
     _, path, _ = resolved

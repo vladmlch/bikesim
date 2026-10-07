@@ -33,6 +33,7 @@
 #include "diag.hpp"
 #include "rider/attachment_binding.hpp"
 #include "rider/contact_binding.hpp"
+#include "rider/rider_contact_binding.hpp"
 #include "drivetrain/policy_binding.hpp"
 #include "drivetrain/drive_binding.hpp"
 #include "writers/cruise.hpp"
@@ -458,6 +459,7 @@ NB_MODULE(bike_native, m) {
     bind_drivetrain(m, stepper_class);
     bind_rider_contact_math(m);
     bind_rider_attachment(m, stepper_class);
+    bind_rider_contacts(m, stepper_class);
 }
 
 NATIVE_DIAG_POP

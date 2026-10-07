@@ -561,6 +561,75 @@ re-derived from the current `efc_type`/`efc_id` arena on every call, so
 contact/limit rows shifting the arena cannot produce a stale gap: a
 missing equality reports `gap_m == 0.`.
 
+### T3b-1 model-owned rider contact writer core
+
+```bash
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_rider_contacts.py -q
+```
+
+`native/src/writers/rider_contacts.{hpp,cpp}` is the model-owned port of
+`RiderContactApplier` (`src/bike_sim/sim/ride/rider_contacts.py`); the
+Stepper method face lives in `native/src/rider/rider_contact_binding.cpp`
+(the `bind_rider_contacts` seam) as
+
+- `stepper.rider_contacts_reset()`,
+- `stepper.rider_contacts_restart_clock()`,
+- `stepper.rider_contacts_initialize_settled_state()`,
+- `stepper.rider_contacts_release_all()`,
+- `stepper.rider_contacts_set_enabled(name, enabled)`,
+- `stepper.rider_contacts_qfrc(dt, advance=True, detailed=True)`,
+- `stepper.rider_contacts_stored_energy()`,
+- `stepper.rider_contacts_diagnostics(probe=False)`,
+- `stepper.rider_contacts_state()` and
+- `stepper.set_rider_contacts_state(state)`.
+
+The writer is owned by `Stepper` like the other writers: constructed when
+the config carries a `rider_contacts` section, reset by
+`Stepper::reset()`, and reachable only through the methods above — a
+Stepper built without the section answers the shared `logic_error`. The
+typed config parse sits in `native/src/config.hpp`
+(`rider_contacts_from_dict`) behind the schema-2 section reader; the
+`RiderContactsConfig` struct and its domain validation live in
+`native/src/rider/contact_config.hpp` (T3a).
+
+Ported in this wave: the two-pad unilateral supports (compiled box pads
+on the named support geoms, `contactlaw::normal_contact`/`brush_step`,
+tangent transport with face-switch loss, paired-reaction generalized
+force through `jrel` — the rider-vs-bike relative point Jacobian — and
+per-pad patch diagnostics), the releasable spring grip plus its cohesive
+pair overload, the connect-grip diagnostics path reading live equality
+residuals, welded/pinned/spindle support diagnostics against the
+(still-null, wave-3b) settled latch, capture/release through
+`set_enabled` (grip capture gated on distance and approach speed, release
+loss booked into `pending_release_loss_j`), probe publication for
+`advance=False` evaluations, and the serializable state container with
+atomic staged validation before commit. `settle_welds` latch production,
+`prepare_attachment_raw` and `attachment_samples` are wave 3b and are
+asserted absent; their snapshot fields exist so a restored or
+future-produced value round-trips.
+
+Numerical parity follows the oracle's expression order: dot products and
+`np.linalg.norm` route through CBLAS `ddot`, `jrel @ qvel`/`R @ v`/
+`jrel.T @ f` through `dgemv`, `math.hypot` through `rider::hypot3`,
+`x ** y` through `pyfloat::pow`, `np.cross` through literal component
+products, and `min`/`max` through `std::min`/`std::max` — under the
+module-wide `-ffp-contract=off`. `mj_kinematics`/`mj_comPos` refreshes in
+the capture/release paths go through `engine::invoke` so a fatal MuJoCo
+error poisons the owning Stepper; `mj_jac` and `mj_name2id` are pure
+arithmetic/table reads and are invoked directly.
+`rider_contacts_stored_energy` stays callable after a fatal engine error
+poisons the mutation paths (same stance as the other read-only component
+reads).
+
+Verification ran `cmake --build native/build --target check_frontends`
+and `bash tools/run_tests.sh native` to green: all static-analysis
+sweeps, CTest 4/4, the structural contract checks, and the full
+native+golden pytest sweep (2119 items) passed. The reference file's 54
+tests compare qfrc, diagnostics trees, state snapshots and error types
+bitwise against the live Python oracle on tiny MuJoCo models, across the
+flat/weld/pin/spindle × spring/connect attachment matrix.
+
 ## V3 verification record
 
 Verification was run from the V3 tree based on `1ccdfcb28244dd14af6e584f958a40d3dbc04918`.

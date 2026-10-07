@@ -7,6 +7,7 @@
 #include <ranges>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include <nanobind/nanobind.h>
@@ -26,6 +27,10 @@ class RiderForcesWriter;
 
 namespace drivetrain {
     class DrivetrainWriter;
+}
+
+namespace writers {
+    class RiderContactWriter;
 }
 
 struct TireSideInput;
@@ -268,6 +273,25 @@ public:
     [[nodiscard]] std::vector<double>
     total(std::span<const std::vector<double>> components) const;
 
+    // T3b-1 — the model-owned RiderContactWriter (rider_contacts.py
+    // RiderContactApplier): pad force assembly, grip capture/release,
+    // diagnostics, probe publication and snapshot restore live on the
+    // writer; the Stepper owns it, supplies the (m_, d_) pair and the
+    // construction-sized nv output buffer. The accessor throws
+    // std::logic_error naming 'rider_contacts' when the config is absent,
+    // like drive()/require_cruise(). set_enabled/reset/release paths go
+    // through the binding's mutate() boundary.
+    [[nodiscard]] writers::RiderContactWriter &rider_contacts() const;
+    void rider_contacts_reset();
+    void rider_contacts_restart_clock();
+    void rider_contacts_initialize_settled_state();
+    void rider_contacts_release_all();
+    [[nodiscard]] bool rider_contacts_set_enabled(std::string_view name,
+                                                  bool enabled);
+    [[nodiscard]] double rider_contacts_stored_energy() const;
+    [[nodiscard]] std::vector<double>
+    rider_contacts_qfrc(double dt, bool advance, bool detailed);
+
 private:
     mjModel *m_;
     mjData *d_;
@@ -288,6 +312,10 @@ private:
     std::unique_ptr<TireWriter> tire_;
     std::unique_ptr<RiderForcesWriter> rider_forces_;
     std::unique_ptr<drivetrain::DrivetrainWriter> drive_;
+    // T3b-1 — the model-owned RiderContactWriter plus its construction-
+    // sized nv qfrc buffer (resized beside the writer in the config ctor).
+    std::unique_ptr<writers::RiderContactWriter> rider_contacts_;
+    std::vector<double> rider_contacts_out_;
 
     // R1 warm-core scratch for the convenience faces above: the boxed
     // methods route through the writers' *_into APIs over these members —

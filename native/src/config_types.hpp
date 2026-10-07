@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "rider/contact_config.hpp" // rider::RiderContactsConfig (T3b-1)
+
 namespace drivetrain {
     struct GearingConfig {
         int front_teeth{}, rear_teeth{};
@@ -262,6 +264,7 @@ namespace nativecfg {
         std::optional<ResistanceConfig> resistance;
         std::optional<TireConfig> tire;
         std::optional<RiderForcesConfig> rider_forces;
+        std::optional<rider::RiderContactsConfig> rider_contacts;
     };
 
 }

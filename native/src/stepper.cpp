@@ -13,6 +13,7 @@
 #include "writers/brake.hpp"
 #include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
+#include "writers/rider_contacts.hpp"
 #include "writers/rider_forces.hpp"
 #include "writers/suspension.hpp"
 #include "writers/tire.hpp"
@@ -111,7 +112,17 @@ Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
         }
         if (cfg.drive)
             drive_ = std::make_unique<drivetrain::DrivetrainWriter>(m_, d_, *cfg.drive);
+        if (cfg.rider_contacts) {
+            rider_contacts_ = std::make_unique<writers::RiderContactWriter>(
+                m_, *cfg.rider_contacts);
+            // Construction-sized convenience scratch — the boxed
+            // rider_contacts_qfrc reroutes through compute_qfrc_into like
+            // tire_qfrc; the writer's anchors stay uninitialized until the
+            // first rider_contacts_reset (the oracle's reset(model, None)).
+            rider_contacts_out_.resize(static_cast<std::size_t>(m_->nv));
+        }
     } catch (...) {
+        rider_contacts_.reset();
         drive_.reset();
         mj_deleteData(d_);
         mj_deleteModel(m_);
@@ -122,6 +133,7 @@ Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
 }
 
 Stepper::~Stepper() {
+    rider_contacts_.reset();
     drive_.reset();
     if (d_) mj_deleteData(d_);
     if (m_) mj_deleteModel(m_);
@@ -248,6 +260,9 @@ void Stepper::reset() {
         if (drive_) drive_->reset();
         if (tire_) tire_->reset();
         if (cruise_) cruise_->reset();
+        // reset(model, data) on the post-forward pose — re-anchors grips and
+        // revalidates the planar support topology like the oracle applier.
+        if (rider_contacts_) rider_contacts_->reset(d_);
         poisoned_ = false;
     } catch (const engine::EngineFailure &) {
         poisoned_ = true;
@@ -357,6 +372,7 @@ void Stepper::set_state(std::span<const double> qpos,
             if (drive_) drive_->reset();
             if (tire_) tire_->reset();
             if (cruise_) cruise_->reset();
+            if (rider_contacts_) rider_contacts_->reset(d_);
         } catch (...) {
             poisoned_ = true;
             throw;
@@ -494,4 +510,52 @@ Stepper::total(std::span<const std::vector<double>> components) const {
             result[i] += c[i];
     }
     return result;
+}
+
+writers::RiderContactWriter &Stepper::rider_contacts() const {
+    if (!rider_contacts_)
+        throw std::logic_error(
+            "rider_contacts: Stepper was built without a rider_contacts "
+            "config (pass the dict from tools.native_config.project)");
+    return *rider_contacts_;
+}
+
+void Stepper::rider_contacts_reset() {
+    require_healthy();
+    rider_contacts().reset(d_);
+}
+
+void Stepper::rider_contacts_restart_clock() {
+    require_healthy();
+    rider_contacts().restart_clock();
+}
+
+void Stepper::rider_contacts_initialize_settled_state() {
+    require_healthy();
+    rider_contacts().initialize_settled_state(d_);
+}
+
+void Stepper::rider_contacts_release_all() {
+    require_healthy();
+    rider_contacts().release_all();
+}
+
+bool Stepper::rider_contacts_set_enabled(std::string_view name,
+                                         bool enabled) {
+    require_healthy();
+    return rider_contacts().set_enabled(name, enabled);
+}
+
+double Stepper::rider_contacts_stored_energy() const {
+    // A read on the current arena — like suspension_components() it stays
+    // available after a fatal engine error poisons the mutation paths.
+    return rider_contacts().stored_energy(d_);
+}
+
+std::vector<double> Stepper::rider_contacts_qfrc(double dt, bool advance,
+                                                 bool detailed) {
+    require_healthy();
+    rider_contacts().compute_qfrc_into(d_, dt, advance, detailed,
+                                       rider_contacts_out_);
+    return rider_contacts_out_;
 }

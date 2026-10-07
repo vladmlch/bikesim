@@ -275,7 +275,9 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/rider/attachment_binding.cpp
   src/rider/attachment_wrench.cpp
   src/rider/contact_binding.cpp
-  src/rider/equality_reactions.cpp)
+  src/rider/equality_reactions.cpp
+  src/rider/rider_contact_binding.cpp
+  src/writers/rider_contacts.cpp)
 
 set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 

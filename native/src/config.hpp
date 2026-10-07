@@ -469,6 +469,54 @@ namespace nativecfg {
         return c;
     }
 
+    // rider_contacts (T3b-1): the ArticulatedConfig subset
+    // RiderContactApplier reads, plus the pose-resolved arm_reach_m. The
+    // closed-set parses name the field on rejection like the
+    // ArticulatedConfig.__post_init__ membership gates they mirror.
+    inline rider::RiderContactsConfig rider_contacts_from_dict(const nb::dict &top) {
+        const char *s = "rider_contacts";
+        const nb::dict d = detail::req_dict(top, "config", s);
+        rider::RiderContactsConfig c;
+        c.arm_reach_m = detail::req_f64(d, s, "arm_reach_m");
+        c.saddle_patch_half_length_m = detail::req_f64(d, s, "saddle_patch_half_length_m");
+        c.pedal_patch_half_length_m = detail::req_f64(d, s, "pedal_patch_half_length_m");
+        c.support_pad_radius_m = detail::req_f64(d, s, "support_pad_radius_m");
+        c.support_k_n_m = detail::req_f64(d, s, "support_k_n_m");
+        c.support_c_ns_m = detail::req_f64(d, s, "support_c_ns_m");
+        c.pedal_c_ns_m = detail::req_f64(d, s, "pedal_c_ns_m");
+        c.support_tangent_k_n_m = detail::req_f64(d, s, "support_tangent_k_n_m");
+        c.support_mu = detail::req_f64(d, s, "support_mu");
+        c.support_length_m = detail::req_f64(d, s, "support_length_m");
+        c.grip_k_n_m = detail::req_f64(d, s, "grip_k_n_m");
+        c.grip_c_ns_m = detail::req_f64(d, s, "grip_c_ns_m");
+        c.grip_release_distance_m = detail::req_f64(d, s, "grip_release_distance_m");
+        c.grip_capture_distance_m = detail::req_f64(d, s, "grip_capture_distance_m");
+        c.grip_capture_speed_mps = detail::req_f64(d, s, "grip_capture_speed_mps");
+        if (d.contains("grip_pair_force_limit_n"))
+            c.grip_pair_force_limit_n = wire::optional_real(
+                d["grip_pair_force_limit_n"],
+                "config.rider_contacts.grip_pair_force_limit_n");
+        const auto pedal =
+            rider::pedal_attachment(detail::req_str(d, s, "pedal_attachment"));
+        if (!pedal)
+            wire::invalid("config.rider_contacts.pedal_attachment",
+                          "unknown attachment");
+        c.pedal_attachment = *pedal;
+        const auto saddle =
+            rider::saddle_attachment(detail::req_str(d, s, "saddle_attachment"));
+        if (!saddle)
+            wire::invalid("config.rider_contacts.saddle_attachment",
+                          "unknown attachment");
+        c.saddle_attachment = *saddle;
+        const auto grip =
+            rider::grip_attachment(detail::req_str(d, s, "grip_attachment"));
+        if (!grip)
+            wire::invalid("config.rider_contacts.grip_attachment",
+                          "unknown attachment");
+        c.grip_attachment = *grip;
+        return c;
+    }
+
     // Whole-config reader: an empty dict disables every writer (checked by the
     // caller before this runs); a non-empty one must name the schema and may
     // carry each writer's section.
@@ -500,11 +548,8 @@ namespace nativecfg {
             c.tire = tire_from_dict(d);
         if (d.contains("rider_forces"))
             c.rider_forces = rider_forces_from_dict(d);
-        // rider_contacts is a declared wire section without a consuming
-        // writer yet — validate its key shape so an unknown or missing key
-        // still fails here; the typed parse arrives with the writer binding.
         if (d.contains("rider_contacts"))
-            static_cast<void>(detail::req_dict(d, "config", "rider_contacts"));
+            c.rider_contacts = rider_contacts_from_dict(d);
         return c;
     }
 } // namespace nativecfg

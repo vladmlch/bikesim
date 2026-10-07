@@ -435,6 +435,9 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'geometry_nonfinite_transform',
         'profile_contract_boundaries',
         'support_geometry_parent_contracts',
+        'settlement_sparse_last_atomicity',
+        'drivetrain_allocation_enumeration',
+        'cblas_and_norm',
     ]
 
 

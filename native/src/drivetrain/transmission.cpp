@@ -375,7 +375,14 @@ namespace drivetrain {
         commit(update);
     }
 
-    std::span<const double> Transmission::solved(mjData *d) {
+    SolvedTransmission Transmission::stage_solved(mjData *d) {
+        // The candidate detaches the live snapshot up front; everything the
+        // solve used to publish now lands on `solved.state`, so a throw in
+        // any step below leaves state_ byte-identical. Scratch writes
+        // (force_, multipliers_, endpoint_, displacement_, geometry_) are
+        // not logical state and may partially complete on a throw — the
+        // next staging run overwrites them wholesale.
+        SolvedTransmission solved{.force = {}, .state = state_};
         std::ranges::fill(force_, 0.);
         multipliers_.assign(static_cast<std::size_t>(d->nefc), 0.);
         const auto type = buffer(d->efc_type, d->nefc), ids = buffer(d->efc_id, d->nefc);
@@ -390,8 +397,9 @@ namespace drivetrain {
             }
         if (selected)
             mj_mulJacTVec(model_, d, force_.data(), multipliers_.data());
+        solved.force = force_;
         if (!geometric_)
-            return force_;
+            return solved;
         if (!prepared_valid_)
             throw std::runtime_error("prepare the geometric transmission before solving");
         const auto &p = prepared_storage_;
@@ -402,13 +410,16 @@ namespace drivetrain {
             displacement_[i] = q[i] - p.qpos[i];
         const double defect = endpoint - p.phi - dot(p.jacobian, displacement_),
                 work = dot(force_, displacement_);
+        // Every derived value is in hand: the candidate publication below
+        // is detached until commit(), so the work counter, the telemetry
+        // map, last tension and the consumed pending flag land together.
         if (state_.shift_pending)
-            state_.shift_constraint_work_j += work;
+            solved.state.shift_constraint_work_j += work;
         double error = 0.;
         for (std::size_t i = 0; i < force_.size(); ++i)
             error = std::max(
                 error, std::abs(force_[i] - (-std::max(0., tension) * p.jacobian[i])));
-        state_.diagnostics = {
+        solved.state.diagnostics = {
             {"transmission_phi_m", p.phi},
             {"transmission_boundary_m", engaged(state_.boundary)},
             {"transmission_gap_m", engaged(state_.boundary) - p.phi},
@@ -418,15 +429,30 @@ namespace drivetrain {
             {"transmission_reaction_error_n", error},
             {"shift_parameter_work_j", state_.shift_parameter_work_j},
             {"shift_interval_constraint_work_j", state_.shift_pending ? work : 0.},
-            {"shift_constraint_work_cumulative_j", state_.shift_constraint_work_j},
+            {"shift_constraint_work_cumulative_j", solved.state.shift_constraint_work_j},
             {
                 "transmission_reference_status",
                 std::string("experimental_geometric_reduction")
             }
         };
-        state_.last_tension_n = tension;
-        state_.shift_pending = false;
-        return force_;
+        solved.state.last_tension_n = tension;
+        solved.state.shift_pending = false;
+        return solved;
+    }
+
+    void Transmission::commit(SolvedTransmission &solved) noexcept {
+        // Every member of TransmissionSnapshot is noexcept-movable, so the
+        // whole candidate swaps in without a single allocation — this runs
+        // inside the settlement's noexcept commit.
+        static_assert(std::is_nothrow_move_assignable_v<TransmissionSnapshot>);
+        state_ = std::move(solved.state);
+    }
+
+    std::span<const double> Transmission::solved(mjData *d) {
+        auto update = stage_solved(d);
+        const std::span<const double> force = update.force;
+        commit(update);
+        return force;
     }
 
     TransmissionSnapshot Transmission::state() const {

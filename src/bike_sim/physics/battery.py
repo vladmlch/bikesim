@@ -18,14 +18,28 @@ class Battery:
         self.energy_j = self.initial_energy_j
         self.drawn_energy_j = 0.
 
-    def draw(self,requested_power_w,dt):
+    def debit(self,requested_power_w,dt):
+        """Candidate form of draw(): identical arithmetic on a detached store.
+
+        Returns (delivered_power_w, (energy_j, drawn_energy_j)) so a settlement
+        can validate the draw before any live field moves — publish() lands
+        the tuple once the whole operation has been accepted.
+        """
         power = scalar(requested_power_w,'battery power',minimum=0)
         dt = scalar(dt,'battery timestep',positive=True)
         requested = derived(power*dt, 'Battery.requested_energy')
         delivered = min(self.energy_j,requested)
-        self.energy_j = max(0.,self.energy_j-delivered)
-        self.drawn_energy_j += delivered
-        return delivered/dt
+        energy = max(0.,self.energy_j-delivered)
+        return delivered/dt, (energy, self.drawn_energy_j+delivered)
+
+    def publish(self,state):
+        """Land a debit() candidate — plain attribute stores, never throws."""
+        self.energy_j,self.drawn_energy_j = state
+
+    def draw(self,requested_power_w,dt):
+        delivered,state = self.debit(requested_power_w,dt)
+        self.publish(state)
+        return delivered
 
 
 def motor_electrical_power(torque,omega,a,b,idle,enabled):

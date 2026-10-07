@@ -553,7 +553,17 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                 nb::arg("rear_slip_mps").none() = nb::none())
             .def("drive_settle_actuation",
                  [](Stepper &s) {
-                     return s.mutate([&] { return owned(s.drive().settle()); });
+                     // The staged settlement owns everything commit()
+                     // publishes; boxing the force array first means an
+                     // ndarray allocation failure cannot leave the
+                     // drivetrain half settled (battery debited, pending
+                     // consumed, telemetry written).
+                     return s.mutate([&] {
+                         auto settlement = s.drive().stage_settle();
+                         auto out = owned(settlement.force);
+                         s.drive().commit(settlement);
+                         return out;
+                     });
                  })
             .def(
                 "drive_diagnostics",

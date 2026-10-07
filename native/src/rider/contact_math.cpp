@@ -1,16 +1,11 @@
 #include "contact_math.hpp"
+#include "../cblas_abi.hpp"
+#include "../model_access.hpp"
+#include "../numeric_norm.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <limits>
-
-extern "C" {
-double cblas_ddot(int n, const double *x, int incx, const double *y, int incy);
-
-void cblas_dgemv(int order, int trans, int m, int n, double alpha,
-                 const double *a, int lda, const double *x, int incx,
-                 double beta, double *y, int incy);
-}
 
 namespace rider {
     void validate_scalar(double value, const char *name) {
@@ -22,12 +17,14 @@ namespace rider {
     }
 
     double dot(const Vec3 &a, const Vec3 &b) {
-        return cblas_ddot(3, a.data(), 1, b.data(), 1);
+        return blas::ddot(model_access::kXYZ, a.data(), 1, b.data(), 1);
     }
 
-    Vec3 matvec(const Mat3 &matrix, const Vec3 &vector, bool transpose) {
+    Vec3 matvec(const Mat3 &matrix, const Vec3 &vector,
+                blas::Transpose transpose) {
         Vec3 result{};
-        cblas_dgemv(101, transpose ? 112 : 111, 3, 3, 1., matrix.data(), 3,
+        blas::dgemv(blas::Order::row_major, transpose, model_access::kXYZ,
+                    model_access::kXYZ, 1., matrix.data(), model_access::kXYZ,
                     vector.data(), 1, 0., result.data(), 1);
         return result;
     }
@@ -36,57 +33,12 @@ namespace rider {
     Vec3 subtract(const Vec3 &a, const Vec3 &b) { return {a[0] - b[0], a[1] - b[1], a[2] - b[2]}; }
     Vec3 multiply(const Vec3 &v, double factor) { return {v[0] * factor, v[1] * factor, v[2] * factor}; }
 
-    namespace {
-        // CPython 3.14.3 Modules/mathmodule.c vector_norm: exact products and compensated sums,
-        // then a square-root differential correction. Explicit FMA is confined to
-        // the error-free product; scalar expression contraction remains disabled.
-        // NOLINTNEXTLINE(misc-no-recursion) subnormal-rescale recursion mirrors CPython mathmodule.c
-        double vector_norm(Vec3 values, double maximum, bool found_nan) {
-            if (std::isinf(maximum)) return maximum;
-            if (found_nan) return std::numeric_limits<double>::quiet_NaN();
-            if (maximum == 0.) return maximum;
-            int exponent = 0;
-            (void) std::frexp(maximum, &exponent);
-            if (exponent < -1023) {
-                constexpr double minimum = std::numeric_limits<double>::min();
-                for (double &value: values) value /= minimum;
-                return minimum * vector_norm(values, maximum / minimum, found_nan);
-            }
-            const double scale = std::ldexp(1., -exponent);
-            double csum = 1., frac1 = 0., frac2 = 0.;
-            for (double const value: values) {
-                const double x = value * scale;
-                const double product = x * x;
-                const double product_error = std::fma(x, x, -product);
-                const double sum = csum + product;
-                const double sum_error = (csum - sum) + product;
-                csum = sum;
-                frac1 += product_error;
-                frac2 += sum_error;
-            }
-            double h = std::sqrt(csum - 1. + (frac1 + frac2));
-            const double product = -h * h;
-            const double product_error = std::fma(-h, h, -product);
-            const double sum = csum + product;
-            const double sum_error = (csum - sum) + product;
-            csum = sum;
-            frac1 += product_error;
-            frac2 += sum_error;
-            const double x = csum - 1. + (frac1 + frac2);
-            h += x / (2. * h);
-            return h / scale;
-        }
-    } // namespace
     double hypot3(const Vec3 &values) {
-        double maximum = 0.;
-        bool found_nan = false;
-        Vec3 absolute{};
-        for (std::size_t i = 0; i < 3; ++i) {
-            absolute[i] = std::abs(values[i]);
-            found_nan = found_nan || std::isnan(absolute[i]);
-            if (absolute[i] > maximum) maximum = absolute[i];
-        }
-        return vector_norm(absolute, maximum, found_nan);
+        // CPython math.hypot — the local vector_norm port moved to
+        // numeric::python_vector_norm unchanged (same fabs scan and the
+        // same DoubleLength compensated kernel, verified bitwise on the
+        // math.hypot oracle corpus).
+        return numeric::python_vector_norm(values);
     }
 
     double hypot2(double x, double z) { return hypot3({x, z, 0.}); }

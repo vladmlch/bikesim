@@ -1,17 +1,11 @@
 #include "chain.hpp"
+#include "../cblas_abi.hpp"
 #include "../model_access.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <numbers>
 #include <utility>
-
-extern "C" {
-double cblas_ddot(int, const double *, int, const double *, int);
-
-void cblas_dgemv(int, int, int, int, double, const double *, int, const double *, int,
-                 double, double *, int);
-}
 
 namespace {
     // Workspace-width allocation bound: nv is the caller-declared model
@@ -25,7 +19,11 @@ namespace {
 
     // mj_jac destination contract: jacp/jacr are (3,nv) row-major blocks
     // and the query point is exactly 3 doubles. The engine ABI call
-    // receives .data() only after every extent checks out.
+    // receives .data() only after every extent checks out. Deliberately
+    // NOT model_access::point_jacobian_into — this site has its own
+    // recorded contract: both Jacobian halves are filled, the body gate
+    // is a bare require_id (world body ID 0 is admissible here), and the
+    // point extent is checked without the finite scan.
     void body_jacobian(const mjModel *m, const mjData *d,
                        std::span<mjtNum> jacp, std::span<mjtNum> jacr,
                        std::span<const mjtNum> point, int body) {
@@ -34,10 +32,11 @@ namespace {
             throw std::invalid_argument(
                 "geometry Jacobian needs a nonnegative model width");
         const std::size_t width = model_access::checked_product(
-            3, static_cast<std::size_t>(m->nv),
+            static_cast<std::size_t>(model_access::kXYZ),
+            static_cast<std::size_t>(m->nv),
             std::numeric_limits<std::size_t>::max());
         if (jacp.size() != width || jacr.size() != width ||
-            point.size() != 3)
+            point.size() != static_cast<std::size_t>(model_access::kXYZ))
             throw std::invalid_argument(
                 "body Jacobian destinations must be 3*nv blocks");
         mj_jac(m, d, jacp.data(), jacr.data(), point.data(), body);
@@ -49,7 +48,8 @@ namespace drivetrain {
         if (a.size() != b.size() ||
             a.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
             throw std::invalid_argument("dot width");
-        return cblas_ddot(static_cast<int>(a.size()), a.data(), 1, b.data(), 1);
+        return blas::ddot(static_cast<int>(a.size()), a.data(), 1,
+                          b.data(), 1);
     }
 
     double unwrap(double value, double reference) {
@@ -229,8 +229,10 @@ namespace drivetrain {
             difference[i] = jp_r[i] - jp_f[i];
             difference[n + i] = jp_r[2 * n + i] - jp_f[2 * n + i];
         }
-        cblas_dgemv(101, 112, 2, static_cast<int>(n), 1., difference.data(),
-                    static_cast<int>(n), gradient.data(), 1, 0., jacobian.data(), 1);
+        blas::dgemv(blas::Order::row_major, blas::Transpose::yes, 2,
+                    static_cast<int>(n), 1., difference.data(),
+                    static_cast<int>(n), gradient.data(), 1, 0.,
+                    jacobian.data(), 1);
         for (std::size_t i = 0; i < n; ++i)
             jacobian[i] = jacobian[i] + rf * jr_f[n + i] - rr * jr_r[n + i];
         validation::derived_array(jacobian, "geometry.jacobian");

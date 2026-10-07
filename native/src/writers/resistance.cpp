@@ -6,10 +6,11 @@
 // in CPython-numpy dispatch to BLAS — on this platform numpy links Apple
 // Accelerate, whose ddot/dgemv use a vectorized multi-accumulator order a
 // sequential C++ loop cannot reproduce. The writer calls the SAME legacy
-// CBLAS entry points numpy resolves to, declared here at the ABI because
-// <Accelerate/Accelerate.h> marks them deprecated under -Werror (and its
-// vecLib headers do not parse under gcc -fsyntax-only). Probes verified
-// each call reproduces the numpy expression bitwise (2000 trials each):
+// CBLAS entry points numpy resolves to, declared once at the ABI in
+// cblas_abi.hpp because <Accelerate/Accelerate.h> marks them deprecated
+// under -Werror (and its vecLib headers do not parse under gcc
+// -fsyntax-only). Probes verified each call reproduces the numpy
+// expression bitwise (2000 trials each):
 //   a @ b            == cblas_ddot(n, a, 1, b, 1)
 //   A(3,nv) @ x      == cblas_dgemv(RowMajor, NoTrans, 3, nv, 1, A, nv, ...)
 //   A.T @ x (F-view) == cblas_dgemv(RowMajor, Trans,    3, nv, 1, A, nv, ...)
@@ -18,32 +19,20 @@
 // below; elementwise ops keep IEEE per-element semantics under any SIMD
 // numpy may use, so scalar loops stay bitwise-correct.
 #include "resistance.hpp"
+#include "../cblas_abi.hpp"
 #include "../config_validation.hpp"
+#include "../model_access.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <ranges>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <utility>
 
-extern "C" {
-// Legacy CBLAS ABI (still exported by Accelerate.framework; enum values are
-// the stable classic CBLAS constants).
-double cblas_ddot(int N, const double *X, int incX, const double *Y,
-                  int incY);
-
-void cblas_dgemv(int Order, int TransA, int M, int N, double alpha,
-                 const double *A, int lda, const double *X, int incX,
-                 double beta, double *Y, int incY);
-}
-
 namespace {
-    constexpr int kCblasRowMajor = 101;
-    constexpr int kCblasNoTrans = 111;
-    constexpr int kCblasTrans = 112;
-
     // CPython builtin sum() on floats (3.12+): Neumaier compensated summation.
     // The compensation term updates only while the running total stays finite;
     // f_result itself always takes the naive step. An empty/fully-filtered
@@ -69,13 +58,12 @@ namespace {
         return f_result + c_sum;
     }
 
-    // physical_mapping.py:6-11 — resolve_id.
+    // physical_mapping.py:6-11 — resolve_id. Site contract: BODY lookups
+    // additionally reject the world body (id 0 can never host a force);
+    // other kinds keep the plain name check — routed through the shared
+    // resolver with the physical gate explicit.
     int resolve_id(const mjModel *m, mjtObj kind, const char *name) {
-        const int result = mj_name2id(m, kind, name);
-        if (result < 0 || (kind == mjOBJ_BODY && result == 0))
-            throw std::invalid_argument("model has no '" + std::string(name) +
-                                        "'");
-        return result;
+        return model_access::resolve_id(m, kind, name, kind == mjOBJ_BODY);
     }
 
     // external_resistance.py:21-23 — _rolling_moment (validation-free core).
@@ -86,16 +74,17 @@ namespace {
     }
 
     // physical_mapping.py:24-37 — point_jacobian_into's checks + the jacp-only
-    // mj_jac call (the rotational half is skipped in the source too).
+    // mj_jac call (the rotational half is skipped in the source too). The
+    // shared checked boundary keeps this site's recorded contract verbatim —
+    // Python's single `0 < body_id < nbody` gate → JacobianBody::
+    // physical_strict — while replacing the raw destination pointer with a
+    // span that gets the exact 3*nv check.
     void point_jacobian_into(const mjModel *m, const mjData *d, int body_id,
-                             const std::array<double, 3> &point, mjtNum *jp) {
-        if (!std::ranges::all_of(
-            point, [](double v) { return std::isfinite(v); }))
-            throw std::invalid_argument("invalid world point");
-        if (!(0 < body_id && body_id < m->nbody))
-            throw std::invalid_argument(
-                "point Jacobian requires a physical body");
-        mj_jac(m, d, jp, nullptr, point.data(), body_id);
+                             const std::array<double, 3> &point,
+                             std::span<mjtNum> jp) {
+        model_access::point_jacobian_into(
+            m, d, body_id, point, jp,
+            model_access::JacobianBody::physical_strict, "point Jacobian");
     }
 } // namespace
 
@@ -130,8 +119,10 @@ ResistanceWriter::ResistanceWriter(const mjModel *m,
     frame_ = resolve_id(m, mjOBJ_BODY, cfg_.frame_body.c_str());
     front_wheel_ = resolve_id(m, mjOBJ_BODY, cfg_.front_wheel_body.c_str());
     rear_wheel_ = resolve_id(m, mjOBJ_BODY, cfg_.rear_wheel_body.c_str());
-    jr_.resize(static_cast<std::size_t>(3) * static_cast<std::size_t>(nv_));
-    jp_.resize(static_cast<std::size_t>(3) * static_cast<std::size_t>(nv_));
+    jr_.resize(static_cast<std::size_t>(model_access::kXYZ) *
+               static_cast<std::size_t>(nv_));
+    jp_.resize(static_cast<std::size_t>(model_access::kXYZ) *
+               static_cast<std::size_t>(nv_));
 }
 
 std::vector<ResistanceWriter::Component> ResistanceWriter::components(
@@ -144,9 +135,9 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
             "equal length");
 
     const std::span<const mjtNum> xpos =
-            std::views::counted(d->xpos, 3 * m_->nbody);
-    const std::span<const mjtNum> xmat =
-            std::views::counted(d->xmat, 9 * m_->nbody);
+            std::views::counted(d->xpos, model_access::kXYZ * m_->nbody);
+    const std::span<const mjtNum> xmat = std::views::counted(
+        d->xmat, model_access::kRotationElements * m_->nbody);
     const std::span<const mjtNum> qvel = std::views::counted(d->qvel, m_->nv);
     // Bounded element reads (and element addresses) — -Wunsafe-buffer-usage
     // rejects raw indexing/arithmetic on the mjData pointers.
@@ -169,18 +160,21 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
         const double Fn = validation::derived(py_sum(snap.patch_loads, snap.patch_working), "ExternalResistanceApplier.normal_load");
         // axis = data.xmat[body].reshape(3, 3)[:, 1] — the body's world
         // y-axis, column 1 of the row-major 3x3 block.
-        const std::array<double, 3> axis = {
-            at(xmat, 9 * body + 1), at(xmat, 9 * body + 4),
-            at(xmat, 9 * body + 7)
+        const std::array<double, model_access::kXYZ> axis = {
+            at(xmat, model_access::kRotationElements * body + 1),
+            at(xmat, model_access::kRotationElements * body + 4),
+            at(xmat, model_access::kRotationElements * body + 7)
         };
-        mj_jac(m_, d, nullptr, jr_.data(), &at(xpos, 3 * body), body);
+        mj_jac(m_, d, nullptr, jr_.data(), &at(xpos, model_access::kXYZ * body),
+               body);
         // row = self._jr.T @ axis (F-order operand → gemv-trans path)
         std::vector<double> row(static_cast<std::size_t>(nv_));
-        cblas_dgemv(kCblasRowMajor, kCblasTrans, 3, nv_, 1.0, jr_.data(), nv_,
+        blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
+                    model_access::kXYZ, nv_, 1.0, jr_.data(), nv_,
                     axis.data(), 1, 0.0, row.data(), 1);
         // omega = float(row @ data.qvel)
         const double omega =
-                cblas_ddot(nv_, row.data(), 1, qvel.data(), 1);
+                blas::ddot(nv_, row.data(), 1, qvel.data(), 1);
         const double radius = snap.effective_radius_m;
         if (Fn > 0.0 && radius > 0.0) {
             const double moment =
@@ -196,23 +190,27 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
 
     // point = data.xpos[self.frame] + data.xmat[self.frame].reshape(3, 3)
     //         @ cfg.point_body_m
-    std::array<double, 3> rotp{};
-    cblas_dgemv(kCblasRowMajor, kCblasNoTrans, 3, 3, 1.0,
-                &at(xmat, 9 * frame_), 3,
+    std::array<double, model_access::kXYZ> rotp{};
+    blas::dgemv(blas::Order::row_major, blas::Transpose::no,
+                model_access::kXYZ, model_access::kXYZ, 1.0,
+                &at(xmat, model_access::kRotationElements * frame_),
+                model_access::kXYZ,
                 cfg_.point_body_m.data(), 1, 0.0, rotp.data(), 1);
-    std::array<double, 3> point{};
-    for (int i = 0; i < 3; ++i)
+    std::array<double, model_access::kXYZ> point{};
+    for (int i = 0; i < model_access::kXYZ; ++i)
         point[static_cast<std::size_t>(i)] =
-                at(xpos, 3 * frame_ + i) + rotp[static_cast<std::size_t>(i)];
+                at(xpos, model_access::kXYZ * frame_ + i) +
+                rotp[static_cast<std::size_t>(i)];
     validation::derived_array(point, "ExternalResistanceApplier.point");
-    point_jacobian_into(m_, d, frame_, point, jp_.data());
+    point_jacobian_into(m_, d, frame_, point, jp_);
     // velocity = self._jp @ data.qvel
-    std::array<double, 3> velocity{};
-    cblas_dgemv(kCblasRowMajor, kCblasNoTrans, 3, nv_, 1.0, jp_.data(), nv_,
+    std::array<double, model_access::kXYZ> velocity{};
+    blas::dgemv(blas::Order::row_major, blas::Transpose::no,
+                model_access::kXYZ, nv_, 1.0, jp_.data(), nv_,
                 qvel.data(), 1, 0.0, velocity.data(), 1);
     // relative = velocity - np.asarray(cfg.wind_world_mps)
-    std::array<double, 3> relative{};
-    for (int i = 0; i < 3; ++i)
+    std::array<double, model_access::kXYZ> relative{};
+    for (int i = 0; i < model_access::kXYZ; ++i)
         relative[static_cast<std::size_t>(i)] =
                 velocity[static_cast<std::size_t>(i)] -
                 cfg_.wind_world_mps[static_cast<std::size_t>(i)];
@@ -221,23 +219,26 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
     // -.5*rho*cda*norm(v)*v. np.linalg.norm's fast path on a real 1-D
     // vector is `x.dot(x)` → cblas_ddot (numpy/linalg/_linalg.py:2767),
     // not a sequential fold — same-libcall contract applies here too.
-    // np.sqrt is libm sqrt.
+    // np.sqrt is libm sqrt. (Distinct from the CPython vector_norm — see
+    // numeric_norm.hpp; this site stays on the BLAS oracle.)
     if (relative[1] != 0.0)
         throw std::invalid_argument("drag velocity must be planar X-Z");
     const double norm = std::sqrt(
-        cblas_ddot(3, relative.data(), 1, relative.data(), 1));
+        blas::ddot(model_access::kXYZ, relative.data(), 1, relative.data(),
+                   1));
     validation::derived(norm, "ExternalResistanceApplier.velocity_norm");
     const double t =
             ((-0.5 * cfg_.rho_kg_m3) * cfg_.cda_m2) * norm;
-    std::array<double, 3> force{};
-    for (int i = 0; i < 3; ++i)
+    std::array<double, model_access::kXYZ> force{};
+    for (int i = 0; i < model_access::kXYZ; ++i)
         force[static_cast<std::size_t>(i)] =
                 t * relative[static_cast<std::size_t>(i)];
     validation::derived_array(force, "ExternalResistanceApplier.drag_force");
 
     // 'aerodynamic': self._jp.T @ force (same gemv-trans path as row above)
     std::vector<double> aerodynamic(static_cast<std::size_t>(nv_));
-    cblas_dgemv(kCblasRowMajor, kCblasTrans, 3, nv_, 1.0, jp_.data(), nv_,
+    blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
+                model_access::kXYZ, nv_, 1.0, jp_.data(), nv_,
                 force.data(), 1, 0.0, aerodynamic.data(), 1);
     validation::derived_array(rolling, "ExternalResistanceApplier.rolling");
     validation::derived_array(aerodynamic, "ExternalResistanceApplier.aerodynamic");

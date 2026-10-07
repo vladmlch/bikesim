@@ -1,4 +1,5 @@
 #pragma once
+#include "../cblas_abi.hpp"
 #include <array>
 
 namespace rider {
@@ -11,7 +12,22 @@ namespace rider {
 
     double dot(const Vec3 &a, const Vec3 &b);
 
-    Vec3 matvec(const Mat3 &matrix, const Vec3 &vector, bool transpose = false);
+    // The transpose operand is a blas::Transpose, not an opaque bool —
+    // the CBLAS integer it encodes is compiler-visible at the call site.
+    Vec3 matvec(const Mat3 &matrix, const Vec3 &vector,
+                blas::Transpose transpose = blas::Transpose::no);
+
+    // Compatibility shim for the remaining bool call sites (rider/
+    // support_geometry.cpp is owned by another task): forwards to the
+    // enum-typed form unchanged. Raw CBLAS ints are deleted outright so
+    // the magic-literal call cannot compile.
+    inline Vec3 matvec(const Mat3 &matrix, const Vec3 &vector,
+                       bool transpose) {
+        return matvec(matrix, vector, transpose ? blas::Transpose::yes
+                                                : blas::Transpose::no);
+    }
+    Vec3 matvec(const Mat3 &matrix, const Vec3 &vector,
+                int transpose) = delete;
 
     Vec3 add(const Vec3 &a, const Vec3 &b);
 

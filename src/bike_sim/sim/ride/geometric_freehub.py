@@ -147,7 +147,13 @@ class GeometricFreehubConstraint(IdealFreehubConstraint):
         self.gearing=candidate_gearing;self.ratio=ratio;self.boundary=boundary
         self.shift_parameter_work_j=shift_parameter_work;self.shift_pending=True
 
-    def solved_qfrc(self,model,data):
+    def _stage_solved(self,model,data):
+        """Solve into a detached candidate — (force, candidate).
+
+        The caller owns publication through ``_commit_solved`` so a
+        settlement can finish every allocation before any field moves,
+        matching the native ``Transmission::stage_solved`` candidate.
+        """
         force=super().solved_qfrc(model,data)
         if self.prepared is None:
             raise RuntimeError('prepare the geometric transmission before solving')
@@ -160,14 +166,28 @@ class GeometricFreehubConstraint(IdealFreehubConstraint):
         displacement=data.qpos-q
         defect=endpoint-phi-float(j@displacement)
         work=float(force@displacement)
-        if self.shift_pending:self.shift_constraint_work_j+=work
-        self.diagnostics={'transmission_phi_m':phi,'transmission_boundary_m':self.boundary,
+        # Stage: every derived value lands on locals first; the attribute
+        # writes below publish together — a rejection mid-solve moves
+        # nothing, matching the native stage_solved candidate.
+        constraint_work=self.shift_constraint_work_j+(work if self.shift_pending else 0.)
+        diagnostics={'transmission_phi_m':phi,'transmission_boundary_m':self.boundary,
             'transmission_gap_m':self.boundary-phi,'transmission_tension_n':tension,
             'transmission_constraint_defect_m':defect,'transmission_interval_work_j':work,
             'transmission_reaction_error_n':float(np.max(np.abs(force-constraint_reaction(max(0.,tension),j)))),
             'shift_parameter_work_j':self.shift_parameter_work_j,
             'shift_interval_constraint_work_j':work if self.shift_pending else 0.,
-            'shift_constraint_work_cumulative_j':self.shift_constraint_work_j,
+            'shift_constraint_work_cumulative_j':constraint_work,
             'transmission_reference_status':'experimental_geometric_reduction'}
+        return force,(constraint_work,diagnostics,tension)
+
+    def _commit_solved(self,candidate):
+        """Land a ``_stage_solved`` candidate — plain stores, never throws."""
+        constraint_work,diagnostics,tension=candidate
+        self.shift_constraint_work_j=constraint_work
+        self.diagnostics=diagnostics
         self.last_tension_n=tension;self.shift_pending=False
+
+    def solved_qfrc(self,model,data):
+        force,candidate=self._stage_solved(model,data)
+        self._commit_solved(candidate)
         return force

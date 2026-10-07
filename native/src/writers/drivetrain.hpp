@@ -4,6 +4,7 @@
 #include "../drivetrain/pedaling.hpp"
 #include "../drivetrain/shifting.hpp"
 #include "../drivetrain/transmission.hpp"
+#include <array>
 
 namespace drivetrain {
     class ArithmeticError : public std::runtime_error {
@@ -91,6 +92,57 @@ namespace drivetrain {
         bool advance = false, probe = false;
     };
 
+    // A fully evaluated, still-unpublished settlement. stage_settle()
+    // performs every throwing step — candidate battery debit, pending
+    // validation, force solution (which drives the transmissions' own
+    // solve telemetry) and diagnostics construction — so commit() is a
+    // memory-only, non-throwing publication of the whole result:
+    // force vector, battery candidate, telemetry and pending removal land
+    // together or not at all.
+    struct PreparedSettlement {
+        // One declared telemetry write: a pointer to an existing live_.last
+        // slot (resolved while staging — std::map element addresses are
+        // stable — so commit performs no lookup and no allocation) plus the
+        // value to publish into it.
+        struct Write {
+            DiagnosticValue *slot;
+            DiagnosticValue value;
+        };
+
+        // Solved transmission force — a view over the writer's persistent
+        // transmission_ scratch so the FFI binding can box it before
+        // commit(), and the convenience settle() keeps returning the same
+        // persistent span.
+        std::span<const double> force{};
+        // In-place telemetry writes, applied to slots that already exist
+        // in live_.last (stage_settle proves membership first, so commit
+        // never allocates a map node). Only scalar values ever land here —
+        // a string-valued write would make the in-place path allocating.
+        static constexpr std::size_t write_capacity = 16;
+        std::array<Write, write_capacity> writes{};
+        std::size_t write_count = 0;
+        // Full candidate diagnostics — engaged when an in-place write
+        // cannot express the publication (a key absent from live_.last —
+        // e.g. after restoring a sparse `last` — or the geometric
+        // transmission telemetry merge, which carries a string status).
+        // All candidate work happens during staging; commit only moves.
+        std::optional<Diagnostics> last;
+        // Staged per-transmission solve candidates — one per transmission
+        // the topology owns. The solve's own telemetry/state publication
+        // rides these: commit() lands each through
+        // Transmission::commit(SolvedTransmission&), a memory-only swap, so
+        // a staging throw (a bad_alloc in a candidate map, an unprepared
+        // geometric hub) publishes none of them.
+        std::optional<SolvedTransmission> ideal_solve, clutch_solve,
+                freewheel_solve;
+        // Candidate store after the pending debit — identical arithmetic to
+        // Battery::draw, staged detached so a failed publish never drains.
+        std::optional<BatterySnapshot> battery;
+        std::optional<AssistSnapshot> assist;
+        // Pending actuation is consumed only when the settlement commits.
+        bool clear_pending = false;
+    };
+
     class DrivetrainWriter {
     public:
         DrivetrainWriter(mjModel *model, mjData *data, DriveConfig config);
@@ -119,6 +171,18 @@ namespace drivetrain {
 
         void commit(PreparedTick &tick);
 
+        // Settlement follows the same transaction shape: staging runs the
+        // transmission solve, the battery debit on a detached snapshot and
+        // every diagnostics allocation, so a throw anywhere publishes
+        // nothing. commit() only lands already-computed values.
+        [[nodiscard]] PreparedSettlement stage_settle();
+
+        // Memory-only and noexcept: the pending actuation, battery store
+        // and telemetry all publish together.
+        void commit(PreparedSettlement &settlement) noexcept;
+
+        // Convenience settle for native callers: stage + commit, returning
+        // the persistent transmission_ span it always did.
         std::span<const double> settle();
 
         const Diagnostics &diagnostics(bool probe) const;
@@ -135,7 +199,10 @@ namespace drivetrain {
         mjModel *model_ = nullptr;
         mjData *data_ = nullptr;
         DriveConfig config_;
-        bool simplified_ = false, effort_ = false;
+        // geometric_hub_ selects the telemetry-merge settle path (the
+        // geometric transmission publishes its solve diagnostics — a map
+        // carrying a string status — which cannot be written in place).
+        bool simplified_ = false, effort_ = false, geometric_hub_ = false;
         GeometryWorkspace geometry_;
         // frame_/crank_/rear_ resolve unconditionally in the ctor; cassette_
         // resolves only for the elastic-chain model, so it needs a named
@@ -182,10 +249,54 @@ namespace drivetrain {
         void stage_pedal_advance(PreparedTick &tick, const PrepareInputs &inputs,
                                  PedalingPolicy &pedaling);
 
+        // Scalar results the solve half of stage_components hands to the
+        // telemetry build — kept private so the split stays an
+        // implementation detail. Each staging frame stays under the
+        // 8192-byte frame contract this way (the sanitizer build's red
+        // zones pushed the single merged frame past it).
+        struct TickMetrics {
+            double extension = 0., rate = 0., tension = 0., energy = 0.,
+                    torque = 0., deflection = 0., relative_rate = 0.,
+                    cadence = 0., omega_crank = 0., omega = 0., human = 0.,
+                    sensor = 0., assist_sensor = 0., request = 0.,
+                    safety = 0., delivered = 0., electrical = 0.;
+            bool enabled = false;
+            PedalingState ps;
+            std::vector<double> angles;
+            std::optional<double> psi;
+        };
+
+        // The solve half of stage_components: pedaling advance, chain/freehub
+        // and bearing force evaluation and the motor/battery solve land the
+        // component forces on the candidate tick and return the scalar
+        // metrics the telemetry build publishes.
+        [[nodiscard]] TickMetrics
+        stage_components_metrics(PreparedTick &tick, const TickInputs &in);
+
+        // The publish half: derived-force revalidation, pending reservation,
+        // control rows, the telemetry map and mirror staging all land on the
+        // candidate tick from the already-computed metrics.
+        void stage_components_telemetry(PreparedTick &tick,
+                                        const TickInputs &in,
+                                        const TickMetrics &metrics);
+
+        // Stages the snapshot's embedded policy/transmission mirrors with
+        // the same values commit() will publish, so commit() performs no
+        // fresh state() copies (which allocate).
+        void stage_snapshot_mirrors(PreparedTick &tick) const;
+
         // Re-runs each policy's set_state validation on the staged candidate
         // snapshots; staged TransmissionUpdates were already validated inside
         // stage_* by evaluate_candidate().
         void validate_tick(const PreparedTick &tick) const;
+
+        // Same re-validation for the settlement candidates.
+        void validate_settlement(const PreparedSettlement &settlement) const;
+
+        // Post-commit snapshot view of a staged transmission update —
+        // mirrors what Transmission::state() reports after commit() lands.
+        [[nodiscard]] static TransmissionSnapshot
+        committed_snapshot(const TransmissionUpdate &update);
     };
 } // namespace drivetrain
 using drivetrain::DrivetrainWriter;

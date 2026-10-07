@@ -11,11 +11,17 @@
 #include "../src/model_access.hpp"
 #include "../src/tyre/profile.hpp"
 #include "../src/rider/support_geometry.hpp"
+#include "../src/cblas_abi.hpp"
+#include "../src/numeric_norm.hpp"
 #include "../src/writers/cruise.hpp"
+#include "../src/writers/drivetrain.hpp"
+#include "allocation_faults.hpp"
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <cfenv>
 #include <exception>
@@ -1585,7 +1591,654 @@ namespace {
         rider::validate_planar_support_model(model.get(), data.get(), good);
     }
 
-    constexpr std::array<TestCase, 23> cases{{
+    // ---------- E4: exactly-once settlement + exhaustive allocation sweep --
+
+    // Bitwise logical-state equality. An injected allocation failure must
+    // leave the whole drivetrain snapshot byte-identical to the armed
+    // baseline, and the disarmed retry must reproduce the clean control run
+    // exactly — value equality would tolerate drift the transaction must
+    // not have.
+    bool same(double a, double b) {
+        return std::bit_cast<std::uint64_t>(a) ==
+               std::bit_cast<std::uint64_t>(b);
+    }
+    // Generic optional lift — declared up front so every comparator below
+    // can call it, defined after the concrete overloads so the dependent
+    // payload lookup resolves each same(T, T) above.
+    template <typename T>
+    bool same(const std::optional<T> &a, const std::optional<T> &b);
+    bool same(const std::vector<double> &a, const std::vector<double> &b) {
+        if (a.size() != b.size())
+            return false;
+        for (std::size_t i = 0; i < a.size(); ++i)
+            if (!same(a[i], b[i]))
+                return false;
+        return true;
+    }
+    bool same(const drivetrain::DiagnosticValue &a,
+              const drivetrain::DiagnosticValue &b) {
+        if (a.index() != b.index())
+            return false;
+        return std::visit(
+            [](const auto &x, const auto &y) {
+                using T = std::decay_t<decltype(x)>;
+                using U = std::decay_t<decltype(y)>;
+                if constexpr (!std::is_same_v<T, U>)
+                    return false;
+                else if constexpr (std::is_same_v<T, double>)
+                    return same(x, y);
+                else if constexpr (std::is_same_v<T, std::monostate>)
+                    return true;
+                else
+                    return x == y; // int, bool, std::string
+            },
+            a, b);
+    }
+    bool same(const drivetrain::Diagnostics &a,
+              const drivetrain::Diagnostics &b) {
+        if (a.size() != b.size())
+            return false;
+        for (auto ia = a.begin(), ib = b.begin(); ia != a.end(); ++ia, ++ib)
+            if (ia->first != ib->first || !same(ia->second, ib->second))
+                return false;
+        return true;
+    }
+    bool same(const drivetrain::PreparedTransmission &a,
+              const drivetrain::PreparedTransmission &b) {
+        return same(a.phi, b.phi) && same(a.time, b.time) &&
+               same(a.jacobian, b.jacobian) && same(a.qpos, b.qpos);
+    }
+    bool same(const drivetrain::TransmissionSnapshot &a,
+              const drivetrain::TransmissionSnapshot &b) {
+        return same(a.ratio, b.ratio) && a.rear_teeth == b.rear_teeth &&
+               same(a.boundary, b.boundary) && same(a.prepared, b.prepared) &&
+               same(a.diagnostics, b.diagnostics) &&
+               a.shift_pending == b.shift_pending &&
+               same(a.shift_parameter_work_j, b.shift_parameter_work_j) &&
+               same(a.shift_constraint_work_j, b.shift_constraint_work_j) &&
+               same(a.last_tension_n, b.last_tension_n) &&
+               same(a.range[0], b.range[0]) && same(a.range[1], b.range[1]) &&
+               same(a.coefficients, b.coefficients);
+    }
+    bool same(const drivetrain::PedalingSnapshot &a,
+              const drivetrain::PedalingSnapshot &b) {
+        return a.coasting == b.coasting &&
+               same(a.target_phase_rad, b.target_phase_rad) &&
+               same(a.target_rate_rad_s, b.target_rate_rad_s) &&
+               same(a.deceleration_rad_s2, b.deceleration_rad_s2) &&
+               same(a.effort, b.effort) && same(a.cadence_ema, b.cadence_ema);
+    }
+    bool same(const drivetrain::ShiftingSnapshot &a,
+              const drivetrain::ShiftingSnapshot &b) {
+        return a.rear_teeth == b.rear_teeth && a.from_teeth == b.from_teeth &&
+               a.shift_count == b.shift_count &&
+               same(a.cooldown_s, b.cooldown_s) &&
+               same(a.cut_remaining_s, b.cut_remaining_s) &&
+               a.direction == b.direction &&
+               same(a.cadence_ema, b.cadence_ema) &&
+               same(a.required_ema, b.required_ema);
+    }
+    bool same(const drivetrain::AssistSnapshot &a,
+              const drivetrain::AssistSnapshot &b) {
+        return same(a.torque, b.torque) && same(a.last_gain, b.last_gain) &&
+               a.pedaling == b.pedaling;
+    }
+    bool same(const drivetrain::BatterySnapshot &a,
+              const drivetrain::BatterySnapshot &b) {
+        return same(a.initial_energy_j, b.initial_energy_j) &&
+               same(a.energy_j, b.energy_j) &&
+               same(a.drawn_energy_j, b.drawn_energy_j);
+    }
+    bool same(const drivetrain::FreehubSnapshot &a,
+              const drivetrain::FreehubSnapshot &b) {
+        return same(a.boundary, b.boundary) && same(a.energy_j, b.energy_j) &&
+               same(a.torque_nm, b.torque_nm);
+    }
+    bool same(const drivetrain::PendingActuation &a,
+              const drivetrain::PendingActuation &b) {
+        return same(a.requested, b.requested) && same(a.omega, b.omega) &&
+               same(a.dt, b.dt) && a.enabled == b.enabled;
+    }
+    template <typename T>
+    bool same(const std::optional<T> &a, const std::optional<T> &b) {
+        return a.has_value() == b.has_value() && (!a || same(*a, *b));
+    }
+    bool same(const drivetrain::DriveSnapshot &a,
+              const drivetrain::DriveSnapshot &b) {
+        return same(a.pedaling, b.pedaling) && same(a.shifting, b.shifting) &&
+               same(a.assist, b.assist) && same(a.battery, b.battery) &&
+               same(a.hub, b.hub) && same(a.shift_time_s, b.shift_time_s) &&
+               same(a.last_time_s, b.last_time_s) &&
+               same(a.reference, b.reference) && same(a.psi, b.psi) &&
+               same(a.angles, b.angles) && same(a.last, b.last) &&
+               same(a.probe_last, b.probe_last) &&
+               same(a.pending_actuation, b.pending_actuation) &&
+               same(a.ideal_hub, b.ideal_hub) && same(a.clutch, b.clutch) &&
+               same(a.freewheel, b.freewheel);
+    }
+
+    // The operation's observable result folded into comparable bits. Boxing
+    // it sits inside the armed window — exactly where the binding places
+    // owned()/result_dict — so a result-boxing allocation failure is
+    // enumerated like every production allocation.
+    struct Digest {
+        std::vector<double> numbers;
+        std::vector<std::string> strings;
+    };
+    bool same(const Digest &a, const Digest &b) {
+        return a.strings == b.strings && same(a.numbers, b.numbers);
+    }
+
+    struct ModelRows {
+        std::vector<double> wrap_prm, tendon_range, tendon_length0;
+    };
+    ModelRows model_rows(const mjModel &model) {
+        return {.wrap_prm = rows(model.wrap_prm, model.nwrap),
+                .tendon_range = rows(model.tendon_range, 2 * model.ntendon),
+                .tendon_length0 = rows(model.tendon_length0, model.ntendon)};
+    }
+    bool same(const ModelRows &a, const ModelRows &b) {
+        return same(a.wrap_prm, b.wrap_prm) &&
+               same(a.tendon_range, b.tendon_range) &&
+               same(a.tendon_length0, b.tendon_length0);
+    }
+
+    // Mirrors tests/reference/test_native_drivetrain.py::model_xml for the
+    // crank_effort physical chain: scalar planar joints plus each auxiliary
+    // one-way hub topology. The spec wrapper keeps the two same-typed
+    // selector strings from silently swapping at call sites.
+    struct DriveSpec {
+        std::string_view kind, topology;
+    };
+    std::string drive_mjcf(const DriveSpec &spec) {
+        const std::string_view kind = spec.kind, topology = spec.topology;
+        std::vector<std::string> names{
+            "root_x", "frame_pitch", "crank_spin", "rear_carrier",
+            "rear_wheel_spin", "front_wheel_spin", "pedal_front_spin",
+            "pedal_rear_spin"};
+        std::string extra, tendon;
+        if (kind == "elastic_chain") {
+            extra += "<body name=\"cassette\" pos=\"-.5 0 0\"><joint "
+                     "name=\"cassette_spin\" axis=\"0 1 0\"/><geom size=\".04\" "
+                     "mass=\"1\"/></body>";
+            names.emplace_back("cassette_spin");
+        }
+        if (topology == "clutch") {
+            extra += "<body name=\"drive_shaft\"><joint "
+                     "name=\"drive_shaft_spin\" axis=\"0 1 0\"/><geom "
+                     "size=\".04\" mass=\"1\"/></body>";
+            names.emplace_back("drive_shaft_spin");
+        }
+        if (topology == "rotor") {
+            extra += "<body name=\"rotor\"><joint name=\"rotor_spin\" "
+                     "axis=\"0 1 0\"/><inertial pos=\"0 0 0\" mass=\"1\" "
+                     "diaginertia=\".2 .2 .2\"/></body>";
+            names.emplace_back("rotor_spin");
+        }
+        const std::string_view driver =
+                topology == "clutch" ? "drive_shaft_spin" : "crank_spin";
+        if (kind == "ideal_mid_drive") {
+            tendon += "<fixed name=\"ideal_mid_drive_freehub\" limited=\"true\" "
+                      "range=\"-100 0\"><joint joint=\"";
+            tendon += driver;
+            tendon += "\" coef=\"1.4166666666666667\"/><joint "
+                      "joint=\"rear_wheel_spin\" coef=\"-1\"/></fixed>";
+        } else if (kind == "geometric_ideal_mid_drive") {
+            tendon += "<fixed name=\"geometric_mid_drive_freehub\" "
+                      "limited=\"true\" range=\"-100 0\">";
+            for (const std::string &name: names) {
+                tendon += R"(<joint joint=")" + name + R"(" coef=".1"/>)";
+            }
+            tendon += "</fixed>";
+        }
+        if (topology == "clutch")
+            tendon += "<fixed name=\"crank_clutch\" limited=\"true\" "
+                      "range=\"-100 0\"><joint joint=\"crank_spin\" "
+                      "coef=\"1\"/><joint joint=\"drive_shaft_spin\" "
+                      "coef=\"-1\"/></fixed>";
+        if (topology == "rotor")
+            tendon += "<fixed name=\"motor_freewheel\" limited=\"true\" "
+                      "range=\"-100 0\"><joint joint=\"rotor_spin\" "
+                      "coef=\"1\"/><joint joint=\"crank_spin\" "
+                      "coef=\"-1\"/></fixed>";
+        const std::string_view motor_joint =
+                topology == "rotor" ? "rotor_spin" : driver;
+        std::string xml =
+                "<mujoco><option timestep=\".0002\" gravity=\"0 0 0\"/>"
+                "<default><geom type=\"sphere\" size=\".05\" mass=\"1\" "
+                "contype=\"0\" conaffinity=\"0\"/><joint damping=\"0\"/></default>"
+                "<worldbody><body name=\"frame\"><joint name=\"root_x\" "
+                "type=\"slide\" axis=\"1 0 0\"/><joint name=\"frame_pitch\" "
+                "axis=\"0 1 0\"/><geom/>"
+                "<body name=\"crank\"><joint name=\"crank_spin\" axis=\"0 1 "
+                "0\"/><geom/></body>"
+                "<body name=\"rear_wheel\" pos=\"-.5 0 .1\"><joint "
+                "name=\"rear_carrier\" type=\"slide\" axis=\"0 0 1\" "
+                "limited=\"true\" range=\"-.01 .01\"/><joint "
+                "name=\"rear_wheel_spin\" axis=\"0 1 0\"/><geom/></body>"
+                "<body name=\"front_wheel\" pos=\".6 0 0\"><joint "
+                "name=\"front_wheel_spin\" axis=\"0 1 0\"/><geom/></body>"
+                "<body name=\"pedal_front\"><joint name=\"pedal_front_spin\" "
+                "axis=\"0 1 0\"/><geom/></body>"
+                "<body name=\"pedal_rear\"><joint name=\"pedal_rear_spin\" "
+                "axis=\"0 1 0\"/><geom/></body>";
+        xml += extra;
+        xml += "</body></worldbody><tendon>";
+        xml += tendon;
+        xml += "</tendon><actuator><motor name=\"human_crank\" "
+               "joint=\"crank_spin\"/><motor name=\"mid_drive\" joint=\"";
+        xml += motor_joint;
+        xml += "\"/></actuator></mujoco>";
+        return xml;
+    }
+
+    int joint_dof(const mjModel *m, const char *name) {
+        const int id = mj_name2id(m, mjOBJ_JOINT, name);
+        require(id >= 0, "fixture joint resolves");
+        return drivetrain::buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)];
+    }
+    int joint_qpos(const mjModel *m, const char *name) {
+        const int id = mj_name2id(m, mjOBJ_JOINT, name);
+        require(id >= 0, "fixture joint resolves");
+        return drivetrain::buffer(m->jnt_qposadr, m->njnt)[static_cast<std::size_t>(id)];
+    }
+
+    drivetrain::DriveConfig drive_config(std::string_view kind,
+                                         std::string_view topology,
+                                         bool assist_enabled, bool shifting_enabled) {
+        drivetrain::ShiftingConfig shifting{
+            .enabled = shifting_enabled, .cassette = {24, 28},
+            .target_cadence_min_rpm = 65., .target_cadence_max_rpm = 85.,
+            .shift_cooldown_s = .4, .shift_cut_duration_s = .2,
+            .torque_factor = .3, .cadence_smoothing_tau_s = .35,
+            .upshift_slip_limit_mps = .5,
+            .upshift_slip_mode = "legacy_signed"};
+        drivetrain::AssistConfig assist = valid_assist_config();
+        if (!assist_enabled) {
+            assist.gain = 0.;
+            assist.max_torque = 0.;
+            assist.max_power = 0.;
+        }
+        return {
+            .policies = {
+                .gearing = {.front_teeth = 34, .rear_teeth = 24,
+                            .chain_pitch_m = .0127},
+                .pedaling = valid_pedaling_config(),
+                .shifting = std::move(shifting),
+                .assist = std::move(assist),
+                .battery = {.enabled = true, .energy_j = 1800000.,
+                            .copper_w_per_nm2 = .02, .speed_w_per_rad_s2 = 0.,
+                            .idle_w = 5.},
+                .hub_stiffness_nm_rad = 1000., .hub_damping_nm_s = .5},
+            .drive_mode = "crank_effort",
+            .transmission_model = std::string(kind),
+            .human_torque_nm = 20., .torque_ripple = .35,
+            .crank_phase_rad = 0., .chain_k_n_m = 200000.,
+            .chain_c_ns_m = 10., .bearing_c_nms_rad = .03,
+            .rotor_inertia_kgm2 = topology == "rotor" ? .2 : 0.,
+            .motor_clutch = topology == "clutch"};
+    }
+
+    // The pairing-fixture model/data/writer trio, seeded exactly like the
+    // Python reference pair(): posed carrier, spinning crank/wheel, then
+    // kinematics + reset so every op starts from a real drivetrain state.
+    struct DriveFixture {
+        drivetrain::OwnedModel model;
+        drivetrain::OwnedData data;
+        drivetrain::DrivetrainWriter writer;
+
+        DriveFixture(std::string_view kind, std::string_view topology,
+                     drivetrain::DriveConfig config)
+            : model(load_xml_model(
+                  drive_mjcf({.kind = kind, .topology = topology}))),
+              data(engine::make_data(model.get())),
+              writer(model.get(), data.get(), std::move(config)) {
+            require(data != nullptr, "drive fixture data");
+            mjData *d = data.get();
+            const auto qpos = drivetrain::buffer(d->qpos, model->nq);
+            const auto qvel = drivetrain::buffer(d->qvel, model->nv);
+            qpos[static_cast<std::size_t>(joint_qpos(model.get(), "rear_carrier"))] = .013;
+            qvel[static_cast<std::size_t>(joint_dof(model.get(), "crank_spin"))] = 4.;
+            qvel[static_cast<std::size_t>(joint_dof(model.get(), "rear_wheel_spin"))] = 5.;
+            if (topology == "clutch")
+                qvel[static_cast<std::size_t>(joint_dof(model.get(), "drive_shaft_spin"))] = 4.5;
+            if (topology == "rotor")
+                qvel[static_cast<std::size_t>(joint_dof(model.get(), "rotor_spin"))] = 4.5;
+            mj_forward(model.get(), d);
+            writer.reset();
+        }
+    };
+
+    // Reserve a pending actuation on a nonzero delivered torque, then let the
+    // engine settle the reserved ctrl into actuator_force — the same state a
+    // settle() sees in production.
+    void prime_pending(DriveFixture &fixture) {
+        static_cast<void>(fixture.writer.components(
+            {}, .002, 2., false, true, true, 20., std::nullopt, true,
+            std::nullopt));
+        mj_forward(fixture.model.get(), fixture.data.get());
+    }
+
+    // Operation digests — staged calls with the result boxed between stage
+    // and commit, mirroring each binding's actual transaction boundary.
+    Digest prepare_op(DriveFixture &fixture) {
+        auto tick = fixture.writer.stage_prepare(
+            {.control = {}, .dt = .002, .braking = false, .active = true,
+             .advance = true, .contact = true, .slip = std::nullopt,
+             .ceiling = std::nullopt});
+        Digest digest{
+            .numbers = {tick.result.effort_nm,
+                        tick.result.required_cadence_rpm,
+                        tick.result.target_phase_rad ? 1. : 0.,
+                        tick.result.target_phase_rad.value_or(0.),
+                        tick.result.target_rate_rad_s},
+            .strings = {tick.result.mode, tick.result.reason}};
+        fixture.writer.commit(tick);
+        return digest;
+    }
+    Digest components_op(DriveFixture &fixture, bool advance) {
+        auto tick = fixture.writer.stage_components(
+            {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
+             .braking = false, .active = true, .advance = advance,
+             .contact = true, .pedaling = std::nullopt, .slip = std::nullopt});
+        Digest digest;
+        for (const auto &[name, row]: tick.components) {
+            digest.strings.push_back(name);
+            digest.numbers.insert(digest.numbers.end(), row.begin(), row.end());
+        }
+        fixture.writer.commit(tick);
+        return digest;
+    }
+    Digest advance_op(DriveFixture &fixture) {
+        return components_op(fixture, true);
+    }
+    Digest probe_op(DriveFixture &fixture) {
+        return components_op(fixture, false);
+    }
+    Digest settle_op(DriveFixture &fixture) {
+        auto settlement = fixture.writer.stage_settle();
+        Digest digest;
+        digest.numbers.assign(settlement.force.begin(),
+                              settlement.force.end());
+        fixture.writer.commit(settlement);
+        return digest;
+    }
+    Digest reset_op(DriveFixture &fixture) {
+        fixture.writer.reset();
+        return {};
+    }
+
+    // The enumeration driver from the plan: run the control once, measure
+    // the operation's allocation surface once, then inject at every position
+    // — each failure must publish nothing, and the disarmed retry must match
+    // the control bitwise.
+    template <typename Op>
+    void sweep_allocations(std::string_view label, DriveFixture &fixture,
+                           const drivetrain::DriveSnapshot &armed,
+                           const Op &op) {
+        const auto fail = [&label](const char *what) {
+            require(false, std::string(label) + ": " + what);
+        };
+        fixture.writer.restore(armed);
+        const Digest control_result = op(fixture);
+        const drivetrain::DriveSnapshot control_post = fixture.writer.state();
+        const ModelRows control_model = model_rows(*fixture.model);
+        const std::vector<double> control_ctrl =
+                rows(fixture.data->ctrl, fixture.model->nu);
+        std::size_t count = 0;
+        fixture.writer.restore(armed);
+        {
+            const allocation_faults::Guard guard;
+            allocation_faults::arm(std::numeric_limits<std::size_t>::max());
+            const Digest measured = op(fixture);
+            count = allocation_faults::allocated();
+            if (!(same(measured, control_result) &&
+                  same(fixture.writer.state(), control_post) &&
+                  same(model_rows(*fixture.model), control_model) &&
+                  rows(fixture.data->ctrl, fixture.model->nu) == control_ctrl))
+                fail("the armed measurement run deviates from the control");
+        }
+        if (count == 0)
+            fail("the operation exposes no enumerable allocations");
+        // Compact positions table for the enumeration report.
+        std::cout << "  positions " << label << " = " << count << '\n';
+        for (std::size_t fail_at = 0; fail_at < count; ++fail_at) {
+            fixture.writer.restore(armed);
+            const drivetrain::DriveSnapshot pre = fixture.writer.state();
+            if (!same(pre, armed))
+                fail("restore must reproduce the armed baseline bitwise");
+            const ModelRows pre_model = model_rows(*fixture.model);
+            const std::vector<double> pre_ctrl =
+                    rows(fixture.data->ctrl, fixture.model->nu);
+            bool injected = false;
+            {
+                const allocation_faults::Guard guard;
+                allocation_faults::arm(fail_at);
+                try {
+                    static_cast<void>(op(fixture));
+                } catch (const std::bad_alloc &) {
+                    injected = true;
+                }
+            }
+            if (!injected)
+                fail("an armed allocation position ran to completion");
+            if (!(same(fixture.writer.state(), pre) &&
+                  same(model_rows(*fixture.model), pre_model) &&
+                  rows(fixture.data->ctrl, fixture.model->nu) == pre_ctrl))
+                fail("an injected failure published partial state");
+            const Digest retry = op(fixture);
+            if (!(same(retry, control_result) &&
+                  same(fixture.writer.state(), control_post) &&
+                  same(model_rows(*fixture.model), control_model) &&
+                  rows(fixture.data->ctrl, fixture.model->nu) == control_ctrl))
+                fail("the disarmed retry deviates from the control");
+        }
+    }
+
+    // The A12 reproduction: restore a state whose `last` is the sparse {} a
+    // partial restore leaves, with the pending actuation still reserved, then
+    // sweep every settlement allocation position. The failed settles publish
+    // nothing — battery, pending, telemetry, transmissions — and the retry
+    // debits exactly once, never twice.
+    void test_settlement_sparse_last_atomicity() {
+        // Heap — a full writer plus several snapshots exceeds the frame
+        // budget several times over.
+        const auto fixture = std::make_unique<DriveFixture>(
+            "ideal_mid_drive", "plain",
+            drive_config("ideal_mid_drive", "plain", true, false));
+        prime_pending(*fixture);
+        drivetrain::DriveSnapshot armed = fixture->writer.state();
+        require(armed.pending_actuation && armed.battery.drawn_energy_j == 0.,
+                "fixture primes a pending actuation on a full battery");
+        armed.last.clear();
+        fixture->writer.restore(armed);
+        require(fixture->writer.state().last.empty() &&
+                fixture->writer.state().pending_actuation,
+                "sparse restore leaves last={} with the pending reserved");
+        // The clean control: one settlement, one debit, pending released.
+        static_cast<void>(settle_op(*fixture));
+        const drivetrain::DriveSnapshot settled = fixture->writer.state();
+        require(settled.battery.drawn_energy_j > 0. &&
+                !settled.pending_actuation && !settled.last.empty(),
+                "control settlement debits once and releases pending");
+        const double drawn_once = settled.battery.drawn_energy_j;
+        static_cast<void>(settle_op(*fixture));
+        require(fixture->writer.state().battery.drawn_energy_j == drawn_once,
+                "a settlement with no pending actuation debits nothing");
+        sweep_allocations("sparse last settlement", *fixture, armed,
+                          settle_op);
+        const drivetrain::DriveSnapshot post = fixture->writer.state();
+        require(post.battery.energy_j == settled.battery.energy_j &&
+                post.battery.drawn_energy_j == settled.battery.drawn_energy_j,
+                "injected-failure retries debit the battery exactly once");
+    }
+
+    // Every supported drivetrain topology, every transaction shape: each
+    // operation's full allocation surface is enumerated from a restored
+    // armed baseline.
+    void test_drivetrain_allocation_enumeration() {
+        struct Variant {
+            const char *kind, *topology;
+            bool assist, shifting;
+        };
+        for (const Variant variant: {
+                 Variant{.kind = "elastic_chain", .topology = "plain",
+                         .assist = true, .shifting = false},
+                 Variant{.kind = "ideal_mid_drive", .topology = "plain",
+                         .assist = true, .shifting = false},
+                 Variant{.kind = "ideal_mid_drive", .topology = "plain",
+                         .assist = true, .shifting = true},
+                 Variant{.kind = "ideal_mid_drive", .topology = "clutch",
+                         .assist = true, .shifting = false},
+                 Variant{.kind = "ideal_mid_drive", .topology = "rotor",
+                         .assist = true, .shifting = false},
+                 Variant{.kind = "ideal_mid_drive", .topology = "plain",
+                         .assist = false, .shifting = false},
+                 Variant{.kind = "geometric_ideal_mid_drive",
+                         .topology = "plain", .assist = true,
+                         .shifting = false},
+                 Variant{.kind = "geometric_ideal_mid_drive",
+                         .topology = "plain", .assist = true,
+                         .shifting = true},
+                 Variant{.kind = "geometric_ideal_mid_drive",
+                         .topology = "clutch", .assist = true,
+                         .shifting = false},
+                 Variant{.kind = "geometric_ideal_mid_drive",
+                         .topology = "rotor", .assist = true,
+                         .shifting = false},
+                 Variant{.kind = "geometric_ideal_mid_drive",
+                         .topology = "plain", .assist = false,
+                         .shifting = false}}) {
+            const std::string prefix =
+                    std::string(variant.kind) + "/" + variant.topology +
+                    (variant.shifting ? "/shift" : "") +
+                    (variant.assist ? "" : "/noassist");
+            // Heap — the writer plus baseline snapshots far exceed the
+            // frame budget.
+            const auto fixture = std::make_unique<DriveFixture>(
+                variant.kind, variant.topology,
+                drive_config(variant.kind, variant.topology, variant.assist,
+                             variant.shifting));
+            const drivetrain::DriveSnapshot armed_clean =
+                    fixture->writer.state();
+            prime_pending(*fixture);
+            const drivetrain::DriveSnapshot armed_primed =
+                    fixture->writer.state();
+            // reset() reverts a pending-bearing, possibly-shifted state.
+            sweep_allocations(prefix + " reset", *fixture, armed_primed,
+                              reset_op);
+            // restore() commits a pending-bearing candidate onto a clean
+            // baseline — the revert-and-retry shape the enumeration needs.
+            sweep_allocations(prefix + " restore", *fixture, armed_clean,
+                              [&armed_primed](DriveFixture &f) -> Digest {
+                                  f.writer.restore(armed_primed);
+                                  return {};
+                              });
+            sweep_allocations(prefix + " prepare", *fixture, armed_clean,
+                              prepare_op);
+            sweep_allocations(prefix + " advance", *fixture, armed_clean,
+                              advance_op);
+            // Probe with the pending still reserved exercises the
+            // probe_last publication on top of live pending state.
+            sweep_allocations(prefix + " probe", *fixture, armed_primed,
+                              probe_op);
+            sweep_allocations(prefix + " settle", *fixture, armed_primed,
+                              settle_op);
+            // The sparse-last{} settlement — the A12 double-debit shape.
+            drivetrain::DriveSnapshot armed_sparse = armed_primed;
+            armed_sparse.last.clear();
+            sweep_allocations(prefix + " settle sparse", *fixture,
+                              armed_sparse, settle_op);
+        }
+    }
+
+    void test_cblas_and_norm() {
+        // The typed enum faces must reach the linked CBLAS symbols —
+        // each call below distinguishes routing from a decorative
+        // pass-through by changing the buffer interpretation.
+        const std::array a3{1., 2., 3.}, b3{4., 5., 6.};
+        require(blas::ddot(3, a3.data(), 1, b3.data(), 1) == 32.,
+                "cblas ddot dot product");
+        require(blas::ddot(0, a3.data(), 1, b3.data(), 1) == 0.,
+                "cblas ddot zero length");
+
+        const std::array amat{1., 2., 3., 4., 5., 6.};
+        const std::array x3{1., 1., 1.};
+        std::array y2{0., 0.};
+        blas::dgemv(blas::Order::row_major, blas::Transpose::no, 2, 3, 1.,
+                    amat.data(), 3, x3.data(), 1, 0., y2.data(), 1);
+        require(y2[0] == 6. && y2[1] == 15., "dgemv row-major no-transpose");
+        const std::array x2{1., 1.};
+        std::array y3{0., 0., 0.};
+        blas::dgemv(blas::Order::row_major, blas::Transpose::yes, 2, 3, 1.,
+                    amat.data(), 3, x2.data(), 1, 0., y3.data(), 1);
+        require(y3[0] == 5. && y3[1] == 7. && y3[2] == 9.,
+                "dgemv row-major transpose");
+        // The same buffer under column_major reads as [[1,3,5],[2,4,6]].
+        std::array z2{0., 0.};
+        blas::dgemv(blas::Order::column_major, blas::Transpose::no, 2, 3,
+                    1., amat.data(), 2, x3.data(), 1, 0., z2.data(), 1);
+        require(z2[0] == 9. && z2[1] == 12.,
+                "dgemv column-major interpretation");
+
+        const std::array a22{1., 2., 3., 4.}, b22{5., 6., 7., 8.};
+        std::array c22{0., 0., 0., 0.};
+        blas::dgemm(blas::Order::row_major, blas::Transpose::no,
+                    blas::Transpose::no, 2, 2, 2, 1., a22.data(), 2,
+                    b22.data(), 2, 0., c22.data(), 2);
+        require(c22[0] == 19. && c22[1] == 22. && c22[2] == 43. &&
+                        c22[3] == 50.,
+                "dgemm row-major product");
+
+        // CPython vector_norm (math.hypot) oracle corpus — expected bits
+        // generated by CPython 3.14 math.hypot on this platform; covers
+        // zero-length-adjacent singles, signed zero, the subnormal
+        // rescale path, huge inputs that would overflow a naive sum,
+        // near-cancellation, and repeated values.
+        struct NormCase {
+            std::vector<double> values;
+            std::uint64_t expected_bits;
+        };
+        const std::array<NormCase, 13> norm_cases{{
+            {.values = {0.0}, .expected_bits = 0x0000000000000000ULL},
+            {.values = {-0.0}, .expected_bits = 0x0000000000000000ULL},
+            {.values = {3.4}, .expected_bits = 0x400b333333333333ULL},
+            {.values = {1.7976931348623157e308},
+             .expected_bits = 0x7fefffffffffffffULL},
+            {.values = {5e-324}, .expected_bits = 0x0000000000000001ULL},
+            {.values = {2.2250738585072014e-308},
+             .expected_bits = 0x0010000000000000ULL},
+            {.values = {3.0, 4.0}, .expected_bits = 0x4014000000000000ULL},
+            {.values = {1e308, 1e308},
+             .expected_bits = 0x7fe92c80954c51f5ULL},
+            {.values = {1e308, -1e308},
+             .expected_bits = 0x7fe92c80954c51f5ULL},
+            {.values = {1.0000000000000002, 1.0},
+             .expected_bits = 0x3ff6a09e667f3bcdULL},
+            {.values = {1e-300, 1e-300, 1e-300},
+             .expected_bits = 0x01b28f1f70999505ULL},
+            {.values = {5e-324, 5e-324, 5e-324, 5e-324},
+             .expected_bits = 0x0000000000000002ULL},
+            {.values = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1},
+             .expected_bits = 0x3fd43d136248490fULL},
+        }};
+        for (const NormCase &norm_case: norm_cases) {
+            const double got = numeric::python_vector_norm(norm_case.values);
+            require(std::bit_cast<std::uint64_t>(got) ==
+                            norm_case.expected_bits,
+                    "python_vector_norm oracle bytes");
+        }
+        require(numeric::python_vector_norm({}) == 0.,
+                "python_vector_norm empty span");
+        const std::array nanv{1., std::numeric_limits<double>::quiet_NaN()};
+        require(std::isnan(numeric::python_vector_norm(nanv)),
+                "python_vector_norm nan propagation");
+        const std::array infv{std::numeric_limits<double>::infinity(), 0.};
+        require(std::isinf(numeric::python_vector_norm(infv)),
+                "python_vector_norm inf short-circuit");
+    }
+
+    constexpr std::array<TestCase, 26> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -1609,6 +2262,9 @@ namespace {
         {.name = "geometry_nonfinite_transform", .run = test_geometry_nonfinite_transform},
         {.name = "profile_contract_boundaries", .run = test_profile_contract_boundaries},
         {.name = "support_geometry_parent_contracts", .run = test_support_geometry_parent_contracts},
+        {.name = "settlement_sparse_last_atomicity", .run = test_settlement_sparse_last_atomicity},
+        {.name = "drivetrain_allocation_enumeration", .run = test_drivetrain_allocation_enumeration},
+        {.name = "cblas_and_norm", .run = test_cblas_and_norm},
     }};
 
     int run_case(const TestCase &test_case) {

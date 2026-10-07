@@ -3,21 +3,24 @@
 // source lines at the time of porting.
 //
 // NumPy/CPython lowering decisions (each verified bitwise by probe):
-//   `a @ b` / `np.dot` 1-D@1-D          → cblas_ddot  (same numpy libcall)
-//   `normals @ n`  (k,2)@(2,)           → cblas_dgemv(RowMajor, NoTrans)
-//   `local @ R.T`  (cols,3)@(3,3).T     → cblas_dgemm(RowMajor, NoTrans, Trans)
+//   `a @ b` / `np.dot` 1-D@1-D          → blas::ddot  (same numpy libcall)
+//   `normals @ n`  (k,2)@(2,)           → blas::dgemv(row_major, no)
+//   `local @ R.T`  (cols,3)@(3,3).T     → blas::dgemm(row_major, no, yes)
 //   `np.linalg.norm(v)` on (2,)/(3,)    → sqrt(ddot(v, v))
 //   `np.linalg.norm(M, axis=1)` on (k,2)→ elementwise sqrt(x*x + y*y)
 //   `np.einsum('ij,ij->i')` on (n,2)    → seeded `0.0 + a0*b0 + a1*b1`
 //   `np.interp` scalar                  → np_interp() below (fma form)
-//   `math.hypot`                        → py_hypot() (CPython vector_norm)
+//   `math.hypot`                        → py_hypot()
+//                                       (numeric::python_vector_norm)
 //   `np.searchsorted` right/left        → upper_bound/lower_bound
 //   `np.linspace(-s, s, n)`             → i*step + (-s), last element = s
 //   `np.cos/np.radians/np.exp` scalars  → std::cos / x*(pi/180) / std::exp
 //   `round()`                           → std::nearbyint (banker's, default FP)
 #include "profile.hpp"
 
+#include "../cblas_abi.hpp"
 #include "../model_access.hpp"
+#include "../numeric_norm.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -27,25 +30,7 @@
 #include <string>
 #include <utility>
 
-extern "C" {
-// Legacy CBLAS ABI — the same Accelerate entry points numpy resolves to on
-// this platform (see writers/resistance.cpp for the contract rationale).
-double cblas_ddot(int N, const double *X, int incX, const double *Y,
-                  int incY);
-
-void cblas_dgemv(int Order, int TransA, int M, int N, double alpha,
-                 const double *A, int lda, const double *X, int incX,
-                 double beta, double *Y, int incY);
-
-void cblas_dgemm(int Order, int TransA, int TransB, int M, int N, int K,
-                 double alpha, const double *A, int lda, const double *B,
-                 int ldb, double beta, double *C, int ldc);
-}
-
 namespace {
-    constexpr int kCblasRowMajor = 101;
-    constexpr int kCblasNoTrans = 111;
-    constexpr int kCblasTrans = 112;
 
     // np.searchsorted(x, v, side='right') — first index with x[i] > v.
     int search_right(std::span<const double> x, double v) {
@@ -93,76 +78,16 @@ namespace {
         return {.point = point, .normal = normal, .delta = delta, .segment_id = segment, .multi_support = multi};
     }
 
-    // --- CPython math.hypot (Modules/mathmodule.c, 3.14) ----------------------
-    // DoubleLength compensated arithmetic; dl_mul needs a true fma — the call
-    // is explicit, so -ffp-contract=off does not disturb it.
-    struct DLen {
-        double hi, lo;
-    };
-
-    DLen dl_fast_sum(double a, double b) {
-        double const x = a + b;
-        double const y = (a - x) + b;
-        return {.hi = x, .lo = y};
-    }
-
-    DLen dl_mul(double x, double y) {
-        double const z = x * y;
-        double const zz = std::fma(x, y, -z);
-        return {.hi = z, .lo = zz};
-    }
-
-    // vector_norm — faithful port for the n<=2 case (hypot's only use here);
-    // the subnormal-rescale recursion is kept verbatim.
-    // NOLINTNEXTLINE(misc-no-recursion) subnormal-rescale recursion mirrors CPython mathmodule.c
-    double vector_norm(std::span<double> vec, double mx, bool found_nan) {
-        if (std::isinf(mx))
-            return mx;
-        if (found_nan)
-            return std::numeric_limits<double>::quiet_NaN();
-        if (mx == 0.0 || vec.size() <= 1)
-            return mx;
-        int max_e = 0;
-        std::frexp(mx, &max_e);
-        if (max_e < -1023) {
-            // When max_e < -1023, ldexp(1.0, -max_e) would overflow.
-            for (double &v: vec)
-                v /= std::numeric_limits<double>::min();
-            return std::numeric_limits<double>::min() *
-                   vector_norm(vec, mx / std::numeric_limits<double>::min(),
-                               found_nan);
-        }
-        const double scale = std::ldexp(1.0, -max_e);
-        double csum = 1.0, frac1 = 0.0, frac2 = 0.0;
-        for (double const &v: vec) {
-            const double x = v * scale; // lossless scaling
-            const DLen pr = dl_mul(x, x); // lossless squaring
-            const DLen sm = dl_fast_sum(csum, pr.hi); // lossless addition
-            csum = sm.hi;
-            frac1 += pr.lo;
-            frac2 += sm.lo;
-        }
-        double h = std::sqrt(csum - 1.0 + (frac1 + frac2));
-        const DLen pr = dl_mul(-h, h);
-        const DLen sm = dl_fast_sum(csum, pr.hi);
-        csum = sm.hi;
-        frac1 += pr.lo;
-        frac2 += sm.lo;
-        const double x = csum - 1.0 + (frac1 + frac2);
-        h += x / (2.0 * h); // differential correction
-        return h / scale;
-    }
 } // namespace
 
 namespace biketyre {
     double py_hypot(double a, double b) {
-        std::array<double, 2> vec = {std::fabs(a), std::fabs(b)};
-        const bool found_nan = std::isnan(vec[0]) || std::isnan(vec[1]);
-        double mx = 0.0;
-        for (const double v: vec)
-            if (v > mx)
-                mx = v;
-        return vector_norm(vec, mx, found_nan);
+        // CPython math.hypot — the local vector_norm port moved to
+        // numeric::python_vector_norm unchanged (same fabs scan and the
+        // same DoubleLength compensated kernel, verified bitwise on the
+        // math.hypot oracle corpus).
+        const std::array<double, 2> values = {a, b};
+        return numeric::python_vector_norm(values);
     }
 
     double np_interp(double xq, std::span<const double> xs,
@@ -277,59 +202,71 @@ namespace biketyre {
                                               4 * model->nhfield);
         const double sx = hsize[4 * static_cast<std::size_t>(hfield)];
         const double sz = hsize[4 * static_cast<std::size_t>(hfield) + 2];
-        const std::span<const mjtNum> xmat =
-                model_access::readonly_buffer(data->geom_xmat,
-                                              9 * model->ngeom);
-        const std::span<const mjtNum> xpos =
-                model_access::readonly_buffer(data->geom_xpos,
-                                              3 * model->ngeom);
+        const std::span<const mjtNum> xmat = model_access::readonly_buffer(
+            data->geom_xmat,
+            model_access::kRotationElements * model->ngeom);
+        const std::span<const mjtNum> xpos = model_access::readonly_buffer(
+            data->geom_xpos, model_access::kXYZ * model->ngeom);
         const std::size_t gs = static_cast<std::size_t>(geom);
         // Nonfinite transform entries are rejected before the tolerance
         // comparisons — NaN must fail as "invalid transform", not just fall
         // out of an allclose predicate.
-        for (int k = 0; k < 9; ++k)
-            if (!std::isfinite(xmat[9 * gs + static_cast<std::size_t>(k)]))
+        for (int k = 0; k < model_access::kRotationElements; ++k)
+            if (!std::isfinite(xmat[
+                    model_access::kRotationElements * gs +
+                    static_cast<std::size_t>(k)]))
                 throw std::invalid_argument(
                     "invalid terrain transform: non-finite entry");
-        for (int k = 0; k < 3; ++k)
-            if (!std::isfinite(xpos[3 * gs + static_cast<std::size_t>(k)]))
+        for (int k = 0; k < model_access::kXYZ; ++k)
+            if (!std::isfinite(xpos[model_access::kXYZ * gs +
+                                    static_cast<std::size_t>(k)]))
                 throw std::invalid_argument(
                     "invalid terrain transform: non-finite entry");
         // np.allclose(R[:, 1], [0,1,0], rtol=0, atol=1e-10)
-        if (!(std::abs(xmat[9 * gs + 1]) <= 1e-10 &&
-              std::abs(xmat[9 * gs + 4] - 1.0) <= 1e-10 &&
-              std::abs(xmat[9 * gs + 7]) <= 1e-10))
+        if (!(std::abs(xmat[model_access::kRotationElements * gs + 1]) <=
+                  1e-10 &&
+              std::abs(xmat[model_access::kRotationElements * gs + 4] -
+                       1.0) <= 1e-10 &&
+              std::abs(xmat[model_access::kRotationElements * gs + 7]) <=
+                  1e-10))
             throw std::invalid_argument(
                 "terrain transform must preserve the planar Y axis");
         // local = column_stack((linspace(-sx, sx, cols), 0, raster[0]*sz))
-        std::vector<double> local(3 * cs);
+        // (cols,3) XYZ rows — the 3 is the spatial width.
+        const std::size_t xyz = static_cast<std::size_t>(model_access::kXYZ);
+        std::vector<double> local(xyz * cs);
         const double delta = sx - (-sx); // np.subtract(stop, start)
         const double step = delta / static_cast<double>(cols - 1);
         for (std::size_t i = 0; i < cs; ++i) {
-            local[3 * i] = static_cast<double>(i) * step + (-sx);
-            local[3 * i + 1] = 0.0;
-            local[3 * i + 2] = static_cast<double>(raster[i]) * sz;
+            local[xyz * i] = static_cast<double>(i) * step + (-sx);
+            local[xyz * i + 1] = 0.0;
+            local[xyz * i + 2] = static_cast<double>(raster[i]) * sz;
         }
-        local[3 * (cs - 1)] = sx; // linspace's y[-1] = stop
+        local[xyz * (cs - 1)] = sx; // linspace's y[-1] = stop
         // world = local @ R.T + xpos — dgemm NoTrans/Trans, then the broadcast
         // elementwise add (two separate numpy roundings).
-        std::vector<double> world(3 * cs);
-        cblas_dgemm(kCblasRowMajor, kCblasNoTrans, kCblasTrans,
-                    cols, 3, 3, 1.0, local.data(), 3, &xmat[9 * gs], 3,
-                    0.0, world.data(), 3);
+        std::vector<double> world(xyz * cs);
+        blas::dgemm(blas::Order::row_major, blas::Transpose::no,
+                    blas::Transpose::yes, cols, model_access::kXYZ,
+                    model_access::kXYZ, 1.0, local.data(),
+                    model_access::kXYZ,
+                    &xmat[model_access::kRotationElements * gs],
+                    model_access::kXYZ, 0.0, world.data(),
+                    model_access::kXYZ);
         for (std::size_t i = 0; i < cs; ++i)
-            for (int j = 0; j < 3; ++j)
-                world[3 * i + static_cast<std::size_t>(j)] +=
-                        xpos[3 * gs + static_cast<std::size_t>(j)];
+            for (int j = 0; j < model_access::kXYZ; ++j)
+                world[xyz * i + static_cast<std::size_t>(j)] +=
+                        xpos[model_access::kXYZ * gs +
+                             static_cast<std::size_t>(j)];
         // np.allclose(world[:, 1], 0., rtol=0, atol=1e-9)
         for (std::size_t i = 0; i < cs; ++i)
-            if (!(std::abs(world[3 * i + 1]) <= 1e-9))
+            if (!(std::abs(world[xyz * i + 1]) <= 1e-9))
                 throw std::invalid_argument(
                     "working profile must lie in world Y=0");
         std::vector<std::array<double, 2> > vertices;
         vertices.reserve(cs);
         for (std::size_t i = 0; i < cs; ++i)
-            vertices.push_back({world[3 * i], world[3 * i + 2]});
+            vertices.push_back({world[xyz * i], world[xyz * i + 2]});
         return vertices;
     }
 
@@ -561,8 +498,10 @@ namespace biketyre {
                         right_x_[vv],
                         right_z_[vv]
                     };
-                    closer = cblas_ddot(2, off.data(), 1, left.data(), 1) > 1e-14 ||
-                             cblas_ddot(2, off.data(), 1, right.data(), 1) > 1e-14;
+                    closer = blas::ddot(2, off.data(), 1, left.data(), 1) >
+                                 1e-14 ||
+                             blas::ddot(2, off.data(), 1, right.data(), 1) >
+                                 1e-14;
                 }
                 if (!closer && std::abs(previous_distance - distance) <= 1e-12) {
                     segment = *previous_segment;
@@ -643,9 +582,10 @@ namespace biketyre {
             // different = normals @ normal_winner < normal_cosine — a
             // (k,2)@(2,) matmul → gemv path, not a per-row manual dot.
             std::vector<double> dots(near.size());
-            cblas_dgemv(kCblasRowMajor, kCblasNoTrans,
-                        static_cast<int>(near.size()), 2, 1.0, normals.data(), 2,
-                        normal_winner.data(), 1, 0.0, dots.data(), 1);
+            blas::dgemv(blas::Order::row_major, blas::Transpose::no,
+                        static_cast<int>(near.size()), 2, 1.0,
+                        normals.data(), 2, normal_winner.data(), 1, 0.0,
+                        dots.data(), 1);
             for (std::size_t j = 0; j < near.size(); ++j) {
                 const std::size_t i = static_cast<std::size_t>(near[j]);
                 const double ex = cand.points[i][0] - cand.points[winner][0];

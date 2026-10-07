@@ -35,61 +35,38 @@
 #include <utility>
 #include <vector>
 
-extern "C" {
-// Legacy CBLAS ABI — see writers/resistance.cpp / tyre/profile.cpp.
-double cblas_ddot(int N, const double *X, int incX, const double *Y,
-                  int incY);
-
-void cblas_dgemv(int Order, int TransA, int M, int N, double alpha,
-                 const double *A, int lda, const double *X, int incX,
-                 double beta, double *Y, int incY);
-}
+#include "../cblas_abi.hpp"
 
 namespace {
-    constexpr int kCblasRowMajor = 101;
-    constexpr int kCblasNoTrans = 111;
-    constexpr int kCblasTrans = 112;
-
-    using Vec3 = std::array<double, 3>;
+    using Vec3 = std::array<double, model_access::kXYZ>;
 
     using contactlaw::normal_contact;
     using contactlaw::brush_step;
 
-    // physical_mapping.py:6-11 — resolve_id.
+    // physical_mapping.py:6-11 — resolve_id. Site contract: the wheel
+    // contact geoms take the plain name check (id >= 0) — the shared
+    // resolver's physical gate stays off for GEOM kinds.
     int resolve_id(const mjModel *m, mjtObj kind, const char *name) {
-        const int result = mj_name2id(m, kind, name);
-        if (result < 0)
-            throw std::invalid_argument("model has no '" + std::string(name) +
-                                        "'");
-        return result;
+        return model_access::resolve_id(m, kind, name);
     }
 
     // physical_mapping.py:24-37 — point_jacobian_into (jacp only). The
-    // destination is a checked span of exactly 3*nv elements; the engine
-    // ABI receives .data() only after the width contract verifies.
+    // shared checked boundary keeps this site's recorded contract: the
+    // split body gate (range via require_id, then nonzero → the
+    // physical-body message), finite point, exact 3*nv destination.
     void point_jacobian_into(const mjModel *m, const mjData *d, int body_id,
                              const Vec3 &point, std::span<mjtNum> jp) {
-        if (!std::ranges::all_of(point,
-                                 [](double v) { return std::isfinite(v); }))
-            throw std::invalid_argument("invalid world point");
-        model_access::require_id(body_id, m->nbody, "point Jacobian body");
-        if (body_id == 0)
-            throw std::invalid_argument(
-                "point Jacobian requires a physical body");
-        if (m->nv < 0)
-            throw std::invalid_argument(
-                "point Jacobian needs a nonnegative model width");
-        if (jp.size() != model_access::checked_product(
-                3, static_cast<std::size_t>(m->nv),
-                std::numeric_limits<std::size_t>::max()))
-            throw std::invalid_argument(
-                "point Jacobian destination must be 3*nv elements");
-        mj_jac(m, d, jp.data(), nullptr, point.data(), body_id);
+        model_access::point_jacobian_into(
+            m, d, body_id, point, jp,
+            model_access::JacobianBody::physical, "point Jacobian body");
     }
 
     // np.linalg.norm(v) on a (3,) — sqrt(ddot(v,v)), the same-libcall form.
+    // Distinct from the CPython vector_norm (numeric_norm.hpp): this site's
+    // oracle is numpy's BLAS path, so it stays on ddot by design.
     double norm3(const Vec3 &v) {
-        return std::sqrt(cblas_ddot(3, v.data(), 1, v.data(), 1));
+        return std::sqrt(blas::ddot(model_access::kXYZ, v.data(), 1,
+                                    v.data(), 1));
     }
 
     Vec3 sub(const Vec3 &a, const Vec3 &b) {
@@ -97,7 +74,7 @@ namespace {
     }
 
     double dot3(const Vec3 &a, const Vec3 &b) {
-        return cblas_ddot(3, a.data(), 1, b.data(), 1);
+        return blas::ddot(model_access::kXYZ, a.data(), 1, b.data(), 1);
     }
 
     // CPython builtin sum() on floats: Neumaier compensated summation — see
@@ -309,16 +286,17 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
     };
     const std::span<const int> body_of =
             model_access::readonly_buffer(m->geom_bodyid, m->ngeom);
-    const std::span<const mjtNum> gsize =
-            model_access::readonly_buffer(m->geom_size, 3 * m->ngeom);
+    const std::span<const mjtNum> gsize = model_access::readonly_buffer(
+        m->geom_size, model_access::kXYZ * m->ngeom);
     for (std::size_t i = 0; i < 2; ++i) {
         model_access::require_id(geoms_[i], m->ngeom, "tire contact geom");
         bodies_[i] = body_of[static_cast<std::size_t>(geoms_[i])];
-        radii_[i] = gsize[3 * static_cast<std::size_t>(geoms_[i])];
+        radii_[i] = gsize[model_access::kXYZ *
+                          static_cast<std::size_t>(geoms_[i])];
     }
-    jac_contact_.resize(static_cast<std::size_t>(3) *
+    jac_contact_.resize(static_cast<std::size_t>(model_access::kXYZ) *
                         static_cast<std::size_t>(nv_));
-    jac_center_.resize(static_cast<std::size_t>(3) *
+    jac_center_.resize(static_cast<std::size_t>(model_access::kXYZ) *
                        static_cast<std::size_t>(nv_));
     // tire_forces.py:84-88 — every geom on each wheel body must be
     // collision-disabled for the compliant_2d backend.
@@ -384,8 +362,9 @@ void TireWriter::set_state(std::span<const std::string> names,
     // leaf column (the leaf holds None/NaN whenever the row encodes an
     // unset vector).
     struct VecAcc {
-        std::array<bool, 3> comp_seen = {false, false, false};
-        std::array<double, 3> comp = {0.0, 0.0, 0.0};
+        std::array<bool, model_access::kXYZ> comp_seen = {false, false,
+                                                          false};
+        std::array<double, model_access::kXYZ> comp = {0.0, 0.0, 0.0};
     };
     std::array<BrushState, 2> next;
     std::array<bool, 2> xi_seen = {false, false};
@@ -524,7 +503,8 @@ std::vector<double> TireWriter::state() const {
     std::vector<double> out;
     out.reserve(22);
     const auto push_vec = [&out, nan_v](const std::optional<Vec3> &v) {
-        for (std::size_t i = 0; i < 3; ++i)
+        for (std::size_t i = 0;
+             i < static_cast<std::size_t>(model_access::kXYZ); ++i)
             out.push_back(v ? (*v)[i] : nan_v);
     };
     for (const BrushState &st: states_) {
@@ -559,8 +539,8 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
     std::array<BrushState, 2> new_states;
     std::array<std::optional<TireSnapshot>, 2> snapshots;
     std::array<std::optional<TireDiagnostics>, 2> diagnostics;
-    const std::span<const mjtNum> xpos =
-            model_access::readonly_buffer(d->geom_xpos, 3 * m_->ngeom);
+    const std::span<const mjtNum> xpos = model_access::readonly_buffer(
+        d->geom_xpos, model_access::kXYZ * m_->ngeom);
     const std::span<const mjtNum> qvel =
             model_access::readonly_buffer(d->qvel, m_->nv);
     const double normal_cosine = std::cos(
@@ -571,7 +551,9 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
                 s == 0 ? cfg_.front : cfg_.rear;
         const BrushState &state = states_[s];
         const int geom = geoms_[s], body = bodies_[s];
-        const std::size_t g3 = 3 * static_cast<std::size_t>(geom);
+        const std::size_t g3 =
+                static_cast<std::size_t>(model_access::kXYZ) *
+                static_cast<std::size_t>(geom);
         const double radius = radii_[s];
         const double tk = pcfg.tangent_k_n_m;
         // center = np.array(data.geom_xpos[geom], copy=True)
@@ -585,10 +567,12 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
         point_jacobian_into(m_, d, body, center, jac_center_);
         // velocity = jac @ qvel / center_velocity = jac_center @ qvel
         Vec3 velocity, center_velocity;
-        cblas_dgemv(kCblasRowMajor, kCblasNoTrans, 3, nv_, 1.0,
+        blas::dgemv(blas::Order::row_major, blas::Transpose::no,
+                    model_access::kXYZ, nv_, 1.0,
                     jac_contact_.data(), nv_, qvel.data(), 1, 0.0,
                     velocity.data(), 1);
-        cblas_dgemv(kCblasRowMajor, kCblasNoTrans, 3, nv_, 1.0,
+        blas::dgemv(blas::Order::row_major, blas::Transpose::no,
+                    model_access::kXYZ, nv_, 1.0,
                     jac_center_.data(), nv_, qvel.data(), 1, 0.0,
                     center_velocity.data(), 1);
         const double delta_dot = -dot3(velocity, n);
@@ -656,7 +640,8 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
         };
         // qfrc += jac_contact.T @ force_world — the same gemv-trans path
         // the resistance writer uses, then elementwise +=.
-        cblas_dgemv(kCblasRowMajor, kCblasTrans, 3, nv_, 1.0,
+        blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
+                    model_access::kXYZ, nv_, 1.0,
                     jac_contact_.data(), nv_, force_world.data(), 1, 0.0,
                     tmp.data(), 1);
         for (int i = 0; i < nv_; ++i)

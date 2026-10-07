@@ -24,6 +24,11 @@ namespace drivetrain {
         // memory-only move.
         void set_state(AssistSnapshot state);
 
+        // noexcept publication for staged candidates that were validated
+        // while staging (PreparedSettlement::commit is noexcept — no
+        // validation may run there).
+        void publish(AssistSnapshot state) noexcept { state_ = state; }
+
     private:
         AssistConfig config_;
         AssistSnapshot state_;
@@ -43,12 +48,23 @@ namespace drivetrain {
 
         double draw(double requested_power_w, double dt);
 
+        // Pure candidate form of draw(): identical arithmetic, but the debit
+        // lands on a detached snapshot so a settlement can stage the draw
+        // before any live state moves.
+        [[nodiscard]] std::pair<double, BatterySnapshot>
+        debit(double requested_power_w, double dt) const;
+
         const BatterySnapshot &state() const { return state_; }
 
         // By value so transaction commits can move the candidate into
         // place — validation runs on the argument, then the publish is a
         // memory-only move.
         void set_state(BatterySnapshot state);
+
+        // noexcept publication for staged candidates that were validated
+        // while staging (PreparedSettlement::commit is noexcept — no
+        // validation may run there).
+        void publish(BatterySnapshot state) noexcept { state_ = state; }
 
     private:
         BatterySnapshot state_;

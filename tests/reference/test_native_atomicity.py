@@ -8,10 +8,13 @@ be bitwise-identical after any rejection, and a repeated attempt must reject
 identically. Successful commits must land atomically without reallocating the
 prepared buffers (generation and capacity stable).
 """
+import copy
+
 import mujoco
 import numpy as np
 import pytest
 
+from _bits import assert_bitwise_equal
 from bike_sim.physics.physical_config import ShiftingConfig
 from bike_sim.sim.ride.control import RideControl
 from native_loader import load_native
@@ -354,3 +357,177 @@ def test_python_rejected_compute_keeps_everything(tmp_path):
         drive.compute_components(model, data, .002, speed_mps=2.)
     assert _python_frozen(drive, model) == before
     assert np.array_equal(data.ctrl, ctrl)
+
+
+# ----------------------------- E4: settlement -----------------------------
+
+def _solved_fixture(native, model, data):
+    """Arm a pending actuation whose reserved effort matches the solve.
+
+    ``drive_components`` reserves the delivered torque in the pending row;
+    a restored pending row plus a matching ctrl row reproduces that arming
+    deterministically — the ceiling check admits the solve and the settle
+    debits a real energy amount.
+    """
+    native.drive_components({}, .002, 2., sensed_human_torque_nm=20.)
+    armed = native.drive_state()
+    assert armed['pending_actuation'] is not None
+    armed['pending_actuation'] = {'requested': 1., 'omega': 4., 'dt': .002,
+                                  'enabled': True}
+    native.set_drive_state(armed)
+    data.ctrl[model.actuator('mid_drive').id] = 1.
+    native.set_inputs(data.ctrl, data.qfrc_applied)
+    mujoco.mj_step(model, data)
+    native.step()
+    armed = native.drive_state()
+    assert armed['pending_actuation']['requested'] == 1.
+    return armed
+
+
+@pytest.mark.parametrize('kind', ['elastic_chain', 'ideal_mid_drive', GEOMETRIC])
+def test_rejected_settle_keeps_everything(tmp_path, kind):
+    """A settle rejection publishes nothing — not even transmission solve
+    telemetry: pending validation runs ahead of every solve, so a refused
+    settle leaves battery, pending, diagnostics and hub state frozen."""
+    model, data, _, native = drive_pair(tmp_path, kind=kind)
+    armed = _solved_fixture(native, model, data)
+    # A pending reservation below the solved effort violates the reserved
+    # ceiling — the rejection must land before any publication.
+    corrupted = copy.deepcopy(armed)
+    corrupted['pending_actuation'] = {'requested': .001, 'omega': 4.,
+                                    'dt': .002, 'enabled': True}
+    native.set_drive_state(corrupted)
+    before = _frozen(native)
+    for _ in range(2):
+        with pytest.raises(ArithmeticError, match='reserved effort ceiling'):
+            native.drive_settle_actuation()
+        assert _frozen(native) == before
+    # Retry from the honest armed state: bitwise-equal to a clean drivetrain
+    # settling from the same snapshot — no residual from the rejections.
+    # The control steps from the same pre-step engine state so its recorded
+    # constraint forces (what the settle reads) are identical.
+    native.set_drive_state(armed)
+    out = native.drive_settle_actuation()
+    fresh_dir = tmp_path / 'fresh'
+    fresh_dir.mkdir()
+    _, _, _, fresh = drive_pair(fresh_dir, kind=kind)
+    fresh.set_drive_state(armed)
+    fresh.set_inputs(data.ctrl, data.qfrc_applied)
+    fresh.step()
+    assert_bitwise_equal(out, fresh.drive_settle_actuation())
+    assert freeze(native.drive_state()) == freeze(fresh.drive_state())
+
+
+def test_battery_budget_rejection_is_atomic(tmp_path):
+    """The store check rejects before any publication too — and the retry
+    with an honest reservation debits exactly once."""
+    model, data, _, native = drive_pair(tmp_path)
+    armed = _solved_fixture(native, model, data)
+    corrupted = copy.deepcopy(armed)
+    corrupted['pending_actuation'] = {'requested': 1000., 'omega': 4.,
+                                    'dt': .002, 'enabled': True}
+    corrupted['policies']['battery']['energy_j'] = .001
+    native.set_drive_state(corrupted)
+    before = _frozen(native)
+    with pytest.raises(ArithmeticError, match='battery storage'):
+        native.drive_settle_actuation()
+    assert _frozen(native) == before
+    native.set_drive_state(armed)
+    native.drive_settle_actuation()
+    settled = native.drive_state()
+    debit = (settled['policies']['battery']['drawn_energy_j'] -
+             armed['policies']['battery']['drawn_energy_j'])
+    assert debit > 0. and settled['pending_actuation'] is None
+
+
+@pytest.mark.parametrize('kind,topology', [('elastic_chain', 'plain')] + [
+    (kind, topology)
+    for kind in ('ideal_mid_drive', GEOMETRIC)
+    for topology in ('plain', 'clutch', 'rotor')])
+def test_sparse_last_settle_debits_once(tmp_path, kind, topology):
+    """The A12 shape at the FFI: a restored sparse ``last={}`` cannot change
+    exactly-once settlement — the detached map republishes the telemetry,
+    the battery moves exactly once, and a second settle debits nothing."""
+    model, data, _, native = drive_pair(tmp_path, kind=kind, topology=topology)
+    armed = _solved_fixture(native, model, data)
+    sparse = copy.deepcopy(armed)
+    sparse['last'] = {}
+    native.set_drive_state(sparse)
+    assert native.drive_state()['last'] == {}
+    native.drive_settle_actuation()
+    settled = native.drive_state()
+    debit = (settled['policies']['battery']['drawn_energy_j'] -
+             armed['policies']['battery']['drawn_energy_j'])
+    assert debit > 0.
+    assert settled['pending_actuation'] is None
+    assert settled['last']  # telemetry republished through the detached map
+    # Control: the same armed snapshot with full diagnostics settles into
+    # the same battery/pending/hub outcome; it steps from the same pre-step
+    # engine state so the recorded constraint forces match.
+    control_dir = tmp_path / 'control'
+    control_dir.mkdir()
+    _, _, _, control = drive_pair(control_dir, kind=kind, topology=topology)
+    control.set_drive_state(armed)
+    control.set_inputs(data.ctrl, data.qfrc_applied)
+    control.step()
+    control.drive_settle_actuation()
+    control_state = control.drive_state()
+    assert freeze(settled['policies']) == freeze(control_state['policies'])
+    for name in ('ideal_hub', 'clutch', 'freewheel'):
+        assert freeze(settled[name]) == freeze(control_state[name])
+    # Exactly once: settling again moves the battery by nothing at all.
+    native.drive_settle_actuation()
+    again = native.drive_state()
+    assert freeze(again['policies']['battery']) == \
+        freeze(settled['policies']['battery'])
+    assert again['pending_actuation'] is None
+
+
+@pytest.mark.parametrize('kind', ['ideal_mid_drive', GEOMETRIC])
+def test_python_rejected_settle_keeps_everything(tmp_path, kind):
+    """The Python mirror rejects before solving: a refused settle must not
+    leak the transmission's own solve state — diagnostics, work counters,
+    tension or the consumed shift flag — exactly the hole the staged solve
+    closes on both sides."""
+    model, data, drive, _ = drive_pair(tmp_path, kind=kind)
+    drive.compute_components(model, data, .002, speed_mps=2.,
+                             sensed_human_nm=20.)
+    assert drive.pending_actuation is not None
+    drive.pending_actuation = (1., 4., .002, True)
+    # Solved effort far beyond the reserved ceiling: the settle must reject
+    # before the transmission publishes anything of its own.
+    data.ctrl[drive.actuators['mid_drive']] = 1000.
+    data.qfrc_applied[:] = 0.
+    mujoco.mj_step(model, data)
+    before = _python_frozen(drive, model)
+    for _ in range(2):
+        with pytest.raises(ArithmeticError, match='reserved effort ceiling'):
+            drive.settle_actuation(model, data)
+        assert _python_frozen(drive, model) == before
+    # An honest solve at the reserved torque settles and debits exactly once.
+    data.ctrl[drive.actuators['mid_drive']] = 1.
+    mujoco.mj_forward(model, data)
+    drive.settle_actuation(model, data)
+    drawn = drive.battery.drawn_energy_j
+    assert drawn > 0. and drive.pending_actuation is None
+    drive.settle_actuation(model, data)
+    assert drive.battery.drawn_energy_j == drawn
+
+
+def test_python_settle_debits_once_after_sparse_diagnostics(tmp_path):
+    """The sparse-``last`` shape on the Python mirror: settlement rebuilds
+    the telemetry but debits the battery exactly once."""
+    model, data, drive, _ = drive_pair(tmp_path)
+    drive.compute_components(model, data, .002, speed_mps=2.,
+                             sensed_human_nm=20.)
+    assert drive.pending_actuation is not None
+    drive.pending_actuation = (1., 4., .002, True)
+    data.ctrl[drive.actuators['mid_drive']] = 1.
+    data.qfrc_applied[:] = 0.
+    mujoco.mj_forward(model, data)
+    drive.last = {}
+    drive.settle_actuation(model, data)
+    drawn = drive.battery.drawn_energy_j
+    assert drawn > 0. and drive.pending_actuation is None and drive.last
+    drive.settle_actuation(model, data)
+    assert drive.battery.drawn_energy_j == drawn

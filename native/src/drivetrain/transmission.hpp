@@ -60,6 +60,20 @@ namespace drivetrain {
         bool prepared_valid{};
     };
 
+    // A fully evaluated, still-unpublished constraint solve. stage_solved()
+    // collects the tendon-limit reaction into the persistent force_ scratch
+    // (exposed as `force`) and mutates only scratch plus the detached
+    // candidate `state` — telemetry map, work counters, last tension and the
+    // consumed shift_pending flag all land at commit() together, so a throw
+    // anywhere in staging leaves the live snapshot byte-identical. Unlike
+    // TransmissionUpdate the solve never touches model rows, so its commit
+    // is a proved memory-only swap (it runs inside the settlement's
+    // noexcept commit).
+    struct SolvedTransmission {
+        std::span<const double> force;
+        TransmissionSnapshot state;
+    };
+
     class Transmission {
     public:
         Transmission(mjModel *model, GearingConfig gear, bool geometric = false,
@@ -106,6 +120,16 @@ namespace drivetrain {
         // gear/state/prepared swap runs. The update's state is consumed.
         void commit(TransmissionUpdate &update);
 
+        // Solve follows the same transaction shape: staging collects the
+        // force into persistent scratch and mutates only the detached
+        // candidate — an allocation failure or rejection publishes nothing,
+        // not even the solve's own telemetry.
+        [[nodiscard]] SolvedTransmission stage_solved(mjData *data);
+
+        // Memory-only and noexcept: the whole candidate state swaps in.
+        void commit(SolvedTransmission &solved) noexcept;
+
+        // Convenience: stage + commit, returning the persistent force span.
         std::span<const double> solved(mjData *data);
 
         double relative_rate(const mjData *data) const;

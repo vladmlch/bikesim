@@ -17,6 +17,10 @@
 
 namespace {
     // wheels.py:40-71 — resolve_wheel_spin, same checks and order.
+    // Deliberately local rather than model_access::resolve_id: this
+    // site's rejection text is wheels.py's own message, and its
+    // physical-joint requirements are explicit topology::joint
+    // parameters (mjJNT_HINGE, axis {0,1,0}).
     std::pair<int, double> resolve_wheel_spin(const mjModel *m,
                                               const char *joint_name,
                                               const char *contact_geom) {
@@ -43,19 +47,22 @@ namespace {
         model_access::require_id(jid, m->njnt, "wheel spin joint");
         const std::span<const int> dofadr =
                 model_access::readonly_buffer(m->jnt_dofadr, m->njnt);
-        const std::span<const mjtNum> geom_size =
-                model_access::readonly_buffer(m->geom_size, 3 * m->ngeom);
+        const std::span<const mjtNum> geom_size = model_access::readonly_buffer(
+            m->geom_size, model_access::kXYZ * m->ngeom);
         const int adr = dofadr[static_cast<std::size_t>(jid)];
         // The stored dof address indexes d->qvel[nv] on every apply — a
         // corrupt model table is rejected here, not at the read.
         model_access::require_id(adr, m->nv, "wheel spin dof address");
         return {
             adr,
-            geom_size[3 * static_cast<std::size_t>(gid)]
+            geom_size[model_access::kXYZ * static_cast<std::size_t>(gid)]
         };
     }
 
-    // ride_sim.py:794-807 — _actuator_id.
+    // ride_sim.py:794-807 — _actuator_id. Local for the same reason as
+    // resolve_wheel_spin: ride_sim.py's own rejection text; the target-
+    // joint requirement is the explicit topology::actuator parameter
+    // below.
     int actuator_id(const mjModel *m, const char *name) {
         const int id = mj_name2id(m, mjOBJ_ACTUATOR, name);
         if (id < 0)

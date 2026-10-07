@@ -240,16 +240,58 @@ class DrivetrainForceApplier:
                 'freehub': .5*self.hub.k*max(phi-boundary, 0.)**2}
 
     def settle_actuation(self, model, data):
-        """Debit only delivered, solved shaft effort at the saved input velocity."""
-        transmission = (np.zeros(model.nv) if self.ideal_hub is None
-                        else self.ideal_hub.solved_qfrc(model, data))
+        """Debit only delivered, solved shaft effort at the saved input velocity.
+
+        Stage then publish, in the native writer's order: pending validation
+        and the detached battery debit happen before any solve, telemetry
+        accumulates on a detached dict, and every live field moves only
+        after validation has fully passed — a rejected settle or a boxing
+        failure leaves the drivetrain exactly as found.
+        """
+        # Phase 1 — pending validation on detached candidates, ahead of the
+        # solves: a rejected settle publishes nothing, not even the
+        # transmissions' own solve telemetry.
+        pending = self.pending_actuation
+        torque = delivered_power = 0.
+        store = None
+        if pending is not None:
+            requested, omega, dt, enabled = pending
+            aid = self.actuators['mid_drive']
+            torque = float(data.actuator_force[aid]) if aid >= 0 else 0.
+            if torque < -1e-10 or torque > requested+1e-8:
+                raise ArithmeticError('solved motor effort violates the reserved effort ceiling')
+            torque = max(torque, 0.)
+            cfg = self.config.battery
+            power = motor_electrical_power(torque, omega, cfg.copper_w_per_nm2,
+                cfg.speed_w_per_rad_s2, cfg.idle_w, enabled and torque > 0.)
+            if cfg.enabled:
+                if power*dt > self.battery.energy_j+max(1e-10, self.battery.energy_j*1e-12):
+                    raise ArithmeticError('solved motor energy exceeds available battery storage')
+                delivered_power, store = self.battery.debit(power, dt)
+            else:
+                delivered_power = power
+        # Phase 2 — solves plus staged telemetry. The geometric hub stages
+        # its own candidate so a failure in any later step publishes
+        # nothing — not even the transmissions' solve telemetry (the ideal
+        # hub's solve is read-only and needs no candidate). The detached
+        # telemetry map is the last allocation before publish: dict.update
+        # is not itself atomic, so self.last swaps to a fully built dict
+        # in one store rather than merging in place.
+        hub_solve = None
+        if self.ideal_hub is None:
+            transmission = np.zeros(model.nv)
+        elif hasattr(self.ideal_hub, '_stage_solved'):
+            transmission, hub_solve = self.ideal_hub._stage_solved(model, data)
+        else:
+            transmission = self.ideal_hub.solved_qfrc(model, data)
+        staged = {}
         if self.clutch is not None:
             clutch_force = self.clutch.solved_qfrc(model, data)
             transmission = transmission + clutch_force
             clutch_torque = float(clutch_force[self.clutch.driven_dof])
             # A one-sided catch is inelastic: force x overrun rate is
             # dissipated by the solver and must be debited as loss.
-            self.last.update(
+            staged.update(
                 crank_clutch_torque_nm=clutch_torque,
                 crank_clutch_engaged=bool(clutch_torque > 1e-8),
                 crank_clutch_dissipation_power_w=max(0., clutch_torque
@@ -258,38 +300,37 @@ class DrivetrainForceApplier:
             freewheel_force = self.freewheel.solved_qfrc(model, data)
             transmission = transmission + freewheel_force
             freewheel_torque = float(freewheel_force[self.freewheel.driven_dof])
-            self.last.update(
+            staged.update(
                 motor_freewheel_torque_nm=freewheel_torque,
                 motor_freewheel_engaged=bool(freewheel_torque > 1e-8),
                 motor_freewheel_dissipation_power_w=max(
                     0., freewheel_torque*self.freewheel.relative_rate(data)))
         if self.ideal_hub is not None:
-            torque = float(transmission[self.ideal_hub.driven_dof])
-            self.last.update(freehub_torque_nm=torque, freehub_engaged=torque > 1e-8)
+            hub_torque = float(transmission[self.ideal_hub.driven_dof])
+            staged.update(freehub_torque_nm=hub_torque, freehub_engaged=hub_torque > 1e-8)
             if self.motor_clutch:
-                self.last['freehub_dissipation_power_w'] = max(
-                    0., torque * self.ideal_hub.relative_rate(data))
-            self.last.update(getattr(self.ideal_hub,'diagnostics',{}))
-        if self.pending_actuation is None:
+                staged['freehub_dissipation_power_w'] = max(
+                    0., hub_torque * self.ideal_hub.relative_rate(data))
+            staged.update(hub_solve[1] if hub_solve is not None
+                          else getattr(self.ideal_hub,'diagnostics',{}))
+        if pending is not None:
+            energy_j = store[0] if store is not None else self.battery.energy_j
+            staged.update(motor_torque_nm=torque, motor_shaft_power_w=torque*omega,
+                          electrical_power_w=delivered_power, battery_energy_j=energy_j,
+                          motor_enabled=enabled and torque > 0., battery_empty=energy_j == 0.)
+        new_last = dict(self.last)
+        new_last.update(staged)
+        # Phase 3 — publish in the native commit's order: transmission
+        # candidates, telemetry, battery, assist, pending release. Every
+        # store below is a plain attribute/reference write — nothing left
+        # can fail mid-publication.
+        if hub_solve is not None:
+            self.ideal_hub._commit_solved(hub_solve)
+        self.last = new_last
+        if pending is None:
             return transmission
-        requested, omega, dt, enabled = self.pending_actuation
-        aid = self.actuators['mid_drive']
-        torque = float(data.actuator_force[aid]) if aid >= 0 else 0.
-        if torque < -1e-10 or torque > requested+1e-8:
-            raise ArithmeticError('solved motor effort violates the reserved effort ceiling')
-        torque = max(torque, 0.)
-        cfg = self.config.battery
-        power = motor_electrical_power(torque, omega, cfg.copper_w_per_nm2,
-            cfg.speed_w_per_rad_s2, cfg.idle_w, enabled and torque > 0.)
-        if cfg.enabled:
-            if power*dt > self.battery.energy_j+max(1e-10, self.battery.energy_j*1e-12):
-                raise ArithmeticError('solved motor energy exceeds available battery storage')
-            delivered_power = self.battery.draw(power, dt)
-        else:
-            delivered_power = power
-        self.last.update(motor_torque_nm=torque, motor_shaft_power_w=torque*omega,
-                         electrical_power_w=delivered_power, battery_energy_j=self.battery.energy_j,
-                         motor_enabled=enabled and torque > 0., battery_empty=self.battery.energy_j == 0.)
+        if store is not None:
+            self.battery.publish(store)
         self.assist.torque = torque
         self.pending_actuation = None
         return transmission

@@ -3,6 +3,7 @@
 #include "../model_topology.hpp"
 #include "pyfloat.hpp"
 #include <algorithm>
+#include <array>
 #include <numbers>
 #include <ranges>
 
@@ -83,6 +84,7 @@ namespace drivetrain {
           simplified_(config_.transmission_model != "elastic_chain"),
           effort_(config_.drive_mode == "crank_effort" ||
                   config_.drive_mode == "articulated_effort"),
+          geometric_hub_(config_.transmission_model == "geometric_ideal_mid_drive"),
           geometry_(m->nv), frame_(resolve(m, mjOBJ_BODY, "frame")),
           crank_(resolve(m, mjOBJ_BODY, "crank")),
           rear_(resolve(m, mjOBJ_BODY, "rear_wheel")),
@@ -192,38 +194,99 @@ namespace drivetrain {
                 s.cut_remaining_s > 0. ? config_.policies.shifting.torque_factor : 1.;
     }
 
+    // Post-commit snapshot view of a staged update: Transmission::state()
+    // reads wrap_prm/tendon_range from the model, which commit() rewrites
+    // from update — so the mirror is the staged state plus those rows.
+    TransmissionSnapshot
+    DrivetrainWriter::committed_snapshot(const TransmissionUpdate &update) {
+        TransmissionSnapshot snapshot = update.state;
+        snapshot.range = update.range;
+        snapshot.coefficients = update.coefficients;
+        snapshot.prepared = update.prepared_valid
+                                ? std::optional<PreparedTransmission>(update.prepared)
+                                : std::nullopt;
+        return snapshot;
+    }
+
     void DrivetrainWriter::reset() {
         mj_kinematics(model_, data_);
-        shifting_.reset();
-        live_.shift_time_s.reset();
+        // Stage: every allocation and every candidate lands before the
+        // first live write, so a failure anywhere above the commit line
+        // leaves the drivetrain exactly as found.
+        DriveSnapshot next = live_;
+        next.shift_time_s.reset();
+        next.pending_actuation.reset();
+        next.last_time_s.reset();
+        next.pedaling = PedalingSnapshot{};
+        next.assist = AssistSnapshot{};
+        next.battery = BatterySnapshot{
+            .initial_energy_j = battery_.state().initial_energy_j,
+            .energy_j = battery_.state().initial_energy_j,
+            .drawn_energy_j = 0.};
+        next.shifting = {};
+        next.shifting.rear_teeth = next.shifting.from_teeth =
+                config_.policies.gearing.rear_teeth;
+        next.hub = hub_ ? std::optional<FreehubSnapshot>(FreehubSnapshot{})
+                        : std::nullopt;
+        std::optional<TransmissionUpdate> hub_update, clutch_update,
+                freewheel_update;
         if (simplified_) {
-            live_.angles = std::vector<double>{angle(crank_)};
-            live_.reference = 0.;
-            live_.psi.reset();
+            next.angles = std::vector<double>{angle(crank_)};
+            next.reference = 0.;
+            next.psi.reset();
             if (ideal_hub_) {
-                ideal_hub_->set_ratio(data_, shifting_.gear_ratio());
-                ideal_hub_->reset(data_);
+                // Live order was set_ratio(configured gearing) then reset();
+                // staging composes both candidates into one update.
+                const double ratio =
+                        static_cast<double>(config_.policies.gearing.front_teeth) /
+                        config_.policies.gearing.rear_teeth;
+                if (geometric_hub_) {
+                    // reset() seeded at the current gear, then the ratio
+                    // staging composes on top — pending stays set inside the
+                    // composed update, but the published reset state clears
+                    // it, exactly like the sequential live order did.
+                    TransmissionUpdate update = ideal_hub_->stage_ratio(
+                        data_, ratio, ideal_hub_->stage_reset(data_));
+                    update.state.shift_pending = false;
+                    hub_update = std::move(update);
+                } else {
+                    TransmissionUpdate update =
+                            ideal_hub_->stage_ratio(data_, ratio);
+                    // reset() publishes the boundary at the new ratio — the
+                    // direct relative() value, not the composed delta.
+                    const auto q = buffer(data_->qpos, model_->nq);
+                    const auto driver = joints_.at(config_.motor_clutch
+                                                           ? "drive_shaft_spin"
+                                                           : "crank_spin"),
+                            driven = joints_.at("rear_wheel_spin");
+                    update.state.boundary = validation::finite(
+                        ratio * q[static_cast<std::size_t>(driver.qpos)] -
+                            q[static_cast<std::size_t>(driven.qpos)],
+                        "transmission boundary");
+                    update.range[1] = *update.state.boundary;
+                    update.state.range = update.range;
+                    hub_update = std::move(update);
+                }
+                next.ideal_hub = committed_snapshot(*hub_update);
             }
-            if (clutch_)
-                clutch_->reset(data_);
-            if (freewheel_)
-                freewheel_->reset(data_);
+            if (clutch_) {
+                clutch_update = clutch_->stage_reset(data_);
+                next.clutch = committed_snapshot(*clutch_update);
+            }
+            if (freewheel_) {
+                freewheel_update = freewheel_->stage_reset(data_);
+                next.freewheel = committed_snapshot(*freewheel_update);
+            }
         } else {
-            live_.angles = std::vector<double>{
+            next.angles = std::vector<double>{
                 angle(crank_), angle(cassette_body())};
-            live_.reference = geometry_.evaluate(
+            next.reference = geometry_.evaluate(
                 model_, data_, config_.policies.gearing, crank_, cassette_body(),
                 frame_,
-                Vec2{(*live_.angles)[0], (*live_.angles)[1]}, std::nullopt, false);
-            live_.psi = geometry_.psi;
-            engaged(hub_).reset();
+                Vec2{(*next.angles)[0], (*next.angles)[1]}, std::nullopt, false);
+            next.psi = geometry_.psi;
         }
-        assist_.reset();
-        battery_.reset();
-        pedaling_.reset();
-        live_.pending_actuation.reset();
-        live_.last_time_s.reset();
-        live_.last = {
+        Diagnostics last = {
             {"chain_energy_j", 0.},
             {"freehub_energy_j", 0.},
             {"motor_torque_nm", 0.},
@@ -234,7 +297,24 @@ namespace drivetrain {
             {"motor_freewheel_torque_nm", 0.},
             {"motor_freewheel_dissipation_power_w", 0.}
         };
-        shifts(live_.last, shifting_.state(), live_.shift_time_s);
+        shifts(last, next.shifting, next.shift_time_s);
+        next.last = std::move(last);
+        // Commit: guarded model writes publish first (an engine failure
+        // poisons the owning Stepper per the E1 contract), then the policy
+        // resets and the snapshot swap — all memory-only.
+        if (hub_update)
+            ideal_hub_->commit(*hub_update);
+        if (clutch_update)
+            clutch_->commit(*clutch_update);
+        if (freewheel_update)
+            freewheel_->commit(*freewheel_update);
+        shifting_.reset();
+        assist_.reset();
+        battery_.reset();
+        pedaling_.reset();
+        if (hub_)
+            engaged(hub_).reset();
+        live_ = std::move(next);
     }
 
     void DrivetrainWriter::restart_clock() {
@@ -286,8 +366,31 @@ namespace drivetrain {
         auto pedaling = pedaling_;
         stage_pedal_advance(tick, in, pedaling);
         tick.pedaling = pedaling.state();
+        stage_snapshot_mirrors(tick);
         validate_tick(tick);
         return tick;
+    }
+
+    // The snapshot embeds the same mirrors state() would report after the
+    // commit — candidate values where a stage produced one, current state
+    // otherwise — so restore() round-trips the published snapshot verbatim
+    // and commit() never allocates a fresh mirror.
+    void DrivetrainWriter::stage_snapshot_mirrors(PreparedTick &tick) const {
+        tick.snapshot.pedaling = tick.pedaling;
+        tick.snapshot.shifting = tick.shifting;
+        tick.snapshot.assist = tick.assist;
+        tick.snapshot.battery = tick.battery;
+        tick.snapshot.hub = tick.hub;
+        const auto mirror = [](const Transmission *transmission,
+                               const std::optional<TransmissionUpdate> &update)
+                -> std::optional<TransmissionSnapshot> {
+            if (!transmission)
+                return std::nullopt;
+            return update ? committed_snapshot(*update) : transmission->state();
+        };
+        tick.snapshot.ideal_hub = mirror(ideal_hub_.get(), tick.ideal_hub);
+        tick.snapshot.clutch = mirror(clutch_.get(), tick.clutch);
+        tick.snapshot.freewheel = mirror(freewheel_.get(), tick.freewheel);
     }
 
     // Every candidate is validated while staged so commit()'s publication is
@@ -389,7 +492,16 @@ namespace drivetrain {
             if (freewheel_)
                 tick.freewheel = freewheel_->stage_prepare(data_);
         }
-        PedalingState ps;
+        stage_components_telemetry(tick, in,
+                                   stage_components_metrics(tick, in));
+        return tick;
+    }
+
+    DrivetrainWriter::TickMetrics
+    DrivetrainWriter::stage_components_metrics(PreparedTick &tick,
+                                               const TickInputs &in) {
+        TickMetrics m;
+        PedalingState &ps = m.ps;
         if (in.pedaling) {
             ps = *in.pedaling;
             tick.result = ps;
@@ -409,164 +521,172 @@ namespace drivetrain {
             std::ranges::fill(component.second, 0.);
         const auto crank = joints_.at("crank_spin"), wheel = joints_.at("rear_wheel_spin");
         const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
-        double extension = 0., rate = 0., tension = 0., energy = 0., torque = 0.,
-                deflection = 0., relative_rate = 0.;
-        std::vector<double> angles;
-        std::optional<double> psi;
         if (!simplified_) {
-            angles = {
+            m.angles = {
                 angle(crank_, engaged(tick.snapshot.angles)[0]),
                 angle(cassette_body(), engaged(tick.snapshot.angles)[1])
             };
-            extension = geometry_.evaluate(model_, data_, config_.policies.gearing, crank_,
-                                           cassette_body(), frame_, Vec2{angles[0], angles[1]},
-                                           tick.snapshot.psi, false) -
-                        engaged(live_.reference);
-            psi = geometry_.psi;
-            rate = dot(geometry_.jacobian, v);
+            m.extension =
+                    geometry_.evaluate(model_, data_, config_.policies.gearing, crank_,
+                                       cassette_body(), frame_,
+                                       Vec2{m.angles[0], m.angles[1]},
+                                       tick.snapshot.psi, false) -
+                    engaged(live_.reference);
+            m.psi = geometry_.psi;
+            m.rate = dot(geometry_.jacobian, v);
             auto const t =
-                    chain_tension(extension, rate, config_.chain_k_n_m, config_.chain_c_ns_m);
-            tension = t.first;
-            energy = t.second;
+                    chain_tension(m.extension, m.rate, config_.chain_k_n_m,
+                                  config_.chain_c_ns_m);
+            m.tension = t.first;
+            m.energy = t.second;
             for (std::size_t i = 0; i < transmission_.size(); ++i)
-                tick.components[0].second[i] = -tension * geometry_.jacobian[i];
+                tick.components[0].second[i] = -m.tension * geometry_.jacobian[i];
             const auto cassette = joints_.at("cassette_spin");
             auto hub = hub_;
-            torque = engaged(hub).update(q[static_cast<std::size_t>(cassette.qpos)],
-                                         q[static_cast<std::size_t>(wheel.qpos)],
-                                         v[static_cast<std::size_t>(cassette.dof)],
-                                         v[static_cast<std::size_t>(wheel.dof)]);
+            m.torque =
+                    engaged(hub).update(q[static_cast<std::size_t>(cassette.qpos)],
+                                        q[static_cast<std::size_t>(wheel.qpos)],
+                                        v[static_cast<std::size_t>(cassette.dof)],
+                                        v[static_cast<std::size_t>(wheel.dof)]);
             tick.hub = engaged(hub).state();
-            tick.components[1].second[static_cast<std::size_t>(wheel.dof)] = torque;
-            tick.components[1].second[static_cast<std::size_t>(cassette.dof)] = -torque;
-            relative_rate = v[static_cast<std::size_t>(cassette.dof)] -
-                            v[static_cast<std::size_t>(wheel.dof)];
-            deflection = std::max(q[static_cast<std::size_t>(cassette.qpos)] -
-                                  q[static_cast<std::size_t>(wheel.qpos)] -
-                                  engaged(tick.hub->boundary),
-                                  0.);
+            tick.components[1].second[static_cast<std::size_t>(wheel.dof)] = m.torque;
+            tick.components[1].second[static_cast<std::size_t>(cassette.dof)] = -m.torque;
+            m.relative_rate = v[static_cast<std::size_t>(cassette.dof)] -
+                              v[static_cast<std::size_t>(wheel.dof)];
+            m.deflection = std::max(q[static_cast<std::size_t>(cassette.qpos)] -
+                                    q[static_cast<std::size_t>(wheel.qpos)] -
+                                    engaged(tick.hub->boundary),
+                                    0.);
         }
         for (auto const j: bearing_joints_)
             tick.components[2].second[static_cast<std::size_t>(j.dof)] =
                     validation::derived(-config_.bearing_c_nms_rad * v[static_cast<std::size_t>(j.dof)], "DrivetrainWriter.bearing_force");
-        const double omega_crank = v[static_cast<std::size_t>(crank.dof)],
-                cadence = validation::derived(omega_crank * 60. / (2. * std::numbers::pi), "DrivetrainWriter.cadence");
+        m.omega_crank = v[static_cast<std::size_t>(crank.dof)];
+        m.cadence = validation::derived(
+                m.omega_crank * 60. / (2. * std::numbers::pi),
+                "DrivetrainWriter.cadence");
         const auto shaft = joints_.contains("drive_shaft_spin")
                                ? joints_.at("drive_shaft_spin")
                                : joints_.contains("rotor_spin")
                                      ? joints_.at("rotor_spin")
                                      : crank;
-        const double omega = v[static_cast<std::size_t>(shaft.dof)],
-                rpm = validation::derived(omega * 60. / (2. * std::numbers::pi), "DrivetrainWriter.shaft_rpm");
-        const double human =
+        m.omega = v[static_cast<std::size_t>(shaft.dof)];
+        const double rpm = validation::derived(
+                m.omega * 60. / (2. * std::numbers::pi),
+                "DrivetrainWriter.shaft_rpm");
+        m.human =
                 in.active && config_.drive_mode == "crank_effort"
                     ? human_crank_torque(ps.effort_nm, q[static_cast<std::size_t>(crank.qpos)],
                                          config_.torque_ripple)
                     : 0.;
-        const double sensor = config_.drive_mode == "crank_effort" ? human : in.sensed,
-                assist_sensor = ps.mode == "pedaling" ? sensor : 0.;
-        double request = 0.;
+        m.sensor = config_.drive_mode == "crank_effort" ? m.human : in.sensed;
+        m.assist_sensor = ps.mode == "pedaling" ? m.sensor : 0.;
         if (in.active && effort_) {
             auto assist = assist_;
-            request = assist.step(assist_sensor, cadence, in.speed, in.braking, in.dt,
-                                  in.control.motor_torque_nm, rpm);
+            m.request = assist.step(m.assist_sensor, m.cadence, in.speed, in.braking,
+                                    in.dt, in.control.motor_torque_nm, rpm);
             tick.assist = assist.state();
         }
         const auto &b = config_.policies.battery;
-        const double budget = tick.battery.energy_j / in.dt,
-                safety =
-                        in.control.motor_limit_nm
-                            ? std::min(request, *in.control.motor_limit_nm)
-                            : request;
-        double delivered =
+        const double budget = tick.battery.energy_j / in.dt;
+        m.safety = in.control.motor_limit_nm
+                       ? std::min(m.request, *in.control.motor_limit_nm)
+                       : m.request;
+        m.delivered =
                 b.enabled
-                    ? limit_torque_by_energy(safety, omega, b.copper_w_per_nm2,
+                    ? limit_torque_by_energy(m.safety, m.omega, b.copper_w_per_nm2,
                                              b.speed_w_per_rad_s2, b.idle_w, budget)
-                    : safety;
-        const bool enabled = in.active && delivered > 0. && !in.braking;
-        if (!enabled)
-            delivered = 0.;
-        const double electrical = motor_electrical_power(
-            delivered, omega, b.copper_w_per_nm2, b.speed_w_per_rad_s2, b.idle_w, enabled);
-        if (b.enabled && electrical > budget + std::max(1e-10, std::abs(budget) * 1e-12))
+                    : m.safety;
+        m.enabled = in.active && m.delivered > 0. && !in.braking;
+        if (!m.enabled)
+            m.delivered = 0.;
+        m.electrical = motor_electrical_power(
+            m.delivered, m.omega, b.copper_w_per_nm2, b.speed_w_per_rad_s2,
+            b.idle_w, m.enabled);
+        if (b.enabled && m.electrical > budget + std::max(1e-10, std::abs(budget) * 1e-12))
             throw ArithmeticError("delivered motor torque exceeds the battery budget");
+        return m;
+    }
+
+    void DrivetrainWriter::stage_components_telemetry(
+            PreparedTick &tick, const TickInputs &in, const TickMetrics &m) {
         for (const auto &component: tick.components)
             validation::derived_array(component.second, "DrivetrainWriter.force");
         const double chain_loss = std::max(0., validation::derived(
-            (tension - config_.chain_k_n_m * std::max(extension, 0.)) * rate, "DrivetrainWriter.chain_dissipation"));
+            (m.tension - config_.chain_k_n_m * std::max(m.extension, 0.)) * m.rate, "DrivetrainWriter.chain_dissipation"));
         const double hub_loss = simplified_ ? 0. : std::max(0., validation::derived(
-            (torque - config_.policies.hub_stiffness_nm_rad * deflection) * relative_rate, "DrivetrainWriter.freehub_dissipation"));
+            (m.torque - config_.policies.hub_stiffness_nm_rad * m.deflection) * m.relative_rate, "DrivetrainWriter.freehub_dissipation"));
         tick.snapshot.pending_actuation =
                 in.active
                     ? std::optional<PendingActuation>{
-                        {.requested = delivered, .omega = omega, .dt = in.dt,
-                         .enabled = enabled}
+                        {.requested = m.delivered, .omega = m.omega, .dt = in.dt,
+                         .enabled = m.enabled}
                     }
                     : std::nullopt;
         if (human_actuator_ >= 0)
-            tick.ctrl.emplace_back(human_actuator_, human);
+            tick.ctrl.emplace_back(human_actuator_, m.human);
         if (motor_actuator_ >= 0)
-            tick.ctrl.emplace_back(motor_actuator_, delivered);
+            tick.ctrl.emplace_back(motor_actuator_, m.delivered);
         if (effort_)
-            tick.assist.torque = delivered;
+            tick.assist.torque = m.delivered;
         auto const opt = [](std::optional<double> x) -> DiagnosticValue {
             return x ? DiagnosticValue(*x) : DiagnosticValue(std::monostate{});
         };
         tick.snapshot.last = {
             {"transmission_model", config_.transmission_model},
             {"omits_suspension_coupling", config_.transmission_model == "ideal_mid_drive"},
-            {"chain_extension_m", extension},
-            {"chain_extension_rate_mps", rate},
-            {"chain_tension_n", tension},
-            {"chain_energy_j", energy},
+            {"chain_extension_m", m.extension},
+            {"chain_extension_rate_mps", m.rate},
+            {"chain_tension_n", m.tension},
+            {"chain_energy_j", m.energy},
             {
                 "chain_dissipation_power_w",
                 chain_loss
             },
-            {"freehub_torque_nm", simplified_ ? 0. : torque},
+            {"freehub_torque_nm", simplified_ ? 0. : m.torque},
             {"freehub_energy_j", simplified_ ? 0. : engaged(tick.hub).energy_j},
-            {"freehub_engaged", simplified_ ? false : torque > 0.},
-            {"freehub_deflection_rad", deflection},
+            {"freehub_engaged", simplified_ ? false : m.torque > 0.},
+            {"freehub_deflection_rad", m.deflection},
             {
                 "freehub_dissipation_power_w",
                 hub_loss
             },
-            {"cadence_rpm", cadence},
-            {"crank_rad_s", omega_crank},
-            {"drive_shaft_rad_s", omega},
-            {"human_torque_nm", human},
-            {"human_sensor_nm", sensor},
+            {"cadence_rpm", m.cadence},
+            {"crank_rad_s", m.omega_crank},
+            {"drive_shaft_rad_s", m.omega},
+            {"human_torque_nm", m.human},
+            {"human_sensor_nm", m.sensor},
             {"human_setpoint_nm", opt(in.control.human_torque_nm)},
             {
                 "assist_demand_gated",
-                in.braking || assist_sensor <= config_.policies.assist.engage_torque_nm ||
-                omega_crank <= config_.policies.assist.gate_min_crank_rad_s
+                in.braking || m.assist_sensor <= config_.policies.assist.engage_torque_nm ||
+                m.omega_crank <= config_.policies.assist.gate_min_crank_rad_s
             },
-            {"assist_sensor_nm", assist_sensor},
-            {"human_command_nm", ps.effort_nm},
-            {"rider_mode", ps.mode},
-            {"coasting_reason", ps.reason},
-            {"required_cadence_rpm", ps.required_cadence_rpm},
-            {"crank_target_phase_rad", opt(ps.target_phase_rad)},
-            {"crank_target_rate_rad_s", ps.target_rate_rad_s},
-            {"motor_request_nm", request},
-            {"motor_torque_nm", delivered},
-            {"motor_freewheel_engaged", delivered > 0.},
-            {"motor_freewheel_torque_nm", delivered},
+            {"assist_sensor_nm", m.assist_sensor},
+            {"human_command_nm", m.ps.effort_nm},
+            {"rider_mode", m.ps.mode},
+            {"coasting_reason", m.ps.reason},
+            {"required_cadence_rpm", m.ps.required_cadence_rpm},
+            {"crank_target_phase_rad", opt(m.ps.target_phase_rad)},
+            {"crank_target_rate_rad_s", m.ps.target_rate_rad_s},
+            {"motor_request_nm", m.request},
+            {"motor_torque_nm", m.delivered},
+            {"motor_freewheel_engaged", m.delivered > 0.},
+            {"motor_freewheel_torque_nm", m.delivered},
             {"motor_freewheel_dissipation_power_w", 0.},
-            {"motor_limited_request_nm", safety},
+            {"motor_limited_request_nm", m.safety},
             {"motor_setpoint_nm", opt(in.control.motor_torque_nm)},
             {"motor_limit_nm", opt(in.control.motor_limit_nm)},
             {
                 "motor_control_source",
                 std::string(in.control.motor_torque_nm ? "external_request" : "assist")
             },
-            {"safety_limited", safety < request},
-            {"motor_shaft_power_w", delivered * omega},
+            {"safety_limited", m.safety < m.request},
+            {"motor_shaft_power_w", m.delivered * m.omega},
             {"electrical_power_w", 0.},
             {"battery_energy_j", tick.battery.energy_j},
-            {"motor_enabled", enabled},
-            {"energy_limited", delivered < safety},
+            {"motor_enabled", m.enabled},
+            {"energy_limited", m.delivered < m.safety},
             {"battery_empty", tick.battery.energy_j == 0.},
             {"assist_mode", config_.policies.assist.mode},
             {"assist_gain", tick.assist.last_gain}
@@ -576,12 +696,13 @@ namespace drivetrain {
             tick.snapshot.angles =
                     std::vector<double>{angle(crank_, engaged(tick.snapshot.angles)[0])};
         else {
-            tick.snapshot.angles = angles;
-            tick.snapshot.psi = psi;
+            tick.snapshot.angles = m.angles;
+            tick.snapshot.psi = m.psi;
         }
         tick.snapshot.last_time_s = data_->time;
+        if (tick.advance)
+            stage_snapshot_mirrors(tick);
         validate_tick(tick);
-        return tick;
     }
 
     void DrivetrainWriter::commit(PreparedTick &tick) {
@@ -632,87 +753,286 @@ namespace drivetrain {
         battery_.set_state(tick.battery);
         if (hub_)
             engaged(hub_).set_state(engaged(tick.hub));
-        // Keep the snapshot's embedded policy mirrors coherent with the
-        // committed policies: state() refreshes them anyway, but restore()
-        // moves a snapshot into live_ verbatim and expects consistency.
-        tick.snapshot.pedaling = pedaling_.state();
-        tick.snapshot.shifting = shifting_.state();
-        tick.snapshot.assist = assist_.state();
-        tick.snapshot.battery = battery_.state();
-        if (hub_)
-            tick.snapshot.hub = engaged(hub_).state();
-        for (const auto &[transmission, mirror]: {
-                 std::pair{ideal_hub_.get(), &tick.snapshot.ideal_hub},
-                 std::pair{clutch_.get(), &tick.snapshot.clutch},
-                 std::pair{freewheel_.get(), &tick.snapshot.freewheel}
-             })
-            if (transmission)
-                *mirror = transmission->state();
+        // The snapshot's embedded policy/transmission mirrors were staged
+        // with the committed values — the publication below is one move.
         live_ = std::move(tick.snapshot);
     }
 
-    std::span<const double> DrivetrainWriter::settle() {
+    void DrivetrainWriter::validate_settlement(
+        const PreparedSettlement &settlement) const {
+        if (settlement.battery) {
+            auto battery = battery_;
+            battery.set_state(*settlement.battery);
+        }
+        if (settlement.assist) {
+            auto assist = assist_;
+            assist.set_state(*settlement.assist);
+        }
+    }
+
+    PreparedSettlement DrivetrainWriter::stage_settle() {
+        PreparedSettlement settlement;
+        // The force publication is a view over the persistent transmission_
+        // scratch — the binding boxes it before commit(), and the settle()
+        // convenience wrapper returns the same span it always did.
+        settlement.force = transmission_;
+
+        // Phase 1 — pending validation and detached policy candidates. Every
+        // rejection lands before the solve below, so a refused settlement
+        // publishes nothing — not even the transmissions' solve telemetry.
+        const PendingActuation *pending = live_.pending_actuation
+                                              ? &*live_.pending_actuation
+                                              : nullptr;
+        double pending_torque = 0., pending_delivered = 0.;
+        if (pending) {
+            pending_torque =
+                    motor_actuator_ >= 0
+                        ? buffer(data_->actuator_force,
+                                 model_->nu)[static_cast<std::size_t>(motor_actuator_)]
+                        : 0.;
+            if (pending_torque < -1e-10 ||
+                pending_torque > pending->requested + 1e-8)
+                throw ArithmeticError(
+                    "solved motor effort violates the reserved effort ceiling");
+            pending_torque = std::max(pending_torque, 0.);
+            const auto &b = config_.policies.battery;
+            const double power = motor_electrical_power(
+                pending_torque, pending->omega, b.copper_w_per_nm2,
+                b.speed_w_per_rad_s2, b.idle_w,
+                pending->enabled && pending_torque > 0.);
+            pending_delivered = power;
+            if (b.enabled) {
+                const double store = battery_.state().energy_j;
+                if (power * pending->dt >
+                    store + std::max(1e-10, store * 1e-12))
+                    throw ArithmeticError(
+                        "solved motor energy exceeds available battery storage");
+                const auto [delivered, candidate] =
+                        battery_.debit(power, pending->dt);
+                pending_delivered = delivered;
+                settlement.battery = candidate;
+            }
+            AssistSnapshot assist = assist_.state();
+            assist.torque = pending_torque;
+            settlement.assist = assist;
+            settlement.clear_pending = true;
+        }
+        validate_settlement(settlement);
+
+        // Phase 2 — the telemetry write plan. Every settlement key resolves
+        // to a map slot BEFORE the solve runs; when a key is absent (a
+        // restored sparse `last`) or the geometric merge must carry its
+        // string status, the whole publication moves onto a detached
+        // candidate map. commit() then performs either plain slot writes or
+        // one map move — never an allocation.
+        constexpr std::array<std::string_view, 3> clutch_keys{
+            "crank_clutch_torque_nm", "crank_clutch_engaged",
+            "crank_clutch_dissipation_power_w"};
+        constexpr std::array<std::string_view, 3> freewheel_keys{
+            "motor_freewheel_torque_nm", "motor_freewheel_engaged",
+            "motor_freewheel_dissipation_power_w"};
+        // Transmission::solved publishes this fixed geometric telemetry
+        // contract — pre-created here so the post-solve merge never has to
+        // allocate a fresh map node.
+        constexpr std::array<std::string_view, 11> geometric_keys{
+            "transmission_phi_m", "transmission_boundary_m",
+            "transmission_gap_m", "transmission_tension_n",
+            "transmission_constraint_defect_m", "transmission_interval_work_j",
+            "transmission_reaction_error_n", "shift_parameter_work_j",
+            "shift_interval_constraint_work_j",
+            "shift_constraint_work_cumulative_j",
+            "transmission_reference_status"};
+        constexpr std::array<std::string_view, 6> pending_keys{
+            "motor_torque_nm", "motor_shaft_power_w", "electrical_power_w",
+            "battery_energy_j", "motor_enabled", "battery_empty"};
+        std::vector<std::string_view> keys;
+        if (ideal_hub_) {
+            keys.emplace_back("freehub_torque_nm");
+            keys.emplace_back("freehub_engaged");
+            if (config_.motor_clutch)
+                keys.emplace_back("freehub_dissipation_power_w");
+            if (geometric_hub_)
+                for (const std::string_view key: geometric_keys)
+                    keys.emplace_back(key);
+        }
+        if (clutch_)
+            for (const std::string_view key: clutch_keys)
+                keys.emplace_back(key);
+        if (freewheel_)
+            for (const std::string_view key: freewheel_keys)
+                keys.emplace_back(key);
+        if (pending)
+            for (const std::string_view key: pending_keys)
+                keys.emplace_back(key);
+        // A geometric hub merges its solve telemetry — including the
+        // std::string status — so it always publishes through the candidate
+        // map. An ideal hub normally publishes an empty map, but a restored
+        // snapshot can carry arbitrary diagnostics and staging preserves
+        // them; any nonempty map takes the detached path as well, because
+        // keys outside the declared set could never resolve to a slot and
+        // an in-place fallback would write live_.last mid-staging.
+        const bool merge_telemetry =
+                ideal_hub_ &&
+                (geometric_hub_ || !ideal_hub_->diagnostics().empty());
+        bool candidate_map = merge_telemetry;
+        if (!candidate_map)
+            for (const std::string_view key: keys)
+                if (live_.last.find(std::string(key)) == live_.last.end()) {
+                    candidate_map = true;
+                    break;
+                }
+        Diagnostics &target =
+                candidate_map ? settlement.last.emplace(live_.last) : live_.last;
+        for (const std::string_view key: keys)
+            static_cast<void>(target[std::string(key)]);
+        // The status value is a std::string — give its slot a heap buffer
+        // now so the post-solve assignment stays allocation-free. Only an
+        // owned geometric hub ever writes this key; seeding it on a hubless
+        // (passive) or ideal-drift path would publish a spurious empty
+        // entry.
+        if (ideal_hub_ && geometric_hub_) {
+            DiagnosticValue &status =
+                    target["transmission_reference_status"];
+            if (!std::holds_alternative<std::string>(status))
+                status.emplace<std::string>();
+            std::get<std::string>(status).reserve(64);
+        }
+        std::vector<std::pair<std::string_view, DiagnosticValue *> > plan;
+        plan.reserve(keys.size());
+        for (const std::string_view key: keys) {
+            const auto it = target.find(std::string(key));
+            plan.emplace_back(key, &it->second);
+        }
+        // post-solve lookups are pointer-only: every planned key was
+        // resolved above, so slot_of never misses a declared write.
+        const auto slot_of = [&plan](std::string_view key) noexcept
+                -> DiagnosticValue * {
+            for (const auto &[k, slot]: plan)
+                if (k == key)
+                    return slot;
+            return nullptr;
+        };
+        const auto record = [&settlement](DiagnosticValue *slot,
+                                          const DiagnosticValue &value) {
+            if (settlement.last)
+                *slot = value;
+            else if (settlement.write_count == PreparedSettlement::write_capacity)
+                throw std::logic_error("settlement write plan overflow");
+            else
+                settlement.writes[settlement.write_count++] =
+                        PreparedSettlement::Write{.slot = slot, .value = value};
+        };
+
+        // Phase 3 — the solve. Each transmission stages its own candidate:
+        // the reaction force lands in the persistent transmission_ scratch
+        // now, but the solve's telemetry/state publication rides the
+        // settlement's commit — a throw here (a bad_alloc inside a
+        // candidate map, an unprepared geometric hub) leaves every
+        // transmission and the pending reservation byte-identical.
         std::ranges::fill(transmission_, 0.);
-        if (ideal_hub_)
-            std::ranges::copy(ideal_hub_->solved(data_), transmission_.begin());
-        for (auto *t: {clutch_.get(), freewheel_.get()})
-            if (t) {
-                const auto f = t->solved(data_);
+        if (ideal_hub_) {
+            settlement.ideal_solve = ideal_hub_->stage_solved(data_);
+            std::ranges::copy(settlement.ideal_solve->force,
+                              transmission_.begin());
+        }
+        struct Aux {
+            Transmission *transmission;
+            std::optional<SolvedTransmission> *slot;
+            std::string_view torque_key, engaged_key, dissipation_key;
+        };
+        for (const Aux &aux: {
+                 Aux{.transmission = clutch_.get(),
+                     .slot = &settlement.clutch_solve,
+                     .torque_key = clutch_keys[0],
+                     .engaged_key = clutch_keys[1],
+                     .dissipation_key = clutch_keys[2]},
+                 Aux{.transmission = freewheel_.get(),
+                     .slot = &settlement.freewheel_solve,
+                     .torque_key = freewheel_keys[0],
+                     .engaged_key = freewheel_keys[1],
+                     .dissipation_key = freewheel_keys[2]}})
+            if (aux.transmission) {
+                *aux.slot = aux.transmission->stage_solved(data_);
+                const std::span<const double> f = (*aux.slot)->force;
                 for (std::size_t i = 0; i < transmission_.size(); ++i)
                     transmission_[i] += f[i];
-                const double torque = f[static_cast<std::size_t>(t->driven_dof())];
-                const std::string prefix =
-                        t == clutch_.get() ? "crank_clutch" : "motor_freewheel";
-                live_.last[prefix + "_torque_nm"] = torque;
-                live_.last[prefix + "_engaged"] = torque > 1e-8;
-                live_.last[prefix + "_dissipation_power_w"] =
-                        std::max(0., torque * t->relative_rate(data_));
+                const double torque =
+                        f[static_cast<std::size_t>(aux.transmission->driven_dof())];
+                record(slot_of(aux.torque_key), torque);
+                record(slot_of(aux.engaged_key), torque > 1e-8);
+                record(slot_of(aux.dissipation_key),
+                       std::max(0., torque * aux.transmission->relative_rate(data_)));
             }
         if (ideal_hub_) {
             const double torque =
                     transmission_[static_cast<std::size_t>(ideal_hub_->driven_dof())];
-            live_.last["freehub_torque_nm"] = torque;
-            live_.last["freehub_engaged"] = torque > 1e-8;
+            record(slot_of("freehub_torque_nm"), torque);
+            record(slot_of("freehub_engaged"), torque > 1e-8);
             if (config_.motor_clutch)
-                live_.last["freehub_dissipation_power_w"] =
-                        std::max(0., torque * ideal_hub_->relative_rate(data_));
-            for (const auto &[k, v]: ideal_hub_->diagnostics())
-                live_.last[k] = v;
+                record(slot_of("freehub_dissipation_power_w"),
+                       std::max(0., torque * ideal_hub_->relative_rate(data_)));
+            // Merge from the staged candidate — not the live diagnostics,
+            // which publish only at commit. Keys outside the declared set
+            // only exist when merge_telemetry already forced the detached
+            // map, and that is asserted rather than assumed: writing
+            // live_.last here would be a staging-time publication.
+            for (const auto &[k, v]: settlement.ideal_solve->state.diagnostics)
+                if (DiagnosticValue *slot = slot_of(k))
+                    record(slot, v);
+                else if (settlement.last)
+                    (*settlement.last)[k] = v;
+                else
+                    throw std::logic_error(
+                        "diagnostics merge requires the detached map");
         }
-        if (!live_.pending_actuation)
-            return transmission_;
-        const auto p = *live_.pending_actuation;
-        double torque = motor_actuator_ >= 0
-                            ? buffer(data_->actuator_force,
-                                     model_->nu)[static_cast<std::size_t>(motor_actuator_)]
-                            : 0.;
-        if (torque < -1e-10 || torque > p.requested + 1e-8)
-            throw ArithmeticError(
-                "solved motor effort violates the reserved effort ceiling");
-        torque = std::max(torque, 0.);
-        const auto &b = config_.policies.battery;
-        const double power = motor_electrical_power(torque, p.omega, b.copper_w_per_nm2,
-                                                    b.speed_w_per_rad_s2, b.idle_w,
-                                                    p.enabled && torque > 0.);
-        double delivered = power;
-        if (b.enabled) {
-            if (power * p.dt > battery_.state().energy_j +
-                std::max(1e-10, battery_.state().energy_j * 1e-12))
-                throw ArithmeticError(
-                    "solved motor energy exceeds available battery storage");
-            delivered = battery_.draw(power, p.dt);
+        if (pending) {
+            const double energy = settlement.battery
+                                      ? settlement.battery->energy_j
+                                      : battery_.state().energy_j;
+            record(slot_of("motor_torque_nm"), pending_torque);
+            record(slot_of("motor_shaft_power_w"),
+                   pending_torque * pending->omega);
+            record(slot_of("electrical_power_w"), pending_delivered);
+            record(slot_of("battery_energy_j"), energy);
+            record(slot_of("motor_enabled"),
+                   pending->enabled && pending_torque > 0.);
+            record(slot_of("battery_empty"), energy == 0.);
         }
-        live_.last["motor_torque_nm"] = torque;
-        live_.last["motor_shaft_power_w"] = torque * p.omega;
-        live_.last["electrical_power_w"] = delivered;
-        live_.last["battery_energy_j"] = battery_.state().energy_j;
-        live_.last["motor_enabled"] = p.enabled && torque > 0.;
-        live_.last["battery_empty"] = battery_.state().energy_j == 0.;
-        auto s = assist_.state();
-        s.torque = torque;
-        assist_.set_state(s);
-        live_.pending_actuation.reset();
-        return transmission_;
+        return settlement;
+    }
+
+    void DrivetrainWriter::commit(PreparedSettlement &settlement) noexcept {
+        // The transmission solve candidates publish through their own
+        // memory-only swap first; every store below is then provably
+        // allocation-free: the candidate map move never allocates, the
+        // in-place slots were resolved during staging (std::map element
+        // addresses are stable), and only scalar diagnostic values ever
+        // travel the in-place path — a string write would have forced the
+        // candidate map during staging.
+        if (settlement.ideal_solve)
+            ideal_hub_->commit(*settlement.ideal_solve);
+        if (settlement.clutch_solve)
+            clutch_->commit(*settlement.clutch_solve);
+        if (settlement.freewheel_solve)
+            freewheel_->commit(*settlement.freewheel_solve);
+        if (settlement.last)
+            live_.last = std::move(*settlement.last);
+        else
+            for (std::size_t i = 0; i < settlement.write_count; ++i)
+                *settlement.writes[i].slot = settlement.writes[i].value;
+        if (settlement.battery)
+            battery_.publish(*settlement.battery);
+        if (settlement.assist)
+            assist_.publish(*settlement.assist);
+        if (settlement.clear_pending)
+            live_.pending_actuation.reset();
+    }
+
+    std::span<const double> DrivetrainWriter::settle() {
+        auto settlement = stage_settle();
+        const std::span<const double> force = settlement.force;
+        commit(settlement);
+        return force;
     }
 
     const Diagnostics &DrivetrainWriter::diagnostics(bool probe) const {

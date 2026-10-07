@@ -97,14 +97,21 @@ namespace drivetrain {
         state_ = s;
     }
 
-    double Battery::draw(double power, double dt) {
+    std::pair<double, BatterySnapshot> Battery::debit(double power, double dt) const {
         nonnegative(power, "battery power");
         positive(dt, "battery timestep");
         const double requested = validation::derived(power * dt, "Battery.requested_energy");
         const double delivered = std::min(state_.energy_j, requested);
-        state_.energy_j = std::max(0., state_.energy_j - delivered);
-        state_.drawn_energy_j += delivered;
-        return delivered / dt;
+        BatterySnapshot candidate = state_;
+        candidate.energy_j = std::max(0., state_.energy_j - delivered);
+        candidate.drawn_energy_j = state_.drawn_energy_j + delivered;
+        return {delivered / dt, candidate};
+    }
+
+    double Battery::draw(double power, double dt) {
+        auto [delivered, candidate] = debit(power, dt);
+        state_ = candidate;
+        return delivered;
     }
 
     double motor_electrical_power(double torque, double omega, double a, double b, double idle, bool enabled) {

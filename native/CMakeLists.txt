@@ -272,10 +272,8 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp src/stepper.cpp src/writers/suspension.cpp
   src/writers/brake.cpp src/writers/resistance.cpp
   src/writers/rider_forces.cpp src/writers/tire.cpp
-  src/drivetrain/shifting.cpp
-  src/drivetrain/motor.cpp src/drivetrain/freehub.cpp src/drivetrain/policy_binding.cpp
+  src/drivetrain/policy_binding.cpp
   src/drivetrain/drive_binding.cpp
-  src/writers/drivetrain.cpp
   src/rider/contact_binding.cpp)
 
 set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
@@ -419,6 +417,8 @@ endif()
 # including -ffp-contract=off, as when they were listed on the module itself.
 add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp
+  src/drivetrain/shifting.cpp src/drivetrain/motor.cpp
+  src/drivetrain/freehub.cpp src/writers/drivetrain.cpp
   src/writers/cruise.cpp src/tyre/profile.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp)
 set_target_properties(bike_native_contract_core PROPERTIES
@@ -466,7 +466,11 @@ target_include_directories(bike_native_engine SYSTEM PRIVATE
 target_link_libraries(bike_native_engine PUBLIC "${MJ_DIR}/libmujoco.3.12.0.dylib")
 target_link_libraries(bike_native PRIVATE bike_native_engine)
 
-add_executable(native_contract_tests tests/test_contracts.cpp)
+# allocation_faults.cpp overrides the test binary's throwing allocation
+# operators — it must never land in a shipped target, so it joins the
+# executable's own sources, not the shared contract core.
+add_executable(native_contract_tests tests/test_contracts.cpp
+  tests/allocation_faults.cpp)
 set_target_properties(native_contract_tests PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON

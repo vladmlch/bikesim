@@ -134,17 +134,14 @@ namespace model_access {
     // Body-domain contract for the point-Jacobian boundary — an explicit
     // parameter so each port keeps its recorded gate:
     enum class JacobianBody : std::uint8_t {
-        // Every in-range ID is accepted — the caller enforces
-        // physicality in its own earlier gate.
-        any = 0,
         // Split gate: an out-of-range ID reports "<field>: invalid model
         // ID" through require_id; the world body reports the
         // physical-body message. (tire writer's recorded contract)
-        physical = 1,
+        physical = 0,
         // Single gate matching physical_mapping.py:36 literally — any ID
         // outside 1..nbody reports the physical-body message.
         // (resistance writer's recorded contract)
-        physical_strict = 2
+        physical_strict = 1
     };
 
     // Checked boundary for the jacp-only point Jacobian

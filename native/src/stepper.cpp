@@ -260,7 +260,9 @@ void Stepper::reset() {
 
 drivetrain::DrivetrainWriter &Stepper::drive() const {
     if (!drive_)
-        throw std::logic_error("Stepper was built without a drive config");
+        throw std::logic_error(
+            "drive: Stepper was built without a drive config (pass the dict "
+            "from tools.native_config.project)");
     return *drive_;
 }
 
@@ -279,7 +281,9 @@ void Stepper::set_inputs(std::span<const double> ctrl,
 
 CruiseWriter &Stepper::require_cruise() const {
     if (!cruise_)
-        throw std::logic_error("Stepper was built without a cruise config");
+        throw std::logic_error(
+            "cruise: Stepper was built without a cruise config (pass the "
+            "dict from tools.native_config.project)");
     return *cruise_;
 }
 

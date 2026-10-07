@@ -38,12 +38,8 @@ CruiseWriter::CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config)
     const int joint = mj_name2id(model, mjOBJ_JOINT, "root_x");
     if (joint < 0)
         throw std::invalid_argument("model has no joint 'root_x'");
-    const std::span<const int> types =
-            std::views::counted(model->jnt_type, model->njnt);
     const auto index = static_cast<std::size_t>(joint);
     topology::joint(model, joint, "CruiseWriter.root_x", mjJNT_SLIDE, {1., 0., 0.});
-    if (types[index] != mjJNT_SLIDE)
-        throw std::invalid_argument("root_x must be a scalar slide or hinge joint");
     const std::span<const int> dofs =
             std::views::counted(model->jnt_dofadr, model->njnt);
     root_dof_ = dofs[index];

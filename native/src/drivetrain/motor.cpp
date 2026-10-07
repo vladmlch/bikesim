@@ -63,14 +63,10 @@ namespace drivetrain {
         const double sensed = human > config_.engage_torque_nm ? human : 0.;
         double gain = config_.gain;
         if (config_.profile) {
-            const auto &p = *config_.profile;
-            if (config_.mode == "eco") gain = p.eco;
-            else if (config_.mode == "tour") gain = p.tour;
-            else if (config_.mode == "turbo") gain = p.turbo;
-            else {
-                const double fraction = std::min(1., std::max(0., sensed) / p.emtb_full_gain_at_nm);
-                gain = p.emtb_low + (p.emtb_high - p.emtb_low) * fraction;
-            }
+            // The ctor resolved the closed ProfileMode — dispatch on it
+            // rather than the wire label. A profile-less controller keeps
+            // its open custom label and the configured scalar gain.
+            gain = profile_gain(engaged(config_.profile), engaged(profile_mode_), sensed);
         }
         const auto [limit, taper] = ceiling(shaft.value_or(rpm), speed);
         const double target = std::min(validation::derived(gain * sensed * taper, "AssistController.target"), limit);

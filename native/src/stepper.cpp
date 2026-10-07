@@ -95,7 +95,7 @@ Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
             rider_forces_ =
                     std::make_unique<RiderForcesWriter>(m_, *cfg.rider_forces);
         if (cfg.drive)
-            drive_ = std::make_unique<DrivetrainWriter>(m_, d_, *cfg.drive);
+            drive_ = std::make_unique<drivetrain::DrivetrainWriter>(m_, d_, *cfg.drive);
     } catch (...) {
         drive_.reset();
         mj_deleteData(d_);

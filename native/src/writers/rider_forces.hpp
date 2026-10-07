@@ -40,9 +40,14 @@ private:
         bool unilateral = false;
     };
 
-    // _JointPath.force_n / .gap_m — a per-call snapshot kept for a future
-    // telemetry surface (interface_loads_n, recorder), like
-    // SuspensionWriter's last_; it does not feed qfrc().
+    // _JointPath.force_n / .gap_m — per-path telemetry read back by qfrc()
+    // itself (each path's computed force_n is the row's dofadr value), so
+    // unlike the removed brake/suspension snapshots this state is live
+    // output state and must stay. It is per-instance scratch of the owning
+    // Stepper context: qfrc() is const yet mutates it, which stays correct
+    // only because calls arrive through the nanobind boundary while the GIL
+    // is held — cross-context sharing needs external synchronization
+    // outside realtime code.
     struct Telemetry {
         double force_n = 0.0, gap_m = 0.0;
     };

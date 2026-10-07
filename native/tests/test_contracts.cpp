@@ -2238,7 +2238,222 @@ namespace {
                 "python_vector_norm inf short-circuit");
     }
 
-    constexpr std::array<TestCase, 26> cases{{
+    // C4: the closed-mode enums are compile-time contracts — the parsers
+    // map exactly the declared wire labels, profile_gain dispatches every
+    // enumerator, and the declared noexcept surface holds. A wrong mapping
+    // or a widened domain fails the build, not just this case.
+    void test_closed_mode_enums() {
+        using namespace drivetrain;
+
+        static_assert(profile_mode("eco") == ProfileMode::eco &&
+                      profile_mode("tour") == ProfileMode::tour &&
+                      profile_mode("emtb") == ProfileMode::emtb &&
+                      profile_mode("turbo") == ProfileMode::turbo &&
+                      !profile_mode("supersport") && !profile_mode(""),
+                      "profile_mode maps exactly the four profiled labels");
+        static_assert(slip_mode("legacy_signed") == SlipMode::legacy_signed &&
+                      slip_mode("magnitude") == SlipMode::magnitude &&
+                      !slip_mode("mystery") && !slip_mode(""),
+                      "slip_mode maps exactly the two slip labels");
+        static_assert(shift_direction("none") == ShiftDirection::none &&
+                      shift_direction("up") == ShiftDirection::up &&
+                      shift_direction("down") == ShiftDirection::down &&
+                      !shift_direction("sideways") && !shift_direction(""),
+                      "shift_direction maps exactly the three wire labels");
+        static_assert(shift_direction_name(ShiftDirection::none) == "none" &&
+                      shift_direction_name(ShiftDirection::up) == "up" &&
+                      shift_direction_name(ShiftDirection::down) == "down",
+                      "shift_direction_name round-trips the wire strings");
+
+        static_assert(noexcept(profile_mode(std::string_view{})) &&
+                      noexcept(slip_mode(std::string_view{})) &&
+                      noexcept(shift_direction(std::string_view{})) &&
+                      noexcept(shift_direction_name(ShiftDirection::none)) &&
+                      noexcept(force_component_index(ForceComponent::chain)),
+                      "enum parsers and index helpers stay noexcept");
+
+        constexpr MotorProfile profile{
+            .eco = .5, .tour = 1., .emtb_low = .8, .emtb_high = 2.,
+            .turbo = 2.5, .emtb_full_gain_at_nm = 50.};
+        static_assert(profile_gain(profile, ProfileMode::eco, 10.) == .5 &&
+                      profile_gain(profile, ProfileMode::tour, 10.) == 1. &&
+                      profile_gain(profile, ProfileMode::turbo, 10.) == 2.5 &&
+                      profile_gain(profile, ProfileMode::emtb, 0.) == .8 &&
+                      profile_gain(profile, ProfileMode::emtb, 50.) == 2.,
+                      "profile_gain dispatches every enumerator");
+        static_assert(noexcept(profile_gain(profile, ProfileMode::eco, 0.)),
+                      "profile_gain is declared noexcept");
+        // The eMTB ramp interpolates between the low/high gains with the
+        // sensed rider torque, saturating at emtb_full_gain_at_nm.
+        require(profile_gain(profile, ProfileMode::emtb, 25.) ==
+                        profile.emtb_low +
+                            (profile.emtb_high - profile.emtb_low) *
+                                std::min(1., std::max(0., 25.) /
+                                             profile.emtb_full_gain_at_nm),
+                "emtb ramp keeps the declared interpolation order");
+
+        // A profiled controller resolves the enum once at construction and
+        // dispatches on it — last_gain is the profiled gain, not the scalar.
+        {
+            auto config = valid_assist_config();
+            config.profile = profile;
+            config.mode = "turbo";
+            config.gain = 9.9; // must not leak into the profiled path
+            AssistController controller(config);
+            const double torque =
+                    controller.step(10., 50., 0., false, .01);
+            require(torque > 0. && controller.state().last_gain == 2.5,
+                    "profiled step reports the enum-resolved turbo gain");
+        }
+        // Unknown labels are rejected only while a profile is installed;
+        // the same label without a profile stays an open custom mode that
+        // uses the configured scalar gain.
+        {
+            auto config = valid_assist_config();
+            config.profile = profile;
+            config.mode = "supersport";
+            require_throws_invalid_argument(
+                [&] { [[maybe_unused]] const AssistController c(config); },
+                "profiled assist rejects an unknown mode");
+        }
+        {
+            auto config = valid_assist_config();
+            config.mode = "supersport"; // custom profile-less label
+            config.gain = 1.5;
+            AssistController controller(config);
+            const double torque =
+                    controller.step(10., 50., 0., false, .01);
+            require(torque > 0. && controller.state().last_gain == 1.5,
+                    "profile-less custom label keeps the scalar gain path");
+        }
+
+        // Slip-mode parsing drives the upshift gate: "magnitude" compares
+        // |slip| against the limit, "legacy_signed" keeps the sign.
+        {
+            auto shifting = valid_shifting_config();
+            shifting.upshift_slip_mode = "magnitude";
+            CadenceShifter shifter(valid_gearing_config(), shifting);
+            require(!shifter.update(100., 85., .01, true, false, true, -.3),
+                    "magnitude mode blocks an upshift on |slip| over limit");
+            require(shifter.state().rear_teeth == 18 &&
+                        shifter.state().direction == "none",
+                    "blocked shift keeps gear and none direction");
+        }
+        {
+            CadenceShifter shifter(valid_gearing_config(),
+                                   valid_shifting_config()); // legacy_signed
+            require(shifter.update(100., 85., .01, true, false, true, -.3),
+                    "legacy_signed mode ignores negative slip");
+            require(shifter.state().rear_teeth == 15 &&
+                        shifter.state().direction == "up",
+                    "upshift lands on the next smaller sprocket");
+        }
+        {
+            CadenceShifter shifter(valid_gearing_config(),
+                                   valid_shifting_config());
+            require(!shifter.update(100., 85., .01, true, false, true, .3),
+                    "legacy_signed still blocks positive slip over limit");
+        }
+        {   // A downshift serializes "down" through the same enum path.
+            CadenceShifter shifter(valid_gearing_config(),
+                                   valid_shifting_config());
+            require(shifter.update(50., 80., .01, true, false, true,
+                                   std::nullopt),
+                    "low cadence downshifts");
+            require(shifter.state().rear_teeth == 21 &&
+                        shifter.state().direction == "down",
+                    "downshift lands on the next larger sprocket");
+        }
+        {   // set_state accepts only the serialized direction domain.
+            CadenceShifter shifter(valid_gearing_config(),
+                                   valid_shifting_config());
+            ShiftingSnapshot snapshot = shifter.state();
+            snapshot.direction = "sideways";
+            require_throws_invalid_argument(
+                [&] { shifter.set_state(snapshot); },
+                "set_state rejects an unknown direction");
+            snapshot.direction = "up";
+            shifter.set_state(snapshot);
+            require(shifter.state().direction == "up",
+                    "set_state accepts a declared direction");
+        }
+    }
+
+    // C4: the serialized component rows are addressed by the ForceComponent
+    // table, not by emplace order — the emitted names and their order are
+    // checked against the declared table, and the bearing row carries its
+    // force at the right dof (external output, not private structure).
+    void test_force_component_layout() {
+        using namespace drivetrain;
+
+        static_assert(force_component_specs.size() == 4 &&
+                      force_component_index(ForceComponent::chain) == 0 &&
+                      force_component_index(ForceComponent::freehub) == 1 &&
+                      force_component_index(ForceComponent::drive_bearings) == 2 &&
+                      force_component_index(ForceComponent::ideal_transmission) == 3,
+                      "component slots match the declared enum positions");
+        static_assert(force_component_specs[0].name == "chain" &&
+                      force_component_specs[1].name == "freehub" &&
+                      force_component_specs[2].name == "drive_bearings" &&
+                      force_component_specs[3].name == "ideal_transmission",
+                      "component names match the serialized layout");
+
+        {   // Physical chain: three rows, in declared order.
+            const auto fixture = std::make_unique<DriveFixture>(
+                "elastic_chain", "plain",
+                drive_config("elastic_chain", "plain", true, false));
+            auto tick = fixture->writer.stage_components(
+                {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
+                 .braking = false, .active = true, .advance = true,
+                 .contact = true, .pedaling = std::nullopt,
+                 .slip = std::nullopt});
+            require(tick.components.size() == 3,
+                    "elastic chain emits exactly three component rows");
+            for (std::size_t i = 0; i < tick.components.size(); ++i)
+                require(tick.components[i].first ==
+                                std::string(force_component_specs[i].name),
+                        "emitted name matches the declared table slot");
+            // qvel rear_wheel_spin = 5 → bearing force -0.03*5 at its dof.
+            const int wheel = joint_dof(fixture->model.get(),
+                                        "rear_wheel_spin");
+            const auto &bearings =
+                    tick.components[force_component_index(
+                                        ForceComponent::drive_bearings)]
+                        .second;
+            require(bearings[static_cast<std::size_t>(wheel)] < 0.,
+                    "bearing row carries force at the wheel dof");
+            // The snapshot telemetry keeps the wire strings — enum plumbing
+            // must not leak into serialization.
+            require(std::get<std::string>(
+                        tick.snapshot.last.at("assist_mode")) == "turbo" &&
+                    std::get<std::string>(
+                        tick.snapshot.last.at("shift_direction")) == "none",
+                    "telemetry keeps the public serialization strings");
+            fixture->writer.commit(tick);
+        }
+        {   // Simplified topology appends ideal_transmission last.
+            const auto fixture = std::make_unique<DriveFixture>(
+                "ideal_mid_drive", "plain",
+                drive_config("ideal_mid_drive", "plain", true, false));
+            auto tick = fixture->writer.stage_components(
+                {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
+                 .braking = false, .active = true, .advance = true,
+                 .contact = true, .pedaling = std::nullopt,
+                 .slip = std::nullopt});
+            require(tick.components.size() == 4 &&
+                        tick.components[force_component_index(
+                                            ForceComponent::ideal_transmission)]
+                                    .first == "ideal_transmission",
+                    "simplified model appends the ideal_transmission row");
+            for (std::size_t i = 0; i < tick.components.size(); ++i)
+                require(tick.components[i].first ==
+                                std::string(force_component_specs[i].name),
+                        "emitted order follows the declared table");
+            fixture->writer.commit(tick);
+        }
+    }
+
+    constexpr std::array<TestCase, 28> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -2265,6 +2480,8 @@ namespace {
         {.name = "settlement_sparse_last_atomicity", .run = test_settlement_sparse_last_atomicity},
         {.name = "drivetrain_allocation_enumeration", .run = test_drivetrain_allocation_enumeration},
         {.name = "cblas_and_norm", .run = test_cblas_and_norm},
+        {.name = "closed_mode_enums", .run = test_closed_mode_enums},
+        {.name = "force_component_layout", .run = test_force_component_layout},
     }};
 
     int run_case(const TestCase &test_case) {

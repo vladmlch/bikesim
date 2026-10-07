@@ -5,6 +5,17 @@
 #include "../drivetrain/shifting.hpp"
 #include "../drivetrain/transmission.hpp"
 #include <array>
+#include <cstddef>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <optional>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace drivetrain {
     class ArithmeticError : public std::runtime_error {
@@ -52,6 +63,45 @@ namespace drivetrain {
                   const mjModel &model);
 
     using ForceComponents = std::vector<std::pair<std::string, std::vector<double> > >;
+
+    // The fixed serialized force-component layout — names and order mirror
+    // the Python dict's insertion order, so they are part of the wire
+    // contract. The enum names each slot for the write sites, and the table
+    // below binds each name to its slot instead of relying on emplace order.
+    enum class ForceComponent : std::uint8_t {
+        chain,
+        freehub,
+        drive_bearings,
+        ideal_transmission
+    };
+
+    struct ForceComponentSpec {
+        ForceComponent slot;
+        std::string_view name;
+    };
+
+    inline constexpr std::array<ForceComponentSpec, 4> force_component_specs{{
+        {.slot = ForceComponent::chain, .name = "chain"},
+        {.slot = ForceComponent::freehub, .name = "freehub"},
+        {.slot = ForceComponent::drive_bearings, .name = "drive_bearings"},
+        {.slot = ForceComponent::ideal_transmission, .name = "ideal_transmission"},
+    }};
+
+    [[nodiscard]] constexpr std::size_t
+    force_component_index(ForceComponent component) noexcept {
+        return static_cast<std::size_t>(component);
+    }
+
+    // Compile-time pin: every table row must sit at its enum position, so a
+    // reordered row is a build failure rather than a silent wire change.
+    consteval bool force_component_table_ordered() {
+        for (std::size_t i = 0; i < force_component_specs.size(); ++i)
+            if (force_component_index(force_component_specs[i].slot) != i)
+                return false;
+        return true;
+    }
+    static_assert(force_component_table_ordered(),
+                  "force-component rows must sit at their enum positions");
 
     struct PrepareInputs {
         RideControl control;
@@ -143,6 +193,13 @@ namespace drivetrain {
         bool clear_pending = false;
     };
 
+    // One writer per owning Stepper context: model_/data_ are non-owning
+    // pointers to the context's engine objects, and every mutable field —
+    // geometry_, components_, transmission_, live_ and the policy objects —
+    // is per-instance scratch fully rewritten by each call. Calls arrive
+    // through the nanobind boundary while the GIL is held, so there is no
+    // concurrent access; sharing one writer across contexts would require
+    // separate instances or external synchronization outside realtime code.
     class DrivetrainWriter {
     public:
         DrivetrainWriter(mjModel *model, mjData *data, DriveConfig config);
@@ -151,15 +208,17 @@ namespace drivetrain {
 
         void restart_clock();
 
-        PedalingState prepare(const RideControl &control, double dt, bool braking,
-                              bool active, bool advance, bool contact,
-                              std::optional<double> slip, std::optional<double> ceiling);
+        [[nodiscard]] PedalingState
+        prepare(const RideControl &control, double dt, bool braking,
+                bool active, bool advance, bool contact,
+                std::optional<double> slip, std::optional<double> ceiling);
 
-        const ForceComponents &components(const RideControl &control, double dt,
-                                          double speed, bool braking, bool active,
-                                          bool advance, double sensed,
-                                          const std::optional<PedalingState> &pedaling,
-                                          bool contact, std::optional<double> slip);
+        [[nodiscard]] const ForceComponents &
+        components(const RideControl &control, double dt,
+                   double speed, bool braking, bool active,
+                   bool advance, double sensed,
+                   const std::optional<PedalingState> &pedaling,
+                   bool contact, std::optional<double> slip);
 
         // Stage → commit: all runtime/pending/time checks run first, every
         // policy advance is computed on detached candidates, model updates
@@ -183,17 +242,19 @@ namespace drivetrain {
 
         // Convenience settle for native callers: stage + commit, returning
         // the persistent transmission_ span it always did.
-        std::span<const double> settle();
+        [[nodiscard]] std::span<const double> settle();
 
-        const Diagnostics &diagnostics(bool probe) const;
+        [[nodiscard]] const Diagnostics &diagnostics(bool probe) const noexcept;
 
-        Diagnostics stored_energy();
+        [[nodiscard]] Diagnostics stored_energy();
 
-        DriveSnapshot state() const;
+        [[nodiscard]] DriveSnapshot state() const;
 
         void restore(const DriveSnapshot &snapshot);
 
-        const Transmission *transmission_storage() const { return ideal_hub_.get(); }
+        [[nodiscard]] const Transmission *transmission_storage() const noexcept {
+            return ideal_hub_.get();
+        }
 
     private:
         mjModel *model_ = nullptr;
@@ -238,7 +299,8 @@ namespace drivetrain {
             return cassette_;
         }
 
-        double angle(int body, std::optional<double> reference = std::nullopt);
+        [[nodiscard]] double
+        angle(int body, std::optional<double> reference = std::nullopt);
 
         void shifts(Diagnostics &d, const ShiftingSnapshot &state,
                     std::optional<double> shift_time_s) const;
@@ -299,4 +361,3 @@ namespace drivetrain {
         committed_snapshot(const TransmissionUpdate &update);
     };
 } // namespace drivetrain
-using drivetrain::DrivetrainWriter;

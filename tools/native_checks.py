@@ -1036,10 +1036,15 @@ def _tool_argv(
     log_directory = build / "native_check_logs" / kind / run_id
     if kind == "tidy":
         database = _temporary_database(build, kind, run_id, index, entry)
-        return (
-            [str(tool), "-p", str(database), "--extra-arg=-Wno-error", "--quiet", str(source)],
-            log_directory,
-        )
+        argv = [str(tool), "-p", str(database), "--extra-arg=-Wno-error", "--quiet"]
+        # First-party sources outside native/ (e.g. tools/proto_native_bench)
+        # do not inherit native/.clang-tidy through parent-directory
+        # discovery — without it clang-tidy reports "no checks enabled".
+        policy = Path(context["source_roots"][0]) / ".clang-tidy"
+        if policy.is_file():
+            argv.append(f"--config-file={policy}")
+        argv.append(str(source))
+        return argv, log_directory
     if kind == "analyzer":
         arguments = list(entry["arguments"])
         arguments[0] = str(tool)
@@ -1099,6 +1104,11 @@ def _tool_argv(
         object_path.parent.mkdir(parents=True, exist_ok=True)
         argv = [
             str(tool), "-std=c++23", "-O2", "-flto=auto", "-ffat-lto-objects", "-Wno-psabi",
+            # Sweep TUs may each define `main` (contract tests, the benchmark);
+            # rename it uniquely per TU so the relocatable link of all objects
+            # has no duplicate-symbol conflict. -Wodr checks types across TUs
+            # regardless of the entry-point symbol name.
+            f"-Dmain=native_check_odr_entry_{index:04d}",
             *gcc_args, "-c", str(source), "-o", str(object_path),
         ]
     else:

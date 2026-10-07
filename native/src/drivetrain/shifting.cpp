@@ -7,8 +7,7 @@ namespace drivetrain {
     void CadenceShifter::set_state(ShiftingSnapshot s) {
         if (s.rear_teeth < 3 || s.from_teeth < 3 || s.shift_count < 0) throw std::invalid_argument(
             "shifter teeth/count");
-        if (s.direction != "none" && s.direction != "up" && s.direction != "down") throw std::invalid_argument(
-            "direction");
+        if (!shift_direction(s.direction)) throw std::invalid_argument("direction");
         nonnegative(s.cooldown_s, "cooldown_s");
         nonnegative(s.cut_remaining_s, "cut_remaining_s");
         finite_optional(s.cadence_ema, "cadence_ema");
@@ -43,27 +42,30 @@ namespace drivetrain {
         if (!config_.enabled || !pedaling || braking || !contact || next.cooldown_s > 1e-12 ||
             std::min(cadence, required) < 0.) return finish(false);
         int selected = next.rear_teeth;
-        std::string direction;
-        if (*next.cadence_ema > config_.target_cadence_max_rpm) {
+        ShiftDirection direction = ShiftDirection::none;
+        if (engaged(next.cadence_ema) > config_.target_cadence_max_rpm) {
             for (int const teeth: config_.cassette) if (
                 teeth < next.rear_teeth && (selected == next.rear_teeth || teeth > selected)) selected = teeth;
-            direction = "up";
-        } else if (*next.cadence_ema < config_.target_cadence_min_rpm) {
+            direction = ShiftDirection::up;
+        } else if (engaged(next.cadence_ema) < config_.target_cadence_min_rpm) {
             for (int const teeth: config_.cassette) if (
                 teeth > next.rear_teeth && (selected == next.rear_teeth || teeth < selected)) selected = teeth;
-            direction = "down";
+            direction = ShiftDirection::down;
         } else return finish(false);
         if (selected == next.rear_teeth) return finish(false);
-        if (slip && config_.upshift_slip_mode == "magnitude") slip = std::abs(*slip);
-        if (direction == "up" && slip && *slip > config_.upshift_slip_limit_mps) return finish(false);
+        // The slip gate is mode-dependent: "magnitude" compares unsigned
+        // slip, "legacy_signed" keeps the signed value — resolved once at
+        // construction into slip_mode_.
+        if (slip && slip_mode_ == SlipMode::magnitude) slip = std::abs(*slip);
+        if (direction == ShiftDirection::up && slip && *slip > config_.upshift_slip_limit_mps) return finish(false);
         const double landing = validation::derived(engaged(next.required_ema) * selected / next.rear_teeth, "CadenceShifter.landing_cadence");
-        if ((direction == "up" && landing < config_.target_cadence_min_rpm) || (
-                direction == "down" && landing > config_.target_cadence_max_rpm)) return finish(false);
+        if ((direction == ShiftDirection::up && landing < config_.target_cadence_min_rpm) || (
+                direction == ShiftDirection::down && landing > config_.target_cadence_max_rpm)) return finish(false);
         if (next.shift_count == std::numeric_limits<int>::max()) throw std::overflow_error("shift_count");
         next.from_teeth = next.rear_teeth;
         next.rear_teeth = selected;
         next.required_ema = landing;
-        next.direction = direction;
+        next.direction = shift_direction_name(direction);
         ++next.shift_count;
         next.cooldown_s = config_.shift_cooldown_s;
         next.cut_remaining_s = config_.shift_cut_duration_s;

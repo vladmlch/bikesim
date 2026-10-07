@@ -452,20 +452,12 @@ SuspensionWriter::components(const mjData *d) const {
     const double shock_total = shock_spring + shock_bumper + shock_damper +
                                shock_top_out + shock_upper_stop;
 
-    // Last-call telemetry mirrors SuspensionForceApplier's self.*_n fields
-    // and potential_energy_j (forces.py:207-221); kept as a snapshot for a
-    // future telemetry surface — it does not feed the components.
+    // SuspensionForceApplier's self.*_n scalars and potential_energy_j
+    // (forces.py:207-221) are still computed and validated here — the
+    // derived() gate keeps rejecting non-finite telemetry exactly as
+    // before — but the stored snapshot was write-only state, so it is gone.
     for (const double value: {fork_total, shock_total, top_out_force, top_out_energy, upper_force, upper_energy, bumper_energy, coil_energy})
         validation::derived(value, "SuspensionWriter.force_or_energy");
-    last_ = Telemetry{
-        .fork_spring_n = fork_spring, .fork_damper_n = fork_damper, .fork_total_n = fork_total,
-        .shock_spring_n = shock_spring, .shock_bumper_n = shock_bumper, .shock_damper_n = shock_damper,
-        .shock_top_out_n = shock_top_out, .shock_upper_stop_n = shock_upper_stop, .shock_total_n = shock_total,
-        .potential_energy_j = {
-            .shock_coil = coil_energy, .shock_bumper = bumper_energy, .shock_top_out = top_out_energy,
-            .shock_upper_stop = upper_energy
-        }
-    };
 
     // vector(dofadr, force) — compression-positive coordinates take the
     // negated force (forces.py:189-192).

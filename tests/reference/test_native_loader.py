@@ -438,6 +438,8 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'settlement_sparse_last_atomicity',
         'drivetrain_allocation_enumeration',
         'cblas_and_norm',
+        'closed_mode_enums',
+        'force_component_layout',
     ]
 
 

@@ -166,11 +166,13 @@ namespace drivetrain {
                     false, "motor_freewheel",
                     "rotor_spin", "crank_spin");
         }
-        for (const char *name: {"chain", "freehub", "drive_bearings"})
-            components_.emplace_back(name, std::vector<double>(transmission_.size()));
-        if (simplified_)
-            components_.emplace_back("ideal_transmission",
-                                     std::vector<double>(transmission_.size()));
+        // Rows are emitted in the declared force-component order — the
+        // table position IS the serialized slot (pinned by the
+        // force_component_table_ordered static_assert in the header).
+        for (const ForceComponentSpec &spec: force_component_specs)
+            if (spec.slot != ForceComponent::ideal_transmission || simplified_)
+                components_.emplace_back(std::string(spec.name),
+                                         std::vector<double>(transmission_.size()));
     }
 
     double DrivetrainWriter::angle(int body, std::optional<double> reference) {
@@ -263,7 +265,7 @@ namespace drivetrain {
                         ratio * q[static_cast<std::size_t>(driver.qpos)] -
                             q[static_cast<std::size_t>(driven.qpos)],
                         "transmission boundary");
-                    update.range[1] = *update.state.boundary;
+                    update.range[1] = engaged(update.state.boundary);
                     update.state.range = update.range;
                     hub_update = std::move(update);
                 }
@@ -540,7 +542,7 @@ namespace drivetrain {
             m.tension = t.first;
             m.energy = t.second;
             for (std::size_t i = 0; i < transmission_.size(); ++i)
-                tick.components[0].second[i] = -m.tension * geometry_.jacobian[i];
+                tick.components[force_component_index(ForceComponent::chain)].second[i] = -m.tension * geometry_.jacobian[i];
             const auto cassette = joints_.at("cassette_spin");
             auto hub = hub_;
             m.torque =
@@ -549,17 +551,17 @@ namespace drivetrain {
                                         v[static_cast<std::size_t>(cassette.dof)],
                                         v[static_cast<std::size_t>(wheel.dof)]);
             tick.hub = engaged(hub).state();
-            tick.components[1].second[static_cast<std::size_t>(wheel.dof)] = m.torque;
-            tick.components[1].second[static_cast<std::size_t>(cassette.dof)] = -m.torque;
+            tick.components[force_component_index(ForceComponent::freehub)].second[static_cast<std::size_t>(wheel.dof)] = m.torque;
+            tick.components[force_component_index(ForceComponent::freehub)].second[static_cast<std::size_t>(cassette.dof)] = -m.torque;
             m.relative_rate = v[static_cast<std::size_t>(cassette.dof)] -
                               v[static_cast<std::size_t>(wheel.dof)];
             m.deflection = std::max(q[static_cast<std::size_t>(cassette.qpos)] -
                                     q[static_cast<std::size_t>(wheel.qpos)] -
-                                    engaged(tick.hub->boundary),
+                                    engaged(engaged(tick.hub).boundary),
                                     0.);
         }
         for (auto const j: bearing_joints_)
-            tick.components[2].second[static_cast<std::size_t>(j.dof)] =
+            tick.components[force_component_index(ForceComponent::drive_bearings)].second[static_cast<std::size_t>(j.dof)] =
                     validation::derived(-config_.bearing_c_nms_rad * v[static_cast<std::size_t>(j.dof)], "DrivetrainWriter.bearing_force");
         m.omega_crank = v[static_cast<std::size_t>(crank.dof)];
         m.cadence = validation::derived(
@@ -1035,7 +1037,7 @@ namespace drivetrain {
         return force;
     }
 
-    const Diagnostics &DrivetrainWriter::diagnostics(bool probe) const {
+    const Diagnostics &DrivetrainWriter::diagnostics(bool probe) const noexcept {
         static const Diagnostics empty;
         return probe ? (live_.probe_last ? *live_.probe_last : empty) : live_.last;
     }

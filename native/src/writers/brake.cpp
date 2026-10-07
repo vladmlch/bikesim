@@ -136,11 +136,12 @@ double BrakeWriter::wheel_torque(const mjData *d, const WheelSpin &wheel,
 std::pair<double, double> BrakeWriter::torques(const mjData *d,
                                                double front_demand,
                                                double rear_demand) const {
-    last_ = {
+    // Front computed first, like the Python source — the pair is a local
+    // result now that the write-only last_torque snapshot is gone.
+    return {
         wheel_torque(d, front_, front_demand),
         wheel_torque(d, rear_, rear_demand)
     };
-    return last_;
 }
 
 // Same model/data pairing + single-Stepper ownership precondition as

@@ -51,6 +51,11 @@ private:
     // world body and must never mean absent.
     int frame_ = -1, front_wheel_ = -1, rear_wheel_ = -1;
     // self._jr / self._jp — per-step scratch shared by the rolling and drag
-    // maps, fully rewritten by mj_jac on every use.
+    // maps, fully rewritten by mj_jac on every use. Ownership: per-instance
+    // scratch of this writer's owning Stepper context — components() is
+    // const yet mutates them, which stays correct only because calls arrive
+    // through the nanobind boundary while the GIL is held. Sharing one
+    // writer across contexts requires external synchronization outside
+    // realtime code.
     mutable std::vector<mjtNum> jr_, jp_;
 };

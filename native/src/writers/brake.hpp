@@ -52,7 +52,9 @@ private:
     // missing name); -1 is the declared "not resolved" state, matching
     // mj_name2id's miss sentinel.
     int front_ctrl_adr_ = -1, rear_ctrl_adr_ = -1;
-    // Mirrors the controller's last-reported self.front/rear_torque_nm —
-    // a snapshot for a future telemetry surface, like SuspensionWriter's.
-    mutable std::pair<double, double> last_{0.0, 0.0};
+    // No retained telemetry: torques() returns the computed pair directly.
+    // The Python controller's self.front/rear_torque_nm snapshot exists only
+    // so its own compute() can return what it just stored — this writer
+    // keeps the value local, so every call is scratch-free and const in
+    // observable effect.
 };

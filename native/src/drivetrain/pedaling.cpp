@@ -42,10 +42,10 @@ namespace drivetrain {
         const double actual = validation::derived(std::abs(rate) * 60. / (2. * std::numbers::pi), "PedalingPolicy.cadence");
         const double cadence = std::max(actual, required);
         if (config_.coast_cadence_tau_s > 0. && state_.cadence_ema)
-            *state_.cadence_ema = validation::derived(*state_.cadence_ema + std::min(1., dt / config_.coast_cadence_tau_s) * validation::derived(actual - *state_.cadence_ema, "PedalingPolicy.cadence_delta"), "PedalingPolicy.cadence_ema");
+            engaged(state_.cadence_ema) = validation::derived(engaged(state_.cadence_ema) + std::min(1., dt / config_.coast_cadence_tau_s) * validation::derived(actual - engaged(state_.cadence_ema), "PedalingPolicy.cadence_delta"), "PedalingPolicy.cadence_ema");
         else state_.cadence_ema = actual;
         const double threshold = state_.coasting ? config_.resume_below_rpm : config_.coast_above_rpm;
-        const bool excessive = config_.enabled && *state_.cadence_ema >= threshold;
+        const bool excessive = config_.enabled && engaged(state_.cadence_ema) >= threshold;
         const std::string reason = braking ? "braking" : effort == 0. ? "no_effort" : excessive ? "cadence" : "";
         if (reason.empty()) {
             const double previous = state_.effort;

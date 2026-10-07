@@ -502,9 +502,58 @@ add_custom_command(TARGET native_contract_tests POST_BUILD
     "$<TARGET_FILE:native_contract_tests>"
   VERBATIM)
 
+# Prototype native benchmark (native-safety runtime plan task R2). The TU
+# lives outside native/, so its directory joins the first-party source roots
+# below and the target inherits the extension's warning/hardening/sanitizer
+# context — the manifest loop then places bench.cpp into every sweep.
+# bench.cpp reaches engine_call.hpp/model_access.hpp by relative include and
+# links bike_native_engine like native_contract_tests does.
+get_filename_component(_native_bench_dir
+  "${CMAKE_CURRENT_SOURCE_DIR}/../tools/proto_native_bench" ABSOLUTE)
+if(NOT IS_DIRECTORY "${_native_bench_dir}")
+  message(FATAL_ERROR "proto_native_bench directory is missing: ${_native_bench_dir}")
+endif()
+set(_native_first_party_roots "${CMAKE_CURRENT_SOURCE_DIR}" "${_native_bench_dir}")
+
+add_executable(native_bench
+  "${_native_bench_dir}/bench.cpp" "${_native_bench_dir}/state_format.hpp")
+set_target_properties(native_bench PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(native_bench PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(native_bench PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_include_directories)
+  target_include_directories(native_bench SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+if(_native_contract_link_options)
+  target_link_options(native_bench PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(native_bench PRIVATE bike_native_engine)
+add_custom_command(TARGET native_bench POST_BUILD
+  COMMAND install_name_tool -change
+    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+    "${MJ_DIR}/libmujoco.3.12.0.dylib"
+    "$<TARGET_FILE:native_bench>"
+  VERBATIM)
+
 include(CTest)
 if(BUILD_TESTING)
   add_test(NAME native_contract_tests COMMAND native_contract_tests)
+  add_test(NAME native_bench_bare
+    COMMAND native_bench bare 20 5
+            --artifacts "${_native_bench_dir}/artifacts")
+  add_test(NAME native_bench_glue
+    COMMAND native_bench glue 10 4
+            --artifacts "${_native_bench_dir}/artifacts")
+  add_test(NAME native_bench_heavy
+    COMMAND native_bench heavy 6 3
+            --artifacts "${_native_bench_dir}/artifacts")
 endif()
 
 add_custom_target(check_native_contracts
@@ -646,7 +695,12 @@ foreach(_target IN LISTS _native_targets)
       continue()
     endif()
     get_filename_component(_source_absolute "${_source}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-    cmake_path(IS_PREFIX CMAKE_CURRENT_SOURCE_DIR "${_source_absolute}" NORMALIZE _source_is_first_party)
+    set(_source_is_first_party FALSE)
+    foreach(_first_party_root IN LISTS _native_first_party_roots)
+      if(NOT _source_is_first_party)
+        cmake_path(IS_PREFIX _first_party_root "${_source_absolute}" NORMALIZE _source_is_first_party)
+      endif()
+    endforeach()
     if(NOT _source_is_first_party OR NOT _source_absolute MATCHES "\\.(cpp|cc|cxx|C)$")
       continue()
     endif()
@@ -711,7 +765,10 @@ if(_native_source_separator STREQUAL "")
   message(FATAL_ERROR "No first-party C++ translation units were found in configured CMake targets")
 endif()
 
-_native_json_array(_native_source_roots_json "${CMAKE_CURRENT_SOURCE_DIR}")
+# First-party roots: native/ first (source_roots[0]'s parent is the
+# repository in tools/native_checks.py), then the proto_native_bench tree so
+# bench.cpp's target context lands in the same manifest and sweep contract.
+_native_json_array(_native_source_roots_json ${_native_first_party_roots})
 _native_json_quote(_native_compiler_path_json "${CMAKE_CXX_COMPILER}")
 _native_json_quote(_native_compiler_id_json "${CMAKE_CXX_COMPILER_ID}")
 _native_json_quote(_native_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION}")

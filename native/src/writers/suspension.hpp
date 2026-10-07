@@ -30,26 +30,14 @@ public:
     [[nodiscard]] std::vector<Component> components(const mjData *d) const;
 
 private:
-    // Mirrors SuspensionForceApplier's `self.*_n` scalars and
-    // `potential_energy_j` (forces.py:207-221) — a snapshot kept per call
-    // for a future telemetry surface; it does not feed `components()`.
-    struct Telemetry {
-        double fork_spring_n = 0.0, fork_damper_n = 0.0, fork_total_n = 0.0;
-        double shock_spring_n = 0.0, shock_bumper_n = 0.0,
-                shock_damper_n = 0.0;
-        double shock_top_out_n = 0.0, shock_upper_stop_n = 0.0,
-                shock_total_n = 0.0;
-
-        struct {
-            double shock_coil = 0.0, shock_bumper = 0.0,
-                    shock_top_out = 0.0, shock_upper_stop = 0.0;
-        } potential_energy_j;
-    };
-
     nativecfg::SuspensionConfig cfg_;
     bool physical_ = false;
     mjtSize nq_ = 0, nv_ = 0;
     int fork_qposadr_ = 0, fork_dofadr_ = 0;
     int shock_qposadr_ = 0, shock_dofadr_ = 0;
-    mutable Telemetry last_{};
+    // No retained telemetry snapshot: SuspensionForceApplier's self.*_n
+    // scalars and potential_energy_j (forces.py:207-221) are still
+    // computed and validated inside components(), but nothing outside that
+    // call ever read the stored copy — every components() call is
+    // scratch-free and const in observable effect.
 };

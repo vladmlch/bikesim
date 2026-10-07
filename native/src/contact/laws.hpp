@@ -24,8 +24,8 @@ namespace contactlaw {
     // tire.py:113-122 — _normal_contact (inputs pre-validated upstream).
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror tire.py _normal_contact
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
-    inline std::pair<double, double> normal_contact(double delta, double delta_dot,
-                                                    double k, double c) {
+    [[nodiscard]] inline std::pair<double, double>
+    normal_contact(double delta, double delta_dot, double k, double c) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         if (delta <= 0.0)
             return {0.0, 0.0};
@@ -40,7 +40,7 @@ namespace contactlaw {
     // tire.py:157-190 — _brush_step (inputs pre-validated upstream).
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror tire.py brush step
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
-    inline std::tuple<double, double, double>
+    [[nodiscard]] inline std::tuple<double, double, double>
     brush_step(double xi, double u, double v_roll, double Fn, double k,
                double mu, double length, double dt) {
         // NOLINTEND(bugprone-easily-swappable-parameters)

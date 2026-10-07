@@ -5,6 +5,7 @@ smooth track function. Calls require current MuJoCo kinematics. Advancing the
 brush state twice at the same timestamp is an error; telemetry is read-only.
 """
 from dataclasses import dataclass
+from math import isfinite
 import copy
 import numpy as np
 from bike_sim.physics.checks import array, derived, derived_array, scalar
@@ -51,6 +52,32 @@ class _BrushState:
     point: np.ndarray | None = None
     segment: int | None = None
     center: np.ndarray | None = None
+
+
+_INT64_MAX = (1 << 63) - 1
+# First binary64 value outside the int64 domain: float(1 << 63) == 0x1p63.
+_INT64_OVERFLOW_BOUND = float(1 << 63)
+
+
+def interval_id(time: float, dt: float) -> int:
+    """Simulation-time -> snapshot interval id (S4 interval domain).
+
+    Binary64 ``time / dt`` rounded half-even — bit-identical to the native
+    ``interval_clock::interval_id`` twin and, like CPython ``round()``,
+    independent of the process floating-point rounding mode. Finite
+    nonnegative time and a finite positive interval are required; a finite
+    input whose interval leaves the int64 range is an OverflowError, while
+    domain violations stay ValueError — matching the native error classes.
+    """
+    time = scalar(time, 'tire.interval_id.time', minimum=0.)
+    dt = scalar(dt, 'tire.interval_id.dt', positive=True)
+    quotient = time / dt
+    if not isfinite(quotient) or quotient >= _INT64_OVERFLOW_BOUND:
+        raise OverflowError('tire.interval_id')
+    result = round(quotient)
+    if result > _INT64_MAX:
+        raise OverflowError('tire.interval_id')
+    return result
 
 
 def effective_friction(tire, surface_map, contact_x_m, slip_mps):
@@ -185,7 +212,7 @@ class TireForceApplier:
             patches = (ContactPatch(p, n, normal, force, slip),) if contact.delta > 0 else ()
             snapshots[side] = WheelContactSnapshot(
                 time_s=time, patches=patches, geometric_contact=contact.delta > 0,
-                interval_id=round(time/dt), backend='compliant_2d', wheel_axis_m=center,
+                interval_id=interval_id(time, dt), backend='compliant_2d', wheel_axis_m=center,
             )
             # Continuous radial passivity, separated from numerical integration error.
             radial_loss = (normal-elastic_force)*delta_dot

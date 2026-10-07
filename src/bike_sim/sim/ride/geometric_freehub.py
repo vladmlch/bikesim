@@ -3,8 +3,16 @@
 The engine solves the ONLY reaction. ``constraint_reaction`` is an independent
 sign/power oracle, never an additional applied force. Model constants are
 updated using detached data, so a coefficient update cannot reset live state.
+
+Every mutation is a staged transaction: the candidate gearing, linearization,
+and boundary are computed first, the candidate ``mj_setConst`` rehearses on an
+owned scratch model (a fatal lands on the copy), live model writes run next,
+and the plain attributes publish last — so a rejected candidate leaves every
+attribute and model row untouched.
 """
+import copy
 from dataclasses import replace
+
 import numpy as np
 import mujoco
 from bike_sim.physics.checks import scalar
@@ -36,16 +44,51 @@ class GeometricFreehubConstraint(IdealFreehubConstraint):
             raise ValueError('geometric tendon must contain every scalar model coordinate exactly once')
         self.constant_data=mujoco.MjData(model)
         self.endpoint_data=mujoco.MjData(model)
+        # Owned scratch world for candidate validation; resynced from live
+        # before each staged engine call so rejected candidates cannot leak.
+        self.scratch_model=copy.deepcopy(model)
+        self.scratch_data=mujoco.MjData(self.scratch_model)
         self.boundary=None;self.prepared=None;self.diagnostics={}
         self.shift_pending=False;self.shift_parameter_work_j=0.;self.shift_constraint_work_j=0.
         self.last_tension_n=0.
 
-    def _geometry(self,model,data):
+    def _geometry(self,model,data,gearing=None):
+        # Kinematics stay on the caller's data: refreshing xpos/xmat there is
+        # observable behavior downstream readers rely on. Only the MODEL is
+        # staged; the gearing parameter carries the candidate.
         mujoco.mj_kinematics(model,data);mujoco.mj_comPos(model,data)
-        return transmission_geometry(model,data,self.gearing,front_body=self.front_body)
+        return transmission_geometry(model,data,self.gearing if gearing is None else gearing,
+                                     front_body=self.front_body)
 
-    def _linearize(self,model,data,phi,jacobian):
-        coefficients,upper=linearized_upper_bound(phi,jacobian,data.qpos,self.boundary)
+    def _sync_scratch(self,model):
+        scratch=self.scratch_model
+        scratch.wrap_prm[:]=model.wrap_prm
+        scratch.tendon_range[:]=model.tendon_range
+        scratch.opt.timestep=model.opt.timestep
+        return scratch
+
+    def _stage_linearize(self,model,data,boundary,phi,jacobian):
+        """Evaluate the candidate linearization and rehearse the model write.
+
+        Returns ``(coefficients, upper, prepared)`` — every live write is
+        deferred to ``_commit_linearize``.
+        """
+        coefficients,upper=linearized_upper_bound(phi,jacobian,data.qpos,boundary)
+        # Rehearse on the owned scratch model in commit order (coefficients,
+        # set_const, range): a fatal lands on the copy, never on live.
+        scratch=self._sync_scratch(model)
+        for dof,index in self.coefficients.items():
+            scratch.wrap_prm[index]=coefficients[dof]
+        changed=any(model.wrap_prm[index]!=coefficients[dof]
+                    for dof,index in self.coefficients.items())
+        if changed:
+            mujoco.mj_setConst(scratch,self.scratch_data)
+        scratch.tendon_range[self.tendon_id,1]=upper
+        prepared=(float(phi),jacobian.copy(),data.qpos.copy(),float(data.time))
+        return coefficients,upper,prepared
+
+    def _commit_linearize(self,model,coefficients,upper,prepared):
+        """Guarded live writes, then publish the prepared tuple."""
         changed=False
         for dof,index in self.coefficients.items():
             if model.wrap_prm[index]!=coefficients[dof]:
@@ -53,18 +96,22 @@ class GeometricFreehubConstraint(IdealFreehubConstraint):
         if changed:
             mujoco.mj_setConst(model,self.constant_data)
         model.tendon_range[self.tendon_id,1]=upper
-        self.prepared=(float(phi),jacobian.copy(),data.qpos.copy(),float(data.time))
+        self.prepared=prepared
 
     def reset(self,model,data):
         phi,j=self._geometry(model,data)
-        self.boundary=phi;self.diagnostics={};self.shift_pending=False
+        boundary=phi
+        candidate=self._stage_linearize(model,data,boundary,phi,j)
+        self._commit_linearize(model,*candidate)
+        self.boundary=boundary;self.diagnostics={};self.shift_pending=False
         self.shift_parameter_work_j=self.shift_constraint_work_j=self.last_tension_n=0.
-        self._linearize(model,data,phi,j)
 
     def prepare(self,model,data):
         phi,j=self._geometry(model,data)
-        self.boundary=phi if self.boundary is None else min(self.boundary,phi)
-        self._linearize(model,data,phi,j)
+        boundary=phi if self.boundary is None else min(self.boundary,phi)
+        candidate=self._stage_linearize(model,data,boundary,phi,j)
+        self._commit_linearize(model,*candidate)
+        self.boundary=boundary
 
     def prepare_initial_candidate(self,model,data,incoming_boundary):
         """Initialization ONLY: all optimizer trials share the same datum.
@@ -73,8 +120,10 @@ class GeometricFreehubConstraint(IdealFreehubConstraint):
         across unordered least-squares trials would corrupt the initial pose.
         """
         phi,j=self._geometry(model,data)
-        self.boundary=phi if incoming_boundary is None else min(float(incoming_boundary),phi)
-        self._linearize(model,data,phi,j)
+        boundary=phi if incoming_boundary is None else min(float(incoming_boundary),phi)
+        candidate=self._stage_linearize(model,data,boundary,phi,j)
+        self._commit_linearize(model,*candidate)
+        self.boundary=boundary
 
     def set_ratio(self,model,data,ratio):
         ratio=scalar(ratio,'geometric gear ratio',positive=True)
@@ -84,17 +133,19 @@ class GeometricFreehubConstraint(IdealFreehubConstraint):
             raise ValueError('geometric ratio must identify an integer rear sprocket')
         old_phi,_=self._geometry(model,data)
         old_gap=0. if self.boundary is None else self.boundary-old_phi
-        self.gearing=replace(self.gearing,rear_teeth=teeth);self.ratio=ratio
-        phi,j=self._geometry(model,data)
-        self.boundary=phi+old_gap
-        new_gap=self.boundary-phi
+        candidate_gearing=replace(self.gearing,rear_teeth=teeth)
+        phi,j=self._geometry(model,data,candidate_gearing)
+        boundary=phi+old_gap
+        new_gap=boundary-phi
         # Virtual parameter work at fixed q. With a preserved physical gap
         # it is zero up to roundoff. The *whole* following solved interval's
         # work is logged separately; zero parameter work is not a claim that
         # a real shift is lossless or that solver impulses cannot change KE.
-        self.shift_parameter_work_j+=self.last_tension_n*(new_gap-old_gap)
-        self.shift_pending=True
-        self._linearize(model,data,phi,j)
+        shift_parameter_work=self.shift_parameter_work_j+self.last_tension_n*(new_gap-old_gap)
+        candidate=self._stage_linearize(model,data,boundary,phi,j)
+        self._commit_linearize(model,*candidate)
+        self.gearing=candidate_gearing;self.ratio=ratio;self.boundary=boundary
+        self.shift_parameter_work_j=shift_parameter_work;self.shift_pending=True
 
     def solved_qfrc(self,model,data):
         force=super().solved_qfrc(model,data)

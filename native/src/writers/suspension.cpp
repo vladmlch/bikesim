@@ -297,15 +297,22 @@ namespace {
             dofadr[static_cast<std::size_t>(jid)]
         };
     }
+    // The member-init list consumes physics_mode before the ctor body could
+    // run, so the typed config is validated in the init expression itself —
+    // same pattern as drivetrain::checked_config.
+    nativecfg::SuspensionConfig checked_config(
+            nativecfg::SuspensionConfig config) {
+        nativecfg::validate(config);
+        return config;
+    }
 } // namespace
 
 SuspensionWriter::SuspensionWriter(const mjModel *m,
                                    nativecfg::SuspensionConfig config)
-    : cfg_(std::move(config)),
+    : cfg_(checked_config(std::move(config))),
       physical_(cfg_.physics_mode == "physical"),
       nq_(m->nq),
       nv_(m->nv) {
-    nativecfg::validate(cfg_);
     // forces.py:49-52 — only the physical shock may start below zero
     // (top-out travel).
     std::tie(fork_qposadr_, fork_dofadr_) =

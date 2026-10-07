@@ -7,8 +7,9 @@
 // Accelerate's ddot/dgemv, and this TU invokes the same CBLAS symbols.
 // `np.einsum('ij,ij->i')` is NOT a BLAS call — it is numpy's seeded
 // 0.0+p0+p1 accumulation — replicated literally. Python `sum()` gets the
-// Neumaier compensation; `round()` is std::nearbyint under the default
-// to-nearest-even mode; `min`/`max` are std::min/std::max (identical
+// Neumaier compensation; snapshot `round(time/dt)` is
+// interval_clock::interval_id (half-even without fenv, exact int64
+// bound); `min`/`max` are std::min/std::max (identical
 // `b<a?b:a` / `a<b?b:a` semantics, NaN included).
 #include "tire.hpp"
 #include "../config_validation.hpp"
@@ -16,6 +17,7 @@
 #include "../contact/laws.hpp"
 #include "../diag.hpp"
 #include "../engaged.hpp"
+#include "../interval_clock.hpp"
 
 #include <algorithm>
 #include <array>
@@ -638,8 +640,11 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
             qfrc[static_cast<std::size_t>(i)] +=
                     tmp[static_cast<std::size_t>(i)];
         // WheelContactSnapshot args evaluate before __post_init__ checks:
-        // the patch tuple (line 180) and round(time/dt) (line 183) run
-        // first, then the time/interval validation.
+        // the patch tuple (tire_forces.py:212) and interval_id(time, dt)
+        // (line 215) run first — the helper owns the S4 interval domain
+        // (finite nonnegative time, finite positive dt), FE-mode-
+        // independent half-even rounding, and the exact int64 bound —
+        // then the snapshot's own time/interval validation runs.
         snapshots[s].emplace();
         TireSnapshot &snap = engaged(snapshots[s]);
         snap.time_s = time;
@@ -649,15 +654,7 @@ std::vector<double> TireWriter::qfrc(const mjData *d, double dt_arg) {
         if (contact.delta > 0.0)
             snap.patches.push_back(
                 make_patch(p, n, normal, force, slip));
-        const double quotient = time / dt;
-        if (!std::isfinite(quotient))
-            throw std::overflow_error(
-                "cannot convert float infinity to integer");
-        const double rounded = std::nearbyint(quotient);
-        if (std::abs(rounded) > 9.2e18)
-            throw std::overflow_error(
-                "cannot convert float infinity to integer");
-        snap.interval_id = static_cast<std::int64_t>(rounded);
+        snap.interval_id = interval_clock::interval_id(time, dt);
         // WheelContactSnapshot.__post_init__ (contact_state.py:90-113).
         if (!std::isfinite(time) || time < 0.0)
             throw std::invalid_argument(

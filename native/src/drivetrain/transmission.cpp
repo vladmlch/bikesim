@@ -8,12 +8,44 @@
 #include <ranges>
 
 namespace drivetrain {
+    namespace {
+        struct CloneModelContext {
+            const mjModel *source;
+            mjModel *result;
+        };
+        void clone_model_operation(void *raw) noexcept {
+            auto *context = static_cast<CloneModelContext *>(raw);
+            context->result = mj_copyModel(nullptr, context->source);
+        }
+        struct CopyModelContext {
+            mjModel *destination;
+            const mjModel *source;
+        };
+        void copy_model_operation(void *raw) noexcept {
+            const auto *context = static_cast<CopyModelContext *>(raw);
+            mj_copyModel(context->destination, context->source);
+        }
+        // Fatal-capable whole-model copy through the E1 boundary.
+        mjModel *clone_model(const mjModel *model) {
+            CloneModelContext context{.source = model, .result = nullptr};
+            engine::ErrorBuffer error;
+            if (!engine::invoke(&clone_model_operation, &context, error))
+                engine::throw_failure(error);
+            if (!context.result)
+                throw std::runtime_error("mj_copyModel");
+            return context.result;
+        }
+    }
+
     Transmission::Transmission(mjModel *model, GearingConfig gear, bool geometric,
                                const char *tendon, const char *driver, const char *driven,
                                const char *front)
         : model_(model), gear_(gear), geometric_(geometric),
           tendon_(resolve(model, mjOBJ_TENDON, tendon)), constant_(engine::make_data(model)),
-          endpoint_(geometric ? engine::make_data(model) : nullptr), geometry_(model->nv),
+          endpoint_(geometric ? engine::make_data(model) : nullptr),
+          scratch_model_(clone_model(model)),
+          scratch_data_(engine::make_data(scratch_model_.get())),
+          geometry_(model->nv),
           prepared_storage_{
               .phi = 0., .time = 0.,
               .jacobian = std::vector<double>(static_cast<std::size_t>(geometric ? model->nv : 0)),
@@ -23,7 +55,7 @@ namespace drivetrain {
           multipliers_(static_cast<std::size_t>(model->njmax > 0 ? model->njmax : 0)),
           displacement_(force_.size()) {
         drivetrain::validate(gear_);
-        if (!constant_ || (geometric && !endpoint_))
+        if (!constant_ || (geometric && !endpoint_) || !scratch_data_)
             throw std::runtime_error("mj_makeData");
         const int dj = resolve(model, mjOBJ_JOINT, driver),
                 wj = resolve(model, mjOBJ_JOINT, driven);
@@ -80,8 +112,12 @@ namespace drivetrain {
     }
 
     double Transmission::relative(const mjData *d) const {
+        return relative(d, state_.ratio);
+    }
+
+    double Transmission::relative(const mjData *d, double ratio) const {
         const auto q = buffer(d->qpos, model_->nq);
-        return state_.ratio * q[static_cast<std::size_t>(driver_qpos_)] -
+        return ratio * q[static_cast<std::size_t>(driver_qpos_)] -
                q[static_cast<std::size_t>(driven_qpos_)];
     }
 
@@ -97,89 +133,237 @@ namespace drivetrain {
         return geometry_.evaluate(model_, d, gear_, front_, rear_, frame_);
     }
 
-    void Transmission::linearize(mjData *d, double phi) {
-        const auto q = buffer(d->qpos, model_->nq);
-        const double upper = validation::derived(engaged(state_.boundary) - phi + dot(geometry_.jacobian, q), "transmission.upper_bound");
-        bool changed = false;
-        auto const prm = buffer(model_->wrap_prm, model_->nwrap);
-        for (std::size_t i = 0; i < coefficients_.size(); ++i) {
-            auto &c = prm[static_cast<std::size_t>(coefficients_[i])];
-            if (c != geometry_.jacobian[i]) {
-                c = geometry_.jacobian[i];
-                changed = true;
-            }
+    void Transmission::sync_scratch_data(const mjData *data) const {
+        std::ranges::copy(buffer(data->qpos, model_->nq), scratch_data_->qpos);
+        std::ranges::copy(buffer(data->qvel, model_->nv), scratch_data_->qvel);
+        scratch_data_->time = data->time;
+    }
+
+    // Candidate geometry still refreshes kinematics on the caller's data:
+    // that live-data refresh is observable behavior — the writer's angle
+    // bookkeeping reads xmat after prepare() (Python relies on the same
+    // side effect). Only the MODEL is write-protected during staging;
+    // the gear parameter carries the candidate.
+    double Transmission::candidate_geometry(mjData *data,
+                                            const GearingConfig &gear) {
+        mj_kinematics(model_, data);
+        mj_comPos(model_, data);
+        return geometry_.evaluate(model_, data, gear, front_, rear_, frame_);
+    }
+
+    void Transmission::refresh_scratch_model() {
+        CopyModelContext context{.destination = scratch_model_.get(), .source = model_};
+        engine::ErrorBuffer error;
+        if (!engine::invoke(&copy_model_operation, &context, error))
+            engine::throw_failure(error);
+    }
+
+    // Values only — every write goes into `update`; scratch/live models stay
+    // untouched until evaluate_candidate()/commit().
+    void Transmission::linearize_candidate(const mjData *data,
+                                           TransmissionUpdate &update, double phi) {
+        const auto q = buffer(data->qpos, model_->nq);
+        const double upper = validation::derived(
+            engaged(update.state.boundary) - phi + dot(geometry_.jacobian, q),
+            "transmission.upper_bound");
+        update.coefficients.assign(geometry_.jacobian.begin(), geometry_.jacobian.end());
+        update.state.coefficients = update.coefficients;
+        update.range[1] = upper;
+        update.state.range = update.range;
+        update.prepared.phi = phi;
+        update.prepared.time = data->time;
+        update.prepared.jacobian = geometry_.jacobian;
+        update.prepared.qpos.assign(q.begin(), q.end());
+        update.prepared_valid = true;
+        update.state.prepared = update.prepared;
+    }
+
+    TransmissionUpdate Transmission::make_update_from_current() const {
+        TransmissionUpdate update;
+        update.gear = gear_;
+        update.state = state_;
+        update.coefficients.reserve(coefficients_.size());
+        const auto prm = buffer(model_->wrap_prm, model_->nwrap);
+        for (int const index: coefficients_)
+            update.coefficients.push_back(prm[static_cast<std::size_t>(index)]);
+        update.state.coefficients = update.coefficients;
+        const auto range = buffer(model_->tendon_range, 2 * model_->ntendon)
+                .subspan(2 * static_cast<std::size_t>(tendon_), 2);
+        update.range = {range[0], range[1]};
+        update.state.range = update.range;
+        if (prepared_valid_) {
+            update.prepared = prepared_storage_;
+            update.state.prepared = prepared_storage_;
+            update.prepared_valid = true;
         }
-        if (changed)
-            engine::set_const(model_, constant_.get());
-        buffer(model_->tendon_range,
-               2 * model_->ntendon)[2 * static_cast<std::size_t>(tendon_) + 1] = upper;
-        prepared_storage_.phi = phi;
-        prepared_storage_.time = d->time;
-        std::ranges::copy(geometry_.jacobian, prepared_storage_.jacobian.begin());
-        std::ranges::copy(q, prepared_storage_.qpos.begin());
-        prepared_valid_ = true;
+        return update;
     }
 
-    void Transmission::reset(mjData *d) {
-        state_.boundary = geometric_ ? geometry(d) : relative(d);
-        if (geometric_) {
-            state_.diagnostics.clear();
-            state_.shift_pending = false;
-            state_.shift_parameter_work_j = state_.shift_constraint_work_j =
-                                            state_.last_tension_n = 0.;
-            linearize(d, *state_.boundary);
-        } else
-            buffer(model_->tendon_range,
-                   2 * model_->ntendon)[2 * static_cast<std::size_t>(tendon_) + 1] =
-                    *state_.boundary;
-    }
-
-    void Transmission::prepare(mjData *d) {
-        const double phi = geometric_ ? geometry(d) : relative(d);
-        state_.boundary = state_.boundary ? std::min(*state_.boundary, phi) : phi;
-        if (geometric_)
-            linearize(d, phi);
-        else
-            buffer(model_->tendon_range,
-                   2 * model_->ntendon)[2 * static_cast<std::size_t>(tendon_) + 1] =
-                    *state_.boundary;
-    }
-
-    void Transmission::set_ratio(mjData *d, double ratio) {
-        positive(ratio, "gear ratio");
-        if (ratio == state_.ratio)
-            return;
-        if (!geometric_) {
-            const double previous = relative(d);
-            state_.ratio = ratio;
-            buffer(model_->wrap_prm,
-                   model_->nwrap)[static_cast<std::size_t>(coefficients_.front())] = ratio;
-            engine::set_const(model_, constant_.get());
-            const double current = relative(d);
-            state_.boundary =
-                    state_.boundary ? *state_.boundary + current - previous : current;
-            buffer(model_->tendon_range,
-                   2 * model_->ntendon)[2 * static_cast<std::size_t>(tendon_) + 1] =
-                    *state_.boundary;
-            return;
-        }
+    int Transmission::validated_rear_teeth(double ratio) const {
         const double teeth = std::nearbyint(gear_.front_teeth / ratio);
         if (teeth < 3. || teeth > std::numeric_limits<int>::max() ||
             std::abs(ratio - gear_.front_teeth / teeth) >
             1e-12 * std::abs(gear_.front_teeth / teeth))
             throw std::invalid_argument(
                 "geometric ratio must identify an integer rear sprocket");
-        const double old_phi = geometry(d),
-                old_gap = state_.boundary ? *state_.boundary - old_phi : 0.;
-        gear_.rear_teeth = static_cast<int>(teeth);
-        state_.rear_teeth = gear_.rear_teeth;
-        state_.ratio = ratio;
-        const double phi = geometry(d);
-        state_.boundary = phi + old_gap;
-        const double new_gap = *state_.boundary - phi;
-        state_.shift_parameter_work_j += state_.last_tension_n * (new_gap - old_gap);
-        state_.shift_pending = true;
-        linearize(d, phi);
+        return static_cast<int>(teeth);
+    }
+
+    void Transmission::evaluate_candidate(mjData *data, TransmissionUpdate &update) {
+        // Candidates validate every field the stage produced, but not the
+        // ideal coefficient/ratio coupling: reset/prepare only mirror the
+        // live wrap row, which an external model mutation may have moved
+        // off the logical ratio — reporting it is truthful, not a contract
+        // violation. stage_ratio rebuilds the pair consistently by
+        // construction, and restore() still enforces the coupling on the
+        // caller-supplied snapshot via validate() before staging.
+        validate_state(update.state);
+        const auto prm = buffer(model_->wrap_prm, model_->nwrap);
+        bool changed = false;
+        for (std::size_t i = 0; i < coefficients_.size(); ++i)
+            if (prm[static_cast<std::size_t>(coefficients_[i])] != update.coefficients[i])
+                changed = true;
+        if (!changed)
+            return;
+        // Refresh the owned scratch from live, then rehearse the commit in
+        // the same order it will run below (coefficients, set_const, range):
+        // a fatal lands on the scratch model, never the committed one.
+        refresh_scratch_model();
+        if (data != nullptr)
+            sync_scratch_data(data);
+        const auto candidate = buffer(scratch_model_->wrap_prm, scratch_model_->nwrap);
+        for (std::size_t i = 0; i < coefficients_.size(); ++i)
+            candidate[static_cast<std::size_t>(coefficients_[i])] = update.coefficients[i];
+        engine::set_const(scratch_model_.get(), scratch_data_.get());
+        std::ranges::copy(update.range,
+                          buffer(scratch_model_->tendon_range,
+                                 2 * scratch_model_->ntendon)
+                          .subspan(2 * static_cast<std::size_t>(tendon_), 2).begin());
+    }
+
+    TransmissionUpdate Transmission::stage_reset(mjData *data) {
+        auto update = make_update_from_current();
+        if (geometric_) {
+            const double phi = candidate_geometry(data, update.gear);
+            update.state.boundary = phi;
+            update.state.diagnostics.clear();
+            update.state.shift_pending = false;
+            update.state.shift_parameter_work_j = update.state.shift_constraint_work_j =
+                    update.state.last_tension_n = 0.;
+            linearize_candidate(data, update, phi);
+        } else {
+            update.state.boundary = relative(data);
+            update.range[1] = *update.state.boundary;
+            update.state.range = update.range;
+        }
+        evaluate_candidate(data, update);
+        return update;
+    }
+
+    TransmissionUpdate Transmission::stage_prepare(mjData *data) {
+        auto update = make_update_from_current();
+        if (geometric_) {
+            const double phi = candidate_geometry(data, update.gear);
+            update.state.boundary =
+                    update.state.boundary ? std::min(*update.state.boundary, phi) : phi;
+            linearize_candidate(data, update, phi);
+        } else {
+            const double phi = relative(data);
+            update.state.boundary =
+                    update.state.boundary ? std::min(*update.state.boundary, phi) : phi;
+            update.range[1] = *update.state.boundary;
+            update.state.range = update.range;
+        }
+        evaluate_candidate(data, update);
+        return update;
+    }
+
+    TransmissionUpdate Transmission::stage_ratio(mjData *data, double ratio) {
+        positive(ratio, "gear ratio");
+        auto update = make_update_from_current();
+        if (ratio == state_.ratio)
+            return update;
+        update.state.ratio = ratio;
+        if (!geometric_) {
+            const double previous = relative(data);
+            update.coefficients[0] = ratio;
+            update.state.coefficients = update.coefficients;
+            const double current = relative(data, ratio);
+            update.state.boundary = update.state.boundary
+                                        ? *update.state.boundary + current - previous
+                                        : current;
+            update.range[1] = *update.state.boundary;
+            update.state.range = update.range;
+            evaluate_candidate(data, update);
+            return update;
+        }
+        update.gear.rear_teeth = validated_rear_teeth(ratio);
+        update.state.rear_teeth = update.gear.rear_teeth;
+        const double old_phi = candidate_geometry(data, gear_);
+        const double old_gap =
+                update.state.boundary ? *update.state.boundary - old_phi : 0.;
+        const double phi = candidate_geometry(data, update.gear);
+        update.state.boundary = phi + old_gap;
+        const double new_gap = *update.state.boundary - phi;
+        update.state.shift_parameter_work_j +=
+                update.state.last_tension_n * (new_gap - old_gap);
+        update.state.shift_pending = true;
+        linearize_candidate(data, update, phi);
+        evaluate_candidate(data, update);
+        return update;
+    }
+
+    void Transmission::commit(TransmissionUpdate &update) {
+        // Phase 1 — guarded live-model writes. An engine failure here
+        // propagates before any logical publication; the owning Stepper
+        // treats it as fatal.
+        const auto prm = buffer(model_->wrap_prm, model_->nwrap);
+        bool changed = false;
+        for (std::size_t i = 0; i < coefficients_.size(); ++i) {
+            auto &c = prm[static_cast<std::size_t>(coefficients_[i])];
+            if (c != update.coefficients[i]) {
+                c = update.coefficients[i];
+                changed = true;
+            }
+        }
+        if (changed)
+            engine::set_const(model_, constant_.get());
+        std::ranges::copy(update.range,
+                          buffer(model_->tendon_range, 2 * model_->ntendon)
+                          .subspan(2 * static_cast<std::size_t>(tendon_), 2).begin());
+        // Phase 2 — memory-only logical publication. state_.prepared stays
+        // disengaged; the candidate lands in the construction-owned storage
+        // element-by-element so vector identity (prepared_generations) is
+        // preserved — resize only repairs a width drift, never reallocates.
+        gear_ = update.gear;
+        update.state.prepared.reset();
+        state_ = std::move(update.state);
+        prepared_valid_ = update.prepared_valid;
+        if (update.prepared_valid) {
+            if (prepared_storage_.jacobian.size() != update.prepared.jacobian.size())
+                prepared_storage_.jacobian.resize(update.prepared.jacobian.size());
+            if (prepared_storage_.qpos.size() != update.prepared.qpos.size())
+                prepared_storage_.qpos.resize(update.prepared.qpos.size());
+            prepared_storage_.phi = update.prepared.phi;
+            prepared_storage_.time = update.prepared.time;
+            std::ranges::copy(update.prepared.jacobian, prepared_storage_.jacobian.begin());
+            std::ranges::copy(update.prepared.qpos, prepared_storage_.qpos.begin());
+        }
+    }
+
+    void Transmission::reset(mjData *d) {
+        auto update = stage_reset(d);
+        commit(update);
+    }
+
+    void Transmission::prepare(mjData *d) {
+        auto update = stage_prepare(d);
+        commit(update);
+    }
+
+    void Transmission::set_ratio(mjData *d, double ratio) {
+        auto update = stage_ratio(d, ratio);
+        commit(update);
     }
 
     std::span<const double> Transmission::solved(mjData *d) {
@@ -251,6 +435,13 @@ namespace drivetrain {
     }
 
     void Transmission::validate(const TransmissionSnapshot &s) const {
+        validate_state(s);
+        // An ideal transmission's single wrap coefficient IS the ratio.
+        if (!geometric_ && s.coefficients[0] != s.ratio)
+            throw std::invalid_argument("transmission coefficient/ratio mismatch");
+    }
+
+    void Transmission::validate_state(const TransmissionSnapshot &s) const {
         positive(s.ratio, "transmission ratio");
         if (s.rear_teeth < 3)
             throw std::invalid_argument("transmission rear teeth");
@@ -268,9 +459,6 @@ namespace drivetrain {
         // same call), and only geometric transmissions own a prepared slot.
         if (s.shift_pending && (!geometric_ || !s.prepared))
             throw std::invalid_argument("transmission shift_pending");
-        // An ideal transmission's single wrap coefficient IS the ratio.
-        if (!geometric_ && s.coefficients[0] != s.ratio)
-            throw std::invalid_argument("transmission coefficient/ratio mismatch");
         if (s.prepared) {
             const auto &p = *s.prepared;
             if (!geometric_ || !s.boundary || p.qpos.size() != force_.size() ||
@@ -287,27 +475,18 @@ namespace drivetrain {
 
     void Transmission::restore(TransmissionSnapshot s) {
         validate(s);
-        // Widths are already checked. Copy into construction-owned buffers without
-        // allocations; snapshot buffers remain owning and detached at the FFI edge.
-        prepared_valid_ = s.prepared.has_value();
-        if (s.prepared) {
-            const auto &prepared = *s.prepared;
-            prepared_storage_.phi = prepared.phi;
-            prepared_storage_.time = prepared.time;
-            std::ranges::copy(prepared.jacobian, prepared_storage_.jacobian.begin());
-            std::ranges::copy(prepared.qpos, prepared_storage_.qpos.begin());
-        }
-        s.prepared.reset();
-        state_ = std::move(s);
-        const auto &restored = state_;
-        gear_.rear_teeth = restored.rear_teeth;
-        auto const prm = buffer(model_->wrap_prm, model_->nwrap);
-        for (std::size_t i = 0; i < coefficients_.size(); ++i)
-            prm[static_cast<std::size_t>(coefficients_[i])] = restored.coefficients[i];
-        engine::set_const(model_, constant_.get());
-        std::ranges::copy(restored.range,
-                          buffer(model_->tendon_range, 2 * model_->ntendon)
-                          .subspan(2 * static_cast<std::size_t>(tendon_), 2)
-                          .begin());
+        // A restore is a staged candidate like any other: validate up front,
+        // let the scratch mj_setConst guard the coefficients, then commit.
+        TransmissionUpdate update;
+        update.gear = gear_;
+        update.gear.rear_teeth = s.rear_teeth;
+        update.state = s;
+        update.coefficients = s.coefficients;
+        update.range = s.range;
+        update.prepared_valid = s.prepared.has_value();
+        if (s.prepared)
+            update.prepared = *s.prepared;
+        evaluate_candidate(nullptr, update);
+        commit(update);
     }
 } // namespace drivetrain

@@ -261,12 +261,19 @@ namespace drivetrain {
             if (!ideal_hub_)
                 throw std::invalid_argument(
                     "automatic shifting needs the live ideal_mid_drive model");
-            if (shifting_.update(
+            // The shifter and the transmission update stage together: a
+            // rejected ratio rolls back the whole advance — EMAs, counters,
+            // gear — while a clean staging commits it in one move.
+            auto shifter = shifting_;
+            const bool shifted = shifter.update(
                 v[static_cast<std::size_t>(crank.dof)] * 60. / (2. * std::numbers::pi),
-                required, dt, enabled && effort > 0., braking, contact, slip)) {
-                ideal_hub_->set_ratio(data_, shifting_.gear_ratio());
+                required, dt, enabled && effort > 0., braking, contact, slip);
+            if (shifted) {
+                auto update = ideal_hub_->stage_ratio(data_, shifter.gear_ratio());
+                ideal_hub_->commit(update);
                 live_.shift_time_s = data_->time;
             }
+            shifting_ = std::move(shifter);
             required = v[static_cast<std::size_t>(wheel.dof)] / shifting_.gear_ratio() *
                        60. / (2. * std::numbers::pi);
         }

@@ -270,11 +270,11 @@ endif()
 # configs, which would silently nullify -fstack-protector-strong below.
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp src/stepper.cpp src/writers/suspension.cpp
-  src/writers/brake.cpp src/writers/cruise.cpp src/writers/resistance.cpp
+  src/writers/brake.cpp src/writers/resistance.cpp
   src/writers/rider_forces.cpp src/writers/tire.cpp src/tyre/profile.cpp
   src/drivetrain/shifting.cpp
   src/drivetrain/motor.cpp src/drivetrain/freehub.cpp src/drivetrain/policy_binding.cpp
-  src/drivetrain/chain.cpp src/drivetrain/transmission.cpp src/drivetrain/drive_binding.cpp
+  src/drivetrain/drive_binding.cpp
   src/writers/drivetrain.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp src/rider/contact_binding.cpp)
 
@@ -412,7 +412,14 @@ endif()
 # Share Python-free drivetrain code with direct native contract tests. The
 # object is compiled once with the extension's complete warning, hardening,
 # sanitizer, and coverage context, and remains PIC for module linkage.
-add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp)
+# The contract binary links these objects directly, so each drivetrain TU
+# keeps exactly one translation unit across all targets (the ODR sweep links
+# every selected TU into a single image). bike_native picks them up through
+# the existing target_link_libraries edge below — same COMPILE_OPTIONS,
+# including -ffp-contract=off, as when they were listed on the module itself.
+add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
+  src/drivetrain/chain.cpp src/drivetrain/transmission.cpp
+  src/writers/cruise.cpp)
 set_target_properties(bike_native_contract_core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   CXX_STANDARD 23
@@ -480,6 +487,9 @@ if(_native_contract_link_options)
   target_link_options(native_contract_tests PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core bike_native_engine)
+# chain.cpp's GeometryWorkspace resolves CBLAS through Apple Accelerate, the
+# same BLAS provider bike_native links.
+target_link_libraries(native_contract_tests PRIVATE "-framework Accelerate")
 add_custom_command(TARGET native_contract_tests POST_BUILD
   COMMAND install_name_tool -change
     "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"

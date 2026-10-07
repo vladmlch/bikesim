@@ -29,8 +29,8 @@ namespace {
 } // namespace
 
 CruiseWriter::CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config)
-    : cfg_(config), nv_(model->nv),
-      timestep_(model->opt.timestep), state_{.target_speed_mps = 0.0} {
+    : cfg_(config), model_(model), nv_(model->nv),
+      state_{.target_speed_mps = 0.0} {
     // The shared validator owns the config domain (positive kp/ki/ceiling,
     // finite target speed in [15, 45]) — checked before any use here.
     nativecfg::validate(cfg_);
@@ -72,7 +72,13 @@ double CruiseWriter::compute(const mjData *data, bool rear_in_contact,
             std::abs(demand) >= cfg_.torque_ceiling_nm &&
             (demand > 0.0) == (error > 0.0);
     if (!pushing_further && !traction_limited) {
-        next.integral_mps_s = clamp(validation::derived(next.integral_mps_s + validation::derived(error * timestep_, "CruiseWriter.integral_delta"), "CruiseWriter.integral"),
+        // cruise.py:202 reads model.opt.timestep live inside the integral
+        // update — the integrator follows a timestep change between calls,
+        // and an invalid value is rejected when the branch actually runs.
+        const double timestep =
+                static_cast<double>(model_->opt.timestep);
+        positive(timestep, "CruiseWriter.timestep");
+        next.integral_mps_s = clamp(validation::derived(next.integral_mps_s + validation::derived(error * timestep, "CruiseWriter.integral_delta"), "CruiseWriter.integral"),
                                       cfg_.torque_ceiling_nm / ki);
         demand = validation::derived(proportional + ki * next.integral_mps_s, "CruiseWriter.demand");
     }

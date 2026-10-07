@@ -427,6 +427,9 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'thread_local_engine_frames',
         'previous_tls_handler_restored',
         'owned_staging_owner_failure_frees_storage',
+        'transmission_staged_ratio_atomicity',
+        'interval_clock_contracts',
+        'cruise_live_timestep',
     ]
 
 

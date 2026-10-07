@@ -7,11 +7,14 @@
 #include "../src/engine_call.hpp"
 #include "../src/engine_abi_312.hpp"
 #include "../src/diag.hpp"
+#include "../src/interval_clock.hpp"
+#include "../src/writers/cruise.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
+#include <cfenv>
 #include <exception>
 #include <iostream>
 #include <limits>
@@ -908,7 +911,250 @@ namespace {
         }
     }
 
-    constexpr std::array<TestCase, 15> cases{{
+    // E2 staging fixtures: the same MJCF topologies the Python reference
+    // tests use (scalar planar joints; a joint wrap for every coordinate).
+    constexpr std::string_view geometric_freehub_xml = R"XML(
+<mujoco><option timestep=".0002" gravity="0 0 0"/>
+<default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/><joint damping="0"/></default>
+<worldbody><body name="frame"><joint name="root_x" type="slide" axis="1 0 0"/><joint name="frame_pitch" axis="0 1 0"/><geom/>
+  <body name="crank"><joint name="crank_spin" axis="0 1 0"/><geom/></body>
+  <body name="rear_wheel" pos="-.5 0 .1"><joint name="rear_carrier" type="slide" axis="0 0 1" limited="true" range="-.01 .01"/><joint name="rear_wheel_spin" axis="0 1 0"/><geom/></body>
+  <body name="front_wheel" pos=".6 0 0"><joint name="front_wheel_spin" axis="0 1 0"/><geom/></body>
+  <body name="pedal_front"><joint name="pedal_front_spin" axis="0 1 0"/><geom/></body>
+  <body name="pedal_rear"><joint name="pedal_rear_spin" axis="0 1 0"/><geom/></body>
+</body></worldbody>
+<tendon><fixed name="geometric_mid_drive_freehub" limited="true" range="-100 0">
+<joint joint="root_x" coef=".1"/><joint joint="frame_pitch" coef=".1"/><joint joint="crank_spin" coef=".1"/><joint joint="rear_carrier" coef=".1"/><joint joint="rear_wheel_spin" coef=".1"/><joint joint="front_wheel_spin" coef=".1"/><joint joint="pedal_front_spin" coef=".1"/><joint joint="pedal_rear_spin" coef=".1"/>
+</fixed></tendon></mujoco>
+)XML";
+    constexpr std::string_view ideal_freehub_xml = R"XML(
+<mujoco><option timestep=".0002" gravity="0 0 0"/>
+<default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/><joint damping="0"/></default>
+<worldbody><body name="frame"><geom/>
+  <body name="crank"><joint name="crank_spin" axis="0 1 0"/><geom/></body>
+  <body name="rear_wheel" pos="-.5 0 .1"><joint name="rear_wheel_spin" axis="0 1 0"/><geom/></body>
+</body></worldbody>
+<tendon><fixed name="ideal_mid_drive_freehub" limited="true" range="-100 0"><joint joint="crank_spin" coef="1.4166666666666667"/><joint joint="rear_wheel_spin" coef="-1"/></fixed></tendon>
+</mujoco>
+)XML";
+
+    mjModel *load_xml_model(std::string_view xml) {
+        mjVFS vfs;
+        mj_defaultVFS(&vfs);
+        require(mj_addBufferVFS(&vfs, "contract.xml", xml.data(),
+                                static_cast<int>(xml.size())) == 0,
+                "contract MJCF mounts into the VFS");
+        std::array<char, 1024> error{};
+        mjModel *model = mj_loadXML("contract.xml", &vfs, error.data(),
+                                    static_cast<int>(error.size()));
+        mj_deleteVFS(&vfs);
+        require(model != nullptr, "contract MJCF loads");
+        return model;
+    }
+
+    std::vector<double> rows(const double *first, mjtSize count) {
+        const auto view = drivetrain::buffer(first, count);
+        return {view.begin(), view.end()};
+    }
+
+    // E2: a staged ratio whose candidate geometry is invalid leaves the
+    // transmission snapshot AND the live model byte-identical, a repeated
+    // attempt raises the same rejection, and staging alone never publishes.
+    void test_transmission_staged_ratio_atomicity() {
+        const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+            load_xml_model(geometric_freehub_xml), &mj_deleteModel);
+        const drivetrain::OwnedData data(engine::make_data(model.get()));
+        require(data != nullptr, "geometric contract data");
+        // crank_spin — nontrivial tangent geometry.
+        drivetrain::buffer(data->qpos, model->nq)[2] = .31;
+        const drivetrain::GearingConfig gear{
+            .front_teeth = 34, .rear_teeth = 24, .chain_pitch_m = .0127};
+        drivetrain::Transmission transmission(model.get(), gear, true,
+                                              "geometric_mid_drive_freehub");
+        transmission.reset(data.get());
+        const drivetrain::TransmissionSnapshot before = transmission.state();
+        const auto generations = transmission.prepared_generations();
+        const std::vector prm_before = rows(model->wrap_prm, model->nwrap);
+        const std::vector range_before = rows(model->tendon_range, 2 * model->ntendon);
+        // Derived constants: tendon_length0 is recomputed by mj_setConst —
+        // an unchanged row proves no model write ran at all on rejection.
+        const std::vector length0_before =
+                rows(model->tendon_length0, model->ntendon);
+        require_throws_invalid_argument([&] {
+            static_cast<void>(transmission.stage_ratio(data.get(), 34. / 1000.));
+        }, "impossible-sprocket staged ratio must be rejected");
+        const drivetrain::TransmissionSnapshot rejected = transmission.state();
+        require(rejected.ratio == before.ratio && rejected.rear_teeth == before.rear_teeth &&
+                rejected.boundary == before.boundary && rejected.range == before.range &&
+                rejected.coefficients == before.coefficients &&
+                rejected.shift_pending == before.shift_pending &&
+                rejected.shift_parameter_work_j == before.shift_parameter_work_j &&
+                rejected.shift_constraint_work_j == before.shift_constraint_work_j &&
+                rejected.last_tension_n == before.last_tension_n,
+                "rejected stage_ratio leaves the logical snapshot untouched");
+        require(rejected.prepared && before.prepared &&
+                rejected.prepared->phi == before.prepared->phi &&
+                rejected.prepared->time == before.prepared->time &&
+                rejected.prepared->jacobian == before.prepared->jacobian &&
+                rejected.prepared->qpos == before.prepared->qpos,
+                "rejected stage_ratio leaves prepared geometry untouched");
+        require(rows(model->wrap_prm, model->nwrap) == prm_before &&
+                rows(model->tendon_range, 2 * model->ntendon) == range_before &&
+                rows(model->tendon_length0, model->ntendon) == length0_before,
+                "rejected stage_ratio leaves live model rows untouched");
+        require(transmission.prepared_generations() == generations,
+                "rejected stage_ratio preserves prepared storage identity");
+        require_throws_invalid_argument([&] {
+            static_cast<void>(transmission.stage_ratio(data.get(), 34. / 1000.));
+        }, "a repeated staged ratio rejection is identical");
+        // Staging alone never publishes: a valid update is invisible until commit.
+        auto staged = transmission.stage_ratio(data.get(), 34. / 28.);
+        require(transmission.state().ratio == before.ratio &&
+                transmission.state().rear_teeth == before.rear_teeth,
+                "staging a valid ratio must not publish before commit");
+        transmission.commit(staged);
+        const drivetrain::TransmissionSnapshot shifted = transmission.state();
+        require(shifted.ratio == 34. / 28. && shifted.rear_teeth == 28 &&
+                shifted.shift_pending && shifted.prepared,
+                "committed staged shift publishes gear, ratio, and prepared state");
+        // The ideal transmission shares the transaction shape.
+        const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> ideal_model(
+            load_xml_model(ideal_freehub_xml), &mj_deleteModel);
+        const drivetrain::OwnedData ideal_data(engine::make_data(ideal_model.get()));
+        require(ideal_data != nullptr, "ideal contract data");
+        drivetrain::Transmission ideal(ideal_model.get(), gear);
+        ideal.reset(ideal_data.get());
+        const drivetrain::TransmissionSnapshot ideal_before = ideal.state();
+        const std::vector ideal_prm = rows(ideal_model->wrap_prm, ideal_model->nwrap);
+        require_throws_invalid_argument([&] {
+            static_cast<void>(ideal.stage_ratio(ideal_data.get(), -1.));
+        }, "negative staged ratio is rejected");
+        require_throws_invalid_argument([&] {
+            static_cast<void>(ideal.stage_ratio(ideal_data.get(), 0.));
+        }, "zero staged ratio is rejected");
+        require(ideal.state().ratio == ideal_before.ratio &&
+                ideal.state().boundary == ideal_before.boundary &&
+                rows(ideal_model->wrap_prm, ideal_model->nwrap) == ideal_prm,
+                "rejected ideal stage_ratio leaves state and model untouched");
+        auto ideal_update = ideal.stage_ratio(ideal_data.get(), 1.5);
+        ideal.commit(ideal_update);
+        require(ideal.state().ratio == 1.5 && ideal.state().coefficients[0] == 1.5,
+                "committed ideal staged ratio publishes coefficient and ratio");
+    }
+
+    template <typename Exception, typename F>
+    void require_throws(const F &f, std::string_view message) {
+        try {
+            f();
+        } catch (const Exception &) {
+            return;
+        } catch (...) {
+            require(false, message);
+        }
+        require(false, message);
+    }
+
+    // F5: interval_id ties land on the even neighbour, domain violations are
+    // invalid_argument while an out-of-int64 quotient is overflow_error, and
+    // the conversion never consults the process rounding mode. Exact binary64
+    // quotients (halves representable in every mode) isolate the rounding
+    // step from the mode-dependent division.
+    void test_interval_clock_contracts() {
+        using interval_clock::interval_id;
+        require(interval_id(0.5, 1.0) == 0 && interval_id(1.5, 1.0) == 2 &&
+                    interval_id(2.5, 1.0) == 2 && interval_id(3.5, 1.0) == 4,
+                "half-even ties");
+        require(interval_id(-0.0, 1.0) == 0, "negative zero time");
+        // Largest representable quotient below 0x1p63 stays in range.
+        require(interval_id(0x1.fffffffffffffp62, 1.0) ==
+                    std::int64_t{9223372036854774784LL},
+                "int64 upper edge");
+        require_throws<std::invalid_argument>(
+            [] { static_cast<void>(interval_id(-1.0, 1.0)); }, "negative time");
+        constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+        require_throws<std::invalid_argument>(
+            [] { static_cast<void>(interval_id(nan, 1.0)); },
+            "nonfinite time");
+        require_throws<std::invalid_argument>(
+            [] { static_cast<void>(interval_id(1.0, 0.0)); }, "zero dt");
+        require_throws<std::invalid_argument>(
+            [] { static_cast<void>(interval_id(1.0, -1.0)); }, "negative dt");
+        require_throws<std::invalid_argument>(
+            [] { static_cast<void>(interval_id(1.0, nan)); }, "nonfinite dt");
+        require_throws<std::overflow_error>(
+            [] { static_cast<void>(interval_id(0x1p63, 1.0)); },
+            "quotient at the int64 boundary");
+        require_throws<std::overflow_error>(
+            [] { static_cast<void>(interval_id(1.0, 1e-300)); },
+            "nonfinite quotient");
+        const int original_mode = std::fegetround();
+        {
+            // Restore the caller's rounding mode even when a check fails.
+            struct FeGuard {
+                int saved;
+                explicit FeGuard(int restore_mode) : saved(restore_mode) {}
+                FeGuard(const FeGuard &) = delete;
+                FeGuard &operator=(const FeGuard &) = delete;
+                FeGuard(FeGuard &&) = delete;
+                FeGuard &operator=(FeGuard &&) = delete;
+                ~FeGuard() { std::fesetround(saved); }
+            };
+            const FeGuard guard(original_mode);
+            for (const int candidate:
+                 {FE_TONEAREST, FE_UPWARD, FE_DOWNWARD, FE_TOWARDZERO}) {
+                if (std::fesetround(candidate) != 0)
+                    continue;
+                require(interval_id(2.5, 1.0) == 2 &&
+                            interval_id(1.5, 1.0) == 2 &&
+                            interval_id(0.5, 1.0) == 0,
+                        "interval_id ignores the FP rounding mode");
+            }
+        }
+        require(std::fegetround() == original_mode,
+                "rounding mode restored after the sweep");
+    }
+
+    // F5: CruiseWriter reads model->opt.timestep live for each integrate —
+    // mutating the model between calls rescales the integral increment, and
+    // a nonpositive timestep is rejected only when the branch runs.
+    constexpr std::string_view cruise_xml = R"XML(
+<mujoco><option timestep=".001"/>
+<default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/></default>
+<worldbody><body name="frame"><joint name="root_x" type="slide" axis="1 0 0"/><geom/></body></worldbody>
+</mujoco>
+)XML";
+
+    void test_cruise_live_timestep() {
+        const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+            load_xml_model(cruise_xml), &mj_deleteModel);
+        const drivetrain::OwnedData data(engine::make_data(model.get()));
+        require(data != nullptr, "cruise contract data");
+        const nativecfg::CruiseConfig config{
+            .target_speed_kmh = 36., .kp_nm_per_mps = 1.,
+            .ki_nm_per_mps_s = 2., .torque_ceiling_nm = 100.};
+        CruiseWriter writer(model.get(), config);
+        // target 10 m/s, qvel 0 -> error 10; integral accumulates error*dt.
+        static_cast<void>(writer.compute(data.get(), true, false, std::nullopt));
+        require(writer.state().integral_mps_s == 10. * 0.001,
+                "first integrate uses the ctor timestep");
+        model->opt.timestep = 0.003;
+        static_cast<void>(writer.compute(data.get(), true, false, std::nullopt));
+        require(writer.state().integral_mps_s == 10. * 0.001 + 10. * 0.003,
+                "a changed opt.timestep is picked up live");
+        model->opt.timestep = 0.0;
+        // Traction-limited calls skip the integral branch — no rejection.
+        static_cast<void>(writer.compute(data.get(), true, true, std::nullopt));
+        require_throws<std::invalid_argument>(
+            [&] { static_cast<void>(writer.compute(data.get(), true, false,
+                                                   std::nullopt)); },
+            "nonpositive live timestep rejected when integrating");
+        // Not engaged at all -> timestep is never read.
+        writer.reset();
+        static_cast<void>(writer.compute(data.get(), false, false,
+                                         std::nullopt));
+    }
+
+    constexpr std::array<TestCase, 18> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -924,6 +1170,9 @@ namespace {
         {.name = "thread_local_engine_frames", .run = test_thread_local_engine_frames},
         {.name = "previous_tls_handler_restored", .run = test_previous_tls_handler_restored},
         {.name = "owned_staging_owner_failure_frees_storage", .run = test_owned_staging_owner_failure_frees_storage},
+        {.name = "transmission_staged_ratio_atomicity", .run = test_transmission_staged_ratio_atomicity},
+        {.name = "interval_clock_contracts", .run = test_interval_clock_contracts},
+        {.name = "cruise_live_timestep", .run = test_cruise_live_timestep},
     }};
 
     int run_case(const TestCase &test_case) {

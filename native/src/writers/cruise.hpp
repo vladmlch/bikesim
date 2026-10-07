@@ -36,8 +36,8 @@ private:
     void validate_scale(double scale) const;
 
     nativecfg::CruiseConfig cfg_;
+    const mjModel *model_ = nullptr; // non-owning; the Stepper outlives it
     mjtSize nv_ = 0;
     int root_dof_{0};
-    double timestep_ = 0.0;
     CruiseState state_;
 };

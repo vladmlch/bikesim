@@ -500,6 +500,67 @@ the port reproduces that rounding with an explicit `std::fma` even under
 through Accelerate `ddot`, which the residual reader calls directly rather
 than re-associating.
 
+### T2b solved attachment wrench measurements
+
+```bash
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
+UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_attachment_wrench.py -q
+```
+
+`native/src/rider/attachment_wrench.{hpp,cpp}` is the typed, Python-free
+port of `bike_sim/sim/ride/attachment_wrench.py`; the binding face lives
+in `native/src/rider/attachment_binding.cpp` (the existing
+`bind_rider_attachment` seam) as
+
+- `stepper.rider_equality_qfrc(eq_id)` (T2a, unchanged),
+- `stepper.rider_relative_planar_jacobian(body_a, body_b, point,
+  rotational)`,
+- `stepper.rider_prepare_attachment(eq_id, body_rider, body_bike, point,
+  normal, kind, rotational, half_patch_m=0., pull_direction=None)`,
+- `stepper.rider_attachment_raw(...)`,
+- `stepper.rider_attachment_raw_from_geometry(geometry,
+  validate_wrench=True)`,
+- `stepper.rider_attachment_sample(...)`,
+- `bike_native.rider_recover_wrench(relative_jacobian, qfrc)` and
+- `bike_native.rider_decompose_wrench(wrench, normal, kind, rotational,
+  half_patch_m=0., gap_m=0., pull_direction=None)`.
+
+The Stepper's own `(m_, d_)` is the only model/data pair ever read;
+`set_state` copies no derived engine buffers, so a caller that only
+mirrors `qpos` needs `stepper.forward()` for `cdof`/`xpos` before any
+jacobian read — `mj_jac` consumes `cdof`, which `mj_kinematics` alone
+does not refresh (verified on the pinned 3.12.0 dylib). Every returned
+array is capsule-owned storage; geometry/raw/sample arrive as dicts with
+the dataclasses' exact field names and compare bitwise against the
+oracle, including soft-CONNECT per-body compiled anchors
+(`_attachment_points` reads `eq_type[eq_id]` only on the nonrotational
+path — a bogus `eq_id` then indexes like numpy: negatives wrap,
+out-of-range is IndexError).
+
+The least-squares solves reuse the T2a `_dgelsd$NEWLAPACK$ILP64`
+workspace at the oracle's `rcond=1e-12`. `recover_wrench` additionally
+screens nonfinite input (`'nonfinite wrench input'`) and requires full
+column rank of the transposed matrix
+(`'rank-deficient attachment Jacobian'`); reconstruction checks use
+numpy 2.5's asymmetric isclose on the second operand as the relative
+reference — `(|a-b| <= atol + rtol*|b| AND isfinite(b)) OR (a == b)` —
+so `allclose(Jᵀw, q, rtol=1e-8, atol=1e-8)`, the Newton-third-law gate
+(`rtol=1e-4`, `atol=1e-4*scale`) and the `1e-6*scale` absolute
+out-of-plane bound behave bitwise-identically, including `inf == inf`
+pass-throughs and NaN rejections. Error strings, types and evaluation
+order match the oracle (`'attachment body carries no degrees of
+freedom'`, `'attachment bodies share kinematic support'`,
+`'in-plane attachment force is not observable'`,
+`'rank-deficient attachment Jacobian'`,
+`'attachment wrench does not explain generalized force'`,
+`'attachment wrenches fail Newton third law'`,
+`'attachment wrench leaves the planar model'`, the normal/pull
+validation messages), and `validate_wrench=False` defers every spatial
+check exactly like the oracle's fast path. `equality_rows` membership is
+re-derived from the current `efc_type`/`efc_id` arena on every call, so
+contact/limit rows shifting the arena cannot produce a stale gap: a
+missing equality reports `gap_m == 0.`.
+
 ## V3 verification record
 
 Verification was run from the V3 tree based on `1ccdfcb28244dd14af6e584f958a40d3dbc04918`.

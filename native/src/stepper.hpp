@@ -12,6 +12,7 @@
 #include <nanobind/nanobind.h>
 #include "engine_call.hpp"
 #include "rtsan.hpp"
+#include "rider/attachment_wrench.hpp"
 #include "rider/equality_reactions.hpp"
 #include "writers/writer_types.hpp"
 
@@ -220,6 +221,45 @@ public:
     // require_healthy() like every read path.
     [[nodiscard]] rider::EqualityReactions &rider_equalities() const;
 
+    // T2b — attachment_wrench.py measurement faces on the owned (m_, d_)
+    // pair. These are thin owners over the typed rider:: core: the
+    // Stepper supplies the model/data, the EqualityReactions reader and
+    // the reused DGELSD workspace; every returned block owns its
+    // storage. All validation/errors match the Python oracle (see
+    // rider/attachment_wrench.hpp).
+    [[nodiscard]] rider::DenseMatrix rider_relative_planar_jacobian(
+        int body_a, int body_b, std::span<const double> point,
+        bool rotational) const;
+
+    [[nodiscard]] rider::AttachmentGeometry rider_prepare_attachment(
+        int eq_id, int body_rider, int body_bike,
+        std::span<const double> point, std::span<const double> normal,
+        std::string kind, bool rotational, double half_patch_m,
+        const std::optional<std::vector<double>> &pull_direction) const;
+
+    [[nodiscard]] rider::AttachmentRaw rider_attachment_raw(
+        int eq_id, int body_rider, int body_bike,
+        std::span<const double> point, std::span<const double> normal,
+        std::string kind, bool rotational, double half_patch_m,
+        const std::optional<std::vector<double>> &pull_direction) const;
+
+    [[nodiscard]] rider::AttachmentRaw rider_attachment_raw_from_geometry(
+        const rider::AttachmentGeometry &geometry,
+        bool validate_wrench) const;
+
+    [[nodiscard]] rider::AttachmentSample rider_attachment_sample(
+        int eq_id, int body_rider, int body_bike,
+        std::span<const double> point, std::span<const double> normal,
+        const std::string &kind, bool rotational, double half_patch_m,
+        const std::optional<std::vector<double>> &pull_direction) const;
+
+    // The reused DGELSD workspace behind the attachment measurements
+    // (lazy, like equality_scratch_): bound (nv, max(nv,6), 1) admits
+    // the (k,6) spatial solves, the (ncr,6)/(ncb,6) validation solves
+    // and the (nv, r) recover problems this face ever runs.
+    [[nodiscard]] rider::LeastSquaresWorkspace &
+    rider_attachment_lstsq() const;
+
     // ForceAccumulator.total() (force_accumulator.py:47-51): zero-init,
     // then sequential in-place adds in the GIVEN order — the P2 ordering
     // contract the native step loop replicates. Each component is checked
@@ -264,4 +304,12 @@ private:
     // nefc multiplier / nv qfrc buffers behind it. Null until the first
     // call; the arena contents are still re-derived on every call.
     mutable std::unique_ptr<rider::EqualityReactions> equality_scratch_;
+    // T2b lazy scratch: the shared DGELSD workspace plus the nv qfrc
+    // buffer the equality_qfrc stage writes before the dof gathers.
+    // Contents are re-derived on every call like equality_scratch_.
+    mutable std::unique_ptr<rider::LeastSquaresWorkspace> attachment_lstsq_;
+    mutable std::vector<double> attachment_qfrc_;
+    // nv-sized view over attachment_qfrc_ (assigned on first use or an
+    // nv change — never a per-call reallocation).
+    [[nodiscard]] std::span<double> attachment_qfrc_scratch() const;
 };

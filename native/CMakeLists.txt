@@ -273,6 +273,7 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/drivetrain/policy_binding.cpp
   src/drivetrain/drive_binding.cpp
   src/rider/attachment_binding.cpp
+  src/rider/attachment_wrench.cpp
   src/rider/contact_binding.cpp
   src/rider/equality_reactions.cpp)
 

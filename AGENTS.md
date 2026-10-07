@@ -1,14 +1,14 @@
 1. for Python always use uv
 2. you even can use it like `uv run --with numpy --with matplotlib ...`
-3.
+3. Before native changes, mirrored physics changes, or verification-tool changes, read [native engineering rules](docs/agents/native-engineering.md).
 
 
 ## Verification
 
 `bash tools/run_tests.sh` is the test entry point; pick the profile by what changed:
 
-- `quick` — Python-only changes.
-- `native` — anything under `native/` or `tools/*.sh`: build, all static-analysis sweeps, native+golden tests. Not done until green.
+- `quick` — Python-only changes outside the native verification scope.
+- `native` — native code, bindings/config projection/tests, or build/analysis/sanitizer/coverage tooling (including `tools/*.sh`): build, all static-analysis sweeps, native+golden tests. Not done until green.
 - `full` — changes to physics or realtime paths.
 
 A failed sweep names its CMake target; rerun it standalone with `cmake --build native/build --target check_<name>`. Alpha analyzer findings print but never block. A missing sweep tool fails the run on purpose — install the tool rather than skipping the target. For sanitizer/RTSan/coverage builds and sweep internals, reach `docs/TESTING.md`.

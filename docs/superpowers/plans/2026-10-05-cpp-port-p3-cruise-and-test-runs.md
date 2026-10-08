@@ -1,6 +1,6 @@
 # C++ Port P3: Cruise Controller and Focused Test Runs Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Port the independently testable cruise controller from the P3 backlog and provide explicit, fast test commands for everyday native work.
 
@@ -36,7 +36,7 @@
 - Consumes: pytest's existing `slow` marker, test files in `tests/reference/test_native_*.py` and `tests/reference/test_golden_episode*.py`, native extension in `native/build`.
 - Produces: `bash tools/run_tests.sh [quick|native|full] [pytest arguments...]`, with `quick` as the no-argument default. Help succeeds; unknown profiles return exit 2. Native requires a successfully imported `bike_native` before pytest starts. Every test command adds `-q --durations=10` and preserves pytest's exit code.
 
-- [ ] **Step 1: Implement the small launcher**
+- [x] **Step 1: Implement the small launcher**
 
 Use `set -euo pipefail`, resolve the repository root relative to `${BASH_SOURCE[0]}`, and `cd` there. Keep the paths quoted. Select mode with a `case` and reject unknown modes. Use an array for pytest arguments and `exec uv run python -m pytest` for the final command. For native mode, prepend the absolute `native/build` path to `PYTHONPATH` preserving any existing value; use `uv run python -c 'import bike_native; print(bike_native.__file__)'` as the preflight, then select the native/golden files via bash arrays. Modes:
 
@@ -52,15 +52,15 @@ exec uv run python -m pytest -q --durations=10 "$@"
 
 Do not add xdist, default cache-based test selection, or change pytest's own defaults. The realtime tests measure machine speed and must have a serial mode.
 
-- [ ] **Step 2: Write usage documentation**
+- [x] **Step 2: Write usage documentation**
 
 Document the three commands, targeted node/file invocation with `uv run python -m pytest ...`, when to use each profile, native build prerequisite `uv run cmake --build native/build -j4`, import failure behavior, and why full realtime episodes are explicit. Distinguish the known full-suite failures from checks that are green. Record prior timings as measurements rather than promises: approximately 2 s for `not slow`, 6 s for the six-module P2 focused run, and 478 s for the full suite on a216f36.
 
-- [ ] **Step 3: Verify launcher behavior cheaply**
+- [x] **Step 3: Verify launcher behavior cheaply**
 
 Run `bash -n tools/run_tests.sh`, help, and an invalid profile (expect exit 2). Use `bash tools/run_tests.sh native --collect-only` to verify native import, selected files, and forwarding. Use `bash tools/run_tests.sh full --collect-only` to verify that full includes slow tests without running them. Record actual selected counts. Do not add tests that merely reproduce the shell case logic.
 
-- [ ] **Step 4: Self-review and commit**
+- [x] **Step 4: Self-review and commit**
 
 Review quoting, native import failure propagation, default selector, user arguments and exit codes. Commit only `tools/run_tests.sh` and `docs/TESTING.md` with message `chore(test): add focused native and quick test profiles`.
 
@@ -86,7 +86,7 @@ Review quoting, native import failure propagation, default selector, user argume
 - Config construction validates finite positive gains and ceiling, finite target within `[15,45]`, and resolves a scalar slide/hinge `root_x` joint. Public target/support setters reject nonfinite values before mutation. Negative finite support remains accepted and maps to scale 1, matching Python. Reject an assist value whose resulting scale or scaled integral gain is zero (division by zero would otherwise occur); rejection preserves state.
 - `project(env)` adds cruise only when `getattr(sim, 'cruise', None)` is present. Emit the four configuration attributes, not mutable PI state; existing duck-typed fixture sims without cruise remain supported.
 
-- [ ] **Step 1: Add failing sequential bitwise tests**
+- [x] **Step 1: Add failing sequential bitwise tests**
 
 Create a tiny local MuJoCo model with one `root_x` slide joint, inertia, timestep 0.0005 and no simulation loop. Save it as MJB under `tmp_path`; construct Python `CruiseController(model)` and native Stepper with only cruise config. This avoids research-environment setup and slow marks. Import `bike_native` using the existing native test convention; compare numeric state/output using `assert_bitwise_equal` from `_bits.py`.
 
@@ -116,21 +116,21 @@ Use sequences containing accelerating/decelerating speed, both signs of saturati
 
 Add boundary tests for missing config (every API raises RuntimeError), missing required keys, bad schema, invalid gain/target/ceiling, model missing `root_x`, wrong joint type, nonfinite setter input, invalid state fields and support underflow. Check old state remains unchanged on rejected setter/restore. Add a projection check using the existing small seated fixture (`test_native_suspension.py` construction) or a duck-typed env that feeds `project`; also confirm absent cruise leaves existing projection valid.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Run `uv run python -m pytest tests/reference/test_native_cruise.py -q` against the current built extension. Expect missing `cruise_compute`/state API failures. Record the exact result in the task report.
 
-- [ ] **Step 3: Implement scalar native controller and bridges**
+- [x] **Step 3: Implement scalar native controller and bridges**
 
 Implement a small typed `CruiseConfig` and `CruiseState`, and an owned `CruiseWriter`. Port Python's operation order literally: choose engaged gate; error; early airborne return; scaled kp/ki; proportional and demand; the `abs(demand) >= ceiling` plus same-sign saturation test; clamped integral update when unsaturated and not traction limited; final clamped demand. Clamp must preserve Python's `max(-limit, min(limit, value))` signed-zero behavior; avoid `std::clamp` if its equal-value tie behavior differs. Do not add an automatic cruise actuator write: that belongs to the later runtime orchestration task.
 
 Expose a std::optional<bool> override at the FFI edge (include `nanobind/stl/optional.h`). Return owning state dict values. Parse config once and keep no Python references. Controller compute takes `const mjData*` and the stored timestep/root dof, never calls Python. Update the existing NativeConfig optional sections and constructor cleanup path, Stepper forward declarations/owned member, bindings and CMake source list. Document that mjData restore does not reset PI state.
 
-- [ ] **Step 4: Run GREEN and native safety checks**
+- [x] **Step 4: Run GREEN and native safety checks**
 
 Build with `uv run cmake --build native/build -j4`; run the focused cruise module. Run the existing config-related suspension/rider modules once alongside cruise to check projection compatibility. Run `uv run cmake --build native/build --target check_frontends` to verify the new TU under GCC as well as clang. Build the existing ASan configuration with `uv run cmake --build native/build/asan -j4` and run the focused cruise module with the ASan dylib injected using the established Xcode clang 21 runtime. Force the ASan extension via a Python preimport path/assertion so the test's own normal-build sys.path insertion cannot substitute it. Record commands, results, and any diagnostics. Do not rerun unrelated eight-minute physical episodes.
 
-- [ ] **Step 5: Self-review and commit**
+- [x] **Step 5: Self-review and commit**
 
 Review Python operation ordering, validation before mutation, optional override semantics, no callback ownership, config compatibility and signed-zero comparisons. Commit the Task 2 files with message `feat(native): port stateful cruise controller with bitwise oracle`.
 

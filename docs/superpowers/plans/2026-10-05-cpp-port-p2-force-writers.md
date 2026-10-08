@@ -1,6 +1,6 @@
 # C++ Port P2: Force-Writer Equivalence Framework + First Ports Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Построить per-state equivalence-харнесс для force writers (state из golden → `mj_forward` → writer → побитовое сравнение компонентов) и портировать первый блок писателей: suspension, brake, resistance, tire, rider_forces.
 
@@ -52,7 +52,7 @@
 - Consumes: существующий `capture_episode`; `sim.force_accumulator` (обёртка `add`), `runtime.apply_forces` (обёртка для state-снимка на входе и `d.ctrl` на выходе), `sim.tire.states` (`_BrushState` полей xi/tangent/point/segment/center), `sim.tire.snapshots` (per-side: `patches[].normal_load_n/.working_surface`, `effective_radius_m` — сериализуемые маленькие dicts).
 - Produces: в `episode.npz` дополнительно `state_qpos[K,nq]`, `state_qvel[K,nv]`, `state_act[K,na]`, `state_warmstart[K,nv]`, `state_time[K]`, `ctrl_written[K,nu]`, `force_names[C]` (строки, insertion-order), `forces[K,C,nv]`, `tire_state[K,S]` + `tire_state_names[S]`; в `manifest.json` — `tire_snapshots[K]` (JSON-able per-side структуры). `load_episode` возвращает их в `EpisodeArtifact` (новые поля с дефолтами для старых артефактов). `K` = число physics-step'ов (может отличаться от числа channel-строк — sample'ы выходят по period-close).
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 ```python
 """Capture v2 stores per-step states and the full force-component matrix."""
@@ -102,12 +102,12 @@ def test_v2_roundtrip_and_determinism(tmp_path):
     assert loaded.force_names == ep.force_names
 ```
 
-- [ ] **Step 2: Run — verify fail**
+- [x] **Step 2: Run — verify fail**
 
 Run: `uv run python -m pytest tests/reference/test_golden_episode_v2.py -v -m slow`
 Expected: FAIL — `AttributeError: 'EpisodeArtifact' object has no attribute 'state_qpos'` (или аналог — поля ещё не существуют).
 
-- [ ] **Step 3: Implement capture v2**
+- [x] **Step 3: Implement capture v2**
 
 В `capture_episode`: до цикла шагов — инструментация:
 
@@ -132,12 +132,12 @@ def spied_apply(**kw):
 
 Точные формы — дело имплементора (главное — ordering: state на входе apply_forces, components по мере `acc.add` внутри него, ctrl на выходе). Tire: `sim.tire.states`/`snapshots` копируются после каждого шага (deepcopy маленьких dicts). Cleanup: `acc.add`/`rt.apply_forces` восстанавливаются в `finally`. `EpisodeArtifact` получает поля; `save`/`load_episode` — симметрично. Нестейтфул детали: имена `force_names` — union в порядке первого появления (компоненты могут появляться не с шага 0 — `shock_hbo` только в physical mode и т.п.).
 
-- [ ] **Step 4: Run — verify pass + regression**
+- [x] **Step 4: Run — verify pass + regression**
 
 Run: `uv run python -m pytest tests/reference/test_golden_episode_v2.py tests/reference/test_golden_episode.py -v -m slow`
 Expected: PASS; старые capture-тесты зелёные (совместимость).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git commit -m "feat(tools): golden capture v2 — per-step state + force-component matrix (cpp-port P2)"
@@ -157,7 +157,7 @@ git commit -m "feat(tools): golden capture v2 — per-step state + force-compone
 - Consumes: golden `episode.npz` (`state_*` матрицы из Task 1 — тест генерирует артефакт capture'ом или грузит fixture).
 - Produces: `Stepper.set_state(qpos, qvel, act, warmstart, time)`, `Stepper.forward()`, views `qacc`, `qfrc_constraint`, `efc_force` (read-only numpy views, как `qpos`). Контракт: `set_state` + `forward` на записанном состоянии даёт побитово то же, что `mj_resetData`+запись+`mj_forward` в Python.
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 ```python
 """Native forward on a stored golden state is bitwise-equal to Python forward."""
@@ -207,12 +207,12 @@ def test_forward_on_stored_state_is_bitwise(tmp_path):
         assert np.array_equal(st.efc_force, dref.efc_force)
 ```
 
-- [ ] **Step 2: Run — verify fail**
+- [x] **Step 2: Run — verify fail**
 
 Run: `uv run python -m pytest tests/reference/test_native_state_restore.py -v -m slow`
 Expected: FAIL — `AttributeError`/`TypeError` на `set_state`/`forward`.
 
-- [ ] **Step 3: Implement `set_state`/`forward` + views**
+- [x] **Step 3: Implement `set_state`/`forward` + views**
 
 ```cpp
 // stepper.hpp additions:
@@ -227,7 +227,7 @@ void forward() { mj_forward(m_, d_); }
 
 `set_state`: `mj_resetData`, затем `std::copy` каждого span в соответствующий буфер с проверкой размеров (`qpos.size()==m_->nq` и т.д.; mismatch → `std::invalid_argument`). binding: принимать `nb::ndarray<const double, nb::shape<-1>>` и конвертировать в `span` (size/shape check на границе, не в ядре). Views — как `qpos` (empty owner, non-owning).
 
-- [ ] **Step 4: Build + run**
+- [x] **Step 4: Build + run**
 
 ```bash
 cd native && uv run cmake --build build && cd ..
@@ -237,7 +237,7 @@ bash tools/check_native_frontends.sh native/src .venv/lib/python3.14/site-packag
 
 Expected: bitwise PASS; sweeps clean. Если `efc_force` не совпадает побитово — первое расследование: warmstart-путь (`mj_forward` использует `qacc_warmstart` для солвера); проверить что `mj_resetData`+записи воспроизводят состояние capture-точки (state снимается на ВХОДЕ apply_forces — до первого mj_forward шага).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git commit -m "feat(native): Stepper set_state/forward + solved-quantity views — bitwise restore gate (cpp-port P2)"
@@ -261,7 +261,7 @@ git commit -m "feat(native): Stepper set_state/forward + solved-quantity views �
 - Produces: `Stepper(path, config: dict)` — ctor принимает dict от `tools.native_config.project(env)`; `stepper.suspension_components() -> dict[str, np.ndarray]` — имена как в `force_names` (`fork_spring` … `shock_hbo`), каждый — nv-вектор (копия или non-owning view; dtype float64).
 - Config dict-ключи (Task фиксирует финальный список после чтения damper.py): coil (`rate_n_m,preload_mm,stroke_mm,bumper_length_mm,bumper_peak_n`), fork air spring + Charger3 clicks/params, SuperDeluxe clicks/HBO, `end_stops{stiffness_n_m,damping_n_s_m}`, `physics_mode`, joint names (`fork_travel`,`shock_stroke` — адреса резолвятся в C++ через `mj_name2id` с той же range-валидацией, что `_resolve_compression_joint`).
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 ```python
 """Native suspension components are bitwise-equal to recorded acc components."""
@@ -280,18 +280,18 @@ def test_suspension_components_bitwise(tmp_path):
                 assert np.array_equal(comp[name], ep.forces[k][i]), f'{name} step {k}'
 ```
 
-- [ ] **Step 2: Run — verify fail** → `TypeError: Stepper() takes 1 argument` / `AttributeError`.
+- [x] **Step 2: Run — verify fail** → `TypeError: Stepper() takes 1 argument` / `AttributeError`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - `tools/native_config.py::project(env) -> dict` — вытаскивает ТОЛЬКО используемые поля (dataclass → dict через публичные attrs; без pickle). Versioning: ключ `schema: 1`.
 - `native/src/config.hpp` — `struct SuspensionConfig` + `from_dict(const nb::dict&)`; обязательные ключи отсутствуют → `std::invalid_argument` с именем ключа.
 - `suspension.cpp` — порядок FP-операций = forces.py:127-202 (сложение компонентов в том же порядке; `vector()`→ запись `-force` в dofadr). Damper-математика — expression-for-expression порт `compute_damping_force`/`compute_damping_components` (damper.py), `end_stop` (stops.py), `compute_spring_force`/`compute_bumper_force` (coil_shock.py). Трансценденталки если есть → см. Global Constraints (bitwise приоритет, ulp-бюджет документируется).
 - Stepper ctor: `Stepper(path)` остаётся (config = empty dict → suspension disabled, метод кинет `std::logic_error`); `Stepper(path, dict)` — с config.
 
-- [ ] **Step 4: Run** — build, test PASS, sweep clean.
+- [x] **Step 4: Run** — build, test PASS, sweep clean.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git commit -m "feat(native): suspension writer port + config bridge — bitwise per-state equivalence (cpp-port P2)"
@@ -312,8 +312,8 @@ git commit -m "feat(native): suspension writer port + config bridge — bitwise 
 - Consumes: `BrakeController.compute`/`_wheel_torque`/`opposing_torque` (braking.py:67-105 — clamp demand, ceiling, taper); `PhysicalResistance.compute_components` (physical_resistance.py:20-42 — `mj_jac` по wheel axis, rolling-moment, drag-force; snapshots из manifest'а).
 - Produces: `stepper.brake_torques(front: float, rear: float) -> tuple[float, float]` + `stepper.apply_brake(front, rear)` (пишет в ctrl — verify через `ctrl_written[k]`); `stepper.resistance_components(snapshots_k) -> dict[str, np.ndarray]` ('road_rolling','aerodynamic'). Snapshot dict реконструируется из manifest на Python-стороне и передаётся как nb::dict/pybstruct — наиболее простой контракт: плоские массивы (`patch_loads_front`, `eff_radius_front`, …) — имплементор фиксирует схему.
 
-- [ ] **Step 1: Failing test** — per-state: `brake_torques(f,r)` vs записанными `front/rear` demands (controls в артефакте) и `ctrl_written`; `resistance_components` vs `forces[k][road_rolling|aerodynamic]` bitwise.
-- [ ] **Step 2-4:** TDD-цикл, build+test+sweep, commit `"feat(native): brake + resistance writers (cpp-port P2)"`.
+- [x] **Step 1: Failing test** — per-state: `brake_torques(f,r)` vs записанными `front/rear` demands (controls в артефакте) и `ctrl_written`; `resistance_components` vs `forces[k][road_rolling|aerodynamic]` bitwise.
+- [x] **Step 2-4:** TDD-цикл, build+test+sweep, commit `"feat(native): brake + resistance writers (cpp-port P2)"`.
 
 ---
 
@@ -329,7 +329,7 @@ git commit -m "feat(native): suspension writer port + config bridge — bitwise 
 **Interfaces:**
 - Produces: `stepper.tire_state()` / `stepper.set_tire_state(arr)` (roundtrip с `tire_state` матрицей артефакта); `stepper.tire_qfrc(dt: float) -> np.ndarray` — nv-вектор, bitwise vs `forces[k]['tires']` на каждом шаге; snapshots native-аналог для downstream (resistance) — совместимая структура.
 
-- [ ] **Step 1-4:** TDD: failing test (per-state bitwise `tire_qfrc`), implement, build+test+sweep, commit `"feat(native): tire writer port — brush-state restore + bitwise components (cpp-port P2)"`.
+- [x] **Step 1-4:** TDD: failing test (per-state bitwise `tire_qfrc`), implement, build+test+sweep, commit `"feat(native): tire writer port — brush-state restore + bitwise components (cpp-port P2)"`.
 - Замечание: brush-интеграция использует `last_time_s`-проверки (`tire_forces.py:130`) — native-порт сохраняет ту же дисциплину (double-advance на том же timestamp = error).
 
 ---
@@ -347,7 +347,7 @@ git commit -m "feat(native): suspension writer port + config bridge — bitwise 
 - Consumes: `rider_forces.py` (apply:143, compute:50 — rider tissue/interface springs).
 - Produces: `stepper.rider_forces_qfrc() -> np.ndarray` bitwise vs `forces[k]['seated_interfaces']`; тест `total()`: `np.add.reduce` в порядке `force_names` == native `total()` порядок.
 
-- [ ] **Step 1-4:** TDD: failing test, implement, build+test+sweep, commit `"feat(native): rider_forces writer + accumulator ordering gate (cpp-port P2)"`.
+- [x] **Step 1-4:** TDD: failing test, implement, build+test+sweep, commit `"feat(native): rider_forces writer + accumulator ordering gate (cpp-port P2)"`.
 
 ---
 

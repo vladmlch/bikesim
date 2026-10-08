@@ -1,6 +1,6 @@
 # Native drivetrain P3 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Port the physical drivetrain's policies, force components, transmission constraints, and solved-actuation energy accounting into independently callable C++ code.
 
@@ -73,7 +73,7 @@ Typed classes mirror the unchanged Python method signatures with doubles, bools,
 
 State mirrors `vars()` of each policy excluding config/gearing/profile: pedaling's coasting/phase/rate/deceleration/effort/cadence EMA, shifter's rear/from teeth, cooldown/cut/count/direction/two EMAs, assist's torque/pedaling/last_gain, battery's initial/current/drawn energy, hub's boundary/energy/torque. Document exact dict keys in the tests/doc. Reject missing keys, nonfinite numbers, invalid bools, invalid tooth/count integers, negative energy/timers, and mismatched optional shifter EMAs before changing any member. Preserve arbitrary finite values that are legitimate Python snapshots; do not invent narrow physical limits.
 
-- [ ] **Step 1: Write independent failing oracle tests.** Construct a Python applier solely to project configuration and use the unchanged scalar objects/functions as oracle. Include a minimal concrete battery test:
+- [x] **Step 1: Write independent failing oracle tests.** Construct a Python applier solely to project configuration and use the unchanged scalar objects/functions as oracle. Include a minimal concrete battery test:
 
 ```python
 def test_battery_draw_matches_python(config):
@@ -87,7 +87,7 @@ def test_battery_draw_matches_python(config):
 
 Add sequences for coasting hysteresis, mash/slew/EMA, signed rollback cadence and braking; shifter up/down, landing/cooldown/cut/airborne/positive and negative slip in both modes; assist all four profile modes, eMTB ramp, exact curve knots/interior/outside, separate crank and shaft rpm, power/speed taper, gate, brake reset, request ceiling, lag/slew; battery enabled/disabled, a=0/a>0, negative shaft speed, nonzero idle remainder; elastic hub engagement/overrun. Compare every state field after every call, not only returns. Test copied configs and state survive original Python object's deletion and original dict mutation. Test atomic invalid restoration, missing/nonfinite config, reset, state roundtrip, and crank torque phases/ripple.
 
-- [ ] **Step 2: Run RED and retain the expected missing-API output.**
+- [x] **Step 2: Run RED and retain the expected missing-API output.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_drive_policies.py -q
@@ -95,7 +95,7 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_drive
 
 Expected failures identify `bike_native.DrivePolicies`/`human_crank_torque` absent, not collection skips or fixture errors.
 
-- [ ] **Step 3: Port the literal reference equations into the typed classes.** Source files are `physics/pedaling.py`, `shifting.py`, `motor.py`, `motor_profile.py`, `battery.py`, `freehub.py`. For example the lag expression must be:
+- [x] **Step 3: Port the literal reference equations into the typed classes.** Source files are `physics/pedaling.py`, `shifting.py`, `motor.py`, `motor_profile.py`, `battery.py`, `freehub.py`. For example the lag expression must be:
 
 ```cpp
 double candidate = torque - std::expm1(-dt / config.tau) * (target - torque);
@@ -105,7 +105,7 @@ candidate = std::max(torque - config.slew * dt,
 
 Curve interpolation follows NumPy's scalar interpolation arithmetic and endpoint behavior; diagnose any raw-bit mismatch. Validate complete candidates before restoring state. Keep each responsibility in its named file; config parsing and dict conversion stay at the FFI boundary.
 
-- [ ] **Step 4: Build and run GREEN, affected native checks, and compiler sweep.**
+- [x] **Step 4: Build and run GREEN, affected native checks, and compiler sweep.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
@@ -115,7 +115,7 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target chec
 
 Report exact counts, time, warnings, red/green commands, and public typed interfaces for Task 2. Stop and escalate a numerical/platform ambiguity instead of altering oracle tolerance.
 
-- [ ] **Step 5: Self-review and commit only the Task 1 files.**
+- [x] **Step 5: Self-review and commit only the Task 1 files.**
 
 ```bash
 git add native/src/drivetrain native/src/binding.cpp native/CMakeLists.txt tools/native_config.py tests/reference/test_native_drive_policies.py docs/TESTING.md
@@ -164,7 +164,7 @@ stepper.set_inputs(ctrl, qfrc_applied)  # copies finite width nu/nv arrays atomi
 
 Preserve optional policy times/angles/reference/pending-actuation sentinel; model tendon range and coefficient mutations; ideal/geometric boundaries; geometric prepared phi/J/q/time, last tension, shift flags and cumulative work; every policy and diagnostic field. State restoration must recreate these without reading derived MuJoCo arrays from Python. It must validate dimensions, finite/integer/bool/enum fields and positive ratios before mutation. State schemas are documented with tests. Setup and FFI conversion may allocate; the typed writer reuses model-size scratch buffers and contains no Python calls. Do not claim a full allocation-free P4 tick or speedup in this increment.
 
-- [ ] **Step 1: Write failing layer-one and solved-interval tests.** Use compiled small scalar planar models with frame/crank/wheels/pedals; add cassette for elastic-chain mode, fixed tendon for ideal mode, and one coefficient per scalar dof for geometric mode. Use the real builder's compiled model helper where practical without invoking slow equilibrium relaxation. Save MJB, load a separate native owner, initialize identical state and clock. Examples for force staging:
+- [x] **Step 1: Write failing layer-one and solved-interval tests.** Use compiled small scalar planar models with frame/crank/wheels/pedals; add cassette for elastic-chain mode, fixed tendon for ideal mode, and one coefficient per scalar dof for geometric mode. Use the real builder's compiled model helper where practical without invoking slow equilibrium relaxation. Save MJB, load a separate native owner, initialize identical state and clock. Examples for force staging:
 
 ```python
 expected = python_drive.compute_components(python_model, python_data, dt,
@@ -180,7 +180,7 @@ For solved accounting, run genuine identical `mj_step` and `Stepper.step()` inte
 
 Exercise all three transmission models, rotor/legacy clutch, both effort drive modes and both passive modes (including legal absence of human actuator), forward multi-turn angles, slack/tension, wheel overrun, shifting ratio continuity, inactive and `advance=False` force probes, duplicate-time and pending-settlement guards, injected/restored valid states, restart-clock versus full reset, disabled/depleted batteries and energy ceiling. Compare every force channel and diagnostic, not just torque. Verify optional config projection and no-drive Stepper compatibility. Test nonfinite/invalid inputs and atomic restoration, including aliasing in `set_inputs`.
 
-- [ ] **Step 2: Run RED against the missing writer APIs.**
+- [x] **Step 2: Run RED against the missing writer APIs.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_drivetrain.py -q
@@ -188,7 +188,7 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_drive
 
 Retain expected failures separately from topology/fixture mistakes.
 
-- [ ] **Step 3: Implement geometry, transmissions, and model-owned writer in that dependency order.** Port `physics/chain.py`, `physics/transmission_constraint.py`, `sim/ride/ideal_freehub.py`, `sim/ride/geometric_freehub.py`, and `sim/ride/drivetrain_forces.py` literally. Preserve this ordering:
+- [x] **Step 3: Implement geometry, transmissions, and model-owned writer in that dependency order.** Port `physics/chain.py`, `physics/transmission_constraint.py`, `sim/ride/ideal_freehub.py`, `sim/ride/geometric_freehub.py`, and `sim/ride/drivetrain_forces.py` literally. Preserve this ordering:
 
 ```text
 prepare ratchets -> prepare pedaling/shift -> chain + hub + bearings
@@ -199,7 +199,7 @@ prepare ratchets -> prepare pedaling/shift -> chain + hub + bearings
 
 The solved battery debit uses the saved incoming shaft rate and actual nonnegative actuator force, not the requested moment or outgoing shaft rate. Only `advance=True` live calls mutate policy/time/pending state; `advance=False` uses copies, emits probe diagnostics, and preserves the live policy/transmission state while retaining Python's force/control writes. Do not shift/touch ratchets during probes. Model mutations use owned detached `mjData` for `mj_setConst`; geometric endpoint kinematics use another owned scratch data. Chain Jacobians and dot products match NumPy/Accelerate operation shapes; do not add a duplicate sprocket torque on top of `-T*J`.
 
-- [ ] **Step 4: Run focused GREEN and compiler checks; sanitize the new code once.**
+- [x] **Step 4: Run focused GREEN and compiler checks; sanitize the new code once.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
@@ -210,7 +210,7 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build/asan -j4
 
 Run these two test files against the actual sanitizer extension by prepending `native/build/asan` inside Python and asserting its module path. Use `uv run env ASAN_OPTIONS=detect_leaks=0 DYLD_INSERT_LIBRARIES=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib python ...` so the sanitizer is injected into Python after uv. Record exact test evidence and numerical/platform limitations. After task review and any fixes the controller runs `bash tools/run_tests.sh quick` once, followed by the final increment review.
 
-- [ ] **Step 5: Self-review and commit scoped changes.**
+- [x] **Step 5: Self-review and commit scoped changes.**
 
 ```bash
 git add native/src/drivetrain native/src/writers/drivetrain.hpp native/src/writers/drivetrain.cpp native/src/config.hpp native/src/stepper.hpp native/src/stepper.cpp native/src/binding.cpp native/CMakeLists.txt tools/native_config.py tests/reference/test_native_drivetrain.py docs/TESTING.md

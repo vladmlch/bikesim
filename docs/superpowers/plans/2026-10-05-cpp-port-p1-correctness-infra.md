@@ -1,6 +1,6 @@
 # C++ Port P1: Correctness Infrastructure + Build Scaffold Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Построить инфраструктуру корректности (golden-эпизоды, comparator, горизонт расхождения) и нативный build-scaffold — до первой строчки ported-кода, чтобы порт был проверяем на каждом шаге.
 
@@ -41,7 +41,7 @@
 - Consumes: `bike_sim.cli.research.make_environment`, `env.sim`, `sim.physical` (PhysicalRuntime), `runtime.step(control=RideControl)`, `runtime.completed_samples` (PhysicalSample с `.as_dict()`), `runtime.flush()`, `runtime.reference_monitor.first_failure`, `PhysicalInitialState.capture(sim)` / `sim.reset()` (паттерн из oracle-теста), `bike_sim.validation.environment.source_fingerprint`.
 - Produces: `capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact`; `save(ep, out_dir: Path, model)` пишет `episode.npz` (начальные `qpos/qvel/act/time`, per-step контроль-векторы, flatten-нутые numeric-каналы `steps × nch` + `channel_names`), `manifest.json` (`source_fingerprint`, `first_failure`, per-step non-numeric каналы) и `model.mjb` через `mujoco.mj_saveModel`; `load_episode(dir) -> EpisodeArtifact`; `flatten_row(row) -> dict`. Поздние задачи читают эти файлы.
 
-- [ ] **Step 1: Failing test — детерминизм захвата**
+- [x] **Step 1: Failing test — детерминизм захвата**
 
 ```python
 """Golden-episode capture is deterministic and complete."""
@@ -80,12 +80,12 @@ def test_saved_artifact_roundtrips(tmp_path):
     assert (tmp_path/'golden'/'model.mjb').exists()
 ```
 
-- [ ] **Step 2: Run — verify fail**
+- [x] **Step 2: Run — verify fail**
 
 Run: `uv run pytest tests/reference/test_golden_episode.py -v -m slow`
 Expected: FAIL — `ModuleNotFoundError: tools.golden_episode`.
 
-- [ ] **Step 3: Implement `tools/golden_episode.py`**
+- [x] **Step 3: Implement `tools/golden_episode.py`**
 
 ```python
 """Freeze a deterministic episode as the correctness oracle artifact.
@@ -204,12 +204,12 @@ def load_episode(d: Path) -> EpisodeArtifact:
 
 Note for the implementer: `flatten_row`/`save`/`load_episode` делят один контракт: flat-имена `a.b`/`a.0`, numeric → npz, non-numeric → `non_numeric` в manifest и overlay обратно при load (иначе roundtrip-тест не сойдётся побитово). `model.mjb` — сохранить через `mujoco.mj_saveModel(env.sim.model, str(out_dir/'model.mjb'))` в `save` (импортируется вверху файла) или передавать `env` — выбрать более простой путь: `save(ep, out_dir, model)` с явным `mujoco.MjModel`.
 
-- [ ] **Step 4: Run — verify pass**
+- [x] **Step 4: Run — verify pass**
 
 Run: `uv run pytest tests/reference/test_golden_episode.py -v -m slow`
 Expected: PASS (оба теста). Если `test_capture_is_deterministic` флаки — остановиться и доложить: недетерминизм Python-рантайма ломает всю планку, это блокер.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tools/golden_episode.py tests/reference/test_golden_episode.py
@@ -230,7 +230,7 @@ git commit -m "feat(tools): golden-episode capture — oracle artifact generator
 - Consumes: `EpisodeArtifact`/`load_episode` из Task 1; `runtime.step(control)`, `completed_samples`, `flush`, `first_failure` (та же поверхность).
 - Produces: `replay_episode(env, ep: EpisodeArtifact) -> list[dict]`; `compare_rows(golden, candidate, *, rtol=1e-12, atol=1e-12) -> list[str]` (список расхождений вида `step=K channel=name golden=… candidate=…`); `compare_episode(golden_dir, env) -> list[str]` (полный: replay + compare + first_failure). Поздние планы зовут `compare_episode` из нативных тестов.
 
-- [ ] **Step 1: Failing test — self-oracle replay**
+- [x] **Step 1: Failing test — self-oracle replay**
 
 ```python
 """Replay of a golden episode on the same code is bitwise identical."""
@@ -261,12 +261,12 @@ def test_compare_reports_first_divergence():
     assert diffs and 'step=0' in diffs[0] and 'y' in diffs[0]
 ```
 
-- [ ] **Step 2: Run — verify fail**
+- [x] **Step 2: Run — verify fail**
 
 Run: `uv run pytest tests/reference/test_episode_compare.py -v`
 Expected: FAIL — `ModuleNotFoundError: tools.episode_compare`.
 
-- [ ] **Step 3: Implement `tools/episode_compare.py`**
+- [x] **Step 3: Implement `tools/episode_compare.py`**
 
 ```python
 """Replay a golden episode and diff it row-by-row — the equivalence harness.
@@ -327,12 +327,12 @@ def compare_rows(golden, candidate, *, rtol=1e-12, atol=1e-12) -> list[str]:
 
 Note for the implementer: `RideControl` is immutable — restore fields only present in `controls` records; if `asdict(applied_control)` carries extra keys not in `RideControl.__init__`, filter by `inspect.signature(RideControl).parameters`.
 
-- [ ] **Step 4: Run — verify pass**
+- [x] **Step 4: Run — verify pass**
 
 Run: `uv run pytest tests/reference/test_episode_compare.py -v`
 Expected: PASS. Self-oracle replay обязан быть побитовым — любое расхождение = баг в capture/replay, чинить harness, не ослаблять толеранс.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tools/episode_compare.py tests/reference/test_episode_compare.py
@@ -353,7 +353,7 @@ git commit -m "feat(tools): episode replay+comparator — layer-2 equivalence ha
 - Consumes: `capture_episode`/`EpisodeArtifact` (Task 1), `compare_rows`-flatten (Task 2), `env.sim.data` (`qvel`), `sim.reset()` + восстановление `initial`-массивов из артефакта.
 - Produces: `measure_horizon(env_factory, steps: int, *, perturb: dict, tol: float = 1e-9) -> int` — номер первого шага, где хоть один канал превысил `tol` (или `steps` если не расходится); CLI `uv run python tools/divergence_horizon.py --steps 4000` пишет `output/divergence_horizon.json` с `horizon_step` и per-channel первой точкой расхождения. Поздние планы используют это число как границу детерминированной проверки.
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 ```python
 """A 1e-14 state perturbation diverges at a measurable, repeatable step."""
@@ -390,12 +390,12 @@ def test_unperturbed_never_diverges(tmp_path):
     assert measure_horizon(make, 200, perturb={'qvel_idx': 0, 'eps': 0.}) == 200
 ```
 
-- [ ] **Step 2: Run — verify fail**
+- [x] **Step 2: Run — verify fail**
 
 Run: `uv run pytest tests/reference/test_divergence_horizon.py -v -m slow`
 Expected: FAIL — `ModuleNotFoundError: tools.divergence_horizon`.
 
-- [ ] **Step 3: Implement `tools/divergence_horizon.py`**
+- [x] **Step 3: Implement `tools/divergence_horizon.py`**
 
 ```python
 """Measure the chaos-divergence horizon that bounds deterministic comparison.
@@ -489,12 +489,12 @@ if __name__ == '__main__':
 
 Note for the implementer: make the CLI self-contained — build env via `research_cli.make_environment` directly (copy the parse pattern from `test_pinned_topology._model`, do NOT import tests from tools). `env_factory` must return a *fresh* env each call (two runs must not share mjData).
 
-- [ ] **Step 4: Run — verify pass + реальное число**
+- [x] **Step 4: Run — verify pass + реальное число**
 
 Run: `uv run pytest tests/reference/test_divergence_horizon.py -v -m slow`
 Expected: PASS. Записать измеренный `h` в `manifest.json`-комментарий теста (комментарий к assert: «измерено h≈N на savage/400 шагов») — это число станет границей слоя-2 в поздних планах.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tools/divergence_horizon.py tests/reference/test_divergence_horizon.py
@@ -518,7 +518,7 @@ git commit -m "feat(tools): divergence-horizon measurement — bounds the determ
 - Consumes: `model.mjb` из `tools/golden_episode`/`dump_model.py`; mujoco headers/dylib из `.venv` (глобальный constraint); nanobind из `uv run python -c "import nanobind"` — добавить `nanobind` в dev-зависимости если отсутствует (`uv add --dev nanobind`).
 - Produces: Python-модуль `bike_native` (в `native/build/`): `Stepper(path: str)`, `step() -> None`, `qpos -> np.ndarray` (zero-copy view в `d->qpos`), `qvel -> np.ndarray`, `time -> float`. Поздние планы расширяют этот класс до полного tick-path.
 
-- [ ] **Step 1: Failing test — layer-1 побитовая эквивалентность шага**
+- [x] **Step 1: Failing test — layer-1 побитовая эквивалентность шага**
 
 ```python
 """Native mj_step is bitwise-identical to Python mj_step — same dylib."""
@@ -546,12 +546,12 @@ def test_native_step_matches_python_bitwise():
 
 Note: `Stepper` должен вызывать `mj_forward` после загрузки (как Python `mj_forward` выше), иначе стартовое состояние расходится.
 
-- [ ] **Step 2: Run — verify fail**
+- [x] **Step 2: Run — verify fail**
 
 Run: `uv run pytest tests/reference/test_native_stepper.py -v`
 Expected: FAIL — `ModuleNotFoundError: bike_native` (importorskip → SKIP: приёмлемо, но сборка ниже сделает PASS; скип здесь честен — нативный модуль может отсутствовать на не-arm64).
 
-- [ ] **Step 3: `native/CMakeLists.txt`**
+- [x] **Step 3: `native/CMakeLists.txt`**
 
 ```cmake
 cmake_minimum_required(VERSION 3.24)
@@ -596,7 +596,7 @@ add_custom_target(check_frontends
   COMMENT "gcc -fsyntax-only sweep (second frontend)")
 ```
 
-- [ ] **Step 4: `native/src/stepper.hpp` + `stepper.cpp` + `binding.cpp`**
+- [x] **Step 4: `native/src/stepper.hpp` + `stepper.cpp` + `binding.cpp`**
 
 ```cpp
 // stepper.hpp — owns mjModel/mjData; buffers never escape ownership.
@@ -660,7 +660,7 @@ NB_MODULE(bike_native, m) {
 
 Note for the implementer: views are zero-copy and non-owning — `Stepper` must outlive them (document in `binding.cpp` comment); `nb::handle()` empty owner means "no owner". If nanobind's ndarray signature differs in the installed version, follow its `ndarray` docs — the contract (numpy view over `d->qpos`) is what matters.
 
-- [ ] **Step 5: `tools/check_native_frontends.sh`**
+- [x] **Step 5: `tools/check_native_frontends.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -683,7 +683,7 @@ echo "gcc sweep clean: $SRC_DIR"
 
 `chmod +x tools/check_native_frontends.sh`. Если nanobind-хедеры под GCC дают шум — sweeping прогоняет только `stepper.cpp` (без `binding.cpp`): binding — clang-only frontend, ядро — под обоими.
 
-- [ ] **Step 6: Build + run**
+- [x] **Step 6: Build + run**
 
 ```bash
 cd native && uv run cmake -B build -S . && uv run cmake --build build && \
@@ -694,12 +694,12 @@ uv run pytest tests/reference/test_native_stepper.py -v
 ```
 Expected: сборка чисто под -Werror, тест PASS (побитовое равенство — та же dylib). `install_name_tool` нужен только если dyld резолвит framework-rpath — как в `tools/proto_native_bench`. Если линкер уже записал абсолютный путь — шаг no-op.
 
-- [ ] **Step 7: Frontends sweep**
+- [x] **Step 7: Frontends sweep**
 
 Run: `bash tools/check_native_frontends.sh native/src .venv/lib/python3.14/site-packages/mujoco/include`
 Expected: `gcc sweep clean`. Любой новый ворнинг от второго фронтенда — чинить код (не ослаблять набор).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add native/ tools/check_native_frontends.sh tests/reference/test_native_stepper.py pyproject.toml uv.lock

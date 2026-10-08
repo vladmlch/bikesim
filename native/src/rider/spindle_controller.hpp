@@ -277,13 +277,21 @@ private:
     // _predict_target_state — detached kinematics on a scratch mjData.
     void predict_target_state(const mjData *data, mjData *scratch,
                               bool reverse) const;
+    // self.joints[name] — the resolved reference-joint slot; locked
+    // joints miss like the oracle's dict KeyError (std::out_of_range).
+    [[nodiscard]] std::size_t joint_index(const std::string &name) const;
     // _directional_limit: strength capacity or the flat joint ceiling.
     [[nodiscard]] double directional_limit(const std::string &name,
                                            const mjData *data,
                                            double sign) const;
     // limit_torques — per-joint directional+speed cap then power budget.
+    // `filled` marks which entries Python's requested dict actually
+    // carried; the dense-vector callers (activated/final) omit it and
+    // mean "every joint". An unfilled joint is the oracle's torques[name]
+    // KeyError (rider_control.py:743), not an implicit zero.
     [[nodiscard]] std::vector<double>
-    limit_torques(std::span<const double> torques, const mjData *data) const;
+    limit_torques(std::span<const double> torques, const mjData *data,
+                  std::span<const char> filled = {}) const;
     // finalize_effort — activation/bounds re-check plus diagnostics.
     [[nodiscard]] std::vector<double>
     finalize_effort(mjData *data, std::span<const double> torques,

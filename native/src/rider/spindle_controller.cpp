@@ -644,6 +644,15 @@ spindle::Vec2 SpindleController::leg_targets(const mjData *data,
                                 xz(spindle_world), pitch);
 }
 
+std::size_t
+SpindleController::joint_index(const std::string &name) const {
+    const auto found = std::ranges::find_if(
+        joints_, [&](const JointEntry &j) { return j.name == name; });
+    if (found == joints_.end())
+        throw std::out_of_range(name);
+    return static_cast<std::size_t>(found - joints_.begin());
+}
+
 std::vector<std::pair<std::string, double>>
 SpindleController::upper_targets(const mjData *data,
                                  const RiderPosture *posture) {
@@ -670,14 +679,10 @@ SpindleController::upper_targets(const mjData *data,
     // about the actual torso would always be "already met" and give the
     // trunk no support. Solve about the shoulder the *target* torso angle
     // would place; a sagging trunk then meets elbow stiffness.
-    const auto torso_entry = std::ranges::find_if(
-        joints_, [](const JointEntry &j) {
-            return j.name == "rider_torso_hinge";
-        });
     double delta = torso_q -
         model_access::readonly_buffer(data->qpos, model_->nq,
                                       "qpos")[static_cast<std::size_t>(
-            torso_entry->qpos_adr)];
+            joints_[joint_index("rider_torso_hinge")].qpos_adr)];
     delta = std::atan2(std::sin(delta), std::cos(delta));
     const double cd = std::cos(delta), sd = std::sin(delta);
     const std::array<double, 9> rot{cd, 0., sd, 0., 1., 0., -sd, 0., cd};
@@ -713,10 +718,8 @@ SpindleController::upper_targets(const mjData *data,
     const auto qpos = model_access::readonly_buffer(
         data->qpos, model_->nq, "qpos");
     for (auto &[name, target] : targets) {
-        const auto entry = std::ranges::find_if(
-            joints_, [&](const JointEntry &j) { return j.name == name; });
-        const double current =
-            qpos[static_cast<std::size_t>(entry->qpos_adr)];
+        const double current = qpos[static_cast<std::size_t>(
+            joints_[joint_index(name)].qpos_adr)];
         target = current + std::atan2(std::sin(target - current),
                                       std::cos(target - current));
         const auto range = joint_ranges_.find(name);
@@ -791,18 +794,14 @@ void SpindleController::initialize(mjData *data) {
         data->qpos, model_->nq, "qpos");
     // Pose the torso first, then solve the arms about that actual shoulder.
     auto upper = upper_targets(data, nullptr);
-    const auto torso_entry = std::ranges::find_if(
-        joints_, [](const JointEntry &j) {
-            return j.name == "rider_torso_hinge";
-        });
-    qpos[static_cast<std::size_t>(torso_entry->qpos_adr)] =
+    qpos[static_cast<std::size_t>(
+        joints_[joint_index("rider_torso_hinge")].qpos_adr)] =
         upper.front().second;
     engine::forward(model_, data);
     upper = upper_targets(data, nullptr);
     for (const auto &[name, value] : upper) {
-        const auto entry = std::ranges::find_if(
-            joints_, [&](const JointEntry &j) { return j.name == name; });
-        qpos[static_cast<std::size_t>(entry->qpos_adr)] = value;
+        qpos[static_cast<std::size_t>(
+            joints_[joint_index(name)].qpos_adr)] = value;
     }
     engine::forward(model_, data);
     for (const auto side : kSides) {
@@ -882,6 +881,11 @@ SpindleController::strength_limited(std::span<const double> torques,
     std::vector<double> clipped(torques.begin(), torques.end());
     if (!config_.has_strength)
         return {clipped, {}};
+    // qpos[qa]/qvel[dof] indexing — a wrong width is the oracle's
+    // IndexError, not an out-of-bounds read.
+    if (qpos.size() != static_cast<std::size_t>(model_->nq) ||
+        qvel.size() != static_cast<std::size_t>(model_->nv))
+        throw std::invalid_argument("strength state width mismatch");
     if (clipped.size() != joints_.size())
         throw std::invalid_argument("strength limit vector mismatch");
     std::vector<std::string> limited;
@@ -906,6 +910,9 @@ std::vector<std::string> SpindleController::strength_violations(
     std::span<const double> qpos, std::span<const double> qvel) const {
     if (!config_.has_strength)
         return {};
+    if (qpos.size() != static_cast<std::size_t>(model_->nq) ||
+        qvel.size() != static_cast<std::size_t>(model_->nv))
+        throw std::invalid_argument("strength state width mismatch");
     std::vector<std::string> violated;
     for (const auto &joint : joints_) {
         const double torque =
@@ -924,10 +931,7 @@ std::vector<std::string> SpindleController::strength_violations(
 double SpindleController::directional_limit(const std::string &name,
                                             const mjData *data,
                                             double sign) const {
-    const auto entry = std::ranges::find_if(
-        joints_, [&](const JointEntry &j) { return j.name == name; });
-    if (entry == joints_.end())
-        throw std::out_of_range(name);
+    const JointEntry &entry = joints_[joint_index(name)];
     if (!config_.has_strength)
         return config_.joint_limit_nm;
     const auto qpos = model_access::readonly_buffer(
@@ -937,21 +941,24 @@ double SpindleController::directional_limit(const std::string &name,
     return strength_capacity(
         name,
         anatomical_joint_angle(
-            name, qpos[static_cast<std::size_t>(entry->qpos_adr)]),
-        qvel[static_cast<std::size_t>(entry->dof_adr)], sign);
+            name, qpos[static_cast<std::size_t>(entry.qpos_adr)]),
+        qvel[static_cast<std::size_t>(entry.dof_adr)], sign);
 }
 
 std::vector<double>
 SpindleController::limit_torques(std::span<const double> torques,
-                                 const mjData *data) const {
-    if (torques.size() != joints_.size())
-        throw std::invalid_argument("effort state shape mismatch");
+                                 const mjData *data,
+                                 std::span<const char> filled) const {
     const std::size_t n = joints_.size();
+    if (torques.size() != n || (!filled.empty() && filled.size() != n))
+        throw std::invalid_argument("effort state shape mismatch");
     std::vector<double> limited(n), speeds(n);
     const auto qvel = model_access::readonly_buffer(
         data->qvel, model_->nv, "qvel");
     for (std::size_t i = 0; i < n; ++i) {
         const auto &joint = joints_[i];
+        if (!filled.empty() && !filled[i])
+            throw std::out_of_range(joint.name);
         const double torque = validation::finite(
             torques[i], (joint.name + " requested torque").c_str());
         const double speed = validation::finite(
@@ -1089,7 +1096,13 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         data->qvel, model_->nv, "qvel");
     const auto bias = model_access::readonly_buffer(
         data->qfrc_bias, model_->nv, "qfrc_bias");
+    // Python's `requested` dict: every joint present at 0. when the
+    // command is disabled, only the driven hip/knee/upper names when
+    // enabled. `requested_filled` tracks which dense slots the oracle's
+    // dict would actually carry so _limit_torques can re-raise the
+    // missing-key KeyError instead of silently clipping an implicit 0.
     std::vector<double> requested(n, 0.);
+    std::vector<char> requested_filled(n, command_enabled_ ? 0 : 1);
     double total = 0.;
     std::array<spindle::Vec2, 2> jacobians{};
     std::array<bool, 2> has_jacobian{false, false};
@@ -1142,13 +1155,6 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             command.mean_crank_torque_nm > 0.
                 ? config_.return_foot_preload_n
                 : 0.);
-        const auto index_of = [&](const std::string &name) {
-            return static_cast<std::size_t>(
-                std::ranges::find_if(
-                    joints_,
-                    [&](const JointEntry &j) { return j.name == name; }) -
-                joints_.begin());
-        };
         for (const auto side : kSides) {
             const auto s = side_index(side);
             const Vec2 hip = mat_t_vec_xz(
@@ -1170,14 +1176,18 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             };
             const Vec2 torques = spindle::split_joint_torques(
                 leg_targets_v[s], jac, capacity);
-            requested[index_of("rider_hip_" + std::string(side))] =
-                torques[0];
-            requested[index_of("rider_knee_" + std::string(side))] =
-                torques[1];
+            const std::size_t hip_slot =
+                joint_index("rider_hip_" + std::string(side));
+            const std::size_t knee_slot =
+                joint_index("rider_knee_" + std::string(side));
+            requested[hip_slot] = torques[0];
+            requested[knee_slot] = torques[1];
+            requested_filled[hip_slot] = 1;
+            requested_filled[knee_slot] = 1;
         }
         const auto upper = upper_targets(data, &command.posture);
         for (const auto &[name, target] : upper) {
-            const auto index = index_of(name);
+            const auto index = joint_index(name);
             const auto &joint = joints_[index];
             // Positive hinge torque applies the restoring -y reaction
             // to the pelvis.
@@ -1198,13 +1208,15 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                               qvel[static_cast<std::size_t>(joint.dof_adr)];
             requested[index] =
                 torque + bias[static_cast<std::size_t>(joint.dof_adr)];
+            requested_filled[index] = 1;
         }
         const Vec2 shares = spindle::leg_shares(phase);
         support_diagnostics_ = {.present = true,
                                 .stance_front = shares[0] >= .5,
                                 .stance_rear = shares[1] >= .5};
     }
-    const std::vector<double> excitation = limit_torques(requested, data);
+    const std::vector<double> excitation =
+        limit_torques(requested, data, requested_filled);
     const std::vector<double> activated =
         steady_state || !command_enabled_
             ? excitation
@@ -1228,20 +1240,13 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
     // front hip, front knee, rear hip, rear knee — so the adds must not
     // regroup per side.
     double projected = 0.;
-    const auto index_of = [&](const std::string &name) {
-        return static_cast<std::size_t>(
-            std::ranges::find_if(
-                joints_,
-                [&](const JointEntry &j) { return j.name == name; }) -
-            joints_.begin());
-    };
     for (const auto side : kSides) {
         const auto s = side_index(side);
         if (!has_jacobian[s])
             continue;
-        projected += final[index_of("rider_hip_" + std::string(side))] *
+        projected += final[joint_index("rider_hip_" + std::string(side))] *
                      jacobians[s][0];
-        projected += final[index_of("rider_knee_" + std::string(side))] *
+        projected += final[joint_index("rider_knee_" + std::string(side))] *
                      jacobians[s][1];
     }
     allocation_diagnostics_ = {.present = true,

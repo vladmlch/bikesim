@@ -432,6 +432,32 @@ def test_policy_update_parity_with_delays(plant):
     _compare(probe.intent_state(), resolver.state_dict())
 
 
+def test_resolve_enabled_delayed_none_front_load(plant):
+    """Enabled resolver fed a delayed front_load_share=None sample.
+
+    With trim_dead_time_s=.2 and a .01s acquisition period the queued None
+    becomes the delivered delayed_load_share at tick 21, so the optional
+    branch (skip the trim update) runs inside an enabled resolver's
+    policy.update — the disabled-resolver case returns before update."""
+    probe, resolver = plant
+    saw_delayed_none = False
+    for step in range(450):
+        share = None if step < 200 else .45
+        native, expected = _resolve(
+            probe, resolver, step,
+            signals=_signals(front_load_share=share))
+        _compare(native, expected)
+        program = resolver.state_dict()['program']
+        if program['delayed_load_share'] is None and step >= 220:
+            saw_delayed_none = True
+            # A delivered None skips the trim integrator entirely.
+            assert program['trim_rad'] == 0.
+        _compare(probe.intent_state(), resolver.state_dict())
+    assert saw_delayed_none
+    # Once real shares deliver, the trim integrator runs again on both.
+    assert resolver.state_dict()['program']['trim_rad'] != 0.
+
+
 def test_policy_inclination_norm_gate(plant):
     probe, resolver = plant
     policy = resolver.policy

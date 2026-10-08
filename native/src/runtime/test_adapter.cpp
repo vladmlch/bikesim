@@ -280,6 +280,12 @@ public:
         const auto torque_v = wire::vector(torques, "strength.torques");
         const auto qpos_v = wire::vector(qpos, "strength.qpos");
         const auto qvel_v = wire::vector(qvel, "strength.qvel");
+        if (qpos_v.size() !=
+                static_cast<std::size_t>(stepper_.model()->nq) ||
+            qvel_v.size() !=
+                static_cast<std::size_t>(stepper_.model()->nv))
+            throw std::invalid_argument(
+                "strength incoming state width mismatch");
         const auto [clipped, limited] =
             require_spindle().strength_limited(torque_v, qpos_v, qvel_v);
         nb::dict out;

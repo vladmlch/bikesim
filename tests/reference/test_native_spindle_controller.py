@@ -58,7 +58,22 @@ def test_effort_ceiling_rejects_bad_inputs():
 
 # ---- A2.3: SpindleController through the native-only adapter ---------------
 
-def _plant(tmp_path):
+def _damped_config(tmp_path):
+    """The pinned TOML plus a nonzero activation time constant and joint
+    passive damping — the pinned profile leaves both at zero, which makes
+    the activation filter and passive-damping terms vacuous."""
+    from test_pinned_topology import _pinned_config
+    text = _pinned_config(tmp_path).read_text()
+    assert 'joint_passive_damping_nms_rad = 0.0' in text
+    text = text.replace(
+        'joint_passive_damping_nms_rad = 0.0',
+        'joint_passive_damping_nms_rad = 2.5\nactivation_tau_s = 0.05')
+    path = tmp_path / 'physics_damped.toml'
+    path.write_text(text)
+    return path
+
+
+def _plant(tmp_path, config_path=None):
     """The pinned nine-actuator plant: Python controller + native adapter
     over the identical compiled model and wire config."""
     from test_pinned_topology import _pinned_config
@@ -68,7 +83,8 @@ def _plant(tmp_path):
     from bike_sim.physics.resolution import load_physics_config
     from bike_sim.physics.rider import RiderSpecs
     from bike_sim.physics.rider_segments import geometry_pose
-    cfg = load_physics_config(_pinned_config(tmp_path))
+    cfg = load_physics_config(
+        _pinned_config(tmp_path) if config_path is None else config_path)
     specs = BikeSpecs()
     rider = RiderSpecs(variant='articulated_planar')
     pose = geometry_pose(rider, specs)
@@ -105,7 +121,8 @@ def _command_dict(command):
             'crank_target_rate_rad_s': command.crank_target_rate_rad_s}
 
 
-def _staged(model, probe, crank_q=0.0, crank_rate=0.0, root_pitch=0.0):
+def _staged(model, probe, crank_q=0.0, crank_rate=0.0, root_pitch=0.0,
+            joint_rates=None):
     """Identical mjData on both sides: qpos/qvel staged, then forward."""
     data = mujoco.MjData(model)
     crank = model.joint('crank_spin')
@@ -113,6 +130,8 @@ def _staged(model, probe, crank_q=0.0, crank_rate=0.0, root_pitch=0.0):
     data.qpos[crank.qposadr[0]] = crank_q
     data.qpos[pitch.qposadr[0]] = root_pitch
     data.qvel[crank.dofadr[0]] = crank_rate
+    for name, rate in (joint_rates or {}).items():
+        data.qvel[model.joint(name).dofadr[0]] = rate
     mujoco.mj_forward(model, data)
     probe.set_state(np.asarray(data.qpos), np.asarray(data.qvel),
                     np.asarray(data.act), np.asarray(data.qacc_warmstart),
@@ -213,17 +232,50 @@ def test_spindle_steady_state_bypasses_activation(tmp_path):
 
 
 def test_spindle_activation_rejects_repeated_timestamp(tmp_path):
-    model, controller, probe = _plant(tmp_path)
+    # The damped fixture carries activation_tau_s > 0 so the guard is real.
+    model, controller, probe = _plant(tmp_path, _damped_config(tmp_path))
+    assert controller.config.activation_tau_s > 0.
     data = _staged(model, probe, crank_q=.4, crank_rate=5.)
     command = _command(mean_crank_torque_nm=60.)
-    if controller.config.activation_tau_s <= 0.:
-        pytest.skip('pinned profile has no activation time constant')
     controller.compute(model, data, command, dt_s=.00125)
     probe.spindle_compute(_command_dict(command), True, .00125, False)
     with pytest.raises(Exception):
         controller.compute(model, data, command, dt_s=.00125)
     with pytest.raises(Exception):
         probe.spindle_compute(_command_dict(command), True, .00125, False)
+
+
+def test_spindle_activation_and_passive_damping_match_python(tmp_path):
+    """Nonzero activation_tau_s + joint_passive_damping_nms_rad: the
+    activation filter state, activation_time_s bookkeeping and the
+    -damping*speed passive terms all evolve against the oracle."""
+    model, controller, probe = _plant(tmp_path, _damped_config(tmp_path))
+    assert controller.config.activation_tau_s > 0.
+    assert controller.config.passive_damping_nms_rad > 0.
+    data = _staged(model, probe, crank_q=.4, crank_rate=5.,
+                   joint_rates={'rider_hip_front': 1.5,
+                                'rider_knee_rear': -2.})
+    for time_s, effort in ((.00125, 60.), (.00250, 80.), (.00375, 40.)):
+        data.time = time_s
+        mujoco.mj_forward(model, data)
+        command = _command(mean_crank_torque_nm=effort)
+        expected = controller.compute(model, data, command, dt_s=.00125)
+        probe.set_state(np.asarray(data.qpos), np.asarray(data.qvel),
+                        np.asarray(data.act),
+                        np.asarray(data.qacc_warmstart), float(data.time))
+        probe.forward()
+        actual = probe.spindle_compute(_command_dict(command), True,
+                                       .00125, False)
+        for name, value in expected.items():
+            assert actual['torques'][name] == pytest.approx(
+                value, rel=1e-12, abs=1e-12), f'{time_s}:{name}'
+        _compare_terms(actual['state'], controller)
+        _compare_diagnostics(actual['state'], controller)
+        assert actual['state']['activation_time_s'] == \
+            pytest.approx(time_s, rel=0., abs=1e-15)
+        assert any(
+            term['passive_damping_nm'] != 0.
+            for term in controller.last_terms.values())
 
 
 def test_spindle_initialize_matches_python(tmp_path):
@@ -441,6 +493,63 @@ def test_spindle_strength_probes_match_python(tmp_path):
     np.testing.assert_allclose(actual['torques'], clipped,
                                rtol=1e-12, atol=1e-12)
     assert tuple(actual['limited']) == limited
+
+
+def test_spindle_strength_rejects_malformed_state(tmp_path):
+    """Caller-supplied qpos/qvel narrower than nq/nv must reject like the
+    oracle's numpy indexing — never an out-of-bounds span read."""
+    from bike_sim.sim.ride.rider_effort import solved_effort
+    model, controller, probe = _plant(tmp_path)
+    data = _staged(model, probe, crank_q=.4)
+    command = _command(mean_crank_torque_nm=70.)
+    torques = controller.compute(model, data, command, dt_s=.00125)
+    controller.write(data, torques)
+    mujoco.mj_forward(model, data)
+    probe.spindle_compute(_command_dict(command), True, .00125, False)
+    probe.set_inputs(np.asarray(data.ctrl), np.zeros(model.nv))
+    probe.forward()
+    qpos = np.asarray(data.qpos)
+    qvel = np.asarray(data.qvel)
+    flat = np.zeros(len(controller.joints))
+    with pytest.raises(Exception):
+        controller.strength_limited(flat, qpos[:2], qvel)
+    with pytest.raises(Exception):
+        probe.spindle_strength_limited(flat, qpos[:2], qvel)
+    with pytest.raises(Exception):
+        controller.strength_limited(flat, qpos, qvel[:2])
+    with pytest.raises(Exception):
+        probe.spindle_strength_limited(flat, qpos, qvel[:2])
+    with pytest.raises(Exception):
+        solved_effort(controller, data, (qpos[:2], qvel), .00125)
+    with pytest.raises(Exception):
+        probe.spindle_solved_effort(qpos[:2], qvel, .00125)
+    with pytest.raises(Exception):
+        solved_effort(controller, data, (qpos, qvel[:2]), .00125)
+    with pytest.raises(Exception):
+        probe.spindle_solved_effort(qpos, qvel[:2], .00125)
+
+
+def test_spindle_lookups_reject_unknown_joints(tmp_path):
+    """A name outside the configured rider joints must reject like the
+    oracle's self.joints[name]/table lookups — never an unchecked index
+    into the joint arrays. The locked ankle references are absent from
+    self.joints on this nine-actuator plant, and 'rider_wrist' is absent
+    from every table."""
+    model, controller, probe = _plant(tmp_path)
+    data = _staged(model, probe, crank_q=.4)
+    for name in ('rider_ankle_front', 'rider_wrist'):
+        with pytest.raises(Exception):
+            controller.write(data, {name: 0.})
+        with pytest.raises(Exception):
+            probe.spindle_write({name: 0.})
+    with pytest.raises(Exception):
+        controller.anatomical_joint_angle('rider_wrist', 0.)
+    with pytest.raises(Exception):
+        probe.spindle_anatomical('rider_wrist', 0.)
+    with pytest.raises(Exception):
+        controller.strength_capacity('rider_wrist', 0., 0., 5.)
+    with pytest.raises(Exception):
+        probe.spindle_capacity('rider_wrist', 0., 0., 5.)
 
 
 def test_spindle_probe_rejects_bad_input(tmp_path):

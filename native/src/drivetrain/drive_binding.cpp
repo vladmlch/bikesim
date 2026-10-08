@@ -441,6 +441,13 @@ DriveConfig parse_drive_config(const nb::dict &input) {
     return c;
 }
 
+drivetrain::DriveSnapshot parse_drive_snapshot(nb::handle state,
+                                               std::string_view path) {
+    const std::string owned_path(path);
+    return parse_state({.value = wire::mapping(state, owned_path),
+                        .path = owned_path});
+}
+
 // Import-time binding glue; its ~15KB frame is nanobind temporaries,
 // so the 8KB guard keeps covering the per-step code elsewhere.
 NATIVE_DIAG_PUSH

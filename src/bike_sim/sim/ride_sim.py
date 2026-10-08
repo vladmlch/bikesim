@@ -730,6 +730,11 @@ class RideSimulation:
         return float(self.data.qpos[self.root_pitch_qposadr])
 
     @property
+    def cg_site_id(self) -> int:
+        """Compiled-COM marker site id, or ``-1`` when the site is absent."""
+        return int(self._cg_site_id)
+
+    @property
     def fork_travel_mm(self) -> float:
         """Fork compression, in millimetres of shaft travel."""
         return float(self.data.qpos[self.applier.fork_qposadr]) * 1000.0

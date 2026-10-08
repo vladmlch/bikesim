@@ -148,3 +148,23 @@ class SeatedClimbPolicy:
             front_load_share=signals.front_load_share, lean_limit_rad=lean_limit_rad)
         self.time_s += dt
         return SeatedClimbIntent(RiderPosture(torso_lean_rad=self.lean_rad, use_saddle=True), self.effort_nm)
+
+    @staticmethod
+    def _signals_dict(signals):
+        return None if signals is None else {
+            'pitch_rate_up_rad_s': signals.pitch_rate_up_rad_s,
+            'specific_force_body_mps2': tuple(signals.specific_force_body_mps2),
+            'crank_rate_rad_s': signals.crank_rate_rad_s,
+            'human_crank_torque_nm': signals.human_crank_torque_nm,
+            'front_load_share': signals.front_load_share}
+
+    def state_dict(self) -> dict:
+        """Owned snapshot of the policy's running state for the bootstrap."""
+        return {'time_s': self.time_s,
+                'inclination_rad': self.inclination_rad,
+                'lean_rad': self.lean_rad,
+                'effort_nm': self.effort_nm,
+                'samples': [(time_s, self._signals_dict(signals))
+                            for time_s, signals in self._samples],
+                'delayed': self._signals_dict(self._delayed),
+                'surge_budget_s_left': self.surge_budget_s_left}

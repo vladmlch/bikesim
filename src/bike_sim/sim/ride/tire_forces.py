@@ -54,6 +54,25 @@ class _BrushState:
     center: np.ndarray | None = None
 
 
+# Canonical wire leaves of the native set_tire_state schema ('front.xi',
+# 'front.tangent.0', ...) — the C++ TireWriter requires all of them.
+_BRUSH_LEAVES = ('xi', 'tangent', 'point', 'segment', 'center')
+_BRUSH_WIDTHS = {'tangent': 3, 'point': 3, 'center': 3}
+
+
+def _brush_row(state: _BrushState) -> dict:
+    """One brush state's canonical columns — NaN where the field is unset."""
+    out = {'xi': float(state.xi),
+           'segment': (np.nan if state.segment is None else float(state.segment))}
+    for leaf in ('tangent', 'point', 'center'):
+        value = getattr(state, leaf)
+        if value is None:
+            out[leaf] = [np.nan] * _BRUSH_WIDTHS[leaf]
+        else:
+            out[leaf] = [float(x) for x in np.asarray(value, float)]
+    return out
+
+
 _INT64_MAX = (1 << 63) - 1
 # First binary64 value outside the int64 domain: float(1 << 63) == 0x1p63.
 _INT64_OVERFLOW_BOUND = float(1 << 63)
@@ -124,6 +143,28 @@ class TireForceApplier:
         self.brush_loss_step_j = 0.
         self.radial_dissipation_power_w = 0.
         self.last_time_s = None
+
+    def state_dict(self) -> dict:
+        """Canonical brush-state wire form: {'names': [...], 'row': [...]}.
+
+        Production exporter for the runtime bootstrap's ``tire`` section;
+        names follow the native ``tire_state_names`` schema with NaN where a
+        brush field is unset. Values are owned copies.
+        """
+        names, row = [], []
+        for side in sorted(self.states):
+            columns = _brush_row(self.states[side])
+            for leaf in _BRUSH_LEAVES:
+                value = columns[leaf]
+                width = _BRUSH_WIDTHS.get(leaf, 1)
+                if width == 1:
+                    names.append(f'{side}.{leaf}')
+                    row.append(value)
+                else:
+                    for index in range(width):
+                        names.append(f'{side}.{leaf}.{index}')
+                        row.append(value[index])
+        return {'names': names, 'row': np.asarray(row, dtype=float)}
 
     def restart_clock(self):
         """End initialization without discarding static contact shear."""

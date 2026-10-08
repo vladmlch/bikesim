@@ -921,6 +921,11 @@ namespace {
     }
 } // namespace
 
+std::pair<writers::RiderContactsState, std::optional<writers::RiderContactsProbe>>
+parse_rider_contacts_state(nb::handle raw, const writers::RiderContactWriter &w) {
+    return state_from_dict(raw, w);
+}
+
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void bind_rider_contacts(const nb::module_ &module,

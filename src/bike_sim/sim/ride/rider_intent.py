@@ -74,3 +74,24 @@ class RiderIntentResolver:
             posture=self.intent.posture if control.posture is None else control.posture,
             human_torque_nm=(self.intent.effort_ceiling_nm
                              if control.human_torque_nm is None else control.human_torque_nm))
+
+    def state_dict(self) -> dict:
+        """Owned snapshot of resolver, policy and posture-program state.
+
+        Production exporter for the runtime bootstrap's ``rider_intent``
+        section; every nested value is a plain owned copy.
+        """
+        posture = self.intent.posture
+        return {
+            'last_tick_step': self._last_tick_step,
+            'intent': {
+                'posture': {'torso_lean_rad': posture.torso_lean_rad,
+                            'pelvis_pitch_rad': posture.pelvis_pitch_rad,
+                            'pelvis_offset_m': (None if posture.pelvis_offset_m
+                                                is None else
+                                                list(posture.pelvis_offset_m)),
+                            'use_saddle': posture.use_saddle},
+                'effort_ceiling_nm': self.intent.effort_ceiling_nm},
+            'policy': self.policy.state_dict(),
+            'program': self.policy.program.state_dict(),
+        }

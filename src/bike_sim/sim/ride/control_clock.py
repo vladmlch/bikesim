@@ -29,3 +29,7 @@ class ControlClock:
 
     def reset(self) -> None:
         self._held = None
+
+    def held_state(self) -> dict[str, float] | None:
+        """The currently held command copy, or None before the first tick."""
+        return None if self._held is None else dict(self._held)

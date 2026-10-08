@@ -1556,3 +1556,45 @@ class ArticulatedRiderController:
             self._last_branch = branch
             self._last_solution = result.solution.copy()
         return result, branch
+
+    def state_dict(self) -> dict:
+        """Every mutable controller field, as owned plain data.
+
+        Production exporter for the runtime bootstrap's ``rider_controller``
+        section — activation state, held terms, allocator warm starts and
+        the diagnostic mirrors the running loop republishes. Nothing
+        aliases live arrays; the native side decodes and re-owns each
+        field before use.
+        """
+        def owned(value):
+            if isinstance(value, dict):
+                return {k: owned(v) for k, v in value.items()}
+            if isinstance(value, (list, tuple)):
+                return [owned(v) for v in value]
+            if isinstance(value, np.ndarray):
+                return np.asarray(value, float).copy()
+            if isinstance(value, np.generic):
+                return value.item()
+            return value
+        return {
+            'enabled': bool(self.enabled),
+            'command_enabled': bool(self.command_enabled),
+            'active_state': np.asarray(self.active_state, float).copy(),
+            'activation_time_s': self.activation_time_s,
+            'last_terms': owned(self.last_terms),
+            'pd_split': owned(self.pd_split),
+            'saturated_ik': owned(self.saturated_ik),
+            'ik_reach_limited': owned(self.ik_reach_limited),
+            'joint_torques_nm': owned(self.joint_torques_nm),
+            'joint_capacity_nm': owned(self.joint_capacity_nm),
+            'lean_limit_rad': self.lean_limit_rad,
+            'last_branch': owned(self._last_branch),
+            'last_solution': (None if self._last_solution is None
+                              else np.asarray(self._last_solution, float).copy()),
+            'pedal_recovery': {side: recovery.state_dict()
+                               for side, recovery in self.pedal_recovery.items()},
+            'effort_diagnostics': owned(self.effort_diagnostics),
+            'allocation_diagnostics': owned(self.allocation_diagnostics),
+            'support_diagnostics': owned(self.support_diagnostics),
+            'sole_goal_diagnostics': owned(self.sole_goal_diagnostics),
+        }

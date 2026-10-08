@@ -18,6 +18,12 @@ class GroundedFilter:
         self.last_loaded: float | None = None
         self.value = False
 
+    def state_dict(self) -> dict:
+        """Owned snapshot of the debounce state for the runtime bootstrap."""
+        return {'last_time_s': self.last_time,
+                'last_loaded_s': self.last_loaded,
+                'value': bool(self.value)}
+
     def update(self, raw_grounded: bool, time_s: float) -> bool:
         """Return the controller gate at this timestamp without creating a load."""
         if not isfinite(time_s):

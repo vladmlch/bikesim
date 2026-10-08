@@ -44,6 +44,13 @@ void step(const mjModel *model, mjData *data);
 void reset_data(const mjModel *model, mjData *data);
 void set_const(mjModel *model, mjData *data);
 
+// mj_stateSize/mj_getState/mj_setState — the integration-vector boundary the
+// runtime bootstrap uses. Framed like every engine call so a fatal message
+// surfaces as EngineFailure instead of aborting.
+[[nodiscard]] mjtSize state_size(const mjModel *model, int spec);
+void get_state(const mjModel *model, const mjData *data, mjtNum *state, int spec);
+void set_state(const mjModel *model, mjData *data, const mjtNum *state, int spec);
+
 [[nodiscard]] bool try_forward(const mjModel *model, mjData *data,
                                ErrorBuffer &error) noexcept;
 [[nodiscard]] bool try_step(const mjModel *model, mjData *data,

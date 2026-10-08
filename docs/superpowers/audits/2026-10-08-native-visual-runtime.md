@@ -107,3 +107,40 @@ sides, as the plan prescribes.
 | Task | Source revision | Red test/error | Green command/result | Selected artifact | Inspection result | Remaining limitations |
 |---|---|---|---|---|---|---|
 | A0 | `7a12394` + A0 files | baseline `full`: 26 failed / 2579 passed (24 documented + 2 Release-FP) | Release build + all sweeps + CTest + contract checks green; helper smoke ok | `native/build/release` | sweeps `errors: []` | 26 recorded baseline failures; Release-vs-Python 1-ULP FP divergence risk for bitwise parity gates |
+| A1 | A0 + `bike_sim.native` package + `native/src/runtime/` | `test_native_runtime_config.py` failed on `import bike_sim.native` (module absent) | 43/43 `test_native_runtime_{config,bootstrap}`; 129/129 A1 set incl. `native_loader`/`state_restore` | `native/build/release` + `native/build` | IDEA lint: no new findings on touched files; `check_frontends` green after GCC-only fixes | `NativeRideRuntime` exposes only snapshot/reset/close — stepping is A3; controller/intent state is staged wire data, not yet consumed |
+
+### A1 implementation notes
+
+- **Package boundary.** `tools/native_config.py` and `tools/native_schema.py`
+  moved verbatim into `bike_sim/native/{config,schema}.py`; both tools modules
+  are now compatibility shims re-exporting the full surface (including the
+  `validate_config`/`plain`/`sequence` and leading-underscore names the
+  original imported from the schema module). 34 initially-failing consumers
+  verified green after the shims were completed.
+- **Capability matrix** (`setup.py::validate_supported`): field-path rejections
+  for every design section-1 predicate; construction-time rejections tested via
+  `object.__setattr__` bypass so `validate_supported` itself is exercised.
+- **Bootstrap** (`capture_bootstrap` → `RuntimeBootstrap`): writes
+  `model.mjb`, SHA-256 digest, 13 model dims, 292-wide `mjSTATE_INTEGRATION`
+  vector (finite-checked), name-keyed mutable model coefficients
+  (`dof_frictionloss` per joint+dof, `site_pos` per site), and owner-side
+  `state_dict()` exporters added on every state owner (drivetrain, tire,
+  rider contacts, rider control, intent policy/program, pedal recovery,
+  terrain queries, filters, monitor, clock; `PhysicalRuntime`/`RideSimulation`
+  gained small public readers so the exporter touches no private fields).
+- **Native side** (`native/src/runtime/`): `NativeRideRuntime` owns
+  `Stepper` + decoded `BootstrapState`; construction order is config →
+  digest → Stepper → decode → ordered restore (`reset_data` → mutable model
+  → `mj_setConst` → integration vector → writer snapshots → counters).
+  `mj_setConst` rewrites `qpos`, so the integration vector restores strictly
+  after it (the one ordering constraint, found by test).
+- **State decode reuses existing parsers**: `parse_drive_snapshot` and
+  `parse_rider_contacts_state` are the same readers the `set_*_state`
+  bindings use — no second wire format.
+- **GCC frontend fixes** (Clang-clean but GCC-flagged): redundant `std::move`
+  returns, a useless `nb::object` cast, and `size_t → iter_difference_t`
+  sign-conversion in `views::counted`.
+- **Restore correctness evidence**: constructor snapshot equals the captured
+  integration vector exactly (292 doubles, bitwise); `reset()` re-applies the
+  bootstrap and bumps generation 1 → 2; `close()` makes further calls raise
+  `NativeRideRuntime is closed`.

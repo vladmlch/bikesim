@@ -680,3 +680,42 @@ class RiderContactApplier:
         self.delivered_crank_torque_nm=delivered
         self.pending_release_loss_j=0.; self.last_time_s=time
         return qfrc
+
+    def state_dict(self) -> dict:
+        """Every mutable applier field, in the set_rider_contacts_state schema.
+
+        Production exporter for the runtime bootstrap's ``rider_contacts``
+        section — the same shape the C++ ``state_from_dict`` reader
+        validates. All values are owned copies; nothing aliases live arrays.
+        """
+        settled = None
+        if self._settled_welds is not None:
+            welds, crank = self._settled_welds
+            settled = ({name: dict(entry) for name, entry in welds.items()},
+                       crank)
+        return {
+            'enabled': {name: bool(self.enabled[name]) for name in self.CONTACTS},
+            'supports': {key: {'xi': float(state.xi),
+                               'tangent': None if state.tangent is None
+                               else np.asarray(state.tangent, float)}
+                         for key, state in self.states.items()},
+            'grip_xi_local': {side: np.asarray(self.grip_xi_local[side], float)
+                              for side in ('left', 'right')},
+            'grip_anchor_local': {side: None if self.grip_anchor_local[side] is None
+                                  else np.asarray(self.grip_anchor_local[side], float)
+                                  for side in ('left', 'right')},
+            'elastic_energy_j': float(self.elastic_energy_j),
+            'loss_step_j': float(self.loss_step_j),
+            'radial_dissipation_power_w': float(self.radial_dissipation_power_w),
+            'delivered_crank_torque_nm': float(self.delivered_crank_torque_nm),
+            'last_time_s': self.last_time_s,
+            'pending_release_loss_j': float(self.pending_release_loss_j),
+            'diagnostics': copy.deepcopy(self.diagnostics),
+            'settled_welds': settled,
+            'last_attachment_samples': dict(self.last_attachment_samples),
+            'last_attachment_errors': tuple(self.last_attachment_errors),
+            'probe_diagnostics': getattr(self, 'probe_diagnostics', None),
+            'probe_enabled': getattr(self, 'probe_enabled', None),
+            'probe_delivered_crank_torque_nm':
+                getattr(self, 'probe_delivered_crank_torque_nm', None),
+        }

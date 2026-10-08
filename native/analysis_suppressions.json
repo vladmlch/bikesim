@@ -18,6 +18,24 @@
       "reason": "clang-tidy reports the same CSA false positive at the reusable fixed-size nanobind array caster assignment in nb_array.h:34; each from_python call overwrites every std::array element before extraction.",
       "reproducer": "uv run cmake --build native/build --target check_tidy; clang-analyzer-cplusplus.Move at native/src/rider/contact_binding.cpp:33 and nanobind/stl/detail/nb_array.h:34",
       "remove_when": "Remove when clang-tidy no longer emits this exact cplusplus.Move diagnostic at nb_array.h:34 for the contact_binding.cpp matrix conversion, or nanobind stops reusing the fixed-size element caster."
+    },
+    {
+      "checker": "security.ArrayBound",
+      "origin": "(?:^|/)nanobind/include/nanobind/nb_types\\.h$",
+      "message": "Out of bound access to memory after the end of the field 'ob_item'",
+      "tool_version": "23.1.2",
+      "reason": "CSA flags PyTuple_GET_ITEM at nb_types.h:1583 as an out-of-bound read of ob_item, which CPython declares as a one-element array while tuple objects are allocated with variably sized storage; the iterator only walks indices < PyTuple_GET_SIZE.",
+      "reproducer": "uv run python tools/native_checks.py --kind analyzer --build native/build; security.ArrayBound at nanobind/nb_types.h:1583 reached via tuple iteration in native/src/runtime/runtime_binding.cpp owned_copy",
+      "remove_when": "Remove when CSA stops reporting PyTuple_GET_ITEM's variably sized ob_item access as out-of-bounds at nb_types.h:1583, or nanobind's tuple iterator stops using NB_TUPLE_GET_ITEM."
+    },
+    {
+      "checker": "clang-analyzer-security.ArrayBound",
+      "origin": "(?:^|/)nanobind/include/nanobind/nb_types\\.h$",
+      "message": "Out of bound access to memory after the end of the field 'ob_item'",
+      "tool_version": "23.1.2",
+      "reason": "clang-tidy reports the same CSA false positive at PyTuple_GET_ITEM in nb_types.h:1583; PyTupleObject.ob_item is a single-element declaration whose storage is variably allocated per tuple length, and the seq_iterator only reads indices below the tuple size.",
+      "reproducer": "uv run cmake --build native/build --target check_tidy; clang-analyzer-security.ArrayBound at nanobind/nb_types.h:1583 reached via tuple iteration in native/src/runtime/runtime_binding.cpp owned_copy",
+      "remove_when": "Remove when clang-tidy no longer emits this exact ArrayBound diagnostic at nb_types.h:1583 for tuple iteration, or nanobind stops indexing ob_item through NB_TUPLE_GET_ITEM."
     }
   ]
 }

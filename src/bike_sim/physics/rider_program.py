@@ -124,3 +124,11 @@ class SeatedPostureProgram:
         self.lean_rad += max(-config.lean_rate_rad_s*dt,
             min(config.lean_rate_rad_s*dt, target-self.lean_rad))
         return self.lean_rad
+
+    def state_dict(self) -> dict:
+        """Owned snapshot of the program's running state for the bootstrap."""
+        return {'lean_rad': self.lean_rad,
+                'trim_rad': self.trim_rad,
+                'load_samples': [tuple(s) for s in self._load_samples],
+                'delayed_load_share': self._delayed_load_share,
+                'pulses': [tuple(p) for p in self._pulses]}

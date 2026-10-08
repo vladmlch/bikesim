@@ -58,3 +58,15 @@ class BalanceMonitor:
                 'low_speed_s':self.low_speed_s,'grace_left_s':self.grace_left_s,
                 'balance_lost_at_m':None if self.event is None else self.event.position_m,
                 'balance_lost_time_s':None if self.event is None else self.event.time_s}
+
+    def state_dict(self) -> dict:
+        """Owned snapshot of every latched/running field for the bootstrap."""
+        event = self.event
+        return {'event': None if event is None else {
+                    'time_s': event.time_s, 'position_m': event.position_m,
+                    'speed_mps': event.speed_mps},
+                'low_speed_s': self.low_speed_s,
+                'grace_left_s': self.grace_left_s,
+                'started_s': self._started_s,
+                'low_started_s': self._low_started_s,
+                'last_time_s': self._last_time_s}

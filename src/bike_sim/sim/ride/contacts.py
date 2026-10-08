@@ -263,6 +263,18 @@ class TerrainContactQuery:
         self._front_controller_grounded.reset()
         self._rear_controller_grounded.reset()
 
+    def state_dict(self) -> dict:
+        """Owned snapshot of the held-load bridges and grounded debounce."""
+        return {
+            'front_load': {'held_load_n': self._front_load.held_load_n,
+                           'unloaded_steps': self._front_load.unloaded_steps},
+            'rear_load': {'held_load_n': self._rear_load.held_load_n,
+                          'unloaded_steps': self._rear_load.unloaded_steps},
+            'front_controller_grounded':
+                self._front_controller_grounded.state_dict(),
+            'rear_controller_grounded':
+                self._rear_controller_grounded.state_dict()}
+
     def handlebar_load(self, model: mujoco.MjModel, data: mujoco.MjData) -> float:
         """
         Normal-force magnitude on the handlebar geom against the terrain.

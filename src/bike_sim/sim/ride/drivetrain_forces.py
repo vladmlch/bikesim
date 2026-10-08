@@ -512,3 +512,74 @@ class DrivetrainForceApplier:
         self.last = last
         self.last_time_s = time
         return components
+
+    # Mutable policy fields carried by the native bootstrap state. Keys match
+    # the set_drive_state wire schema the C++ parse_state validates.
+    _STATE_POLICY_KEYS = {
+        'pedaling': ('coasting', 'target_phase_rad', 'target_rate_rad_s',
+                     'deceleration_rad_s2', '_effort', '_cadence_ema'),
+        'shifting': ('rear_teeth', 'cooldown_s', 'cut_remaining_s',
+                     'shift_count', 'direction', 'from_teeth', 'cadence_ema',
+                     'required_ema'),
+        'assist': ('torque', 'pedaling', 'last_gain'),
+        'battery': ('initial_energy_j', 'energy_j', 'drawn_energy_j'),
+        'hub': ('boundary', 'energy_j', 'torque_nm'),
+    }
+
+    def _transmission_state(self, constraint, name, model):
+        """One constraint's full snapshot (set_drive_state wire schema)."""
+        if constraint is None:
+            return None
+        from bike_sim.sim.ride.geometric_freehub import GeometricFreehubConstraint
+        geometric = isinstance(constraint, GeometricFreehubConstraint)
+        indices = ([constraint.coefficients[dof] for dof in range(model.nv)]
+                   if geometric else [constraint.driver_coefficient])
+        state = {
+            'ratio': constraint.ratio,
+            'rear_teeth': (constraint.gearing.rear_teeth if geometric else
+                           (self.config.gearing.rear_teeth
+                            if name == 'ideal_hub' else 3)),
+            'boundary': constraint.boundary,
+            'prepared': None,
+            'diagnostics': dict(getattr(constraint, 'diagnostics', {})),
+            'shift_pending': getattr(constraint, 'shift_pending', False),
+            'shift_parameter_work_j': getattr(constraint, 'shift_parameter_work_j', 0.),
+            'shift_constraint_work_j': getattr(constraint, 'shift_constraint_work_j', 0.),
+            'last_tension_n': getattr(constraint, 'last_tension_n', 0.),
+            'range': model.tendon_range[constraint.tendon_id].copy(),
+            'coefficients': model.wrap_prm[indices].copy(),
+        }
+        if geometric and constraint.prepared is not None:
+            phi, jacobian, qpos, time = constraint.prepared
+            state['prepared'] = {'phi': phi, 'jacobian': jacobian,
+                                 'qpos': qpos, 'time': time}
+        return state
+
+    def state_dict(self, model) -> dict:
+        """Every mutable field of the live drivetrain, in wire form.
+
+        This is the production exporter behind the runtime bootstrap's
+        ``drive`` section; it owns every value (model rows are copied), so
+        callers may mutate or discard the live objects afterwards. Engine
+        addresses never cross the bridge.
+        """
+        pending = self.pending_actuation
+        return {
+            'policies': {
+                name: (None if getattr(self, name) is None
+                       else {key: getattr(getattr(self, name), key)
+                             for key in keys})
+                for name, keys in self._STATE_POLICY_KEYS.items()},
+            'shift_time_s': self.shift_time_s,
+            'last_time_s': self.last_time_s,
+            'reference': self.reference,
+            'psi': self.psi,
+            'angles': self.angles,
+            'last': copy.deepcopy(self.last),
+            'probe_last': copy.deepcopy(getattr(self, 'probe_last', None)),
+            'pending_actuation': (None if pending is None else dict(zip(
+                ('requested', 'omega', 'dt', 'enabled'), pending))),
+            'ideal_hub': self._transmission_state(self.ideal_hub, 'ideal_hub', model),
+            'clutch': self._transmission_state(self.clutch, 'clutch', model),
+            'freewheel': self._transmission_state(self.freewheel, 'freewheel', model),
+        }

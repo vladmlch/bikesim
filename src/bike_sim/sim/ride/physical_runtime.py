@@ -132,6 +132,24 @@ class PhysicalRuntime:
         """Legacy name for the accounted live factor."""
         return self.live_real_time_factor
 
+    @property
+    def strict(self) -> bool:
+        return self._strict
+
+    @property
+    def held_rider_terms(self):
+        """Rider-control terms frozen across a rollback replay, if any."""
+        return self._held_rider_terms
+
+    @property
+    def rollback_hold(self) -> bool:
+        return self._rollback_hold
+
+    @property
+    def wheel_bodies(self) -> tuple:
+        """Wheel body ids (front, rear); empty without an articulated rider."""
+        return getattr(self, '_wheel_bodies', ())
+
     def address(self, name):
         m = self.sim.model
         jid = mujoco.mj_name2id(m,mujoco.mjtObj.mjOBJ_JOINT,name)

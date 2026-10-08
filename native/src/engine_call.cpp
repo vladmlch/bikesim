@@ -211,6 +211,24 @@ void set_const_operation(void *raw) noexcept {
     mj_setConst(context->model, context->data);
 }
 
+struct StateSizeContext { const mjModel *model; int spec; mjtSize result; };
+void state_size_operation(void *raw) noexcept {
+    auto *context = static_cast<StateSizeContext *>(raw);
+    context->result = mj_stateSize(context->model, context->spec);
+}
+struct GetStateContext { const mjModel *model; const mjData *data; mjtNum *state; int spec; };
+// NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
+void get_state_operation(void *raw) noexcept {
+    const auto *context = static_cast<const GetStateContext *>(raw);
+    mj_getState(context->model, context->data, context->state, context->spec);
+}
+struct SetStateContext { const mjModel *model; mjData *data; const mjtNum *state; int spec; };
+// NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
+void set_state_operation(void *raw) noexcept {
+    const auto *context = static_cast<const SetStateContext *>(raw);
+    mj_setState(context->model, context->data, context->state, context->spec);
+}
+
 } // namespace
 
 EngineFailure::~EngineFailure() = default;
@@ -376,6 +394,31 @@ void set_const(mjModel *model, mjData *data) {
     MutableModelDataContext context{.model = model, .data = data};
     ErrorBuffer error;
     if (!invoke(set_const_operation, &context, error)) throw_failure(error);
+}
+
+mjtSize state_size(const mjModel *model, int spec) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    StateSizeContext context{.model = model, .spec = spec, .result = 0};
+    ErrorBuffer error;
+    if (!invoke(state_size_operation, &context, error)) throw_failure(error);
+    return context.result;
+}
+
+void get_state(const mjModel *model, const mjData *data, mjtNum *state, int spec) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    GetStateContext context{.model = model, .data = data, .state = state, .spec = spec};
+    ErrorBuffer error;
+    if (!invoke(get_state_operation, &context, error)) throw_failure(error);
+}
+
+void set_state(const mjModel *model, mjData *data, const mjtNum *state, int spec) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    SetStateContext context{.model = model, .data = data, .state = state, .spec = spec};
+    ErrorBuffer error;
+    if (!invoke(set_state_operation, &context, error)) throw_failure(error);
 }
 
 } // namespace engine

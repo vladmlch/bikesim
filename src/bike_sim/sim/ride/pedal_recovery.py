@@ -16,6 +16,11 @@ class PedalRecovery:
         self.direction = 1.
         self.release_offset_x_m = 0.
 
+    def state_dict(self) -> dict:
+        """Owned recovery-observer snapshot for the runtime bootstrap."""
+        return {'stage': self.stage, 'direction': self.direction,
+                'release_offset_x_m': self.release_offset_x_m}
+
     def observe(self, origin_m, rotation, half_size_m, sole_position_m, force_on_rider_n):
         origin = array(origin_m, 'pedal origin', (3,))
         orientation = array(rotation, 'pedal rotation', (3, 3))

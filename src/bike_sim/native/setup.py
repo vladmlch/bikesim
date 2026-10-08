@@ -226,6 +226,52 @@ def _model_mutable(sim, physical, model) -> dict:
     return {'dof_frictionloss': frictionloss, 'site_pos': site_pos}
 
 
+def _curve_dict(curve) -> dict:
+    return {'angles_rad': [float(v) for v in curve.angles_rad],
+            'torques_nm': [float(v) for v in curve.torques_nm],
+            'vmax_rad_s': float(curve.vmax_rad_s),
+            'hill_c': float(curve.hill_c),
+            'eccentric_ratio': float(curve.eccentric_ratio),
+            'source': str(curve.source)}
+
+
+def _envelope_dict(envelope) -> dict:
+    return {'neutral_anatomical_rad': float(envelope.neutral_anatomical_rad),
+            'direction': int(envelope.direction),
+            'minimum_anatomical_rad': float(envelope.minimum_anatomical_rad),
+            'maximum_anatomical_rad': float(envelope.maximum_anatomical_rad),
+            'provenance': str(envelope.provenance)}
+
+
+def rider_controller_config(articulated, control) -> dict:
+    """``config.rider_controller`` — the articulated dataclass plus the
+    strength/envelope tables resolved from its *_path fields. Python owns
+    file resolution; the native decoder validates the exact key set and
+    never reads a path."""
+    out = plain(asdict(articulated))
+    out['strength'] = None
+    out['strength_coordinates'] = {}
+    out['envelopes'] = {}
+    if control is None:
+        return out
+    if control.strength is not None:
+        out['strength'] = {
+            name: {'positive': _curve_dict(curves[1]),
+                   'negative': _curve_dict(curves[-1])}
+            for name, curves in control.strength.items()}
+        out['strength_coordinates'] = {
+            name: _envelope_dict(entry)
+            for name, entry in control.strength_coordinates.items()}
+    if articulated.joint_envelope_path is not None:
+        from bike_sim.physics.rider_envelope import load_joint_envelopes
+        out['envelopes'] = {
+            name: _envelope_dict(entry)
+            for name, entry in load_joint_envelopes(
+                articulated.joint_envelope_path,
+                present=tuple(control.joints)).items()}
+    return out
+
+
 def _geometry(sim, physical, model) -> dict:
     """Resolved named IDs and geometry the running loop needs (design 3.1)."""
     out = {
@@ -306,7 +352,8 @@ def capture_bootstrap(sim, directory: Path) -> RuntimeBootstrap:
         'strict': bool(physical.strict),
         'record_decimation': int(physical.record_decimation),
         'writer_config': _project_writers(sim),
-        'rider_controller': plain(asdict(sim.physics_config.articulated)),
+        'rider_controller': rider_controller_config(
+            sim.physics_config.articulated, physical.rider_control),
         'rider_intent': plain(asdict(sim.physics_config.seated_climb)),
         'monitors': {
             'balance_floor_mps': float(physical.balance_monitor.floor_mps),

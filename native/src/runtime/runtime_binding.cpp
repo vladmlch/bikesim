@@ -38,6 +38,7 @@
 #include "../binding_arrays.hpp"
 #include "../binding_readers.hpp"
 #include "../engine_call.hpp"
+#include "../rider/spindle_math.hpp"
 #include "../stepper.hpp"
 
 namespace nb = nanobind;
@@ -638,7 +639,24 @@ void NativeRideRuntime::close() {
 
 NativeRideRuntime::~NativeRideRuntime() = default;
 
-void bind_runtime(const nb::module_ &module) {
+void bind_runtime(nb::module_ &module) {
+    // Production spindle kernels exposed as parity probes (plan A2):
+    // same inputs, same arithmetic, same rejections as the Python helpers.
+    module.def(
+        "spindle_torque_waveform",
+        [](double mean_nm, double phase_rad, double ripple) {
+            return spindle::spindle_torque_waveform(mean_nm, phase_rad,
+                                                   ripple);
+        },
+        nb::arg("mean_nm"), nb::arg("phase_rad"), nb::arg("ripple"));
+    module.def(
+        "crank_effort_ceiling",
+        [](double power_w, double torque_limit_nm, double crank_rate_rad_s) {
+            return spindle::crank_effort_ceiling(power_w, torque_limit_nm,
+                                                 crank_rate_rad_s);
+        },
+        nb::arg("power_w"), nb::arg("torque_limit_nm"),
+        nb::arg("crank_rate_rad_s"));
     nb::class_<RuntimeSnapshot>(module, "RuntimeSnapshot")
         .def_ro("generation", &RuntimeSnapshot::generation)
         .def_ro("step", &RuntimeSnapshot::step)

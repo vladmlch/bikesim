@@ -51,6 +51,16 @@ void set_const(mjModel *model, mjData *data);
 void get_state(const mjModel *model, const mjData *data, mjtNum *state, int spec);
 void set_state(const mjModel *model, mjData *data, const mjtNum *state, int spec);
 
+// mj_mulJacTVec — generalized force of a constraint-multiplier vector.
+// Caller owns both buffers: result is nv-wide, vector is nefc-wide.
+void mul_jac_t_vec(const mjModel *model, const mjData *data, mjtNum *result,
+                   const mjtNum *vector);
+// mj_kinematics/mj_integratePos — detached-kinematics helpers for target
+// prediction (scratch mjData only; never the live data's substitute).
+void kinematics(const mjModel *model, mjData *data);
+void integrate_pos(const mjModel *model, mjtNum *qpos, const mjtNum *qvel,
+                   mjtNum dt);
+
 [[nodiscard]] bool try_forward(const mjModel *model, mjData *data,
                                ErrorBuffer &error) noexcept;
 [[nodiscard]] bool try_step(const mjModel *model, mjData *data,

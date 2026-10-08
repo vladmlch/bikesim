@@ -61,6 +61,6 @@ private:
     bool closed_ = false;
 };
 
-void bind_runtime(const nanobind::module_ &module);
+void bind_runtime(nanobind::module_ &module);
 
 } // namespace runtime

@@ -229,6 +229,28 @@ void set_state_operation(void *raw) noexcept {
     mj_setState(context->model, context->data, context->state, context->spec);
 }
 
+struct MulJacTVecContext { const mjModel *model; const mjData *data; mjtNum *result; const mjtNum *vector; };
+// NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
+void mul_jac_t_vec_operation(void *raw) noexcept {
+    const auto *context = static_cast<const MulJacTVecContext *>(raw);
+    mj_mulJacTVec(context->model, context->data, context->result,
+                  context->vector);
+}
+
+// NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
+void kinematics_operation(void *raw) noexcept {
+    const auto *context = static_cast<const ModelDataContext *>(raw);
+    mj_kinematics(context->model, context->data);
+}
+
+struct IntegratePosContext { const mjModel *model; mjtNum *qpos; const mjtNum *qvel; mjtNum dt; };
+// NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
+void integrate_pos_operation(void *raw) noexcept {
+    const auto *context = static_cast<const IntegratePosContext *>(raw);
+    mj_integratePos(context->model, context->qpos, context->qvel,
+                    context->dt);
+}
+
 } // namespace
 
 EngineFailure::~EngineFailure() = default;
@@ -419,6 +441,34 @@ void set_state(const mjModel *model, mjData *data, const mjtNum *state, int spec
     SetStateContext context{.model = model, .data = data, .state = state, .spec = spec};
     ErrorBuffer error;
     if (!invoke(set_state_operation, &context, error)) throw_failure(error);
+}
+
+void mul_jac_t_vec(const mjModel *model, const mjData *data, mjtNum *result,
+                   const mjtNum *vector) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    MulJacTVecContext context{.model = model, .data = data,
+                              .result = result, .vector = vector};
+    ErrorBuffer error;
+    if (!invoke(mul_jac_t_vec_operation, &context, error)) throw_failure(error);
+}
+
+void kinematics(const mjModel *model, mjData *data) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    ModelDataContext context{.model = model, .data = data};
+    ErrorBuffer error;
+    if (!invoke(kinematics_operation, &context, error)) throw_failure(error);
+}
+
+void integrate_pos(const mjModel *model, mjtNum *qpos, const mjtNum *qvel,
+                   mjtNum dt) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    IntegratePosContext context{.model = model, .qpos = qpos,
+                                .qvel = qvel, .dt = dt};
+    ErrorBuffer error;
+    if (!invoke(integrate_pos_operation, &context, error)) throw_failure(error);
 }
 
 } // namespace engine

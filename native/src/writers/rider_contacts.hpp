@@ -1,19 +1,20 @@
 // writers/rider_contacts.hpp — the model-owned port of RiderContactApplier
-// (src/bike_sim/sim/ride/rider_contacts.py), writer core (T3b-1).
+// (src/bike_sim/sim/ride/rider_contacts.py), writer core (T3b-1) plus the
+// attachment telemetry of T3b-2.
 //
-// Ported in this wave: the two-pad unilateral supports (finite box pads on
-// named support geoms, contactlaw::normal_contact/brush_step, tangent
-// transport and face-switch handling, paired-reaction generalized force via
-// the relative point Jacobian), the releasable spring grip plus its
-// cohesive pair overload, the connect-grip diagnostics path, the
-// welded/pinned/spindle support diagnostics reading the (still-null,
-// wave-3b) settled latch, capture/release through set_enabled, probe
-// publication for advance=False, and the serializable state container.
+// Ported: the two-pad unilateral supports (finite box pads on named
+// support geoms, contactlaw::normal_contact/brush_step, tangent
+// transport and face-switch handling, paired-reaction generalized force
+// via the relative point Jacobian), the releasable spring grip plus its
+// cohesive pair overload, the connect-grip diagnostics path, capture/
+// release through set_enabled, probe publication for advance=False, and
+// the serializable state container.
 //
-// Deliberately absent (wave 3b): settle_welds latch production,
-// prepare_attachment_raw, attachment_samples — the latch field exists in
-// the snapshot so a restored or future-produced value round-trips, but no
-// code path in this TU ever writes one.
+// T3b-2 adds the settle face: prepare_attachment_raw's interval-start
+// geometry capture, settle_welds' solved-reaction latch (the
+// welded/pinned diagnostics and the crank-torque sensor read it on the
+// next compute_qfrc), and attachment_samples' optional interval-state
+// measurement with its guaranteed live-state restore.
 //
 // Numerical contract: expression order follows rider_contacts.py line by
 // line; `a @ b`/`A @ x`/`np.linalg.norm` route through the Accelerate CBLAS
@@ -30,6 +31,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "../rider/attachment_wrench.hpp"
@@ -166,10 +168,55 @@ namespace writers {
     };
 
     // self._settled_welds — the (welds dict, crank) pair settle_welds
-    // latches in wave 3b. entries keeps the dict's insertion order.
+    // latches. entries keeps the dict's insertion order (the oracle's
+    // deepcopy excludes the 'crank_torque_nm' key appended afterwards).
     struct RiderSettledWelds {
         std::vector<std::pair<std::string, RiderSettledEntry>> entries;
         double crank_torque_nm = 0.;
+    };
+
+    // ---- settle/sample method outputs (T3b-2) -----------------------
+    // One interval_state (qpos, qvel) pair — the pose the solved
+    // interval started from. Widths are validated against nq/nv before
+    // the values ever reach data.qpos/data.qvel.
+    using RiderIntervalState =
+        std::pair<std::vector<double>, std::vector<double>>;
+
+    // prepare_attachment_raw's (prepared, errors) return: insertion-
+    // ordered (out name, geometry) pairs plus the collected
+    // ':unobservable_attachment_wrench' errors.
+    struct RiderPreparedAttachments {
+        std::vector<std::pair<std::string, rider::AttachmentGeometry>>
+            geometry;
+        std::vector<std::string> errors;
+    };
+
+    // One last_attachment_samples element — the budget dataclass of the
+    // scalar path or the raw measurement block of the raw path; both
+    // arrive through the same dict in the oracle.
+    using RiderAttachmentEntry =
+        std::variant<rider::AttachmentSample, rider::AttachmentRaw>;
+
+    // attachment_samples' (samples, errors) return — `raw` selects which
+    // vector carries entries (the other is empty, like the oracle's
+    // homogeneous dict).
+    struct RiderAttachmentMeasurement {
+        bool raw = false;
+        std::vector<std::pair<std::string, rider::AttachmentRaw>> raws;
+        std::vector<std::pair<std::string, rider::AttachmentSample>>
+            samples;
+        std::vector<std::string> errors;
+    };
+
+    // settle_welds' return value parts: the result dict as ordered
+    // entries plus the conditional 'crank_torque_nm' tail, and the
+    // measurement block the call latched into
+    // last_attachment_samples/last_attachment_errors.
+    struct RiderSettleOutcome {
+        std::vector<std::pair<std::string, RiderSettledEntry>> entries;
+        bool crank_torque_nm_appended = false;
+        double crank_torque_nm = 0.;
+        RiderAttachmentMeasurement measurement;
     };
 
     // probe_diagnostics / probe_enabled / probe_delivered_crank_torque_nm —
@@ -196,9 +243,10 @@ namespace writers {
         double pending_release_loss_j = 0.;
         RiderContactsDiagnostics diagnostics;
         std::optional<RiderSettledWelds> settled_welds;
-        // attachment_raw/sample outputs — empty until wave 3b produces
-        // them; typed so a restored snapshot round-trips.
-        std::vector<std::pair<std::string, rider::AttachmentSample>>
+        // last_attachment_samples / last_attachment_errors — the scalar
+        // or raw entries the latest settle_welds/attachment_samples call
+        // published, plus the ':unobservable_attachment_wrench' strings.
+        std::vector<std::pair<std::string, RiderAttachmentEntry>>
             attachment_samples;
         std::vector<std::string> attachment_errors;
     };
@@ -242,6 +290,43 @@ namespace writers {
         // ledger — grip springs plus enabled in-platform pad normal/shear
         // energy, in the oracle's accumulation order.
         [[nodiscard]] double stored_energy(const mjData *data) const;
+
+        // ---- T3b-2: the settle/sample face --------------------------
+        // prepare_attachment_raw (rider_contacts.py:221-269): every
+        // linked support's interval-start attachment geometry plus the
+        // welded grips' connect anchors — insertion-ordered (out name,
+        // geometry) pairs, with the oracle's
+        // '<out>:unobservable_attachment_wrench' errors collected in
+        // place of failed entries (never zero-substituted).
+        [[nodiscard]] RiderPreparedAttachments
+        prepare_attachment_raw(const mjData *data) const;
+
+        // attachment_samples (lines 345-357): without an interval_state,
+        // _attachment_samples on the current pose; with one, the pair is
+        // width/finiteness-checked, swapped in, kinematics+comPos
+        // refreshed, measured, and the saved live state restored on
+        // EVERY exit path — success, collected errors, a propagating
+        // measurement failure or an engine fault — exactly the oracle's
+        // try/finally.
+        [[nodiscard]] RiderAttachmentMeasurement
+        attachment_samples(mjData *data,
+                           const std::optional<RiderIntervalState>
+                               &interval_state,
+                           bool raw);
+
+        // settle_welds (lines 271-343): latch this solve's reactions —
+        // _settled_welds gets a detached copy of the support/grip dict
+        // (before 'crank_torque_nm' joins the result), then publish
+        // last_attachment_samples/last_attachment_errors: the prepared
+        // raw blocks when (raw, prepared) is given, else the
+        // attachment_samples(interval_state, raw) path. A propagating
+        // measurement failure leaves the latch written and the sample
+        // fields untouched, like the oracle.
+        [[nodiscard]] RiderSettleOutcome
+        settle_welds(mjData *data,
+                     const std::optional<RiderIntervalState>
+                         &interval_state,
+                     bool raw, const RiderPreparedAttachments *prepared);
 
         [[nodiscard]] const RiderContactsState &state() const {
             return state_;
@@ -314,8 +399,49 @@ namespace writers {
         relative_jacobian(const mjData *data, int body_a, int body_b,
                           const rider::Vec3 &point);
 
+        // The shared per-attachment read of prepare_attachment_raw and
+        // _attachment_samples — identical eq_id / force point / normal /
+        // kind / rotational / half-patch rules per linked support, and
+        // the welded grip's connect anchor plus pull direction. nullopt
+        // on an unlinked support or an uncaptured anchor — the oracle's
+        // `continue`.
+        struct AttachmentTarget {
+            int eq_id = -1;
+            int rider_body = -1;
+            int bike_body = -1;
+            std::string out;  // 'saddle' | 'foot_*' | 'grip_*'
+            std::string kind; // 'saddle' | 'foot' | 'grip'
+            bool rotational = false;
+            double half_patch_m = 0.;
+            rider::Vec3 point{};
+            rider::Vec3 normal{};
+            std::optional<rider::Vec3> pull; // grips only
+        };
+        [[nodiscard]] std::optional<AttachmentTarget>
+        support_target(std::size_t support, const mjData *data) const;
+        [[nodiscard]] std::optional<AttachmentTarget>
+        grip_target(std::size_t side, const mjData *data) const;
+
+        // pull_direction as the optional<vector<double>> the attachment
+        // functions take — Vec3 widened to the heap form.
+        [[nodiscard]] static std::optional<std::vector<double>>
+        pull_of(const AttachmentTarget &target) {
+            std::optional<std::vector<double>> pull;
+            if (target.pull.has_value())
+                pull = std::vector<double>{(*target.pull)[0],
+                                           (*target.pull)[1],
+                                           (*target.pull)[2]};
+            return pull;
+        }
+
+        // _attachment_samples (lines 359-412) evaluated on the CURRENT
+        // data pose — the kernel the public wrapper runs after the
+        // optional interval swap, and settle_welds' else-branch.
+        [[nodiscard]] RiderAttachmentMeasurement
+        measure_samples(const mjData *data, bool raw);
+
         // _settled(name) (rider_contacts.py:414-419) — (force, max(normal,0))
-        // of the wave-3b latch, zeros while it stays null.
+        // of the settle_welds latch, zeros while it stays null.
         [[nodiscard]] std::pair<rider::Vec3, double>
         settled_force(const RiderContactsState &w, std::string_view name) const;
 
@@ -359,6 +485,12 @@ namespace writers {
         std::vector<double> jac_b_;
         std::vector<double> qfrc_;
         rider::EqualityReactions equality_;
+        // T3b-2 measurement scratch: the DGELSD workspace behind
+        // attachment_sample / attachment_raw_from_geometry's validation
+        // solves (bound (nv, max(nv,6), 1) — the (k,6) spatial solves the
+        // measurement ever runs) and the nv equality_qfrc destination.
+        rider::LeastSquaresWorkspace lstsq_;
+        std::vector<double> measure_qfrc_;
         // self._data — the last mjData seen by reset/compute_qfrc;
         // set_enabled's capture/release refresh paths read it.
         mjData *seen_ = nullptr;

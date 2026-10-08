@@ -561,7 +561,7 @@ re-derived from the current `efc_type`/`efc_id` arena on every call, so
 contact/limit rows shifting the arena cannot produce a stale gap: a
 missing equality reports `gap_m == 0.`.
 
-### T3b-1 model-owned rider contact writer core
+### T3b model-owned rider contact writer
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
@@ -582,7 +582,17 @@ Stepper method face lives in `native/src/rider/rider_contact_binding.cpp`
 - `stepper.rider_contacts_stored_energy()`,
 - `stepper.rider_contacts_diagnostics(probe=False)`,
 - `stepper.rider_contacts_state()` and
-- `stepper.set_rider_contacts_state(state)`.
+- `stepper.set_rider_contacts_state(state)`,
+
+plus the T3b-2 settle/sample face
+
+- `stepper.rider_contacts_prepare_attachment_raw()` — returns
+  `(geometry dict by name, errors tuple)` captured at the incoming pose;
+- `stepper.rider_contacts_settle(interval_state=None, raw=False,
+  prepared=None)` — the `settle_welds` result dict, or the
+  `(dict, samples, errors)` triple when `raw=True`;
+- `stepper.rider_contacts_attachment_samples(interval_state=None,
+  raw=False)` — `(samples dict, errors tuple)`.
 
 The writer is owned by `Stepper` like the other writers: constructed when
 the config carries a `rider_contacts` section, reset by
@@ -599,15 +609,22 @@ tangent transport with face-switch loss, paired-reaction generalized
 force through `jrel` — the rider-vs-bike relative point Jacobian — and
 per-pad patch diagnostics), the releasable spring grip plus its cohesive
 pair overload, the connect-grip diagnostics path reading live equality
-residuals, welded/pinned/spindle support diagnostics against the
-(still-null, wave-3b) settled latch, capture/release through
-`set_enabled` (grip capture gated on distance and approach speed, release
-loss booked into `pending_release_loss_j`), probe publication for
-`advance=False` evaluations, and the serializable state container with
-atomic staged validation before commit. `settle_welds` latch production,
-`prepare_attachment_raw` and `attachment_samples` are wave 3b and are
-asserted absent; their snapshot fields exist so a restored or
-future-produced value round-trips.
+residuals, welded/pinned/spindle support diagnostics against the settled
+latch, capture/release through `set_enabled` (grip capture gated on
+distance and approach speed, release loss booked into
+`pending_release_loss_j`), probe publication for `advance=False`
+evaluations, and the serializable state container with atomic staged
+validation before commit. The T3b-2 face adds `settle_welds`' solved-
+equality latch (`_settled_welds` — support/grip reaction dict plus the
+crank-torque scalar the next `compute_qfrc` reads), interval-start
+`prepare_attachment_raw` geometry capture, and `attachment_samples`'
+scalar/raw measurements with the optional `(qpos, qvel)` interval-state
+swap. Interval measurement validates widths and finiteness before any
+buffer is touched, then restores the live `qpos`/`qvel` and refreshes
+`mj_kinematics`/`mj_comPos` on every exit path — success, collected
+errors, or a propagating failure. Measurement errors arrive as the
+oracle's `'<attachment>:unobservable_attachment_wrench'` strings, never
+as fabricated zero samples.
 
 Numerical parity follows the oracle's expression order: dot products and
 `np.linalg.norm` route through CBLAS `ddot`, `jrel @ qvel`/`R @ v`/
@@ -625,10 +642,14 @@ reads).
 Verification ran `cmake --build native/build --target check_frontends`
 and `bash tools/run_tests.sh native` to green: all static-analysis
 sweeps, CTest 4/4, the structural contract checks, and the full
-native+golden pytest sweep (2119 items) passed. The reference file's 54
-tests compare qfrc, diagnostics trees, state snapshots and error types
-bitwise against the live Python oracle on tiny MuJoCo models, across the
-flat/weld/pin/spindle × spring/connect attachment matrix.
+native+golden pytest sweep (2128 items) passed. The reference file's 63
+tests compare qfrc, diagnostics trees, state snapshots, settle results
+and attachment measurements/errors bitwise against the live Python oracle
+on tiny MuJoCo models, across the flat/weld/pin/spindle × spring/connect
+attachment matrix — including latch-fed next-step qfrc, the raw
+interval-start-geometry path, interval-state pose restoration (success
+and collected-error exits), unobservable-attachment error collection, and
+settled snapshot round-trip/ownership/atomicity.
 
 ## V3 verification record
 

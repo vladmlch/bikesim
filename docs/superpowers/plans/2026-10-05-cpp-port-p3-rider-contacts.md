@@ -57,7 +57,7 @@ bike_native.rider_release_if_overloaded(force_n, old_energy_j, limit_n)
 
 Core exports `box_pad_contact` (validated), `box_pad_contact_unchecked` for previously validated compiled geometry, `upper_box_face`, `sole_target_height`, `project_sole_goal`, `grip_step`, `release_if_overloaded`, `validate_planar_support_model(model,data,geom_ids)`. Shared `contactlaw::normal_contact` returns `(force,energy)` and `contactlaw::brush_step` returns `(xi,force,loss)` with the existing tire finite/passivity guards. The later writer calls these same functions directly. Preserve Python `UnreachableSoleTarget` semantics via a registered ValueError subclass, keeping non-convergence a RuntimeError.
 
-- [ ] **Step 1: Write raw-byte oracle tests before implementation.** Use independent `support_geometry`, `grip_step`, and `grip_release` imports. Example:
+- [x] **Step 1: Write raw-byte oracle tests before implementation.** Use independent `support_geometry`, `grip_step`, and `grip_release` imports. Example:
 
 ```python
 def test_grip_energy_oracle():
@@ -71,7 +71,7 @@ def test_grip_energy_oracle():
 
 Cover planar rotations, flipped/vertical boxes, finite edges/corners, medial-axis ties, width/footprint boundaries, signed zeros and near-zero deltas. Cover upper face ray, both sole-target branches, unreachable compression/shear projection and limiting-reason order, convergence errors; random valid points. Grip cases include release at/below/above strength, overflow, zero damping, three-coordinate distances against `math.hypot`. Check owning outputs/dtype conversions, invalid shapes/nonfinite/config ranges and improper/nonplanar rotations. Do not change existing Python references.
 
-- [ ] **Step 2: Run RED.**
+- [x] **Step 2: Run RED.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_rider_contact_math.py -q
@@ -79,7 +79,7 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_rider
 
 Expected missing native API failures, not collection skips or erroneous fixtures. Keep evidence.
 
-- [ ] **Step 3: Extract existing tire laws literally, then port math/geometry.** Preserve this `_box_pad_contact` branch and ordering:
+- [x] **Step 3: Extract existing tire laws literally, then port math/geometry.** Preserve this `_box_pad_contact` branch and ordering:
 
 ```cpp
 const double closest_x = std::min(std::max(local[0], -half[0]), half[0]);
@@ -89,7 +89,7 @@ const double distance = std::hypot(local[0] - closest_x, local[2] - closest_z);
 
 Matrix-vector products use the same Accelerate shape as NumPy. Grip energy/loss computes both `u@u` occurrences with the same dot operation and order. CPython three-argument `math.hypot` is not assumed identical to `std::hypot(x,y,z)`; diagnose/port its compensated norm if tests show a difference. Do not substitute a different sole-target algorithm or alter fixed iteration counts (32/18) and tolerances from the source.
 
-- [ ] **Step 4: Build, focused GREEN, affected tire gate, compiler sweep.**
+- [x] **Step 4: Build, focused GREEN, affected tire gate, compiler sweep.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
@@ -99,7 +99,7 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target chec
 
 Report raw-byte/math-hypot evidence and exact typed interfaces for downstream tasks. Escalate any unresolved library rounding issue.
 
-- [ ] **Step 5: Self-review and scoped commit.**
+- [x] **Step 5: Self-review and scoped commit.**
 
 ```bash
 git add native/src/contact native/src/rider native/src/writers/tire.cpp native/src/binding.cpp native/CMakeLists.txt tests/reference/test_native_rider_contact_math.py docs/TESTING.md
@@ -142,7 +142,7 @@ stepper.rider_attachment_sample(eq_id, body_rider, body_bike, point, normal,
 
 The typed core exports the corresponding operations for Task 3 without constructing an FFI wrapper. Preserve exact raw/prepared schemas, normal/pull projections, body-specific soft-connect anchors, disjoint support checks, least-squares rank/reconstruction/third-law/planarity failures and gap from current `efc_pos`. Sample normal/tangent/moment/gap/pull/half-patch fields match `AttachmentSample`. Raw from prepared geometry with `validate_wrench=False` defers spatial checks exactly like Python.
 
-- [ ] **Step 1: Add independent failing numerical and genuine-solve tests.**
+- [x] **Step 1: Add independent failing numerical and genuine-solve tests.**
 
 ```python
 def test_native_recover_wrench():
@@ -154,13 +154,13 @@ def test_native_recover_wrench():
 
 Add random tall/wide/rank-deficient matrices and near rcond thresholds, inconsistent targets and nonfinite/shape errors. Use small independent rider/bike free-body or scalar planar weld/connect models (existing `test_attachment_wrench.py::_pair_model` is useful) with genuine applied nv forces via `set_inputs`. Compare every prepared/raw/sample field against unchanged Python after identical forward/8-step solves. Cover dense/sparse layout, unrelated contact/limit rows, missing equality rows, soft-connect nonzero anchor gap, shared supports, out-of-plane force, unobservable DOFs, Newton-law/reconstruction errors, owning prepared snapshots and validation-disabled raw path. The solved multipliers must come from MuJoCo; no direct efc writes in native fixtures.
 
-- [ ] **Step 2: Run RED.**
+- [x] **Step 2: Run RED.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_attachment_wrench.py -q
 ```
 
-- [ ] **Step 3: Implement row extraction, DGELSD recovery, then attachment measurement.** Preserve selected multipliers and engine mapping:
+- [x] **Step 3: Implement row extraction, DGELSD recovery, then attachment measurement.** Preserve selected multipliers and engine mapping:
 
 ```text
 scan current equality rows -> zero multiplier scratch
@@ -171,7 +171,7 @@ scan current equality rows -> zero multiplier scratch
 
 For connect constraints each body's own compiled anchor is the force point. Prepared geometry contains pre-step Jacobians and columns; combine with post-solve multipliers/residuals without a new forward. Preserve the source's `np.allclose` asymmetry/tolerances exactly, not a norm-only replacement. Static rank/error threshold cases must agree with the same LAPACK routine; diagnose a raw-bit difference before changing any tolerance.
 
-- [ ] **Step 4: Build, focused GREEN, frontend sweep.**
+- [x] **Step 4: Build, focused GREEN, frontend sweep.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
@@ -181,7 +181,7 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target chec
 
 Document exact LAPACK symbol/ABI evidence and all exported typed interfaces for the final writer.
 
-- [ ] **Step 5: Self-review and scoped commit.**
+- [x] **Step 5: Self-review and scoped commit.**
 
 ```bash
 git add native/src/rider native/src/stepper.hpp native/src/binding.cpp native/CMakeLists.txt tests/reference/test_native_attachment_wrench.py docs/TESTING.md
@@ -227,7 +227,7 @@ stepper.set_rider_contacts_state(state)  # validated atomic restoration
 
 Snapshot includes every mutable field: enabled map (four names), six support states (`xi`, optional tangent), left/right grip xi/optional anchors, elastic/loss/radial-power/delivered-torque fields, diagnostics, optional clock, pending-release loss, optional settled support dict+crank torque, last attachment samples/errors, optional probe diagnostics/enabled/delivered torque. Preserve constructor/reset sentinels; parse full candidates, validate shape/type/finite/enums/topology/clock and all allocations before committing. Returned samples/states and converted input buffers must outlive FFI temporaries. Restore no derived efc arrays. mjData restore stays independent of contact state. Release after integration refreshes kinematics only; capture refreshes kinematics/comPos and checks both hands before zeroing springs.
 
-- [ ] **Step 1: Write failing full contact oracle tests using tiny genuine models.** Name required frame/steer/rider pelvis, two feet/forearms/upper arms, sole/saddle/grip sites, support box geoms, crank joint and optional weld/connect equalities exactly. Each model has independently moving planar bike/rider branches; don't invoke research equilibrium relaxation. Save MJB and construct separate owners, identical state, explicit reset.
+- [x] **Step 1: Write failing full contact oracle tests using tiny genuine models.** Name required frame/steer/rider pelvis, two feet/forearms/upper arms, sole/saddle/grip sites, support box geoms, crank joint and optional weld/connect equalities exactly. Each model has independently moving planar bike/rider branches; don't invoke research equilibrium relaxation. Save MJB and construct separate owners, identical state, explicit reset.
 
 ```python
 expected = python_contacts.compute_qfrc(model, data, dt, advance=True, detailed=True)
@@ -239,13 +239,13 @@ assert_tree(native.rider_contacts_state(), python_snapshot(python_contacts))
 
 Test all pedal flat/weld/spindle, saddle flat/weld/pin, and grip spring/connect modes with a bounded representative matrix and mixed configurations. Test exact forces/diagnostics/state/energy, tilted/flipped finite supports, contact/shear transport and material face switch, zero normal/sliding, asymmetric hand reach/overload with left-then-right update order, release/capture success/failure/blocked linked releases, pending release energy at incoming/outgoing poses, initialize-settled-state, restart versus reset, both detailed flags, duplicate-time guard, non-advancing probes and their outputs, state ownership/aliasing/invalid restore, optional projection and no-contact Stepper. Short genuine solves latch equality reactions and next-step crank sensor; compare prepared/raw/scalar attachment measurements/errors across dense/sparse layouts, unrelated rows, optional interval-start pose. Check public interval-state measurement restores live qpos/qvel and poses even on an error.
 
-- [ ] **Step 2: Run RED against missing contact APIs/projection.**
+- [x] **Step 2: Run RED against missing contact APIs/projection.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_rider_contacts.py -q
 ```
 
-- [ ] **Step 3: Implement the unchanged applier with typed state and causal stages.**
+- [x] **Step 3: Implement the unchanged applier with typed state and causal stages.**
 
 ```text
 reset anchors -> compute incoming support/grip forces
@@ -256,7 +256,7 @@ reset anchors -> compute incoming support/grip forces
 
 For pads use one relative Jacobian pair for velocity and force mapping at a common point; add `jrel.T @ f` once, preserve Newton pairs and accumulation order. Linked supports add no second physical force. Detailed=False must preserve material/enable/force/energy behavior and omit exactly the reference diagnostics. Probes copy material/enabled state and leave live latches/clocks/anchors intact while publishing only probe values. Do not fix apparent Python order quirks (including asymmetric hand release); expose exact oracle behavior. `prepare_attachment_raw` and scalar sampling preserve errors rather than substituting zero-force samples. Own reusable nv scratch and destroy writer before model on normal and failed construction paths.
 
-- [ ] **Step 4: Build, focused GREEN, frontend and one sanitizer gate.**
+- [x] **Step 4: Build, focused GREEN, frontend and one sanitizer gate.**
 
 ```bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
@@ -267,7 +267,7 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build/asan -j4
 
 Run all three new modules under the actual ASAN extension with `NATIVE_TEST_BUILD_DIR=asan`, `ASAN_OPTIONS=detect_leaks=0` and existing clang-21 ASAN library injected via `uv run env ... python`; assert/print exact resolved module path before pytest. Report exact counts/times/RED-GREEN/projection/state schemas and remaining limitations. Root runs one `bash tools/run_tests.sh quick` after task fixes, then final increment review. No full-suite, speed, viewer or full-P3 claim.
 
-- [ ] **Step 5: Self-review and scoped commit.**
+- [x] **Step 5: Self-review and scoped commit.**
 
 ```bash
 git add native/src/rider native/src/writers/rider_contacts.hpp native/src/writers/rider_contacts.cpp native/src/config.hpp native/src/stepper.hpp native/src/stepper.cpp native/src/binding.cpp native/CMakeLists.txt tools/native_config.py tests/reference/test_native_rider_contacts.py docs/TESTING.md

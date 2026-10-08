@@ -8,10 +8,10 @@ pose-resolved arm reach, and the three closed attachment discriminators.
 The second half of this file pins the RiderContactWriter core against the
 unchanged Python oracle on genuine tiny MuJoCo models: pad force assembly,
 grip release/capture, diagnostics trees, probe publication, snapshot
-round-trip and restoration atomicity. The settle_welds latch is exercised
-only through its still-null (unlatched) reads; the attachment
-settle/prepare/sample faces themselves arrive in wave 3b and are explicitly
-asserted absent here.
+round-trip and restoration atomicity. The T3b-2 tail adds the attachment
+settle face: prepare_attachment_raw's pose capture, settle_welds' solved-
+reaction latch (and the crank-torque sensor read on the next qfrc), and
+attachment_samples' optional interval-state measurement.
 """
 import copy
 from dataclasses import asdict, replace
@@ -188,7 +188,14 @@ CONTACT_NAMES = SUPPORT_NAMES + ('grip',)
 PAD_KEYS = tuple(f'{name}:{i}' for name in SUPPORT_NAMES for i in range(2))
 
 
-def _contact_xml(pedal='flat', saddle='flat', grip='spring'):
+def _contact_xml(pedal='flat', saddle='flat', grip='spring',
+                 front_slide=False):
+    # front_slide replaces the front foot's freejoint with a y-slide: its
+    # in-plane attachment force is then genuinely unobservable (the same
+    # degenerate-dof construction as _yslide_model in
+    # test_native_attachment_wrench.py).
+    front_joint = ('<joint name="foot_front_y" type="slide" axis="0 1 0"/>'
+                   if front_slide else '<freejoint/>')
     equalities = []
     if pedal == 'weld':
         equalities += [f'<weld name="weld_foot_{s}" body1="rider_foot_{s}" body2="pedal_{s}"/>'
@@ -247,7 +254,7 @@ def _contact_xml(pedal='flat', saddle='flat', grip='spring'):
       <geom type="sphere" size="0.02" contype="0" conaffinity="0"/>
     </body>
     <body name="rider_foot_front" pos="0.25 0.04 0.83">
-      <freejoint/>
+      {front_joint}
       <inertial pos="0 0 0" mass="1" diaginertia="0.01 0.01 0.01"/>
       <site name="site_rider_sole_front" pos="0 0 -0.035"/>
       <geom type="sphere" size="0.02" contype="0" conaffinity="0"/>
@@ -305,12 +312,13 @@ def _body_qpos(model, name):
 
 
 def _plant(tmp_path, pedal='flat', saddle='flat', grip='spring', pose=None,
-           cfg_overrides=None, name='contacts'):
+           cfg_overrides=None, name='contacts', front_slide=False):
     from bike_sim.physics.physical_config import ArticulatedConfig
     from bike_sim.sim.ride.rider_contacts import RiderContactApplier
     from tools.native_config import project_rider_contacts
     model = mujoco.MjModel.from_xml_string(
-        _contact_xml(pedal=pedal, saddle=saddle, grip=grip))
+        _contact_xml(pedal=pedal, saddle=saddle, grip=grip,
+                     front_slide=front_slide))
     data = mujoco.MjData(model)
     mujoco.mj_forward(model, data)
     cfg = replace(ArticulatedConfig(), pedal_attachment=pedal,
@@ -672,8 +680,8 @@ def test_linked_attachments_refuse_release(tmp_path):
 
 
 def test_welded_branch_null_latch_diagnostics(tmp_path):
-    # The settle latch is a wave-3b deliverable: this wave's welded branches
-    # read only the null latch (zero force/load/flags) plus the live
+    # Before any settle_welds call the latch is None: the welded branches
+    # read the oracle's zeros (zero force/load/flags) plus the live
     # translation residual — pinned here against the oracle.
     for pedal, saddle, grip in (('weld', 'weld', 'connect'),
                                 ('spindle', 'pin', 'connect')):
@@ -795,7 +803,10 @@ def test_no_writer_answers_missing_config_errors(tmp_path):
     for name in ('rider_contacts_reset', 'rider_contacts_restart_clock',
                  'rider_contacts_initialize_settled_state',
                  'rider_contacts_release_all', 'rider_contacts_stored_energy',
-                 'rider_contacts_diagnostics', 'rider_contacts_state'):
+                 'rider_contacts_diagnostics', 'rider_contacts_state',
+                 'rider_contacts_prepare_attachment_raw',
+                 'rider_contacts_settle',
+                 'rider_contacts_attachment_samples'):
         with pytest.raises(RuntimeError, match='rider_contacts'):
             getattr(stepper, name)()
     with pytest.raises(RuntimeError, match='rider_contacts'):
@@ -806,13 +817,353 @@ def test_no_writer_answers_missing_config_errors(tmp_path):
         stepper.set_rider_contacts_state({})
 
 
-def test_settle_and_sample_faces_are_wave_3b(tmp_path):
-    model, data, applier, stepper = _plant(tmp_path)
-    # Deferred in this wave: the attachment settle/prepare/sample APIs must
-    # not exist yet — they arrive with the wave-3b attachment path.
-    for name in ('rider_contacts_prepare_attachment_raw',
-                 'rider_contacts_settle', 'rider_contacts_attachment_samples'):
-        assert not hasattr(stepper, name), name
+# --------------------------------------------------------------------------
+# T3b-2: the attachment settle/sample face.
+#
+# The settle face reads the SOLVED constraint arena (efc_type/efc_id/
+# efc_force of the forward or step that just ran), so each parity check
+# forwards both owners on the same pose and solver inputs before calling:
+# _solved_mirror makes the Stepper's arena bitwise the oracle's.
+# --------------------------------------------------------------------------
+
+
+def _solved_mirror(stepper, model, data):
+    """set_state + inputs + forward: the Stepper's efc arena is bitwise the
+    arena the oracle's settle_welds reads."""
+    stepper.set_state(np.asarray(data.qpos), np.asarray(data.qvel),
+                      np.asarray(data.act), np.asarray(data.qacc_warmstart),
+                      float(data.time))
+    stepper.set_inputs(np.asarray(data.ctrl), np.asarray(data.qfrc_applied))
+    stepper.forward()
+
+
+def test_prepare_attachment_raw_matches_oracle(tmp_path):
+    # prepare_attachment_raw (rider_contacts.py:221-269): geometry for every
+    # linked support plus the welded-grip connect anchors, captured at the
+    # incoming pose; unlinked attachments and spring grips produce nothing.
+    for pedal, saddle, grip in (('weld', 'weld', 'connect'),
+                                ('spindle', 'pin', 'connect'),
+                                ('weld', 'pin', 'spring'),
+                                ('spindle', 'weld', 'spring'),
+                                ('weld', 'flat', 'connect'),
+                                ('flat', 'flat', 'spring')):
+        model, data, applier, stepper = _plant(
+            tmp_path, pedal=pedal, saddle=saddle, grip=grip,
+            name=f'prep_{pedal}_{saddle}_{grip}')
+        _reset_pair(stepper, applier, model, data)
+        expected_geometry, expected_errors = \
+            applier.prepare_attachment_raw(model, data)
+        geometry, errors = stepper.rider_contacts_prepare_attachment_raw()
+        assert errors == expected_errors, (pedal, saddle, grip)
+        assert_tree(geometry, expected_geometry)
+
+
+def test_settle_welds_latches_solved_reactions(tmp_path):
+    # settle_welds (rider_contacts.py:271-343): the per-support telemetry
+    # dict of the CURRENT solve, latching _settled_welds and publishing
+    # last_attachment_samples/last_attachment_errors.
+    for pedal, saddle, grip in (('weld', 'weld', 'connect'),
+                                ('spindle', 'pin', 'connect'),
+                                ('weld', 'pin', 'spring'),
+                                ('spindle', 'flat', 'connect'),
+                                ('flat', 'flat', 'spring')):
+        model, data, applier, stepper = _plant(
+            tmp_path, pedal=pedal, saddle=saddle, grip=grip,
+            name=f'settle_{pedal}_{saddle}_{grip}')
+        _reset_pair(stepper, applier, model, data)
+        # A real rider load so the equalities carry nonzero multipliers.
+        _, pelvis_dof = _body_qpos(model, 'rider_pelvis')
+        data.qfrc_applied[pelvis_dof + 2] = -40.
+        mujoco.mj_forward(model, data)
+        _solved_mirror(stepper, model, data)
+        expected = applier.settle_welds(model, data)
+        actual = stepper.rider_contacts_settle()
+        assert_tree(actual, expected)
+        # The latch and the published samples joined the snapshot.
+        assert_tree(stepper.rider_contacts_state(), oracle_state(applier))
+
+
+def test_settled_latch_feeds_next_qfrc(tmp_path):
+    # The torque sensor and the welded-support diagnostics read the latch
+    # on the NEXT compute_qfrc — linked supports must not add a second
+    # physical force.
+    model, data, applier, stepper = _plant(
+        tmp_path, pedal='weld', saddle='weld', grip='connect', name='latch')
+    _reset_pair(stepper, applier, model, data)
+    mujoco.mj_forward(model, data)
+    _solved_mirror(stepper, model, data)
+    assert_tree(stepper.rider_contacts_settle(),
+                applier.settle_welds(model, data))
+    dt = float(model.opt.timestep)
+    expected = applier.compute_qfrc(model, data, dt)
+    actual = stepper.rider_contacts_qfrc(dt)
+    assert_bitwise_equal(actual, expected, 'post-settle qfrc')
+    assert_tree(stepper.rider_contacts_diagnostics(), applier.diagnostics)
+    assert_tree(stepper.rider_contacts_state(), oracle_state(applier))
+    # delivered_crank_torque_nm is the latched scalar, not a recomputation.
+    state = stepper.rider_contacts_state()
+    assert state['delivered_crank_torque_nm'] == \
+        applier._settled_welds[1] != 0.
+
+
+def test_attachment_samples_scalar_and_raw_match_oracle(tmp_path):
+    # attachment_samples (rider_contacts.py:345-412): the scalar budget
+    # dataclass per attachment, or the raw measurement block with raw=True.
+    for pedal, saddle, grip in (('weld', 'weld', 'connect'),
+                                ('spindle', 'pin', 'connect'),
+                                ('weld', 'pin', 'spring')):
+        model, data, applier, stepper = _plant(
+            tmp_path, pedal=pedal, saddle=saddle, grip=grip,
+            name=f'samples_{pedal}_{saddle}_{grip}')
+        _reset_pair(stepper, applier, model, data)
+        _, fz = _joint(model, 'frame_z')
+        data.qvel[fz] = -0.05
+        mujoco.mj_forward(model, data)
+        _solved_mirror(stepper, model, data)
+        for raw in (False, True):
+            expected_samples, expected_errors = \
+                applier.attachment_samples(model, data, raw=raw)
+            samples, errors = \
+                stepper.rider_contacts_attachment_samples(raw=raw)
+            assert errors == expected_errors, (pedal, saddle, grip, raw)
+            assert_tree(samples, expected_samples)
+
+
+def test_settle_raw_with_prepared_uses_interval_start_geometry(tmp_path):
+    # The raw period path: geometry captured at the interval-start pose is
+    # paired with the post-solve multipliers — no second kinematics pass.
+    model, data, applier, stepper = _plant(
+        tmp_path, pedal='weld', saddle='weld', grip='connect',
+        name='prepared_settle')
+    _reset_pair(stepper, applier, model, data)
+    expected_prepared = applier.prepare_attachment_raw(model, data)
+    prepared = stepper.rider_contacts_prepare_attachment_raw()
+    # Move to the interval-end pose and solve again.
+    _, pelvis_qpos = _body_qpos(model, 'rider_pelvis')
+    data.qpos[pelvis_qpos + 2] -= 0.01
+    mujoco.mj_forward(model, data)
+    _solved_mirror(stepper, model, data)
+    expected = applier.settle_welds(model, data, raw=True,
+                                  prepared=expected_prepared)
+    actual = stepper.rider_contacts_settle(raw=True, prepared=prepared)
+    # (welds dict, raw samples dict, errors tuple) — the oracle's triple.
+    assert_tree(actual, expected)
+    assert_tree(stepper.rider_contacts_state(), oracle_state(applier))
+    # The prepared pair may also arrive as the oracle's own dataclass tuple.
+    assert_tree(
+        stepper.rider_contacts_settle(raw=True, prepared=expected_prepared),
+        expected)
+
+
+def test_attachment_samples_interval_state_restores_pose(tmp_path):
+    # interval_state=(qpos, qvel) measures at the interval-start pose, then
+    # restores the live buffers AND the derived kinematics on every exit.
+    model, data, applier, stepper = _plant(
+        tmp_path, pedal='weld', saddle='weld', grip='connect',
+        name='interval')
+    _reset_pair(stepper, applier, model, data)
+    mujoco.mj_forward(model, data)
+    _solved_mirror(stepper, model, data)
+    interval_qpos = np.array(data.qpos, copy=True)
+    interval_qvel = np.array(data.qvel, copy=True)
+    interval_qpos[_joint(model, 'frame_x')[0]] += 0.02
+    interval = (interval_qpos, interval_qvel)
+    qpos_before = np.array(data.qpos, copy=True)
+    qvel_before = np.array(data.qvel, copy=True)
+    xpos_before = np.array(data.xpos, copy=True)
+    expected_samples, expected_errors = \
+        applier.attachment_samples(model, data, interval)
+    # The oracle restored pose and kinematics through its try/finally.
+    assert_bitwise_equal(data.qpos, qpos_before, 'oracle qpos')
+    assert_bitwise_equal(data.qvel, qvel_before, 'oracle qvel')
+    assert_bitwise_equal(data.xpos, xpos_before, 'oracle xpos')
+    live_qpos = np.array(stepper.qpos, copy=True)
+    live_qvel = np.array(stepper.qvel, copy=True)
+    dt = float(model.opt.timestep)
+    probe_before = stepper.rider_contacts_qfrc(dt, advance=False)
+    samples, errors = stepper.rider_contacts_attachment_samples(interval)
+    assert errors == expected_errors
+    assert_tree(samples, expected_samples)
+    assert_bitwise_equal(np.asarray(stepper.qpos), live_qpos,
+                         'qpos restored')
+    assert_bitwise_equal(np.asarray(stepper.qvel), live_qvel,
+                         'qvel restored')
+    # Kinematics were refreshed too: the pose-dependent probe is identical.
+    assert_bitwise_equal(stepper.rider_contacts_qfrc(dt, advance=False),
+                         probe_before, 'kinematics restored')
+
+
+def test_attachment_samples_interval_restores_through_errors(tmp_path):
+    # Rejected intervals never reach the buffers; an interval that still
+    # collects per-attachment errors restores just like a clean one.
+    model, data, applier, stepper = _plant(
+        tmp_path, pedal='weld', saddle='weld', grip='connect',
+        name='interval_err', front_slide=True)
+    _reset_pair(stepper, applier, model, data)
+    mujoco.mj_forward(model, data)
+    _solved_mirror(stepper, model, data)
+    live_qpos = np.array(stepper.qpos, copy=True)
+    live_qvel = np.array(stepper.qvel, copy=True)
+    for bad in ((np.zeros(model.nq + 1), np.zeros(model.nv)),
+                (np.zeros(model.nq), np.zeros(model.nv + 1)),
+                (np.full(model.nq, np.nan), np.zeros(model.nv)),
+                (np.zeros(model.nq), np.full(model.nv, np.inf))):
+        with pytest.raises(ValueError):
+            stepper.rider_contacts_attachment_samples(bad)
+    assert_bitwise_equal(np.asarray(stepper.qpos), live_qpos)
+    assert_bitwise_equal(np.asarray(stepper.qvel), live_qvel)
+    interval_qpos = np.array(data.qpos, copy=True)
+    interval_qpos[_joint(model, 'frame_x')[0]] += 0.02
+    interval = (interval_qpos, np.array(data.qvel, copy=True))
+    expected_samples, expected_errors = \
+        applier.attachment_samples(model, data, interval)
+    samples, errors = stepper.rider_contacts_attachment_samples(interval)
+    # At the shifted interval pose the live-pose wrenches no longer
+    # explain — every measurement collects the generic
+    # ':unobservable_attachment_wrench' spelling (never a fabricated
+    # zero), and the live pose is still restored.
+    assert errors == expected_errors
+    assert len(errors) == 5 and samples == expected_samples == {}
+    assert 'foot_front:unobservable_attachment_wrench' in errors
+    assert_bitwise_equal(np.asarray(stepper.qpos), live_qpos,
+                         'qpos restored through collected errors')
+    assert_bitwise_equal(np.asarray(stepper.qvel), live_qvel,
+                         'qvel restored through collected errors')
+
+
+def test_attachment_unobservable_records_errors_not_zeros(tmp_path):
+    # The y-slide front foot keeps a dof but no x/z observability: prepare
+    # still captures its geometry (observable=False), the scalar path
+    # collects the error, and the raw paths store the measurement.
+    model, data, applier, stepper = _plant(
+        tmp_path, pedal='weld', saddle='weld', grip='connect',
+        name='unobservable', front_slide=True)
+    _reset_pair(stepper, applier, model, data)
+    mujoco.mj_forward(model, data)
+    _solved_mirror(stepper, model, data)
+    expected_geometry, expected_errors = \
+        applier.prepare_attachment_raw(model, data)
+    geometry, errors = stepper.rider_contacts_prepare_attachment_raw()
+    assert errors == expected_errors == ()
+    assert_tree(geometry, expected_geometry)
+    assert geometry['foot_front']['observable'] is False
+    # Scalar: 'foot_front' becomes an error string, not a fabricated zero.
+    # (On this plant the grip measurements also collect the generic
+    # ':unobservable_attachment_wrench' spelling — the wrenches fail the
+    # Newton third-law check — identical on both sides either way.)
+    expected_samples, expected_errors = \
+        applier.attachment_samples(model, data)
+    samples, errors = stepper.rider_contacts_attachment_samples()
+    assert errors == expected_errors
+    assert 'foot_front:unobservable_attachment_wrench' in errors
+    assert 'foot_front' not in samples
+    assert_tree(samples, expected_samples)
+    # Raw: the measurement is stored with observable=False — the raw reader
+    # defers validation (attachment_raw never validates by itself).
+    expected_raw, expected_errors = \
+        applier.attachment_samples(model, data, raw=True)
+    raw, errors = stepper.rider_contacts_attachment_samples(raw=True)
+    assert errors == expected_errors == ()
+    assert raw['foot_front']['observable'] is False
+    assert_tree(raw, expected_raw)
+    # settle(raw=True, prepared) takes the same deferred-validation path.
+    prepared_errors = ()
+    expected = applier.settle_welds(
+        model, data, raw=True,
+        prepared=(expected_geometry, prepared_errors))
+    actual = stepper.rider_contacts_settle(
+        raw=True, prepared=(geometry, prepared_errors))
+    assert_tree(actual, expected)
+    assert actual[2] == expected[2] == ()
+    assert_tree(stepper.rider_contacts_state(), oracle_state(applier))
+
+
+def test_settled_snapshot_round_trip(tmp_path):
+    # The latch and the published samples/errors are snapshot fields:
+    # they must survive a restore onto a fresh owner bitwise, and the
+    # restored owner must evaluate identically.
+    model, data, applier, stepper = _plant(
+        tmp_path, pedal='weld', saddle='weld', grip='connect',
+        name='settled_snap')
+    _reset_pair(stepper, applier, model, data)
+    mujoco.mj_forward(model, data)
+    _solved_mirror(stepper, model, data)
+    stepper.rider_contacts_settle()
+    applier.settle_welds(model, data)
+    dt = float(model.opt.timestep)
+    applier.compute_qfrc(model, data, dt)
+    stepper.rider_contacts_qfrc(dt)
+    snapshot = stepper.rider_contacts_state()
+    assert_tree(snapshot, oracle_state(applier))
+    from tools.native_config import project_rider_contacts
+    other_path = tmp_path / 'settled_restored.mjb'
+    mujoco.mj_saveModel(model, str(other_path))
+    config = {'schema': 2, 'rider_contacts': project_rider_contacts(applier)}
+    restored = bike_native.Stepper(str(other_path), config)
+    restored.set_rider_contacts_state(copy.deepcopy(snapshot))
+    # Oracle-shaped candidates restore too — the oracle dict's samples are
+    # AttachmentSample dataclasses, parsed through the attribute path.
+    oracle_restored = bike_native.Stepper(str(other_path), config)
+    oracle_restored.set_rider_contacts_state(
+        copy.deepcopy(oracle_state(applier)))
+    data.time += dt
+    mujoco.mj_forward(model, data)
+    for s in (stepper, restored, oracle_restored):
+        _mirror(s, data)
+    expected = applier.compute_qfrc(model, data, dt)
+    assert_bitwise_equal(restored.rider_contacts_qfrc(dt), expected,
+                         'restored qfrc')
+    assert_bitwise_equal(oracle_restored.rider_contacts_qfrc(dt), expected,
+                         'oracle-state qfrc')
+    assert_tree(restored.rider_contacts_state(), oracle_state(applier))
+    # The snapshot owns its storage: mutating the emitted dict must not
+    # touch the live latch or sample blocks.
+    snapshot['settled_welds'][0]['saddle']['normal_n'] = -1.
+    snapshot['last_attachment_samples']['foot_front']['normal_n'] = 7.
+    snapshot['last_attachment_errors'] = ('bogus',)
+    fresh = stepper.rider_contacts_state()
+    assert fresh['settled_welds'][0]['saddle']['normal_n'] != -1.
+    assert fresh['last_attachment_samples']['foot_front']['normal_n'] != 7.
+    assert fresh['last_attachment_errors'] == ()
+
+
+def test_settled_snapshot_rejects_malformed_attachment_fields(tmp_path):
+    model, data, applier, stepper = _plant(
+        tmp_path, pedal='weld', saddle='weld', grip='connect',
+        name='settled_bad')
+    _reset_pair(stepper, applier, model, data)
+    mujoco.mj_forward(model, data)
+    _solved_mirror(stepper, model, data)
+    stepper.rider_contacts_settle()
+    baseline = stepper.rider_contacts_state()
+    bad = []
+    candidate = copy.deepcopy(baseline)
+    candidate['last_attachment_samples']['foot_front'] = {'kind': 'foot'}
+    bad.append(candidate)
+    candidate = copy.deepcopy(baseline)
+    candidate['last_attachment_samples']['foot_front'] = 5.
+    bad.append(candidate)
+    candidate = copy.deepcopy(baseline)
+    candidate['last_attachment_errors'] = ['ok', 5]
+    bad.append(candidate)
+    candidate = copy.deepcopy(baseline)
+    candidate['settled_welds'][0]['saddle'] = {'force_on_rider_n': []}
+    bad.append(candidate)
+    for candidate in bad:
+        with pytest.raises((ValueError, TypeError)):
+            stepper.set_rider_contacts_state(candidate)
+    assert_tree(stepper.rider_contacts_state(), baseline)
+    # The samples map is name-open — the oracle serializes whichever
+    # attachment names were measured — so an unknown-but-valid entry is
+    # restored verbatim rather than rejected.
+    extra = copy.deepcopy(baseline)
+    extra['last_attachment_samples']['extra'] = \
+        copy.deepcopy(extra['last_attachment_samples']['foot_front'])
+    stepper.set_rider_contacts_state(extra)
+    assert 'extra' in \
+        stepper.rider_contacts_state()['last_attachment_samples']
+    stepper.set_rider_contacts_state(baseline)
+    assert_tree(stepper.rider_contacts_state(), baseline)
 
 
 def test_set_enabled_rejects_invalid_requests(tmp_path):

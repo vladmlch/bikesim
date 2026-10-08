@@ -31,6 +31,13 @@ namespace drivetrain {
 
 namespace writers {
     class RiderContactWriter;
+    // T3b-2 measurement value types (writers/rider_contacts.hpp) —
+    // forward-declared for the settle face's signatures.
+    struct RiderPreparedAttachments;
+    struct RiderAttachmentMeasurement;
+    struct RiderSettleOutcome;
+    using RiderIntervalState =
+        std::pair<std::vector<double>, std::vector<double>>;
 }
 
 struct TireSideInput;
@@ -291,6 +298,23 @@ public:
     [[nodiscard]] double rider_contacts_stored_energy() const;
     [[nodiscard]] std::vector<double>
     rider_contacts_qfrc(double dt, bool advance, bool detailed);
+
+    // T3b-2 — the settle/sample face (rider_contacts.py:221-412):
+    // prepare_attachment_raw's interval-start geometry capture,
+    // settle_welds' solved-reaction latch plus its measurement half, and
+    // attachment_samples' optional interval-state measurement. Settle
+    // and samples write data.qpos/qvel during the swap — the binding
+    // routes them through mutate() like every mutating entry point.
+    [[nodiscard]] writers::RiderPreparedAttachments
+    rider_contacts_prepare_attachment_raw() const;
+    [[nodiscard]] writers::RiderAttachmentMeasurement
+    rider_contacts_attachment_samples(
+        const std::optional<writers::RiderIntervalState> &interval_state,
+        bool raw);
+    [[nodiscard]] writers::RiderSettleOutcome rider_contacts_settle(
+        const std::optional<writers::RiderIntervalState> &interval_state,
+        bool raw,
+        const writers::RiderPreparedAttachments *prepared);
 
 private:
     mjModel *m_;

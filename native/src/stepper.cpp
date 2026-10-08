@@ -559,3 +559,27 @@ std::vector<double> Stepper::rider_contacts_qfrc(double dt, bool advance,
                                        rider_contacts_out_);
     return rider_contacts_out_;
 }
+
+writers::RiderPreparedAttachments
+Stepper::rider_contacts_prepare_attachment_raw() const {
+    // Pose-only read — the same non-mutating contract as
+    // rider_contacts_stored_energy.
+    return rider_contacts().prepare_attachment_raw(d_);
+}
+
+writers::RiderAttachmentMeasurement
+Stepper::rider_contacts_attachment_samples(
+    const std::optional<writers::RiderIntervalState> &interval_state,
+    bool raw) {
+    require_healthy();
+    return rider_contacts().attachment_samples(d_, interval_state, raw);
+}
+
+writers::RiderSettleOutcome Stepper::rider_contacts_settle(
+    const std::optional<writers::RiderIntervalState> &interval_state,
+    bool raw,
+    const writers::RiderPreparedAttachments *prepared) {
+    require_healthy();
+    return rider_contacts().settle_welds(d_, interval_state, raw,
+                                         prepared);
+}

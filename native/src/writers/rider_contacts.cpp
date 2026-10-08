@@ -34,6 +34,7 @@
 #include <cstddef>
 #include <cstring>
 #include <limits>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -102,13 +103,29 @@ namespace {
         const auto *ctx = static_cast<const KinematicsContext *>(raw);
         mj_comPos(ctx->model, ctx->data);
     }
+
+    // nv as a lapack_int for the ctor's workspace bound — 0 on a null
+    // model (equality_'s member-init throws before lstsq_ is built).
+    [[nodiscard]] rider::lapack_int
+    lstsq_rows_bound(const mjModel *model) noexcept {
+        return model != nullptr ? model->nv : rider::lapack_int{0};
+    }
 } // namespace
 
 namespace writers {
 
     RiderContactWriter::RiderContactWriter(
         const mjModel *model, const rider::RiderContactsConfig &config)
-        : model_(model), cfg_(config), equality_(model) {
+        : model_(model), cfg_(config), equality_(model),
+          // The (nv, max(nv,6), 1) bound admits every (k,6) spatial
+          // validation solve the attachment measurement runs — the same
+          // bound Stepper::rider_attachment_lstsq uses. equality_ throws
+          // on a null model before this expression ever dereferences it;
+          // the helper keeps the mjtSize read out of a casted ternary
+          // (-Wuseless-cast under the second frontend).
+          lstsq_(lstsq_rows_bound(model),
+                 std::max<rider::lapack_int>(lstsq_rows_bound(model), 6),
+                 1) {
         if (model_ == nullptr)
             throw std::invalid_argument("rider contacts need a live model");
         if (model_->nv < 0)
@@ -167,6 +184,7 @@ namespace writers {
         jac_a_.assign(3 * static_cast<std::size_t>(model_->nv), 0.);
         jac_b_.assign(3 * static_cast<std::size_t>(model_->nv), 0.);
         qfrc_.assign(static_cast<std::size_t>(model_->nv), 0.);
+        measure_qfrc_.assign(static_cast<std::size_t>(model_->nv), 0.);
         // Attachment discriminators (lines 84-95) and the conditional
         // equality resolution each link class performs.
         spindle_pedals_ =
@@ -399,6 +417,13 @@ namespace writers {
         evaluate(data, dt, detailed, state_, out);
     }
 
+    // The whole oracle compute_qfrc evaluation lives in one frame — the
+    // staged diagnostics tree, per-pad scratch and both grip branches —
+    // so sanitizer redzones push it past the 8 KiB frame budget. The
+    // function is depth-bounded (no recursion) and the frame is fixed;
+    // suppressing locally like the staged-dict binding paths do.
+    NATIVE_DIAG_PUSH
+    NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     void RiderContactWriter::evaluate(mjData *data, double dt, bool detailed,
                                       RiderContactsState &w,
                                       std::span<double> out) {
@@ -436,8 +461,8 @@ namespace writers {
                 (si == 0 && linked_saddle_) || (si > 0 && linked_pedals_);
             if (linked) {
                 // Welded/pinned support (lines 458-502): the settled latch
-                // supplies force/load/flags — null until wave 3b latches
-                // it — and the live translation residual fills gap_m.
+                // supplies force/load/flags — null until settle_welds
+                // latches it — and the live translation residual fills gap_m.
                 const auto [force_on_rider, normal_load] =
                     settled_force(w, kSupportNames[si]);
                 const RiderSettledEntry *const settled =
@@ -762,6 +787,7 @@ namespace writers {
         w.pending_release_loss_j = 0.;
         w.last_time_s = time;
     }
+    NATIVE_DIAG_POP
 
     double RiderContactWriter::stored_energy(const mjData *data) const {
         double energy = 0.;
@@ -786,6 +812,369 @@ namespace writers {
             }
         }
         return energy;
+    }
+
+    RiderPreparedAttachments
+    RiderContactWriter::prepare_attachment_raw(const mjData *data) const {
+        // rider_contacts.py:221-269 — pose-only capture; errors replace
+        // entries (unobservable attachments are never zero-substituted).
+        RiderPreparedAttachments out;
+        const auto run = [this, data, &out](const AttachmentTarget &t) {
+            const std::optional<std::vector<double>> pull =
+                pull_of(t);
+            try {
+                out.geometry.emplace_back(
+                    t.out, rider::prepare_attachment_geometry(
+                               model_, data, t.eq_id, t.rider_body,
+                               t.bike_body, t.point, t.normal, t.kind,
+                               t.rotational, t.half_patch_m, pull));
+            } catch (const std::invalid_argument &) {
+                out.errors.push_back(
+                    t.out + ":unobservable_attachment_wrench");
+            }
+        };
+        for (std::size_t si = 0; si < kSupportCount; ++si)
+            if (const auto t = support_target(si, data)) run(*t);
+        if (welded_grip_)
+            for (std::size_t side = 0; side < kSideCount; ++side)
+                if (const auto t = grip_target(side, data)) run(*t);
+        return out;
+    }
+
+    RiderAttachmentMeasurement
+    RiderContactWriter::attachment_samples(
+        mjData *data, const std::optional<RiderIntervalState> &interval,
+        bool raw) {
+        if (!interval.has_value()) return measure_samples(data, raw);
+        const auto &[qpos, qvel] = *interval;
+        // The oracle's data.qpos[:]=qpos / data.qvel[:]=qvel broadcast
+        // gate, checked before anything is written — plus the port's
+        // all-finite domain (set_inputs/set_state's convention; a NaN
+        // pose would only ever produce NaN telemetry, never a reading).
+        if (qpos.size() != static_cast<std::size_t>(model_->nq))
+            throw std::invalid_argument(
+                "attachment interval qpos must be nq wide");
+        if (qvel.size() != static_cast<std::size_t>(model_->nv))
+            throw std::invalid_argument(
+                "attachment interval qvel must be nv wide");
+        if (!std::ranges::all_of(qpos, [](double v) {
+                return std::isfinite(v);
+            }))
+            throw std::invalid_argument(
+                "attachment interval qpos must be finite");
+        if (!std::ranges::all_of(qvel, [](double v) {
+                return std::isfinite(v);
+            }))
+            throw std::invalid_argument(
+                "attachment interval qvel must be finite");
+        const std::span<const double> live_qpos = std::views::counted(
+            data->qpos, model_->nq);
+        const std::span<const double> live_qvel = std::views::counted(
+            data->qvel, model_->nv);
+        const std::vector<double> saved_qpos(live_qpos.begin(),
+                                             live_qpos.end());
+        const std::vector<double> saved_qvel(live_qvel.begin(),
+                                             live_qvel.end());
+        const auto restore = [&]() {
+            std::ranges::copy(saved_qpos, data->qpos);
+            std::ranges::copy(saved_qvel, data->qvel);
+            refresh_kinematics_com(data);
+        };
+        // Prologue stays outside the unwind scope like the oracle's:
+        // data.qpos[:]=...; data.qvel[:]=...; mj_kinematics; mj_comPos.
+        // A kinematics failure here leaves the swap in place and the
+        // owning Stepper poisoned (engine::EngineFailure via mutate()).
+        std::ranges::copy(qpos, data->qpos);
+        std::ranges::copy(qvel, data->qvel);
+        refresh_kinematics_com(data);
+        RiderAttachmentMeasurement measured;
+        try {
+            measured = measure_samples(data, raw);
+        } catch (...) {
+            // try/finally — restore runs for EVERY escape (a collected
+            // error is a normal exit; a propagating failure or a restore
+            // fault replaces the in-flight exception like Python's
+            // finally-raised one does).
+            restore();
+            throw;
+        }
+        restore();
+        return measured;
+    }
+
+    RiderSettleOutcome RiderContactWriter::settle_welds(
+        mjData *data, const std::optional<RiderIntervalState> &interval,
+        bool raw, const RiderPreparedAttachments *prepared) {
+        // rows = equality_rows(data) — ONE pass for the whole settle.
+        const rider::EqualityRowMap rows = equality_.equality_rows(data);
+        const std::span<const double> xmat =
+            model_access::readonly_buffer(data->xmat, 9 * model_->nbody,
+                                          "xmat");
+        RiderSettleOutcome outcome;
+        for (std::size_t si = 0; si < kSupportCount; ++si) {
+            const bool linked = si == 0 ? linked_saddle_ : linked_pedals_;
+            if (!linked) continue;
+            const int eq = si == 0 ? saddle_eq_ : pedal_eq_[si - 1];
+            // force_on_rider_n — the lam[:3] slice: zeros(3) when the
+            // equality is absent; a shorter vector only when the
+            // equality itself owns fewer than three rows (a renamed
+            // joint equality) — where the oracle's force @ n matmul
+            // raises ValueError, mirrored by the width gate below.
+            const std::vector<double> force =
+                equality_.force_on_rider(data, eq);
+            Vec3 n{};
+            Vec3 tangent{};
+            if (si > 0 && spindle_pedals_) {
+                // Foot z-column (compression toward the ankle) and its
+                // in-plane perpendicular — unnormalized, as written.
+                const Mat3 foot = mat3_at(xmat, supports_[si].body);
+                n = {foot[2], foot[5], foot[8]};
+                tangent = {n[2], 0., -n[0]};
+            } else {
+                PadEval first{};
+                PadEval second{};
+                pad_eval(si, 0, data, first);
+                pad_eval(si, 1, data, second);
+                // np.mean(axis=0) over the two pads — the ordered
+                // (a+b)/2 pair — then the in-place /= max(norm, 1e-12).
+                for (std::size_t i = 0; i < 3; ++i)
+                    n[i] = (first.normal[i] + second.normal[i]) / 2.;
+                const double n_scale = std::max(norm3(n), 1e-12);
+                for (double &v : n) v /= n_scale;
+                for (std::size_t i = 0; i < 3; ++i)
+                    tangent[i] =
+                        (first.tangent[i] + second.tangent[i]) / 2.;
+                const double t_scale = std::max(norm3(tangent), 1e-12);
+                for (double &v : tangent) v /= t_scale;
+            }
+            if (force.size() != 3)
+                throw std::invalid_argument(
+                    "attachment reaction is not a 3-vector");
+            // normal = float(force @ n); shear = float(force @ tangent)
+            // — np.dot's ddot dispatch.
+            const double normal =
+                blas::ddot(3, force.data(), 1, n.data(), 1);
+            const double shear =
+                blas::ddot(3, force.data(), 1, tangent.data(), 1);
+            outcome.entries.emplace_back(
+                std::string(kSupportNames[si]),
+                RiderSettledEntry{
+                    .support_fields = true,
+                    .force_on_rider_n = {force[0], force[1], force[2]},
+                    .normal_n = normal,
+                    .tangent_n = shear,
+                    .would_separate = normal < 0.,
+                    .would_slip = std::abs(shear) >
+                                  cfg_.support_mu * std::max(normal, 0.)});
+        }
+        if (welded_grip_) {
+            for (std::size_t side = 0; side < kSideCount; ++side) {
+                const std::vector<double> force =
+                    equality_.force_on_rider(data, grip_eq_[side]);
+                if (force.size() != 3)
+                    throw std::invalid_argument(
+                        "attachment reaction is not a 3-vector");
+                outcome.entries.emplace_back(
+                    std::string("grip_") + std::string(kSideNames[side]),
+                    RiderSettledEntry{
+                        .force_on_rider_n = {force[0], force[1],
+                                             force[2]}});
+            }
+        }
+        // delivered_crank_torque_nm over the pedal equalities — the
+        // torque sensor's next-step read (0. when pedals are unlinked).
+        const double crank =
+            linked_pedals_
+                ? equality_.equalities_qfrc_at(data, pedal_eq_, crank_dof_)
+                : 0.;
+        // _settled_welds = (deepcopy(result), crank) — the support/grip
+        // entries BEFORE 'crank_torque_nm' joins the emitted dict.
+        state_.settled_welds = RiderSettledWelds{.entries = outcome.entries,
+                                                 .crank_torque_nm = crank};
+        outcome.crank_torque_nm_appended = linked_pedals_;
+        outcome.crank_torque_nm = crank;
+        if (raw && prepared != nullptr) {
+            // The raw period path: pre-step jacobians pair with the
+            // CURRENT multipliers; validation stays deferred like the
+            // oracle's validate_wrench=False.
+            outcome.measurement.raw = true;
+            outcome.measurement.errors = prepared->errors;
+            for (const auto &[name, geometry] : prepared->geometry) {
+                try {
+                    outcome.measurement.raws.emplace_back(
+                        name, rider::attachment_raw_from_geometry(
+                                  data, equality_, lstsq_, measure_qfrc_,
+                                  geometry, false, &rows));
+                } catch (const std::invalid_argument &) {
+                    outcome.measurement.errors.push_back(
+                        name + ":unobservable_attachment_wrench");
+                }
+            }
+        } else {
+            outcome.measurement =
+                attachment_samples(data, interval, raw);
+        }
+        // last_attachment_samples/last_attachment_errors commit — after
+        // measurement, so a propagating failure keeps the previous
+        // published pair (and the latch stays written — line 326).
+        state_.attachment_samples.clear();
+        if (outcome.measurement.raw) {
+            for (const auto &[name, r] : outcome.measurement.raws)
+                state_.attachment_samples.emplace_back(name, r);
+        } else {
+            for (const auto &[name, s] : outcome.measurement.samples)
+                state_.attachment_samples.emplace_back(name, s);
+        }
+        state_.attachment_errors = outcome.measurement.errors;
+        return outcome;
+    }
+
+    std::optional<RiderContactWriter::AttachmentTarget>
+    RiderContactWriter::support_target(std::size_t support,
+                                       const mjData *data) const {
+        // The identical linked/field selection of prepare_attachment_raw
+        // (rider_contacts.py:232-249) and _attachment_samples
+        // (375-391) — porting them twice would invite drift.
+        const SupportRef &ref = supports_[support];
+        AttachmentTarget target;
+        target.rider_body = ref.body;
+        target.bike_body = ref.bike;
+        if (support == 0) {
+            if (!linked_saddle_) return std::nullopt;
+            target.eq_id = saddle_eq_;
+            target.rotational = welded_saddle_;
+            target.half_patch_m = cfg_.saddle_patch_half_length_m;
+            target.out = "saddle";
+            target.kind = "saddle";
+        } else {
+            if (!linked_pedals_) return std::nullopt;
+            target.eq_id = pedal_eq_[support - 1];
+            target.rotational = !spindle_pedals_;
+            target.out = support == 1 ? "foot_front" : "foot_rear";
+            target.kind = "foot";
+            if (spindle_pedals_) {
+                target.half_patch_m = 0.;
+            } else {
+                const std::span<const double> geom_size =
+                    model_access::readonly_buffer(model_->geom_size,
+                                                  3 * model_->ngeom,
+                                                  "geom_size");
+                target.half_patch_m = geom_size[3 *
+                    static_cast<std::size_t>(ref.geom)];
+            }
+        }
+        const std::span<const double> site_xpos =
+            model_access::readonly_buffer(data->site_xpos,
+                                          3 * model_->nsite, "site_xpos");
+        // point = np.array(data.site_xpos[site]) — then the spindle
+        // pedal moves it to the compiled connect anchor and replaces the
+        // normal with the foot's world +z column.
+        target.point = vec3_at(site_xpos, ref.site);
+        if (support > 0 && spindle_pedals_) {
+            const std::span<const double> xmat =
+                model_access::readonly_buffer(data->xmat,
+                                              9 * model_->nbody, "xmat");
+            const std::span<const double> xpos =
+                model_access::readonly_buffer(data->xpos,
+                                              3 * model_->nbody, "xpos");
+            const std::span<const double> eq_data =
+                model_access::readonly_buffer(model_->eq_data,
+                                              mjNEQDATA * model_->neq,
+                                              "eq_data");
+            const Mat3 foot = mat3_at(xmat, ref.body);
+            target.normal = {foot[2], foot[5], foot[8]};
+            const Vec3 anchor = vec3_off(
+                eq_data, static_cast<std::size_t>(mjNEQDATA) *
+                             static_cast<std::size_t>(target.eq_id));
+            target.point = rider::add(vec3_at(xpos, ref.body),
+                                      rider::matvec(foot, anchor));
+        } else {
+            // np.mean([n0, n1], axis=0) — the ordered pair mean,
+            // unnormalized (decompose/geometry normalize downstream).
+            PadEval first{};
+            PadEval second{};
+            pad_eval(support, 0, data, first);
+            pad_eval(support, 1, data, second);
+            for (std::size_t i = 0; i < 3; ++i)
+                target.normal[i] =
+                    (first.normal[i] + second.normal[i]) / 2.;
+        }
+        return target;
+    }
+
+    std::optional<RiderContactWriter::AttachmentTarget>
+    RiderContactWriter::grip_target(std::size_t side,
+                                    const mjData *data) const {
+        // The welded-grip connect read (lines 257-262/399-404): anchor
+        // captured at reset; None skips the side like the oracle.
+        const auto &anchor = state_.grip_anchor_local[side];
+        if (!anchor.has_value()) return std::nullopt;
+        const std::span<const double> xpos =
+            model_access::readonly_buffer(data->xpos, 3 * model_->nbody,
+                                          "xpos");
+        const std::span<const double> xmat =
+            model_access::readonly_buffer(data->xmat, 9 * model_->nbody,
+                                          "xmat");
+        const Mat3 steer = mat3_at(xmat, steer_);
+        // grip = xpos[steer] + xmat[steer] @ anchor — R·v.
+        const Vec3 grip =
+            rider::add(vec3_at(xpos, steer_), rider::matvec(steer, *anchor));
+        // pull = xpos[pelvis] - grip — both `normal` and pull_direction.
+        const Vec3 pull = rider::subtract(vec3_at(xpos, pelvis_), grip);
+        AttachmentTarget target;
+        target.eq_id = grip_eq_[side];
+        target.rider_body = forearm_[side];
+        target.bike_body = steer_;
+        target.out =
+            std::string("grip_") + std::string(kSideNames[side]);
+        target.kind = "grip";
+        target.point = grip;
+        target.normal = pull;
+        target.pull = pull;
+        return target;
+    }
+
+    RiderAttachmentMeasurement
+    RiderContactWriter::measure_samples(const mjData *data, bool raw) {
+        // _attachment_samples (rider_contacts.py:359-412): every linked
+        // support then the welded grips; a ValueError-in-Python
+        // (std::invalid_argument here) collects the
+        // ':unobservable_attachment_wrench' string instead of a sample.
+        RiderAttachmentMeasurement out;
+        out.raw = raw;
+        const rider::EqualityRowMap rows = equality_.equality_rows(data);
+        const auto run = [this, data, raw, &rows,
+                          &out](const AttachmentTarget &t) {
+            const std::optional<std::vector<double>> pull = pull_of(t);
+            try {
+                if (raw) {
+                    out.raws.emplace_back(
+                        t.out,
+                        rider::attachment_raw(
+                            model_, data, equality_, measure_qfrc_,
+                            t.eq_id, t.rider_body, t.bike_body, t.point,
+                            t.normal, t.kind, t.rotational,
+                            t.half_patch_m, pull, &rows));
+                } else {
+                    out.samples.emplace_back(
+                        t.out,
+                        rider::attachment_sample(
+                            model_, data, equality_, lstsq_,
+                            measure_qfrc_, t.eq_id, t.rider_body,
+                            t.bike_body, t.point, t.normal, t.kind,
+                            t.rotational, t.half_patch_m, pull, &rows));
+                }
+            } catch (const std::invalid_argument &) {
+                out.errors.push_back(
+                    t.out + ":unobservable_attachment_wrench");
+            }
+        };
+        for (std::size_t si = 0; si < kSupportCount; ++si)
+            if (const auto t = support_target(si, data)) run(*t);
+        if (welded_grip_)
+            for (std::size_t side = 0; side < kSideCount; ++side)
+                if (const auto t = grip_target(side, data)) run(*t);
+        return out;
     }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (support, pad) mirrors the oracle's (key, patch) pair

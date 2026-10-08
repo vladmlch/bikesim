@@ -1,5 +1,6 @@
-// rider_contact_binding.cpp — the T3b-1 FFI seam for the model-owned
-// RiderContactWriter. Three concerns live here and nowhere else:
+// rider_contact_binding.cpp — the FFI seam for the model-owned
+// RiderContactWriter (T3b-1 core plus the T3b-2 settle/sample face).
+// Three concerns live here and nowhere else:
 //
 //   * Method bindings on the Stepper class (qfrc, lifecycle, enable,
 //     diagnostics, state round-trip) — each delegates to Stepper's writer
@@ -23,6 +24,7 @@
 #include "../diag.hpp"
 #include "../stepper.hpp"
 #include "../writers/rider_contacts.hpp"
+#include "attachment_wire.hpp"
 
 #include <algorithm>
 #include <array>
@@ -31,6 +33,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <nanobind/ndarray.h>
@@ -217,16 +220,26 @@ namespace {
         return nb::make_tuple(std::move(welds), w->crank_torque_nm);
     }
 
-    [[nodiscard]] nb::dict sample_dict(const rider::AttachmentSample &s) {
-        nb::dict out;
-        out["kind"] = s.kind;
-        out["normal_n"] = s.normal_n;
-        out["tangent_n"] = s.tangent_n;
-        out["moment_nm"] = s.moment_nm;
-        out["gap_m"] = s.gap_m;
-        out["pull_n"] = s.pull_n;
-        out["half_patch_m"] = s.half_patch_m;
-        return out;
+    // The one schema for both attachment faces — geometry/raw/sample
+    // dicts and the dataclass-or-mapping parsers all live in
+    // attachment_wire (attachment_binding.cpp), so the settle/sample
+    // face can never drift from the T2b surface it composes.
+    namespace aw = attachment_wire;
+
+    // last_attachment_samples carries the budget sample OR the raw
+    // measurement block per entry — std::visit keeps the variant the
+    // state field already is.
+    [[nodiscard]] nb::object attachment_entry_dict(
+        const wc::RiderAttachmentEntry &entry) {
+        return std::visit(
+            [](const auto &v) -> nb::object {
+                using T = std::decay_t<decltype(v)>;
+                if constexpr (std::is_same_v<T, rider::AttachmentRaw>)
+                    return nb::object(aw::raw_dict(v));
+                else
+                    return nb::object(aw::sample_dict(v));
+            },
+            entry);
     }
 
     // The oracle-shaped snapshot: same key set, same ndarray/list/scalar
@@ -267,8 +280,8 @@ namespace {
         out["diagnostics"] = diagnostics_dict(s.diagnostics);
         out["settled_welds"] = settled_obj(s.settled_welds);
         nb::dict samples;
-        for (const auto &[name, sample] : s.attachment_samples)
-            samples[name.c_str()] = sample_dict(sample);
+        for (const auto &[name, entry] : s.attachment_samples)
+            samples[name.c_str()] = attachment_entry_dict(entry);
         out["last_attachment_samples"] = std::move(samples);
         nb::list errors;
         for (const std::string &e : s.attachment_errors)
@@ -558,8 +571,8 @@ namespace {
         return out;
     }
 
-    // (welds dict, crank) — the wave-3b latch shape. Entry names must be
-    // ones this writer's attachments could have produced.
+    // (welds dict, crank) — the settle_welds latch shape. Entry names
+    // must be ones this writer's attachments could have produced.
     [[nodiscard]] std::optional<wc::RiderSettledWelds>
     parse_settled(nb::handle value, const RiderContactWriter &w,
                   const std::string &path) {
@@ -618,6 +631,83 @@ namespace {
         out.crank_torque_nm =
             wire::finite_real(crank_raw, path + ".crank_torque_nm");
         return out;
+    }
+
+    // One last_attachment_samples entry: the oracle's state carries the
+    // AttachmentSample/AttachmentRaw dataclass instances; a native
+    // snapshot carries dicts with the same keys. 'rider_jac' membership
+    // selects the raw block over the budget sample; dicts get the exact
+    // key-set gate, dataclass entries fail on the first absent field.
+    [[nodiscard]] wc::RiderAttachmentEntry
+    parse_attachment_entry(nb::handle value, const std::string &path) {
+        const bool is_dict = nb::isinstance<nb::dict>(value);
+        const bool is_raw =
+            is_dict ? nb::borrow<nb::dict>(value).contains("rider_jac")
+                    : nb::hasattr(value, "rider_jac");
+        const auto field = [&](const char *name) -> nb::object {
+            if (is_dict) {
+                const nb::dict d = nb::borrow<nb::dict>(value);
+                if (!d.contains(name))
+                    wire::invalid(path + "." + name, "missing required key");
+                return nb::object(d[name]);
+            }
+            try {
+                return nb::getattr(value, name);
+            } catch (const nb::python_error &) {
+                wire::invalid(path + "." + name, "missing required field");
+            }
+        };
+        if (is_raw) {
+            if (is_dict)
+                wire::exact_keys(nb::borrow<nb::dict>(value),
+                                 wire::keys("rider_jac", "rider_qfrc",
+                                            "bike_jac", "bike_qfrc",
+                                            "observable", "normal", "kind",
+                                            "rotational", "half_patch_m",
+                                            "gap_m", "pull_direction"),
+                                 {}, path);
+            rider::AttachmentRaw raw;
+            raw.rider_jac =
+                aw::dense_matrix_arg(field("rider_jac"),
+                                     path + ".rider_jac");
+            raw.rider_qfrc = aw::float_vector(field("rider_qfrc"),
+                                              path + ".rider_qfrc");
+            raw.bike_jac = aw::dense_matrix_arg(field("bike_jac"),
+                                                path + ".bike_jac");
+            raw.bike_qfrc = aw::float_vector(field("bike_qfrc"),
+                                             path + ".bike_qfrc");
+            raw.observable = aw::truthy(field("observable"));
+            raw.normal =
+                aw::float_vector(field("normal"), path + ".normal");
+            raw.kind = wire::string(field("kind"), path + ".kind");
+            raw.rotational = aw::truthy(field("rotational"));
+            raw.half_patch_m = wire::finite_real(field("half_patch_m"),
+                                                 path + ".half_patch_m");
+            raw.gap_m =
+                wire::finite_real(field("gap_m"), path + ".gap_m");
+            raw.pull_direction =
+                aw::optional_vector(field("pull_direction"),
+                                    path + ".pull_direction");
+            return raw;
+        }
+        if (is_dict)
+            wire::exact_keys(nb::borrow<nb::dict>(value),
+                             wire::keys("kind", "normal_n", "tangent_n",
+                                        "moment_nm", "gap_m", "pull_n",
+                                        "half_patch_m"),
+                             {}, path);
+        rider::AttachmentSample sample;
+        sample.kind = wire::string(field("kind"), path + ".kind");
+        const auto real = [&](const char *name) {
+            return wire::finite_real(field(name), path + "." + name);
+        };
+        sample.normal_n = real("normal_n");
+        sample.tangent_n = real("tangent_n");
+        sample.moment_nm = real("moment_nm");
+        sample.gap_m = real("gap_m");
+        sample.pull_n = real("pull_n");
+        sample.half_patch_m = real("half_patch_m");
+        return sample;
     }
 
     // The staged state plus the probe copy outsize the 8 KiB frame budget;
@@ -714,30 +804,9 @@ namespace {
             const wire::Dict samples = dict_at(root, "last_attachment_samples");
             for (const auto item : samples.value) {
                 const std::string name = wire::string(item.first, samples.path);
-                const std::string entry_path = samples.child(name.c_str());
-                const nb::dict entry = wire::mapping(item.second, entry_path);
-                constexpr auto sample_keys =
-                    wire::keys("kind", "normal_n", "tangent_n", "moment_nm",
-                               "gap_m", "pull_n", "half_patch_m");
-                wire::exact_keys(entry, sample_keys, {}, entry_path);
                 st.attachment_samples.emplace_back(
-                    name,
-                    rider::AttachmentSample{
-                        .kind = wire::string(entry["kind"],
-                                             entry_path + ".kind"),
-                        .normal_n = wire::finite_real(entry["normal_n"],
-                                                      entry_path + ".normal_n"),
-                        .tangent_n = wire::finite_real(
-                            entry["tangent_n"], entry_path + ".tangent_n"),
-                        .moment_nm = wire::finite_real(
-                            entry["moment_nm"], entry_path + ".moment_nm"),
-                        .gap_m = wire::finite_real(entry["gap_m"],
-                                                   entry_path + ".gap_m"),
-                        .pull_n = wire::finite_real(entry["pull_n"],
-                                                    entry_path + ".pull_n"),
-                        .half_patch_m = wire::finite_real(
-                            entry["half_patch_m"],
-                            entry_path + ".half_patch_m")});
+                    name, parse_attachment_entry(
+                              item.second, samples.child(name.c_str())));
             }
         }
         {
@@ -774,8 +843,81 @@ namespace {
     }
     NATIVE_DIAG_POP
 
-    [[nodiscard]] bool truthy(nb::handle value) {
-        return PyObject_IsTrue(value.ptr()) == 1;
+    // ---- T3b-2 settle/sample plumbing --------------------------------
+
+    // tuple(errors) — the oracle's last_attachment_errors is a tuple,
+    // and the tree comparator is type-strict.
+    [[nodiscard]] nb::tuple
+    string_tuple(const std::vector<std::string> &items) {
+        nb::list list;
+        for (const std::string &item : items) list.append(item);
+        return nb::steal<nb::tuple>(PySequence_Tuple(list.ptr()));
+    }
+
+    // The (qpos, qvel) interval_state — unpacked here; widths and
+    // finiteness are the writer's domain (checked before any buffer is
+    // touched, like set_inputs).
+    [[nodiscard]] std::optional<wc::RiderIntervalState>
+    parse_interval(nb::handle value) {
+        if (value.is_none()) return std::nullopt;
+        const nb::list pair = wire::sequence(value, "interval_state");
+        if (pair.size() != 2)
+            wire::invalid("interval_state",
+                          "expected the (qpos, qvel) pair");
+        return wc::RiderIntervalState{
+            wire::vector(pair[0], "interval_state.qpos"),
+            wire::vector(pair[1], "interval_state.qvel")};
+    }
+
+    // The prepared pair of settle_welds(raw=...) — (geometry dict by
+    // name, errors). Each geometry dict/dataclass is copied through the
+    // shared attachment_wire parser; nothing references Python storage.
+    [[nodiscard]] wc::RiderPreparedAttachments
+    parse_prepared(nb::handle value) {
+        const nb::list pair = wire::sequence(value, "prepared");
+        if (pair.size() != 2)
+            wire::invalid("prepared",
+                          "expected the (geometry, errors) pair");
+        wc::RiderPreparedAttachments out;
+        const nb::dict geometry =
+            wire::mapping(pair[0], "prepared.geometry");
+        for (const auto item : geometry) {
+            const std::string name =
+                wire::string(item.first, "prepared.geometry");
+            out.geometry.emplace_back(
+                name, aw::attachment_geometry_from(item.second));
+        }
+        const nb::list errors = wire::sequence(pair[1], "prepared.errors");
+        for (nb::handle const item : errors)
+            out.errors.push_back(wire::string(item, "prepared.errors"));
+        return out;
+    }
+
+    // The settle_welds result dict — ordered support/grip entries plus
+    // the conditional 'crank_torque_nm' tail (linked pedals only).
+    [[nodiscard]] nb::dict
+    settle_dict(const wc::RiderSettleOutcome &outcome) {
+        nb::dict out;
+        for (const auto &[name, entry] : outcome.entries)
+            out[name.c_str()] = settled_entry_dict(entry);
+        if (outcome.crank_torque_nm_appended)
+            out["crank_torque_nm"] = outcome.crank_torque_nm;
+        return out;
+    }
+
+    // The measurement dict — scalar budget samples or raw blocks per
+    // the `raw` flag (the oracle's dict is homogeneous per call).
+    [[nodiscard]] nb::dict
+    measurement_samples_dict(const wc::RiderAttachmentMeasurement &m) {
+        nb::dict out;
+        if (m.raw) {
+            for (const auto &[name, raw] : m.raws)
+                out[name.c_str()] = aw::raw_dict(raw);
+        } else {
+            for (const auto &[name, sample] : m.samples)
+                out[name.c_str()] = aw::sample_dict(sample);
+        }
+        return out;
     }
 } // namespace
 
@@ -824,8 +966,8 @@ void bind_rider_contacts(const nb::module_ &module,
         // 'invalid rider contact dt' covers nonfinite and nonpositive
         // alike, like scalar(dt, ..., positive=True).
         const double checked = wire::real(dt, "rider_contacts_qfrc.dt");
-        const bool advancing = truthy(advance);
-        const bool detail = truthy(detailed);
+        const bool advancing = aw::truthy(advance);
+        const bool detail = aw::truthy(detailed);
         return s.mutate([&] {
             return wire::owned_array<double>(
                 s.rider_contacts_qfrc(checked, advancing, detail));
@@ -838,10 +980,61 @@ void bind_rider_contacts(const nb::module_ &module,
     cls.def("rider_contacts_stored_energy", [](Stepper &s) {
         return s.rider_contacts_stored_energy();
     });
+    // T3b-2 — the settle/sample face (rider_contacts.py:221-412).
+    cls.def("rider_contacts_prepare_attachment_raw", [](Stepper &s) {
+        const wc::RiderPreparedAttachments prepared =
+            s.rider_contacts_prepare_attachment_raw();
+        nb::dict geometry;
+        for (const auto &[name, g] : prepared.geometry)
+            geometry[name.c_str()] = aw::geometry_dict(g);
+        // (prepared dict, errors tuple) — the oracle's return shape.
+        return nb::make_tuple(std::move(geometry),
+                              string_tuple(prepared.errors));
+    });
+    cls.def("rider_contacts_settle",
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) named nb::args mirror the oracle's keyword order
+            [](Stepper &s, nb::handle interval_state, nb::handle raw,
+               nb::handle prepared) {
+        const bool want_raw = aw::truthy(raw);
+        // The oracle's dispatch (lines 330-342): `prepared` is unpacked
+        // only when raw=True; `interval_state` only when the prepared
+        // path is not taken.
+        std::optional<wc::RiderPreparedAttachments> prep;
+        std::optional<wc::RiderIntervalState> interval;
+        if (want_raw && !prepared.is_none()) {
+            prep = parse_prepared(prepared);
+        } else {
+            interval = parse_interval(interval_state);
+        }
+        const wc::RiderSettleOutcome outcome = s.mutate([&] {
+            return s.rider_contacts_settle(
+                interval, want_raw, prep.has_value() ? &*prep : nullptr);
+        });
+        nb::dict result = settle_dict(outcome);
+        if (!want_raw) return nb::object(std::move(result));
+        // raw=True: (result, samples, errors) — the exact triple.
+        return nb::object(nb::make_tuple(
+            std::move(result),
+            measurement_samples_dict(outcome.measurement),
+            string_tuple(outcome.measurement.errors)));
+    }, nb::arg("interval_state") = nb::none(), nb::arg("raw") = false,
+       nb::arg("prepared") = nb::none());
+    cls.def("rider_contacts_attachment_samples",
+            // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) named nb::args mirror the oracle's keyword order
+            [](Stepper &s, nb::handle interval_state, nb::handle raw) {
+        const auto interval = parse_interval(interval_state);
+        const wc::RiderAttachmentMeasurement measured = s.mutate([&] {
+            return s.rider_contacts_attachment_samples(interval,
+                                                       aw::truthy(raw));
+        });
+        // (samples dict, errors tuple).
+        return nb::make_tuple(measurement_samples_dict(measured),
+                              string_tuple(measured.errors));
+    }, nb::arg("interval_state") = nb::none(), nb::arg("raw") = false);
     cls.def("rider_contacts_diagnostics",
             [](Stepper &s, nb::handle probe) {
         const RiderContactWriter &w = s.rider_contacts();
-        if (truthy(probe)) {
+        if (aw::truthy(probe)) {
             if (!w.probe().has_value()) return nb::object(nb::none());
             return nb::object(diagnostics_dict(w.probe()->diagnostics));
         }

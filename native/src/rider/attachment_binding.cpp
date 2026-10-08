@@ -11,6 +11,7 @@
 #include "../diag.hpp"
 #include "../stepper.hpp"
 #include "attachment_wrench.hpp"
+#include "attachment_wire.hpp"
 #include "equality_reactions.hpp"
 #include "least_squares.hpp"
 
@@ -30,7 +31,16 @@
 
 namespace nb = nanobind;
 
-namespace {
+// The conversion helpers below moved into namespace attachment_wire —
+// shared with rider_contact_binding.cpp via attachment_wire.hpp. The
+// unqualified call sites in bind_rider_attachment resolve through this
+// directive exactly as they did when the helpers were anonymous.
+using namespace attachment_wire;
+
+// attachment_wire.hpp's conversions live here (declarations in the
+// header, definitions in this TU — one schema for both attachment faces).
+namespace attachment_wire {
+
     // Owning 2-D float64 array — wire::owned_array's exact policy,
     // extended to the (n, k) solution matrix np.linalg.lstsq returns for
     // a 2-D right-hand side.
@@ -49,6 +59,10 @@ namespace {
             });
         return {data, {rows, columns}, owner};
     }
+
+} // namespace attachment_wire
+
+namespace {
 
     // np.linalg.lstsq's input contract: A is exactly 2-D, B is 1-D or
     // 2-D, and B's row count equals A's. The casts accept dtype and
@@ -139,7 +153,13 @@ namespace {
             wire::owned_array<double>(result.singular_values));
     }
 
-    // --------------------------- T2b conversions ------------------------
+} // namespace
+
+// --------------------------- T2b conversions --------------------------
+// attachment_wire.hpp — shared with rider_contact_binding.cpp's settle /
+// sample face. One schema, one implementation: the prepared-dict
+// round-trip must byte-for-byte reproduce what T2b emits.
+namespace attachment_wire {
 
     // Python truthiness for the oracle's `not rotational` /
     // `if validate_wrench` gates — accepts np.bool_, ints and every
@@ -317,6 +337,10 @@ namespace {
                             "pull_direction");
         return g;
     }
+
+} // namespace attachment_wire
+
+namespace {
 
     // recover_wrench's matrix argument — np.asarray(jac, dtype=float)
     // then numpy _assert_2d's wording on a wrong rank.

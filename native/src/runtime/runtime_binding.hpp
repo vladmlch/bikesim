@@ -96,10 +96,13 @@ private:
     // The decoded state.runtime (+ signals/controller/intent) inventory —
     // parsed once at construction, replayed verbatim by reset().
     StepState bootstrap_step_state_;
-    // Single-advancement reentrancy guard: advance() and reset() exclude
-    // each other as well as nested advance() calls.
-    std::atomic<bool> advancing_{false};
-    bool closed_ = false;
+    // Single-advancement reentrancy guard: advance(), probe_step_inputs(),
+    // reset(), snapshot() and close() exclude each other — a second entry
+    // fails fast instead of observing or freeing a half-advanced runtime.
+    // `mutable` lets the const snapshot() take it; `closed_` is atomic so
+    // the unguarded closed() property reads a defined value.
+    mutable std::atomic<bool> advancing_{false};
+    std::atomic<bool> closed_{false};
 };
 
 void bind_runtime(nanobind::module_ &module);

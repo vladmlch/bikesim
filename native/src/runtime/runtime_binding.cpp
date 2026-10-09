@@ -1154,11 +1154,17 @@ NativeRideRuntime::probe_step_inputs(nb::handle control,
         probe.has_contact_probe
             ? nb::object(wire_object_to_python(probe.contact_probe))
             : nb::none();
+    out["sensors"] = wire_object_to_python(probe.sensors);
+    out["intent_signals"] = wire_object_to_python(probe.intent_signals);
+    out["intent_inclination_rad"] = probe.intent_inclination_rad;
     return out;
 }
 
 RuntimeSnapshot NativeRideRuntime::snapshot() const {
     require_open();
+    // get_state reads live mjData — exclude an in-flight advance so the
+    // integration vector cannot be torn mid-mutation.
+    const AdvancementGuard guard(advancing_);
     const mjModel *const model = stepper_->model();
     const mjData *const data = stepper_->data();
     const mjtSize width =
@@ -1184,9 +1190,12 @@ void NativeRideRuntime::reset() {
 }
 
 void NativeRideRuntime::close() {
+    // Freeing under an in-flight advance is a UAF — take the guard first.
+    // Idempotent (a second close re-acquires and no-ops), like before.
+    const AdvancementGuard guard(advancing_);
+    closed_.store(true);
     physical_.reset();
     stepper_.reset();
-    closed_ = true;
 }
 
 NativeRideRuntime::~NativeRideRuntime() = default;

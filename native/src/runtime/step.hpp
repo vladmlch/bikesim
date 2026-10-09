@@ -192,6 +192,13 @@ public:
         // probe_contacts['diagnostics'] — populated when
         // has_contact_probe is set.
         WireObject contact_probe;
+        // Committed-state observability lanes — pure reads of what the
+        // last interval left behind, surfaced so regression tests can
+        // reach the sensordata rows (sensor id -> sensor_adr resolution)
+        // and the rider-intent state without draining RawSteps (A4).
+        WireObject sensors;
+        WireObject intent_signals;
+        double intent_inclination_rad = 0.;
     };
     [[nodiscard]] ProbeResult
     probe_step_inputs(const RideControl &control, double front_demand,

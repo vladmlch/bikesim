@@ -153,6 +153,18 @@ int joint_dofadr(const mjModel *m, const char *name) {
     return ibuf(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(jid)];
 }
 
+// d.sensor(name).data -> sensordata[sensor_adr[id]...]: the sensordata
+// row offset is NOT the sensor id (jointpos/jointvel channels above the
+// IMU are 1-dim, so id!=adr once any wider channel precedes it). The
+// oracle's sensor() lookup raises on a missing name — reject -1 alike.
+int sensor_adr(const mjModel *m, const char *name) {
+    const int id = mj_name2id(m, mjOBJ_SENSOR, name);
+    if (id < 0)
+        throw std::invalid_argument(std::string("physical model needs sensor '") +
+                                    name + "'");
+    return ibuf(m->sensor_adr, m->nsensor)[static_cast<std::size_t>(id)];
+}
+
 // physical_mapping.py point_jacobian — (jp; jr) row-major (3, nv) blocks,
 // one mj_jac call filling both like the Python helper.
 struct PointJacobian {
@@ -961,8 +973,8 @@ PhysicalStep::PhysicalStep(
                      mj_name2id(m, mjOBJ_BODY, "rear_wheel")};
     wheel_spin_dofs_ = {joint_dofadr(m, "front_wheel_spin"),
                         joint_dofadr(m, "rear_wheel_spin")};
-    accel_sensor_adr_ = mj_name2id(m, mjOBJ_SENSOR, "sensor_frame_accel");
-    gyro_sensor_adr_ = mj_name2id(m, mjOBJ_SENSOR, "sensor_frame_gyro");
+    accel_sensor_adr_ = sensor_adr(m, "sensor_frame_accel");
+    gyro_sensor_adr_ = sensor_adr(m, "sensor_frame_gyro");
     crash_geoms_ = crash_geom_ids(m);
     if (stepper_->tire() == nullptr)
         throw std::invalid_argument(
@@ -2220,6 +2232,30 @@ PhysicalStep::probe_step_inputs(const RideControl &control,
                     wire_contacts_diagnostics(probe->diagnostics);
             }
         }
+        // Observability lanes: the channel dict sensor_channels() emits
+        // for the committed data (encoders read the incoming velocity
+        // span — the current qvel at probe time), plus the committed
+        // rider-intent signals and policy inclination.
+        out.sensors = sensor_channels(buf(d->qvel, m->nv));
+        WireObject signals;
+        signals.emplace_back("pitch_rate_up_rad_s",
+                             Wire(intent_signals_.pitch_rate_up_rad_s));
+        signals.emplace_back(
+            "specific_force_body_mps2",
+            wire_array(std::span<const double>(
+                intent_signals_.specific_force_body_mps2)));
+        signals.emplace_back("crank_rate_rad_s",
+                             Wire(intent_signals_.crank_rate_rad_s));
+        signals.emplace_back("human_crank_torque_nm",
+                             Wire(intent_signals_.human_crank_torque_nm));
+        signals.emplace_back(
+            "front_load_share",
+            intent_signals_.front_load_share.has_value()
+                ? Wire(*intent_signals_.front_load_share)
+                : Wire(nullptr));
+        out.intent_signals = std::move(signals);
+        out.intent_inclination_rad =
+            rider_intent_.policy().inclination_rad();
         return out;
     });
 }

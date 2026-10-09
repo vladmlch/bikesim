@@ -170,6 +170,16 @@ def test_concurrent_advance_and_reset_rejected(sim):
         native.advance(5, command)
     with pytest.raises(Exception):
         native.reset()
+    # snapshot() reads live mjData and close() frees it — both take the
+    # same guard rather than racing the in-flight loop.
+    with pytest.raises(Exception, match='advance'):
+        native.snapshot()
+    with pytest.raises(Exception, match='advance'):
+        native.probe_step_inputs(command)
+    with pytest.raises(Exception, match='advance'):
+        native.close()
+    # The rejected close must not have latched: the runtime is still open.
+    assert not native.closed
     assert release.wait(15.)
     thread.join(15.)
     assert native.snapshot().step >= 0

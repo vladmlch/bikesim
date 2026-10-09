@@ -169,3 +169,58 @@ def test_probe_step_inputs_returns_staged_diagnostics(sim):
     assert isinstance(probe['drive'], dict)
     assert probe['contact_probe'] is None or isinstance(
         probe['contact_probe'], dict)
+
+
+def test_sensor_channels_read_sensordata_rows(sim):
+    """frame_gyro/frame_accel come from sensordata[sensor_adr[id]...], not
+    the sensor id — on the pinned model id=13 but adr=15, so an id-indexed
+    read returns [accel_y, accel_z, gyro_x] instead of the gyro row."""
+    native = create_native_ride(sim, strict=False, record_decimation=1)
+    command = RideControl()
+    for target in range(1, 6):
+        sim.step(control=command)
+        native.advance(target, command)
+        # probe_step_inputs stages apply_forces(advance=False), which
+        # re-forwards sensordata with the staged forces — stage the same
+        # inputs on the oracle first so both read post-staging rows.
+        sim.physical.apply_forces(active=True, advance=False, front=0.,
+                                  rear=0., control=command)
+        probe = native.probe_step_inputs(command)
+        # d.sensor(name).data is the oracle lane (physical_observations.py
+        # :182-183); bitwise equal, not just close.
+        np.testing.assert_array_equal(
+            np.asarray(probe['sensors']['frame_gyro_body_rad_s']),
+            sim.data.sensor('sensor_frame_gyro').data)
+        np.testing.assert_array_equal(
+            np.asarray(probe['sensors']['frame_specific_force_body_mps2']),
+            sim.data.sensor('sensor_frame_accel').data)
+
+
+@pytest.mark.slow
+def test_native_intent_lanes_match_python_past_reaction_delay(sim):
+    """The welded profile runs seated_climb (period .01 s = 8 steps at
+    dt=.00125) with reaction_delay_s=.15: past ~step 120 the delayed
+    samples drive inclination_rad. A corrupted gyro lane would integrate
+    pitch_rate_up ~ -9.8 rad/s and diverge ~1 rad by then."""
+    native = create_native_ride(sim, strict=False, record_decimation=1)
+    command = RideControl()
+    for target in range(1, 161):
+        sim.step(control=command)
+        native.advance(target, command)
+    assert native.snapshot().step == 160
+    # Snapshot before the probe: apply_forces staging rewrites
+    # qacc_warmstart/sensordata lanes the integration vector carries.
+    np.testing.assert_array_equal(
+        native.snapshot().integration_state, _integration_state(sim))
+    probe = native.probe_step_inputs(command)
+    expected = sim.physical.rider_intent_signals
+    signals = probe['intent_signals']
+    assert signals['pitch_rate_up_rad_s'] == expected.pitch_rate_up_rad_s
+    np.testing.assert_array_equal(
+        np.asarray(signals['specific_force_body_mps2']),
+        np.asarray(expected.specific_force_body_mps2))
+    assert signals['crank_rate_rad_s'] == expected.crank_rate_rad_s
+    assert signals['human_crank_torque_nm'] == expected.human_crank_torque_nm
+    assert signals['front_load_share'] == expected.front_load_share
+    assert (probe['intent_inclination_rad'] ==
+            sim.physical.rider_intent.policy.inclination_rad)

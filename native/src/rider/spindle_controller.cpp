@@ -18,10 +18,12 @@
 #include <numbers>
 #include <stdexcept>
 
+#include "../cblas_abi.hpp"
 #include "../diag.hpp"
 #include "../engine_call.hpp"
 #include "../model_access.hpp"
 #include "../numeric_sincos.hpp"
+#include "../numeric_sum.hpp"
 
 namespace rider {
 namespace {
@@ -1068,11 +1070,16 @@ SpindleController::finalize_effort(mjData *data,
                     : std::optional<double>(data->time);
         }
     }
-    double positive_power = 0., passive_power = 0.;
-    for (std::size_t i = 0; i < n; ++i) {
-        positive_power += std::max(result[i] * speeds[i], 0.);
-        passive_power += passive[i] * speeds[i];
-    }
+    // rider_effort.py:70-71 — positive power is np.max(...).sum(), i.e.
+    // numpy's pairwise reduction over all joints; passive power is
+    // passive @ speeds, a BLAS ddot — neither is a sequential fold.
+    std::vector<double> positive_terms(n);
+    for (std::size_t i = 0; i < n; ++i)
+        positive_terms[i] = std::max(result[i] * speeds[i], 0.);
+    const double positive_power =
+        numeric::numpy_pairwise_sum(positive_terms);
+    const double passive_power = blas::ddot(
+        static_cast<int>(n), passive.data(), 1, speeds.data(), 1);
     bool saturated = false;
     for (std::size_t i = 0; i < n && !saturated; ++i)
         saturated = !isclose(result[i], excitation[i], 1e-10, 1e-10);
@@ -1260,19 +1267,22 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         terms.saturated = !isclose(final[i], requested[i], 1e-9, 1e-9);
         last_terms_.emplace_back(name, terms);
     }
-    // sum() over the Python generator is a flat left-to-right fold —
-    // front hip, front knee, rear hip, rear knee — so the adds must not
-    // regroup per side.
-    double projected = 0.;
+    // sum() over the Python generator is CPython's Neumaier loop —
+    // front hip, front knee, rear hip, rear knee in dict order — so the
+    // terms must neither regroup per side nor accumulate naively.
+    numeric::PythonSum projected_acc;
     for (const auto side : kSides) {
         const auto s = side_index(side);
         if (!has_jacobian[s])
             continue;
-        projected += final[joint_index("rider_hip_" + std::string(side))] *
-                     jacobians[s][0];
-        projected += final[joint_index("rider_knee_" + std::string(side))] *
-                     jacobians[s][1];
+        projected_acc.add(
+            final[joint_index("rider_hip_" + std::string(side))] *
+            jacobians[s][0]);
+        projected_acc.add(
+            final[joint_index("rider_knee_" + std::string(side))] *
+            jacobians[s][1]);
     }
+    const double projected = projected_acc.total();
     allocation_diagnostics_ = {.present = true,
                                .invalid_controller = false,
                                .crank_task_nm = total,

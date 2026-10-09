@@ -2,6 +2,7 @@
 #include "../engaged.hpp"
 #include "../engine_call.hpp"
 #include "../model_topology.hpp"
+#include "../numeric_sum.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -462,14 +463,18 @@ namespace drivetrain {
         multipliers_.assign(static_cast<std::size_t>(d->nefc), 0.);
         const auto type = buffer(d->efc_type, d->nefc), ids = buffer(d->efc_id, d->nefc);
         const auto ef = buffer(d->efc_force, d->nefc);
-        double tension = 0.;
+        // np.sum(efc_force[:nefc][selected]) — the masked copy keeps row
+        // order, then numpy's pairwise block order reduces it; a naive
+        // fold regroups the tail differently at n in [2, 8).
+        tension_terms_.clear();
         bool selected = false;
         for (std::size_t i = 0; i < multipliers_.size(); ++i)
             if (type[i] == mjCNSTR_LIMIT_TENDON && ids[i] == tendon_) {
                 multipliers_[i] = ef[i];
-                tension += ef[i];
+                tension_terms_.push_back(ef[i]);
                 selected = true;
             }
+        const double tension = numeric::numpy_pairwise_sum(tension_terms_);
         if (selected)
             mj_mulJacTVec(model_, d, force_.data(), multipliers_.data());
         solved.force = force_;

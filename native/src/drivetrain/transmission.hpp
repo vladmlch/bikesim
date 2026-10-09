@@ -215,7 +215,8 @@ namespace drivetrain {
         TransmissionSnapshot state_;
         PreparedTransmission prepared_storage_;
         bool prepared_valid_{};
-        std::vector<double> force_, multipliers_, displacement_;
+        std::vector<double> force_, multipliers_, displacement_,
+                tension_terms_;
         // Storage-identity telemetry synced on prepared_storage() access.
         mutable const double *jacobian_identity_ = nullptr;
         mutable const double *qpos_identity_ = nullptr;

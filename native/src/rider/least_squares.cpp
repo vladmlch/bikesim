@@ -23,9 +23,12 @@
 //   np.linalg.lstsq's wrapper then keeps them iff rank == n and m > n —
 //   folded into the returned residuals vector;
 //   m == 0: x is forced to zero afterwards (numpy's `x[...] = 0`);
-//   failures: an FE_INVALID flag already set on entry, or a nonzero info
-//   from either DGELSD call, raises the flag and throws — the gufunc's
-//   get_fp_invalid_and_clear / set_fp_invalid_or_clear discipline.
+//   failures: a nonzero info from either DGELSD call raises the flag and
+//   throws — the gufunc's get_fp_invalid_and_clear /
+//   set_fp_invalid_or_clear discipline. An FE_INVALID flag set on entry
+//   is error_occurred's seed: it is re-raised at the end like the gufunc
+//   preserves it, but never fails the call — ambient flags (Accelerate
+//   BLAS leaves them raised) are not solver failures.
 #include "least_squares.hpp"
 
 #include "../model_access.hpp"
@@ -163,8 +166,11 @@ namespace rider {
         }
 
         // The gufunc captures+clears FP flags BEFORE init (the query
-        // call included) and either re-raises invalid on failure or
-        // clears everything on success.
+        // call included); the entry flag is error_occurred's initial
+        // value in umath_linalg.cpp — it only decides whether FE_INVALID
+        // is re-raised at the end, never whether the call fails. Ambient
+        // flags (e.g. left by Accelerate BLAS internals during model
+        // setup) must not turn a well-posed solve into a failure.
         const bool prior_invalid = std::fetestexcept(FE_INVALID) != 0;
         std::feclearexcept(FE_ALL_EXCEPT);
 
@@ -216,7 +222,9 @@ namespace rider {
         dgelsd_ilp64(&m, &n, &nrhs, a_.data(), &lda_l, b_.data(), &ldb_l,
                      s_.data(), &rcond, &rank, work_.data(), &lwork,
                      iwork_.data(), &info);
-        if (info != 0 || prior_invalid) raise_lapack_failure();
+        // Only THIS call's info decides failure — like the oracle's
+        // not_ok from call_gelsd; the entry flag is never an error.
+        if (info != 0) raise_lapack_failure();
 
         LeastSquaresResult result;
         result.rank = rank;
@@ -250,7 +258,11 @@ namespace rider {
             }
         }
 
-        std::feclearexcept(FE_ALL_EXCEPT);
+        // set_fp_invalid_or_clear(error_occurred): success preserves an
+        // entry-invalid flag (re-raised like numpy's flag discipline);
+        // a clean entry clears everything raised by the LAPACK calls.
+        if (prior_invalid) std::feraiseexcept(FE_INVALID);
+        else std::feclearexcept(FE_ALL_EXCEPT);
         return result;
     }
 } // namespace rider

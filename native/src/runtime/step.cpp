@@ -18,6 +18,7 @@
 #include "../cblas_abi.hpp"
 #include "../drivetrain/pedaling.hpp"
 #include "../engine_call.hpp"
+#include "../numeric_sum.hpp"
 #include "../rider/rider_posture.hpp"
 #include "../stepper.hpp"
 #include "../writers/cruise.hpp"
@@ -57,33 +58,10 @@ std::span<const int> ibuf(const int *p, mjtSize n) {
     return std::views::counted(p, n);
 }
 
-// numpy pairwise_sum — contiguous float64: the n <= 128 eight-way block
-// accumulator plus the halving recursion for longer inputs.
-// NOLINTNEXTLINE(misc-no-recursion) recursion depth mirrors numpy's pairwise halving
+// numpy pairwise_sum — shared with the mirrored sites outside this TU;
+// numeric::numpy_pairwise_sum documents the exact upstream order.
 double numpy_pairwise_sum(std::span<const double> a) noexcept {
-    const std::size_t n = a.size();
-    if (n < 8) {
-        std::array<double, 8> r{};
-        std::ranges::copy(a, r.begin());
-        return ((r[0] + r[1]) + (r[2] + r[3])) +
-               ((r[4] + r[5]) + (r[6] + r[7]));
-    }
-    if (n <= 128) {
-        std::array<double, 8> r{};
-        std::ranges::copy(a.first(8), r.begin());
-        std::size_t i = 8;
-        for (; i + 8 <= n; i += 8)
-            for (std::size_t j = 0; j < 8; ++j)
-                r[j] += a[i + j];
-        for (std::size_t j = 0; i + j < n; ++j)
-            r[j] += a[i + j];
-        return ((r[0] + r[1]) + (r[2] + r[3])) +
-               ((r[4] + r[5]) + (r[6] + r[7]));
-    }
-    std::size_t n2 = n / 2;
-    n2 -= n2 % 128;
-    return numpy_pairwise_sum(a.first(n2)) +
-        numpy_pairwise_sum(a.subspan(n2));
+    return numeric::numpy_pairwise_sum(a);
 }
 
 double dot(std::span<const double> a, std::span<const double> b) noexcept {

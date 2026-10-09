@@ -5,6 +5,7 @@
 
 #include "../numeric_norm.hpp"
 #include "../numeric_sincos.hpp"
+#include "../numeric_sum.hpp"
 
 #include <numbers>
 
@@ -266,11 +267,15 @@ namespace spindle {
             result[i] =
                 torque * speed > per_joint ? per_joint / speed : torque;
         }
-        double positive = 0.;
+        // crank_split.py:63 — builtin sum() over the clipped dict values:
+        // CPython's Neumaier loop, not a sequential fold. The scale factor
+        // inherits the reduction rounding, so a naive += lands the bound
+        // torques one ulp off whenever the budget binds.
+        numeric::PythonSum positive;
         for (std::size_t i = 0; i < result.size(); ++i)
-            positive += std::max(result[i] * velocities[i], 0.);
-        if (positive > total) {
-            const double scale = total / positive;
+            positive.add(std::max(result[i] * velocities[i], 0.));
+        if (positive.total() > total) {
+            const double scale = total / positive.total();
             for (std::size_t i = 0; i < result.size(); ++i)
                 if (result[i] * velocities[i] > 0.)
                     result[i] *= scale;
@@ -315,10 +320,15 @@ namespace spindle {
         if (limit_w < 0)
             throw std::invalid_argument("invalid power budget");
         std::vector<double> result(torque.begin(), torque.end());
-        double power = 0.;
+        // rider_activation.py:24-25 — result[positive]*velocity[positive]
+        // materializes the masked products in index order, then np.sum
+        // reduces them with numpy's pairwise block order.
+        std::vector<double> products;
+        products.reserve(result.size());
         for (std::size_t i = 0; i < result.size(); ++i)
             if (result[i] * velocity[i] > 0)
-                power += result[i] * velocity[i];
+                products.push_back(result[i] * velocity[i]);
+        const double power = numeric::numpy_pairwise_sum(products);
         if (power > limit_w) {
             const double scale = limit_w / power;
             for (std::size_t i = 0; i < result.size(); ++i)

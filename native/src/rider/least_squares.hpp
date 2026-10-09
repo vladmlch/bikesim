@@ -12,10 +12,13 @@
 //   * dimension/shape violations -> std::invalid_argument before any
 //     copy ("Incompatible dimensions" / "N-dimensional array given.
 //     Array must be two-dimensional" — numpy's own messages);
-//   * DGELSD info != 0 (or a raised FE_INVALID flag on entry, matching
-//     the gufunc's get_fp_invalid_and_clear/set_fp_invalid_or_clear
-//     discipline) -> LeastSquaresError, registered under ValueError with
-//     numpy's "SVD did not converge in Linear Least Squares" message;
+//   * DGELSD info != 0 -> LeastSquaresError, registered under ValueError
+//     with numpy's "SVD did not converge in Linear Least Squares"
+//     message. An FE_INVALID flag already set on entry is captured and
+//     re-raised at the end like the gufunc's
+//     get_fp_invalid_and_clear/set_fp_invalid_or_clear discipline — it
+//     never fails the call: in the oracle it is error_occurred's seed,
+//     which only controls flag re-raising, not the result;
 //   * nonfinite inputs are NOT pre-screened — they flow into DGELSD
 //     exactly as numpy's gufunc does, so inf-in-b solves that "succeed"
 //     return the identical nonfinite result and non-convergent inputs

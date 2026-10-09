@@ -282,8 +282,10 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/rider/spindle_controller.cpp
   src/rider/spindle_math.cpp
   src/rider/spindle_wire.cpp
+  src/runtime/control.cpp
   src/runtime/runtime_binding.cpp
   src/runtime/static_brake.cpp
+  src/runtime/step.cpp
   src/runtime/test_adapter.cpp
   src/writers/rider_contacts.cpp)
 

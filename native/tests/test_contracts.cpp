@@ -439,7 +439,7 @@ namespace {
         {   // Rider-force path fields.
             const nativecfg::RiderForcesConfig config{
                 .paths = {{
-                    .joint = "saddle_z", .stiffness_n_m = 5000.,
+                    .name = "", .joint = "saddle_z", .stiffness_n_m = 5000.,
                     .damping_ns_m = 50., .preload_deflection_m = .01,
                     .offset_m = 0., .unilateral = true}}};
             nativecfg::validate(config);
@@ -2656,7 +2656,8 @@ namespace {
     }
 
     nativecfg::RiderForcesConfig warm_rider() {
-        return {.paths = {{.joint = "saddle_z", .stiffness_n_m = 9000.,
+        return {.paths = {{.name = "", .joint = "saddle_z",
+                           .stiffness_n_m = 9000.,
                            .damping_ns_m = 200.,
                            .preload_deflection_m = .01, .offset_m = .002,
                            .unilateral = false}}};

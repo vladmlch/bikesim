@@ -55,6 +55,16 @@ void set_state(const mjModel *model, mjData *data, const mjtNum *state, int spec
 // Caller owns both buffers: result is nv-wide, vector is nefc-wide.
 void mul_jac_t_vec(const mjModel *model, const mjData *data, mjtNum *result,
                    const mjtNum *vector);
+// mj_mulJacVec — constraint-space velocity of a generalized velocity.
+// Caller owns both buffers: result is nefc-wide, vector is nv-wide.
+void mul_jac_vec(const mjModel *model, const mjData *data, mjtNum *result,
+                 const mjtNum *vector);
+// mj_mulM — mass-matrix product. result and vector are both nv-wide.
+void mul_m(const mjModel *model, const mjData *data, mjtNum *result,
+           const mjtNum *vector);
+// mj_subtreeVel — subtree momentum observation caches (subtree_linvel /
+// subtree_angmom). Observation only; it solves no forces.
+void subtree_vel(const mjModel *model, mjData *data);
 // mj_kinematics/mj_integratePos — detached-kinematics helpers for target
 // prediction (scratch mjData only; never the live data's substitute).
 void kinematics(const mjModel *model, mjData *data);

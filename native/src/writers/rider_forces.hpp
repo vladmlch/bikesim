@@ -13,6 +13,7 @@
 #include <mujoco/mujoco.h>
 
 #include <span>
+#include <string>
 #include <vector>
 
 #include "../config_types.hpp"
@@ -21,6 +22,30 @@
 
 class RiderForcesWriter {
 public:
+    // _JointPath.__slots__ resolved: the body's spring params, the joint's
+    // addresses, and the projection-time pedal offset_m. `name` is the
+    // SeatedPose body name — the 'seated_'+name stored-terms key
+    // (physical_observations.py:89-93).
+    struct Path {
+        std::string name;
+        int qposadr = 0, dofadr = 0;
+        double stiffness_n_m = 0.0, damping_ns_m = 0.0;
+        double preload_deflection_m = 0.0, offset_m = 0.0;
+        bool unilateral = false;
+    };
+
+    // _JointPath.force_n / .gap_m — per-path telemetry read back by qfrc()
+    // itself (each path's computed force_n is the row's dofadr value), so
+    // unlike the removed brake/suspension snapshots this state is live
+    // output state and must stay. It is per-instance scratch of the owning
+    // Stepper context: qfrc() is const yet mutates it, which stays correct
+    // only because calls arrive through the nanobind boundary while the GIL
+    // is held — cross-context sharing needs external synchronization
+    // outside realtime code.
+    struct Telemetry {
+        double force_n = 0.0, gap_m = 0.0;
+    };
+
     // Resolves every configured path's joint through rider_forces.py's
     // _resolve_slide checks (named joint, unlimited slide). Throws
     // std::invalid_argument on any violation, like the Python ctor.
@@ -46,28 +71,17 @@ public:
     try_compute_into(const mjData *d, std::span<double> out)
             const noexcept BIKE_NONBLOCKING;
 
+    // self.active / self._paths / the live per-path telemetry — the
+    // runtime's stored-terms loop reads _paths directly
+    // (physical_observations.py:89-93) and the loss ledger reads
+    // force_n/gap_m after apply().
+    [[nodiscard]] bool active() const noexcept { return !paths_.empty(); }
+    [[nodiscard]] std::span<const Path>
+    paths() const noexcept { return paths_; }
+    [[nodiscard]] std::span<const Telemetry>
+    path_telemetry() const noexcept { return last_; }
+
 private:
-    // _JointPath.__slots__ resolved: the body's spring params, the joint's
-    // addresses, and the projection-time pedal offset_m.
-    struct Path {
-        int qposadr = 0, dofadr = 0;
-        double stiffness_n_m = 0.0, damping_ns_m = 0.0;
-        double preload_deflection_m = 0.0, offset_m = 0.0;
-        bool unilateral = false;
-    };
-
-    // _JointPath.force_n / .gap_m — per-path telemetry read back by qfrc()
-    // itself (each path's computed force_n is the row's dofadr value), so
-    // unlike the removed brake/suspension snapshots this state is live
-    // output state and must stay. It is per-instance scratch of the owning
-    // Stepper context: qfrc() is const yet mutates it, which stays correct
-    // only because calls arrive through the nanobind boundary while the GIL
-    // is held — cross-context sharing needs external synchronization
-    // outside realtime code.
-    struct Telemetry {
-        double force_n = 0.0, gap_m = 0.0;
-    };
-
     // qfrc()'s body verbatim on caller-owned storage: zero-fill, then the
     // per-path spring-damper dofadr writes (assign, not accumulate) and
     // the live last_ telemetry updates. Kept throwing so both boundaries

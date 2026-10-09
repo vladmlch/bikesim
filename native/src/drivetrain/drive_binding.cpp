@@ -407,7 +407,7 @@ namespace {
 DriveConfig parse_drive_config(const nb::dict &input) {
     const wire::Dict d{.value = input, .path = "config.drive"};
     DriveConfig c;
-    constexpr auto extra_keys = wire::keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","chain_k_n_m","chain_c_ns_m","bearing_c_nms_rad","rotor_inertia_kgm2","motor_clutch");
+    constexpr auto extra_keys = wire::keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","chain_k_n_m","chain_c_ns_m","bearing_c_nms_rad","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm");
     c.policies = parse_drive_policy_config(d.value, extra_keys);
     c.drive_mode = string(d, "drive_mode");
     c.transmission_model = string(d, "transmission_model");
@@ -428,6 +428,8 @@ DriveConfig parse_drive_config(const nb::dict &input) {
     c.bearing_c_nms_rad = nonnegative(num(d, "bearing_c_nms_rad"), "bearing_c_nms_rad");
     c.rotor_inertia_kgm2 =
             nonnegative(num(d, "rotor_inertia_kgm2"), "rotor_inertia_kgm2");
+    c.brake_ceiling_nm =
+            nonnegative(num(d, "brake_ceiling_nm"), "brake_ceiling_nm");
     c.motor_clutch = boolean(d, "motor_clutch");
     if (c.motor_clutch && c.rotor_inertia_kgm2 > 0.)
         throw std::invalid_argument("rotor and clutch are exclusive");

@@ -368,6 +368,31 @@ namespace drivetrain {
             return ideal_hub_.get();
         }
 
+        // self.ids.get (drivetrain_forces.py:34-37): {'frame','crank',
+        // 'rear_wheel'} always, 'cassette' only on the elastic-chain
+        // topology — the tire-channel builder falls back to
+        // geom_bodyid[contact geom] on a miss, so no exception.
+        [[nodiscard]] std::optional<int>
+        body_id(std::string_view name) const noexcept;
+
+        // self.simplified — stored_terms()'s empty-map branch and the
+        // runtime's crank-target gating both read it.
+        [[nodiscard]] bool simplified() const noexcept { return simplified_; }
+
+        // self.cfg — the runtime's static-brake owner reads
+        // brake_ceiling_nm and the pedaling gates off the same config the
+        // writer was built from.
+        [[nodiscard]] const DriveConfig &config() const noexcept {
+            return config_;
+        }
+
+        // self.battery.energy_j — the committed battery store level the
+        // step's metadata reads after settle (drive.last alone is a tick
+        // snapshot; the battery object carries the running level).
+        [[nodiscard]] double battery_energy_j() const noexcept {
+            return battery_.state().energy_j;
+        }
+
     private:
         mjModel *model_ = nullptr;
         mjData *data_ = nullptr;

@@ -215,6 +215,37 @@ public:
     // The writer itself — snapshots()/diagnostics() are read here by the
     // binding. nullptr without a tire config (callers gate on it).
     [[nodiscard]] const TireWriter *tire() const { return tire_.get(); }
+
+    // ---- Owned-writer access for the runtime's physical step (plan A3) --
+    // Mutable borrowed references into the Stepper-owned writers — the
+    // runtime's step kernel drives these directly; the boxed convenience
+    // surfaces above serialize into fresh vectors, which the warm step
+    // cannot afford. Same throw-on-absent contract as drive(); the
+    // borrowed references never outlive the Stepper and remain valid only
+    // while the caller holds no other alias into the same data.
+    [[nodiscard]] SuspensionWriter &suspension() const;
+    [[nodiscard]] ResistanceWriter &resistance() const;
+    [[nodiscard]] RiderForcesWriter &rider_forces() const;
+    [[nodiscard]] TireWriter &tire_writer() const;
+    [[nodiscard]] CruiseWriter &cruise() const { return require_cruise(); }
+    [[nodiscard]] bool has_suspension() const noexcept {
+        return suspension_ != nullptr;
+    }
+    [[nodiscard]] bool has_resistance() const noexcept {
+        return resistance_ != nullptr;
+    }
+    [[nodiscard]] bool has_rider_forces() const noexcept {
+        return rider_forces_ != nullptr;
+    }
+    [[nodiscard]] bool has_rider_contacts() const noexcept {
+        return rider_contacts_ != nullptr;
+    }
+    [[nodiscard]] bool has_cruise() const noexcept {
+        return cruise_ != nullptr;
+    }
+    [[nodiscard]] std::span<const double> qfrc_passive() const {
+        return std::views::counted(d_->qfrc_passive, m_->nv);
+    }
     // RiderForceApplier.apply on the CURRENT mjData, read back as a vector:
     // zeros(nv) + each path's force at its dofadr — the 'seated_interfaces'
     // accumulator row. Throws std::logic_error without a rider_forces

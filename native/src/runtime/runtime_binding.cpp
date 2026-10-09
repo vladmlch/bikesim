@@ -20,11 +20,13 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -37,9 +39,13 @@
 
 #include "../binding_arrays.hpp"
 #include "../binding_readers.hpp"
+#include "../diag.hpp"
 #include "../engine_call.hpp"
+#include "../rider/intent_wire.hpp"
 #include "../rider/spindle_math.hpp"
+#include "../rider/spindle_wire.hpp"
 #include "../stepper.hpp"
+#include "../tyre/profile.hpp"
 
 namespace nb = nanobind;
 
@@ -247,6 +253,338 @@ private:
     return runtime::owned_copy(
         wire::mapping(value, d.child(key)), d.child(key));
 }
+
+// ---- Wire <-> Python ----------------------------------------------------
+// The step emits pure-C++ Wire trees so the GIL-free loop never touches a
+// Python object; these converters run strictly at the held-GIL boundary.
+
+nb::object wire_to_python(const runtime::Wire &w);
+
+[[nodiscard]] nb::dict wire_object_to_python(
+    const runtime::WireObject &object) {
+    nb::dict out;
+    for (const auto &[key, value] : object)
+        out[nb::str(key.c_str(), key.size())] = wire_to_python(value);
+    return out;
+}
+
+nb::object wire_to_python(const runtime::Wire &w) {
+    return std::visit(
+        [](const auto &value) -> nb::object {
+            using T = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<T, std::monostate>)
+                return nb::none();
+            else if constexpr (std::is_same_v<T, bool>)
+                return nb::object(nb::bool_(value));
+            else if constexpr (std::is_same_v<T, std::int64_t>)
+                return nb::object(nb::int_(value));
+            else if constexpr (std::is_same_v<T, double>)
+                return nb::object(nb::float_(value));
+            else if constexpr (std::is_same_v<T, std::string>)
+                return nb::object(nb::str(value.c_str(), value.size()));
+            else if constexpr (std::is_same_v<T, runtime::WireArray>) {
+                nb::list out;
+                for (const auto &element : value)
+                    out.append(wire_to_python(element));
+                return out;
+            } else {
+                return wire_object_to_python(value);
+            }
+        },
+        w.value);
+}
+
+// plain() inverse for the wire sections the step state round-trips
+// verbatim (elastic_energy_j's named-term dict is the only consumer).
+// NOLINTNEXTLINE(misc-no-recursion) depth mirrors the plain-data tree
+[[nodiscard]] runtime::Wire python_to_wire(nb::handle value,
+                                           std::string_view path) {
+    if (value.is_none()) return runtime::Wire{nullptr};
+    if (nb::isinstance<nb::bool_>(value) || wire::numeric_boolean(value))
+        return runtime::Wire{nb::cast<bool>(value)};
+    const auto numbers = nb::module_::import_("numbers");
+    if (nb::isinstance(value, numbers.attr("Integral")))
+        return runtime::Wire{wire::integer(value, path)};
+    if (nb::isinstance(value, numbers.attr("Real")))
+        return runtime::Wire{wire::real(value, path)};
+    if (nb::isinstance<nb::str>(value))
+        return runtime::Wire{wire::string(value, path)};
+    if (nb::isinstance<nb::dict>(value)) {
+        runtime::WireObject out;
+        for (const auto item : nb::borrow<nb::dict>(value))
+            out.emplace_back(wire::string(item.first, path),
+                             python_to_wire(item.second, path));
+        return runtime::Wire{std::move(out)};
+    }
+    if (nb::isinstance<nb::list>(value) ||
+        nb::isinstance<nb::tuple>(value)) {
+        runtime::WireArray out;
+        for (const nb::handle item : wire::sequence(value, path))
+            out.push_back(python_to_wire(item, path));
+        return runtime::Wire{std::move(out)};
+    }
+    wire::invalid(path, "expected plain data (dict/list/scalar)");
+}
+
+// ---- state.runtime section decoders --------------------------------------
+// Every state_dict() shape validated key-for-key against setup.py's
+// emission; rejected input leaves the live step untouched (the restore
+// happens only after the whole StepState decoded).
+
+[[nodiscard]] double real_field(const wire::Dict &d, const char *key) {
+    return wire::real(wire::field(d, key), d.child(key));
+}
+
+[[nodiscard]] std::optional<double>
+optional_field(const wire::Dict &d, const char *key) {
+    return wire::optional_real(wire::field(d, key), d.child(key));
+}
+
+[[nodiscard]] bool bool_field(const wire::Dict &d, const char *key) {
+    return wire::boolean(wire::field(d, key), d.child(key));
+}
+
+[[nodiscard]] std::int64_t int_field(const wire::Dict &d, const char *key) {
+    return wire::integer(wire::field(d, key), d.child(key));
+}
+
+[[nodiscard]] runtime::GroundedFilter::State
+parse_grounded(const wire::Dict &d) {
+    wire::exact(d, wire::keys("last_time_s", "last_loaded_s", "value"));
+    return {.last_time_s = optional_field(d, "last_time_s"),
+            .last_loaded_s = optional_field(d, "last_loaded_s"),
+            .value = bool_field(d, "value")};
+}
+
+[[nodiscard]] runtime::BridgedLoad::State
+parse_bridged(const wire::Dict &d) {
+    wire::exact(d, wire::keys("held_load_n", "unloaded_steps"));
+    return {.held_load_n = real_field(d, "held_load_n"),
+            .unloaded_steps = int_field(d, "unloaded_steps")};
+}
+
+[[nodiscard]] runtime::RuntimeContactQuery::State
+parse_query_state(const wire::Dict &d) {
+    wire::exact(d,
+                wire::keys("front_load", "rear_load",
+                           "front_controller_grounded",
+                           "rear_controller_grounded"));
+    return {.front_load = parse_bridged(wire::section(d, "front_load")),
+            .rear_load = parse_bridged(wire::section(d, "rear_load")),
+            .front_controller = parse_grounded(
+                wire::section(d, "front_controller_grounded")),
+            .rear_controller = parse_grounded(
+                wire::section(d, "rear_controller_grounded"))};
+}
+
+[[nodiscard]] runtime::BalanceMonitor::State
+parse_balance(const wire::Dict &d) {
+    wire::exact(d, wire::keys("event", "low_speed_s", "grace_left_s",
+                              "started_s", "low_started_s", "last_time_s"));
+    runtime::BalanceMonitor::State out;
+    const nb::object event = wire::field(d, "event");
+    if (!event.is_none()) {
+        const wire::Dict e{
+            .value = wire::mapping(event, d.child("event")),
+            .path = d.child("event")};
+        wire::exact(e, wire::keys("time_s", "position_m", "speed_mps"));
+        out.event = runtime::BalanceLostEvent{
+            .time_s = real_field(e, "time_s"),
+            .position_m = real_field(e, "position_m"),
+            .speed_mps = real_field(e, "speed_mps")};
+    }
+    out.low_speed_s = real_field(d, "low_speed_s");
+    out.grace_left_s = real_field(d, "grace_left_s");
+    out.started_s = optional_field(d, "started_s");
+    out.low_started_s = optional_field(d, "low_started_s");
+    out.last_time_s = optional_field(d, "last_time_s");
+    return out;
+}
+
+[[nodiscard]] std::optional<runtime::CrashEvent>
+parse_crash(const wire::Dict &d) {
+    wire::exact(d, wire::keys("event"));
+    const nb::object event = wire::field(d, "event");
+    if (event.is_none()) return std::nullopt;
+    const wire::Dict e{.value = wire::mapping(event, d.child("event")),
+                       .path = d.child("event")};
+    wire::exact(e,
+                wire::keys("cause", "time_s", "position_m", "pitch_rad"));
+    return runtime::CrashEvent{
+        .cause = wire::string(wire::field(e, "cause"), e.child("cause")),
+        .time_s = real_field(e, "time_s"),
+        .position_m = real_field(e, "position_m"),
+        .pitch_rad = real_field(e, "pitch_rad")};
+}
+
+[[nodiscard]] runtime::RuntimeContacts
+parse_contacts(const wire::Dict &d) {
+    wire::exact(d,
+                wire::keys("front_load_n", "rear_load_n", "front_support_n",
+                           "rear_support_n", "handlebar_load_n",
+                           "front_controller_grounded",
+                           "rear_controller_grounded", "front_slip_mps",
+                           "rear_slip_mps"));
+    runtime::RuntimeContacts out;
+    out.front_load_n = real_field(d, "front_load_n");
+    out.rear_load_n = real_field(d, "rear_load_n");
+    out.front_support_n = real_field(d, "front_support_n");
+    out.rear_support_n = real_field(d, "rear_support_n");
+    out.handlebar_load_n = real_field(d, "handlebar_load_n");
+    // _contacts_state emits plain bools for the controller-grounded pair.
+    out.front_controller_grounded = bool_field(d, "front_controller_grounded");
+    out.rear_controller_grounded = bool_field(d, "rear_controller_grounded");
+    out.front_slip_mps = optional_field(d, "front_slip_mps");
+    out.rear_slip_mps = optional_field(d, "rear_slip_mps");
+    return out;
+}
+
+[[nodiscard]] runtime::EnergyState
+parse_energy(const wire::Dict &d) {
+    wire::exact(d, wire::keys(
+                       "initial_energy_j", "energy_scale_j", "loss_j",
+                       "active_work_j", "external_work_j", "solver_work_j",
+                       "muscle_signed_j", "muscle_positive_j",
+                       "motor_signed_j", "motor_positive_j",
+                       "constraint_absolute_j", "initial_battery_j",
+                       "electrical_work_j", "mechanical_energy_j",
+                       "elastic_energy_j", "residual_j"));
+    runtime::EnergyState out;
+    out.initial_energy_j = optional_field(d, "initial_energy_j");
+    out.energy_scale_j = real_field(d, "energy_scale_j");
+    out.loss_j = real_field(d, "loss_j");
+    out.active_work_j = real_field(d, "active_work_j");
+    out.external_work_j = real_field(d, "external_work_j");
+    out.solver_work_j = real_field(d, "solver_work_j");
+    out.muscle_signed_j = real_field(d, "muscle_signed_j");
+    out.muscle_positive_j = real_field(d, "muscle_positive_j");
+    out.motor_signed_j = real_field(d, "motor_signed_j");
+    out.motor_positive_j = real_field(d, "motor_positive_j");
+    out.constraint_absolute_j = real_field(d, "constraint_absolute_j");
+    out.initial_battery_j = optional_field(d, "initial_battery_j");
+    out.electrical_work_j = real_field(d, "electrical_work_j");
+    out.mechanical_energy_j = real_field(d, "mechanical_energy_j");
+    const runtime::Wire elastic =
+        python_to_wire(wire::field(d, "elastic_energy_j"),
+                       d.child("elastic_energy_j"));
+    if (const auto *object = std::get_if<runtime::WireObject>(
+            &elastic.value))
+        out.elastic_energy_j = *object;
+    else
+        wire::invalid(d.child("elastic_energy_j"), "expected dict");
+    out.residual_j = real_field(d, "residual_j");
+    return out;
+}
+
+// state.runtime + the sibling top-level sections (signals, rider_intent,
+// rider_controller) -> the step's full restore input. history/
+// model_status/monitor stay owned blobs on the BootstrapState until A4.
+[[nodiscard]] runtime::StepState
+parse_step_state(const runtime::BootstrapState &bootstrap) {
+    const wire::Dict rt{.value = wire::mapping(bootstrap.runtime,
+                                              "state.runtime"),
+                        .path = "state.runtime"};
+    wire::exact(rt, wire::keys(
+                        "step", "generation", "record_decimation",
+                        "applied_control", "held_control",
+                        "held_rider_terms", "rollback_hold",
+                        "research_accounting_valid", "initializing",
+                        "filters", "balance", "crash", "contacts",
+                        "contact_query", "probe_query", "energy", "history",
+                        "model_status", "monitor"));
+    runtime::StepState out;
+    out.step = int_field(rt, "step");
+    if (out.step < 0)
+        wire::invalid(rt.child("step"), "expected nonnegative integer");
+    out.generation =
+        wire::integer32(wire::field(rt, "generation"),
+                        rt.child("generation"));
+    if (out.generation <= 0)
+        wire::invalid(rt.child("generation"), "expected positive integer");
+    out.record_decimation =
+        wire::integer32(wire::field(rt, "record_decimation"),
+                        rt.child("record_decimation"));
+    if (out.record_decimation <= 0)
+        wire::invalid(rt.child("record_decimation"),
+                      "expected positive integer");
+    out.applied_control = rider::parse_intent_control(
+        wire::field(rt, "applied_control"),
+        rt.child("applied_control"));
+    const nb::object held = wire::field(rt, "held_control");
+    if (!held.is_none())
+        out.held_control = rider::parse_named_reals(
+            held, rt.child("held_control"));
+    const nb::object terms = wire::field(rt, "held_rider_terms");
+    if (!terms.is_none()) {
+        const wire::Dict map{
+            .value = wire::mapping(terms, rt.child("held_rider_terms")),
+            .path = rt.child("held_rider_terms")};
+        rider::NamedEntries<rider::JointTerms> decoded;
+        for (const auto item : map.value) {
+            const std::string joint = wire::string(item.first, map.path);
+            decoded.emplace_back(
+                joint,
+                rider::parse_joint_terms(item.second,
+                                         map.child(joint.c_str())));
+        }
+        out.held_rider_terms = std::move(decoded);
+    }
+    out.rollback_hold = bool_field(rt, "rollback_hold");
+    out.research_accounting_valid =
+        bool_field(rt, "research_accounting_valid");
+    out.initializing = bool_field(rt, "initializing");
+    const wire::Dict filters = wire::section(rt, "filters");
+    wire::exact(filters, wire::keys("front", "rear"));
+    out.filters = {parse_grounded(wire::section(filters, "front")),
+                   parse_grounded(wire::section(filters, "rear"))};
+    out.balance = parse_balance(wire::section(rt, "balance"));
+    out.crash = parse_crash(wire::section(rt, "crash"));
+    out.contacts = parse_contacts(wire::section(rt, "contacts"));
+    out.contact_query =
+        parse_query_state(wire::section(rt, "contact_query"));
+    out.probe_query = parse_query_state(wire::section(rt, "probe_query"));
+    out.energy = parse_energy(wire::section(rt, "energy"));
+    out.signals =
+        rider::parse_intent_signals(bootstrap.signals, "state.signals");
+    out.rider_intent =
+        rider::parse_intent_state(bootstrap.rider_intent,
+                                  "state.rider_intent");
+    if (!bootstrap.rider_controller.is_none())
+        out.rider_controller = rider::parse_spindle_state(
+            bootstrap.rider_controller, "state.rider_controller");
+    return out;
+}
+
+// environment.py crash_reason — the latched CrashEvent's outcome label.
+[[nodiscard]] std::optional<std::string>
+crash_outcome(const std::optional<runtime::CrashEvent> &event) {
+    if (!event.has_value()) return std::nullopt;
+    if (event->cause == "pitch_over")
+        return std::string(event->pitch_rad < 0. ? "crash:loop_out"
+                                                 : "crash:endo");
+    return "crash:" + event->cause;
+}
+
+// Reentrancy guard — advance() and reset() are the two entries that can
+// run without the GIL; a nested or concurrent call fails fast instead of
+// observing a half-advanced runtime.
+class AdvancementGuard {
+public:
+    explicit AdvancementGuard(std::atomic<bool> &flag) : flag_(flag) {
+        bool expected = false;
+        if (!flag_.compare_exchange_strong(expected, true))
+            throw std::runtime_error(
+                "advance already in progress on this runtime");
+    }
+    ~AdvancementGuard() { flag_.store(false); }
+    AdvancementGuard(const AdvancementGuard &) = delete;
+    AdvancementGuard &operator=(const AdvancementGuard &) = delete;
+    AdvancementGuard(AdvancementGuard &&) = delete;
+    AdvancementGuard &operator=(AdvancementGuard &&) = delete;
+
+private:
+    std::atomic<bool> &flag_;
+};
 
 } // namespace
 
@@ -558,19 +896,119 @@ void NativeRideRuntime::require_open() const {
     if (closed_) throw std::logic_error("NativeRideRuntime is closed");
 }
 
+namespace {
+
+// The step-owned slice of the runtime envelope — physics/drive modes are
+// already pinned at parse_runtime_config.
+[[nodiscard]] StepConfig step_config(const RuntimeConfig &config) {
+    StepConfig out;
+    out.timestep_s = config.timestep_s;
+    out.control_period_s = config.control_period_s;
+    out.record_decimation = config.record_decimation;
+    out.strict = config.strict;
+    out.crank_length_m = config.geometry.crank_length_m;
+    const wire::Dict rider_cfg{
+        .value = wire::mapping(config.rider_controller,
+                               "config.rider_controller"),
+        .path = "config.rider_controller"};
+    out.road_lookahead_m = wire::finite_real(
+        wire::field(rider_cfg, "road_lookahead_m"),
+        rider_cfg.child("road_lookahead_m"));
+    out.rider_present = !config.geometry.pose.is_none();
+    out.monitors = config.monitors;
+    out.intent = rider::parse_intent_config(config.rider_intent,
+                                            "config.rider_intent");
+    return out;
+}
+
+// StaticBrakeApplier — the geometry section's name-indexed brake refs plus
+// the drive config's ceiling, resolved to DOF addresses once.
+[[nodiscard]] StaticBrake static_brake(const RuntimeConfig &config,
+                                       const mjModel &model,
+                                       const Stepper &stepper) {
+    const auto resolve = [&](const JointReference &ref, const char *what) {
+        const int joint =
+            mj_name2id(&model, mjOBJ_JOINT, ref.joint.c_str());
+        if (joint < 0)
+            throw std::invalid_argument(std::string("unknown ") + what +
+                                        " brake joint '" + ref.joint + "'");
+        const std::span<const int> joint_types =
+            std::views::counted(model.jnt_type, model.njnt);
+        const int dof_count = [&] {
+            switch (joint_types[static_cast<std::size_t>(joint)]) {
+            case mjJNT_FREE: return 6;
+            case mjJNT_BALL: return 3;
+            default: return 1;
+            }
+        }();
+        if (ref.dof_index < 0 || ref.dof_index >= dof_count)
+            throw std::invalid_argument(
+                std::string("config.geometry.brake_dofs: ") + what +
+                " dof_index out of range");
+        const std::span<const int> dofadr =
+            std::views::counted(model.jnt_dofadr, model.njnt);
+        return dofadr[static_cast<std::size_t>(joint)] + ref.dof_index;
+    };
+    return {resolve(config.geometry.front_brake, "front"),
+            resolve(config.geometry.rear_brake, "rear"),
+            stepper.drive().config().brake_ceiling_nm};
+}
+
+// The PhysicalStep assembly — pose/config/vertices decode plus the
+// constructor — carries a frame too large for the debug stack budget, so
+// it owns a separate function scope.
+std::unique_ptr<PhysicalStep>
+make_physical_step(Stepper &stepper, const RuntimeConfig &config) {
+    // The compiled terrain cross-section is constant model geometry — the
+    // tire writer's own copy was read from this same post-forward data.
+    std::vector<std::array<double, 2>> vertices =
+        biketyre::compiled_profile_vertices(stepper.model(),
+                                            stepper.data(), "terrain");
+    std::optional<rider::SpindlePose> pose;
+    std::optional<rider::SpindleConfig> rider_cfg;
+    if (!config.geometry.pose.is_none()) {
+        pose = rider::parse_spindle_pose(config.geometry.pose,
+                                         "config.geometry.pose");
+        rider_cfg = rider::parse_spindle_config(
+            config.rider_controller, "config.rider_controller");
+    }
+    return std::make_unique<PhysicalStep>(
+        stepper, step_config(config), std::move(vertices),
+        static_brake(config, *stepper.model(), stepper), pose, rider_cfg);
+}
+
+} // namespace
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature is the spec'd Python API
 NativeRideRuntime::NativeRideRuntime(nb::handle model_path,
                                      nb::handle config, nb::handle state)
     : config_(parse_runtime_config(config)) {
+    init(model_path, state);
+}
+
+// One-shot bootstrap decode — like bind_drivetrain, its frame is decode
+// temporaries rather than per-step code, so the frame guard is waived.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) decode handles, callee pins their roles
+void NativeRideRuntime::init(nb::handle model_path, nb::handle state) {
     const std::string path = artifact_path(model_path);
     if (sha256_file(path) != expected_model_digest(state))
         throw std::invalid_argument(
             "state.model_digest: model artifact bytes do not match");
     stepper_ = std::make_unique<Stepper>(path, config_.writer_config);
     bootstrap_ = parse_bootstrap(state, *stepper_->model(), *stepper_);
+    physical_ = make_physical_step(*stepper_, config_);
+    bootstrap_step_state_ = parse_step_state(bootstrap_);
+    // The captured controller state and the configured rider ensemble
+    // arrive together (setup.py emits both or neither).
+    if (bootstrap_step_state_.rider_controller.has_value() !=
+        physical_->rider_present())
+        throw std::invalid_argument(
+            "state.rider_controller does not match the rider config");
     apply_bootstrap();
-    generation_ = bootstrap_.generation;
 }
+NATIVE_DIAG_POP
 
 void NativeRideRuntime::apply_bootstrap() {
     mjModel *const model = stepper_->model();
@@ -605,8 +1043,118 @@ void NativeRideRuntime::apply_bootstrap() {
         }
         stepper_->set_tire_state(bootstrap_.tire.names,
                                  bootstrap_.tire.row);
+        // The runtime counters land last (the docstring's ordered restore
+        // ends with them): step/generation, clocks, filters, contacts,
+        // energy and the controller/intent state faces.
+        physical_->restore(bootstrap_step_state_);
     });
-    step_ = bootstrap_.step;
+}
+
+std::optional<std::string> NativeRideRuntime::outcome_reason() const {
+    return crash_outcome(physical_->crash());
+}
+
+AdvanceResult
+NativeRideRuntime::advance(std::int64_t target_step, nb::handle control,
+                           double front_brake_demand,
+                           double rear_brake_demand,
+                           nb::handle wall_budget_s) {
+    require_open();
+    // ---- GIL held: decode + validate every Python input first ----
+    // An argument rejection never mutates committed state.
+    const RideControl command =
+        rider::parse_intent_control(control, "control");
+    if (!std::isfinite(front_brake_demand))
+        throw std::invalid_argument("front_brake_demand must be finite");
+    if (!std::isfinite(rear_brake_demand))
+        throw std::invalid_argument("rear_brake_demand must be finite");
+    std::optional<double> budget;
+    if (!wall_budget_s.is_none()) {
+        budget = wire::finite_real(wall_budget_s, "wall_budget_s");
+        if (*budget < 0.)
+            throw std::invalid_argument(
+                "wall_budget_s must be nonnegative");
+    }
+    if (target_step < 0)
+        throw std::invalid_argument("target_step must be nonnegative");
+    // Reentrancy precedes every state-dependent check: while a concurrent
+    // advance is in flight the committed step is a moving target, so
+    // reading it (or advancing) must fail as reentrancy first.
+    const AdvancementGuard guard(advancing_);
+    if (target_step < physical_->step())
+        throw std::invalid_argument(
+            "target_step is behind the committed step");
+    std::string reason;
+    {
+        // ---- GIL released: owned native advancement only ---------
+        // The loop touches no Python objects: advance_physics' outputs
+        // are pure-C++ Wire trees that stay inside the RawStep A4 owns.
+        const nb::gil_scoped_release release;
+        stepper_->refresh_time_callback_policy();
+        const auto start = std::chrono::steady_clock::now();
+        while (physical_->step() < target_step &&
+               !physical_->crash().has_value()) {
+            // `>=` keeps a zero budget a hard stop-before-first-step: two
+            // back-to-back steady_clock reads can share a tick, so a strict
+            // `>` could let one step slip through on budget=0.
+            if (budget.has_value() &&
+                std::chrono::duration<double>(
+                    std::chrono::steady_clock::now() - start)
+                        .count() >= *budget) {
+                reason = "budget";
+                break;
+            }
+            // The committed prefix survives a mid-range failure —
+            // advance_physics increments only after a completed solve.
+            (void)physical_->advance_physics(front_brake_demand,
+                                             rear_brake_demand, std::nullopt,
+                                             command);
+        }
+        if (reason.empty())
+            reason = physical_->crash().has_value() ? "outcome" : "target";
+    }
+    // ---- GIL held: build the immutable result --------------------
+    return {.step = physical_->step(),
+            .time_s = stepper_->data()->time,
+            .reason = std::move(reason),
+            .outcome = outcome_reason()};
+}
+
+nb::dict
+NativeRideRuntime::probe_step_inputs(nb::handle control,
+                                     double front_brake_demand,
+                                     double rear_brake_demand) {
+    require_open();
+    const RideControl command =
+        rider::parse_intent_control(control, "control");
+    if (!std::isfinite(front_brake_demand))
+        throw std::invalid_argument("front_brake_demand must be finite");
+    if (!std::isfinite(rear_brake_demand))
+        throw std::invalid_argument("rear_brake_demand must be finite");
+    const AdvancementGuard guard(advancing_);
+    PhysicalStep::ProbeResult probe;
+    {
+        const nb::gil_scoped_release release;
+        probe = physical_->probe_step_inputs(command, front_brake_demand,
+                                             rear_brake_demand);
+    }
+    nb::dict out;
+    nb::dict components;
+    for (const auto &[name, force] : probe.components)
+        components[nb::str(name.c_str(), name.size())] =
+            wire::owned_array<double>(
+                std::span<const double>(force));
+    out["components"] = components;
+    out["ctrl"] = wire::owned_array<double>(
+        std::span<const double>(probe.ctrl));
+    out["front_brake_bound_nm"] = probe.front_brake_bound_nm;
+    out["rear_brake_bound_nm"] = probe.rear_brake_bound_nm;
+    out["drive"] = wire_object_to_python(probe.drive);
+    out["contact_probe"] =
+        probe.has_contact_probe
+            ? nb::object(wire_object_to_python(probe.contact_probe))
+            : nb::none();
+    return out;
 }
 
 RuntimeSnapshot NativeRideRuntime::snapshot() const {
@@ -618,26 +1166,91 @@ RuntimeSnapshot NativeRideRuntime::snapshot() const {
     std::vector<double> values(static_cast<std::size_t>(width));
     engine::get_state(model, data, values.data(),
                       static_cast<int>(mjSTATE_INTEGRATION));
-    return {.generation = generation_,
-            .step = step_,
+    return {.generation = physical_->generation(),
+            .step = physical_->step(),
             .time_s = data->time,
-            .integration_state = std::move(values)};
+            .integration_state = std::move(values),
+            .outcome = outcome_reason()};
 }
 
 void NativeRideRuntime::reset() {
     require_open();
+    const AdvancementGuard guard(advancing_);
+    // PhysicalRuntime.reset() bumps generation monotonically; the stored
+    // bootstrap's capture value belongs to the constructor only.
+    const int next = physical_->generation() + 1;
     apply_bootstrap();
-    // PhysicalRuntime.reset() bumps generation; the stored bootstrap's
-    // capture value is only the constructor's.
-    ++generation_;
+    physical_->set_generation(next);
 }
 
 void NativeRideRuntime::close() {
+    physical_.reset();
     stepper_.reset();
     closed_ = true;
 }
 
 NativeRideRuntime::~NativeRideRuntime() = default;
+
+namespace {
+
+// nanobind's class builders carry heavy template frames; each binding
+// group gets its own noinline function so the per-function stack budget
+// holds on unoptimized builds.
+void bind_snapshot_class(const nb::module_ &module) {
+    nb::class_<RuntimeSnapshot>(module, "RuntimeSnapshot")
+        .def_ro("generation", &RuntimeSnapshot::generation)
+        .def_ro("step", &RuntimeSnapshot::step)
+        .def_ro("time_s", &RuntimeSnapshot::time_s)
+        // Every access mints a fresh capsule-owned array — the stored
+        // vector stays an internal copy the caller can never reach.
+        .def_prop_ro("integration_state",
+                     [](const RuntimeSnapshot &s) {
+                         return wire::owned_array<double>(
+                             s.integration_state);
+                     },
+                     nb::rv_policy::move)
+        .def_prop_ro("outcome",
+                     [](const RuntimeSnapshot &s) -> nb::object {
+                         return s.outcome.has_value()
+                                    ? nb::object(nb::str(s.outcome->c_str(),
+                                                         s.outcome->size()))
+                                    : nb::none();
+                     });
+}
+
+void bind_result_class(const nb::module_ &module) {
+    nb::class_<AdvanceResult>(module, "NativeAdvanceResult")
+        .def_ro("step", &AdvanceResult::step)
+        .def_ro("time_s", &AdvanceResult::time_s)
+        .def_ro("reason", &AdvanceResult::reason)
+        .def_prop_ro("outcome",
+                     [](const AdvanceResult &r) -> nb::object {
+                         return r.outcome.has_value()
+                                    ? nb::object(nb::str(r.outcome->c_str(),
+                                                         r.outcome->size()))
+                                    : nb::none();
+                     });
+}
+
+void bind_runtime_class(const nb::module_ &module) {
+    nb::class_<NativeRideRuntime>(module, "NativeRideRuntime")
+        .def(nb::init<nb::handle, nb::handle, nb::handle>(),
+             nb::arg("model_path"), nb::arg("config"), nb::arg("state"))
+        .def("advance", &NativeRideRuntime::advance,
+             nb::arg("target_step"), nb::arg("control"),
+             nb::arg("front_brake_demand") = 0.,
+             nb::arg("rear_brake_demand") = 0.,
+             nb::arg("wall_budget_s") = nb::none())
+        .def("probe_step_inputs", &NativeRideRuntime::probe_step_inputs,
+             nb::arg("control"), nb::arg("front_brake_demand") = 0.,
+             nb::arg("rear_brake_demand") = 0.)
+        .def("snapshot", &NativeRideRuntime::snapshot)
+        .def("reset", &NativeRideRuntime::reset)
+        .def("close", &NativeRideRuntime::close)
+        .def_prop_ro("closed", &NativeRideRuntime::closed);
+}
+
+} // namespace
 
 void bind_runtime(nb::module_ &module) {
     // Production spindle kernels exposed as parity probes (plan A2):
@@ -657,25 +1270,9 @@ void bind_runtime(nb::module_ &module) {
         },
         nb::arg("power_w"), nb::arg("torque_limit_nm"),
         nb::arg("crank_rate_rad_s"));
-    nb::class_<RuntimeSnapshot>(module, "RuntimeSnapshot")
-        .def_ro("generation", &RuntimeSnapshot::generation)
-        .def_ro("step", &RuntimeSnapshot::step)
-        .def_ro("time_s", &RuntimeSnapshot::time_s)
-        // Every access mints a fresh capsule-owned array — the stored
-        // vector stays an internal copy the caller can never reach.
-        .def_prop_ro("integration_state",
-                     [](const RuntimeSnapshot &s) {
-                         return wire::owned_array<double>(
-                             s.integration_state);
-                     },
-                     nb::rv_policy::move);
-    nb::class_<NativeRideRuntime>(module, "NativeRideRuntime")
-        .def(nb::init<nb::handle, nb::handle, nb::handle>(),
-             nb::arg("model_path"), nb::arg("config"), nb::arg("state"))
-        .def("snapshot", &NativeRideRuntime::snapshot)
-        .def("reset", &NativeRideRuntime::reset)
-        .def("close", &NativeRideRuntime::close)
-        .def_prop_ro("closed", &NativeRideRuntime::closed);
+    bind_snapshot_class(module);
+    bind_result_class(module);
+    bind_runtime_class(module);
 }
 
 } // namespace runtime

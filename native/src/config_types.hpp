@@ -16,6 +16,11 @@ namespace drivetrain {
         bool enabled{};
         double coast_above_rpm{}, resume_below_rpm{}, stop_time_s{}, coast_cadence_tau_s{};
         double mash_cadence_rpm{}, mash_torque_nm{}, effort_slew_nm_s{};
+        // Hill-hold reflex fields (physical_config.py PedalingConfig) —
+        // PhysicalRuntime._rollback_brake_demand reads them; the pedaling
+        // policy itself ignores them exactly like the Python class.
+        bool rollback_brake{};
+        double rollback_engage_mps{}, rollback_release_mps{}, rollback_demand{};
     };
 
     struct ShiftingConfig {
@@ -84,6 +89,10 @@ namespace drivetrain {
         std::string drive_mode, transmission_model;
         double human_torque_nm{}, torque_ripple{}, crank_phase_rad{}, chain_k_n_m{},
                 chain_c_ns_m{}, bearing_c_nms_rad{}, rotor_inertia_kgm2{};
+        // StaticBrakeApplier's ceiling (physical_config drive section) —
+        // the runtime's static-brake owner reads it; the drivetrain writer
+        // itself never does.
+        double brake_ceiling_nm{};
         bool motor_clutch{};
     };
 
@@ -246,6 +255,10 @@ namespace nativecfg {
     // the effective offset_m, not the crank derivation). `joint` re-resolves to
     // qposadr/dofadr through _resolve_slide's checks.
     struct RiderPathConfig {
+        // `name` is the SeatedPose body name ('rider_leg_front', ...) —
+        // the 'seated_'+name stored-terms key and _by_name lookup key;
+        // `joint` is the MuJoCo slide joint the path resolves through.
+        std::string name;
         std::string joint;
         double stiffness_n_m, damping_ns_m;
         double preload_deflection_m, offset_m;

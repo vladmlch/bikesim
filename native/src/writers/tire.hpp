@@ -151,6 +151,58 @@ public:
         return out;
     }
 
+    // ---- probe path (compute_qfrc advance=False, tire_forces.py:108-113) --
+    // A detached writer copy evaluates one ADVANCING compute on a cleared
+    // clock (copy.copy + deepcopy(states) + last_time_s=None in the
+    // oracle); only its snapshots cross back into probe_snapshots. The
+    // caller's brush states, clock, energies, committed snapshots and
+    // diagnostics stay untouched — including when the detached eval
+    // throws. This is a cold path (init probe + advance=False steps):
+    // the detached copy duplicates the construction-sized scratch, so no
+    // try_* nonblocking face exists here.
+    [[nodiscard]] std::vector<double> probe_qfrc(const mjData *d, double dt);
+    void probe_compute_into(const mjData *d, double dt,
+                            std::span<double> out);
+    [[nodiscard]] std::array<std::optional<TireSnapshot>, 2>
+    probe_snapshots() const {
+        std::array<std::optional<TireSnapshot>, 2> out{};
+        if (probe_committed_)
+            for (std::size_t i = 0; i < 2; ++i)
+                out[i] = probe_snapshots_[i];
+        return out;
+    }
+
+    // self.radii — {'front':.., 'rear':..} in that order
+    // (tire_forces.py:126).
+    [[nodiscard]] const std::array<double, 2> &radii() const {
+        return radii_;
+    }
+
+    // restart_clock() (tire_forces.py:169-171): `last_time_s = None`
+    // without touching brush state — the init/restore re-arm.
+    void restart_clock() noexcept { last_time_s_.reset(); }
+
+    // stored_energy(model, data) (tire_forces.py:173-184): elastic +
+    // shear energy at the CURRENT geometry — the patch delta comes from
+    // a fresh profile contact, the shear term from the stored brush.
+    [[nodiscard]] double stored_energy(const mjData *d) const;
+
+    // Raw committed storage for internal readers (the runtime step
+    // borrows these spans — the boxed accessors above stay the copying
+    // boundary). The committed_ flag is the publication gate.
+    [[nodiscard]] const std::array<TireSnapshot, 2> &
+    snapshot_storage() const noexcept { return snapshots_; }
+    [[nodiscard]] bool snapshots_committed() const noexcept {
+        return committed_;
+    }
+    [[nodiscard]] const std::array<TireDiagnostics, 2> &
+    diagnostic_storage() const noexcept { return diagnostics_; }
+    [[nodiscard]] const std::array<TireSnapshot, 2> &
+    probe_snapshot_storage() const noexcept { return probe_snapshots_; }
+    [[nodiscard]] bool probe_committed() const noexcept {
+        return probe_committed_;
+    }
+
     // Post-commit counters (tire_forces.py:203-205).
     [[nodiscard]] double elastic_energy_j() const {
         return elastic_energy_j_;
@@ -214,6 +266,11 @@ private:
     std::array<TireSnapshot, 2> snapshots_{};
     std::array<TireDiagnostics, 2> diagnostics_{};
     bool committed_ = false;
+    // self.probe_snapshots — published only by the advance=False probe;
+    // reset() deliberately does not touch it (the oracle never clears it
+    // either — the attribute persists across reset()).
+    std::array<TireSnapshot, 2> probe_snapshots_{};
+    bool probe_committed_ = false;
     double elastic_energy_j_ = 0.0;
     double brush_loss_step_j_ = 0.0;
     double radial_dissipation_power_w_ = 0.0;

@@ -28,6 +28,13 @@ namespace nb = nanobind;
 [[nodiscard]] SpindleController::State
 parse_spindle_state(nb::handle value, std::string_view path);
 
+// Ordered joint-name -> scalar dict decode — the runtime bootstrap's
+// held_control/held_rider_terms sections carry the same wire shapes.
+[[nodiscard]] NamedEntries<double>
+parse_named_reals(nb::handle value, std::string_view path);
+[[nodiscard]] JointTerms parse_joint_terms(nb::handle value,
+                                           std::string_view path);
+
 // The exact ArticulatedRiderController.state_dict() shape.
 [[nodiscard]] nb::dict
 spindle_state_dict(const SpindleController::State &state);

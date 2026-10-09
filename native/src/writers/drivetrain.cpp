@@ -179,6 +179,21 @@ namespace drivetrain {
             if (spec.slot != ForceComponent::ideal_transmission || simplified_)
                 components_.emplace_back(std::string(spec.name),
                                          std::vector<double>(transmission_.size()));
+        // TickBank::components are construction-sized by contract (see the
+        // struct comment): a fresh writer may go straight to restore()
+        // without a reset(), and restore() reseeds no bank extents, so the
+        // rows/views/names must exist before the first stage call. reset()
+        // repeats this same seeding idempotently.
+        for (auto &bank: banks_) {
+            bank.component_count = components_.size();
+            for (std::size_t i = 0; i < bank.components.size(); ++i) {
+                bank.components[i].assign(transmission_.size(), 0.);
+                bank.component_views[i] = ForceComponentView{
+                    .kind = force_component_specs[i].kind,
+                    .values = std::span<const double>(bank.components[i])};
+                bank.component_names[i] = force_component_specs[i].name;
+            }
+        }
     }
 
     double DrivetrainWriter::angle(int body, std::optional<double> reference) {
@@ -1204,7 +1219,12 @@ namespace drivetrain {
         // byte-identical.
         std::ranges::fill(transmission_, 0.);
         if (ideal_hub_) {
-            ideal_hub_->stage_solved_into(data_, engaged(bank.ideal_solve));
+            // Engage-once like the tick slots: restore() seeds no bank
+            // extents, so a fresh writer's first settle must materialize the
+            // slot; stage_solved_into() overwrites the state wholesale.
+            ideal_hub_->stage_solved_into(
+                data_, bank.ideal_solve ? *bank.ideal_solve
+                                        : bank.ideal_solve.emplace());
             std::ranges::copy(engaged(bank.ideal_solve).force,
                               transmission_.begin());
         }
@@ -1227,8 +1247,10 @@ namespace drivetrain {
                      .dissipation =
                          TelemetryField::motor_freewheel_dissipation_power_w}})
             if (aux.transmission) {
-                aux.transmission->stage_solved_into(data_, engaged(*aux.slot));
-                const std::span<const double> f = engaged(*aux.slot).force;
+                SolvedTransmission &solved =
+                        *aux.slot ? **aux.slot : aux.slot->emplace();
+                aux.transmission->stage_solved_into(data_, solved);
+                const std::span<const double> f = solved.force;
                 for (std::size_t i = 0; i < transmission_.size(); ++i)
                     transmission_[i] += f[i];
                 const double torque =
@@ -1316,6 +1338,15 @@ namespace drivetrain {
         static const DriveTelemetry empty;
         return probe ? (live_.probe_last ? *live_.probe_last : empty)
                      : live_.last;
+    }
+
+    std::optional<int>
+    DrivetrainWriter::body_id(std::string_view name) const noexcept {
+        if (name == "frame") return frame_;
+        if (name == "crank") return crank_;
+        if (name == "rear_wheel") return rear_;
+        if (name == "cassette" && cassette_ != absent_id) return cassette_;
+        return std::nullopt;
     }
 
     Diagnostics DrivetrainWriter::stored_energy() {

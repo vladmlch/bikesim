@@ -65,7 +65,7 @@ def oracle_config(drive):
         'mode_gains': {k: list(v) if isinstance(v, tuple) else float(v) for k,v in a.profile.mode_gains.items()},
         'emtb_full_gain_at_nm': a.profile.emtb_full_gain_at_nm}
     return {'gearing': asdict(drive.config.gearing),
-            'pedaling': {k: getattr(drive.pedaling.config,k) for k in ('enabled','coast_above_rpm','resume_below_rpm','stop_time_s','coast_cadence_tau_s','mash_cadence_rpm','mash_torque_nm','effort_slew_nm_s')},
+            'pedaling': {k: getattr(drive.pedaling.config,k) for k in ('enabled','coast_above_rpm','resume_below_rpm','stop_time_s','coast_cadence_tau_s','mash_cadence_rpm','mash_torque_nm','effort_slew_nm_s','rollback_brake','rollback_engage_mps','rollback_release_mps','rollback_demand')},
             'shifting': {**asdict(drive.shifting.config), 'cassette': list(drive.shifting.config.cassette)},
             'assist': {**{k:getattr(a,k) for k in ('gain','max_torque','max_power','tau','slew','engage_torque_nm','gate_min_crank_rad_s','mode')},
                        'cutoff_mps':a.cutoff,'taper_width_mps':a.width,'profile':profile,
@@ -243,8 +243,10 @@ def test_config_validation(config):
         for key, value in config[section].items():
             bad = copy.deepcopy(config)
             del bad[section][key]
-            # profile and curve are optional.
-            if key in ('profile','torque_curve'):
+            # profile and curve are optional; rollback_* carry
+            # PedalingConfig dataclass defaults (physical_config.py:142-145).
+            if key in ('profile','torque_curve','rollback_brake',
+                       'rollback_engage_mps','rollback_release_mps','rollback_demand'):
                 continue
             with pytest.raises(ValueError):
                 bike_native.DrivePolicies(bad)
@@ -262,7 +264,7 @@ def test_projection_resolves_runtime(drive):
     assert config['assist']['max_torque'] == 85.
     assert config['assist']['slew'] == 2125.
     assert config['assist']['profile']['mode_gains'] == {'eco':.6,'tour':1.4,'emtb':[1.4,3.4],'turbo':3.4}
-    assert set(config['pedaling']) == {'enabled','coast_above_rpm','resume_below_rpm','stop_time_s','coast_cadence_tau_s','mash_cadence_rpm','mash_torque_nm','effort_slew_nm_s'}
+    assert set(config['pedaling']) == {'enabled','coast_above_rpm','resume_below_rpm','stop_time_s','coast_cadence_tau_s','mash_cadence_rpm','mash_torque_nm','effort_slew_nm_s','rollback_brake','rollback_engage_mps','rollback_release_mps','rollback_demand'}
     native = bike_native.DrivePolicies(config)
     del drive
     gc.collect()

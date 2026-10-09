@@ -24,7 +24,11 @@ namespace spindle {
         }
 
         // np.interp over a strictly increasing knot table: clamped at the
-        // ends, slope*(x-xp0)+fp0 inside (numpy's evaluation order).
+        // ends, slope*(x-xp0)+fp0 inside. The multiply/add must stay a
+        // literal fma — this NumPy wheel contracts np_interp's
+        // slope*(x-dx[j])+dy[j] on arm64 (same compiled_base.c mirror as
+        // tyre/profile.cpp and drivetrain/motor.cpp), so a plain
+        // mul+add lands one ULP off on a fraction of interior queries.
         [[nodiscard]] double interp(std::span<const double> xp,
                                     std::span<const double> fp, double x) {
             if (x <= xp[0])
@@ -37,7 +41,15 @@ namespace spindle {
                 ++hi;
             const double slope =
                 (fp[hi] - fp[hi - 1]) / (xp[hi] - xp[hi - 1]);
-            return fp[hi - 1] + slope * (x - xp[hi - 1]);
+            double result = std::fma(slope, x - xp[hi - 1], fp[hi - 1]);
+            // np_interp retries from the right endpoint after overflow
+            // cancellation, then falls back to a constant-segment value.
+            if (std::isnan(result)) {
+                result = std::fma(slope, x - xp[hi], fp[hi]);
+                if (std::isnan(result) && fp[hi - 1] == fp[hi])
+                    result = fp[hi - 1];
+            }
+            return result;
         }
     } // namespace
 

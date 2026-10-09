@@ -62,6 +62,7 @@ RiderForcesWriter::RiderForcesWriter(const mjModel *m,
     for (const nativecfg::RiderPathConfig &p: config.paths) {
         const auto [qposadr, dofadr] = resolve_slide(m, p.joint);
         paths_.push_back({
+            .name = p.name,
             .qposadr = qposadr, .dofadr = dofadr, .stiffness_n_m = p.stiffness_n_m, .damping_ns_m = p.damping_ns_m,
             .preload_deflection_m = p.preload_deflection_m, .offset_m = p.offset_m, .unilateral = p.unilateral
         });

@@ -93,20 +93,6 @@ parse_envelope_map(nb::handle value, std::string_view path) {
     return out;
 }
 
-// A joint-name -> number dict preserving wire insertion order — Python
-// dict ordering is part of the contract.
-[[nodiscard]] NamedEntries<double>
-parse_named_reals(nb::handle value, std::string_view path) {
-    NamedEntries<double> out;
-    const auto d = wire::mapping(value, path);
-    for (const auto item : d) {
-        const auto name = wire::string(item.first, path);
-        const auto sub = std::string(path) + "." + name;
-        out.emplace_back(name, wire::finite_real(item.second, sub));
-    }
-    return out;
-}
-
 [[nodiscard]] NamedEntries<bool>
 parse_named_bools(nb::handle value, std::string_view path,
                   std::span<const std::string_view> allowed) {
@@ -149,38 +135,6 @@ parse_pedal_recovery(nb::handle value, std::string_view path) {
     out.direction = wire::finite_real(d["direction"], path);
     out.release_offset_x_m =
         wire::finite_real(d["release_offset_x_m"], path);
-    return out;
-}
-
-[[nodiscard]] JointTerms parse_joint_terms(nb::handle value,
-                                           std::string_view path) {
-    const auto d = wire::mapping(value, path);
-    wire::exact_keys(
-        d,
-        keys("requested_nm", "command_nm", "posture_nm", "pedaling_nm",
-             "saturated"),
-        keys("active_request_nm", "active_delivered_nm",
-             "passive_damping_nm", "solved_force_nm", "solved_active_nm",
-             "solved_passive_nm"),
-        path);
-    JointTerms out;
-    out.requested_nm = wire::finite_real(d["requested_nm"], path);
-    out.command_nm = wire::finite_real(d["command_nm"], path);
-    out.posture_nm = wire::finite_real(d["posture_nm"], path);
-    out.pedaling_nm = wire::finite_real(d["pedaling_nm"], path);
-    out.saturated = wire::boolean(d["saturated"], path);
-    const auto optional = [&](const char *key) {
-        if (!d.contains(key) || d[key].is_none())
-            return std::optional<double>{};
-        return std::optional<double>(
-            wire::finite_real(d[key], path));
-    };
-    out.active_request_nm = optional("active_request_nm");
-    out.active_delivered_nm = optional("active_delivered_nm");
-    out.passive_damping_nm = optional("passive_damping_nm");
-    out.solved_force_nm = optional("solved_force_nm");
-    out.solved_active_nm = optional("solved_active_nm");
-    out.solved_passive_nm = optional("solved_passive_nm");
     return out;
 }
 
@@ -372,6 +326,53 @@ void parse_strength_tables(const nb::dict &d, std::string_view path,
 }
 
 } // namespace
+
+// A joint-name -> number dict preserving wire insertion order — Python
+// dict ordering is part of the contract. Exported for the runtime
+// bootstrap's held_control decode.
+NamedEntries<double> parse_named_reals(nb::handle value,
+                                       std::string_view path) {
+    NamedEntries<double> out;
+    const auto d = wire::mapping(value, path);
+    for (const auto item : d) {
+        const auto name = wire::string(item.first, path);
+        const auto sub = std::string(path) + "." + name;
+        out.emplace_back(name, wire::finite_real(item.second, sub));
+    }
+    return out;
+}
+
+// Exported for the runtime bootstrap's held_rider_terms decode.
+JointTerms parse_joint_terms(nb::handle value, std::string_view path) {
+    const auto d = wire::mapping(value, path);
+    wire::exact_keys(
+        d,
+        keys("requested_nm", "command_nm", "posture_nm", "pedaling_nm",
+             "saturated"),
+        keys("active_request_nm", "active_delivered_nm",
+             "passive_damping_nm", "solved_force_nm", "solved_active_nm",
+             "solved_passive_nm"),
+        path);
+    JointTerms out;
+    out.requested_nm = wire::finite_real(d["requested_nm"], path);
+    out.command_nm = wire::finite_real(d["command_nm"], path);
+    out.posture_nm = wire::finite_real(d["posture_nm"], path);
+    out.pedaling_nm = wire::finite_real(d["pedaling_nm"], path);
+    out.saturated = wire::boolean(d["saturated"], path);
+    const auto optional = [&](const char *key) {
+        if (!d.contains(key) || d[key].is_none())
+            return std::optional<double>{};
+        return std::optional<double>(
+            wire::finite_real(d[key], path));
+    };
+    out.active_request_nm = optional("active_request_nm");
+    out.active_delivered_nm = optional("active_delivered_nm");
+    out.passive_damping_nm = optional("passive_damping_nm");
+    out.solved_force_nm = optional("solved_force_nm");
+    out.solved_active_nm = optional("solved_active_nm");
+    out.solved_passive_nm = optional("solved_passive_nm");
+    return out;
+}
 
 SpindlePose parse_spindle_pose(nb::handle value, std::string_view path) {
     const auto d = wire::mapping(value, path);

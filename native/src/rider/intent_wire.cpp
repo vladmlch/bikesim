@@ -206,6 +206,74 @@ IntentControl parse_intent_control(nb::handle value, std::string_view path) {
     return control;
 }
 
+namespace {
+
+// Per-section decoders — the stack-budget sweep bounds each function's
+// frame even on sanitizer builds, so the state sections decode in their
+// own scopes.
+Intent parse_intent_block(nb::handle value, const std::string &path) {
+    const auto intent = wire::mapping(value, path);
+    wire::exact_keys(intent, keys("posture", "effort_ceiling_nm"), {},
+                     path);
+    Intent block;
+    block.posture =
+        parse_rider_posture(intent["posture"], path + ".posture");
+    block.effort_ceiling_nm =
+        wire::finite_real(intent["effort_ceiling_nm"], path);
+    return block;
+}
+
+SeatedClimbPolicy::State
+parse_intent_policy(nb::handle value, const std::string &policy_path) {
+    const auto policy = wire::mapping(value, policy_path);
+    wire::exact_keys(policy,
+                     keys("time_s", "inclination_rad", "lean_rad",
+                          "effort_nm", "samples", "delayed",
+                          "surge_budget_s_left"),
+                     {}, policy_path);
+    SeatedClimbPolicy::State out;
+    out.time_s = wire::finite_real(policy["time_s"], policy_path);
+    out.inclination_rad =
+        wire::finite_real(policy["inclination_rad"], policy_path);
+    out.lean_rad = wire::finite_real(policy["lean_rad"], policy_path);
+    out.effort_nm = wire::finite_real(policy["effort_nm"], policy_path);
+    for (nb::handle const item :
+         wire::sequence(policy["samples"], policy_path))
+        out.samples.push_back(
+            parse_policy_sample(item, policy_path + ".samples"));
+    const nb::handle delayed = policy["delayed"];
+    if (!delayed.is_none())
+        out.delayed = parse_signals(delayed, policy_path + ".delayed");
+    out.surge_budget_s_left =
+        wire::finite_real(policy["surge_budget_s_left"], policy_path);
+    return out;
+}
+
+SeatedPostureProgram::State
+parse_intent_program(nb::handle value, const std::string &program_path) {
+    const auto program = wire::mapping(value, program_path);
+    wire::exact_keys(program,
+                     keys("lean_rad", "trim_rad", "load_samples",
+                          "delayed_load_share", "pulses"),
+                     {}, program_path);
+    SeatedPostureProgram::State out;
+    out.lean_rad = wire::finite_real(program["lean_rad"], program_path);
+    out.trim_rad = wire::finite_real(program["trim_rad"], program_path);
+    for (nb::handle const item :
+         wire::sequence(program["load_samples"], program_path))
+        out.load_samples.push_back(
+            parse_load_sample(item, program_path + ".load_samples"));
+    out.delayed_load_share =
+        wire::optional_real(program["delayed_load_share"], program_path);
+    for (nb::handle const item :
+         wire::sequence(program["pulses"], program_path))
+        out.pulses.push_back(
+            parse_pulse(item, program_path + ".pulses"));
+    return out;
+}
+
+} // namespace
+
 RiderIntent::State parse_intent_state(nb::handle value,
                                       std::string_view path) {
     const auto d = wire::mapping(value, path);
@@ -215,65 +283,12 @@ RiderIntent::State parse_intent_state(nb::handle value,
     state.last_tick_step =
         parse_intent_step(d["last_tick_step"],
                           std::string(path) + ".last_tick_step");
-    {
-        const auto intent_path = std::string(path) + ".intent";
-        const auto intent = wire::mapping(d["intent"], intent_path);
-        wire::exact_keys(intent, keys("posture", "effort_ceiling_nm"), {},
-                         intent_path);
-        state.intent.posture = parse_rider_posture(
-            intent["posture"], intent_path + ".posture");
-        state.intent.effort_ceiling_nm =
-            wire::finite_real(intent["effort_ceiling_nm"], intent_path);
-    }
-    {
-        const auto policy_path = std::string(path) + ".policy";
-        const auto policy = wire::mapping(d["policy"], policy_path);
-        wire::exact_keys(policy,
-                         keys("time_s", "inclination_rad", "lean_rad",
-                              "effort_nm", "samples", "delayed",
-                              "surge_budget_s_left"),
-                         {}, policy_path);
-        state.policy.time_s =
-            wire::finite_real(policy["time_s"], policy_path);
-        state.policy.inclination_rad =
-            wire::finite_real(policy["inclination_rad"], policy_path);
-        state.policy.lean_rad =
-            wire::finite_real(policy["lean_rad"], policy_path);
-        state.policy.effort_nm =
-            wire::finite_real(policy["effort_nm"], policy_path);
-        for (nb::handle const item :
-             wire::sequence(policy["samples"], policy_path))
-            state.policy.samples.push_back(
-                parse_policy_sample(item, policy_path + ".samples"));
-        const nb::handle delayed = policy["delayed"];
-        if (!delayed.is_none())
-            state.policy.delayed =
-                parse_signals(delayed, policy_path + ".delayed");
-        state.policy.surge_budget_s_left = wire::finite_real(
-            policy["surge_budget_s_left"], policy_path);
-    }
-    {
-        const auto program_path = std::string(path) + ".program";
-        const auto program = wire::mapping(d["program"], program_path);
-        wire::exact_keys(program,
-                         keys("lean_rad", "trim_rad", "load_samples",
-                              "delayed_load_share", "pulses"),
-                         {}, program_path);
-        state.program.lean_rad =
-            wire::finite_real(program["lean_rad"], program_path);
-        state.program.trim_rad =
-            wire::finite_real(program["trim_rad"], program_path);
-        for (nb::handle const item :
-             wire::sequence(program["load_samples"], program_path))
-            state.program.load_samples.push_back(
-                parse_load_sample(item, program_path + ".load_samples"));
-        state.program.delayed_load_share =
-            wire::optional_real(program["delayed_load_share"], program_path);
-        for (nb::handle const item :
-             wire::sequence(program["pulses"], program_path))
-            state.program.pulses.push_back(
-                parse_pulse(item, program_path + ".pulses"));
-    }
+    state.intent = parse_intent_block(d["intent"],
+                                      std::string(path) + ".intent");
+    state.policy = parse_intent_policy(d["policy"],
+                                       std::string(path) + ".policy");
+    state.program = parse_intent_program(d["program"],
+                                         std::string(path) + ".program");
     return state;
 }
 

@@ -44,7 +44,8 @@ def resolved(tmp_path_factory):
     config['drive']['assist']['mode'] = 'eco'
     # The seated plant disables the legacy rider writer. Include a valid
     # unlimited-slide path so its wire section also participates in the matrix.
-    config.setdefault('rider_forces', {'paths': [dict(joint='root_x', stiffness_n_m=1.,
+    config.setdefault('rider_forces', {'paths': [dict(name='probe_path',
+        joint='root_x', stiffness_n_m=1.,
         damping_ns_m=0., preload_deflection_m=0., offset_m=0., unilateral=False)]})
     if not config['tire']['surface_map']['sections']:
         config['tire']['surface_map']['sections'] = [dict(start_m=1., end_m=2.,

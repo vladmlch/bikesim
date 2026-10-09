@@ -175,7 +175,11 @@ DrivePolicyConfig parse_drive_policy_config(const nb::dict &raw, std::span<const
     const auto g = section(input, "gearing"), p = section(input, "pedaling"), s = section(input, "shifting"),
             a = section(input, "assist"), b = section(input, "battery");
     wire::exact(g, wire::keys("front_teeth","rear_teeth","chain_pitch_m"), wire::keys());
-    wire::exact(p, wire::keys("enabled","coast_above_rpm","resume_below_rpm","stop_time_s","coast_cadence_tau_s","mash_cadence_rpm","mash_torque_nm","effort_slew_nm_s"), wire::keys());
+    // The hill-hold reflex fields are ride-level PhysicalConfig members the
+    // ride projection folds into pedaling (native/config.py); a bare
+    // drivetrain config omits them and they default to the Python values.
+    wire::exact(p, wire::keys("enabled","coast_above_rpm","resume_below_rpm","stop_time_s","coast_cadence_tau_s","mash_cadence_rpm","mash_torque_nm","effort_slew_nm_s"),
+                wire::keys("rollback_brake","rollback_engage_mps","rollback_release_mps","rollback_demand"));
     wire::exact(s, wire::keys("enabled","cassette","target_cadence_min_rpm","target_cadence_max_rpm","shift_cooldown_s","shift_cut_duration_s","torque_factor","cadence_smoothing_tau_s","upshift_slip_limit_mps","upshift_slip_mode"), wire::keys());
     wire::exact(a, wire::keys("gain","max_torque","max_power","tau","slew","engage_torque_nm","gate_min_crank_rad_s","cutoff_mps","taper_width_mps","mode"), wire::keys("profile","torque_curve"));
     wire::exact(b, wire::keys("enabled","energy_j","copper_w_per_nm2","speed_w_per_rad_s2","idle_w"), wire::keys());
@@ -191,8 +195,18 @@ DrivePolicyConfig parse_drive_policy_config(const nb::dict &raw, std::span<const
         .coast_cadence_tau_s = nonnegative(num(p, "coast_cadence_tau_s"), p.child("coast_cadence_tau_s")),
         .mash_cadence_rpm = nonnegative(num(p, "mash_cadence_rpm"), p.child("mash_cadence_rpm")),
         .mash_torque_nm = nonnegative(num(p, "mash_torque_nm"), p.child("mash_torque_nm")),
-        .effort_slew_nm_s = nonnegative(num(p, "effort_slew_nm_s"), p.child("effort_slew_nm_s"))
+        .effort_slew_nm_s = nonnegative(num(p, "effort_slew_nm_s"), p.child("effort_slew_nm_s")),
+        .rollback_brake = p.contains("rollback_brake") ? boolean(p, "rollback_brake") : true,
+        .rollback_engage_mps = p.contains("rollback_engage_mps")
+            ? positive(num(p, "rollback_engage_mps"), p.child("rollback_engage_mps")) : .25,
+        .rollback_release_mps = p.contains("rollback_release_mps")
+            ? nonnegative(num(p, "rollback_release_mps"), p.child("rollback_release_mps")) : 0.,
+        .rollback_demand = p.contains("rollback_demand")
+            ? nonnegative(num(p, "rollback_demand"), p.child("rollback_demand")) : 1.
     };
+    if (out.pedaling.rollback_release_mps >= out.pedaling.rollback_engage_mps ||
+        out.pedaling.rollback_demand > 1.)
+        throw std::invalid_argument("pedaling rollback band");
     if (out.pedaling.resume_below_rpm >= out.pedaling.coast_above_rpm || (
             out.pedaling.mash_torque_nm > 0. && out.pedaling.mash_cadence_rpm <= 0.)) throw std::invalid_argument(
         "pedaling cadence band");

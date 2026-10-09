@@ -18,6 +18,14 @@
 #include "../rtsan.hpp"
 #include "writer_types.hpp"
 
+// suspension_energy's terms dict (physical_energy.py:70-89): the five
+// elastic storage terms evaluated at q — the material-loss ledger reads
+// them every step, independently of the last force call.
+struct SuspensionStoredTerms {
+    double fork_air, shock_coil, shock_bumper, shock_top_out,
+           shock_upper_stop;
+};
+
 class SuspensionWriter {
 public:
     // Resolves both slide joints with forces.py's
@@ -62,6 +70,22 @@ public:
     // names instead of calling the allocating components().
     [[nodiscard]] std::span<const std::string_view>
     component_names() const noexcept;
+
+    // Joint addresses and config the observation helpers read —
+    // suspension_energy (physical_energy.py:73-81) reaches
+    // applier.shock_qposadr / .fork_qposadr / .coil_shock.specs /
+    // .physics_config.end_stops / .controller.air_spring.
+    [[nodiscard]] int fork_qposadr() const noexcept { return fork_qposadr_; }
+    [[nodiscard]] int fork_dofadr() const noexcept { return fork_dofadr_; }
+    [[nodiscard]] int shock_qposadr() const noexcept { return shock_qposadr_; }
+    [[nodiscard]] int shock_dofadr() const noexcept { return shock_dofadr_; }
+    [[nodiscard]] const nativecfg::SuspensionConfig &
+    config() const noexcept { return cfg_; }
+
+    // suspension_energy (physical_energy.py:70-89): elastic terms at
+    // d->qpos — no retained compute state, matching the oracle which
+    // re-derives every term from the coordinates.
+    [[nodiscard]] SuspensionStoredTerms stored_terms(const mjData *d) const;
 
 private:
     nativecfg::SuspensionConfig cfg_;

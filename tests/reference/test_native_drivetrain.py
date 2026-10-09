@@ -72,7 +72,7 @@ def pair(tmp_path, kind='ideal_mid_drive', mode='crank_effort', topology='plain'
     drive = DrivetrainForceApplier(m, cfg, mode)
     # Independent resolved projection permits clean missing-API RED.
     config = {**oracle_config(drive), 'drive_mode':mode, 'transmission_model':kind,
-        **{k: float(getattr(cfg,k)) for k in ('human_torque_nm','torque_ripple','crank_phase_rad','chain_k_n_m','chain_c_ns_m','bearing_c_nms_rad','rotor_inertia_kgm2')},
+        **{k: float(getattr(cfg,k)) for k in ('human_torque_nm','torque_ripple','crank_phase_rad','chain_k_n_m','chain_c_ns_m','bearing_c_nms_rad','rotor_inertia_kgm2','brake_ceiling_nm')},
         'motor_clutch':cfg.motor_clutch}
     path = tmp_path / 'drive.mjb'
     mujoco.mj_saveModel(m, str(path), None)

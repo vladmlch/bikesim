@@ -55,7 +55,8 @@ def _rf_section(model, rf):
     resolved fields, read straight off the live applier."""
     from tools.native_config import _joint_name
     return {'paths': [
-        {'joint': _joint_name(model, p.qposadr),
+        {'name': p.body.name,
+         'joint': _joint_name(model, p.qposadr),
          'stiffness_n_m': float(p.body.stiffness_n_m),
          'damping_ns_m': float(p.body.damping_ns_m),
          'preload_deflection_m': float(p.body.preload_deflection_m),
@@ -179,7 +180,8 @@ def test_project_emits_resolved_paths(tmp_path):
 def _rf_cfg(**over):
     """Minimal hand-built rider_forces section on the pinned model —
     'root_x' is an unlimited slide there."""
-    path = {'joint': 'root_x', 'stiffness_n_m': 1e5, 'damping_ns_m': 1e3,
+    path = {'name': 'probe_path', 'joint': 'root_x', 'stiffness_n_m': 1e5,
+            'damping_ns_m': 1e3,
             'preload_deflection_m': 0.01, 'unilateral': True,
             'offset_m': 0.0}
     path.update(over)

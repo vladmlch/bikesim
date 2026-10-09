@@ -85,11 +85,18 @@ NATIVE_DIAG_POP
     return {p[0], p[1], p[2]};
 }
 
-// (R^T v) restricted to the planar (x, z) coordinates.
+// (R^T v) restricted to the planar (x, z) coordinates. The oracle's
+// `R.T @ v` dispatches to Accelerate's transposed dgemv, whose column dot
+// accumulates forward through fma — a plain mul-add chain is one ulp off
+// on ~30% of random operands (verified: 60000/60000 matches for
+// acc = fma(a_i, v_i, acc) starting at a0*v0). std::fma pins that
+// rounding; the row-dot M @ v kernel (mat_vec) stays sequential.
 [[nodiscard]] Vec2 mat_t_vec_xz(const std::array<double, 9> &r,
                                 const Vec3 &v) {
-    return {r[0] * v[0] + r[3] * v[1] + r[6] * v[2],
-            r[2] * v[0] + r[5] * v[1] + r[8] * v[2]};
+    return {std::fma(r[6], v[2],
+                     std::fma(r[3], v[1], r[0] * v[0])),
+            std::fma(r[8], v[2],
+                     std::fma(r[5], v[1], r[2] * v[0]))};
 }
 
 [[nodiscard]] Vec3 mat_vec(const std::array<double, 9> &r, const Vec3 &v) {
@@ -98,8 +105,12 @@ NATIVE_DIAG_POP
             r[6] * v[0] + r[7] * v[1] + r[8] * v[2]};
 }
 
-// r = lhs @ rhs (row-major). Mat3-sized returns are the designed
-// interface; the flag's useful half (by-value parameters) stays enabled.
+// r = lhs @ rhs (row-major). numpy's `A @ B` dispatches to Accelerate's
+// dgemm, whose inner products accumulate forward through fma — same
+// kernel semantics as mat_t_vec_xz above (verified 180000/180000 on
+// random 3x3 operands). std::fma pins that rounding elementwise.
+// Mat3-sized returns are the designed interface; the flag's useful half
+// (by-value parameters) stays enabled.
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
 [[nodiscard]] std::array<double, 9> mat_mul(const std::array<double, 9> &lhs,
@@ -107,9 +118,10 @@ NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
     std::array<double, 9> out{};
     for (std::size_t i = 0; i < 3; ++i)
         for (std::size_t j = 0; j < 3; ++j)
-            out[i * 3 + j] = lhs[i * 3] * rhs[j] +
-                             lhs[i * 3 + 1] * rhs[3 + j] +
-                             lhs[i * 3 + 2] * rhs[6 + j];
+            out[i * 3 + j] = std::fma(
+                    lhs[i * 3 + 2], rhs[6 + j],
+                    std::fma(lhs[i * 3 + 1], rhs[3 + j],
+                             lhs[i * 3] * rhs[j]));
     return out;
 }
 NATIVE_DIAG_POP
@@ -460,6 +472,13 @@ SpindleController::SpindleController(const mjModel *model,
         envelope_upper_.push_back(range->second[1]);
     }
     reset_activation();
+    resolve_model_layout(qpos_adrs, dof_adrs);
+}
+
+void SpindleController::resolve_model_layout(
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (qpos, dof) address arrays mirror the model layout
+    std::span<const int> qpos_adrs, std::span<const int> dof_adrs) {
+    const mjModel *model = model_;
     pelvis_body_ = mj_name2id(model, mjOBJ_BODY, "rider_pelvis");
     torso_joint_ = mj_name2id(model, mjOBJ_JOINT, "rider_torso_hinge");
     for (const auto side : kSides) {
@@ -1116,12 +1135,16 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
     } else {
         const auto frame_r = body_mat(model_, data, frame_body_);
         const auto pelvis_r = body_mat(model_, data, pelvis_body_);
-        const double rel02 = frame_r[0] * pelvis_r[2] +
-                             frame_r[3] * pelvis_r[5] +
-                             frame_r[6] * pelvis_r[8];
-        const double rel00 = frame_r[0] * pelvis_r[0] +
-                             frame_r[3] * pelvis_r[3] +
-                             frame_r[6] * pelvis_r[6];
+        // relative_R = frame_R.T @ pelvis_R — the oracle's dgemm inner
+        // products accumulate forward through fma (mat_mul above).
+        const double rel02 =
+                std::fma(frame_r[6], pelvis_r[8],
+                         std::fma(frame_r[3], pelvis_r[5],
+                                  frame_r[0] * pelvis_r[2]));
+        const double rel00 =
+                std::fma(frame_r[6], pelvis_r[6],
+                         std::fma(frame_r[3], pelvis_r[3],
+                                  frame_r[0] * pelvis_r[0]));
         const double pelvis_pitch = std::atan2(rel02, rel00);
         const Vec3 crank_world = joint_anchor(model_, data, crank_joint_);
         std::array<Vec2, 2> spindles{};

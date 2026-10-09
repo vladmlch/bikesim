@@ -166,7 +166,9 @@ def _project_drive_policies(drive) -> dict:
                      **{key: getattr(drive.pedaling.config, key) for key in
                         ('coast_above_rpm', 'resume_below_rpm', 'stop_time_s',
                          'coast_cadence_tau_s', 'mash_cadence_rpm', 'mash_torque_nm',
-                         'effort_slew_nm_s')}},
+                         'effort_slew_nm_s', 'rollback_brake',
+                         'rollback_engage_mps', 'rollback_release_mps',
+                         'rollback_demand')}},
         'shifting': {'enabled': drive.shifting.config.enabled,
                      'cassette': drive.shifting.config.cassette,
                      'upshift_slip_mode': drive.shifting.config.upshift_slip_mode,
@@ -196,7 +198,8 @@ def _project_drive(drive) -> dict:
             'motor_clutch':cfg.motor_clutch,
             **{key:getattr(cfg,key) for key in
                ('human_torque_nm','torque_ripple','crank_phase_rad','chain_k_n_m',
-                'chain_c_ns_m','bearing_c_nms_rad','rotor_inertia_kgm2')}}
+                'chain_c_ns_m','bearing_c_nms_rad','rotor_inertia_kgm2',
+                'brake_ceiling_nm')}}
 
 
 def _project(env) -> dict:
@@ -294,7 +297,8 @@ def _project(env) -> dict:
         # _paths order is apply()'s order. Joint names re-resolve through
         # _resolve_slide on the native side, like the suspension joints.
         out['rider_forces'] = {'paths': [
-            {'joint': _joint_name(sim.model, p.qposadr),
+            {'name': p.body.name,
+             'joint': _joint_name(sim.model, p.qposadr),
              'stiffness_n_m': p.body.stiffness_n_m,
              'damping_ns_m': p.body.damping_ns_m,
              'preload_deflection_m': p.body.preload_deflection_m,

@@ -273,12 +273,51 @@ void Stepper::reset() {
     }
 }
 
+namespace {
+    constexpr const char *kNoTire =
+            "tire writer: Stepper was built without a tire config (pass the dict "
+            "from tools.native_config.project)";
+} // namespace
+
 drivetrain::DrivetrainWriter &Stepper::drive() const {
     if (!drive_)
         throw std::logic_error(
             "drive: Stepper was built without a drive config (pass the dict "
             "from tools.native_config.project)");
     return *drive_;
+}
+
+// ---- A3 owned-writer access ----------------------------------------------
+// Each accessor mirrors drive()/require_cruise(): std::logic_error naming
+// the writer when its config section was absent at construction.
+
+SuspensionWriter &Stepper::suspension() const {
+    if (!suspension_)
+        throw std::logic_error(
+            "suspension: Stepper was built without a suspension config (pass "
+            "the dict from tools.native_config.project)");
+    return *suspension_;
+}
+
+ResistanceWriter &Stepper::resistance() const {
+    if (!resistance_)
+        throw std::logic_error(
+            "resistance: Stepper was built without a resistance config (pass "
+            "the dict from tools.native_config.project)");
+    return *resistance_;
+}
+
+RiderForcesWriter &Stepper::rider_forces() const {
+    if (!rider_forces_)
+        throw std::logic_error(
+            "rider_forces: Stepper was built without a rider_forces config "
+            "(pass the dict from tools.native_config.project)");
+    return *rider_forces_;
+}
+
+TireWriter &Stepper::tire_writer() const {
+    if (!tire_) throw std::logic_error(kNoTire);
+    return *tire_;
 }
 
 void Stepper::set_inputs(std::span<const double> ctrl,
@@ -449,12 +488,6 @@ Stepper::resistance_components(const TireSideInput &front,
     resistance_->components_into(d_, front, rear, resistance_views_);
     return box_views(names, resistance_views_);
 }
-
-namespace {
-    constexpr const char *kNoTire =
-            "tire writer: Stepper was built without a tire config (pass the dict "
-            "from tools.native_config.project)";
-} // namespace
 
 std::vector<double> Stepper::tire_qfrc(double dt) {
     require_healthy();

@@ -236,6 +236,23 @@ void mul_jac_t_vec_operation(void *raw) noexcept {
     mj_mulJacTVec(context->model, context->data, context->result,
                   context->vector);
 }
+// NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
+void mul_jac_vec_operation(void *raw) noexcept {
+    const auto *context = static_cast<const MulJacTVecContext *>(raw);
+    mj_mulJacVec(context->model, context->data, context->result,
+                 context->vector);
+}
+// NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
+void mul_m_operation(void *raw) noexcept {
+    const auto *context = static_cast<const MulJacTVecContext *>(raw);
+    mj_mulM(context->model, context->data, context->result,
+            context->vector);
+}
+// NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
+void subtree_vel_operation(void *raw) noexcept {
+    const auto *context = static_cast<const ModelDataContext *>(raw);
+    mj_subtreeVel(context->model, context->data);
+}
 
 // NOLINTNEXTLINE(misc-const-correctness) void* param is the fixed Operation ABI
 void kinematics_operation(void *raw) noexcept {
@@ -451,6 +468,34 @@ void mul_jac_t_vec(const mjModel *model, const mjData *data, mjtNum *result,
                               .result = result, .vector = vector};
     ErrorBuffer error;
     if (!invoke(mul_jac_t_vec_operation, &context, error)) throw_failure(error);
+}
+
+void mul_jac_vec(const mjModel *model, const mjData *data, mjtNum *result,
+                 const mjtNum *vector) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    MulJacTVecContext context{.model = model, .data = data,
+                              .result = result, .vector = vector};
+    ErrorBuffer error;
+    if (!invoke(mul_jac_vec_operation, &context, error)) throw_failure(error);
+}
+
+void mul_m(const mjModel *model, const mjData *data, mjtNum *result,
+           const mjtNum *vector) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    MulJacTVecContext context{.model = model, .data = data,
+                              .result = result, .vector = vector};
+    ErrorBuffer error;
+    if (!invoke(mul_m_operation, &context, error)) throw_failure(error);
+}
+
+void subtree_vel(const mjModel *model, mjData *data) {
+    if (model->nplugin != 0)
+        throw std::invalid_argument("unsupported MuJoCo plugin model");
+    ModelDataContext context{.model = model, .data = data};
+    ErrorBuffer error;
+    if (!invoke(subtree_vel_operation, &context, error)) throw_failure(error);
 }
 
 void kinematics(const mjModel *model, mjData *data) {

@@ -20,6 +20,7 @@
 #include "../engine_call.hpp"
 #include "../interval_clock.hpp"
 #include "../model_access.hpp"
+#include "pyfloat.hpp"
 
 #include <algorithm>
 #include <array>
@@ -825,4 +826,66 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
     brush_loss_step_j_ = loss;
     radial_dissipation_power_w_ = radial_loss_power;
     last_time_s_ = time;
+}
+
+// stored_energy (tire_forces.py:173-184): the per-side material energy
+// under the CURRENT geometry plus the stored brush shear. The config
+// re-validation (`self.config.__post_init__()`) is a no-op here — the
+// writer's config is const and was validated at construction; nothing in
+// this TU can mutate it.
+double TireWriter::stored_energy(const mjData *d) const {
+    if (d == nullptr)
+        throw std::invalid_argument(
+            "tire stored_energy needs a live mjData");
+    const std::span<const mjtNum> xpos = model_access::readonly_buffer(
+        d->geom_xpos, model_access::kXYZ * m_->ngeom);
+    double energy = 0.0;
+    for (std::size_t s = 0; s < 2; ++s) {
+        const nativecfg::TireParams &cfg = s == 0 ? cfg_.front : cfg_.rear;
+        const BrushState &state = states_[s];
+        const std::size_t g3 =
+                static_cast<std::size_t>(model_access::kXYZ) *
+                static_cast<std::size_t>(geoms_[s]);
+        const biketyre::ProfileContact contact = engaged(profile_).contact(
+            {xpos[g3], xpos[g3 + 2]}, radii_[s], state.segment);
+        // TireSpec.elastic_response (tire.py:73-79): _scalar(delta) then
+        // max(0,·), force and energy both validated by _finite_result.
+        if (!std::isfinite(contact.delta))
+            throw std::invalid_argument("tire deflection must be finite");
+        const double penetration = std::max(0.0, contact.delta);
+        const double force = cfg.material.radial_k_n_m * penetration;
+        const double elastic =
+                0.5 * cfg.material.radial_k_n_m *
+                pyfloat::pow(penetration, 2.0);
+        validation::derived(force, "TireSpec.elastic_response");
+        validation::derived(elastic, "TireSpec.elastic_response");
+        energy += elastic;
+        energy += 0.5 * cfg.tangent_k_n_m *
+                  pyfloat::pow(state.xi, 2.0);
+    }
+    return validation::derived(energy, "TireForceApplier.stored_energy");
+}
+
+// compute_qfrc(advance=False) (tire_forces.py:108-113): a detached copy
+// runs the full advancing kernel on a cleared clock; only its committed
+// snapshots cross back. The copy duplicates scratch the oracle shares —
+// observably identical, and the probe never mutates the caller.
+void TireWriter::probe_compute_into(const mjData *d, double dt,
+                                    std::span<double> out) {
+    if (d == nullptr)
+        throw std::invalid_argument("tire probe needs a live mjData");
+    if (out.size() != static_cast<std::size_t>(nv_) ||
+        (out.data() == nullptr && !out.empty()))
+        throw std::invalid_argument("tire output width");
+    TireWriter probe(*this);
+    probe.last_time_s_.reset();
+    probe.accumulate_validated(d, dt, out);
+    probe_snapshots_ = probe.snapshots_;
+    probe_committed_ = probe.committed_;
+}
+
+std::vector<double> TireWriter::probe_qfrc(const mjData *d, double dt) {
+    std::vector<double> out(static_cast<std::size_t>(nv_));
+    probe_compute_into(d, dt, out);
+    return out;
 }

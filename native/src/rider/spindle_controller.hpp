@@ -267,6 +267,10 @@ public:
     }
 
 private:
+    // The constructor's id/geometry resolution half — split out so the
+    // debug stack-frame budget holds on unoptimized builds.
+    void resolve_model_layout(std::span<const int> qpos_adrs,
+                              std::span<const int> dof_adrs);
     // _targets() spindle branch — IK goals for one leg, updates the
     // sole/IK diagnostic mirrors.
     [[nodiscard]] spindle::Vec2 leg_targets(const mjData *data,

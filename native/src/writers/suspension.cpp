@@ -84,6 +84,54 @@ namespace {
         return std::max(0.0, validation::derived(area * (p_pos - p_neg), "ForkAirSpring.axial_force"));
     }
 
+    // --- stored-energy helpers (physical_energy.py) ----------------------------
+
+    // gas_chamber_energy (physical_energy.py:12-21) — scalar(positive)
+    // gates on all four inputs, then the PV**gamma integral.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror physical_energy.py
+    double gas_chamber_energy(double pressure_pa, double initial_volume_m3,
+                              double volume_m3, double gamma) {
+        const double p = validation::positive(pressure_pa, "absolute pressure");
+        const double v0 = validation::positive(initial_volume_m3, "reference volume");
+        const double v = validation::positive(volume_m3, "volume");
+        const double g = validation::positive(gamma, "polytropic exponent");
+        const double ratio_log = std::log(v / v0);
+        if (std::abs(g - 1.) < 1e-10) return -p * v0 * ratio_log;
+        return p * v0 * std::expm1((1. - g) * ratio_log) / (g - 1.);
+    }
+
+    // fork_air_energy (physical_energy.py:24-42): integral of the
+    // travel-clamped axial force — NOT air_axial_force's clamped output;
+    // above nominal travel the terminal force's linear continuation is
+    // added explicitly. The ArithmeticError reaches C++ as
+    // std::overflow_error — OverflowError is ArithmeticError's subclass
+    // on the Python side (same convention as contact/laws.hpp).
+    double fork_air_energy(const nativecfg::AirSpringConfig &air,
+                           double travel_m) {
+        const double x = validation::finite(travel_m, "fork travel");
+        const nativecfg::AirSpringSpec &s = air.specs;
+        const double limit = s.total_travel_mm / 1000.;
+        const double inside = std::min(std::max(x, 0.), limit);
+        const double vp0 = base_pos_volume_m3(s) -
+                           air.num_tokens * token_volume_m3(s);
+        const double vn0 = base_neg_volume_m3(s);
+        const double displacement = piston_area_m2(s) * inside;
+        // ForkAirSpring.abs_pressure_pa (air_spring.py:86-90).
+        validation::nonnegative(air.gauge_pressure_psi,
+                                "ForkAirSpring.gauge_pressure_psi");
+        const double p0 = validation::derived(
+            air.gauge_pressure_psi * kPsiToPa + s.atm_pressure_pa,
+            "ForkAirSpring.abs_pressure_pa");
+        double energy = gas_chamber_energy(p0, vp0, vp0 - displacement,
+                                           s.gamma);
+        energy += gas_chamber_energy(p0, vn0, vn0 + displacement, s.gamma);
+        if (x > limit)
+            energy += air_axial_force(air, s.total_travel_mm) * (x - limit);
+        if (energy < -1e-9 || !std::isfinite(energy))
+            throw std::overflow_error("invalid fork elastic energy");
+        return std::max(energy, 0.);
+    }
+
     // --- damper helpers (physics/damper.py BaseDamper) -------------------------
 
     struct Coeffs {
@@ -566,4 +614,39 @@ void SuspensionWriter::compute_validated(const mjData *d) const {
     vector(6, shock_dofadr_, shock_upper_stop);
     if (physical_)
         vector(7, shock_dofadr_, shock_hbo);
+}
+
+// suspension_energy (physical_energy.py:70-89) — the terms dict in its
+// insertion order. qpos reads are float() (ungated); only fork_air's
+// scalar() gate rejects non-finite travel.
+SuspensionStoredTerms SuspensionWriter::stored_terms(const mjData *d) const {
+    if (d == nullptr)
+        throw std::invalid_argument("suspension stored_terms needs a live mjData");
+    const std::span<const mjtNum> qpos = model_access::readonly_buffer(
+        d->qpos, nq_);
+    const nativecfg::CoilConfig &coil = cfg_.coil;
+    const double x = qpos[static_cast<std::size_t>(shock_qposadr_)];
+    const double nominal = coil.stroke_mm / 1000.;
+    const double bumper_length = coil.bumper_length_mm / 1000.;
+    const double bumper_depth =
+            std::min(std::max(x - (nominal - bumper_length), 0.),
+                     bumper_length);
+    const nativecfg::EndStopConfig &stop = cfg_.end_stops;
+    const double over = std::max(x - nominal, 0.);
+    return {
+        .fork_air = fork_air_energy(
+            cfg_.air_spring,
+            qpos[static_cast<std::size_t>(fork_qposadr_)]),
+        .shock_coil = .5 * coil.rate_n_m *
+                      pyfloat::pow(
+                          std::max(x + coil.preload_mm / 1000., 0.), 2.0),
+        .shock_bumper = coil.bumper_peak_n *
+                        pyfloat::pow(bumper_depth, 3.0) /
+                        (3. * pyfloat::pow(bumper_length, 2.0)),
+        .shock_top_out = .5 * stop.stiffness_n_m *
+                         pyfloat::pow(std::min(x, 0.), 2.0),
+        .shock_upper_stop = coil.bumper_peak_n * over +
+                            .5 * stop.stiffness_n_m *
+                                pyfloat::pow(over, 2.0),
+    };
 }

@@ -147,7 +147,7 @@ namespace nativecfg {
                 return;
             }
             if (name == "rider_forces.paths") {
-                constexpr auto required = wire::keys("joint", "stiffness_n_m", "damping_ns_m", "preload_deflection_m", "offset_m", "unilateral");
+                constexpr auto required = wire::keys("name", "joint", "stiffness_n_m", "damping_ns_m", "preload_deflection_m", "offset_m", "unilateral");
                 constexpr auto optional = wire::keys();
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
                 return;
@@ -458,6 +458,7 @@ namespace nativecfg {
             const char *sp = path.c_str();
             detail::section_keys(p, "rider_forces.paths", "config." + path);
             c.paths.push_back({
+                .name = detail::req_str(p, sp, "name"),
                 .joint = detail::req_str(p, sp, "joint"),
                 .stiffness_n_m = detail::req_f64(p, sp, "stiffness_n_m"),
                 .damping_ns_m = detail::req_f64(p, sp, "damping_ns_m"),

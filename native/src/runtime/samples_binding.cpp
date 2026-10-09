@@ -95,7 +95,8 @@ void bind_batch_value(const nb::module_ &module) {
 }
 
 PhysicalSampleData history_sample(nb::handle value) {
-    const wire::Dict row{wire::mapping(value, "history interval"), "history interval"};
+    const wire::Dict row{.value = wire::mapping(value, "history interval"),
+                         .path = "history interval"};
     wire::exact(row, wire::keys("interval_id", "time_s", "end_time_s", "powers_w", "tires"));
     PhysicalSampleData sample;
     sample.interval_id = wire::integer(wire::field(row, "interval_id"), row.child("interval_id"));
@@ -112,8 +113,10 @@ PhysicalSampleData history_sample(nb::handle value) {
         WireObject evidence;
         if (tire.contains("patches")) {
             WireArray patches;
-            for (nb::handle item : wire::sequence(tire["patches"], tire.child("patches"))) {
-                const wire::Dict patch{wire::mapping(item, "patch"), "patch"};
+            for (const nb::handle item :
+                 wire::sequence(tire["patches"], tire.child("patches"))) {
+                const wire::Dict patch{.value = wire::mapping(item, "patch"),
+                                       .path = "patch"};
                 patches.emplace_back(WireObject{
                     {"normal_load_n", Wire(wire::finite_real(wire::field(patch, "normal_load_n"), "normal_load_n"))},
                     {"source_geom", Wire(wire::string(wire::field(patch, "source_geom"), "source_geom"))}});
@@ -128,10 +131,10 @@ PhysicalSampleData history_sample(nb::handle value) {
 
 // Pure production kernels surfaced for independent, deliberately adversarial
 // accounting tests. They neither step an engine nor synthesize oracle results.
-void bind_work_probes(const nb::module_ &module) {
+void bind_work_probes(nb::module_ &module) {
     module.def("runtime_work_history", [](nb::handle intervals) {
         WorkHistory history;
-        for (nb::handle item : wire::sequence(intervals, "intervals"))
+        for (const nb::handle item : wire::sequence(intervals, "intervals"))
             history.add(history_sample(item));
         return wire_object_to_python(history.as_wire());
     }, nb::arg("intervals"));
@@ -147,7 +150,7 @@ void bind_work_probes(const nb::module_ &module) {
     module.def("runtime_validate_intervals", [](nb::handle intervals, int capacity) {
         if (capacity < 1) throw std::invalid_argument("period capacity must be positive");
         PeriodBuffer buffer(static_cast<std::size_t>(capacity));
-        for (nb::handle item : wire::sequence(intervals, "intervals")) {
+        for (const nb::handle item : wire::sequence(intervals, "intervals")) {
             const auto values = wire::sequence(item, "interval");
             if (nb::len(values) != 3)
                 throw std::invalid_argument("interval must contain ID, start and end");
@@ -163,7 +166,10 @@ void bind_work_probes(const nb::module_ &module) {
 } // namespace
 
 void bind_samples(nb::module_ &module) {
-    nb::exception<InvalidReferenceRun>(module, "InvalidReferenceRun", PyExc_RuntimeError);
+    // Registration is RAII: the held type lives in the module, not the handle.
+    const nb::exception<InvalidReferenceRun> invalid_reference_run(
+        module, "InvalidReferenceRun", PyExc_RuntimeError);
+    (void)invalid_reference_run;
     bind_sample_value(module);
     bind_batch_value(module);
     bind_work_probes(module);

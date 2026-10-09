@@ -8,6 +8,7 @@
 #include <utility>
 
 namespace runtime {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) capacity and first interval are distinct domains guarded below
 PeriodBuffer::PeriodBuffer(std::size_t capacity, std::int64_t first_interval,
                            std::optional<double> previous_end)
     : capacity_(capacity), next_interval_(first_interval), previous_end_(previous_end) {

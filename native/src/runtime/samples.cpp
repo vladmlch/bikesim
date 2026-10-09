@@ -67,16 +67,16 @@ Wire strings(std::span<const std::string> values) {
     WireArray result;
     result.reserve(values.size());
     for (const auto &value : values) result.emplace_back(value);
-    return Wire(std::move(result));
+    return Wire{std::move(result)};
 }
 
-void set(WireObject &value, std::string key, Wire item) {
-    for (auto &[name, slot] : value)
+void set(WireObject &object, std::string key, Wire value) {
+    for (auto &[name, slot] : object)
         if (name == key) {
-            slot = std::move(item);
+            slot = std::move(value);
             return;
         }
-    value.emplace_back(std::move(key), std::move(item));
+    object.emplace_back(std::move(key), std::move(value));
 }
 
 void merge(WireObject &destination, const WireObject &source) {
@@ -143,11 +143,19 @@ void finite(double value, std::string_view path, bool nonnegative = false) {
 void flatten(const Wire &value, const std::string &prefix,
              std::map<std::string, double> &destination) {
     if (const auto *fields = std::get_if<WireObject>(&value.value)) {
-        for (const auto &[key, item] : *fields)
-            flatten(item, prefix.empty() ? key : prefix + "." + key, destination);
+        for (const auto &[key, item] : *fields) {
+            std::string nested{prefix};
+            if (!nested.empty()) nested += '.';
+            nested += key;
+            flatten(item, nested, destination);
+        }
     } else if (const auto *items = std::get_if<WireArray>(&value.value)) {
-        for (std::size_t i = 0; i < items->size(); ++i)
-            flatten((*items)[i], prefix + "." + std::to_string(i), destination);
+        for (std::size_t i = 0; i < items->size(); ++i) {
+            std::string nested{prefix};
+            nested += '.';
+            nested += std::to_string(i);
+            flatten((*items)[i], nested, destination);
+        }
     } else if (const auto *real = std::get_if<double>(&value.value)) {
         destination.emplace(prefix, *real);
     } else if (const auto *whole = std::get_if<std::int64_t>(&value.value)) {
@@ -241,7 +249,8 @@ SampleColumns join_columns(std::span<const RecordedBlock> blocks) {
             auto [slot, inserted] = result.try_emplace(name);
             if (inserted)
                 slot->second.assign(total, std::numeric_limits<double>::quiet_NaN());
-            auto destination = std::span<double>(slot->second).subspan(offset, block.rows);
+            const auto destination =
+                std::span<double>(slot->second).subspan(offset, block.rows);
             std::ranges::copy(values, destination.begin());
         }
         offset += block.rows;

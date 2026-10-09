@@ -262,9 +262,6 @@ private:
 // The step emits pure-C++ Wire trees so the GIL-free loop never touches a
 // Python object; these converters run strictly at the held-GIL boundary.
 
-using runtime::wire_to_python;
-using runtime::wire_object_to_python;
-
 // plain() inverse for the wire sections the step state round-trips
 // verbatim (elastic_energy_j's named-term dict is the only consumer).
 // NOLINTNEXTLINE(misc-no-recursion) depth mirrors the plain-data tree
@@ -1176,7 +1173,8 @@ NativeRideRuntime::advance(std::int64_t target_step, nb::handle control,
             // Accounting uses only owned captures, never the poisoned arena.
             // A strict reference rejection cannot replace the fatal engine error.
             const std::exception_ptr failure = std::current_exception();
-            try { accounting_->flush(); } catch (...) { /* captures remain retryable */ }
+            // NOLINTNEXTLINE(bugprone-empty-catch) captures remain retryable; the engine failure must not be masked
+            try { accounting_->flush(); } catch (...) {}
             std::rethrow_exception(failure);
         }
         if (reason.empty()) reason = committed_outcome_.has_value() ? "outcome" : "target";
@@ -1375,6 +1373,11 @@ void bind_result_class(const nb::module_ &module) {
                      });
 }
 
+// The A4 additions pushed the chained def() temporaries past the frame
+// guard on unoptimized clang builds — binding-time cost only, like
+// bind_drivetrain.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void bind_runtime_class(const nb::module_ &module) {
     nb::class_<NativeRideRuntime>(module, "NativeRideRuntime")
         .def(nb::init<nb::handle, nb::handle, nb::handle>(),
@@ -1398,6 +1401,7 @@ void bind_runtime_class(const nb::module_ &module) {
         .def("close", &NativeRideRuntime::close)
         .def_prop_ro("closed", &NativeRideRuntime::closed);
 }
+NATIVE_DIAG_POP
 
 } // namespace
 

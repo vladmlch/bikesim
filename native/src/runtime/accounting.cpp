@@ -102,8 +102,11 @@ std::vector<std::string> interval_violations(const RawStep &raw,
             return sample.first == name;
         });
         if (found != samples.end())
-            for (const auto &error : attachment_violations(found->second, budget))
-                errors.push_back(name + '.' + error);
+            for (const auto &error : attachment_violations(found->second, budget)) {
+                errors.emplace_back(name);
+                errors.back() += '.';
+                errors.back() += error;
+            }
     }
     errors.insert(errors.end(), effort.violations.begin(), effort.violations.end());
     return errors;
@@ -306,7 +309,7 @@ EffortObservation observe_effort(const RawStep &raw,
 PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState initial,
                                      int generation, rider::SpindleController *controller,
                                      writers::RiderContactWriter *contacts)
-    : config_(std::move(config)), state_(std::move(initial)), generation_(generation),
+    : config_(config), state_(std::move(initial)), generation_(generation),
       buffer_(config_.period_steps, next_interval(state_.history), state_.history.last_end),
       workspace_(static_cast<rider::lapack_int>(config_.max_dofs), 6, 1),
       controller_(controller), contacts_(contacts) {

@@ -180,7 +180,7 @@ void ModelStatus::observe(std::int64_t interval_id, double time_s,
     auto next_first = first;
     Wire next_numerical = numerically_valid;
     for (const auto &reason : reasons) {
-        auto found = std::ranges::find_if(next_counts, [&](const auto &entry) {
+        const auto found = std::ranges::find_if(next_counts, [&](const auto &entry) {
             return entry.first == reason;
         });
         if (found == next_counts.end()) next_counts.emplace_back(reason, 1);

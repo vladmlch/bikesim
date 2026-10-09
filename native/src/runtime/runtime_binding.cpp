@@ -16,6 +16,7 @@
 // mjData fields stay at reset values until the first forward (the same
 // deferral Stepper::set_state documents).
 #include "runtime_binding.hpp"
+#include "samples_binding.hpp"
 
 #include <algorithm>
 #include <array>
@@ -25,6 +26,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <exception>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -46,6 +49,7 @@
 #include "../rider/spindle_wire.hpp"
 #include "../stepper.hpp"
 #include "../tyre/profile.hpp"
+#include "../writers/drivetrain.hpp"
 
 namespace nb = nanobind;
 
@@ -258,41 +262,8 @@ private:
 // The step emits pure-C++ Wire trees so the GIL-free loop never touches a
 // Python object; these converters run strictly at the held-GIL boundary.
 
-nb::object wire_to_python(const runtime::Wire &w);
-
-[[nodiscard]] nb::dict wire_object_to_python(
-    const runtime::WireObject &object) {
-    nb::dict out;
-    for (const auto &[key, value] : object)
-        out[nb::str(key.c_str(), key.size())] = wire_to_python(value);
-    return out;
-}
-
-nb::object wire_to_python(const runtime::Wire &w) {
-    return std::visit(
-        [](const auto &value) -> nb::object {
-            using T = std::decay_t<decltype(value)>;
-            if constexpr (std::is_same_v<T, std::monostate>)
-                return nb::none();
-            else if constexpr (std::is_same_v<T, bool>)
-                return nb::object(nb::bool_(value));
-            else if constexpr (std::is_same_v<T, std::int64_t>)
-                return nb::object(nb::int_(value));
-            else if constexpr (std::is_same_v<T, double>)
-                return nb::object(nb::float_(value));
-            else if constexpr (std::is_same_v<T, std::string>)
-                return nb::object(nb::str(value.c_str(), value.size()));
-            else if constexpr (std::is_same_v<T, runtime::WireArray>) {
-                nb::list out;
-                for (const auto &element : value)
-                    out.append(wire_to_python(element));
-                return out;
-            } else {
-                return wire_object_to_python(value);
-            }
-        },
-        w.value);
-}
+using runtime::wire_to_python;
+using runtime::wire_object_to_python;
 
 // plain() inverse for the wire sections the step state round-trips
 // verbatim (elastic_energy_j's named-term dict is the only consumer).
@@ -478,7 +449,7 @@ parse_energy(const wire::Dict &d) {
 
 // state.runtime + the sibling top-level sections (signals, rider_intent,
 // rider_controller) -> the step's full restore input. history/
-// model_status/monitor stay owned blobs on the BootstrapState until A4.
+// model_status/monitor are decoded separately by initialize_accounting().
 [[nodiscard]] runtime::StepState
 parse_step_state(const runtime::BootstrapState &bootstrap) {
     const wire::Dict rt{.value = wire::mapping(bootstrap.runtime,
@@ -1007,6 +978,7 @@ void NativeRideRuntime::init(nb::handle model_path, nb::handle state) {
         throw std::invalid_argument(
             "state.rider_controller does not match the rider config");
     apply_bootstrap();
+    initialize_accounting();
 }
 NATIVE_DIAG_POP
 
@@ -1050,8 +1022,94 @@ void NativeRideRuntime::apply_bootstrap() {
     });
 }
 
+// Decode the A4-owned portion once; reset replays typed owned values.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void NativeRideRuntime::initialize_accounting() {
+    const Wire runtime_tree = python_to_wire(bootstrap_.runtime, "state.runtime");
+    const auto &runtime = sample_wire::object(runtime_tree);
+    bootstrap_accounting_state_.energy = bootstrap_step_state_.energy;
+    bootstrap_accounting_state_.history = WorkHistory::from_wire(
+        sample_wire::object(sample_wire::required(runtime, "history")));
+    bootstrap_accounting_state_.model_status = ModelStatus::from_wire(
+        sample_wire::object(sample_wire::required(runtime, "model_status")));
+    bootstrap_accounting_state_.monitor = ReferenceMonitor::from_wire(
+        sample_wire::object(sample_wire::required(runtime, "monitor")));
+    if (bootstrap_step_state_.step != 0 || stepper_->data()->time != 0.)
+        throw std::invalid_argument("state.runtime.step: bootstrap must describe t=0");
+    if (bootstrap_accounting_state_.history.last_id.has_value() ||
+        bootstrap_accounting_state_.history.last_end.has_value() ||
+        bootstrap_accounting_state_.model_status.last_interval != -1)
+        throw std::invalid_argument("state.runtime: t=0 bootstrap contains accounted intervals");
+    if (bootstrap_accounting_state_.monitor.strict != config_.strict)
+        throw std::invalid_argument("state.runtime.monitor.strict: disagrees with config.strict");
+    if (bootstrap_step_state_.record_decimation != config_.record_decimation)
+        throw std::invalid_argument("state.runtime.record_decimation: disagrees with config.record_decimation");
+    const Wire articulated_tree = python_to_wire(config_.rider_controller, "config.rider_controller");
+    const auto &articulated = sample_wire::object(articulated_tree);
+    const auto nonnegative = [&](const char *name) {
+        const double value = sample_wire::number(sample_wire::required(articulated, name));
+        if (value < 0.)
+            throw std::invalid_argument(std::string("config.rider_controller.") + name + ": must be nonnegative");
+        return value;
+    };
+    accounting_config_.attachment_budget = {
+        .foot_min_normal_n = nonnegative("pedal_min_normal_n"),
+        .foot_mu = nonnegative("foot_mu"), .saddle_mu = nonnegative("saddle_mu"),
+        .grip_pull_n = nonnegative("grip_pull_per_hand_n"), .max_gap_m = nonnegative("link_max_gap_m")};
+    accounting_config_.timestep_s = config_.timestep_s;
+    accounting_config_.period_steps = static_cast<std::size_t>(config_.control_period_steps);
+    accounting_config_.record_decimation = config_.record_decimation;
+    accounting_config_.battery_enabled = stepper_->drive().config().policies.battery.enabled;
+    const mjModel *const model = stepper_->model();
+    accounting_config_.max_dofs = static_cast<std::size_t>(model->nv);
+    const int root_x = mj_name2id(model, mjOBJ_JOINT, "root_x");
+    const int root_pitch = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
+    if (root_x < 0 || root_pitch < 0)
+        throw std::invalid_argument("accounting requires root_x and root_pitch joints");
+    const auto qpos_addresses = std::views::counted(model->jnt_qposadr, model->njnt);
+    const auto dof_addresses = std::views::counted(model->jnt_dofadr, model->njnt);
+    accounting_config_.columns = {
+        .root_x_qpos = static_cast<std::size_t>(qpos_addresses[static_cast<std::size_t>(root_x)]),
+        .root_x_dof = static_cast<std::size_t>(dof_addresses[static_cast<std::size_t>(root_x)]),
+        .root_pitch_qpos = static_cast<std::size_t>(qpos_addresses[static_cast<std::size_t>(root_pitch)])};
+    accounting_ = std::make_unique<PeriodAccounting>(accounting_config_,
+        bootstrap_accounting_state_, physical_->generation(),
+        physical_->rider_present() ? &physical_->rider_control() : nullptr,
+        bootstrap_.rider_contacts.has_value() ? &stepper_->rider_contacts() : nullptr);
+    committed_integration_state_ = bootstrap_.integration_state;
+    next_integration_state_ = bootstrap_.integration_state;
+    committed_step_ = physical_->step();
+    committed_time_s_ = stepper_->data()->time;
+    committed_outcome_ = crash_outcome(physical_->crash());
+}
+NATIVE_DIAG_POP
+
+void NativeRideRuntime::test_fail_at_step(std::int64_t step) {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    if (step < committed_step_)
+        throw std::invalid_argument("test failure step is behind the committed boundary");
+    test_failure_step_ = step;
+}
+
+void NativeRideRuntime::test_failure_boundary() {
+    if (!test_failure_step_.has_value() || committed_step_ != *test_failure_step_) return;
+    test_failure_step_.reset();
+    // Same isolated fatal probe as binding.cpp::_engine_test_forward_failure.
+    stepper_->mutate([&] {
+        mjModel *const model = stepper_->model();
+        const int previous_solver = model->opt.solver;
+        model->opt.solver = 99;
+        try { stepper_->forward(); }
+        catch (...) { model->opt.solver = previous_solver; throw; }
+        model->opt.solver = previous_solver;
+    });
+    throw std::runtime_error("runtime fatal probe did not trigger an engine error");
+}
+
 std::optional<std::string> NativeRideRuntime::outcome_reason() const {
-    return crash_outcome(physical_->crash());
+    return committed_outcome_;
 }
 
 AdvanceResult
@@ -1081,43 +1139,51 @@ NativeRideRuntime::advance(std::int64_t target_step, nb::handle control,
     // advance is in flight the committed step is a moving target, so
     // reading it (or advancing) must fail as reentrancy first.
     const AdvancementGuard guard(advancing_);
-    if (target_step < physical_->step())
+    require_open();
+    if (target_step < committed_step_)
         throw std::invalid_argument(
             "target_step is behind the committed step");
+    control_validate_for(command, physical_->rider_present());
     std::string reason;
     {
-        // ---- GIL released: owned native advancement only ---------
-        // The loop touches no Python objects: advance_physics' outputs
-        // are pure-C++ Wire trees that stay inside the RawStep A4 owns.
         const nb::gil_scoped_release release;
         stepper_->refresh_time_callback_policy();
-        const auto start = std::chrono::steady_clock::now();
-        while (physical_->step() < target_step &&
-               !physical_->crash().has_value()) {
-            // `>=` keeps a zero budget a hard stop-before-first-step: two
-            // back-to-back steady_clock reads can share a tick, so a strict
-            // `>` could let one step slip through on budget=0.
-            if (budget.has_value() &&
-                std::chrono::duration<double>(
-                    std::chrono::steady_clock::now() - start)
+        const auto start_time = std::chrono::steady_clock::now();
+        // A previous allocation/evaluation failure may have left a full,
+        // unacknowledged raw period. Retry it before accepting new physics.
+        if (accounting_->full()) accounting_->flush();
+        try {
+            while (committed_step_ < target_step && !committed_outcome_.has_value()) {
+                if (budget.has_value() &&
+                    std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time)
                         .count() >= *budget) {
-                reason = "budget";
-                break;
+                    reason = "budget";
+                    break;
+                }
+                test_failure_boundary();
+                RawStep raw = physical_->advance_physics(front_brake_demand,
+                    rear_brake_demand, std::nullopt, command);
+                accounting_->push(std::move(raw));
+                engine::get_state(stepper_->model(), stepper_->data(),
+                    next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
+                committed_integration_state_.swap(next_integration_state_);
+                committed_step_ = physical_->step();
+                committed_time_s_ = stepper_->data()->time;
+                committed_outcome_ = crash_outcome(physical_->crash());
+                if (accounting_->full() || committed_outcome_.has_value()) accounting_->flush();
             }
-            // The committed prefix survives a mid-range failure —
-            // advance_physics increments only after a completed solve.
-            (void)physical_->advance_physics(front_brake_demand,
-                                             rear_brake_demand, std::nullopt,
-                                             command);
+        } catch (const engine::EngineFailure &) {
+            // Accounting uses only owned captures, never the poisoned arena.
+            // A strict reference rejection cannot replace the fatal engine error.
+            const std::exception_ptr failure = std::current_exception();
+            try { accounting_->flush(); } catch (...) { /* captures remain retryable */ }
+            std::rethrow_exception(failure);
         }
-        if (reason.empty())
-            reason = physical_->crash().has_value() ? "outcome" : "target";
+        if (reason.empty()) reason = committed_outcome_.has_value() ? "outcome" : "target";
     }
-    // ---- GIL held: build the immutable result --------------------
-    return {.step = physical_->step(),
-            .time_s = stepper_->data()->time,
-            .reason = std::move(reason),
-            .outcome = outcome_reason()};
+    emit_reference_warning();
+    return {.step = committed_step_, .time_s = committed_time_s_,
+            .reason = std::move(reason), .outcome = outcome_reason()};
 }
 
 nb::dict
@@ -1132,6 +1198,7 @@ NativeRideRuntime::probe_step_inputs(nb::handle control,
     if (!std::isfinite(rear_brake_demand))
         throw std::invalid_argument("rear_brake_demand must be finite");
     const AdvancementGuard guard(advancing_);
+    require_open();
     PhysicalStep::ProbeResult probe;
     {
         const nb::gil_scoped_release release;
@@ -1161,32 +1228,87 @@ NativeRideRuntime::probe_step_inputs(nb::handle control,
 }
 
 RuntimeSnapshot NativeRideRuntime::snapshot() const {
-    require_open();
-    // get_state reads live mjData — exclude an in-flight advance so the
-    // integration vector cannot be torn mid-mutation.
     const AdvancementGuard guard(advancing_);
-    const mjModel *const model = stepper_->model();
-    const mjData *const data = stepper_->data();
-    const mjtSize width =
-        engine::state_size(model, static_cast<int>(mjSTATE_INTEGRATION));
-    std::vector<double> values(static_cast<std::size_t>(width));
-    engine::get_state(model, data, values.data(),
-                      static_cast<int>(mjSTATE_INTEGRATION));
-    return {.generation = physical_->generation(),
-            .step = physical_->step(),
-            .time_s = data->time,
-            .integration_state = std::move(values),
-            .outcome = outcome_reason()};
+    require_open();
+    const auto &latest = accounting_->latest_sample();
+    return {.generation = physical_->generation(), .step = committed_step_,
+            .time_s = committed_time_s_, .integration_state = committed_integration_state_,
+            .outcome = outcome_reason(), .latest_sample = latest,
+            .view = latest == nullptr ? WireObject{} : latest->channels,
+            .model_status = accounting_->state().model_status.as_wire(),
+            .first_failure = accounting_->state().monitor.first_failure};
+}
+
+void NativeRideRuntime::flush() {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    {
+        const nb::gil_scoped_release release;
+        accounting_->flush();
+    }
+    emit_reference_warning();
+}
+
+RuntimeSampleBatch NativeRideRuntime::prepare_samples() const {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    return accounting_->prepare_samples();
+}
+
+void NativeRideRuntime::acknowledge_samples(const RuntimeSampleBatch &batch) {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    accounting_->acknowledge_samples(batch);
+}
+
+nb::dict NativeRideRuntime::accounting_state() const {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    return wire_object_to_python(accounting_->state_wire());
+}
+
+nb::dict NativeRideRuntime::recorded_columns() const {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    return columns_to_python(accounting_->recorded_columns());
+}
+
+void NativeRideRuntime::emit_reference_warning() {
+    const auto message = accounting_->take_warning();
+    if (message.has_value() && PyErr_WarnEx(PyExc_RuntimeWarning, message->c_str(), 1) < 0)
+        throw nb::python_error();
 }
 
 void NativeRideRuntime::reset() {
-    require_open();
     const AdvancementGuard guard(advancing_);
-    // PhysicalRuntime.reset() bumps generation monotonically; the stored
-    // bootstrap's capture value belongs to the constructor only.
+    require_open();
+    if (physical_->generation() == std::numeric_limits<int>::max())
+        throw std::overflow_error("native runtime generation overflow");
     const int next = physical_->generation() + 1;
+    auto accounting = std::make_unique<PeriodAccounting>(accounting_config_,
+        bootstrap_accounting_state_, next,
+        physical_->rider_present() ? &physical_->rider_control() : nullptr,
+        bootstrap_.rider_contacts.has_value() ? &stepper_->rider_contacts() : nullptr);
+    // Like PhysicalRuntime.reset(), close the outgoing period first. A
+    // strict rejection publishes that period and leaves its generation
+    // intact; callers may drain it and retry reset without losing evidence.
+    {
+        const nb::gil_scoped_release release;
+        accounting_->flush();
+    }
+    emit_reference_warning();
+    // Stepper::reset is the supported recovery path for a poisoned owner.
+    // The subsequent bootstrap restore replaces all its reset-time solves.
+    stepper_->reset();
     apply_bootstrap();
     physical_->set_generation(next);
+    accounting_ = std::move(accounting);
+    committed_integration_state_ = bootstrap_.integration_state;
+    next_integration_state_ = bootstrap_.integration_state;
+    committed_step_ = bootstrap_step_state_.step;
+    committed_time_s_ = stepper_->data()->time;
+    committed_outcome_ = crash_outcome(physical_->crash());
+    test_failure_step_.reset();
 }
 
 void NativeRideRuntime::close() {
@@ -1194,6 +1316,7 @@ void NativeRideRuntime::close() {
     // Idempotent (a second close re-acquires and no-ops), like before.
     const AdvancementGuard guard(advancing_);
     closed_.store(true);
+    accounting_.reset();
     physical_.reset();
     stepper_.reset();
 }
@@ -1218,6 +1341,17 @@ void bind_snapshot_class(const nb::module_ &module) {
                              s.integration_state);
                      },
                      nb::rv_policy::move)
+        .def_prop_ro("latest_sample", [](const RuntimeSnapshot &s) -> nb::object {
+            return s.latest_sample == nullptr ? nb::none() :
+                nb::cast(RuntimeSample{.value = s.latest_sample});
+        })
+        .def_prop_ro("view", [](const RuntimeSnapshot &s) { return wire_object_to_python(s.view); })
+        .def_prop_ro("model_status", [](const RuntimeSnapshot &s) {
+            return wire_object_to_python(s.model_status);
+        })
+        .def_prop_ro("first_failure", [](const RuntimeSnapshot &s) {
+            return wire_to_python(s.first_failure.has_value() ? s.first_failure->as_wire() : Wire(nullptr));
+        })
         .def_prop_ro("outcome",
                      [](const RuntimeSnapshot &s) -> nb::object {
                          return s.outcome.has_value()
@@ -1254,6 +1388,12 @@ void bind_runtime_class(const nb::module_ &module) {
              nb::arg("control"), nb::arg("front_brake_demand") = 0.,
              nb::arg("rear_brake_demand") = 0.)
         .def("snapshot", &NativeRideRuntime::snapshot)
+        .def("flush", &NativeRideRuntime::flush)
+        .def("prepare_samples", &NativeRideRuntime::prepare_samples)
+        .def("acknowledge_samples", &NativeRideRuntime::acknowledge_samples, nb::arg("batch"))
+        .def("accounting_state", &NativeRideRuntime::accounting_state)
+        .def("recorded_columns", &NativeRideRuntime::recorded_columns)
+        .def("_test_fail_at_step", &NativeRideRuntime::test_fail_at_step, nb::arg("step"))
         .def("reset", &NativeRideRuntime::reset)
         .def("close", &NativeRideRuntime::close)
         .def_prop_ro("closed", &NativeRideRuntime::closed);
@@ -1279,6 +1419,7 @@ void bind_runtime(nb::module_ &module) {
         },
         nb::arg("power_w"), nb::arg("torque_limit_nm"),
         nb::arg("crank_rate_rad_s"));
+    bind_samples(module);
     bind_snapshot_class(module);
     bind_result_class(module);
     bind_runtime_class(module);

@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <nanobind/nanobind.h>
+#include "accounting.hpp"
 #include "bootstrap.hpp"
 #include "config.hpp"
 #include "step.hpp"
@@ -31,6 +32,10 @@ struct RuntimeSnapshot {
     std::vector<double> integration_state;
     // The latched terminal outcome (crash:<cause> family) or none.
     std::optional<std::string> outcome;
+    SamplePtr latest_sample;
+    WireObject view;
+    WireObject model_status;
+    std::optional<ReferenceFailure> first_failure;
 };
 
 // The committed prefix of one advance() call (design section 3.2).
@@ -74,6 +79,13 @@ public:
     probe_step_inputs(nanobind::handle control, double front_brake_demand,
                       double rear_brake_demand);
     [[nodiscard]] RuntimeSnapshot snapshot() const;
+    void flush();
+    [[nodiscard]] RuntimeSampleBatch prepare_samples() const;
+    void acknowledge_samples(const RuntimeSampleBatch &batch);
+    [[nodiscard]] nanobind::dict accounting_state() const;
+    [[nodiscard]] nanobind::dict recorded_columns() const;
+    // Process-isolated regression hook; never armed by an application.
+    void test_fail_at_step(std::int64_t step);
     // Replays the stored bootstrap: integration vector, model coefficients,
     // writer state and counters return to the captured t=0. Mirrors
     // PhysicalRuntime.reset() — generation increments per reset.
@@ -87,6 +99,9 @@ private:
     // stack-budget sweep green on unoptimized builds.
     void init(nanobind::handle model_path, nanobind::handle state);
     void apply_bootstrap();
+    void initialize_accounting();
+    void emit_reference_warning();
+    void test_failure_boundary();
     [[nodiscard]] std::optional<std::string> outcome_reason() const;
 
     RuntimeConfig config_;
@@ -96,6 +111,17 @@ private:
     // The decoded state.runtime (+ signals/controller/intent) inventory —
     // parsed once at construction, replayed verbatim by reset().
     StepState bootstrap_step_state_;
+    AccountingConfig accounting_config_;
+    AccountingState bootstrap_accounting_state_;
+    std::unique_ptr<PeriodAccounting> accounting_;
+    // The engine may already be partially mutated when a fatal call throws.
+    // Snapshots therefore read the last successful boundary, not live mjData.
+    std::vector<double> committed_integration_state_;
+    std::vector<double> next_integration_state_;
+    std::int64_t committed_step_ = 0;
+    double committed_time_s_ = 0.;
+    std::optional<std::string> committed_outcome_;
+    std::optional<std::int64_t> test_failure_step_;
     // Single-advancement reentrancy guard: advance(), probe_step_inputs(),
     // reset(), snapshot() and close() exclude each other — a second entry
     // fails fast instead of observing or freeing a half-advanced runtime.

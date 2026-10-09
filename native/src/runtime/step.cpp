@@ -1652,11 +1652,12 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             rider_control_.has_value() &&
             rider_control_->state().allocation_diagnostics
                 .invalid_controller;
-        if (rider_control_.has_value())
-            raw.effort_base =
-                wire_effort(rider_control_->state().effort_diagnostics);
-        else
+        if (rider_control_.has_value()) {
+            raw.effort_state = rider_control_->state().effort_diagnostics;
+            raw.effort_base = wire_effort(*raw.effort_state);
+        } else {
             raw.effort_base = WireObject{};
+        }
         raw.constraint_snapshot = last_constraint_snapshot_;
         raw.full = full;
         step_ += 1;

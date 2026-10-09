@@ -345,6 +345,15 @@ namespace writers {
             probe_ = std::move(probe);
         }
 
+        // Only the accounted telemetry changes. Settled reactions used by
+        // the next physical step remain owned by settle_welds.
+        void publish_accounted_attachments(
+            std::vector<std::pair<std::string, RiderAttachmentEntry>> samples,
+            std::vector<std::string> errors) noexcept {
+            state_.attachment_samples = std::move(samples);
+            state_.attachment_errors = std::move(errors);
+        }
+
         [[nodiscard]] const rider::RiderContactsConfig &config() const {
             return cfg_;
         }

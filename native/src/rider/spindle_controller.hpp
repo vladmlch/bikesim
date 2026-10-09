@@ -259,6 +259,14 @@ public:
     [[nodiscard]] const std::vector<JointEntry> &joints() const {
         return joints_;
     }
+    [[nodiscard]] const SpindleConfig &config() const noexcept { return config_; }
+    // Accounting publishes only diagnostics; actuator/filter state is not
+    // restored from an earlier interval. Both arguments were fully staged.
+    void publish_accounted_effort(EffortDiagnostics diagnostics,
+                                   NamedEntries<JointTerms> terms) noexcept {
+        effort_diagnostics_ = std::move(diagnostics);
+        last_terms_ = std::move(terms);
+    }
     [[nodiscard]] bool spindle() const { return true; }
     [[nodiscard]] bool welded() const { return false; }
     [[nodiscard]] bool command_enabled() const { return command_enabled_; }

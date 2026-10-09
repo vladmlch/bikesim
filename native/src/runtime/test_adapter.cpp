@@ -8,6 +8,8 @@
 // oracle. Unknown sections are rejected — the adapter never guesses
 // which subsystem a test wanted.
 #include "test_adapter.hpp"
+#include "accounting.hpp"
+#include "samples_binding.hpp"
 
 #include <optional>
 #include <span>
@@ -274,6 +276,33 @@ public:
         return rider::effort_diagnostics_dict(diagnostics);
     }
 
+    // Account arbitrary *captured* inputs without reading/stepping mjData.
+    // This is the production A4 kernel, not a separately implemented oracle.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed captured-array wire signature
+    nb::dict runtime_observe_effort(nb::handle qpos, nb::handle qvel,
+                                    nb::handle actuator_force, nb::handle qfrc_passive,
+                                    double dt_s) {
+        RawStep raw;
+        raw.qpos = wire::vector(qpos, "interval.qpos");
+        raw.qvel = wire::vector(qvel, "interval.qvel");
+        raw.actuator_force = wire::vector(actuator_force, "interval.actuator_force");
+        raw.qfrc_passive = wire::vector(qfrc_passive, "interval.qfrc_passive");
+        const auto *model = stepper_.model();
+        if (raw.qpos.size() != static_cast<std::size_t>(model->nq) ||
+            raw.qvel.size() != static_cast<std::size_t>(model->nv) ||
+            raw.actuator_force.size() != static_cast<std::size_t>(model->nu) ||
+            raw.qfrc_passive.size() != static_cast<std::size_t>(model->nv))
+            throw std::invalid_argument("accounted effort incoming array width mismatch");
+        const auto state = require_spindle().state();
+        raw.effort_state = state.effort_diagnostics;
+        raw.rider_control_terms = state.last_terms;
+        const auto observed = observe_effort(raw, require_spindle(), dt_s);
+        nb::dict result;
+        result["effort"] = wire_object_to_python(observed.channels);
+        result["violations"] = wire_to_python(sample_wire::strings(observed.violations));
+        return result;
+    }
+
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional wire signature
     nb::dict spindle_strength_limited(nb::handle torques, nb::handle qpos,
                                       nb::handle qvel) {
@@ -456,6 +485,9 @@ void bind_test_adapter(const nb::module_ &module) {
         .def("spindle_solved_effort",
              &NativeTestAdapter::spindle_solved_effort, nb::arg("qpos"),
              nb::arg("qvel"), nb::arg("dt_s"))
+        .def("runtime_observe_effort", &NativeTestAdapter::runtime_observe_effort,
+             nb::arg("qpos"), nb::arg("qvel"), nb::arg("actuator_force"),
+             nb::arg("qfrc_passive"), nb::arg("dt_s"))
         .def("spindle_strength_limited",
              &NativeTestAdapter::spindle_strength_limited,
              nb::arg("torques"), nb::arg("qpos"), nb::arg("qvel"))

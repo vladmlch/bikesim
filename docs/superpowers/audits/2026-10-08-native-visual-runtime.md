@@ -146,3 +146,87 @@ sides, as the plan prescribes.
   integration vector exactly (292 doubles, bitwise); `reset()` re-applies the
   bootstrap and bumps generation 1 → 2; `close()` makes further calls raise
   `NativeRideRuntime is closed`.
+
+
+## A4 source delivery - 2026-10-09 (execution explicitly prohibited)
+
+**Input:** the supplied `Archive(6).zip`, without a Git repository or a new
+revision identity. The A0-A3 results above are historical records supplied in
+that archive; none of those commands were rerun for this delivery.
+
+**Status:** A4 source implementation and regression sources are present.
+The A4 verification/completion gate is **not satisfied or claimed**. The user
+explicitly requested no project execution and no compilation. No application,
+project imports, tests, build/configuration commands, linters, static-analysis
+tools, benchmarks, or sanitizer probes were run. Work was limited to reading,
+editing, and packaging files. There is no selected or newly built A4 artifact,
+no new compiler/runtime identity, and no red/green execution result.
+
+### Source-supported changes
+
+- `runtime/period_buffer.{hpp,cpp}` retains owned incoming RawSteps, enforces
+  consecutive IDs and continuous times across explicit flushes, and reconstructs
+  each interval's paired attachment wrenches with the existing native
+  least-squares primitive and the Python observability/action-reaction budgets.
+- `runtime/accounting.{hpp,cpp}` reconstructs solved effort on every physical
+  interval, independently of record decimation; accumulates signed/positive
+  muscle and motor work, independent signed/absolute constraint work, losses,
+  external/electrical work, component history and tire-contact airtime. The
+  integral constraint criterion is added only on a period's final interval.
+  Complete rows, history, status, recorder blocks and diagnostic updates are
+  staged before publication; strict rejection follows publication.
+- `runtime/samples.{hpp,cpp}` owns schema-2 sample data and constraint captures,
+  flattens native numeric columns including recorder aliases and NaN gaps, and
+  retains recorded blocks independently of drained output. `status.{hpp,cpp}`
+  implements sticky model/reference status and original failure timestamps.
+- `runtime/runtime_binding.{hpp,cpp}` now consumes RawSteps instead of dropping
+  them. Target, wall-budget, snapshot and drain boundaries retain partial
+  periods. Explicit flush, full periods and terminal outcomes close them.
+  Engine-failure handling closes the successful prefix using owned captures,
+  preserves the engine exception, and snapshots the cached successful
+  integration boundary rather than possibly poisoned live data. Reset first
+  closes the outgoing period, preserving drainable evidence on strict failure;
+  a successful reset replays the stored bootstrap through Stepper recovery and
+  starts a fresh output generation.
+- `runtime/samples_binding.{hpp,cpp}` and `bike_sim.native` expose owned samples,
+  views, first-failure/model status and numeric columns. Drain uses
+  prepare/box/acknowledge, with identity-checked prefix acknowledgement. Eager
+  boxing failure leaves rows pending. Structured row export is lazy and
+  retryable on an independently owned batch after acknowledgement/reset/close.
+  Python containers are recursively frozen and arrays copied and marked
+  read-only; explicit dictionary exports return independent mutable copies.
+- `runtime/step.{hpp,cpp}`, controller/contact diagnostic publication,
+  `runtime/test_adapter.cpp`, and `native/CMakeLists.txt` connect these owners
+  and expose isolated production-kernel/fatal-boundary regression probes.
+  The physical stepping order and the existing Python accounting oracle are
+  not replaced.
+
+### Added regression sources - not executed
+
+| File | Scenarios encoded in the source | Result |
+|---|---|---|
+| `tests/reference/test_native_runtime_accounting.py` | Independent opposing work and zero-source cap; invalid inputs; discontinuous/duplicate interval evidence; terrain/catch-plane airtime; held-command inter-tick solved strength/power/speed; complete-period strict rejection; diagnostic warning and sticky failure | Not run |
+| `tests/reference/test_native_runtime_rollout.py` | Every schema-2 row for a 41-step tail; identical explicit flush schedules; budget/target chunking without implicit flush; decimation-independent history/status; native recorder columns; 800-step one-second Python comparison | Not run |
+| `tests/reference/test_native_runtime_ownership.py` | Recursively read-only values; lazy export retry; failed eager boxing/retry; stale/foreign/generation acknowledgement; retention across reset/close; source/bootstrap alias lifetime; argument validation; process-isolated fatal committed prefix and recovery | Not run |
+
+### Required evidence still outstanding
+
+The Release build, focused A4/oracle tests, `native` and `full` profiles,
+required frontend/static/contract gates and selected-artifact ASan/UBSan
+ownership/fatal probes remain outstanding. Follow the core plan and
+`docs/TESTING.md` on the supported toolchain; verify imported artifact and
+runtime identities before interpreting results. The supplied archive does not
+contain the `tools/` launcher directory referenced by the historical commands;
+restore it from the complete repository before using those launchers.
+
+In particular, no numerical parity or performance result is asserted. Native
+attachment reconstruction uses the existing DGELSD minimum-norm solver while
+the Python period oracle uses batched `pinv`; matching cutoffs/checks alone are
+not evidence for the required all-channel 1e-9 comparison. The added 41/800-step
+regressions encode that check but have not established it. The existing
+baseline-failure ledger remains historical and must be reevaluated for the
+final selected artifact.
+
+**Handoff:** source work supplied; compilation, runtime correctness, numerical
+parity, sanitizer safety and the final A4 phase gate remain unverified by
+explicit instruction. No Phase B research or viewer integration claim is made.

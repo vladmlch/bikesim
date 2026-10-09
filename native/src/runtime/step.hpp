@@ -86,6 +86,9 @@ struct RawStep {
     Wire electrical_power_w{};
     bool invalid_controller = false;
     WireObject effort_base;
+    // The typed baseline accompanies the wire channels, so accounting a
+    // committed prefix after an engine failure never reads a later attempt.
+    std::optional<rider::EffortDiagnostics> effort_state;
     ConstraintSnapshot constraint_snapshot;
     bool full = false;
 };
@@ -99,8 +102,8 @@ struct ForceSample {
 };
 
 // The step-owned share of _runtime_state — the binding decodes/emits the
-// full section; these are the fields the step mutates. history/
-// model_status/monitor stay binding-owned blobs until A4.
+// full section; these are the fields the step mutates. PeriodAccounting
+// separately owns history, model status, monitor and the energy ledger.
 struct StepState {
     std::int64_t step = 0;
     int generation = 0;

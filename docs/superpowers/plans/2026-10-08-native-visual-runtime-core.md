@@ -333,6 +333,12 @@ Completion: first-force/first-step bootstrap equivalence and deterministic chunk
 
 ## A4. Account every interval and publish complete native samples
 
+**2026-10-09 source delivery:** implementation and regression sources were added
+from the supplied archive. No execution or compilation was permitted; all A4
+checkboxes remain unchecked. See the A4 source-only entry in
+`../audits/2026-10-08-native-visual-runtime.md` for implemented scope and pending
+evidence. This note does not supersede the completion gate below.
+
 **Files:**
 
 - Create `native/src/runtime/period_buffer.hpp`, `native/src/runtime/period_buffer.cpp`, `native/src/runtime/accounting.hpp`, `native/src/runtime/accounting.cpp`, `native/src/runtime/samples.hpp`, `native/src/runtime/samples.cpp`, `native/src/runtime/status.hpp`, `native/src/runtime/status.cpp`.

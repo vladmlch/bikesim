@@ -289,6 +289,14 @@ private:
     // dict with 'tires' merged in, as a wire object.
     void update_intent_signals(const WireObject &sensors_and_tires);
 
+    // The mutate()'d body of apply_forces — separate frame keeps the
+    // per-function stack budget sweep green on unoptimized builds.
+    [[nodiscard]] std::pair<RuntimeContacts, WheelSnapshots>
+    apply_forces_body(bool active, bool advance, double front, double rear,
+                      const std::optional<std::vector<double>> &external,
+                      const RideControl &caller_control,
+                      std::optional<bool> braking_opt);
+
     // The mutate()'d body of advance_physics — separate frame keeps the
     // per-function stack budget sweep green on unoptimized builds.
     [[nodiscard]] RawStep

@@ -972,7 +972,20 @@ PhysicalStep::apply_forces(bool active, bool advance, double front,
                            const std::optional<std::vector<double>> &external,
                            const RideControl &caller_control,
                            std::optional<bool> braking_opt) {
+    // The staged body sits in its own frame so the mutate lambda stays a
+    // thin call; the debug/asan frame-budget sweep bounds each function.
     return stepper_->mutate([&]() -> std::pair<RuntimeContacts, WheelSnapshots> {
+        return apply_forces_body(active, advance, front, rear, external,
+                                 caller_control, braking_opt);
+    });
+}
+
+std::pair<RuntimeContacts, WheelSnapshots>
+PhysicalStep::apply_forces_body(
+    bool active, bool advance, double front, double rear,
+    const std::optional<std::vector<double>> &external,
+    const RideControl &caller_control, std::optional<bool> braking_opt) {
+    {
         mjModel *m = stepper_->model();
         mjData *d = stepper_->data();
         control_validate_for(caller_control, rider_control_.has_value());
@@ -1192,7 +1205,7 @@ PhysicalStep::apply_forces(bool active, bool advance, double front,
         std::ranges::copy(final_total,
                           wbuf(d->qfrc_applied, m->nv).begin());
         return {contacts, snapshots};
-    });
+    }
 }
 
 // ---- _advance_physics (physical_runtime.py:561-700) --------------------

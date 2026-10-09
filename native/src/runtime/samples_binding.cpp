@@ -55,6 +55,11 @@ nb::list batch_rows(const RuntimeSampleBatch &batch) {
     return result;
 }
 
+// The chained class_ def() temporaries push this builder past the frame
+// guard on unoptimized clang builds — binding-time cost only, like
+// bind_runtime_class in runtime_binding.cpp.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void bind_sample_value(const nb::module_ &module) {
     nb::class_<RuntimeSample>(module, "RuntimeSample")
         .def_prop_ro("interval_id", [](const RuntimeSample &s) { return s.value->interval_id; })
@@ -77,6 +82,7 @@ void bind_sample_value(const nb::module_ &module) {
         })
         .def("as_dict", [](const RuntimeSample &s) { return wire_object_to_python(s.value->as_wire()); });
 }
+NATIVE_DIAG_POP
 
 void bind_batch_value(const nb::module_ &module) {
     nb::class_<RuntimeSampleBatch>(module, "RuntimeSampleBatch")

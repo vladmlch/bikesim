@@ -138,26 +138,53 @@ parse_pedal_recovery(nb::handle value, std::string_view path) {
     return out;
 }
 
+// Key tables stay in static storage: under sanitizer instrumentation a
+// function-local constexpr array still materializes in the stack frame,
+// and these decoders sit next to the 8 KiB stack guard.
+constexpr auto kEffortRequiredKeys = keys(
+    "rider_active_request_nm", "rider_active_delivered_nm",
+    "rider_positive_power_w", "rider_passive_power_w",
+    "rider_activation_saturated", "rider_strength_limited",
+    "rider_effort_budget_exceeded",
+    "rider_active_positive_power_limit_w",
+    "rider_effort_observation");
+constexpr auto kEffortOptionalKeys = keys(
+    "rider_joint_positive_power_w", "rider_joint_power_violations",
+    "rider_joint_speed_violations", "rider_positive_work_step_j",
+    "rider_passive_work_step_j", "rider_strength_violations");
+
+// Kept out of parse_effort_diagnostics' frame: the optional solved_effort
+// decodes plus the finalize section together exceed the 8 KiB stack
+// guard under sanitizer instrumentation.
+void parse_effort_solved_fields(const nb::dict &d, std::string_view path,
+                                EffortDiagnostics &out) {
+    if (d.contains("rider_joint_positive_power_w"))
+        out.joint_positive_power_w = parse_named_reals(
+            d["rider_joint_positive_power_w"], path);
+    if (d.contains("rider_joint_power_violations"))
+        out.joint_power_violations = parse_name_list(
+            d["rider_joint_power_violations"], path);
+    if (d.contains("rider_joint_speed_violations"))
+        out.joint_speed_violations = parse_name_list(
+            d["rider_joint_speed_violations"], path);
+    if (d.contains("rider_positive_work_step_j"))
+        out.positive_work_step_j = wire::finite_real(
+            d["rider_positive_work_step_j"], path);
+    if (d.contains("rider_passive_work_step_j"))
+        out.passive_work_step_j = wire::finite_real(
+            d["rider_passive_work_step_j"], path);
+    if (d.contains("rider_strength_violations"))
+        out.strength_violations = parse_name_list(
+            d["rider_strength_violations"], path);
+}
+
 [[nodiscard]] EffortDiagnostics
 parse_effort_diagnostics(nb::handle value, std::string_view path) {
     const auto d = nullable_dict(value, path);
     if (d.size() == 0)
         return {};
     EffortDiagnostics out;
-    wire::exact_keys(
-        d,
-        keys("rider_active_request_nm", "rider_active_delivered_nm",
-             "rider_positive_power_w", "rider_passive_power_w",
-             "rider_activation_saturated", "rider_strength_limited",
-             "rider_effort_budget_exceeded",
-             "rider_active_positive_power_limit_w",
-             "rider_effort_observation"),
-        keys("rider_joint_positive_power_w",
-             "rider_joint_power_violations",
-             "rider_joint_speed_violations",
-             "rider_positive_work_step_j", "rider_passive_work_step_j",
-             "rider_strength_violations"),
-        path);
+    wire::exact_keys(d, kEffortRequiredKeys, kEffortOptionalKeys, path);
     out.present = true;
     out.active_request_nm =
         parse_named_reals(d["rider_active_request_nm"], path);
@@ -177,24 +204,7 @@ parse_effort_diagnostics(nb::handle value, std::string_view path) {
         d["rider_active_positive_power_limit_w"], path);
     out.observation =
         wire::string(d["rider_effort_observation"], path);
-    if (d.contains("rider_joint_positive_power_w"))
-        out.joint_positive_power_w = parse_named_reals(
-            d["rider_joint_positive_power_w"], path);
-    if (d.contains("rider_joint_power_violations"))
-        out.joint_power_violations = parse_name_list(
-            d["rider_joint_power_violations"], path);
-    if (d.contains("rider_joint_speed_violations"))
-        out.joint_speed_violations = parse_name_list(
-            d["rider_joint_speed_violations"], path);
-    if (d.contains("rider_positive_work_step_j"))
-        out.positive_work_step_j = wire::finite_real(
-            d["rider_positive_work_step_j"], path);
-    if (d.contains("rider_passive_work_step_j"))
-        out.passive_work_step_j = wire::finite_real(
-            d["rider_passive_work_step_j"], path);
-    if (d.contains("rider_strength_violations"))
-        out.strength_violations = parse_name_list(
-            d["rider_strength_violations"], path);
+    parse_effort_solved_fields(d, path, out);
     return out;
 }
 
@@ -293,12 +303,135 @@ void set_or_none(const nb::dict &out, const char *key,
 }
 
 // Kept out of parse_spindle_config's frame: the table decode plus the
-// scalar section together exceed the 8 KiB stack guard.
+// scalar section together exceed the 8 KiB stack guard. Static key
+// tables serve the same end — a function-local constexpr array still
+// materializes in the frame under sanitizer instrumentation.
+constexpr auto kConfigRequiredKeys = keys(
+    "activation_tau_s", "active_positive_power_limit_w",
+    "arm_reach_fraction", "balance_dwell_s", "balance_floor_kmh",
+    "balance_grace_s", "bar_support_fraction",
+    "coasting_brake_d_nm_s_rad", "coasting_brake_limit_nm",
+    "coupled_task_control", "foot_mu", "grip_attachment",
+    "grip_c_ns_m", "grip_capture_distance_m", "grip_capture_speed_mps",
+    "grip_k_n_m", "grip_pair_force_limit_n", "grip_pull_per_hand_n",
+    "grip_release_distance_m", "joint_envelope_path",
+    "joint_envelope_soft_k_nm_rad", "joint_envelope_soft_margin_rad",
+    "joint_kd_nms_rad", "joint_kp_nm_rad", "joint_limit_nm",
+    "joint_passive_damping_nms_rad", "joint_power_limit_w",
+    "joint_speed_limit_rad_s", "joint_strength_path", "link_max_gap_m",
+    "pedal_ankle_amplitude_rad", "pedal_attachment", "pedal_c_ns_m",
+    "pedal_min_normal_n", "pedal_patch_half_length_m",
+    "pedal_scrape_fraction", "pedal_support_fraction",
+    "pedal_torque_ripple", "posture_pitch_d_nms_rad",
+    "posture_pitch_k_nm_rad", "posture_pitch_limit_nm",
+    "posture_sole_depth_m", "posture_translation_d_ns_m",
+    "posture_translation_k_n_m", "posture_translation_limit_n",
+    "return_foot_preload_n", "road_lookahead_m", "saddle_attachment",
+    "saddle_mu", "saddle_patch_half_length_m",
+    "saddle_reserve_weight_fraction", "stance_blend_load_n",
+    "support_c_ns_m", "support_k_n_m", "support_length_m",
+    "support_mu", "support_pad_radius_m", "support_tangent_k_n_m",
+    "swing_clearance_m", "strength", "strength_coordinates",
+    "envelopes");
+
+// CTAD keeps the element count honest — a manual count that drifts past
+// the initializer list leaves nullptr entries (ASan-caught).
+constexpr std::array kUnmodeledScalarKeys{
+    "pedal_support_fraction", "bar_support_fraction",
+    "posture_sole_depth_m", "swing_clearance_m",
+    "stance_blend_load_n", "posture_pitch_k_nm_rad",
+    "posture_pitch_d_nms_rad", "posture_pitch_limit_nm",
+    "posture_translation_k_n_m", "posture_translation_d_ns_m",
+    "posture_translation_limit_n", "saddle_patch_half_length_m",
+    "support_k_n_m", "support_c_ns_m", "pedal_c_ns_m",
+    "support_tangent_k_n_m", "support_mu", "support_length_m",
+    "grip_k_n_m", "grip_c_ns_m", "grip_release_distance_m",
+    "grip_capture_distance_m", "grip_capture_speed_mps",
+    "grip_pull_per_hand_n", "foot_mu", "saddle_mu",
+    "pedal_min_normal_n", "saddle_reserve_weight_fraction",
+    "pedal_ankle_amplitude_rad", "pedal_scrape_fraction",
+    "link_max_gap_m", "road_lookahead_m", "balance_floor_kmh",
+    "balance_dwell_s", "balance_grace_s"};
+
 void parse_optional_path(const nb::dict &d, const char *key,
                          std::string_view path) {
     const nb::handle v = d[key];
     if (!v.is_none())
         (void)wire::string(v, path);
+}
+
+// Consumed-but-unmodeled fields are still type-validated; the values
+// belong to surfaces the spindle path does not reach.
+void validate_unmodeled_scalars(const nb::dict &d,
+                                std::string_view path) {
+    for (const char *key : kUnmodeledScalarKeys)
+        (void)wire::finite_real(d[key], path);
+    (void)wire::optional_real(d["grip_pair_force_limit_n"], path);
+    if (wire::boolean(d["coupled_task_control"], path))
+        wire::invalid(std::string(path) + ".coupled_task_control",
+                      "coupled task control is a legacy allocator path");
+}
+
+// The class implements exactly the supported spindle plant; other
+// attachments route through paths that do not exist natively.
+void validate_attachments(const nb::dict &d, std::string_view path) {
+    const auto pedal_attachment = wire::string(d["pedal_attachment"], path);
+    if (pedal_attachment != "spindle")
+        wire::invalid(std::string(path) + ".pedal_attachment",
+                      "supported: 'spindle'");
+    const auto saddle_attachment =
+        wire::string(d["saddle_attachment"], path);
+    if (saddle_attachment != "pin")
+        wire::invalid(std::string(path) + ".saddle_attachment",
+                      "supported: 'pin'");
+    const auto grip_attachment = wire::string(d["grip_attachment"], path);
+    if (grip_attachment != "connect")
+        wire::invalid(std::string(path) + ".grip_attachment",
+                      "supported: 'connect'");
+}
+
+// The modeled scalar decodes sit in their own frames for the same reason
+// as the tables and attachments — see kConfigRequiredKeys. At ~0.5 KiB of
+// instrumented temporaries per wire decode, the 16 fields are split at
+// the actuation/geometry boundary to stay under the 8 KiB stack guard.
+void parse_actuation_scalars(const nb::dict &d, std::string_view path,
+                             SpindleConfig &config) {
+    config.joint_kp_nm_rad = wire::finite_real(d["joint_kp_nm_rad"], path);
+    config.joint_kd_nms_rad =
+        wire::finite_real(d["joint_kd_nms_rad"], path);
+    config.joint_limit_nm = wire::finite_real(d["joint_limit_nm"], path);
+    config.joint_speed_limit_rad_s =
+        wire::finite_real(d["joint_speed_limit_rad_s"], path);
+    config.joint_power_limit_w =
+        wire::finite_real(d["joint_power_limit_w"], path);
+    config.active_positive_power_limit_w =
+        wire::optional_real(d["active_positive_power_limit_w"], path);
+    config.joint_passive_damping_nms_rad =
+        wire::optional_real(d["joint_passive_damping_nms_rad"], path);
+    config.activation_tau_s =
+        wire::finite_real(d["activation_tau_s"], path);
+}
+
+void parse_geometry_scalars(const nb::dict &d, std::string_view path,
+                            SpindleConfig &config) {
+    config.pedal_torque_ripple =
+        wire::finite_real(d["pedal_torque_ripple"], path);
+    config.return_foot_preload_n =
+        wire::finite_real(d["return_foot_preload_n"], path);
+    config.coasting_brake_d_nm_s_rad =
+        wire::finite_real(d["coasting_brake_d_nm_s_rad"], path);
+    config.coasting_brake_limit_nm =
+        wire::finite_real(d["coasting_brake_limit_nm"], path);
+    config.joint_envelope_soft_k_nm_rad =
+        wire::finite_real(d["joint_envelope_soft_k_nm_rad"], path);
+    config.joint_envelope_soft_margin_rad =
+        wire::finite_real(d["joint_envelope_soft_margin_rad"], path);
+    config.arm_reach_fraction =
+        wire::finite_real(d["arm_reach_fraction"], path);
+    config.pedal_patch_half_length_m =
+        wire::finite_real(d["pedal_patch_half_length_m"], path);
+    config.support_pad_radius_m =
+        wire::finite_real(d["support_pad_radius_m"], path);
 }
 
 void parse_strength_tables(const nb::dict &d, std::string_view path,
@@ -402,104 +535,12 @@ SpindleConfig parse_spindle_config(nb::handle value,
     // Every ArticulatedConfig field, plus the resolved tables appended by
     // the setup boundary. All fields are required; presence is the wire
     // contract even when the spindle path ignores a value.
-    constexpr auto required = keys(
-        "activation_tau_s", "active_positive_power_limit_w",
-        "arm_reach_fraction", "balance_dwell_s", "balance_floor_kmh",
-        "balance_grace_s", "bar_support_fraction",
-        "coasting_brake_d_nm_s_rad", "coasting_brake_limit_nm",
-        "coupled_task_control", "foot_mu", "grip_attachment",
-        "grip_c_ns_m", "grip_capture_distance_m", "grip_capture_speed_mps",
-        "grip_k_n_m", "grip_pair_force_limit_n", "grip_pull_per_hand_n",
-        "grip_release_distance_m", "joint_envelope_path",
-        "joint_envelope_soft_k_nm_rad", "joint_envelope_soft_margin_rad",
-        "joint_kd_nms_rad", "joint_kp_nm_rad", "joint_limit_nm",
-        "joint_passive_damping_nms_rad", "joint_power_limit_w",
-        "joint_speed_limit_rad_s", "joint_strength_path", "link_max_gap_m",
-        "pedal_ankle_amplitude_rad", "pedal_attachment", "pedal_c_ns_m",
-        "pedal_min_normal_n", "pedal_patch_half_length_m",
-        "pedal_scrape_fraction", "pedal_support_fraction",
-        "pedal_torque_ripple", "posture_pitch_d_nms_rad",
-        "posture_pitch_k_nm_rad", "posture_pitch_limit_nm",
-        "posture_sole_depth_m", "posture_translation_d_ns_m",
-        "posture_translation_k_n_m", "posture_translation_limit_n",
-        "return_foot_preload_n", "road_lookahead_m", "saddle_attachment",
-        "saddle_mu", "saddle_patch_half_length_m",
-        "saddle_reserve_weight_fraction", "stance_blend_load_n",
-        "support_c_ns_m", "support_k_n_m", "support_length_m",
-        "support_mu", "support_pad_radius_m", "support_tangent_k_n_m",
-        "swing_clearance_m", "strength", "strength_coordinates",
-        "envelopes");
-    wire::exact_keys(d, required, {}, path);
+    wire::exact_keys(d, kConfigRequiredKeys, {}, path);
     SpindleConfig config;
-    config.joint_kp_nm_rad = wire::finite_real(d["joint_kp_nm_rad"], path);
-    config.joint_kd_nms_rad =
-        wire::finite_real(d["joint_kd_nms_rad"], path);
-    config.joint_limit_nm = wire::finite_real(d["joint_limit_nm"], path);
-    config.joint_speed_limit_rad_s =
-        wire::finite_real(d["joint_speed_limit_rad_s"], path);
-    config.joint_power_limit_w =
-        wire::finite_real(d["joint_power_limit_w"], path);
-    config.active_positive_power_limit_w =
-        wire::optional_real(d["active_positive_power_limit_w"], path);
-    config.joint_passive_damping_nms_rad =
-        wire::optional_real(d["joint_passive_damping_nms_rad"], path);
-    config.activation_tau_s =
-        wire::finite_real(d["activation_tau_s"], path);
-    config.pedal_torque_ripple =
-        wire::finite_real(d["pedal_torque_ripple"], path);
-    config.return_foot_preload_n =
-        wire::finite_real(d["return_foot_preload_n"], path);
-    config.coasting_brake_d_nm_s_rad =
-        wire::finite_real(d["coasting_brake_d_nm_s_rad"], path);
-    config.coasting_brake_limit_nm =
-        wire::finite_real(d["coasting_brake_limit_nm"], path);
-    config.joint_envelope_soft_k_nm_rad =
-        wire::finite_real(d["joint_envelope_soft_k_nm_rad"], path);
-    config.joint_envelope_soft_margin_rad =
-        wire::finite_real(d["joint_envelope_soft_margin_rad"], path);
-    config.arm_reach_fraction =
-        wire::finite_real(d["arm_reach_fraction"], path);
-    config.pedal_patch_half_length_m =
-        wire::finite_real(d["pedal_patch_half_length_m"], path);
-    config.support_pad_radius_m =
-        wire::finite_real(d["support_pad_radius_m"], path);
-    // Consumed-but-unmodeled fields are still type-validated; the values
-    // belong to surfaces the spindle path does not reach.
-    for (const char *key :
-         {"pedal_support_fraction", "bar_support_fraction",
-          "posture_sole_depth_m", "swing_clearance_m",
-          "stance_blend_load_n", "posture_pitch_k_nm_rad",
-          "posture_pitch_d_nms_rad", "posture_pitch_limit_nm",
-          "posture_translation_k_n_m", "posture_translation_d_ns_m",
-          "posture_translation_limit_n", "saddle_patch_half_length_m",
-          "support_k_n_m", "support_c_ns_m", "pedal_c_ns_m",
-          "support_tangent_k_n_m", "support_mu", "support_length_m",
-          "grip_k_n_m", "grip_c_ns_m", "grip_release_distance_m",
-          "grip_capture_distance_m", "grip_capture_speed_mps",
-          "grip_pull_per_hand_n", "foot_mu", "saddle_mu",
-          "pedal_min_normal_n", "saddle_reserve_weight_fraction",
-          "pedal_ankle_amplitude_rad", "pedal_scrape_fraction",
-          "link_max_gap_m", "road_lookahead_m", "balance_floor_kmh",
-          "balance_dwell_s", "balance_grace_s"})
-        (void)wire::finite_real(d[key], path);
-    (void)wire::optional_real(d["grip_pair_force_limit_n"], path);
-    if (wire::boolean(d["coupled_task_control"], path))
-        wire::invalid(std::string(path) + ".coupled_task_control",
-                      "coupled task control is a legacy allocator path");
-    // The class implements exactly the supported spindle plant; other
-    // attachments route through paths that do not exist natively.
-    const auto pedal_attachment = wire::string(d["pedal_attachment"], path);
-    if (pedal_attachment != "spindle")
-        wire::invalid(std::string(path) + ".pedal_attachment",
-                      "supported: 'spindle'");
-    const auto saddle_attachment = wire::string(d["saddle_attachment"], path);
-    if (saddle_attachment != "pin")
-        wire::invalid(std::string(path) + ".saddle_attachment",
-                      "supported: 'pin'");
-    const auto grip_attachment = wire::string(d["grip_attachment"], path);
-    if (grip_attachment != "connect")
-        wire::invalid(std::string(path) + ".grip_attachment",
-                      "supported: 'connect'");
+    parse_actuation_scalars(d, path, config);
+    parse_geometry_scalars(d, path, config);
+    validate_unmodeled_scalars(d, path);
+    validate_attachments(d, path);
     parse_optional_path(d, "joint_strength_path", path);
     parse_optional_path(d, "joint_envelope_path", path);
     parse_strength_tables(d, path, config);
@@ -559,46 +600,44 @@ RiderCommand parse_rider_command(nb::handle value, std::string_view path) {
     return command;
 }
 
-SpindleController::State parse_spindle_state(nb::handle value,
-                                             std::string_view path) {
-    const auto d = wire::mapping(value, path);
-    wire::exact_keys(
-        d,
-        keys("enabled", "command_enabled", "active_state",
-             "activation_time_s", "last_terms", "pd_split", "saturated_ik",
-             "ik_reach_limited", "joint_torques_nm", "joint_capacity_nm",
-             "lean_limit_rad", "last_branch", "last_solution",
-             "pedal_recovery", "effort_diagnostics",
-             "allocation_diagnostics", "support_diagnostics",
-             "sole_goal_diagnostics"),
-        {}, path);
-    SpindleController::State state;
-    state.enabled = wire::boolean(d["enabled"], path);
-    state.command_enabled = wire::boolean(d["command_enabled"], path);
-    state.active_state = wire::vector(d["active_state"], path);
-    state.activation_time_s =
-        wire::optional_real(d["activation_time_s"], path);
-    {
-        const auto terms = wire::mapping(d["last_terms"], path);
-        for (const auto item : terms) {
-            const auto name = wire::string(item.first, path);
-            const auto sub = std::string(path) + ".last_terms." + name;
-            state.last_terms.emplace_back(name,
-                                          parse_joint_terms(item.second,
-                                                            sub));
-        }
+namespace {
+
+// Kept out of parse_spindle_state's frame, same as kConfigRequiredKeys:
+// section decodes plus the key tables exceed the 8 KiB stack guard under
+// sanitizer instrumentation.
+constexpr auto kStateRequiredKeys = keys(
+    "enabled", "command_enabled", "active_state",
+    "activation_time_s", "last_terms", "pd_split", "saturated_ik",
+    "ik_reach_limited", "joint_torques_nm", "joint_capacity_nm",
+    "lean_limit_rad", "last_branch", "last_solution",
+    "pedal_recovery", "effort_diagnostics",
+    "allocation_diagnostics", "support_diagnostics",
+    "sole_goal_diagnostics");
+constexpr auto kIkJointKeys = keys("front", "rear", "torso", "arms");
+constexpr auto kSideKeys = keys("front", "rear");
+
+void parse_state_terms(const nb::dict &d, std::string_view path,
+                       SpindleController::State &state) {
+    const auto terms = wire::mapping(d["last_terms"], path);
+    for (const auto item : terms) {
+        const auto name = wire::string(item.first, path);
+        const auto sub = std::string(path) + ".last_terms." + name;
+        state.last_terms.emplace_back(name,
+                                      parse_joint_terms(item.second,
+                                                        sub));
     }
-    {
-        const auto split = wire::mapping(d["pd_split"], path);
-        if (split.size() != 0)
-            wire::invalid(std::string(path) + ".pd_split",
-                          "spindle controller carries no PD warm split");
-    }
-    constexpr auto ik_names = keys("front", "rear", "torso", "arms");
+    const auto split = wire::mapping(d["pd_split"], path);
+    if (split.size() != 0)
+        wire::invalid(std::string(path) + ".pd_split",
+                      "spindle controller carries no PD warm split");
+}
+
+void parse_state_ik(const nb::dict &d, std::string_view path,
+                    SpindleController::State &state) {
     state.saturated_ik =
-        parse_named_bools(d["saturated_ik"], path, ik_names);
+        parse_named_bools(d["saturated_ik"], path, kIkJointKeys);
     state.ik_reach_limited = parse_named_bools(
-        d["ik_reach_limited"], path, keys("front", "rear"));
+        d["ik_reach_limited"], path, kSideKeys);
     state.joint_torques_nm =
         parse_named_reals(d["joint_torques_nm"], path);
     state.joint_capacity_nm =
@@ -611,17 +650,19 @@ SpindleController::State parse_spindle_state(nb::handle value,
     if (!d["last_solution"].is_none())
         wire::invalid(std::string(path) + ".last_solution",
                       "spindle controller carries no allocator warm start");
-    {
-        const auto recovery = wire::mapping(d["pedal_recovery"], path);
-        wire::exact_keys(recovery, keys("front", "rear"), {},
-                         std::string(path) + ".pedal_recovery");
-        for (const char *side : {"front", "rear"})
-            state.pedal_recovery.emplace_back(
-                side,
-                parse_pedal_recovery(recovery[side],
-                                     std::string(path) +
-                                         ".pedal_recovery." + side));
-    }
+}
+
+void parse_state_recovery(const nb::dict &d, std::string_view path,
+                          SpindleController::State &state) {
+    const auto recovery = wire::mapping(d["pedal_recovery"], path);
+    wire::exact_keys(recovery, kSideKeys, {},
+                     std::string(path) + ".pedal_recovery");
+    for (const char *side : {"front", "rear"})
+        state.pedal_recovery.emplace_back(
+            side,
+            parse_pedal_recovery(recovery[side],
+                                 std::string(path) +
+                                     ".pedal_recovery." + side));
     state.effort_diagnostics = parse_effort_diagnostics(
         d["effort_diagnostics"], std::string(path) + ".effort_diagnostics");
     state.allocation_diagnostics = parse_allocation_diagnostics(
@@ -633,6 +674,23 @@ SpindleController::State parse_spindle_state(nb::handle value,
     state.sole_goal_diagnostics = parse_sole_goal_diagnostics(
         d["sole_goal_diagnostics"],
         std::string(path) + ".sole_goal_diagnostics");
+}
+
+} // namespace
+
+SpindleController::State parse_spindle_state(nb::handle value,
+                                             std::string_view path) {
+    const auto d = wire::mapping(value, path);
+    wire::exact_keys(d, kStateRequiredKeys, {}, path);
+    SpindleController::State state;
+    state.enabled = wire::boolean(d["enabled"], path);
+    state.command_enabled = wire::boolean(d["command_enabled"], path);
+    state.active_state = wire::vector(d["active_state"], path);
+    state.activation_time_s =
+        wire::optional_real(d["activation_time_s"], path);
+    parse_state_terms(d, path, state);
+    parse_state_ik(d, path, state);
+    parse_state_recovery(d, path, state);
     return state;
 }
 

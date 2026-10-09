@@ -197,6 +197,15 @@ def run_child(script: str, *arguments: str) -> subprocess.CompletedProcess[str]:
     environment['PYTHONPATH'] = os.pathsep.join(
         [str(REFERENCE_ROOT), environment.get('PYTHONPATH', '')])
     command = ['uv', 'run', '--frozen', '--group', 'native']
+    runtime = environment.get('NATIVE_TEST_SANITIZER_RUNTIME')
+    if runtime:
+        preload_name = 'DYLD_INSERT_LIBRARIES' if sys.platform == 'darwin' else 'LD_PRELOAD'
+        previous = environment.pop(preload_name, '')
+        preload = runtime if not previous else f'{runtime}{os.pathsep}{previous}'
+        # dyld clears the variable in the parent after loading it. Reinject
+        # after uv starts so the probe runs under the selected sanitizer —
+        # same contract as test_native_engine_errors.run_child.
+        command.extend(['env', f'{preload_name}={preload}'])
     command.extend(['python', '-c', script, *arguments])
     return subprocess.run(
         command, cwd=REPO_ROOT, env=environment, text=True,

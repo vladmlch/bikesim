@@ -1325,7 +1325,11 @@ namespace {
 
 // nanobind's class builders carry heavy template frames; each binding
 // group gets its own noinline function so the per-function stack budget
-// holds on unoptimized builds.
+// holds on unoptimized builds. Sanitizer instrumentation still pushes
+// the chained def() temporaries past the guard — binding-time cost only,
+// like bind_runtime_class below.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void bind_snapshot_class(const nb::module_ &module) {
     nb::class_<RuntimeSnapshot>(module, "RuntimeSnapshot")
         .def_ro("generation", &RuntimeSnapshot::generation)
@@ -1358,6 +1362,7 @@ void bind_snapshot_class(const nb::module_ &module) {
                                     : nb::none();
                      });
 }
+NATIVE_DIAG_POP
 
 void bind_result_class(const nb::module_ &module) {
     nb::class_<AdvanceResult>(module, "NativeAdvanceResult")

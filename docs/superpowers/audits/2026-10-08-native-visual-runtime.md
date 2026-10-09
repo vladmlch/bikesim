@@ -250,3 +250,11 @@ B1-B3 source changes and regression sources are supplied in the
 The user prohibited execution and compilation, so no new build, test, analyzer,
 sanitizer, rollout or replay result is recorded. A4 and B completion gates remain
 unverified. The source/API guide is [native research Track B](../../native-research-track-b.md).
+
+## 2026-10-09 Track B source-only handoff
+
+B1-B3 source changes and regression sources are supplied in the
+[Track B delivery audit](2026-10-09-native-research-source-delivery.md).
+The user prohibited execution and compilation, so no new build, test, analyzer,
+sanitizer, rollout or replay result is recorded. A4 and B completion gates remain
+unverified. The source/API guide is [native research Track B](../../native-research-track-b.md).

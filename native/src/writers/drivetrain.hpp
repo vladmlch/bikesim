@@ -392,6 +392,9 @@ namespace drivetrain {
         [[nodiscard]] double battery_energy_j() const noexcept {
             return battery_.state().energy_j;
         }
+        [[nodiscard]] bool assist_pedaling() const noexcept {
+            return assist_.state().pedaling;
+        }
 
     private:
         mjModel *model_ = nullptr;

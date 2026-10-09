@@ -394,6 +394,7 @@ void PeriodAccounting::flush() {
     // Copying/reserving can throw; the raw period and all old evidence still exist.
     pending_.reserve(pending_.size() + published.size());
     recorded_.reserve(recorded_.size() + (block.rows == 0 ? 0U : 1U));
+    recorded_samples_.reserve(recorded_samples_.size() + selected.size());
     const auto strict_failure = staged.monitor.strict && !staged.period_violations.empty()
                                     ? std::optional<ReferenceFailure>(staged.period_violations.front())
                                     : std::nullopt;
@@ -403,6 +404,8 @@ void PeriodAccounting::flush() {
     pending_.insert(pending_.end(), std::make_move_iterator(published.begin()),
                      std::make_move_iterator(published.end()));
     if (block.rows != 0) recorded_.push_back(std::move(block));
+    recorded_samples_.insert(recorded_samples_.end(), std::make_move_iterator(selected.begin()),
+                              std::make_move_iterator(selected.end()));
     if (contacts_ != nullptr)
         contacts_->publish_accounted_attachments(std::move(contact_samples),
                                                  std::move(final_attachment_errors));

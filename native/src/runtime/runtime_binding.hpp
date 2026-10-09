@@ -18,6 +18,7 @@
 #include "bootstrap.hpp"
 #include "config.hpp"
 #include "step.hpp"
+#include "presentation.hpp"
 
 class Stepper;
 
@@ -84,6 +85,11 @@ public:
     void acknowledge_samples(const RuntimeSampleBatch &batch);
     [[nodiscard]] nanobind::dict accounting_state() const;
     [[nodiscard]] nanobind::dict recorded_columns() const;
+    [[nodiscard]] nanobind::list recorded_intervals() const;
+    void release_samples();
+    // Frontend-only finish gate, checked after every committed physics step.
+    // Research installs its own experiment limits and leaves this unset.
+    void set_finish_position(double position_m);
     // Process-isolated regression hook; never armed by an application.
     void test_fail_at_step(std::int64_t step);
     // Replays the stored bootstrap: integration vector, model coefficients,
@@ -97,6 +103,7 @@ private:
     friend class NativeResearchRuntime;
     void advance_interval(const RideControl &command, double front, double rear);
     void cache_research_boundary();
+    void flush_accounting();
     double committed_position_m_ = 0.;
     double committed_battery_energy_j_ = 0.;
     std::optional<CrashEvent> committed_crash_;
@@ -125,9 +132,11 @@ private:
     // Snapshots therefore read the last successful boundary, not live mjData.
     std::vector<double> committed_integration_state_;
     std::vector<double> next_integration_state_;
+    PresentationState committed_presentation_, next_presentation_;
     std::int64_t committed_step_ = 0;
     double committed_time_s_ = 0.;
     std::optional<std::string> committed_outcome_;
+    std::optional<double> finish_position_m_;
     std::optional<std::int64_t> test_failure_step_;
     // Single-advancement reentrancy guard: advance(), probe_step_inputs(),
     // reset(), snapshot() and close() exclude each other — a second entry

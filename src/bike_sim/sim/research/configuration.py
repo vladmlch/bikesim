@@ -70,8 +70,8 @@ def research_field(track, resolution_m=.005):
 def build_environment(*, track, rider, physics_config, experiment, sensors,
                       road_resolution_m=.005, demand=None, rider_program=None, rider_behavior=None,
                       backend="python"):
-    if backend not in ("python", "native"):
-        raise ValueError("backend must be python or native")
+    from bike_sim.sim.backend import require_backend
+    require_backend(backend, physics_config, rider)
     sim = RideSimulation(track=track, rider=rider, physics_config=physics_config,
                          field=research_field(track, road_resolution_m))
     reference = ResearchEnvironment(sim, experiment, sensors, demand=demand,
@@ -79,4 +79,8 @@ def build_environment(*, track, rider, physics_config, experiment, sensors,
     if backend == "python":
         return reference
     from bike_sim.native.research import create_native_research
-    return create_native_research(reference)
+    try:
+        return create_native_research(reference)
+    finally:
+        # The native adapter owns copies, not this temporary setup owner.
+        reference.close(discard_pending=True)

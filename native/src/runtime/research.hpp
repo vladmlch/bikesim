@@ -76,7 +76,8 @@ public:
     NativeResearchRuntime &operator=(const NativeResearchRuntime &) = delete;
     void begin_control(const RideControl &control, double front, double rear);
     // A completed result stays available until ack_control after Python boxing.
-    [[nodiscard]] std::optional<ResearchTransition> advance_control(std::optional<double> wall_budget_s);
+    [[nodiscard]] std::optional<ResearchTransition> advance_control(
+        std::optional<double> wall_budget_s, std::optional<std::int64_t> target_step = std::nullopt);
     void acknowledge_control();
     [[nodiscard]] RuntimeSnapshot snapshot() const;
     [[nodiscard]] WireObject status() const;

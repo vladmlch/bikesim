@@ -1,5 +1,37 @@
 # Running tests
 
+## Track C source-overlay status (2026-10-10)
+
+No project, build, test, benchmark, sanitizer, analyzer or viewer was run for this
+delivery. The commands below are instructions for a later authorized verification
+session, not a run log. See [the Track C audit](native-visual-track-c.md).
+
+The supplied source archive omits the upstream root packaging/lock files,
+`tools/run_tests.sh`, verification controllers and most earlier tests. Apply this
+overlay to the matching complete checkout before invoking the profiles documented
+here. Do not infer a working native extension or a passing profile from this ZIP.
+
+New source-only regressions cover `test_playback_clock.py`,
+`test_physical_view.py`, `test_ride_backend_cli.py`, `test_research_frontend.py`,
+`test_frontend_windows.py`, `test_replay_session.py` and
+`test_realtime_measurement.py`. The pre-C HUD oracle is a retained copy of the
+supplied `hud.py`, not an independently executed result.
+
+Selected-artifact tests are `test_native_viewer_snapshot.py`,
+`test_native_ride_frontend.py`, `test_native_research_frontend.py` and
+`test_native_replay_session.py`. The existing native recording test now expects
+checked native reconstruction instead of the old Track-C-not-implemented error.
+The fixture never builds or skips a missing extension. Keep
+`NATIVE_TEST_BUILD_PATH` and `BIKE_NATIVE_BUILD_PATH` set to the same absolute
+directory, containing a newly built extension with the current source stamp.
+
+After authorization, run the targeted regressions and the complete native/full
+profiles. Separately exercise macOS windows and measure one warm-up plus three
+runs per backend with `tools/measure_realtime.py`. A fake window is not a GUI
+acceptance check, and a measurement report is not a numerical parity result.
+
+## Upstream verification commands
+
 Run these commands from the repository root:
 
 ```bash

@@ -8,11 +8,12 @@ Python batch has been constructed successfully.
 from __future__ import annotations
 
 from numbers import Integral
+from dataclasses import replace
 from pathlib import Path
 import tempfile
 
 from bike_sim.native.contracts import (
-    AdvanceResult, FrameSnapshot, PhysicalViewState, SampleBatch,
+    AdvanceResult, FrameSnapshot, SampleBatch,
     _freeze, _owned_array,
 )
 from bike_sim.native.setup import RuntimeBootstrap, capture_bootstrap, _control_dict
@@ -42,10 +43,11 @@ class NativeRideDriver:
     """Facade over ``NativeRideRuntime`` returning owning contract values."""
 
     def __init__(self, runtime, bootstrap: RuntimeBootstrap, hold_dir=None,
-                 *, native_reference_error=None) -> None:
+                 *, native_reference_error=None, initial_frame=None) -> None:
         self._native = runtime
         self._bootstrap = bootstrap
         self._hold_dir = hold_dir
+        self._initial_frame = initial_frame
         if native_reference_error is None:
             from bike_sim.native.artifact import load_native_extension
             native_reference_error = load_native_extension().InvalidReferenceRun
@@ -78,12 +80,29 @@ class NativeRideDriver:
     def snapshot(self) -> FrameSnapshot:
         """The last committed engine boundary and latest published sample."""
         snap = self._native.snapshot()
-        return FrameSnapshot(
-            generation=int(snap.generation), step=int(snap.step),
-            time_s=float(snap.time_s), integration_state=snap.integration_state,
-            latest_sample=_sample(snap.latest_sample),
-            view=PhysicalViewState(snap.view), outcome=snap.outcome,
-            first_failure=snap.first_failure, model_status=snap.model_status)
+        from bike_sim.sim.ride.physical_view import native_frame
+        frame = native_frame(snap, _sample(snap.latest_sample))
+        # Bootstrap restores the integration vector without mj_forward. The
+        # already-settled setup owns the t=0 geometry/diagnostics; no extra
+        # engine solve may be inserted merely to draw the initial frame.
+        if frame.step == 0 and self._initial_frame is not None:
+            frame = replace(frame, view=self._initial_frame.view,
+                            model_fields=self._initial_frame.model_fields)
+        return frame
+
+    def make_render_model(self):
+        import mujoco
+        return mujoco.MjModel.from_binary_path(str(self._bootstrap.model_path))
+
+    def set_finish_position(self, position_m):
+        self._native.set_finish_position(position_m)
+
+    def release_samples(self):
+        """Release pending delivery, retaining native decimated recording."""
+        self._native.release_samples()
+
+    def recorded_intervals(self):
+        return self._native.recorded_intervals()
 
     def probe_step_inputs(self, control=None, *,
                           front_brake_demand: float = 0.0,
@@ -137,6 +156,9 @@ class NativeRideDriver:
 
     def close(self) -> None:
         self._native.close()
+        if self._hold_dir is not None:
+            self._hold_dir.cleanup()
+            self._hold_dir = None
 
     @property
     def closed(self) -> bool:
@@ -162,10 +184,22 @@ def create_native_ride(sim, *, strict: bool | None = None,
     if directory is None:
         hold_dir = tempfile.TemporaryDirectory(prefix='bike_sim_native_')
         directory = hold_dir.name
-    bootstrap = capture_bootstrap(sim, Path(directory))
-    from bike_sim.native.artifact import load_native_extension
-    extension = load_native_extension()
-    native = extension.NativeRideRuntime(
-        str(bootstrap.model_path), bootstrap.config, bootstrap.state)
-    return NativeRideDriver(native, bootstrap, hold_dir,
-                            native_reference_error=extension.InvalidReferenceRun)
+    native = None
+    try:
+        from bike_sim.sim.ride.physical_view import snapshot_python
+        initial_frame = snapshot_python(sim)
+        bootstrap = capture_bootstrap(sim, Path(directory))
+        from bike_sim.native.artifact import load_native_extension
+        extension = load_native_extension()
+        native = extension.NativeRideRuntime(
+            str(bootstrap.model_path), bootstrap.config, bootstrap.state)
+        return NativeRideDriver(native, bootstrap, hold_dir,
+            native_reference_error=extension.InvalidReferenceRun, initial_frame=initial_frame)
+    except BaseException as error:
+        for resource in (native, hold_dir):
+            if resource is not None:
+                try:
+                    resource.close() if resource is native else resource.cleanup()
+                except BaseException as cleanup:
+                    error.add_note(f'native setup cleanup failed: {cleanup}')
+        raise

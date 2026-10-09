@@ -97,10 +97,13 @@ class PolicySession:
                 front_brake_demand=front, rear_brake_demand=rear))
             self.env.run_metadata['operator_intervention'] = True
 
-    def advance_pending(self, *, wall_budget_s=None):
+    def advance_pending(self, *, wall_budget_s=None, target_step=None):
         if not self.pending:
             raise RuntimeError('begin_advance is required before advance_pending')
-        result = self.env.advance_control(wall_budget_s=wall_budget_s)
+        options = dict(wall_budget_s=wall_budget_s)
+        if target_step is not None:
+            options['target_step'] = target_step
+        result = self.env.advance_control(**options)
         if result is not None:
             self._apply_queued()
         return result

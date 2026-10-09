@@ -302,15 +302,19 @@ class ResearchEnvironment:
         self._window = (control, front_brake_demand, rear_brake_demand,
                         start_step, target_step, seen_demand_nm)
 
-    def advance_control(self, *, wall_budget_s=None):
+    def advance_control(self, *, wall_budget_s=None, target_step=None):
         if self._closed or not self.control_pending:
             raise RuntimeError("begin an external control interval before advancing")
         if wall_budget_s is not None:
             wall_budget_s = scalar(wall_budget_s, "wall_budget_s", minimum=0.)
+        if target_step is not None and (type(target_step) is not int or target_step < self.sim.steps):
+            raise ValueError('target_step must be an integer at or after the committed step')
         deadline = None if wall_budget_s is None else monotonic()+wall_budget_s
-        control, front_brake_demand, rear_brake_demand, start_step, target_step, seen_demand_nm = self._window
+        control, front_brake_demand, rear_brake_demand, start_step, window_end_step, seen_demand_nm = self._window
         try:
-            while self.sim.steps < target_step and not self.done:
+            while self.sim.steps < window_end_step and not self.done:
+                if target_step is not None and self.sim.steps >= target_step:
+                    return None  # No accounting flush or new policy command on a pacing yield.
                 if deadline is not None and monotonic() >= deadline:
                     return None
                 while self._queue and self._queue[0][0] <= self.sim.steps:
@@ -392,7 +396,8 @@ class ResearchEnvironment:
             self.terminated, self.reason = True, "policy_error"
             self.error = f"{type(error).__name__}: {error}"
 
-    def close(self):
-        if self.control_pending:
+    def close(self, *, discard_pending=False):
+        if self.control_pending and not discard_pending:
             raise RuntimeError("finish the active interval before closing the environment")
+        self._window = None
         self._closed = True

@@ -27,8 +27,15 @@ def make_ride_session(track, args, rider):
     demand = None if args.demand is None else DemandProgram.constant(args.demand)
     env = build_environment(track=track, rider=rider, physics_config=args.resolved_physics,
         experiment=experiment, sensors=sensors, road_resolution_m=args.road_resolution,
-        demand=demand, rider_program=program)
-    return PolicySession(env, policy, reference=reference)
+        demand=demand, rider_program=program, backend=getattr(args, 'backend', 'python'))
+    try:
+        return PolicySession(env, policy, reference=reference)
+    except BaseException as error:
+        try:
+            env.close(discard_pending=True)
+        except BaseException as cleanup:
+            error.add_note(f'research setup cleanup failed: {type(cleanup).__name__}: {cleanup}')
+        raise
 
 
 def advance_control_ticks(session, count, *, brake_demand=0.):
@@ -43,98 +50,133 @@ def advance_control_ticks(session, count, *, brake_demand=0.):
     return completed
 
 
-def run_research_viewer(session, output_dir):
-    """Space pauses, R saves/resets, B toggles brakes,
-    C changes camera, Q ends."""
-    import mujoco.viewer
-    from bike_sim.sim.camera import CameraManager
-    from bike_sim.sim.ride.viewer import RealTimePacer
+def advance_playback(session, target_step, *, wall_budget_s=.008):
+    """One bounded slice, without resubmitting a partially consumed command."""
+    if session.env.done or target_step <= session.env.sim.steps:
+        return None
+    if not session.pending:
+        if session.paused:
+            return None
+        session.begin_advance()
+    return session.advance_pending(wall_budget_s=wall_budget_s, target_step=target_step)
 
+
+def stop_at_boundary(session):
+    """Complete only an already active window; never ask the policy for another."""
+    from bike_sim.sim.playback import COMPUTE_SLICE_S
+    session.stop()
+    while session.pending:
+        session.advance_pending(wall_budget_s=COMPUTE_SLICE_S)
+
+
+def run_research_viewer(session, output_dir, *, time_scale=1):
+    """Owned snapshots, bounded slices, boundary-safe pause/stop/save/reset."""
     env = session.env
-    sim = env.sim
-    camera = CameraManager(default_mode='2d')
-    pacer = RealTimePacer(env.config.control_period_s,
-                          max_catchup_s=max(.05, env.config.control_period_s))
     keys = SimpleQueue()
     generation = 0
     saved = False
-    paused = False
-    braking = False
-    stop = False
+    paused = braking = stop = reset_requested = False
 
     def save_episode():
         nonlocal saved
         if not saved:
-            destination = Path(output_dir) / f'episode-{generation:04d}'
+            destination = Path(output_dir)/f'episode-{generation:04d}'
             session.save(destination)
             print(f'[bike-ride research] {env.reason}: {destination}', flush=True)
             saved = True
 
-    print('[bike-ride research] Space pause | R reset | B brakes | C camera | Q stop', flush=True)
     try:
-        with mujoco.viewer.launch_passive(
-                sim.model, sim.data, key_callback=keys.put,
+        import mujoco.viewer
+        from bike_sim.sim.playback import PlaybackClock, COMPUTE_SLICE_S, RENDER_INTERVAL_S, speed_key
+        from bike_sim.sim.ride.physical_view import environment_snapshot, present_view
+        from bike_sim.sim.ride.presentation import AchievedRate, FramePresenter
+        from copy import copy
+        clock = PlaybackClock(env.dt_s, scale=time_scale)
+        model = env.make_render_model() if env.backend == 'native' else copy(env.sim.model)
+        presenter = FramePresenter(model)
+        presenter.replica.apply(environment_snapshot(env))
+        print('[bike-ride research] Space pause | R save/reset | B brakes | C/1/2 camera | '
+              'T telemetry | G markers | Q stop | F6/F7/F8 speed', flush=True)
+        with mujoco.viewer.launch_passive(model, presenter.replica.data, key_callback=keys.put,
                 show_left_ui=False, show_right_ui=False) as viewer:
-            previous = last_sync = last_hud = rate_wall = time.monotonic()
-            rate_sim = sim.time_s
-            while viewer.is_running() and not stop:
+            now = last_sync = last_hud = time.monotonic()
+            clock.rebase(now, step=env.sim.steps)
+            rate = AchievedRate(now, env.sim.time_s)
+            while viewer.is_running():
                 while True:
                     try:
                         key = keys.get_nowait()
                     except Empty:
                         break
-                    if key == 32:
+                    now = time.monotonic()
+                    scale = speed_key(key, clock.scale)
+                    if scale is not None:
+                        clock.set_scale(scale, now=now, step=env.sim.steps)
+                        rate.rebase(now, env.sim.time_s)
+                    elif key == 32:
                         paused = not paused
-                        pacer.reset()
-                    elif key == ord('R'):
+                        session.pause() if paused else session.resume()
+                        clock.set_paused(paused, now=now, step=env.sim.steps)
+                        rate.rebase(now, env.sim.time_s)
+                    elif key in (ord('R'), ord('r')):
+                        reset_requested = True
                         session.stop()
-                        save_episode()
+                    elif key in (ord('B'), ord('b')):
+                        braking = not braking
+                        session.set_brakes(front_brake_demand=.5 if braking else 0.,
+                                           rear_brake_demand=.5 if braking else 0.)
+                    elif key in (ord('Q'), ord('q'), 256):
+                        stop = True
+                        session.stop()
+                    elif not presenter.handle_key(key, viewer):
+                        print('[bike-ride research] Physical parameters are fixed per run.', flush=True)
+                now = time.monotonic()
+                target = clock.target_step(now, current_step=env.sim.steps)
+                if session.pending and (stop or reset_requested or paused):
+                    # Boundary-safe operator changes finish the same command;
+                    # no new command or policy call is issued while draining.
+                    session.advance_pending(wall_budget_s=COMPUTE_SLICE_S)
+                elif not stop and not reset_requested:
+                    advance_playback(session, target, wall_budget_s=COMPUTE_SLICE_S)
+                if not session.pending and (env.done or reset_requested or stop):
+                    save_episode()
+                    if stop:
+                        break
+                    if reset_requested:
                         generation += 1
                         session.reset()
-                        saved = paused = braking = False
-                        pacer.reset()
-                        previous = rate_wall = time.monotonic()
-                        rate_sim = sim.time_s
-                    elif key == ord('B'):
-                        braking = not braking
-                    elif key == ord('C'):
-                        camera.cycle_mode()
-                    elif key in (ord('Q'), 256):
-                        stop = True
-                    else:
-                        print('[bike-ride research] Change physical parameters in the config before a new run.', flush=True)
+                        saved = paused = braking = reset_requested = False
+                        now = time.monotonic()
+                        clock.set_paused(False, now=now, step=env.sim.steps)
+                        clock.rebase(now, step=env.sim.steps)
+                        rate.rebase(now, env.sim.time_s)
+                        presenter.camera.reset_preset()
                 now = time.monotonic()
-                if not paused and not env.done and not stop:
-                    advance_control_ticks(session, pacer.steps_for(now-previous),
-                                          brake_demand=.5 if braking else 0.)
-                previous = now
-                if env.done:
-                    save_episode()
-                    pacer.reset()
-                now = time.monotonic()
-                if now-last_sync >= 1./60.:
-                    with viewer.lock():
-                        camera.update_viewer(viewer, bike_x=sim.position_m,
-                            bike_z=float(sim.data.xpos[sim._frame_body_id, 2]))
-                    viewer.sync()
+                factor = rate.update(now, env.sim.time_s)
+                if now-last_sync >= RENDER_INTERVAL_S:
+                    frame = environment_snapshot(env)
+                    view = present_view(frame.view, requested_scale=clock.scale,
+                                        achieved_rtf=factor, track=env.sim.track)
+                    presenter.sync(viewer, frame)
                     last_sync = now
-                if now-last_hud >= .5:
-                    elapsed = now-rate_wall
-                    factor = (sim.time_s-rate_sim)/elapsed if elapsed else 0.
-                    quality = ('invalid' if not env.model_valid or not env.numerically_valid
-                               else 'synthetic')
-                    print(f'\rt={sim.time_s:.3f}s x={sim.position_m:.2f}m '
-                          f'motor={env.observation.motor_torque_nm:.1f}Nm '
-                          f'{env.tracker.state} {quality} rtf={factor:.2f} '
-                          f'{env.reason or ("paused" if paused else "running")}    ',
-                          end='', flush=True)
-                    rate_wall, rate_sim, last_hud = now, sim.time_s, now
+                    if now-last_hud >= .5:
+                        quality = 'invalid' if not env.model_valid or not env.numerically_valid else 'synthetic'
+                        presenter.print_hud(frame, view,
+                            prefix=f'[research {env.backend} {quality} {env.reason or ("paused" if paused else "running")}] ')
+                        last_hud = now
                 time.sleep(.001)
-    finally:
-        session.stop()
+        stop_at_boundary(session)
         save_episode()
-        print()
-    return episode_exit_code(env)
+        return episode_exit_code(env)
+    except BaseException as error:
+        try:
+            stop_at_boundary(session)
+            save_episode()
+        except BaseException as cleanup:
+            error.add_note(f'research finalization failed: {type(cleanup).__name__}: {cleanup}')
+        raise
+    finally:
+        env.close(discard_pending=True)
 
 
 def run_ride_research(track, args, rider):
@@ -145,25 +187,28 @@ def run_ride_research(track, args, rider):
     if output.exists() and (not output.is_dir() or any(output.iterdir())):
         raise FileExistsError('research output already exists; choose a new --out directory')
     session = make_ride_session(track, args, rider)
-    if not args.headless:
+    try:
+        if not args.headless:
+            try:
+                return run_research_viewer(session, output, time_scale=getattr(args, 'time_scale', 1))
+            except Exception:
+                if session.env.error is None:
+                    raise
+                print(f'[bike-ride research] {session.env.error}', flush=True)
+                return episode_exit_code(session.env)
         try:
-            return run_research_viewer(session, output)
+            while not session.env.done:
+                session.advance()
+        except KeyboardInterrupt:
+            stop_at_boundary(session)
         except Exception:
             if session.env.error is None:
                 raise
             print(f'[bike-ride research] {session.env.error}', flush=True)
-            return episode_exit_code(session.env)
-    try:
-        while not session.env.done:
-            session.advance()
-    except KeyboardInterrupt:
-        session.stop()
-    except Exception:
-        if session.env.error is None:
-            raise
-        print(f'[bike-ride research] {session.env.error}', flush=True)
+        finally:
+            session.save(output/'episode-0000')
+        print(f'[bike-ride research] {session.env.reason}: '
+              f'{session.env.sim.time_s:.3f}s x={session.env.sim.position_m:.3f}m -> {output}')
+        return episode_exit_code(session.env)
     finally:
-        session.save(output / 'episode-0000')
-    print(f'[bike-ride research] {session.env.reason}: '
-          f'{session.env.sim.time_s:.3f}s x={session.env.sim.position_m:.3f}m -> {output}')
-    return episode_exit_code(session.env)
+        session.env.close(discard_pending=True)

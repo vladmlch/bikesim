@@ -17,7 +17,7 @@ import json
 import tempfile
 import numpy as np
 
-from bike_sim.native.contracts import FrameSnapshot, PhysicalViewState, _freeze, _plain
+from bike_sim.native.contracts import _freeze, _plain
 from bike_sim.native.runtime import _sample
 from bike_sim.native.setup import capture_bootstrap, _control_dict, validate_supported
 from bike_sim.physics.checks import scalar
@@ -187,6 +187,8 @@ class NativeResearchEnvironment:
         self.execution = deepcopy(execution)
         self.run_metadata = deepcopy(reference.run_metadata)
         self.initial_integration_state = _freeze(reference.initial_integration_state)
+        from bike_sim.sim.ride.physical_view import snapshot_python
+        self._initial_frame = snapshot_python(reference.sim)
         self._raw_initial = raw_observation(reference.sim)
         self._active = False
         self._closed = False
@@ -251,11 +253,17 @@ class NativeResearchEnvironment:
         return [_transition(value) for value in self._native.transitions()]
 
     def snapshot(self):
+        from bike_sim.sim.ride.physical_view import native_frame
         value = self._native.snapshot()
-        return FrameSnapshot(generation=int(value.generation), step=int(value.step),
-            time_s=float(value.time_s), integration_state=value.integration_state,
-            latest_sample=_sample(value.latest_sample), view=PhysicalViewState(value.view),
-            outcome=value.outcome, first_failure=value.first_failure, model_status=value.model_status)
+        frame = native_frame(value, _sample(value.latest_sample))
+        if frame.step == 0:
+            frame = replace(frame, view=self._initial_frame.view,
+                            model_fields=self._initial_frame.model_fields)
+        return frame
+
+    def make_render_model(self):
+        import mujoco
+        return mujoco.MjModel.from_binary_path(str(self._bootstrap.model_path))
 
     def begin_control(self, control, *, front_brake_demand=0., rear_brake_demand=0.):
         if self._closed or self.done or self.control_pending:
@@ -276,11 +284,12 @@ class NativeResearchEnvironment:
         self._native.begin_control(_control_dict(control), front_brake_demand, rear_brake_demand)
         self._active = True
 
-    def advance_control(self, *, wall_budget_s=None):
+    def advance_control(self, *, wall_budget_s=None, target_step=None):
         if self._closed or not self.control_pending:
             raise RuntimeError('begin an external control interval before advancing')
         try:
-            value = self._native.advance_control(wall_budget_s)
+            value = (self._native.advance_control(wall_budget_s) if target_step is None else
+                     self._native.advance_control(wall_budget_s, target_step))
         except Exception as error:
             # Publication errors retain the completed native transaction for
             # retry. Cleanup/diagnostic failures must not mask the primary one.
@@ -374,12 +383,13 @@ class NativeResearchEnvironment:
         from bike_sim.native.recording import export_recording
         return export_recording(self, directory, overwrite=overwrite)
 
-    def close(self):
+    def close(self, *, discard_pending=False):
         if self._closed:
             return
-        if self.control_pending:
+        if self.control_pending and not discard_pending:
             raise RuntimeError('finish the active interval before closing the environment')
         self._native.close()
+        self._active = False
         self._closed = True
         if self._directory is not None:
             self._directory.cleanup()

@@ -2,7 +2,8 @@
 
 Schema 1 remains readable with its original checksum set. Schema 2 identifies
 its backend and covers all exported evidence and referenced rider parameter
-bundles. Checked native replay/viewer execution is a separate Track C contract.
+bundles. ReplaySession supplies the same incremental verifier to headless and
+visual replay, using the recorded backend without loading a policy factory.
 """
 from copy import deepcopy
 from dataclasses import asdict
@@ -42,7 +43,7 @@ def _sha256(path):
     return digest.hexdigest()
 
 
-def _json_read(path):
+def _json_loads(text):
     def object_pairs(pairs):
         result = {}
         for key, value in pairs:
@@ -60,8 +61,12 @@ def _json_read(path):
             raise ValueError("nonfinite JSON number")
         return value
 
-    return json.loads(Path(path).read_text(encoding='utf-8'),
+    return json.loads(text,
                       object_pairs_hook=object_pairs, parse_constant=nonfinite, parse_float=finite_float)
+
+
+def _json_read(path):
+    return _json_loads(Path(path).read_text(encoding='utf-8'))
 
 
 def save_replay_files(env, path):
@@ -183,7 +188,7 @@ def _check_runtime(summary):
 
 
 def _state_error(actual, expected, label, *, atol=1e-9, rtol=1e-9):
-    if actual.shape != expected.shape or not np.isfinite(expected).all():
+    if actual.shape != expected.shape or not np.isfinite(expected).all() or not np.isfinite(actual).all():
         raise ValueError(f'{label}: incompatible or nonfinite state')
     error = float(np.max(np.abs(actual-expected))) if actual.size else 0.
     if not np.allclose(actual, expected, rtol=rtol, atol=atol):
@@ -202,13 +207,12 @@ def _rebuild(path, summary, manifest):
     from bike_sim.sim.research.sensors import SensorConfig
     from bike_sim.terrain.heightfield import HeightFieldSpec
     from bike_sim.terrain.trackfile import load_track
-    if manifest["schema_version"] == 2:
-        if manifest["execution"]["backend"] == "native":
-            raise ValueError("checked native replay requires Track C3; refusing a Python-backend substitution")
-        from bike_sim.native.artifact import execution_provenance
-        if execution_provenance("python") != manifest["execution"]:
-            raise ValueError("replay execution identity differs from this runtime")
     _check_runtime(summary)
+    backend = 'python' if manifest['schema_version'] == 1 else manifest['execution']['backend']
+    if manifest["schema_version"] == 2:
+        from bike_sim.native.artifact import execution_provenance
+        if execution_provenance(backend) != manifest["execution"]:
+            raise ValueError("replay execution identity differs from this runtime")
     data = deepcopy(summary["resolved_config"])
     for key, filename in (("joint_envelope", ENVELOPE_FILE), ("joint_strength", STRENGTH_FILE)):
         declared = data["physics"]["articulated"].get(key+"_path")
@@ -218,27 +222,47 @@ def _rebuild(path, summary, manifest):
         data["physics"]["articulated"][key+"_path"] = (
             None if bundled is None else str((path/filename).resolve()))
     cfg = resolve_physics_config(data['physics'])
-    sim = RideSimulation(track=load_track(path/'track.toml'),
-        specs=BikeSpecs(**data['geometry_and_suspension']), mass_specs=BikeMassSpecs(**data['mass_budget']),
-        rider=RiderSpecs(**data['rider']), physics_config=cfg,
-        field=HeightFieldSpec(**manifest['heightfield']), start_x_m=manifest['start_x_m'])
+    rider = RiderSpecs(**data['rider'])
+    from bike_sim.sim.backend import require_backend
+    require_backend(backend, cfg, rider)
     research = summary['research']
     program = research.get('rider_program')
+    if backend == 'native' and program is not None and research.get('rider_command_recording') != 'program_inputs':
+        raise ValueError('native replay requires the recorded rider program input contract')
+    sim = RideSimulation(track=load_track(path/'track.toml'),
+        specs=BikeSpecs(**data['geometry_and_suspension']), mass_specs=BikeMassSpecs(**data['mass_budget']),
+        rider=rider, physics_config=cfg,
+        field=HeightFieldSpec(**manifest['heightfield']), start_x_m=manifest['start_x_m'])
     from bike_sim.sim.research.demand import DemandProgram
     demand = research.get('demand_program')
     experiment = dict(research['config'], seed=research['actual_sensor_seed'])
     env = ResearchEnvironment(sim, ExperimentConfig(**experiment), SensorConfig(**research['sensor_config']),
         rider_program=None if program is None else RiderProgram.from_dict(program),
         demand=None if demand is None else DemandProgram.from_dict(demand))
-    if env.metadata['configuration_sha256'] != summary['configuration_sha256']:
-        raise ValueError('reconstructed configuration differs; custom runtime/suspension overrides are not reproducible from this recipe')
-    if env.metadata['terrain_sha256'] != summary['terrain_sha256']:
-        raise ValueError('reconstructed terrain differs from the recorded compiled road')
-    vertices = np.load(path/'terrain_vertices.npy', allow_pickle=False)
-    _state_error(sim.physical.vertices, vertices, 'compiled terrain', atol=0., rtol=0.)
-    with np.load(path/'states.npz', allow_pickle=False) as states:
-        _state_error(env.initial_integration_state, states['initial'], 'initial integration state')
-    return env
+    try:
+        if env.metadata['configuration_sha256'] != summary['configuration_sha256']:
+            raise ValueError('reconstructed configuration differs; custom runtime/suspension overrides are not reproducible from this recipe')
+        if env.metadata['terrain_sha256'] != summary['terrain_sha256']:
+            raise ValueError('reconstructed terrain differs from the recorded compiled road')
+        vertices = np.load(path/'terrain_vertices.npy', allow_pickle=False)
+        _state_error(sim.physical.vertices, vertices, 'compiled terrain', atol=0., rtol=0.)
+        with np.load(path/'states.npz', allow_pickle=False) as states:
+            initial = states['initial'].copy()
+        _state_error(env.initial_integration_state, initial, 'initial integration state')
+        if backend == 'python':
+            return env
+        from bike_sim.native.research import create_native_research
+        native = create_native_research(env)
+        try:
+            _state_error(native.snapshot().integration_state, initial, 'native initial integration state')
+        except BaseException:
+            native.close(discard_pending=True)
+            raise
+        env.close()
+        return native
+    except BaseException:
+        env.close(discard_pending=True)
+        raise
 
 
 def rebuild_environment(directory):
@@ -250,7 +274,7 @@ def rebuild_environment(directory):
 
 def _rows(path):
     with Path(path).open(encoding='utf-8') as stream:
-        return [json.loads(line) for line in stream if line.strip()]
+        return [_json_loads(line) for line in stream if line.strip()]
 
 
 def _compare(actual, expected, label):
@@ -267,46 +291,20 @@ def _compare(actual, expected, label):
             _compare(a, b, f'{label}[{i}]')
     elif isinstance(expected, (int, float)) and not isinstance(expected, bool):
         if (isinstance(actual, bool) or not isinstance(actual, (int, float))
+            or not math.isfinite(actual)
             or not math.isclose(actual, expected, rel_tol=1e-9, abs_tol=1e-9)):
             raise ValueError(f'{label}: numerical replay mismatch ({actual!r} vs {expected!r})')
-    elif actual != expected:
+    elif type(actual) is not type(expected) or actual != expected:
         raise ValueError(f'{label}: replay mismatch ({actual!r} vs {expected!r})')
 
 
 def replay_episode(directory):
-    """Raise on incompatible or diverging replay; return measured errors on success."""
-    from bike_sim.physics.rider_posture import RiderPosture
-    from bike_sim.sim.ride.control import RideControl
-    path = Path(directory)
-    summary, manifest = validate_recording(path)
-    env = _rebuild(path, summary, manifest)
-    if summary['research'].get('rider_command_recording') != 'program_inputs':
-        env.rider_program = None
-    commands = _rows(path/'commands_requested.jsonl')
-    transitions = _rows(path/'transitions.jsonl')
-    observations = _rows(path/'observations.jsonl')
-    if len(commands) != len(transitions) or len(observations) != len(commands)+1:
-        raise ValueError('inconsistent recorded command/transition counts')
-    _compare(plain(asdict(env.observation)), observations[0], 'initial observation')
-    for i, (command, expected) in enumerate(zip(commands, transitions)):
-        if env.done or command['step'] != env.sim.steps:
-            raise ValueError(f'command {i}: episode ended early or step does not align')
-        _compare(env.sim.time_s, command['time_s'], f'command {i} time')
-        value = dict(command['control'])
-        if value.get('posture') is not None:
-            value['posture'] = RiderPosture(**value['posture'])
-        result = env.step(RideControl(**value), front_brake_demand=command['front_brake_demand'],
-                          rear_brake_demand=command['rear_brake_demand'])
-        _compare(plain(asdict(result)), expected, f'transition {i}')
-        _compare(plain(asdict(env.observation)), observations[i+1], f'observation {i+1}')
-    _compare(plain(env.commands_applied), _rows(path/'commands_applied.jsonl'), 'applied commands')
-    if summary['outcome']['reason'] == 'operator_stop' and not env.done:
-        env.stop()
-    _compare(env.reason, summary['outcome']['reason'] if env.done else None, 'outcome')
-    _compare(env.tracker.metrics, summary['research']['metrics'], 'event metrics')
-    with np.load(path/'states.npz', allow_pickle=False) as states:
-        final_error = _state_error(integration_state(env.sim), states['final'], 'final integration state')
-    return dict(passed=True, replayed_control_steps=len(commands), physics_steps=env.sim.steps,
-        final_state_max_abs_error=final_error, outcome=env.reason, numerically_valid=env.numerically_valid,
-        model_valid=env.model_valid, source_sha256=env.metadata['model_source_sha256'],
-        scope='Deterministic software replay under the recorded source/runtime, not physical calibration.')
+    """Synchronous convenience over the exact same verifier used by the viewer."""
+    from bike_sim.sim.research.replay_session import ReplaySession
+    session = ReplaySession(directory)
+    try:
+        while not session.advance():
+            pass
+        return session.report()
+    finally:
+        session.close()

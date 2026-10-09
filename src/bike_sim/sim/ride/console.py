@@ -13,7 +13,7 @@ console = Console(soft_wrap=True)
 
 # Physical viewer key map, shared by the session help and the viewer banner.
 PHYSICAL_KEY_MAP = ("Space brakes; ,/. brake strength; R reset; "
-                    "C/1/2 camera; T telemetry; G markers.")
+                    "C/1/2 camera; T telemetry; G markers; F6 slower; F7 faster; F8 1x.")
 PHYSICAL_HELP_NOTE = ("W/S changes the target only in ideal_speed_control. "
                       "Material and drive tuning is fixed per run.")
 

@@ -254,6 +254,15 @@ public:
         NamedEntries<SoleGoalDiagnostics> sole_goal_diagnostics;
     };
     [[nodiscard]] State state() const;
+    [[nodiscard]] const NamedEntries<JointTerms> &presentation_terms() const noexcept {
+        return last_terms_;
+    }
+    [[nodiscard]] const NamedEntries<bool> &presentation_ik() const noexcept {
+        return saturated_ik_;
+    }
+    [[nodiscard]] const SupportDiagnostics &presentation_support() const noexcept {
+        return support_diagnostics_;
+    }
     void restore(const State &state);
 
     [[nodiscard]] const std::vector<JointEntry> &joints() const {

@@ -1079,6 +1079,8 @@ void NativeRideRuntime::initialize_accounting() {
     committed_step_ = physical_->step();
     committed_time_s_ = stepper_->data()->time;
     committed_outcome_ = crash_outcome(physical_->crash());
+    physical_->initialize_presentation(committed_presentation_);
+    physical_->initialize_presentation(next_presentation_);
     cache_research_boundary();
 }
 NATIVE_DIAG_POP
@@ -1124,12 +1126,37 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
     accounting_->push(std::move(raw));
     engine::get_state(stepper_->model(), stepper_->data(),
         next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
+    physical_->capture_presentation(next_presentation_);
     committed_integration_state_.swap(next_integration_state_);
+    std::swap(committed_presentation_, next_presentation_);
     committed_step_ = physical_->step();
     committed_time_s_ = stepper_->data()->time;
     committed_outcome_ = crash_outcome(physical_->crash());
     cache_research_boundary();
-    if (accounting_->full() || committed_outcome_) accounting_->flush();
+    if (!committed_outcome_ && finish_position_m_ &&
+        committed_position_m_ >= *finish_position_m_)
+        committed_outcome_ = "end_of_track";
+    if (accounting_->full() || committed_outcome_) flush_accounting();
+}
+
+void NativeRideRuntime::flush_accounting() {
+    try {
+        accounting_->flush();
+    } catch (const InvalidReferenceRun &) {
+        physical_->capture_accounted_presentation(committed_presentation_);
+        throw;
+    }
+    physical_->capture_accounted_presentation(committed_presentation_);
+}
+
+void NativeRideRuntime::set_finish_position(double position_m) {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    if (!std::isfinite(position_m) || position_m <= committed_position_m_)
+        throw std::invalid_argument("finish position must be finite and ahead of the start");
+    if (committed_step_ != 0)
+        throw std::invalid_argument("finish position must be configured at t=0");
+    finish_position_m_ = position_m;
 }
 
 AdvanceResult
@@ -1171,7 +1198,7 @@ NativeRideRuntime::advance(std::int64_t target_step, nb::handle control,
         const auto start_time = std::chrono::steady_clock::now();
         // A previous allocation/evaluation failure may have left a full,
         // unacknowledged raw period. Retry it before accepting new physics.
-        if (accounting_->full()) accounting_->flush();
+        if (accounting_->full()) flush_accounting();
         try {
             while (committed_step_ < target_step && !committed_outcome_.has_value()) {
                 if (budget.has_value() &&
@@ -1187,7 +1214,7 @@ NativeRideRuntime::advance(std::int64_t target_step, nb::handle control,
             // A strict reference rejection cannot replace the fatal engine error.
             const std::exception_ptr failure = std::current_exception();
             // NOLINTNEXTLINE(bugprone-empty-catch) captures remain retryable; the engine failure must not be masked
-            try { accounting_->flush(); } catch (...) {}
+            try { flush_accounting(); } catch (...) {}
             std::rethrow_exception(failure);
         }
         if (reason.empty()) reason = committed_outcome_.has_value() ? "outcome" : "target";
@@ -1245,7 +1272,7 @@ RuntimeSnapshot NativeRideRuntime::snapshot() const {
     return {.generation = physical_->generation(), .step = committed_step_,
             .time_s = committed_time_s_, .integration_state = committed_integration_state_,
             .outcome = outcome_reason(), .latest_sample = latest,
-            .view = latest == nullptr ? WireObject{} : latest->channels,
+            .view = committed_presentation_.as_wire(),
             .model_status = accounting_->state().model_status.as_wire(),
             .first_failure = accounting_->state().monitor.first_failure};
 }
@@ -1255,7 +1282,7 @@ void NativeRideRuntime::flush() {
     require_open();
     {
         const nb::gil_scoped_release release;
-        accounting_->flush();
+        flush_accounting();
     }
     emit_reference_warning();
 }
@@ -1284,6 +1311,22 @@ nb::dict NativeRideRuntime::recorded_columns() const {
     return columns_to_python(accounting_->recorded_columns());
 }
 
+nb::list NativeRideRuntime::recorded_intervals() const {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    nb::list result;
+    for (const auto &sample : accounting_->recorded_samples())
+        result.append(wire_object_to_python(sample->as_wire()));
+    return result;
+}
+
+void NativeRideRuntime::release_samples() {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    if (const auto &latest = accounting_->latest_sample(); latest != nullptr)
+        accounting_->acknowledge_through(latest->interval_id);
+}
+
 void NativeRideRuntime::emit_reference_warning() {
     const auto message = accounting_->take_warning();
     if (message.has_value() && PyErr_WarnEx(PyExc_RuntimeWarning, message->c_str(), 1) < 0)
@@ -1305,7 +1348,7 @@ void NativeRideRuntime::reset() {
     // intact; callers may drain it and retry reset without losing evidence.
     {
         const nb::gil_scoped_release release;
-        accounting_->flush();
+        flush_accounting();
     }
     emit_reference_warning();
     // Stepper::reset is the supported recovery path for a poisoned owner.
@@ -1319,6 +1362,8 @@ void NativeRideRuntime::reset() {
     committed_step_ = bootstrap_step_state_.step;
     committed_time_s_ = stepper_->data()->time;
     committed_outcome_ = crash_outcome(physical_->crash());
+    physical_->capture_presentation(committed_presentation_);
+    physical_->capture_presentation(next_presentation_);
     cache_research_boundary();
     test_failure_step_.reset();
 }
@@ -1415,6 +1460,9 @@ void bind_runtime_class(const nb::module_ &module) {
         .def("acknowledge_samples", &NativeRideRuntime::acknowledge_samples, nb::arg("batch"))
         .def("accounting_state", &NativeRideRuntime::accounting_state)
         .def("recorded_columns", &NativeRideRuntime::recorded_columns)
+        .def("recorded_intervals", &NativeRideRuntime::recorded_intervals)
+        .def("release_samples", &NativeRideRuntime::release_samples)
+        .def("set_finish_position", &NativeRideRuntime::set_finish_position, nb::arg("position_m"))
         .def("_test_fail_at_step", &NativeRideRuntime::test_fail_at_step, nb::arg("step"))
         .def("reset", &NativeRideRuntime::reset)
         .def("close", &NativeRideRuntime::close)

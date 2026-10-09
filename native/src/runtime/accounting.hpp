@@ -70,6 +70,7 @@ public:
     [[nodiscard]] const AccountingState &state() const noexcept { return state_; }
     [[nodiscard]] WireObject state_wire() const;
     [[nodiscard]] SampleColumns recorded_columns() const;
+    [[nodiscard]] std::span<const SamplePtr> recorded_samples() const noexcept { return recorded_samples_; }
     [[nodiscard]] std::optional<std::string> take_warning() { return state_.monitor.take_warning(); }
 private:
     AccountingConfig config_;
@@ -81,6 +82,7 @@ private:
     writers::RiderContactWriter *contacts_;
     std::vector<SamplePtr> pending_;
     std::vector<RecordedBlock> recorded_;
+    std::vector<SamplePtr> recorded_samples_;
     SamplePtr latest_;
 };
 } // namespace runtime

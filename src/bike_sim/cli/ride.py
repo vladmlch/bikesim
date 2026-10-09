@@ -167,6 +167,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="override the track surface friction preset (default: track surface)",
     )
     parser.add_argument("--physics", choices=("legacy","physical"), default=None)
+    parser.add_argument('--backend', choices=('python', 'native'), default='python',
+                        help='physical/research execution backend; never falls back')
+    parser.add_argument('--time-scale', type=int, choices=(1, 2, 4, 8), default=None,
+                        help='interactive physical/research playback speed (default 1)')
     parser.add_argument("--drive", choices=("coast","ideal_speed_control","crank_effort","articulated_effort"), default=None)
     parser.add_argument("--physics-config", default=None, metavar="PATH")
     parser.add_argument("--initial-speed", type=float, default=None, metavar="KMH")
@@ -212,6 +216,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         parser.error(str(exc))
     args.physics=args.resolved_physics.physics_mode
     args.drive=args.resolved_physics.drive_mode
+    if args.time_scale is not None and (args.headless or args.physics != 'physical' or args.preview):
+        parser.error('--time-scale requires an interactive physical or research run')
+    args.time_scale = 1 if args.time_scale is None else args.time_scale
+    if args.backend == 'native' and args.physics != 'physical':
+        parser.error('--backend native requires physical or research mode')
     if args.assist is not None and args.physics == 'physical':
         drive_values['assist'] = {**drive_values.get('assist', {}), 'mode': args.assist}
         overrides['drive'] = drive_values
@@ -758,9 +767,10 @@ def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, 
     if args.physics == "physical":
         from bike_sim.sim.playground import ensure_macos_mjpython
         ensure_macos_mjpython()
-        from bike_sim.sim.ride.physical_session import build_physical_simulation
-        from bike_sim.sim.ride.viewer import run_physical_viewer
-        return run_physical_viewer(build_physical_simulation(track,args,rider), out_root=args.out)
+        from bike_sim.sim.ride.physical_driver import build_physical_driver
+        from bike_sim.sim.ride.physical_frontend import run_viewer
+        return run_viewer(build_physical_driver(track, args, rider, seed=args.seed, strict=False),
+                          out_root=args.out, time_scale=args.time_scale)
     if args.sag is not None:
         print(f"{PREFIX} --sag applies to headless runs only; the viewer uses the shipped tune "
               f"(P cycles damper presets, -/= change pressure)", file=sys.stderr)
@@ -805,7 +815,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 2
     try:
         rider = resolve_rider(args)
-    except ValueError as exc:
+        if args.physics == 'physical' and not args.preview:
+            from bike_sim.sim.backend import require_backend
+            require_backend(args.backend, args.resolved_physics, rider)
+    except (ValueError, RuntimeError, ImportError, OSError) as exc:
         print(f"{PREFIX} {exc}", file=sys.stderr)
         return 2
     if args.sag is not None and not rider.present:

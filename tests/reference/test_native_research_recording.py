@@ -42,8 +42,12 @@ def test_shared_export_native_rows_and_complete_provenance(environment_pair, tmp
         with np.load(python_path/'states.npz', allow_pickle=False) as expected:
             for name in ('initial', 'final'):
                 np.testing.assert_allclose(actual[name], expected[name], atol=1e-9, rtol=1e-9)
-    with pytest.raises(ValueError, match='Track C3'):
-        rebuild_environment(native_path)
+    rebuilt = rebuild_environment(native_path)
+    try:
+        assert rebuilt.backend == 'native'
+        assert rebuilt.sim.steps == 0
+    finally:
+        rebuilt.close()
 
 
 def test_empty_recording_and_no_overwrite(environment_pair, tmp_path):

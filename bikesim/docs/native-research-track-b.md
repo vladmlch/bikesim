@@ -1,5 +1,9 @@
 # Native research: Track B source delivery
 
+Historical Track B scope. The later [Track C source audit](native-visual-track-c.md)
+and [ride usage](RIDE.md) supersede the frontend/replay work marked future below;
+neither source delivery establishes executable acceptance.
+
 Status: B1-B3 implementation and regression sources are supplied. They were not
 compiled, imported, executed or tested during this delivery. A4 verification was
 already pending in the supplied audit. This is not a verified release artifact.

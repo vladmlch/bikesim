@@ -207,16 +207,19 @@ void bind_research(nb::module_ &module) {
             self.begin_control(command, wire::finite_real(front, "front_brake_demand"),
                                wire::finite_real(rear, "rear_brake_demand"));
         }, nb::arg("control"), nb::arg("front_brake_demand") = 0., nb::arg("rear_brake_demand") = 0.)
-        .def("advance_control", [](NativeResearchRuntime &self, nb::handle wall_budget) -> nb::object {
+        .def("advance_control", [](NativeResearchRuntime &self, nb::handle wall_budget,
+                                  nb::handle target) -> nb::object {
             const auto budget = wire::optional_real(wall_budget, "wall_budget_s");
+            const auto target_step = target.is_none() ? std::optional<std::int64_t>{} :
+                std::optional<std::int64_t>{wire::integer(target, "target_step")};
             std::optional<ResearchTransition> result;
             {
                 const nb::gil_scoped_release release;
-                result = self.advance_control(budget);
+                result = self.advance_control(budget, target_step);
             }
             self.emit_warning();
             return result ? nb::object(wire_object_to_python(result->as_wire())) : nb::none();
-        }, nb::arg("wall_budget_s") = nb::none())
+        }, nb::arg("wall_budget_s") = nb::none(), nb::arg("target_step") = nb::none())
         .def("acknowledge_control", &NativeResearchRuntime::acknowledge_control)
         .def("snapshot", &NativeResearchRuntime::snapshot)
         .def("status", [](const NativeResearchRuntime &self) { return wire_object_to_python(self.status()); })

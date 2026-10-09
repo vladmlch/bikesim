@@ -204,18 +204,15 @@ class RideHUD:
         red, an airborne wheel is red, |kappa| past SLIP_WARN is red, a support
         pulling against its weld is orange1, a slipping one red.
         """
-        from bike_sim.native.contracts import PhysicalViewState
-        from bike_sim.sim.ride.physical_view import make_physical_view
-        view = sim if isinstance(sim, PhysicalViewState) else make_physical_view(
-            sim, achieved_rtf=sim.physical.live_real_time_factor)
-        factor = view.achieved_rtf
+        physical = sim.physical
+        factor = physical.live_real_time_factor
         rate = "----x" if factor is None else f"{factor:.2f}x"
         rtf_style = ("dim" if factor is None else "green" if factor >= .95
                      else "yellow" if factor >= .5 else "red")
-        if view.sample is None:
-            return [("PHYS", [(f"[PHYS|{view.drive_mode}]", "bold cyan")]),
+        if physical.sample is None:
+            return [("PHYS", [(f"[PHYS|{sim.physics_config.drive_mode}]", "bold cyan")]),
                     ("", [(" initial condition", ""), (f" RTF={rate}", rtf_style)])]
-        channels = view.channels
+        channels = physical.sample.channels
         tires = channels["tires"]; drive = channels["drive"]
         rider = channels.get("rider", {})
         front_angle = degrees(drive.get("crank_phase_rad", 0.)) % 360.
@@ -227,10 +224,10 @@ class RideHUD:
             leading = [(" ", "")] if columns and columns[-1] is not sep else []
             columns.append((legend, leading + list(segments)))
 
-        col("PHYS", (f"[PHYS|{view.drive_mode}]", "bold cyan"))
-        col("time", (f"t={view.sample.time_s:7.2f}s", ""))
+        col("PHYS", (f"[PHYS|{sim.physics_config.drive_mode}]", "bold cyan"))
+        col("time", (f"t={physical.sample.time_s:7.2f}s", ""))
         col("rtf", (f"RTF={rate}", rtf_style))
-        col("speed", (f"v={view.sample.qvel[view.endpoint['root_x_dofadr']]*3.6:+6.2f}km/h", ""))
+        col("speed", (f"v={physical.sample.qvel[sim.root_x_dofadr]*3.6:+6.2f}km/h", ""))
         normal_f = float(tires["front"].get("normal_load_n", 0.))
         normal_r = float(tires["rear"].get("normal_load_n", 0.))
         col("Fn f/r",
@@ -302,8 +299,8 @@ class RideHUD:
             (f"{saddle_n:4.0f}" if saddle_n is not None else "----",
              "orange1" if (saddle_n or 0.) < 0. else "green"),
             ("N", "green"))
-        torso_pitch = view.endpoint['torso_pitch_deg']
-        lean = None if torso_pitch is None else torso_pitch - degrees(view.endpoint['pitch_rad'])
+        torso_pitch = self._rider_body_pitch_deg(sim, "rider_torso")
+        lean = None if torso_pitch is None else torso_pitch - degrees(sim.pitch_rad)
         col("lean",
             ("lean=", "green"),
             (f"{lean:+5.1f}" if lean is not None else "-----", "green"),
@@ -438,13 +435,6 @@ class RideHUD:
         return ids[key]
 
     def preview_log_row(self, sim: "RideSimulation") -> dict:
-        """Accept an owned view or retain the historical simulation entry point."""
-        from bike_sim.native.contracts import PhysicalViewState
-        if isinstance(sim, PhysicalViewState):
-            return dict(sim.preview_row)
-        return self._preview_log_row(sim)
-
-    def _preview_log_row(self, sim: "RideSimulation") -> dict:
         """Build one CSV row of the physical preview's key state channels.
 
         Columns absent from this build (no rider contacts, no tire model) are

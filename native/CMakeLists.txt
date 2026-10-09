@@ -298,6 +298,7 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/runtime/runtime_binding.cpp
   src/runtime/static_brake.cpp
   src/runtime/step.cpp
+  src/runtime/presentation.cpp
   src/runtime/test_adapter.cpp
   src/writers/rider_contacts.cpp)
 

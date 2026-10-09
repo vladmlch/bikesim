@@ -38,6 +38,8 @@ class ExplicitPhysicsValue(argparse.Action):
 
 def parser():
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--backend', choices=('python', 'native'), default='python',
+                   help='headless research backend; no automatic fallback')
     p.add_argument('--physics-config', type=Path)
     p.add_argument('--road-resolution', type=float, default=.005, help='compiled road spacing, m')
     p.add_argument('--sensor-period', type=float, default=.005, help='acquisition period, s')
@@ -172,7 +174,7 @@ def make_environment(args):
     rider, program = build_rider(args)
     return build_environment(track=track, rider=rider, physics_config=cfg,
         experiment=experiment, sensors=sensors, road_resolution_m=args.road_resolution,
-        demand=build_demand(args), rider_program=program)
+        demand=build_demand(args), rider_program=program, backend=getattr(args, 'backend', 'python'))
 
 
 def posture_at(name, time_s):
@@ -222,7 +224,9 @@ def main(argv=None):
             env.save(args.out, overwrite=args.overwrite)
         else:
             session.save(args.out, overwrite=args.overwrite)
-        print(json.dumps(dict(output=str(args.out), outcome=env.reason, metrics=env.tracker.metrics), indent=2))
+        from bike_sim.sim.ride.physical_samples import plain
+        print(json.dumps(plain(dict(output=str(args.out), outcome=env.reason,
+                                    metrics=env.tracker.metrics)), indent=2))
         return episode_exit_code(env)
     except Exception as exc:
         if env is not None and env.error is not None:
@@ -232,6 +236,9 @@ def main(argv=None):
                 session.save(args.out, overwrite=args.overwrite)
         print(f'ERROR: {exc}', file=sys.stderr)
         return 3 if env is not None and env.error is not None else 2
+    finally:
+        if env is not None:
+            env.close(discard_pending=True)
 
 
 if __name__ == '__main__':

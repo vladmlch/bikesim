@@ -56,9 +56,17 @@ class PhysicalViewState:
     """Published physical channels, independent of the render replica."""
 
     channels: Mapping[str, Any] = field(default_factory=dict)
+    drive_mode: str = 'articulated_effort'
+    sample: Any = None
+    endpoint: Mapping[str, Any] = field(default_factory=dict)
+    preview_row: Mapping[str, Any] = field(default_factory=dict)
+    requested_scale: int = 1
+    achieved_rtf: float | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, 'channels', _freeze(self.channels))
+        object.__setattr__(self, 'endpoint', _freeze(self.endpoint))
+        object.__setattr__(self, 'preview_row', _freeze(self.preview_row))
 
 
 @dataclass(frozen=True)
@@ -74,12 +82,14 @@ class FrameSnapshot:
     outcome: str | None = None
     first_failure: Any = None
     model_status: Mapping[str, Any] = field(default_factory=dict)
+    model_fields: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, 'integration_state',
                            _owned_array(self.integration_state, 'integration_state'))
         object.__setattr__(self, 'first_failure', _freeze(self.first_failure))
         object.__setattr__(self, 'model_status', _freeze(self.model_status))
+        object.__setattr__(self, 'model_fields', _freeze(self.model_fields))
         if self.view is not None and not isinstance(self.view, PhysicalViewState):
             raise ValueError('view must be a PhysicalViewState')
 

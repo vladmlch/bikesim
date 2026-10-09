@@ -35,6 +35,7 @@
 class Stepper;
 
 namespace runtime {
+struct PresentationState;
 
 // The step-owned slice of the runtime config — decoded in the binding.
 // `monitors`, `intent` and rollback thresholds arrive prevalidated;
@@ -222,6 +223,9 @@ public:
     [[nodiscard]] const RuntimeContacts &contacts() const noexcept {
         return contacts_;
     }
+    void initialize_presentation(PresentationState &out) const;
+    void capture_presentation(PresentationState &out) const;
+    void capture_accounted_presentation(PresentationState &out) const;
     [[nodiscard]] const CrashDetector &crash_detector() const noexcept {
         return crash_detector_;
     }

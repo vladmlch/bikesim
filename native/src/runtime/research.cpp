@@ -231,7 +231,7 @@ void NativeResearchRuntime::handle_failure(const std::exception &failure) {
     e.error = std::string(reference ? "InvalidReferenceRun: " : "RuntimeError: ") + failure.what();
     // Cleanup may fail independently; retain the original exception and all
     // successfully published evidence rather than manufacturing a transition.
-    try { if (runtime_->accounting_->has_raws()) runtime_->accounting_->flush(); }
+    try { if (runtime_->accounting_->has_raws()) runtime_->flush_accounting(); }
     catch (const std::exception &tail) { e.cleanup_notes.push_back(std::string("trailing interval check: ") + tail.what()); }
     try { consume_samples(false); }
     catch (const std::exception &tail) { e.cleanup_notes.push_back(std::string("trailing sample consumption: ") + tail.what()); }
@@ -239,11 +239,14 @@ void NativeResearchRuntime::handle_failure(const std::exception &failure) {
     e.window.reset();
     e.delivery_pending = false;
 }
-std::optional<ResearchTransition> NativeResearchRuntime::advance_control(std::optional<double> budget) {
+std::optional<ResearchTransition> NativeResearchRuntime::advance_control(
+    std::optional<double> budget, std::optional<std::int64_t> target_step) {
     const ResearchGuard guard(busy_);
     require_open();
     if (budget && (!std::isfinite(*budget) || *budget < 0.))
         throw std::invalid_argument("wall_budget_s must be finite and nonnegative");
+    if (target_step && *target_step < runtime_->committed_step_)
+        throw std::invalid_argument("target_step is behind the committed step");
     auto &e = *episode_;
     if (e.delivery_pending) return e.transitions.back();
     if (!e.window) throw std::runtime_error("begin_control must precede advance_control");
@@ -251,6 +254,8 @@ std::optional<ResearchTransition> NativeResearchRuntime::advance_control(std::op
     try {
         runtime_->stepper_->refresh_time_callback_policy();
         while (runtime_->committed_step_ < e.window->target_step && !e.done()) {
+            if (target_step && runtime_->committed_step_ >= *target_step)
+                return std::nullopt; // Pacing yield; the external command stays latched.
             if (budget && std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count() >= *budget)
                 return std::nullopt; // No flush, delivery, request or transition on a yield.
             while (!e.commands.empty() && e.commands.front().first <= runtime_->committed_step_) {
@@ -271,7 +276,7 @@ std::optional<ResearchTransition> NativeResearchRuntime::advance_control(std::op
             consume_samples();
         }
         if (runtime_->accounting_->has_raws()) {
-            runtime_->accounting_->flush();
+            runtime_->flush_accounting();
             consume_samples();
         }
         finish_window();

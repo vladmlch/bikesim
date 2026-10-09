@@ -54,7 +54,10 @@ private:
         std::span<const double> a) noexcept {
     const std::size_t n = a.size();
     if (n < 8) {
-        double result = 0.;
+        // np.sum's empty-reduce identity is +0.0; pairwise_sum itself
+        // seeds -0.0 so that summing only -0.0 stays -0.0 upstream.
+        if (n == 0) return 0.;
+        double result = -0.;
         for (const double value : a) result += value;
         return result;
     }

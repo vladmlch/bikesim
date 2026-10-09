@@ -1064,8 +1064,11 @@ PhysicalStep::apply_forces_body(
                         : stepper_->tire_writer().probe_snapshots();
             std::array<TireSideInput, 2> side_input{};
             for (std::size_t i = 0; i < 2; ++i) {
+                // One bound element: the optional-access checker cannot
+                // link has_value()/-> across separate snaps[i] calls.
+                const auto &snap = snaps[i];
                 const auto *patches =
-                    snaps[i].has_value() ? &snaps[i]->patches : nullptr;
+                    snap.has_value() ? &snap->patches : nullptr;
                 const std::size_t n =
                     patches != nullptr ? patches->size() : 0;
                 patch_loads_[i].assign(n, 0.);
@@ -1087,8 +1090,8 @@ PhysicalStep::apply_forces_body(
                                             static_cast<std::ptrdiff_t>(n))),
                     .patch_working = working,
                     .effective_radius_m =
-                        snaps[i].has_value()
-                            ? snaps[i]->effective_radius_m
+                        snap.has_value()
+                            ? snap->effective_radius_m
                             : 0.};
             }
             const std::span<const std::string_view> res_names =

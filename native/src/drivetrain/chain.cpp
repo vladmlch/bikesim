@@ -1,6 +1,7 @@
 #include "chain.hpp"
 #include "../cblas_abi.hpp"
 #include "../model_access.hpp"
+#include "../numeric_sincos.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -54,7 +55,7 @@ namespace drivetrain {
 
     double unwrap(double value, double reference) {
         return reference +
-               std::atan2(std::sin(value - reference), std::cos(value - reference));
+               std::atan2(numeric::sin(value - reference), numeric::cos(value - reference));
     }
 
     int resolve(const mjModel *m, mjtObj kind, const char *name) {
@@ -111,7 +112,7 @@ namespace drivetrain {
         const double D = std::sqrt(dot(a, a)), difference = rf - rr,
                 root = std::sqrt(D * D - difference * difference);
         const Vec2 perpendicular = {a[1] / D, -a[0] / D},
-                normal = {std::cos(psi), std::sin(psi)};
+                normal = {numeric::cos(psi), numeric::sin(psi)};
         const double sign = dot(normal, perpendicular) >= 0. ? 1. : -1.;
         const double radial = D / root - sign * difference * difference / (D * root);
         const Vec2 result = {

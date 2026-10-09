@@ -1,6 +1,8 @@
+# Frozen from the supplied pre-Track-B archive for an independent test oracle.
+# Do not replace its draws with SensorNoiseSource or change its arithmetic.
 """Explicit causal IMU/encoder/torque sensor model; no privileged terrain data."""
 from collections import deque
-from dataclasses import asdict, dataclass, replace
+from dataclasses import dataclass, replace
 import numpy as np
 from bike_sim.physics.checks import array, scalar
 
@@ -81,8 +83,9 @@ class SensorPipeline:
         self._reset_noise()
 
     def _reset_noise(self):
-        from bike_sim.sim.research.sensor_noise import SensorNoiseSource
-        self._noise = SensorNoiseSource(self.config, seed=self.seed)
+        noise_seed, dropout_seed = np.random.SeedSequence(self.seed).spawn(2)
+        self._rng = np.random.default_rng(noise_seed)
+        self._dropout_rng = np.random.default_rng(dropout_seed)
 
     @staticmethod
     def _invalid_sample(raw):
@@ -108,14 +111,13 @@ class SensorPipeline:
         t = raw.source_time_s
         if self._last_time is not None and t <= self._last_time:
             raise ValueError('sensor input timestamps must strictly increase')
-        c = self.config
-        noise, dropout = self._noise.draw()
+        c, rng = self.config, self._rng
         acceleration = (np.asarray(raw.specific_force_body_mps2)
                         + np.asarray(c.acceleration_bias_mps2)
-                        + noise[:3])
-        gyro = raw.pitch_rate_up_rad_s+c.gyro_bias_rad_s+float(noise[3])
-        encoder_noise = noise[4:7]
-        torque_noise = noise[7:9]
+                        + rng.normal(0., c.acceleration_std_mps2, 3))
+        gyro = raw.pitch_rate_up_rad_s+c.gyro_bias_rad_s+float(rng.normal(0., c.gyro_std_rad_s))
+        encoder_noise = rng.normal(0., c.encoder_std_rad_s, 3)
+        torque_noise = rng.normal(0., c.torque_std_nm, 2)
         measured = replace(raw, specific_force_body_mps2=tuple(acceleration), pitch_rate_up_rad_s=gyro,
             front_wheel_rad_s=raw.front_wheel_rad_s+float(encoder_noise[0]),
             rear_wheel_rad_s=raw.rear_wheel_rad_s+float(encoder_noise[1]),
@@ -130,7 +132,7 @@ class SensorPipeline:
         self.samples_attempted += 1
         if self._startup is None:
             self._startup = self._invalid_sample(raw)
-        if dropout < c.dropout_probability:
+        if self._dropout_rng.random() < c.dropout_probability:
             self.samples_dropped += 1
         else:
             self._queue.append(measured)
@@ -153,12 +155,3 @@ class SensorPipeline:
         valid = (selected.valid and selected.source_time_s <= cutoff+1e-12
                  and now-selected.source_time_s <= self.config.maximum_age_s+1e-12)
         return replace(selected, time_s=now, valid=valid)
-
-    def state_dict(self):
-        """Owned delivery state; RNG is represented by the episode tape cursor."""
-        return dict(queue=[asdict(sample) for sample in self._queue],
-                    last_time=self._last_time, delivery_time=self._delivery_time,
-                    startup=None if self._startup is None else asdict(self._startup),
-                    samples_attempted=self.samples_attempted,
-                    samples_dropped=self.samples_dropped,
-                    cursor=self.samples_attempted)

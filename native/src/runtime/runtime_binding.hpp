@@ -94,6 +94,13 @@ public:
     [[nodiscard]] bool closed() const { return closed_; }
 
 private:
+    friend class NativeResearchRuntime;
+    void advance_interval(const RideControl &command, double front, double rear);
+    void cache_research_boundary();
+    double committed_position_m_ = 0.;
+    double committed_battery_energy_j_ = 0.;
+    std::optional<CrashEvent> committed_crash_;
+    std::optional<BalanceLostEvent> committed_balance_;
     void require_open() const;
     // The ctor's decode/build/restore half — its own frame keeps the
     // stack-budget sweep green on unoptimized builds.

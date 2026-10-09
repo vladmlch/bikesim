@@ -1079,6 +1079,7 @@ void NativeRideRuntime::initialize_accounting() {
     committed_step_ = physical_->step();
     committed_time_s_ = stepper_->data()->time;
     committed_outcome_ = crash_outcome(physical_->crash());
+    cache_research_boundary();
 }
 NATIVE_DIAG_POP
 
@@ -1107,6 +1108,28 @@ void NativeRideRuntime::test_failure_boundary() {
 
 std::optional<std::string> NativeRideRuntime::outcome_reason() const {
     return committed_outcome_;
+}
+
+void NativeRideRuntime::cache_research_boundary() {
+    const auto qpos = stepper_->qpos();
+    committed_position_m_ = qpos[accounting_config_.columns.root_x_qpos];
+    committed_battery_energy_j_ = stepper_->drive().battery_energy_j();
+    committed_crash_ = physical_->crash();
+    committed_balance_ = physical_->balance_event();
+}
+
+void NativeRideRuntime::advance_interval(const RideControl &command, double front, double rear) {
+    test_failure_boundary();
+    RawStep raw = physical_->advance_physics(front, rear, std::nullopt, command);
+    accounting_->push(std::move(raw));
+    engine::get_state(stepper_->model(), stepper_->data(),
+        next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
+    committed_integration_state_.swap(next_integration_state_);
+    committed_step_ = physical_->step();
+    committed_time_s_ = stepper_->data()->time;
+    committed_outcome_ = crash_outcome(physical_->crash());
+    cache_research_boundary();
+    if (accounting_->full() || committed_outcome_) accounting_->flush();
 }
 
 AdvanceResult
@@ -1157,17 +1180,7 @@ NativeRideRuntime::advance(std::int64_t target_step, nb::handle control,
                     reason = "budget";
                     break;
                 }
-                test_failure_boundary();
-                RawStep raw = physical_->advance_physics(front_brake_demand,
-                    rear_brake_demand, std::nullopt, command);
-                accounting_->push(std::move(raw));
-                engine::get_state(stepper_->model(), stepper_->data(),
-                    next_integration_state_.data(), static_cast<int>(mjSTATE_INTEGRATION));
-                committed_integration_state_.swap(next_integration_state_);
-                committed_step_ = physical_->step();
-                committed_time_s_ = stepper_->data()->time;
-                committed_outcome_ = crash_outcome(physical_->crash());
-                if (accounting_->full() || committed_outcome_.has_value()) accounting_->flush();
+                advance_interval(command, front_brake_demand, rear_brake_demand);
             }
         } catch (const engine::EngineFailure &) {
             // Accounting uses only owned captures, never the poisoned arena.
@@ -1306,6 +1319,7 @@ void NativeRideRuntime::reset() {
     committed_step_ = bootstrap_step_state_.step;
     committed_time_s_ = stepper_->data()->time;
     committed_outcome_ = crash_outcome(physical_->crash());
+    cache_research_boundary();
     test_failure_step_.reset();
 }
 

@@ -228,6 +228,12 @@ public:
     [[nodiscard]] const std::optional<CrashEvent> &crash() const noexcept {
         return crash_detector_.event();
     }
+    [[nodiscard]] std::optional<BalanceLostEvent> balance_event() const noexcept {
+        return balance_monitor_.state().event;
+    }
+    [[nodiscard]] std::span<const std::array<double, 2>> terrain_vertices() const noexcept {
+        return vertices_;
+    }
     [[nodiscard]] bool rider_present() const noexcept {
         return rider_control_.has_value();
     }

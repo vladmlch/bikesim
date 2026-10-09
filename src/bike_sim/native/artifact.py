@@ -140,3 +140,101 @@ def load_native_extension(build_dir: Path | None = None) -> ModuleType:
             f'native artifact mismatch: selected={build}, '
             f'expected={expected}, imported={actual}')
     return module
+
+
+EXECUTION_FIELDS = frozenset({
+    'backend', 'runtime_schema', 'python_source_sha256', 'native_source_sha256',
+    'extension_sha256', 'mujoco_version', 'mujoco_library_sha256', 'build_context',
+})
+BUILD_CONTEXT_FIELDS = frozenset({'build_type', 'compiler_id', 'compiler_version', 'numerical_flags'})
+
+
+def _file_digest(path):
+    from hashlib import sha256
+    digest = sha256()
+    with Path(path).open('rb') as stream:
+        for block in iter(lambda: stream.read(1024*1024), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def native_source_fingerprint(root=None):
+    """Same sorted path/content manifest as native/CMakeLists.txt.
+
+    Generated headers, build trees, binaries and third-party reference archives
+    are excluded. This digest binds a binary's compile-time stamp to its source
+    checkout, independent of the checkout's absolute path.
+    """
+    from hashlib import sha256
+    root = _REPO_ROOT/'native' if root is None else Path(root)
+    inputs = {root/'CMakeLists.txt'}
+    for directory, extensions in (('src', {'.cpp', '.hpp', '.h', '.in'}),
+                                  ('cmake', {'.cmake', '.in'})):
+        inputs.update(path for path in (root/directory).rglob('*')
+                      if path.is_file() and path.suffix in extensions)
+    records = (f'{path.relative_to(root).as_posix()}={_file_digest(path)}\n'
+               for path in sorted(inputs, key=lambda p: p.relative_to(root).as_posix()))
+    return sha256(''.join(records).encode('utf-8')).hexdigest()
+
+
+def validate_execution(value):
+    """Validate data only: no imports, recorded paths, or policy factories."""
+    import re
+    if not isinstance(value, dict) or set(value) != EXECUTION_FIELDS:
+        raise ValueError('execution must contain the exact schema-2 identity fields')
+    if value['backend'] not in ('python', 'native'):
+        raise ValueError('unsupported recorded execution backend')
+    if type(value['runtime_schema']) is not int or value['runtime_schema'] != 1:
+        raise ValueError('unsupported recorded runtime schema')
+    if not isinstance(value['mujoco_version'], str) or not value['mujoco_version'].strip():
+        raise ValueError('execution.mujoco_version must be a nonempty string')
+    hashes = ('python_source_sha256', 'native_source_sha256',
+              'extension_sha256', 'mujoco_library_sha256')
+    for name in hashes:
+        expected_null = value['backend'] == 'python' and name != 'python_source_sha256'
+        if expected_null:
+            if value[name] is not None:
+                raise ValueError(f'Python execution.{name} must be null')
+        elif not isinstance(value[name], str) or re.fullmatch('[0-9a-f]{64}', value[name]) is None:
+            raise ValueError(f'execution.{name} must be a lowercase SHA-256 digest')
+    context = value['build_context']
+    if value['backend'] == 'python':
+        if context is not None:
+            raise ValueError('Python execution.build_context must be null')
+    elif (not isinstance(context, dict) or set(context) != BUILD_CONTEXT_FIELDS
+          or any(not isinstance(item, str) or not item.strip() for item in context.values())):
+        raise ValueError('native execution.build_context is incomplete')
+    return value
+
+
+def execution_provenance(backend: str, *, artifact=None) -> dict:
+    """Capture source and actual loaded binary/library content at a boundary.
+
+    Native creation separately checks the compiled source stamp. Re-reading
+    current source digests at save detects subsequent edits without silently
+    rewriting the recorded startup identity.
+    """
+    import json
+    import mujoco
+    from bike_sim.validation.environment import source_fingerprint
+    if backend not in ('python', 'native'):
+        raise ValueError('backend must be python or native')
+    result = dict(backend=backend, runtime_schema=1,
+                  python_source_sha256=source_fingerprint(Path(__file__).resolve().parents[1]),
+                  native_source_sha256=None, extension_sha256=None,
+                  mujoco_version=mujoco.mj_versionString(),
+                  mujoco_library_sha256=None, build_context=None)
+    if backend == 'native':
+        module = load_native_extension() if artifact is None else artifact
+        location = _module_path(module)
+        if location is None or not location.is_file():
+            raise ValueError('native provenance requires the loaded extension file')
+        identity = module.runtime_identity()
+        library = Path(identity['mujoco_library_path']).resolve(strict=True)
+        if identity['mujoco_version'] != result['mujoco_version']:
+            raise ValueError('native and Python have different loaded MuJoCo versions')
+        result.update(native_source_sha256=native_source_fingerprint(),
+                      extension_sha256=_file_digest(location),
+                      mujoco_library_sha256=_file_digest(library),
+                      build_context=json.loads(identity['build_context_json']))
+    return validate_execution(result)

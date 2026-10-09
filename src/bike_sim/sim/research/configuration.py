@@ -68,8 +68,15 @@ def research_field(track, resolution_m=.005):
 
 
 def build_environment(*, track, rider, physics_config, experiment, sensors,
-                      road_resolution_m=.005, demand=None, rider_program=None):
+                      road_resolution_m=.005, demand=None, rider_program=None, rider_behavior=None,
+                      backend="python"):
+    if backend not in ("python", "native"):
+        raise ValueError("backend must be python or native")
     sim = RideSimulation(track=track, rider=rider, physics_config=physics_config,
                          field=research_field(track, road_resolution_m))
-    return ResearchEnvironment(sim, experiment, sensors, demand=demand,
-                               rider_program=rider_program)
+    reference = ResearchEnvironment(sim, experiment, sensors, demand=demand,
+                                    rider_program=rider_program, rider_behavior=rider_behavior)
+    if backend == "python":
+        return reference
+    from bike_sim.native.research import create_native_research
+    return create_native_research(reference)

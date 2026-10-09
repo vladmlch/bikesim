@@ -2,6 +2,12 @@
 2. you even can use it like `uv run --with numpy --with matplotlib ...`
 3. Before native changes, mirrored physics changes, or verification-tool changes, read [native engineering rules](docs/agents/native-engineering.md).
 
+# Libraries Source code
+
+Always use this code as a reference:
+
+- numpy:  /Users/vladislav.molchanov/Desktop/Projects_downloaded/numpy
+- mujoco: /Users/vladislav.molchanov/Desktop/Projects_downloaded/mujoco
 
 ## Verification
 

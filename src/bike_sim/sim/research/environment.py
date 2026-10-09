@@ -6,24 +6,18 @@ surface. This wrapper never adds forces or edits qpos/qvel to keep the bike up.
 from collections import deque
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
-import csv
-import hashlib
-import json
-import numpy as np
+from time import monotonic
 import mujoco
 from bike_sim.physics.checks import scalar
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.physical_recorder import PhysicalRecorder
-from bike_sim.sim.ride.physical_session import configuration_metadata, physical_summary
-from bike_sim.sim.ride.physical_samples import plain
+from bike_sim.sim.ride.physical_session import configuration_metadata
 from bike_sim.sim.ride.wheelie import WheelieTracker, WheelieTruth, truth_from_sample
 from bike_sim.sim.research.observations import raw_observation
 from bike_sim.sim.research.rider_behavior import RiderBehavior, signals_from_sample
 from bike_sim.sim.research.rider_program import RiderProgram
 from bike_sim.sim.research.sensors import SensorConfig, SensorObservation, SensorPipeline
-from bike_sim.terrain.trackfile import save_track
 from bike_sim.sim.research.demand import DemandProgram
-from bike_sim.sim.research.metrics import episode_metrics
 from bike_sim.sim.research.quality import energy_quality
 
 
@@ -93,6 +87,8 @@ def _integer_steps(seconds, dt, name):
 
 
 class ResearchEnvironment:
+    backend = "python"
+
     def __init__(self, sim, config=None, sensors=None, *, demand=None, rider_behavior=None, rider_program=None):
         self.sim = sim
         self.config = ExperimentConfig() if config is None else config
@@ -128,6 +124,11 @@ class ResearchEnvironment:
         self._begin_episode()
 
     def _begin_episode(self):
+        self._window = None
+        self._stop_requested = False
+        self._closed = False
+        from bike_sim.native.artifact import execution_provenance
+        self.execution = execution_provenance("python")
         self.run_metadata = {}
         if self.rider_behavior is not None:
             self.rider_behavior.reset(self.seed)
@@ -195,6 +196,8 @@ class ResearchEnvironment:
         return self.sim.physical.model_status.as_dict()['model_valid']
 
     def reset(self, *, seed=None):
+        if self._closed or self.control_pending:
+            raise RuntimeError("reset requires an open environment at an external boundary")
         if seed is not None:
             if type(seed) is not int or seed < 0:
                 raise ValueError('reset seed must be a nonnegative integer')
@@ -260,11 +263,27 @@ class ResearchEnvironment:
                 if stop_at_outcome:
                     break
 
+    @property
+    def control_pending(self):
+        return self._window is not None
+
     def step(self, control, *, front_brake_demand=0., rear_brake_demand=0.):
+        self.begin_control(control, front_brake_demand=front_brake_demand,
+                           rear_brake_demand=rear_brake_demand)
+        return self.advance_control()
+
+    def begin_control(self, control, *, front_brake_demand=0., rear_brake_demand=0.):
+        if self._closed:
+            raise RuntimeError('research environment is closed')
+        if self.control_pending:
+            raise RuntimeError('an external control interval is already active')
         if self.done:
             raise RuntimeError('episode has ended; reset before stepping again')
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
+        for value in (front_brake_demand, rear_brake_demand):
+            if scalar(value, 'brake demand', minimum=0.) > 1.:
+                raise ValueError('brake demand must lie in [0, 1]')
         # env.demand_nm is what the policy saw when it chose this command; it is
         # refreshed at the end of step() for the next call and never enforced.
         seen_demand_nm = self.demand_nm
@@ -275,16 +294,25 @@ class ResearchEnvironment:
             if posture is not None:
                 control = replace(control, posture=posture)
         control.validate_for(self.sim.physics_config, self.sim.rider.variant)
-        for value in (front_brake_demand, rear_brake_demand):
-            if scalar(value, 'brake demand', minimum=0.) > 1.:
-                raise ValueError('brake demand must lie in [0, 1]')
         start_step = self.sim.steps
         self._queue.append((start_step+self.delay_steps, control))
         self.commands_requested.append(dict(time_s=self.sim.time_s, step=start_step, control=asdict(control),
             front_brake_demand=front_brake_demand, rear_brake_demand=rear_brake_demand))
-        count = min(self.control_steps, self.max_steps-self.sim.steps)
+        target_step = min(start_step+self.control_steps, self.max_steps)
+        self._window = (control, front_brake_demand, rear_brake_demand,
+                        start_step, target_step, seen_demand_nm)
+
+    def advance_control(self, *, wall_budget_s=None):
+        if self._closed or not self.control_pending:
+            raise RuntimeError("begin an external control interval before advancing")
+        if wall_budget_s is not None:
+            wall_budget_s = scalar(wall_budget_s, "wall_budget_s", minimum=0.)
+        deadline = None if wall_budget_s is None else monotonic()+wall_budget_s
+        control, front_brake_demand, rear_brake_demand, start_step, target_step, seen_demand_nm = self._window
         try:
-            for _ in range(count):
+            while self.sim.steps < target_step and not self.done:
+                if deadline is not None and monotonic() >= deadline:
+                    return None
                 while self._queue and self._queue[0][0] <= self.sim.steps:
                     _, self._motor_applied = self._queue.popleft()
                 rider_control = (self.rider_program.apply(control, self.sim.time_s)
@@ -326,6 +354,7 @@ class ResearchEnvironment:
                 exc.add_note(f'trailing sample consumption: {consumption_error}')
             finally:
                 self.reason = primary_reason
+            self._window = None
             raise  # Never manufacture a successful transition from invalid dynamics.
         if not self.done and self.sim.steps >= self.max_steps:
             self.truncated, self.reason = True, 'duration'
@@ -336,61 +365,34 @@ class ResearchEnvironment:
                               self.terminated, self.truncated, self.reason, self.sim.steps-start_step, self.numerically_valid,
                               demand_nm=seen_demand_nm, model_valid=self.model_valid)
         self.trace.append(result)
+        self._window = None
+        if self._stop_requested:
+            self.stop()
         return result
 
     def save(self, directory, *, overwrite=False):
-        path = Path(directory)
-        if path.exists() and (not path.is_dir() or any(path.iterdir())) and not overwrite:
-            raise FileExistsError(f'refusing to overwrite nonempty output: {path}')
-        path.mkdir(parents=True, exist_ok=True)
-        current_metadata = configuration_metadata(self.sim, seed=self.seed)
-        research = dict(config=asdict(self.config), sensor_config=asdict(self.sensor_config),
-            model_status=self.sim.physical.model_status.as_dict(),
-            numerically_valid=self.numerically_valid, max_energy_residual_ratio=self.max_energy_residual_ratio,
-            actual_sensor_seed=self.seed, control_steps=self.control_steps, actuator_delay_steps=self.delay_steps,
-            metrics=self.tracker.metrics, terminated=self.terminated, truncated=self.truncated, error=self.error,
-            source_changed_during_run=current_metadata['model_source_sha256'] != self.metadata['model_source_sha256'],
-            policy_inputs='proper acceleration, pitch gyro, wheel/crank encoders, motor/human torque sensors',
-            privileged_outputs='contact loads/clearances, road-relative pitch, CoM and simulator speed',
-            timestep_alignment='truth/sensor source is the last incoming physical state, not the endpoint',
-            parameters_validated_against_measurements=False)
-        research['valid_for_learning'] = self.numerically_valid and self.model_valid and self.error is None
-        research['run_metadata'] = plain(self.run_metadata)
-        if self.demand is not None:
-            research['demand_program'] = self.demand.to_dict()
-        if self.rider_program is not None:
-            research['rider_program'] = self.rider_program.to_dict()
-            research['rider_command_recording'] = 'program_inputs'
-        commands_json = json.dumps(plain(self.commands_requested), sort_keys=True, allow_nan=False)
-        research['commands_sha256'] = hashlib.sha256(commands_json.encode()).hexdigest()
-        summary = physical_summary(self.sim, self.metadata, self.reason or 'not_finished')
-        summary['research'] = research
-        (path/'summary.json').write_text(json.dumps(plain(summary), indent=2, sort_keys=True, allow_nan=False)+'\n')
-        for name, values in (('commands_requested.jsonl', self.commands_requested),
-                             ('commands_applied.jsonl', self.commands_applied),
-                             ('observations.jsonl', [asdict(o) for o in self.observations])):
-            with (path/name).open('w', encoding='utf-8') as stream:
-                for value in values:
-                    stream.write(json.dumps(plain(value), sort_keys=True, allow_nan=False)+'\n')
-        rows = []
-        for result in self.trace:
-            obs = asdict(result.observation)
-            acceleration = obs.pop('specific_force_body_mps2')
-            row = {'sensor_'+k: v for k, v in obs.items()}
-            row.update({f'sensor_specific_force_{axis}_mps2': acceleration[i] for i, axis in enumerate('xyz')})
-            row.update({'truth_'+k: v for k, v in asdict(result.truth).items()})
-            row.update(contact_state=result.contact_state, demand_nm=result.demand_nm, terminated=result.terminated,
-                       truncated=result.truncated, reason=result.reason, numerically_valid=result.numerically_valid)
-            rows.append(row)
-        with (path/'trace.csv').open('w', newline='', encoding='utf-8') as stream:
-            writer = csv.DictWriter(stream, fieldnames=list(rows[0]) if rows else ['sensor_time_s'])
-            writer.writeheader(); writer.writerows(rows)
-        (path/'episode_metrics.json').write_text(
-            json.dumps(plain(episode_metrics(self)), indent=2, sort_keys=True, allow_nan=False)+'\n')
-        self.recorder.write_csv(path/'telemetry.csv')
-        self.recorder.write_jsonl(path/'intervals.jsonl')
-        np.save(path/'terrain_vertices.npy', self.sim.physical.vertices, allow_pickle=False)
-        save_track(self.sim.track, path/'track.toml')
-        from bike_sim.sim.research.replay import save_replay_files
-        save_replay_files(self, path)
-        return path
+        from bike_sim.native.recording import export_recording
+        return export_recording(self, directory, overwrite=overwrite)
+
+    def current_metadata(self):
+        return configuration_metadata(self.sim, seed=self.seed)
+
+    def stop(self):
+        if self.done:
+            return
+        if self.control_pending:
+            self._stop_requested = True
+        else:
+            self.truncated, self.reason = True, "operator_stop"
+
+    def fail_policy(self, error):
+        if self.control_pending:
+            raise RuntimeError("cannot fail a policy inside an active control interval")
+        if not self.done:
+            self.terminated, self.reason = True, "policy_error"
+            self.error = f"{type(error).__name__}: {error}"
+
+    def close(self):
+        if self.control_pending:
+            raise RuntimeError("finish the active interval before closing the environment")
+        self._closed = True

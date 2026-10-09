@@ -37,6 +37,8 @@
 #include "drivetrain/policy_binding.hpp"
 #include "drivetrain/drive_binding.hpp"
 #include "runtime/runtime_binding.hpp"
+#include "runtime/research_binding.hpp"
+#include "runtime/provenance.hpp"
 #include "runtime/test_adapter.hpp"
 #include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
@@ -463,6 +465,8 @@ NB_MODULE(bike_native, m) {
     bind_rider_attachment(m, stepper_class);
     bind_rider_contacts(m, stepper_class);
     runtime::bind_runtime(m);
+    runtime::bind_research(m);
+    runtime::bind_provenance(m);
     runtime::bind_test_adapter(m);
 }
 

@@ -64,6 +64,8 @@ public:
     void flush();
     [[nodiscard]] RuntimeSampleBatch prepare_samples() const;
     void acknowledge_samples(const RuntimeSampleBatch &batch);
+    [[nodiscard]] std::span<const SamplePtr> pending_samples() const noexcept { return pending_; }
+    void acknowledge_through(std::int64_t interval_id);
     [[nodiscard]] const SamplePtr &latest_sample() const noexcept { return latest_; }
     [[nodiscard]] const AccountingState &state() const noexcept { return state_; }
     [[nodiscard]] WireObject state_wire() const;

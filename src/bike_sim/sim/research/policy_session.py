@@ -37,55 +37,132 @@ def _metadata(policy, reference):
 
 
 class PolicySession:
+    """One policy call per external interval, independent of wall-clock chunks."""
     def __init__(self, env, policy, *, reference=None):
-        self.env = env
-        self.policy = policy
-        self.reference = reference
+        from collections import deque
+        self.env, self.policy, self.reference = env, policy, reference
         self.operator_events = []
+        self._queued = deque()
+        self._paused = False
+        self._brakes = (0., 0.)
         self._start_policy()
 
     def _start_policy(self):
-        self.policy.reset(self.env.seed)
-        self.env.run_metadata.update(
-            policy=_metadata(self.policy, self.reference),
+        try:
+            self.policy.reset(self.env.seed)
+            metadata = _metadata(self.policy, self.reference)
+        except Exception as error:
+            self.env.fail_policy(error)
+            raise
+        self.env.run_metadata.update(policy=metadata,
             operator_events=self.operator_events, operator_intervention=False)
 
-    def advance(self, *, front_brake_demand=0., rear_brake_demand=0.):
-        if self.env.done:
-            raise RuntimeError('episode has ended')
+    @property
+    def pending(self):
+        return self.env.control_pending
+
+    @property
+    def paused(self):
+        return self._paused
+
+    @staticmethod
+    def _validate_brakes(front, rear):
+        from bike_sim.physics.checks import scalar
+        values = tuple(scalar(value, 'brake demand', minimum=0.) for value in (front, rear))
+        if any(value > 1. for value in values):
+            raise ValueError('brake demand must lie in [0, 1]')
+        return values
+
+    def begin_advance(self, *, front_brake_demand=None, rear_brake_demand=None):
+        if self.pending:
+            raise RuntimeError('an external policy interval is already active')
+        if self._paused or self.env.done:
+            raise RuntimeError('cannot start a policy interval while paused or ended')
+        front, rear = self._validate_brakes(
+            self._brakes[0] if front_brake_demand is None else front_brake_demand,
+            self._brakes[1] if rear_brake_demand is None else rear_brake_demand)
         try:
             command = self.policy.act(self.env.observation, self.env.demand_nm)
             if not isinstance(command, RideControl):
                 raise ValueError('policy must return RideControl')
             if (command.human_torque_nm is not None or command.posture is not None
-                    or command.crank_target_rate_rad_s is not None
-                    or not command.rider_enabled):
+                    or command.crank_target_rate_rad_s is not None or not command.rider_enabled):
                 raise ValueError('motor policy cannot own rider inputs')
         except Exception as error:
-            self.env.terminated = True
-            self.env.reason = 'policy_error'
-            self.env.error = f'{type(error).__name__}: {error}'
+            self.env.fail_policy(error)
             raise
-        if front_brake_demand or rear_brake_demand:
-            self.operator_events.append({
-                'time_s': self.env.sim.time_s,
-                'front_brake_demand': front_brake_demand,
-                'rear_brake_demand': rear_brake_demand,
-            })
+        self.env.begin_control(command, front_brake_demand=front, rear_brake_demand=rear)
+        if front or rear:
+            self.operator_events.append(dict(time_s=self.env.sim.time_s,
+                front_brake_demand=front, rear_brake_demand=rear))
             self.env.run_metadata['operator_intervention'] = True
-        return self.env.step(command, front_brake_demand=front_brake_demand,
-                             rear_brake_demand=rear_brake_demand)
 
-    def reset(self, *, seed=None):
+    def advance_pending(self, *, wall_budget_s=None):
+        if not self.pending:
+            raise RuntimeError('begin_advance is required before advance_pending')
+        result = self.env.advance_control(wall_budget_s=wall_budget_s)
+        if result is not None:
+            self._apply_queued()
+        return result
+
+    def advance(self, *, front_brake_demand=None, rear_brake_demand=None):
+        self.begin_advance(front_brake_demand=front_brake_demand,
+                           rear_brake_demand=rear_brake_demand)
+        result = self.advance_pending()
+        while result is None:
+            result = self.advance_pending()
+        return result
+
+    def _operator(self, kind, value=None):
+        if self.pending:
+            self._queued.append((kind, value))
+            return
+        self._apply_operator(kind, value)
+
+    def _apply_operator(self, kind, value):
+        if kind == 'stop':
+            self.env.stop()
+        elif kind == 'pause':
+            self._paused = value
+        elif kind == 'brakes':
+            self._brakes = value
+        elif kind == 'reset':
+            self._reset_now(value)
+        else:
+            raise ValueError(f'unknown operator event: {kind}')
+
+    def _apply_queued(self):
+        while self._queued:
+            kind, value = self._queued.popleft()
+            self._apply_operator(kind, value)
+
+    def set_brakes(self, *, front_brake_demand=0., rear_brake_demand=0.):
+        self._operator('brakes', self._validate_brakes(front_brake_demand, rear_brake_demand))
+
+    def pause(self):
+        self._operator('pause', True)
+
+    def resume(self):
+        self._operator('pause', False)
+
+    def _reset_now(self, seed):
         observation = self.env.reset(seed=seed)
         self.operator_events.clear()
+        self._paused, self._brakes = False, (0., 0.)
         self._start_policy()
         return observation
 
+    def reset(self, *, seed=None):
+        if seed is not None and (type(seed) is not int or seed < 0):
+            raise ValueError('reset seed must be a nonnegative integer')
+        if self.pending:
+            self._queued.append(('reset', seed))
+            return None
+        self._queued.clear()
+        return self._reset_now(seed)
+
     def stop(self):
-        if not self.env.done:
-            self.env.truncated = True
-            self.env.reason = 'operator_stop'
+        self._operator('stop')
 
     def save(self, directory, *, overwrite=False):
         previous = self.env.run_metadata['policy']

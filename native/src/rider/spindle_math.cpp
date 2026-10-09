@@ -4,6 +4,7 @@
 #include "spindle_math.hpp"
 
 #include "../numeric_norm.hpp"
+#include "../numeric_sincos.hpp"
 
 #include <numbers>
 
@@ -91,7 +92,8 @@ namespace spindle {
             std::min(std::max((d * d - a * a - b * b) / (2 * a * b), -1.), 1.);
         const double knee = elbow_sign * std::acos(cosine);
         const double hip =
-            direction - std::atan2(b * std::sin(knee), a + b * std::cos(knee));
+            direction - std::atan2(b * numeric::sin(knee),
+                                   a + b * numeric::cos(knee));
         return {.angles = {hip, knee}, .saturated = saturated};
     }
 
@@ -129,12 +131,13 @@ namespace spindle {
         if (sign != -1. && sign != 1.)
             throw std::invalid_argument(
                 "leg side sign must be plus or minus one");
-        return {crank_xz[0] + sign * radius * std::cos(phase),
-                crank_xz[1] - sign * radius * std::sin(phase)};
+        return {crank_xz[0] + sign * radius * numeric::cos(phase),
+                crank_xz[1] - sign * radius * numeric::sin(phase)};
     }
 
     double wrap_angle(double angle_rad) {
-        return std::atan2(std::sin(angle_rad), std::cos(angle_rad));
+        return std::atan2(numeric::sin(angle_rad),
+                          numeric::cos(angle_rad));
     }
 
     Vec2 leg_joint_q(const LegLoopGeometry &geometry, Vec2 hip_xz,
@@ -463,7 +466,7 @@ namespace spindle {
                 "coordinate");
         const double value =
             envelope.neutral_anatomical_rad + envelope.direction * joint_q;
-        return std::atan2(std::sin(value), std::cos(value));
+        return std::atan2(numeric::sin(value), numeric::cos(value));
     }
 
 } // namespace spindle

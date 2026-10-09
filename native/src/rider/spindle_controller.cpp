@@ -21,6 +21,7 @@
 #include "../diag.hpp"
 #include "../engine_call.hpp"
 #include "../model_access.hpp"
+#include "../numeric_sincos.hpp"
 
 namespace rider {
 namespace {
@@ -334,7 +335,7 @@ double lean_limit_rad(
     };
     const Vec2 grip_xz = xz(pose.grip);
     const auto feasible = [&](double lean) {
-        const double c = std::cos(lean), s = std::sin(lean);
+        const double c = numeric::cos(lean), s = numeric::sin(lean);
         const Vec2 shoulder{hip[0] + c * trunk[0] + s * trunk[1],
                             hip[1] - s * trunk[0] + c * trunk[1]};
         const Vec2 goal{grip_xz[0] - shoulder[0],
@@ -683,8 +684,8 @@ SpindleController::upper_targets(const mjData *data,
         model_access::readonly_buffer(data->qpos, model_->nq,
                                       "qpos")[static_cast<std::size_t>(
             joints_[joint_index("rider_torso_hinge")].qpos_adr)];
-    delta = std::atan2(std::sin(delta), std::cos(delta));
-    const double cd = std::cos(delta), sd = std::sin(delta);
+    delta = std::atan2(numeric::sin(delta), numeric::cos(delta));
+    const double cd = numeric::cos(delta), sd = numeric::sin(delta);
     const std::array<double, 9> rot{cd, 0., sd, 0., 1., 0., -sd, 0., cd};
     const Vec3 hinge = joint_anchor(model_, data, torso_joint_);
     const auto torso_r = mat_mul(rot, torso_r_actual);
@@ -720,8 +721,8 @@ SpindleController::upper_targets(const mjData *data,
     for (auto &[name, target] : targets) {
         const double current = qpos[static_cast<std::size_t>(
             joints_[joint_index(name)].qpos_adr)];
-        target = current + std::atan2(std::sin(target - current),
-                                      std::cos(target - current));
+        target = current + std::atan2(numeric::sin(target - current),
+                                      numeric::cos(target - current));
         const auto range = joint_ranges_.find(name);
         if (range != joint_ranges_.end()) {
             const auto [lo, hi] = range->second;

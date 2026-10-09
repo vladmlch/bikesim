@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from native_loader import load_native
+from _bits import assert_bitwise_equal
 from _native_runtime_support import make_python_ride, advance_python, assert_tree_close
 from bike_sim.native.runtime import create_native_ride
 from bike_sim.sim.ride.control import RideControl
@@ -161,9 +162,11 @@ def test_one_second_800_interval_golden_episode_all_channels():
     _assert_rows(native.drain_samples().as_dict_rows(), expected)
     snap = native.snapshot()
     assert snap.time_s == pytest.approx(1., abs=1e-12)
-    # Integration-state parity is bitwise: the release build reproduces the
-    # oracle's exact reduction order, so no ULP class applies here.
-    np.testing.assert_array_equal(snap.integration_state, _integration(sim))
+    # Integration-state parity is bit-identity, not IEEE equality: signed
+    # zeros and NaN payloads must match byte-for-byte (the port contract's
+    # bar for this comparison kind).
+    assert_bitwise_equal(snap.integration_state, _integration(sim),
+                         'golden episode integration state')
     assert_tree_close(snap.first_failure, sim.physical.reference_monitor.first_failure)
     assert_tree_close(snap.model_status, sim.physical.model_status.as_dict())
     assert_tree_close(native.accounting_state['history']['work_j'], sim.physical.history.work_j)

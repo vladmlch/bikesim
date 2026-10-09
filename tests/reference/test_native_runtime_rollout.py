@@ -161,7 +161,9 @@ def test_one_second_800_interval_golden_episode_all_channels():
     _assert_rows(native.drain_samples().as_dict_rows(), expected)
     snap = native.snapshot()
     assert snap.time_s == pytest.approx(1., abs=1e-12)
-    np.testing.assert_allclose(snap.integration_state, _integration(sim), rtol=1e-9, atol=1e-9)
+    # Integration-state parity is bitwise: the release build reproduces the
+    # oracle's exact reduction order, so no ULP class applies here.
+    np.testing.assert_array_equal(snap.integration_state, _integration(sim))
     assert_tree_close(snap.first_failure, sim.physical.reference_monitor.first_failure)
     assert_tree_close(snap.model_status, sim.physical.model_status.as_dict())
     assert_tree_close(native.accounting_state['history']['work_j'], sim.physical.history.work_j)

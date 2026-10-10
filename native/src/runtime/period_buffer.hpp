@@ -16,6 +16,10 @@ public:
     [[nodiscard]] bool full() const noexcept { return raws_.size() == capacity_; }
     [[nodiscard]] bool empty() const noexcept { return raws_.empty(); }
     [[nodiscard]] std::span<const RawStep> raws() const noexcept { return raws_; }
+    // flush() consumes payloads out of the buffered captures while it
+    // publishes; on failure it must move every consumed field back before the
+    // exception escapes so the period stays retryable.
+    [[nodiscard]] std::span<RawStep> mutable_raws() noexcept { return raws_; }
     // Publication acknowledges captures only after the whole period commits.
     // The next ID/time markers deliberately survive an explicit flush.
     void clear() noexcept { raws_.clear(); }

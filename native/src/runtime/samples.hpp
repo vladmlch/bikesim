@@ -30,6 +30,8 @@ namespace sample_wire {
 [[nodiscard]] Wire strings(std::span<const std::string> values);
 void set(WireObject &object, std::string key, Wire value);
 void merge(WireObject &destination, const WireObject &source);
+// Same last-write-wins fold; the rvalue overload steals each source value.
+void merge(WireObject &destination, WireObject &&source);
 void exact(const WireObject &object, std::span<const std::string_view> keys,
            std::string_view path);
 [[nodiscard]] double dot(std::span<const double> a, std::span<const double> b);

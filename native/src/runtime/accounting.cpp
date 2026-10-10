@@ -338,78 +338,130 @@ void PeriodAccounting::flush() {
     // No public state changes until all rows, validation and allocations succeed.
     AccountingState staged = state_;
     staged.period_violations.clear();
-    std::vector<SamplePtr> published;
-    published.reserve(buffer_.raws().size());
+    // Publication donates each row's captures to its sample instead of
+    // deep-copying them. Until the commit below, every donation can be put
+    // back: `channels` holds the in-flight row's channel object while
+    // `channels_donor` names it, and published rows keep theirs in the
+    // not-yet-visible sample (snapshots in a parallel non-const slot, since
+    // samples share them as shared_ptr<const>). The period therefore stays
+    // retryable exactly as before. Restored channels may carry merged-in keys
+    // that a copy would not have produced, but every such key is written again
+    // by the deterministic puts below — overwritten in place with the
+    // identical value at the identical position — so a retried period
+    // publishes byte-identical samples.
+    const auto raws = buffer_.mutable_raws();
+    struct PublishedRow {
+        std::shared_ptr<PhysicalSampleData> sample;
+        std::shared_ptr<ConstraintSnapshot> snapshot;  // restore donor
+    };
+    std::vector<PublishedRow> published;
+    published.reserve(raws.size());
+    WireObject channels;
+    RawStep *channels_donor = nullptr;
     AttachmentSamples final_attachments;
     std::vector<std::string> final_attachment_errors;
     EffortObservation final_effort;
-    const auto raws = buffer_.raws();
-    for (std::size_t index = 0; index < raws.size(); ++index) {
-        const RawStep &raw = raws[index];
-        const auto &constraints = raw.constraint_snapshot;
-        if (std::abs(constraints.interval_start_s - raw.time_s) > 1e-12 ||
-            std::abs(constraints.interval_end_s - raw.end_time_s) > 1e-12 ||
-            !std::ranges::equal(constraints.qvel_start, raw.qvel))
-            throw std::invalid_argument("constraint snapshot does not match the physical interval");
-        auto attachments = evaluate_attachments(raw, workspace_);
-        auto effort = controller_ == nullptr ? EffortObservation{} :
-                                               observe_effort(raw, *controller_, config_.timestep_s);
-        auto violations = interval_violations(raw, attachments, config_.attachment_budget, effort);
-        staged.energy_channels = account_energy(staged, config_, raw, raw_work(raw, config_.timestep_s));
-        if (index + 1 == raws.size() && !boolean(required(staged.energy_channels, "constraint_work_ok")))
-            violations.emplace_back("energy.constraint_work");
-        WireObject channels = raw.channels;
-        merge(channels, effort.channels);
-        set(channels, "energy", Wire(staged.energy_channels));
-        set(channels, "attachment_violations", strings(violations));
-        if (raw.full || index + 1 == raws.size())
-            add_detail(channels, raw, attachments, effort, staged.history, config_.timestep_s);
-        staged.model_status.observe(raw.interval_id, raw.time_s, channels);
-        set(channels, "model_status", Wire(staged.model_status.as_wire()));
-        auto sample = std::make_shared<PhysicalSampleData>();
-        sample->interval_id = raw.interval_id;
-        sample->time_s = raw.time_s;
-        sample->end_time_s = raw.end_time_s;
-        sample->qpos = raw.qpos;
-        sample->qvel = raw.qvel;
-        sample->forces = raw.components;
-        sample->constraints = std::make_shared<ConstraintSnapshot>(constraints);
-        for (const auto &[name, force] : raw.components)
-            sample->powers_w.emplace_back(name, Wire(dot(force, raw.qvel)));
-        sample->channels = std::move(channels);
-        staged.history.add(*sample);
-        published.push_back(std::move(sample));
-        if (!violations.empty()) {
-            ReferenceFailure failure{.time_s = raw.end_time_s, .violations = std::move(violations)};
-            staged.monitor.observe(failure);
-            staged.period_violations.push_back(std::move(failure));
-        }
-        if (index + 1 == raws.size()) {
-            final_attachment_errors = attachment_errors(raw, attachments);
-            final_attachments = std::move(attachments);
-            final_effort = std::move(effort);
-        }
-    }
     std::vector<SamplePtr> selected;
-    selected.reserve(published.size());
-    for (const auto &sample : published)
-        if (sample->interval_id % config_.record_decimation == 0) selected.push_back(sample);
-    RecordedBlock block{.rows = selected.size(), .columns = make_columns(selected, config_.columns)};
+    RecordedBlock block;
     std::vector<std::pair<std::string, writers::RiderAttachmentEntry>> contact_samples;
-    for (auto &[name, sample] : final_attachments)
-        contact_samples.emplace_back(std::move(name), std::move(sample));
-    // Copying/reserving can throw; the raw period and all old evidence still exist.
-    pending_.reserve(pending_.size() + published.size());
-    recorded_.reserve(recorded_.size() + (block.rows == 0 ? 0U : 1U));
-    recorded_samples_.reserve(recorded_samples_.size() + selected.size());
-    const auto strict_failure = staged.monitor.strict && !staged.period_violations.empty()
-                                    ? std::optional<ReferenceFailure>(staged.period_violations.front())
-                                    : std::nullopt;
+    std::optional<ReferenceFailure> strict_failure;
+    const auto restore = [&]() noexcept {
+        if (channels_donor != nullptr)
+            channels_donor->channels = std::move(channels);
+        for (std::size_t i = 0; i < published.size(); ++i) {
+            RawStep &raw = raws[i];
+            PhysicalSampleData &sample = *published[i].sample;
+            if (!sample.channels.empty())
+                raw.channels = std::move(sample.channels);
+            if (published[i].snapshot != nullptr)
+                raw.constraint_snapshot = std::move(*published[i].snapshot);
+            raw.qpos = std::move(sample.qpos);
+            raw.qvel = std::move(sample.qvel);
+            raw.components = std::move(sample.forces);
+        }
+    };
+    try {
+        for (std::size_t index = 0; index < raws.size(); ++index) {
+            RawStep &raw = raws[index];
+            const auto &constraints = raw.constraint_snapshot;
+            if (std::abs(constraints.interval_start_s - raw.time_s) > 1e-12 ||
+                std::abs(constraints.interval_end_s - raw.end_time_s) > 1e-12 ||
+                !std::ranges::equal(constraints.qvel_start, raw.qvel))
+                throw std::invalid_argument("constraint snapshot does not match the physical interval");
+            auto attachments = evaluate_attachments(raw, workspace_);
+            auto effort = controller_ == nullptr ? EffortObservation{} :
+                                                   observe_effort(raw, *controller_, config_.timestep_s);
+            auto violations = interval_violations(raw, attachments, config_.attachment_budget, effort);
+            staged.energy_channels = account_energy(staged, config_, raw, raw_work(raw, config_.timestep_s));
+            if (index + 1 == raws.size() &&
+                !boolean(required(staged.energy_channels, "constraint_work_ok")))
+                violations.emplace_back("energy.constraint_work");
+            channels = std::move(raw.channels);
+            channels_donor = &raw;
+            merge(channels, std::move(effort.channels));
+            // The committed energy channels are the final row's object;
+            // earlier rows may donate theirs to the published channel.
+            set(channels, "energy",
+                index + 1 == raws.size() ? Wire(staged.energy_channels)
+                                         : Wire(std::move(staged.energy_channels)));
+            set(channels, "attachment_violations", strings(violations));
+            if (raw.full || index + 1 == raws.size())
+                add_detail(channels, raw, attachments, effort, staged.history, config_.timestep_s);
+            staged.model_status.observe(raw.interval_id, raw.time_s, channels);
+            set(channels, "model_status", Wire(staged.model_status.as_wire()));
+            published.push_back({std::make_shared<PhysicalSampleData>(), {}});
+            PublishedRow &row = published.back();
+            PhysicalSampleData &out = *row.sample;
+            out.interval_id = raw.interval_id;
+            out.time_s = raw.time_s;
+            out.end_time_s = raw.end_time_s;
+            out.qpos = std::move(raw.qpos);
+            out.qvel = std::move(raw.qvel);
+            out.forces = std::move(raw.components);
+            row.snapshot =
+                std::make_shared<ConstraintSnapshot>(std::move(raw.constraint_snapshot));
+            out.constraints = row.snapshot;
+            out.powers_w.reserve(out.forces.size());
+            for (const auto &[name, force] : out.forces)
+                out.powers_w.emplace_back(name, Wire(dot(force, out.qvel)));
+            out.channels = std::move(channels);
+            channels_donor = nullptr;
+            staged.history.add(out);
+            if (!violations.empty()) {
+                ReferenceFailure failure{.time_s = raw.end_time_s, .violations = std::move(violations)};
+                staged.monitor.observe(failure);
+                staged.period_violations.push_back(std::move(failure));
+            }
+            if (index + 1 == raws.size()) {
+                final_attachment_errors = attachment_errors(raw, attachments);
+                final_attachments = std::move(attachments);
+                final_effort = std::move(effort);
+            }
+        }
+        selected.reserve(published.size());
+        for (const auto &row : published)
+            if (row.sample->interval_id % config_.record_decimation == 0)
+                selected.push_back(row.sample);
+        block = RecordedBlock{.rows = selected.size(),
+                              .columns = make_columns(selected, config_.columns)};
+        contact_samples.reserve(final_attachments.size());
+        for (auto &[name, sample] : final_attachments)
+            contact_samples.emplace_back(std::move(name), std::move(sample));
+        // Copying/reserving can throw; the raw period and all old evidence still exist.
+        pending_.reserve(pending_.size() + published.size());
+        recorded_.reserve(recorded_.size() + (block.rows == 0 ? 0U : 1U));
+        recorded_samples_.reserve(recorded_samples_.size() + selected.size());
+        strict_failure = staged.monitor.strict && !staged.period_violations.empty()
+                             ? std::optional<ReferenceFailure>(staged.period_violations.front())
+                             : std::nullopt;
+    } catch (...) {
+        restore();
+        throw;
+    }
     // Commit uses only moves into reserved storage and nonthrowing diagnostics.
     state_ = std::move(staged);
-    latest_ = published.back();
-    pending_.insert(pending_.end(), std::make_move_iterator(published.begin()),
-                     std::make_move_iterator(published.end()));
+    latest_ = published.back().sample;
+    for (auto &row : published) pending_.push_back(std::move(row.sample));
     if (block.rows != 0) recorded_.push_back(std::move(block));
     recorded_samples_.insert(recorded_samples_.end(), std::make_move_iterator(selected.begin()),
                               std::make_move_iterator(selected.end()));

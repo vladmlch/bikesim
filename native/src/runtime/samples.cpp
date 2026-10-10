@@ -1,7 +1,9 @@
 #include "samples.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <type_traits>
@@ -83,6 +85,11 @@ void merge(WireObject &destination, const WireObject &source) {
     for (const auto &[key, value] : source) set(destination, key, value);
 }
 
+void merge(WireObject &destination, WireObject &&source) {
+    for (auto &[key, value] : source)
+        set(destination, std::move(key), std::move(value));
+}
+
 void exact(const WireObject &value, std::span<const std::string_view> keys,
            std::string_view path) {
     if (value.size() != keys.size())
@@ -139,22 +146,35 @@ void finite(double value, std::string_view path, bool nonnegative = false) {
         throw std::invalid_argument(std::string(path) + ": invalid finite value");
 }
 
+// Index suffixes go through a stack buffer — no std::to_string temporary.
+void append_index(std::string &out, std::size_t index) {
+    std::array<char, 20> digits{};
+    char *const end = std::to_chars(digits.data(), digits.end(), index).ptr;
+    out.append(digits.data(),
+               static_cast<std::size_t>(std::distance(digits.data(), end)));
+}
+
+// `prefix` is the caller's scratch: children extend it in place and restore it
+// on the way out, so a leaf costs one string copy instead of a fresh nested
+// temporary per level.
 // NOLINTNEXTLINE(misc-no-recursion) recursion follows an owned, finite Wire tree
-void flatten(const Wire &value, const std::string &prefix,
+void flatten(const Wire &value, std::string &prefix,
              FlatColumns &destination) {
     if (const auto *fields = std::get_if<WireObject>(&value.value)) {
         for (const auto &[key, item] : *fields) {
-            std::string nested{prefix};
-            if (!nested.empty()) nested += '.';
-            nested += key;
-            flatten(item, nested, destination);
+            const std::size_t base = prefix.size();
+            if (!prefix.empty()) prefix += '.';
+            prefix += key;
+            flatten(item, prefix, destination);
+            prefix.resize(base);
         }
     } else if (const auto *items = std::get_if<WireArray>(&value.value)) {
         for (std::size_t i = 0; i < items->size(); ++i) {
-            std::string nested{prefix};
-            nested += '.';
-            nested += std::to_string(i);
-            flatten((*items)[i], nested, destination);
+            const std::size_t base = prefix.size();
+            prefix += '.';
+            append_index(prefix, i);
+            flatten((*items)[i], prefix, destination);
+            prefix.resize(base);
         }
     } else if (const auto *real = std::get_if<double>(&value.value)) {
         destination.emplace_back(prefix, *real);
@@ -230,6 +250,7 @@ PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
         "dt_s", "qpos", "qvel", "powers_w"};
     std::array<const Wire *, fields.size()> overrides{};
     std::vector<const WireObject::value_type *> extras;
+    extras.reserve(channels.size());
     for (const auto &field : channels) {
         std::size_t slot = fields.size();
         for (std::size_t i = 0; i < fields.size(); ++i)
@@ -250,9 +271,11 @@ PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
     FlatColumns row;
     row.reserve(qpos.size() + qvel.size() + powers_w.size() +
                 channels.size() + 16);
+    std::string scratch;
     const auto fixed = [&](std::size_t slot, const char *name) {
         if (const Wire *value = overrides[slot]) {
-            flatten(*value, name, row);
+            scratch.assign(name);
+            flatten(*value, scratch, row);
             return true;
         }
         return false;
@@ -265,16 +288,27 @@ PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
         row.emplace_back("interval_end_s", end_time_s);
     if (!fixed(4, "dt_s")) row.emplace_back("dt_s", dt_s());
     if (!fixed(5, "qpos"))
-        for (std::size_t i = 0; i < qpos.size(); ++i)
-            row.emplace_back("qpos." + std::to_string(i), qpos[i]);
+        for (std::size_t i = 0; i < qpos.size(); ++i) {
+            scratch.assign("qpos.");
+            append_index(scratch, i);
+            row.emplace_back(scratch, qpos[i]);
+        }
     if (!fixed(6, "qvel"))
-        for (std::size_t i = 0; i < qvel.size(); ++i)
-            row.emplace_back("qvel." + std::to_string(i), qvel[i]);
+        for (std::size_t i = 0; i < qvel.size(); ++i) {
+            scratch.assign("qvel.");
+            append_index(scratch, i);
+            row.emplace_back(scratch, qvel[i]);
+        }
     if (!fixed(7, "powers_w"))
-        for (const auto &[name, power] : powers_w)
-            flatten(power, "powers_w." + name, row);
-    for (const auto *field : extras)
-        flatten(field->second, field->first, row);
+        for (const auto &[name, power] : powers_w) {
+            scratch.assign("powers_w.");
+            scratch += name;
+            flatten(power, scratch, row);
+        }
+    for (const auto *field : extras) {
+        scratch.assign(field->first);
+        flatten(field->second, scratch, row);
+    }
     keep_first(row);
     // The explicit alias writes below land exactly where the old code's
     // map::operator[] assignments did: every listed name overwrites or
@@ -286,25 +320,42 @@ PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
     assigned.emplace_back("pitch_rad", qpos.at(layout.root_pitch_qpos));
     assigned.emplace_back("interval_start_s", time_s);
     assigned.emplace_back("interval_dt_s", dt_s());
-    for (std::size_t i = 0; i < qpos.size(); ++i)
-        assigned.emplace_back("prestep_qpos_" + std::to_string(i), qpos[i]);
-    for (std::size_t i = 0; i < qvel.size(); ++i)
-        assigned.emplace_back("prestep_qvel_" + std::to_string(i), qvel[i]);
+    for (std::size_t i = 0; i < qpos.size(); ++i) {
+        scratch.assign("prestep_qpos_");
+        append_index(scratch, i);
+        assigned.emplace_back(scratch, qpos[i]);
+    }
+    for (std::size_t i = 0; i < qvel.size(); ++i) {
+        scratch.assign("prestep_qvel_");
+        append_index(scratch, i);
+        assigned.emplace_back(scratch, qvel[i]);
+    }
     for (const auto &[name, power] : powers_w) {
-        assigned.emplace_back("power_" + name + "_w", number(power));
-        assigned.emplace_back(name + "_power_w", number(power));
+        scratch.assign("power_");
+        scratch += name;
+        scratch += "_w";
+        assigned.emplace_back(scratch, number(power));
+        scratch.assign(name);
+        scratch += "_power_w";
+        assigned.emplace_back(scratch, number(power));
     }
     if (const auto *work = find(channels, "component_work_j"))
-        for (const auto &[name, value] : object(*work))
-            assigned.emplace_back(name + "_work_j", number(value));
+        for (const auto &[name, value] : object(*work)) {
+            scratch.assign(name);
+            scratch += "_work_j";
+            assigned.emplace_back(scratch, number(value));
+        }
     const auto &mass = object(required(channels, "mass"));
     assigned.emplace_back("compiled_mass_kg",
                           number(required(mass, "mass_kg")));
     const auto &com = array(required(mass, "com_m"));
     constexpr std::array<std::string_view, 3> axes{"x", "y", "z"};
-    for (std::size_t i = 0; i < axes.size(); ++i)
-        assigned.emplace_back("compiled_com_" + std::string(axes[i]) + "_m",
-                              number(com.at(i)));
+    for (std::size_t i = 0; i < axes.size(); ++i) {
+        scratch.assign("compiled_com_");
+        scratch += axes[i];
+        scratch += "_m";
+        assigned.emplace_back(scratch, number(com.at(i)));
+    }
     for (const auto name : {"kinetic_energy_j", "gravitational_energy_j"})
         assigned.emplace_back(name, number(required(mass, name)));
     const auto &energy = object(required(channels, "energy"));
@@ -343,10 +394,14 @@ SampleColumns make_columns(std::span<const SamplePtr> samples,
     const double missing = std::numeric_limits<double>::quiet_NaN();
     for (std::size_t i = 0; i < samples.size(); ++i) {
         const auto flat = samples[i]->flat_columns(layout);
+        // The flat row and the map are both name-sorted: one forward walk
+        // replaces a per-leaf tree lookup, and a fresh column inserts just
+        // before the walk position. An empty column still marks the insert.
+        auto slot = result.begin();
         for (const auto &[key, value] : flat) {
-            // Sorted input: an end hint turns fresh-column inserts into
-            // amortized O(1) tail pushes; an empty column marks the insert.
-            const auto slot = result.try_emplace(result.end(), key);
+            while (slot != result.end() && slot->first < key) ++slot;
+            if (slot == result.end() || slot->first != key)
+                slot = result.try_emplace(slot, key);
             if (slot->second.empty())
                 slot->second.assign(samples.size(), missing);
             slot->second[i] = value;

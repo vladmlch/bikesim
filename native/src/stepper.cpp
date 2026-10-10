@@ -181,9 +181,13 @@ void Stepper::refresh_time_callback_policy() {
         return;
     }
 
-    // structs_wrappers.cc in MuJoCo 3.12.0 installs GetTime from _structs
-    // after constructing a stock MjData. Identify that exact module before
-    // calling it; direct foreign C timer pointers are not part of this owner.
+    // MuJoCo's own extension modules install process-global mjcb_time owners
+    // in supported flows: _structs installs GetTime when a stock MjData is
+    // constructed (structs_wrappers.cc in tag 3.12.0), and _simulate installs
+    // the passive-viewer timer when mujoco.viewer.launch_passive builds its
+    // Simulate handle. Identify the callback's owning image against each
+    // pinned vendored module before calling it; direct foreign C timer
+    // pointers are not part of this owner.
     static_assert(sizeof(mjfTime) == sizeof(const void *));
     Dl_info image{};
     // dladdr requires an object pointer on Apple platforms; this pinned ABI
@@ -194,18 +198,28 @@ void Stepper::refresh_time_callback_policy() {
         record(nullptr, false);
         return;
     }
-    const nanobind::object structs =
-        nanobind::module_::import_("mujoco._structs");
-    const std::string expected = nanobind::cast<std::string>(structs.attr("__file__"));
-    if (!std::filesystem::equivalent(image.dli_fname, expected)) {
-        record(nullptr, false);
+    for (const char *module_name : {"mujoco._structs", "mujoco._simulate"}) {
+        nanobind::object module;
+        try {
+            module = nanobind::module_::import_(module_name);
+        } catch (...) {
+            // An unimportable module cannot own the installed callback.
+            continue;
+        }
+        const std::string expected =
+            nanobind::cast<std::string>(module.attr("__file__"));
+        if (!std::filesystem::equivalent(image.dli_fname, expected)) {
+            continue;
+        }
+
+        // The vendored timers initialize a static steady-clock epoch. Do that
+        // before entering BIKE_NONBLOCKING: the first call takes a C++ guard
+        // lock.
+        static_cast<void>(current());
+        record(current, true);
         return;
     }
-
-    // GetTime initializes a static steady-clock epoch. Do that before
-    // entering BIKE_NONBLOCKING: its first call takes a C++ guard lock.
-    static_cast<void>(current());
-    record(current, true);
+    record(nullptr, false);
 }
 
 bool Stepper::try_step(engine::ErrorBuffer &error) noexcept {

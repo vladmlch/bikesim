@@ -103,7 +103,7 @@ def test_target_snapshot_drain_and_budget_do_not_close_a_partial_period():
     native.flush()
     actual.extend(native.drain_samples().as_dict_rows())
     _assert_rows(actual, whole.drain_samples().as_dict_rows())
-    np.testing.assert_array_equal(native.snapshot().integration_state, whole.snapshot().integration_state)
+    assert_bitwise_equal(native.snapshot().integration_state, whole.snapshot().integration_state)
     native.close()
     whole.close()
 

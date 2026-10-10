@@ -233,6 +233,7 @@ from pathlib import Path
 import mujoco
 import numpy as np
 from native_loader import load_native
+from _bits import assert_bitwise_equal
 from _native_runtime_support import make_python_ride, assert_tree_close
 from bike_sim.native.runtime import create_native_ride
 load_native()
@@ -254,7 +255,7 @@ else:
     raise AssertionError('fatal engine boundary did not fire')
 frame = driver.snapshot()
 assert frame.step == 3
-np.testing.assert_array_equal(frame.integration_state, expected_frame.integration_state)
+assert_bitwise_equal(frame.integration_state, expected_frame.integration_state)
 assert_tree_close(driver.first_failure, clean.first_failure)
 assert driver.accounting_state['history']['last_id'] == 2
 assert driver.accounting_state['buffered_intervals'] == 0

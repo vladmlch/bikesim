@@ -127,6 +127,7 @@ def test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue(
     from bike_sim.sim.ride.control import RideControl
     env=ResearchEnvironment.__new__(ResearchEnvironment)
     env.terminated=env.truncated=False;env.reason=env.error=None
+    env._closed=False;env._window=None;env._stop_requested=False
     env.demand_nm=None;env.rider_program=env.rider_behavior=None
     env._queue=deque();env.delay_steps=2;env.control_steps=env.max_steps=1
     env._motor_applied=env._applied=RideControl(motor_torque_nm=0.)

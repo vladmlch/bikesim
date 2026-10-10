@@ -106,13 +106,21 @@ def test_sensor_observation_contract_unchanged():
 
 
 def test_motor_policy_cannot_take_ownership_of_rider_cadence():
+    from collections import deque
     from types import SimpleNamespace
     from bike_sim.sim.research.policy_session import PolicySession
     from bike_sim.sim.ride.control import RideControl
     session=PolicySession.__new__(PolicySession)
     session.policy=SimpleNamespace(act=lambda *args:RideControl(crank_target_rate_rad_s=8.))
     session.env=SimpleNamespace(done=False,observation=None,demand_nm=None,terminated=False,
-        reason=None,error=None,step=lambda *args,**kwargs:None)
+        reason=None,error=None,step=lambda *args,**kwargs:None,control_pending=False)
+    # Mirror the __init__ state begin_advance touches before the rejection.
+    session._paused=False;session._brakes=(0.,0.);session._queued=deque()
+    def fail_policy(error):
+        session.env.terminated=True
+        session.env.reason='policy_error'
+        session.env.error=f'{type(error).__name__}: {error}'
+    session.env.fail_policy=fail_policy
     with pytest.raises(ValueError,match='motor policy cannot own rider inputs'):
         session.advance()
     assert session.env.terminated and session.env.reason == 'policy_error'

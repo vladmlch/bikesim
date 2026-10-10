@@ -107,33 +107,43 @@ def test_reset_enters_new_episode_before_preparing_an_explicit_initial_state():
 @pytest.mark.parametrize('tail_error', [ValueError, RuntimeError, ArithmeticError])
 def test_headless_tail_failure_preserves_primary_error_and_serializes(tmp_path, monkeypatch, tail_error):
     import json
-    from bike_sim.sim.ride import physical_session
+    from bike_sim.sim.ride import physical_driver, physical_frontend, physical_session
     from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
     runtime = SimpleNamespace(set_strict=lambda value: None,
         reference_monitor=ReferenceMonitor(strict=True), vertices=np.zeros((2, 2)),
         model_status=SimpleNamespace(as_dict=lambda: {'model_valid':False}))
-    def step():
+    def step(*args, **kwargs):
         raise ValueError('primary integration failure')
     def flush():
         raise tail_error('tail publication failure')
     runtime.flush = flush
     sim = SimpleNamespace(physical=runtime, position_m=0., time_s=.001, steps=2,
         crash=None, model=SimpleNamespace(opt=SimpleNamespace(timestep=.0005)), step=step,
-        default_limits=lambda:SimpleNamespace(max_steps=10,max_wall_clock_s=10.))
+        track=SimpleNamespace(name='probe', length_m=100.), equilibrium={},
+        physics_config=None, rider=None,
+        default_limits=lambda:SimpleNamespace(max_steps=10,max_wall_clock_s=10.,
+            finish_x_m=100.))
     monkeypatch.setattr(physical_session, 'build_physical_simulation', lambda *args:sim)
     monkeypatch.setattr(physical_session, 'configuration_metadata', lambda *args:{})
-    monkeypatch.setattr(physical_session, 'physical_run_dir_name', lambda *args:'failed')
-    monkeypatch.setattr(physical_session, 'physical_summary',
-                        lambda sim,meta,reason:dict(meta, reason=reason))
+    # run_headless binds the run-dir namer at physical_frontend import time.
+    monkeypatch.setattr(physical_frontend, 'physical_run_dir_name', lambda *args:'failed')
     recorder = SimpleNamespace(record=lambda sim:None, write_csv=lambda path:None,
-                               write_jsonl=lambda path:None)
-    monkeypatch.setattr(physical_session, 'PhysicalRecorder', lambda *args:recorder)
-    args=SimpleNamespace(out=tmp_path,decimate=1,duration=.01,no_plots=True)
+                               write_jsonl=lambda path:None, rows=0)
+    # The backend-neutral driver binds PhysicalRecorder at physical_driver
+    # import time; the summary is still resolved through physical_session.
+    monkeypatch.setattr(physical_driver, 'PhysicalRecorder', lambda *args:recorder)
+    monkeypatch.setattr(physical_session, 'physical_summary',
+                        lambda sim,meta,reason:dict(meta, reason=reason,
+                            outcome=dict(reason=reason, time_s=sim.time_s,
+                                         position_m=sim.position_m)))
+    args=SimpleNamespace(out=tmp_path,decimate=1,duration=.01,no_plots=True,
+        resolved_physics=None)
     assert physical_session.run_physical_headless(
         SimpleNamespace(name='probe',length_m=100.),args,0,None) == 1
     summary=json.loads((tmp_path/'failed'/'summary.json').read_text())
     assert summary['reason'] == 'simulation_error'
-    assert summary['failure'] == 'primary integration failure'
+    # run_headless records failures as 'Type: message' (the env.error contract).
+    assert summary['failure'] == 'ValueError: primary integration failure'
     assert 'tail publication failure' in summary['tail_failure']
 
 
@@ -144,6 +154,7 @@ def test_research_cleanup_keeps_primary_exception_and_terminal_metadata(primary_
     from bike_sim.sim.ride.control import RideControl
     env=ResearchEnvironment.__new__(ResearchEnvironment)
     env.terminated=env.truncated=False;env.reason=env.error=None
+    env._closed=False;env._window=None;env._stop_requested=False
     env.demand_nm=None;env.rider_program=env.rider_behavior=None
     env._queue=deque();env.delay_steps=0;env.control_steps=env.max_steps=1
     env._motor_applied=env._applied=RideControl()

@@ -4,7 +4,7 @@ from dataclasses import replace
 import mujoco
 import numpy as np
 import pytest
-from ._physical_hud_oracle import RideHUD as OriginalHUD
+from _physical_hud_oracle import RideHUD as OriginalHUD
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.hud import RideHUD
 from bike_sim.sim.ride.physical_view import (

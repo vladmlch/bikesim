@@ -98,6 +98,33 @@ def test_recorded_policy_reference_is_never_loaded(environment_factory, tmp_path
     assert replay_episode(path)['passed']
 
 
+@pytest.mark.parametrize('name,index,key,label', [
+    ('commands_applied.jsonl', 0, 'step', 'applied commands'),
+    ('transitions.jsonl', 0, 'physics_steps', 'transition'),
+    ('observations.jsonl', 1, 'time_s', 'observation')])
+def test_resealed_semantic_tamper_still_fails_verification(
+        environment_factory, tmp_path, name, index, key, label):
+    """A checksum-honest edit must still fail the semantic comparison."""
+    path = record_prefix(environment_factory(), tmp_path/'episode')
+    lines = (path/name).read_text().splitlines()
+    row = json.loads(lines[index])
+    row[key] += 1
+    lines[index] = json.dumps(row)
+    (path/name).write_text('\n'.join(lines)+'\n')
+    reseal(path, name)
+    session = ReplaySession(path)
+    try:
+        with pytest.raises(ValueError, match=label):
+            while not session.advance():
+                pass
+        assert not session.done
+        assert replay_exit_code(session) == 1
+        with pytest.raises(RuntimeError, match='incomplete'):
+            session.report()
+    finally:
+        session.close()
+
+
 def test_identity_mismatch_rejected_before_plant_construction(monkeypatch, tmp_path):
     import bike_sim.sim.research.replay as replay
     import bike_sim.sim.ride_sim as plant

@@ -67,3 +67,81 @@ def test_native_preflight_failure_precedes_ride_setup(monkeypatch):
     monkeypatch.setattr(session, 'build_physical_simulation', forbidden)
     with pytest.raises(ValueError, match='artifact'):
         driver.build_physical_driver(None, SimpleNamespace(backend='native', resolved_physics=None), None)
+
+
+def test_missing_artifact_names_directory_commands_and_code(tmp_path, monkeypatch, capsys):
+    from bike_sim.cli.ride import main
+    missing = tmp_path/'empty-build'
+    missing.mkdir()
+    monkeypatch.setenv('BIKE_NATIVE_BUILD_PATH', str(missing))
+    assert main(['--backend', 'native', '--physics-config', PROFILE,
+                 '--headless', '--duration', '1', '--no-plots',
+                 '--out', str(tmp_path/'out')]) == 2
+    error = capsys.readouterr().err
+    assert str(missing.resolve()) in error
+    assert 'cmake -S native -B native/build/release -DCMAKE_BUILD_TYPE=Release' in error
+    assert 'cmake --build native/build/release' in error
+
+
+def test_python_command_never_loads_the_extension(tmp_path, monkeypatch):
+    """A forced native import failure must not affect a plain Python command."""
+    import bike_sim.native.artifact as artifact
+    import bike_sim.sim.ride.physical_session as physical_session
+    from bike_sim.cli.ride import main
+    def forbidden(*args, **kwargs):
+        raise AssertionError('python command imported the native extension')
+    monkeypatch.setattr(artifact, 'load_native_extension', forbidden)
+    monkeypatch.setattr(physical_session, 'run_physical_headless',
+                        lambda track, args, seed, rider: 0)
+    assert main(['--physics-config', PROFILE, '--headless',
+                 '--duration', '1', '--no-plots', '--out', str(tmp_path/'out')]) == 0
+
+
+def test_cli_dispatches_every_live_and_headless_route(tmp_path, monkeypatch):
+    import bike_sim.sim.backend as backend
+    import bike_sim.sim.playground as playground
+    import bike_sim.sim.ride.physical_driver as physical_driver
+    import bike_sim.sim.ride.physical_frontend as physical_frontend
+    import bike_sim.sim.ride.physical_session as physical_session
+    import bike_sim.sim.research.viewer as research_viewer
+    import bike_sim.cli.research as research_cli
+    from bike_sim.cli.ride import main
+    monkeypatch.setattr(backend, 'require_backend',
+                        lambda *args: SimpleNamespace(name='selected-extension'))
+    monkeypatch.setattr(playground, 'ensure_macos_mjpython', lambda: None)
+    calls = []
+    driver = SimpleNamespace(backend='native')
+    monkeypatch.setattr(physical_driver, 'build_physical_driver',
+                        lambda track, args, rider, **kwargs: driver)
+    def viewer(d, *, out_root, time_scale):
+        calls.append(('ride-viewer', d is driver, out_root, time_scale))
+        return 0
+    monkeypatch.setattr(physical_frontend, 'run_viewer', viewer)
+    monkeypatch.setattr(physical_session, 'run_physical_headless',
+                        lambda track, args, seed, rider:
+                        calls.append(('ride-headless', args.backend)) or 7)
+    monkeypatch.setattr(research_viewer, 'run_ride_research',
+                        lambda track, args, rider:
+                        calls.append(('ride-research', args.backend, args.time_scale)) or 0)
+    seen = {}
+    def environment(args):
+        seen['args'] = args
+        return SimpleNamespace(done=True, save=lambda *a, **k: None,
+            reason='duration_reached', error=None,
+            tracker=SimpleNamespace(metrics={}), close=lambda *a, **k: None)
+    monkeypatch.setattr(research_cli, 'make_environment', environment)
+    monkeypatch.setattr(research_cli, 'episode_exit_code', lambda env: 9)
+
+    out = str(tmp_path/'out')
+    assert main(['--backend', 'native', '--physics-config', PROFILE,
+                 '--time-scale', '2', '--out', out]) == 0
+    assert main(['--backend', 'native', '--physics-config', PROFILE, '--headless',
+                 '--duration', '1', '--no-plots', '--out', out]) == 7
+    assert main(['--backend', 'native', '--physics-config', PROFILE,
+                 '--research', '--out', out]) == 0
+    assert research_cli.main(['--backend', 'native', '--duration', '1',
+                              '--out', str(tmp_path/'research')]) == 9
+    assert calls[0] == ('ride-viewer', True, out, 2)
+    assert calls[1] == ('ride-headless', 'native')
+    assert calls[2] == ('ride-research', 'native', 1)
+    assert seen['args'].backend == 'native'

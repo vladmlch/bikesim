@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from native_loader import load_native
 from test_replay_session import record_prefix
 from bike_sim.sim.research.replay import replay_episode
@@ -34,3 +35,14 @@ def test_native_recording_replays_same_backend_and_restarts(environment_pair, tm
         np.testing.assert_array_equal(final.integration_state, before)
     finally:
         session.close()
+
+
+def test_native_replay_rejects_a_missing_selected_extension(environment_pair, tmp_path, monkeypatch):
+    _, native = environment_pair()
+    path = record_prefix(native, tmp_path/'native')
+    empty = tmp_path/'empty-build'
+    empty.mkdir()
+    monkeypatch.setenv('BIKE_NATIVE_BUILD_PATH', str(empty))
+    with pytest.raises(RuntimeError, match='empty-build') as failure:
+        ReplaySession(path)
+    assert 'cmake --build native/build/release' in str(failure.value)

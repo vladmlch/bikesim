@@ -22,8 +22,14 @@ from types import SimpleNamespace
 
 import pytest
 
+from native_loader import load_native
+from bike_sim.native.artifact import execution_provenance
 from bike_sim.sim.realtime_measurement import (
     build_report, compare_runs, measure_run)
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 # Named acceptance thresholds (spec: "sustains mean achieved RTF >= 0.95
@@ -82,6 +88,31 @@ class _FailingDriver:
 
     def close(self):
         self.closed = True
+
+
+class _MeasuredDriver(_FailingDriver):
+    """Same fixture shape, but the loop completes and the metadata carries
+    the real native execution identity a NativeRideDriver would."""
+
+    backend = 'native'
+
+    def __init__(self, clock, execution):
+        super().__init__()
+        self.clock = clock
+        self.metadata['execution'] = execution
+
+    def start(self):
+        self.clock.now += .5  # boundary/loop work, not kernel time
+
+    def advance(self, target_step, *, wall_budget_s):
+        assert target_step == self.max_steps
+        self.clock.now += 2.
+        self.step = self.max_steps
+        self.time_s = self.step * self.dt_s
+        self.reason = 'duration_reached'
+
+    def flush(self):
+        self.clock.now += 1.
 
 
 def _failing_report():
@@ -167,3 +198,31 @@ def test_visual_1x_gate_is_emitted_as_a_pending_gate():
     # The visual gate is measured on a real window; a headless report
     # must keep it pending rather than claim full acceptance.
     assert aggregate['full_acceptance_verified'] is False
+
+
+def test_measure_run_binds_the_selected_artifact_identity(native_module):
+    """The default identity reader re-derives provenance from the loaded
+    extension; a driver carrying the real native execution dict stays
+    identity_unchanged — the Release gate then reads real build context."""
+    execution = execution_provenance('native', artifact=native_module)
+    clock = _Clock()
+    driver = _MeasuredDriver(clock, execution)
+    report = measure_run(lambda: driver, clock=clock)
+    assert report['measured_ok'] and report['valid_prefix']
+    assert report['identity_unchanged'] is True
+    assert report['execution'] == execution
+    identity = native_module.runtime_identity()
+    assert report['execution']['native_source_sha256'] == \
+        identity['native_source_sha256']
+
+
+def test_threshold_gate_tracks_the_selected_artifact_build_type(native_module):
+    """headless_rtf_threshold_met keys off the build_context the selected
+    artifact stamps at compile time — not a fabricated 'Release' flag."""
+    execution = execution_provenance('native', artifact=native_module)
+    report = _native_report(NATIVE_UNPACED_MEDIAN_RTF_MIN,
+                            execution=execution)
+    aggregate = _aggregate(report)
+    is_release = execution['build_context']['build_type'] == 'Release'
+    assert aggregate['headless_rtf_threshold_met'] is (
+        True if is_release else None)

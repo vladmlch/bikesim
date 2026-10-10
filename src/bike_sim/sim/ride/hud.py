@@ -206,8 +206,26 @@ class RideHUD:
         """
         from bike_sim.native.contracts import PhysicalViewState
         from bike_sim.sim.ride.physical_view import make_physical_view
-        view = sim if isinstance(sim, PhysicalViewState) else make_physical_view(
-            sim, achieved_rtf=sim.physical.live_real_time_factor)
+        if isinstance(sim, PhysicalViewState):
+            view = sim
+        elif getattr(sim, 'model', None) is None or getattr(sim, 'data', None) is None:
+            # A sample-only double has no compiled-model surface for
+            # make_physical_view to inspect; the line itself only needs the
+            # published sample, so the view is built from it directly.
+            physical = sim.physical
+            sample = physical.sample
+            view = PhysicalViewState(
+                channels={} if sample is None else sample.channels,
+                drive_mode=sim.physics_config.drive_mode,
+                sample=sample,
+                endpoint={
+                    'root_x_dofadr': int(sim.root_x_dofadr),
+                    'torso_pitch_deg': self._rider_body_pitch_deg(sim, 'rider_torso'),
+                    'pitch_rad': getattr(sim, 'pitch_rad', None),
+                },
+                achieved_rtf=physical.live_real_time_factor)
+        else:
+            view = make_physical_view(sim, achieved_rtf=sim.physical.live_real_time_factor)
         factor = view.achieved_rtf
         rate = "----x" if factor is None else f"{factor:.2f}x"
         rtf_style = ("dim" if factor is None else "green" if factor >= .95

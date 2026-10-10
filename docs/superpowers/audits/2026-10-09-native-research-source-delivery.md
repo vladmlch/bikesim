@@ -127,3 +127,157 @@ The companion patch is against the supplied source tree and uses `original/` and
 57ad67969fc4a649be553dc7d4cb82169fa13301ee1f343fd0417fd217e59979  /mnt/data/mujoco.zip
 a3febcb7cc5fce1f206f82687a7182ba35e00d633d18f852e0bb8cbb87d8ef76  /mnt/data/bikesim(2).zip
 ```
+
+## Post-delivery execution evidence — 2026-10-10
+
+The six "Outstanding gates" above were executed in the complete checkout
+(branch `impl/cpp-port-p2`; gate-of-record tree `8f5fb3c` = `ed75ac7` plus
+three gate commits below). Host: macOS arm64, Python 3.14.3, NumPy 2.5.2
+(Accelerate BLAS), MuJoCo 3.12.0, Apple clang 21. Selected artifact:
+`native/build/release/bike_native.cpython-314-darwin.so` via
+`NATIVE_TEST_BUILD_PATH` + `BIKE_NATIVE_BUILD_PATH`. Detail:
+`.superpowers/sdd/2026-10-09-native-research-source-delivery/task-B3gate-report.md`.
+
+### Item 1 — A4 rollout/failure/ownership gates: SATISFIED
+
+The `full` profile below runs the entire suite including
+`test_native_runtime_{accounting,rollout,ownership,step,commands,bootstrap}.py`
+on the release artifact; the sanitizer selection additionally ran the
+ownership/commands modules under ASan (23/23 carryover tests green, zero
+sanitizer reports, process-isolated fatal probes included).
+
+### Item 2 — provenance/fingerprint: SATISFIED
+
+Compiled-vs-current fingerprint agreement verified in-process on both
+artifacts after rebuild: `runtime_identity()['native_source_sha256']` ==
+`native_source_fingerprint()` ==
+`c1bc5d84dcfeaba8328cbf31e3a88d1433a8d677fae6898bcad4fd7602b165c6`.
+`create_native_research` (`src/bike_sim/native/research.py:408`) raises when
+they disagree, so every paired test exercises the check. Generated header:
+`native/build/release/research_identity/Release/research_build_identity.hpp`
+— `context_json` records `build_type=Release`, `compiler_id=AppleClang`,
+`compiler_version=21.0.0.21000101`, and the effective flag set
+(`-O3 -DNDEBUG`, strict `-W*` wall, `-Wframe-larger-than=8192`,
+`-ffp-contract=off`, `-fstack-protector-strong`, `-fvisibility=hidden`,
+`-fstrict-flex-arrays=3`, `-mbranch-protection=standard`). No git hash is
+stamped by design — identity is a content hash of `native/{src,cmake}` +
+`CMakeLists.txt`; HEAD at verification time was `ed75ac7`/`8f5fb3c`.
+`native/build/asan/native_test_provenance.json` names the asan build and the
+asan extension (its `native_test_count: 1870` is the loader's
+carried-forward manifest field, not the sanitizer selection size).
+
+### Item 3 — B1 sensor sources incl. retained pre-refactor oracle: SATISFIED
+
+`test_sensor_noise.py` + `test_native_research_sensors.py` run in the `full`
+profile and in the sanitizer selection (frozen legacy trace parity,
+exact-call-order RNG draw parity, tape ownership/exhaustion, dropout/latency
+matrix, seed repeat). All green.
+
+### Item 4 — B2 regressions incl. the complete one-second paired case: SATISFIED (with clarification)
+
+The delivered `test_one_second_pair_with_one_e_minus_nine_gate` is an honest
+identical-classification gate, not a disguised completeness claim: it asserts
+per-step `assert_tree` (atol=rtol=1e-9) plus **bitwise** integration-state
+equality, and equal steps/reason at whatever outcome the Python oracle
+reaches; its comment documents the platform truncation explicitly. Direct
+probe: both backends `done` at `steps 104/800`, `reason=numerical_quality`,
+identical `max_energy_residual_ratio=0.0500441062119803` — the documented
+Accelerate-baseline `energy.constraint_work` violation (0.005 s, both
+backends). `numerical_quality` truncation is unconditional in both
+implementations (`environment.py:244-249`, `native/src/runtime/research.cpp:179-184`).
+
+The complete case is nonetheless reachable: `--energy-tolerance` gates only
+the truncation *decision*, never the integrated physics. With the established
+`1e9` parity convention, **both backends complete all 800 steps with
+`reason='duration'` and zero bitwise integration-state diffs** (identical
+residual 0.19970166122503874). New test
+`test_one_second_pair_complete_episode_gate` (commit `ff1f814`) asserts
+`steps == max_steps == 800`, `reason='duration'` on both, per-step 1e-9 +
+bitwise state parity, bitwise command logs, equal metrics/recorder — and
+asserts the identical residual exceeds `.05`, proving the raised gate changed
+no physics. The sibling truncation test is unchanged and keeps the
+classification-parity coverage.
+
+### Item 5 — B3 parity/schema/tamper/identity: SATISFIED
+
+`test_native_research_recording.py`, `test_replay_manifest_v2.py`,
+`test_replay_session.py`, `test_native_replay_session.py` all green in the
+gate below — including `test_shared_export_native_rows_and_complete_provenance`
+(summary compared with only the explicit `research.execution` difference
+excluded) and the tamper/identity matrices; the sanitizer selection adds the
+recording/export/identity tests under ASan.
+
+### Item 6 — upstream profiles, sweeps, sanitizer artifact: SATISFIED
+
+`bash tools/run_tests.sh full` at `8f5fb3c` (see numbers below): build +
+`check_frontends`, `check_tidy` (findings none, 2 baseline nanobind
+suppressions), `check_analyzer` (alpha report-only), `check_cppcheck`,
+`check_odr`, `check_scripts`, headers, diagnostic-controls, context SDK,
+CTest 4/4, `check_native_contracts` — all green; 2297 native extension items
+collected.
+
+Sanitizer: `native/build/asan` was stale (predated all B/C TUs). Rebuild
+exposed two `-Wframe-larger-than=8192` failures in `research_binding.cpp`
+(`bind_research` 34912 B, `bind_sensor_pipeline` 11200 B) — fixed with the
+documented scoped `NATIVE_DIAG_IGNORE` waiver (`5696953`). A second
+known-class defect: `test_native_research_failures.py`'s fatal-probe child
+lacked `NATIVE_TEST_SANITIZER_RUNTIME` reinjection (dyld strips
+`DYLD_INSERT_LIBRARIES` from the parent) — fixed same commit. ASan/UBSan
+selection: **72 passed, 0 failed, zero sanitizer reports**, with
+`verify_sanitizer_runtime` proving the Xcode clang-21 ASan dylib mapped
+in-process; selection covers the new research/sensors/programs/recording/
+presentation/replay TUs including both one-second gates under sanitizers.
+
+### New `full` failures found and fixed by this gate
+
+The first gate run at `ed75ac7` produced **31 failed / 2966 passed** — 7 IDs
+beyond the documented 24-ID baseline, all test skew from the `198cfd0` /
+`0ae8d99` interface refactors (the `native` profile never collects these
+files, so B/C's green `native` run could not see them):
+
+- `test_monitor_strictness::test_headless_tail_failure_...` (3 params) —
+  stub `args` lacked `resolved_physics`; `sim.step` signature, driver-bound
+  `PhysicalRecorder`/`physical_run_dir_name` bindings, `'Type: message'`
+  failure format and the `outcome` summary key were all stale.
+- `test_monitor_strictness::test_research_cleanup_...` (2 params) and
+  `test_seated_pedaling_cycle::test_cadence_wish_is_forwarded_...` —
+  `__new__` env stubs lacked `_closed`/`_window`/`_stop_requested` from the
+  begin/advance split.
+- `test_rider_information_boundary::test_motor_policy_cannot_...` —
+  `PolicySession.__new__` stub lacked `_paused`/`_brakes`/`_queued` and the
+  env stub lacked `control_pending`/`fail_policy`.
+
+All fixed at `8f5fb3c` by completing the stubs to the current contracts —
+assertions unchanged except the failure-string format now matching the
+codebase's `Type: message` convention. No production code was touched by
+these test fixes.
+
+### Gate-of-record result (see §5 of the report for the command)
+
+`bash tools/run_tests.sh full` at `8f5fb3c`, release artifact, log
+`/tmp/b3-full-gate-final.log`: **24 failed, 2973 passed, 195 warnings in
+792.19 s** (2997 collected, 2297 native-extension-selected). Sorted `FAILED`
+IDs diffed against `/tmp/a4c-full-gate-final.log`: **byte-identical to the
+24 documented baseline IDs — zero NEW failures.** All preflight sweeps
+green (frontends/tidy/analyzer-report-only/cppcheck/odr/scripts/headers/
+diag-ctrls/context/CTest 4/4/`check_native_contracts`).
+
+### Gate commits
+
+- `5696953` `fix:` asan build + failure-probe sanitizer reinjection
+- `ff1f814` `test:` complete one-second paired gate (+ `conftest.py`
+  `energy_tolerance` passthrough)
+- `8f5fb3c` `test:` stub-probe contract updates
+
+### Remaining limitations
+
+- No performance claim is asserted anywhere; nothing was benchmarked.
+- The 24 documented baseline failures remain red — platform physics
+  divergence and test/code skew predating this delivery, unchanged by B/C.
+- The `slow`-marked 80-transition parity test runs in `full` (release), not
+  in the 72-test sanitizer selection.
+- C3 native replay/viewer CLI integration remains out of scope; the
+  schema-2 reader still rejects Python-backend substitution for native
+  recordings — replay-success was not claimed before and is claimed only to
+  the extent `test_native_recording_replays_same_backend_and_restarts`
+  covers (same-backend replay round-trip).

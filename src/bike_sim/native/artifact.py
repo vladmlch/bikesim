@@ -111,6 +111,14 @@ def load_native_extension(build_dir: Path | None = None) -> ModuleType:
         build = build.resolve()
     artifacts = extension_artifacts(build)
     if len(artifacts) != 1:
+        if not artifacts:
+            raise RuntimeError(
+                f'no {EXTENSION_MODULE} extension in the selected build '
+                f'directory {build}; build the Release artifact with: '
+                'uv run --frozen --group native cmake -S native -B '
+                'native/build/release -DCMAKE_BUILD_TYPE=Release && '
+                'uv run --frozen --group native cmake --build '
+                'native/build/release -j4')
         raise RuntimeError(
             f'expected exactly one {EXTENSION_MODULE} extension in {build}, '
             f'found {len(artifacts)}')

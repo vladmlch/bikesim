@@ -6,8 +6,8 @@ This document describes the **verified** native visual-runtime release as of the
 2026-10-10 acceptance session (branch `impl/cpp-port-p2`). Verified status:
 
 - The native extension builds clean under the documented Release workflow below;
-  `bash tools/run_tests.sh native` is green and the `full` profile passes with
-  only the recorded platform-baseline failures (see
+  `bash tools/run_tests.sh native` is green and the `full` profile fails only
+  on the recorded platform-baseline failure set (see
   [the execution audit](superpowers/audits/2026-10-08-native-visual-runtime.md)).
 - The macOS GUI paths below were exercised for real: `bike-ride` (physical,
   native backend, 1x and 8x), `bike-ride --research` (native, `--duration 1`),
@@ -52,8 +52,8 @@ numerical tolerances or the model. Higher requested scales are not a promise of
 higher achieved throughput — the interactive 8x run above achieved a sustained
 ~1.8x. The HUD/preview distinguish requested scale from measured
 simulated-time/wall-time RTF, and physics is scale-invariant by construction
-(the 1x and 8x runs produced bitwise-identical outcomes: `crash` at
-t=31.178750 s, 24943 steps).
+(the 1x and 8x runs produced byte-identical run outcomes: `crash` at
+t=31.178750 s, 24943 steps, identical position).
 
 Exact profile/track examples:
 
@@ -190,7 +190,8 @@ classified invalid prefixes remain diagnostic, never calibrated valid rides.
 Short terminal prefixes require explicit review — on this platform every strict
 run is short because the documented `energy.constraint_work` baseline violation
 at t=0.005 s ends strict progression at step 4 for both backends; the reported
-medians (python ~0.44, native ~2.21 RTF) measure boundary cost on that prefix,
+medians (python 0.4736, native 2.0196 RTF in the linked `report.json`
+artifacts) measure boundary cost on that prefix,
 not sustained throughput. Sustained evidence comes from the interactive runs
 above. The headless RTF threshold field alone cannot establish Track C
 acceptance: full parity/replay tests, sanitisers/inspections, actual macOS UI

@@ -1,6 +1,7 @@
 """Physical driver parity uses full accounting, not a preview force shortcut."""
 import numpy as np
 from native_loader import load_native
+from _bits import assert_bitwise_equal
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.physical_driver import PhysicalRideDriver
 
@@ -27,7 +28,7 @@ def test_native_physical_driver_finishes_exports_and_retains_owned_snapshot(
         assert_tree(native.recorder.samples, reference.recorder.samples)
         old = native.snapshot()
         expected = old.integration_state.copy()
-        np.testing.assert_allclose(expected, reference.snapshot().integration_state, atol=1e-9, rtol=1e-9)
+        assert_bitwise_equal(expected, reference.snapshot().integration_state)
         summary = native.export(tmp_path/'physical')
         assert summary['execution']['backend'] == 'native'
         assert summary['outcome']['steps'] == 4

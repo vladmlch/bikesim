@@ -6,6 +6,7 @@ from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.hud import RideHUD
 from bike_sim.sim.ride.physical_view import RenderReplica, environment_snapshot, present_view
 from native_loader import load_native
+from _bits import assert_bitwise_equal
 from _physical_hud_oracle import RideHUD as OriginalHUD
 
 
@@ -51,7 +52,7 @@ def test_native_target_slice_does_not_flush_or_duplicate_request(environment_pai
         with pytest.raises(ValueError):
             env.advance_control(target_step=0)
         assert env.control_pending
-    np.testing.assert_allclose(native.snapshot().integration_state,
-                               environment_snapshot(reference).integration_state, rtol=1e-9, atol=1e-9)
+    assert_bitwise_equal(native.snapshot().integration_state,
+                         environment_snapshot(reference).integration_state)
     assert_tree(native.advance_control(), reference.advance_control())
     assert len(native.commands_requested) == len(native.trace) == 1

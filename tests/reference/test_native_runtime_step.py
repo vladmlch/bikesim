@@ -11,6 +11,7 @@ import pytest
 import mujoco
 
 from native_loader import load_native
+from _bits import assert_bitwise_equal
 from _native_runtime_support import make_python_ride, assert_tree_close
 from bike_sim.native.runtime import create_native_ride
 from bike_sim.sim.ride.control import RideControl
@@ -43,7 +44,7 @@ def test_physics_result_is_independent_of_call_chunks(sim):
         chunks.advance(target, command)
     a, b = one.snapshot(), chunks.snapshot()
     assert a.step == b.step == 40
-    np.testing.assert_array_equal(a.integration_state, b.integration_state)
+    assert_bitwise_equal(a.integration_state, b.integration_state)
 
 
 def test_native_first_step_uses_settled_material_state(sim):
@@ -52,9 +53,7 @@ def test_native_first_step_uses_settled_material_state(sim):
     sim.step(control=command)
     native.advance(1, command)
     expected = _integration_state(sim)
-    np.testing.assert_allclose(
-        native.snapshot().integration_state, expected,
-        atol=1e-9, rtol=1e-9)
+    assert_bitwise_equal(native.snapshot().integration_state, expected)
 
 
 @pytest.mark.slow
@@ -67,7 +66,7 @@ def test_native_step_sequence_matches_python_state(sim):
         result = native.advance(target, command)
         assert result.step == target
         assert result.reason == 'target'
-        np.testing.assert_array_equal(
+        assert_bitwise_equal(
             native.snapshot().integration_state, _integration_state(sim))
 
 
@@ -118,9 +117,9 @@ def test_native_advance_tracks_python_under_load(sim):
         sim.step(front, rear, control=command)
         native.advance(target, command, front_brake_demand=front,
                        rear_brake_demand=rear)
-        np.testing.assert_array_equal(
+        assert_bitwise_equal(
             native.snapshot().integration_state, _integration_state(sim),
-            err_msg=f'interval {target}')
+            f'interval {target}')
 
 
 def test_reset_after_advance_replays_the_bootstrap(sim):
@@ -188,10 +187,10 @@ def test_sensor_channels_read_sensordata_rows(sim):
         probe = native.probe_step_inputs(command)
         # d.sensor(name).data is the oracle lane (physical_observations.py
         # :182-183); bitwise equal, not just close.
-        np.testing.assert_array_equal(
+        assert_bitwise_equal(
             np.asarray(probe['sensors']['frame_gyro_body_rad_s']),
             sim.data.sensor('sensor_frame_gyro').data)
-        np.testing.assert_array_equal(
+        assert_bitwise_equal(
             np.asarray(probe['sensors']['frame_specific_force_body_mps2']),
             sim.data.sensor('sensor_frame_accel').data)
 
@@ -210,13 +209,13 @@ def test_native_intent_lanes_match_python_past_reaction_delay(sim):
     assert native.snapshot().step == 160
     # Snapshot before the probe: apply_forces staging rewrites
     # qacc_warmstart/sensordata lanes the integration vector carries.
-    np.testing.assert_array_equal(
+    assert_bitwise_equal(
         native.snapshot().integration_state, _integration_state(sim))
     probe = native.probe_step_inputs(command)
     expected = sim.physical.rider_intent_signals
     signals = probe['intent_signals']
     assert signals['pitch_rate_up_rad_s'] == expected.pitch_rate_up_rad_s
-    np.testing.assert_array_equal(
+    assert_bitwise_equal(
         np.asarray(signals['specific_force_body_mps2']),
         np.asarray(expected.specific_force_body_mps2))
     assert signals['crank_rate_rad_s'] == expected.crank_rate_rad_s

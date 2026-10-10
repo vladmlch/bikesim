@@ -17,6 +17,7 @@ import pytest
 import mujoco
 
 from native_loader import load_native, selected_build
+from _bits import assert_bitwise_equal
 from _native_runtime_support import make_python_ride
 from bike_sim.native.runtime import create_native_ride
 from bike_sim.sim.ride.control import RideControl
@@ -62,7 +63,7 @@ def test_explicit_zero_effort_differs_from_automatic(sim):
         _advance_both(sim, native, target, zero)
         automatic.advance(target, RideControl())
     expected = _integration_state(sim)
-    np.testing.assert_array_equal(
+    assert_bitwise_equal(
         native.snapshot().integration_state, expected)
     assert not np.array_equal(
         native.snapshot().integration_state,
@@ -76,9 +77,9 @@ def test_motor_ceiling_change_matches_python(sim):
         command = RideControl(motor_limit_nm=40. if target <= 15 else None,
                               human_torque_nm=30.)
         _advance_both(sim, native, target, command)
-        np.testing.assert_array_equal(
+        assert_bitwise_equal(
             native.snapshot().integration_state, _integration_state(sim),
-            err_msg=f'interval {target}')
+            f'interval {target}')
 
 
 @pytest.mark.slow
@@ -88,9 +89,9 @@ def test_brake_apply_release_matches_python(sim):
     plan = [(0., 0.)] * 8 + [(1., 0.5)] * 8 + [(0., 0.)] * 8
     for target, (front, rear) in enumerate(plan, start=1):
         _advance_both(sim, native, target, command, front=front, rear=rear)
-        np.testing.assert_array_equal(
+        assert_bitwise_equal(
             native.snapshot().integration_state, _integration_state(sim),
-            err_msg=f'interval {target}')
+            f'interval {target}')
 
 
 @pytest.mark.slow
@@ -104,9 +105,9 @@ def test_gear_shift_and_coast_resume_match_python(sim):
     for target, command in segments:
         while sim.steps < target:
             _advance_both(sim, native, sim.steps + 1, command)
-        np.testing.assert_array_equal(
+        assert_bitwise_equal(
             native.snapshot().integration_state, _integration_state(sim),
-            err_msg=f'interval {target}')
+            f'interval {target}')
 
 
 def test_budget_yield_stops_between_steps(sim):

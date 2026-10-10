@@ -74,6 +74,8 @@ public:
     ~NativeResearchRuntime();
     NativeResearchRuntime(const NativeResearchRuntime &) = delete;
     NativeResearchRuntime &operator=(const NativeResearchRuntime &) = delete;
+    NativeResearchRuntime(NativeResearchRuntime &&) = delete;
+    NativeResearchRuntime &operator=(NativeResearchRuntime &&) = delete;
     void begin_control(const RideControl &control, double front, double rear);
     // A completed result stays available until ack_control after Python boxing.
     [[nodiscard]] std::optional<ResearchTransition> advance_control(

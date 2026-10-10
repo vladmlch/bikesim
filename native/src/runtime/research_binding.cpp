@@ -5,6 +5,8 @@
 #include "samples_binding.hpp"
 #include "../binding_readers.hpp"
 #include "../rider/intent_wire.hpp"
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <memory>
@@ -18,6 +20,7 @@ namespace runtime {
 namespace {
 namespace nb = nanobind;
 using namespace sample_wire;
+// NOLINTNEXTLINE(misc-no-recursion) bounded-depth recursion mirrors plain() tree conversion
 Wire read_plain(nb::handle value, const std::string &path, unsigned depth = 0) {
     if (depth > 64) wire::invalid(path, "plain-data nesting exceeds 64");
     if (value.is_none()) return nullptr;
@@ -31,7 +34,10 @@ Wire read_plain(nb::handle value, const std::string &path, unsigned depth = 0) {
         result.reserve(d.size());
         for (const auto item : d) {
             const auto key = wire::string(item.first, path);
-            result.emplace_back(key, read_plain(item.second, path + "." + key, depth + 1));
+            std::string child = path;
+            child += '.';
+            child += key;
+            result.emplace_back(key, read_plain(item.second, child, depth + 1));
         }
         return result;
     }
@@ -39,14 +45,19 @@ Wire read_plain(nb::handle value, const std::string &path, unsigned depth = 0) {
         WireArray result;
         const auto items = wire::sequence(value, path);
         result.reserve(items.size());
-        for (std::size_t i = 0; i < items.size(); ++i)
-            result.push_back(read_plain(items[i], path + "[" + std::to_string(i) + "]", depth + 1));
+        for (std::size_t i = 0; i < items.size(); ++i) {
+            std::string child = path;
+            child += '[';
+            child += std::to_string(i);
+            child += ']';
+            result.push_back(read_plain(items[i], child, depth + 1));
+        }
         return result;
     }
     wire::invalid(path, "expected plain finite scalar/dict/list/tuple");
 }
 SensorConfig parse_sensors(nb::handle value) {
-    const wire::Dict d{wire::mapping(value, "sensors"), "sensors"};
+    const wire::Dict d{.value = wire::mapping(value, "sensors"), .path = "sensors"};
     wire::exact(d, wire::keys("latency_s", "acceleration_std_mps2", "gyro_std_rad_s", "encoder_std_rad_s",
         "torque_std_nm", "imu_enabled", "sample_period_s", "acceleration_bias_mps2", "gyro_bias_rad_s",
         "dropout_probability", "maximum_age_s"));
@@ -81,13 +92,21 @@ NoiseTape parse_tape(nb::handle noise, nb::handle dropout) {
     NoiseTape result;
     const auto rows = wire::sequence(noise, "noise_tape.noise");
     result.noise.reserve(rows.size());
-    for (const nb::handle row : rows) result.noise.push_back(wire::fixed<9>(row, "noise_tape.noise"));
+    for (const nb::handle row : rows) {
+        // wire::vector keeps the same sequence/finite checks as wire::fixed
+        // without instantiating a 72-byte pass-by-value return for N=9.
+        const auto values = wire::vector(row, "noise_tape.noise");
+        if (values.size() != 9) wire::invalid("noise_tape.noise", "incorrect sequence width");
+        std::array<double, 9> parsed{};
+        std::copy_n(values.begin(), parsed.size(), parsed.begin());
+        result.noise.push_back(parsed);
+    }
     result.dropout_uniform = wire::vector(dropout, "noise_tape.dropout_uniform");
     result.validate();
     return result;
 }
 SensorState parse_sensor_state(nb::handle value) {
-    const wire::Dict d{wire::mapping(value, "sensor_state"), "sensor_state"};
+    const wire::Dict d{.value = wire::mapping(value, "sensor_state"), .path = "sensor_state"};
     wire::exact(d, wire::keys("queue", "last_time", "delivery_time", "startup", "cursor",
                               "samples_attempted", "samples_dropped"));
     SensorState s;
@@ -109,7 +128,7 @@ SensorState parse_sensor_state(nb::handle value) {
     return s;
 }
 ResearchConfig parse_config(nb::handle value) {
-    const wire::Dict d{wire::mapping(value, "research"), "research"};
+    const wire::Dict d{.value = wire::mapping(value, "research"), .path = "research"};
     wire::exact(d, wire::keys("timestep_s", "control_steps", "delay_steps", "max_steps", "sensor_steps",
         "record_decimation", "stop_on_model_violation", "maximum_energy_residual_ratio", "wheelie_persistence_s",
         "track_length_m", "start_position_m", "sensors", "geometry", "startup_control", "rider_program", "demand_program"));
@@ -154,10 +173,11 @@ ResearchConfig parse_config(nb::handle value) {
     c.geometry.root_pitch_dof = address("root_pitch_dof");
     return c;
 }
-void bind_sensor_pipeline(nb::module_ &module) {
+// NOLINTBEGIN(bugprone-easily-swappable-parameters) positional handles mirror the fixed Python API
+void bind_sensor_pipeline(const nb::module_ &module) {
     nb::class_<SensorPipeline>(module, "NativeSensorPipeline")
         .def("__init__", [](SensorPipeline *self, nb::handle config, nb::handle noise, nb::handle dropout) {
-            auto c = parse_sensors(config);
+            const auto c = parse_sensors(config);
             auto tape = parse_tape(noise, dropout);
             new (self) SensorPipeline(c, std::move(tape));
         }, nb::arg("config"), nb::arg("noise"), nb::arg("dropout_uniform"))
@@ -178,8 +198,10 @@ void bind_sensor_pipeline(nb::module_ &module) {
         }, nb::arg("time_s"))
         .def("state_dict", [](const SensorPipeline &self) { return wire_object_to_python(self.state_wire()); });
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 } // namespace
 void bind_research(nb::module_ &module) {
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional handles mirror the fixed Python API
     bind_sensor_pipeline(module);
     module.def("research_program_at", [](nb::handle rider_program, nb::handle demand_program,
                                            nb::handle control, nb::handle time) {
@@ -190,7 +212,8 @@ void bind_research(nb::module_ &module) {
         const auto demand = programs.demand_at(time_s);
         return wire_object_to_python({{"control", research_control_wire(command)},
                                       {"demand_nm", demand ? Wire(*demand) : Wire(nullptr)}});
-    }, nb::arg("rider_program"), nb::arg("demand_program"), nb::arg("control"), nb::arg("time_s"));
+    }, nb::arg("rider_program").none(), nb::arg("demand_program").none(),
+       nb::arg("control"), nb::arg("time_s"));
     nb::class_<NativeResearchRuntime>(module, "NativeResearchRuntime")
         .def("__init__", [](NativeResearchRuntime *self, nb::handle model, nb::handle physical_config,
                             nb::handle physical_state, nb::handle research_config, nb::handle noise,
@@ -240,5 +263,6 @@ void bind_research(nb::module_ &module) {
         .def("set_error_text", &NativeResearchRuntime::set_error_text)
         .def("close", &NativeResearchRuntime::close)
         .def_prop_ro("closed", &NativeResearchRuntime::closed);
+    // NOLINTEND(bugprone-easily-swappable-parameters)
 }
 } // namespace runtime

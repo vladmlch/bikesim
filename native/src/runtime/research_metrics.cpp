@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <utility>
 #include "../numeric_sincos.hpp"
 #include "../tyre/profile.hpp"
@@ -24,7 +26,7 @@ double load(const WireObject &wheel) {
     }
     return result;
 }
-std::string classify(const WheelieTruth &t) {
+std::string_view classify(const WheelieTruth &t) {
     const bool front = t.front_load_n > 5., rear = t.rear_load_n > 5.;
     if (front && rear) return "two_wheels";
     if (!front && !rear) return std::min(t.front_clearance_m, t.rear_clearance_m) > .01 ? "flight" : "unsupported";
@@ -102,6 +104,7 @@ WheelieTracker::WheelieTracker(double persistence_s) : persistence_(persistence_
     if (!std::isfinite(persistence_) || persistence_ < 0.)
         throw std::invalid_argument("wheelie persistence must be finite and nonnegative");
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) argument order mirrors WheelieTracker.update
 void WheelieTracker::update(const WheelieTruth &t, double dt, double delivered, std::optional<double> applied) {
     if (!std::isfinite(dt) || dt <= 0.) throw std::invalid_argument("metric interval must be positive");
     if (last_end_ && std::abs(t.time_s - *last_end_) > 1e-9)
@@ -115,8 +118,10 @@ void WheelieTracker::update(const WheelieTruth &t, double dt, double delivered, 
     candidate_s_ = candidate ? candidate_s_ + dt : 0.;
     const bool active = candidate && candidate_s_ + 1e-12 >= persistence_;
     if (onset) {
-        episode_ = WheelieEpisode{t.time_s, t.time_s, false, t.relative_pitch_rad, t.front_clearance_m,
-            t.front_load_n, {{"delivered_motor_nm", delivered}, {"applied_motor_nm", opt(applied)},
+        episode_ = WheelieEpisode{.start_s = t.time_s, .end_s = t.time_s, .confirmed = false,
+            .max_relative_pitch_rad = t.relative_pitch_rad, .max_front_clearance_m = t.front_clearance_m,
+            .min_front_load_n = t.front_load_n,
+            .onset = {{"delivered_motor_nm", delivered}, {"applied_motor_nm", opt(applied)},
             {"road_pitch_rad", t.road_pitch_rad}, {"pitch_rate_up_rad_s", t.pitch_rate_up_rad_s},
             {"speed_mps", t.speed_mps}}};
     }
@@ -152,7 +157,7 @@ void WheelieTracker::update(const WheelieTruth &t, double dt, double delivered, 
         ++fraction_count_;
         max_pitch_rate_ = std::max(max_pitch_rate_, t.pitch_rate_up_rad_s);
     }
-    state_times_[raw] += dt;
+    state_times_[std::string(raw)] += dt;
     last_end_ = t.time_s + dt;
 }
 WireObject WheelieTracker::metrics() const {
@@ -183,6 +188,7 @@ ResearchQuality research_quality(const WireObject &energy, double maximum_ratio)
     const double ratio = std::abs(optional_number(energy, "residual_j", 0.)) / scale;
     const double electrical = optional_number(energy, "electrical_residual_j", 0.);
     const double budget = std::max(1., std::abs(optional_number(energy, "electrical_work_j", 0.)));
-    return {ratio, ratio <= maximum_ratio && std::abs(electrical) <= 1e-7 * budget};
+    return {.residual_ratio = ratio,
+        .acceptable = ratio <= maximum_ratio && std::abs(electrical) <= 1e-7 * budget};
 }
 } // namespace runtime

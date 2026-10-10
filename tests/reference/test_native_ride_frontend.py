@@ -1,7 +1,12 @@
 """Physical driver parity uses full accounting, not a preview force shortcut."""
 import numpy as np
+from native_loader import load_native
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.physical_driver import PhysicalRideDriver
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 def test_native_physical_driver_finishes_exports_and_retains_owned_snapshot(

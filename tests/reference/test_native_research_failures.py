@@ -5,6 +5,12 @@ import os
 import subprocess
 import sys
 
+from native_loader import load_native
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
+
 
 def test_engine_failure_preserves_prefix_and_reset_recovers(native_module):
     root = Path(__file__).resolve().parents[2]

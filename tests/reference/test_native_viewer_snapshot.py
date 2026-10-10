@@ -5,7 +5,12 @@ import pytest
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.hud import RideHUD
 from bike_sim.sim.ride.physical_view import RenderReplica, environment_snapshot, present_view
-from ._physical_hud_oracle import RideHUD as OriginalHUD
+from native_loader import load_native
+from _physical_hud_oracle import RideHUD as OriginalHUD
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 def test_native_preview_matches_reference_and_is_owned(environment_pair, assert_tree):

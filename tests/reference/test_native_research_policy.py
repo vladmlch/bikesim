@@ -1,7 +1,12 @@
 """The same external policy lifecycle is exercised against both backends."""
 import pytest
+from native_loader import load_native
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.research.policy_session import PolicySession
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 class CountingPolicy:
@@ -51,6 +56,50 @@ def test_one_act_per_window_and_queued_pause_brakes(policy_environment):
     assert env.commands_requested[1]['front_brake_demand'] == .2
     assert env.commands_requested[1]['rear_brake_demand'] == .1
     assert env.run_metadata['operator_intervention']
+
+
+def test_one_act_per_window_across_budget_yields(policy_environment):
+    """Whatever the wall-clock chunking, a window costs exactly one act call."""
+    env = policy_environment
+    policy = CountingPolicy()
+    session = PolicySession(env, policy)
+    for window in range(3):
+        if env.done:
+            break
+        session.begin_advance()
+        # A zero-budget call is a pure poll: no simulated progress, the pending
+        # command survives, and the policy is not re-invoked.
+        assert session.advance_pending(wall_budget_s=0.) is None
+        result = None
+        for _ in range(200):
+            result = session.advance_pending(wall_budget_s=.008)
+            if result is not None:
+                break
+        assert result is not None
+        assert len(policy.calls) == window+1
+        assert len(env.commands_requested) == window+1
+        assert len(env.trace) == window+1
+
+
+def test_pause_and_resume_do_not_advance_simulated_time(policy_environment):
+    env = policy_environment
+    policy = CountingPolicy()
+    session = PolicySession(env, policy)
+    session.advance()
+    steps, time_s, calls = env.sim.steps, env.sim.time_s, len(policy.calls)
+    session.pause()
+    assert session.paused
+    with pytest.raises(RuntimeError):
+        session.advance_pending()
+    with pytest.raises(RuntimeError):
+        session.advance()
+    session.resume()
+    assert not session.paused
+    assert env.sim.steps == steps and env.sim.time_s == time_s
+    assert len(policy.calls) == calls
+    session.advance()
+    assert env.sim.steps == steps+env.control_steps
+    assert len(policy.calls) == calls+1
 
 
 def test_stop_and_reset_are_deferred_to_external_boundary(policy_environment):
@@ -105,6 +154,8 @@ def test_policy_failure_has_no_manufactured_transition(policy_environment):
     assert env.error == 'RuntimeError: policy sentinel'
     assert env.sim.steps == 0
     assert env.commands_requested == [] and env.trace == []
+    env.stop()
+    assert env.reason == 'policy_error'
 
 
 def test_policy_cannot_smuggle_rider_inputs(policy_environment):

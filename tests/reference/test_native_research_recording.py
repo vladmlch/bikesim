@@ -1,11 +1,18 @@
 import json
 import numpy as np
 import pytest
+from native_loader import load_native
 from bike_sim.native.artifact import EXECUTION_FIELDS
 from bike_sim.sim.ride.control import RideControl
+from bike_sim.sim.research.policies import zero_factory
+from bike_sim.sim.research.policy_session import PolicySession
 from bike_sim.sim.research.replay import (
     SCHEMA2_FILES, ENVELOPE_FILE, STRENGTH_FILE, validate_recording, rebuild_environment,
 )
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 def test_shared_export_native_rows_and_complete_provenance(environment_pair, tmp_path, assert_tree):
@@ -22,6 +29,10 @@ def test_shared_export_native_rows_and_complete_provenance(environment_pair, tmp
     assert set(manifest['execution']) == EXECUTION_FIELDS
     assert manifest['execution']['backend'] == 'native'
     assert python_manifest['execution']['backend'] == 'python'
+    # A Python export carries schema-2 provenance with all native fields null.
+    for null_field in ('native_source_sha256', 'extension_sha256',
+                       'mujoco_library_sha256', 'build_context'):
+        assert python_manifest['execution'][null_field] is None
     assert set(manifest['file_sha256']) == set(SCHEMA2_FILES) | {ENVELOPE_FILE, STRENGTH_FILE}
     assert not summary['research']['execution_changed_during_run']
     assert not python_summary['research']['execution_changed_during_run']
@@ -74,6 +85,32 @@ def test_failed_staging_does_not_destroy_existing_recording(environment_pair, tm
     with pytest.raises(OSError, match='injected export failure'):
         native.save(destination, overwrite=True)
     assert {path.name: path.read_bytes() for path in destination.iterdir()} == before
+    validate_recording(destination)
+
+
+def test_manifest_is_the_publication_seal(environment_pair, tmp_path):
+    # replay.json is written last: a directory without it is a partial save,
+    # never a valid recording, no matter how complete the other files are.
+    _, native = environment_pair()
+    native.step(RideControl(0.))
+    destination = tmp_path/'episode'
+    native.save(destination)
+    validate_recording(destination)
+    (destination/'replay.json').unlink()
+    with pytest.raises((ValueError, OSError)):
+        validate_recording(destination)
+
+
+def test_validation_never_resolves_the_recorded_policy(environment_pair, tmp_path):
+    # Recorded policy metadata is opaque provenance: the validator reads data
+    # files and never resolves the recorded module:factory reference.
+    _, native = environment_pair()
+    session = PolicySession(native, zero_factory(), reference='ghost.module:Missing')
+    session.advance()
+    destination = tmp_path/'ghost'
+    session.save(destination)
+    summary = json.loads((destination/'summary.json').read_text())
+    assert summary['research']['run_metadata']['policy']['reference'] == 'ghost.module:Missing'
     validate_recording(destination)
 
 

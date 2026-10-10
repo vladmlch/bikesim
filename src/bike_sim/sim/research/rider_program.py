@@ -61,7 +61,10 @@ class RiderProgram:
             return self.keyframes[-1]
         a, b = self.keyframes[i:i+2]
         u = (t-a.time_s)/(b.time_s-a.time_s)
-        blend = u*u*u*(10.+u*(-15.+6.*u))
+        # The smoothstep's image is [0, 1]; at u one ulp below the upper knot
+        # this association can round a hair above 1 and inject a nonphysical
+        # sign into mixed fields (effort below zero fails keyframe validation).
+        blend = min(1., max(0., u*u*u*(10.+u*(-15.+6.*u))))
         def mix(x, y):
             return x+(y-x)*blend
         pa, pb = a.posture, b.posture

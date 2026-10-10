@@ -117,8 +117,8 @@ RideControl ResearchPrograms::apply(const RideControl &control, double time_s) c
     validate_control(control);
     if (rider_frames.empty()) return control;
     const double t = std::max(0., time_s - reaction_delay_s);
-    auto upper = std::upper_bound(rider_frames.begin(), rider_frames.end(), t,
-        [](double x, const RiderKeyframe &f) { return x < f.time_s; });
+    const auto upper = std::ranges::upper_bound(rider_frames, t, {},
+        [](const RiderKeyframe &f) { return f.time_s; });
     const auto &a = *std::prev(upper);
     RideControl result = control;
     result.posture = a.posture;
@@ -126,15 +126,25 @@ RideControl ResearchPrograms::apply(const RideControl &control, double time_s) c
     if (upper == rider_frames.end()) return result;
     const auto &b = *upper;
     const double u = (t - a.time_s) / (b.time_s - a.time_s);
-    const double blend = u * u * u * (10. + u * (-15. + 6. * u));
+    // The smoothstep's image is [0, 1]; at u one ulp below the upper knot
+    // this association can round a hair above 1 (see RiderProgram.at).
+    const double blend = std::clamp(u * u * u * (10. + u * (-15. + 6. * u)), 0., 1.);
     const auto mix = [blend](double x, double y) { return x + (y - x) * blend; };
     auto &p = *result.posture;
     p.torso_lean_rad = mix(a.posture.torso_lean_rad, b.posture.torso_lean_rad);
     p.pelvis_pitch_rad = mix(a.posture.pelvis_pitch_rad, b.posture.pelvis_pitch_rad);
-    if (p.pelvis_offset_m)
+    if (p.pelvis_offset_m) {
+        // validate() requires uniform offset ownership across all keyframes.
+        if (!a.posture.pelvis_offset_m || !b.posture.pelvis_offset_m)
+            throw std::logic_error("nonuniform rider hip offset ownership");
         for (std::size_t i = 0; i < 2; ++i)
             (*p.pelvis_offset_m)[i] = mix((*a.posture.pelvis_offset_m)[i], (*b.posture.pelvis_offset_m)[i]);
-    if (a.human_torque_nm) result.human_torque_nm = mix(*a.human_torque_nm, *b.human_torque_nm);
+    }
+    if (a.human_torque_nm) {
+        // validate() requires uniform effort ownership across all keyframes.
+        if (!b.human_torque_nm) throw std::logic_error("nonuniform rider effort ownership");
+        result.human_torque_nm = mix(*a.human_torque_nm, *b.human_torque_nm);
+    }
     validate_posture(p);
     return result;
 }
@@ -142,8 +152,8 @@ std::optional<double> ResearchPrograms::demand_at(double time_s) const {
     if (!std::isfinite(time_s)) throw std::invalid_argument("demand time must be finite");
     if (demand_frames.empty()) return std::nullopt;
     const double t = std::max(0., time_s);
-    auto upper = std::upper_bound(demand_frames.begin(), demand_frames.end(), t,
-        [](double x, const std::array<double, 2> &f) { return x < f[0]; });
+    const auto upper = std::ranges::upper_bound(demand_frames, t, {},
+        [](const std::array<double, 2> &f) { return f[0]; });
     const auto &a = *std::prev(upper);
     if (upper == demand_frames.end()) return a[1];
     const auto &b = *upper;
@@ -163,8 +173,9 @@ ResearchPrograms ResearchPrograms::from_wire(const Wire &rider_program, const Wi
             const auto &f = object(item);
             constexpr std::array<std::string_view, 3> fields{"time_s", "posture", "human_torque_nm"};
             exact(f, fields, "rider_program.keyframes");
-            result.rider_frames.push_back({number(required(f, "time_s")),
-                posture_from_wire(object(required(f, "posture"))), optional_number(required(f, "human_torque_nm"))});
+            result.rider_frames.push_back(RiderKeyframe{.time_s = number(required(f, "time_s")),
+                .posture = posture_from_wire(object(required(f, "posture"))),
+                .human_torque_nm = optional_number(required(f, "human_torque_nm"))});
         }
         if (result.rider_frames.empty()) throw std::invalid_argument("rider program requires keyframes");
     }

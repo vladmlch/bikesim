@@ -1,10 +1,15 @@
 from dataclasses import asdict
 import math
 import pytest
+from native_loader import load_native
 from bike_sim.physics.rider_posture import RiderPosture
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.research.demand import DemandProgram
 from bike_sim.sim.research.rider_program import RiderKeyframe, RiderProgram
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 @pytest.mark.parametrize('offsets', [None, (0., 0.)])

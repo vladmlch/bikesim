@@ -2,8 +2,13 @@ from copy import deepcopy
 from dataclasses import asdict, replace
 import numpy as np
 import pytest
+from native_loader import load_native
 from bike_sim.sim.research.sensor_noise import build_noise_tape
 from bike_sim.sim.research.sensors import SensorConfig, SensorObservation, SensorPipeline
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 def native_pipeline(module, config, *, count=32, seed=41):
@@ -78,6 +83,58 @@ def test_invalid_operations_and_exhaustion_preserve_state(native_module, raw_sen
     with pytest.raises(RuntimeError, match='exhausted'):
         native.push(asdict(raw_sensor(.01)))
     assert_tree(native.state_dict(), before, atol=0., rtol=0.)
+
+
+def test_irregular_delivery_schedule_matches_python(native_module, raw_sensor, assert_tree):
+    config = replace(SensorConfig(), latency_s=.004, maximum_age_s=.02,
+        acceleration_bias_mps2=(.05, -.01, .02), gyro_bias_rad_s=.003,
+        dropout_probability=.15)
+    reference = SensorPipeline(config, seed=11)
+    native = native_pipeline(native_module, config, count=8, seed=11)
+    reference.reset(raw_sensor())
+    native.reset(asdict(raw_sensor()))
+    pushes = [.005, .010, .015, .025, .030]
+    reads = [.0032, .0067, .0119, .0161, .0204, .0276, .0311, .045]
+    for read_at in reads:
+        while pushes and pushes[0] <= read_at:
+            raw = raw_sensor(pushes.pop(0))
+            reference.push(raw)
+            native.push(asdict(raw))
+        assert_tree(native.read(read_at), asdict(reference.read(read_at)), atol=0., rtol=0.)
+        assert_tree(native.state_dict(), reference.state_dict(), atol=0., rtol=0.)
+
+
+def test_same_seed_reset_repeats_and_different_seeds_differ(native_module, raw_sensor, assert_tree):
+    config = replace(SensorConfig(), latency_s=0., dropout_probability=.3)
+
+    def python_sequence(pipeline):
+        pipeline.reset(raw_sensor())
+        out = []
+        for index in range(1, 6):
+            raw = raw_sensor(index*.005)
+            pipeline.push(raw)
+            out.append(pipeline.read(index*.005))
+        return out
+
+    def native_sequence(pipeline):
+        pipeline.reset(asdict(raw_sensor()))
+        out = []
+        for index in range(1, 6):
+            pipeline.push(asdict(raw_sensor(index*.005)))
+            out.append(pipeline.read(index*.005))
+        return out
+
+    reference = SensorPipeline(config, seed=7)
+    native = native_pipeline(native_module, config, count=6, seed=7)
+    first_reference = python_sequence(reference)
+    first_native = native_sequence(native)
+    # Reset replays the same seed: identical tape, identical deliveries.
+    assert_tree(python_sequence(reference), first_reference, atol=0., rtol=0.)
+    assert_tree(native_sequence(native), first_native, atol=0., rtol=0.)
+    assert_tree(first_native, [asdict(o) for o in first_reference], atol=0., rtol=0.)
+    other = python_sequence(SensorPipeline(config, seed=8))
+    differences = sum(a != b for a, b in zip(first_reference, other))
+    assert differences > 0
 
 
 def test_native_owns_noise_and_validates_empty_shape(native_module, raw_sensor):

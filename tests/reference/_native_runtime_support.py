@@ -46,6 +46,16 @@ def advance_python(sim, steps, control=None, *, front=0.0, rear=0.0):
     return rows
 
 
+def make_python_research(*, duration=0.1, seed=210):
+    from bike_sim.cli import research
+    args = research.parser().parse_args([
+        "--physics-config", str(PHYSICS), "--track-file", str(TRACK),
+        "--duration", str(duration), "--seed", str(seed),
+        "--diagnostic-model-limits", "--assist",
+    ])
+    return research.make_environment(args)
+
+
 def assert_tree_close(actual, expected, *, atol=1e-9, rtol=1e-9, path="root"):
     actual, expected = plain(actual), plain(expected)
     if isinstance(expected, Mapping):

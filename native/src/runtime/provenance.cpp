@@ -19,8 +19,9 @@ void bind_provenance(nanobind::module_ &module) {
         nanobind::dict result;
         result["mujoco_version"] = nanobind::str(version);
         result["mujoco_library_path"] = nanobind::str(location.dli_fname);
-        result["native_source_sha256"] = nanobind::str(build_identity::native_source_sha256);
-        result["build_context_json"] = nanobind::str(build_identity::context_json);
+        // &array[0] produces the char pointer without an implicit array decay.
+        result["native_source_sha256"] = nanobind::str(&build_identity::native_source_sha256[0]);
+        result["build_context_json"] = nanobind::str(&build_identity::context_json[0]);
         return result;
     });
 }

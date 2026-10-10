@@ -7,6 +7,8 @@
 #include "../model_access.hpp"
 #include "../stepper.hpp"
 #include "../drivetrain/pedaling.hpp"
+#include "../writers/drivetrain.hpp"
+#include "../writers/suspension.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -75,7 +77,7 @@ double number(const drivetrain::Diagnostics &drive, const char *name, double fal
 Wire vector_wire(std::span<const double> values) {
     WireArray out;
     out.reserve(values.size());
-    for (double value : values) out.emplace_back(value);
+    for (const double value : values) out.emplace_back(value);
     return Wire{std::move(out)};
 }
 void append_name(std::string &out, const std::string &name) {
@@ -142,14 +144,16 @@ void PhysicalStep::capture_presentation(PresentationState &out) const {
     out.battery_energy_j = stepper_->drive().battery_energy_j();
     const auto balance = balance_event();
     out.balance_lost_at_m = balance ? std::optional<double>(balance->position_m) : std::nullopt;
-    if (out.rider_present) {
+    // rider_present was initialized from rider_control_ and cannot diverge.
+    if (rider_control_) {
         const auto &diagnostics = stepper_->rider_contacts().state().diagnostics;
         out.grip_enabled = diagnostics.grip.enabled;
         out.grip_reachable = diagnostics.grip.reachable;
         out.grip_gap_m = diagnostics.grip.hand_gap_m;
         for (std::size_t i = 0; i < out.supports.size(); ++i) {
             const auto &source = diagnostics.supports[i];
-            out.supports[i] = {source.in_platform, source.normal_load_n, source.gap_m};
+            out.supports[i] = PresentationSupport{.in_platform = source.in_platform,
+                .normal_load_n = source.normal_load_n, .gap_m = source.gap_m};
         }
         const auto &support = rider_control_->presentation_support();
         out.stance_front = support.stance_front;
@@ -209,7 +213,7 @@ WireObject PresentationState::as_wire() const {
             "motor_request_nm", "motor_torque_nm", "motor_shaft_power_w"})
         set(row, key, diagnostic(last, key));
     set(row, "rider_mode", diagnostic(last, "rider_mode", Wire{"unknown"}));
-    Wire coast = diagnostic(last, "coasting_reason", Wire{""});
+    const Wire coast = diagnostic(last, "coasting_reason", Wire{""});
     set(row, "coast_reason", sample_wire::is_none(coast) ? Wire{""} : coast);
     set(row, "shift_torque_factor", diagnostic(last, "shift_torque_factor", Wire{1.}));
     const bool shifted = number(last, "shift_count") != 0.;
@@ -263,6 +267,6 @@ WireObject PresentationState::as_wire() const {
     for (std::size_t i = 0; i < model_fields.size(); ++i)
         fields.emplace_back(kModelFields[i], vector_wire(model_fields[i]));
     return {{"drive_mode", "articulated_effort"}, {"endpoint", Wire{std::move(endpoint)}},
-            {"preview_row", Wire{std::move(row)}}, {"model_fields", Wire{std::move(fields)}};
+            {"preview_row", Wire{std::move(row)}}, {"model_fields", Wire{std::move(fields)}}};
 }
 } // namespace runtime

@@ -451,15 +451,7 @@ SampleColumns PeriodAccounting::recorded_columns() const { return join_columns(r
 
 namespace runtime {
 void PeriodAccounting::acknowledge_through(std::int64_t interval_id) {
-    const auto end = std::find_if(pending_.begin(), pending_.end(),
-        [interval_id](const SamplePtr &sample) { return sample->interval_id > interval_id; });
-    pending_.erase(pending_.begin(), end);
-}
-} // namespace runtime
-
-namespace runtime {
-void PeriodAccounting::acknowledge_through(std::int64_t interval_id) {
-    const auto end = std::find_if(pending_.begin(), pending_.end(),
+    const auto end = std::ranges::find_if(pending_,
         [interval_id](const SamplePtr &sample) { return sample->interval_id > interval_id; });
     pending_.erase(pending_.begin(), end);
 }

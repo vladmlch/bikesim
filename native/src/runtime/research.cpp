@@ -21,6 +21,8 @@ public:
     ~ResearchGuard() { busy_.store(false, std::memory_order_release); }
     ResearchGuard(const ResearchGuard &) = delete;
     ResearchGuard &operator=(const ResearchGuard &) = delete;
+    ResearchGuard(ResearchGuard &&) = delete;
+    ResearchGuard &operator=(ResearchGuard &&) = delete;
 private:
     std::atomic<bool> &busy_;
 };
@@ -32,6 +34,8 @@ void validate_brake(double value) {
     if (!std::isfinite(value) || value < 0. || value > 1.)
         throw std::invalid_argument("brake demand must lie in [0, 1]");
 }
+// Steps must stay below 2^53 so every committed index is exactly real-representable.
+constexpr std::int64_t kMaxExactStep = static_cast<std::int64_t>(std::uint64_t{1} << 52U);
 }
 WireObject ResearchCommand::as_wire(bool requested) const {
     WireObject result{{"time_s", time_s}, {"step", step}, {"control", research_control_wire(control)}};
@@ -49,7 +53,8 @@ WireObject ResearchTransition::as_wire() const {
 }
 ResearchEpisode::ResearchEpisode(const ResearchConfig &c, NoiseTape tape, SensorState startup)
     : sensors(c.sensors, std::move(tape)), tracker(c.wheelie_persistence_s),
-      recorder(c.record_decimation, {c.geometry.root_x_qpos, c.geometry.root_x_dof, c.geometry.root_pitch_qpos}),
+      recorder(c.record_decimation, ColumnLayout{.root_x_qpos = c.geometry.root_x_qpos,
+          .root_x_dof = c.geometry.root_x_dof, .root_pitch_qpos = c.geometry.root_pitch_qpos}),
       next_sensor_step(c.sensor_steps), applied(c.startup_control), motor_applied(c.startup_control) {
     // Python setup already pushed and delivered row zero. Never noise it twice.
     if (startup.cursor != 1 || startup.samples_attempted != 1 || !startup.last_time || *startup.last_time != 0. ||
@@ -58,7 +63,8 @@ ResearchEpisode::ResearchEpisode(const ResearchConfig &c, NoiseTape tape, Sensor
     sensors.import_state(std::move(startup));
     observation = sensors.read(0.);
     observations.push_back(observation);
-    applied_records.push_back({0., 0, applied, 0., 0.});
+    applied_records.push_back(ResearchCommand{.time_s = 0., .step = 0, .control = applied,
+        .front = 0., .rear = 0.});
     demand_nm = c.programs.demand_at(0.);
     if (demand_nm) demand_integral_nms = 0.;
 }
@@ -70,7 +76,7 @@ NativeResearchRuntime::NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> 
     const auto &c = config_;
     if (!std::isfinite(c.timestep_s) || c.timestep_s <= 0. || c.timestep_s != runtime_->config_.timestep_s ||
         c.control_steps < 1 || c.sensor_steps < 1 || c.max_steps < 1 || c.delay_steps < 0 ||
-        c.max_steps > (std::int64_t{1} << 52) || c.sensor_steps > (std::int64_t{1} << 52) ||
+        c.max_steps > kMaxExactStep || c.sensor_steps > kMaxExactStep ||
         c.delay_steps > std::numeric_limits<std::int64_t>::max() - c.max_steps)
         throw std::invalid_argument("invalid integer research deadlines or physics timestep");
     if (!std::isfinite(c.track_length_m) || c.track_length_m <= 0. || !std::isfinite(c.start_position_m) ||
@@ -90,7 +96,7 @@ NativeResearchRuntime::NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> 
     if (vertices.size() != c.geometry.x.size())
         throw std::invalid_argument("research terrain width differs from physical bootstrap");
     for (std::size_t i = 0; i < vertices.size(); ++i)
-        if (vertices[i][0] != c.geometry.x[i] || vertices[i][1] != c.geometry.z[i])
+        if (std::get<0>(vertices[i]) != c.geometry.x[i] || std::get<1>(vertices[i]) != c.geometry.z[i])
             throw std::invalid_argument("research terrain differs from physical bootstrap");
     const auto *tire = runtime_->stepper_->tire();
     const auto *model = runtime_->stepper_->model();
@@ -98,7 +104,7 @@ NativeResearchRuntime::NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> 
     const auto dofs = model_access::readonly_buffer(model->jnt_dofadr, model->njnt,
                                                     "research pitch joint dof addresses");
     if (!tire || tire->radii()[0] != c.geometry.front_radius || tire->radii()[1] != c.geometry.rear_radius ||
-        pitch_joint < 0 || static_cast<std::size_t>(dofs[static_cast<std::size_t>(pitch_joint)]) != c.geometry.root_pitch_dof)
+        pitch_joint < 0 || std::cmp_not_equal(dofs[static_cast<std::size_t>(pitch_joint)], c.geometry.root_pitch_dof))
         throw std::invalid_argument("research radii/pitch address differ from physical bootstrap");
     c.programs.validate();
     control_validate_for(c.startup_control, runtime_->physical_->rider_present());
@@ -127,8 +133,10 @@ void NativeResearchRuntime::begin_control(const RideControl &control, double fro
     const auto start = runtime_->committed_step_;
     if (start >= config_.max_steps) throw std::runtime_error("research duration already reached");
     const auto count = std::min(config_.control_steps, config_.max_steps - start);
-    const ResearchWindow window{control, front, rear, start, start + count, e.demand_nm};
-    const ResearchCommand request{runtime_->committed_time_s_, start, control, front, rear};
+    const ResearchWindow window{.control = control, .front = front, .rear = rear,
+        .start_step = start, .target_step = start + count, .seen_demand = e.demand_nm};
+    const ResearchCommand request{.time_s = runtime_->committed_time_s_, .step = start,
+        .control = control, .front = front, .rear = rear};
     e.requested.reserve(e.requested.size() + 1);
     e.commands.emplace_back(start + config_.delay_steps, control);
     e.requested.push_back(request);
@@ -154,7 +162,12 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
     const auto &drive = section(s.channels, "drive");
     const auto *motor = find(drive, "motor_torque_nm");
     const double delivered = motor ? number(*motor) : 0.;
-    if (e.demand_integral_nms) *e.demand_integral_nms += *config_.programs.demand_at(s.time_s) * s.dt_s();
+    if (e.demand_integral_nms) {
+        const auto demand = config_.programs.demand_at(s.time_s);
+        // Integral tracking is created only when a demand program exists.
+        if (!demand) throw std::logic_error("demand integration requires a demand program");
+        *e.demand_integral_nms += *demand * s.dt_s();
+    }
     const auto &requested = required(section(s.channels, "control"), "motor_torque_nm");
     const auto applied = is_none(requested) ? std::nullopt : std::optional(number(requested));
     if (applied) e.torque_requested_nms += *applied * s.dt_s();
@@ -213,9 +226,11 @@ void NativeResearchRuntime::finish_window() {
     e.transitions.reserve(e.transitions.size() + 1);
     const auto demand = config_.programs.demand_at(runtime_->committed_time_s_);
     const auto observation = e.sensors.read(runtime_->committed_time_s_);
-    ResearchTransition result{observation, e.truth, e.tracker.state(), e.terminated, e.truncated,
-        e.numerically_valid, model_valid(), e.reason, runtime_->committed_step_ - e.window->start_step,
-        e.window->seen_demand};
+    ResearchTransition result{.observation = observation, .truth = e.truth,
+        .contact_state = e.tracker.state(), .terminated = e.terminated, .truncated = e.truncated,
+        .numerically_valid = e.numerically_valid, .model_valid = model_valid(), .reason = e.reason,
+        .physics_steps = runtime_->committed_step_ - e.window->start_step,
+        .demand_nm = e.window->seen_demand};
     e.transitions.push_back(std::move(result));
     e.observations.push_back(observation);
     e.observation = observation;
@@ -269,7 +284,8 @@ std::optional<ResearchTransition> NativeResearchRuntime::advance_control(
             effective.posture = rider.posture;
             effective.rider_enabled = rider.rider_enabled;
             if (!controls_equal(effective, e.applied)) {
-                e.applied_records.push_back({runtime_->committed_time_s_, runtime_->committed_step_, effective, 0., 0.});
+                e.applied_records.push_back(ResearchCommand{.time_s = runtime_->committed_time_s_,
+                    .step = runtime_->committed_step_, .control = effective, .front = 0., .rear = 0.});
                 e.applied = effective;
             }
             runtime_->advance_interval(e.applied, e.window->front, e.window->rear);

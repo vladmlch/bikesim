@@ -162,12 +162,3 @@ class SensorPipeline:
                     samples_attempted=self.samples_attempted,
                     samples_dropped=self.samples_dropped,
                     cursor=self.samples_attempted)
-
-    def state_dict(self):
-        """Owned delivery state; RNG is represented by the episode tape cursor."""
-        return dict(queue=[asdict(sample) for sample in self._queue],
-                    last_time=self._last_time, delivery_time=self._delivery_time,
-                    startup=None if self._startup is None else asdict(self._startup),
-                    samples_attempted=self.samples_attempted,
-                    samples_dropped=self.samples_dropped,
-                    cursor=self.samples_attempted)

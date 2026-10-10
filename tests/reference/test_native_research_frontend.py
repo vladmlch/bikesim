@@ -1,6 +1,11 @@
+from native_loader import load_native
+from test_research_frontend import CountingPolicy
 from bike_sim.sim.research.policy_session import PolicySession
 from bike_sim.sim.research.viewer import advance_playback, stop_at_boundary
-from .test_research_frontend import CountingPolicy
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 def test_native_partial_ticks_latch_policy_until_external_boundary(environment_pair):

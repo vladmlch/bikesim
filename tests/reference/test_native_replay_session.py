@@ -1,7 +1,12 @@
 import numpy as np
+from native_loader import load_native
+from test_replay_session import record_prefix
 from bike_sim.sim.research.replay import replay_episode
 from bike_sim.sim.research.replay_session import ReplaySession
-from .test_replay_session import record_prefix
+
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 def test_native_recording_replays_same_backend_and_restarts(environment_pair, tmp_path):

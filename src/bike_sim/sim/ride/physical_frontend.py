@@ -170,6 +170,15 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1):
                           presenter.hud.preview_log_row(present_view(frame.view,
                               requested_scale=clock.scale, achieved_rtf=rate.value)))
             preview.write_marker(f'run ended; {reason}; t={frame.time_s:.6f}s')
+        try:
+            # preview.csv holds the backend's recorded view rows; reading it
+            # back keeps this report identical for python and native.
+            from bike_sim.viz.ride_plots import load_ride_csv, plot_physical_ride_html
+            info(f"[bike-ride] physical live html: "
+                 f"{plot_physical_ride_html(load_ride_csv(out/'preview.csv'), out)}")
+        except ImportError:
+            info("[bike-ride] skipped ride.html (plotly not installed; "
+                 "use `uv run --with plotly`)")
         return physical_exit_code(summary['outcome']['reason'], summary)
     except BaseException as error:
         driver.metadata['failure'] = f'{type(error).__name__}: {error}'

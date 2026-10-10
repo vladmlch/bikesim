@@ -11,7 +11,8 @@ def frame(step=0, generation=1):
     return FrameSnapshot(generation=generation, step=step, time_s=step*.00125,
         integration_state=np.array([step*.00125]),
         view=PhysicalViewState(endpoint={'position_m': 0., 'z_m': 1.},
-            preview_row={'time_s': step*.00125}), model_status={'model_valid': True})
+            preview_row={'time_s': step*.00125, 'x_m': step*.5}),
+        model_status={'model_valid': True})
 
 
 class Clock:
@@ -121,6 +122,28 @@ def test_physical_window_bounds_rendering_and_exports_reset_generation(tmp_path,
     assert len(previews) == 1
     text = previews[0].read_text()
     assert 'requested_scale' in text and 'reset' in text
+    # The interactive route renders ride.html from the recorded preview rows.
+    html = list(tmp_path.rglob('ride.html'))
+    assert len(html) == 1 and html[0].parent == previews[0].parent
+
+
+def test_physical_window_skips_ride_html_when_plotly_is_absent(tmp_path, monkeypatch, capsys):
+    import builtins
+    import bike_sim.sim.ride.physical_frontend as frontend
+    clock = Clock()
+    patch_window(monkeypatch, frontend, clock, {2: [ord('Q')]})
+    original_import = builtins.__import__
+    def no_plotly(name, *args, **kwargs):
+        if name == 'bike_sim.viz.ride_plots' or name == 'plotly.graph_objects':
+            raise ImportError('plotly not installed')
+        return original_import(name, *args, **kwargs)
+    monkeypatch.setattr(builtins, '__import__', no_plotly)
+    driver = Driver(clock)
+    assert run_viewer(driver, out_root=tmp_path) == 0
+    assert driver.closed
+    assert list(tmp_path.rglob('preview.csv'))
+    assert not list(tmp_path.rglob('ride.html'))
+    assert 'skipped ride.html' in capsys.readouterr().out
 
 
 def test_window_construction_error_still_exports_and_closes(tmp_path, monkeypatch):

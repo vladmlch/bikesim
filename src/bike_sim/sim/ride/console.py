@@ -16,6 +16,10 @@ PHYSICAL_KEY_MAP = ("Space brakes; ,/. brake strength; R reset; "
                     "C/1/2 camera; T telemetry; G markers; F6 slower; F7 faster; F8 1x.")
 PHYSICAL_HELP_NOTE = ("W/S changes the target only in ideal_speed_control. "
                       "Material and drive tuning is fixed per run.")
+# The unified frontend (physical_frontend.run_viewer) binds no W/S keys at all —
+# its dispatch handles Space/,/., R, Q, C/1/2, T, G, F6-F8 and ?// only.
+PHYSICAL_NO_CRUISE_NOTE = ("Cruise target is fixed per run, like material and "
+                           "drive tuning; this viewer binds no W/S keys.")
 
 
 def styled(columns):
@@ -57,12 +61,13 @@ def key_help(text):
     console.print(line)
 
 
-def print_help():
+def print_help(*, cruise_target_keys: bool = True):
     """The physical viewer's key map: dim prose, bold key tokens."""
     info("Physical ride:")
     key_help(PHYSICAL_KEY_MAP)
-    info(PHYSICAL_HELP_NOTE)
+    info(PHYSICAL_HELP_NOTE if cruise_target_keys else PHYSICAL_NO_CRUISE_NOTE)
 
 
 __all__ = ["console", "styled", "info", "event", "outcome", "key_help",
-           "print_help", "PHYSICAL_KEY_MAP", "PHYSICAL_HELP_NOTE"]
+           "print_help", "PHYSICAL_KEY_MAP", "PHYSICAL_HELP_NOTE",
+           "PHYSICAL_NO_CRUISE_NOTE"]

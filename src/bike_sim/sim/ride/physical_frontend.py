@@ -98,7 +98,7 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1):
         presenter = FramePresenter(driver.make_render_model())
         frame = driver.snapshot()
         presenter.replica.apply(frame)
-        print_help()
+        print_help(cruise_target_keys=False)
         info('F6 slower; F7 faster; F8 1x. Playback does not change the integration timestep.')
         info(f'[bike-ride] backend={driver.backend}; physical live csv: {out / "preview.csv"}')
         with PhysicalLiveCsv(out/'preview.csv') as preview:
@@ -136,7 +136,7 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1):
                         elif presenter.handle_key(key, viewer):
                             pass
                         elif key in (ord('?'), ord('/')):
-                            print_help()
+                            print_help(cruise_target_keys=False)
                         else:
                             info('Physical parameters are fixed per run; edit the configuration before a new run.')
                     now = time.monotonic()

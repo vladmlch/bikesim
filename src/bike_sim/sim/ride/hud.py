@@ -608,7 +608,8 @@ class RideHUD:
 ================================================================================
   --- SPEED, BRAKES & RUN ---
     W / S           : Cruise Target Speed + / - 1 km/h \
-({MIN_TARGET_SPEED_KMH:.0f}-{MAX_TARGET_SPEED_KMH:.0f} km/h band)
+({MIN_TARGET_SPEED_KMH:.0f}-{MAX_TARGET_SPEED_KMH:.0f} km/h band; \
+unbound in the unified physical viewer)
     SPACE           : Brakes TOGGLE (a passive viewer delivers presses, not key state)
     , / .           : Brake Strength - / + 10 %
     R               : Restart the run from the solved static equilibrium

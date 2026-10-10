@@ -82,7 +82,7 @@ def environment_factory(tmp_path):
 
     def create(*, duration=.04, seed=19, decimation=1, actuator_delay=.005,
                control_period=None, sensor_period=None,
-               program=None, demand=None, strict=False):
+               program=None, demand=None, strict=False, energy_tolerance=None):
         arguments = ['--physics-config', str(ROOT/'examples/research/viewer_physics_welded.toml'),
             '--scenario', 'flat', '--duration', str(duration), '--seed', str(seed),
             '--record-decimation', str(decimation), '--actuator-delay', str(actuator_delay),
@@ -91,6 +91,8 @@ def environment_factory(tmp_path):
             arguments += ['--control-period', str(control_period)]
         if sensor_period is not None:
             arguments += ['--sensor-period', str(sensor_period)]
+        if energy_tolerance is not None:
+            arguments += ['--energy-tolerance', str(energy_tolerance)]
         if not strict:
             arguments.append('--diagnostic-model-limits')
         index = len(environments)

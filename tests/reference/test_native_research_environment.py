@@ -63,6 +63,43 @@ def test_one_second_pair_with_one_e_minus_nine_gate(environment_pair, assert_tre
     assert_tree(native.recorder.columns(), reference.recorder.columns())
 
 
+def test_one_second_pair_complete_episode_gate(environment_pair, assert_tree):
+    """The complete one-second paired case, all 800 physics steps to 'duration'.
+
+    The sibling gate above classifies the outcome under the default .05
+    residual limit; on this platform both backends truncate identically at
+    step 104 with 'numerical_quality'. Here the acceptance threshold is raised
+    (the established 1e9 parity-run convention) so the truncation decision
+    does not end the episode: the energy tolerance only gates the
+    'numerical_quality' classification, never the integrated physics, so both
+    backends still execute every real step — and all 800 must match bitwise.
+    The residual assertion proves the episode really did produce the
+    over-limit physics the default gate truncates on, so nothing is hidden.
+    """
+    reference, native = environment_pair(duration=1., decimation=20,
+                                         energy_tolerance=1e9)
+    command = RideControl(motor_torque_nm=0.)
+    assert_tree(native.observation, reference.observation, atol=0., rtol=0.)
+    while not reference.done and not native.done:
+        expected, actual = reference.step(command), native.step(command)
+        assert_tree(actual, expected)
+        assert native.sim.steps == reference.sim.steps
+        assert native.sim.time_s == reference.sim.time_s
+        assert_bitwise_equal(integration_state(native.sim), integration_state(reference.sim),
+                             msg=f'integration state at step {reference.sim.steps}')
+    # Completeness: the whole second ran on both backends, not a prefix.
+    assert reference.done and native.done
+    assert native.sim.steps == reference.sim.steps == reference.max_steps == 800
+    assert native.reason == reference.reason == 'duration'
+    # The identical >.05 residual shows the raised gate did not alter physics:
+    # under the default limit this same episode truncates at step 104.
+    assert native.max_energy_residual_ratio == reference.max_energy_residual_ratio > .05
+    assert_tree(native.commands_requested, reference.commands_requested, atol=0., rtol=0.)
+    assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
+    assert_tree(episode_metrics(native), episode_metrics(reference))
+    assert_tree(native.recorder.columns(), reference.recorder.columns())
+
+
 @pytest.mark.parametrize('decimation', [1, 7, 20, 80])
 def test_delay_full_commands_immediate_brakes_and_recording(environment_pair, assert_tree, decimation):
     reference, native = environment_pair(duration=.04, decimation=decimation)

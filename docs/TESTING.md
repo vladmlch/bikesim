@@ -1,21 +1,18 @@
 # Running tests
 
-## Track C source-overlay status (2026-10-10)
+## Track C verification status (2026-10-10)
 
-No project, build, test, benchmark, sanitizer, analyzer or viewer was run for this
-delivery. The commands below are instructions for a later authorized verification
-session, not a run log. See [the Track C audit](native-visual-track-c.md).
+The Track C source delivery has been applied and executed in this checkout. The
+`native` profile is green; the `full` profile fails only on the recorded
+platform-baseline set. Real macOS windows were exercised (physical ride 1x/8x,
+research viewer, checked replay) and backend-selectable measurements were run —
+see [the execution audit](superpowers/audits/2026-10-08-native-visual-runtime.md)
+and [docs/RIDE.md](RIDE.md) for numbers and GUI evidence.
 
-The supplied source archive omits the upstream root packaging/lock files,
-`tools/run_tests.sh`, verification controllers and most earlier tests. Apply this
-overlay to the matching complete checkout before invoking the profiles documented
-here. Do not infer a working native extension or a passing profile from this ZIP.
-
-New source-only regressions cover `test_playback_clock.py`,
+Track C regressions cover `test_playback_clock.py`,
 `test_physical_view.py`, `test_ride_backend_cli.py`, `test_research_frontend.py`,
 `test_frontend_windows.py`, `test_replay_session.py` and
-`test_realtime_measurement.py`. The pre-C HUD oracle is a retained copy of the
-supplied `hud.py`, not an independently executed result.
+`test_realtime_measurement.py`.
 
 Selected-artifact tests are `test_native_viewer_snapshot.py`,
 `test_native_ride_frontend.py`, `test_native_research_frontend.py` and
@@ -25,8 +22,8 @@ The fixture never builds or skips a missing extension. Keep
 `NATIVE_TEST_BUILD_PATH` and `BIKE_NATIVE_BUILD_PATH` set to the same absolute
 directory, containing a newly built extension with the current source stamp.
 
-After authorization, run the targeted regressions and the complete native/full
-profiles. Separately exercise macOS windows and measure one warm-up plus three
+Run the targeted regressions and the complete native/full profiles after native
+changes. Separately exercise macOS windows and measure one warm-up plus three
 runs per backend with `tools/measure_realtime.py`. A fake window is not a GUI
 acceptance check, and a measurement report is not a numerical parity result.
 
@@ -1270,23 +1267,42 @@ PYTHONPATH=tests/reference .venv/bin/python -m pytest tests/reference/test_nativ
 
 ### Realtime measurement report
 
-`tools/measure_realtime.py` writes `realtime.json` with per-step
-percentiles (`step_ms_p50`, `step_ms_p95`, `step_ms_p99`, plus the mean),
-the accounted wall/factor figures, and a `provenance` block: Python,
-`bike_sim`, MuJoCo and NumPy versions, the resolved native build
-directory, and — when CMake's `native_check_context.json` exists — the
-compiler (path/id/version), SDK, libc++ hardening mode, the `bike_native`
-target configuration/C++ standard/compile options, sanitizer options read
-from `CMakeCache.txt`, the injected sanitizer runtime, and the extension
-path actually imported by the interpreter. `--baseline PATH` compares
-against a previous report and emits per-metric deltas
-(`factor`, `step_ms_*`, `wall_seconds`, `steps`, `sim_seconds`) plus a
-`comparability` block flagging input, revision, timestep, duration and
-machine mismatches, so cross-run deltas cannot be mistaken for
-like-for-like evidence:
+`tools/measure_realtime.py` has two entry points. The backend-selectable
+`main()` runs the whole-boundary measurement: a fresh physical driver per
+warm-up/repetition, wall clock around all `advance` calls plus the final
+flush, setup and export clocked separately, and per-run JSON plus a
+schema-1 `report.json` (`median_real_time_factor`, comparability blocks,
+prefix/validity/error evidence, execution and artifact provenance —
+imported extension path, compiled source stamp, native build context).
+The profile's timestep is used unless `--dt` is given explicitly.
 
 ```bash
-uv run python tools/measure_realtime.py --track <track.toml> \
-  --physics-config <physics.toml> --duration 20 \
-  --baseline output/previous/realtime.json --out output/realtime
+uv run --frozen --group native python tools/measure_realtime.py \
+  --backend python --physics-config examples/research/viewer_physics_welded.toml \
+  --track examples/research/rough_uphill_savage.toml \
+  --duration 30 --warmup 1 --runs 3 --out output/rtf/python
+
+BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" \
+uv run --frozen --group native python tools/measure_realtime.py \
+  --backend native --physics-config examples/research/viewer_physics_welded.toml \
+  --track examples/research/rough_uphill_savage.toml \
+  --duration 30 --warmup 1 --runs 3 \
+  --compare output/rtf/python/report.json \
+  --out output/rtf/native
 ```
+
+Arguments: `--backend python|native` (native uses the selected artifact,
+never a fallback), `--physics-config`, `--track`, `--duration`,
+`--dt`, `--warmup`, `--runs`, `--record-decimation/--decimate`,
+`--seed` (generated-road only), `--out` (new/empty dir), `--compare`
+(earlier `report.json` for a same-prefix check). Exit code is `0` only
+when every measured run is `measured_ok`; `1` means retained evidence of a
+failed/invalid run; `2` is a usage/data error. Comparisons accept only
+identical settings **and** identically classified measured prefixes —
+failed runs are never `same_valid_prefix`, and a short natural terminal
+prefix stays a flagged limitation rather than being hidden.
+
+The historical accounted Python-only path (`measure_realtime()` /
+`realtime.json`, `step_ms_*` percentiles, `--baseline` deltas with a
+`comparability` block) is unchanged and still backs the realtime gate; it
+is invoked from tests, not through the CLI above.

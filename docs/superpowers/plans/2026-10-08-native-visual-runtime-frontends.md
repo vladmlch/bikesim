@@ -1,6 +1,6 @@
 # Viewer, Replay and Acceptance Implementation Plan — Phase C
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Expose native ride/research execution through the existing window and CLI, add checked visual replay, and measure the completed feature.
 
@@ -39,7 +39,7 @@ The clock remembers last observed completed step. On each request it subtracts a
 
 `PhysicalViewState` in contracts contains `drive_mode`, latest schema-2 `sample` or None, `endpoint`, and `preview_row`. Endpoint includes time, position, speed, pitch, torso pitch and named rider joint angles required by existing HUD geometry columns. `preview_row` preserves every existing preview_log_row key/value meaning. Its requested scale/achieved RTF are presentation values added by the caller.
 
-- [ ] **Add deterministic playback regressions with a fake clock.**
+- [x] **Add deterministic playback regressions with a fake clock.**
 
 ```python
 from bike_sim.sim.playback import PlaybackClock, speed_key
@@ -67,7 +67,7 @@ Run:
 uv run --frozen --group native python -m pytest tests/reference/test_playback_clock.py -q
 ```
 
-- [ ] **Implement clock arithmetic and speed mapping.**
+- [x] **Implement clock arithmetic and speed mapping.**
 
 Use the following update order; the clock validates monotonic completed step/generation through rebase:
 
@@ -85,7 +85,7 @@ Rebase resets debt/time/step without changing physics. Keep sub-step remainder i
 
 Retain legacy RealTimePacer behavior for legacy ride. Use the new clock only for physical and research/replay paths.
 
-- [ ] **Extract physical formatting and implement frame replication.**
+- [x] **Extract physical formatting and implement frame replication.**
 
 Move physical HUD numeric reads and preview-row production behind PhysicalViewState. Python uses `make_physical_view`; native snapshots supply equivalent native-computed values. Reuse the existing formatting, units, labels and blank-channel rules. Test equality against captured current Python HUD/CSV output before changing its consumers.
 
@@ -107,7 +107,7 @@ yield briefly when ahead of the presentation schedule
 
 For research, pump the B2 pending control interval and call policy act only at its next boundary. Pause/brake/reset/stop keys take effect at external boundaries; frame refresh can happen at an intermediate compute yield.
 
-- [ ] **Verify C1 and checkpoint.**
+- [x] **Verify C1 and checkpoint.**
 
 Use fake viewer/context/clock objects to assert render calls are wall-clock limited, snapshot generation resets are handled and no native buffer is read concurrently. With a real supported native runtime, change replica qpos and assert the native integration state is unchanged. Retain an old snapshot across reset/close and verify it is still readable and unchanged.
 
@@ -135,7 +135,7 @@ Completion: clock and fake-window tests pass; physical HUD/CSV values match the 
 - Physical session owns brake state, camera, terminator and presentation events; it does not reach into native writer objects.
 - CLI `--backend` choices/default and `--time-scale` follow design section 1.
 
-- [ ] **Add argument and dispatch regressions.**
+- [x] **Add argument and dispatch regressions.**
 
 ```python
 import pytest
@@ -161,7 +161,7 @@ def test_headless_rejects_explicit_playback_scale():
 
 Add mocked builder dispatch for all four live/headless ride/research routes, missing selected artifact and unsupported configuration. A plain Python command must work while native import is forced to fail.
 
-- [ ] **Implement parser and factory wiring.**
+- [x] **Implement parser and factory wiring.**
 
 Add:
 
@@ -176,7 +176,7 @@ Validate the native capability matrix after config/rider resolution and before n
 
 Call `ensure_macos_mjpython()` before expensive setup on each graphical route. Preserve new flags and `BIKE_NATIVE_BUILD_PATH` across re-exec. On missing artifact, print the exact selected directory and documented Release build commands; return the existing CLI argument/setup error code without silently selecting Python.
 
-- [ ] **Integrate physical run/session behavior.**
+- [x] **Integrate physical run/session behavior.**
 
 Preserve physical Space brakes, comma/period strength, R reset, camera/view/telemetry/marker controls and existing fixed-configuration notices. Intercept F6/F7/F8 before the mode's ordinary dispatch. Research retains Space pause, B brakes, R save/reset and Q stop.
 
@@ -184,7 +184,7 @@ Ride termination retains its existing reason precedence and final frame. For wal
 
 Preserve preview.csv, generation markers, final flush and optional ride.html. For headless physical native execution, export current telemetry/summary/plot inputs from native records rather than reconstructing forces through Python. All exits close the driver after evidence/output handling.
 
-- [ ] **Verify C2 and checkpoint.**
+- [x] **Verify C2 and checkpoint.**
 
 Exercise parser/dispatch/fake-window tests; run a short native headless physical and research episode through their public CLI with temporary output directories. Compare outcomes and schemas to Python using identical arguments. Verify reset clears pacing/RTF state while preserving selected backend/configuration.
 
@@ -218,7 +218,7 @@ run_replay_viewer(session: ReplaySession, *, time_scale: int = 1) -> int
 
 Advance returns true only when final verification is complete; false means more recorded execution remains. report before complete raises RuntimeError. Mismatch raises the existing replay error classes and latches failure for presentation. The session never evaluates a policy factory.
 
-- [ ] **Add checked replay regression through a real recording.**
+- [x] **Add checked replay regression through a real recording.**
 
 ```python
 import pytest
@@ -247,7 +247,7 @@ def test_native_recording_replays_with_recorded_backend(tmp_path):
 
 Add Python recording controls, schema-1 compatibility, a deliberately changed command with updated checksum (must fail transition comparison), changed observation/final state, changed artifact hash, unavailable selected extension and unexpected backend value. Test policies are not imported during replay.
 
-- [ ] **Refactor verifier into the shared incremental session.**
+- [x] **Refactor verifier into the shared incremental session.**
 
 Move current validate/rebuild/compare/control-loop/final-check logic into ReplaySession without loosening comparisons. Keep `replay_episode(directory)` as a synchronous convenience that advances to completion and returns report.
 
@@ -257,7 +257,7 @@ Maintain these independent cursors: requested command index, expected observatio
 
 restart reconstructs/reset-validates the recorded initial environment and resets all verification cursors. It does not reuse a partially consumed sensor tape or previous final-state cache.
 
-- [ ] **Implement replay CLI and viewer.**
+- [x] **Implement replay CLI and viewer.**
 
 Add `--viewer` and explicit-only `--time-scale` to bike-replay. Headless behavior remains checked verification. No backend override is exposed.
 
@@ -273,7 +273,7 @@ window closed before final verification -> print incomplete; exit 2
 
 On a mismatch, preserve the last consistent snapshot and show its error until the window closes. On successful completion, hold the final frame for inspection; closing after success returns 0. Re-exec under mjpython before creating ReplaySession when --viewer is selected.
 
-- [ ] **Verify C3 and checkpoint.**
+- [x] **Verify C3 and checkpoint.**
 
 Run native/Python replay round trips and fake-window tests. Verify speed/FPS/budget differences produce the same final report; early close never emits passed=true; reset repeats the same verification; checksum-valid semantic tampering is still detected.
 

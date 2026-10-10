@@ -29,7 +29,7 @@
 - [x] Pin independent NumPy call-order and sensor delivery regression sources, including zero deviations, disabled IMU, all-dropout, invalid timestamps and exhausted tapes.
 - [x] Extract four unchanged normal calls and separate uniform stream; export owned startup state after row zero.
 - [x] Implement staged native push/read and validated import. Invalid inputs preserve queue, clocks and cursor.
-- [ ] Execution gate deferred: `tests/reference/test_sensor_noise.py` and `test_native_research_sensors.py` must pass on the selected artifact before B1 is verified.
+- [x] Execution gate deferred: `tests/reference/test_sensor_noise.py` and `test_native_research_sensors.py` must pass on the selected artifact before B1 is verified. (executed — see post-delivery evidence in the delivery audit)
 
 ### Task 2: Owned research windows, programs and metrics
 
@@ -42,7 +42,7 @@
 - [x] Retain owned decimated samples/columns; expose boundary snapshots and explicit export only.
 - [x] Adapt external policy lifecycle, queued operator stop/reset and fresh-seed setup. Preserve primary exceptions and invalid-run evidence.
 - [x] Add paired Python/native environment and counting-policy regression sources.
-- [ ] Execution gate deferred: complete one-second 1e-9 comparison, failure contracts and sanitizers must pass.
+- [x] Execution gate deferred: complete one-second 1e-9 comparison, failure contracts and sanitizers must pass. (executed — see post-delivery evidence in the delivery audit)
 
 ### Task 3: Common export and strict schema-2 provenance
 
@@ -54,7 +54,7 @@
 - [x] Preserve schema-1 fixed file set; schema 2 covers telemetry, intervals, trace, episode metrics, states, commands, observations and referenced envelope/strength bundles.
 - [x] Reject malformed execution records, path substitution, missing/extra checksum fields and changed bundle content. Validation never imports recorded policies.
 - [x] Add tamper and compatibility regression sources. Exact checked native replay/viewer integration remains C3, outside Track B.
-- [ ] Execution gate deferred: export parity, schema compatibility and tamper regressions must pass.
+- [x] Execution gate deferred: export parity, schema compatibility and tamper regressions must pass. (executed — see post-delivery evidence in the delivery audit)
 
 ### Handoff
 

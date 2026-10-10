@@ -295,7 +295,7 @@ Completion: headless/visual drivers share the same verification state machine an
 
 **Interfaces:** measurement accepts `--backend python|native`, optional `--dt` defaulting to the profile, `--runs` and `--warmup`; output records selected runtime, effective clocks, complete wall time, setup/flush/export timings, outcome/validity and artifact provenance.
 
-- [ ] **Add measurement-contract tests before changing the benchmark.**
+- [x] **Add measurement-contract tests before changing the benchmark.**
 
 ```python
 from bike_sim.cli.ride import parse_args
@@ -312,7 +312,7 @@ def test_profile_timestep_is_not_replaced_for_native_measurement():
 
 Extend the existing measurement report tests with fake drivers/clocks: whole-loop wall time includes Python/native boundary and final flush; setup/export are separate; different dt/config/record settings are marked non-comparable; a budgeted packet is not mislabeled as a single-step timing sample.
 
-- [ ] **Measure the full runtime through its normal boundary.**
+- [x] **Measure the full runtime through its normal boundary.**
 
 Use monotonic time around the complete measured advancement loop plus flush, rather than summing only native kernel times. Python and native use identical controls/record settings and the supported profile. For native speed, advance in policy/internal-clock packets rather than invoking Python once per physics step.
 
@@ -327,7 +327,7 @@ BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group nativ
 
 Record all measured prefixes/outcomes and median RTF. Compare the same valid or equally classified natural terminal prefix. If it is too short or outcomes diverge, report the limitation and investigate; do not change dt, tolerances or the physical model to make the speed gate pass.
 
-- [ ] **Run required verification on final code.**
+- [ ] **Run required verification on final code.** (partially evidenced — post-fix `native` 2393/0 and `full` 24F/2973P byte-identical baseline plus `git diff --check` in the audit C row; IDEA inspections and a post-`a7db786` ASan/UBSan targeted engine-error run remain unevidenced)
 
 ```bash
 NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full
@@ -336,7 +336,7 @@ git diff --check
 
 Run required IDEA file inspections with warnings enabled and resolve findings related to these changes. Verify targeted native ownership/engine-error tests under ASan/UBSan with actual loader/runtime provenance. Add new native warm regions to RTSan only where their no-allocation/blocking behavior has been established; record any excluded coefficient-changing path explicitly.
 
-- [ ] **Exercise the real macOS windows.**
+- [x] **Exercise the real macOS windows.**
 
 Launch these only during execution acceptance, one at a time:
 
@@ -348,7 +348,7 @@ uv run --frozen --group native bike-replay output/native-visual-acceptance/resea
 
 Use new output directories if acceptance artifacts already exist. Check opening/re-exec, camera, physical brakes/strength, reset, telemetry/preview output, research pause/save/reset, replay pause/restart/early exit, and F6/F7/F8. Record actual requested/achieved RTF and UI behavior. A source read or fake viewer is not this GUI check.
 
-- [ ] **Publish the usage and final audit.**
+- [x] **Publish the usage and final audit.**
 
 Document the one-time Release build, explicit backend selection, supported capabilities, fixed physics versus playback scale, speed keys, artifact selection, research outputs, same-backend replay and meaning of incomplete replay. Include the user's exact profile/track launch at 1x and 2x.
 

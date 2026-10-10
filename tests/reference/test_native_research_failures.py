@@ -55,6 +55,13 @@ print(json.dumps(failure))
 '''
     child_environment = os.environ.copy()
     child_environment['PYTHONPATH'] = str(root/'src') + os.pathsep + child_environment.get('PYTHONPATH', '')
+    runtime = child_environment.get('NATIVE_TEST_SANITIZER_RUNTIME')
+    if runtime:
+        # dyld clears DYLD_INSERT_LIBRARIES from this process after applying
+        # it, so the probe child must get the selected sanitizer runtime
+        # reinjected — same contract as test_native_engine_errors.run_child.
+        preload_name = 'DYLD_INSERT_LIBRARIES' if sys.platform == 'darwin' else 'LD_PRELOAD'
+        child_environment[preload_name] = runtime
     result = subprocess.run([sys.executable, '-c', script, str(root)], env=child_environment,
                             capture_output=True, text=True, timeout=180, check=False)
     assert result.returncode == 0, result.stdout+'\n'+result.stderr

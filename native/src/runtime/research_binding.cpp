@@ -4,6 +4,7 @@
 #include "research.hpp"
 #include "samples_binding.hpp"
 #include "../binding_readers.hpp"
+#include "../diag.hpp"
 #include "../rider/intent_wire.hpp"
 #include <algorithm>
 #include <array>
@@ -173,6 +174,10 @@ ResearchConfig parse_config(nb::handle value) {
     c.geometry.root_pitch_dof = address("root_pitch_dof");
     return c;
 }
+// Binding-time nanobind template frames are not per-step code — same waiver
+// as bind_runtime_class and the other binding functions in this directory.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional handles mirror the fixed Python API
 void bind_sensor_pipeline(const nb::module_ &module) {
     nb::class_<SensorPipeline>(module, "NativeSensorPipeline")
@@ -199,7 +204,10 @@ void bind_sensor_pipeline(const nb::module_ &module) {
         .def("state_dict", [](const SensorPipeline &self) { return wire_object_to_python(self.state_wire()); });
 }
 // NOLINTEND(bugprone-easily-swappable-parameters)
+NATIVE_DIAG_POP
 } // namespace
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void bind_research(nb::module_ &module) {
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional handles mirror the fixed Python API
     bind_sensor_pipeline(module);
@@ -265,4 +273,5 @@ void bind_research(nb::module_ &module) {
         .def_prop_ro("closed", &NativeResearchRuntime::closed);
     // NOLINTEND(bugprone-easily-swappable-parameters)
 }
+NATIVE_DIAG_POP
 } // namespace runtime

@@ -2,6 +2,7 @@ import json
 import numpy as np
 import pytest
 from native_loader import load_native
+from _bits import assert_bitwise_equal
 from bike_sim.native.artifact import EXECUTION_FIELDS
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.research.policies import zero_factory
@@ -52,7 +53,8 @@ def test_shared_export_native_rows_and_complete_provenance(environment_pair, tmp
     with np.load(native_path/'states.npz', allow_pickle=False) as actual:
         with np.load(python_path/'states.npz', allow_pickle=False) as expected:
             for name in ('initial', 'final'):
-                np.testing.assert_allclose(actual[name], expected[name], atol=1e-9, rtol=1e-9)
+                assert_bitwise_equal(actual[name], expected[name],
+                                     msg=f'states.npz {name}')
     rebuilt = rebuild_environment(native_path)
     try:
         assert rebuilt.backend == 'native'

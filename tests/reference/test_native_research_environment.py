@@ -2,6 +2,7 @@ from dataclasses import asdict
 import numpy as np
 import pytest
 from native_loader import load_native
+from _bits import assert_bitwise_equal
 from bike_sim.physics.rider_posture import RiderPosture
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.research.demand import DemandProgram
@@ -47,8 +48,8 @@ def test_one_second_pair_with_one_e_minus_nine_gate(environment_pair, assert_tre
         assert_tree(actual, expected)
         assert native.sim.steps == reference.sim.steps
         assert native.sim.time_s == reference.sim.time_s
-        np.testing.assert_allclose(integration_state(native.sim), integration_state(reference.sim),
-                                   atol=1e-9, rtol=1e-9)
+        assert_bitwise_equal(integration_state(native.sim), integration_state(reference.sim),
+                             msg=f'integration state at step {reference.sim.steps}')
     # The Python oracle defines the outcome; this platform's documented
     # baseline physics (energy.constraint_work from the first intervals)
     # truncates this run near step 104 with 'numerical_quality'. The gate is
@@ -263,6 +264,41 @@ def test_strict_and_diagnostic_outcomes_remain_visible(environment_pair, assert_
         if reference.done or native.done:
             assert native.done and reference.done
             break
+
+
+# The welded physics timestep is .00125 s, so each pair below names
+# (control_steps, sensor_steps) through the production --control-period /
+# --sensor-period wiring: defaults (8, 4), the plan's control_steps=10 case,
+# a mismatched pair, and sensor acquisition slower than the control window.
+@pytest.mark.parametrize('control_period,sensor_period,control_steps,sensor_steps', [
+    (.01, .005, 8, 4),
+    (.0125, .0025, 10, 2),
+    (.005, .00375, 4, 3),
+    (.00375, .00625, 3, 5),
+])
+def test_differing_control_and_sensor_periods_match_python(
+        environment_pair, assert_tree, control_period, sensor_period,
+        control_steps, sensor_steps):
+    reference, native = environment_pair(
+        control_period=control_period, sensor_period=sensor_period)
+    assert native.control_steps == reference.control_steps == control_steps
+    assert native.sensor_steps == reference.sensor_steps == sensor_steps
+    while not reference.done and not native.done:
+        assert_tree(asdict(native.step(RideControl(0.))), asdict(reference.step(RideControl(0.))))
+        assert native.sim.steps == reference.sim.steps
+        assert_bitwise_equal(integration_state(native.sim), integration_state(reference.sim),
+                             msg=f'integration state at step {reference.sim.steps}')
+    assert native.done and reference.done
+    assert native.reason == reference.reason == 'duration'
+    # The acquisition gate really ran: one push per sensor_steps boundary on
+    # interval-start steps strictly inside the episode (the terminal boundary
+    # starts no interval), plus the startup row — identical on both backends.
+    expected_attempted = 1 + (reference.sim.steps-1)//sensor_steps
+    assert reference.pipeline.samples_attempted == expected_attempted
+    assert native.pipeline.samples_attempted == expected_attempted
+    assert native.pipeline.samples_dropped == reference.pipeline.samples_dropped
+    assert_tree(native.commands_requested, reference.commands_requested, atol=0., rtol=0.)
+    assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
 
 
 def test_stop_on_ended_episode_preserves_original_reason(environment_pair):

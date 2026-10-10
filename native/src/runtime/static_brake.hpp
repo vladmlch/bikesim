@@ -24,9 +24,11 @@ public:
     // apply(model, data, front_demand, rear_demand): validate both demands
     // before either write, then
     //   dof_frictionloss[dof] = ceiling * clip(demand, 0, 1)
-    // front first — the Python statement order.
-    void apply(mjModel *model, double front_demand,
-               double rear_demand) const;
+    // front first — the Python statement order. Returns whether either
+    // bound changed (a position-stage model input; the caller's freshness
+    // guard needs it).
+    [[nodiscard]] bool apply(mjModel *model, double front_demand,
+                             double rear_demand) const;
 
     // solved_components: per-brake generalized force of the solved
     // mjCNSTR_FRICTION_DOF constraint rows, via mj_mulJacTVec over the

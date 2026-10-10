@@ -984,6 +984,10 @@ void NativeRideRuntime::apply_bootstrap() {
     mjData *const data = stepper_->data();
     stepper_->mutate([&] {
         engine::reset_data(model, data);
+        // reset + model writes (frictionloss, site_pos, mj_setConst,
+        // mj_setState, transmission restores): every derived stage is
+        // stale until a full forward re-establishes pos/vel caches.
+        stepper_->note_posvel_stale();
         const std::span<double> frictionloss =
             std::views::counted(model->dof_frictionloss, model->nv);
         for (const FrictionLossEntry &e :

@@ -172,12 +172,12 @@ void keep_first(FlatColumns &row) {
     const auto by_name = [](const auto &a, const auto &b) {
         return a.first < b.first;
     };
-    std::stable_sort(row.begin(), row.end(), by_name);
-    row.erase(std::unique(row.begin(), row.end(),
-                          [](const auto &a, const auto &b) {
-                              return a.first == b.first;
-                          }),
-              row.end());
+    std::ranges::stable_sort(row, by_name);
+    const auto tail = std::ranges::unique(
+        row, [](const auto &a, const auto &b) {
+            return a.first == b.first;
+        });
+    row.erase(tail.begin(), row.end());
 }
 
 // Sequential map::operator[] writes overwrite. The stable sort holds
@@ -186,7 +186,7 @@ void keep_last(FlatColumns &row) {
     const auto by_name = [](const auto &a, const auto &b) {
         return a.first < b.first;
     };
-    std::stable_sort(row.begin(), row.end(), by_name);
+    std::ranges::stable_sort(row, by_name);
     std::size_t kept = 0;
     for (std::size_t i = 0; i < row.size();) {
         std::size_t next = i + 1;

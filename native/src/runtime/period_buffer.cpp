@@ -53,7 +53,7 @@ std::optional<std::vector<double>> spatial_wrench(
     for (std::size_t row = 0; row < jac.columns; ++row) {
         // J.T's row is J's strided column — gathered contiguous so the
         // dot keeps unit-stride BLAS dispatch and summation order.
-        std::array<double, 6> coefficients;
+        std::array<double, 6> coefficients{};
         for (std::size_t j = 0; j < 6; ++j)
             coefficients[j] = jac.values[j * jac.columns + row];
         const double explained = sample_wire::dot(coefficients, solved.solution);

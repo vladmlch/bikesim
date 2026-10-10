@@ -116,7 +116,7 @@ namespace rider {
     private:
         // A's memory order at staging: solve() permutes row-major
         // input; solve_column_major() receives the layout outright.
-        enum class MatrixLayout { row_major, column_major };
+        enum class MatrixLayout : std::uint8_t { row_major, column_major };
 
         [[nodiscard]] LeastSquaresResult
         solve_impl(std::span<const double> a, lapack_int m, lapack_int n,

@@ -22,6 +22,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from native_loader import load_native
+
 from bike_sim.sim.realtime_measurement import (
     build_report, compare_runs, measure_run)
 
@@ -111,6 +113,13 @@ def _aggregate(report):
     """One warmup plus three identical-classification measurements."""
     return build_report(
         [deepcopy(report)], [deepcopy(report) for _ in range(3)])
+
+
+def test_selected_native_artifact_loads():
+    # These gates bind a native Release measurement — assert the selected
+    # artifact itself resolves so this file keeps the test_native_* loader
+    # contract instead of only exercising pure-Python aggregation.
+    assert load_native() is not None
 
 
 def test_failed_run_is_measured_not_ok_and_short():

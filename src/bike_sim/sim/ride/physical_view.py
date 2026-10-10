@@ -8,12 +8,13 @@ from __future__ import annotations
 
 from copy import copy
 import math
+from types import MappingProxyType
 
 import mujoco
 import numpy as np
 
 from bike_sim.native.contracts import (
-    FrameSnapshot, PhysicalViewState, _amend, _freeze,
+    FrameSnapshot, PhysicalViewState, _amend, _LazyMap,
 )
 
 MODEL_FIELDS = ('dof_frictionloss', 'site_pos', 'tendon_stiffness',
@@ -75,8 +76,10 @@ def present_view(view, *, requested_scale=1, achieved_rtf=None, track=None,
     if track is not None:
         row.update(_terrain_fields(track, view.endpoint['position_m'])
                    if terrain is None else terrain)
-    # _amend skips __post_init__, so the row must be frozen explicitly.
-    return _amend(view, preview_row=_freeze(row),
+    # _amend skips __post_init__, so the row must be frozen explicitly. It is
+    # depth-1 and already holds only immutable scalars, so a shallow proxy
+    # preserves the read-only contract without a recursive walk.
+    return _amend(view, preview_row=MappingProxyType(row),
                   requested_scale=requested_scale, achieved_rtf=achieved_rtf)
 
 
@@ -86,18 +89,26 @@ _BLANK_VIEW = PhysicalViewState()
 def native_frame(value, sample):
     """Box the native envelope without borrowing mjData or writer scratch."""
     payload = value.view
-    # sample.channels was frozen at publication and passes through; endpoint
-    # and preview_row are fresh native dictionaries needing an owning freeze.
+    # sample.channels was frozen at publication and passes through. The view
+    # payload, model_status and model_fields are fresh exclusively-owned
+    # dictionaries per snapshot, so lazy read-only views own them without an
+    # eager recursive freeze. first_failure keeps an eager freeze: equality
+    # against tuples is part of its contract.
     view = _amend(_BLANK_VIEW,
         channels=_BLANK_VIEW.channels if sample is None else sample.channels,
         drive_mode=payload['drive_mode'], sample=sample,
-        endpoint=_freeze(payload['endpoint']),
-        preview_row=_freeze(payload['preview_row']))
+        endpoint=_LazyMap(payload['endpoint']),
+        preview_row=_LazyMap(payload['preview_row']))
+    # Fresh capsule-owned vector per access; the readonly mark turns the
+    # _owned_array check in __post_init__ into a pass-through.
+    state = value.integration_state
+    state.flags.writeable = False
     return FrameSnapshot(generation=int(value.generation), step=int(value.step),
-        time_s=float(value.time_s), integration_state=value.integration_state,
+        time_s=float(value.time_s), integration_state=state,
         latest_sample=sample, view=view, outcome=value.outcome,
-        first_failure=value.first_failure, model_status=value.model_status,
-        model_fields=payload['model_fields'])
+        first_failure=value.first_failure,
+        model_status=_LazyMap(value.model_status),
+        model_fields=_LazyMap(payload['model_fields']))
 
 
 def snapshot_python(sim, *, outcome=None):

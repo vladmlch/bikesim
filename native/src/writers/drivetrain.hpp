@@ -396,6 +396,17 @@ namespace drivetrain {
             return assist_.state().pedaling;
         }
 
+        // True since the last drain if any tick/reset/restore committed a
+        // live-model transmission write (wrap coefficients or tendon range —
+        // position/velocity-stage inputs). The Stepper freshness guard
+        // drains this at its decision point; the bit accumulates
+        // conservatively between calls.
+        [[nodiscard]] bool take_model_dirty() noexcept {
+            const bool dirty = live_model_dirty_;
+            live_model_dirty_ = false;
+            return dirty;
+        }
+
     private:
         mjModel *model_ = nullptr;
         mjData *data_ = nullptr;
@@ -443,6 +454,9 @@ namespace drivetrain {
         // restore, restart_clock): a handle staged at an earlier epoch is
         // stale — its bank seed no longer matches live_.
         std::uint64_t commit_epoch_ = 0;
+        // OR-accumulated from Transmission::commit/restore returns; the
+        // Stepper freshness guard drains it via take_model_dirty().
+        bool live_model_dirty_ = false;
         PedalingPolicy pedaling_scratch_;
         CadenceShifter shifting_scratch_;
         AssistController assist_scratch_;

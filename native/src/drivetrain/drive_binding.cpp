@@ -629,6 +629,10 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                     "_drive_core mutates the live model behind the installed "
                     "drive writer; use a bare Stepper (no drive config)");
             return owner.mutate([&] {
+                // The transient Transmission writes wrap_prm/tendon_range
+                // on the shared model outside the installed-writer dirty
+                // channel — invalidate the pos/vel cache outright.
+                owner.note_posvel_stale();
                 const bool geometric = kind == "geometric_ideal_mid_drive";
                 Transmission t(owner.model(), {.front_teeth = 34, .rear_teeth = 24, .chain_pitch_m = .0127}, geometric,
                                geometric

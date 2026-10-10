@@ -212,6 +212,10 @@ NB_MODULE(bike_native, m) {
     m.def("_engine_test_set_const_failure", [](Stepper &stepper) {
         stepper.mutate([&] {
             mjModel *model = stepper.model();
+            // body_ipos/sameframe are restored on every path, but a
+            // partial mj_setConst can still leave model state behind —
+            // the probe poisons anyway; stay conservative.
+            stepper.note_posvel_stale();
             if (model->nbody < 2)
                 throw std::invalid_argument("setConst test needs a nonworld body");
             const auto ipos = std::views::counted(model->body_ipos, 3 * model->nbody);

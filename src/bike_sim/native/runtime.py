@@ -8,13 +8,12 @@ Python batch has been constructed successfully.
 from __future__ import annotations
 
 from numbers import Integral
-from dataclasses import replace
 from pathlib import Path
 import tempfile
 
 from bike_sim.native.contracts import (
     AdvanceResult, FrameSnapshot, SampleBatch,
-    _freeze, _owned_array,
+    _amend, _freeze, _owned_array,
 )
 from bike_sim.native.setup import RuntimeBootstrap, capture_bootstrap, _control_dict
 from bike_sim.sim.ride.control import RideControl
@@ -86,8 +85,8 @@ class NativeRideDriver:
         # already-settled setup owns the t=0 geometry/diagnostics; no extra
         # engine solve may be inserted merely to draw the initial frame.
         if frame.step == 0 and self._initial_frame is not None:
-            frame = replace(frame, view=self._initial_frame.view,
-                            model_fields=self._initial_frame.model_fields)
+            frame = _amend(frame, view=self._initial_frame.view,
+                           model_fields=self._initial_frame.model_fields)
         return frame
 
     def make_render_model(self):

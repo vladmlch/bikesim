@@ -16,9 +16,13 @@ import numpy as np
 
 
 def _owned_array(values, name: str) -> np.ndarray:
-    array = np.array(values, dtype=np.float64, copy=True)
+    array = np.asarray(values, dtype=np.float64)
     if array.ndim != 1:
         raise ValueError(f'{name}: expected a vector')
+    if (not array.flags.writeable and array.flags.owndata
+            and not array.dtype.hasobject):
+        return array
+    array = np.array(array, dtype=np.float64, copy=True)
     array.flags.writeable = False
     if not array.flags.owndata:
         raise ValueError(f'{name}: array must own its storage')
@@ -26,7 +30,12 @@ def _owned_array(values, name: str) -> np.ndarray:
 
 
 def _freeze(value):
+    if type(value) in (float, int, str, bool) or value is None:
+        return value
     if isinstance(value, np.ndarray):
+        if (type(value) is np.ndarray and not value.flags.writeable
+                and value.flags.owndata and not value.dtype.hasobject):
+            return value
         result = np.array(value, copy=True)
         result.flags.writeable = False
         return result
@@ -36,9 +45,19 @@ def _freeze(value):
         return tuple(_freeze(item) for item in value)
     if isinstance(value, np.generic):
         return value.item()
-    if value is None or isinstance(value, (bool, int, float, str)):
+    if isinstance(value, (bool, int, float, str)):
         return value
     raise ValueError(f'unsupported native value: {type(value).__name__}')
+
+
+def _amend(instance, **fields):
+    result = object.__new__(type(instance))
+    result.__dict__.update(instance.__dict__)
+    for name, value in fields.items():
+        if name not in instance.__dataclass_fields__:
+            raise TypeError(f'{type(instance).__name__}: unknown field {name!r}')
+        result.__dict__[name] = value
+    return result
 
 
 def _plain(value):

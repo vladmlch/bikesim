@@ -7,13 +7,14 @@ recomputed without stepping, force evaluation, or sensor acquisition.
 from __future__ import annotations
 
 from copy import copy
-from dataclasses import replace
 import math
 
 import mujoco
 import numpy as np
 
-from bike_sim.native.contracts import FrameSnapshot, PhysicalViewState
+from bike_sim.native.contracts import (
+    FrameSnapshot, PhysicalViewState, _amend, _freeze,
+)
 
 MODEL_FIELDS = ('dof_frictionloss', 'site_pos', 'tendon_stiffness',
                 'tendon_damping', 'tendon_lengthspring', 'tendon_range')
@@ -53,27 +54,45 @@ def make_physical_view(sim, *, requested_scale=1, achieved_rtf=None):
         preview_row=row, requested_scale=requested_scale, achieved_rtf=achieved_rtf)
 
 
-def present_view(view, *, requested_scale=1, achieved_rtf=None, track=None):
-    """Attach wall-clock values and immutable road annotations, never forces."""
+def _terrain_fields(track, position_m):
+    """The three road annotations at one position, exactly as the HUD row."""
+    from bike_sim.sim.ride.hud import nearest_obstacle
+    obstacle = nearest_obstacle(track, position_m)
+    return dict(grade_pct=0. if track.grade_profile is None else
+                100. * track.grade_profile.slope(position_m),
+                obstacle='' if obstacle is None else obstacle[0],
+                obstacle_distance_m='' if obstacle is None else float(obstacle[1]))
+
+
+def present_view(view, *, requested_scale=1, achieved_rtf=None, track=None,
+                 terrain=None):
+    """Attach wall-clock values and immutable road annotations, never forces.
+
+    ``terrain`` optionally supplies a precomputed ``_terrain_fields`` result;
+    it is merged only when ``track`` is given.
+    """
     row = dict(view.preview_row, rtf=achieved_rtf, requested_scale=requested_scale)
     if track is not None:
-        from bike_sim.sim.ride.hud import nearest_obstacle
-        position = view.endpoint['position_m']
-        obstacle = nearest_obstacle(track, position)
-        row.update(grade_pct=0. if track.grade_profile is None else
-                   100. * track.grade_profile.slope(position),
-                   obstacle='' if obstacle is None else obstacle[0],
-                   obstacle_distance_m='' if obstacle is None else float(obstacle[1]))
-    return replace(view, preview_row=row, requested_scale=requested_scale,
-                   achieved_rtf=achieved_rtf)
+        row.update(_terrain_fields(track, view.endpoint['position_m'])
+                   if terrain is None else terrain)
+    # _amend skips __post_init__, so the row must be frozen explicitly.
+    return _amend(view, preview_row=_freeze(row),
+                  requested_scale=requested_scale, achieved_rtf=achieved_rtf)
+
+
+_BLANK_VIEW = PhysicalViewState()
 
 
 def native_frame(value, sample):
     """Box the native envelope without borrowing mjData or writer scratch."""
     payload = value.view
-    view = PhysicalViewState(channels={} if sample is None else sample.channels,
+    # sample.channels was frozen at publication and passes through; endpoint
+    # and preview_row are fresh native dictionaries needing an owning freeze.
+    view = _amend(_BLANK_VIEW,
+        channels=_BLANK_VIEW.channels if sample is None else sample.channels,
         drive_mode=payload['drive_mode'], sample=sample,
-        endpoint=payload['endpoint'], preview_row=payload['preview_row'])
+        endpoint=_freeze(payload['endpoint']),
+        preview_row=_freeze(payload['preview_row']))
     return FrameSnapshot(generation=int(value.generation), step=int(value.step),
         time_s=float(value.time_s), integration_state=value.integration_state,
         latest_sample=sample, view=view, outcome=value.outcome,
@@ -149,7 +168,7 @@ class RenderReplica:
 def environment_snapshot(env):
     if getattr(env, 'backend', 'python') == 'native':
         frame = env.snapshot()
-        return replace(frame, outcome=env.reason or frame.outcome)
+        return _amend(frame, outcome=env.reason or frame.outcome)
     return snapshot_python(env.sim, outcome=env.reason)
 
 

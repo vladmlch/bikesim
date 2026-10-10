@@ -39,6 +39,11 @@ void exact(const WireObject &object, std::span<const std::string_view> keys,
 using ForceComponents =
     std::vector<std::pair<std::string, std::vector<double>>>;
 using SampleColumns = std::map<std::string, std::vector<double>>;
+// One published interval flattened to unique (name, value) pairs sorted by
+// name — the same sequence the former std::map<std::string, double> row
+// iterated, without per-leaf tree nodes. Consumers rely on the
+// sorted-unique invariant for merge passes.
+using FlatColumns = std::vector<std::pair<std::string, double>>;
 
 struct ColumnLayout {
     std::size_t root_x_qpos = 0;
@@ -58,8 +63,7 @@ struct PhysicalSampleData {
 
     [[nodiscard]] double dt_s() const noexcept { return end_time_s - time_s; }
     [[nodiscard]] WireObject as_wire() const;
-    [[nodiscard]] std::map<std::string, double>
-    flat_columns(const ColumnLayout &layout) const;
+    [[nodiscard]] FlatColumns flat_columns(const ColumnLayout &layout) const;
 };
 
 using SamplePtr = std::shared_ptr<const PhysicalSampleData>;

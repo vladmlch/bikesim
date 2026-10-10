@@ -141,7 +141,7 @@ void finite(double value, std::string_view path, bool nonnegative = false) {
 
 // NOLINTNEXTLINE(misc-no-recursion) recursion follows an owned, finite Wire tree
 void flatten(const Wire &value, const std::string &prefix,
-             std::map<std::string, double> &destination) {
+             FlatColumns &destination) {
     if (const auto *fields = std::get_if<WireObject>(&value.value)) {
         for (const auto &[key, item] : *fields) {
             std::string nested{prefix};
@@ -157,12 +157,46 @@ void flatten(const Wire &value, const std::string &prefix,
             flatten((*items)[i], nested, destination);
         }
     } else if (const auto *real = std::get_if<double>(&value.value)) {
-        destination.emplace(prefix, *real);
+        destination.emplace_back(prefix, *real);
     } else if (const auto *whole = std::get_if<std::int64_t>(&value.value)) {
-        destination.emplace(prefix, static_cast<double>(*whole));
+        destination.emplace_back(prefix, static_cast<double>(*whole));
     } else if (const auto *flag = std::get_if<bool>(&value.value)) {
-        destination.emplace(prefix, *flag ? 1. : 0.);
+        destination.emplace_back(prefix, *flag ? 1. : 0.);
     }
+}
+
+// std::map::emplace keeps the first inserted value. The stable sort holds
+// traversal order inside each equal-name run, so keeping a run's first
+// entry reproduces the flatten-into-map dedup exactly.
+void keep_first(FlatColumns &row) {
+    const auto by_name = [](const auto &a, const auto &b) {
+        return a.first < b.first;
+    };
+    std::stable_sort(row.begin(), row.end(), by_name);
+    row.erase(std::unique(row.begin(), row.end(),
+                          [](const auto &a, const auto &b) {
+                              return a.first == b.first;
+                          }),
+              row.end());
+}
+
+// Sequential map::operator[] writes overwrite. The stable sort holds
+// statement order inside each equal-name run, so a run's last entry wins.
+void keep_last(FlatColumns &row) {
+    const auto by_name = [](const auto &a, const auto &b) {
+        return a.first < b.first;
+    };
+    std::stable_sort(row.begin(), row.end(), by_name);
+    std::size_t kept = 0;
+    for (std::size_t i = 0; i < row.size();) {
+        std::size_t next = i + 1;
+        while (next < row.size() && row[next].first == row[i].first) ++next;
+        // Move only across positions: in-place runs must not self-move-assign.
+        if (kept != next - 1) row[kept] = std::move(row[next - 1]);
+        ++kept;
+        i = next;
+    }
+    row.resize(kept);
 }
 
 constexpr std::array<std::string_view, 2> kSides{"front", "rear"};
@@ -184,37 +218,122 @@ WireObject PhysicalSampleData::as_wire() const {
     return result;
 }
 
-std::map<std::string, double>
+FlatColumns
 PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
-    std::map<std::string, double> result;
-    flatten(Wire(as_wire()), "", result);
-    result["x_m"] = qpos.at(layout.root_x_qpos);
-    result["speed_mps"] = qvel.at(layout.root_x_dof);
-    result["pitch_rad"] = qpos.at(layout.root_pitch_qpos);
-    result["interval_start_s"] = time_s;
-    result["interval_dt_s"] = dt_s();
+    // flatten(as_wire()) without owning the tree: the eight fixed fields
+    // keep their positions, and a same-named channels entry supplies the
+    // flattened value for that slot (merge writes the last matching source
+    // value into the kept slot). The remaining channels fields follow in
+    // first-seen order, again holding each key's last value.
+    constexpr std::array<std::string_view, 8> fields{
+        "schema_version", "interval_id", "time_s", "interval_end_s",
+        "dt_s", "qpos", "qvel", "powers_w"};
+    std::array<const Wire *, fields.size()> overrides{};
+    std::vector<const WireObject::value_type *> extras;
+    for (const auto &field : channels) {
+        std::size_t slot = fields.size();
+        for (std::size_t i = 0; i < fields.size(); ++i)
+            if (field.first == fields[i]) {
+                slot = i;
+                break;
+            }
+        if (slot != fields.size()) {
+            overrides[slot] = &field.second;
+            continue;
+        }
+        const auto same = std::ranges::find_if(extras, [&](const auto *entry) {
+            return entry->first == field.first;
+        });
+        if (same == extras.end()) extras.push_back(&field);
+        else *same = &field;
+    }
+    FlatColumns row;
+    row.reserve(qpos.size() + qvel.size() + powers_w.size() +
+                channels.size() + 16);
+    const auto fixed = [&](std::size_t slot, const char *name) {
+        if (const Wire *value = overrides[slot]) {
+            flatten(*value, name, row);
+            return true;
+        }
+        return false;
+    };
+    if (!fixed(0, "schema_version")) row.emplace_back("schema_version", 2.);
+    if (!fixed(1, "interval_id"))
+        row.emplace_back("interval_id", static_cast<double>(interval_id));
+    if (!fixed(2, "time_s")) row.emplace_back("time_s", time_s);
+    if (!fixed(3, "interval_end_s"))
+        row.emplace_back("interval_end_s", end_time_s);
+    if (!fixed(4, "dt_s")) row.emplace_back("dt_s", dt_s());
+    if (!fixed(5, "qpos"))
+        for (std::size_t i = 0; i < qpos.size(); ++i)
+            row.emplace_back("qpos." + std::to_string(i), qpos[i]);
+    if (!fixed(6, "qvel"))
+        for (std::size_t i = 0; i < qvel.size(); ++i)
+            row.emplace_back("qvel." + std::to_string(i), qvel[i]);
+    if (!fixed(7, "powers_w"))
+        for (const auto &[name, power] : powers_w)
+            flatten(power, "powers_w." + name, row);
+    for (const auto *field : extras)
+        flatten(field->second, field->first, row);
+    keep_first(row);
+    // The explicit alias writes below land exactly where the old code's
+    // map::operator[] assignments did: every listed name overwrites or
+    // inserts, statement order deciding repeats.
+    FlatColumns assigned;
+    assigned.reserve(qpos.size() + qvel.size() + 2 * powers_w.size() + 16);
+    assigned.emplace_back("x_m", qpos.at(layout.root_x_qpos));
+    assigned.emplace_back("speed_mps", qvel.at(layout.root_x_dof));
+    assigned.emplace_back("pitch_rad", qpos.at(layout.root_pitch_qpos));
+    assigned.emplace_back("interval_start_s", time_s);
+    assigned.emplace_back("interval_dt_s", dt_s());
     for (std::size_t i = 0; i < qpos.size(); ++i)
-        result["prestep_qpos_" + std::to_string(i)] = qpos[i];
+        assigned.emplace_back("prestep_qpos_" + std::to_string(i), qpos[i]);
     for (std::size_t i = 0; i < qvel.size(); ++i)
-        result["prestep_qvel_" + std::to_string(i)] = qvel[i];
+        assigned.emplace_back("prestep_qvel_" + std::to_string(i), qvel[i]);
     for (const auto &[name, power] : powers_w) {
-        result["power_" + name + "_w"] = number(power);
-        result[name + "_power_w"] = number(power);
+        assigned.emplace_back("power_" + name + "_w", number(power));
+        assigned.emplace_back(name + "_power_w", number(power));
     }
     if (const auto *work = find(channels, "component_work_j"))
         for (const auto &[name, value] : object(*work))
-            result[name + "_work_j"] = number(value);
+            assigned.emplace_back(name + "_work_j", number(value));
     const auto &mass = object(required(channels, "mass"));
-    result["compiled_mass_kg"] = number(required(mass, "mass_kg"));
+    assigned.emplace_back("compiled_mass_kg",
+                          number(required(mass, "mass_kg")));
     const auto &com = array(required(mass, "com_m"));
     constexpr std::array<std::string_view, 3> axes{"x", "y", "z"};
     for (std::size_t i = 0; i < axes.size(); ++i)
-        result["compiled_com_" + std::string(axes[i]) + "_m"] = number(com.at(i));
+        assigned.emplace_back("compiled_com_" + std::string(axes[i]) + "_m",
+                              number(com.at(i)));
     for (const auto name : {"kinetic_energy_j", "gravitational_energy_j"})
-        result[name] = number(required(mass, name));
+        assigned.emplace_back(name, number(required(mass, name)));
     const auto &energy = object(required(channels, "energy"));
-    result["mechanical_energy_j"] = number(required(energy, "mechanical_energy_j"));
-    result["energy_residual_j"] = number(required(energy, "residual_j"));
+    assigned.emplace_back("mechanical_energy_j",
+                          number(required(energy, "mechanical_energy_j")));
+    assigned.emplace_back("energy_residual_j",
+                          number(required(energy, "residual_j")));
+    keep_last(assigned);
+    // Overlay the sorted rows: on a shared name the explicit write wins,
+    // exactly like operator[] on the flattened map.
+    FlatColumns result;
+    result.reserve(row.size() + assigned.size());
+    auto leaf = row.begin();
+    auto extra = assigned.begin();
+    while (leaf != row.end() && extra != assigned.end()) {
+        if (extra->first < leaf->first) {
+            result.push_back(std::move(*extra));
+            ++extra;
+        } else if (leaf->first < extra->first) {
+            result.push_back(std::move(*leaf));
+            ++leaf;
+        } else {
+            result.push_back(std::move(*extra));
+            ++extra;
+            ++leaf;
+        }
+    }
+    for (; leaf != row.end(); ++leaf) result.push_back(std::move(*leaf));
+    for (; extra != assigned.end(); ++extra) result.push_back(std::move(*extra));
     return result;
 }
 
@@ -225,8 +344,11 @@ SampleColumns make_columns(std::span<const SamplePtr> samples,
     for (std::size_t i = 0; i < samples.size(); ++i) {
         const auto flat = samples[i]->flat_columns(layout);
         for (const auto &[key, value] : flat) {
-            auto [slot, inserted] = result.try_emplace(key);
-            if (inserted) slot->second.assign(samples.size(), missing);
+            // Sorted input: an end hint turns fresh-column inserts into
+            // amortized O(1) tail pushes; an empty column marks the insert.
+            const auto slot = result.try_emplace(result.end(), key);
+            if (slot->second.empty())
+                slot->second.assign(samples.size(), missing);
             slot->second[i] = value;
         }
     }
@@ -246,9 +368,12 @@ SampleColumns join_columns(std::span<const RecordedBlock> blocks) {
         for (const auto &[name, values] : block.columns) {
             if (values.size() != block.rows)
                 throw std::logic_error("recorded column block width mismatch");
-            auto [slot, inserted] = result.try_emplace(name);
-            if (inserted)
-                slot->second.assign(total, std::numeric_limits<double>::quiet_NaN());
+            // Block columns are sorted: an end hint keeps fresh-column
+            // inserts at the tail; an empty column marks the insert.
+            const auto slot = result.try_emplace(result.end(), name);
+            if (slot->second.empty())
+                slot->second.assign(total,
+                                    std::numeric_limits<double>::quiet_NaN());
             const auto destination =
                 std::span<double>(slot->second).subspan(offset, block.rows);
             std::ranges::copy(values, destination.begin());

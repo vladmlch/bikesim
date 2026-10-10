@@ -7,13 +7,14 @@ unverified work. Failed comparisons freeze the last verified control boundary.
 from __future__ import annotations
 
 from copy import copy, deepcopy
-from dataclasses import asdict, replace
+from dataclasses import asdict
 import math
 from numbers import Real
 from pathlib import Path
 
 import numpy as np
 
+from bike_sim.native.contracts import _amend
 from bike_sim.physics.rider_posture import RiderPosture
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.physical_samples import plain
@@ -71,7 +72,7 @@ class ReplaySession:
         (self._env, self._summary, self._manifest, self._commands, self._transitions,
          self._observations, self._applied, self._final_state, self._episode_metrics, frame) = loaded
         self._index = self._applied_index = 0
-        self._frame = self._last_verified = replace(frame, generation=self._generation)
+        self._frame = self._last_verified = _amend(frame, generation=self._generation)
         self._done, self._error, self._report = False, None, None
 
     @property
@@ -169,7 +170,7 @@ class ReplaySession:
             numerically_valid=env.numerically_valid, model_valid=env.model_valid,
             source_sha256=env.metadata['model_source_sha256'],
             scope='Deterministic software replay under the recorded source/runtime, not physical calibration.')
-        frame = replace(environment_snapshot(env), generation=self._generation)
+        frame = _amend(environment_snapshot(env), generation=self._generation)
         self._frame = self._last_verified = frame
         self._report, self._done = report, True
 
@@ -206,7 +207,7 @@ class ReplaySession:
                 options['target_step'] = target_step
             result = env.advance_control(**options)
             if result is None:
-                self._frame = replace(environment_snapshot(env), generation=self._generation)
+                self._frame = _amend(environment_snapshot(env), generation=self._generation)
                 return False
             index = self._index
             _compare(plain(asdict(result)), self._transitions[index], f'transition {index}')
@@ -218,7 +219,7 @@ class ReplaySession:
                 # Do not replace the verified checkpoint until they all pass.
                 self._finish()
             else:
-                self._frame = self._last_verified = replace(
+                self._frame = self._last_verified = _amend(
                     environment_snapshot(env), generation=self._generation)
             return self._done
         except Exception as error:

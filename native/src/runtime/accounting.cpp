@@ -67,6 +67,8 @@ WireObject terms_wire(const rider::NamedEntries<rider::JointTerms> &terms) {
 
 StepWork raw_work(const RawStep &raw, double dt_s) {
     std::vector<double> muscle, constraint;
+    muscle.reserve(raw.components.size());
+    constraint.reserve(raw.numerical_constraint_power_w.size());
     double motor = 0.;
     for (const auto &[name, force] : raw.components) {
         if (name == "human_crank" || name.starts_with("act_rider_"))
@@ -254,6 +256,10 @@ EffortObservation observe_effort(const RawStep &raw,
     rider::NamedEntries<double> delivered, joint_positive;
     std::vector<double> positive, passive;
     std::vector<std::string> power_errors, speed_errors;
+    delivered.reserve(controller.joints().size());
+    joint_positive.reserve(controller.joints().size());
+    positive.reserve(controller.joints().size());
+    passive.reserve(controller.joints().size());
     for (const auto &joint : controller.joints()) {
         const auto dof = static_cast<std::size_t>(joint.dof_adr);
         const double active = raw.actuator_force.at(static_cast<std::size_t>(joint.actuator_id));
@@ -385,6 +391,7 @@ void PeriodAccounting::flush() {
         }
     }
     std::vector<SamplePtr> selected;
+    selected.reserve(published.size());
     for (const auto &sample : published)
         if (sample->interval_id % config_.record_decimation == 0) selected.push_back(sample);
     RecordedBlock block{.rows = selected.size(), .columns = make_columns(selected, config_.columns)};
@@ -435,6 +442,7 @@ void PeriodAccounting::acknowledge_samples(const RuntimeSampleBatch &batch) {
 
 WireObject PeriodAccounting::state_wire() const {
     WireArray violations;
+    violations.reserve(state_.period_violations.size());
     for (const auto &failure : state_.period_violations) violations.push_back(failure.as_wire());
     return {{"history", Wire(state_.history.as_wire())},
             {"energy", Wire(state_.energy_channels)},

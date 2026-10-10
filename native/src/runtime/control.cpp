@@ -380,6 +380,7 @@ road_samples(std::span<const std::array<double, 2>> vertices,
     std::vector<double> xs(wheel_x_m.begin(), wheel_x_m.end());
     const int count = static_cast<int>(
         std::floor(lookahead_m / spacing_m + 1e-12));
+    xs.reserve(wheel_x_m.size() + static_cast<std::size_t>(count) + 1);
     for (int k = 0; k < count; ++k)
         xs.push_back(front + static_cast<double>(k + 1) * spacing_m);
     xs.push_back(front + lookahead_m);

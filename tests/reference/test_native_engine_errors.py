@@ -545,6 +545,47 @@ print('ctypes timer rejected before native recovery')
     assert 'ctypes timer rejected before native recovery' in child.stdout
 
 
+def test_simulate_owned_time_callback_is_accepted_for_runtime_steps(tmp_path: Path) -> None:
+    """Simulate::RenderLoop installs mjcb_time = Timer from the _simulate image."""
+    model = mujoco.MjModel.from_xml_string(
+        '<mujoco><worldbody><geom type="sphere" size=".1"/></worldbody></mujoco>'
+    )
+    path = tmp_path / 'simulate-timer-callback.mjb'
+    mujoco.mj_saveModel(model, str(path), None)
+    child = run_child(
+        """import ctypes, sys
+import mujoco
+import mujoco._simulate
+from native_loader import _loaded_images, load_native
+bike_native = load_native()
+# The extension's libmujoco may differ from the importing package's copy;
+# write the callback slot in the actually loaded image.
+libs = [str(p) for p in _loaded_images() if 'libmujoco' in p.name]
+assert len(libs) == 1, libs
+libmujoco = ctypes.CDLL(libs[0])
+slot = ctypes.c_void_p.in_dll(libmujoco, 'mjcb_time')
+# RenderLoop's Timer is not exported; any address inside the _simulate image
+# identifies the same owner through dladdr.
+sim = ctypes.CDLL(mujoco._simulate.__file__)
+previous = slot.value
+slot.value = ctypes.cast(sim.PyInit__simulate, ctypes.c_void_p).value
+try:
+    stepper = bike_native.Stepper(sys.argv[1])
+    stepper.step()
+    stepper.forward()
+    stepper.reset()
+    assert stepper.time == 0.0
+    stepper.step()
+finally:
+    slot.value = previous
+print('simulate-owned timer accepted for native steps')
+""",
+        str(path),
+    )
+    assert child.returncode == 0, child.stderr
+    assert 'simulate-owned timer accepted for native steps' in child.stdout
+
+
 def test_unsupported_callback_rejected_before_drive_restore(tmp_path: Path) -> None:
     from test_native_drive_policies import assert_tree
     from test_native_drivetrain import pair

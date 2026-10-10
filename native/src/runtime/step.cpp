@@ -1572,8 +1572,14 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             "rider_balance",
             Wire(balance_channel(front, rear, braking,
                                  control.rider_enabled)));
-        if (rider_control_.has_value()) {
-            const auto &st = rider_control_->state();
+        // state() deep-copies every named mirror — one snapshot feeds
+        // the four rider reads below.
+        const auto rider_state =
+            rider_control_.has_value()
+                ? std::optional(rider_control_->state())
+                : std::nullopt;
+        if (rider_state.has_value()) {
+            const auto &st = *rider_state;
             WireObject torques;
             for (const auto &[name, value]: st.joint_torques_nm)
                 torques.emplace_back(name, Wire(value));
@@ -1604,8 +1610,8 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             Wire(config_.intent.enabled
                      ? rider_intent_.policy().inclination_rad()
                      : 0.));
-        if (rider_control_.has_value()) {
-            const auto &st = rider_control_->state();
+        if (rider_state.has_value()) {
+            const auto &st = *rider_state;
             diagnostics.emplace_back(
                 "rider_allocation",
                 Wire(wire_allocation(st.allocation_diagnostics)));
@@ -1643,11 +1649,10 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.battery_energy_j = stepper_->drive().battery_energy_j();
         raw.electrical_power_w = in.electrical_power_w;
         raw.invalid_controller =
-            rider_control_.has_value() &&
-            rider_control_->state().allocation_diagnostics
-                .invalid_controller;
-        if (rider_control_.has_value()) {
-            raw.effort_state = rider_control_->state().effort_diagnostics;
+            rider_state.has_value() &&
+            rider_state->allocation_diagnostics.invalid_controller;
+        if (rider_state.has_value()) {
+            raw.effort_state = rider_state->effort_diagnostics;
             raw.effort_base = wire_effort(*raw.effort_state);
         } else {
             raw.effort_base = WireObject{};

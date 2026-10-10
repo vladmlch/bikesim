@@ -138,6 +138,24 @@ namespace rider {
     LeastSquaresWorkspace::solve(std::span<const double> a, lapack_int m,
                                  lapack_int n, std::span<const double> b,
                                  lapack_int nrhs, double rcond) {
+        return solve_impl(a, m, n, b, nrhs, rcond,
+                          MatrixLayout::row_major);
+    }
+
+    LeastSquaresResult
+    LeastSquaresWorkspace::solve_column_major(
+        std::span<const double> a, lapack_int m, lapack_int n,
+        std::span<const double> b, lapack_int nrhs, double rcond) {
+        return solve_impl(a, m, n, b, nrhs, rcond,
+                          MatrixLayout::column_major);
+    }
+
+    LeastSquaresResult
+    LeastSquaresWorkspace::solve_impl(std::span<const double> a,
+                                      lapack_int m, lapack_int n,
+                                      std::span<const double> b,
+                                      lapack_int nrhs, double rcond,
+                                      MatrixLayout layout) {
         require_dim(m, max_rows_, "rows");
         require_dim(n, max_columns_, "columns");
         if (nrhs < 1 || nrhs > max_rhs_)
@@ -154,11 +172,18 @@ namespace rider {
 
         const std::size_t lda = std::max<std::size_t>(1, em);
         const std::size_t ldb = std::max({std::size_t{1}, em, en});
-        // Row-major input -> column-major staging — pure permutation, so
-        // loop order is arithmetically irrelevant.
-        for (std::size_t j = 0; j < en; ++j)
-            for (std::size_t i = 0; i < em; ++i)
-                a_[i + j * lda] = a[i * en + j];
+        if (layout == MatrixLayout::column_major) {
+            // a already carries lda-strided Fortran order — staging is
+            // a plain copy of the same m*n bytes the permutation below
+            // would produce.
+            std::ranges::copy(a, a_.begin());
+        } else {
+            // Row-major input -> column-major staging — pure
+            // permutation, so loop order is arithmetically irrelevant.
+            for (std::size_t j = 0; j < en; ++j)
+                for (std::size_t i = 0; i < em; ++i)
+                    a_[i + j * lda] = a[i * en + j];
+        }
         for (std::size_t j = 0; j < ek; ++j) {
             for (std::size_t i = 0; i < em; ++i)
                 b_[i + j * ldb] = b[i * ek + j];
@@ -180,35 +205,54 @@ namespace rider {
         lapack_int rank = 0;
 
         // init_gelsd's query: LWORK == -1 writes the optimal work and
-        // iwork sizes into the first elements.
-        const lapack_int query_lwork = -1;
-        double work_query = 0.;
-        lapack_int iwork_query = 0;
-        dgelsd_ilp64(&m, &n, &nrhs, a_.data(), &lda_l, b_.data(), &ldb_l,
-                     s_.data(), &rcond, &rank, &work_query, &query_lwork,
-                     &iwork_query, &info);
-        if (info != 0) raise_lapack_failure();
-        // numpy truncates the queried sizes verbatim (fortran_int
-        // work_count = (fortran_int)work_size_query) and hands them back
-        // — a degenerate m/n == 0 query legitimately answers a smaller
-        // lwork/iwork. Only an unrepresentable cast is rejected here
-        // (the gufunc's (fortran_int) cast is undefined past int64);
-        // a representable-but-broken answer still reaches DGELSD below
-        // and reports through info, matching the oracle's failure
-        // channel instead of inventing a second error kind.
-        if (!std::isfinite(work_query) ||
-            work_query >= 4.611686018427388e18 || // 2^62, far below int64 UB
-            work_query <= -4.611686018427388e18)
-            throw std::runtime_error(
-                "dgelsd workspace query returned invalid sizes");
-        const lapack_int needed_work =
-            static_cast<lapack_int>(work_query);
+        // iwork sizes into the first elements. The answer depends only
+        // on (m, n, nrhs) — lda/ldb are derived from them and matrix
+        // values never enter it — so a remembered answer for the shape
+        // replays the identical probe result; only unseen shapes pay
+        // the extra call.
+        lapack_int needed_work = 0;
+        lapack_int needed_iwork = 0;
+        const auto remembered = std::ranges::find_if(
+            shape_work_, [&](const ShapeWork &entry) {
+                return entry.m == m && entry.n == n && entry.nrhs == nrhs;
+            });
+        if (remembered != shape_work_.end()) {
+            needed_work = remembered->lwork;
+            needed_iwork = remembered->iwork;
+        } else {
+            const lapack_int query_lwork = -1;
+            double work_query = 0.;
+            lapack_int iwork_query = 0;
+            dgelsd_ilp64(&m, &n, &nrhs, a_.data(), &lda_l, b_.data(),
+                         &ldb_l, s_.data(), &rcond, &rank, &work_query,
+                         &query_lwork, &iwork_query, &info);
+            if (info != 0) raise_lapack_failure();
+            // numpy truncates the queried sizes verbatim (fortran_int
+            // work_count = (fortran_int)work_size_query) and hands them
+            // back — a degenerate m/n == 0 query legitimately answers a
+            // smaller lwork/iwork. Only an unrepresentable cast is
+            // rejected here (the gufunc's (fortran_int) cast is
+            // undefined past int64); a representable-but-broken answer
+            // still reaches DGELSD below and reports through info,
+            // matching the oracle's failure channel instead of
+            // inventing a second error kind.
+            if (!std::isfinite(work_query) ||
+                work_query >= 4.611686018427388e18 || // 2^62, far below int64 UB
+                work_query <= -4.611686018427388e18)
+                throw std::runtime_error(
+                    "dgelsd workspace query returned invalid sizes");
+            needed_work = static_cast<lapack_int>(work_query);
+            needed_iwork = iwork_query;
+            shape_work_.push_back(
+                {.m = m, .n = n, .nrhs = nrhs, .lwork = needed_work,
+                 .iwork = needed_iwork});
+        }
         if (needed_work > 0 &&
             work_.size() < static_cast<std::size_t>(needed_work))
             work_.resize(static_cast<std::size_t>(needed_work));
-        if (iwork_query > 0 &&
-            iwork_.size() < static_cast<std::size_t>(iwork_query))
-            iwork_.resize(static_cast<std::size_t>(iwork_query));
+        if (needed_iwork > 0 &&
+            iwork_.size() < static_cast<std::size_t>(needed_iwork))
+            iwork_.resize(static_cast<std::size_t>(needed_iwork));
         // Keep at least one element so .data() is a valid Fortran
         // argument even when the queried sizes are degenerate.
         if (work_.empty()) work_.resize(1);

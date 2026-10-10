@@ -42,16 +42,20 @@ std::optional<std::vector<double>> spatial_wrench(
         jac.columns > std::numeric_limits<std::size_t>::max() / jac.rows ||
         jac.values.size() != jac.rows * jac.columns || force.size() != jac.columns)
         throw std::invalid_argument("attachment raw: incompatible spatial wrench dimensions");
-    std::vector<double> transpose(jac.values.size());
-    for (std::size_t row = 0; row < jac.columns; ++row)
-        for (std::size_t column = 0; column < jac.rows; ++column)
-            transpose[row * jac.rows + column] = jac.values[column * jac.columns + row];
-    // Spatial bodies need explanation, not full six-dimensional rank.
-    // The existing native minimum-norm primitive uses the same 1e-12 cutoff.
-    auto solved = workspace.solve(transpose, static_cast<rider::lapack_int>(jac.columns),
-                                   6, force, 1, 1e-12);
+    // The (6, k) row-major Jacobian already carries the (k, 6)
+    // column-major J.T layout DGELSD stages — byte-for-byte what an
+    // explicit transpose produced. Spatial bodies need explanation,
+    // not full six-dimensional rank; the existing native minimum-norm
+    // primitive uses the same 1e-12 cutoff.
+    auto solved = workspace.solve_column_major(
+        jac.values, static_cast<rider::lapack_int>(jac.columns), 6, force,
+        1, 1e-12);
     for (std::size_t row = 0; row < jac.columns; ++row) {
-        const auto coefficients = std::span<const double>(transpose).subspan(row * 6, 6);
+        // J.T's row is J's strided column — gathered contiguous so the
+        // dot keeps unit-stride BLAS dispatch and summation order.
+        std::array<double, 6> coefficients;
+        for (std::size_t j = 0; j < 6; ++j)
+            coefficients[j] = jac.values[j * jac.columns + row];
         const double explained = sample_wire::dot(coefficients, solved.solution);
         if (!std::isfinite(force[row]) ||
             std::abs(explained - force[row]) > 1e-8 + 1e-8 * std::abs(force[row]))

@@ -78,6 +78,22 @@ def test_state_wire_names_and_round_trip():
         tire.set_state(['front.s000.bogus'], [0.])
 
 
+def test_distributed_state_arrays_round_trip_through_the_cache_codec():
+    from types import SimpleNamespace
+    from bike_sim.sim.ride.equilibrium_cache import _state_arrays, restore_state
+    from bike_sim.sim.ride.distributed_tire_forces import _StationState
+    m, d, tire = wheel_stand(.00125, 32)
+    tire.states = {('front', 5): _StationState(.001, np.array([0., 0., 1.])), ('rear', 9): _StationState(-.002, None)}
+    runtime = SimpleNamespace(drive=SimpleNamespace(ideal_hub=None, clutch=None), rider_contacts=None, tire=tire)
+    arrays = _state_arrays(runtime)
+    assert set(arrays) == {'state_tire_sides', 'state_tire_xi', 'state_tire_tangent', 'state_tire_tangent_valid'}
+    tire.states = {}
+    assert restore_state(runtime, arrays) is True
+    assert tire.states[('front', 5)].xi == .001 and tire.states[('rear', 9)].tangent is None
+    bad = dict(arrays); bad['state_tire_xi'] = np.array([float('nan'), -.002])
+    assert restore_state(runtime, bad) is False
+
+
 def test_diagnostics_are_scalar_only_and_multi_contact_is_informational():
     rows, m = distributed_road_trace(.00125, 64, .005, case='two_support', duration_s=.05)
     assert m['max_patch_count'] >= 2

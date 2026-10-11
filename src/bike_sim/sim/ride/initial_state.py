@@ -97,8 +97,7 @@ class PhysicalInitialState:
         # station_angles includes a fixed quadrature phase; use the actual
         # angular coordinates for both interpolation domains.
         old_angles=tire.angles
-        arrays={name:[] for name in ('sides','xi','tangent','tangent_valid','point','point_valid',
-                                     'segment','center','center_valid')}
+        arrays={name:[] for name in ('sides','xi','tangent','tangent_valid')}
         for side in ('front','rear'):
             xi=np.zeros(old_count);tangents=np.zeros((old_count,3))
             for (wheel,index),state in tire.states.items():
@@ -114,19 +113,15 @@ class PhysicalInitialState:
             points=center+local@rotation.T
             active=(points[:,2]<tire.profile.height(points[:,0]))|(np.abs(target_xi)>0.)
             ids=np.flatnonzero(active)
-            geometry=tire.profile.query(points[ids][:,[0,2]])
             for j,index in enumerate(ids):
                 tangent=target_tangent[index];norm=float(np.linalg.norm(tangent))
                 if norm>1e-12:tangent=tangent/norm
                 arrays['sides'].append(json.dumps([side,int(index)]));arrays['xi'].append(target_xi[index])
                 arrays['tangent'].append(tangent);arrays['tangent_valid'].append(norm>1e-12)
-                arrays['point'].append(points[index]);arrays['point_valid'].append(True)
-                arrays['segment'].append(int(geometry.segment[j]));arrays['center'].append(center)
-                arrays['center_valid'].append(True)
         for name,values in arrays.items():
-            dtype=(bool if name.endswith('_valid') else int if name=='segment' else str if name=='sides' else float)
+            dtype=(bool if name.endswith('_valid') else str if name=='sides' else float)
             array=np.asarray(values,dtype=dtype)
-            if name in ('tangent','point','center'):array=array.reshape(-1,3)
+            if name=='tangent':array=array.reshape(-1,3)
             p['material']['state_tire_'+name]={'dtype':str(array.dtype),'shape':list(array.shape),'values':array.tolist()}
         p['contract_sha256']=_contract(sim,station_count=station_count)
         p['station_projection']={'method':'periodic piecewise-linear angular shear field; identical qpos/qvel',

@@ -165,9 +165,9 @@ The user makes the choice; this plan only states the criteria so the spike measu
 
 ---
 
-## Phase 2 — Native port outline (only after Outcome C and its own spec)
+## Phase 2 — Native port (only after Outcome C)
 
-This section lists what the spec/brainstorm must cover so that nothing is estimated by feel. It mirrors how `compliant_2d` was ported (`docs/superpowers/plans/2026-10-05-cpp-port-p2-force-writers.md`).
+The brainstorm and spec for this phase are done: `docs/superpowers/specs/2026-10-11-native-distributed-tire-design.md`, with two implementation plans — `2026-10-11-distributed-tire-a-portable-reference.md` (Python reference made bitwise-portable, state wire, frozen `alpine_rocky` + distributed profile, before/after audit) and `2026-10-11-distributed-tire-b-native-port.md` (C++ writer, config, bitwise per-state gate, stands, sanitizers, RTF gate). The outline below is kept as the summary that fed that spec.
 
 **Scope to port (Python → C++):**
 1. `terrain/profile_distance.py::SignedProfile` (80 lines) — signed distance from a point to the piecewise-linear road, with the same winding/segment conventions as `ProfileQuery`.

@@ -186,3 +186,115 @@ def _rhythm(spec, rng):
     knots += [knot for _, s, e, g in segments for knot in ((s, g), (e, g))]
     knots += [(body_end, 0.), (spec.length_m, 0.)]
     return GradeProfile(tuple(knots)), [(s, e) for kind, s, e, _ in segments if kind in ('ramp', 'wall')]
+
+
+def _count(rng, bounds):
+    return int(rng.integers(bounds[0], bounds[1] + 1))
+
+
+def _faceted(spec, rng, cls, start, length, amp, corr):
+    """A seeded faceted section whose concave span respects ``max_kink_deg``.
+
+    New seeds are drawn first; if none of PLACEMENT_TRIES passes, the amplitude shrinks by
+    a fifth and the draw repeats. Without ``single_contact_safe`` the first seed is kept.
+    """
+    while True:
+        for _ in range(PLACEMENT_TRIES):
+            obstacle = cls(start_m=start, section_length_m=length, amplitude_m=amp,
+                           correlation_length_m=corr, seed=int(rng.integers(0, 2**31)))
+            if not spec.single_contact_safe or concave_span_deg(obstacle, spec.contact_window_m) < spec.max_kink_deg:
+                return obstacle
+        amp = _r(amp * .8)
+
+
+def generate_alpine_track(spec, *, seed, name=None):
+    """Draws one alpine scree climb; ``(spec, seed)`` fully determines the result."""
+    if not isinstance(spec, AlpineGenSpec):
+        raise ValueError('expected an AlpineGenSpec')
+    if type(seed) is not int or seed < 0:
+        raise ValueError('terrain seed must be a nonnegative integer')
+    rng = np.random.default_rng(seed)
+    lo, hi = spec.lead_in_m, _r(spec.length_m - spec.lead_out_m, 2)
+    grade, ramps = _rhythm(spec, rng)
+    taken, used, obstacles, sections = [], [], [], []
+
+    for _ in range(_count(rng, spec.n_rock_gardens)):
+        wanted = _r(rng.uniform(*spec.rock_len_m), 2)
+        amp, corr = _r(rng.uniform(*spec.rock_amp_m)), _r(rng.uniform(*spec.rock_corr_m), 3)
+        placed = place(rng, wanted, lo, hi, taken, shrink=True)
+        if placed is not None:
+            start, length = placed
+            obstacles.append(_faceted(spec, rng, RockGarden, start, length, amp, corr))
+            taken.append((start, start + length))
+
+    for _ in range(_count(rng, spec.n_scree)):
+        wanted = _r(rng.uniform(*spec.scree_len_m), 2)
+        amp, corr = _r(rng.uniform(*spec.scree_amp_m)), _r(rng.uniform(*spec.scree_corr_m), 3)
+        a, b = ramps[int(rng.integers(0, len(ramps)))] if rng.uniform() < spec.scree_ramp_bias else (lo, hi)
+        placed = place(rng, wanted, a, b, taken, shrink=True)
+        if placed is not None:
+            start, length = placed
+            obstacles.append(_faceted(spec, rng, RoadRoughness, start, length, amp, corr))
+            sections.append(SurfaceSection(start, _r(start + length, 2), 'scree'))
+            taken.append((start, start + length))
+            used.append((start, start + length))
+
+    for _ in range(_count(rng, spec.n_boulders)):
+        height, length = _r(rng.uniform(*spec.boulder_height_m)), _r(rng.uniform(*spec.boulder_len_m), 2)
+        if spec.single_contact_safe:
+            length = max(length, _r(ceil(min_bump_length_m(height, spec.min_contact_radius_m) * 100.) / 100., 2))
+        placed = place(rng, length, lo, hi, taken)
+        if placed is not None:
+            start, _ = placed
+            obstacles.append(Bump(start_m=start, height_m=height, bump_length_m=length))
+            taken.append((start, start + length))
+
+    for _ in range(_count(rng, spec.n_water_bars)):
+        depth, length = _r(rng.uniform(*spec.water_bar_depth_m)), _r(rng.uniform(*spec.water_bar_len_m), 2)
+        if spec.single_contact_safe:
+            depth = min(depth, _r(max_bowl_depth_m(length, spec.min_contact_radius_m) * .98))
+        placed = place(rng, length, lo, hi, taken)
+        if placed is not None:
+            start, _ = placed
+            obstacles.append(BowlPothole(start_m=start, depth_m=depth, hole_length_m=length))
+            taken.append((start, start + length))
+
+    for _ in range(_count(rng, spec.n_sharp_edges)):
+        height, length = _r(rng.uniform(*spec.sharp_edge_height_m)), _r(rng.uniform(.2, .6), 2)
+        placed = place(rng, length, lo, hi, taken)
+        if placed is not None:
+            start, _ = placed
+            obstacles.append(SquareEdge(start_m=start, height_m=height, ledge_length_m=length))
+            taken.append((start, start + length))
+
+    for _ in range(_count(rng, spec.n_wet)):
+        wanted = _r(rng.uniform(*spec.wet_len_m), 2)
+        placed = place(rng, wanted, lo, hi, used, shrink=True)
+        if placed is not None:
+            start, length = placed
+            sections.append(SurfaceSection(start, _r(start + length, 2), 'wet'))
+            used.append((start, start + length))
+
+    amp, corr = _r(rng.uniform(*spec.background_amp_m)), _r(rng.uniform(*spec.background_corr_m), 3)
+    for a, b in free_intervals((lo, hi), taken, 0.):
+        if b - a >= MIN_BACKGROUND_CORRELATIONS * corr:
+            # Trim float noise from the segment length without crossing into the neighbour.
+            length = round(b - a, 6)
+            while a + length > b:
+                length = round(length - 1e-6, 6)
+            obstacles.append(_faceted(spec, rng, RoadRoughness, a, length, amp, corr))
+
+    track = TrackSpec(name or f'alpine_{seed}', spec.length_m, obstacles=obstacles, surface=spec.base_surface,
+                      grade_profile=grade, surface_sections=tuple(sorted(sections, key=lambda s: s.start_m)),
+                      description=f'Alpine scree climb; seed={seed}; spec_sha256={spec.sha256()}')
+    track.validate()
+    return track
+
+
+def alpine_scree(seed=ALPINE_PRESET_SEED):
+    """Builds the ``alpine_scree`` preset: the default spec at the pinned seed, or another seed."""
+    name = 'alpine_scree' if seed == ALPINE_PRESET_SEED else f'alpine_scree_{seed}'
+    return generate_alpine_track(AlpineGenSpec(), seed=seed, name=name)
+
+
+__all__ = ['ALPINE_PRESET_SEED', 'AlpineGenSpec', 'generate_alpine_track', 'alpine_scree']

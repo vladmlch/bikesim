@@ -117,3 +117,129 @@ def test_rhythm_grade_profile_is_flat_outside_the_body(seed):
 def test_rhythm_without_walls_or_counter_slopes():
     spec, segments = _kinds(3, n_walls=0, counter_prob=0.)
     assert {s[0] for s in segments} <= {'ramp', 'shelf'}
+
+
+import tomllib as _tomllib
+
+from bike_sim.physics.physical_config import TireBackendConfig
+from bike_sim.terrain.alpine import alpine_scree, generate_alpine_track
+from bike_sim.terrain.contact_profile import ProfileQuery
+from bike_sim.terrain.contact_safety import single_contact_hazards
+from bike_sim.terrain.heightfield import build_field_data
+from bike_sim.terrain.obstacles import BowlPothole, Bump, RoadRoughness, RockGarden, SquareEdge
+from bike_sim.terrain.profile import build_profile
+from bike_sim.terrain.trackfile import dump_track, track_from_dict, track_to_dict
+from bike_sim.terrain.wheelpath import FRONT_WHEEL_RADIUS_M, REAR_WHEEL_RADIUS_M
+
+SEEDS = range(8)
+
+
+def test_generate_rejects_bad_arguments():
+    with pytest.raises(ValueError):
+        generate_alpine_track(object(), seed=0)
+    with pytest.raises(ValueError):
+        generate_alpine_track(AlpineGenSpec(), seed=-1)
+    with pytest.raises(ValueError):
+        generate_alpine_track(AlpineGenSpec(), seed=1.0)
+
+
+@pytest.mark.parametrize('seed', SEEDS)
+def test_same_seed_same_bytes_and_toml_round_trip(seed):
+    spec = AlpineGenSpec()
+    first, second = dump_track(generate_alpine_track(spec, seed=seed)), dump_track(generate_alpine_track(spec, seed=seed))
+    assert first == second
+    doc = _tomllib.loads(first)
+    assert track_to_dict(track_from_dict(doc)) == track_to_dict(generate_alpine_track(spec, seed=seed))
+
+
+def test_different_seeds_differ():
+    dumps = {dump_track(generate_alpine_track(AlpineGenSpec(), seed=s)) for s in SEEDS}
+    assert len(dumps) == len(SEEDS)
+
+
+def _body(track, spec):
+    return spec.lead_in_m, spec.length_m - spec.lead_out_m
+
+
+@pytest.mark.parametrize('seed', SEEDS)
+def test_default_track_structure(seed):
+    spec = AlpineGenSpec()
+    track = generate_alpine_track(spec, seed=seed)
+    track.validate()
+    lo, hi = _body(track, spec)
+    assert track.length_m == 120. and track.surface == 'hardpack' and track.name == f'alpine_{seed}'
+    assert f'seed={seed}' in track.description and spec.sha256() in track.description
+    assert all(lo <= o.start_m and o.end_m <= hi + 1e-9 for o in track.obstacles)
+    assert all(lo <= s.start_m and s.end_m <= hi + 1e-9 for s in track.surface_sections)
+    x = np.array([0., 5., 10., 105., 112., 120.])
+    assert np.all(track.grade_profile.slope(x) == 0.)
+
+    scree = [s for s in track.surface_sections if s.surface == 'scree']
+    rough = [o for o in track.obstacles if isinstance(o, RoadRoughness)]
+    assert len(scree) >= 2
+    for section in scree:
+        matches = [o for o in rough if abs(o.start_m - section.start_m) < 1e-6 and abs(o.end_m - section.end_m) < 1e-6]
+        assert len(matches) == 1
+        assert spec.scree_amp_m[0] * .8 ** 6 <= matches[0].amplitude_m <= spec.scree_amp_m[1]
+    gardens = [o for o in track.obstacles if type(o) is RockGarden]
+    boulders = [o for o in track.obstacles if isinstance(o, Bump)]
+    bowls = [o for o in track.obstacles if isinstance(o, BowlPothole)]
+    assert 1 <= len(gardens) <= spec.n_rock_gardens[1]
+    assert 1 <= len(boulders) <= spec.n_boulders[1]
+    assert 1 <= len(bowls) <= spec.n_water_bars[1]
+    assert not any(isinstance(o, SquareEdge) for o in track.obstacles)
+    assert all(spec.boulder_height_m[0] <= o.height_m <= spec.boulder_height_m[1] for o in boulders)
+    assert all(o.depth_m <= spec.water_bar_depth_m[1] for o in bowls)
+    assert build_field_data(track).shape[0] == 2
+
+
+@pytest.mark.parametrize('seed', SEEDS)
+def test_default_track_has_no_single_contact_hazards(seed):
+    assert single_contact_hazards(generate_alpine_track(AlpineGenSpec(), seed=seed)) == []
+
+
+def roll_multi_support_count(track, radius, *, delta_m=.010, step_m=.005):
+    """Ground truth: roll a circle along the 5 mm raster through the production contact query."""
+    cfg = TireBackendConfig()
+    x = np.arange(0., track.length_m + 2. * radius + step_m / 2., step_m)
+    z = build_profile(track, x)
+    query = ProfileQuery(np.column_stack([x, z]), significant_delta_m=cfg.significant_delta_m,
+                         significance_fraction=cfg.significance_fraction, normal_angle_deg=cfg.distinct_normal_deg)
+    window = int(round(radius / step_m))
+    count = 0
+    for i in range(window + 1, len(x) - window - 1):
+        lo, hi = i - window, i + window + 1
+        dx = x[i] - x[lo:hi]
+        lift = np.sqrt(np.maximum(radius * radius - dx * dx, 0.))
+        centre = np.array([x[i], float(np.max(z[lo:hi] + lift)) - delta_m])
+        count += query.contact(centre, radius).multi_support
+    return count
+
+
+@pytest.mark.parametrize('seed', range(3))
+def test_default_track_rolls_clean_for_both_wheels(seed):
+    track = generate_alpine_track(AlpineGenSpec(), seed=seed)
+    assert roll_multi_support_count(track, FRONT_WHEEL_RADIUS_M) == 0
+    assert roll_multi_support_count(track, REAR_WHEEL_RADIUS_M) == 0
+
+
+def test_opting_out_of_single_contact_produces_detectable_hazards():
+    spec = AlpineGenSpec(single_contact_safe=False, n_sharp_edges=(2, 2), rock_amp_m=(.10, .10), rock_corr_m=(.15, .15))
+    track = generate_alpine_track(spec, seed=0)
+    assert any(isinstance(o, SquareEdge) for o in track.obstacles)
+    assert single_contact_hazards(track)
+    assert roll_multi_support_count(track, FRONT_WHEEL_RADIUS_M) > 0
+
+
+def test_redraw_keeps_a_marginal_rock_garden_clean():
+    spec = AlpineGenSpec(rock_amp_m=(.07, .07), rock_corr_m=(.45, .45), n_rock_gardens=(2, 2))
+    for seed in SEEDS:
+        track = generate_alpine_track(spec, seed=seed)
+        assert single_contact_hazards(track) == []
+        assert all(o.amplitude_m <= .07 for o in track.obstacles if type(o) is RockGarden)
+
+
+def test_alpine_scree_preset_builder():
+    pinned, other = alpine_scree(), alpine_scree(seed=7)
+    assert pinned.name == 'alpine_scree' and other.name == 'alpine_scree_7'
+    assert dump_track(pinned) == dump_track(generate_alpine_track(AlpineGenSpec(), seed=ALPINE_PRESET_SEED, name='alpine_scree'))

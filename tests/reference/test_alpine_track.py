@@ -4,7 +4,7 @@ import tomllib
 import numpy as np
 import pytest
 
-from bike_sim.terrain.alpine import ALPINE_PRESET_SEED, AlpineGenSpec
+from bike_sim.terrain.alpine import ALPINE_PRESET_SEED, AlpineGenSpec, _rhythm, _segments
 from bike_sim.terrain.surface import SURFACES, get_surface
 
 
@@ -72,3 +72,48 @@ def test_spec_rejects_invalid_values(bad):
 def test_sharp_edges_need_the_multi_contact_opt_in():
     spec = AlpineGenSpec(single_contact_safe=False, n_sharp_edges=(1, 2))
     assert spec.n_sharp_edges == (1, 2)
+
+
+def _kinds(seed, **overrides):
+    spec = AlpineGenSpec(**overrides)
+    return spec, _segments(spec, np.random.default_rng(seed))
+
+
+@pytest.mark.parametrize('seed', range(8))
+def test_rhythm_fills_the_body_with_ramp_shelf_cycles(seed):
+    spec, segments = _kinds(seed)
+    body_end, t = spec.length_m - spec.lead_out_m, spec.transition_m
+    kinds = [s[0] for s in segments]
+    assert kinds[0] in ('ramp', 'wall')
+    assert kinds.count('wall') == 1
+    assert all(k in ('ramp', 'wall', 'shelf', 'counter') for k in kinds)
+    for (_, s, e, _g), (_, s2, _e2, _g2) in zip(segments, segments[1:]):
+        assert s < e and s2 == pytest.approx(e + t, abs=1e-9)
+    assert segments[0][1] == pytest.approx(spec.lead_in_m + t)
+    assert segments[-1][2] <= body_end - t + 1e-9
+    assert body_end - t - segments[-1][2] < spec.ramp_len_m[0] + t  # no room left for another ramp
+    for kind, s, e, g in segments:
+        lo, hi = {'ramp': spec.ramp_grade, 'wall': spec.wall_grade, 'shelf': spec.shelf_grade,
+                  'counter': spec.counter_grade}[kind]
+        assert lo <= g <= hi
+        if kind == 'ramp':
+            assert spec.ramp_len_m[0] <= e - s <= spec.ramp_len_m[1] + 1e-9
+
+
+@pytest.mark.parametrize('seed', range(8))
+def test_rhythm_grade_profile_is_flat_outside_the_body(seed):
+    spec = AlpineGenSpec()
+    grade, ramps = _rhythm(spec, np.random.default_rng(seed))
+    x = np.linspace(0., spec.length_m, 2401)
+    slope = grade.slope(x)
+    assert np.all(slope[x <= spec.lead_in_m] == 0.)
+    assert np.all(slope[x >= spec.length_m - spec.lead_out_m] == 0.)
+    assert slope.max() <= spec.wall_grade[1] + 1e-12
+    assert slope.min() >= spec.counter_grade[0] - 1e-12
+    assert ramps and all(spec.lead_in_m < s < e < spec.length_m - spec.lead_out_m for s, e in ramps)
+    assert grade.elevation(spec.length_m) > 8.  # a climb, not a flat
+
+
+def test_rhythm_without_walls_or_counter_slopes():
+    spec, segments = _kinds(3, n_walls=0, counter_prob=0.)
+    assert {s[0] for s in segments} <= {'ramp', 'shelf'}

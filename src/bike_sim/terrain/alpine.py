@@ -136,3 +136,53 @@ class AlpineGenSpec:
 
     def sha256(self):
         return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode()).hexdigest()
+
+
+def _segments(spec, rng):
+    """Fill the body with ramp -> shelf [-> counter-slope] cycles; rows are [kind, start, end, grade].
+
+    Each segment ends ``transition_m`` before the next starts so the grade profile ramps
+    linearly between them. When the remaining body is too short for a ramp, the last
+    segment runs on to the body end; one ramp becomes the wall when ``n_walls`` is 1.
+    """
+    body_end = _r(spec.length_m - spec.lead_out_m, 2)
+    limit = _r(body_end - spec.transition_m, 2)
+    cursor = _r(spec.lead_in_m + spec.transition_m, 2)
+    segments = []
+
+    def push(kind, length, grade):
+        nonlocal cursor
+        if cursor >= limit:  # no room left: the draws are spent but nothing is appended
+            return False
+        end = _r(min(cursor + length, limit), 2)
+        segments.append([kind, cursor, end, grade])
+        cursor = _r(end + spec.transition_m, 2)
+        return end < limit
+
+    while cursor < limit:
+        length, grade = _r(rng.uniform(*spec.ramp_len_m), 2), _r(rng.uniform(*spec.ramp_grade))
+        if _r(limit - cursor, 2) < spec.ramp_len_m[0]:
+            segments[-1][2] = limit
+            break
+        if not push('ramp', length, grade):
+            break
+        if not push('shelf', _r(rng.uniform(*spec.shelf_len_m), 2), _r(rng.uniform(*spec.shelf_grade))):
+            break
+        if rng.uniform() < spec.counter_prob and not push(
+                'counter', _r(rng.uniform(*spec.counter_len_m), 2), _r(rng.uniform(*spec.counter_grade))):
+            break
+    if spec.n_walls:
+        ramps = [i for i, s in enumerate(segments) if s[0] == 'ramp']
+        i = ramps[int(rng.integers(0, len(ramps)))]
+        segments[i][0], segments[i][3] = 'wall', _r(rng.uniform(*spec.wall_grade))
+    return segments
+
+
+def _rhythm(spec, rng):
+    """Grade profile of the trail rhythm plus the (start, end) of every ramp or wall."""
+    segments = _segments(spec, rng)
+    body_end = _r(spec.length_m - spec.lead_out_m, 2)
+    knots = [(0., 0.), (spec.lead_in_m, 0.)]
+    knots += [knot for _, s, e, g in segments for knot in ((s, g), (e, g))]
+    knots += [(body_end, 0.), (spec.length_m, 0.)]
+    return GradeProfile(tuple(knots)), [(s, e) for kind, s, e, _ in segments if kind in ('ramp', 'wall')]

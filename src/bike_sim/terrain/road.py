@@ -29,6 +29,7 @@ from bike_sim.terrain.obstacles import (
     SlopedPothole,
     TrapezoidBump,
 )
+from bike_sim.terrain.placement import free_intervals as _free_intervals
 from bike_sim.terrain.profile import TrackSpec
 from bike_sim.terrain.surface import ROAD_SURFACE
 
@@ -122,21 +123,6 @@ def _choose(rng: np.random.Generator, weights: Dict[str, float]) -> str:
     names = sorted(weights)
     p = np.array([weights[n] for n in names], dtype=float)
     return names[int(rng.choice(len(names), p=p / p.sum()))]
-
-
-def _free_intervals(span: Interval, occupied: Sequence[Interval], gap_m: float) -> List[Interval]:
-    """Sub-intervals of ``span`` at least ``gap_m`` clear of every occupied interval."""
-    lo, hi = span
-    free: List[Interval] = []
-    cursor = lo
-    for start, end in sorted(occupied):
-        right = min(start - gap_m, hi)
-        if right > cursor:
-            free.append((cursor, right))
-        cursor = max(cursor, end + gap_m)
-    if hi > cursor:
-        free.append((cursor, hi))
-    return free
 
 
 def _place(

@@ -31,6 +31,13 @@ namespace nativecfg {
     // --- dict readers ----------------------------------------------------------
 
     namespace detail {
+        // The one-section-per-branch chain keeps every branch's path
+        // temporaries live under -O0 codegen, so this frame legitimately
+        // exceeds the 8KB guard whose target is the per-step realtime
+        // path — config projection runs once at construction, same
+        // rationale as the binding glue frames in test_contracts.cpp.
+        NATIVE_DIAG_PUSH
+        NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         inline void section_keys(const nb::dict &d, std::string_view name, std::string_view public_path = {}) {
             if (name == "config") {
                 constexpr auto required = wire::keys("schema");
@@ -181,6 +188,7 @@ namespace nativecfg {
                 return;
             }
         }
+        NATIVE_DIAG_POP
 
         inline nb::object req(const nb::dict &d, const char *section,
                               const char *key) {

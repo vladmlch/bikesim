@@ -98,13 +98,17 @@ NativeResearchRuntime::NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> 
     for (std::size_t i = 0; i < vertices.size(); ++i)
         if (std::get<0>(vertices[i]) != c.geometry.x[i] || std::get<1>(vertices[i]) != c.geometry.z[i])
             throw std::invalid_argument("research terrain differs from physical bootstrap");
-    const auto *tire = runtime_->stepper_->tire();
     const auto *model = runtime_->stepper_->model();
     const int pitch_joint = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
     const auto dofs = model_access::readonly_buffer(model->jnt_dofadr, model->njnt,
                                                     "research pitch joint dof addresses");
-    if (!tire || tire->radii()[0] != c.geometry.front_radius || tire->radii()[1] != c.geometry.rear_radius ||
-        pitch_joint < 0 || std::cmp_not_equal(dofs[static_cast<std::size_t>(pitch_joint)], c.geometry.root_pitch_dof))
+    // Backend-agnostic presence + radii check: the writer view forwards
+    // radii() for whichever tyre backend the config selected.
+    const bool tire_mismatch = !runtime_->stepper_->has_tire() ||
+        runtime_->stepper_->tire_writer().radii()[0] != c.geometry.front_radius ||
+        runtime_->stepper_->tire_writer().radii()[1] != c.geometry.rear_radius;
+    if (tire_mismatch || pitch_joint < 0 ||
+        std::cmp_not_equal(dofs[static_cast<std::size_t>(pitch_joint)], c.geometry.root_pitch_dof))
         throw std::invalid_argument("research radii/pitch address differ from physical bootstrap");
     c.programs.validate();
     control_validate_for(c.startup_control, runtime_->physical_->rider_present());

@@ -17,6 +17,7 @@
 #include "writers/rider_forces.hpp"
 #include "writers/suspension.hpp"
 #include "writers/tire.hpp"
+#include "writers/distributed_tire.hpp"
 #include "writers/drivetrain.hpp"
 
 // The stepper.hpp view scratch is literal-sized (the writer constants live
@@ -100,7 +101,14 @@ Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
             resistance_ =
                     std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
         if (cfg.tire) {
-            tire_ = std::make_unique<TireWriter>(m_, d_, *cfg.tire);
+            // The backend string selects the writer; each writer's own
+            // ctor re-validates the section it consumes (TireWriter
+            // rejects a distributed-only config and vice versa).
+            if (cfg.tire->backend == "distributed_2d_reference")
+                distributed_tire_ = std::make_unique<DistributedTireWriter>(
+                        m_, d_, *cfg.tire);
+            else
+                tire_ = std::make_unique<TireWriter>(m_, d_, *cfg.tire);
             // Construction-sized convenience scratch — the boxed tire_qfrc
             // reroutes through compute_into instead of copying qfrc()'s
             // member out per call.
@@ -278,6 +286,7 @@ void Stepper::reset() {
         posvel_fresh_ = true;
         if (drive_) drive_->reset();
         if (tire_) tire_->reset();
+        if (distributed_tire_) distributed_tire_->reset();
         if (cruise_) cruise_->reset();
         // reset(model, data) on the post-forward pose — re-anchors grips and
         // revalidates the planar support topology like the oracle applier.
@@ -336,9 +345,144 @@ RiderForcesWriter &Stepper::rider_forces() const {
     return *rider_forces_;
 }
 
-TireWriter &Stepper::tire_writer() const {
-    if (!tire_) throw std::logic_error(kNoTire);
-    return *tire_;
+TireWriterView Stepper::tire_writer() const {
+    if (tire_) return TireWriterView(tire_.get());
+    if (distributed_tire_) return TireWriterView(distributed_tire_.get());
+    throw std::logic_error(kNoTire);
+}
+
+// ---- TireWriterView ---------------------------------------------------
+// One std::visit forward per method: the pointer variant selects the
+// engaged backend and both writers implement this surface identically.
+// The calls add one indirect dispatch, never an allocation.
+
+void TireWriterView::compute_into(const mjData *d, double dt,
+                                  std::span<double> out) const {
+    std::visit([&](auto *w) { w->compute_into(d, dt, out); }, writer_);
+}
+
+CoreStatus TireWriterView::try_compute_into(
+        const mjData *d, double dt, std::span<double> out) const {
+    return std::visit(
+            [&](auto *w) { return w->try_compute_into(d, dt, out); },
+            writer_);
+}
+
+std::vector<double> TireWriterView::qfrc(const mjData *d,
+                                         double dt) const {
+    return std::visit([&](auto *w) { return w->qfrc(d, dt); }, writer_);
+}
+
+void TireWriterView::probe_compute_into(const mjData *d, double dt,
+                                        std::span<double> out) const {
+    std::visit([&](auto *w) { w->probe_compute_into(d, dt, out); },
+               writer_);
+}
+
+std::vector<double> TireWriterView::probe_qfrc(const mjData *d,
+                                               double dt) const {
+    return std::visit([&](auto *w) { return w->probe_qfrc(d, dt); },
+                      writer_);
+}
+
+std::array<std::optional<TireSnapshot>, 2>
+TireWriterView::snapshots() const {
+    return std::visit([&](auto *w) { return w->snapshots(); }, writer_);
+}
+
+std::array<std::optional<TireSnapshot>, 2>
+TireWriterView::probe_snapshots() const {
+    return std::visit([&](auto *w) { return w->probe_snapshots(); },
+                      writer_);
+}
+
+std::array<std::optional<TireDiagnostics>, 2>
+TireWriterView::diagnostics() const {
+    return std::visit([&](auto *w) { return w->diagnostics(); }, writer_);
+}
+
+const std::array<TireSnapshot, 2> &
+TireWriterView::snapshot_storage() const {
+    return std::visit(
+            [&](auto *w) -> const auto & { return w->snapshot_storage(); },
+            writer_);
+}
+
+bool TireWriterView::snapshots_committed() const {
+    return std::visit(
+            [&](auto *w) { return w->snapshots_committed(); }, writer_);
+}
+
+const std::array<TireDiagnostics, 2> &
+TireWriterView::diagnostic_storage() const {
+    return std::visit([&](auto *w) -> const auto & {
+        return w->diagnostic_storage();
+    }, writer_);
+}
+
+const std::array<TireSnapshot, 2> &
+TireWriterView::probe_snapshot_storage() const {
+    return std::visit([&](auto *w) -> const auto & {
+        return w->probe_snapshot_storage();
+    }, writer_);
+}
+
+bool TireWriterView::probe_committed() const {
+    return std::visit(
+            [&](auto *w) { return w->probe_committed(); }, writer_);
+}
+
+const std::array<double, 2> &TireWriterView::radii() const {
+    return std::visit(
+            [&](auto *w) -> const auto & { return w->radii(); }, writer_);
+}
+
+double TireWriterView::stored_energy(const mjData *d) const {
+    return std::visit([&](auto *w) { return w->stored_energy(d); },
+                      writer_);
+}
+
+double TireWriterView::elastic_energy_j() const {
+    return std::visit(
+            [&](auto *w) { return w->elastic_energy_j(); }, writer_);
+}
+
+double TireWriterView::brush_loss_step_j() const {
+    return std::visit(
+            [&](auto *w) { return w->brush_loss_step_j(); }, writer_);
+}
+
+double TireWriterView::radial_dissipation_power_w() const {
+    return std::visit([&](auto *w) {
+        return w->radial_dissipation_power_w();
+    }, writer_);
+}
+
+void TireWriterView::set_state(std::span<const std::string> names,
+                               std::span<const double> row) const {
+    std::visit([&](auto *w) { w->set_state(names, row); }, writer_);
+}
+
+std::vector<double> TireWriterView::state() const {
+    return std::visit([&](auto *w) { return w->state(); }, writer_);
+}
+
+const std::vector<std::string> &TireWriterView::state_names() const {
+    return std::visit(
+            [&](auto *w) -> const auto & { return w->state_names(); },
+            writer_);
+}
+
+void TireWriterView::reset() const {
+    std::visit([](auto *w) { w->reset(); }, writer_);
+}
+
+void TireWriterView::restart_clock() const {
+    std::visit([](auto *w) { w->restart_clock(); }, writer_);
+}
+
+bool TireWriterView::is_distributed() const noexcept {
+    return std::holds_alternative<DistributedTireWriter *>(writer_);
 }
 
 void Stepper::set_inputs(std::span<const double> ctrl,
@@ -434,6 +578,7 @@ void Stepper::set_state(std::span<const double> qpos,
         try {
             if (drive_) drive_->reset();
             if (tire_) tire_->reset();
+            if (distributed_tire_) distributed_tire_->reset();
             if (cruise_) cruise_->reset();
             if (rider_contacts_) rider_contacts_->reset(d_);
         } catch (...) {
@@ -515,29 +660,29 @@ Stepper::resistance_components(const TireSideInput &front,
 
 std::vector<double> Stepper::tire_qfrc(double dt) {
     require_healthy();
-    if (!tire_)
-        throw std::logic_error(kNoTire);
     // compute_into writes the caller-owned construction-sized scratch —
-    // same advance+commit pipeline as qfrc(), no writer-side copy.
-    tire_->compute_into(d_, dt, tire_out_);
+    // same advance+commit pipeline as qfrc(), no writer-side copy. The
+    // view forwards to whichever backend the config engaged (and throws
+    // kNoTire when there is none).
+    tire_writer().compute_into(d_, dt, tire_out_);
     return tire_out_;
 }
 
 void Stepper::set_tire_state(std::span<const std::string> names,
                              std::span<const double> row) {
     require_healthy();
-    if (!tire_)
-        throw std::logic_error(kNoTire);
-    tire_->set_state(names, row);
+    tire_writer().set_state(names, row);
 }
 
 std::vector<double> Stepper::tire_state() const {
-    if (!tire_)
-        throw std::logic_error(kNoTire);
-    return tire_->state();
+    return tire_writer().state();
 }
 
 const std::vector<std::string> &Stepper::tire_state_names() const {
+    // The no-tire case keeps the historical compliant schema — the
+    // binding documents state_names as the default artifact's names.
+    if (tire_) return tire_->state_names();
+    if (distributed_tire_) return distributed_tire_->state_names();
     return TireWriter::state_names();
 }
 

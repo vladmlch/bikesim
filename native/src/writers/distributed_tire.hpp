@@ -1,13 +1,11 @@
 // writers/distributed_tire.hpp — native port of `DistributedTireForceApplier`
 // (src/bike_sim/sim/ride/distributed_tire_forces.py) — the distributed
-// per-station tyre backend. Task 4 of
+// per-station tyre backend. Tasks 4-5 of
 // docs/superpowers/plans/2026-10-11-distributed-tire-b-native-port.md:
-// construction, the canonical state wire, stored energy, and the
-// reset/clock/snapshot/diagnostic scaffolding. The station tick
-// (`compute_into`/`try_compute_into`/`probe_*`) is a stub here and lands in
-// Task 5; `Stepper` dispatch is Task 5 as well — until then the debug factory
-// `bike_native._debug_distributed_writer` in binding.cpp is the only entry
-// point.
+// construction, the canonical state wire, stored energy, the
+// reset/clock/snapshot/diagnostic scaffolding, and the station tick
+// (`compute_into`/`try_compute_into`/`probe_*`). `Stepper` selects this
+// writer whenever `tire.backend == "distributed_2d_reference"`.
 //
 // Divergence guide for the surrounding modules:
 //  - writers/distributed_tire.cpp — this implementation; notes that affect
@@ -107,13 +105,12 @@ public:
     // without touching station state — the init/restore re-arm.
     void restart_clock() noexcept { last_time_s_.reset(); }
 
-    // CONTRACT — the distributed tick is Task 5. `compute_into` validates the
-    // live-data/width preconditions like `TireWriter` then throws
-    // `std::logic_error` until the station loop lands; `try_compute_into`
-    // keeps the final noexcept shape (precondition failures return
-    // `CoreStatus::invalid_input`) and maps the stub throw. Both signatures
-    // and the allocation-free structure are final — Task 5 fills only the
-    // `accumulate_validated` kernel.
+    // CONTRACT — the distributed tick. `compute_into` validates the
+    // live-data/width preconditions like `TireWriter` then runs the
+    // advancing per-station kernel verbatim; `try_compute_into` reports
+    // the same preconditions through `CoreStatus` and catches residual
+    // kernel rejections, so the valid warm path is noexcept and
+    // allocation-free (BIKE_NONBLOCKING) end to end.
     [[nodiscard]] std::vector<double> qfrc(const mjData *d, double dt);
     void compute_into(const mjData *d, double dt, std::span<double> out);
     [[nodiscard]] CoreStatus try_compute_into(

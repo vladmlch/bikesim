@@ -417,7 +417,7 @@ def test_distributed_state_wire_round_trip(tmp_path):
 - Consumes: Plan A's `compute_qfrc` as the oracle, step by step (spec §4.3).
 - Produces: `Stepper.tire_qfrc(dt)` for the distributed backend equal bitwise to the golden `forces[k]['tires']`.
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 ```python
 def _live_applier(env, ref):
@@ -473,9 +473,9 @@ def test_distributed_qfrc_bitwise(tmp_path):
 
 (Check whether `Stepper` exposes diagnostics today — `binding.cpp:448` writes `multi_support` into a dict; use the actual accessor name.)
 
-- [ ] **Step 2: Run** → fails at `Stepper` construction (`requires the compliant_2d tire writer`).
+- [x] **Step 2: Run** → fails at `Stepper` construction (`requires the compliant_2d tire writer`).
 
-- [ ] **Step 3: Implement the tick** following spec §4.3 one numbered step per code block, with these lowerings:
+- [x] **Step 3: Implement the tick** following spec §4.3 one numbered step per code block, with these lowerings:
   1. `points_[s] = center + R @ local_[s]` — use the same `dgemm/dgemv` call that `compiled_profile_vertices` uses for `local @ R.T + xpos` (one `cblas_dgemv(RowMajor, NoTrans, 3, 3, 1., R, 3, local, 1, 0., out, 1)` then `+ center` component-wise, matching numpy's `center + (local @ rotation.T)` evaluation: the matmul first, then the add).
   2. `heights_[s] = profile_.height(points_[s][0])`; active iff `points_[s][2] < heights_[s]`; ids ascending.
   3. `mj_jac(m, d, jac_center_, jr_, center, body)`; `center_velocity = cblas_dgemv(RowMajor, NoTrans, 3, nv, 1., jac_center_, nv, qvel, 1, 0., …)`.
@@ -489,10 +489,10 @@ def test_distributed_qfrc_bitwise(tmp_path):
 
   `Stepper`: replace `std::unique_ptr<TireWriter>` by `std::variant<std::monostate, TireWriter, DistributedTireWriter>` (or two optionals) and dispatch every `tire_*` method; `step.cpp:962` accepts either alternative; `step.cpp` tick calls `try_compute_into` through the visitor. Remove the Task 4 debug factory.
 
-- [ ] **Step 4: Run** `bash tools/run_tests.sh native tests/reference/test_native_distributed_tire.py tests/reference/test_native_tire.py`
+- [x] **Step 4: Run** `bash tools/run_tests.sh native tests/reference/test_native_distributed_tire.py tests/reference/test_native_tire.py`
 Expected: both bitwise suites green. Triage order for a mismatch: (1) `tire_state` evolve — brush path; (2) `qfrc` but states equal — Jacobian/`dgemv` ordering or the `+=` temporary; (3) patches equal but `radial_energy_j` differs — the pairwise sum was replaced by a loop; (4) first mismatch at the first step with a hairpin of >1 active stations — `np.cross` component order.
 
-- [ ] **Step 5: Commit** (`feat(native): DistributedTireWriter tick and Stepper dispatch, bitwise against the portable reference`).
+- [x] **Step 5: Commit** (`feat(native): DistributedTireWriter tick and Stepper dispatch, bitwise against the portable reference`).
 
 ---
 
@@ -502,7 +502,7 @@ Expected: both bitwise suites green. Triage order for a mismatch: (1) `tire_stat
 - Modify: `native/src/writers/distributed_tire.cpp` (`probe_*`), `native/src/runtime/step.cpp:1905-1941` (`supports_multiple_contacts` from the writer's diagnostics; new scalar fields on the wire), `native/src/runtime/research_metrics.cpp:76`, `native/src/runtime/control.hpp:206` (both reference "compliant_2d always publishes …" — verify the distributed path publishes `penetration_m` and the grounded flag the same way)
 - Test: `tests/reference/test_native_distributed_tire.py`, `tests/reference/test_native_numeric_completion.py` (observation channel parity across backends)
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```python
 @pytest.mark.slow
@@ -540,13 +540,13 @@ def test_distributed_observations_declare_multi_contact(tmp_path):
 
 (Resolve the exact observation accessor from `tests/reference/test_native_research_environment.py` before running.)
 
-- [ ] **Step 2: Run** → probe entry missing / `supports_multiple_contacts` is `False`.
+- [x] **Step 2: Run** → probe entry missing / `supports_multiple_contacts` is `False`.
 
-- [ ] **Step 3: Implement** probe as `TireWriter` does (detached copy, cleared clock, only `probe_snapshots_` published); `step.cpp` reads `supports_multiple_contacts`, `station_count`, `active_station_count`, `nonsmooth_station_count`, `max_patch_count`, `outside_material_deflection_range`, `calibration_status`, `capability_status` from the diagnostics struct and emits them for the distributed backend (compliant wire unchanged: emit the new keys only when the backend is distributed, so compliant channel parity tests are untouched).
+- [x] **Step 3: Implement** probe as `TireWriter` does (detached copy, cleared clock, only `probe_snapshots_` published); `step.cpp` reads `supports_multiple_contacts`, `station_count`, `active_station_count`, `nonsmooth_station_count`, `max_patch_count`, `outside_material_deflection_range`, `calibration_status`, `capability_status` from the diagnostics struct and emits them for the distributed backend (compliant wire unchanged: emit the new keys only when the backend is distributed, so compliant channel parity tests are untouched).
 
-- [ ] **Step 4: Run** `bash tools/run_tests.sh native` (whole profile) → green, including `test_native_numeric_completion.py` and the research parity suite.
+- [x] **Step 4: Run** `bash tools/run_tests.sh native` (whole profile) → green, including `test_native_numeric_completion.py` and the research parity suite.
 
-- [ ] **Step 5: Commit** (`feat(native): distributed tyre probe, clock and multi-contact wire semantics`).
+- [x] **Step 5: Commit** (`feat(native): distributed tyre probe, clock and multi-contact wire semantics`).
 
 ---
 

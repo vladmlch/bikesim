@@ -455,6 +455,32 @@ WireObject wire_tire_diagnostics(const TireDiagnostics &d) {
     return out;
 }
 
+// distributed_tire_forces.py:204-213 — the distributed per-side dict,
+// its own key set in the oracle's insertion order.
+WireObject wire_distributed_tire_diagnostics(const TireDiagnostics &d) {
+    WireObject out;
+    out.emplace_back("penetration_m", Wire(d.penetration_m));
+    out.emplace_back("normal_load_n", Wire(d.normal_load_n));
+    out.emplace_back("multi_support", Wire(d.multi_support));
+    out.emplace_back("supports_multiple_contacts",
+                     Wire(d.supports_multiple_contacts));
+    out.emplace_back("capability_status", Wire(d.capability_status));
+    out.emplace_back("calibration_status", Wire(d.calibration_status));
+    out.emplace_back("station_count", Wire(d.station_count));
+    out.emplace_back("active_station_count", Wire(d.active_station_count));
+    out.emplace_back("nonsmooth_station_count",
+                     Wire(d.nonsmooth_station_count));
+    out.emplace_back("max_patch_count", Wire(d.max_patch_count));
+    out.emplace_back("outside_material_load_range",
+                     Wire(d.outside_material_load_range));
+    out.emplace_back("outside_material_deflection_range",
+                     Wire(d.outside_material_deflection_range));
+    out.emplace_back("radial_energy_j", Wire(d.radial_energy_j));
+    out.emplace_back("shear_energy_j", Wire(d.shear_energy_j));
+    out.emplace_back("brush_loss_j", Wire(d.brush_loss_j));
+    return out;
+}
+
 // ---- observation helpers (physical_observations.py) -------------------
 
 // actuator_components — rows keyed by the bare actuator name in id
@@ -957,9 +983,11 @@ PhysicalStep::PhysicalStep(
     accel_sensor_adr_ = sensor_adr(m, "sensor_frame_accel");
     gyro_sensor_adr_ = sensor_adr(m, "sensor_frame_gyro");
     crash_geoms_ = crash_geom_ids(m);
-    if (stepper_->tire() == nullptr)
+    // Either tyre backend qualifies — the writer view dispatches on
+    // tire.backend; the gate is presence, not a specific backend.
+    if (!stepper_->has_tire())
         throw std::invalid_argument(
-            "physical step requires the compliant_2d tire writer");
+            "physical step requires a configured tire writer");
     const std::size_t nv = static_cast<std::size_t>(m->nv);
     component_out_.assign(nv, 0.);
     mul_scratch_.assign(nv, 0.);
@@ -1833,8 +1861,10 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
     const std::size_t nv = static_cast<std::size_t>(m->nv);
-    const auto diags = stepper_->tire_writer().diagnostics();
-    const auto &radii = stepper_->tire_writer().radii();
+    const TireWriterView view = stepper_->tire_writer();
+    const auto diags = view.diagnostics();
+    const auto &radii = view.radii();
+    const bool distributed = view.is_distributed();
     constexpr std::array<const char *, 2> sides = {"front", "rear"};
     const std::array<std::optional<bool>, 2> grounded = {
         contacts_.front_controller_grounded,
@@ -1899,17 +1929,27 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
         }
         const double roll_speed =
             nl > 0. ? roll_num.total() / nl : velocity[0];
+        // dict(diagnostics, ...) — the backend's own diagnostic key set
+        // starts the row; observation keys then override/append in the
+        // oracle's keyword order.
         WireObject side =
-            diags[i].has_value() ? wire_tire_diagnostics(*diags[i])
-                                 : WireObject{};
+            diags[i].has_value()
+                ? (distributed
+                       ? wire_distributed_tire_diagnostics(*diags[i])
+                       : wire_tire_diagnostics(*diags[i]))
+                : WireObject{};
         const bool multi_support =
             diags[i].has_value() ? diags[i]->multi_support : false;
         const bool outside_load_range =
             diags[i].has_value() ? diags[i]->outside_material_load_range
                                  : false;
+        const bool supports_multiple =
+            diags[i].has_value() ? diags[i]->supports_multiple_contacts
+                                 : false;
         wire_set(side, "backend", Wire(std::string(s.backend)));
         wire_set(side, "unloaded_radius_m", Wire(radii[i]));
-        wire_set(side, "supports_multiple_contacts", Wire(false));
+        wire_set(side, "supports_multiple_contacts",
+                 Wire(supports_multiple));
         wire_set(side, "outside_material_load_range",
                  Wire(outside_load_range));
         wire_set(side, "patches", Wire(std::move(patches)));
@@ -1961,7 +2001,7 @@ WireObject PhysicalStep::stored_terms() const {
     out.emplace_back("shock_upper_stop", Wire(susp.shock_upper_stop));
     for (const auto &[key, value]: stepper_->drive().stored_energy())
         wire_set(out, key, diag_wire(value));
-    if (stepper_->tire() != nullptr)
+    if (stepper_->has_tire())
         wire_set(out, "tires",
                  Wire(stepper_->tire_writer().stored_energy(d)));
     if (rider_control_.has_value())
@@ -2101,7 +2141,7 @@ double PhysicalStep::loss_increment(
     loss += diag_number(last, "freehub_dissipation_power_w") * dt;
     loss += diag_number(last, "crank_clutch_dissipation_power_w") * dt;
     loss += diag_number(last, "motor_freewheel_dissipation_power_w") * dt;
-    if (stepper_->tire() != nullptr)
+    if (stepper_->has_tire())
         loss += stepper_->tire_writer().brush_loss_step_j() +
             stepper_->tire_writer().radial_dissipation_power_w() * dt;
     if (stepper_->has_rider_contacts()) {

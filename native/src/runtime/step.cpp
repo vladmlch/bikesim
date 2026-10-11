@@ -1904,8 +1904,9 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
             row.emplace_back("slip_mps", Wire(p.slip_mps));
             row.emplace_back("world_force_n",
                              wire_vec3(patch_world_force(p)));
-            // The compliant_2d backend never carries a contact couple or
-            // a non-terrain source geom (contact_state.py defaults).
+            // The supported tire backends never carry a contact couple or
+            // a non-terrain source geom (contact_state.py defaults — the
+            // distributed writer's make_patch sets working_surface too).
             row.emplace_back("couple_world_nm",
                              wire_vec3({0., 0., 0.}));
             row.emplace_back(

@@ -203,3 +203,130 @@ def test_distributed_qfrc_bitwise(tmp_path):
                                 ep.manifest['tire_snapshots'][k], k)
         _assert_diagnostics_equal(st.tire_diagnostics(),
                                   applier.diagnostics, k)
+
+
+def _integration_state(sim):
+    expected = np.empty(
+        mujoco.mj_stateSize(sim.model, mujoco.mjtState.mjSTATE_INTEGRATION))
+    mujoco.mj_getState(sim.model, sim.data, expected,
+                       mujoco.mjtState.mjSTATE_INTEGRATION)
+    return expected
+
+
+@pytest.mark.slow
+def test_distributed_probe_and_clock(tmp_path, native_module):
+    """advance=False probe isolation and the once-per-timestamp clock.
+
+    The Stepper binding exposes no tire-probe entry point (binding.cpp
+    publishes tire_qfrc only): the production probe surface is
+    NativeRideDriver.probe_step_inputs -> apply_forces(active,
+    advance=False) -> TireWriterView::probe_compute_into — the same
+    detached-copy kernel the C++ distributed_probe_isolation contract
+    drives on the writer directly. The first half gates the clock and
+    restore atomicity on the Stepper; the second gates the probe's
+    Python-visible consequences: the staged fold equals the oracle's
+    apply_forces(advance=False) fold bitwise, no committed boundary or
+    published sample moves, and the interval after the probe still lands
+    on the oracle's integration vector — only possible while the
+    committed station state and clock stay untouched by the detached
+    copy.
+    """
+    from tools.golden_episode import load_episode
+    from tools.native_config import project
+    from bike_sim.native.runtime import create_native_ride
+    from bike_sim.sim.ride.control import RideControl
+    env, g = _golden(tmp_path, steps=5)
+    ep = load_episode(g)
+    ref = mujoco.MjModel.from_binary_path(str(g / 'model.mjb'))
+    st = bike_native.Stepper(str(g / 'model.mjb'), project(env))
+    names = list(ep.tire_state_names)
+    dt = float(ref.opt.timestep)
+    st.set_state(ep.state_qpos[2], ep.state_qvel[2], ep.state_act[2],
+                 ep.state_warmstart[2], float(ep.state_time[2]))
+    st.forward()
+    st.set_tire_state(names, ep.tire_state[2])
+    # One advancing compute per timestamp (the std::invalid_argument the
+    # compliant clock test pins as ValueError).
+    st.tire_qfrc(dt)
+    with pytest.raises(ValueError, match='increasing timestamp'):
+        st.tire_qfrc(dt)
+    committed = np.asarray(st.tire_state())
+    # A rejected restore is atomic: staged decode never commits, so the
+    # state wire AND the committed clock are preserved.
+    bad = committed.copy()
+    bad[names.index('front.s000.xi')] = np.inf
+    with pytest.raises(RuntimeError, match='finite or NaN'):
+        st.set_tire_state(names, bad)
+    assert_bitwise_equal(np.asarray(st.tire_state()), committed,
+                         'rejected set_state preserves the state wire')
+    with pytest.raises(ValueError, match='increasing timestamp'):
+        st.tire_qfrc(dt)
+    st.set_tire_state(names, committed)      # a valid restore re-arms it
+    st.tire_qfrc(dt)
+    with pytest.raises(ValueError, match='increasing timestamp'):
+        st.tire_qfrc(dt)
+
+    # The runtime probe entry point: probe_step_inputs -> apply_forces
+    # (active, advance=False) -> the writer's detached probe_compute_into.
+    probe_dir = tmp_path / 'probe'
+    probe_dir.mkdir()
+    probe_env = _env(probe_dir)
+    native = create_native_ride(probe_env.sim, strict=False,
+                                record_decimation=1)
+    command = RideControl()
+    try:
+        period = probe_env.sim.physical.control_clock.steps_per_period
+        for target in range(1, period + 1):
+            probe_env.sim.step(control=command)
+            native.advance(target, command)
+            assert_bitwise_equal(native.snapshot().integration_state,
+                                 _integration_state(probe_env.sim),
+                                 f'interval {target}')
+        # The probe replays the staged pre-solve fold on the committed
+        # state; the oracle's apply_forces(advance=False) is the same fold.
+        probe_env.sim.physical.apply_forces(
+            active=True, advance=False, front=0., rear=0., control=command)
+        expected = probe_env.sim.force_accumulator.components
+        before = native.snapshot()
+        probe = native.probe_step_inputs(command)
+        assert list(probe['components']) == list(expected)
+        for name, force in expected.items():
+            assert_bitwise_equal(np.asarray(probe['components'][name]),
+                                 np.asarray(force), f'probe {name}')
+        # Probe output is published through probe_snapshots only — the
+        # resistance rows in the fold consume it — while the committed
+        # boundary and the published sample do not move.
+        after = native.snapshot()
+        assert after.step == before.step == period
+        assert before.latest_sample is not None
+        assert (after.latest_sample.interval_id
+                == before.latest_sample.interval_id)
+        probe_env.sim.step(control=command)
+        native.advance(period + 1, command)
+        assert_bitwise_equal(native.snapshot().integration_state,
+                             _integration_state(probe_env.sim),
+                             'post-probe interval')
+    finally:
+        native.close()
+        probe_env.close()
+
+
+def test_distributed_observations_declare_multi_contact(tmp_path, native_module):
+    """The committed tire channel declares the multi-contact capability:
+    the wire channel_violations (status.cpp) reads before trusting a
+    multi_support flag. The observation accessor resolved from
+    test_native_research_environment.py is snapshot().latest_sample —
+    the latest published interval's channels."""
+    from bike_sim.native.research import create_native_research
+    from bike_sim.sim.ride.control import RideControl
+    env = _env(tmp_path, duration='.05')
+    native = create_native_research(env)
+    try:
+        native.step(RideControl())
+        tires = native.snapshot().latest_sample.channels['tires']
+        for side in ('front', 'rear'):
+            assert tires[side]['supports_multiple_contacts'] is True
+            assert tires[side]['backend'] == 'distributed_2d_reference'
+    finally:
+        native.close()
+        env.close()

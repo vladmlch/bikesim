@@ -882,3 +882,50 @@ int main() {
         capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     subprocess.run([str(executable)], check=True, capture_output=True, text=True)
+
+
+def test_tire_channel_parity_across_backends(tmp_path, native_module):
+    """Observation-channel parity: each backend's tire wire equals the
+    oracle's ``tire_channels`` output for the same committed interval —
+    key-for-key, value-for-value — and the distributed-only diagnostic
+    keys (``step.cpp``'s ``wire_distributed_tire_diagnostics``) appear
+    only on the distributed wire: the compliant channel keeps its
+    established schema."""
+    from _native_runtime_support import make_python_ride, assert_tree_close
+    from bike_sim.native.runtime import create_native_ride
+    from bike_sim.sim.ride.control import RideControl
+    from test_native_distributed_tire import _env
+    command = RideControl()
+    distributed_only = {'capability_status', 'calibration_status',
+        'station_count', 'active_station_count', 'nonsmooth_station_count',
+        'max_patch_count', 'outside_material_deflection_range'}
+    # compliant_2d — the established wire, unchanged by the new keys.
+    sim = make_python_ride()
+    native = create_native_ride(sim, strict=False, record_decimation=1)
+    period = sim.physical.control_clock.steps_per_period
+    for target in range(1, period + 1):
+        sim.step(control=command)
+        native.advance(target, command)
+    oracle = sim.physical.sample.channels['tires']
+    got = native.snapshot().latest_sample.channels['tires']
+    assert_tree_close(got, oracle)
+    for side in ('front', 'rear'):
+        assert set(got[side]) == set(oracle[side])
+        assert set(got[side]).isdisjoint(distributed_only)
+    native.close()
+    # distributed_2d_reference — the declared multi-contact wire.
+    env = _env(tmp_path)
+    ride = create_native_ride(env.sim, strict=False, record_decimation=1)
+    period = env.sim.physical.control_clock.steps_per_period
+    for target in range(1, period + 1):
+        env.sim.step(control=command)
+        ride.advance(target, command)
+    oracle = env.sim.physical.sample.channels['tires']
+    got = ride.snapshot().latest_sample.channels['tires']
+    assert_tree_close(got, oracle)
+    for side in ('front', 'rear'):
+        assert set(got[side]) == set(oracle[side])
+        assert distributed_only <= set(got[side])
+        assert got[side]['supports_multiple_contacts'] is True
+    ride.close()
+    env.close()

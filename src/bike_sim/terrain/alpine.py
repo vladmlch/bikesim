@@ -20,6 +20,7 @@ from dataclasses import asdict, dataclass, fields
 import hashlib
 import json
 from math import ceil
+from pathlib import Path
 
 import numpy as np
 
@@ -316,4 +317,20 @@ def alpine_scree(seed=ALPINE_PRESET_SEED):
     return generate_alpine_track(AlpineGenSpec(), seed=seed, name=name)
 
 
-__all__ = ['ALPINE_PRESET_SEED', 'AlpineGenSpec', 'generate_alpine_track', 'alpine_scree']
+ROCKY_PRESET_SEED = 0
+ROCKY_GENSPEC_PATH = Path(__file__).resolve().parents[3] / 'examples/research/alpine_rocky_genspec.toml'
+
+
+def alpine_rocky(seed=ROCKY_PRESET_SEED):
+    """Builds the ``alpine_rocky`` preset: the multi-contact gen-spec at the pinned seed.
+
+    Deliberately violates the single-contact guards; it is the multi-contact tyre's track.
+    """
+    import tomllib
+    spec = AlpineGenSpec.from_dict(tomllib.loads(ROCKY_GENSPEC_PATH.read_text(encoding='utf-8')))
+    name = 'alpine_rocky' if seed == ROCKY_PRESET_SEED else f'alpine_rocky_{seed}'
+    return generate_alpine_track(spec, seed=seed, name=name)
+
+
+__all__ = ['ALPINE_PRESET_SEED', 'AlpineGenSpec', 'generate_alpine_track', 'alpine_scree',
+           'ROCKY_PRESET_SEED', 'alpine_rocky']

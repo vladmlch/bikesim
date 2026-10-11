@@ -31,7 +31,7 @@ from bike_sim.terrain.obstacles import (
 )
 from bike_sim.terrain.profile import TrackSpec
 from bike_sim.terrain.road import road_broken, road_smooth, road_worn
-from bike_sim.terrain.alpine import ALPINE_PRESET_SEED, alpine_scree
+from bike_sim.terrain.alpine import ALPINE_PRESET_SEED, ROCKY_PRESET_SEED, alpine_rocky, alpine_scree
 
 
 def enduro_aggressive() -> TrackSpec:
@@ -188,6 +188,7 @@ PRESETS: Dict[str, Callable[[], TrackSpec]] = {
     "road_worn": road_worn,
     "road_broken": road_broken,
     "alpine_scree": alpine_scree,
+    "alpine_rocky": alpine_rocky,
 }
 
 DEFAULT_PRESET = "enduro_aggressive"
@@ -196,6 +197,7 @@ DEFAULT_ROAD_PRESET = "road_worn"
 # Presets that are generated from a seed and accept a seed override but no length override.
 SEEDED_PRESETS: Dict[str, Tuple[Callable[..., TrackSpec], int]] = {
     "alpine_scree": (alpine_scree, ALPINE_PRESET_SEED),
+    "alpine_rocky": (alpine_rocky, ROCKY_PRESET_SEED),
 }
 
 
@@ -233,6 +235,7 @@ __all__ = [
     "get_preset",
     "enduro_aggressive",
     "alpine_scree",
+    "alpine_rocky",
     "flat",
     "single_edge",
     "washboard_only",

@@ -356,3 +356,18 @@ def test_research_gen_spec_rejects_unknown_keys_and_wrong_scenarios(tmp_path):
     good.write_text('ramp_grade = [0.1, 0.2]\n', encoding='utf-8')
     with pytest.raises(ValueError, match='--gen-spec requires'):
         research_cli.build_track(research_cli.parser().parse_args(['--scenario', 'rough_uphill', '--gen-spec', str(good)]))
+
+
+def test_alpine_rocky_preset_is_frozen_and_hazardous_by_design():
+    from bike_sim.terrain.alpine import ROCKY_PRESET_SEED, alpine_rocky
+    track = get_preset('alpine_rocky')
+    assert track.name == 'alpine_rocky' and SEEDED_PRESETS['alpine_rocky'] == (alpine_rocky, ROCKY_PRESET_SEED)
+    assert (ROOT / 'examples/research/alpine_rocky.toml').read_text(encoding='utf-8') == dump_track(track)
+    assert single_contact_hazards(track)
+
+
+def test_distributed_physics_profile_loads():
+    from bike_sim.physics.resolution import load_physics_config
+    cfg = load_physics_config(ROOT / 'examples/research/viewer_physics_distributed.toml')
+    assert cfg.tires.backend == 'distributed_2d_reference' and cfg.tires.surface_mode == 'track'
+    assert 16 <= cfg.tires.distributed.station_count <= 512

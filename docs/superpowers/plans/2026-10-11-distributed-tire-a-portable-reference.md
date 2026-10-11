@@ -1,6 +1,6 @@
 # Distributed Tyre Plan A: Portable Python Reference Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **Prerequisite:** Phase 0 of `docs/superpowers/plans/2026-10-11-multi-contact-tire.md` finished with Outcome C, and `docs/superpowers/plans/2026-10-11-alpine-scree-track.md` landed.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **Prerequisite:** Phase 0 of `docs/superpowers/plans/2026-10-11-multi-contact-tire.md` finished (Outcome C decided by the user on 2026-10-11 — the port is mandatory; the spike's numbers feed this plan's audit and `station_count`), and `docs/superpowers/plans/2026-10-11-alpine-scree-track.md` landed.
 
 **Goal:** Rewrite the experimental `distributed_2d_reference` tyre into a form a C++ writer can reproduce bit-for-bit — scalar per-station loop with an explicit operation order, a trimmed per-station state with a canonical wire schema, scalar-only diagnostics — and freeze the files the port's golden and performance gates will reference, without changing the model's physics beyond ulp-level reordering (documented before/after).
 

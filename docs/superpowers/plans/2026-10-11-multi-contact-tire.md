@@ -1,6 +1,6 @@
 # Multi-Contact Tyre: Spike, Decision Gate and Port Outline
 
-> **For agentic workers:** Phase 0 is executable as written (superpowers:executing-plans; it is a spike — nothing built in it is kept except the audit report). Phases 1–2 are a decision gate and a scoped outline: they MUST go through superpowers:brainstorming → spec → superpowers:writing-plans before any native code is written.
+> **For agentic workers:** Phase 0 is executable as written (superpowers:executing-plans; it is a spike — nothing built in it is kept except the audit report). **Decision taken 2026-10-11: Outcome C — the native port is mandatory.** Phase 0 therefore runs as a measurement step, not a gate: its outputs (recommended `station_count`, rocky-ride confirmation, stand matrix, throughput numbers) feed Plan A's audit and the distributed physics profile, and Plan A's before/after comparison. Even a poor spike outcome does not stop the port — it is recorded in the audit and carried into the port's risk list.
 
 **Goal:** Decide, on measured evidence, how the project gets a tyre that can rest on several road facets at once (a real tyre wrapping a rock), so that alpine tracks can carry realistic rocks instead of the single-contact-safe geometry the `compliant_2d` model demands.
 
@@ -155,6 +155,8 @@ EOF
 
 ## Phase 1 — Decision gate (criteria fixed before the numbers exist)
 
+**Decision taken 2026-10-11 by the user: Outcome C.** The native port is mandatory; the table below stays as the documented criteria and the spike's audit still records which row the evidence matched — that record feeds the port's risk list, not a go/no-go vote.
+
 | Outcome | Chosen when | Consequence |
 |---|---|---|
 | **A. Stop at the spike** | Stand matrix fails at dt = 0.00125 for all station counts, or the rocky track still ends invalid on the distributed tyre, or safe-track agreement is poor | The distributed tyre is not ready to carry research conclusions; alpine tracks stay single-contact-safe. A new brainstorm on the tyre model itself (not a port) would be the next step |
@@ -165,7 +167,7 @@ The user makes the choice; this plan only states the criteria so the spike measu
 
 ---
 
-## Phase 2 — Native port (only after Outcome C)
+## Phase 2 — Native port (decided: Outcome C)
 
 The brainstorm and spec for this phase are done: `docs/superpowers/specs/2026-10-11-native-distributed-tire-design.md`, with two implementation plans — `2026-10-11-distributed-tire-a-portable-reference.md` (Python reference made bitwise-portable, state wire, frozen `alpine_rocky` + distributed profile, before/after audit) and `2026-10-11-distributed-tire-b-native-port.md` (C++ writer, config, bitwise per-state gate, stands, sanitizers, RTF gate). The outline below is kept as the summary that fed that spec.
 

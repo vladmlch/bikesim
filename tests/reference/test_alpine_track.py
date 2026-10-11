@@ -275,3 +275,21 @@ def test_rocky_genspec_is_the_multi_contact_opt_in():
     assert spec.n_sharp_edges[1] >= 1
     assert spec.rock_amp_m[1] > AlpineGenSpec().rock_amp_m[1]
     assert single_contact_hazards(generate_alpine_track(spec, seed=0))
+
+
+from bike_sim.cli import ride as ride_cli
+
+
+def test_ride_resolves_the_seeded_preset():
+    assert dump_track(ride_cli.resolve_track('alpine_scree')) == dump_track(alpine_scree())
+    assert dump_track(ride_cli.resolve_track('alpine_scree', seed=7)) == dump_track(alpine_scree(seed=7))
+    with pytest.raises(ValueError, match='--length'):
+        ride_cli.resolve_track('alpine_scree', length_m=150.)
+    assert ride_cli.track_seed('alpine_scree', None) == ALPINE_PRESET_SEED
+    assert ride_cli.track_seed('alpine_scree', 9) == 9
+
+
+def test_ride_lists_the_preset_as_generated(capsys):
+    assert ride_cli._list_tracks() == 0
+    line = next(l for l in capsys.readouterr().out.splitlines() if l.split() and l.split()[0] == 'alpine_scree')
+    assert 'generated' in line and '120 m' in line

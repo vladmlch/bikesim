@@ -41,6 +41,7 @@ from bike_sim.terrain import (
     DEFAULT_ROAD_PRESET,
     PRESETS,
     ROAD_LEVEL_SPECS,
+    SEEDED_PRESETS,
     SURFACES,
     TrackFileError,
     TrackSpec,
@@ -357,7 +358,7 @@ def resolve_track(name_or_path: str, seed: Optional[int] = None, length_m: Optio
 
     Args:
         name_or_path: Registered preset name, or a path to a TOML track file.
-        seed: Generator seed override; only meaningful for road presets and files with a
+        seed: Generator seed override; only meaningful for road presets, seeded presets and files with a
             ``[generator]`` block.
         length_m: Track length override, same applicability.
 
@@ -380,6 +381,13 @@ def resolve_track(name_or_path: str, seed: Optional[int] = None, length_m: Optio
             spec.seed = int(seed)
         kwargs = {"length_m": float(length_m)} if length_m is not None else {}
         return build_road(name_or_path, spec, description=get_preset(name_or_path).description, **kwargs)
+
+    if name_or_path in SEEDED_PRESETS:
+        if length_m is not None:
+            raise ValueError(f"--length does not apply to '{name_or_path}': its length is part of the generator "
+                             f"spec; use bike-research --scenario alpine --gen-spec for another length")
+        build, default_seed = SEEDED_PRESETS[name_or_path]
+        return build(seed=default_seed if seed is None else int(seed))
 
     if name_or_path not in PRESETS:
         raise ValueError(f"unknown track '{name_or_path}'; presets: {', '.join(available_presets())} "
@@ -413,6 +421,8 @@ def track_seed(name_or_path: str, seed: Optional[int]) -> Optional[int]:
         return int(seed)
     if name_or_path in ROAD_LEVEL_SPECS:
         return int(ROAD_LEVEL_SPECS[name_or_path]().seed)
+    if name_or_path in SEEDED_PRESETS:
+        return int(SEEDED_PRESETS[name_or_path][1])
     path = Path(name_or_path)
     if _is_file_argument(name_or_path) and path.is_file():
         import tomllib
@@ -564,7 +574,7 @@ def describe_rider(rider: RiderSpecs, specs: BikeSpecs) -> str:
 def _list_tracks() -> int:
     for name in available_presets():
         track = get_preset(name)
-        kind = "generated" if name in ROAD_LEVEL_SPECS else "authored"
+        kind = "generated" if name in ROAD_LEVEL_SPECS or name in SEEDED_PRESETS else "authored"
         print(f"  {name:20s} {track.length_m:6.0f} m  {kind:9s}  {track.description}")
     return 0
 

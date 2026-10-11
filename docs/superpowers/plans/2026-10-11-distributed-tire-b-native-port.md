@@ -319,17 +319,17 @@ struct BrushResult { double xi, force, loss; };
 }
 ```
 
-- [ ] **Step 1: Failing C++ test**
+- [x] **Step 1: Failing C++ test**
 
 `native/tests/test_station.cpp`: `station_angles(16)`/`(512)` ok, `(15)`/`(513)` throw; `station_density(-.01) == (0,0)`; `station_density(.005)` with default density `(300000*(.005-0) + 0 + 0, .5*300000*.005*.005)`; `station_response(.005, -.3, w)` = `w*max(0, 1500 + 2000*(-.3))`; `station_response(0., 1., w) == (0,0)` (gate `delta > 0`).
 
-- [ ] **Step 2: Run** — CTest fails to configure the missing target.
+- [x] **Step 2: Run** — CTest fails to configure the missing target.
 
-- [ ] **Step 3: Implement** `station.cpp` exactly as Plan A's Python (`for knot, k: x = max(delta-knot, 0); force += k*x; energy += k*x*x; return (force, .5*energy)`; response: `delta > 0 ? max(0., elastic + damping*rate) : 0.`, times weight). Create `tire_common` by moving `brush_step`/`effective_friction`/`surface_at` out of `tire.cpp` without changing a character of their bodies; `tire.cpp` includes the header. `TirePatch`, `TireSnapshot`, `TireDiagnostics` move to `tire_common.hpp`; `TireDiagnostics` gains the distributed scalar fields with zero defaults: `bool supports_multiple_contacts{}; int station_count{}, active_station_count{}, nonsmooth_station_count{}, max_patch_count{}; bool outside_material_deflection_range{}; std::string calibration_status, capability_status;`.
+- [x] **Step 3: Implement** `station.cpp` exactly as Plan A's Python (`for knot, k: x = max(delta-knot, 0); force += k*x; energy += k*x*x; return (force, .5*energy)`; response: `delta > 0 ? max(0., elastic + damping*rate) : 0.`, times weight). Create `tire_common` by moving `brush_step`/`effective_friction`/`surface_at` out of `tire.cpp` without changing a character of their bodies; `tire.cpp` includes the header. `TirePatch`, `TireSnapshot`, `TireDiagnostics` move to `tire_common.hpp`; `TireDiagnostics` gains the distributed scalar fields with zero defaults: `bool supports_multiple_contacts{}; int station_count{}, active_station_count{}, nonsmooth_station_count{}, max_patch_count{}; bool outside_material_deflection_range{}; std::string calibration_status, capability_status;`.
 
-- [ ] **Step 4: Run** `bash tools/run_tests.sh native tests/reference/test_native_tire.py` → green (bitwise, unchanged), CTest green.
+- [x] **Step 4: Run** `bash tools/run_tests.sh native tests/reference/test_native_tire.py` → green (bitwise, unchanged), CTest green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add native/src/tyre/station.hpp native/src/tyre/station.cpp native/src/writers/tire_common.hpp native/src/writers/tire_common.cpp native/src/writers/tire.hpp native/src/writers/tire.cpp native/tests/test_station.cpp native/CMakeLists.txt

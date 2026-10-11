@@ -12,6 +12,7 @@
 // bound); `min`/`max` are std::min/std::max (identical
 // `b<a?b:a` / `a<b?b:a` semantics, NaN included).
 #include "tire.hpp"
+#include "tire_common.hpp"
 #include "../config_validation.hpp"
 
 #include "../contact/laws.hpp"
@@ -46,7 +47,6 @@ namespace {
     using Vec3 = std::array<double, model_access::kXYZ>;
 
     using contactlaw::normal_contact;
-    using contactlaw::brush_step;
 
     // physical_mapping.py:6-11 — resolve_id. Site contract: the wheel
     // contact geoms take the plain name check (id >= 0) — the shared
@@ -105,25 +105,6 @@ namespace {
         double f_result = 0.0;
         double c_sum = 0.0;
     };
-
-    // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide)*exp(-|v|/str).
-    double surface_mu(const nativecfg::SurfaceSpec &s, double slip) {
-        const double decay =
-                std::exp(-std::abs(slip) / s.stribeck_speed_mps);
-        return s.mu_slide + (s.mu_peak - s.mu_slide) * decay;
-    }
-
-    // surface.py:194-206 — SurfaceMap.at: finite query, first matching
-    // half-open section wins, else the default material.
-    const nativecfg::SurfaceSpec &
-    surface_at(const nativecfg::SurfaceMap &map, double x_m) {
-        if (!std::isfinite(x_m))
-            throw std::invalid_argument("material query must be finite");
-        for (const auto &sec: map.sections)
-            if (sec.start_m <= x_m && x_m < sec.end_m)
-                return sec.surface;
-        return map.surface;
-    }
 
     // SurfaceSpec.__post_init__ (surface.py:54-69) — the checks project()'s
     // input already passed; kept so a hand-built dict fails the same way.
@@ -743,18 +724,10 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         // effective_friction (tire_forces.py:56-61). material_name stays
         // a view — assigning it into the persistent diagnostics stage
         // reuses string capacity instead of building a fresh string.
-        double mu = std::numeric_limits<double>::quiet_NaN();
-        std::string_view material_name;
-        if (!surface_map_) {
-            mu = pcfg.mu;
-            material_name = "configured";
-        } else {
-            const nativecfg::SurfaceSpec &surf =
-                    surface_at(*surface_map_, p[0]);
-            mu = std::min(pcfg.mu, surface_mu(surf, slip));
-            material_name = surf.name;
-        }
-        const auto [xi_new, force, brush_loss] = brush_step(
+        const auto [mu, material_name] = tirecommon::effective_friction(
+            pcfg.mu, surface_map_ ? &*surface_map_ : nullptr, p[0],
+            slip);
+        const auto [xi_new, force, brush_loss] = tirecommon::brush_step(
             xi, slip, dot3(center_velocity, tangent), normal, tk, mu,
             pcfg.relaxation_length_m, dt);
         // force_world = normal*n + force*tangent (two elementwise roundings)

@@ -594,13 +594,13 @@ Record headless medians (both backends) and the HUD's mean achieved RTF after 20
 - Modify: `docs/RIDE.md:74-78`
 - Create: `docs/superpowers/audits/<date>-native-distributed-tire.md`
 
-- [ ] **Step 1: RIDE.md** — replace "track-material analytic `compliant_2d` tires" with "track-material analytic `compliant_2d` tires and the experimental multi-contact `distributed_2d_reference` tyre (unvalidated material; see the native distributed tyre audit)", and remove "distributed-tire" from the "does not add" list.
+- [x] **Step 1: RIDE.md** — replace "track-material analytic `compliant_2d` tires" with "track-material analytic `compliant_2d` tires and the experimental multi-contact `distributed_2d_reference` tyre (unvalidated material; see the native distributed tyre audit)", and remove "distributed-tire" from the "does not add" list.
 
-- [ ] **Step 2: Audit** — sections: commit range; per-component parity table (component → bitwise / ulp bound with reason); state schema; stands (native vs Python metrics); sanitizer runs (build ids, outcomes); RTF table (python/native headless medians, interactive mean at 1×, station count); residuals and follow-ups (calibration remains out of scope).
+- [x] **Step 2: Audit** — sections: commit range; per-component parity table (component → bitwise / ulp bound with reason); state schema; stands (native vs Python metrics); sanitizer runs (build ids, outcomes); RTF table (python/native headless medians, interactive mean at 1×, station count); residuals and follow-ups (calibration remains out of scope).
 
-- [ ] **Step 3: Final gates** — `bash tools/run_tests.sh native` then `bash tools/run_tests.sh full`; both green or the documented platform-baseline failure set only (as recorded in `docs/RIDE.md`).
+- [x] **Step 3: Final gates** — `bash tools/run_tests.sh native` then `bash tools/run_tests.sh full`; both green or the documented platform-baseline failure set only (as recorded in `docs/RIDE.md`).
 
-- [ ] **Step 4: Commit** (`docs: native distributed tyre capability and acceptance audit`).
+- [x] **Step 4: Commit** (`docs: native distributed tyre capability and acceptance audit`).
 
 ---
 

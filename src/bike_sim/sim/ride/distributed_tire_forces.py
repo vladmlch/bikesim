@@ -5,6 +5,7 @@ Tangential forces and velocities use the SAME material-point Jacobian; a
 snapshot retains each patch and the physical resultant wrench.
 """
 import copy
+from dataclasses import dataclass
 import numpy as np
 import mujoco
 from bike_sim.physics.checks import scalar
@@ -14,6 +15,16 @@ from bike_sim.terrain.profile_distance import SignedProfile
 from bike_sim.sim.ride.tire_forces import _BrushState, effective_friction
 from bike_sim.sim.ride.physical_mapping import resolve_id, point_jacobian
 from bike_sim.sim.ride.contact_state import ContactPatch, WheelContactSnapshot
+
+
+@dataclass
+class _StationState:
+    """Per-station brush state: only what the next interval reads (spec section 4.1)."""
+    xi: float = 0.0
+    tangent: np.ndarray | None = None
+
+
+_STATION_LEAVES = ('xi', 'tangent.0', 'tangent.1', 'tangent.2')
 
 
 class DistributedTireForceApplier:
@@ -46,6 +57,47 @@ class DistributedTireForceApplier:
         self.last_time_s = None
 
     def restart_clock(self):
+        self.last_time_s = None
+
+    def state_names(self) -> list[str]:
+        """Canonical wire columns: side-major, station-major, then xi and the tangent components."""
+        return [f'{side}.s{index:03d}.{leaf}' for side in ('front', 'rear')
+                for index in range(len(self.angles)) for leaf in _STATION_LEAVES]
+
+    def state_dict(self) -> dict:
+        """{'names': [...], 'row': ndarray}: NaN for an inactive station or an unset tangent."""
+        row = np.full(2 * len(self.angles) * 4, np.nan)
+        for (side, index), state in self.states.items():
+            base = (0 if side == 'front' else 1) * len(self.angles) * 4 + index * 4
+            row[base] = float(state.xi)
+            if state.tangent is not None:
+                row[base + 1:base + 4] = np.asarray(state.tangent, float)
+        return {'names': self.state_names(), 'row': row}
+
+    def set_state(self, names, row) -> None:
+        """Inverse of state_dict; every canonical column is required and unknown
+        columns are rejected — the wire schema is the native writer's contract."""
+        index = {str(n): i for i, n in enumerate(names)}
+        row = np.asarray(row, float)
+        canonical = set(self.state_names())
+        for name in index:
+            if name not in canonical:
+                raise ValueError(f'tire state has unknown column {name}')
+        if row.shape != (len(index),):
+            raise ValueError(f'tire state row has {row.shape} cells for {len(index)} columns')
+        states = {}
+        for side in ('front', 'rear'):
+            for station in range(len(self.angles)):
+                keys = [f'{side}.s{station:03d}.{leaf}' for leaf in _STATION_LEAVES]
+                for key in keys:
+                    if key not in index:
+                        raise ValueError(f'tire state is missing column {key}')
+                values = np.array([row[index[k]] for k in keys])
+                if np.isnan(values[0]):
+                    continue
+                tangent = None if np.isnan(values[1:]).all() else values[1:].copy()
+                states[(side, station)] = _StationState(float(values[0]), tangent)
+        self.states = states
         self.last_time_s = None
 
     def _geometry(self, data, side):

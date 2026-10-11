@@ -47,3 +47,32 @@ def test_station_count_ceiling():
         station_angles(513)
     with pytest.raises(ValueError):
         DistributedTireConfig(station_count=1024)
+
+
+def _stand():
+    m, d, tire = wheel_stand(.00125, 32)
+    return m, d, tire
+
+
+def test_state_wire_names_and_round_trip():
+    from bike_sim.sim.ride.distributed_tire_forces import _StationState
+    m, d, tire = _stand()
+    names = tire.state_names()
+    assert len(names) == 2 * 32 * 4
+    assert names[:4] == ['front.s000.xi', 'front.s000.tangent.0', 'front.s000.tangent.1', 'front.s000.tangent.2']
+    assert names[-1] == 'rear.s031.tangent.2'
+    tire.states = {('front', 3): _StationState(.002, np.array([1., 0., 0.])), ('rear', 7): _StationState(-.001, None)}
+    wire = tire.state_dict()
+    assert wire['names'] == names and wire['row'].shape == (len(names),)
+    assert wire['row'][names.index('front.s003.xi')] == .002
+    assert np.isnan(wire['row'][names.index('rear.s007.tangent.0')])
+    assert np.isnan(wire['row'][names.index('front.s000.xi')])
+    tire.states = {}
+    tire.set_state(wire['names'], wire['row'])
+    assert set(tire.states) == {('front', 3), ('rear', 7)}
+    assert tire.states[('front', 3)].xi == .002 and tire.states[('rear', 7)].tangent is None
+    assert np.array_equal(tire.states[('front', 3)].tangent, [1., 0., 0.])
+    with pytest.raises(ValueError, match='rear.s031.tangent.2'):
+        tire.set_state(wire['names'][:-1], wire['row'][:-1])
+    with pytest.raises(ValueError, match='front.s000.bogus'):
+        tire.set_state(['front.s000.bogus'], [0.])

@@ -23,3 +23,27 @@ def test_step_rig_matches_the_pinned_trace_to_reordering_tolerance():
     assert m['max_patch_count'] == BEFORE_MAX_PATCHES >= 2
     assert m['energy_residual_ratio'] <= .05
     assert m['native_wheel_contact_count'] == 0
+
+
+def test_scalar_station_formulas_equal_the_vectorised_ones_bitwise():
+    material = HingeDensity()
+    deltas = np.array([-.01, 0., 1e-6, .003, .004, .0041, .011, .012, .02])
+    rates = np.array([-.3, 0., .2, -1., .5, 0., .1, -.1, 2.])
+    weights = np.full(len(deltas), 2 * np.pi / 128)
+    vec_force, vec_energy = normal_station_response(deltas, rates, weights, material)
+    vec_density, vec_density_energy = density_response(deltas, material)
+    from bike_sim.physics.distributed_tire import station_density, station_response
+    for i in range(len(deltas)):
+        f, e = station_response(float(deltas[i]), float(rates[i]), float(weights[i]), material)
+        d, de = station_density(float(deltas[i]), material)
+        assert (f, e) == (float(vec_force[i]), float(vec_energy[i]))
+        assert (d, de) == (float(vec_density[i]), float(vec_density_energy[i]))
+
+
+def test_station_count_ceiling():
+    from bike_sim.physics.distributed_tire import station_angles, DistributedTireConfig
+    station_angles(512)
+    with pytest.raises(ValueError, match='512'):
+        station_angles(513)
+    with pytest.raises(ValueError):
+        DistributedTireConfig(station_count=1024)

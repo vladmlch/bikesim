@@ -92,9 +92,15 @@ class DistributedTireConfig:
 
 
 
+MAX_STATION_COUNT = 512
+"""Upper bound the native writer sizes its allocation-free scratch against."""
+
+
 def station_angles(count: int):
     if isinstance(count, bool) or not isinstance(count, int) or count < 16:
         raise ValueError('at least sixteen tread stations required')
+    if count > MAX_STATION_COUNT:
+        raise ValueError(f'at most {MAX_STATION_COUNT} tread stations supported')
     return 2*np.pi*np.arange(count)/count, np.full(count, 2*np.pi/count)
 
 
@@ -114,6 +120,32 @@ def normal_station_response(delta, delta_rate, weights, material: HingeDensity):
     elastic, energy = density_response(delta, material)
     force = np.where(delta > 0, np.maximum(0., elastic+material.damping_ns_m*rate), 0.)
     return w*force, w*energy
+
+
+def station_density(delta: float, material: HingeDensity) -> tuple[float, float]:
+    """One station's elastic force and energy per radian: the scalar form of density_response.
+
+    The knot sum is sequential, which is what numpy's pairwise sum does below eight terms,
+    so the result is bitwise the vectorised value for the same station.
+    """
+    if not np.isfinite(delta):
+        raise ValueError('contact penetration must be finite')
+    force = 0.
+    energy = 0.
+    for knot, k in zip(material.knots_m, material.stiffness_n_m):
+        x = max(delta - knot, 0.)
+        force += k * x
+        energy += k * x * x
+    return force, .5 * energy
+
+
+def station_response(delta: float, rate: float, weight: float, material: HingeDensity) -> tuple[float, float]:
+    """One station's normal load and stored energy: the scalar form of normal_station_response."""
+    if not (np.isfinite(delta) and np.isfinite(rate) and np.isfinite(weight)) or weight < 0:
+        raise ValueError('invalid contact quadrature')
+    elastic, energy = station_density(delta, material)
+    force = max(0., elastic + material.damping_ns_m * rate) if delta > 0 else 0.
+    return weight * force, weight * energy
 
 
 def flat_load(deflection_m, radius_m, material: HingeDensity, station_count=512, phase_rad=0.):

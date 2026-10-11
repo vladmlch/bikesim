@@ -18,7 +18,7 @@ committed.
 Load check (Task 0.1): the distributed profile loads, the plant builds, and
 `summary.json → resolved_config.physics.tires.backend` resolves to
 `distributed_2d_reference` with `station_count = 128` and the synthetic density
-table above. The flat smoke run (`--duration 0.2`) ended at 0.156 s with reason
+table above. The flat smoke run (`--duration 0.2`) ended at 0.160 s with reason
 `numerical_quality` — see methodology note M2.
 
 ### Methodology notes (deviations from the brief, all recorded, none blocking)
@@ -143,8 +143,13 @@ gate during rollout (M4), not a terrain event.
 | `multi_support` fraction (0.1 s samples) | 0.0 % front / 1.0 % rear | 1.5 % front / 4.0 % rear |
 | Max normalized energy residual | 0.1747 | 0.1620 |
 | Rear slip distance / peak rear slip | 5.25 m / 1.62 m/s | 28.69 m / 3.36 m/s |
-| Mean front load share | 0.290 | 0.284 |
+| Mean front load share (telemetry-derived *) | 0.290 | 0.284 |
 | Wall time (≈) | ~90 s | ~70 s |
+
+\* Mean front load share here is a telemetry-derived mean over sampled
+contact intervals; the episode `front_load_fraction_mean` summary field
+(0.262 compliant / 0.277 distributed) uses a different aggregation — both
+put the front/rear ratio within ~4 % of each other.
 
 Compliant `multi_support` violations fire where expected — sampled true at
 x ≈ 21.2 m (inside scree band 14.8–28.3) and x ≈ 46.7 m (inside scree
@@ -168,7 +173,7 @@ Same flags as §4 (`--track-file examples/research/alpine_scree.toml`).
 | Metric | compliant_2d | distributed_2d_reference (n=128) | Ratio D/C |
 |---|---|---|---|
 | Distance reached (20 s) | 58.02 m | 28.63 m | **0.49** |
-| Mean front load share | 0.256 | 0.266 | 1.04 |
+| Mean front load share (telemetry-derived, as §4 *) | 0.256 | 0.266 | 1.04 |
 | Peak rear slip | 1.239 m/s | 3.394 m/s | **2.74** |
 | Rear slip distance | 4.46 m | 28.87 m | **6.5** |
 | Max energy residual ratio | 0.1747 | 0.1617 | 0.93 |
@@ -185,7 +190,7 @@ difference, not a track difference.
 ## 6. Observations
 
 1. **The model works.** 36/36 stands pass at all tested counts (64–256);
-   energy residuals stay ≤ 0.7 % on the stands and are dt-consistent (halving
+   energy residuals stay ≤ 0.73 % on the stands and are dt-consistent (halving
    dt halves residual). Up to 17 simultaneous patches on the real track with
    zero native contacts — genuine multi-contact, no silent fallback.
 2. **It is in-scope where compliant is not.** On the rocky track compliant

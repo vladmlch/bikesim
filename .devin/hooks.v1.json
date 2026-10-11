@@ -1,0 +1,12 @@
+{
+  "UserPromptSubmit": [
+    {
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "<reminder>AGENTS.md:6  ## Behavioral Stability</reminder>"
+        }
+      ]
+    }
+  ]
+}

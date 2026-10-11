@@ -1,6 +1,12 @@
 1. for Python always use uv
 2. you even can use it like `uv run --with numpy --with matplotlib ...`
-3.
+
+# Libraries Source code
+
+Always use this code as a reference:
+
+- numpy:  /Users/vladislav.molchanov/Desktop/Projects_downloaded/numpy
+- mujoco: /Users/vladislav.molchanov/Desktop/Projects_downloaded/mujoco
 
 
 ## Behavioral Stability

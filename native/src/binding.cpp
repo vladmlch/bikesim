@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
+#include <cmath>
 #include <exception>
 #include <ranges>
 #include <span>
@@ -27,6 +29,7 @@
 #include <nanobind/stl/vector.h>
 #include "stepper.hpp"
 #include "config.hpp"
+#include "tyre/distance.hpp"
 #include "binding_readers.hpp"
 #include "binding_arrays.hpp"
 #include "engine_call.hpp"
@@ -129,6 +132,24 @@ namespace {
             };
         }
     };
+
+    // Owned (N,2) float64 array — the 2-D sibling of wire::owned_array for
+    // the _debug_signed_distance test surface, keeping the same
+    // capsule-owner discipline (the ndarray owns the released buffer).
+    nb::ndarray<nb::numpy, double, nb::shape<-1, -1>>
+    as_owned_grid(std::vector<double> values) {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) ndarray requires runtime-sized contiguous primitive storage
+        auto storage = std::make_unique<double[]>(values.size());
+        std::ranges::copy(values, storage.get());
+        auto [data, owner] = wire::detail::release_with_owner(
+            std::move(storage), [](double *value) {
+                return nb::capsule(value, [](void *p) noexcept {
+                    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) capsule owns the released unique_ptr array
+                    delete[] static_cast<double *>(p);
+                });
+            });
+        return {data, {values.size() / 2, 2}, owner};
+    }
 
     OwnedTireSideInput side_input(const nb::dict &snaps, const char *side) {
         if (!snaps.contains(side))
@@ -252,6 +273,69 @@ NB_MODULE(bike_native, m) {
             return std::pair{succeeded, std::string(error.message.data())};
         });
     });
+    // Debug-only oracle surface for the SignedProfile port — used by
+    // tests/reference/test_native_distributed_tire.py to compare
+    // biketyre::SignedProfile bitwise against terrain/profile_distance.py.
+    // Not part of the runtime API; batched so the oracle's whole-array
+    // validation order (finite before domain) is preserved.
+    m.def("_debug_signed_distance",
+          [](nb::handle raw_vertices, nb::handle raw_points) {
+        using Table = nb::ndarray<const double, nb::shape<-1, 2>,
+                                  nb::c_contig>;
+        Table vertices;
+        try {
+            vertices = nb::cast<Table>(raw_vertices);
+        } catch (const nb::cast_error &) {
+            throw std::invalid_argument(
+                "road vertices must be finite and strictly increasing in X");
+        }
+        const std::size_t vertex_count = vertices.shape(0);
+        std::vector<std::array<double, 2>> verts(vertex_count);
+        for (std::size_t i = 0; i < vertex_count; ++i)
+            verts[i] = {vertices(i, 0), vertices(i, 1)};
+        const biketyre::SignedProfile profile(std::move(verts));
+        Table points;
+        try {
+            points = nb::cast<Table>(raw_points);
+        } catch (const nb::cast_error &) {
+            throw std::invalid_argument(
+                "distance queries must be a finite (N, 2) array");
+        }
+        const std::size_t n = points.shape(0);
+        // profile_distance.py:42-44 — the oracle validates finiteness of
+        // the whole batch, then heights over the whole batch (the domain
+        // gate), before the per-point loop. Keep that error order.
+        for (std::size_t i = 0; i < n; ++i)
+            if (!std::isfinite(points(i, 0)) || !std::isfinite(points(i, 1)))
+                throw std::invalid_argument(
+                    "distance queries must be a finite (N, 2) array");
+        for (std::size_t i = 0; i < n; ++i)
+            static_cast<void>(profile.height(points(i, 0)));
+        std::vector<double> distance(n);
+        std::vector<double> normal(2 * n);
+        std::vector<double> point(2 * n);
+        std::vector<std::int64_t> segment(n);
+        std::vector<char> nonsmooth(n);
+        for (std::size_t i = 0; i < n; ++i) {
+            const biketyre::PointDistance row =
+                profile.query({points(i, 0), points(i, 1)});
+            distance[i] = row.distance;
+            normal[2 * i] = row.normal[0];
+            normal[2 * i + 1] = row.normal[1];
+            point[2 * i] = row.point[0];
+            point[2 * i + 1] = row.point[1];
+            segment[i] = row.segment;
+            nonsmooth[i] = static_cast<char>(row.nonsmooth);
+        }
+        return nb::make_tuple(as_owned(std::move(distance)),
+                              as_owned_grid(std::move(normal)),
+                              as_owned_grid(std::move(point)),
+                              wire::owned_array<std::int64_t>(segment),
+                              as_owned_bool(std::move(nonsmooth)));
+    }, nb::arg("vertices"), nb::arg("points"),
+        "Debug test surface: signed profile distance oracle rows "
+        "(distance, normal, point, segment, nonsmooth) for (N,2) inputs.")
+    ;
     stepper_class
             .def(nb::init<const std::string &>())
             .def(nb::init<const std::string &, nb::handle>(),

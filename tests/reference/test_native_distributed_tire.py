@@ -46,6 +46,22 @@ def _golden(tmp_path, steps=40):
     return env, tmp_path / 'g'
 
 
+def test_signed_distance_matches_python_bitwise():
+    from bike_sim.terrain.profile_distance import SignedProfile
+    rng = np.random.default_rng(3)
+    x = np.linspace(0., 12., 2401)
+    z = .05 * np.sin(x) + np.where((x > 5.) & (x < 5.3), .04, 0.) + rng.normal(0., .002, len(x))
+    vertices = np.column_stack([x, z])
+    pts = np.column_stack([rng.uniform(.1, 11.9, 400), rng.uniform(-.1, .5, 400)])
+    want = SignedProfile(vertices).query(pts)
+    got = bike_native._debug_signed_distance(vertices, pts)
+    assert_bitwise_equal(np.asarray(got[0]), want.distance, 'distance')
+    assert_bitwise_equal(np.asarray(got[1]), want.normal, 'normal')
+    assert_bitwise_equal(np.asarray(got[2]), want.point, 'point')
+    assert np.array_equal(np.asarray(got[3]), want.segment)
+    assert np.array_equal(np.asarray(got[4]), want.nonsmooth)
+
+
 def test_config_projection_carries_the_distributed_section(tmp_path):
     from tools.native_config import project, validate_config
     env = _env(tmp_path, duration='.01')

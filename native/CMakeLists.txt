@@ -464,6 +464,7 @@ add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/drivetrain/shifting.cpp src/drivetrain/motor.cpp
   src/drivetrain/freehub.cpp src/writers/drivetrain.cpp
   src/writers/cruise.cpp src/tyre/profile.cpp
+  src/tyre/distance.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp
   src/rider/least_squares.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
@@ -550,6 +551,39 @@ add_custom_command(TARGET native_contract_tests POST_BUILD
     "$<TARGET_FILE:native_contract_tests>"
   VERBATIM)
 
+# tyre/distance.cpp (SignedProfile) contract cases — same build context as
+# native_contract_tests, without the allocation-fault override TU.
+add_executable(native_distance_tests tests/test_distance.cpp)
+set_target_properties(native_distance_tests PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(native_distance_tests PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(native_distance_tests PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_include_directories)
+  target_include_directories(native_distance_tests SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(native_distance_tests SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+if(_native_contract_link_options)
+  target_link_options(native_distance_tests PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(native_distance_tests PRIVATE bike_native_contract_core bike_native_engine)
+# tyre/distance.cpp resolves CBLAS through Apple Accelerate, the same BLAS
+# provider bike_native links.
+target_link_libraries(native_distance_tests PRIVATE "-framework Accelerate")
+add_custom_command(TARGET native_distance_tests POST_BUILD
+  COMMAND install_name_tool -change
+    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+    "${MJ_DIR}/libmujoco.3.12.0.dylib"
+    "$<TARGET_FILE:native_distance_tests>"
+  VERBATIM)
+
 # Prototype native benchmark (native-safety runtime plan task R2). The TU
 # lives outside native/, so its directory joins the first-party source roots
 # below and the target inherits the extension's warning/hardening/sanitizer
@@ -593,6 +627,7 @@ add_custom_command(TARGET native_bench POST_BUILD
 include(CTest)
 if(BUILD_TESTING)
   add_test(NAME native_contract_tests COMMAND native_contract_tests)
+  add_test(NAME native_distance_tests COMMAND native_distance_tests)
   add_test(NAME native_bench_bare
     COMMAND native_bench bare 20 5
             --artifacts "${_native_bench_dir}/artifacts")

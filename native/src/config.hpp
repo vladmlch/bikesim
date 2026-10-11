@@ -106,18 +106,40 @@ namespace nativecfg {
             }
             if (name == "tire") {
                 constexpr auto required = wire::keys("backend", "surface_mode", "front", "rear", "significant_delta_m", "significance_fraction", "distinct_normal_deg");
-                constexpr auto optional = wire::keys("surface_map");
+                constexpr auto optional = wire::keys("surface_map", "distributed");
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
                 return;
             }
             if (name == "tire.front" || name == "tire.rear") {
-                constexpr auto required = wire::keys("material", "tangent_k_n_m", "mu", "relaxation_length_m");
-                constexpr auto optional = wire::keys();
+                // material is backend-conditional: required for compliant_2d,
+                // forbidden for distributed_2d_reference — the domain rule
+                // lives in validate(TireConfig), the key table stays open.
+                constexpr auto required = wire::keys("tangent_k_n_m", "mu", "relaxation_length_m");
+                constexpr auto optional = wire::keys("material");
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
                 return;
             }
             if (name == "tire.front.material" || name == "tire.rear.material") {
                 constexpr auto required = wire::keys("radial_k_n_m", "radial_c_ns_m", "pressure_pa_gauge", "provenance", "valid_load_range_n");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.distributed") {
+                constexpr auto required = wire::keys("station_count", "density", "front", "rear");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.distributed.front" || name == "tire.distributed.rear") {
+                constexpr auto required = wire::keys("density", "fitting_dataset_id", "valid_load_range_n", "valid_deflection_range_m", "calibration_status");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name.ends_with(".density")) {
+                // tire.distributed.density and each wheel's own density law.
+                constexpr auto required = wire::keys("knots_m", "stiffness_n_m", "damping_ns_m", "provenance");
                 constexpr auto optional = wire::keys();
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
                 return;
@@ -368,11 +390,15 @@ namespace nativecfg {
     inline TireParams tire_params_from_dict(const nb::dict &d, const char *s) {
         detail::section_keys(d, s);
         TireParams p;
-        {
+        // material rides the wire iff the backend is compliant_2d — the
+        // distributed backend's hinge-density law lives under
+        // tire.distributed. Parse what arrives; validate(TireConfig) owns
+        // the per-backend presence rule.
+        if (d.contains("material")) {
             const nb::dict m = detail::req_dict(d, s, "material");
             const std::string sm_path = std::string(s) + ".material";
             const char *sm = sm_path.c_str();
-            p.material = {
+            p.material = TireMaterial{
                 .radial_k_n_m = detail::req_f64(m, sm, "radial_k_n_m"),
                 .radial_c_ns_m = detail::req_f64(m, sm, "radial_c_ns_m"),
                 .pressure_pa_gauge = detail::req_f64(m, sm, "pressure_pa_gauge"),
@@ -386,16 +412,45 @@ namespace nativecfg {
         return p;
     }
 
+    inline HingeDensity hinge_density_from_dict(const nb::dict &d, const char *s) {
+        detail::section_keys(d, s);
+        return {
+            .knots_m = wire::vector(detail::req(d, s, "knots_m"),
+                                    detail::path(s, "knots_m")),
+            .stiffness_n_m = wire::vector(detail::req(d, s, "stiffness_n_m"),
+                                          detail::path(s, "stiffness_n_m")),
+            .damping_ns_m = detail::req_f64(d, s, "damping_ns_m"),
+            .provenance = detail::req_str(d, s, "provenance"),
+        };
+    }
+
+    inline DistributedMaterial distributed_material_from_dict(const nb::dict &d,
+                                                            const std::string &s) {
+        detail::section_keys(d, s);
+        DistributedMaterial m;
+        const std::string density_path = s + ".density";
+        m.density = hinge_density_from_dict(
+            detail::req_dict(d, s.c_str(), "density"), density_path.c_str());
+        m.fitting_dataset_id = detail::req_str(d, s.c_str(), "fitting_dataset_id");
+        m.valid_load_range_n = detail::req_vec2(d, s.c_str(), "valid_load_range_n");
+        m.valid_deflection_range_m =
+                detail::req_vec2(d, s.c_str(), "valid_deflection_range_m");
+        m.calibration_status = detail::req_str(d, s.c_str(), "calibration_status");
+        return m;
+    }
+
     inline TireConfig tire_from_dict(const nb::dict &top) {
         const char *s = "tire";
         const nb::dict d = detail::req_dict(top, "config", s);
         TireConfig c;
         c.backend = detail::req_str(d, s, "backend");
-        // Only compliant_2d is ported; the config layer is the honest place to
-        // say so (project() never emits another backend).
-        if (c.backend != "compliant_2d")
+        // Both backends are accepted at the config layer; the writer
+        // boundary stays honest about which law it implements (compliant_2d
+        // today — the distributed writer lands with the Stepper dispatch).
+        if (c.backend != "compliant_2d" && c.backend != "distributed_2d_reference")
             throw std::invalid_argument(
-                "config.tire.backend must be 'compliant_2d'");
+                "config.tire.backend must be 'compliant_2d' or "
+                "'distributed_2d_reference'");
         c.surface_mode = detail::req_str(d, s, "surface_mode");
         if (c.surface_mode != "configured" && c.surface_mode != "track")
             throw std::invalid_argument(
@@ -409,6 +464,20 @@ namespace nativecfg {
         c.significance_fraction =
                 detail::req_f64(d, s, "significance_fraction");
         c.distinct_normal_deg = detail::req_f64(d, s, "distinct_normal_deg");
+        if (d.contains("distributed")) {
+            const nb::dict dist = detail::req_dict(d, s, "distributed");
+            const char *sd = "tire.distributed";
+            c.distributed = DistributedConfig{
+                .station_count = detail::req_int(dist, sd, "station_count"),
+                .density = hinge_density_from_dict(
+                    detail::req_dict(dist, sd, "density"),
+                    "tire.distributed.density"),
+                .front = distributed_material_from_dict(
+                    detail::req_dict(dist, sd, "front"), "tire.distributed.front"),
+                .rear = distributed_material_from_dict(
+                    detail::req_dict(dist, sd, "rear"), "tire.distributed.rear"),
+            };
+        }
         if (c.surface_mode == "track" || d.contains("surface_map")) {
             const nb::dict sm =
                     detail::req_dict(d, s, "surface_map");

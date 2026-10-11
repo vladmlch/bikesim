@@ -246,10 +246,61 @@ namespace nativecfg {
         if (!nonblank(s.provenance)) throw std::invalid_argument(std::string(path) + ".provenance");
     }
     inline void validate(const TireParams &s, std::string_view path = "config.tire") {
-        validate(s.material, std::string(path) + ".material");
+        // material is backend-conditional: validate(TireConfig) enforces the
+        // presence rule; when engaged the TireSpec fields check as before.
+        if (s.material) validate(*s.material, std::string(path) + ".material");
         validation::positive(s.tangent_k_n_m, std::string(path) + ".tangent_k_n_m");
         validation::nonnegative(s.mu, std::string(path) + ".mu");
         validation::positive(s.relaxation_length_m, std::string(path) + ".relaxation_length_m");
+    }
+    // HingeDensity.__post_init__ (distributed_tire.py:18-29): nonempty
+    // aligned tables, all values finite, knots strictly increasing from
+    // zero, nonnegative stiffnesses/damping and a nonblank provenance.
+    inline void validate(const HingeDensity &s, std::string_view path) {
+        const std::string p(path);
+        if (s.knots_m.empty() || s.knots_m.size() != s.stiffness_n_m.size())
+            throw std::invalid_argument(p + ": invalid density table shape");
+        for (const double knot: s.knots_m)
+            validation::finite(knot, p + ".knots_m");
+        if (s.knots_m.front() != 0.)
+            throw std::invalid_argument(p + ".knots_m");
+        for (std::size_t i = 1; i < s.knots_m.size(); ++i)
+            if (s.knots_m[i] <= s.knots_m[i - 1])
+                throw std::invalid_argument(p + ".knots_m: strictly increasing required");
+        for (const double stiffness: s.stiffness_n_m)
+            validation::nonnegative(stiffness, p + ".stiffness_n_m");
+        validation::nonnegative(s.damping_ns_m, p + ".damping_ns_m");
+        if (!nonblank(s.provenance))
+            throw std::invalid_argument(p + ".provenance");
+    }
+    // DistributedWheelMaterial.__post_init__ (distributed_tire.py:40-51):
+    // its own density law, a nonblank fit identity, ordered validity
+    // ranges and the fixed experimental calibration status.
+    inline void validate(const DistributedMaterial &s, std::string_view path) {
+        const std::string p(path);
+        validate(s.density, p + ".density");
+        if (!nonblank(s.fitting_dataset_id))
+            throw std::invalid_argument(p + ".fitting_dataset_id");
+        validation::nonnegative(s.valid_load_range_n[0], p + ".valid_load_range_n");
+        validation::finite(s.valid_load_range_n[1], p + ".valid_load_range_n");
+        if (s.valid_load_range_n[0] >= s.valid_load_range_n[1])
+            throw std::invalid_argument(p + ".valid_load_range_n");
+        validation::nonnegative(s.valid_deflection_range_m[0], p + ".valid_deflection_range_m");
+        validation::finite(s.valid_deflection_range_m[1], p + ".valid_deflection_range_m");
+        if (s.valid_deflection_range_m[0] >= s.valid_deflection_range_m[1])
+            throw std::invalid_argument(p + ".valid_deflection_range_m");
+        if (s.calibration_status != "experimental_unvalidated")
+            throw std::invalid_argument(p + ".calibration_status");
+    }
+    // DistributedTireConfig.__post_init__ (distributed_tire.py:65-80):
+    // station_angles bounds (16..MAX_STATION_COUNT) and the resolved
+    // per-wheel material records.
+    inline void validate(const DistributedConfig &s) {
+        if (s.station_count < 16 || s.station_count > 512)
+            throw std::invalid_argument("config.tire.distributed.station_count");
+        validate(s.density, "config.tire.distributed.density");
+        validate(s.front, "config.tire.distributed.front");
+        validate(s.rear, "config.tire.distributed.rear");
     }
     inline void validate(const SurfaceSpec &s, std::string_view path = "config.tire.surface") {
         validation::positive(s.mu_peak, std::string(path) + ".mu_peak");
@@ -259,13 +310,36 @@ namespace nativecfg {
         if (s.mu_slide > s.mu_peak) throw std::invalid_argument(std::string(path) + ".mu_slide");
     }
     inline void validate(const TireConfig &s) {
+        const bool distributed = s.backend == "distributed_2d_reference";
+        if (s.backend != "compliant_2d" && !distributed)
+            throw std::invalid_argument("config.tire.backend");
+        if (s.surface_mode != "track" && s.surface_mode != "configured")
+            throw std::invalid_argument("config.tire.surface_mode");
+        // Spec section 6 wire rule: tire.distributed is required iff the
+        // backend is distributed_2d_reference, and the TireSpec material is
+        // required iff the backend is compliant_2d — the distributed
+        // material lives under the distributed section instead.
+        if (distributed) {
+            if (!s.distributed)
+                throw std::invalid_argument("config.tire.distributed");
+            if (s.front.material)
+                throw std::invalid_argument("config.tire.front.material");
+            if (s.rear.material)
+                throw std::invalid_argument("config.tire.rear.material");
+            validate(*s.distributed);
+        } else {
+            if (s.distributed)
+                throw std::invalid_argument("config.tire.distributed");
+            if (!s.front.material)
+                throw std::invalid_argument("config.tire.front.material");
+            if (!s.rear.material)
+                throw std::invalid_argument("config.tire.rear.material");
+        }
         validate(s.front, "config.tire.front"); validate(s.rear, "config.tire.rear");
         validation::nonnegative(s.significant_delta_m, "config.tire.significant_delta_m");
         validation::nonnegative(s.significance_fraction, "config.tire.significance_fraction");
         validation::positive(s.distinct_normal_deg, "config.tire.distinct_normal_deg");
         if (s.significance_fraction > 1. || s.distinct_normal_deg >= 180.) throw std::invalid_argument("config.tire.support_thresholds");
-        if (s.backend != "compliant_2d" || (s.surface_mode != "track" && s.surface_mode != "configured"))
-            throw std::invalid_argument("config.tire.backend_or_surface_mode");
         if (s.surface_mode == "track" && !s.surface_map) throw std::invalid_argument("config.tire.surface_map");
         if (s.surface_map) {
             validate(s.surface_map->surface, "config.tire.surface_map.surface");

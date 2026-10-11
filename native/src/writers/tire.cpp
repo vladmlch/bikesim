@@ -201,12 +201,28 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
         throw std::invalid_argument(
             "tire writer needs a model width in int range");
     nativecfg::validate(cfg_);
+    // This writer is the compliant_2d port. The config layer accepts
+    // 'distributed_2d_reference' — section, domains and all — but the
+    // DistributedTireWriter lands with the Stepper dispatch; reject the
+    // backend by name here instead of dereferencing the absent TireSpec
+    // material below.
+    if (cfg_.backend != "compliant_2d")
+        throw std::runtime_error(
+            "TireWriter implements only the compliant_2d backend; "
+            "'distributed_2d_reference' is accepted by the config layer and "
+            "waits on the distributed tire writer");
     // Dataclass __post_init__ validation happened when Python built the
     // config — before TireForceApplier.__init__ — so these checks precede
     // the ctor body like they do in the Python flow.
     // TireSpec.__post_init__ (tire.py:52-69) on both sides.
     for (const nativecfg::TireParams *p: {&cfg_.front, &cfg_.rear}) {
-        const nativecfg::TireMaterial &mat = p->material;
+        // Engaged by the backend gate + validate() above — restated so the
+        // optional access stays checked (an invariant break is a logic
+        // error, not bad caller input).
+        if (!p->material)
+            throw std::logic_error(
+                "compliant_2d tire params carry no material");
+        const nativecfg::TireMaterial &mat = *p->material;
         if (!std::isfinite(mat.radial_k_n_m) ||
             !std::isfinite(mat.radial_c_ns_m) ||
             !std::isfinite(mat.pressure_pa_gauge))
@@ -635,6 +651,15 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
     // backend != 'compliant_2d' is rejected by the config reader, so the
     // zero-return path (line 129-131) is unreachable here.
     std::ranges::fill(out, 0.0);
+    // The TireSpec materials engage iff the backend is compliant_2d — the
+    // ctor's gate established it; restating once per call keeps the
+    // per-contact optional accesses below checked without a per-side
+    // branch. An invariant break is a logic error, not bad caller input.
+    if (!cfg_.front.material || !cfg_.rear.material)
+        throw std::logic_error(
+            "compliant_2d tire params carry no material");
+    const nativecfg::TireMaterial &front_mat = *cfg_.front.material;
+    const nativecfg::TireMaterial &rear_mat = *cfg_.rear.material;
     double energy = 0.0, loss = 0.0, radial_loss_power = 0.0;
     std::array<BrushState, 2> new_states;
     const std::span<const mjtNum> xpos = model_access::readonly_buffer(
@@ -675,8 +700,9 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         const double delta_dot = -dot3(velocity, n);
         const double slip = dot3(velocity, tangent);
         // TireSpec material branch (tire_forces.py:147-150).
-        const double rk = pcfg.material.radial_k_n_m;
-        const double rc = pcfg.material.radial_c_ns_m;
+        const nativecfg::TireMaterial &mat = s == 0 ? front_mat : rear_mat;
+        const double rk = mat.radial_k_n_m;
+        const double rc = mat.radial_c_ns_m;
         const auto [normal, radial_energy] =
                 normal_contact(contact.delta, delta_dot, rk, rc);
         const double elastic_force = rk * std::max(contact.delta, 0.0);
@@ -803,8 +829,8 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         diag.brush_loss_j = brush_loss;
         diag.radial_energy_j = radial_energy;
         diag.shear_energy_j = 0.5 * tk * xi_new * xi_new;
-        diag.outside_material_load_range = !(pcfg.material.valid_load_range_n[0] <= normal &&
-                                             normal <= pcfg.material.valid_load_range_n[1]);
+        diag.outside_material_load_range = !(mat.valid_load_range_n[0] <= normal &&
+                                             normal <= mat.valid_load_range_n[1]);
         new_states[s] = {.xi = xi_new, .tangent = tangent, .point = p, .segment = contact.segment_id, .center = center};
     }
     // Commit persistent state only after both wheels evaluate successfully
@@ -839,9 +865,17 @@ double TireWriter::stored_energy(const mjData *d) const {
             "tire stored_energy needs a live mjData");
     const std::span<const mjtNum> xpos = model_access::readonly_buffer(
         d->geom_xpos, model_access::kXYZ * m_->ngeom);
+    // Same engaged-material invariant as the apply path — the ctor's
+    // compliant_2d gate plus validate() established it.
+    if (!cfg_.front.material || !cfg_.rear.material)
+        throw std::logic_error(
+            "compliant_2d tire params carry no material");
+    const nativecfg::TireMaterial &front_mat = *cfg_.front.material;
+    const nativecfg::TireMaterial &rear_mat = *cfg_.rear.material;
     double energy = 0.0;
     for (std::size_t s = 0; s < 2; ++s) {
         const nativecfg::TireParams &cfg = s == 0 ? cfg_.front : cfg_.rear;
+        const nativecfg::TireMaterial &mat = s == 0 ? front_mat : rear_mat;
         const BrushState &state = states_[s];
         const std::size_t g3 =
                 static_cast<std::size_t>(model_access::kXYZ) *
@@ -853,9 +887,9 @@ double TireWriter::stored_energy(const mjData *d) const {
         if (!std::isfinite(contact.delta))
             throw std::invalid_argument("tire deflection must be finite");
         const double penetration = std::max(0.0, contact.delta);
-        const double force = cfg.material.radial_k_n_m * penetration;
+        const double force = mat.radial_k_n_m * penetration;
         const double elastic =
-                0.5 * cfg.material.radial_k_n_m *
+                0.5 * mat.radial_k_n_m *
                 pyfloat::pow(penetration, 2.0);
         validation::derived(force, "TireSpec.elastic_response");
         validation::derived(elastic, "TireSpec.elastic_response");

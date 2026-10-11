@@ -29,13 +29,17 @@ actually read, as a versioned dict::
                         <resolved ArticulatedConfig contact fields>},
     }
 
-The 'tire' section is emitted only for ``backend == 'compliant_2d'`` — the
-only backend the native port implements (``native_reference`` produces no
-tire writer in Python either, so no section; ``distributed_2d_reference``
-is a different, unported writer and is rejected). The material must be a
+The 'tire' section is emitted for the two backends the native port's
+config layer accepts — ``compliant_2d`` and ``distributed_2d_reference``
+(``native_reference`` produces no tire writer in Python either, so no
+section). For ``compliant_2d`` each side's material must be a
 ``TireSpec``; a ``TabulatedTireSpec`` follows a different force law the
-native writer does not implement and is rejected here. The surface map is
-serialized with every named surface resolved to its numeric fields.
+native writer does not implement and is rejected here. For
+``distributed_2d_reference`` the material is the hinge-density law under
+``tire.distributed`` — the resolved ``for_wheel`` records per side — so
+``front``/``rear`` carry only the shared tangential parameters and
+``material`` is not projected. The surface map is serialized with every
+named surface resolved to its numeric fields.
 
 The 'rider_contacts' section is emitted only when ``sim.physical`` owns a
 ``RiderContactApplier`` (an ``articulated_planar`` rider; ``None`` otherwise
@@ -103,37 +107,46 @@ def _surface_spec(spec) -> dict:
             'stribeck_speed_mps': spec.stribeck_speed_mps}
 
 
-def _tire_side(params) -> dict:
-    """TireParameters -> the fields compute_qfrc reads (TireSpec only)."""
-    from bike_sim.physics.tire import TireSpec
-    material = params.material
-    if not isinstance(material, TireSpec):
-        raise ValueError('native tire port requires TireSpec material, '
-                         f'got {type(material).__name__}')
-    return {
-        'material': {
+def _tire_side(params, *, distributed) -> dict:
+    """TireParameters -> the fields the native tire writer reads per side.
+
+    The compliant backend projects its analytic ``TireSpec`` material; the
+    distributed backend keeps its hinge-density material under
+    ``tire.distributed`` instead, so ``material`` is skipped here.
+    """
+    out = {}
+    if not distributed:
+        from bike_sim.physics.tire import TireSpec
+        material = params.material
+        if not isinstance(material, TireSpec):
+            raise ValueError('native tire port requires TireSpec material, '
+                             f'got {type(material).__name__}')
+        out['material'] = {
             'radial_k_n_m': material.radial_k_n_m,
             'radial_c_ns_m': material.radial_c_ns_m,
             'pressure_pa_gauge': material.pressure_pa_gauge,
             'provenance': material.provenance,
             'valid_load_range_n': material.valid_load_range_n,
-        },
+        }
+    out.update({
         'tangent_k_n_m': params.tangent_k_n_m,
         'mu': params.mu,
         'relaxation_length_m': params.relaxation_length_m,
-    }
+    })
+    return out
 
 
 def _tire_section(cfg_tires, surface_map) -> dict:
     """TireBackendConfig + SurfaceMap -> the tire writer's section."""
+    distributed = cfg_tires.backend == 'distributed_2d_reference'
     out = {
         'backend': cfg_tires.backend,
         'surface_mode': cfg_tires.surface_mode,
         'significant_delta_m': cfg_tires.significant_delta_m,
         'significance_fraction': cfg_tires.significance_fraction,
         'distinct_normal_deg': cfg_tires.distinct_normal_deg,
-        'front': _tire_side(cfg_tires.front),
-        'rear': _tire_side(cfg_tires.rear),
+        'front': _tire_side(cfg_tires.front, distributed=distributed),
+        'rear': _tire_side(cfg_tires.rear, distributed=distributed),
     }
     if cfg_tires.surface_mode == 'track':
         if surface_map is None:
@@ -145,6 +158,25 @@ def _tire_section(cfg_tires, surface_map) -> dict:
                           'surface': _surface_spec(get_surface(s.surface))}
                          for s in sequence(surface_map.sections, "config.tire.surface_map.sections")],
         }
+    if distributed:
+        from bike_sim.physics.distributed_tire import DistributedTireConfig
+        dist = cfg_tires.distributed
+        if not isinstance(dist, DistributedTireConfig):
+            raise ValueError('native distributed tire port requires a resolved '
+                             f'DistributedTireConfig, got {type(dist).__name__}')
+
+        def density(h):
+            return {'knots_m': list(h.knots_m), 'stiffness_n_m': list(h.stiffness_n_m),
+                    'damping_ns_m': h.damping_ns_m, 'provenance': h.provenance}
+
+        def material(side):
+            m = dist.for_wheel(side)
+            return {'density': density(m.density), 'fitting_dataset_id': m.fitting_dataset_id,
+                    'valid_load_range_n': list(m.valid_load_range_n),
+                    'valid_deflection_range_m': list(m.valid_deflection_range_m),
+                    'calibration_status': m.calibration_status}
+        out['distributed'] = {'station_count': dist.station_count, 'density': density(dist.density),
+                              'front': material('front'), 'rear': material('rear')}
     return out
 
 
@@ -215,7 +247,7 @@ def _project(env) -> dict:
     res = cfg.resistance
     # sim.physics_config is the object the runtime's tire writer read.
     tires = sim.physics_config.tires
-    if tires.backend not in ('compliant_2d', 'native_reference'):
+    if tires.backend not in ('compliant_2d', 'native_reference', 'distributed_2d_reference'):
         raise ValueError(f"native tire backend '{tires.backend}' is not ported")
     out = {
         'schema': SCHEMA,
@@ -288,7 +320,7 @@ def _project(env) -> dict:
             },
         },
     }
-    if tires.backend == 'compliant_2d':
+    if tires.backend in ('compliant_2d', 'distributed_2d_reference'):
         # sim.track.surface_map is a fresh SurfaceMap per access; the tire
         # writer captured an equal-valued one at construction — content is
         # what crosses the boundary.

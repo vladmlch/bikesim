@@ -64,7 +64,7 @@ Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.
   `{'backend': 'distributed_2d_reference', 'surface_mode', 'significant_delta_m', 'significance_fraction', 'distinct_normal_deg', 'front': {'tangent_k_n_m', 'mu', 'relaxation_length_m'}, 'rear': {...}, 'surface_map'?: {...}, 'distributed': {'station_count': int, 'density': {'knots_m': [..], 'stiffness_n_m': [..], 'damping_ns_m': float, 'provenance': str}, 'front': {'density': {...}, 'fitting_dataset_id': str, 'valid_load_range_n': [lo, hi], 'valid_deflection_range_m': [lo, hi], 'calibration_status': str}, 'rear': {...}}}`.
 - Produces (C++): `nativecfg::HingeDensity {std::vector<double> knots_m, stiffness_n_m; double damping_ns_m; std::string provenance;}`, `nativecfg::DistributedMaterial {HingeDensity density; std::string fitting_dataset_id; std::array<double,2> valid_load_range_n, valid_deflection_range_m; std::string calibration_status;}`, `nativecfg::DistributedConfig {int station_count; HingeDensity density; DistributedMaterial front, rear;}`, `std::optional<DistributedConfig> TireConfig::distributed`.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 In `tests/reference/test_native_distributed_tire.py` (new):
 
@@ -158,12 +158,12 @@ def test_config_rejects_bad_distributed_sections(tmp_path):
 
 In `test_native_runtime_config.py` locate the assertion at line 55 that currently expects the distributed backend to be rejected and invert it to expect acceptance **with** a `distributed` section and rejection **without** one.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `uv run --frozen --group native python -m pytest tests/reference/test_native_distributed_tire.py -q -k config`
 Expected: FAIL — `project()` raises `native tire port requires TireSpec material` / backend rejected.
 
-- [ ] **Step 3: Python projection**
+- [x] **Step 3: Python projection**
 
 In `config.py`: `_tire_side(params, *, distributed)` skips `material` when `distributed`; `_tire_section` adds:
 
@@ -185,18 +185,18 @@ In `config.py`: `_tire_side(params, *, distributed)` skips `material` when `dist
 
 Update the module docstring paragraph (lines 32–38) to describe both backends. In `schema.py` add the field lists for `tire.distributed`, `tire.distributed.density`, `tire.distributed.front/rear` and the rule "`distributed` required iff backend is distributed, forbidden otherwise", mirroring the `surface_map` rule at line 214.
 
-- [ ] **Step 4: C++ config**
+- [x] **Step 4: C++ config**
 
 `config_types.hpp`: add the three structs above and `std::optional<DistributedConfig> distributed;` to `TireConfig`; `TireParams` material becomes `std::optional<TireMaterial>` (present iff compliant). `config.hpp:394-398`: accept both backends; read `distributed` when the backend is distributed (reader helpers already exist for arrays/strings). `config_validation.hpp:267`: `backend ∈ {compliant_2d, distributed_2d_reference}`; when distributed: `distributed` present, `16 ≤ station_count ≤ 512`, knots strictly increasing from 0, stiffness ≥ 0, damping ≥ 0, load/deflection ranges `0 ≤ lo < hi`, `calibration_status == "experimental_unvalidated"`, `material` absent on both sides; when compliant: `distributed` absent, `material` present.
 
-- [ ] **Step 5: Run native profile**
+- [x] **Step 5: Run native profile**
 
 Run: `bash tools/run_tests.sh native tests/reference/test_native_distributed_tire.py tests/reference/test_native_runtime_config.py tests/reference/test_native_input_contracts.py`
 Expected: config tests pass; `test_native_input_contracts.py` (recursive key contract) still passes — if it enumerates `tire.front.material` as required, update its optional-key set at line 70 to include `material` and `distributed`.
 
 Note: `Stepper` construction with the distributed backend will fail at this point in the writer factory (`step.cpp:962` "requires the compliant_2d tire writer") — mark `test_config_projection_carries_the_distributed_section`'s last line with `pytest.xfail('writer lands in Task 5')` until Task 5 removes it.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/bike_sim/native/config.py src/bike_sim/native/schema.py native/src/config_types.hpp native/src/config_validation.hpp native/src/config.hpp tests/reference/test_native_distributed_tire.py tests/reference/test_native_runtime_config.py tests/reference/test_native_input_contracts.py

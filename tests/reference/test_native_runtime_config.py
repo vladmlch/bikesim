@@ -52,7 +52,6 @@ def test_native_capability_uses_fields_not_filename():
     ("articulated.saddle_attachment", "flat"),
     ("articulated.saddle_attachment", "weld"),
     ("articulated.grip_attachment", "spring"),
-    ("tires.backend", "distributed_2d_reference"),
     ("tires.surface_mode", "configured"),
     ("drive.motor_clutch", True),
     ("drive.rotor_inertia_kgm2", 0.001),
@@ -61,6 +60,22 @@ def test_native_capability_rejects_unsupported_structure(path, value):
     cfg, rider = _supported()
     with pytest.raises(ValueError, match=path.replace(".", r"\.")):
         validate_supported(_replaced(cfg, path, value), rider)
+
+
+def test_native_capability_accepts_distributed_backend_with_section():
+    """distributed_2d_reference is supported when tires.distributed resolves."""
+    cfg, rider = _supported()
+    tires = replace(cfg.tires, backend="distributed_2d_reference")
+    validate_supported(replace(cfg, tires=tires), rider)
+
+
+def test_native_capability_rejects_distributed_backend_without_section():
+    """The distributed backend without its resolved section is rejected."""
+    cfg, rider = _supported()
+    tires = _mutated(replace(cfg.tires, backend="distributed_2d_reference"),
+                     "distributed", None)
+    with pytest.raises(ValueError, match=r"tires\.distributed"):
+        validate_supported(replace(cfg, tires=tires), rider)
 
 
 def _mutated(cfg, path, value):

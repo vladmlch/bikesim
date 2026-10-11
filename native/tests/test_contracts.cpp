@@ -2612,11 +2612,12 @@ namespace {
     }
 
     nativecfg::TireParams warm_tire_params() {
-        return {.material = {.radial_k_n_m = 150000.,
-                             .radial_c_ns_m = 800.,
-                             .pressure_pa_gauge = 250000.,
-                             .provenance = "contract-test",
-                             .valid_load_range_n = {0., 3000.}},
+        return {.material = nativecfg::TireMaterial{
+                    .radial_k_n_m = 150000.,
+                    .radial_c_ns_m = 800.,
+                    .pressure_pa_gauge = 250000.,
+                    .provenance = "contract-test",
+                    .valid_load_range_n = {0., 3000.}},
                 .tangent_k_n_m = 90000., .mu = 1.2,
                 .relaxation_length_m = .35};
     }
@@ -2627,7 +2628,8 @@ namespace {
             .surface_mode = track ? "track" : "configured",
             .front = warm_tire_params(), .rear = warm_tire_params(),
             .significant_delta_m = .0005, .significance_fraction = .3,
-            .distinct_normal_deg = 12., .surface_map = std::nullopt};
+            .distinct_normal_deg = 12., .surface_map = std::nullopt,
+            .distributed = std::nullopt};
         if (track) {
             // One material interval under the front wheel's contact x —
             // short names stay inside the diagnostics string's capacity so

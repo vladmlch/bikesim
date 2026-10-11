@@ -572,9 +572,9 @@ def test_distributed_observations_declare_multi_contact(tmp_path):
 - Modify: `tests/reference/test_native_runtime_performance_contract.py`
 - Evidence: `output/native-distributed-rtf/` (not committed), audit
 
-- [ ] **Step 1: Extend the contract** with a distributed case mirroring the existing compliant case (same duration, same thresholds structure) on `alpine_rocky` + `viewer_physics_distributed.toml`; the threshold is the spec's gate expressed in the contract's own units — if the contract measures headless RTF, set the floor so that the interactive ≥ 0.95 at 1× is implied with the same margin the compliant case uses (read how the compliant threshold was derived in the test's docstring and copy the derivation).
+- [x] **Step 1: Extend the contract** with a distributed case mirroring the existing compliant case (same duration, same thresholds structure) on `alpine_rocky` + `viewer_physics_distributed.toml`; the threshold is the spec's gate expressed in the contract's own units — if the contract measures headless RTF, set the floor so that the interactive ≥ 0.95 at 1× is implied with the same margin the compliant case uses (read how the compliant threshold was derived in the test's docstring and copy the derivation).
 
-- [ ] **Step 2: Measure**
+- [x] **Step 2: Measure**
 
 ```bash
 BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native python tools/measure_realtime.py --backend native --physics-config examples/research/viewer_physics_distributed.toml --track examples/research/alpine_rocky.toml --duration 30 --warmup 1 --runs 3 --out output/native-distributed-rtf/native
@@ -584,7 +584,7 @@ BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group nativ
 
 Record headless medians (both backends) and the HUD's mean achieved RTF after 20 s at 1×. Gate: ≥ 0.95. If it fails at the default `station_count`, measure 96 and 64; a lower default is a **spec change** (update `viewer_physics_distributed.toml`, the spec, and re-run Plan A's Task 6 test) — not a silent edit.
 
-- [ ] **Step 3: Commit** (`test(native): performance contract for the distributed tyre`).
+- [x] **Step 3: Commit** (`test(native): performance contract for the distributed tyre`).
 
 ---
 

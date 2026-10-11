@@ -409,7 +409,8 @@ void PeriodAccounting::flush() {
                 add_detail(channels, raw, attachments, effort, staged.history, config_.timestep_s);
             staged.model_status.observe(raw.interval_id, raw.time_s, channels);
             set(channels, "model_status", Wire(staged.model_status.as_wire()));
-            published.push_back({std::make_shared<PhysicalSampleData>(), {}});
+            published.push_back({.sample = std::make_shared<PhysicalSampleData>(),
+                                 .snapshot = nullptr});
             PublishedRow &row = published.back();
             PhysicalSampleData &out = *row.sample;
             out.interval_id = raw.interval_id;

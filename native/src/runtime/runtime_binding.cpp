@@ -347,20 +347,25 @@ parse_query_state(const wire::Dict &d) {
 
 [[nodiscard]] runtime::BalanceMonitor::State
 parse_balance(const wire::Dict &d) {
-    wire::exact(d, wire::keys("event", "low_speed_s", "grace_left_s",
+    wire::exact(d, wire::keys("event", "current_event", "low_speed_s",
+                              "grace_left_s",
                               "started_s", "low_started_s", "last_time_s"));
     runtime::BalanceMonitor::State out;
-    const nb::object event = wire::field(d, "event");
-    if (!event.is_none()) {
+    const auto parse_event = [&d](const char *key)
+        -> std::optional<runtime::BalanceLostEvent> {
+        const nb::object event = wire::field(d, key);
+        if (event.is_none()) return std::nullopt;
         const wire::Dict e{
-            .value = wire::mapping(event, d.child("event")),
-            .path = d.child("event")};
+            .value = wire::mapping(event, d.child(key)),
+            .path = d.child(key)};
         wire::exact(e, wire::keys("time_s", "position_m", "speed_mps"));
-        out.event = runtime::BalanceLostEvent{
+        return runtime::BalanceLostEvent{
             .time_s = real_field(e, "time_s"),
             .position_m = real_field(e, "position_m"),
             .speed_mps = real_field(e, "speed_mps")};
-    }
+    };
+    out.event = parse_event("event");
+    out.current_event = parse_event("current_event");
     out.low_speed_s = real_field(d, "low_speed_s");
     out.grace_left_s = real_field(d, "grace_left_s");
     out.started_s = optional_field(d, "started_s");

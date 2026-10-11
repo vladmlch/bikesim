@@ -85,6 +85,7 @@ void merge(WireObject &destination, const WireObject &source) {
     for (const auto &[key, value] : source) set(destination, key, value);
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved) moves each element, not the container
 void merge(WireObject &destination, WireObject &&source) {
     for (auto &[key, value] : source)
         set(destination, std::move(key), std::move(value));

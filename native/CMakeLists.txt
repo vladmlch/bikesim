@@ -415,9 +415,16 @@ if(NATIVE_SANITIZE)
   # Available-but-rejected extras (verified arm64-apple): implicit-conversion
   # and unsigned-integer-overflow are too noisy for numerics; thread/msan/
   # cfi/safe-stack are unsupported or dead on this target.
+  # The 8192-byte -Wframe-larger-than budget guards production stack use;
+  # ASan wraps every alloca in >=32-byte redzones, roughly tripling the
+  # measured frame (DistributedTireWriter::accumulate_validated reports
+  # 9152 bytes instrumented), so the instrumented budget is raised 3x —
+  # appended last, clang's repeated-flag last-wins semantics verified on
+  # Apple clang 21.
   target_compile_options(bike_native PRIVATE
     -fsanitize=address,undefined,local-bounds,float-cast-overflow
-    -fno-sanitize-recover=all -fno-omit-frame-pointer)
+    -fno-sanitize-recover=all -fno-omit-frame-pointer
+    -Wframe-larger-than=24576)
   target_link_options(bike_native PRIVATE
     -fsanitize=address,undefined,local-bounds,float-cast-overflow -shared-libasan)
 endif()

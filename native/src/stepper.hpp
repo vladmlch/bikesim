@@ -287,6 +287,20 @@ public:
     [[nodiscard]] const std::vector<std::string> &
     tire_state_names() const;
 
+    // ---- Stand-ledger test surface (contact_manifold_rigs._run_stand) --
+    // The terms the distributed-stand tests read on the live mjData each
+    // interval: `_kinetic`'s .5 qvel·(M qvel), the writer's stored energy
+    // at the CURRENT pose, its per-step loss channels, and d->ncon for the
+    // native-contact gate. Thin forwards over the accessors the runtime
+    // step already uses — no new physics.
+    [[nodiscard]] double kinetic_energy() const;
+    [[nodiscard]] double tire_stored_energy() const;
+    [[nodiscard]] double tire_brush_loss_step_j() const;
+    [[nodiscard]] double tire_radial_dissipation_power_w() const;
+    [[nodiscard]] int contact_count() const noexcept {
+        return static_cast<int>(d_->ncon);
+    }
+
     // The writer itself — snapshots()/diagnostics() are read here by the
     // binding. True without a tire config is the callers' absence gate;
     // the dispatched writer is one of the two configured backends.

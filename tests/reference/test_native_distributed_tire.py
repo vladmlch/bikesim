@@ -1,5 +1,8 @@
 """Native distributed tyre writer: config, bitwise per-state parity, state wire, probe, stands."""
 import re
+from collections.abc import Mapping
+from dataclasses import asdict, is_dataclass
+from numbers import Integral, Real
 from pathlib import Path
 
 import mujoco
@@ -330,3 +333,78 @@ def test_distributed_observations_declare_multi_contact(tmp_path, native_module)
     finally:
         native.close()
         env.close()
+
+
+def _assert_tree_bitwise(actual, expected, path='root'):
+    """Channel-wise bitwise tree compare — the trajectory gate's assert_tree
+    analogue with the native port's raw-bytes float rule instead of
+    assert_allclose: float/ndarray leaves compare tobytes() (signed zeros
+    and NaN payloads stay observable), integer leaves compare by exact
+    value, and str/bool/None keep their type+value rule. A leaf that
+    cannot meet byte equality is a failure, never a tolerance bump."""
+    if is_dataclass(actual):
+        actual = asdict(actual)
+    if is_dataclass(expected):
+        expected = asdict(expected)
+    if isinstance(expected, Mapping):
+        assert isinstance(actual, Mapping) and set(actual) == set(expected), path
+        for key in expected:
+            _assert_tree_bitwise(actual[key], expected[key], f'{path}.{key}')
+    elif isinstance(expected, np.ndarray):
+        assert_bitwise_equal(actual, expected, path)
+    elif isinstance(expected, (list, tuple)):
+        assert isinstance(actual, (list, tuple)) and len(actual) == len(expected), path
+        for index, (left, right) in enumerate(zip(actual, expected)):
+            _assert_tree_bitwise(left, right, f'{path}[{index}]')
+    elif expected is None or isinstance(expected, (str, bool)):
+        assert type(actual) is type(expected) and actual == expected, path
+    elif isinstance(expected, Integral):
+        assert not isinstance(actual, bool) and isinstance(actual, Integral) \
+            and actual == expected, path
+    elif isinstance(expected, Real):
+        assert not isinstance(actual, (bool, Integral)), path
+        assert_bitwise_equal(actual, expected, path)
+    else:
+        assert actual == expected, path
+
+
+def test_distributed_trajectory_matches_python_channel_wise_bitwise(
+        environment_pair, assert_tree):
+    """One second of the paired research trajectory under the distributed
+    backend — the Task-7 trajectory gate. Same shape as the compliant
+    one-second release gate in test_native_research_environment.py
+    (test_one_second_pair_with_one_e_minus_nine_gate): the Python
+    reference env steps the same commands as the native env and every
+    observation/transition channel compares bitwise — the integration
+    state per step plus every published leaf — never tolerance.
+
+    The outcome is cross-backend equality of steps/reason like the
+    compliant gate: the energy-residual monitor may truncate the episode
+    and both backends must decide identically step-for-step.
+    """
+    from bike_sim.sim.ride.control import RideControl
+    from bike_sim.sim.research.metrics import episode_metrics
+    from bike_sim.sim.research.replay import integration_state
+    reference, native = environment_pair(
+        physics_config=DISTRIBUTED,
+        track_file=ROOT / 'examples/research/alpine_rocky.toml',
+        duration=1., decimation=20)
+    command = RideControl(motor_torque_nm=0.)
+    _assert_tree_bitwise(native.observation, reference.observation)
+    while not reference.done and not native.done:
+        expected, actual = reference.step(command), native.step(command)
+        _assert_tree_bitwise(actual, expected)
+        assert native.sim.steps == reference.sim.steps
+        assert native.sim.time_s == reference.sim.time_s
+        assert_bitwise_equal(integration_state(native.sim),
+                             integration_state(reference.sim),
+                             msg=f'integration state at step {reference.sim.steps}')
+    assert reference.done and native.done
+    assert native.sim.steps == reference.sim.steps
+    assert native.reason == reference.reason
+    _assert_tree_bitwise(native.commands_requested, reference.commands_requested)
+    _assert_tree_bitwise(native.commands_applied, reference.commands_applied)
+    # Post-hoc aggregates keep the compliant gate's comparison — the
+    # bitwise contract covers the per-step channels above.
+    assert_tree(episode_metrics(native), episode_metrics(reference))
+    assert_tree(native.recorder.columns(), reference.recorder.columns())

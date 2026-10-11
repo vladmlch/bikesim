@@ -82,11 +82,18 @@ def environment_factory(tmp_path):
 
     def create(*, duration=.04, seed=19, decimation=1, actuator_delay=.005,
                control_period=None, sensor_period=None,
-               program=None, demand=None, strict=False, energy_tolerance=None):
-        arguments = ['--physics-config', str(ROOT/'examples/research/viewer_physics_welded.toml'),
+               program=None, demand=None, strict=False, energy_tolerance=None,
+               physics_config=None, track_file=None):
+        arguments = ['--physics-config',
+            str(ROOT/'examples/research/viewer_physics_welded.toml'
+                if physics_config is None else physics_config),
             '--scenario', 'flat', '--duration', str(duration), '--seed', str(seed),
             '--record-decimation', str(decimation), '--actuator-delay', str(actuator_delay),
             ]
+        # --track-file wins over --scenario, so the authored track replaces
+        # the flat default without disturbing existing callers.
+        if track_file is not None:
+            arguments += ['--track-file', str(track_file)]
         if control_period is not None:
             arguments += ['--control-period', str(control_period)]
         if sensor_period is not None:

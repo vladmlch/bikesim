@@ -6,6 +6,7 @@
 #include <string_view>
 #include <utility>
 #include "../numeric_sincos.hpp"
+#include "../numeric_sum.hpp"
 #include "../tyre/profile.hpp"
 
 namespace runtime {
@@ -18,13 +19,15 @@ double optional_number(const WireObject &v, std::string_view key, double fallbac
     return p ? number(*p) : fallback;
 }
 Wire opt(std::optional<double> v) { return v ? Wire(*v) : Wire(nullptr); }
+// wheelie.py's load() is builtin sum() over the terrain patches — CPython
+// 3.12+ Neumaier compensated summation, not a naive fold.
 double load(const WireObject &wheel) {
-    double result = 0.;
+    numeric::PythonSum result;
     for (const auto &patch : array(required(wheel, "patches"))) {
         const auto &p = object(patch);
-        if (string(required(p, "source_geom")) == "terrain") result += n(p, "normal_load_n");
+        if (string(required(p, "source_geom")) == "terrain") result.add(n(p, "normal_load_n"));
     }
-    return result;
+    return result.total();
 }
 std::string_view classify(const WheelieTruth &t) {
     const bool front = t.front_load_n > 5., rear = t.rear_load_n > 5.;

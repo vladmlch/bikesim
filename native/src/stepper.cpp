@@ -1,4 +1,5 @@
 #include "stepper.hpp"
+#include "cblas_abi.hpp"
 #include "engine_call.hpp"
 #include "validation.hpp"
 #include <bit>
@@ -676,6 +677,30 @@ void Stepper::set_tire_state(std::span<const std::string> names,
 
 std::vector<double> Stepper::tire_state() const {
     return tire_writer().state();
+}
+
+double Stepper::kinetic_energy() const {
+    require_healthy();
+    std::vector<mjtNum> mv(static_cast<std::size_t>(m_->nv));
+    engine::mul_m(m_, d_, mv.data(), d_->qvel);
+    // data.qvel @ mv — np.dot dispatches to the pinned CBLAS ABI.
+    return .5 * blas::cblas_ddot(static_cast<int>(m_->nv), d_->qvel, 1,
+                               mv.data(), 1);
+}
+
+double Stepper::tire_stored_energy() const {
+    require_healthy();
+    return tire_writer().stored_energy(d_);
+}
+
+double Stepper::tire_brush_loss_step_j() const {
+    require_healthy();
+    return tire_writer().brush_loss_step_j();
+}
+
+double Stepper::tire_radial_dissipation_power_w() const {
+    require_healthy();
+    return tire_writer().radial_dissipation_power_w();
 }
 
 const std::vector<std::string> &Stepper::tire_state_names() const {

@@ -571,6 +571,15 @@ NB_MODULE(bike_native, m) {
                 }
                 return out;
             })
+            // _run_stand's ledger terms on the live mjData — thin forwards
+            // over the writer accessors, no new physics.
+            .def("tire_stored_energy", &Stepper::tire_stored_energy)
+            .def("tire_brush_loss_step_j",
+                 &Stepper::tire_brush_loss_step_j)
+            .def("tire_radial_dissipation_power_w",
+                 &Stepper::tire_radial_dissipation_power_w)
+            .def("kinetic_energy", &Stepper::kinetic_energy)
+            .def_prop_ro("contact_count", &Stepper::contact_count)
             .def_prop_ro("time", &Stepper::time);
     bind_drivetrain(m, stepper_class);
     bind_rider_contact_math(m);

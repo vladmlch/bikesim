@@ -914,8 +914,12 @@ wire_settled_welds(const writers::RiderSettleOutcome &settle) {
     return out;
 }
 
-// compiled_center_of_mass (mass_properties.py:7-13) — the pairwise
-// column sum also shared by mass_observations.
+// compiled_center_of_mass (mass_properties.py:7-13) — the column sum also
+// shared by mass_observations. The oracle is
+// np.sum(masses[:, None] * xipos, axis=0): reducing the strided outer axis
+// of a C-order (nbody, 3) product is a plain sequential per-column fold in
+// numpy, not the contiguous pairwise reduction. Verified bitwise against
+// numpy 2.5.2 for nbody = 2..1000.
 std::array<double, 3> compiled_com(const mjModel *m, const mjData *d) {
     const std::size_t nbody = static_cast<std::size_t>(m->nbody);
     const auto body_mass = buf(m->body_mass, m->nbody);
@@ -923,12 +927,12 @@ std::array<double, 3> compiled_com(const mjModel *m, const mjData *d) {
     const double total = numpy_pairwise_sum(body_mass);
     if (!(total > 0.))
         throw std::invalid_argument("model has no positive physical mass");
-    std::vector<double> column(nbody);
     std::array<double, 3> com{};
     for (std::size_t k = 0; k < 3; ++k) {
+        double sum = 0.;
         for (std::size_t i = 0; i < nbody; ++i)
-            column[i] = body_mass[i] * xipos[3 * i + k];
-        com[k] = numpy_pairwise_sum(column) / total;
+            sum += body_mass[i] * xipos[3 * i + k];
+        com[k] = sum / total;
     }
     return com;
 }

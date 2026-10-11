@@ -17,6 +17,8 @@
 #include <cstdint>
 #include <cmath>
 #include <exception>
+#include <memory>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -29,6 +31,7 @@
 #include <nanobind/stl/vector.h>
 #include "stepper.hpp"
 #include "config.hpp"
+#include "engaged.hpp"
 #include "tyre/distance.hpp"
 #include "binding_readers.hpp"
 #include "binding_arrays.hpp"
@@ -44,6 +47,7 @@
 #include "runtime/provenance.hpp"
 #include "runtime/test_adapter.hpp"
 #include "writers/cruise.hpp"
+#include "writers/distributed_tire.hpp"
 #include "writers/resistance.hpp"
 #include "writers/tire.hpp"
 
@@ -198,6 +202,59 @@ namespace {
         catch (const nb::cast_error &) { wire::invalid(parsed.child("patch_working"), "expected 1-D flag array"); }
         return {.loads = loads, .working = working, .effective_radius_m = wire::finite_real(arr("eff_radius"), parsed.child("eff_radius"))};
     }
+
+    // Task-4 debug-only surface for the DistributedTireWriter contract —
+    // tests/reference/test_native_distributed_tire.py drives it until
+    // Task 5 wires the writer into Stepper and deletes this class. Owns a
+    // private model/data pair like a single-writer Stepper; declaration
+    // order is the destruction contract (the writer borrows the model/data,
+    // so it must be declared last and destroyed first).
+    class DebugDistributedWriter {
+    public:
+        DebugDistributedWriter(const std::string &mjb_path,
+                               nb::handle raw_config)
+            : model_(engine::load_model(mjb_path.c_str()), &mj_deleteModel),
+              data_(engine::make_data(model_.get()), &mj_deleteData) {
+            if (!model_)
+                throw std::runtime_error("mj_loadModel failed: " + mjb_path);
+            if (!data_)
+                throw std::runtime_error("mj_makeData");
+            engine::require_supported_callbacks();
+            engine::forward(model_.get(), data_.get());
+            const nb::dict config = wire::mapping(raw_config, "config");
+            if (config.empty())
+                throw std::invalid_argument(
+                    "debug distributed writer needs a tire config section");
+            nativecfg::NativeConfig cfg =
+                    nativecfg::native_config_from_dict(config);
+            if (!cfg.tire)
+                throw std::invalid_argument(
+                    "debug distributed writer needs a tire config section");
+            writer_.emplace(model_.get(), data_.get(), std::move(*cfg.tire));
+        }
+
+        ~DebugDistributedWriter() = default;
+        DebugDistributedWriter(DebugDistributedWriter &&) = default;
+        DebugDistributedWriter &operator=(DebugDistributedWriter &&) =
+                default;
+        DebugDistributedWriter(const DebugDistributedWriter &) = delete;
+        DebugDistributedWriter &
+        operator=(const DebugDistributedWriter &) = delete;
+
+        [[nodiscard]] const mjModel *model() const { return model_.get(); }
+        [[nodiscard]] mjData *data() const { return data_.get(); }
+        [[nodiscard]] const DistributedTireWriter &writer() const {
+            return engaged(writer_);
+        }
+        [[nodiscard]] DistributedTireWriter &writer() {
+            return engaged(writer_);
+        }
+
+    private:
+        std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model_;
+        std::unique_ptr<mjData, decltype(&mj_deleteData)> data_;
+        std::optional<DistributedTireWriter> writer_;
+    };
 } // namespace
 
 // Binding glue builds 15-20KB frames of nanobind temporaries at import
@@ -335,6 +392,64 @@ NB_MODULE(bike_native, m) {
     }, nb::arg("vertices"), nb::arg("points"),
         "Debug test surface: signed profile distance oracle rows "
         "(distance, normal, point, segment, nonsmooth) for (N,2) inputs.")
+    ;
+    // Task-4 debug-only surface for the DistributedTireWriter state wire —
+    // removed in Task 5 once Stepper dispatches the writer itself.
+    nb::class_<DebugDistributedWriter>(m, "_DebugDistributedWriter")
+            .def_prop_ro("state_names", [](const DebugDistributedWriter &w) {
+                return w.writer().state_names();
+            })
+            // NOLINTBEGIN(bugprone-easily-swappable-parameters) fixed Python names/row signature
+            .def("set_state", [](DebugDistributedWriter &w,
+                                 nb::handle raw_names, nb::handle raw_row) {
+                const auto sequence = wire::sequence(raw_names,
+                                                     "set_state.names");
+                std::vector<std::string> names;
+                names.reserve(sequence.size());
+                for (nb::handle const value: sequence)
+                    names.push_back(wire::string(value, "set_state.names"));
+                const auto row_values = wire::sequence(raw_row,
+                                                       "set_state.row");
+                std::vector<double> row;
+                row.reserve(row_values.size());
+                // The wire owns the NaN sentinel domain; `real` checks the
+                // original types only.
+                for (nb::handle const value: row_values)
+                    row.push_back(wire::real(value, "set_state.row"));
+                w.writer().set_state(names, row);
+            }, nb::arg("names").none(), nb::arg("row").none())
+            // NOLINTEND(bugprone-easily-swappable-parameters)
+            .def("state", [](DebugDistributedWriter &w) {
+                return as_owned(w.writer().state());
+            })
+            // NOLINTBEGIN(bugprone-easily-swappable-parameters) fixed Python qpos/qvel signature
+            .def("stored_energy", [](DebugDistributedWriter &w,
+                                     nb::handle raw_qpos,
+                                     nb::handle raw_qvel) {
+                const std::vector<double> qpos =
+                        wire::vector(raw_qpos, "stored_energy.qpos");
+                const std::vector<double> qvel =
+                        wire::vector(raw_qvel, "stored_energy.qvel");
+                const mjModel *model = w.model();
+                mjData *data = w.data();
+                if (qpos.size() != static_cast<std::size_t>(model->nq))
+                    throw std::invalid_argument(
+                        "stored_energy.qpos must have nq cells");
+                if (qvel.size() != static_cast<std::size_t>(model->nv))
+                    throw std::invalid_argument(
+                        "stored_energy.qvel must have nv cells");
+                std::ranges::copy(qpos, data->qpos);
+                std::ranges::copy(qvel, data->qvel);
+                engine::forward(model, data);
+                return w.writer().stored_energy(data);
+            }, nb::arg("qpos"), nb::arg("qvel"));
+    // NOLINTEND(bugprone-easily-swappable-parameters)
+    m.def("_debug_distributed_writer",
+          [](const std::string &mjb_path, nb::handle config) {
+              return DebugDistributedWriter(mjb_path, config);
+          }, nb::arg("model_path"), nb::arg("config"),
+          "Debug test surface: construct a DistributedTireWriter on a "
+          "private model/data pair for the Task-4 state-wire contract.")
     ;
     stepper_class
             .def(nb::init<const std::string &>())

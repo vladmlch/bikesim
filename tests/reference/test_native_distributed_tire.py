@@ -98,3 +98,28 @@ def test_config_rejects_bad_distributed_sections(tmp_path):
         mutate(bad)
         with pytest.raises((ValueError, RuntimeError)):
             bike_native.Stepper(model, bad)
+
+
+def test_distributed_state_wire_round_trip(tmp_path):
+    from tools.native_config import project
+    env = _env(tmp_path, duration='.01')
+    writer = bike_native._debug_distributed_writer(str(_model_path(tmp_path, env)), project(env))
+    names = list(writer.state_names)
+    N = env.sim.physics_config.tires.distributed.station_count
+    assert names == env.sim.physical.tire.state_names() and len(names) == 2 * N * 4
+    row = np.full(len(names), np.nan)
+    row[names.index('front.s003.xi')] = .002
+    row[names.index('front.s003.tangent.0'):names.index('front.s003.tangent.0') + 3] = [1., 0., 0.]
+    row[names.index('rear.s007.xi')] = -.001
+    writer.set_state(names, row)
+    assert_bitwise_equal(np.asarray(writer.state()), row, 'state round trip')
+    with pytest.raises(RuntimeError, match='rear.s'):
+        writer.set_state(names[:-1], row[:-1])
+    # The distributed stored_energy shares the state wire: restore the same
+    # row on both writers and compare the scalar bitwise.
+    oracle = env.sim.physical.tire
+    oracle.set_state(names, row)
+    mujoco.mj_forward(env.sim.model, env.sim.data)
+    assert_bitwise_equal(
+        writer.stored_energy(env.sim.data.qpos, env.sim.data.qvel),
+        oracle.stored_energy(env.sim.model, env.sim.data), 'stored energy')

@@ -469,7 +469,8 @@ add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/rider/least_squares.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
-  src/writers/tire_common.cpp src/writers/tire.cpp)
+  src/writers/tire_common.cpp src/writers/tire.cpp
+  src/writers/distributed_tire.cpp)
 set_target_properties(bike_native_contract_core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   CXX_STANDARD 23

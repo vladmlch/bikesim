@@ -76,3 +76,46 @@ def test_state_wire_names_and_round_trip():
         tire.set_state(wire['names'][:-1], wire['row'][:-1])
     with pytest.raises(ValueError, match='front.s000.bogus'):
         tire.set_state(['front.s000.bogus'], [0.])
+
+
+def test_diagnostics_are_scalar_only_and_multi_contact_is_informational():
+    rows, m = distributed_road_trace(.00125, 64, .005, case='two_support', duration_s=.05)
+    assert m['max_patch_count'] >= 2
+    m_, d_, tire = wheel_stand(.00125, 64)
+    tire.compute_qfrc(m_, d_, .00125)
+    diag = tire.diagnostics['front']
+    assert set(diag) == {'penetration_m', 'normal_load_n', 'multi_support', 'supports_multiple_contacts',
+                         'capability_status', 'calibration_status', 'station_count', 'active_station_count',
+                         'nonsmooth_station_count', 'max_patch_count', 'outside_material_load_range',
+                         'outside_material_deflection_range', 'radial_energy_j', 'shear_energy_j', 'brush_loss_j'}
+    assert diag['supports_multiple_contacts'] is True and diag['station_count'] == 64
+    assert all(not isinstance(v, (list, tuple, np.ndarray)) for v in diag.values())
+
+
+def test_compute_is_deterministic_and_states_are_station_states():
+    from bike_sim.sim.ride.distributed_tire_forces import _StationState
+    import mujoco
+    a = wheel_stand(.00125, 64)
+    b = wheel_stand(.00125, 64)
+    for m, d, tire in (a, b):
+        d.qpos[1] = -.006
+        mujoco.mj_forward(m, d)
+    fa, fb = a[2].compute_qfrc(a[0], a[1], .00125), b[2].compute_qfrc(b[0], b[1], .00125)
+    assert np.array_equal(fa, fb)
+    assert a[2].states and all(isinstance(s, _StationState) for s in a[2].states.values())
+    # equal_nan: the airborne rear wheel keeps an all-NaN state block and NaN != NaN.
+    assert np.array_equal(a[2].state_dict()['row'], b[2].state_dict()['row'], equal_nan=True)
+
+
+def test_probe_leaves_state_and_clock_untouched():
+    import mujoco
+    m, d, tire = wheel_stand(.00125, 64)
+    d.qpos[1] = -.006
+    mujoco.mj_forward(m, d)
+    tire.compute_qfrc(m, d, .00125)
+    before = tire.state_dict()['row'].copy(); clock = tire.last_time_s
+    tire.compute_qfrc(m, d, .00125, advance=False)
+    assert np.array_equal(np.nan_to_num(tire.state_dict()['row']), np.nan_to_num(before))
+    assert tire.last_time_s == clock and tire.probe_snapshots
+    with pytest.raises(ValueError, match='once per increasing timestamp'):
+        tire.compute_qfrc(m, d, .00125)

@@ -1,4 +1,7 @@
 """Closed-form single-contact guards reproduce the rolling-circle spike (spec section 4)."""
+from math import atan, degrees
+
+import numpy as np
 import pytest
 
 from bike_sim.terrain.contact_safety import (
@@ -37,6 +40,44 @@ def test_concave_span_ignores_convex_crests():
     # This seed's sharpest kink (20.46 deg between adjacent facets) is a crest; the rolling
     # spike found it clean, so the concave-only span must stay below 20 deg.
     assert concave_span_deg(garden(0.05, 0.30, 3)) < 20.
+
+
+class StubGarden:
+    """Minimal ``_nodes()`` stand-in: crafted facets without RockGarden's taper/noise."""
+
+    def __init__(self, s, z):
+        self._s = np.asarray(s, dtype=float)
+        self._z = np.asarray(z, dtype=float)
+
+    def _nodes(self):
+        return self._s, self._z
+
+
+# Facet mids at 0.10, 0.40, 1.00, 1.60, 2.10, 2.70 -- every pair of adjacent mids is more
+# than the 0.25 m window apart, so interior pairs contribute nothing and boundary joins
+# are isolated. Only the first facet mid (0.10) sits in the entry window; no mid reaches
+# the exit window (s[-1] - 0.25 = 2.75).
+S = [0.0, 0.2, 0.6, 1.4, 1.8, 2.4, 3.0]
+
+
+def test_concave_span_counts_a_steep_entry_join():
+    # First facet rises at atan(0.4) ~ 21.8 deg off flat ground; the rest are gentle.
+    stub = StubGarden(S, [0.0, 0.08, 0.10, 0.10, 0.10, 0.05, 0.0])
+    assert concave_span_deg(stub) == pytest.approx(degrees(atan(0.4)), abs=1e-9)
+    assert concave_span_deg(stub) >= 20.
+
+
+def test_concave_span_ignores_a_convex_entry_join():
+    # First facet descends at atan(-0.4) ~ -21.8 deg: a drop-off edge, not a concave join.
+    # With no other kink anywhere, the span must stay on the floor.
+    stub = StubGarden(S, [0.0, -0.08, -0.10, -0.10, -0.10, -0.05, 0.0])
+    assert concave_span_deg(stub) == pytest.approx(0., abs=1e-9)
+
+
+def test_concave_span_control_gentle_facets_stay_clean():
+    # All facets under ~6 deg, joins included: nothing for the guard to report.
+    stub = StubGarden(S, [0.0, 0.01, 0.02, 0.02, 0.02, 0.01, 0.0])
+    assert concave_span_deg(stub) < 17.
 
 
 def test_hazards_report_every_unsafe_obstacle_kind():

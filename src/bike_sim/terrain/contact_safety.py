@@ -41,14 +41,15 @@ def max_bowl_depth_m(length_m: float, min_radius_m: float = DEFAULT_MIN_CONTACT_
 
 
 def concave_span_deg(obstacle: RockGarden, window_m: float = DEFAULT_CONTACT_WINDOW_M) -> float:
-    """Largest slope increase between two facets at most ``window_m`` apart, in degrees.
+    """Largest concave slope difference between two facets at most ``window_m`` apart, in degrees.
 
-    The joins to flat ground at both ends are included. Convex crests do not count: a wheel
-    on a crest has a single support.
+    Both interior facet pairs and the joins to flat ground at each end are included: a
+    facet whose midpoint lies within ``window_m`` of a boundary is measured against the
+    slope-0 ground beyond it. Only slope *increases* count -- a rising facet off flat
+    ground (entry) or a facet descending to flat (exit) is a concave join; convex joins
+    and crests cannot put the wheel on two supports.
     """
     s, z = obstacle._nodes()
-    s = np.r_[s[0] - 1., s, s[-1] + 1.]
-    z = np.r_[0., z, 0.]
     mid = (s[:-1] + s[1:]) / 2.
     slopes = np.degrees(np.arctan(np.diff(z) / np.diff(s)))
     worst = 0.
@@ -56,6 +57,12 @@ def concave_span_deg(obstacle: RockGarden, window_m: float = DEFAULT_CONTACT_WIN
         ahead = slopes[(mid > mid[i]) & (mid - mid[i] <= window_m)]
         if len(ahead):
             worst = max(worst, float(np.max(ahead) - slopes[i]))
+    entry = slopes[mid <= s[0] + window_m]
+    if len(entry):
+        worst = max(worst, float(np.max(entry)))
+    exit_ = slopes[mid >= s[-1] - window_m]
+    if len(exit_):
+        worst = max(worst, float(-np.min(exit_)))
     return worst
 
 

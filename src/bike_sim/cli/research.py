@@ -21,6 +21,7 @@ from bike_sim.sim.research.rider_program import RiderProgram
 from bike_sim.sim.research.policy_session import PolicySession, load_policy, episode_exit_code
 from bike_sim.sim.research.sensors import SensorConfig
 from bike_sim.terrain.generator import TerrainGenSpec, generate_track
+from bike_sim.terrain.alpine import AlpineGenSpec, generate_alpine_track
 from bike_sim.terrain.research import RESEARCH_SCENARIOS, build_research_track
 from bike_sim.terrain.trackfile import load_track
 
@@ -47,9 +48,11 @@ def parser():
     p.add_argument('--policy', help='motor policy factory, module:factory')
     p.add_argument('--diagnostic-model-limits', action='store_true',
                    help='continue out-of-scope diagnostic runs; validity remains false')
-    p.add_argument('--scenario', choices=RESEARCH_SCENARIOS+('generated',), default='rough_uphill',
-        help="'generated' draws a seeded procedural rough climb (see --gen-spec); the seed is --seed")
-    p.add_argument('--gen-spec', type=Path, help='TOML of TerrainGenSpec ranges for --scenario generated')
+    p.add_argument('--scenario', choices=RESEARCH_SCENARIOS+('generated', 'alpine'), default='rough_uphill',
+        help="'generated' draws a seeded procedural rough climb, 'alpine' a seeded alpine scree climb "
+             "(see --gen-spec); the seed is --seed")
+    p.add_argument('--gen-spec', type=Path,
+        help='TOML of generator ranges: TerrainGenSpec for --scenario generated, AlpineGenSpec for --scenario alpine')
     p.add_argument('--track-file', type=Path, help='TOML overrides --scenario; preserves its authored seed/geometry')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--rider', choices=('lumped', 'articulated_planar'), default='articulated_planar')
@@ -98,11 +101,14 @@ def build_track(args):
     """--track-file wins over --scenario so an authored/frozen track is never regenerated."""
     if args.track_file:
         return load_track(args.track_file)
-    if args.gen_spec is not None and args.scenario != 'generated':
-        raise ValueError('--gen-spec requires --scenario generated')
+    if args.gen_spec is not None and args.scenario not in ('generated', 'alpine'):
+        raise ValueError('--gen-spec requires --scenario generated or alpine')
     if args.scenario == 'generated':
         spec = TerrainGenSpec.from_dict(tomllib.loads(args.gen_spec.read_text())) if args.gen_spec else TerrainGenSpec()
         return generate_track(spec, seed=args.seed, name=f'generated_{args.seed}')
+    if args.scenario == 'alpine':
+        spec = AlpineGenSpec.from_dict(tomllib.loads(args.gen_spec.read_text())) if args.gen_spec else AlpineGenSpec()
+        return generate_alpine_track(spec, seed=args.seed, name=f'alpine_{args.seed}')
     return build_research_track(args.scenario, seed=args.seed)
 
 

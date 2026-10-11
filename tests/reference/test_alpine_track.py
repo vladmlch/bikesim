@@ -293,3 +293,31 @@ def test_ride_lists_the_preset_as_generated(capsys):
     assert ride_cli._list_tracks() == 0
     line = next(l for l in capsys.readouterr().out.splitlines() if l.split() and l.split()[0] == 'alpine_scree')
     assert 'generated' in line and '120 m' in line
+
+
+from bike_sim.cli import research as research_cli
+
+
+def _research_args(*extra):
+    return research_cli.parser().parse_args(['--scenario', 'alpine', '--seed', '3', *extra])
+
+
+def test_research_alpine_scenario_builds_the_generator_track(tmp_path):
+    track = research_cli.build_track(_research_args())
+    assert track.name == 'alpine_3'
+    assert dump_track(track) == dump_track(generate_alpine_track(AlpineGenSpec(), seed=3, name='alpine_3'))
+    spec_file = tmp_path / 'gen.toml'
+    spec_file.write_text('ramp_grade = [0.10, 0.18]\nwall_grade = [0.20, 0.24]\n', encoding='utf-8')
+    custom = research_cli.build_track(_research_args('--gen-spec', str(spec_file)))
+    assert custom.grade_profile.slope(np.linspace(0., 120., 1201)).max() <= .24 + 1e-12
+
+
+def test_research_gen_spec_rejects_unknown_keys_and_wrong_scenarios(tmp_path):
+    bad = tmp_path / 'bad.toml'
+    bad.write_text('rampgrade = [0.1, 0.2]\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='unknown alpine generator keys'):
+        research_cli.build_track(_research_args('--gen-spec', str(bad)))
+    good = tmp_path / 'good.toml'
+    good.write_text('ramp_grade = [0.1, 0.2]\n', encoding='utf-8')
+    with pytest.raises(ValueError, match='--gen-spec requires'):
+        research_cli.build_track(research_cli.parser().parse_args(['--scenario', 'rough_uphill', '--gen-spec', str(good)]))

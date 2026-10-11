@@ -34,11 +34,19 @@ from bike_sim.terrain.surface import SURFACES, SurfaceSection
 ALPINE_PRESET_SEED = 41
 MIN_BACKGROUND_CORRELATIONS = 4.
 """Free stretches shorter than this many correlation lengths get no background texture."""
+MIN_GRID_M = 0.01
+"""The centimetre grid the body, placements and corr draws are rounded onto."""
+_FACETED_REDRAWS = 25
+"""Amplitude-shrink rounds a faceted section gets before its spec is declared impossible."""
 
 _RANGE_FIELDS = ('ramp_len_m', 'ramp_grade', 'shelf_len_m', 'shelf_grade', 'wall_grade', 'counter_len_m',
                  'scree_len_m', 'scree_amp_m', 'scree_corr_m', 'wet_len_m', 'background_amp_m',
                  'background_corr_m', 'boulder_height_m', 'boulder_len_m', 'rock_len_m', 'rock_amp_m',
                  'rock_corr_m', 'water_bar_depth_m', 'water_bar_len_m', 'sharp_edge_height_m')
+_GRID_RANGE_FIELDS = ('ramp_len_m', 'shelf_len_m', 'counter_len_m', 'scree_len_m', 'scree_corr_m',
+                      'wet_len_m', 'background_corr_m', 'boulder_len_m', 'rock_len_m', 'rock_corr_m',
+                      'water_bar_len_m')
+"""Length-like ranges whose low bound must still round to a positive grid step."""
 _COUNT_FIELDS = ('n_scree', 'n_wet', 'n_boulders', 'n_rock_gardens', 'n_water_bars', 'n_sharp_edges')
 _POSITIVE_FIELDS = ('length_m', 'lead_in_m', 'lead_out_m', 'transition_m', 'min_contact_radius_m',
                     'max_kink_deg', 'contact_window_m')
@@ -94,7 +102,8 @@ class AlpineGenSpec:
             if isinstance(value, list):
                 object.__setattr__(self, f.name, tuple(value))
         for name in _RANGE_FIELDS:
-            lo, hi = check_range(getattr(self, name), name)
+            lo, hi = check_range(getattr(self, name), name,
+                                 minimum=MIN_GRID_M if name in _GRID_RANGE_FIELDS else 0.)
             object.__setattr__(self, name, (float(lo), float(hi)))
         lo, hi = check_range(self.counter_grade, 'counter_grade', minimum=-1.)
         if hi >= 0.:
@@ -117,7 +126,13 @@ class AlpineGenSpec:
             raise ValueError('wall_grade must start at or above the top of ramp_grade')
         if self.base_surface not in SURFACES:
             raise ValueError(f'unknown base_surface {self.base_surface!r}; available: {", ".join(SURFACES)}')
-        if self.lead_in_m + self.lead_out_m + 2. * self.transition_m + self.ramp_len_m[0] > self.length_m:
+        if self.transition_m < MIN_GRID_M:
+            raise ValueError(f'transition_m must be at least {MIN_GRID_M} m: segments are spaced on a centimetre grid')
+        # _segments walks the body on the rounded centimetre grid, so the fit is checked
+        # on the same rounded terms rather than on the raw spec values.
+        cursor = _r(self.lead_in_m + self.transition_m, 2)
+        limit = _r(_r(self.length_m - self.lead_out_m, 2) - self.transition_m, 2)
+        if _r(limit - cursor, 2) < self.ramp_len_m[0]:
             raise ValueError('the body must hold at least one shortest ramp between lead-in and lead-out')
         if self.single_contact_safe and self.n_sharp_edges[1] > 0:
             raise ValueError('sharp edges always put the 2D tyre on two supports; '
@@ -196,15 +211,19 @@ def _faceted(spec, rng, cls, start, length, amp, corr):
     """A seeded faceted section whose concave span respects ``max_kink_deg``.
 
     New seeds are drawn first; if none of PLACEMENT_TRIES passes, the amplitude shrinks by
-    a fifth and the draw repeats. Without ``single_contact_safe`` the first seed is kept.
+    a fifth and the draw repeats. The shrink rounds onto the placement grid and reaches a
+    fixed point, so after ``_FACETED_REDRAWS`` rounds the spec is rejected rather than left
+    redrawing forever. Without ``single_contact_safe`` the first seed is kept.
     """
-    while True:
+    for _ in range(_FACETED_REDRAWS):
         for _ in range(PLACEMENT_TRIES):
             obstacle = cls(start_m=start, section_length_m=length, amplitude_m=amp,
                            correlation_length_m=corr, seed=int(rng.integers(0, 2**31)))
             if not spec.single_contact_safe or concave_span_deg(obstacle, spec.contact_window_m) < spec.max_kink_deg:
                 return obstacle
         amp = _r(amp * .8)
+    raise ValueError(f'concave-span redraw exhausted for {cls.__name__} at {start:g} m: '
+                     'amplitude reached the grid floor without passing max_kink_deg')
 
 
 def generate_alpine_track(spec, *, seed, name=None):

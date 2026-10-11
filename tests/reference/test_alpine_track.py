@@ -74,6 +74,33 @@ def test_sharp_edges_need_the_multi_contact_opt_in():
     assert spec.n_sharp_edges == (1, 2)
 
 
+@pytest.mark.parametrize('bad', [
+    dict(length_m=44.014, transition_m=2.007),  # fits unrounded but not on the cm grid
+    dict(transition_m=0.001),                   # sub-cm: the segment cursor would not advance
+    dict(transition_m=0.009),
+    dict(ramp_len_m=(0., 0.)),
+    dict(shelf_len_m=(0., 0.)),
+    dict(counter_len_m=(0., 0.)),
+    dict(scree_len_m=(0., 0.), n_scree=(0, 0)),
+    dict(wet_len_m=(0., 0.), n_wet=(0, 0)),
+    dict(boulder_len_m=(0., 0.), n_boulders=(0, 0)),
+    dict(rock_len_m=(0., 0.), n_rock_gardens=(0, 0)),
+    dict(water_bar_len_m=(0., 0.), n_water_bars=(0, 0)),
+    dict(scree_corr_m=(0., 0.)),
+    dict(background_corr_m=(0., 0.)),
+    dict(rock_corr_m=(0., 0.)),
+])
+def test_spec_rejects_lengths_below_the_grid(bad):
+    with pytest.raises(ValueError):
+        AlpineGenSpec(**bad)
+
+
+def test_spec_accepts_the_grid_boundary():
+    assert AlpineGenSpec(transition_m=0.01).transition_m == pytest.approx(0.01)
+    spec = AlpineGenSpec(ramp_len_m=(0.01, 15.))
+    assert spec.ramp_len_m == (0.01, 15.)
+
+
 def _kinds(seed, **overrides):
     spec = AlpineGenSpec(**overrides)
     return spec, _segments(spec, np.random.default_rng(seed))
@@ -237,6 +264,14 @@ def test_redraw_keeps_a_marginal_rock_garden_clean():
         track = generate_alpine_track(spec, seed=seed)
         assert single_contact_hazards(track) == []
         assert all(o.amplitude_m <= .07 for o in track.obstacles if type(o) is RockGarden)
+
+
+def test_faceted_redraw_is_capped_not_endless():
+    """A max_kink_deg below what the flattest possible draw can meet must fail, not hang."""
+    spec = AlpineGenSpec(max_kink_deg=1e-4, n_rock_gardens=(1, 1))
+    for seed in SEEDS:
+        with pytest.raises(ValueError, match='concave-span redraw exhausted'):
+            generate_alpine_track(spec, seed=seed)
 
 
 def test_alpine_scree_preset_builder():

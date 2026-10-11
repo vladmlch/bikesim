@@ -1,0 +1,171 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "alpine_scree"
+length_m = 120.0
+description = "Alpine scree climb; seed=41; spec_sha256=7a83347d4bb0153c4c06b70cf6c4a0b3a9712c02875465442050525c6511597c"
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [10.0, 0.0], [12.0, 0.2268], [41.31, 0.2268], [43.31, 0.0531], [47.81, 0.0531], [49.81, 0.2858], [70.06, 0.2858], [72.06, 0.0336], [78.47, 0.0336], [80.47, 0.2361], [103.0, 0.2361], [105.0, 0.0], [120.0, 0.0]] }
+surface_sections = [{ start_m = 25.19, end_m = 32.61, surface = "scree" }, { start_m = 82.66, end_m = 91.8, surface = "scree" }, { start_m = 93.85, end_m = 101.17, surface = "scree" }]
+
+[[obstacles]]
+type = "roughness"
+start_m = 10.0
+section_length_m = 5.18
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 113147155
+
+[[obstacles]]
+type = "rock_garden"
+start_m = 15.18
+section_length_m = 6.38
+amplitude_m = 0.0593
+correlation_length_m = 0.439
+seed = 1671052458
+
+[[obstacles]]
+type = "roughness"
+start_m = 21.56
+section_length_m = 3.63
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 1987102996
+
+[[obstacles]]
+type = "roughness"
+start_m = 25.19
+section_length_m = 7.42
+amplitude_m = 0.0128
+correlation_length_m = 0.179
+seed = 235416628
+
+[[obstacles]]
+type = "roughness"
+start_m = 32.61
+section_length_m = 4.52
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 867627500
+
+[[obstacles]]
+type = "pothole"
+edge = "bowl"
+start_m = 37.13
+depth_m = 0.0977
+hole_length_m = 1.46
+
+[[obstacles]]
+type = "roughness"
+start_m = 38.59
+section_length_m = 6.229999
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 1610455891
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 44.82
+height_m = 0.1388
+bump_length_m = 1.12
+
+[[obstacles]]
+type = "roughness"
+start_m = 45.94
+section_length_m = 16.51
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 1246306415
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 62.45
+height_m = 0.0828
+bump_length_m = 0.86
+
+[[obstacles]]
+type = "roughness"
+start_m = 63.31
+section_length_m = 4.98
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 1311573360
+
+[[obstacles]]
+type = "pothole"
+edge = "bowl"
+start_m = 68.29
+depth_m = 0.1075
+hole_length_m = 1.42
+
+[[obstacles]]
+type = "roughness"
+start_m = 69.71000000000001
+section_length_m = 5.699999
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 150993694
+
+[[obstacles]]
+type = "pothole"
+edge = "bowl"
+start_m = 75.41
+depth_m = 0.1186
+hole_length_m = 1.05
+
+[[obstacles]]
+type = "roughness"
+start_m = 76.46
+section_length_m = 1.82
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 277620370
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 78.28
+height_m = 0.0914
+bump_length_m = 1.1
+
+[[obstacles]]
+type = "roughness"
+start_m = 79.38
+section_length_m = 3.28
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 274032135
+
+[[obstacles]]
+type = "roughness"
+start_m = 82.66
+section_length_m = 9.14
+amplitude_m = 0.0184
+correlation_length_m = 0.195
+seed = 1239545633
+
+[[obstacles]]
+type = "roughness"
+start_m = 91.8
+section_length_m = 2.05
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 1163793998
+
+[[obstacles]]
+type = "roughness"
+start_m = 93.85
+section_length_m = 7.32
+amplitude_m = 0.0179
+correlation_length_m = 0.2
+seed = 682828266
+
+[[obstacles]]
+type = "roughness"
+start_m = 101.16999999999999
+section_length_m = 3.83
+amplitude_m = 0.0083
+correlation_length_m = 0.213
+seed = 1402622616

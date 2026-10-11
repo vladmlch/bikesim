@@ -243,3 +243,35 @@ def test_alpine_scree_preset_builder():
     pinned, other = alpine_scree(), alpine_scree(seed=7)
     assert pinned.name == 'alpine_scree' and other.name == 'alpine_scree_7'
     assert dump_track(pinned) == dump_track(generate_alpine_track(AlpineGenSpec(), seed=ALPINE_PRESET_SEED, name='alpine_scree'))
+
+
+from pathlib import Path
+
+from bike_sim.terrain import SEEDED_PRESETS, available_presets, get_preset
+from bike_sim.terrain.trackfile import load_track
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_preset_is_registered_and_seeded():
+    assert 'alpine_scree' in available_presets()
+    assert SEEDED_PRESETS['alpine_scree'] == (alpine_scree, ALPINE_PRESET_SEED)
+    track = get_preset('alpine_scree')
+    assert track.name == 'alpine_scree' and track.length_m == 120.
+
+
+def test_frozen_example_equals_the_preset_dump():
+    path = ROOT / 'examples/research/alpine_scree.toml'
+    assert path.read_text(encoding='utf-8') == dump_track(get_preset('alpine_scree'))
+    track = load_track(path)
+    assert track.surface == 'hardpack'
+    assert any(s.surface == 'scree' for s in track.surface_sections)
+    assert track.length_m == 120.
+
+
+def test_rocky_genspec_is_the_multi_contact_opt_in():
+    spec = AlpineGenSpec.from_dict(_tomllib.loads((ROOT / 'examples/research/alpine_rocky_genspec.toml').read_text(encoding='utf-8')))
+    assert spec.single_contact_safe is False
+    assert spec.n_sharp_edges[1] >= 1
+    assert spec.rock_amp_m[1] > AlpineGenSpec().rock_amp_m[1]
+    assert single_contact_hazards(generate_alpine_track(spec, seed=0))

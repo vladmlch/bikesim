@@ -1,0 +1,18 @@
+# examples/research/alpine_rocky_genspec.toml
+# AlpineGenSpec for bike-research --scenario alpine --gen-spec <this file>.
+# Multi-contact opt-in: single_contact_safe = false removes the compliant_2d
+# tyre's geometry guards, so rock gardens, scree and sharp ledges take the
+# sizes a real alpine trail has. Strict compliant_2d runs WILL end in
+# multi_support; use a multi-contact tyre backend or --diagnostic-model-limits.
+single_contact_safe = false
+rock_amp_m = [0.06, 0.12]
+rock_corr_m = [0.15, 0.25]
+n_rock_gardens = [2, 3]
+scree_amp_m = [0.015, 0.030]
+scree_corr_m = [0.10, 0.15]
+boulder_height_m = [0.08, 0.20]
+boulder_len_m = [0.4, 0.9]
+water_bar_depth_m = [0.10, 0.18]
+water_bar_len_m = [0.6, 1.0]
+n_sharp_edges = [1, 2]
+sharp_edge_height_m = [0.04, 0.10]

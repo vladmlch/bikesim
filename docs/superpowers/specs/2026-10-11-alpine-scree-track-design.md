@@ -1,6 +1,6 @@
 # Alpine scree climb: seeded trail generator and pinned preset — design
 
-Дата: 2026-10-11. Ветка: `feat/alpine-scree-track`. Статус: дизайн согласован в чате, ждёт ревью файла.
+Статус: реализовано в feat/alpine-scree-track; тесты tests/reference/test_alpine_track.py, test_contact_safety.py, test_terrain_placement_regression.py.
 
 ## 1. Цель
 

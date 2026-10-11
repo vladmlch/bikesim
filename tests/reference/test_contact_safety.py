@@ -80,6 +80,23 @@ def test_concave_span_control_gentle_facets_stay_clean():
     assert concave_span_deg(stub) < 17.
 
 
+# Same isolation trick mirrored to the far end: mids at 0.30, 1.00, 1.70, 2.30, 2.80 --
+# all interior gaps exceed the window, no mid reaches the entry window (s[0] + 0.25),
+# and only the last facet mid (2.80) sits in the exit window (s[-1] - 0.25 = 2.75).
+S_EXIT = [0.0, 0.6, 1.4, 2.0, 2.6, 3.0]
+
+
+def test_concave_span_counts_a_steep_exit_join_and_ignores_a_convex_one():
+    # Final facet descends at atan(0.4) ~ 21.8 deg onto flat ground: a concave exit
+    # join, counted. Everything else is gentle or unpaired, so the exit term drives it.
+    stub = StubGarden(S_EXIT, [0.0, 0.02, 0.16, 0.16, 0.16, 0.0])
+    assert concave_span_deg(stub) == pytest.approx(degrees(atan(0.4)), abs=1e-9)
+    # A final facet rising at atan(0.4) to meet flat ground is a convex exit join:
+    # the contribution is negative, so it must not flag.
+    stub = StubGarden(S_EXIT, [0.0, -0.02, -0.16, -0.16, -0.16, 0.0])
+    assert concave_span_deg(stub) == pytest.approx(0., abs=1e-9)
+
+
 def test_hazards_report_every_unsafe_obstacle_kind():
     track = TrackSpec('t', 60., obstacles=[
         Bump(start_m=5., height_m=.10, bump_length_m=.66),

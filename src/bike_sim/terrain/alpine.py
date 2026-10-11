@@ -103,10 +103,12 @@ class AlpineGenSpec:
         for name in _COUNT_FIELDS:
             check_range(getattr(self, name), name, integer=True)
         for name in _POSITIVE_FIELDS:
-            scalar(getattr(self, name), name, positive=True)
+            object.__setattr__(self, name, scalar(getattr(self, name), name, positive=True))
         for name in ('counter_prob', 'scree_ramp_bias'):
-            if scalar(getattr(self, name), name, minimum=0.) > 1.:
+            value = scalar(getattr(self, name), name, minimum=0.)
+            if value > 1.:
                 raise ValueError(f'{name} must lie in [0, 1]')
+            object.__setattr__(self, name, value)
         if type(self.n_walls) is not int or not 0 <= self.n_walls <= 1:
             raise ValueError('n_walls must be 0 or 1')
         if type(self.single_contact_safe) is not bool:

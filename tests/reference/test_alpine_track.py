@@ -1,6 +1,7 @@
 """Alpine scree climb: generator, preset, frozen files and CLI routing."""
 import tomllib
 
+import numpy as np
 import pytest
 
 from bike_sim.terrain.alpine import ALPINE_PRESET_SEED, AlpineGenSpec
@@ -35,6 +36,19 @@ def test_spec_round_trips_through_dict_and_toml_lists():
     assert again == spec and again.sha256() == spec.sha256()
     assert AlpineGenSpec.from_dict(spec.to_dict()) == spec
     assert AlpineGenSpec().sha256() != spec.sha256()
+
+
+def test_spec_hash_is_stable_across_numeric_input_types():
+    plain = AlpineGenSpec()
+    assert AlpineGenSpec(length_m=120).sha256() == AlpineGenSpec(length_m=120.).sha256()
+    mixed = AlpineGenSpec(length_m=np.int64(120), counter_prob=np.float64(.3))
+    assert mixed.length_m == 120. and isinstance(mixed.length_m, float)
+    assert mixed.counter_prob == .3
+    assert mixed.sha256() == plain.sha256()
+    # np.float32 validates too but widens to a different double; it must still hash cleanly.
+    widened = AlpineGenSpec(counter_prob=np.float32(.3))
+    assert isinstance(widened.counter_prob, float)
+    widened.sha256()
 
 
 @pytest.mark.parametrize('bad', [

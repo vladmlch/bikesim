@@ -115,6 +115,7 @@ class RideHUD:
             ValueError: If a wheel-spin joint or contact sphere is missing.
         """
         self.rear_wheel = resolve_wheel_spin(model, "rear_wheel_spin", "geom_rear_contact")
+        self._terrain_stamp = None
 
     def line(
         self,
@@ -473,21 +474,34 @@ class RideHUD:
             return row
         drive = sim.physical.drive.last
         assist = sim.physical.drive.assist
-        obstacle = nearest_obstacle(sim.track, sim.position_m)
         fork_spring = sim.force_accumulator.component("fork_spring")
         shock_coil = sim.force_accumulator.component("shock_coil")
         shift_count = int(drive.get("shift_count") or 0)
         crank_rate = drive.get("crank_target_rate_rad_s")
-        grade = (0.0 if sim.track.grade_profile is None
-                 else 100.0 * sim.track.grade_profile.slope(sim.position_m))
+        # The terrain triple depends only on track identity and position, so a
+        # position-exact single-entry memo dedups repeat snapshots and the
+        # legend/line double compute. The id guards hold because the track's
+        # containers are reassigned only at build time -- an in-place
+        # ``obstacles.append`` would slip past them.
+        key = (id(sim.track), id(sim.track.obstacles),
+               id(sim.track.grade_profile), sim.position_m)
+        stamp = self._terrain_stamp
+        if stamp is None or stamp[0] != key:
+            obstacle = nearest_obstacle(sim.track, sim.position_m)
+            grade = (0.0 if sim.track.grade_profile is None
+                     else 100.0 * sim.track.grade_profile.slope(sim.position_m))
+            stamp = (key, {
+                "grade_pct": float(grade),
+                "obstacle": "" if obstacle is None else obstacle[0],
+                "obstacle_distance_m": "" if obstacle is None else float(obstacle[1]),
+            })
+            self._terrain_stamp = stamp
         row.update({
             "x_m": float(sim.position_m),
             "rtf": sim.physical.live_real_time_factor,
             "speed_kmh": float(sim.speed_mps) * KMH_PER_MPS,
             "pitch_deg": float(degrees(sim.pitch_rad)),
-            "grade_pct": float(grade),
-            "obstacle": "" if obstacle is None else obstacle[0],
-            "obstacle_distance_m": "" if obstacle is None else float(obstacle[1]),
+            **stamp[1],
             "front_load_n": float(sim.contacts.front_load_n),
             "rear_load_n": float(sim.contacts.rear_load_n),
             "fork_travel_mm": float(sim.fork_travel_mm),

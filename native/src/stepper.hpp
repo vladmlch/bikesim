@@ -94,6 +94,21 @@ public:
     [[nodiscard]] mjModel *model() const { return m_; }
     [[nodiscard]] mjData *data() const { return d_; }
 
+    // Position/velocity-stage freshness: true only while d_'s fwdPosition /
+    // fwdVelocity products still correspond to the CURRENT qpos/qvel under
+    // the current pos/vel-stage model inputs (friction bounds, wrap
+    // coefficients, tendon/site rows). mj_forwardSkip(mjSTAGE_VEL) is legal
+    // only while this holds — anything else falls back to a full forward.
+    // Engine/state entry points below update it; paths that write
+    // qpos/qvel/time or pos/vel model inputs directly must call
+    // note_posvel_stale. Writers that swap+restore qpos bitwise and refresh
+    // kinematics/comPos afterwards preserve it (attachment samples), as do
+    // paired model-field+mirror writes (the CG marker) and pure
+    // kinematics/comPos refreshes.
+    [[nodiscard]] bool posvel_fresh() const noexcept { return posvel_fresh_; }
+    void note_posvel_fresh() noexcept { posvel_fresh_ = true; }
+    void note_posvel_stale() noexcept { posvel_fresh_ = false; }
+
     drivetrain::DrivetrainWriter &drive() const;
 
     // Nonthrowing presence check for the installed drive writer — private
@@ -351,6 +366,7 @@ private:
     mjModel *m_;
     mjData *d_;
     bool poisoned_ = false;
+    bool posvel_fresh_ = false;
     mjfTime allowed_time_callback_ = nullptr;
     mjfTime observed_time_callback_ = nullptr;
     bool time_callback_policy_ready_ = false;

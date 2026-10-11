@@ -102,7 +102,27 @@ namespace rider {
               std::span<const double> b, lapack_int nrhs,
               double rcond = kDefaultRcond);
 
+        // Same contract with `a` already in DGELSD's Fortran
+        // column-major (m, n) layout. A row-major (n, m) buffer IS that
+        // layout byte-for-byte, so a caller holding J when the problem
+        // needs J.T passes J untransposed: the staged bytes — and thus
+        // every LAPACK argument and the result — are identical to
+        // materializing the transpose and going through solve().
+        [[nodiscard]] LeastSquaresResult
+        solve_column_major(std::span<const double> a, lapack_int m,
+                           lapack_int n, std::span<const double> b,
+                           lapack_int nrhs, double rcond = kDefaultRcond);
+
     private:
+        // A's memory order at staging: solve() permutes row-major
+        // input; solve_column_major() receives the layout outright.
+        enum class MatrixLayout : std::uint8_t { row_major, column_major };
+
+        [[nodiscard]] LeastSquaresResult
+        solve_impl(std::span<const double> a, lapack_int m, lapack_int n,
+                   std::span<const double> b, lapack_int nrhs,
+                   double rcond, MatrixLayout layout);
+
         lapack_int max_rows_;
         lapack_int max_columns_;
         lapack_int max_rhs_;
@@ -114,5 +134,13 @@ namespace rider {
         std::vector<double> s_;
         std::vector<double> work_;
         std::vector<lapack_int> iwork_;
+        // Resolved DGELSD work sizes per solve shape. The LWORK=-1
+        // probe's answer is a pure function of (m, n, nrhs) — dims fix
+        // lda/ldb as well — so replaying a remembered answer hands the
+        // real call the identical lwork while skipping the probe.
+        struct ShapeWork {
+            lapack_int m, n, nrhs, lwork, iwork;
+        };
+        std::vector<ShapeWork> shape_work_;
     };
 } // namespace rider

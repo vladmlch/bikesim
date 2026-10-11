@@ -256,6 +256,17 @@ public:
     }
 
 private:
+    // Freshness predicate for the mjSTAGE_VEL-skip fast path: drains the
+    // drivetrain's live-model write bit into the Stepper's flag, then
+    // answers whether d's position/velocity-stage products still match the
+    // current qpos/qvel under the current pos/vel-stage model inputs.
+    [[nodiscard]] bool posvel_fresh();
+    // The deduplicated engine refresh: mj_forwardSkip(mjSTAGE_VEL, 0) while
+    // posvel_fresh() holds, a full mj_forward otherwise — the flag is true
+    // on return either way. Callers keep the oracle's call sites verbatim;
+    // only the redundant position/velocity stages are elided.
+    void refresh_forward(mjModel *m, mjData *d);
+
     // apply_forces tail — the contacts refresh at physical_runtime.py:337
     // (update_grounded = active && advance) and :631 (final=true). The
     // tire backend always owns the wheel channels; the query's
@@ -269,8 +280,13 @@ private:
     [[nodiscard]] double
     rollback_brake_demand(double speed_mps, const RideControl *control);
 
+    // `drive_last` is the interval's single materialized
+    // DriveTelemetry::to_map() — the caller owns the hoisted copy; every
+    // consumer below sees the same lanes, matching the oracle's repeated
+    // dict reads on an unchanged sim.drive.diagnostics().
     [[nodiscard]] WireObject
-    sensor_channels(std::span<const double> qvel) const;
+    sensor_channels(std::span<const double> qvel,
+                    const drivetrain::Diagnostics &drive_last) const;
     [[nodiscard]] WireObject
     tire_channels(const WheelSnapshots &snapshots,
                   std::span<const double> qvel) const;
@@ -286,7 +302,8 @@ private:
     [[nodiscard]] double
     loss_increment(const std::vector<std::pair<
                        std::string, std::vector<double>>> &components,
-                   std::span<const double> velocity, double dt) const;
+                   std::span<const double> velocity, double dt,
+                   const drivetrain::Diagnostics &drive_last) const;
     [[nodiscard]] WireObject
     balance_channel(double front, double rear, bool braking,
                     bool rider_enabled);

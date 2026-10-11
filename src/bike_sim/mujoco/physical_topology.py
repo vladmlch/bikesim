@@ -138,6 +138,24 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
         if physics_config.tires.backend in ('compliant_2d','distributed_2d_reference'):
             for geom in body.iter('geom'):
                 geom.set('contype','0'); geom.set('conaffinity','0')
+    # Terrain collisions matter only for crash detection: geom_handlebar feeds
+    # handlebar_load, geom_rider_* feed physical_contact_crash — both keep the
+    # standard mask. Every other structural geom moves to bit 3: it can no
+    # longer meet the heightfield (conaffinity never carries bit 3) but still
+    # collides with catch_plane, which gains bit 3 below, so catch semantics
+    # stay intact.
+    for body_name in ('frame','steer','fork_lower','chainstay','seatstay',
+                      'rocker','shock_yoke','shock_shaft','shock_body'):
+        body=_find(root,'body',body_name)
+        for geom in body.findall('geom'):
+            if geom.get('name') == 'geom_handlebar':
+                continue
+            if int(geom.get('contype','1')) == 0:
+                continue
+            geom.set('contype','8'); geom.set('conaffinity','0')
+    catch=root.find(".//geom[@name='catch_plane']")
+    if catch is not None:
+        catch.set('conaffinity',str(int(catch.get('conaffinity','1'))|8))
     contact=root.find('contact')
     if contact is None:
         contact=ET.SubElement(root,'contact')

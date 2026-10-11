@@ -1,4 +1,5 @@
-"""Low speed latches after grace and dwell; braking never contributes dwell."""
+"""Low speed latches a run record after grace and dwell; the active loss
+recovers with the dwell timer. Braking never contributes dwell."""
 import pytest
 
 from bike_sim.sim.ride.balance_monitor import BalanceMonitor
@@ -21,7 +22,24 @@ def test_sustained_low_speed_latches_after_half_second_from_first_low_sample():
     assert event is not None
     assert event.time_s == pytest.approx(3.6)
     assert event.position_m == pytest.approx(3.)
-    assert monitor.update(10.,50.,10/3.6,riding=True) is event
+    assert monitor.current_event is event
+
+
+def test_recovered_speed_clears_the_active_event_but_keeps_the_record():
+    monitor = _run([5/3.6]*31+[3/3.6]*6)
+    event = monitor.event
+    assert monitor.update(10.,50.,10/3.6,riding=True) is None
+    assert monitor.current_event is None
+    assert monitor.event is event
+    assert monitor.low_speed_s == 0.
+    monitor.update(20.,60.,3/3.6,riding=True)
+    assert monitor.update(20.6,61.,3/3.6,riding=True) is monitor.current_event
+    assert monitor.current_event is not event
+    assert monitor.current_event.position_m == 61.
+    assert monitor.event is event
+    monitor.update(21.,62.,3/3.6,riding=False)
+    assert monitor.current_event is None
+    assert monitor.event is event
 
 
 def test_brief_dip_recovers_and_resets_dwell():
@@ -59,6 +77,7 @@ def test_reset_clears_event_and_restarts_first_ride_grace():
     assert monitor.event is not None
     monitor.reset()
     assert monitor.event is None
+    assert monitor.current_event is None
     assert monitor.low_speed_s == 0.
     assert monitor.update(100.,0.,0.,riding=True) is None
     assert monitor.grace_left_s == 3.

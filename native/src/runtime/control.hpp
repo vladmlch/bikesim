@@ -282,21 +282,24 @@ class BalanceMonitor {
 public:
     BalanceMonitor(double floor, double dwell, double grace);
     void reset() noexcept;
-    // update() returns the latched/created event (nullopt while upright).
+    // update() returns the active event (nullopt while upright); `event`
+    // keeps the run's first latched record for summaries and metrics.
     std::optional<BalanceLostEvent> update(double time_s, double position_m,
                                          double speed_mps, bool riding);
-    // observation() — the rider_balance channel dict.
+    // observation() — the rider_balance channel dict; reports the active
+    // `current_event` so the HUD recovers when the dwell timer resets.
     [[nodiscard]] WireObject observation() const;
 
-    // state_dict() — balance_monitor.py:62-72; the config triple stays
+    // state_dict() — balance_monitor.py:71-84; the config triple stays
     // construction-owned.
     struct State {
-        std::optional<BalanceLostEvent> event;
+        std::optional<BalanceLostEvent> event, current_event;
         double low_speed_s = 0., grace_left_s = 0.;
         std::optional<double> started_s, low_started_s, last_time_s;
     };
     [[nodiscard]] State state() const noexcept {
         return {.event = event,
+                .current_event = current_event,
                 .low_speed_s = low_speed_s,
                 .grace_left_s = grace_left_s,
                 .started_s = started_s,
@@ -305,6 +308,7 @@ public:
     }
     void restore(const State &s) noexcept {
         event = s.event;
+        current_event = s.current_event;
         low_speed_s = s.low_speed_s;
         grace_left_s = s.grace_left_s;
         started_s = s.started_s;
@@ -313,7 +317,7 @@ public:
     }
 
     double floor_mps, dwell_s, grace_s;
-    std::optional<BalanceLostEvent> event;
+    std::optional<BalanceLostEvent> event, current_event;
     double low_speed_s = 0.;
     double grace_left_s = 0.;
     std::optional<double> started_s, low_started_s, last_time_s;

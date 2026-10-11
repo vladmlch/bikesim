@@ -256,6 +256,7 @@ BalanceMonitor::BalanceMonitor(double floor, double dwell,
 
 void BalanceMonitor::reset() noexcept {
     event.reset();
+    current_event.reset();
     low_speed_s = 0.;
     grace_left_s = grace_s;
     started_s.reset();
@@ -275,7 +276,6 @@ std::optional<BalanceLostEvent> BalanceMonitor::update(
         throw std::invalid_argument(
             "balance monitor time must not rewind");
     last_time_s = time_s;
-    if (event.has_value()) return event;
     if (riding && !started_s.has_value()) started_s = time_s;
     grace_left_s = !started_s.has_value()
                        ? grace_s
@@ -283,26 +283,33 @@ std::optional<BalanceLostEvent> BalanceMonitor::update(
     if (!riding || grace_left_s > 1e-12 || speed_mps >= floor_mps) {
         low_started_s.reset();
         low_speed_s = 0.;
+        current_event.reset();
         return std::nullopt;
     }
     if (!low_started_s.has_value()) low_started_s = time_s;
     low_speed_s = time_s - *low_started_s;
-    if (low_speed_s >= dwell_s - 1e-12)
-        event = BalanceLostEvent{.time_s = time_s,
-                                 .position_m = position_m,
-                                 .speed_mps = speed_mps};
-    return event;
+    if (low_speed_s >= dwell_s - 1e-12 && !current_event.has_value()) {
+        current_event = BalanceLostEvent{.time_s = time_s,
+                                         .position_m = position_m,
+                                         .speed_mps = speed_mps};
+        if (!event.has_value()) event = current_event;
+    }
+    return current_event;
 }
 
 WireObject BalanceMonitor::observation() const {
     WireObject out;
-    out.emplace_back("balance_lost", Wire(event.has_value()));
+    out.emplace_back("balance_lost", Wire(current_event.has_value()));
     out.emplace_back("low_speed_s", Wire(low_speed_s));
     out.emplace_back("grace_left_s", Wire(grace_left_s));
     out.emplace_back("balance_lost_at_m",
-                     event.has_value() ? Wire(event->position_m) : Wire());
+                     current_event.has_value()
+                         ? Wire(current_event->position_m)
+                         : Wire());
     out.emplace_back("balance_lost_time_s",
-                     event.has_value() ? Wire(event->time_s) : Wire());
+                     current_event.has_value()
+                         ? Wire(current_event->time_s)
+                         : Wire());
     return out;
 }
 
@@ -380,6 +387,7 @@ road_samples(std::span<const std::array<double, 2>> vertices,
     std::vector<double> xs(wheel_x_m.begin(), wheel_x_m.end());
     const int count = static_cast<int>(
         std::floor(lookahead_m / spacing_m + 1e-12));
+    xs.reserve(wheel_x_m.size() + static_cast<std::size_t>(count) + 1);
     for (int k = 0; k < count; ++k)
         xs.push_back(front + static_cast<double>(k + 1) * spacing_m);
     xs.push_back(front + lookahead_m);

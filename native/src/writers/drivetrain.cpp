@@ -490,13 +490,13 @@ namespace drivetrain {
         // Commit: guarded model writes publish first (an engine failure
         // poisons the owning Stepper per the E1 contract), then the policy
         // resets and the snapshot swap — all memory-only, so nothing past
-        // this line can allocate.
+        // this line can allocate. Live-model writes feed the freshness bit.
         if (hub_staged)
-            ideal_hub_->commit(*staging.ideal_hub);
+            live_model_dirty_ |= ideal_hub_->commit(*staging.ideal_hub);
         if (clutch_staged)
-            clutch_->commit(*staging.clutch);
+            live_model_dirty_ |= clutch_->commit(*staging.clutch);
         if (freewheel_staged)
-            freewheel_->commit(*staging.freewheel);
+            live_model_dirty_ |= freewheel_->commit(*staging.freewheel);
         shifting_.reset();
         assist_.reset();
         battery_.reset();
@@ -1093,11 +1093,14 @@ namespace drivetrain {
         // mark the updates this tick refreshed; they exist only when the
         // transmission does — staging adds them under the topology guard.
         if (bank.ideal_hub_staged)
-            ideal_hub_->commit(engaged(bank.ideal_hub));
+            live_model_dirty_ |=
+                ideal_hub_->commit(engaged(bank.ideal_hub));
         if (bank.clutch_staged)
-            clutch_->commit(engaged(bank.clutch));
+            live_model_dirty_ |=
+                clutch_->commit(engaged(bank.clutch));
         if (bank.freewheel_staged)
-            freewheel_->commit(engaged(bank.freewheel));
+            live_model_dirty_ |=
+                freewheel_->commit(engaged(bank.freewheel));
         // Memory-only publication: every candidate was fully evaluated and
         // validated during staging, so the writes below are copies into
         // preallocated extents.
@@ -1437,11 +1440,11 @@ namespace drivetrain {
         // each), keeping restore() under the frame contract.
         snapshot_scratch_ = s;
         if (ideal_hub_)
-            ideal_hub_->restore(engaged(s.ideal_hub));
+            live_model_dirty_ |= ideal_hub_->restore(engaged(s.ideal_hub));
         if (clutch_)
-            clutch_->restore(engaged(s.clutch));
+            live_model_dirty_ |= clutch_->restore(engaged(s.clutch));
         if (freewheel_)
-            freewheel_->restore(engaged(s.freewheel));
+            live_model_dirty_ |= freewheel_->restore(engaged(s.freewheel));
         pedaling_ = p;
         shifting_ = std::move(sh);
         assist_ = std::move(a);

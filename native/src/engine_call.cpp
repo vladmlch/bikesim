@@ -200,6 +200,52 @@ void step_operation(void *raw) noexcept {
     const auto *context = static_cast<ModelDataContext *>(raw);
     mj_step(context->model, context->data);
 }
+void forward_skip_operation(void *raw) noexcept {
+    const auto *context = static_cast<ModelDataContext *>(raw);
+    mj_forwardSkip(context->model, context->data, mjSTAGE_VEL, 0);
+}
+void implicit_operation(void *raw) noexcept {
+    const auto *context = static_cast<ModelDataContext *>(raw);
+    mj_implicit(context->model, context->data);
+}
+// mj_step (engine_forward.c, tag 3.12.0) with an mjSTAGE_VEL-skipped
+// forward: checks, the FWDINV comparison gate, the integrator dispatch and
+// the STEP timer bookkeeping stay verbatim — only the proven-fresh
+// position/velocity stages are elided. (TM_START/TM_END live in
+// engine_macro.h; the hand-inlined timer lines replicate them against the
+// public mjcb_time/d->timer fields.)
+void step_skip_operation(void *raw) noexcept {
+    const auto *context = static_cast<ModelDataContext *>(raw);
+    const mjModel *m = context->model;
+    mjData *d = context->data;
+    const mjtNum tm = (mjcb_time ? mjcb_time() : 0);
+    mj_checkPos(m, d);
+    mj_checkVel(m, d);
+    mj_forwardSkip(m, d, mjSTAGE_VEL, 0);
+    mj_checkAcc(m, d);
+    if ((static_cast<unsigned>(m->opt.enableflags) &
+         static_cast<unsigned>(mjENBL_FWDINV)) != 0U)
+        mj_compareFwdInv(m, d);
+    // opt.integrator is an int in the ABI; switching on the raw value keeps
+    // the out-of-range default reachable (mj_step's verbatim behaviour).
+    switch (m->opt.integrator) {
+    case mjINT_EULER:
+        mj_Euler(m, d);
+        break;
+    case mjINT_RK4:
+        mj_RungeKutta(m, d, 4);
+        break;
+    case mjINT_IMPLICIT:
+    case mjINT_IMPLICITFAST:
+        mj_implicit(m, d);
+        break;
+    default:
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg) mju_error is the engine's fatal-error ABI — mj_step calls it verbatim
+        mju_error("invalid integrator");
+    }
+    d->timer[mjTIMER_STEP].duration += (mjcb_time ? mjcb_time() : 0) - tm;
+    d->timer[mjTIMER_STEP].number++;
+}
 void reset_operation(void *raw) noexcept {
     const auto *context = static_cast<ModelDataContext *>(raw);
     mj_resetData(context->model, context->data);
@@ -409,6 +455,44 @@ bool try_step(const mjModel *model, mjData *data, ErrorBuffer &error) noexcept {
     return invoke(step_operation, &context, error);
 }
 
+bool try_forward_skip(const mjModel *model, mjData *data,
+                      ErrorBuffer &error) noexcept {
+    if (model->nplugin != 0) {
+        plugin_error(error);
+        return false;
+    }
+    if (model->opt.solver < mjSOL_PGS || model->opt.solver > mjSOL_NEWTON) {
+        invalid_solver_error(error, model->opt.solver);
+        return false;
+    }
+    ModelDataContext context{.model = model, .data = data};
+    return invoke(forward_skip_operation, &context, error);
+}
+
+bool try_step_skip(const mjModel *model, mjData *data,
+                   ErrorBuffer &error) noexcept {
+    if (model->nplugin != 0) {
+        plugin_error(error);
+        return false;
+    }
+    if (model->opt.solver < mjSOL_PGS || model->opt.solver > mjSOL_NEWTON) {
+        invalid_solver_error(error, model->opt.solver);
+        return false;
+    }
+    ModelDataContext context{.model = model, .data = data};
+    return invoke(step_skip_operation, &context, error);
+}
+
+bool try_implicit(const mjModel *model, mjData *data,
+                  ErrorBuffer &error) noexcept {
+    if (model->nplugin != 0) {
+        plugin_error(error);
+        return false;
+    }
+    ModelDataContext context{.model = model, .data = data};
+    return invoke(implicit_operation, &context, error);
+}
+
 void forward(const mjModel *model, mjData *data) {
     ErrorBuffer error;
     if (!try_forward(model, data, error)) throw_failure(error);
@@ -417,6 +501,21 @@ void forward(const mjModel *model, mjData *data) {
 void step(const mjModel *model, mjData *data) {
     ErrorBuffer error;
     if (!try_step(model, data, error)) throw_failure(error);
+}
+
+void forward_skip(const mjModel *model, mjData *data) {
+    ErrorBuffer error;
+    if (!try_forward_skip(model, data, error)) throw_failure(error);
+}
+
+void step_skip(const mjModel *model, mjData *data) {
+    ErrorBuffer error;
+    if (!try_step_skip(model, data, error)) throw_failure(error);
+}
+
+void implicit(const mjModel *model, mjData *data) {
+    ErrorBuffer error;
+    if (!try_implicit(model, data, error)) throw_failure(error);
 }
 
 void reset_data(const mjModel *model, mjData *data) {

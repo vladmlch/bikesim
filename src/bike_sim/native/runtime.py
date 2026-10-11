@@ -8,13 +8,12 @@ Python batch has been constructed successfully.
 from __future__ import annotations
 
 from numbers import Integral
-from dataclasses import replace
 from pathlib import Path
 import tempfile
 
 from bike_sim.native.contracts import (
     AdvanceResult, FrameSnapshot, SampleBatch,
-    _freeze, _owned_array,
+    _amend, _freeze, _LazyMap, _owned_array,
 )
 from bike_sim.native.setup import RuntimeBootstrap, capture_bootstrap, _control_dict
 from bike_sim.sim.ride.control import RideControl
@@ -33,10 +32,16 @@ def _integer(value, name, *, minimum=0):
 def _sample(native):
     if native is None:
         return None
+    # Each binding property returns a fresh capsule-owned copy held only by
+    # this sample. Marking it readonly is safe for that sole reference and
+    # enables the checks/owned-array fast-paths (no validation copy needed).
+    qpos, qvel, forces = native.qpos, native.qvel, native.forces
+    for value in (qpos, qvel, *forces.values()):
+        value.flags.writeable = False
     return PhysicalSample(
         interval_id=int(native.interval_id), time_s=float(native.time_s),
-        end_time_s=float(native.end_time_s), qpos=native.qpos, qvel=native.qvel,
-        forces=native.forces, channels=_freeze(native.channels))
+        end_time_s=float(native.end_time_s), qpos=qpos, qvel=qvel,
+        forces=forces, channels=_LazyMap(native.channels))
 
 
 class NativeRideDriver:
@@ -86,8 +91,8 @@ class NativeRideDriver:
         # already-settled setup owns the t=0 geometry/diagnostics; no extra
         # engine solve may be inserted merely to draw the initial frame.
         if frame.step == 0 and self._initial_frame is not None:
-            frame = replace(frame, view=self._initial_frame.view,
-                            model_fields=self._initial_frame.model_fields)
+            frame = _amend(frame, view=self._initial_frame.view,
+                           model_fields=self._initial_frame.model_fields)
         return frame
 
     def make_render_model(self):

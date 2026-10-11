@@ -225,12 +225,22 @@ public:
     }
 
     void spindle_initialize() {
-        stepper_.mutate(
-            [&] { require_spindle().initialize(stepper_.data()); });
+        stepper_.mutate([&] {
+            // initialize() writes data->qpos between forwards; a mid-way
+            // throw leaves caches behind the live pose — the guard starts
+            // pessimistic and the trailing engine::forward inside
+            // initialize() re-earns freshness on success.
+            stepper_.note_posvel_stale();
+            require_spindle().initialize(stepper_.data());
+            stepper_.note_posvel_fresh();
+        });
     }
 
     void spindle_initialize_velocity() {
         stepper_.mutate([&] {
+            // initialize_velocity() writes data->qvel with no trailing
+            // forward — the velocity-stage products are stale.
+            stepper_.note_posvel_stale();
             require_spindle().initialize_velocity(stepper_.data());
         });
     }
@@ -408,11 +418,13 @@ public:
             throw std::logic_error(
                 "adapter was built without a static_brake section");
         stepper_.mutate([&] {
-            brake_->apply(stepper_.model(),
-                          wire::finite_real(front,
-                                            "apply_static_brake.front_demand"),
-                          wire::finite_real(rear,
-                                            "apply_static_brake.rear_demand"));
+            if (brake_->apply(
+                    stepper_.model(),
+                    wire::finite_real(front,
+                                      "apply_static_brake.front_demand"),
+                    wire::finite_real(rear,
+                                      "apply_static_brake.rear_demand")))
+                stepper_.note_posvel_stale();
         });
     }
 

@@ -17,7 +17,7 @@ import json
 import tempfile
 import numpy as np
 
-from bike_sim.native.contracts import _freeze, _plain
+from bike_sim.native.contracts import _amend, _freeze, _plain
 from bike_sim.native.runtime import _sample
 from bike_sim.native.setup import capture_bootstrap, _control_dict, validate_supported
 from bike_sim.physics.checks import scalar
@@ -257,8 +257,8 @@ class NativeResearchEnvironment:
         value = self._native.snapshot()
         frame = native_frame(value, _sample(value.latest_sample))
         if frame.step == 0:
-            frame = replace(frame, view=self._initial_frame.view,
-                            model_fields=self._initial_frame.model_fields)
+            frame = _amend(frame, view=self._initial_frame.view,
+                           model_fields=self._initial_frame.model_fields)
         return frame
 
     def make_render_model(self):

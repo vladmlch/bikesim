@@ -382,6 +382,14 @@ target_compile_options(bike_native PRIVATE
   -fstack-protector-strong -ftrivial-auto-var-init=zero -fvisibility=hidden
   -fvisibility-inlines-hidden -fstrict-flex-arrays=3
   -mbranch-protection=standard)
+# The previous Release compile line ended in -Os (CMAKE's -O3, then
+# nanobind's -Os, last wins); -O2 measures ~7% faster than that stack on
+# this runtime's branchy code (verified arm64-apple, ~0.181 vs ~0.194
+# ms/step on the same session). Appending -O2 here overrides inherited -O
+# flags since the last one wins; this does not stomp a caller's -O choice
+# for other build types, and the option is recorded into
+# research_identity flags.
+target_compile_options(bike_native PRIVATE $<$<CONFIG:Release>:-O2>)
 target_include_directories(bike_native SYSTEM PRIVATE "${MJ_DIR}/include")
 # libc++ hardening modes do not change container layout. Keep the selected mode
 # consistent across this target's TUs; EXTENSIVE is the default in every build

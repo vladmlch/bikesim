@@ -41,6 +41,14 @@ void require_supported_callbacks();
 [[nodiscard]] mjData *make_data(const mjModel *model);
 void forward(const mjModel *model, mjData *data);
 void step(const mjModel *model, mjData *data);
+// mj_forwardSkip(mjSTAGE_VEL, skipsensor=0) — legal only when the data's
+// position/velocity-stage products already correspond to the current
+// qpos/qvel and pos/vel-stage model inputs; the caller owns that freshness
+// contract. step_skip is mj_step verbatim except the forward inside skips
+// the same stages (checks, FWDINV gate and integrator dispatch preserved).
+void forward_skip(const mjModel *model, mjData *data);
+void step_skip(const mjModel *model, mjData *data);
+void implicit(const mjModel *model, mjData *data);
 void reset_data(const mjModel *model, mjData *data);
 void set_const(mjModel *model, mjData *data);
 
@@ -75,5 +83,11 @@ void integrate_pos(const mjModel *model, mjtNum *qpos, const mjtNum *qvel,
                                ErrorBuffer &error) noexcept;
 [[nodiscard]] bool try_step(const mjModel *model, mjData *data,
                             ErrorBuffer &error) noexcept;
+[[nodiscard]] bool try_forward_skip(const mjModel *model, mjData *data,
+                                    ErrorBuffer &error) noexcept;
+[[nodiscard]] bool try_step_skip(const mjModel *model, mjData *data,
+                                 ErrorBuffer &error) noexcept;
+[[nodiscard]] bool try_implicit(const mjModel *model, mjData *data,
+                                ErrorBuffer &error) noexcept;
 
 } // namespace engine

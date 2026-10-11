@@ -6,7 +6,7 @@ reset and close. No published value aliases the engine or a scratch buffer.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from numbers import Integral
 from types import MappingProxyType
@@ -16,17 +16,103 @@ import numpy as np
 
 
 def _owned_array(values, name: str) -> np.ndarray:
-    array = np.array(values, dtype=np.float64, copy=True)
+    array = np.asarray(values, dtype=np.float64)
     if array.ndim != 1:
         raise ValueError(f'{name}: expected a vector')
+    if (not array.flags.writeable and array.flags.owndata
+            and not array.dtype.hasobject):
+        return array
+    array = np.array(array, dtype=np.float64, copy=True)
     array.flags.writeable = False
     if not array.flags.owndata:
         raise ValueError(f'{name}: array must own its storage')
     return array
 
 
-def _freeze(value):
+def _lazy_child(value):
+    """One materialized level of a lazy owned tree."""
+    if isinstance(value, Mapping):
+        return _LazyMap(value)
+    if isinstance(value, (list, tuple)):
+        return _LazySeq(value)
     if isinstance(value, np.ndarray):
+        # Native wire trees never carry arrays; freeze defensively so an
+        # array-bearing source cannot hand out mutable storage.
+        return _freeze(value)
+    return value
+
+
+class _LazyMap(Mapping):
+    """Read-only view lazily wrapping an exclusively-owned mapping tree.
+
+    Children materialize on access: mappings as ``_LazyMap``, lists and
+    tuples as ``_LazySeq``, leaves as-is. The wrapped object is owned
+    outright by the view -- it is never shared with or mutated by the
+    producer -- so reads stay stable without an eager recursive copy. No
+    mutation methods exist; item assignment raises TypeError naturally.
+    """
+
+    __slots__ = ('_source',)
+
+    def __init__(self, source):
+        self._source = source
+
+    def __getitem__(self, key):
+        return _lazy_child(self._source[key])
+
+    def __iter__(self):
+        return iter(self._source)
+
+    def __len__(self):
+        return len(self._source)
+
+    def __repr__(self):
+        return repr(self._source)
+
+
+class _LazySeq(Sequence):
+    """Read-only view lazily wrapping an exclusively-owned list or tuple.
+
+    Elementwise equality against sequences preserves the comparisons the
+    frozen tuples supported; like a list the view itself is unhashable.
+    """
+
+    __slots__ = ('_source',)
+
+    def __init__(self, source):
+        self._source = source
+
+    def __getitem__(self, index):
+        return _lazy_child(self._source[index])
+
+    def __len__(self):
+        return len(self._source)
+
+    def __eq__(self, other):
+        if isinstance(other, _LazySeq):
+            other = other._source
+        if not isinstance(other, (list, tuple)):
+            return NotImplemented
+        if len(self._source) != len(other):
+            return False
+        return all(self[index] == other[index]
+                   for index in range(len(self._source)))
+
+    __hash__ = None
+
+    def __repr__(self):
+        return repr(self._source)
+
+
+def _freeze(value):
+    if type(value) in (float, int, str, bool) or value is None:
+        return value
+    if isinstance(value, (_LazyMap, _LazySeq)):
+        return value  # already a read-only view over owned storage
+    if isinstance(value, np.ndarray):
+        if (type(value) is np.ndarray and not value.flags.writeable
+                and value.flags.owndata and not value.dtype.hasobject):
+            return value
         result = np.array(value, copy=True)
         result.flags.writeable = False
         return result
@@ -36,9 +122,19 @@ def _freeze(value):
         return tuple(_freeze(item) for item in value)
     if isinstance(value, np.generic):
         return value.item()
-    if value is None or isinstance(value, (bool, int, float, str)):
+    if isinstance(value, (bool, int, float, str)):
         return value
     raise ValueError(f'unsupported native value: {type(value).__name__}')
+
+
+def _amend(instance, **fields):
+    result = object.__new__(type(instance))
+    result.__dict__.update(instance.__dict__)
+    for name, value in fields.items():
+        if name not in instance.__dataclass_fields__:
+            raise TypeError(f'{type(instance).__name__}: unknown field {name!r}')
+        result.__dict__[name] = value
+    return result
 
 
 def _plain(value):
@@ -46,7 +142,8 @@ def _plain(value):
         return value.tolist()
     if isinstance(value, Mapping):
         return {key: _plain(item) for key, item in value.items()}
-    if isinstance(value, (tuple, list)):
+    if isinstance(value, (tuple, list)) or (
+            isinstance(value, Sequence) and not isinstance(value, (str, bytes))):
         return [_plain(item) for item in value]
     return value
 

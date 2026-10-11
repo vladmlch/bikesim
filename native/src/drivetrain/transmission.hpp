@@ -138,7 +138,10 @@ namespace drivetrain {
         // an engine failure there propagates and poisons the owning Stepper
         // while no logical state has been published — then the no-throw
         // gear/state/prepared swap runs. The update's state is consumed.
-        void commit(TransmissionUpdate &update);
+        // Returns whether the live model writes actually changed a value
+        // (wrap coefficients or the tendon range — position/velocity-stage
+        // inputs the Stepper's freshness guard tracks).
+        bool commit(TransmissionUpdate &update);
 
         // Solve follows the same transaction shape: staging collects the
         // force into persistent scratch and mutates only the detached
@@ -169,7 +172,9 @@ namespace drivetrain {
 
         void validate(const TransmissionSnapshot &state) const;
 
-        void restore(TransmissionSnapshot state);
+        // Same guarded-commit publication as commit(): returns whether the
+        // live model rows actually changed.
+        bool restore(TransmissionSnapshot state);
 
         const DriveTelemetry &diagnostics() const { return state_.diagnostics; }
         int driven_dof() const { return driven_dof_; }

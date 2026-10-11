@@ -29,17 +29,21 @@ void ResearchRecorder::append(const SamplePtr &sample) {
         // map::merge transfers allocated nodes, and the reserved vector pushes
         // below cannot allocate. Existing records survive allocation failures.
         SampleColumns additions;
-        for (const auto &[key, value] : flat) {
-            (void)value;
-            if (!columns_.contains(key)) additions.emplace(key, std::vector<double>(count, missing));
-        }
+        for (const auto &entry : flat)
+            if (!columns_.contains(entry.first))
+                additions.emplace_hint(additions.end(), entry.first,
+                                       std::vector<double>(count, missing));
         for (auto &[key, column] : additions) { (void)key; reserve_row(column, count + 1); }
         for (auto &[key, column] : columns_) { (void)key; reserve_row(column, count + 1); }
         reserve_row(samples_, count + 1);
         columns_.merge(additions);
+        // columns_ and flat are both name-sorted: one merge pass prices
+        // every column.
+        auto entry = flat.begin();
         for (auto &[key, column] : columns_) {
-            const auto value = flat.find(key);
-            column.push_back(value == flat.end() ? missing : value->second);
+            while (entry != flat.end() && entry->first < key) ++entry;
+            column.push_back(entry != flat.end() && entry->first == key
+                                 ? entry->second : missing);
         }
         samples_.push_back(sample);
     }

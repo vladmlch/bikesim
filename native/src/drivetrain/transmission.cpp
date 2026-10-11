@@ -380,7 +380,7 @@ namespace drivetrain {
         evaluate_candidate(data, update);
     }
 
-    void Transmission::commit(TransmissionUpdate &update) {
+    bool Transmission::commit(TransmissionUpdate &update) {
         // Phase 1 — guarded live-model writes. An engine failure here
         // propagates before any logical publication; the owning Stepper
         // treats it as fatal.
@@ -395,9 +395,11 @@ namespace drivetrain {
         }
         if (changed)
             engine::set_const(model_, constant_.get());
-        std::ranges::copy(update.range,
-                          buffer(model_->tendon_range, 2 * model_->ntendon)
-                          .subspan(2 * static_cast<std::size_t>(tendon_), 2).begin());
+        const auto range = buffer(model_->tendon_range, 2 * model_->ntendon)
+                .subspan(2 * static_cast<std::size_t>(tendon_), 2);
+        if (range[0] != update.range[0] || range[1] != update.range[1])
+            changed = true;
+        std::ranges::copy(update.range, range.begin());
         // Phase 2 — memory-only logical publication. state_.prepared stays
         // disengaged; the candidate lands in the construction-owned storage
         // element-by-element so vector identity (prepared_generations) is
@@ -420,21 +422,24 @@ namespace drivetrain {
             std::ranges::copy(update.prepared.jacobian, prepared_storage_.jacobian.begin());
             std::ranges::copy(update.prepared.qpos, prepared_storage_.qpos.begin());
         }
+        return changed;
     }
 
     void Transmission::reset(mjData *d) {
         auto update = stage_reset(d);
-        commit(update);
+        // The convenience faces report no freshness signal — callers are
+        // the private oracle adapter (mutate frame) and legacy bindings.
+        static_cast<void>(commit(update));
     }
 
     void Transmission::prepare(mjData *d) {
         auto update = stage_prepare(d);
-        commit(update);
+        static_cast<void>(commit(update));
     }
 
     void Transmission::set_ratio(mjData *d, double ratio) {
         auto update = stage_ratio(d, ratio);
-        commit(update);
+        static_cast<void>(commit(update));
     }
 
     SolvedTransmission Transmission::stage_solved(mjData *d) {
@@ -613,7 +618,7 @@ namespace drivetrain {
         }
     }
 
-    void Transmission::restore(TransmissionSnapshot s) {
+    bool Transmission::restore(TransmissionSnapshot s) {
         validate(s);
         // A restore is a staged candidate like any other: validate up front,
         // let the scratch mj_setConst guard the coefficients, then commit.
@@ -627,6 +632,6 @@ namespace drivetrain {
         if (s.prepared)
             update.prepared = *s.prepared;
         evaluate_candidate(nullptr, update);
-        commit(update);
+        return commit(update);
     }
 } // namespace drivetrain

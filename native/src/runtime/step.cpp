@@ -405,6 +405,9 @@ WireObject wire_contacts_diagnostics(
     WireObject out;
     if (!diag.evaluated)
         return out;
+    // Fixed emission shape: every support, then every grip side, then the
+    // 'grip' aggregate — reserve the exact key count.
+    out.reserve(writers::kSupportCount + writers::kSideCount + 1);
     for (std::size_t i = 0; i < writers::kSupportCount; ++i)
         out.emplace_back(std::string(writers::kSupportNames[i]),
                          Wire(wire_support_diag(diag.supports[i])));
@@ -963,6 +966,27 @@ PhysicalStep::PhysicalStep(
     record_decimation_ = config_.record_decimation;
 }
 
+// ---- forward/step deduplication ----------------------------------------
+// posvel_fresh() is the single decision point for the VEL-skip fast path:
+// the Stepper flag is ANDed with the drivetrain's live-model write bit so a
+// transmission commit (wrap_prm / tendon_range / mj_setConst) made since
+// the last check still reaches the guard even when no caller flagged it.
+
+bool PhysicalStep::posvel_fresh() {
+    if (stepper_->has_drive() &&
+        stepper_->drive().take_model_dirty())
+        stepper_->note_posvel_stale();
+    return stepper_->posvel_fresh();
+}
+
+void PhysicalStep::refresh_forward(mjModel *m, mjData *d) {
+    if (posvel_fresh())
+        engine::forward_skip(m, d);
+    else
+        engine::forward(m, d);
+    stepper_->note_posvel_fresh();
+}
+
 // ---- apply_forces (physical_runtime.py:219-349) -------------------------
 // The staged force assembly: writer evaluation order IS the arithmetic.
 
@@ -1025,7 +1049,10 @@ PhysicalStep::apply_forces_body(
         std::ranges::fill(wbuf(d->qfrc_applied, m->nv), 0.);
         std::ranges::fill(wbuf(d->xfrc_applied, m->nbody * 6), 0.);
         std::ranges::fill(wbuf(d->ctrl, m->nu), 0.);
-        brake_.apply(m, front, rear);
+        // dof_frictionloss is a position-stage model input — a bound that
+        // actually changed invalidates the cached makeConstraint rows.
+        if (brake_.apply(m, front, rear))
+            stepper_->note_posvel_stale();
         // prepare_pedaling reads the LAST committed rear contact — the
         // durable contacts_ (previous step's final refresh or bootstrap).
         const drivetrain::RideControl drive_control{
@@ -1039,7 +1066,11 @@ PhysicalStep::apply_forces_body(
             contacts_.rear_slip_mps,
             automatic_effort ? control.human_torque_nm
                              : std::optional<double>{});
-        engine::forward(m, d);
+        // Oracle: mj_forward. VEL-skip when the pos/vel caches still match
+        // (ctrl/qfrc/xfrc writes above are acceleration-stage inputs and
+        // do not invalidate them); a brake or transmission model write
+        // falls back to the full stage.
+        refresh_forward(m, d);
 
         accumulator_.clear();
         const std::span<const std::string_view> susp_names =
@@ -1168,25 +1199,25 @@ PhysicalStep::apply_forces_body(
                 std::ranges::copy(
                     total,
                     wbuf(d->qfrc_applied, m->nv).begin());
-                engine::forward(m, d);
-                torques = rider_control_->compute(
+                refresh_forward(m, d);
+                torques = engaged(rider_control_).compute(
                     d, command, advance,
                     advance && !initializing_ ? control_clock_.period_s : dt,
                     !active);
                 if (advance) {
                     control_clock_.hold(torques);
                     if (!initializing_)
-                        held_rider_terms_ = rider_control_->state().last_terms;
+                        held_rider_terms_ = engaged(rider_control_).state().last_terms;
                 }
             } else {
                 torques = control_clock_.held();
             }
-            rider_control_->write(d, torques);
+            engaged(rider_control_).write(d, torques);
         }
         const auto total = accumulator_.total();
         std::ranges::copy(total,
                           wbuf(d->qfrc_applied, m->nv).begin());
-        engine::forward(m, d);
+        refresh_forward(m, d);
         auto [contacts, snapshots] =
             refresh_contacts(false, std::nullopt, active && advance);
         if (stepper_->has_cruise()) {
@@ -1274,7 +1305,16 @@ RawStep PhysicalStep::advance_body(
             warnings[static_cast<std::size_t>(mjWARN_BADQPOS)].number,
             warnings[static_cast<std::size_t>(mjWARN_BADQVEL)].number,
             warnings[static_cast<std::size_t>(mjWARN_BADQACC)].number};
-        engine::step(m, d);
+        // Oracle: mj_step = checks + mj_forward + checks + integrator.
+        // step_skip replays that sequence verbatim with the pos/vel
+        // stages skipped; the same freshness gate applies — a stale
+        // cache gets the untouched full step. Integration invalidates
+        // the flag for the next interval.
+        if (posvel_fresh())
+            engine::step_skip(m, d);
+        else
+            engine::step(m, d);
+        stepper_->note_posvel_stale();
         return solve_tail({.t = t,
                            .q = std::move(q),
                            .v = std::move(v),
@@ -1334,7 +1374,13 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         const auto transmission_span = stepper_->drive().settle();
         std::vector<double> transmission(transmission_span.begin(),
                                          transmission_span.end());
-        in.sensors = sensor_channels(v);
+        // One materialized telemetry map per interval — settle() is the
+        // last commit into sim.drive.diagnostics() before the three
+        // read-only consumers below (sensors, loss lanes, in.drive), so
+        // the map can't diverge between them.
+        const drivetrain::Diagnostics drive_last =
+            stepper_->drive().diagnostics(false).to_map();
+        in.sensors = sensor_channels(v, drive_last);
         for (auto &[name, f]: actuator_components(m, d))
             ordered_set(components, name, std::move(f));
         if (rider_control_.has_value()) {
@@ -1399,16 +1445,14 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             wire_set(signals_in, "tires", Wire(in.tires));
             update_intent_signals(signals_in);
         }
-        in.loss_step = loss_increment(components, v, dt);
+        in.loss_step = loss_increment(components, v, dt, drive_last);
         if (rider_control_.has_value())
             in.rider_diag =
                 stepper_->rider_contacts().state().diagnostics;
         const double crank_phase = q[static_cast<std::size_t>(
             crank_spin_qposadr_)];
-        const drivetrain::Diagnostics last =
-            stepper_->drive().diagnostics(false).to_map();
-        in.drive =
-            std::get<WireObject>(std::move(wire_diagnostics(last).value));
+        in.drive = std::get<WireObject>(
+            std::move(wire_diagnostics(drive_last).value));
         // dict(last, **kw) semantics — wire_set keeps the insertion
         // position when a telemetry lane name collides.
         wire_set(in.drive, "crank_phase_rad", Wire(crank_phase));
@@ -1428,10 +1472,14 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
                               "shock_solver_limit"),
             v);
         in.electrical_power_w =
-            diag_wire_default_zero(last, "electrical_power_w");
+            diag_wire_default_zero(drive_last, "electrical_power_w");
         in.solved_actuator = buffer_copy(d->actuator_force, m->nu);
         in.solved_passive = buffer_copy(d->qfrc_passive, m->nv);
+        // Deliberately a FULL forward: this refreshes the pos/vel caches
+        // for the integrated state, seeding the next interval's skip
+        // eligibility (and the endpoint kinematics the oracle records).
         engine::forward(m, d);
+        stepper_->note_posvel_fresh();
         for (const double value: buf(d->qpos, m->nq))
             if (!std::isfinite(value))
                 throw std::runtime_error(
@@ -1572,8 +1620,14 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             "rider_balance",
             Wire(balance_channel(front, rear, braking,
                                  control.rider_enabled)));
-        if (rider_control_.has_value()) {
-            const auto &st = rider_control_->state();
+        // state() deep-copies every named mirror — one snapshot feeds
+        // the four rider reads below.
+        const auto rider_state =
+            rider_control_.has_value()
+                ? std::optional(rider_control_->state())
+                : std::nullopt;
+        if (rider_state.has_value()) {
+            const auto &st = *rider_state;
             WireObject torques;
             for (const auto &[name, value]: st.joint_torques_nm)
                 torques.emplace_back(name, Wire(value));
@@ -1604,8 +1658,8 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             Wire(config_.intent.enabled
                      ? rider_intent_.policy().inclination_rad()
                      : 0.));
-        if (rider_control_.has_value()) {
-            const auto &st = rider_control_->state();
+        if (rider_state.has_value()) {
+            const auto &st = *rider_state;
             diagnostics.emplace_back(
                 "rider_allocation",
                 Wire(wire_allocation(st.allocation_diagnostics)));
@@ -1643,11 +1697,10 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.battery_energy_j = stepper_->drive().battery_energy_j();
         raw.electrical_power_w = in.electrical_power_w;
         raw.invalid_controller =
-            rider_control_.has_value() &&
-            rider_control_->state().allocation_diagnostics
-                .invalid_controller;
-        if (rider_control_.has_value()) {
-            raw.effort_state = rider_control_->state().effort_diagnostics;
+            rider_state.has_value() &&
+            rider_state->allocation_diagnostics.invalid_controller;
+        if (rider_state.has_value()) {
+            raw.effort_state = rider_state->effort_diagnostics;
             raw.effort_base = wire_effort(*raw.effort_state);
         } else {
             raw.effort_base = WireObject{};
@@ -1742,10 +1795,10 @@ double PhysicalStep::rollback_brake_demand(double speed_mps,
 // kinematics; encoder rows read the INCOMING velocity span.
 
 WireObject
-PhysicalStep::sensor_channels(std::span<const double> qvel) const {
+PhysicalStep::sensor_channels(std::span<const double> qvel,
+                              const drivetrain::Diagnostics &last) const {
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
-    const auto last = stepper_->drive().diagnostics(false).to_map();
     WireObject encoders;
     encoders.emplace_back("front_wheel",
                           Wire(qvel[static_cast<std::size_t>(
@@ -2020,7 +2073,8 @@ PhysicalStep::energy_state() {
 double PhysicalStep::loss_increment(
     const std::vector<std::pair<std::string, std::vector<double>>>
         &components,
-    std::span<const double> velocity, double dt) const {
+    std::span<const double> velocity, double dt,
+    const drivetrain::Diagnostics &last) const {
     NeumaierSum acc;
     for (const char *name:
          {"fork_damper", "shock_damper", "shock_hbo", "drive_bearings",
@@ -2043,7 +2097,6 @@ double PhysicalStep::loss_increment(
         loss += std::max(0., -(f != nullptr ? dot(*f, velocity) : 0.)) *
             dt;
     }
-    const auto last = stepper_->drive().diagnostics(false).to_map();
     loss += diag_number(last, "chain_dissipation_power_w") * dt;
     loss += diag_number(last, "freehub_dissipation_power_w") * dt;
     loss += diag_number(last, "crank_clutch_dissipation_power_w") * dt;
@@ -2231,7 +2284,9 @@ PhysicalStep::probe_step_inputs(const RideControl &control,
         // for the committed data (encoders read the incoming velocity
         // span — the current qvel at probe time), plus the committed
         // rider-intent signals and policy inclination.
-        out.sensors = sensor_channels(buf(d->qvel, m->nv));
+        out.sensors = sensor_channels(
+            buf(d->qvel, m->nv),
+            stepper_->drive().diagnostics(false).to_map());
         WireObject signals;
         signals.emplace_back("pitch_rate_up_rad_s",
                              Wire(intent_signals_.pitch_rate_up_rad_s));

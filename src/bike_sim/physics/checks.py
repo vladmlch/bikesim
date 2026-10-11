@@ -65,6 +65,16 @@ def sequence(value, name: str) -> tuple:
 
 
 def array(value, name: str, shape=None, *, readonly=False) -> np.ndarray:
+    if (readonly and type(value) is np.ndarray and value.dtype == np.float64
+            and value.flags.c_contiguous and not value.flags.writeable
+            and (value.base is None or not isinstance(value.base, np.ndarray))):
+        # An already-immutable float64 array satisfies the readonly contract
+        # directly: skip the copy and tobytes round-trip. The frombuffer view
+        # shares the immutable buffer and can never re-enable write access;
+        # an ndarray base is rejected so a mutable owner cannot alias in.
+        if (shape is not None and value.shape != shape) or not np.isfinite(value).all():
+            raise ValueError(f'invalid shape or non-finite {name}')
+        return np.frombuffer(value).reshape(value.shape)
     def original_types(item):
         if type(item) in (float, int) or isinstance(item, (np.floating, np.integer)):
             return

@@ -77,6 +77,7 @@ Stepper::Stepper(const std::string &mjb_path) : m_(nullptr), d_(nullptr) {
     engine::forward(model.get(), data.get());
     m_ = model.release();
     d_ = data.release();
+    posvel_fresh_ = true;
 }
 
 Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
@@ -234,6 +235,7 @@ bool Stepper::try_step(engine::ErrorBuffer &error) noexcept {
     const bool succeeded = engine::try_step(m_, d_, error);
     if (!succeeded && error.kind == engine::ErrorKind::fatal)
         poisoned_ = true;
+    if (succeeded) posvel_fresh_ = false;
     return succeeded;
 }
 
@@ -249,6 +251,7 @@ bool Stepper::try_forward(engine::ErrorBuffer &error) noexcept {
     const bool succeeded = engine::try_forward(m_, d_, error);
     if (!succeeded && error.kind == engine::ErrorKind::fatal)
         poisoned_ = true;
+    if (succeeded) posvel_fresh_ = true;
     return succeeded;
 }
 
@@ -269,14 +272,18 @@ void Stepper::reset() {
     bool data_reset = false;
     try {
         engine::reset_data(m_, d_);
+        posvel_fresh_ = false;
         data_reset = true;
         engine::forward(m_, d_);
+        posvel_fresh_ = true;
         if (drive_) drive_->reset();
         if (tire_) tire_->reset();
         if (cruise_) cruise_->reset();
         // reset(model, data) on the post-forward pose — re-anchors grips and
         // revalidates the planar support topology like the oracle applier.
         if (rider_contacts_) rider_contacts_->reset(d_);
+        // A writer reset may still commit live-model transmission writes.
+        if (drive_ && drive_->take_model_dirty()) posvel_fresh_ = false;
         poisoned_ = false;
     } catch (const engine::EngineFailure &) {
         poisoned_ = true;
@@ -420,6 +427,9 @@ void Stepper::set_state(std::span<const double> qpos,
     copy_in(saved_act, d_->act);
     copy_in(saved_warmstart, d_->qacc_warmstart);
     d_->time = time;
+    // reset_data + raw buffer writes: every derived stage is stale until
+    // the next full forward (the oracle's trailing mj_forward is deferred).
+    posvel_fresh_ = false;
     if (recovering) {
         try {
             if (drive_) drive_->reset();

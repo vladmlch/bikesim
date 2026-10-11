@@ -1,7 +1,7 @@
 """Schema-2 force intervals and accounting, independent of recording decimation."""
 from dataclasses import dataclass
 from types import MappingProxyType
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 import numpy as np
 from bike_sim.physics.checks import array, scalar
 
@@ -27,7 +27,8 @@ def plain(value):
         return value.tolist()
     if isinstance(value, Mapping):
         return {k: plain(v) for k, v in value.items()}
-    if isinstance(value, (tuple, list)):
+    if isinstance(value, (tuple, list)) or (
+            isinstance(value, Sequence) and not isinstance(value, (str, bytes))):
         return [plain(v) for v in value]
     if isinstance(value, np.generic):
         return value.item()

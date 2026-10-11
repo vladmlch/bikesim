@@ -6,7 +6,6 @@ force accounting and termination stay in C++; setup metadata is captured once.
 from __future__ import annotations
 
 from copy import copy, deepcopy
-from dataclasses import replace
 import csv
 import json
 import math
@@ -16,12 +15,14 @@ import time
 
 import numpy as np
 
-from bike_sim.native.contracts import AdvanceResult
+from bike_sim.native.contracts import AdvanceResult, PhysicalViewState, _amend
 from bike_sim.sim.backend import require_backend
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.physical_recorder import PhysicalRecorder
 from bike_sim.sim.ride.physical_samples import plain
-from bike_sim.sim.ride.physical_view import present_view, snapshot_python
+from bike_sim.sim.ride.physical_view import (
+    _terrain_fields, present_view, snapshot_python,
+)
 
 
 class NativePhysicalRecorder:
@@ -98,6 +99,7 @@ class PhysicalRideDriver:
         self.step, self.time_s = int(sim.steps), float(sim.time_s)
         self._native = None
         self._sim = None
+        self._terrain_stamp = None
         sim.physical.set_strict(strict)
         if backend == 'native':
             from bike_sim.native.runtime import create_native_ride
@@ -197,13 +199,40 @@ class PhysicalRideDriver:
         return AdvanceResult(self.step, self.time_s,
                              'outcome' if self.reason is not None else result_reason, self.reason)
 
+    def _memoized_terrain(self, frame):
+        """Repeat-boundary terrain triple for the native snapshot path.
+
+        (generation, step) is an exact key: position moves only on committed
+        steps and reset bumps the generation. The id guards hold because the
+        track's terrain containers are reassigned only when the track is
+        built -- an in-place ``track.obstacles.append`` would slip past them.
+        """
+        key = (frame.generation, frame.step,
+               id(self.track.obstacles), id(self.track.grade_profile))
+        stamp = self._terrain_stamp
+        if stamp is None or stamp[0] != key:
+            stamp = (key, _terrain_fields(
+                self.track, frame.view.endpoint['position_m']))
+            self._terrain_stamp = stamp
+        return stamp[1]
+
     def snapshot(self):
         self._require_open()
-        frame = (self._native.snapshot() if self._native is not None
-                 else snapshot_python(self._sim, outcome=self.reason))
+        if self._native is None:
+            # make_physical_view already froze this position's terrain fields
+            # into preview_row; a second track pass would recompute them.
+            frame = snapshot_python(self._sim, outcome=self.reason)
+            self.step, self.time_s = frame.step, frame.time_s
+            return _amend(frame, outcome=self.reason or frame.outcome)
+        frame = self._native.snapshot()
         self.step, self.time_s = frame.step, frame.time_s
-        return replace(frame, view=present_view(frame.view, track=self.track),
-                       outcome=self.reason or frame.outcome)
+        view = present_view(frame.view, track=self.track,
+                            terrain=self._memoized_terrain(frame))
+        # _amend skips FrameSnapshot.__post_init__, so the view check the
+        # constructor used to enforce stays explicit here.
+        if not isinstance(view, PhysicalViewState):
+            raise ValueError('view must be a PhysicalViewState')
+        return _amend(frame, view=view, outcome=self.reason or frame.outcome)
 
     def make_render_model(self):
         self._require_open()

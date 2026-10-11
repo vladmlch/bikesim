@@ -22,7 +22,7 @@ StaticBrake::StaticBrake(int front_dofadr, int rear_dofadr,
             "brakes require two distinct valid wheel DOF addresses");
 }
 
-void StaticBrake::apply(mjModel *model, double front_demand,
+bool StaticBrake::apply(mjModel *model, double front_demand,
                         double rear_demand) const {
     const double front =
         validation::finite(front_demand, "front brake demand");
@@ -36,10 +36,18 @@ void StaticBrake::apply(mjModel *model, double front_demand,
     // reset.
     // ctor guarantees 0 <= front_/rear_ and the nv bound ran above, so the
     // size_t casts below can only wrap an already-rejected index.
-    frictionloss[static_cast<std::size_t>(front_)] =
-        ceiling_nm_ * std::clamp(front, 0., 1.);
-    frictionloss[static_cast<std::size_t>(rear_)] =
-        ceiling_nm_ * std::clamp(rear, 0., 1.);
+    const double front_loss = ceiling_nm_ * std::clamp(front, 0., 1.);
+    const double rear_loss = ceiling_nm_ * std::clamp(rear, 0., 1.);
+    const std::size_t fi = static_cast<std::size_t>(front_);
+    const std::size_t ri = static_cast<std::size_t>(rear_);
+    // dof_frictionloss is a position-stage model input (makeConstraint
+    // builds the FRICTION_DOF rows from it) — report whether this write
+    // changed a value so the caller can invalidate cached stage products.
+    const bool changed =
+        frictionloss[fi] != front_loss || frictionloss[ri] != rear_loss;
+    frictionloss[fi] = front_loss;
+    frictionloss[ri] = rear_loss;
+    return changed;
 }
 
 std::pair<std::vector<double>, std::vector<double>>

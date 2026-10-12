@@ -91,27 +91,34 @@ class RunCapture:
     def add_episode(self, evidence: EpisodeEvidence) -> None:
         """Commit one sealed episode, atomically.
 
-        Episode identifiers are never reused: re-adding the identical owned
-        evidence is idempotent; a different evidence under a committed or
-        regressed identifier is a conflicting repeat and is rejected whole.
+        Episode identity is prefix-continuous (R14): the first committed
+        identifier establishes the base (it need not be 0 or 1 — native
+        generations are 1-based and R01 fixes no numeric base), and every
+        later identifier must be exactly ``previous + 1`` so a launch
+        missing an episode cannot record silently. Re-adding the identical
+        owned evidence is idempotent; a different evidence under a
+        committed identifier is a conflicting repeat. Either way a
+        rejection changes nothing.
         """
         if not isinstance(evidence, EpisodeEvidence):
             raise TypeError('evidence must be an EpisodeEvidence')
         self._require_collecting('episode')
         if not self._enabled:
             return
-        existing = self._episodes.get(evidence.episode_id)
+        episode_id = int(evidence.episode_id)
+        existing = self._episodes.get(episode_id)
         if existing is not None:
             if existing is evidence or existing == evidence:
                 return
             raise ValueError(
-                f'conflicting evidence for episode {evidence.episode_id}')
-        if self._episode_order and \
-                evidence.episode_id <= self._episode_order[-1]:
+                f'conflicting evidence for episode {episode_id}')
+        if self._episode_order \
+                and episode_id != self._episode_order[-1] + 1:
             raise ValueError(
-                f'episode identifier {evidence.episode_id} was already used')
-        self._episodes[evidence.episode_id] = evidence
-        self._episode_order.append(evidence.episode_id)
+                f'episode identifier {episode_id} breaks prefix continuity: '
+                f'expected {self._episode_order[-1] + 1}')
+        self._episodes[episode_id] = evidence
+        self._episode_order.append(episode_id)
 
     def iter_episodes(self) -> Iterator[EpisodeEvidence]:
         """Committed episodes in identity order; read-only, non-consuming."""

@@ -70,11 +70,34 @@ def test_identical_episode_readdition_is_idempotent():
 
 def test_episode_identifiers_are_never_reused():
     capture = RunCapture(run_metadata(), enabled=True)
+    # The first committed identifier establishes the base (here 1).
     capture.add_episode(episode(TreePhysicalSource([sample_row(0)]), episode_id=1))
     with pytest.raises(ValueError):
         capture.add_episode(
             episode(TreePhysicalSource([sample_row(0)]), episode_id=0))
     assert len(list(capture.iter_episodes())) == 1
+
+
+def test_episode_prefix_continuity_rejects_gaps_atomically():
+    capture = RunCapture(run_metadata(), enabled=True)
+    first = episode(TreePhysicalSource([sample_row(0)]), episode_id=1)
+    capture.add_episode(first)
+    with pytest.raises(ValueError, match='continuity'):
+        capture.add_episode(
+            episode(TreePhysicalSource([sample_row(0)]), episode_id=3))
+    # The failed addition committed nothing: the base episode is intact.
+    retained = list(capture.iter_episodes())
+    assert retained == [first]
+    assert retained[0].physical is first.physical
+
+
+def test_episode_ids_need_not_start_at_one():
+    capture = RunCapture(run_metadata(), enabled=True)
+    for episode_id in (5, 6, 7):
+        capture.add_episode(
+            episode(TreePhysicalSource([sample_row(0)]),
+                    episode_id=episode_id))
+    assert [e.episode_id for e in capture.iter_episodes()] == [5, 6, 7]
 
 
 def test_event_identity_and_order_are_validated():

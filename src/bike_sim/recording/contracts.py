@@ -10,19 +10,14 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from numbers import Integral, Real
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Protocol, TYPE_CHECKING
+from typing import Any, Protocol
 from uuid import UUID
 
 import numpy as np
-
-if TYPE_CHECKING:
-    class ResearchEvidence(Protocol):
-        """Typed research recording evidence — the B1 owner replaces this
-        forward declaration; stage A accepts ``None`` only."""
 
 
 def freeze(value):
@@ -31,17 +26,18 @@ def freeze(value):
             or value is None:
         return value
     if isinstance(value, np.ndarray):
-        if (type(value) is np.ndarray and not value.flags.writeable
-                and value.flags.owndata and not value.dtype.hasobject):
-            return value
-        result = np.array(value, copy=True)
-        result.flags.writeable = False
-        return result
+        if value.dtype.hasobject:
+            raise ValueError('recording arrays must not contain Python objects')
+        # Immutable bytes, not merely a reversible writeable=False flag. Even
+        # setflags(write=True) cannot let a consumer mutate captured evidence.
+        array = np.ascontiguousarray(value)
+        return np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
     if isinstance(value, np.generic):
         return value.item()
     if isinstance(value, Mapping):
-        return MappingProxyType(
-            {str(key): freeze(item) for key, item in value.items()})
+        if any(not isinstance(key, str) for key in value):
+            raise ValueError('recording object keys must be strings')
+        return MappingProxyType({key: freeze(item) for key, item in value.items()})
     if isinstance(value, (list, tuple)):
         return tuple(freeze(item) for item in value)
     raise ValueError(
@@ -87,8 +83,9 @@ class RunMetadata:
             raise ValueError('run_id must be a UUID')
         if not isinstance(self.started_at, datetime):
             raise ValueError('started_at must be a datetime')
-        if self.started_at.tzinfo is None:
+        if self.started_at.tzinfo is None or self.started_at.utcoffset() is None:
             raise ValueError('started_at must be timezone-aware (UTC)')
+        object.__setattr__(self, 'started_at', self.started_at.astimezone(timezone.utc))
         _text(self.backend, 'backend')
         _text(self.mode, 'mode')
         object.__setattr__(self, 'values', freeze(self.values))
@@ -164,7 +161,7 @@ class TableBatch:
             if isinstance(column, np.ndarray):
                 column = freeze(column)
             else:
-                column = tuple(column)
+                column = tuple(freeze(item) for item in column)
             frozen[str(name)] = column
         object.__setattr__(self, 'columns', MappingProxyType(frozen))
 
@@ -177,6 +174,38 @@ class PhysicalSource(Protocol):
     def tables(self, *, batch_rows: int) -> Iterator[TableBatch]: ...
 
 
+class ResearchSource(Protocol):
+    """Owned control-rate history. No method may call a live environment."""
+
+    def tables(self, *, batch_rows: int) -> Iterator[TableBatch]: ...
+
+
+@dataclass(frozen=True)
+class ResearchEvidence:
+    history: ResearchSource
+    initial_integration_state: np.ndarray
+    final_integration_state: np.ndarray
+    replay_contract_version: int
+    complete_control_steps: int
+    replay_eligible: bool
+
+    def __post_init__(self) -> None:
+        if not callable(getattr(self.history, 'tables', None)):
+            raise ValueError('research history must implement tables')
+        if self.replay_contract_version != 3:
+            raise ValueError('new recordings require research replay contract 3')
+        _integer(self.complete_control_steps, 'complete_control_steps')
+        if type(self.replay_eligible) is not bool:
+            raise ValueError('replay_eligible must be a bool')
+        for name in ('initial_integration_state', 'final_integration_state'):
+            array = np.asarray(getattr(self, name))
+            if array.dtype != np.dtype('float64') or array.ndim != 1:
+                raise ValueError(f'{name} must be a one-dimensional float64 array')
+            object.__setattr__(self, name, freeze(array))
+        if self.initial_integration_state.shape != self.final_integration_state.shape:
+            raise ValueError('initial and final integration state shapes differ')
+
+
 @dataclass(frozen=True)
 class EpisodeEvidence:
     """One reset-separated physical timeline committed to a run (R01, R03)."""
@@ -186,7 +215,7 @@ class EpisodeEvidence:
     physical: PhysicalSource
     summary: Mapping[str, Any]
     assets: tuple[Asset, ...]
-    research: Any | None = None
+    research: ResearchEvidence | None = None
 
     def __post_init__(self) -> None:
         _integer(self.episode_id, 'episode_id')
@@ -202,6 +231,5 @@ class EpisodeEvidence:
             if not isinstance(asset, Asset):
                 raise ValueError('assets must contain Asset values')
         object.__setattr__(self, 'assets', assets)
-        if self.research is not None:
-            raise ValueError(
-                'stage A records ordinary evidence only: research must be None')
+        if self.research is not None and not isinstance(self.research, ResearchEvidence):
+            raise ValueError('research must be ResearchEvidence or None')

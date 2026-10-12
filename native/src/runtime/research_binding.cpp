@@ -132,8 +132,16 @@ ResearchConfig parse_config(nb::handle value) {
     const wire::Dict d{.value = wire::mapping(value, "research"), .path = "research"};
     wire::exact(d, wire::keys("timestep_s", "control_steps", "delay_steps", "max_steps", "sensor_steps",
         "record_decimation", "stop_on_model_violation", "maximum_energy_residual_ratio", "wheelie_persistence_s",
-        "track_length_m", "start_position_m", "sensors", "geometry", "startup_control", "rider_program", "demand_program"));
+        "track_length_m", "start_position_m", "sensors", "geometry", "startup_control", "rider_program", "demand_program"),
+        wire::keys("capture_mode"));
     ResearchConfig c;
+    if (d.contains("capture_mode")) {
+        const auto mode = wire::string(d["capture_mode"], d.child("capture_mode"));
+        if (mode == "full") c.capture_mode = ResearchCaptureMode::full;
+        else if (mode == "off") c.capture_mode = ResearchCaptureMode::off;
+        else if (mode == "verify") c.capture_mode = ResearchCaptureMode::verify;
+        else if (mode != "legacy") wire::invalid(d.child("capture_mode"), "expected off, full, legacy or verify");
+    }
     c.timestep_s = wire::finite_real(d["timestep_s"], d.child("timestep_s"));
     c.control_steps = wire::integer(d["control_steps"], d.child("control_steps"));
     c.delay_steps = wire::integer(d["delay_steps"], d.child("delay_steps"));
@@ -222,6 +230,18 @@ void bind_research(nb::module_ &module) {
                                       {"demand_nm", demand ? Wire(*demand) : Wire(nullptr)}});
     }, nb::arg("rider_program").none(), nb::arg("demand_program").none(),
        nb::arg("control"), nb::arg("time_s"));
+    nb::class_<OwnedResearchEpisode>(module, "OwnedResearchEpisode")
+        .def_prop_ro("physical", [](const OwnedResearchEpisode &self)
+                         -> const OwnedNativeEpisode & { return self.physical; },
+                     nb::rv_policy::reference_internal)
+        .def("row_count", [](const OwnedResearchEpisode &self, nb::handle stream) {
+            return self.row_count(wire::string(stream, "stream"));
+        })
+        .def("batch", [](const OwnedResearchEpisode &self, nb::handle stream,
+                         nb::handle start, nb::handle limit) {
+            return wire_to_python(self.batch(wire::string(stream, "stream"),
+                wire::integer(start, "start"), wire::integer(limit, "limit")));
+        }, nb::arg("stream"), nb::arg("start"), nb::arg("limit"));
     nb::class_<NativeResearchRuntime>(module, "NativeResearchRuntime")
         .def("__init__", [](NativeResearchRuntime *self, nb::handle model, nb::handle physical_config,
                             nb::handle physical_state, nb::handle research_config, nb::handle noise,
@@ -254,6 +274,15 @@ void bind_research(nb::module_ &module) {
         .def("acknowledge_control", &NativeResearchRuntime::acknowledge_control)
         .def("snapshot", &NativeResearchRuntime::snapshot)
         .def("status", [](const NativeResearchRuntime &self) { return wire_object_to_python(self.status()); })
+        .def("seal_episode", &NativeResearchRuntime::seal_episode)
+        .def("legacy_snapshot", &NativeResearchRuntime::legacy_snapshot)
+        .def("last_requested", [](const NativeResearchRuntime &self) { return wire_to_python(self.last_requested()); })
+        .def("prepare_applied_since", [](const NativeResearchRuntime &self, nb::handle cursor) {
+            return wire_object_to_python(self.prepare_applied_since(wire::integer(cursor, "cursor")));
+        }, nb::arg("cursor"))
+        .def("acknowledge_applied", [](NativeResearchRuntime &self, nb::handle cursor) {
+            self.acknowledge_applied(wire::integer(cursor, "cursor"));
+        }, nb::arg("cursor"))
         .def("commands_requested", [](const NativeResearchRuntime &self) { return wire_to_python(self.commands_requested()); })
         .def("commands_applied", [](const NativeResearchRuntime &self) { return wire_to_python(self.commands_applied()); })
         .def("observations", [](const NativeResearchRuntime &self) { return wire_to_python(self.observations()); })

@@ -26,6 +26,16 @@ public:
 private:
     std::atomic<bool> &busy_;
 };
+bool keeps_history(ResearchCaptureMode mode) noexcept {
+    return mode == ResearchCaptureMode::full || mode == ResearchCaptureMode::legacy;
+}
+template<class T> void reserve_next(std::vector<T> &values) {
+    if (values.size() == values.max_size()) throw std::length_error("research history row limit reached");
+    const auto required = values.size() + 1;
+    if (values.capacity() >= required) return;
+    const auto grown = values.capacity() > values.max_size() / 2 ? required : values.capacity() * 2;
+    values.reserve(std::max(required, grown));
+}
 Wire opt(std::optional<double> v) { return v ? Wire(*v) : Wire(nullptr); }
 Wire opt(const std::optional<std::string> &v) { return v ? Wire(*v) : Wire(nullptr); }
 const WireObject &section(const WireObject &v, std::string_view key) { return object(required(v, key)); }
@@ -62,9 +72,10 @@ ResearchEpisode::ResearchEpisode(const ResearchConfig &c, NoiseTape tape, Sensor
         throw std::invalid_argument("research bootstrap requires the delivered startup row at t=0");
     sensors.import_state(std::move(startup));
     observation = sensors.read(0.);
-    observations.push_back(observation);
-    applied_records.push_back(ResearchCommand{.time_s = 0., .step = 0, .control = applied,
-        .front = 0., .rear = 0.});
+    if (keeps_history(c.capture_mode)) observations.push_back(observation);
+    if (c.capture_mode != ResearchCaptureMode::off)
+        applied_records.push_back(ResearchCommand{.time_s = 0., .step = 0, .control = applied,
+            .front = 0., .rear = 0.});
     demand_nm = c.programs.demand_at(0.);
     if (demand_nm) demand_integral_nms = 0.;
 }
@@ -137,9 +148,13 @@ void NativeResearchRuntime::begin_control(const RideControl &control, double fro
         .start_step = start, .target_step = start + count, .seen_demand = e.demand_nm};
     const ResearchCommand request{.time_s = runtime_->committed_time_s_, .step = start,
         .control = control, .front = front, .rear = rear};
-    e.requested.reserve(e.requested.size() + 1);
+    if (keeps_history(config_.capture_mode)) reserve_next(e.requested);
+    // RideControl contains value-only fields. Queue allocation precedes the
+    // publication of the accepted request and the active window.
     e.commands.emplace_back(start + config_.delay_steps, control);
-    e.requested.push_back(request);
+    if (keeps_history(config_.capture_mode)) e.requested.push_back(request);
+    e.last_requested = request;
+    ++e.requested_count;
     e.window = window;
 }
 void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at_outcome) {
@@ -173,7 +188,7 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
     if (applied) e.torque_requested_nms += *applied * s.dt_s();
     e.torque_delivered_nms += delivered * s.dt_s();
     e.tracker.update(*e.truth, s.dt_s(), delivered, applied);
-    e.recorder.append(sample);
+    if (config_.capture_mode == ResearchCaptureMode::legacy) e.recorder.append(sample);
     const auto quality = research_quality(section(s.channels, "energy"), config_.maximum_energy_residual_ratio);
     e.max_energy_residual_ratio = std::max(e.max_energy_residual_ratio, quality.residual_ratio);
     if (!quality.acceptable) {
@@ -222,8 +237,10 @@ void NativeResearchRuntime::finish_window() {
         e.truncated = true;
         e.reason = "duration";
     }
-    e.observations.reserve(e.observations.size() + 1);
-    e.transitions.reserve(e.transitions.size() + 1);
+    if (keeps_history(config_.capture_mode)) {
+        reserve_next(e.observations);
+        reserve_next(e.transitions);
+    }
     const auto demand = config_.programs.demand_at(runtime_->committed_time_s_);
     const auto observation = e.sensors.read(runtime_->committed_time_s_);
     ResearchTransition result{.observation = observation, .truth = e.truth,
@@ -231,8 +248,15 @@ void NativeResearchRuntime::finish_window() {
         .numerically_valid = e.numerically_valid, .model_valid = model_valid(), .reason = e.reason,
         .physics_steps = runtime_->committed_step_ - e.window->start_step,
         .demand_nm = e.window->seen_demand};
-    e.transitions.push_back(std::move(result));
-    e.observations.push_back(observation);
+    // Stage the deliverable before publishing the completed control prefix.
+    // Python boxing may fail and retry without advancing any of the clocks.
+    auto pending = result;
+    if (keeps_history(config_.capture_mode)) {
+        e.transitions.push_back(std::move(result));
+        e.observations.push_back(observation);
+    }
+    e.pending_transition = std::move(pending);
+    ++e.completed_count;
     e.observation = observation;
     e.demand_nm = demand;
     e.delivery_pending = true;
@@ -263,7 +287,7 @@ std::optional<ResearchTransition> NativeResearchRuntime::advance_control(
     if (target_step && *target_step < runtime_->committed_step_)
         throw std::invalid_argument("target_step is behind the committed step");
     auto &e = *episode_;
-    if (e.delivery_pending) return e.transitions.back();
+    if (e.delivery_pending) return e.pending_transition;
     if (!e.window) throw std::runtime_error("begin_control must precede advance_control");
     const auto start = std::chrono::steady_clock::now();
     try {
@@ -284,8 +308,9 @@ std::optional<ResearchTransition> NativeResearchRuntime::advance_control(
             effective.posture = rider.posture;
             effective.rider_enabled = rider.rider_enabled;
             if (!controls_equal(effective, e.applied)) {
-                e.applied_records.push_back(ResearchCommand{.time_s = runtime_->committed_time_s_,
-                    .step = runtime_->committed_step_, .control = effective, .front = 0., .rear = 0.});
+                if (config_.capture_mode != ResearchCaptureMode::off)
+                    e.applied_records.push_back(ResearchCommand{.time_s = runtime_->committed_time_s_,
+                        .step = runtime_->committed_step_, .control = effective, .front = 0., .rear = 0.});
                 e.applied = effective;
             }
             runtime_->advance_interval(e.applied, e.window->front, e.window->rear);
@@ -306,13 +331,14 @@ std::optional<ResearchTransition> NativeResearchRuntime::advance_control(
         }
         throw;
     }
-    return e.transitions.back();
+    return e.pending_transition;
 }
 void NativeResearchRuntime::acknowledge_control() {
     const ResearchGuard guard(busy_);
     require_open();
     auto &e = *episode_;
     if (!e.delivery_pending) throw std::runtime_error("no completed research transition to acknowledge");
+    e.pending_transition.reset();
     e.delivery_pending = false;
     e.window.reset();
     if (e.stop_requested && !e.done()) { e.truncated = true; e.reason = "operator_stop"; }
@@ -343,13 +369,93 @@ WireObject NativeResearchRuntime::status() const {
         {"samples_attempted", static_cast<std::int64_t>(e.sensors.state().samples_attempted)},
         {"samples_dropped", static_cast<std::int64_t>(e.sensors.state().samples_dropped)},
         {"noise_cursor", static_cast<std::int64_t>(e.sensors.state().cursor)},
-        {"recorded_rows", static_cast<std::int64_t>(e.recorder.rows())},
+        {"recorded_rows", static_cast<std::int64_t>(config_.capture_mode == ResearchCaptureMode::full
+            ? runtime_->accounting_->recorded_samples().size() : e.recorder.rows())},
+        {"requested_count", e.requested_count}, {"completed_count", e.completed_count},
+        {"applied_base", e.applied_base},
         {"cleanup_notes", strings(e.cleanup_notes)}};
     result.emplace_back("balance_event", balance ? Wire(WireObject{{"time_s", balance->time_s},
         {"position_m", balance->position_m}, {"speed_mps", balance->speed_mps}}) : Wire(nullptr));
     result.emplace_back("crash", crash ? Wire(WireObject{{"time_s", crash->time_s}, {"position_m", crash->position_m},
         {"pitch_rad", crash->pitch_rad}, {"cause", crash->cause}}) : Wire(nullptr));
     return result;
+}
+std::size_t OwnedResearchEpisode::row_count(std::string_view stream) const {
+    if (stream == "commands_requested") return requested.size();
+    if (stream == "commands_applied") return applied.size();
+    if (stream == "observations") return observations.size();
+    if (stream == "transitions") return transitions.size();
+    throw std::invalid_argument("unknown research stream");
+}
+WireArray OwnedResearchEpisode::batch(std::string_view stream, std::int64_t start,
+                                      std::int64_t limit) const {
+    const auto count = row_count(stream);
+    if (start < 0 || limit <= 0 || std::cmp_greater(start, count))
+        throw std::invalid_argument("invalid research batch range");
+    const auto first = static_cast<std::size_t>(start);
+    const auto size = std::min(count - first, static_cast<std::size_t>(limit));
+    WireArray rows;
+    rows.reserve(size);
+    for (std::size_t index = first; index < first + size; ++index) {
+        if (stream == "commands_requested") rows.emplace_back(requested[index].as_wire(true));
+        else if (stream == "commands_applied") rows.emplace_back(applied[index].as_wire(false));
+        else if (stream == "observations") rows.emplace_back(observations[index].as_wire());
+        else rows.emplace_back(transitions[index].as_wire());
+    }
+    return rows;
+}
+OwnedResearchEpisode NativeResearchRuntime::seal_episode() {
+    const ResearchGuard guard(busy_); require_open();
+    if (config_.capture_mode != ResearchCaptureMode::full)
+        throw std::runtime_error("sealing research evidence requires full capture");
+    // Sealing never integrates or completes an external window. Frontends
+    // drain a requested stop at the existing control boundary first.
+    if (runtime_->accounting_->has_raws()) runtime_->flush_accounting();
+    auto &e = *episode_;
+    return OwnedResearchEpisode{.physical = runtime_->accounting_->seal_episode(),
+        .requested = e.requested, .applied = e.applied_records,
+        .observations = e.observations, .transitions = e.transitions};
+}
+OwnedResearchEpisode NativeResearchRuntime::legacy_snapshot() const {
+    const ResearchGuard guard(busy_); require_open();
+    if (!keeps_history(config_.capture_mode))
+        throw std::runtime_error("legacy export requires legacy or full capture");
+    const auto &e = *episode_;
+    if (e.window || e.delivery_pending)
+        throw std::runtime_error("finish the external control interval before exporting");
+    return OwnedResearchEpisode{
+        .physical = config_.capture_mode == ResearchCaptureMode::full
+            ? runtime_->accounting_->seal_episode() : e.recorder.seal(),
+        .requested = e.requested, .applied = e.applied_records,
+        .observations = e.observations, .transitions = e.transitions};
+}
+Wire NativeResearchRuntime::last_requested() const {
+    const ResearchGuard guard(busy_); require_open();
+    return episode_->last_requested ? Wire(episode_->last_requested->as_wire(true)) : Wire(nullptr);
+}
+WireObject NativeResearchRuntime::prepare_applied_since(std::int64_t cursor) const {
+    const ResearchGuard guard(busy_); require_open();
+    const auto &e = *episode_;
+    const auto end = e.applied_base + static_cast<std::int64_t>(e.applied_records.size());
+    if (cursor < e.applied_base || cursor > end)
+        throw std::invalid_argument("applied cursor is stale or beyond the committed prefix");
+    WireArray rows;
+    rows.reserve(static_cast<std::size_t>(end - cursor));
+    for (auto index = cursor; index < end; ++index)
+        rows.emplace_back(e.applied_records[static_cast<std::size_t>(index - e.applied_base)].as_wire(false));
+    return {{"rows", std::move(rows)}, {"next_cursor", end}};
+}
+void NativeResearchRuntime::acknowledge_applied(std::int64_t cursor) {
+    const ResearchGuard guard(busy_); require_open();
+    auto &e = *episode_;
+    const auto end = e.applied_base + static_cast<std::int64_t>(e.applied_records.size());
+    if (cursor < e.applied_base || cursor > end)
+        throw std::invalid_argument("applied acknowledgement is stale or beyond the committed prefix");
+    if (config_.capture_mode == ResearchCaptureMode::verify) {
+        const auto count = static_cast<std::vector<ResearchCommand>::difference_type>(cursor - e.applied_base);
+        e.applied_records.erase(e.applied_records.begin(), e.applied_records.begin() + count);
+        e.applied_base = cursor;
+    }
 }
 WireArray NativeResearchRuntime::commands_requested() const {
     const ResearchGuard guard(busy_); require_open();
@@ -376,10 +482,19 @@ WireArray NativeResearchRuntime::transitions() const {
     return out;
 }
 SampleColumns NativeResearchRuntime::recorded_columns() const {
-    const ResearchGuard guard(busy_); require_open(); return episode_->recorder.columns();
+    const ResearchGuard guard(busy_); require_open();
+    if (config_.capture_mode == ResearchCaptureMode::full)
+        return make_columns(runtime_->accounting_->recorded_samples(), runtime_->accounting_config_.columns);
+    return episode_->recorder.columns();
 }
 WireArray NativeResearchRuntime::recorded_intervals() const {
-    const ResearchGuard guard(busy_); require_open(); return episode_->recorder.intervals();
+    const ResearchGuard guard(busy_); require_open();
+    if (config_.capture_mode == ResearchCaptureMode::full) {
+        WireArray rows;
+        for (const auto &sample : runtime_->accounting_->recorded_samples()) rows.emplace_back(sample->as_wire());
+        return rows;
+    }
+    return episode_->recorder.intervals();
 }
 void NativeResearchRuntime::reset(NoiseTape tape, SensorState startup) {
     const ResearchGuard guard(busy_); require_open();

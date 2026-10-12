@@ -3,9 +3,9 @@
 ``NativePhysicalSource`` adapts an ``OwnedNativeEpisode`` — or any
 duck-typed value exposing ``generation``, ``row_count`` and
 ``batch(start, limit)`` — to the ``PhysicalSource`` contract. Every table
-in the bound catalog is emitted in catalog order through the reviewed
-``encode_rows`` encoder; nothing is flattened or renamed by hand, unknown
-channel roots are rejected before any batch is emitted, and absent
+in the bound catalog is emitted through the reviewed ``encode_rows``
+encoder. Each bounded native sample batch is projected once into all domain
+tables; unknown channel roots reject their batch, and absent
 optional roots encode explicit NULLs rather than padding.
 
 ``iter_derived_events`` re-reads a sealed episode and emits compact
@@ -17,6 +17,8 @@ recording pass.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from bike_sim.recording.catalog import Catalog, JointCoords
 from bike_sim.recording.contracts import InputEvent
 from bike_sim.recording.encoding import UnknownFieldError, encode_rows, force_rows
@@ -25,8 +27,8 @@ from bike_sim.sim.ride.physical_samples import plain
 __all__ = ['DERIVED_TRANSITION_RULE', 'NativePhysicalSource',
            'episode_interval_for_time', 'iter_derived_events', 'model_joints']
 
-# The eager channel-root sweep uses its own bounded window; the consumer's
-# ``batch_rows`` governs only the emitted TableBatch sizes.
+# Derived event inspection uses a separate bounded read of sealed evidence.
+# Typed final export itself never performs a preliminary sample sweep.
 _SCAN_ROWS = 1024
 
 _JOINT_TYPE_NAMES = {0: 'free', 1: 'ball', 2: 'slide', 3: 'hinge'}
@@ -55,6 +57,11 @@ def model_joints(model):
     return tuple(joints)
 
 
+def _sample_batch(episode, start, limit):
+    method = getattr(episode, "sample_batch", None)
+    return (episode.batch if method is None else method)(start, limit)
+
+
 class NativePhysicalSource:
     """``PhysicalSource`` over a sealed native episode.
 
@@ -66,7 +73,7 @@ class NativePhysicalSource:
     path.
     """
 
-    def __init__(self, episode, catalog):
+    def __init__(self, episode, catalog, *, ordinary_commands=False):
         if not isinstance(catalog, Catalog):
             raise TypeError('catalog must be a Catalog')
         for member in ('generation', 'row_count', 'batch'):
@@ -76,6 +83,11 @@ class NativePhysicalSource:
                     'or duck-typed equivalent)')
         self._episode = episode
         self._catalog = catalog
+        self.ordinary_commands = bool(ordinary_commands)
+
+    @property
+    def catalog(self):
+        return self._catalog
 
     @property
     def row_count(self):
@@ -97,7 +109,7 @@ class NativePhysicalSource:
         # text ('true' | 'false' | 'not_evaluated'). The mapping is
         # injective over the runtime domain, so nothing is lost.
         status = channels.get('model_status')
-        if isinstance(status, dict):
+        if isinstance(status, Mapping):
             verdict = status.get('numerically_valid')
             if isinstance(verdict, bool):
                 status = dict(status)
@@ -114,16 +126,6 @@ class NativePhysicalSource:
             'powers_w': dict(sample.powers_w),
             'channels': channels,
         }
-
-    def _check_channel_roots(self):
-        claimed = self._catalog.channel_roots()
-        for start in range(0, self.row_count, _SCAN_ROWS):
-            batch = self._episode.batch(start, _SCAN_ROWS)
-            for sample in batch.samples:
-                for root in sample.channels:
-                    if root not in claimed:
-                        raise UnknownFieldError(
-                            f'channels: unrecognized domain {root!r}')
 
     @staticmethod
     def _sample_rows(spec, canonical):
@@ -142,29 +144,54 @@ class NativePhysicalSource:
     def tables(self, *, batch_rows):
         if type(batch_rows) is not int or batch_rows < 1:
             raise ValueError('batch_rows must be a positive integer')
-        self._check_channel_roots()
         episode_id = int(self._episode.generation)
-        count = self.row_count
-        for spec in self._catalog.table_order():
-            pending = []
-            emitted = False
-            for start in range(0, count, batch_rows):
-                batch = self._episode.batch(start, batch_rows)
-                for sample in batch.samples:
-                    pending.extend(
-                        self._sample_rows(spec, self._canonical(sample)))
-                while len(pending) >= batch_rows:
-                    yield encode_rows(spec, pending[:batch_rows],
-                                      episode_id=episode_id)
-                    emitted = True
-                    pending = pending[batch_rows:]
-            if pending:
-                yield encode_rows(spec, pending, episode_id=episode_id)
-            elif not emitted:
-                # An empty table still emits one zero-row batch so the
-                # publisher sees every catalog table, like
-                # TreePhysicalSource.
+        specs = self._catalog.table_order()
+        previous_applied, application_id = None, 0
+        if self.ordinary_commands:
+            from bike_sim.recording.schema import research_tables
+            applied_spec = next(s for s in research_tables() if s.name == 'commands_applied')
+        claimed = self._catalog.channel_roots()
+        if not self.row_count:
+            for spec in specs:
                 yield encode_rows(spec, [], episode_id=episode_id)
+            return
+        # One native batch conversion feeds every domain. In particular, do
+        # not box all samples again for every column family (R07/R21).
+        for start in range(0, self.row_count, batch_rows):
+            native = _sample_batch(self._episode, start, batch_rows)
+            canonical = [self._canonical(sample) for sample in native.samples]
+            for row in canonical:
+                unknown = set(row['channels']) - claimed
+                if unknown:
+                    raise UnknownFieldError(f'channels: unrecognized domains {sorted(unknown)}')
+            if self.ordinary_commands:
+                applied = []
+                for row in canonical:
+                    channels = row['channels']
+                    control = channels.get('control')
+                    drive = channels.get('drive', {})
+                    if control is None:
+                        raise UnknownFieldError('ordinary applied control is missing from the physical source')
+                    actual = {'control': plain(control),
+                              **{key: drive[key] for key in ('front_brake_demand', 'rear_brake_demand',
+                                                            'rollback_brake_demand') if key in drive}}
+                    if actual != previous_applied:
+                        applied.append(dict(application_id=application_id, time_s=row['time_s'],
+                                            step=row['interval_id'], **actual))
+                        previous_applied = actual
+                        application_id += 1
+                if applied:
+                    yield encode_rows(applied_spec, applied, episode_id=episode_id)
+            for spec in specs:
+                pending = []
+                for row in canonical:
+                    for projected in self._sample_rows(spec, row):
+                        pending.append(projected)
+                        if len(pending) == batch_rows:
+                            yield encode_rows(spec, pending, episode_id=episode_id)
+                            pending = []
+                if pending:
+                    yield encode_rows(spec, pending, episode_id=episode_id)
 
 
 # Derived-transition derivation rule, versioned. v1: for each tracked
@@ -213,7 +240,7 @@ def episode_interval_for_time(episode, time_s):
     row_count = int(episode.row_count)
     last = 0
     for start in range(0, row_count, _SCAN_ROWS):
-        for sample in episode.batch(start, _SCAN_ROWS).samples:
+        for sample in _sample_batch(episode, start, _SCAN_ROWS).samples:
             last = int(sample.interval_id)
             if float(sample.end_time_s) >= float(time_s) - 1e-12:
                 return last
@@ -223,7 +250,7 @@ def episode_interval_for_time(episode, time_s):
 def _channel_at(channels, path):
     node = channels
     for key in path:
-        if not isinstance(node, dict) or key not in node:
+        if not isinstance(node, Mapping) or key not in node:
             return None, False
         node = node[key]
     return node, True
@@ -244,7 +271,7 @@ def iter_derived_events(episode, episode_id, *, start_event_id,
     previous = None
     row_count = int(episode.row_count)
     for start in range(0, row_count, _SCAN_ROWS):
-        batch = episode.batch(start, _SCAN_ROWS)
+        batch = _sample_batch(episode, start, _SCAN_ROWS)
         for sample in batch.samples:
             channels = dict(sample.channels)
             interval = int(sample.interval_id)

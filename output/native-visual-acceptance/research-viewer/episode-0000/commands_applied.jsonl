@@ -1,0 +1,2 @@
+{"control": {"crank_target_rate_rad_s": null, "human_torque_nm": null, "motor_limit_nm": null, "motor_torque_nm": 0.0, "posture": null, "rider_enabled": true}, "step": 0, "time_s": 0.0}
+{"control": {"crank_target_rate_rad_s": null, "human_torque_nm": null, "motor_limit_nm": null, "motor_torque_nm": null, "posture": null, "rider_enabled": true}, "step": 4, "time_s": 0.005}

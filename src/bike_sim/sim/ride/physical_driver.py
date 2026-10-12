@@ -101,6 +101,7 @@ class PhysicalRideDriver:
                           else math.ceil(duration_s / self.dt_s))
         self.limit_reason = 'step_cap' if duration_s is None else 'duration_reached'
         self._decimation = decimation
+        self._retention = retention
         self._closed = False
         self.reason = None
         self.step, self.time_s = int(sim.steps), float(sim.time_s)
@@ -112,6 +113,10 @@ class PhysicalRideDriver:
         self._sealed = {}
         self._seal_catalog = None
         self._seal_assets = None
+        if record is True:
+            # Read bytes now, while they still match the identity used to
+            # construct this model. No recipe input is first read at shutdown.
+            self._episode_assets()
         sim.physical.set_strict(strict)
         sim.physical.set_recording_retention(retention)
         if backend == 'native':
@@ -127,7 +132,7 @@ class PhysicalRideDriver:
             self.recorder = NativePhysicalRecorder(native)
         else:
             self._sim = sim
-            self.recorder = PhysicalRecorder(sim, decimation)
+            self.recorder = PhysicalRecorder(sim, decimation, enabled=retention != 'off')
         self.start()
 
     def start(self):
@@ -153,6 +158,9 @@ class PhysicalRideDriver:
     def advance(self, target_step, control=None, *, front_brake_demand=0.,
                 rear_brake_demand=0., wall_budget_s=None):
         self._require_open()
+        if self._sealed and self._native is not None \
+                and int(self._native.snapshot().generation) in self._sealed:
+            raise RuntimeError('cannot advance a sealed episode; reset first')
         if isinstance(target_step, bool) or not isinstance(target_step, Integral) or target_step < self.step:
             raise ValueError('target_step must be an integer at or after the committed step')
         if wall_budget_s is not None and (isinstance(wall_budget_s, bool) or
@@ -269,7 +277,7 @@ class PhysicalRideDriver:
             self._native.reset()
         else:
             self._sim.reset()
-            self.recorder = PhysicalRecorder(self._sim, self._decimation)
+            self.recorder = PhysicalRecorder(self._sim, self._decimation, enabled=self._retention != 'off')
         self.step, self.time_s, self.reason = 0, 0., None
         self.start()
         return self.snapshot()
@@ -316,61 +324,11 @@ class PhysicalRideDriver:
         return self._seal_catalog
 
     def _episode_assets(self):
-        """Bundled recipe inputs, snapshotted once per driver (R12).
-
-        The resolved track and configuration are always bundled. Declared
-        rider-parameter inputs (joint envelope/strength files) are re-read
-        once at first seal: content whose digest no longer matches the hash
-        recorded at configuration time is not relabeled as the original
-        input — the discrepancy is reported in ``asset_identity.json``.
-        """
-        if self._seal_assets is not None:
-            return self._seal_assets
-        import hashlib
-        from bike_sim.recording.contracts import Asset
-        from bike_sim.sim.ride.physical_session import canonical_json
-        from bike_sim.terrain import dump_track
-        assets = []
-
-        def add(name, media_type, content):
-            assets.append(Asset(
-                name=name, media_type=media_type,
-                sha256=hashlib.sha256(content).hexdigest(), content=content))
-
-        add('track.toml', 'application/toml',
-            dump_track(self.track).encode('utf-8'))
-        add('resolved_config.json', 'application/json',
-            (canonical_json(self.metadata['resolved_config'])+'\n').encode('utf-8'))
-        resolved = self.metadata.get('resolved_config') or {}
-        articulated = (resolved.get('physics') or {}).get('articulated') or {}
-        identity = {}
-        media = {'.json': 'application/json', '.toml': 'application/toml',
-                 '.csv': 'text/csv'}
-        for key in ('joint_envelope', 'joint_strength'):
-            path = articulated.get(key + '_path')
-            recorded = resolved.get(key + '_sha256')
-            if path is None or recorded is None:
-                continue
-            file = Path(path)
-            try:
-                content = file.read_bytes()
-            except OSError:
-                identity[key] = {'status': 'missing',
-                                 'recorded_sha256': recorded}
-                continue
-            digest = hashlib.sha256(content).hexdigest()
-            if digest == recorded:
-                add(file.name, media.get(file.suffix.lower(),
-                                         'application/octet-stream'), content)
-            else:
-                # Not the input the hash identified; never relabel it.
-                identity[key] = {'status': 'changed',
-                                 'recorded_sha256': recorded,
-                                 'current_sha256': digest}
-        if identity:
-            add('asset_identity.json', 'application/json',
-                (canonical_json(identity)+'\n').encode('utf-8'))
-        self._seal_assets = tuple(assets)
+        """Owned setup-time bytes shared by all generations of this driver."""
+        if self._seal_assets is None:
+            from bike_sim.recording.assets import snapshot_assets
+            self._seal_assets = snapshot_assets(track=self.track, vertices=self.vertices,
+                                                metadata=self.metadata)
         return self._seal_assets
 
     def seal_episode(self, episode_id, *, reason):
@@ -407,11 +365,25 @@ class PhysicalRideDriver:
         from bike_sim.recording.native import NativePhysicalSource
         sealed = EpisodeEvidence(
             episode_id=episode_id, generation=generation,
-            physical=NativePhysicalSource(owned, self._episode_catalog()),
-            summary=self.summary(reason=reason),
+            physical=NativePhysicalSource(owned, self._episode_catalog(),
+                                          ordinary_commands=True),
+            summary=self._recording_summary(reason),
             assets=self._episode_assets())
         self._sealed[generation] = sealed
         return sealed
+
+    def _recording_summary(self, reason):
+        from bike_sim.recording.assets import identity_changes
+        result = self.summary(reason=reason)
+        try:
+            result.update(identity_changes(self.metadata))
+        except Exception as error:
+            # A source identity inspection failure must not discard physical
+            # evidence. It is an explicit limitation, never "unchanged".
+            result['identity_check_error'] = f'{type(error).__name__}: {error}'
+        result['recording_retention'] = self._retention
+        result['measurement_decimation'] = self.record_decimation
+        return result
 
     def close(self):
         if self._closed:

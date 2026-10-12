@@ -172,11 +172,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument('--time-scale', type=int, choices=(1, 2, 4, 8), default=None,
                         help='interactive physical/research playback speed (default 1)')
     parser.add_argument('--record', action='store_true',
-                        help='ordinary physical native runs only: retain the full run '
+                        help='physical native and both research backends: retain the full run '
                              'recording in memory and publish a run recording under --out '
                              'at launch end (default off)')
     parser.add_argument('--check-policy', choices=('strict', 'diagnostic'), default=None,
-                        help='ordinary physical model-check policy: strict rejects the run '
+                        help='physical/research model-check policy: strict rejects the run '
                              'at the first violated reference budget; diagnostic warns once '
                              'and keeps the sticky first failure (default: strict for '
                              '--headless, diagnostic for the viewer)')
@@ -246,23 +246,17 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             parser.error('--research runs an experiment; --preview only draws the track')
     if args.record:
         if args.physics != 'physical':
-            parser.error('--record is supported for ordinary physical runs only; '
+            parser.error('--record is supported for physical runs only; '
                          f'--physics {args.physics} has no recording adapter')
-        if args.backend != 'native':
+        if args.backend != 'native' and not args.research:
             parser.error('--record requires --backend native; the ordinary physical '
                          'Python backend has no recording adapter in this version')
-        if args.research:
-            parser.error('--record is not supported for --research launches in this '
-                         'version; research recording is a separate feature')
         if args.preview:
             parser.error('--record journals a run; --preview only draws the track')
     if args.check_policy is not None:
         if args.physics != 'physical':
-            parser.error('--check-policy is an ordinary physical option; '
+            parser.error('--check-policy is a physical option; '
                          f'--physics {args.physics} has no model-check policy')
-        if args.research:
-            parser.error('--check-policy is not supported for --research launches in '
-                         'this version; research keeps its own stop-policy option')
         if args.preview:
             parser.error('--check-policy does not apply to --preview')
     if args.duration is not None and (not isfinite(args.duration) or args.duration<=0):
@@ -893,9 +887,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         try:
             return run_ride_research(track, args, rider)
         except KeyboardInterrupt:
-            return 0
+            return 130
         except Exception as error:
             print(f'{PREFIX} research error: {type(error).__name__}: {error}', file=sys.stderr)
+            for note in getattr(error, '__notes__', ()):
+                print(f'  {note}', file=sys.stderr)
             return 2 if isinstance(error, (ValueError, OSError)) else 3
     try:
         tyre = _tyre_config(args)

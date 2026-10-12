@@ -13,6 +13,7 @@ retried while the process lives (R04, R16).
 """
 from collections.abc import Iterator
 from pathlib import Path
+import time
 
 from bike_sim.recording.contracts import (
     EpisodeEvidence, InputEvent, RunMetadata,
@@ -25,7 +26,7 @@ PUBLICATION_FAILED = 'publication_failed'
 
 
 def _default_publisher():
-    """Resolve the storage writer lazily; absent until A4 lands storage.py."""
+    """Resolve the storage writer only when enabled capture is finalized."""
     from bike_sim.recording.storage import write_recording
     return write_recording
 
@@ -66,7 +67,7 @@ class EpisodeJournal:
             received_wall_s=float(received_wall_s),
             processed_step=int(processed_step),
             applied_step=applied_step,
-            values={} if values is None else values)
+            values={'processed_wall_s': time.monotonic(), **({} if values is None else values)})
         self._capture.event(event)
         self.next_id += 1
         return event
@@ -142,9 +143,9 @@ class RunCapture:
             raise ValueError(
                 f'event identity {key} does not follow '
                 f'{self._last_event_key}')
-        self._last_event_key = key
         if self._enabled:
             self._events.append(event)
+        self._last_event_key = key
 
     def add_episode(self, evidence: EpisodeEvidence) -> None:
         """Commit one sealed episode, atomically.
@@ -166,7 +167,7 @@ class RunCapture:
         episode_id = int(evidence.episode_id)
         existing = self._episodes.get(episode_id)
         if existing is not None:
-            if existing is evidence or existing == evidence:
+            if existing is evidence:
                 return
             raise ValueError(
                 f'conflicting evidence for episode {episode_id}')
@@ -175,8 +176,12 @@ class RunCapture:
             raise ValueError(
                 f'episode identifier {episode_id} breaks prefix continuity: '
                 f'expected {self._episode_order[-1] + 1}')
-        self._episodes[episode_id] = evidence
         self._episode_order.append(episode_id)
+        try:
+            self._episodes[episode_id] = evidence
+        except BaseException:
+            self._episode_order.pop()
+            raise
 
     def iter_episodes(self) -> Iterator[EpisodeEvidence]:
         """Committed episodes in identity order; read-only, non-consuming."""

@@ -10,11 +10,13 @@
 #include "sensors.hpp"
 
 namespace runtime {
+enum class ResearchCaptureMode { off, full, legacy, verify };
 struct ResearchConfig {
     double timestep_s = 0., track_length_m = 0., start_position_m = 0.;
     double maximum_energy_residual_ratio = .05, wheelie_persistence_s = .02;
     std::int64_t control_steps = 0, delay_steps = 0, max_steps = 0, sensor_steps = 0;
     int record_decimation = 1;
+    ResearchCaptureMode capture_mode = ResearchCaptureMode::legacy;
     bool stop_on_model_violation = true;
     SensorConfig sensors;
     TruthGeometry geometry;
@@ -54,6 +56,9 @@ struct ResearchEpisode {
     RideControl applied, motor_applied;
     std::optional<ResearchWindow> window;
     bool delivery_pending = false, stop_requested = false;
+    std::optional<ResearchTransition> pending_transition;
+    std::optional<ResearchCommand> last_requested;
+    std::int64_t requested_count = 0, completed_count = 0, applied_base = 0;
     std::vector<ResearchCommand> requested, applied_records;
     std::vector<SensorObservation> observations;
     std::vector<ResearchTransition> transitions;
@@ -66,6 +71,17 @@ struct ResearchEpisode {
     std::optional<double> demand_integral_nms, demand_nm;
     double max_shock_stroke_m = 0., max_fork_travel_m = 0.;
     [[nodiscard]] bool done() const noexcept { return terminated || truncated; }
+};
+// A sealed episode owns its index and control-clock records. It never borrows
+// a runtime, model, recorder or mutable history vector.
+struct OwnedResearchEpisode {
+    OwnedNativeEpisode physical;
+    std::vector<ResearchCommand> requested, applied;
+    std::vector<SensorObservation> observations;
+    std::vector<ResearchTransition> transitions;
+    [[nodiscard]] std::size_t row_count(std::string_view stream) const;
+    [[nodiscard]] WireArray batch(std::string_view stream, std::int64_t start,
+                                  std::int64_t limit) const;
 };
 class NativeResearchRuntime {
 public:
@@ -83,6 +99,11 @@ public:
     void acknowledge_control();
     [[nodiscard]] RuntimeSnapshot snapshot() const;
     [[nodiscard]] WireObject status() const;
+    [[nodiscard]] OwnedResearchEpisode seal_episode();
+    [[nodiscard]] OwnedResearchEpisode legacy_snapshot() const;
+    [[nodiscard]] WireObject prepare_applied_since(std::int64_t cursor) const;
+    void acknowledge_applied(std::int64_t cursor);
+    [[nodiscard]] Wire last_requested() const;
     [[nodiscard]] WireArray commands_requested() const;
     [[nodiscard]] WireArray commands_applied() const;
     [[nodiscard]] WireArray observations() const;

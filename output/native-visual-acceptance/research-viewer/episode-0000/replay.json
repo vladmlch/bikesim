@@ -1,0 +1,47 @@
+{
+  "execution": {
+    "backend": "native",
+    "build_context": {
+      "build_type": "Release",
+      "compiler_id": "AppleClang",
+      "compiler_version": "21.0.0.21000101",
+      "numerical_flags": " -O3 -DNDEBUG    -Os -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wdouble-promotion -Wshadow -Wcast-qual -Wformat=2 -Wundef -Wimplicit-fallthrough -Wnon-virtual-dtor -Wold-style-cast -Woverloaded-virtual -Wnull-dereference -Wunsafe-buffer-usage -Wmissing-declarations -Wmissing-variable-declarations -Wmissing-noreturn -Wredundant-decls -Wredeclared-class-member -Wstatic-in-inline -Wcast-align -Wcast-function-type-strict -Wreinterpret-base-class -Wunreachable-code-break -Wunreachable-code-return -Wunreachable-code-aggressive -Wconditional-uninitialized -Wloop-analysis -Wrange-loop-analysis -Winfinite-recursion -Winconsistent-missing-override -Winconsistent-missing-destructor-override -Wsuggest-override -Wsuggest-destructor-override -Wweak-vtables -Wweak-template-vtables -Wdelete-non-abstract-non-virtual-dtor -Wabstract-vbase-init -Wctad-maybe-unsupported -Wswitch-enum -Wcovered-switch-default -Wassign-enum -Wbitfield-enum-conversion -Wsigned-enum-bitfield -Wduplicate-enum -Wreserved-identifier -Wreserved-macro-identifier -Wreserved-user-defined-literal -Wunevaluated-expression -Wnull-pointer-arithmetic -Warray-bounds-pointer-arithmetic -Watomic-implicit-seq-cst -Wxor-used-as-pow -Wdangling -Widiomatic-parentheses -Wredundant-parens -Wlogical-not-parentheses -Wshift-op-parentheses -Wunguarded-availability -Wunguarded-availability-new -Wunicode-homoglyph -Wunicode-whitespace -Wunicode-zero-width -Wmemset-transposed-args -Wsuspicious-bzero -Wsuspicious-memaccess -Wnontrivial-memaccess -Wdynamic-class-memaccess -Wsizeof-array-div -Wsizeof-pointer-div -Wsizeof-pointer-memaccess -Wover-aligned -Wpacked -Walloca -Walloca-with-align-alignof -Wvla -Wzero-length-array -Wstring-compare -Wstring-concatenation -Wstring-plus-int -Wformat-pedantic -Wformat-type-confusion -Wfortify-source -Wheader-hygiene -Wcomma -Wkeyword-macro -Wlanguage-extension-token -Wextra-tokens -Wextra-semi-stmt -Wignored-qualifiers -Wextra-qualification -Wnonportable-include-path -Wnonportable-system-include-path -Wunneeded-member-function -Wunneeded-internal-declaration -Wunnamed-type-template-args -Wclass-varargs -Wpredefined-identifier-outside-function -Wduplicate-method-arg -Wmultichar -Wfour-char-constants -Wdate-time -Wnewline-eof -Wused-but-marked-unused -Winit-self -Wsign-promo -Wctor-dtor-privacy -Wpass-failed -Wstack-protector -Wlarge-by-value-copy -Wframe-larger-than=8192 -ffp-contract=off -fstack-protector-strong -ftrivial-auto-var-init=zero -fvisibility=hidden -fvisibility-inlines-hidden -fstrict-flex-arrays=3 -mbranch-protection=standard"
+    },
+    "extension_sha256": "8fe3309981530f76233c6b9b2bf777d0f731f39b160e36c0d54d3925796f8a98",
+    "mujoco_library_sha256": "9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c",
+    "mujoco_version": "3.12.0",
+    "native_source_sha256": "2445c4fcf845146f164e9f7136e6bc38316490812cab1b9c10c7e1d337893d9c",
+    "python_source_sha256": "495ddd102c69e084574e0baa6534ea49fd34589b930923b16eb4ea9e99554b8c",
+    "runtime_schema": 1
+  },
+  "file_sha256": {
+    "commands_applied.jsonl": "e9e25ea50062d40f095e9cda30e8f0a3fcf711ea3a53dbdbab3c79067e344393",
+    "commands_requested.jsonl": "836f3c6430a785a543c898233564c417b3df768fdb3bdaec9f05ec008a2124d2",
+    "episode_metrics.json": "df4a14dd4ef5d5ff1b6d1376c0b9ae720565521c5f3aeafce7ccc3fcab1849f0",
+    "intervals.jsonl": "a41a7cc12cfaf9268cb7e617c53c776ce0bd905209a7fd262b78645beb08f608",
+    "observations.jsonl": "8e8a256407df448510d09f30fbec67b1dd92118ed01a69f4ef3a8f55d410f083",
+    "rider_joint_envelope.json": "4e9cacbce5b7a39d369f3e1d7eacedbef5386c56e1707045ea140621baa43f64",
+    "rider_joint_strength.json": "0921312611e18611da3e384d2827e63c183eb642f0b9be1cbbf0a58480eee5f8",
+    "states.npz": "a626a0dde37cbecdd3958c154aecde93f731f047b0837fc5b0eb605cb4bea900",
+    "summary.json": "953cc9a3ed08d633799650921be4111fd4d972bb20cbefad37e93787c65a5010",
+    "telemetry.csv": "4f1da0172c3911b5277cc979399d9f054db2d0bf7057fdaf4d10d1c71dea4467",
+    "terrain_vertices.npy": "67a239a8ea64cf7ee883706db8cafe2d70e6bf433fad7af7dce2f6e5ae50c2c3",
+    "trace.csv": "16c6c4ac9780808f21308c9bad74c1898a6265c682ffc261928a2347100d723b",
+    "track.toml": "cada1729fa7de786f012d128ce70d39aadcbc243e602adc3f7cefbc4740bbb0d",
+    "transitions.jsonl": "3ad1e3bc7d718625762eeacd7a3d12136cbf618f3ece4ce194e1caabea1947e2"
+  },
+  "heightfield": {
+    "base_m": 0.5,
+    "datum_z_m": 2.8,
+    "elevation_m": 30.1,
+    "ncol": 26001,
+    "nrow": 2,
+    "radius_x_m": 65.0,
+    "radius_y_m": 0.5
+  },
+  "joint_envelope_file": "rider_joint_envelope.json",
+  "joint_strength_file": "rider_joint_strength.json",
+  "schema_version": 2,
+  "start_x_m": 2.0,
+  "state_signature": "mjSTATE_INTEGRATION"
+}

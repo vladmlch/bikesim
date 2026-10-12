@@ -1,0 +1,194 @@
+[
+  {
+    "label": "cppcheck-header-missing",
+    "args": [
+      "bash",
+      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/tools/check_cppcheck.sh",
+      "/private/tmp/infra_audit_extra/build",
+      "/private/tmp/infra_audit_extra/native/src",
+      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/bin/python"
+    ],
+    "rc": 0,
+    "output": "cppcheck clean: /private/tmp/infra_audit_extra/native/src\n"
+  },
+  {
+    "label": "cppcheck-header-present",
+    "args": [
+      "bash",
+      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/tools/check_cppcheck.sh",
+      "/private/tmp/infra_audit_extra/build",
+      "/private/tmp/infra_audit_extra/native/src",
+      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/bin/python"
+    ],
+    "rc": 1,
+    "output": "/private/tmp/infra_audit_extra/native/src/feature.cpp:3:32: error: Null pointer dereference: p [nullPointer]\nint f(){int *p=nullptr;return *p;}\n                               ^\n/private/tmp/infra_audit_extra/native/src/feature.cpp:3:16: note: Assignment 'p=nullptr', assigned value is 0\nint f(){int *p=nullptr;return *p;}\n               ^\n/private/tmp/infra_audit_extra/native/src/feature.cpp:3:32: note: Null pointer dereference\nint f(){int *p=nullptr;return *p;}\n                               ^\n"
+  },
+  {
+    "label": "frontend-source-missing",
+    "args": [
+      "bash",
+      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/tools/check_native_frontends.sh",
+      "/private/tmp/infra_audit_extra/missing-source",
+      "/nonexistent"
+    ],
+    "rc": 0,
+    "output": "gcc sweep clean: /private/tmp/infra_audit_extra/missing-source\nfind: /private/tmp/infra_audit_extra/missing-source: No such file or directory\n"
+  },
+  {
+    "label": "warning-current-umbrella",
+    "args": [
+      "clang++",
+      "-isysroot",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-std=c++23",
+      "-fsyntax-only",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wextra-semi-stmt",
+      "/private/tmp/infra_audit_extra/warnings.cpp"
+    ],
+    "rc": 0,
+    "output": "/private/tmp/infra_audit_extra/warnings.cpp:2:19: warning: use of bitwise '&' with boolean operands [-Wbitwise-instead-of-logical]\n    2 | bool c() { return a() & b(); }\n      |                   ^~~~~~~~~\n      |                       &&\n/private/tmp/infra_audit_extra/warnings.cpp:2:19: note: cast one or both operands to int to silence this warning\n/private/tmp/infra_audit_extra/warnings.cpp:3:18: warning: extra ';' inside a struct [-Wextra-semi]\n    3 | struct S { int n;; };\n      |                  ^\n2 warnings generated.\n"
+  },
+  {
+    "label": "warning-extra-flags",
+    "args": [
+      "clang++",
+      "-isysroot",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-std=c++23",
+      "-fsyntax-only",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wextra-semi-stmt",
+      "/private/tmp/infra_audit_extra/warnings.cpp",
+      "-Wbitwise-instead-of-logical",
+      "-Wextra-semi"
+    ],
+    "rc": 0,
+    "output": "/private/tmp/infra_audit_extra/warnings.cpp:2:19: warning: use of bitwise '&' with boolean operands [-Wbitwise-instead-of-logical]\n    2 | bool c() { return a() & b(); }\n      |                   ^~~~~~~~~\n      |                       &&\n/private/tmp/infra_audit_extra/warnings.cpp:2:19: note: cast one or both operands to int to silence this warning\n/private/tmp/infra_audit_extra/warnings.cpp:3:18: warning: extra ';' inside a struct [-Wextra-semi]\n    3 | struct S { int n;; };\n      |                  ^\n2 warnings generated.\n"
+  },
+  {
+    "label": "hardening-compile-FAST",
+    "args": [
+      "clang++",
+      "-isysroot",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-std=c++23",
+      "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST",
+      "/private/tmp/infra_audit_extra/layout.cpp",
+      "-o",
+      "/private/tmp/infra_audit_extra/layout-FAST"
+    ],
+    "rc": 0,
+    "output": ""
+  },
+  {
+    "label": "hardening-layout-FAST",
+    "args": [
+      "/private/tmp/infra_audit_extra/layout-FAST"
+    ],
+    "rc": 0,
+    "output": "24 8 24 16\n"
+  },
+  {
+    "label": "hardening-compile-EXTENSIVE",
+    "args": [
+      "clang++",
+      "-isysroot",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-std=c++23",
+      "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+      "/private/tmp/infra_audit_extra/layout.cpp",
+      "-o",
+      "/private/tmp/infra_audit_extra/layout-EXTENSIVE"
+    ],
+    "rc": 0,
+    "output": ""
+  },
+  {
+    "label": "hardening-layout-EXTENSIVE",
+    "args": [
+      "/private/tmp/infra_audit_extra/layout-EXTENSIVE"
+    ],
+    "rc": 0,
+    "output": "24 8 24 16\n"
+  },
+  {
+    "label": "hardening-compile-DEBUG",
+    "args": [
+      "clang++",
+      "-isysroot",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.5.sdk",
+      "-std=c++23",
+      "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG",
+      "/private/tmp/infra_audit_extra/layout.cpp",
+      "-o",
+      "/private/tmp/infra_audit_extra/layout-DEBUG"
+    ],
+    "rc": 0,
+    "output": ""
+  },
+  {
+    "label": "hardening-layout-DEBUG",
+    "args": [
+      "/private/tmp/infra_audit_extra/layout-DEBUG"
+    ],
+    "rc": 0,
+    "output": "24 8 24 16\n"
+  },
+  {
+    "label": "coverage-custom-dir-multiple-so",
+    "args": [
+      "bash",
+      "/private/tmp/infra_audit_extra/coverage-project/tools/native_coverage.sh",
+      "/private/tmp/infra_audit_extra/custom/coverage"
+    ],
+    "rc": 0,
+    "output": "cmake args=--build /private/tmp/infra_audit_extra/custom/coverage -j1\ntest selector=coverage cwd=/private/tmp/infra_audit_extra/coverage-project\nxcrun argc=6 args=llvm-profdata merge -sparse /var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/native_cov.rKredXyYIp/mock.profraw -o /private/tmp/infra_audit_extra/custom/coverage/coverage.profdata\nxcrun argc=4 args=llvm-cov report /private/tmp/infra_audit_extra/custom/coverage/bike_native.cpython-313-darwin.so /private/tmp/infra_audit_extra/custom/coverage/bike_native.cpython-314-darwin.so -instr-profile=/private/tmp/infra_audit_extra/custom/coverage/coverage.profdata\n\nper-line detail: xcrun llvm-cov show /private/tmp/infra_audit_extra/custom/coverage/bike_native.cpython-313-darwin.so /private/tmp/infra_audit_extra/custom/coverage/bike_native.cpython-314-darwin.so -instr-profile=/private/tmp/infra_audit_extra/custom/coverage/coverage.profdata\n"
+  },
+  {
+    "label": "rider-forces-coverage-ignored",
+    "args": [
+      "uv",
+      "run",
+      "python",
+      "/private/tmp/infra_audit_extra/rider_import.py"
+    ],
+    "rc": 0,
+    "output": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/build/bike_native.cpython-314-darwin.so\n"
+  },
+  {
+    "label": "committed-bench-rewind-zero",
+    "args": [
+      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/tools/proto_native_bench/bench",
+      "bare",
+      "1",
+      "0"
+    ],
+    "rc": 0,
+    "output": "mode=bare steps=1 nv=26 nefc~22 | 64.1 us/step  15605 steps/s  RTF=7.80x  (sink 0.0)\n"
+  },
+  {
+    "label": "committed-bench-zero-steps",
+    "args": [
+      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/tools/proto_native_bench/bench",
+      "bare",
+      "0"
+    ],
+    "rc": 0,
+    "output": "mode=bare steps=0 nv=26 nefc~26 | nan us/step  nan steps/s  RTF=nanx  (sink 0.0)\n"
+  },
+  {
+    "label": "bench-mismatched-large-nq",
+    "args": [
+      "/private/tmp/infra_audit_repro/bench-asan",
+      "bare",
+      "1"
+    ],
+    "rc": 1,
+    "output": "WARNING: Error opening file 'tools/proto_native_bench/artifacts/model.mjb'\n\nmj_loadModel failed\n"
+  }
+]

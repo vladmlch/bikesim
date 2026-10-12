@@ -1,10 +1,12 @@
 """Run independent bike-research episodes in parallel processes, one per seed.
 
     uv run python tools/research_sweep.py --out sweeps/climb --seeds 1-8 --jobs 8 -- \
-        --track-file examples/research/rough_uphill.toml --duration 20
+        --track-file examples/research/rough_uphill.toml --duration 20 --record
 
 Episodes share nothing: each process has its own MuJoCo model, data and
-recording directory. Throughput scales with cores; per-episode speed does not.
+recording directory when --record is passed through explicitly. Without it
+only sweep logs/return-code metadata are written. Throughput scales with cores;
+per-episode speed does not.
 """
 import argparse
 import json

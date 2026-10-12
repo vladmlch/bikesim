@@ -1,0 +1,259 @@
+[ 35%] Built target nanobind-static-ps
+[100%] Built target bike_native
+[100%] gcc -fsyntax-only sweep (second frontend)
+In file included from /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/lib/python3.14/site-packages/nanobind/include/nanobind/nanobind.h:64,
+                 from /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/binding.cpp:18:
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/lib/python3.14/site-packages/nanobind/include/nanobind/nb_func.h: In instantiation of 'void nanobind::cpp_function_def(Return (Class::*)(Args ...) const, const Extra& ...) [with Target = Stepper; Return = std::pair<double, double>; Class = Stepper; Args = {double, double}; Extra = {scope, name, is_method}]':
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/lib/python3.14/site-packages/nanobind/include/nanobind/nb_class.h:535:28:   required from 'nanobind::class_<T, Ts>& nanobind::class_<T, Ts>::def(const char*, Func&&, const Extra& ...) [with Func = std::pair<double, double> (Stepper::*)(double, double) const; Extra = {}; T = Stepper; Ts = {}]'
+  535 |         cpp_function_def<T>((detail::forward_t<Func>) f, scope(*this),
+      |         ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  536 |                             name(name_), is_method(), extra...);
+      |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/binding.cpp:193:17:   required from here
+  164 |     stepper_class
+      |     ~~~~~~~~~~~~~
+  165 |             .def(nb::init<const std::string &>())
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  166 |             .def(nb::init<const std::string &, const nb::dict &>(),
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  167 |                  nb::arg("mjb_path"), nb::arg("config"))
+      |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  168 |             .def("step", &Stepper::step)
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  169 |             .def("forward", &Stepper::forward)
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  170 |             .def("set_state", [](Stepper &s,
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  171 |                                  const nb::ndarray<const double, nb::shape<-1>,
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  172 |                                      nb::c_contig> &qpos,
+      |                                      ~~~~~~~~~~~~~~~~~~~~
+  173 |                                  const nb::ndarray<const double, nb::shape<-1>,
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  174 |                                      nb::c_contig> &qvel,
+      |                                      ~~~~~~~~~~~~~~~~~~~~
+  175 |                                  const nb::ndarray<const double, nb::shape<-1>,
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  176 |                                      nb::c_contig> &act,
+      |                                      ~~~~~~~~~~~~~~~~~~~
+  177 |                                  const nb::ndarray<const double, nb::shape<-1>,
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  178 |                                      nb::c_contig> &warmstart,
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~
+  179 |                                  double time) {
+      |                                  ~~~~~~~~~~~~~~
+  180 |                 s.set_state(as_span(qpos), as_span(qvel), as_span(act),
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  181 |                             as_span(warmstart), time);
+      |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~
+  182 |             })
+      |             ~~   
+  183 |             .def_prop_ro("qpos", [](Stepper &s) { return as_view(s.qpos()); })
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  184 |             .def_prop_ro("qvel", [](Stepper &s) { return as_view(s.qvel()); })
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  185 |             .def_prop_ro("qacc", [](Stepper &s) { return as_view(s.qacc()); })
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  186 |             .def_prop_ro("qfrc_constraint", [](Stepper &s) {
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  187 |                 return as_view(s.qfrc_constraint());
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  188 |             })
+      |             ~~   
+  189 |             .def_prop_ro("efc_force", [](Stepper &s) {
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  190 |                 return as_view(s.efc_force());
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  191 |             })
+      |             ~~   
+  192 |             .def_prop_ro("ctrl", [](Stepper &s) { return as_view(s.ctrl()); })
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  193 |             .def("brake_torques", &Stepper::brake_torques)
+      |             ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/lib/python3.14/site-packages/nanobind/include/nanobind/nb_func.h:494:9: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  494 |         [f](const T *c, Args... args) NB_INLINE_LAMBDA -> Return {
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  495 |             return (c->*f)((detail::forward_t<Args>) args...);
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  496 |         },
+      |         ~
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/chain.cpp: In function 'std::pair<double, double> drivetrain::chain_tension(double, double, double, double)':
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/chain.cpp:91:86: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+   91 |     std::pair<double, double> chain_tension(double e, double rate, double k, double c) {
+      |                                                                                      ^
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/drive_binding.cpp: In lambda function:
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/drive_binding.cpp:529:41: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  529 |         return std::pair{g.length, g.psi};
+      |                                         ^
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/motor.cpp: In member function 'std::pair<double, double> drivetrain::AssistController::ceiling(double, double) const':
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/motor.cpp:37:83: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+   37 |     std::pair<double, double> AssistController::ceiling(double rpm, double speed) const {
+      |                                                                                   ^~~~~
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/policy_binding.cpp: In lambda function:
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/policy_binding.cpp:316:113: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  316 |                  [](const DrivePolicies &self, double rpm, double speed) { return self.assist.ceiling(rpm, speed); },
+      |                                                                                                                 ^
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/rider/support_geometry.cpp: In lambda function:
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/rider/support_geometry.cpp:191:47: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  191 |             return std::pair{total, derivative};
+      |                                               ^
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/stepper.cpp: In member function 'std::pair<double, double> Stepper::brake_torques(double, double) const':
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/stepper.cpp:175:65: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  175 | Stepper::brake_torques(double front_demand, double rear_demand) const {
+      |                                                                 ^~~~~
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/brake.cpp: In member function 'std::pair<double, double> BrakeWriter::torques(const mjData*, double, double) const':
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/brake.cpp:110:68: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  110 |                                                double rear_demand) const {
+      |                                                                    ^~~~~
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/suspension.cpp: In function 'std::pair<double, double> {anonymous}::end_stop(double, double, double, double, double, double, double, double)':
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/suspension.cpp:224:76: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+  224 |                                        double upper_boundary_energy_j = 0.0) {
+      |                                                                            ^
+In file included from /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/tire.cpp:15:
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../contact/laws.hpp: In function 'std::pair<double, double> contactlaw::normal_contact(double, double, double, double)':
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../contact/laws.hpp:28:71: note: parameter passing for argument of type 'std::pair<double, double>' when C++17 is enabled changed to match C++14 in GCC 10.1
+   28 |                                                     double k, double c) {
+      |                                                                       ^
+gcc sweep clean: /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src
+[100%] Built target check_frontends
+[100%] clang-tidy sweep (LLVM linter)
+tidy clean: /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src
+[100%] Built target check_tidy
+[100%] clang static analyzer sweep (path-sensitive)
+<stdin>:4: ResourceWarning: unclosed file <_io.TextIOWrapper name='/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/build/compile_commands.json' mode='r' encoding='UTF-8'>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/binding.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:245:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:294:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/binding.cpp:99:32: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/binding.cpp:245:44: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/binding.cpp:254:39: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/stepper.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/lib/python3.14/site-packages/nanobind/include/nanobind/nb_types.h:1112:87: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/config.hpp:245:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/config.hpp:294:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/stepper.cpp:100:24: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/stepper.cpp:102:24: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/stepper.cpp:245:38: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/suspension.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:245:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:294:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/suspension.cpp:311:9: warning: This statement is never executed [alpha.deadcode.UnreachableCode]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/suspension.cpp:324:13: warning: This statement is never executed [alpha.deadcode.UnreachableCode]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/suspension.cpp:422:5: warning: Trying to write to immutable memory [alpha.core.StoreToImmutable]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/brake.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:245:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:294:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/cruise.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:245:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:294:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/resistance.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:245:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:294:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/rider_forces.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:245:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:294:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/rider_forces.cpp:53:45: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/tire.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:155:12: warning: Returned pointer value points outside the original object (potential buffer overflow) [alpha.security.ReturnPtrRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:245:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/../config.hpp:294:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/tire.cpp:94:28: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/tire.cpp:120:29: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/tire.cpp:179:32: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/tire.cpp:251:29: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/tire.cpp:273:27: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/tire.cpp:345:33: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/tyre/profile.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/tyre/profile.cpp:68:28: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/tyre/profile.cpp:128:27: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/tyre/profile.cpp:136:29: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/tyre/profile.cpp:241:27: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/tyre/profile.cpp:313:28: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/tyre/profile.cpp:317:28: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/tyre/profile.cpp:395:13: warning: Duplicate code detected [alpha.clone.CloneChecker]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/shifting.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/shifting.cpp:54:33: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/shifting.cpp:58:33: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/policy_binding.cpp
+/opt/homebrew/Cellar/llvm/23.1.2/bin/../include/c++/v1/__new/placement_new_delete.h:24:3: warning: Returning value bound to 'Base{Base{Base{Base{Base{Base{Base{config.torque_curve,__optional_iterator_base},__optional_move_assign_base},__optional_copy_assign_base},__optional_move_base},__optional_copy_base},__optional_storage_base},__optional_destruct_base}.union (anonymous at /opt/homebrew/Cellar/llvm/23.1.2/bin/../include/c++/v1/optional:378:3).__val_' that will go out of scope [alpha.cplusplus.UseAfterLifetimeEnd]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/chain.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/chain.cpp:142:29: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/transmission.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/transmission.cpp:27:9: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/transmission.cpp:29:87: warning: Potential copy-paste error; did you really mean to use 'dj' here? [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/transmission.cpp:31:82: warning: Potential copy-paste error; did you really mean to use 'wj' here? [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/transmission.cpp:237:29: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/transmission.cpp:253:28: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/transmission.cpp:264:32: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/transmission.cpp:266:32: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/drive_binding.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/lib/python3.14/site-packages/nanobind/include/nanobind/stl/detail/nb_list.h:67:27: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/drive_binding.cpp:86:32: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/drivetrain/drive_binding.cpp:566:50: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/drivetrain.cpp
+/opt/homebrew/Cellar/llvm/23.1.2/bin/../include/c++/v1/__new/placement_new_delete.h:24:3: warning: Returning value bound to 'Base{Base{Base{Base{Base{Base{Base{config.torque_curve,__optional_iterator_base},__optional_move_assign_base},__optional_copy_assign_base},__optional_move_base},__optional_copy_base},__optional_storage_base},__optional_destruct_base}.union (anonymous at /opt/homebrew/Cellar/llvm/23.1.2/bin/../include/c++/v1/optional:378:3).__val_' that will go out of scope [alpha.cplusplus.UseAfterLifetimeEnd]
+/opt/homebrew/Cellar/llvm/23.1.2/bin/../include/c++/v1/__new/placement_new_delete.h:24:3: warning: Returning value bound to 'Base{Base{Base{Base{Base{Base{Base{state,__optional_iterator_base},__optional_move_assign_base},__optional_copy_assign_base},__optional_move_base},__optional_copy_base},__optional_storage_base},__optional_destruct_base}.union (anonymous at /opt/homebrew/Cellar/llvm/23.1.2/bin/../include/c++/v1/optional:378:3).__val_' that will go out of scope [alpha.cplusplus.UseAfterLifetimeEnd]
+/opt/homebrew/Cellar/llvm/23.1.2/bin/../include/c++/v1/__new/placement_new_delete.h:24:3: warning: Returning value bound to 'Base{Base{Base{Base{Base{Base{Base{state.prepared,__optional_iterator_base},__optional_move_assign_base},__optional_copy_assign_base},__optional_move_base},__optional_copy_base},__optional_storage_base},__optional_destruct_base}.union (anonymous at /opt/homebrew/Cellar/llvm/23.1.2/bin/../include/c++/v1/optional:378:3).__val_' that will go out of scope [alpha.cplusplus.UseAfterLifetimeEnd]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/drivetrain.cpp:31:17: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/drivetrain.cpp:268:29: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/drivetrain.cpp:307:26: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/drivetrain.cpp:542:9: warning: Duplicate code detected [alpha.clone.CloneChecker]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/drivetrain.cpp:569:32: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/writers/drivetrain.cpp:594:9: warning: Duplicate code detected [alpha.clone.CloneChecker]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/rider/support_geometry.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/rider/support_geometry.cpp:253:47: warning: This statement is never executed [alpha.deadcode.UnreachableCode]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/rider/support_geometry.cpp:279:28: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/rider/support_geometry.cpp:305:28: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+== alpha findings (report-only): /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src/rider/contact_binding.cpp
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/.venv/lib/python3.14/site-packages/nanobind/include/nanobind/stl/detail/nb_list.h:67:27: warning: Past-the-end iterator dereferenced [alpha.cplusplus.IteratorRange]
+csa clean: /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src
+[100%] Built target check_analyzer
+[100%] cppcheck sweep (third analyzer engine)
+cppcheck clean: /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src
+[100%] Built target check_cppcheck
+[100%] gcc -flto -Wodr sweep (cross-TU type conflicts)
+odr clean: /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/src
+[100%] Built target check_odr
+[100%] shellcheck sweep (tools/*.sh)
+shellcheck clean: /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/../tools
+[100%] Built target check_scripts
+/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/native/build/bike_native.cpython-314-darwin.so
+........................................................................ [ 10%]
+........................................................................ [ 20%]
+........................................................................ [ 30%]
+........................................................................ [ 41%]
+........................................................................ [ 51%]
+........................................................................ [ 61%]
+........................................................................ [ 72%]
+........................................................................ [ 82%]
+........................................................................ [ 92%]
+.................................................                        [100%]
+=============================== warnings summary ===============================
+tests/reference/test_native_brake_resistance.py: 2 warnings
+tests/reference/test_native_rider_forces.py: 1 warning
+tests/reference/test_native_state_restore.py: 2 warnings
+tests/reference/test_native_suspension.py: 1 warning
+tests/reference/test_native_tire.py: 2 warnings
+tests/reference/test_golden_episode.py: 3 warnings
+tests/reference/test_golden_episode_v2.py: 3 warnings
+  /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/src/bike_sim/sim/ride/physical_runtime.py:791: RuntimeWarning: invalid reference step at 0.005000000: ('energy.constraint_work',)
+    self.reference_monitor.accept(time_s,violations)
+
+tests/reference/test_golden_episode_v2.py::test_exit_total_is_captured_independently_of_components
+  /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/src/bike_sim/sim/ride/physical_runtime.py:791: RuntimeWarning: invalid reference step at 0.003750000: ('energy.constraint_work',)
+    self.reference_monitor.accept(time_s,violations)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================= slowest 10 durations =============================
+1.16s call     tests/reference/test_native_rider_forces.py::test_project_emits_resolved_paths
+1.12s call     tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing
+1.09s call     tests/reference/test_native_suspension.py::test_suspension_components_bitwise_legacy
+1.08s call     tests/reference/test_native_cruise.py::test_projection_optional_cruise
+0.94s call     tests/reference/test_native_brake_resistance.py::test_brake_torques_and_apply_bitwise
+0.65s call     tests/reference/test_golden_episode_v2.py::test_v2_roundtrip_and_determinism
+0.64s call     tests/reference/test_golden_episode.py::test_capture_is_deterministic
+0.56s call     tests/reference/test_native_state_fuzz.py::test_drive_state_restore_fuzz
+0.41s call     tests/reference/test_native_state_fuzz.py::test_set_state_fuzz
+0.38s call     tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock
+697 passed, 15 warnings in 14.53s

@@ -1,8 +1,8 @@
 """Ordinary ``bike-ride`` recording/check-policy parser contracts (R02, R22).
 
-``--record`` is an opt-in accepted only for ordinary physical native
-headless/viewer runs; every other mode/backend combination names itself as
-unsupported before any stepping. ``--check-policy`` resolves the existing
+``--record`` opts ordinary physical native and research Python/native
+headless/viewer runs into capture. Legacy and preview modes, and ordinary
+physical Python capture, reject the flag before any stepping. ``--check-policy`` resolves the existing
 stop-on-model-violation policy independently of recording. ``--out`` alone
 never enables recording and ``--time-scale`` stays interactive-only.
 """
@@ -58,9 +58,15 @@ def test_record_rejected_for_legacy_physics():
     assert _error_code(['--record']) == 2  # legacy is the default physics mode
 
 
-def test_record_rejected_for_research_and_preview():
-    assert _error_code(['--physics-config', PROFILE, '--backend', 'native',
-                        '--research', '--record']) == 2
+@pytest.mark.parametrize('backend', ['python', 'native'])
+def test_record_accepted_for_research(backend):
+    args = parse_args(['--physics-config', PROFILE, '--backend', backend,
+                       '--research', '--record'])
+    assert args.record is True
+    assert args.resolved_check_policy == 'diagnostic'
+
+
+def test_record_rejected_for_preview():
     assert _error_code(['--physics-config', PROFILE, '--backend', 'native',
                         '--preview', '--record']) == 2
 
@@ -88,10 +94,11 @@ def test_check_policy_accepted_for_python_backend_physical_runs():
 
 
 @pytest.mark.parametrize('policy', ['strict', 'diagnostic'])
-def test_check_policy_rejected_outside_ordinary_physical(policy):
+def test_check_policy_rejected_outside_physical_and_research(policy):
     assert _error_code(['--physics', 'legacy', '--check-policy', policy]) == 2
-    assert _error_code(['--physics-config', PROFILE, '--research',
-                        '--check-policy', policy]) == 2
+    args = parse_args(['--physics-config', PROFILE, '--research',
+                       '--check-policy', policy])
+    assert args.resolved_check_policy == policy
     assert _error_code(['--physics-config', PROFILE, '--preview',
                         '--check-policy', policy]) == 2
 
@@ -115,5 +122,5 @@ def test_unsupported_combination_names_itself(capsys):
     assert 'physical' in capsys.readouterr().err
     with pytest.raises(SystemExit):
         parse_args(['--physics-config', PROFILE, '--backend', 'native',
-                    '--research', '--record'])
-    assert 'research' in capsys.readouterr().err
+                    '--preview', '--record'])
+    assert 'preview' in capsys.readouterr().err

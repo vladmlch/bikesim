@@ -1,0 +1,1030 @@
+{
+  "airtime_threshold_s": {
+    "front": {
+      "0.0": 6.809999999995916,
+      "1.0": 6.823749999995906,
+      "5.0": 6.892499999995869
+    },
+    "rear": {
+      "0.0": 0.6287499999998429,
+      "1.0": 0.6312499999998415,
+      "5.0": 0.6349999999998408
+    }
+  },
+  "backend": "native",
+  "battery_energy_j": 1800000.0,
+  "calibration_status": "parameterized_unvalidated",
+  "component_provenance": {
+    "battery": "synthetic",
+    "chainstay": "synthetic",
+    "crank_pedals": "synthetic",
+    "fork_lowers": "synthetic",
+    "frame_structure": "synthetic",
+    "front_wheel": "synthetic",
+    "motor": "synthetic",
+    "rear_wheel": "synthetic",
+    "rocker": "synthetic",
+    "saddle_post": "synthetic",
+    "seatstay": "synthetic",
+    "shock_damper": "synthetic",
+    "shock_yoke": "synthetic",
+    "stanchions": "synthetic",
+    "steer_assembly": "synthetic"
+  },
+  "component_work_j": {
+    "act_rider_elbow_left": -150.5590321837807,
+    "act_rider_elbow_right": -150.55903218379368,
+    "act_rider_hip_front": 2194.196772312621,
+    "act_rider_hip_rear": 1909.3486711074283,
+    "act_rider_knee_front": 1829.2765937671643,
+    "act_rider_knee_rear": 1571.976142179893,
+    "act_rider_shoulder_left": -63.56952897882893,
+    "act_rider_shoulder_right": -63.569528978830164,
+    "act_rider_torso_hinge": -885.3516354231215,
+    "aerodynamic": -106.0961337054652,
+    "chain": 0.0,
+    "closure": -172.89590367080422,
+    "drive_bearings": -159.35837245953235,
+    "engine_passive": -56.095071603905346,
+    "fork_damper": -1002.3933182762462,
+    "fork_spring": 6.614100197754327,
+    "freehub": 0.0,
+    "front_brake": 0.0,
+    "front_static_brake": -5.634743834337078,
+    "ideal_transmission": -18.547419859327995,
+    "joint_limits": -17.66745445033593,
+    "mid_drive": 8410.023676610419,
+    "native_contact": 0.0,
+    "rear_brake": 0.0,
+    "rear_static_brake": -150.38524319214724,
+    "rider_interfaces": 0.0,
+    "rider_joint_envelope": -2.236804822346387,
+    "rider_passive_damping": 0.0,
+    "road_rolling": -930.1256280170143,
+    "shock_bumper": 0.0,
+    "shock_coil": -35.66161340737142,
+    "shock_damper": -1213.844013316252,
+    "shock_hbo": 0.0,
+    "shock_solver_limit": 0.0,
+    "shock_top_out": -0.0020658799673154847,
+    "shock_upper_stop": 0.0,
+    "tires": -1935.2450933906769
+  },
+  "configuration_sha256": "5227f30cf79e27d7b32eaca916813fdca9d0d090fea23fd271fb165df62583ba",
+  "controller_interval_s": 0.005,
+  "drive_mode": "articulated_effort",
+  "duration_s": 31.178749999989765,
+  "energy": {
+    "active_work_j": 14601.213098234726,
+    "constraint_absolute_j": 384.6282942021456,
+    "constraint_signed_j": -209.11077798052537,
+    "constraint_work_ok": false,
+    "constraint_work_ratio": 0.0213559037585897,
+    "elastic_energy_j": {
+      "fork_air": -0.0,
+      "rider_interfaces": 0.0,
+      "rider_joint_envelope": 0.8333586492141158,
+      "shock_bumper": 0.0,
+      "shock_coil": 16.389755100746058,
+      "shock_top_out": 0.0,
+      "shock_upper_stop": 0.0,
+      "tires": 5.413164996305419
+    },
+    "electrical_residual_j": 0.0,
+    "electrical_work_j": 9499.590025644115,
+    "energy_scale_j": 26.07953354818342,
+    "external_work_j": -1036.221761722724,
+    "loss_j": 4488.43016322002,
+    "loss_step_j": 0.4757223591422104,
+    "mechanical_energy_j": 10047.468984152005,
+    "motor_positive_j": 8410.023676613877,
+    "motor_signed_j": 8410.023676613877,
+    "muscle_positive_j": 9600.372818427531,
+    "muscle_signed_j": 6191.189421620813,
+    "residual_j": 317.25191594551416,
+    "solver_constraint_work_j": -209.11077798052537,
+    "source_positive_work_j": 18010.39649504141
+  },
+  "environment_contract": {
+    "declared_requirements_satisfied": true,
+    "locked_environment_verified": true,
+    "locked_versions_match": true,
+    "packages": {
+      "glfw": {
+        "declared_satisfied": true,
+        "installed_version": "2.10.2",
+        "locked_match": true,
+        "locked_version": "2.10.2",
+        "requirement": "glfw>=2.10.0"
+      },
+      "matplotlib": {
+        "declared_satisfied": true,
+        "installed_version": "3.11.1",
+        "locked_match": true,
+        "locked_version": "3.11.1",
+        "requirement": "matplotlib>=3.7.0"
+      },
+      "mujoco": {
+        "declared_satisfied": true,
+        "installed_version": "3.12.0",
+        "locked_match": true,
+        "locked_version": "3.12.0",
+        "requirement": "mujoco>=3.0.0"
+      },
+      "numpy": {
+        "declared_satisfied": true,
+        "installed_version": "2.5.2",
+        "locked_match": true,
+        "locked_version": "2.5.2",
+        "requirement": "numpy>=1.24.0"
+      },
+      "plotly": {
+        "declared_satisfied": true,
+        "installed_version": "7.1.0",
+        "locked_match": true,
+        "locked_version": "7.1.0",
+        "requirement": "plotly>=5.24"
+      },
+      "pytest": {
+        "declared_satisfied": true,
+        "installed_version": "9.1.1",
+        "locked_match": true,
+        "locked_version": "9.1.1",
+        "requirement": "pytest>=7.0.0"
+      },
+      "rich": {
+        "declared_satisfied": true,
+        "installed_version": "15.0.0",
+        "locked_match": true,
+        "locked_version": "15.0.0",
+        "requirement": "rich>=15.0.0"
+      },
+      "scipy": {
+        "declared_satisfied": true,
+        "installed_version": "1.17.0",
+        "locked_match": true,
+        "locked_version": "1.17.0",
+        "requirement": "scipy==1.17.0"
+      }
+    },
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "pyproject_sha256": "db92d8b6c743072caf9163a9c1d53b77630a964bee2599aa31c48182aeb20b43",
+    "python_requirement": ">=3.13",
+    "python_satisfied": true,
+    "python_version": "3.14.3",
+    "scope": "Direct project dependencies and Python requirement; not transitive wheel integrity.",
+    "uv_lock_sha256": "5e4c7e977bd0aa1ebf7d606f94cca8a2f0ddc0729c4318ce1d6dffaecf693d33"
+  },
+  "equilibrium": {
+    "cache_hit": true,
+    "fork_travel_mm": 60.88387073524049,
+    "initial_crank_phase_rad": 0.0,
+    "pitch_rad": 0.005910497985757731,
+    "rear_travel_mm": 45.76659769168638,
+    "residual_qacc": 0.021681756860416776,
+    "root_z_m": -0.0532547511691788,
+    "settled_crank_phase_rad": 0.004982005465501732,
+    "shock_stroke_mm": 14.434262025932357,
+    "static_front_load_n": 429.00319121880415,
+    "static_rear_load_n": 595.1604759866564,
+    "steps": 800,
+    "total_vertical_force_n": 1024.1636672054606
+  },
+  "execution": {
+    "backend": "native",
+    "build_context": {
+      "build_type": "Release",
+      "compiler_id": "AppleClang",
+      "compiler_version": "21.0.0.21000101",
+      "numerical_flags": " -O3 -DNDEBUG    -Os -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wdouble-promotion -Wshadow -Wcast-qual -Wformat=2 -Wundef -Wimplicit-fallthrough -Wnon-virtual-dtor -Wold-style-cast -Woverloaded-virtual -Wnull-dereference -Wunsafe-buffer-usage -Wmissing-declarations -Wmissing-variable-declarations -Wmissing-noreturn -Wredundant-decls -Wredeclared-class-member -Wstatic-in-inline -Wcast-align -Wcast-function-type-strict -Wreinterpret-base-class -Wunreachable-code-break -Wunreachable-code-return -Wunreachable-code-aggressive -Wconditional-uninitialized -Wloop-analysis -Wrange-loop-analysis -Winfinite-recursion -Winconsistent-missing-override -Winconsistent-missing-destructor-override -Wsuggest-override -Wsuggest-destructor-override -Wweak-vtables -Wweak-template-vtables -Wdelete-non-abstract-non-virtual-dtor -Wabstract-vbase-init -Wctad-maybe-unsupported -Wswitch-enum -Wcovered-switch-default -Wassign-enum -Wbitfield-enum-conversion -Wsigned-enum-bitfield -Wduplicate-enum -Wreserved-identifier -Wreserved-macro-identifier -Wreserved-user-defined-literal -Wunevaluated-expression -Wnull-pointer-arithmetic -Warray-bounds-pointer-arithmetic -Watomic-implicit-seq-cst -Wxor-used-as-pow -Wdangling -Widiomatic-parentheses -Wredundant-parens -Wlogical-not-parentheses -Wshift-op-parentheses -Wunguarded-availability -Wunguarded-availability-new -Wunicode-homoglyph -Wunicode-whitespace -Wunicode-zero-width -Wmemset-transposed-args -Wsuspicious-bzero -Wsuspicious-memaccess -Wnontrivial-memaccess -Wdynamic-class-memaccess -Wsizeof-array-div -Wsizeof-pointer-div -Wsizeof-pointer-memaccess -Wover-aligned -Wpacked -Walloca -Walloca-with-align-alignof -Wvla -Wzero-length-array -Wstring-compare -Wstring-concatenation -Wstring-plus-int -Wformat-pedantic -Wformat-type-confusion -Wfortify-source -Wheader-hygiene -Wcomma -Wkeyword-macro -Wlanguage-extension-token -Wextra-tokens -Wextra-semi-stmt -Wignored-qualifiers -Wextra-qualification -Wnonportable-include-path -Wnonportable-system-include-path -Wunneeded-member-function -Wunneeded-internal-declaration -Wunnamed-type-template-args -Wclass-varargs -Wpredefined-identifier-outside-function -Wduplicate-method-arg -Wmultichar -Wfour-char-constants -Wdate-time -Wnewline-eof -Wused-but-marked-unused -Winit-self -Wsign-promo -Wctor-dtor-privacy -Wpass-failed -Wstack-protector -Wlarge-by-value-copy -Wframe-larger-than=8192 -ffp-contract=off -fstack-protector-strong -ftrivial-auto-var-init=zero -fvisibility=hidden -fvisibility-inlines-hidden -fstrict-flex-arrays=3 -mbranch-protection=standard"
+    },
+    "extension_sha256": "8fe3309981530f76233c6b9b2bf777d0f731f39b160e36c0d54d3925796f8a98",
+    "mujoco_library_sha256": "9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c",
+    "mujoco_version": "3.12.0",
+    "native_source_sha256": "2445c4fcf845146f164e9f7136e6bc38316490812cab1b9c10c7e1d337893d9c",
+    "python_source_sha256": "495ddd102c69e084574e0baa6534ea49fd34589b930923b16eb4ea9e99554b8c",
+    "runtime_schema": 1
+  },
+  "external_speed_controller": false,
+  "first_failure": [
+    0.005,
+    [
+      "energy.constraint_work"
+    ]
+  ],
+  "limitations": [
+    "planar X-Z dynamics",
+    "synthetic material and drive parameters",
+    "single equivalent tire support; multi-support peaks not calibrated",
+    "native contact work is a solver diagnostic, not material tire hysteresis"
+  ],
+  "model_commit": "9461f7812f855effa9a778cd237d64643c3864d1",
+  "model_source_dirty": false,
+  "model_source_sha256": "495ddd102c69e084574e0baa6534ea49fd34589b930923b16eb4ea9e99554b8c",
+  "model_status": {
+    "calibration_status": "parameterized_unvalidated",
+    "first_model_violation": {
+      "interval_id": 3,
+      "reasons": [
+        "energy.constraint_work"
+      ],
+      "time_s": 0.00375
+    },
+    "model_valid": false,
+    "model_violation_counts": {
+      "energy.constraint_work": 6236,
+      "foot_front.friction": 2472,
+      "foot_front.normal": 1587,
+      "foot_rear.friction": 3631,
+      "foot_rear.normal": 2209,
+      "front:multi_support": 53,
+      "grip_left.pull": 78,
+      "grip_right.pull": 78,
+      "rear:material_load_range": 43,
+      "rear:multi_support": 541,
+      "rider_power.positive": 3913,
+      "rider_power.rider_elbow_left": 1,
+      "rider_power.rider_elbow_right": 1,
+      "rider_power.rider_hip_front": 1103,
+      "rider_power.rider_hip_rear": 1040,
+      "rider_power.rider_knee_front": 139,
+      "rider_power.rider_knee_rear": 175,
+      "rider_power.rider_torso_hinge": 27,
+      "rider_strength.rider_elbow_left": 2716,
+      "rider_strength.rider_elbow_right": 2716,
+      "rider_strength.rider_hip_front": 77,
+      "rider_strength.rider_hip_rear": 131,
+      "rider_strength.rider_knee_front": 1072,
+      "rider_strength.rider_knee_rear": 1057,
+      "rider_strength.rider_shoulder_left": 166,
+      "rider_strength.rider_shoulder_right": 166,
+      "rider_strength.rider_torso_hinge": 4573,
+      "saddle.friction": 17172,
+      "saddle.normal": 7084
+    },
+    "numerically_valid": false
+  },
+  "outcome": {
+    "balance_lost": true,
+    "balance_lost_at_m": 50.06612940531592,
+    "crashed": true,
+    "position_m": 58.10276395600012,
+    "reason": "crash",
+    "steps": 24943,
+    "time_s": 31.178749999989765
+  },
+  "physics_revision": "physical-2026-09-29",
+  "resolved_config": {
+    "active_suspension": {
+      "coil": {
+        "bumper_length_mm": 10.0,
+        "bumper_peak_n": 7000.0,
+        "preload_mm": 0.0,
+        "rate_n_m": 114600.0,
+        "stroke_mm": 65.0
+      },
+      "fork_damper": {
+        "c_hsc": 333.21257864384114,
+        "c_lsc": 634.198904787903,
+        "c_reb": 909.414284430181,
+        "frac_hsc": 0.5,
+        "frac_lsc": 0.5,
+        "frac_reb": 0.5294117647058824
+      },
+      "fork_pressure_psi": 85.2,
+      "fork_tokens": 2,
+      "shock_damper": {
+        "c_hbo": 9685.766774493648,
+        "c_hsc": 900.6252313054151,
+        "c_lsc": 1596.0084671604288,
+        "c_reb": 3990.454499701241,
+        "frac_hbo": 0.5,
+        "frac_hsc": 0.5,
+        "frac_lsc": 0.5,
+        "frac_reb": 0.5,
+        "lockout_firm": false
+      }
+    },
+    "allocation_numerical_guards": {
+      "grip_radius_fraction": 1e-06,
+      "support_force_n": 1e-05,
+      "support_moment_nm": 1e-06
+    },
+    "compiled_contact_solver": {
+      "front": {
+        "condim": 3,
+        "friction": [
+          1.1,
+          0.005,
+          0.0001
+        ],
+        "native_enabled": false,
+        "solimp": [
+          0.9,
+          0.95,
+          0.001,
+          0.5,
+          2.0
+        ],
+        "solref": [
+          -130000.0,
+          -800.0
+        ],
+        "units": "MuJoCo solver parameters; not tire material stiffness or damping"
+      },
+      "rear": {
+        "condim": 3,
+        "friction": [
+          1.1,
+          0.005,
+          0.0001
+        ],
+        "native_enabled": false,
+        "solimp": [
+          0.9,
+          0.95,
+          0.001,
+          0.5,
+          2.0
+        ],
+        "solref": [
+          -130000.0,
+          -800.0
+        ],
+        "units": "MuJoCo solver parameters; not tire material stiffness or damping"
+      }
+    },
+    "compiled_equality_solimp": [
+      [
+        0.99,
+        0.999,
+        0.0001,
+        0.5,
+        2.0
+      ],
+      [
+        0.99,
+        0.999,
+        0.0001,
+        0.5,
+        2.0
+      ],
+      [
+        0.9,
+        0.95,
+        0.001,
+        0.5,
+        2.0
+      ],
+      [
+        0.9,
+        0.95,
+        0.001,
+        0.5,
+        2.0
+      ],
+      [
+        0.9,
+        0.95,
+        0.001,
+        0.5,
+        2.0
+      ],
+      [
+        0.9,
+        0.95,
+        0.001,
+        0.5,
+        2.0
+      ],
+      [
+        0.9,
+        0.95,
+        0.001,
+        0.5,
+        2.0
+      ]
+    ],
+    "compiled_equality_solref": [
+      [
+        0.0025,
+        1.0
+      ],
+      [
+        0.0025,
+        1.0
+      ],
+      [
+        0.0025,
+        1.0
+      ],
+      [
+        0.0025,
+        1.0
+      ],
+      [
+        0.0025,
+        1.0
+      ],
+      [
+        0.0025,
+        1.0
+      ],
+      [
+        0.0025,
+        1.0
+      ]
+    ],
+    "geometry_and_suspension": {
+      "bb_drop": 22.5,
+      "crank_length": 165.0,
+      "effective_seat_angle_deg": 77.0,
+      "fork_air_tokens": 2,
+      "fork_damping": 450.0,
+      "fork_hsc": 2,
+      "fork_initial_psi": 85.2,
+      "fork_lsc": 7,
+      "fork_offset": 44.0,
+      "fork_rebound": 9,
+      "fork_stiffness": 6000.0,
+      "fork_travel": 180.0,
+      "front_wheel_radius": 372.0,
+      "head_angle_deg": 64.0,
+      "headtube_length": 120.0,
+      "reach": 480.0,
+      "rear_wheel_radius": 352.0,
+      "rear_wheel_travel": 180.0,
+      "shock_damping": 1200.0,
+      "shock_eye_to_eye": 205.0,
+      "shock_hbo": 2,
+      "shock_hsc": 2,
+      "shock_lockout": false,
+      "shock_lsc": 7,
+      "shock_rebound": 7,
+      "shock_stiffness": 114600.0,
+      "shock_stroke": 65.0,
+      "stack": 646.0,
+      "wheel_radius": 372.0,
+      "wheelbase": 1280.55
+    },
+    "joint_envelope_sha256": "4e9cacbce5b7a39d369f3e1d7eacedbef5386c56e1707045ea140621baa43f64",
+    "joint_envelope_status": "declared_unvalidated",
+    "joint_strength_sha256": "0921312611e18611da3e384d2827e63c183eb642f0b9be1cbbf0a58480eee5f8",
+    "joint_strength_status": "declared_unvalidated",
+    "mass_budget": {
+      "battery_mass": 4.3,
+      "chainstay_mass": 1.25,
+      "crank_pedals_mass": 0.85,
+      "fork_lowers_mass": 1.5,
+      "frame_structure_mass": 3.2,
+      "front_wheel_mass": 2.4,
+      "motor_mass": 2.9,
+      "rear_wheel_mass": 2.8,
+      "rocker_mass": 0.4,
+      "saddle_post_mass": 0.9,
+      "seatstay_mass": 1.05,
+      "shock_damper_mass": 0.6,
+      "shock_yoke_mass": 0.3,
+      "stanchions_mass": 0.85,
+      "steer_assembly_mass": 1.1,
+      "wheel_hub_core_fraction": 0.25,
+      "wheel_rim_tire_fraction": 0.75
+    },
+    "pedal_support_half_length_m": {
+      "front": 0.05,
+      "rear": 0.05
+    },
+    "physics": {
+      "articulated": {
+        "activation_tau_s": 0.0,
+        "active_positive_power_limit_w": 450.0,
+        "arm_reach_fraction": 0.92,
+        "balance_dwell_s": 0.5,
+        "balance_floor_kmh": 4.0,
+        "balance_grace_s": 3.0,
+        "bar_support_fraction": 0.12,
+        "coasting_brake_d_nm_s_rad": 2.0,
+        "coasting_brake_limit_nm": 60.0,
+        "coupled_task_control": false,
+        "foot_mu": 0.9,
+        "grip_attachment": "connect",
+        "grip_c_ns_m": 150.0,
+        "grip_capture_distance_m": 0.02,
+        "grip_capture_speed_mps": 0.2,
+        "grip_k_n_m": 4000.0,
+        "grip_pair_force_limit_n": null,
+        "grip_pull_per_hand_n": 300.0,
+        "grip_release_distance_m": 0.12,
+        "joint_envelope_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/examples/research/rider_joint_envelope_anatomical.json",
+        "joint_envelope_soft_k_nm_rad": 100.0,
+        "joint_envelope_soft_margin_rad": 0.1,
+        "joint_kd_nms_rad": 15.0,
+        "joint_kp_nm_rad": 600.0,
+        "joint_limit_nm": 100.0,
+        "joint_passive_damping_nms_rad": 0.0,
+        "joint_power_limit_w": 250.0,
+        "joint_speed_limit_rad_s": 20.0,
+        "joint_strength_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/cpp-port-p2/examples/research/rider_strength_reference.json",
+        "link_max_gap_m": 0.005,
+        "pedal_ankle_amplitude_rad": 0.1,
+        "pedal_attachment": "spindle",
+        "pedal_c_ns_m": 100.0,
+        "pedal_min_normal_n": 20.0,
+        "pedal_patch_half_length_m": 0.025,
+        "pedal_scrape_fraction": 0.5,
+        "pedal_support_fraction": 0.33,
+        "pedal_torque_ripple": 0.5,
+        "posture_pitch_d_nms_rad": 60.0,
+        "posture_pitch_k_nm_rad": 600.0,
+        "posture_pitch_limit_nm": 60.0,
+        "posture_sole_depth_m": 0.003,
+        "posture_translation_d_ns_m": 150.0,
+        "posture_translation_k_n_m": 1500.0,
+        "posture_translation_limit_n": 400.0,
+        "return_foot_preload_n": 40.0,
+        "road_lookahead_m": 2.0,
+        "saddle_attachment": "pin",
+        "saddle_mu": 0.6,
+        "saddle_patch_half_length_m": 0.045,
+        "saddle_reserve_weight_fraction": 0.15,
+        "stance_blend_load_n": 50.0,
+        "support_c_ns_m": 500.0,
+        "support_k_n_m": 100000.0,
+        "support_length_m": 0.1,
+        "support_mu": 0.8,
+        "support_pad_radius_m": 0.02,
+        "support_tangent_k_n_m": 20000.0,
+        "swing_clearance_m": 0.003
+      },
+      "closure_time_constant_s": 0.0025,
+      "control_period_s": 0.005,
+      "drive": {
+        "assist": {
+          "cutoff_mps": 6.944444444444445,
+          "engage_torque_nm": 4.0,
+          "gain": 2.0,
+          "gate_min_crank_rad_s": 0.08726646259971647,
+          "max_power": 500.0,
+          "max_torque": 80.0,
+          "mode": "turbo",
+          "profile": "bosch_cx_gen4",
+          "slew": 400.0,
+          "taper_width_mps": 0.5555555555555556,
+          "tau": 0.05,
+          "torque_curve": [
+            [
+              0.0,
+              85.0
+            ],
+            [
+              120.0,
+              85.0
+            ],
+            [
+              120.1,
+              47.7
+            ],
+            [
+              180.0,
+              0.0
+            ]
+          ]
+        },
+        "battery": {
+          "copper_w_per_nm2": 0.02,
+          "enabled": false,
+          "energy_j": 1800000.0,
+          "idle_w": 5.0,
+          "speed_w_per_rad_s2": 0.0
+        },
+        "bearing_c_nms_rad": 0.03,
+        "brake_ceiling_nm": 200.0,
+        "chain_c_ns_m": 10.0,
+        "chain_k_n_m": 200000.0,
+        "crank_phase_rad": 0.0,
+        "freehub_c_nms_rad": 0.5,
+        "freehub_k_nm_rad": 1000.0,
+        "gearing": {
+          "chain_pitch_m": 0.0127,
+          "front_teeth": 22,
+          "rear_teeth": 51
+        },
+        "human_torque_nm": 0.0,
+        "motor_clutch": false,
+        "pedaling": {
+          "coast_above_rpm": 120.0,
+          "coast_cadence_tau_s": 0.35,
+          "effort_slew_nm_s": 300.0,
+          "enabled": true,
+          "mash_cadence_rpm": 45.0,
+          "mash_torque_nm": 60.0,
+          "resume_below_rpm": 105.0,
+          "rollback_brake": true,
+          "rollback_demand": 1.0,
+          "rollback_engage_mps": 0.25,
+          "rollback_release_mps": 0.0,
+          "stop_time_s": 0.35
+        },
+        "rotor_inertia_kgm2": 0.0,
+        "shifting": {
+          "cadence_smoothing_tau_s": 0.35,
+          "cassette": [
+            10,
+            12,
+            14,
+            16,
+            18,
+            21,
+            24,
+            28,
+            33,
+            39,
+            45,
+            51
+          ],
+          "enabled": true,
+          "shift_cooldown_s": 0.4,
+          "shift_cut_duration_s": 0.2,
+          "target_cadence_max_rpm": 110.0,
+          "target_cadence_min_rpm": 75.0,
+          "torque_factor": 0.3,
+          "upshift_slip_limit_mps": 0.5,
+          "upshift_slip_mode": "legacy_signed"
+        },
+        "torque_ripple": 0.35,
+        "transmission_model": "ideal_mid_drive"
+      },
+      "drive_mode": "articulated_effort",
+      "end_stops": {
+        "damping_n_s_m": 500.0,
+        "overtravel_m": 0.01,
+        "provenance": "synthetic",
+        "reference_deflection_m": 0.01,
+        "reference_force_n": 7000.0
+      },
+      "equilibrium_cache_enabled": true,
+      "equilibrium_refine_after_s": 1.0,
+      "equilibrium_refine_period_s": 3.0,
+      "initial_front_brake": 1.0,
+      "initial_rear_brake": 1.0,
+      "initial_speed_mps": 0.0,
+      "physics_mode": "physical",
+      "pitch_assist": false,
+      "resistance": {
+        "cda_m2": 0.5,
+        "crr": 0.015,
+        "point_body_m": [
+          0.0,
+          0.0,
+          0.5
+        ],
+        "rho_kg_m3": 1.2,
+        "rolling_taper_rad_s": 0.2,
+        "wind_world_mps": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "seated_climb": {
+        "enabled": true,
+        "front_load_share_target": 0.3,
+        "lean_gain": 1.0,
+        "lean_rate_rad_s": 0.5,
+        "lean_trim_gain_rad_s": 0.3,
+        "lean_trim_limit_rad": 0.15,
+        "max_backward_lean_rad": 0.1,
+        "max_crank_torque_nm": 60.0,
+        "max_forward_lean_rad": 0.35,
+        "orientation_tau_s": 0.5,
+        "period_s": 0.01,
+        "reaction_delay_s": 0.15,
+        "surge_budget_s": 15.0,
+        "surge_grade": 0.2,
+        "surge_power_w": 400.0,
+        "surge_recovery_rate": 0.3333333333333333,
+        "target_crank_power_w": 250.0,
+        "torque_slew_nm_s": 300.0,
+        "trim_dead_time_s": 0.2
+      },
+      "timestep_s": 0.00125,
+      "tires": {
+        "backend": "compliant_2d",
+        "distinct_normal_deg": 20.0,
+        "distributed": {
+          "calibration_status": "experimental_unvalidated",
+          "density": {
+            "damping_ns_m": 2000.0,
+            "knots_m": [
+              0.0,
+              0.004,
+              0.012
+            ],
+            "provenance": "synthetic density; not fitted or measured",
+            "stiffness_n_m": [
+              300000.0,
+              0.0,
+              0.0
+            ]
+          },
+          "fitting_dataset_id": "none-synthetic",
+          "front_material": null,
+          "rear_material": null,
+          "station_count": 128,
+          "valid_deflection_range_m": [
+            0.0,
+            0.04
+          ],
+          "valid_load_range_n": [
+            0.0,
+            2000.0
+          ]
+        },
+        "front": {
+          "material": {
+            "pressure_pa_gauge": 200000.0,
+            "provenance": "synthetic",
+            "radial_c_ns_m": 800.0,
+            "radial_k_n_m": 130000.0,
+            "valid_load_range_n": [
+              0.0,
+              2000.0
+            ]
+          },
+          "mu": 1.1,
+          "relaxation_length_m": 0.2,
+          "tangent_k_n_m": 20000.0
+        },
+        "rear": {
+          "material": {
+            "pressure_pa_gauge": 200000.0,
+            "provenance": "synthetic",
+            "radial_c_ns_m": 800.0,
+            "radial_k_n_m": 130000.0,
+            "valid_load_range_n": [
+              0.0,
+              2000.0
+            ]
+          },
+          "mu": 1.1,
+          "relaxation_length_m": 0.2,
+          "tangent_k_n_m": 20000.0
+        },
+        "significance_fraction": 0.05,
+        "significant_delta_m": 0.0001,
+        "surface_mode": "track"
+      }
+    },
+    "rider": {
+      "arm_resonance_hz": 4.0,
+      "bar_share": 0.12,
+      "damping_ratio": 0.4,
+      "height_m": 1.8,
+      "helmet_mass_kg": 0.4,
+      "inseam_m": null,
+      "leg_resonance_hz": 5.0,
+      "legs": "rigid",
+      "mass_kg": 80.0,
+      "pedal_share": 0.33,
+      "saddle_interface_c_ns_m": 2762.0,
+      "saddle_interface_k_n_m": 101000.0,
+      "saddle_share": 0.55,
+      "torso_resonance_hz": 7.0,
+      "variant": "articulated_planar"
+    },
+    "seed": null,
+    "target_speed_kmh": null,
+    "terrain_sha256": "5e7fa782e1dbd2def1026e5d96741de6d08dbeb25d5e4f8a39594126c963cf2b",
+    "track": {
+      "description": "Savage stepped climb on asphalt: 120 m, plateaus 15/25/34% into a 45% wall; continuous 25 mm roughness, washboard, G-out, roots, rock garden, ledges on the wall; seeds 210+. Surface asphalt end to end (2026-10-04)",
+      "grade_profile": {
+        "knots": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            10.0,
+            0.0
+          ],
+          [
+            15.0,
+            0.15
+          ],
+          [
+            33.0,
+            0.15
+          ],
+          [
+            38.0,
+            0.25
+          ],
+          [
+            55.0,
+            0.25
+          ],
+          [
+            60.0,
+            0.34
+          ],
+          [
+            76.0,
+            0.34
+          ],
+          [
+            81.0,
+            0.45
+          ],
+          [
+            98.0,
+            0.45
+          ],
+          [
+            104.0,
+            0.0
+          ],
+          [
+            120.0,
+            0.0
+          ]
+        ]
+      },
+      "length_m": 120.0,
+      "name": "research_rough_uphill_savage",
+      "obstacles": [
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 8.0,
+          "seed": 210,
+          "start_m": 10.0,
+          "type": "roughness"
+        },
+        {
+          "amplitude_m": 0.04,
+          "n_waves": 9,
+          "start_m": 18.0,
+          "type": "washboard",
+          "wavelength_m": 0.85
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 2.35,
+          "seed": 1000213,
+          "start_m": 25.65,
+          "type": "roughness"
+        },
+        {
+          "height_m": 0.08,
+          "plateau_m": 0.3,
+          "ramp_m": 0.15,
+          "shape": "trapezoid",
+          "start_m": 28.0,
+          "type": "bump"
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 2.9,
+          "seed": 2000216,
+          "start_m": 28.6,
+          "type": "roughness"
+        },
+        {
+          "height_m": 0.09,
+          "ledge_length_m": 0.3,
+          "start_m": 31.5,
+          "type": "square_edge"
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 8.2,
+          "seed": 3000219,
+          "start_m": 31.8,
+          "type": "roughness"
+        },
+        {
+          "depth_m": 0.3,
+          "dip_length_m": 5.0,
+          "start_m": 40.0,
+          "type": "g_out"
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 3.0,
+          "seed": 4000222,
+          "start_m": 45.0,
+          "type": "roughness"
+        },
+        {
+          "height_m": 0.085,
+          "jitter": 0.4,
+          "n_bumps": 9,
+          "section_length_m": 6.5,
+          "seed": 211,
+          "start_m": 48.0,
+          "type": "roots",
+          "width_m": 0.28
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 3.0,
+          "seed": 5000225,
+          "start_m": 54.5,
+          "type": "roughness"
+        },
+        {
+          "depth_m": 0.14,
+          "edge": "sharp",
+          "hole_length_m": 0.65,
+          "start_m": 57.5,
+          "type": "pothole"
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 3.85,
+          "seed": 6000228,
+          "start_m": 58.15,
+          "type": "roughness"
+        },
+        {
+          "amplitude_m": 0.095,
+          "correlation_length_m": 0.22,
+          "section_length_m": 11.0,
+          "seed": 212,
+          "start_m": 62.0,
+          "type": "rock_garden"
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 2.5,
+          "seed": 7000231,
+          "start_m": 73.0,
+          "type": "roughness"
+        },
+        {
+          "depth_m": 0.11,
+          "edge": "bowl",
+          "hole_length_m": 0.55,
+          "start_m": 75.5,
+          "type": "pothole"
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 7.95,
+          "seed": 8000234,
+          "start_m": 76.05,
+          "type": "roughness"
+        },
+        {
+          "height_m": 0.1,
+          "ledge_length_m": 0.25,
+          "start_m": 84.0,
+          "type": "square_edge"
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 6.75,
+          "seed": 9000237,
+          "start_m": 84.25,
+          "type": "roughness"
+        },
+        {
+          "height_m": 0.08,
+          "ledge_length_m": 0.3,
+          "start_m": 91.0,
+          "type": "square_edge"
+        },
+        {
+          "amplitude_m": 0.025,
+          "correlation_length_m": 0.3,
+          "section_length_m": 12.7,
+          "seed": 10000240,
+          "start_m": 91.3,
+          "type": "roughness"
+        }
+      ],
+      "surface": "asphalt"
+    }
+  },
+  "rider_model": "articulated_planar",
+  "schema_version": 2,
+  "seed": null,
+  "terrain_sha256": "5e7fa782e1dbd2def1026e5d96741de6d08dbeb25d5e4f8a39594126c963cf2b",
+  "timestep_s": 0.00125,
+  "tire_backend": "compliant_2d",
+  "versions": {
+    "mujoco": "3.12.0",
+    "numpy": "2.5.2",
+    "python": "3.14.3",
+    "scipy": "1.17.0"
+  }
+}

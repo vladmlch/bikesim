@@ -42,6 +42,8 @@ class PolicySession:
         from collections import deque
         self.env, self.policy, self.reference = env, policy, reference
         self.operator_events = []
+        self._recording_event = None
+        self._after_recording_reset = None
         self._queued = deque()
         self._paused = False
         self._brakes = (0., 0.)
@@ -93,8 +95,9 @@ class PolicySession:
             raise
         self.env.begin_control(command, front_brake_demand=front, rear_brake_demand=rear)
         if front or rear:
-            self.operator_events.append(dict(time_s=self.env.sim.time_s,
-                front_brake_demand=front, rear_brake_demand=rear))
+            if getattr(self.env, 'capture_mode', 'legacy') in ('legacy', 'full'):
+                self.operator_events.append(dict(time_s=self.env.sim.time_s,
+                    front_brake_demand=front, rear_brake_demand=rear))
             self.env.run_metadata['operator_intervention'] = True
 
     def advance_pending(self, *, wall_budget_s=None, target_step=None):
@@ -117,12 +120,16 @@ class PolicySession:
         return result
 
     def _operator(self, kind, value=None):
+        if self._recording_event is not None:
+            self._recording_event('operator_requested', values={
+                'action': kind, 'value': value, 'queued': self.pending, 'terminal': self.env.done})
         if self.pending:
             self._queued.append((kind, value))
             return
         self._apply_operator(kind, value)
 
     def _apply_operator(self, kind, value):
+        was_terminal = self.env.done
         if kind == 'stop':
             self.env.stop()
         elif kind == 'pause':
@@ -133,6 +140,10 @@ class PolicySession:
             self._reset_now(value)
         else:
             raise ValueError(f'unknown operator event: {kind}')
+        if self._recording_event is not None:
+            self._recording_event('operator_after_terminal' if was_terminal else 'operator_applied',
+                                  applied=not was_terminal,
+                                  values={'action': kind, 'value': value, 'terminal': self.env.done})
 
     def _apply_queued(self):
         while self._queued:
@@ -152,6 +163,8 @@ class PolicySession:
         observation = self.env.reset(seed=seed)
         self.operator_events.clear()
         self._paused, self._brakes = False, (0., 0.)
+        if self._after_recording_reset is not None:
+            self._after_recording_reset()
         self._start_policy()
         return observation
 
@@ -167,11 +180,20 @@ class PolicySession:
     def stop(self):
         self._operator('stop')
 
-    def save(self, directory, *, overwrite=False):
-        previous = self.env.run_metadata['policy']
+    def _record_policy_identity(self):
+        previous = self.env.run_metadata.get('policy')
+        if previous is None:
+            return  # policy.reset failed before identity was established
         current = _metadata(self.policy, self.reference)
         self.env.run_metadata['policy_source_changed_during_run'] = (
             current['source_sha256'] != previous['source_sha256'])
+
+    def seal_episode(self, episode_id, *, reason):
+        self._record_policy_identity()
+        return self.env.seal_episode(episode_id, reason=reason)
+
+    def save(self, directory, *, overwrite=False):
+        self._record_policy_identity()
         return self.env.save(directory, overwrite=overwrite)
 
 

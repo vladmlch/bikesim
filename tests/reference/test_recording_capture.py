@@ -269,13 +269,13 @@ def test_failed_publication_keeps_capture_retryable(tmp_path):
     assert capture.state == 'published'
 
 
-def test_finalize_without_a_publisher_fails_without_side_effect(tmp_path):
+def test_finalize_uses_default_duckdb_publisher(tmp_path):
+    from bike_sim.recording.reader import Recording
     capture = RunCapture(run_metadata(), enabled=True)
-    target = tmp_path / 'run'
-    with pytest.raises(Exception):
-        capture.finalize(target)
-    assert capture.state == 'publication_failed'
-    assert not target.exists()
+    target = capture.finalize(tmp_path / 'run')
+    assert capture.state == 'published'
+    with Recording(target) as saved:
+        assert saved.episode_ids == ()
 
 
 def test_appends_are_rejected_after_publication(tmp_path):
@@ -286,8 +286,10 @@ def test_appends_are_rejected_after_publication(tmp_path):
         capture.event(_event(0, 0))
     with pytest.raises(RuntimeError):
         capture.add_episode(episode(TreePhysicalSource([])))
-    failed = RunCapture(run_metadata(), enabled=True)
-    with pytest.raises(Exception):
+    def fail_publisher(capture, target):
+        raise OSError('injected publisher failure')
+    failed = RunCapture(run_metadata(), enabled=True, _publisher=fail_publisher)
+    with pytest.raises(OSError, match='injected'):
         failed.finalize(tmp_path / 'x')
     with pytest.raises(RuntimeError):
         failed.event(_event(0, 0))

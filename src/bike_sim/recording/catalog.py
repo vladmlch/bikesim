@@ -108,8 +108,14 @@ class FieldSpec:
         }
         if self.dtype in scalar:
             return scalar[self.dtype]
-        inner = ', '.join(f'{c.key} {c.duckdb_type()}' for c in self.children)
-        struct = f'STRUCT<{inner}>'
+        members = []
+        for child in self.children:
+            name = '"' + child.key.replace('"', '""') + '"'
+            members.append(f'{name} {child.duckdb_type()}')
+            if child.optional:
+                present = '"' + (child.key + '_present').replace('"', '""') + '"'
+                members.append(f'{present} BOOLEAN')
+        struct = 'STRUCT(' + ', '.join(members) + ')' 
         if self.dtype == 'struct':
             return struct
         if self.dtype == 'struct[]':

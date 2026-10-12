@@ -34,7 +34,8 @@ def test_python_headless_and_incremental_replay_share_checks(environment_factory
             assert session.advance(wall_budget_s=0.) is False
             assert session.advance(wall_budget_s=0.) is False
             assert session.step == 0
-            assert len(session._env.commands_requested) == 1
+            assert session._env.commands_requested == []
+            assert session._env.last_requested['step'] == 0
         while not session.advance(target_step=session.step+1):
             assert not session.done
         assert session.report() == expected

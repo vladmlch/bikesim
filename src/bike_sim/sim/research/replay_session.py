@@ -20,14 +20,14 @@ from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.physical_samples import plain
 from bike_sim.sim.ride.physical_view import environment_snapshot
 from bike_sim.sim.research.replay import (
-    _check_runtime, _compare, _json_read, _rebuild, _rows, _state_error,
-    integration_state, validate_recording,
+    _check_runtime, _compare, _rebuild_input, _state_error, integration_state,
 )
 
 
 class ReplaySession:
-    def __init__(self, directory):
+    def __init__(self, directory, *, episode_id=None):
         self.directory = Path(directory)
+        self.episode_id = episode_id
         self._closed = False
         self._generation = 0
         self._manifest = None
@@ -35,26 +35,16 @@ class ReplaySession:
         self._install(self._load())
 
     def _load(self):
-        summary, manifest = validate_recording(self.directory)
+        from bike_sim.recording.replay_input import load_replay_input
+        from bike_sim.recording.json_codec import thaw
+        data = load_replay_input(self.directory, episode_id=self.episode_id)
+        summary, manifest = thaw(data.summary), thaw(data.manifest)
         if self._manifest is not None and manifest != self._manifest:
             raise ValueError('recording changed since replay session construction')
-        commands = _rows(self.directory/'commands_requested.jsonl')
-        transitions = _rows(self.directory/'transitions.jsonl')
-        observations = _rows(self.directory/'observations.jsonl')
-        applied = _rows(self.directory/'commands_applied.jsonl')
-        if len(commands) != len(transitions) or len(observations) != len(commands)+1:
-            raise ValueError('inconsistent recorded command/transition counts')
-        for index, command in enumerate(commands):
-            if (not isinstance(command, dict) or set(command) != {
-                    'step', 'time_s', 'control', 'front_brake_demand', 'rear_brake_demand'} or
-                    type(command['step']) is not int or command['step'] < 0 or
-                    not isinstance(command['control'], dict)):
-                raise ValueError(f'command {index}: invalid requested-command record')
-        with np.load(self.directory/'states.npz', allow_pickle=False) as states:
-            final_state = states['final'].copy()
-        metrics = (_json_read(self.directory/'episode_metrics.json')
-                   if manifest['schema_version'] == 2 else None)
-        env = _rebuild(self.directory, summary, manifest)
+        commands, applied = thaw(data.requested), thaw(data.applied)
+        transitions, observations = thaw(data.transitions), thaw(data.observations)
+        final_state, metrics = data.final_state, thaw(data.metrics)
+        env = _rebuild_input(data, capture_mode='verify')
         try:
             if summary['research'].get('rider_command_recording') != 'program_inputs':
                 env.rider_program = None
@@ -121,12 +111,12 @@ class ReplaySession:
                 else copy(self._env.sim.model))
 
     def _compare_applied_prefix(self):
-        actual = plain(self._env.commands_applied)
-        if len(actual) > len(self._applied):
-            raise ValueError('applied commands: replay produced extra events')
-        for index in range(self._applied_index, len(actual)):
-            _compare(actual[index], self._applied[index], f'applied commands[{index}]')
-        self._applied_index = len(actual)
+        suffix, next_cursor = self._env.applied_since(self._applied_index)
+        if next_cursor != self._applied_index + len(suffix) or next_cursor > len(self._applied):
+            raise ValueError('applied commands: replay produced extra events or an invalid cursor')
+        for index, actual in enumerate(suffix, self._applied_index):
+            _compare(plain(actual), self._applied[index], f'applied commands[{index}]')
+        self._applied_index = next_cursor
 
     def _finish(self):
         env, summary = self._env, self._summary
@@ -160,11 +150,14 @@ class ReplaySession:
         final_error = _state_error(integration_state(env.sim), self._final_state, 'final integration state')
         # A successful replay cannot conceal a source/binary edit during playback.
         _check_runtime(summary)
-        if self._manifest['schema_version'] == 2:
+        if self._manifest['schema_version'] >= 2:
             from bike_sim.native.artifact import execution_provenance
             if execution_provenance(self.backend) != self._manifest['execution']:
                 raise ValueError('replay execution identity changed during playback')
         report = dict(passed=True, backend=self.backend,
+            episode_id=self._manifest.get('episode_id', 0),
+            container_schema_version=self._manifest.get('container_schema_version'),
+            replay_contract_version=self._manifest['schema_version'],
             replayed_control_steps=self._index, physics_steps=env.sim.steps,
             final_state_max_abs_error=final_error, outcome=env.reason,
             numerically_valid=env.numerically_valid, model_valid=env.model_valid,
@@ -201,7 +194,7 @@ class ReplaySession:
                 env.begin_control(RideControl(**value),
                     front_brake_demand=command['front_brake_demand'],
                     rear_brake_demand=command['rear_brake_demand'])
-                _compare(plain(env.commands_requested[-1]), command, f'command {self._index} request')
+                _compare(plain(env.last_requested), command, f'command {self._index} request')
             options = dict(wall_budget_s=wall_budget_s)
             if target_step is not None:
                 options['target_step'] = target_step

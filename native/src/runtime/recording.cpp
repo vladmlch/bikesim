@@ -21,35 +21,17 @@ void ResearchRecorder::append(const SamplePtr &sample) {
         throw std::invalid_argument("reset requires a new recorder");
     if (last_id_ && sample->interval_id == *last_id_) return;
     if (sample->interval_id % decimation_ == 0) {
-        const auto flat = sample->flat_columns(layout_);
         const auto count = samples_.size();
         if (count == samples_.max_size()) throw std::length_error("research recorder row limit reached");
-        const double missing = std::numeric_limits<double>::quiet_NaN();
-        // Stage new column nodes and all growth before publishing any row.
-        // map::merge transfers allocated nodes, and the reserved vector pushes
-        // below cannot allocate. Existing records survive allocation failures.
-        SampleColumns additions;
-        for (const auto &entry : flat)
-            if (!columns_.contains(entry.first))
-                additions.emplace_hint(additions.end(), entry.first,
-                                       std::vector<double>(count, missing));
-        for (auto &[key, column] : additions) { (void)key; reserve_row(column, count + 1); }
-        for (auto &[key, column] : columns_) { (void)key; reserve_row(column, count + 1); }
         reserve_row(samples_, count + 1);
-        columns_.merge(additions);
-        // columns_ and flat are both name-sorted: one merge pass prices
-        // every column.
-        auto entry = flat.begin();
-        for (auto &[key, column] : columns_) {
-            while (entry != flat.end() && entry->first < key) ++entry;
-            column.push_back(entry != flat.end() && entry->first == key
-                                 ? entry->second : missing);
-        }
         samples_.push_back(sample);
     }
     last_id_ = sample->interval_id;
 }
-SampleColumns ResearchRecorder::columns() const { return columns_; }
+OwnedNativeEpisode ResearchRecorder::seal() const {
+    return OwnedNativeEpisode::seal(0, samples_, layout_);
+}
+SampleColumns ResearchRecorder::columns() const { return make_columns(samples_, layout_); }
 WireArray ResearchRecorder::intervals() const {
     WireArray result;
     result.reserve(samples_.size());

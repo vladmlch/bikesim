@@ -30,12 +30,13 @@ def _flatten_into(value,prefix,result):
 class PhysicalRecorder:
     schema_version=2
 
-    def __init__(self,sim,decimate=1, *, keep_intervals=True):
+    def __init__(self,sim,decimate=1, *, keep_intervals=True, enabled=True):
         if sim.physical.interactive_preview or not sim.physical.research_accounting_valid:
             raise ValueError('interactive preview has no research force intervals')
         if isinstance(decimate,bool) or not isinstance(decimate,int) or decimate<1:
             raise ValueError('decimate must be a positive integer')
         self.sim=sim
+        self.enabled=bool(enabled)
         self.decimate=decimate
         sim.physical.set_measurement_decimation(decimate)
         self.timestep_s=float(sim.model.opt.timestep)
@@ -47,6 +48,8 @@ class PhysicalRecorder:
         self._generation=sim.physical.generation
 
     def record(self,sim, *, sample=None):
+        if not self.enabled:
+            return
         if sample is None:
             published = getattr(sim.physical, 'completed_samples', ())
             if published and self._last_id == published[-1].interval_id:

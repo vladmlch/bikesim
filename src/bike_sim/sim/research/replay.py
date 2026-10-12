@@ -14,7 +14,6 @@ import math
 from pathlib import Path
 import platform
 import re
-import mujoco
 import numpy as np
 from bike_sim.sim.ride.physical_samples import plain
 
@@ -29,6 +28,7 @@ STRENGTH_FILE = 'rider_joint_strength.json'
 def integration_state(sim):
     if getattr(sim, 'backend', None) == 'native':
         return sim.integration_state()
+    import mujoco
     signature = mujoco.mjtState.mjSTATE_INTEGRATION
     state = np.empty(mujoco.mj_stateSize(sim.model, signature))
     mujoco.mj_getState(sim.model, sim.data, state, signature)
@@ -70,30 +70,9 @@ def _json_read(path):
 
 
 def save_replay_files(env, path):
-    """Write the manifest only after states, transitions and all bundles exist."""
-    from bike_sim.native.artifact import validate_execution
-    path = Path(path)
-    execution = validate_execution(deepcopy(env.execution))
-    np.savez_compressed(path/'states.npz', initial=env.initial_integration_state,
-                        final=integration_state(env.sim))
-    with (path/'transitions.jsonl').open('w', encoding='utf-8') as stream:
-        for result in env.trace:
-            stream.write(json.dumps(plain(asdict(result)), sort_keys=True, allow_nan=False)+'\n')
-    manifest = dict(schema_version=2, start_x_m=env.sim.start_x_m,
-                    heightfield=asdict(env.sim.field), state_signature='mjSTATE_INTEGRATION',
-                    execution=execution, file_sha256={name: _sha256(path/name) for name in SCHEMA2_FILES})
-    for key, name in (('joint_envelope', ENVELOPE_FILE), ('joint_strength', STRENGTH_FILE)):
-        source = getattr(env.sim.physics_config.articulated, key+'_path')
-        if source is not None:
-            contents = Path(source).read_bytes()
-            digest = hashlib.sha256(contents).hexdigest()
-            if digest != env.metadata['resolved_config'].get(key+'_sha256'):
-                raise ValueError(f'{key} contents changed after research setup')
-            (path/name).write_bytes(contents)
-            manifest[key+'_file'] = name
-            manifest['file_sha256'][name] = digest
-    (path/'replay.json').write_text(
-        json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False)+'\n', encoding='utf-8')
+    """Compatibility helper; source bytes are snapshotted before file writes."""
+    from bike_sim.native.recording import capture_legacy, write_replay_files
+    return write_replay_files(capture_legacy(env), Path(path))
 
 
 def validate_recording(directory):
@@ -196,7 +175,7 @@ def _state_error(actual, expected, label, *, atol=1e-9, rtol=1e-9):
     return error
 
 
-def _rebuild(path, summary, manifest):
+def _rebuild(path, summary, manifest, *, initial=None, vertices=None, capture_mode='legacy'):
     from bike_sim.geometry.specs import BikeSpecs
     from bike_sim.physics.mass import BikeMassSpecs
     from bike_sim.physics.rider import RiderSpecs
@@ -209,7 +188,7 @@ def _rebuild(path, summary, manifest):
     from bike_sim.terrain.trackfile import load_track
     _check_runtime(summary)
     backend = 'python' if manifest['schema_version'] == 1 else manifest['execution']['backend']
-    if manifest["schema_version"] == 2:
+    if manifest["schema_version"] >= 2:
         from bike_sim.native.artifact import execution_provenance
         if execution_provenance(backend) != manifest["execution"]:
             raise ValueError("replay execution identity differs from this runtime")
@@ -238,16 +217,18 @@ def _rebuild(path, summary, manifest):
     experiment = dict(research['config'], seed=research['actual_sensor_seed'])
     env = ResearchEnvironment(sim, ExperimentConfig(**experiment), SensorConfig(**research['sensor_config']),
         rider_program=None if program is None else RiderProgram.from_dict(program),
-        demand=None if demand is None else DemandProgram.from_dict(demand))
+        demand=None if demand is None else DemandProgram.from_dict(demand), capture_mode=capture_mode)
     try:
         if env.metadata['configuration_sha256'] != summary['configuration_sha256']:
             raise ValueError('reconstructed configuration differs; custom runtime/suspension overrides are not reproducible from this recipe')
         if env.metadata['terrain_sha256'] != summary['terrain_sha256']:
             raise ValueError('reconstructed terrain differs from the recorded compiled road')
-        vertices = np.load(path/'terrain_vertices.npy', allow_pickle=False)
+        if vertices is None:
+            vertices = np.load(path/'terrain_vertices.npy', allow_pickle=False)
         _state_error(sim.physical.vertices, vertices, 'compiled terrain', atol=0., rtol=0.)
-        with np.load(path/'states.npz', allow_pickle=False) as states:
-            initial = states['initial'].copy()
+        if initial is None:
+            with np.load(path/'states.npz', allow_pickle=False) as states:
+                initial = states['initial'].copy()
         _state_error(env.initial_integration_state, initial, 'initial integration state')
         if backend == 'python':
             return env
@@ -265,11 +246,39 @@ def _rebuild(path, summary, manifest):
         raise
 
 
-def rebuild_environment(directory):
+def _rebuild_input(data, *, capture_mode='verify'):
+    """Materialize only fixed engine inputs; states and journals remain owned.
+
+    This is not a temporary legacy recording: no JSONL, replay.json, summary,
+    telemetry or states.npz is generated. The adapter has already validated
+    every byte, and the engine never follows recorded external input paths.
+    """
+    import tempfile
+    from bike_sim.recording.json_codec import thaw
+    owner = tempfile.TemporaryDirectory(prefix='bike-replay-input-')
+    path = Path(owner.name)
+    try:
+        for name in ('track.toml', ENVELOPE_FILE, STRENGTH_FILE):
+            if name in data.assets:
+                (path / name).write_bytes(data.assets[name])
+        env = _rebuild(path, thaw(data.summary), thaw(data.manifest),
+                       initial=data.initial_state, vertices=data.terrain_vertices,
+                       capture_mode=capture_mode)
+        env._replay_assets_owner = owner
+        return env
+    except BaseException as error:
+        try:
+            owner.cleanup()
+        except Exception as cleanup:
+            error.add_note(f'replay input cleanup also failed: {cleanup}')
+        raise
+
+
+def rebuild_environment(directory, *, episode_id=None, capture_mode='legacy'):
     """Return the checked fresh plant for replay or a new, paired torque policy."""
-    path = Path(directory)
-    summary, manifest = validate_recording(path)
-    return _rebuild(path, summary, manifest)
+    from bike_sim.recording.replay_input import load_replay_input
+    return _rebuild_input(load_replay_input(directory, episode_id=episode_id),
+                          capture_mode=capture_mode)
 
 
 def _rows(path):
@@ -298,10 +307,10 @@ def _compare(actual, expected, label):
         raise ValueError(f'{label}: replay mismatch ({actual!r} vs {expected!r})')
 
 
-def replay_episode(directory):
+def replay_episode(directory, *, episode_id=None):
     """Synchronous convenience over the exact same verifier used by the viewer."""
     from bike_sim.sim.research.replay_session import ReplaySession
-    session = ReplaySession(directory)
+    session = ReplaySession(directory, episode_id=episode_id)
     try:
         while not session.advance():
             pass

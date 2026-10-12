@@ -82,7 +82,8 @@ def environment_factory(tmp_path):
 
     def create(*, duration=.04, seed=19, decimation=1, actuator_delay=.005,
                control_period=None, sensor_period=None,
-               program=None, demand=None, strict=False, energy_tolerance=None):
+               program=None, demand=None, strict=False, energy_tolerance=None,
+               capture_mode='legacy'):
         arguments = ['--physics-config', str(ROOT/'examples/research/viewer_physics_welded.toml'),
             '--scenario', 'flat', '--duration', str(duration), '--seed', str(seed),
             '--record-decimation', str(decimation), '--actuator-delay', str(actuator_delay),
@@ -116,7 +117,7 @@ def environment_factory(tmp_path):
             path = tmp_path/f'demand-{index}.toml'
             path.write_text('\n'.join(lines), encoding='utf-8')
             arguments += ['--demand-file', str(path)]
-        environment = make_environment(parser().parse_args(arguments))
+        environment = make_environment(parser().parse_args(arguments), capture_mode=capture_mode)
         environments.append(environment)
         return environment
 

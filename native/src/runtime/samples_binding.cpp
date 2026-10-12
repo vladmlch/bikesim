@@ -123,6 +123,11 @@ void bind_episode_value(const nb::module_ &module) {
         .def_prop_ro("row_count", [](const OwnedNativeEpisode &episode) {
             return episode.samples.size();
         })
+        .def("sample_batch", [](const OwnedNativeEpisode &episode, nb::handle start,
+                                nb::handle limit) {
+            return episode.sample_batch(episode_index(start, "start"),
+                                        episode_index(limit, "limit"));
+        }, nb::arg("start"), nb::arg("limit"))
         .def("batch", [](const OwnedNativeEpisode &episode, nb::handle start,
                          nb::handle limit) {
             return episode.batch(episode_index(start, "start"),

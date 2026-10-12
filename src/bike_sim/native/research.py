@@ -181,12 +181,16 @@ class NativeResearchEnvironment:
         # reference environment would break independent paired experiments.
         self.rider_behavior = deepcopy(reference.rider_behavior)
         self.seed = reference.seed
+        self.capture_mode = reference.capture_mode
+        self._sealed_episode = None
+        self._recording_catalog = reference._recording_catalog
         for name in ('dt_s', 'control_steps', 'delay_steps', 'max_steps', 'sensor_steps', 'start_position_m'):
             setattr(self, name, getattr(reference, name))
         self.metadata = deepcopy(reference.metadata)
         self.execution = deepcopy(execution)
         self.run_metadata = deepcopy(reference.run_metadata)
-        self.initial_integration_state = _freeze(reference.initial_integration_state)
+        from bike_sim.recording.contracts import freeze as immutable
+        self.initial_integration_state = immutable(reference.initial_integration_state)
         from bike_sim.sim.ride.physical_view import snapshot_python
         self._initial_frame = snapshot_python(reference.sim)
         self._raw_initial = raw_observation(reference.sim)
@@ -195,6 +199,9 @@ class NativeResearchEnvironment:
         self._status = _freeze(runtime.status())
         self.sim = _SimulationView(self, reference.sim)
         self.recorder = _NativeRecorder(self)
+        from bike_sim.recording.assets import replace_recipe, research_recipe
+        self._recording_assets = (replace_recipe(reference._recording_assets, research_recipe(self))
+                                  if reference._recording_assets else ())
 
     def __setattr__(self, name, value):
         if name in type(self)._STATUS_FIELDS:
@@ -266,7 +273,7 @@ class NativeResearchEnvironment:
         return mujoco.MjModel.from_binary_path(str(self._bootstrap.model_path))
 
     def begin_control(self, control, *, front_brake_demand=0., rear_brake_demand=0.):
-        if self._closed or self.done or self.control_pending:
+        if self._closed or self._sealed_episode is not None or self.done or self.control_pending:
             raise RuntimeError('begin_control requires an open idle research episode')
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
@@ -285,7 +292,7 @@ class NativeResearchEnvironment:
         self._active = True
 
     def advance_control(self, *, wall_budget_s=None, target_step=None):
-        if self._closed or not self.control_pending:
+        if self._closed or self._sealed_episode is not None or not self.control_pending:
             raise RuntimeError('begin an external control interval before advancing')
         try:
             value = (self._native.advance_control(wall_budget_s) if target_step is None else
@@ -355,6 +362,13 @@ class NativeResearchEnvironment:
         except self._reference_error as error:
             raise InvalidReferenceRun(str(error)) from error
         self.seed, self.metadata, self.rider_behavior = chosen, metadata, behavior
+        self._sealed_episode = None
+        if self._recording_assets:
+            from bike_sim.recording.assets import asset, replace_recipe, research_recipe
+            from bike_sim.recording.json_codec import dumps
+            self._recording_assets = tuple(a for a in self._recording_assets if a.name != 'resolved_config.json') + (
+                asset('resolved_config.json', 'application/json', (dumps(metadata['resolved_config']) + '\n').encode()),)
+            self._recording_assets = replace_recipe(self._recording_assets, research_recipe(self))
         self.run_metadata = {}
         self._status = _freeze(self._native.status())
         return self.observation
@@ -379,6 +393,46 @@ class NativeResearchEnvironment:
         self._native.fail_policy(f'{type(error).__name__}: {error}')
         self._status = _freeze(self._native.status())
 
+    @property
+    def last_requested(self):
+        from bike_sim.recording.contracts import freeze
+        return freeze(self._native.last_requested())
+
+    def applied_since(self, cursor):
+        from bike_sim.recording.contracts import _integer, freeze
+        cursor = _integer(cursor, 'cursor')
+        prepared = self._native.prepare_applied_since(cursor)
+        result = (freeze(prepared['rows']), int(prepared['next_cursor']))
+        # Both native-to-Python boxing and recursive freezing precede ack.
+        self._native.acknowledge_applied(result[1])
+        return result
+
+    def seal_episode(self, episode_id, *, reason):
+        if self.capture_mode != 'full':
+            raise RuntimeError('sealing research evidence requires full capture')
+        if self._sealed_episode is not None:
+            if self._sealed_episode.episode_id != episode_id:
+                raise ValueError('an episode cannot be sealed under two identities')
+            return self._sealed_episode
+        from bike_sim.recording.research import ResearchHistory, seal_research
+        from bike_sim.recording.native import NativePhysicalSource
+        try:
+            owner = self._native.seal_episode()
+        except self._reference_error as error:
+            # A strict accounting flush publishes its invalid prefix before
+            # raising. Retry sealing only; never integrate again here.
+            try:
+                owner = self._native.seal_episode()
+            except BaseException as secondary:
+                error.add_note(f'failed to own the committed failure prefix: {secondary}')
+                raise InvalidReferenceRun(str(error)) from error
+        self._status = _freeze(self._native.status())
+        physical = NativePhysicalSource(owner.physical, self._recording_catalog)
+        evidence = seal_research(self, episode_id, reason=reason, physical=physical,
+                                 history=ResearchHistory(owner=owner))
+        self._sealed_episode = evidence
+        return evidence
+
     def save(self, directory, *, overwrite=False):
         from bike_sim.native.recording import export_recording
         return export_recording(self, directory, overwrite=overwrite)
@@ -391,8 +445,14 @@ class NativeResearchEnvironment:
         self._native.close()
         self._active = False
         self._closed = True
-        if self._directory is not None:
-            self._directory.cleanup()
+        try:
+            if self._directory is not None:
+                self._directory.cleanup()
+        finally:
+            owner = getattr(self, "_replay_assets_owner", None)
+            if owner is not None:
+                owner.cleanup()
+                self._replay_assets_owner = None
 
 
 def create_native_research(reference: ResearchEnvironment, *, directory=None):
@@ -418,6 +478,7 @@ def create_native_research(reference: ResearchEnvironment, *, directory=None):
     research = {name: getattr(reference, name) for name in
                 ('control_steps', 'delay_steps', 'max_steps', 'sensor_steps', 'start_position_m')}
     research.update(timestep_s=reference.dt_s, track_length_m=sim.track.length_m,
+        capture_mode=reference.capture_mode,
         record_decimation=reference.config.record_decimation,
         stop_on_model_violation=reference.config.stop_on_model_violation,
         maximum_energy_residual_ratio=reference.config.maximum_energy_residual_ratio,

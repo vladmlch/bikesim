@@ -20,7 +20,7 @@ PA_TO_BAR = 1.0 / BAR_TO_PA
 ATM_PA = 101325.0
 
 
-@dataclass
+@dataclass(frozen=True)
 class AirSpringSpecs:
     """Dataclass holding geometric and thermodynamic specifications for a suspension air spring."""
 
@@ -40,27 +40,23 @@ class AirSpringSpecs:
     @property
     def piston_area_m2(self) -> float:
         """Piston cross-sectional area in square meters."""
-        air_specs(self)
         r_m = (self.stanchion_inner_diam_mm / 2.0) / 1000.0
         return derived(np.pi * (r_m ** 2), "AirSpringSpecs.piston_area_m2")
 
     @property
     def token_volume_m3(self) -> float:
         """Volume of one token in cubic meters."""
-        air_specs(self)
         return derived(self.token_volume_cm3 * 1e-6, 'AirSpringSpecs.token_volume_m3')
 
     @property
     def base_pos_volume_m3(self) -> float:
         """Nominal uncompressed positive chamber volume with 0 tokens in m^3."""
-        air_specs(self)
         l_pos_m = self.pos_chamber_length_mm / 1000.0
         return derived(self.piston_area_m2 * l_pos_m, 'AirSpringSpecs.base_pos_volume_m3')
 
     @property
     def base_neg_volume_m3(self) -> float:
         """Nominal uncompressed negative chamber volume at top-out in m^3."""
-        air_specs(self)
         l_neg_m = self.neg_chamber_length_mm / 1000.0
         return derived(self.piston_area_m2 * l_neg_m, 'AirSpringSpecs.base_neg_volume_m3')
 
@@ -85,25 +81,21 @@ class ForkAirSpring:
     @property
     def abs_pressure_pa(self) -> float:
         """Initial equalized absolute pressure at top-out in Pa."""
-        air_specs(self.specs)
         scalar(self.gauge_pressure_psi, 'ForkAirSpring.gauge_pressure_psi', minimum=0.)
         return derived(self.gauge_pressure_psi * PSI_TO_PA + self.specs.atm_pressure_pa, 'ForkAirSpring.abs_pressure_pa')
 
     @property
     def gauge_pressure_bar(self) -> float:
         """Gauge pressure in bar."""
-        air_specs(self.specs)
         scalar(self.gauge_pressure_psi, 'ForkAirSpring.gauge_pressure_psi', minimum=0.)
         return derived(self.gauge_pressure_psi * PSI_TO_PA * PA_TO_BAR, 'ForkAirSpring.gauge_pressure_bar')
 
     def set_tokens(self, n_tokens: int) -> None:
         """Sets active token count constrained within [0, max_tokens]."""
-        air_specs(self.specs)
         self.num_tokens = max(0, min(self.specs.max_tokens, integer(n_tokens, "ForkAirSpring.num_tokens")))
 
     def set_pressure_psi(self, psi: float) -> None:
         """Sets gauge air pressure in PSI."""
-        air_specs(self.specs)
         self.gauge_pressure_psi = max(10.0, scalar(psi, "ForkAirSpring.gauge_pressure_psi", minimum=0.))
 
     def compute_volumes(
@@ -114,7 +106,6 @@ class ForkAirSpring:
         """
         Computes instantaneous positive and negative chamber volumes in m^3 at travel x (mm).
         """
-        air_specs(self.specs)
         tokens = max(0, min(self.specs.max_tokens, integer(self.num_tokens if num_tokens is None else num_tokens, "ForkAirSpring.num_tokens")))
         travel_m = max(0.0, min(self.specs.total_travel_mm, scalar(travel_mm, "ForkAirSpring.travel_mm"))) / 1000.0
 
@@ -147,7 +138,6 @@ class ForkAirSpring:
         """
         Computes absolute pressures P_pos and P_neg in Pa at travel x (mm).
         """
-        air_specs(self.specs)
         tokens = max(0, min(self.specs.max_tokens, integer(self.num_tokens if num_tokens is None else num_tokens, "ForkAirSpring.num_tokens")))
         psi = self.gauge_pressure_psi if p_gauge_psi is None else p_gauge_psi
         scalar(psi, "ForkAirSpring.gauge_pressure_psi", minimum=0.)
@@ -207,7 +197,6 @@ class ForkAirSpring:
         """
         Analytically calibrates and sets the required gauge PSI to achieve exact target sag.
         """
-        air_specs(self.specs)
         scalar(target_axial_force_n, 'ForkAirSpring.target_axial_force_n', minimum=0.)
         tokens = max(0, min(self.specs.max_tokens, integer(self.num_tokens if num_tokens is None else num_tokens, "ForkAirSpring.num_tokens")))
 

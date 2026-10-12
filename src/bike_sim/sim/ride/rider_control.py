@@ -829,7 +829,7 @@ class ArticulatedRiderController:
         self.last_terms = {name:{'requested_nm':requested[name],
             'command_nm':final[name], 'posture_nm':requested[name] if name in upper_names else 0.,
             'pedaling_nm':requested[name] if name not in upper_names else 0.,
-            'saturated':not np.isclose(final[name],requested[name],rtol=1e-9,atol=1e-9)}
+            'saturated':not abs(final[name]-requested[name]) <= 1e-9+1e-9*abs(requested[name])}
             for name in self.joints}
         projected = sum(final['rider_'+joint+'_'+side]*jac[i]
                         for side,jac in jacobians.items() for i,joint in enumerate(('hip','knee')))

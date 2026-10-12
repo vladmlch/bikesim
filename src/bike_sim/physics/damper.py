@@ -124,7 +124,6 @@ class BaseDamper:
 
     def _calc_fractions_and_coeffs(self) -> Tuple[float, float, float, float, float, float]:
         """Calculates click ratios and interpolated damping rates."""
-        damper(self)
         frac_lsc = max(0, min(self.max_lsc, self.lsc_clicks)) / float(self.max_lsc)
         frac_hsc = max(0, min(self.max_hsc, self.hsc_clicks)) / float(self.max_hsc)
         frac_reb = max(0, min(self.max_reb, self.rebound_clicks)) / float(self.max_reb)
@@ -222,7 +221,6 @@ class Charger3Damper(BaseDamper):
 
     def compute_damping_force(self, velocity_mps: float, travel_mm: float = 50.0) -> float:
         """Computes instantaneous hydraulic damping force in Newtons."""
-        damper(self)
         v = scalar(velocity_mps, f"{type(self).__name__}.velocity_mps")
         coeffs = self.get_effective_coefficients()
         f_damp = self._compute_base_damping(v, coeffs["c_lsc"], coeffs["c_hsc"], coeffs["c_reb"])
@@ -355,7 +353,6 @@ class SuperDeluxeDamper(BaseDamper):
         """Distinct passive base-valving and hydraulic-bottom-out forces."""
         if self.legacy_behavior:
             return {'base_n': self._compute_legacy_damping_force(velocity_mps, stroke_mm), 'hbo_n': 0.0}
-        damper(self)
         v = scalar(velocity_mps, f"{type(self).__name__}.velocity_mps")
         if not np.isfinite([v,stroke_mm]).all():
             raise ValueError('non-finite shock damper state')
@@ -379,7 +376,6 @@ class SuperDeluxeDamper(BaseDamper):
                 "hbo_n": derived(hbo, 'SuperDeluxeDamper.hbo_n')}
 
     def _compute_legacy_damping_force(self, velocity_mps: float, stroke_mm: float = 20.0) -> float:
-        damper(self)
         v = scalar(velocity_mps, f"{type(self).__name__}.velocity_mps")
         coeffs = self.get_effective_coefficients()
 

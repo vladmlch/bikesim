@@ -47,10 +47,10 @@ class RiderKinematicState:
     road: tuple[RoadSample, ...]
 
     def __post_init__(self):
-        object.__setattr__(self, 'qpos',
-            tuple(scalar(v, 'rider state qpos') for v in self.qpos))
-        object.__setattr__(self, 'qvel',
-            tuple(scalar(v, 'rider state qvel') for v in self.qvel))
+        qpos = tuple(self.qpos); qvel = tuple(self.qvel)
+        if not all(type(v) is float for v in qpos+qvel) or not np.isfinite(qpos+qvel).all():
+            raise ValueError('rider state coordinates must be finite floats')
+        object.__setattr__(self, 'qpos', qpos); object.__setattr__(self, 'qvel', qvel)
         object.__setattr__(self, 'road', tuple(self.road))
         scalar(self.rider_time_s, 'rider state time', minimum=0.)
         if not all(isinstance(s, RoadSample) for s in self.road):
@@ -113,6 +113,6 @@ def rider_kinematic_state(model, data, *, vertices, wheel_x_m,
     if len(qpos) != model.nq or len(qvel) != model.nv:
         raise ValueError('kinematic state and model sizes disagree')
     return RiderKinematicState(
-        qpos=tuple(map(float, qpos)), qvel=tuple(map(float, qvel)),
+        qpos=qpos.tolist(), qvel=qvel.tolist(),
         rider_time_s=float(data.time),
         road=road_samples(vertices, wheel_x_m, lookahead_m, spacing_m=spacing_m))

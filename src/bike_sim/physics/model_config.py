@@ -30,7 +30,6 @@ class EndStopConfig:
 
     @property
     def stiffness_n_m(self) -> float:
-        self.__post_init__()
         stiffness = self.reference_force_n / self.reference_deflection_m
         derived(stiffness, 'EndStopConfig.stiffness_n_m')
         return stiffness

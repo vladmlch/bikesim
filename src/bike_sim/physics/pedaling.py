@@ -1,4 +1,5 @@
 """Synthetic crank effort profile; it is not a speed controller."""
+import copy
 from dataclasses import dataclass
 from math import copysign, cos, pi
 from bike_sim.physics.checks import boolean, derived, scalar
@@ -39,6 +40,13 @@ class PedalingPolicy:
         self.deceleration_rad_s2 = 0.
         self._effort = 0.
         self._cadence_ema = None
+
+    def clone(self):
+        """Independent copy, like deepcopy: the frozen config is recopied
+        shallowly; every other attribute is an immutable scalar."""
+        new = copy.copy(self)
+        new.config = copy.copy(self.config)
+        return new
 
     def update(self, phase_rad, rate_rad_s, required_cadence_rpm, effort_nm, dt,
                *, enabled=True, braking=False):

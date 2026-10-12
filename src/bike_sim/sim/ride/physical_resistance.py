@@ -22,7 +22,6 @@ class ExternalResistanceApplier:
     def compute_components(self, model, data, snapshots):
         import mujoco
         cfg = self.config
-        cfg.__post_init__()
         for name in ('crr', 'rho_kg_m3', 'cda_m2'):
             scalar(getattr(cfg, name), f'ResistanceConfig.{name}', minimum=0.)
         scalar(cfg.rolling_taper_rad_s, 'ResistanceConfig.rolling_taper_rad_s', positive=True)

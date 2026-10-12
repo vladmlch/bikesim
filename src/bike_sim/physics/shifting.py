@@ -1,4 +1,5 @@
 """Cadence-based rider gear selection without prescribing crank or wheel motion."""
+import copy
 from bike_sim.physics.checks import boolean, derived, scalar
 from bike_sim.physics.domain_validation import shifting_config
 
@@ -21,6 +22,14 @@ class CadenceShifter:
         self.from_teeth = self.rear_teeth
         self.cadence_ema = None
         self.required_ema = None
+
+    def clone(self):
+        """Independent copy, like deepcopy: immutable config leaves are recopied
+        shallowly (frozen dataclasses cannot be mutated through the clone)."""
+        new = copy.copy(self)
+        new.gearing = copy.copy(self.gearing)
+        new.config = copy.copy(self.config)
+        return new
 
     @property
     def gear_ratio(self):

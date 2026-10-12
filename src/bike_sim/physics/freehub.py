@@ -3,6 +3,7 @@
 The torque returned acts positively on the wheel and negatively on the cassette.
 A moving engagement boundary follows overrun, never a forced velocity reset.
 """
+import copy
 from bike_sim.physics.checks import derived, scalar
 
 
@@ -16,6 +17,10 @@ class Freehub:
         self.boundary = None
         self.energy_j = 0.
         self.torque_nm = 0.
+
+    def clone(self):
+        """Independent copy, like deepcopy; every attribute is an immutable scalar."""
+        return copy.copy(self)
 
     def update(self,phi_c,phi_w,omega_c,omega_w):
         scalar(self.k, "Freehub.stiffness", positive=True)

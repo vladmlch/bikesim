@@ -172,7 +172,6 @@ class TireForceApplier:
 
     def stored_energy(self, model, data):
         """Energy of current geometry and existing shear, without advancing it."""
-        self.config.__post_init__()
         if self.config.backend != 'compliant_2d':
             return 0.
         energy = 0.
@@ -184,9 +183,6 @@ class TireForceApplier:
         return derived(energy, 'TireForceApplier.stored_energy')
 
     def compute_qfrc(self, model, data, dt, *, advance=True):
-        self.config.__post_init__()
-        if self.surface_map is not None:
-            self.surface_map.validate()
         if not advance:
             probe = copy.copy(self)
             probe.states = copy.deepcopy(self.states)

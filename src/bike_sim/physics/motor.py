@@ -17,6 +17,7 @@ There is no stall timer, no boost hold and no stop delay: a real Gen 4 keeps
 assisting as long as the cranks turn forward under load; thermal derating is
 out of scope.
 """
+import copy
 from math import expm1, pi, radians
 import numpy as np
 from bike_sim.physics.checks import array, boolean, derived, scalar
@@ -99,9 +100,18 @@ class AssistController:
         self.pedaling = False
         self.last_gain = 0.
 
+    def clone(self):
+        """Independent copy, like deepcopy: the frozen profile and the torque
+        curve are recopied so the clone never aliases original state."""
+        new = copy.copy(self)
+        if self.profile is not None:
+            new.profile = copy.copy(self.profile)
+        if self.torque_curve is not None:
+            new.torque_curve = self.torque_curve.copy()
+        return new
+
     def ceiling(self, shaft_rpm, speed_mps):
         """Instantaneous shaft limit: peak, curve over shaft rpm, power, speed taper."""
-        self._validate()
         scalar(shaft_rpm, "AssistController.shaft_rpm")
         scalar(speed_mps, "AssistController.speed_mps")
         omega = shaft_rpm*2*pi/60
@@ -116,7 +126,6 @@ class AssistController:
 
     def step(self,human_nm,cadence_rpm,speed_mps,braking,dt, *,
              torque_request_nm=None,shaft_rpm=None):
-        self._validate()
         human = scalar(human_nm,'human torque')
         rpm = scalar(cadence_rpm,'cadence')
         speed = scalar(speed_mps,'road speed')

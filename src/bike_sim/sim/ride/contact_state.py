@@ -1,6 +1,6 @@
 """Immutable SI-unit snapshots of physical wheel contact patches."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import isfinite
 from numbers import Integral
 
@@ -28,6 +28,8 @@ class ContactPatch:
     couple_world_nm: np.ndarray | None = None
     native_world_force_n: np.ndarray | None = None
     source_geom: str = "terrain"
+    _tangent: np.ndarray = field(init=False, repr=False, compare=False)
+    _world_force_n: np.ndarray = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         point = _frozen_vector(self.point_m, "contact point")
@@ -57,10 +59,17 @@ class ContactPatch:
             ("normal_load_n", "tangent_force_n", "slip_mps"), scalars
         ):
             object.__setattr__(self, name, value)
+        # Tangent and the derived world force are fixed at validation; every
+        # later access reuses these instead of a fresh frozen vector per call.
+        tangent = _frozen_vector(np.array([normal[2], 0.0, -normal[0]]), "tangent")
+        object.__setattr__(self, "_tangent", tangent)
+        object.__setattr__(self, "_world_force_n",
+            native_force if native_force is not None else _frozen_vector(
+                scalars[0] * normal + scalars[1] * tangent, "contact force"))
 
     @property
     def tangent(self) -> np.ndarray:
-        return _frozen_vector(np.array([self.normal[2], 0.0, -self.normal[0]]), "tangent")
+        return self._tangent
 
     @property
     def working_surface(self) -> bool:
@@ -68,12 +77,7 @@ class ContactPatch:
 
     @property
     def world_force_n(self) -> np.ndarray:
-        if self.native_world_force_n is not None:
-            return self.native_world_force_n
-        return _frozen_vector(
-            self.normal_load_n * self.normal + self.tangent_force_n * self.tangent,
-            "contact force",
-        )
+        return self._world_force_n
 
 
 @dataclass(frozen=True)
@@ -86,6 +90,7 @@ class WheelContactSnapshot:
     interval_id: int = 0
     backend: str = "native_reference"
     wheel_axis_m: np.ndarray | None = None
+    _world_force_n: np.ndarray = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         time_s = float(self.time_s)
@@ -111,6 +116,12 @@ class WheelContactSnapshot:
         object.__setattr__(self, "patches", patches)
         object.__setattr__(self, "geometric_contact", bool(self.geometric_contact))
         object.__setattr__(self, "wheel_axis_m", axis)
+        # The patch set is fixed at validation, so the resultant is too: keep
+        # the same frozen sum instead of rebuilding it on every access.
+        object.__setattr__(self, "_world_force_n", _frozen_vector(
+            sum((patch.world_force_n for patch in patches), np.zeros(3)),
+            "wheel force",
+        ))
 
     @property
     def loaded_contact(self) -> bool:
@@ -130,10 +141,7 @@ class WheelContactSnapshot:
 
     @property
     def world_force_n(self) -> np.ndarray:
-        return _frozen_vector(
-            sum((patch.world_force_n for patch in self.patches), np.zeros(3)),
-            "wheel force",
-        )
+        return self._world_force_n
 
     @property
     def vertical_force_n(self) -> float:

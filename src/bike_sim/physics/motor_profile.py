@@ -77,7 +77,6 @@ PROFILES = {'bosch_cx_gen4': BOSCH_CX_GEN4}
 
 def assist_gain(profile: MotorProfile, mode: str, human_nm: float) -> float:
     """Return fixed support or the declared eMTB ramp with rider torque."""
-    profile.validate()
     human = scalar(human_nm, 'human torque')
     if not isinstance(mode, str) or mode not in profile.mode_gains:
         raise ValueError(f'unknown assist mode {mode!r}')

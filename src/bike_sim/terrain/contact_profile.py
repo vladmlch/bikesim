@@ -29,6 +29,15 @@ class ProfileContact:
         object.__setattr__(self, 'delta', scalar(self.delta, 'penetration'))
 
 
+def _trusted_contact(point, normal, delta, segment_id, multi_support) -> ProfileContact:
+    """ProfileQuery builds point/normal itself; skip the re-validation of __post_init__."""
+    contact = object.__new__(ProfileContact)
+    for name, value in (('point', np.asarray(point, dtype=float)), ('normal', np.asarray(normal, dtype=float)),
+                        ('delta', float(delta)), ('segment_id', int(segment_id)), ('multi_support', bool(multi_support))):
+        object.__setattr__(contact, name, value)
+    return contact
+
+
 class ProfileQuery:
     """Validated profile with local search and stable global segment IDs."""
     def __init__(self, vertices_xz, *, significant_delta_m=.0001,
@@ -118,7 +127,7 @@ class ProfileQuery:
                     distance=previous_distance
             if distance<=1e-12:
                 raise ValueError('unsupported or degenerate contact geometry')
-            return ProfileContact(point,(c-point)/distance,radius-distance,segment,False)
+            return _trusted_contact(point,(c-point)/distance,radius-distance,segment,False)
         ids, t, points, distances = self._candidates(c, lo, hi)
         if len(ids) == 0 or np.min(distances) >= radius:
             # Outside contact, retain an exact signed nearest gap rather than a
@@ -161,7 +170,7 @@ class ProfileQuery:
             multi = bool(np.any(different & separated))
         else:
             multi = False
-        return ProfileContact(points[winner], normal_winner, float(delta[winner]),
+        return _trusted_contact(points[winner], normal_winner, float(delta[winner]),
                               int(ids[winner]), multi)
 
 

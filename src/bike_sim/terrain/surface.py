@@ -85,7 +85,6 @@ class SurfaceSpec:
         Returns:
             The coefficient, with the argument's shape (a float for a scalar).
         """
-        self.__post_init__()
         array(sliding_speed_mps, "SurfaceSpec.sliding_speed_mps")
         decay = np.exp(-np.abs(sliding_speed_mps) / self.stribeck_speed_mps)
         value = self.mu_slide + (self.mu_peak - self.mu_slide) * decay
@@ -203,7 +202,6 @@ class SurfaceMap:
         Args:
             x_m: Contact position along the track in metres.
         """
-        self.validate()
         scalar(x_m, 'SurfaceMap.x_m')
         for section in self.sections:
             if section.start_m <= x_m < section.end_m:
@@ -213,13 +211,11 @@ class SurfaceMap:
     def validate(self) -> None:
         if not isinstance(self._surface, SurfaceSpec):
             raise ValueError('SurfaceMap.surface: expected SurfaceSpec')
-        self._surface.__post_init__()
         previous = 0.
         for section in self.sections:
             if not isinstance(section, SurfaceSection):
                 raise ValueError('SurfaceMap.sections: expected SurfaceSection')
-            section.__post_init__()
-            get_surface(section.surface).__post_init__()
+            get_surface(section.surface)
             if section.start_m < previous:
                 raise ValueError('SurfaceMap.sections: unordered or overlapping intervals')
             previous = section.end_m

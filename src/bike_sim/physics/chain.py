@@ -23,12 +23,10 @@ class DrivetrainSpecs:
 
     @property
     def front_radius_m(self):
-        self.__post_init__()
         return derived(self.chain_pitch_m*self.front_teeth/(2*pi), 'DrivetrainSpecs.front_radius_m')
 
     @property
     def rear_radius_m(self):
-        self.__post_init__()
         return derived(self.chain_pitch_m*self.rear_teeth/(2*pi), 'DrivetrainSpecs.rear_radius_m')
 
 

@@ -184,7 +184,6 @@ class DrivetrainForceApplier:
 
     def prepare_pedaling(self, data, dt, control, *, active=True, advance=True, braking=False,
                          model=None, rear_in_contact=True, rear_slip_mps=None, effort_ceiling_nm=None):
-        self.config.__post_init__()
         if advance and self.last_time_s is not None and float(data.time) <= self.last_time_s:
             raise ValueError('drivetrain state can advance only once per timestamp')
         crank_qpos, crank_dof = self.joints['crank_spin']
@@ -200,7 +199,7 @@ class DrivetrainForceApplier:
             # rejected gear change leaves the hub's own staging rolled back,
             # so the candidate (EMAs, counters, gear) is published only after
             # the hub commit succeeds.
-            shifter = copy.deepcopy(self.shifting)
+            shifter = self.shifting.clone()
             shifted = shifter.update(float(data.qvel[crank_dof]) * 60. / (2. * pi),
                 required, dt, pedaling=enabled and effort > 0., braking=braking,
                 rear_in_contact=rear_in_contact, rear_slip_mps=rear_slip_mps)
@@ -213,7 +212,7 @@ class DrivetrainForceApplier:
         # The pedaling policy advances on a detached candidate; a rejected
         # ceiling (or a mid-update failure) leaves the live policy untouched
         # and cannot accumulate effort across retries.
-        policy = copy.deepcopy(self.pedaling)
+        policy = self.pedaling.clone()
         state = policy.update(float(data.qpos[crank_qpos]), float(data.qvel[crank_dof]),
             required, effort, dt, braking=braking,
             enabled=enabled)
@@ -228,7 +227,6 @@ class DrivetrainForceApplier:
         return state
 
     def stored_energy(self, model, data):
-        self.config.__post_init__()
         if self.simplified:
             return {}
         cf, cr, rf, rr, tf, tr, up = self._geometry(data, self.angles, self.psi)
@@ -339,7 +337,6 @@ class DrivetrainForceApplier:
                            sensed_human_nm=0., active=True, advance=True, control=None,
                            pedaling_state=None):
         from bike_sim.sim.ride.control import RideControl
-        self.config.__post_init__()
         control = RideControl() if control is None else control
         if not isinstance(control, RideControl):
             raise ValueError('expected an immutable RideControl')
@@ -390,8 +387,8 @@ class DrivetrainForceApplier:
                 active=active, advance=advance, braking=braking, model=model)
         # Policies advance on detached candidates; every live attribute is
         # published only after components, diagnostics and ctrl rows exist.
-        hub = self.hub if self.simplified else copy.deepcopy(self.hub)
-        assist = copy.deepcopy(self.assist)
+        hub = self.hub if self.simplified else self.hub.clone()
+        assist = self.assist.clone()
         qf, vf = self.joints['crank_spin']
         qw, vw = self.joints['rear_wheel_spin']
         human=0.

@@ -19,6 +19,26 @@ Always use this code as a reference:
 
 A failed sweep names its CMake target; rerun it standalone with `cmake --build native/build --target check_<name>`. Alpha analyzer findings print but never block. A missing sweep tool fails the run on purpose — install the tool rather than skipping the target. For sanitizer/RTSan/coverage builds and sweep internals, reach `docs/TESTING.md`.
 
+### Verification speed
+
+The `native` profile costs ~15–30 min (build + 9 static-analysis sweeps + CTest +
+native/golden pytest). It is the outer gate, not the inner loop.
+
+- Iterate **red→green** on the smallest scope: the targeted pytest node for the
+  behavior you changed, plus `cmake --build <selected-build> --target check_<name>`
+  for the one sweep that covers it (a failed sweep names its own target).
+- Run `bash tools/run_tests.sh native` **once**, as the final step before reporting
+  a task done. The completion criterion: that run exits 0.
+- Pick the cheapest covering profile: `quick` for Python-only changes outside the
+  native scope, `native` for native/bindings/verification tooling, `full` only for
+  physics or realtime paths (profiles: docs/TESTING.md).
+- Compare a gate's failures against the documented baseline list. Reach for
+  stash+rerun at HEAD only for a failure the baseline does not explain — proving
+  pre-existing red costs a full gate.
+- One native gate per machine at a time. If another worktree is mid-gate, run the
+  targeted sweep instead of starting a second full gate; parallel gates contend for
+  CPU and each runs slower than both would serially.
+
 Numba caveats: the ride-loop kernels in `physics/tire.py`,
 `physics/joint_strength.py` and `sim/ride/support_geometry.py` are
 `@numba.njit(cache=True)` — first call per process compiles (seconds)

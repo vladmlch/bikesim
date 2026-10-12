@@ -89,6 +89,13 @@ def _integer_steps(seconds, dt, name):
 
 class ResearchEnvironment:
     backend = "python"
+    # Episode-scope defaults keep __new__ test doubles on the pre-capture
+    # behavior (legacy history, unsealed); __init__/_begin_episode set the
+    # real per-episode state.
+    capture_mode = "legacy"
+    _sealed_episode = None
+    _keep_history = True
+    _requested_count = 0
 
     def __init__(self, sim, config=None, sensors=None, *, demand=None, rider_behavior=None, rider_program=None, capture_mode="legacy"):
         from bike_sim.recording.research import capture_mode as validate_capture_mode

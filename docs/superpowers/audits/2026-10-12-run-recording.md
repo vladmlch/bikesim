@@ -101,6 +101,91 @@ The pointer dangle risk is unchanged in principle: `current.json` is
 tracked while `fixture-v3/` is not, so a clean clone of HEAD still lacks
 the bundle. Unresolved, recorded — not "fixed" by committing user files.
 
+### Gate-repair addendum (post-A0)
+
+The CTest defect above is repaired in the commit carrying this note —
+`test: keep allocation-injector arm probe observable under -O3` (the
+commit that adds this paragraph; resolve its SHA with
+`git log -1 --format=%H --grep='arm probe observable'`). Change, test-local
+to `native/tests/test_contracts.cpp`: `sweep_allocations`' `arm(0)` probe
+now stores the probe storage pointer through a `const volatile` lvalue
+(`const double *const volatile sink = probe.data();`) — the
+`numeric_sincos.hpp`/`pyfloat.hpp` opacity idiom — so the allocation's
+result is observable and `-O3` cannot elide the `operator new` the armed
+injector must fault. Injector, production code, and enumeration logic
+untouched. Sibling sweep: no other `arm(0)` call exists; the only other
+`catch (std::bad_alloc)` site (the enumeration loop) exercises the real
+`op()` path — not elidable.
+
+Standalone verification on the rebuilt release binary:
+`native_contract_tests settlement_sparse_last_atomicity` → `PASS`,
+exit 0; `drivetrain_allocation_enumeration` → `PASS`, exit 0; the whole
+binary reports 32 `PASS` lines, 0 `FAIL`.
+
+Fresh baseline re-run (verbatim command, log
+`/tmp/a0-gate-repair-full.log`; exit 1 — pytest propagates nonzero):
+
+```bash
+NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full
+```
+
+The gate now runs to completion: configure+build, `check_frontends`
+(findings none), `check_tidy` (none), `check_analyzer` (tool health ok,
+report-only alpha), `check_cppcheck` (none), `check_odr` (none),
+`check_scripts`, `headers` (none), `diagnostic-controls` 6/0, `context`
+(all SDK controls pass), **CTest 4/4** (`native_contract_tests` passes),
+selected-extension import + provenance, `check_native_contracts` 9/9 —
+then pytest: **201 failed, 2825 passed, 1 skipped, 197 warnings in
+1002.18s** (2306 native extension items collected). Split of the 201:
+
+- **24 = the documented platform baseline set** — byte-identical IDs to
+  the 2026-10-08 list (closed_form_rider 1, coupled_rider_task 2,
+  joint_strength 1, period_buffer 2, planar_arms 1,
+  realistic_pedelec_acceptance 4, realtime_gate 2, rider_allocation 3,
+  seated_pedaling_cycle 4, seated_posture_program 1, rider_welds 3).
+- **177 = NEW-at-HEAD failures**, all raising Python-side errors in
+  `src/bike_sim` (ValueError expected-but-unraised/wrong-type,
+  OverflowError `non-finite derived value`, ZeroDivisionError in
+  `physics/damper.py` `get_effective_coefficients`), not native-extension
+  or gate defects and not touched by the repair:
+  `tests/reference/test_native_numeric_domains.py` ×105,
+  `tests/reference/test_native_numeric_completion.py` ×72.
+
+Failing names verbatim — the 24 baseline IDs in full plus per-file
+counts for the 177 numeric IDs (the complete 201-line `short test
+summary info` list is reproduced in
+`.superpowers/sdd/2026-10-12-run-recording/task-A0-report.md`
+"Gate-repair addendum" and log `/tmp/a0-gate-repair-full.log`):
+
+```text
+FAILED tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque
+FAILED tests/reference/test_coupled_rider_task.py::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step
+FAILED tests/reference/test_coupled_rider_task.py::test_tissue_damping_does_not_eat_the_muscle_budget
+FAILED tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget
+FAILED tests/reference/test_native_numeric_completion.py (72 parametrized IDs — full list in the locations named above)
+FAILED tests/reference/test_native_numeric_domains.py (105 parametrized IDs — full list in the locations named above)
+FAILED tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms
+FAILED tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush
+FAILED tests/reference/test_planar_arms.py::test_compiled_topology_has_two_arms_and_two_grip_sites
+FAILED tests/reference/test_realistic_pedelec_acceptance.py::test_flat_reaches_25_kmh_within_10_s
+FAILED tests/reference/test_realistic_pedelec_acceptance.py::test_motor_follows_the_rider_through_a_shift_without_an_extra_cut
+FAILED tests/reference/test_realistic_pedelec_acceptance.py::test_fifteen_percent_climb_holds_12_kmh
+FAILED tests/reference/test_realistic_pedelec_acceptance.py::test_savage_is_ridden_to_the_end
+FAILED tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]
+FAILED tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]
+FAILED tests/reference/test_rider_allocation.py::test_healthy_step_allocates_a_feasible_command
+FAILED tests/reference/test_rider_allocation.py::test_allocated_wrenches_close_the_rider_dynamics
+FAILED tests/reference/test_rider_allocation.py::test_infeasible_intent_keeps_the_physical_bounds
+FAILED tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]
+FAILED tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[40.0]
+FAILED tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]
+FAILED tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock
+FAILED tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only
+FAILED tests/test_rider_welds.py::test_held_rider_weight_is_carried_by_the_connects
+FAILED tests/test_rider_welds.py::test_contact_diagnostics_carry_the_solved_weight
+FAILED tests/test_rider_welds.py::test_steep_grade_saddle_shear_exceeds_friction
+```
+
 ## Task ledger
 
 Requirement IDs are taken from the master plan's coverage table.
@@ -109,7 +194,7 @@ otherwise.
 
 | Task | Requirements | Exact commands | Result | Unresolved errors / notes |
 |---|---|---|---|---|
-| A0 — establish baseline | R23 (baseline portion) | `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse HEAD`, `git status --short`; `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full` | Baseline recorded (table above). `full` **exit 8**: preflight green through `context`; CTest 3/4 — `native_contract_tests` fails 2 cases; pytest not reached | `settlement_sparse_last_atomicity` + `drivetrain_allocation_enumeration` escape injected `std::bad_alloc` — Release-only elision of the arm(0) probe's dead `std::vector` allocation; `native` profile equally blocked; `fixture-v3` untracked-but-resolving (clean clones still lack it); plan-file checkboxes intentionally left open |
+| A0 — establish baseline | R23 (baseline portion) | `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse HEAD`, `git status --short`; `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full` | Baseline recorded (table above). `full` **exit 8**: preflight green through `context`; CTest 3/4 — `native_contract_tests` fails 2 cases; pytest not reached. **Gate repaired** (addendum above): probe kept observable under `-O3`; re-run `full` completes — CTest 4/4, all sweeps green, pytest reached: **201 failed / 2825 passed / 1 skipped** (177 `test_native_numeric_*` NEW-at-HEAD Python-side failures + the 24 documented platform IDs) | `settlement_sparse_last_atomicity` + `drivetrain_allocation_enumeration` escaped injected `std::bad_alloc` — Release-only elision of the arm(0) probe's dead `std::vector` allocation — fixed in the commit carrying this note (`test: keep allocation-injector arm probe observable under -O3`); `fixture-v3` untracked-but-resolving (clean clones still lack it); 177 `test_native_numeric_{domains,completion}` failures at HEAD are unrecorded Python-side errors, recorded verbatim in the addendum — not fixed here; plan-file checkboxes intentionally left open |
 | A1 — capture contracts, catalog, deps | R01–R03, R08–R10, R12, R14, R15 | (per plan: `bash tools/run_tests.sh quick tests/reference/test_recording_capture.py tests/reference/test_recording_catalog.py`) | not started | |
 | A2 — native retention vs measurement, sealing | R04–R10, R14 | (per plan: `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh native -k 'recording_retention or runtime_accounting or ride_frontend'`) | not started | depends on the A0-recorded CTest gate being green or explicitly scoped |
 | A3 — ordinary CLI, lifecycle, journal, check policy | R01–R04, R07, R11, R12, R14, R22 | (per plan: `... run_tests.sh native -k 'recording_lifecycle or recording_cli or ride_frontend'` + `quick` for parser-only tests) | not started | same preflight dependency as A2 |

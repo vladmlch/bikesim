@@ -2066,7 +2066,14 @@ namespace {
             bool threw = false;
             try {
                 const std::vector<double> probe(8, 0.);
-                static_cast<void>(probe);
+                // A dead probe is elided under -O3 and the still-armed
+                // injector then faults fail()'s string instead of this
+                // new. Storing the storage pointer through a volatile
+                // lvalue (the numeric_sincos.hpp idiom) makes the
+                // allocation's result observable, so the optimizer
+                // cannot remove the call the probe exists to exercise.
+                const double *const volatile sink = probe.data();
+                static_cast<void>(sink);
             } catch (const std::bad_alloc &) {
                 threw = true;
             }

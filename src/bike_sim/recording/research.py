@@ -171,9 +171,12 @@ def seal_research(env, episode_id, *, reason, physical, history):
     final = np.asarray(integration_state(env.sim), dtype='float64')
     research = summary['research']
     complete = history.row_count('transitions')
+    # Eligibility is completeness plus the absence of a failure/identity change;
+    # model/numerical validity are separate reported flags — checked replay
+    # verifies the recorded prefix bitwise even when the run was invalid.
     eligible = (not env.control_pending and history.row_count('commands_requested') == complete
                 and physical.row_count == env.sim.steps
-                and env.error is None and env.numerically_valid and env.model_valid
+                and env.error is None
                 and np.isfinite(initial).all() and np.isfinite(final).all()
                 and all(research.get(key) is False for key in ('source_changed_during_run',
                     'configuration_changed_during_run', 'execution_changed_during_run'))

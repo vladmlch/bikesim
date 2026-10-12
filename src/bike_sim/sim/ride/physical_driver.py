@@ -132,7 +132,10 @@ class PhysicalRideDriver:
             self.recorder = NativePhysicalRecorder(native)
         else:
             self._sim = sim
-            self.recorder = PhysicalRecorder(sim, decimation, enabled=retention != 'off')
+            # Construct through the bound symbol positionally; the retention
+            # policy is an attribute so injected positional doubles still work.
+            self.recorder = PhysicalRecorder(sim, decimation)
+            self.recorder.enabled = retention != 'off'
         self.start()
 
     def start(self):
@@ -277,7 +280,8 @@ class PhysicalRideDriver:
             self._native.reset()
         else:
             self._sim.reset()
-            self.recorder = PhysicalRecorder(self._sim, self._decimation, enabled=self._retention != 'off')
+            self.recorder = PhysicalRecorder(self._sim, self._decimation)
+            self.recorder.enabled = self._retention != 'off'
         self.step, self.time_s, self.reason = 0, 0., None
         self.start()
         return self.snapshot()

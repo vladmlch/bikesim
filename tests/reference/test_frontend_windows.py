@@ -183,7 +183,7 @@ def test_physical_window_bounds_rendering_and_leaves_no_files_when_off(tmp_path,
     assert list(tmp_path.rglob('*')) == []
 
 
-def test_physical_window_recording_publishes_once_without_legacy_preview(tmp_path, monkeypatch):
+def test_physical_window_recording_publishes_once_and_writes_preview(tmp_path, monkeypatch):
     import bike_sim.sim.ride.physical_frontend as frontend
     clock = Clock()
     patch_window(monkeypatch, frontend, clock, {10: [ord('R')], 30: [ord('Q')]})
@@ -198,12 +198,17 @@ def test_physical_window_recording_publishes_once_without_legacy_preview(tmp_pat
     episodes = list(capture.iter_episodes())
     assert [e.episode_id for e in episodes] == [0, 1]
     assert [e.generation for e in episodes] == [1, 2]
-    assert not list(tmp_path.rglob('preview.csv'))
-    assert not list(tmp_path.rglob('ride.html'))
+    previews = list(tmp_path.rglob('preview.csv'))
+    assert len(previews) == 1
+    text = previews[0].read_text()
+    assert 'requested_scale' in text and 'reset' in text
+    # The interactive route renders ride.html from the recorded preview rows.
+    html = list(tmp_path.rglob('ride.html'))
+    assert len(html) == 1 and html[0].parent == previews[0].parent
     assert list(tmp_path.rglob('recording.marker'))
 
 
-def test_physical_window_recording_does_not_depend_on_plotly(tmp_path, monkeypatch, capsys):
+def test_physical_window_skips_ride_html_when_plotly_is_absent(tmp_path, monkeypatch, capsys):
     import builtins
     import bike_sim.sim.ride.physical_frontend as frontend
     clock = Clock()
@@ -218,9 +223,9 @@ def test_physical_window_recording_does_not_depend_on_plotly(tmp_path, monkeypat
     assert run_viewer(driver, out_root=tmp_path,
                       capture=enabled_capture(driver, [])) == 0
     assert driver.closed
-    assert not list(tmp_path.rglob('preview.csv'))
+    assert list(tmp_path.rglob('preview.csv'))
     assert not list(tmp_path.rglob('ride.html'))
-    assert 'skipped ride.html' not in capsys.readouterr().out
+    assert 'skipped ride.html' in capsys.readouterr().out
 
 
 def test_window_construction_error_still_accounts_and_closes(tmp_path, monkeypatch):

@@ -1,7 +1,5 @@
 # Run recording implementation audit — 2026-10-12
 
-> **Historical audit with 2026-10-13 source-status update.** All commands, artifact identities and pass/fail numbers below were already present in the supplied snapshot. They were not rerun in this delivery. The new [source-completion ledger](2026-10-13-run-recording-source-completion.md) records implementation separately from the explicitly prohibited execution gates.
-
 Master plan: `docs/superpowers/plans/2026-10-12-run-recording.md`
 (ordinary stage: `...-ordinary.md`, research stage: `...-research.md`,
 spec: `docs/superpowers/specs/2026-10-12-run-recording-design.md`, R01–R24).
@@ -197,16 +195,16 @@ otherwise.
 | Task | Requirements | Exact commands | Result | Unresolved errors / notes |
 |---|---|---|---|---|
 | A0 — establish baseline | R23 (baseline portion) | `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse HEAD`, `git status --short`; `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full` | Baseline recorded (table above). `full` **exit 8**: preflight green through `context`; CTest 3/4 — `native_contract_tests` fails 2 cases; pytest not reached. **Gate repaired** (addendum above): probe kept observable under `-O3`; re-run `full` completes — CTest 4/4, all sweeps green, pytest reached: **201 failed / 2825 passed / 1 skipped** (177 `test_native_numeric_*` NEW-at-HEAD Python-side failures + the 24 documented platform IDs) | `settlement_sparse_last_atomicity` + `drivetrain_allocation_enumeration` escaped injected `std::bad_alloc` — Release-only elision of the arm(0) probe's dead `std::vector` allocation — fixed in the commit carrying this note (`test: keep allocation-injector arm probe observable under -O3`); `fixture-v3` untracked-but-resolving (clean clones still lack it); 177 `test_native_numeric_{domains,completion}` failures at HEAD are unrecorded Python-side errors, recorded verbatim in the addendum — not fixed here; plan-file checkboxes intentionally left open |
-| A1 — capture contracts, catalog, deps | R01–R03, R08–R10, R12, R14, R15 | (per plan: `bash tools/run_tests.sh quick tests/reference/test_recording_capture.py tests/reference/test_recording_catalog.py`) | source supplied; verification NOT RUN | |
-| A2 — native retention vs measurement, sealing | R04–R10, R14 | (per plan: `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh native -k 'recording_retention or runtime_accounting or ride_frontend'`) | source supplied; verification NOT RUN | depends on the A0-recorded CTest gate being green or explicitly scoped |
-| A3 — ordinary CLI, lifecycle, journal, check policy | R01–R04, R07, R11, R12, R14, R22 | (per plan: `... run_tests.sh native -k 'recording_lifecycle or recording_cli or ride_frontend'` + `quick` for parser-only tests) | source supplied; verification NOT RUN | same preflight dependency as A2 |
-| A4 — DuckDB storage, reader, publication | R04, R08–R10, R12, R14–R16 | (per plan: `bash tools/run_tests.sh quick tests/reference/test_recording_*.py`) | source supplied; verification NOT RUN | |
-| A5 — report and analyst CLI | R17–R19 | (per plan: `bash tools/run_tests.sh quick tests/reference/test_recording_analysis.py ...`) | source supplied; verification NOT RUN | |
-| A6 — ordinary acceptance + docs | R05, R06, R17–R19, R23, R24 | (per plan: `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full`) | source supplied; verification NOT RUN | final gate currently red per A0 row |
-| B1 — research evidence owner + suffix | R04–R11, R13, R14, R21 | (per plan: `... run_tests.sh native -k 'research_capture or ...'` + `quick test_research_capture.py`) | source supplied; verification NOT RUN | |
-| B2 — research CLI finalization + normalized streams | R01–R04, R11–R16, R21, R22 | (per plan: `... run_tests.sh native -k 'research_recording_lifecycle or ...'` + `quick` files) | source supplied; verification NOT RUN | |
-| B3 — versioned replay + legacy compatibility | R04, R12, R13, R20, R21 | (per plan: `... run_tests.sh native -k 'replay_recording_v3 or ...'` + `quick` files) | source supplied; verification NOT RUN | |
-| B4 — cross-mode acceptance + handoff | R05, R06, R13, R17–R21, R23, R24 | (per plan: `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full`) | source supplied; verification NOT RUN | final gate currently red per A0 row |
+| A1 — capture contracts, catalog, deps | R01–R03, R08–R10, R12, R14, R15 | (per plan: `bash tools/run_tests.sh quick tests/reference/test_recording_capture.py tests/reference/test_recording_catalog.py`) | not started | |
+| A2 — native retention vs measurement, sealing | R04–R10, R14 | (per plan: `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh native -k 'recording_retention or runtime_accounting or ride_frontend'`) | not started | depends on the A0-recorded CTest gate being green or explicitly scoped |
+| A3 — ordinary CLI, lifecycle, journal, check policy | R01–R04, R07, R11, R12, R14, R22 | (per plan: `... run_tests.sh native -k 'recording_lifecycle or recording_cli or ride_frontend'` + `quick` for parser-only tests) | not started | same preflight dependency as A2 |
+| A4 — DuckDB storage, reader, publication | R04, R08–R10, R12, R14–R16 | (per plan: `bash tools/run_tests.sh quick tests/reference/test_recording_*.py`) | not started | |
+| A5 — report and analyst CLI | R17–R19 | (per plan: `bash tools/run_tests.sh quick tests/reference/test_recording_analysis.py ...`) | not started | |
+| A6 — ordinary acceptance + docs | R05, R06, R17–R19, R23, R24 | (per plan: `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full`) | not started | final gate currently red per A0 row |
+| B1 — research evidence owner + suffix | R04–R11, R13, R14, R21 | (per plan: `... run_tests.sh native -k 'research_capture or ...'` + `quick test_research_capture.py`) | not started | |
+| B2 — research CLI finalization + normalized streams | R01–R04, R11–R16, R21, R22 | (per plan: `... run_tests.sh native -k 'research_recording_lifecycle or ...'` + `quick` files) | not started | |
+| B3 — versioned replay + legacy compatibility | R04, R12, R13, R20, R21 | (per plan: `... run_tests.sh native -k 'replay_recording_v3 or ...'` + `quick` files) | not started | |
+| B4 — cross-mode acceptance + handoff | R05, R06, R13, R17–R21, R23, R24 | (per plan: `NATIVE_TEST_BUILD_PATH="$PWD/native/build/release" bash tools/run_tests.sh full`) | not started | final gate currently red per A0 row |
 
 ## Standing notes
 

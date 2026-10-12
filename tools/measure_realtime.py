@@ -161,7 +161,7 @@ def measure_realtime(track_path, physics_path, duration_s, *, out, dt_s=.0005,
     sim=ride_cli.build_physical_simulation_from_args(args)
     # Builder-only timing must still choose the real diagnostic demand; a
     # recorder would otherwise be the only owner setting this decimation.
-    sim.physical.set_record_decimation(args.decimate)
+    sim.physical.set_measurement_decimation(args.decimate)
     sim.physical.reference_monitor.strict=False
     startup=time.perf_counter()-started
     dt=float(sim.model.opt.timestep)

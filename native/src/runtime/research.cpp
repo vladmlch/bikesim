@@ -82,7 +82,7 @@ NativeResearchRuntime::NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> 
     if (!std::isfinite(c.track_length_m) || c.track_length_m <= 0. || !std::isfinite(c.start_position_m) ||
         !std::isfinite(c.maximum_energy_residual_ratio) || c.maximum_energy_residual_ratio <= 0.)
         throw std::invalid_argument("invalid research geometry/energy limits");
-    if (c.record_decimation != runtime_->config_.record_decimation ||
+    if (c.record_decimation != runtime_->config_.measurement_decimation ||
         c.stop_on_model_violation != runtime_->config_.strict)
         throw std::invalid_argument("research recording/strictness must match its physical runtime");
     c.geometry.validate(static_cast<std::size_t>(runtime_->stepper_->model()->nq),

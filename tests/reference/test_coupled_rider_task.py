@@ -65,7 +65,7 @@ def test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step(tmp_pa
     env = _environment(tmp_path, .6)
     physical = env.sim.physical
     controller = physical.rider_control
-    physical.set_record_decimation(1)
+    physical.set_measurement_decimation(1)
     checked = 0
     while not env.done:
         env.step(RideControl())

@@ -138,7 +138,7 @@ def _runtime_state(sim, physical) -> dict:
     return {
         'step': int(sim.steps),
         'generation': int(physical.generation),
-        'record_decimation': int(physical.record_decimation),
+        'measurement_decimation': int(physical.measurement_decimation),
         'applied_control': _control_dict(physical.applied_control),
         'held_control': physical.control_clock.held_state(),
         'held_rider_terms': plain(physical.held_rider_terms),
@@ -350,7 +350,8 @@ def capture_bootstrap(sim, directory: Path) -> RuntimeBootstrap:
         'physics_mode': sim.physics_config.physics_mode,
         'drive_mode': sim.physics_config.drive_mode,
         'strict': bool(physical.strict),
-        'record_decimation': int(physical.record_decimation),
+        'measurement_decimation': int(physical.measurement_decimation),
+        'record_retention': str(physical.recording_retention),
         'writer_config': _project_writers(sim),
         'rider_controller': rider_controller_config(
             sim.physics_config.articulated, physical.rider_control),

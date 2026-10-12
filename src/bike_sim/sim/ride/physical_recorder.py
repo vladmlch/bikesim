@@ -37,7 +37,7 @@ class PhysicalRecorder:
             raise ValueError('decimate must be a positive integer')
         self.sim=sim
         self.decimate=decimate
-        sim.physical.set_record_decimation(decimate)
+        sim.physical.set_measurement_decimation(decimate)
         self.timestep_s=float(sim.model.opt.timestep)
         self.samples=[]
         self.keep_intervals=keep_intervals

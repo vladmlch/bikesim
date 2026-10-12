@@ -45,7 +45,10 @@ struct PresentationState;
 struct StepConfig {
     double timestep_s = 0.;
     double control_period_s = 0.;
-    int record_decimation = 1;
+    // The energy/momentum measurement cadence (the oracle's
+    // physical.record_decimation -> measurement_decimation split; retention
+    // policy lives on AccountingConfig, not here).
+    int measurement_decimation = 1;
     bool strict = false;
     double crank_length_m = 0.;
     double road_lookahead_m = 0.;
@@ -112,7 +115,7 @@ struct ForceSample {
 struct StepState {
     std::int64_t step = 0;
     int generation = 0;
-    int record_decimation = 1;
+    int measurement_decimation = 1;
     RideControl applied_control{};
     std::optional<rider::NamedEntries<double>> held_control;
     std::optional<rider::NamedEntries<rider::JointTerms>> held_rider_terms;
@@ -410,7 +413,7 @@ private:
     // PhysicalRuntime instance state.
     std::int64_t step_ = 0;
     int generation_ = 0;
-    int record_decimation_ = 1;
+    int measurement_decimation_ = 1;
     RideControl applied_control_{};
     std::optional<rider::NamedEntries<rider::JointTerms>>
         held_rider_terms_;

@@ -46,7 +46,7 @@ def test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush(tmp_path
     recorded = []
     monitor = SimpleNamespace(strict=True, first_failure=None)
     physical = SimpleNamespace(control_clock=SimpleNamespace(period_s=.005),
-        set_record_decimation=recorded.append, reference_monitor=monitor,
+        set_measurement_decimation=recorded.append, reference_monitor=monitor,
         model_status=SimpleNamespace(as_dict=lambda: {'model_valid':True,'numerically_valid':False,
                                                      'calibration_status':'synthetic'}),
         flush=lambda: recorded.append('flush'))

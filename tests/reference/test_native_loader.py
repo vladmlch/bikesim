@@ -444,6 +444,9 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'rtsan_invalid_status_control',
         'warm_allocation_matrix',
         'rider_contacts_config_domain',
+        'owned_episode_batch_ranges',
+        'owned_episode_rejects_malformed_samples',
+        'owned_episode_seal_batch_allocation_faults',
     ]
 
 

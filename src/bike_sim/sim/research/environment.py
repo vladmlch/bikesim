@@ -136,7 +136,7 @@ class ResearchEnvironment:
         # Diagnostic mode may keep recording a violating episode; the run's
         # model_valid flag still goes false and stays false.
         self.sim.physical.set_strict(self.config.stop_on_model_violation)
-        self.sim.physical.set_record_decimation(self.config.record_decimation)
+        self.sim.physical.set_measurement_decimation(self.config.record_decimation)
         self.tracker = WheelieTracker(persistence_s=self.config.wheelie_persistence_s)
         self.pipeline = SensorPipeline(self.sensor_config, seed=self.seed)
         self.sim.data.qacc_warmstart.fill(0.)

@@ -186,7 +186,7 @@ def test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms(tmp_pa
     env.reset()
     initial_branch = runtime.rider_control._last_branch
     initial_solution = runtime.rider_control._last_solution.copy()
-    runtime.set_record_decimation(1)
+    runtime.set_measurement_decimation(1)
     commands = [RideControl(motor_torque_nm=0., human_torque_nm=0. if i < 20 else 5.)
                 for i in range(60)]
     expected = []
@@ -196,7 +196,7 @@ def test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms(tmp_pa
     env.reset()
     assert runtime.rider_control._last_branch == initial_branch
     np.testing.assert_array_equal(runtime.rider_control._last_solution, initial_solution)
-    runtime.set_record_decimation(1)
+    runtime.set_measurement_decimation(1)
     actual = []
     for i, command in enumerate(commands):
         runtime.step(control=command)
@@ -252,7 +252,7 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
     env.reset()
     # The scalar oracle is the decimation-1 reference: every interval measures
     # its own energy state, so per-interval fields compare step-for-step.
-    runtime.set_record_decimation(1)
+    runtime.set_measurement_decimation(1)
     actual = []
     for _ in range(2003):
         sim.step(control=command)
@@ -272,7 +272,7 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
         assert batch.channels['rider_positive_power_w'] == pytest.approx(
             scalar.channels['rider_positive_power_w'], abs=1e-9)
     env.reset()
-    runtime.set_record_decimation(80)
+    runtime.set_measurement_decimation(80)
     decimated = []
     for _ in range(2003):
         sim.step(control=command)
@@ -321,7 +321,7 @@ def test_record_decimation_forwards_period_closing_energy(tmp_path):
     steps = runtime.control_clock.steps_per_period*81+3  # unmeasured flush tail
     def collect(decimation):
         env.reset()
-        runtime.set_record_decimation(decimation)
+        runtime.set_measurement_decimation(decimation)
         rows = []
         for _ in range(steps):
             sim.step(control=command)

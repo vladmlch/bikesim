@@ -8,6 +8,7 @@
 // as OWNED deep copies — the runtime never aliases caller objects.
 #pragma once
 #include <nanobind/nanobind.h>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -15,6 +16,14 @@
 namespace runtime {
 
 constexpr int kRuntimeSchema = 1;
+
+// Recording retention policy, independent of the measurement cadence
+// (measurement_decimation): which committed immutable samples the
+// accounting layer keeps for episode sealing. `legacy` reproduces the
+// historical decimated-recorder projection (interval_id %
+// measurement_decimation == 0); `full` retains every committed interval;
+// `off` keeps no optional growing history.
+enum class RetentionMode : std::uint8_t { off, full, legacy };
 
 struct MonitorConfig {
     double balance_floor_mps = 0.;
@@ -43,7 +52,10 @@ struct RuntimeConfig {
     double control_period_s = 0.;
     int control_period_steps = 0;
     bool strict = false;
-    int record_decimation = 0;
+    // The expensive energy/momentum measurement cadence — historically the
+    // `record_decimation` wire/argument value, now named for what it gates.
+    int measurement_decimation = 0;
+    RetentionMode record_retention = RetentionMode::legacy;
     MonitorConfig monitors;
     GeometryConfig geometry;
     nanobind::object writer_config;     // owned dict — the Stepper consumes it once

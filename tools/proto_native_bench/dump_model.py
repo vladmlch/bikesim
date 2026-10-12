@@ -68,7 +68,7 @@ def main(argv=None) -> int:
         "--out", str(args.out / "run"),
     ])
     sim = ride_cli.build_physical_simulation_from_args(ride_args)
-    sim.physical.set_record_decimation(ride_args.decimate)
+    sim.physical.set_measurement_decimation(ride_args.decimate)
     sim.physical.reference_monitor.strict = False
 
     for _ in range(args.warmup_steps):

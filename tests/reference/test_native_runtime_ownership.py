@@ -190,7 +190,7 @@ def test_source_and_bootstrap_mutations_do_not_affect_accounting_or_reset(tmp_pa
     driver._bootstrap.state['runtime']['energy']['initial_energy_j'] += 1e9
     driver._bootstrap.state['runtime']['history']['work_j']['forged'] = 1e9
     driver._bootstrap.state['integration_state'][:] = np.nan
-    driver._bootstrap.config['record_decimation'] = 999
+    driver._bootstrap.config['measurement_decimation'] = 999
     sim.data.qpos[:] = 1e4
     del sim
     gc.collect()

@@ -63,7 +63,13 @@ class PhysicalRuntime:
         self.cfg = sim.physics_config
         self.control_clock = ControlClock(float(sim.model.opt.timestep), self.cfg.control_period_s)
         self._buffer = PeriodBuffer(self.control_clock.steps_per_period)
-        self.record_decimation = 1
+        # The expensive energy/momentum measurement cadence — the legacy
+        # `record_decimation` name now says what it gates. Retention policy
+        # (which committed samples a capture may retain) is separate and
+        # lives on the recording owner; this runtime only mirrors it for
+        # bootstrap emission.
+        self.measurement_decimation = 1
+        self.recording_retention = 'legacy'
         self.completed_samples = ()
         self.period_violations = ()
         self.interval_constraints = {}
@@ -597,7 +603,7 @@ class PhysicalRuntime:
         # every raw of a period reports the period's closing measurement (see
         # _close_period). Decimated intervals keep the compiled mass and CoM
         # rows the per-interval truth consumers read, at kinematic cost only.
-        full = (sim.steps % self.record_decimation == 0
+        full = (sim.steps % self.measurement_decimation == 0
                 or (sim.steps+1) % self.control_clock.steps_per_period == 0)
         # Save incoming auxiliary energies before the solve overwrites no state.
         mass0 = mass_observations(m,d) if full else com_observations(m,d)
@@ -719,10 +725,15 @@ class PhysicalRuntime:
 
         return raw
 
-    def set_record_decimation(self, n):
+    def set_measurement_decimation(self, n):
         if type(n) is not int or n < 1:
-            raise ValueError('record decimation must be a positive integer')
-        self.record_decimation = n
+            raise ValueError('measurement decimation must be a positive integer')
+        self.measurement_decimation = n
+
+    def set_recording_retention(self, mode):
+        if mode not in ('off', 'full', 'legacy'):
+            raise ValueError('recording retention must be off, full or legacy')
+        self.recording_retention = mode
 
     def flush(self):
         """Evaluate the trailing partial period before termination or reset."""
@@ -743,18 +754,27 @@ class PhysicalRuntime:
         # the closing measurement of its period. A crash or flush can drain a
         # partial period holding no measured interval at all -- then the
         # ledger keeps its previous datum instead of fabricating one.
-        closing_total = closing_elastic = None
+        closing_total = closing_elastic = closing_source = None
         endpoint_mass = getattr(self, '_last_endpoint_mass', None)
         for raw in reversed(raws):
             if raw.metadata['mechanical_energy_j'] is not None:
                 closing_total = raw.metadata['mechanical_energy_j']
                 closing_elastic = raw.metadata['elastic_energy_j']
+                closing_source = (raw.interval_id, raw.end_time_s)
                 endpoint_mass = raw.metadata['diagnostics']['endpoint_mass']
                 break
         if closing_total is None:
             closing_total = self.energy['mechanical_energy_j']
             closing_elastic = self.energy['elastic_energy_j']
         self._last_endpoint_mass = endpoint_mass
+        # Provenance for every forwarded row in this period: the period's
+        # closing measured interval when one exists, else the previous
+        # period's closing measurement (None until the first measurement
+        # ever commits — the catalog encodes that as explicit absence).
+        source = closing_source if closing_source is not None else \
+            getattr(self, '_last_measurement_source', None)
+        if closing_source is not None:
+            self._last_measurement_source = closing_source
         published = []
         failures = []
         self.interval_constraints = {}
@@ -782,6 +802,10 @@ class PhysicalRuntime:
                 violations += ('energy.constraint_work',)
             total=raw.metadata['mechanical_energy_j']
             elastic=raw.metadata['elastic_energy_j']
+            # A measured row cites itself; a forwarded row cites the
+            # interval its measurement came from (None only while no
+            # measurement has ever committed).
+            measured = total is not None
             if total is None:
                 # Copy the forwarded closing elastic so each published sample
                 # owns its dict instead of aliasing the period's shared one.
@@ -800,7 +824,10 @@ class PhysicalRuntime:
                 'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
                 'electrical_work_j':self.electrical_work_j,
                 'electrical_residual_j':(self.initial_battery_j-raw.metadata['battery_energy_j']-self.electrical_work_j
-                                        if self.cfg.drive.battery.enabled else 0.)}
+                                        if self.cfg.drive.battery.enabled else 0.),
+                'measured':measured,
+                'source_interval_id':raw.interval_id if measured else (None if source is None else source[0]),
+                'source_time_s':raw.end_time_s if measured else (None if source is None else source[1])}
             self.attachment_samples = attachments
             self.attachment_errors = tuple(raw.metadata['attachment_errors']) + tuple(
                 name+':unobservable_attachment_wrench' for name in raw.attachment_raw if name not in attachments)

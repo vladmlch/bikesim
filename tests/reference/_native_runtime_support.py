@@ -24,7 +24,7 @@ def make_python_ride(*, strict=False, decimation=1):
     ])
     sim = ride.build_physical_simulation_from_args(args)
     sim.physical.set_strict(strict)
-    sim.physical.set_record_decimation(decimation)
+    sim.physical.set_measurement_decimation(decimation)
     return sim
 
 

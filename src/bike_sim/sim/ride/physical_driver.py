@@ -70,10 +70,17 @@ class PhysicalRideDriver:
     """Absolute-step advancement; wall pacing never changes the physics clock."""
 
     def __init__(self, sim, *, backend='python', strict=False, decimation=1,
-                 duration_s=None, seed=None, clock=time.monotonic):
+                 duration_s=None, seed=None, record=None, clock=time.monotonic):
         require_backend(backend, sim.physics_config, sim.rider)
         if type(decimation) is not int or decimation < 1:
             raise ValueError('decimation must be a positive integer')
+        # `record` selects the recording-retention policy, independent of the
+        # measurement cadence (`decimation`): True keeps every committed
+        # interval, False keeps no growing retained history, and None keeps
+        # the historical decimated projection (legacy program compatibility).
+        if record is not None and not isinstance(record, bool):
+            raise ValueError('record must be bool or None')
+        retention = 'legacy' if record is None else ('full' if record else 'off')
         if duration_s is not None and (isinstance(duration_s, bool) or
                 not isinstance(duration_s, Real) or not math.isfinite(duration_s) or duration_s <= 0.):
             raise ValueError('duration_s must be finite and positive')
@@ -101,9 +108,11 @@ class PhysicalRideDriver:
         self._sim = None
         self._terrain_stamp = None
         sim.physical.set_strict(strict)
+        sim.physical.set_recording_retention(retention)
         if backend == 'native':
             from bike_sim.native.runtime import create_native_ride
-            native = create_native_ride(sim, strict=strict, record_decimation=decimation)
+            native = create_native_ride(sim, strict=strict, record_decimation=decimation,
+                                        retention=retention)
             try:
                 native.set_finish_position(self.limits.finish_x_m)
             except BaseException:

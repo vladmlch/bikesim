@@ -138,9 +138,14 @@ double external_work(const RawStep &raw, double dt_s) {
 // otherwise (physical_runtime.py:783-789 — the oracle's `total, elastic`
 // after the unmeasured-raw substitution). The ledger mirrors the
 // published values; residual_j subtracts the row's own accumulators.
+// `source` names the interval the published measurement came from — the
+// row itself when `measured`, the closing/previous measurement otherwise
+// (nullopt only before any measurement has ever committed).
 WireObject account_energy(AccountingState &state, const AccountingConfig &config,
                            const RawStep &raw, const StepWork &work,
-                           double total_j, const WireObject &elastic) {
+                           double total_j, const WireObject &elastic,
+                           bool measured,
+                           const std::optional<MeasurementSource> &source) {
     auto &e = state.energy;
     if (!e.initial_energy_j.has_value() || !e.initial_battery_j.has_value())
         throw std::invalid_argument("accounting requires initialized energy baselines");
@@ -174,7 +179,12 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
         {"constraint_work_ok", Wire(work_ok)}, {"residual_j", Wire(e.residual_j)},
         {"electrical_work_j", Wire(e.electrical_work_j)},
         {"electrical_residual_j", Wire(config.battery_enabled
-            ? *e.initial_battery_j - raw.battery_energy_j - e.electrical_work_j : 0.)}};
+            ? *e.initial_battery_j - raw.battery_energy_j - e.electrical_work_j : 0.)},
+        {"measured", Wire(measured)},
+        {"source_interval_id", source.has_value() ? Wire(source->interval_id)
+                                                  : Wire(nullptr)},
+        {"source_time_s", source.has_value() ? Wire(source->time_s)
+                                             : Wire(nullptr)}};
     for (const auto &[key, value] : result)
         if (std::holds_alternative<double>(value.value)) finite(number(value), key);
     return result;
@@ -335,7 +345,7 @@ PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState init
       workspace_(static_cast<rider::lapack_int>(config_.max_dofs), 6, 1),
       controller_(controller), contacts_(contacts) {
     finite(config_.timestep_s, "accounting timestep");
-    if (config_.timestep_s <= 0. || config_.record_decimation < 1 || generation_ < 1)
+    if (config_.timestep_s <= 0. || config_.measurement_decimation < 1 || generation_ < 1)
         throw std::invalid_argument("invalid accounting configuration");
     if (!state_.energy.initial_energy_j.has_value() || !state_.energy.initial_battery_j.has_value())
         throw std::invalid_argument("accounting bootstrap requires initialized energy baselines");
@@ -376,11 +386,14 @@ void PeriodAccounting::flush() {
     // rest of the staged state.
     std::optional<double> closing_total;
     std::optional<WireObject> closing_elastic;
+    std::optional<MeasurementSource> closing_source;
     std::optional<WireObject> endpoint_mass = staged.last_endpoint_mass;
     for (const RawStep &raw : std::ranges::reverse_view(raws)) {
         if (!raw.mechanical_energy_j.has_value()) continue;
         closing_total = raw.mechanical_energy_j;
         closing_elastic = raw.elastic_energy_j;
+        closing_source = MeasurementSource{.interval_id = raw.interval_id,
+                                           .time_s = raw.end_time_s};
         const Wire &captured = required(raw.diagnostics, "endpoint_mass");
         endpoint_mass = is_none(captured)
                             ? std::nullopt
@@ -392,6 +405,15 @@ void PeriodAccounting::flush() {
         closing_elastic = staged.energy.elastic_energy_j;
     }
     staged.last_endpoint_mass = endpoint_mass;
+    // Provenance for every forwarded row in this period: the period's
+    // closing measured interval when one exists, else the previous
+    // period's closing measurement (nullopt until the first measurement
+    // ever commits — the catalog encodes that as explicit absence).
+    const std::optional<MeasurementSource> forwarding_source =
+        closing_source.has_value() ? closing_source
+                                   : staged.last_measurement_source;
+    if (closing_source.has_value())
+        staged.last_measurement_source = *closing_source;
     struct PublishedRow {
         std::shared_ptr<PhysicalSampleData> sample;
         std::shared_ptr<ConstraintSnapshot> snapshot;  // restore donor
@@ -404,7 +426,6 @@ void PeriodAccounting::flush() {
     std::vector<std::string> final_attachment_errors;
     EffortObservation final_effort;
     std::vector<SamplePtr> selected;
-    RecordedBlock block;
     std::vector<std::pair<std::string, writers::RiderAttachmentEntry>> contact_samples;
     std::optional<ReferenceFailure> strict_failure;
     const auto restore = [&]() noexcept {
@@ -445,8 +466,16 @@ void PeriodAccounting::flush() {
             const WireObject &elastic =
                 measured ? engaged(raw.elastic_energy_j)
                          : engaged(closing_elastic);
+            // A measured row cites itself; a forwarded row cites the
+            // interval its measurement came from (forwarding_source —
+            // nullopt only while no measurement has ever committed).
+            const std::optional<MeasurementSource> source =
+                measured ? std::optional<MeasurementSource>(
+                               MeasurementSource{.interval_id = raw.interval_id,
+                                                 .time_s = raw.end_time_s})
+                         : forwarding_source;
             staged.energy_channels = account_energy(staged, config_, raw, raw_work(raw, config_.timestep_s),
-                                                    total_j, elastic);
+                                                    total_j, elastic, measured, source);
             if (index + 1 == raws.size() &&
                 !boolean(required(staged.energy_channels, "constraint_work_ok")))
                 violations.emplace_back("energy.constraint_work");
@@ -511,19 +540,26 @@ void PeriodAccounting::flush() {
                 final_effort = std::move(effort);
             }
         }
-        selected.reserve(published.size());
-        for (const auto &row : published)
-            if (row.sample->interval_id % config_.record_decimation == 0)
-                selected.push_back(row.sample);
-        block = RecordedBlock{.rows = selected.size(),
-                              .columns = make_columns(selected, config_.columns)};
+        // Retention is independent of the measurement cadence: `full`
+        // keeps every committed interval, `legacy` the historical
+        // interval_id % measurement_decimation projection, `off` none.
+        // The retained index never waits on pending acknowledgement.
+        selected.reserve(config_.retention == RetentionMode::off
+                             ? std::size_t{0}
+                             : published.size());
+        for (const auto &row : published) {
+            const bool keep =
+                config_.retention == RetentionMode::full ||
+                (config_.retention == RetentionMode::legacy &&
+                 row.sample->interval_id % config_.measurement_decimation == 0);
+            if (keep) selected.push_back(row.sample);
+        }
         contact_samples.reserve(final_attachments.size());
         for (auto &[name, sample] : final_attachments)
             contact_samples.emplace_back(std::move(name), std::move(sample));
         // Copying/reserving can throw; the raw period and all old evidence still exist.
         pending_.reserve(pending_.size() + published.size());
-        recorded_.reserve(recorded_.size() + (block.rows == 0 ? 0U : 1U));
-        recorded_samples_.reserve(recorded_samples_.size() + selected.size());
+        retained_.reserve(retained_.size() + selected.size());
         strict_failure = staged.monitor.strict && !staged.period_violations.empty()
                              ? std::optional<ReferenceFailure>(staged.period_violations.front())
                              : std::nullopt;
@@ -535,9 +571,8 @@ void PeriodAccounting::flush() {
     state_ = std::move(staged);
     latest_ = published.back().sample;
     for (auto &row : published) pending_.push_back(std::move(row.sample));
-    if (block.rows != 0) recorded_.push_back(std::move(block));
-    recorded_samples_.insert(recorded_samples_.end(), std::make_move_iterator(selected.begin()),
-                              std::make_move_iterator(selected.end()));
+    retained_.insert(retained_.end(), std::make_move_iterator(selected.begin()),
+                     std::make_move_iterator(selected.end()));
     if (contacts_ != nullptr)
         contacts_->publish_accounted_attachments(std::move(contact_samples),
                                                  std::move(final_attachment_errors));
@@ -578,7 +613,15 @@ WireObject PeriodAccounting::state_wire() const {
             {"buffered_intervals", Wire(static_cast<std::int64_t>(buffer_.raws().size()))}};
 }
 
-SampleColumns PeriodAccounting::recorded_columns() const { return join_columns(recorded_); }
+SampleColumns PeriodAccounting::recorded_columns() const {
+    // The retained index is authoritative; the flat projection is
+    // materialized on demand rather than stored as per-period blocks.
+    return make_columns(retained_, config_.columns);
+}
+
+OwnedNativeEpisode PeriodAccounting::seal_episode() const {
+    return OwnedNativeEpisode::seal(generation_, retained_, config_.columns);
+}
 
 } // namespace runtime
 

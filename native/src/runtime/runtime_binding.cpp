@@ -459,7 +459,7 @@ parse_step_state(const runtime::BootstrapState &bootstrap) {
                                               "state.runtime"),
                         .path = "state.runtime"};
     wire::exact(rt, wire::keys(
-                        "step", "generation", "record_decimation",
+                        "step", "generation", "measurement_decimation",
                         "applied_control", "held_control",
                         "held_rider_terms", "rollback_hold",
                         "research_accounting_valid", "initializing",
@@ -475,11 +475,11 @@ parse_step_state(const runtime::BootstrapState &bootstrap) {
                         rt.child("generation"));
     if (out.generation <= 0)
         wire::invalid(rt.child("generation"), "expected positive integer");
-    out.record_decimation =
-        wire::integer32(wire::field(rt, "record_decimation"),
-                        rt.child("record_decimation"));
-    if (out.record_decimation <= 0)
-        wire::invalid(rt.child("record_decimation"),
+    out.measurement_decimation =
+        wire::integer32(wire::field(rt, "measurement_decimation"),
+                        rt.child("measurement_decimation"));
+    if (out.measurement_decimation <= 0)
+        wire::invalid(rt.child("measurement_decimation"),
                       "expected positive integer");
     out.applied_control = rider::parse_intent_control(
         wire::field(rt, "applied_control"),
@@ -612,8 +612,8 @@ RuntimeConfig parse_runtime_config(nb::handle raw) {
     constexpr auto required = wire::keys(
         "runtime_schema", "timestep_s", "control_period_s",
         "control_period_steps", "physics_mode", "drive_mode", "strict",
-        "record_decimation", "writer_config", "rider_controller",
-        "rider_intent", "monitors", "geometry");
+        "measurement_decimation", "record_retention", "writer_config",
+        "rider_controller", "rider_intent", "monitors", "geometry");
     wire::exact(root, required);
     if (wire::integer32(wire::field(root, "runtime_schema"),
                         root.child("runtime_schema")) != kRuntimeSchema)
@@ -637,7 +637,18 @@ RuntimeConfig parse_runtime_config(nb::handle raw) {
         wire::invalid(root.child("drive_mode"), "unsupported drive mode");
     out.strict =
         wire::boolean(wire::field(root, "strict"), root.child("strict"));
-    out.record_decimation = positive_int_field(root, "record_decimation");
+    out.measurement_decimation =
+        positive_int_field(root, "measurement_decimation");
+    {
+        const std::string mode = wire::string(
+            wire::field(root, "record_retention"),
+            root.child("record_retention"));
+        if (mode == "off") out.record_retention = runtime::RetentionMode::off;
+        else if (mode == "full") out.record_retention = runtime::RetentionMode::full;
+        else if (mode == "legacy") out.record_retention = runtime::RetentionMode::legacy;
+        else wire::invalid(root.child("record_retention"),
+                           "expected 'off', 'full' or 'legacy'");
+    }
 
     out.writer_config = owned_mapping(root, "writer_config");
     out.rider_controller = owned_mapping(root, "rider_controller");
@@ -841,7 +852,7 @@ BootstrapState parse_bootstrap(nb::handle raw_state, const mjModel &model,
 
     const wire::Dict runtime_section = wire::section(root, "runtime");
     wire::exact(runtime_section,
-                wire::keys("step", "generation", "record_decimation",
+                wire::keys("step", "generation", "measurement_decimation",
                            "applied_control", "held_control",
                            "held_rider_terms", "rollback_hold",
                            "research_accounting_valid", "initializing",
@@ -878,7 +889,7 @@ namespace {
     StepConfig out;
     out.timestep_s = config.timestep_s;
     out.control_period_s = config.control_period_s;
-    out.record_decimation = config.record_decimation;
+    out.measurement_decimation = config.measurement_decimation;
     out.strict = config.strict;
     out.crank_length_m = config.geometry.crank_length_m;
     const wire::Dict rider_cfg{
@@ -1044,13 +1055,14 @@ void NativeRideRuntime::initialize_accounting() {
     const Wire runtime_tree = python_to_wire(bootstrap_.runtime, "state.runtime");
     const auto &runtime = sample_wire::object(runtime_tree);
     bootstrap_accounting_state_.energy = bootstrap_step_state_.energy;
-    // _last_endpoint_mass (physical_runtime.py:452) needs no explicit
+    // _last_endpoint_mass and _last_measurement_source need no explicit
     // init here: the draining buffer always starts at interval 0, and
-    // 0 % record_decimation == 0 makes that raw measured, so the close
-    // scan populates the field before any unmeasured row can read it.
-    // Nullopt is also the oracle's value after restore — Python does not
-    // persist it either.
+    // 0 % measurement_decimation == 0 makes that raw measured, so the
+    // close scan populates both fields before any unmeasured row can
+    // read them. Nullopt is also the oracle's value after restore —
+    // Python does not persist them either.
     bootstrap_accounting_state_.last_endpoint_mass = std::nullopt;
+    bootstrap_accounting_state_.last_measurement_source = std::nullopt;
     bootstrap_accounting_state_.history = WorkHistory::from_wire(
         sample_wire::object(sample_wire::required(runtime, "history")));
     bootstrap_accounting_state_.model_status = ModelStatus::from_wire(
@@ -1065,8 +1077,8 @@ void NativeRideRuntime::initialize_accounting() {
         throw std::invalid_argument("state.runtime: t=0 bootstrap contains accounted intervals");
     if (bootstrap_accounting_state_.monitor.strict != config_.strict)
         throw std::invalid_argument("state.runtime.monitor.strict: disagrees with config.strict");
-    if (bootstrap_step_state_.record_decimation != config_.record_decimation)
-        throw std::invalid_argument("state.runtime.record_decimation: disagrees with config.record_decimation");
+    if (bootstrap_step_state_.measurement_decimation != config_.measurement_decimation)
+        throw std::invalid_argument("state.runtime.measurement_decimation: disagrees with config.measurement_decimation");
     const Wire articulated_tree = python_to_wire(config_.rider_controller, "config.rider_controller");
     const auto &articulated = sample_wire::object(articulated_tree);
     const auto nonnegative = [&](const char *name) {
@@ -1081,7 +1093,8 @@ void NativeRideRuntime::initialize_accounting() {
         .grip_pull_n = nonnegative("grip_pull_per_hand_n"), .max_gap_m = nonnegative("link_max_gap_m")};
     accounting_config_.timestep_s = config_.timestep_s;
     accounting_config_.period_steps = static_cast<std::size_t>(config_.control_period_steps);
-    accounting_config_.record_decimation = config_.record_decimation;
+    accounting_config_.measurement_decimation = config_.measurement_decimation;
+    accounting_config_.retention = config_.record_retention;
     accounting_config_.battery_enabled = stepper_->drive().config().policies.battery.enabled;
     const mjModel *const model = stepper_->model();
     accounting_config_.max_dofs = static_cast<std::size_t>(model->nv);
@@ -1345,6 +1358,17 @@ nb::list NativeRideRuntime::recorded_intervals() const {
     return result;
 }
 
+OwnedNativeEpisode NativeRideRuntime::seal_episode() {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    {
+        const nb::gil_scoped_release release;
+        flush_accounting();
+    }
+    emit_reference_warning();
+    return accounting_->seal_episode();
+}
+
 void NativeRideRuntime::release_samples() {
     const AdvancementGuard guard(advancing_);
     require_open();
@@ -1486,6 +1510,7 @@ void bind_runtime_class(const nb::module_ &module) {
         .def("accounting_state", &NativeRideRuntime::accounting_state)
         .def("recorded_columns", &NativeRideRuntime::recorded_columns)
         .def("recorded_intervals", &NativeRideRuntime::recorded_intervals)
+        .def("seal_episode", &NativeRideRuntime::seal_episode)
         .def("release_samples", &NativeRideRuntime::release_samples)
         .def("set_finish_position", &NativeRideRuntime::set_finish_position, nb::arg("position_m"))
         .def("_test_fail_at_step", &NativeRideRuntime::test_fail_at_step, nb::arg("step"))

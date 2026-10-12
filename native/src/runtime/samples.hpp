@@ -80,14 +80,32 @@ struct RuntimeSampleBatch {
     SampleColumns columns;
 };
 
+// An owned immutable prefix of the retained sample index (design A2).
+// The shared_ptr vector references the same const PhysicalSampleData the
+// accounting layer published, so the episode survives runtime reset(),
+// close() and destruction. `columns` is a by-value ColumnLayout copy — the
+// flat-column projection needs no live runtime or model pointer.
+struct OwnedNativeEpisode {
+    int generation = 0;
+    std::vector<SamplePtr> samples;
+    ColumnLayout columns;
+    // The production copy leg behind PeriodAccounting::seal_episode():
+    // retains the published immutable SamplePtrs and the column layout by
+    // value. It lives on the episode type so the contract sweep exercises
+    // exactly this allocation path (PeriodAccounting itself is not
+    // reachable from the contract binary).
+    [[nodiscard]] static OwnedNativeEpisode seal(
+        int generation, std::span<const SamplePtr> retained,
+        const ColumnLayout &columns);
+    // Range/type domains validate BEFORE any boxing; a rejected batch
+    // leaves the episode untouched (row_count rows admit start == row_count
+    // as the empty suffix).
+    [[nodiscard]] RuntimeSampleBatch batch(std::int64_t start,
+                                           std::int64_t limit) const;
+};
+
 [[nodiscard]] SampleColumns make_columns(std::span<const SamplePtr> samples,
                                         const ColumnLayout &layout);
-// Blocks avoid copying the entire episode whenever a period is published.
-struct RecordedBlock {
-    std::size_t rows = 0;
-    SampleColumns columns;
-};
-[[nodiscard]] SampleColumns join_columns(std::span<const RecordedBlock> blocks);
 
 struct WorkHistory {
     WireObject work_j;

@@ -415,32 +415,28 @@ SampleColumns make_columns(std::span<const SamplePtr> samples,
     return result;
 }
 
-SampleColumns join_columns(std::span<const RecordedBlock> blocks) {
-    std::size_t total = 0;
-    for (const auto &block : blocks) {
-        if (block.rows > std::numeric_limits<std::size_t>::max() - total)
-            throw std::overflow_error("recorded column row count overflow");
-        total += block.rows;
-    }
-    SampleColumns result;
-    std::size_t offset = 0;
-    for (const auto &block : blocks) {
-        for (const auto &[name, values] : block.columns) {
-            if (values.size() != block.rows)
-                throw std::logic_error("recorded column block width mismatch");
-            // Block columns are sorted: an end hint keeps fresh-column
-            // inserts at the tail; an empty column marks the insert.
-            const auto slot = result.try_emplace(result.end(), name);
-            if (slot->second.empty())
-                slot->second.assign(total,
-                                    std::numeric_limits<double>::quiet_NaN());
-            const auto destination =
-                std::span<double>(slot->second).subspan(offset, block.rows);
-            std::ranges::copy(values, destination.begin());
-        }
-        offset += block.rows;
-    }
-    return result;
+OwnedNativeEpisode OwnedNativeEpisode::seal(
+    int generation, std::span<const SamplePtr> retained,
+    const ColumnLayout &columns) {
+    return {.generation = generation,
+            .samples = std::vector<SamplePtr>(retained.begin(),
+                                              retained.end()),
+            .columns = columns};
+}
+
+RuntimeSampleBatch OwnedNativeEpisode::batch(std::int64_t start,
+                                             std::int64_t limit) const {
+    const auto size = static_cast<std::int64_t>(samples.size());
+    if (start < 0 || start > size)
+        throw std::invalid_argument("episode batch start is outside the retained extent");
+    if (limit < 1)
+        throw std::invalid_argument("episode batch limit must be positive");
+    const auto last = start + std::min(limit, size - start);
+    std::vector<SamplePtr> slice(samples.begin() + start,
+                                 samples.begin() + last);
+    SampleColumns flat = make_columns(slice, columns);
+    return {.generation = generation, .samples = std::move(slice),
+            .columns = std::move(flat)};
 }
 
 void WorkHistory::add(const PhysicalSampleData &sample) {

@@ -978,7 +978,7 @@ PhysicalStep::PhysicalStep(
     const std::size_t nv = static_cast<std::size_t>(m->nv);
     component_out_.assign(nv, 0.);
     mul_scratch_.assign(nv, 0.);
-    record_decimation_ = config_.record_decimation;
+    measurement_decimation_ = config_.measurement_decimation;
 }
 
 // ---- forward/step deduplication ----------------------------------------
@@ -1320,7 +1320,7 @@ RawStep PhysicalStep::advance_body(
         // computed once here so raw.full and the measurement gate stay
         // one value (step_ is committed only at publish_raw's tail).
         const bool full =
-            step_ % record_decimation_ == 0 ||
+            step_ % measurement_decimation_ == 0 ||
             (step_ + 1) % control_clock_.steps_per_period == 0;
         WireObject mass0 = full ? std::move(mass_observations(m, d).wire)
                                 : com_observations(m, d);
@@ -2365,7 +2365,7 @@ StepState PhysicalStep::state() const {
     StepState s;
     s.step = step_;
     s.generation = generation_;
-    s.record_decimation = record_decimation_;
+    s.measurement_decimation = measurement_decimation_;
     s.applied_control = applied_control_;
     s.held_control = control_clock_.held_state();
     s.held_rider_terms = held_rider_terms_;
@@ -2389,7 +2389,7 @@ StepState PhysicalStep::state() const {
 void PhysicalStep::restore(const StepState &s) {
     step_ = s.step;
     generation_ = s.generation;
-    record_decimation_ = s.record_decimation;
+    measurement_decimation_ = s.measurement_decimation;
     applied_control_ = s.applied_control;
     if (s.held_control.has_value())
         control_clock_.hold(*s.held_control);

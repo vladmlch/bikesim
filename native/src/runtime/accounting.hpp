@@ -1,4 +1,4 @@
-// Every physical interval is evaluated, regardless of recording decimation.
+// Every physical interval is evaluated, regardless of measurement decimation.
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -6,6 +6,7 @@
 #include <span>
 #include <string>
 #include <vector>
+#include "config.hpp"
 #include "period_buffer.hpp"
 #include "samples.hpp"
 #include "status.hpp"
@@ -27,11 +28,23 @@ struct StepWork {
 struct AccountingConfig {
     double timestep_s = 0.;
     std::size_t period_steps = 0;
-    int record_decimation = 1;
+    // The energy/momentum measurement cadence — what legacy
+    // `record_decimation` scheduled before the measurement/retention split.
+    int measurement_decimation = 1;
+    RetentionMode retention = RetentionMode::legacy;
     bool battery_enabled = false;
     std::size_t max_dofs = 0;
     AttachmentBudget attachment_budget;
     ColumnLayout columns;
+};
+
+// Identity of the interval that produced the last committed energy
+// measurement — physical_runtime.py's _last_measurement_source. A row that
+// measured its own state cites itself; a row carrying the period's closing
+// measurement cites the interval that measured it.
+struct MeasurementSource {
+    std::int64_t interval_id = 0;
+    double time_s = 0.;
 };
 
 struct AccountingState {
@@ -47,6 +60,10 @@ struct AccountingState {
     // bootstrap decode (a fresh runtime re-derives it from the first
     // measured interval; interval 0 is always measured).
     std::optional<WireObject> last_endpoint_mass;
+    // Same memory-only contract as last_endpoint_mass: the interval that
+    // supplied the last committed energy measurement, for forwarding rows
+    // in a partial tail that holds no measured interval at all.
+    std::optional<MeasurementSource> last_measurement_source;
 };
 
 struct EffortObservation {
@@ -76,7 +93,11 @@ public:
     [[nodiscard]] const AccountingState &state() const noexcept { return state_; }
     [[nodiscard]] WireObject state_wire() const;
     [[nodiscard]] SampleColumns recorded_columns() const;
-    [[nodiscard]] std::span<const SamplePtr> recorded_samples() const noexcept { return recorded_samples_; }
+    [[nodiscard]] std::span<const SamplePtr> recorded_samples() const noexcept { return retained_; }
+    // The owned immutable prefix design A2 publishes: the shared_ptr
+    // index is copied, never moved, so a sealed episode stays valid for
+    // the lifetime of its samples — across acknowledge, reset and close.
+    [[nodiscard]] OwnedNativeEpisode seal_episode() const;
     [[nodiscard]] std::optional<std::string> take_warning() { return state_.monitor.take_warning(); }
 private:
     AccountingConfig config_;
@@ -87,8 +108,10 @@ private:
     rider::SpindleController *controller_;
     writers::RiderContactWriter *contacts_;
     std::vector<SamplePtr> pending_;
-    std::vector<RecordedBlock> recorded_;
-    std::vector<SamplePtr> recorded_samples_;
+    // The retained committed index — independent of pending
+    // acknowledgement/drain. `retention` selects which committed rows it
+    // keeps; recorded_columns() materializes its flat projection lazily.
+    std::vector<SamplePtr> retained_;
     SamplePtr latest_;
 };
 } // namespace runtime

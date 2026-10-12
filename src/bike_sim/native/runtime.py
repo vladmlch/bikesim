@@ -106,6 +106,15 @@ class NativeRideDriver:
         """Release pending delivery, retaining native decimated recording."""
         self._native.release_samples()
 
+    def seal_episode(self):
+        """Seal the committed retained index into an owned immutable episode.
+
+        The trailing partial period is closed first; the returned
+        ``OwnedNativeEpisode`` keeps its samples alive across ``reset()``
+        and ``close()``.
+        """
+        return self._call(self._native.seal_episode)
+
     def recorded_intervals(self):
         return self._native.recorded_intervals()
 
@@ -172,19 +181,31 @@ class NativeRideDriver:
 
 def create_native_ride(sim, *, strict: bool | None = None,
                        record_decimation: int | None = None,
+                       retention: str | None = None,
                        directory=None) -> NativeRideDriver:
-    """Capture a settled t=0 ride and build its independent native owner."""
+    """Capture a settled t=0 ride and build its independent native owner.
+
+    ``record_decimation`` selects the energy/momentum measurement cadence
+    (the measurement schedule). ``retention`` selects which committed
+    samples the recording layer keeps: ``'off'`` none, ``'full'`` every
+    interval, ``'legacy'`` the historical decimated projection (default).
+    """
     physical = getattr(sim, 'physical', None)
     if physical is None:
         raise ValueError('create_native_ride requires a physical ride runtime')
     if strict is not None and not isinstance(strict, bool):
         raise ValueError('strict must be bool')
+    if retention is not None and retention not in ('off', 'full', 'legacy'):
+        raise ValueError(
+            "retention must be 'off', 'full', 'legacy' or None")
     decimation = None if record_decimation is None else _integer(
         record_decimation, 'record_decimation', minimum=1)
     if strict is not None:
         physical.set_strict(strict)
     if decimation is not None:
-        physical.set_record_decimation(decimation)
+        physical.set_measurement_decimation(decimation)
+    if retention is not None:
+        physical.set_recording_retention(retention)
     hold_dir = None
     if directory is None:
         hold_dir = tempfile.TemporaryDirectory(prefix='bike_sim_native_')

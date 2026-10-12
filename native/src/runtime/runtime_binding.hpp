@@ -86,6 +86,10 @@ public:
     [[nodiscard]] nanobind::dict accounting_state() const;
     [[nodiscard]] nanobind::dict recorded_columns() const;
     [[nodiscard]] nanobind::list recorded_intervals() const;
+    // Seals the committed retained index into an owned immutable episode
+    // (design A2). The trailing partial period is closed first, like
+    // flush(); the returned value outlives reset() and close().
+    [[nodiscard]] OwnedNativeEpisode seal_episode();
     void release_samples();
     // Frontend-only finish gate, checked after every committed physics step.
     // Research installs its own experiment limits and leaves this unset.

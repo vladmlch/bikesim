@@ -123,7 +123,11 @@ def test_accounting_all_intervals_is_independent_of_record_decimation():
     # (physical_runtime.py:_close_period / PeriodAccounting::flush), so the
     # decimated ledger carries the last measured interval's energy while the
     # every-run ledger carries interval 80's own.
-    forwarded = {'mechanical_energy_j', 'elastic_energy_j', 'residual_j'}
+    forwarded = {'mechanical_energy_j', 'elastic_energy_j', 'residual_j',
+                 # A2 provenance is part of the forwarded measurement: the
+                 # decimated tail's verdict/source identity points at the
+                 # period's closing measured interval, not its own.
+                 'measured', 'source_interval_id', 'source_time_s'}
     decimated_energy = decimated.accounting_state['energy']
     every_energy = every.accounting_state['energy']
     assert_tree_close(

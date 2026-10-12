@@ -74,7 +74,7 @@ def test_two_hundred_steps_match_scalar_validation_oracle(tmp_path,monkeypatch):
         kwargs['validate_wrench']=True
         return converter(*args,**kwargs)
     def collect():
-        sim.reset();runtime.set_record_decimation(80)
+        sim.reset();runtime.set_measurement_decimation(80)
         rows=[]
         for _ in range(200):
             runtime.step(control=RideControl(human_torque_nm=35.,motor_torque_nm=0.))

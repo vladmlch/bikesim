@@ -1013,7 +1013,8 @@ def _model_status_table() -> TableSpec:
                _f('numerically_valid', 'varchar', 'n/a', 'interval', False,
                   'diagnostic', m,
                   "tri-state numeric verdict: 'true' | 'false' | "
-                  "'not_evaluated' (a string in the source, kept verbatim)"),
+                  "'not_evaluated' (the runtime's bool verdict publishes "
+                  "as lowercase verdict text)"),
                _f('calibration_status', 'varchar', 'n/a', 'interval', False,
                   'declared', m, 'model calibration status string'),
            ), path=('model_status',)),
@@ -1142,6 +1143,15 @@ def _rider_table() -> TableSpec:
            'diagnostic', rctl, 'hip posture share (legacy path)'),
         _f('saturated', 'boolean', 'n/a', 'control_period', True,
            'diagnostic', rctl, 'command clipped by capacity'),
+        _f('active_request_nm', 'double', 'N·m', 'control_period', True,
+           'solved', 'src/bike_sim/sim/ride/rider_effort.py::finalize_effort',
+           'activation-space torque request after effort bounds'),
+        _f('active_delivered_nm', 'double', 'N·m', 'control_period', True,
+           'solved', 'src/bike_sim/sim/ride/rider_effort.py::finalize_effort',
+           'activated torque delivered by the muscle model'),
+        _f('passive_damping_nm', 'double', 'N·m', 'control_period', True,
+           'solved', 'src/bike_sim/sim/ride/rider_effort.py::finalize_effort',
+           'passive tissue damping torque at this joint'),
         _f('solved_force_nm', 'double', 'N·m', 'interval', True, 'solved',
            rctl, 'solved actuator force at this joint'),
         _f('solved_active_nm', 'double', 'N·m', 'interval', True, 'solved',
@@ -1396,6 +1406,11 @@ def _rider_table() -> TableSpec:
            True, 'diagnostic', 'src/bike_sim/sim/ride/period_buffer.py::_effort_observations',
            'positive power over the configured budget',
            path=('rider_effort_budget_exceeded',)),
+        _f('rider_active_positive_power_limit_w', 'double', 'W', 'interval',
+           True, 'declared', 'src/bike_sim/sim/ride/rider_effort.py::finalize_effort',
+           'configured positive-power budget echoed this interval '
+           '(absent when the rider has no active power limit)',
+           path=('rider_active_positive_power_limit_w',)),
         _f('rider_effort_observation', 'varchar', 'n/a', 'interval', True,
            'declared', 'src/bike_sim/sim/ride/period_buffer.py::_effort_observations',
            'effort measurement convention label',
@@ -1424,6 +1439,7 @@ def _rider_table() -> TableSpec:
                          'rider_joint_power_violations',
                          'rider_joint_speed_violations',
                          'rider_effort_budget_exceeded',
+                         'rider_active_positive_power_limit_w',
                          'rider_effort_observation',
                      }))
 

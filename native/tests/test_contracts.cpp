@@ -12,6 +12,7 @@
 #include "../src/tyre/profile.hpp"
 #include "../src/rider/contact_config.hpp"
 #include "../src/rider/support_geometry.hpp"
+#include "../src/runtime/samples.hpp"
 #include "../src/cblas_abi.hpp"
 #include "../src/numeric_norm.hpp"
 #include "../src/writers/cruise.hpp"
@@ -3450,7 +3451,229 @@ namespace {
                       "attachment parsers stay noexcept");
     }
 
-    constexpr std::array<TestCase, 32> cases{{
+    // ---- A2: owned episode sealing and retention --------------------------
+    // OwnedNativeEpisode::seal is the production copy leg behind
+    // PeriodAccounting::seal_episode() (accounting.cpp); driving it directly
+    // lets the sweep prove the retained-index copy publishes nothing on
+    // bad_alloc. PeriodAccounting itself is not linkable here — its link
+    // closure pulls in the engine — so the contract sweeps the seal leg and
+    // the batch leg on an episode built from synthetic SamplePtrs. batch()
+    // covers the slice copy plus the lazy flat-column materialization, the
+    // same make_columns leg recorded_columns() runs.
+
+    constexpr runtime::ColumnLayout episode_layout{
+        .root_x_qpos = 0, .root_x_dof = 0, .root_pitch_qpos = 1};
+
+    std::shared_ptr<runtime::PhysicalSampleData>
+    make_episode_sample(std::int64_t interval_id) {
+        const auto sample = std::make_shared<runtime::PhysicalSampleData>();
+        sample->interval_id = interval_id;
+        sample->time_s = .005 * static_cast<double>(interval_id);
+        sample->end_time_s = sample->time_s + .005;
+        sample->qpos = {1.25 + .001 * static_cast<double>(interval_id), .02};
+        sample->qvel = {4.5};
+        sample->powers_w = {{"external", runtime::Wire(
+            90. + static_cast<double>(interval_id))}};
+        sample->channels = {
+            {"mass", runtime::Wire(runtime::WireObject{
+                {"mass_kg", runtime::Wire(92.)},
+                {"com_m", runtime::Wire(runtime::WireArray{
+                    runtime::Wire(.1), runtime::Wire(0.), runtime::Wire(.5)})},
+            })},
+            {"energy", runtime::Wire(runtime::WireObject{
+                {"mechanical_energy_j", runtime::Wire(1000.)},
+                {"residual_j", runtime::Wire(.25)},
+                {"measured", runtime::Wire(true)},
+                {"source_interval_id", runtime::Wire(interval_id)},
+                {"source_time_s", runtime::Wire(sample->time_s)},
+            })},
+        };
+        return sample;
+    }
+
+    std::vector<runtime::SamplePtr> make_retained(std::size_t rows) {
+        std::vector<runtime::SamplePtr> retained;
+        retained.reserve(rows);
+        for (std::size_t i = 0; i < rows; ++i)
+            retained.push_back(
+                make_episode_sample(static_cast<std::int64_t>(i)));
+        return retained;
+    }
+
+    // make_columns pads absent leaves with NaN and IEEE NaN never compares
+    // ==, so column equivalence reads bits.
+    bool same_columns(const runtime::SampleColumns &a,
+                      const runtime::SampleColumns &b) {
+        if (a.size() != b.size()) return false;
+        auto rhs = b.begin();
+        for (const auto &[name, values] : a) {
+            if (rhs->first != name || rhs->second.size() != values.size())
+                return false;
+            for (std::size_t i = 0; i < values.size(); ++i)
+                if (std::bit_cast<std::uint64_t>(values[i]) !=
+                    std::bit_cast<std::uint64_t>(rhs->second[i]))
+                    return false;
+            ++rhs;
+        }
+        return true;
+    }
+
+    void test_owned_episode_batch_ranges() {
+        const std::vector<runtime::SamplePtr> retained = make_retained(4);
+        const runtime::OwnedNativeEpisode episode =
+            runtime::OwnedNativeEpisode::seal(5, retained, episode_layout);
+        require(episode.generation == 5 && episode.samples.size() == 4,
+                "seal copies the retained extent and generation");
+        for (std::size_t i = 0; i < retained.size(); ++i)
+            require(episode.samples[i] == retained[i],
+                    "seal retains the same immutable sample objects");
+        require_throws_invalid_argument(
+            [&] { static_cast<void>(episode.batch(-1, 2)); },
+            "batch rejects a negative start");
+        require_throws_invalid_argument(
+            [&] { static_cast<void>(episode.batch(5, 1)); },
+            "batch rejects a start past the retained extent");
+        require_throws_invalid_argument(
+            [&] { static_cast<void>(episode.batch(0, 0)); },
+            "batch rejects a zero limit");
+        require_throws_invalid_argument(
+            [&] { static_cast<void>(episode.batch(1, -3)); },
+            "batch rejects a negative limit");
+        const runtime::RuntimeSampleBatch suffix = episode.batch(4, 8);
+        require(suffix.generation == 5 && suffix.samples.empty() &&
+                suffix.columns.empty(),
+                "start == row_count admits the empty suffix");
+        const runtime::RuntimeSampleBatch tail = episode.batch(2, 99);
+        require(tail.samples.size() == 2 && tail.samples[0] == retained[2] &&
+                tail.samples[1] == retained[3],
+                "limit clamps to the retained extent without rejecting");
+        const auto ids = tail.columns.find("interval_id");
+        require(ids != tail.columns.end() && ids->second.size() == 2 &&
+                ids->second[0] == 2. && ids->second[1] == 3.,
+                "flat columns project the sliced intervals");
+        const auto power = tail.columns.find("power_external_w");
+        require(power != tail.columns.end() && power->second.size() == 2 &&
+                power->second[0] == 92. && power->second[1] == 93.,
+                "flat columns project retained interval powers");
+    }
+
+    void test_owned_episode_rejects_malformed_samples() {
+        // A retained row missing its mandatory channel projection cannot be
+        // flattened: batch() surfaces invalid_argument, never a partial map.
+        const std::shared_ptr<runtime::PhysicalSampleData> broken =
+            std::make_shared<runtime::PhysicalSampleData>();
+        broken->end_time_s = .005;
+        broken->qpos = {1.25, .02};
+        broken->qvel = {4.5};
+        const std::array<runtime::SamplePtr, 1> only_broken{broken};
+        const runtime::OwnedNativeEpisode episode =
+            runtime::OwnedNativeEpisode::seal(1, only_broken, episode_layout);
+        require_throws_invalid_argument(
+            [&] { static_cast<void>(episode.batch(0, 1)); },
+            "batch rejects a retained row missing required channels");
+        const std::shared_ptr<runtime::PhysicalSampleData> nonfinite =
+            make_episode_sample(0);
+        nonfinite->powers_w = {{"external", runtime::Wire(
+            std::numeric_limits<double>::infinity())}};
+        const std::array<runtime::SamplePtr, 1> only_bad{nonfinite};
+        const runtime::OwnedNativeEpisode bad_episode =
+            runtime::OwnedNativeEpisode::seal(1, only_bad, episode_layout);
+        require_throws_invalid_argument(
+            [&] { static_cast<void>(bad_episode.batch(0, 1)); },
+            "batch rejects a nonfinite retained power leaf");
+    }
+
+    void test_owned_episode_seal_batch_allocation_faults() {
+        const std::vector<runtime::SamplePtr> retained = make_retained(4);
+        std::vector<const runtime::PhysicalSampleData *> identities;
+        identities.reserve(retained.size());
+        for (const auto &sample : retained) identities.push_back(sample.get());
+
+        const runtime::OwnedNativeEpisode control =
+            runtime::OwnedNativeEpisode::seal(7, retained, episode_layout);
+        const runtime::RuntimeSampleBatch control_batch = control.batch(1, 3);
+
+        // Every allocation position of the seal copy leg: a failed seal
+        // publishes no episode and leaves the retained index untouched.
+        std::size_t seal_positions = 0;
+        {
+            const allocation_faults::Guard guard;
+            allocation_faults::arm(std::numeric_limits<std::size_t>::max());
+            static_cast<void>(runtime::OwnedNativeEpisode::seal(
+                7, retained, episode_layout));
+            seal_positions = allocation_faults::allocated();
+        }
+        require(seal_positions >= 1, "seal copies the retained index");
+        std::cout << "  positions seal_episode = " << seal_positions << '\n';
+        for (std::size_t fail_at = 0; fail_at < seal_positions; ++fail_at) {
+            bool injected = false;
+            {
+                const allocation_faults::Guard guard;
+                allocation_faults::arm(fail_at);
+                try {
+                    static_cast<void>(runtime::OwnedNativeEpisode::seal(
+                        7, retained, episode_layout));
+                } catch (const std::bad_alloc &) {
+                    injected = true;
+                }
+            }
+            require(injected, "an armed seal position ran to completion");
+            require(retained.size() == identities.size(),
+                    "a failed seal kept the retained extent");
+            for (std::size_t i = 0; i < retained.size(); ++i)
+                require(retained[i].get() == identities[i],
+                        "a failed seal kept retained sample identity");
+        }
+        const runtime::OwnedNativeEpisode retried =
+            runtime::OwnedNativeEpisode::seal(7, retained, episode_layout);
+        require(retried.generation == control.generation &&
+                retried.samples.size() == control.samples.size(),
+                "the disarmed seal retry matches the control extent");
+        for (std::size_t i = 0; i < retried.samples.size(); ++i)
+            require(retried.samples[i] == control.samples[i],
+                    "the disarmed seal retry retains identical samples");
+
+        // Every allocation position of the batch leg over the sealed
+        // episode: a failed batch leaves generation/samples/columns
+        // untouched and the retry is bitwise identical to the control.
+        std::size_t batch_positions = 0;
+        {
+            const allocation_faults::Guard guard;
+            allocation_faults::arm(std::numeric_limits<std::size_t>::max());
+            static_cast<void>(control.batch(1, 3));
+            batch_positions = allocation_faults::allocated();
+        }
+        require(batch_positions >= 1,
+                "batch materializes the slice and flat columns");
+        std::cout << "  positions episode_batch = " << batch_positions << '\n';
+        for (std::size_t fail_at = 0; fail_at < batch_positions; ++fail_at) {
+            bool injected = false;
+            {
+                const allocation_faults::Guard guard;
+                allocation_faults::arm(fail_at);
+                try {
+                    static_cast<void>(control.batch(1, 3));
+                } catch (const std::bad_alloc &) {
+                    injected = true;
+                }
+            }
+            require(injected, "an armed batch position ran to completion");
+            require(control.generation == 7 && control.samples.size() == 4 &&
+                    control.samples[2].get() == identities[2],
+                    "a failed batch left the episode untouched");
+        }
+        const runtime::RuntimeSampleBatch retried_batch = control.batch(1, 3);
+        require(retried_batch.generation == control_batch.generation &&
+                retried_batch.samples.size() == control_batch.samples.size() &&
+                retried_batch.samples[0] == control_batch.samples[0] &&
+                same_columns(retried_batch.columns, control_batch.columns),
+                "the disarmed batch retry is bitwise identical");
+        require(retried_batch.columns.find("mechanical_energy_j") !=
+                retried_batch.columns.end(),
+                "batch columns carry the energy channel projection");
+    }
+
+    constexpr std::array<TestCase, 35> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -3483,6 +3706,9 @@ namespace {
         {.name = "rtsan_invalid_status_control", .run = test_rtsan_invalid_status_control},
         {.name = "warm_allocation_matrix", .run = test_warm_allocation_matrix},
         {.name = "rider_contacts_config_domain", .run = test_rider_contacts_config_domain},
+        {.name = "owned_episode_batch_ranges", .run = test_owned_episode_batch_ranges},
+        {.name = "owned_episode_rejects_malformed_samples", .run = test_owned_episode_rejects_malformed_samples},
+        {.name = "owned_episode_seal_batch_allocation_faults", .run = test_owned_episode_seal_batch_allocation_faults},
     }};
 
     int run_case(const TestCase &test_case) {

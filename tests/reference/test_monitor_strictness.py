@@ -30,7 +30,7 @@ def runtime_for_raws(*, strict=True, decimation=1):
                  'motor_positive_j', 'constraint_absolute_j', 'solver_work_j',
                  'active_work_j', 'external_work_j', 'electrical_work_j'):
         setattr(runtime, name, 0.)
-    runtime.set_record_decimation(decimation)
+    runtime.set_measurement_decimation(decimation)
     runtime.set_strict(strict)
     return runtime
 
@@ -151,6 +151,7 @@ def test_headless_tail_failure_preserves_primary_error_and_serializes(tmp_path, 
     from bike_sim.sim.ride import physical_driver, physical_frontend, physical_session
     from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
     runtime = SimpleNamespace(set_strict=lambda value: None,
+        set_recording_retention=lambda value: None,
         reference_monitor=ReferenceMonitor(strict=True), vertices=np.zeros((2, 2)),
         model_status=SimpleNamespace(as_dict=lambda: {'model_valid':False}))
     def step(*args, **kwargs):

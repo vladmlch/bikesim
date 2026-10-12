@@ -68,7 +68,7 @@ def test_torque_sensor_reads_the_previous_solved_crank_torque(tmp_path):
     """The pedelec torque sensor is the pedal-connect torque solved one step earlier, exactly."""
     env = _environment(tmp_path, 0.)
     physical = env.sim.physical
-    physical.set_record_decimation(1)
+    physical.set_measurement_decimation(1)
     sensed, solved = [], []
     for _ in range(400):
         physical.step(control=RideControl(motor_torque_nm=0., human_torque_nm=40.))

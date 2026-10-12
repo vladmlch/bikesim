@@ -77,6 +77,9 @@ void bind_sample_value(const nb::module_ &module) {
                 result[nb::str(name.c_str(), name.size())] = wire::owned_array<double>(force);
             return result;
         })
+        .def_prop_ro("powers_w", [](const RuntimeSample &s) {
+            return wire_object_to_python(s.value->powers_w);
+        })
         .def_prop_ro("channels", [](const RuntimeSample &s) {
             return wire_object_to_python(s.value->channels);
         })
@@ -88,6 +91,12 @@ void bind_batch_value(const nb::module_ &module) {
     nb::class_<RuntimeSampleBatch>(module, "RuntimeSampleBatch")
         .def_ro("generation", &RuntimeSampleBatch::generation)
         .def_prop_ro("size", [](const RuntimeSampleBatch &batch) { return batch.samples.size(); })
+        .def_prop_ro("samples", [](const RuntimeSampleBatch &batch) {
+            nb::list result;
+            for (const auto &sample : batch.samples)
+                result.append(nb::cast(RuntimeSample{.value = sample}));
+            return result;
+        })
         .def_prop_ro("interval_ids", [](const RuntimeSampleBatch &batch) {
             std::vector<std::int64_t> values;
             values.reserve(batch.samples.size());
@@ -98,6 +107,27 @@ void bind_batch_value(const nb::module_ &module) {
             return columns_to_python(batch.columns);
         })
         .def("as_dict_rows", &batch_rows);
+}
+
+// batch(start, limit) accepts exactly the int domain — bool is rejected
+// before any range check so True can never alias index 1 silently.
+std::int64_t episode_index(nb::handle value, const char *name) {
+    if (nb::isinstance<nb::bool_>(value) || !nb::isinstance<nb::int_>(value))
+        throw nb::type_error(name);
+    return nb::cast<std::int64_t>(value);
+}
+
+void bind_episode_value(const nb::module_ &module) {
+    nb::class_<OwnedNativeEpisode>(module, "OwnedNativeEpisode")
+        .def_ro("generation", &OwnedNativeEpisode::generation)
+        .def_prop_ro("row_count", [](const OwnedNativeEpisode &episode) {
+            return episode.samples.size();
+        })
+        .def("batch", [](const OwnedNativeEpisode &episode, nb::handle start,
+                         nb::handle limit) {
+            return episode.batch(episode_index(start, "start"),
+                                 episode_index(limit, "limit"));
+        }, nb::arg("start"), nb::arg("limit"));
 }
 
 PhysicalSampleData history_sample(nb::handle value) {
@@ -178,6 +208,7 @@ void bind_samples(nb::module_ &module) {
     (void)invalid_reference_run;
     bind_sample_value(module);
     bind_batch_value(module);
+    bind_episode_value(module);
     bind_work_probes(module);
 }
 } // namespace runtime

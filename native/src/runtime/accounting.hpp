@@ -41,6 +41,12 @@ struct AccountingState {
     ReferenceMonitor monitor;
     WireObject energy_channels;
     std::vector<ReferenceFailure> period_violations;
+    // The last measured endpoint_mass datum — _last_endpoint_mass in
+    // physical_runtime.py. Memory only: the oracle keeps it as a plain
+    // attribute, so it is deliberately absent from state_wire() and the
+    // bootstrap decode (a fresh runtime re-derives it from the first
+    // measured interval; interval 0 is always measured).
+    std::optional<WireObject> last_endpoint_mass;
 };
 
 struct EffortObservation {

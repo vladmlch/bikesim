@@ -47,7 +47,13 @@ struct ModelStatus {
     Wire numerically_valid = Wire("not_evaluated");
     std::string calibration_status = "parameterized_unvalidated";
 
-    void observe(std::int64_t interval_id, double time_s, const WireObject &channels);
+    // `include_energy=false` mirrors the oracle's masked observe on
+    // unmeasured intervals ({k:v for k,v in channels if k!='energy'}):
+    // the forwarded residual must not feed the sticky numerically_valid
+    // verdict. Other channel checks still run — only the energy verdict
+    // is suppressed.
+    void observe(std::int64_t interval_id, double time_s, const WireObject &channels,
+                 bool include_energy = true);
     [[nodiscard]] WireObject as_wire() const;
     [[nodiscard]] static ModelStatus from_wire(const WireObject &value);
 };

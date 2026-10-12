@@ -357,8 +357,12 @@ PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
         scratch += "_m";
         assigned.emplace_back(scratch, number(com.at(i)));
     }
+    // Decimated rows carry the reduced {mass_kg, com_m} mass channel —
+    // absent leaves surface as NaN in the merged column, exactly like
+    // PhysicalRecorder's flat.get(key, nan) (physical_recorder.py:133).
     for (const auto name : {"kinetic_energy_j", "gravitational_energy_j"})
-        assigned.emplace_back(name, number(required(mass, name)));
+        if (const Wire *value = find(mass, name))
+            assigned.emplace_back(name, number(*value));
     const auto &energy = object(required(channels, "energy"));
     assigned.emplace_back("mechanical_energy_j",
                           number(required(energy, "mechanical_energy_j")));

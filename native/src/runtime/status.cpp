@@ -171,7 +171,7 @@ bool energy_quality_ok(const WireObject &energy) {
 }
 
 void ModelStatus::observe(std::int64_t interval_id, double time_s,
-                          const WireObject &channels) {
+                          const WireObject &channels, bool include_energy) {
     if (interval_id <= last_interval || !std::isfinite(time_s))
         throw std::invalid_argument("model status requires one advancing finite interval");
     const auto reasons = channel_violations(channels, maximum_compression_fraction,
@@ -193,7 +193,8 @@ void ModelStatus::observe(std::int64_t interval_id, double time_s,
     if (!reasons.empty() && !next_first.has_value())
         next_first = WireObject{{"interval_id", Wire(interval_id)}, {"time_s", Wire(time_s)},
                                 {"reasons", sample_wire::strings(reasons)}};
-    if (const Wire *energy = find(channels, "energy")) {
+    if (const Wire *energy = include_energy ? find(channels, "energy")
+                                            : nullptr) {
         const bool was_false = std::holds_alternative<bool>(numerically_valid.value) &&
                                !boolean(numerically_valid);
         next_numerical = Wire(energy_quality_ok(object(*energy)) && !was_false);

@@ -12,9 +12,10 @@
 //      (mj_setConst rewrites qpos, so the integration vector lands after it)
 //
 // The integration vector is restored verbatim — mj_getState/mj_setState
-// round-trip qacc_warmstart exactly, so no forward() runs here; derived
-// mjData fields stay at reset values until the first forward (the same
-// deferral Stepper::set_state documents).
+// round-trip qacc_warmstart exactly; one trailing forward() then
+// re-establishes the derived stages the oracle's reset tail leaves
+// fresh (the running loop's entry forward is conditional on
+// `initializing` and never runs post-bootstrap).
 #include "runtime_binding.hpp"
 #include "samples_binding.hpp"
 
@@ -1025,6 +1026,14 @@ void NativeRideRuntime::apply_bootstrap() {
         // ends with them): step/generation, clocks, filters, contacts,
         // energy and the controller/intent state faces.
         physical_->restore(bootstrap_step_state_);
+        // Oracle: PhysicalRuntime.reset() leaves sim.data fully
+        // forwarded (physical_runtime.py:444), so the running loop's
+        // apply_forces entry forward is conditional on `initializing`
+        // and never runs after bootstrap. mj_setState round-trips only
+        // the integration vector; re-establish the derived stages once
+        // here so the first interval sees the same fresh caches.
+        engine::forward(model, data);
+        stepper_->note_posvel_fresh();
     });
 }
 
@@ -1035,6 +1044,13 @@ void NativeRideRuntime::initialize_accounting() {
     const Wire runtime_tree = python_to_wire(bootstrap_.runtime, "state.runtime");
     const auto &runtime = sample_wire::object(runtime_tree);
     bootstrap_accounting_state_.energy = bootstrap_step_state_.energy;
+    // _last_endpoint_mass (physical_runtime.py:452) needs no explicit
+    // init here: the draining buffer always starts at interval 0, and
+    // 0 % record_decimation == 0 makes that raw measured, so the close
+    // scan populates the field before any unmeasured row can read it.
+    // Nullopt is also the oracle's value after restore — Python does not
+    // persist it either.
+    bootstrap_accounting_state_.last_endpoint_mass = std::nullopt;
     bootstrap_accounting_state_.history = WorkHistory::from_wire(
         sample_wire::object(sample_wire::required(runtime, "history")));
     bootstrap_accounting_state_.model_status = ModelStatus::from_wire(

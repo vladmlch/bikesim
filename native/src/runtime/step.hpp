@@ -81,8 +81,12 @@ struct RawStep {
         rider_control_terms;
     std::vector<std::pair<std::string, double>>
         numerical_constraint_power_w;
-    double loss_step_j = 0., mechanical_energy_j = 0.;
-    WireObject elastic_energy_j;
+    double loss_step_j = 0.;
+    // The energy/momentum solve runs on measured intervals only
+    // (raw.full): disengaged optionals are the oracle's None raws, and
+    // period close forwards the closing measured datum to the rest.
+    std::optional<double> mechanical_energy_j;
+    std::optional<WireObject> elastic_energy_j;
     double battery_energy_j = 0.;
     Wire electrical_power_w{};
     bool invalid_controller = false;
@@ -345,7 +349,12 @@ private:
         double hold = 0.;
         const RideControl *control = nullptr;
         std::optional<writers::RiderPreparedAttachments> prepared;
-        MassObservations mass0;
+        // `mass` channel wire — mass_observations on measured steps,
+        // com_observations' {mass_kg, com_m} otherwise. `full` is the
+        // single measurement gate (step.cpp advance_body computes it
+        // once; raw.full and the energy gate share it).
+        WireObject mass0;
+        bool full = false;
         std::vector<std::pair<std::string, std::vector<double>>> components;
         std::array<int, 3> warning_counts{};
         // Produced by solve_tail, consumed by publish_raw.

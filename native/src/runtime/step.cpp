@@ -907,6 +907,21 @@ std::array<double, 3> compiled_com(const mjModel *m, const mjData *d) {
     return com;
 }
 
+// com_observations (physical_energy.py:45-59) — the decimated-step mass
+// channel: {mass_kg, com_m} only, no momentum/KE/PE keys and no
+// engine::subtree_vel/mul_m calls. Same formulas mass_observations uses,
+// so a com_m column is identical across full and decimated intervals.
+WireObject com_observations(const mjModel *m, const mjData *d) {
+    const auto body_mass = buf(m->body_mass, m->nbody);
+    const double total = numpy_pairwise_sum(body_mass);
+    if (!(total > 0.))
+        throw std::invalid_argument("model has no physical mass");
+    WireObject out;
+    out.emplace_back("mass_kg", Wire(total));
+    out.emplace_back("com_m", wire_vec3(compiled_com(m, d)));
+    return out;
+}
+
 } // namespace
 
 // ---- construction ------------------------------------------------------
@@ -1066,11 +1081,15 @@ PhysicalStep::apply_forces_body(
             contacts_.rear_slip_mps,
             automatic_effort ? control.human_torque_nm
                              : std::optional<double>{});
-        // Oracle: mj_forward. VEL-skip when the pos/vel caches still match
-        // (ctrl/qfrc/xfrc writes above are acceleration-stage inputs and
-        // do not invalidate them); a brake or transmission model write
-        // falls back to the full stage.
-        refresh_forward(m, d);
+        // Oracle: the apply_forces entry forward runs only while
+        // `initializing` — init callers mutate qpos/qvel or
+        // constraint-defining model constants between apply_forces calls
+        // and rely on this pass to refresh poses/efc_pos; the running
+        // loop enters with derived state already current from the
+        // post-step forward, so the zero-input solve here would feed
+        // only warmstarts (physical_runtime.py:262-271).
+        if (initializing_)
+            refresh_forward(m, d);
 
         accumulator_.clear();
         const std::span<const std::string_view> susp_names =
@@ -1293,7 +1312,18 @@ RawStep PhysicalStep::advance_body(
         std::optional<writers::RiderPreparedAttachments> prepared;
         if (rider_control_.has_value())
             prepared = stepper_->rider_contacts().prepare_attachment_raw(d);
-        const MassObservations mass0 = mass_observations(m, d);
+        // Oracle (physical_runtime.py:596-603): the energy/momentum
+        // solve belongs to full telemetry intervals only; every raw of a
+        // period reports the period's closing measurement. Decimated
+        // intervals keep the compiled mass and CoM rows the per-interval
+        // truth consumers read, at kinematic cost only. `full` is
+        // computed once here so raw.full and the measurement gate stay
+        // one value (step_ is committed only at publish_raw's tail).
+        const bool full =
+            step_ % record_decimation_ == 0 ||
+            (step_ + 1) % control_clock_.steps_per_period == 0;
+        WireObject mass0 = full ? std::move(mass_observations(m, d).wire)
+                                : com_observations(m, d);
         last_force_sample_ = ForceSample{.time_s = t,
                                          .qpos = q,
                                          .qvel = v,
@@ -1324,7 +1354,8 @@ RawStep PhysicalStep::advance_body(
                            .hold = hold,
                            .control = &control,
                            .prepared = std::move(prepared),
-                           .mass0 = mass0,
+                           .mass0 = std::move(mass0),
+                           .full = full,
                            .components = std::move(components),
                            .warning_counts = warning_counts});
 }
@@ -1507,7 +1538,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         const double front = in.front, rear = in.rear;
         const bool braking = in.braking;
         const RideControl &control = *in.control;
-        const MassObservations &mass0 = in.mass0;
+        const WireObject &mass0 = in.mass0;
         ForceMap components = std::move(in.components);
         const writers::RiderSettleOutcome &settle = in.settle;
         const std::optional<std::string> &contact_crash = in.contact_crash;
@@ -1517,7 +1548,20 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         const double linkage_error = in.linkage_error;
         const double shock_limit_power = in.shock_limit_power;
         const double loss_step = in.loss_step;
-        const auto [mass, elastic, total] = energy_state();
+        // Oracle (physical_runtime.py:667): `energy_state(self) if full
+        // else (None,None,None)` — the endpoint momentum/elastic solve
+        // runs on measured intervals only; unmeasured raws carry the
+        // period's closing values (period close mirrors _close_period).
+        std::optional<MassObservations> mass;
+        std::optional<WireObject> elastic;
+        std::optional<double> total;
+        if (in.full) {
+            auto [measured_mass, measured_elastic, measured_total] =
+                energy_state();
+            mass = std::move(measured_mass);
+            elastic = std::move(measured_elastic);
+            total = measured_total;
+        }
         wire_set(drive, "chain_power_w",
                  Wire(dot(require_component(components, "chain"), v)));
         {
@@ -1601,15 +1645,15 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
                             : stepper_->suspension().shock_dofadr())]));
         suspension.emplace_back("generalized_force_components_n",
                                 Wire(std::move(gen_forces)));
-        const bool full =
-            step_ % record_decimation_ == 0 ||
-            (step_ + 1) % control_clock_.steps_per_period == 0;
+        // `in.full` is the measurement gate advance_body computed before
+        // the interval's mass0 capture — one value drives both the mass
+        // channel shape and raw.full (physical_runtime.py:600-601).
         WireObject channels;
         channels.emplace_back("tires", Wire(tires));
         channels.emplace_back("drive", Wire(std::move(drive)));
         channels.emplace_back("suspension", Wire(std::move(suspension)));
         channels.emplace_back("sensors", Wire(sensors));
-        channels.emplace_back("mass", Wire(mass0.wire));
+        channels.emplace_back("mass", Wire(mass0));
         if (contact_crash.has_value())
             channels.emplace_back("contact_crash_cause",
                                   Wire(*contact_crash));
@@ -1647,7 +1691,9 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             Wire(wire_contacts_diagnostics(in.rider_diag)));
         diagnostics.emplace_back("rider_welds",
                                  Wire(wire_settled_welds(settle)));
-        diagnostics.emplace_back("endpoint_mass", Wire(mass.wire));
+        diagnostics.emplace_back(
+            "endpoint_mass",
+            mass.has_value() ? Wire(mass->wire) : Wire(nullptr));
         if (config_.intent.enabled)
             diagnostics.emplace_back("rider_intent",
                                      Wire(wire_intent(rider_intent_.intent())));
@@ -1693,7 +1739,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.numerical_constraint_power_w = in.constraint_powers;
         raw.loss_step_j = loss_step;
         raw.mechanical_energy_j = total;
-        raw.elastic_energy_j = elastic;
+        raw.elastic_energy_j = std::move(elastic);
         raw.battery_energy_j = stepper_->drive().battery_energy_j();
         raw.electrical_power_w = in.electrical_power_w;
         raw.invalid_controller =
@@ -1706,7 +1752,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             raw.effort_base = WireObject{};
         }
         raw.constraint_snapshot = last_constraint_snapshot_;
-        raw.full = full;
+        raw.full = in.full;
         step_ += 1;
         if (contact_crash.has_value() && !crash_detector_.event().has_value())
             crash_detector_.set_event(CrashEvent{

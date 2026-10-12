@@ -6,6 +6,7 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <ranges>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
@@ -132,8 +133,14 @@ double external_work(const RawStep &raw, double dt_s) {
     return sum + correction;
 }
 
+// `total_j`/`elastic` are the row's EFFECTIVE energy: the raw's own
+// measurement on measured intervals, the period's closing forward
+// otherwise (physical_runtime.py:783-789 — the oracle's `total, elastic`
+// after the unmeasured-raw substitution). The ledger mirrors the
+// published values; residual_j subtracts the row's own accumulators.
 WireObject account_energy(AccountingState &state, const AccountingConfig &config,
-                           const RawStep &raw, const StepWork &work) {
+                           const RawStep &raw, const StepWork &work,
+                           double total_j, const WireObject &elastic) {
     auto &e = state.energy;
     if (!e.initial_energy_j.has_value() || !e.initial_battery_j.has_value())
         throw std::invalid_argument("accounting requires initialized energy baselines");
@@ -147,15 +154,15 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
     e.active_work_j += work.muscle_signed_j + work.motor_signed_j;
     e.external_work_j += external_work(raw, config.timestep_s);
     e.electrical_work_j += number(raw.electrical_power_w) * config.timestep_s;
-    e.mechanical_energy_j = raw.mechanical_energy_j;
-    e.elastic_energy_j = raw.elastic_energy_j;
-    e.residual_j = raw.mechanical_energy_j - *e.initial_energy_j - e.active_work_j -
+    e.mechanical_energy_j = total_j;
+    e.elastic_energy_j = elastic;
+    e.residual_j = total_j - *e.initial_energy_j - e.active_work_j -
                    e.external_work_j + e.loss_j;
     const double source_positive = e.muscle_positive_j + e.motor_positive_j;
     const bool work_ok = constraint_work_ok(e.constraint_absolute_j, source_positive);
     WireObject result{
-        {"mechanical_energy_j", Wire(raw.mechanical_energy_j)},
-        {"elastic_energy_j", Wire(raw.elastic_energy_j)},
+        {"mechanical_energy_j", Wire(total_j)},
+        {"elastic_energy_j", Wire(elastic)},
         {"active_work_j", Wire(e.active_work_j)}, {"external_work_j", Wire(e.external_work_j)},
         {"loss_j", Wire(e.loss_j)}, {"loss_step_j", Wire(raw.loss_step_j)},
         {"solver_constraint_work_j", Wire(e.solver_work_j)}, {"energy_scale_j", Wire(e.energy_scale_j)},
@@ -173,10 +180,18 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
     return result;
 }
 
-void add_detail(WireObject &channels, const RawStep &raw,
+// `endpoint_mass` is the row's EFFECTIVE endpoint datum — the measured
+// raw's own dict, or the forwarded last-measured one for an unmeasured
+// close-out row (physical_runtime.py:824-831). By value so each
+// published sample owns one deep copy, like the oracle's dict();
+// raw.diagnostics is never mutated (restore returns captures untouched).
+void add_detail(WireObject &channels, const RawStep &raw, Wire endpoint_mass,
                 const AttachmentSamples &attachments, const EffortObservation &effort,
                 const WorkHistory &history, double dt_s) {
-    for (const auto key : {"rider", "rider_welds", "endpoint_mass", "rider_ik_saturation", "rider_support_targets"})
+    set(channels, "rider", required(raw.diagnostics, "rider"));
+    set(channels, "rider_welds", required(raw.diagnostics, "rider_welds"));
+    set(channels, "endpoint_mass", std::move(endpoint_mass));
+    for (const auto key : {"rider_ik_saturation", "rider_support_targets"})
         set(channels, key, required(raw.diagnostics, key));
     const Wire &intent = required(raw.diagnostics, "rider_intent");
     WireObject intent_fields;
@@ -350,6 +365,33 @@ void PeriodAccounting::flush() {
     // identical value at the identical position — so a retried period
     // publishes byte-identical samples.
     const auto raws = buffer_.mutable_raws();
+    // Oracle _close_period (physical_runtime.py:741-757): the
+    // energy/momentum solve runs on measured (raw.full) intervals only.
+    // A raw that measured its state reports its own energy; an
+    // unmeasured raw carries the closing measurement of its period. A
+    // crash or flush can drain a partial period holding no measured
+    // interval at all — then the ledger keeps its previous datum instead
+    // of fabricating one. The scan is read-only: raws stay intact for the
+    // retry path, and staged.last_endpoint_mass commits only with the
+    // rest of the staged state.
+    std::optional<double> closing_total;
+    std::optional<WireObject> closing_elastic;
+    std::optional<WireObject> endpoint_mass = staged.last_endpoint_mass;
+    for (const RawStep &raw : std::ranges::reverse_view(raws)) {
+        if (!raw.mechanical_energy_j.has_value()) continue;
+        closing_total = raw.mechanical_energy_j;
+        closing_elastic = raw.elastic_energy_j;
+        const Wire &captured = required(raw.diagnostics, "endpoint_mass");
+        endpoint_mass = is_none(captured)
+                            ? std::nullopt
+                            : std::optional<WireObject>(object(captured));
+        break;
+    }
+    if (!closing_total.has_value()) {
+        closing_total = staged.energy.mechanical_energy_j;
+        closing_elastic = staged.energy.elastic_energy_j;
+    }
+    staged.last_endpoint_mass = endpoint_mass;
     struct PublishedRow {
         std::shared_ptr<PhysicalSampleData> sample;
         std::shared_ptr<ConstraintSnapshot> snapshot;  // restore donor
@@ -392,7 +434,19 @@ void PeriodAccounting::flush() {
             auto effort = controller_ == nullptr ? EffortObservation{} :
                                                    observe_effort(raw, *controller_, config_.timestep_s);
             auto violations = interval_violations(raw, attachments, config_.attachment_budget, effort);
-            staged.energy_channels = account_energy(staged, config_, raw, raw_work(raw, config_.timestep_s));
+            // Oracle (physical_runtime.py:783-789): a measured raw
+            // reports its own energy; an unmeasured one publishes the
+            // period's closing total/elastic — dict(closing_elastic)
+            // semantics are automatic here since account_energy emits a
+            // fresh WireObject per row.
+            const bool measured = raw.mechanical_energy_j.has_value();
+            const double total_j = measured ? *raw.mechanical_energy_j
+                                            : *closing_total;
+            const WireObject &elastic =
+                measured ? engaged(raw.elastic_energy_j)
+                         : engaged(closing_elastic);
+            staged.energy_channels = account_energy(staged, config_, raw, raw_work(raw, config_.timestep_s),
+                                                    total_j, elastic);
             if (index + 1 == raws.size() &&
                 !boolean(required(staged.energy_channels, "constraint_work_ok")))
                 violations.emplace_back("energy.constraint_work");
@@ -405,9 +459,27 @@ void PeriodAccounting::flush() {
                 index + 1 == raws.size() ? Wire(staged.energy_channels)
                                          : Wire(std::move(staged.energy_channels)));
             set(channels, "attachment_violations", strings(violations));
-            if (raw.full || index + 1 == raws.size())
-                add_detail(channels, raw, attachments, effort, staged.history, config_.timestep_s);
-            staged.model_status.observe(raw.interval_id, raw.time_s, channels);
+            if (raw.full || index + 1 == raws.size()) {
+                // endpoint_mass: the raw's own measured dict, else the
+                // forwarded last-measured datum (physical_runtime.py
+                // :824-831). The by-value lane keeps the measured path at
+                // exactly one deep copy, matching the old set() call.
+                const Wire &captured = required(raw.diagnostics, "endpoint_mass");
+                add_detail(channels, raw,
+                           is_none(captured)
+                               ? (staged.last_endpoint_mass.has_value()
+                                      ? Wire(*staged.last_endpoint_mass)
+                                      : Wire(nullptr))
+                               : captured,
+                           attachments, effort, staged.history, config_.timestep_s);
+            }
+            // Energy quality judges a measurement; unmeasured intervals
+            // carry a forwarded closing total whose hybrid residual must
+            // not feed the (sticky) numerically_valid verdict — observe
+            // the channels WITHOUT the energy lane, like the oracle's
+            // masked dict.
+            staged.model_status.observe(raw.interval_id, raw.time_s, channels,
+                                        /*include_energy=*/measured);
             set(channels, "model_status", Wire(staged.model_status.as_wire()));
             published.push_back({.sample = std::make_shared<PhysicalSampleData>(),
                                  .snapshot = nullptr});

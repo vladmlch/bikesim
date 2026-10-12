@@ -13,7 +13,6 @@ retried while the process lives (R04, R16).
 """
 from collections.abc import Iterator
 from pathlib import Path
-import time
 
 from bike_sim.recording.contracts import (
     EpisodeEvidence, InputEvent, RunMetadata,
@@ -67,7 +66,7 @@ class EpisodeJournal:
             received_wall_s=float(received_wall_s),
             processed_step=int(processed_step),
             applied_step=applied_step,
-            values={'processed_wall_s': time.monotonic(), **({} if values is None else values)})
+            values={} if values is None else values)
         self._capture.event(event)
         self.next_id += 1
         return event

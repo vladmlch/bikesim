@@ -161,7 +161,7 @@ class TableBatch:
             if isinstance(column, np.ndarray):
                 column = freeze(column)
             else:
-                column = tuple(freeze(item) for item in column)
+                column = tuple(column)
             frozen[str(name)] = column
         object.__setattr__(self, 'columns', MappingProxyType(frozen))
 

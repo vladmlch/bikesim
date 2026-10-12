@@ -99,9 +99,9 @@ def render_report(reader):
             lines.append(f'| `{table}.{name}` | {field["unit"]} / {field["phase"]} | '
                          f'{values["finite"]} | {values["n"]-values["present"]} | '
                          f'{values["present"]-values["finite"]} | {_value(minimum)} | {_value(maximum)} |')
-        lines += ['', 'Reproduce each extrema row using the named table/field with '
-                  f'`WHERE episode_id={identity}` and `isfinite(FIELD)`. '
-                  'For `channel_energy` fields marked `forwarded` in `field_catalog`, '
+        lines += ['', 'Reproduce each extrema row as `SELECT min(FIELD), max(FIELD) '
+                  f'FROM TABLE WHERE episode_id={identity} AND isfinite(FIELD)`; '
+                  'for `channel_energy` fields marked `forwarded` in `field_catalog`, '
                   'also require `measured IS TRUE`. For phase `episode`, select the '
                   'last `interval_id` instead of aggregating cumulative values.', '',
                   '### Recorded component power integrals', '',

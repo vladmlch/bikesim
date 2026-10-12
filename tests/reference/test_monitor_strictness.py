@@ -146,8 +146,7 @@ def test_reset_enters_new_episode_before_preparing_an_explicit_initial_state():
 
 
 @pytest.mark.parametrize('tail_error', [ValueError, RuntimeError, ArithmeticError])
-def test_headless_tail_failure_preserves_primary_error_and_serializes(tmp_path, monkeypatch, tail_error):
-    import json
+def test_headless_tail_failure_preserves_primary_error_without_files(tmp_path, monkeypatch, tail_error):
     from bike_sim.sim.ride import physical_driver, physical_frontend, physical_session
     from bike_sim.sim.ride.reference_monitor import ReferenceMonitor
     runtime = SimpleNamespace(set_strict=lambda value: None,
@@ -174,19 +173,23 @@ def test_headless_tail_failure_preserves_primary_error_and_serializes(tmp_path, 
     # The backend-neutral driver binds PhysicalRecorder at physical_driver
     # import time; the summary is still resolved through physical_session.
     monkeypatch.setattr(physical_driver, 'PhysicalRecorder', lambda *args:recorder)
-    monkeypatch.setattr(physical_session, 'physical_summary',
-                        lambda sim,meta,reason:dict(meta, reason=reason,
-                            outcome=dict(reason=reason, time_s=sim.time_s,
-                                         position_m=sim.position_m)))
+    captured = {}
+    def fake_summary(sim, meta, reason):
+        captured['meta'], captured['reason'] = dict(meta), reason
+        return dict(meta, reason=reason,
+                    outcome=dict(reason=reason, time_s=sim.time_s,
+                                 position_m=sim.position_m))
+    monkeypatch.setattr(physical_session, 'physical_summary', fake_summary)
     args=SimpleNamespace(out=tmp_path,decimate=1,duration=.01,no_plots=True,
         resolved_physics=None)
     assert physical_session.run_physical_headless(
         SimpleNamespace(name='probe',length_m=100.),args,0,None) == 1
-    summary=json.loads((tmp_path/'failed'/'summary.json').read_text())
-    assert summary['reason'] == 'simulation_error'
-    # run_headless records failures as 'Type: message' (the env.error contract).
-    assert summary['failure'] == 'ValueError: primary integration failure'
-    assert 'tail publication failure' in summary['tail_failure']
+    # The failure evidence is the metadata contract — a non-recording
+    # launch serializes nothing under --out.
+    assert captured['reason'] == 'simulation_error'
+    assert captured['meta']['failure'] == 'ValueError: primary integration failure'
+    assert 'tail publication failure' in captured['meta']['tail_failure']
+    assert not (tmp_path/'failed').exists()
 
 
 @pytest.mark.parametrize('primary_type',[RuntimeError,InvalidReferenceRun])

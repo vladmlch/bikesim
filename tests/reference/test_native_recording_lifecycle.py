@@ -214,6 +214,13 @@ def test_viewer_ctrl_c_adds_no_control_and_still_finalizes(tmp_path, monkeypatch
                              advance_failures={3: KeyboardInterrupt()})
     with pytest.raises(KeyboardInterrupt):
         run_viewer(driver, out_root=tmp_path, capture=_capture(published))
+    # Ctrl-C is an operator stop, not a simulation failure: the sealed
+    # episode and the driver's failure metadata say so.
+    assert driver.seal_calls == [(1, 0, 'operator_stop')]
+    assert driver.metadata.get('failure') is None
+    episodes = list(published[0][0].iter_episodes())
+    assert len(episodes) == 1
+    assert episodes[0].summary['outcome']['reason'] == 'operator_stop'
     # No hidden control action after the interrupt: the journal holds only
     # episode_start plus seal-time derived facts for the committed prefix.
     assert driver.advance_calls == 3
@@ -459,9 +466,6 @@ def _headless_driver(clock=None):
             self.time_s = self.step*self.dt_s
             if self.step >= 6:
                 self.reason = 'duration_reached'
-        def export(self, directory, *, reason):
-            self.events.append(('export', self.generation))
-            return self.summary(reason)
     driver = Headless()
     driver.max_steps = 6
     return driver
@@ -518,54 +522,50 @@ def test_headless_zero_step_failure_keeps_owned_episode(tmp_path, monkeypatch):
     assert driver.closed
 
 
-def test_headless_off_keeps_legacy_export(tmp_path, monkeypatch):
-    import bike_sim.sim.ride.physical_frontend as frontend
-    driver = _headless_driver()
-    monkeypatch.setattr(frontend, 'build_physical_driver',
-                        lambda *args, **kwargs: driver)
-    args = _headless_args(tmp_path)
-    code = frontend.run_headless(SimpleNamespace(name='fake'), args, 0, None)
-    assert code == 0
-    assert driver.events == [('flush', 1), ('export', 1), ('summary', 1)]
-    assert driver.closed
+def test_headless_off_writes_no_artifact_files(native_module, tmp_path):
+    """Without --record a real native headless launch writes NOTHING under
+    --out: no telemetry.csv, intervals.jsonl or preview artifacts — not
+    even empty ones."""
+    from bike_sim.cli import ride
+    from _native_runtime_support import PHYSICS, TRACK
+    args = ride.parse_args([
+        '--physics-config', str(PHYSICS), '--track', str(TRACK),
+        '--backend', 'native', '--check-policy', 'diagnostic',
+        '--headless', '--duration', '0.01', '--no-plots',
+        '--out', str(tmp_path)])
+    track = ride.resolve_track(args.track, seed=args.seed,
+                               length_m=args.length)
+    rider = ride.resolve_rider(args)
+    code = run_headless(track, args, args.seed, rider)
+    # The rough recipe still reports its sticky model violation; the check
+    # outcome is honest even though no artifact was requested or written.
+    assert code == 2
+    assert list(tmp_path.rglob('*')) == []
 
 
-def test_headless_export_failure_preserves_primary_failure(tmp_path, monkeypatch):
-    import bike_sim.sim.ride.physical_frontend as frontend
-    driver = _headless_driver()
-    monkeypatch.setattr(frontend, 'build_physical_driver',
-                        lambda *args, **kwargs: driver)
-    def advance(target, **kwargs):
-        driver.advance_calls += 1
-        raise ValueError('primary integration failure')
-    driver.advance = advance
-    def export(directory, *, reason):
-        raise OSError('disk full')
-    driver.export = export
-    args = _headless_args(tmp_path)
-    with pytest.raises(OSError, match='disk full') as failure:
-        frontend.run_headless(SimpleNamespace(name='fake'), args, 0, None)
-    assert driver.metadata['failure'] == 'ValueError: primary integration failure'
-    assert any('primary integration failure' in note
-               for note in failure.value.__notes__)
-    assert driver.closed
-
-
-def test_headless_success_with_failed_export_is_nonzero(tmp_path, monkeypatch):
-    """A clean run whose requested export fails still exits nonzero."""
-    import bike_sim.sim.ride.physical_frontend as frontend
-    driver = _headless_driver()
-    monkeypatch.setattr(frontend, 'build_physical_driver',
-                        lambda *args, **kwargs: driver)
-    def export(directory, *, reason):
-        raise OSError('disk full')
-    driver.export = export
-    args = _headless_args(tmp_path)
-    with pytest.raises(OSError, match='disk full'):
-        frontend.run_headless(SimpleNamespace(name='fake'), args, 0, None)
-    # No primary failure exists to preserve: the export error propagates raw.
-    assert driver.metadata.get('failure') is None
-    assert driver.closed
+def test_explicit_programmatic_export_still_writes_artifacts(
+        environment_factory, native_module, tmp_path):
+    """driver.export() is the explicit opt-in outside the frontend (R02):
+    a legacy-retention caller still gets the telemetry/intervals/summary
+    files it asked for."""
+    from bike_sim.sim.ride.physical_driver import PhysicalRideDriver
+    driver = PhysicalRideDriver(environment_factory().sim, backend='native',
+                                duration_s=.02, record=None)
+    try:
+        driver.advance(16)
+        driver.flush()
+        out = tmp_path/'explicit'
+        summary = driver.export(out, reason='viewer_closed')
+        assert (out/'telemetry.csv').exists()
+        assert (out/'intervals.jsonl').exists()
+        assert (out/'summary.json').exists()
+        assert summary['outcome']['reason'] == 'viewer_closed'
+        # Legacy retention keeps the decimated projection — real rows,
+        # not a header-only artifact.
+        rows = (out/'telemetry.csv').read_text().strip().splitlines()
+        assert len(rows) > 1
+    finally:
+        driver.close()
 
 
 def test_headless_success_with_failed_publication_is_nonzero(tmp_path, monkeypatch):
@@ -586,6 +586,8 @@ def test_headless_success_with_failed_publication_is_nonzero(tmp_path, monkeypat
 
 
 def test_headless_publish_failure_preserves_primary_and_evidence(tmp_path, monkeypatch):
+    """A failing publisher propagates with the primary sim failure noted;
+    the owned episode stays in the failed capture for retry (R04/R16)."""
     import bike_sim.sim.ride.physical_frontend as frontend
     driver = _headless_driver()
     monkeypatch.setattr(frontend, 'build_physical_driver',
@@ -596,12 +598,15 @@ def test_headless_publish_failure_preserves_primary_and_evidence(tmp_path, monke
     driver.advance = advance
     def boom(capture, out_root):
         raise OSError('publish failed')
+    capture = _capture([], mode='headless', publisher=boom)
     args = _headless_args(tmp_path, record=True)
     with pytest.raises(OSError, match='publish failed') as failure:
         frontend.run_headless(SimpleNamespace(name='fake'), args, 0, None,
-            capture=_capture([], mode='headless', publisher=boom))
+                              capture=capture)
     assert driver.metadata['failure'] == 'RuntimeError: primary boom'
     assert any('primary boom' in note for note in failure.value.__notes__)
+    assert capture.state == 'publication_failed'
+    assert len(list(capture.iter_episodes())) == 1
     assert driver.closed
 
 

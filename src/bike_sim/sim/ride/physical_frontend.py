@@ -200,16 +200,12 @@ def run_headless(track, args, seed, rider, *, capture=None):
                         f'{driver.metadata["failure"]}')
                 raise
         else:
+            # Recording off writes nothing — not even empty artifacts.
+            # Explicit programmatic driver.export() remains the opt-in for
+            # callers that want the legacy bundle (R02).
             reason = _check_tail_failure(driver, reason)
-            try:
-                summary = driver.export(out, reason=reason)
-            except BaseException as export_error:
-                if driver.metadata.get('failure'):
-                    export_error.add_note(
-                        f'primary failure before export: '
-                        f'{driver.metadata["failure"]}')
-                raise
-        if not args.no_plots and driver.recorder.rows:
+            summary = driver.summary(reason=reason)
+        if recording and not args.no_plots and driver.recorder.rows:
             from bike_sim.viz.ride_plots import plot_physical_ride
             plot_physical_ride(driver.recorder.columns(), out)
         from bike_sim.sim.ride.console import outcome
@@ -446,9 +442,14 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
                      "use `uv run --with plotly`)")
         return physical_exit_code(summary['outcome']['reason'], summary)
     except BaseException as error:
-        driver.metadata['failure'] = f'{type(error).__name__}: {error}'
+        # Ctrl-C is an operator action, not a simulation failure — it
+        # seals under the same reason the headless path uses, and it is
+        # not recorded as a driver failure.
+        interrupt = isinstance(error, KeyboardInterrupt)
+        if not interrupt:
+            driver.metadata['failure'] = f'{type(error).__name__}: {error}'
         try:
-            seal_episode('simulation_error')
+            seal_episode('operator_stop' if interrupt else 'simulation_error')
         except BaseException as cleanup:
             error.add_note(f'physical episode sealing failed: {type(cleanup).__name__}: {cleanup}')
         try:

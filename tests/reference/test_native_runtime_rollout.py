@@ -117,11 +117,40 @@ def test_accounting_all_intervals_is_independent_of_record_decimation():
         driver.advance(81)
         driver.flush()
     assert_tree_close(decimated.accounting_state['history'], every.accounting_state['history'])
-    assert_tree_close(decimated.accounting_state['energy'], every.accounting_state['energy'])
+    # Cumulative work/loss ledger fields count every interval and are
+    # decimation-invariant. The point-in-time measurement fields are not:
+    # an unmeasured flush tail forwards the period's closing measurement
+    # (physical_runtime.py:_close_period / PeriodAccounting::flush), so the
+    # decimated ledger carries the last measured interval's energy while the
+    # every-run ledger carries interval 80's own.
+    forwarded = {'mechanical_energy_j', 'elastic_energy_j', 'residual_j'}
+    decimated_energy = decimated.accounting_state['energy']
+    every_energy = every.accounting_state['energy']
+    assert_tree_close(
+        {key: value for key, value in decimated_energy.items() if key not in forwarded},
+        {key: value for key, value in every_energy.items() if key not in forwarded})
+    every_rows = every.drain_samples()
+    rows = {row['interval_id']: row for row in every_rows.as_dict_rows()}
+    period = sim.physical.control_clock.steps_per_period
+    closing_id = max(i for i in range(81)
+                     if i % 7 == 0 or (i + 1) % period == 0)
+    closing = rows[closing_id]['energy']
+    assert_tree_close(decimated_energy['mechanical_energy_j'],
+                      closing['mechanical_energy_j'])
+    assert_tree_close(decimated_energy['elastic_energy_j'],
+                      closing['elastic_energy_j'])
+    # The forwarded residual keeps the tail interval's own accumulators:
+    # residual = total - initial - accumulators, so it equals the every-run's
+    # last residual shifted by (forwarded - own) total — the same formula
+    # test_record_decimation_forwards_period_closing_energy asserts upstream.
+    last = rows[80]['energy']
+    assert_tree_close(decimated_energy['residual_j'],
+                      last['residual_j'] + closing['mechanical_energy_j']
+                      - last['mechanical_energy_j'])
     assert_tree_close(decimated.model_status, every.model_status)
     assert decimated.first_failure == every.first_failure
-    for driver in (every, decimated):
-        assert driver.drain_samples().interval_ids == tuple(range(81))
+    assert every_rows.interval_ids == tuple(range(81))
+    assert decimated.drain_samples().interval_ids == tuple(range(81))
     assert len(every.recorded_columns['interval_id']) == 81
     np.testing.assert_array_equal(decimated.recorded_columns['interval_id'], np.arange(0, 81, 7))
     every.close()

@@ -88,7 +88,7 @@ void append_name(std::string &out, const std::string &name) {
 
 void PhysicalStep::initialize_presentation(PresentationState &out) const {
     out.rider_present = rider_control_.has_value();
-    out.tire_present = stepper_->tire() != nullptr;
+    out.tire_present = stepper_->has_tire();
     const mjModel *const model = stepper_->model();
     const auto fields = model_fields(model);
     for (std::size_t i = 0; i < fields.size(); ++i) out.model_fields[i].resize(fields[i].size());
@@ -170,11 +170,17 @@ void PhysicalStep::capture_presentation(PresentationState &out) const {
     }
     out.tire_slip = {};
     out.tire_mu = {};
-    if (out.tire_present && stepper_->tire_writer().snapshots_committed()) {
-        const auto &tires = stepper_->tire_writer().diagnostic_storage();
-        for (std::size_t i = 0; i < tires.size(); ++i) {
-            out.tire_slip[i] = tires[i].slip_mps;
-            out.tire_mu[i] = tires[i].friction_coefficient;
+    if (out.tire_present) {
+        // The committed storage outlives the borrowed view (it lives on
+        // the writer) — the named view is also what GCC's
+        // -Wdangling-reference needs to see.
+        const TireWriterView view = stepper_->tire_writer();
+        if (view.snapshots_committed()) {
+            const auto &tires = view.diagnostic_storage();
+            for (std::size_t i = 0; i < tires.size(); ++i) {
+                out.tire_slip[i] = tires[i].slip_mps;
+                out.tire_mu[i] = tires[i].friction_coefficient;
+            }
         }
     }
     const auto fields = model_fields(model);

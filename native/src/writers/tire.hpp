@@ -18,50 +18,8 @@
 #include "../config_types.hpp"
 #include "../rtsan.hpp"
 #include "../tyre/profile.hpp"
+#include "tire_common.hpp"
 #include "writer_types.hpp"
-
-// ContactPatch (contact_state.py:19-76) — tire patches always carry
-// source 'terrain' (working_surface=true), no couple, no native force.
-struct TirePatch {
-    std::array<double, 3> point_m;
-    std::array<double, 3> normal;
-    double normal_load_n;
-    double tangent_force_n;
-    double slip_mps;
-    bool working_surface;
-};
-
-// WheelContactSnapshot (contact_state.py:79-190) for one side, plus the
-// effective_radius_m property precomputed the way contact_state.py
-// computes it (load-weighted mean contact drop; unit weights when every
-// patch is unloaded; 0 when there is no patch).
-struct TireSnapshot {
-    double time_s{};
-    std::int64_t interval_id{};
-    std::string backend;
-    bool geometric_contact{};
-    std::array<double, 3> wheel_axis_m{};
-    std::vector<TirePatch> patches;
-    double effective_radius_m{};
-};
-
-// The per-side diagnostics dict the Python writer assembles inside the
-// loop (tire_forces.py:190-199) — exposed for parity checks/debugging.
-struct TireDiagnostics {
-    bool multi_support;
-    double penetration_m;
-    double normal_speed_mps;
-    double slip_mps;
-    double normal_load_n;
-    double tangent_force_n;
-    double friction_coefficient;
-    std::string surface;
-    double branch_release_loss_j;
-    double brush_loss_j;
-    double radial_energy_j;
-    double shear_energy_j;
-    bool outside_material_load_range;
-};
 
 // _BrushState (tire_forces.py:47-53). `xi` is a plain float in Python —
 // the dataclass default is 0.0 and a restored NaN reaches _brush_step's

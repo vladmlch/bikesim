@@ -73,9 +73,13 @@ intervals.
 
 Native capability remains the A/B subset: physical `articulated_effort`, the
 `articulated_planar` rider without pitch assist, spindle pedals / saddle pin /
-grip connects, track-material analytic `compliant_2d` tires, `ideal_mid_drive`,
-no motor clutch and zero reflected rotor inertia. Native selection does not add
-elastic-chain, distributed-tire, alternative-support or legacy drive support.
+grip connects, track-material analytic `compliant_2d` tires and the
+experimental multi-contact `distributed_2d_reference` tyre (unvalidated
+material; see
+[the native distributed tyre audit](superpowers/audits/2026-10-11-native-distributed-tire.md)),
+`ideal_mid_drive`, no motor clutch and zero reflected rotor inertia. Native
+selection does not add elastic-chain, alternative-support or legacy drive
+support.
 
 ## Interactive controls and rendering
 

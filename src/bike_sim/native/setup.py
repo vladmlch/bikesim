@@ -15,6 +15,7 @@ import mujoco
 import numpy as np
 
 from bike_sim.native.config import project as _project_writers
+from bike_sim.physics.distributed_tire import DistributedTireConfig
 from bike_sim.physics.model_config import SimulationPhysicsConfig
 from bike_sim.physics.rider import RiderSpecs
 from bike_sim.physics.tire import TireSpec
@@ -51,7 +52,8 @@ def validate_supported(cfg: SimulationPhysicsConfig,
         'articulated.pedal_attachment': (cfg.articulated.pedal_attachment, ('spindle',)),
         'articulated.saddle_attachment': (cfg.articulated.saddle_attachment, ('pin',)),
         'articulated.grip_attachment': (cfg.articulated.grip_attachment, ('connect',)),
-        'tires.backend': (cfg.tires.backend, ('compliant_2d',)),
+        'tires.backend': (cfg.tires.backend,
+                          ('compliant_2d', 'distributed_2d_reference')),
         'tires.surface_mode': (cfg.tires.surface_mode, ('track',)),
         'drive.transmission_model': (cfg.drive.transmission_model, ('ideal_mid_drive',)),
         'drive.motor_clutch': (cfg.drive.motor_clutch, (False,)),
@@ -61,11 +63,19 @@ def validate_supported(cfg: SimulationPhysicsConfig,
         if actual not in supported:
             _reject(path, actual, supported[0] if len(supported) == 1
                     else supported)
+    # The TireSpec material is a compliant_2d input; the distributed backend
+    # reads its hinge-density record from tires.distributed instead, which
+    # must resolve (the wire's `tire.distributed` section is built from it).
     for side in ('front', 'rear'):
         material = getattr(cfg.tires, side).material
-        if not isinstance(material, TireSpec):
+        if (cfg.tires.backend == 'compliant_2d'
+                and not isinstance(material, TireSpec)):
             _reject(f'tires.{side}.material', type(material).__name__,
                     'analytic TireSpec')
+    if (cfg.tires.backend == 'distributed_2d_reference'
+            and not isinstance(cfg.tires.distributed, DistributedTireConfig)):
+        _reject('tires.distributed', cfg.tires.distributed,
+                'a resolved DistributedTireConfig')
 
 
 def _posture_dict(posture) -> dict | None:

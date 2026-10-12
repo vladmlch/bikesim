@@ -49,10 +49,13 @@ from bike_sim.terrain.presets import (
     DEFAULT_PRESET,
     DEFAULT_ROAD_PRESET,
     PRESETS,
+    SEEDED_PRESETS,
     available_presets,
     climb_steps,
     get_preset,
 )
+from bike_sim.terrain.alpine import ALPINE_PRESET_SEED, AlpineGenSpec, alpine_scree, generate_alpine_track
+from bike_sim.terrain.contact_safety import single_contact_hazards
 from bike_sim.terrain.road import (
     ROAD_LEVEL_SPECS,
     RoadGeneratorSpec,
@@ -109,11 +112,17 @@ __all__ = [
     "build_profile",
     "profile_extent",
     "PRESETS",
+    "SEEDED_PRESETS",
     "DEFAULT_PRESET",
     "DEFAULT_ROAD_PRESET",
     "available_presets",
     "get_preset",
     "climb_steps",
+    "AlpineGenSpec",
+    "generate_alpine_track",
+    "alpine_scree",
+    "ALPINE_PRESET_SEED",
+    "single_contact_hazards",
     "RoadGeneratorSpec",
     "ROAD_LEVEL_SPECS",
     "generate_road",

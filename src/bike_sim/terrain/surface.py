@@ -107,6 +107,9 @@ SURFACES: Dict[str, SurfaceSpec] = {
         SurfaceSpec("wet", mu_peak=0.50, mu_slide=0.40, slip_stiffness_per_load=10.0,
                     stribeck_speed_mps=DEFAULT_STRIBECK_SPEED_MPS,
                     description="wet dirt"),
+        SurfaceSpec("scree", mu_peak=0.45, mu_slide=0.38, slip_stiffness_per_load=4.5,
+                    stribeck_speed_mps=DEFAULT_STRIBECK_SPEED_MPS,
+                    description="alpine scree: loose rock debris over bedrock"),
     )
 }
 

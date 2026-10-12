@@ -203,10 +203,11 @@ struct RuntimeContacts {
 };
 
 // contacts.py TerrainContactQuery, minus the legacy wheel-load path: the
-// supported compliant_2d backend always reaches the tire branch of
-// _contacts(), so query()/_sum_normal_loads' per-patch assembly is never
-// invoked natively — the held-load bridges and controller debounce still
-// exist because the bootstrap round-trips their state_dict().
+// supported tire backends (compliant_2d, distributed_2d_reference) always
+// reach the tire branch of _contacts(), so query()/_sum_normal_loads'
+// per-patch assembly is never invoked natively — the held-load bridges
+// and controller debounce still exist because the bootstrap round-trips
+// their state_dict().
 class RuntimeContactQuery {
 public:
     // __init__ resolves the terrain/contact geoms once; dropout_steps

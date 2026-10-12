@@ -244,7 +244,32 @@ def parser():
     p.add_argument('--out', type=Path, required=True, help='new or empty directory')
     p.add_argument('--compare', type=Path,
                    help='earlier report.json from the other backend for a same-prefix check')
+    p.add_argument('--benchmark', action='store_true',
+                   help='steady-state throughput mode: the reference monitor is non-strict, so a '
+                        'documented baseline violation is retained as first_failure instead of '
+                        'stopping physics; the result is never a valid ride or a threshold claim')
     return p
+
+
+# Benchmark mode changes only the stop decision: the monitor records the same
+# first failure, the integration and every force writer run unchanged. The
+# comparison key carries `strict`, so a benchmark report is never comparable
+# with a strict one, and an invalid prefix never meets the headless threshold.
+def monitor_strict(args):
+    return not args.benchmark
+
+
+def annotate_report(report, args, effective_dt_s):
+    report['invocation'] = dict(physics_config=str(args.physics_config.resolve()),
+        track=args.track, duration_s=args.duration, dt_override=args.dt,
+        effective_dt_s=effective_dt_s, record_decimation=args.decimation,
+        monitor_strict=monitor_strict(args), benchmark_mode=bool(args.benchmark))
+    report['benchmark_mode'] = bool(args.benchmark)
+    if args.benchmark:
+        report['limitations'] = ['Benchmark mode: the reference monitor was non-strict; the '
+                                 'measured prefix is a throughput sample of a ride whose '
+                                 'validity is not established, never a valid-ride claim.']
+    return report
 
 
 def ride_arguments(args):
@@ -283,7 +308,7 @@ def main(argv=None):
         track = resolve_track(ride.track, seed=ride.seed, length_m=ride.length)
         seed = track_seed(ride.track, ride.seed)
         def factory():
-            return build_physical_driver(track, ride, rider, seed=seed, strict=True)
+            return build_physical_driver(track, ride, rider, seed=seed, strict=monitor_strict(args))
         warmups, runs = [], []
         for phase, count, result in (('warmup', args.warmup, warmups), ('run', args.runs, runs)):
             for index in range(count):
@@ -295,10 +320,7 @@ def main(argv=None):
                 print(f'{phase} {index+1}/{count}: backend={args.backend}; '
                       f'steps={run["physics_steps"]}; RTF={run["real_time_factor"]}; '
                       f'outcome={run["prefix"]["reason"]}; valid={run["valid_prefix"]}', flush=True)
-        report = build_report(warmups, runs)
-        report['invocation'] = dict(physics_config=str(args.physics_config.resolve()),
-            track=args.track, duration_s=args.duration, dt_override=args.dt,
-            effective_dt_s=ride.resolved_physics.timestep_s, record_decimation=args.decimation)
+        report = annotate_report(build_report(warmups, runs), args, ride.resolved_physics.timestep_s)
         if previous is not None:
             if previous.get('schema_version') != 1 or not previous.get('runs'):
                 raise ValueError('--compare does not contain a measurement schema-1 run set')

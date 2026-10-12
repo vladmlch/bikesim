@@ -169,11 +169,12 @@ public:
     PhysicalStep &operator=(PhysicalStep &&) = delete;
 
     // apply_forces(active=active, advance=advance) — the staged force
-    // assembly. Returns the durable contacts plus the snapshot pair the
-    // caller's probe/channels consume. `external` is the injected nv
-    // generalized force (internal tests only — the public binding never
-    // passes one).
-    [[nodiscard]] std::pair<RuntimeContacts, WheelSnapshots>
+    // assembly. Returns this refresh's contacts; the snapshot pair the
+    // caller's probe/channels consume publishes into the durable
+    // snapshots_ member inside refresh_contacts (the oracle's
+    // self.snapshots). `external` is the injected nv generalized force
+    // (internal tests only — the public binding never passes one).
+    [[nodiscard]] RuntimeContacts
     apply_forces(bool active, bool advance, double front, double rear,
                  const std::optional<std::vector<double>> &external,
                  const RideControl &control,
@@ -277,8 +278,10 @@ private:
     // apply_forces tail — the contacts refresh at physical_runtime.py:337
     // (update_grounded = active && advance) and :631 (final=true). The
     // tire backend always owns the wheel channels; the query's
-    // handlebar load is its only live read.
-    [[nodiscard]] std::pair<RuntimeContacts, WheelSnapshots>
+    // handlebar load is its only live read. The wheel snapshots publish
+    // into snapshots_ — a copy-assign into construction-reserved
+    // capacity, not a by-value materialization.
+    [[nodiscard]] RuntimeContacts
     refresh_contacts(bool final, std::optional<double> time_s,
                      bool update_grounded);
 
@@ -325,7 +328,7 @@ private:
 
     // The mutate()'d body of apply_forces — separate frame keeps the
     // per-function stack budget sweep green on unoptimized builds.
-    [[nodiscard]] std::pair<RuntimeContacts, WheelSnapshots>
+    [[nodiscard]] RuntimeContacts
     apply_forces_body(bool active, bool advance, double front, double rear,
                       const std::optional<std::vector<double>> &external,
                       const RideControl &caller_control,
@@ -425,9 +428,13 @@ private:
     ConstraintSnapshot last_constraint_snapshot_;
     EnergyState energy_;
     // self.snapshots — the current wheel-snapshot pair _contacts
-    // publishes. Not wire-restored (setup.py does not serialize it);
-    // the first advancing refresh_contacts repopulates it like the
-    // oracle's first step does.
+    // publishes. Disengaged until the first publish, mirroring the
+    // oracle's `self.snapshots = {}` (physical_runtime.py:110); not
+    // wire-restored, and restore() re-disengages the slots the same
+    // way. The publish path engages each slot once with the writer's
+    // own per-wheel bound reserved, so every later copy-assign reuses
+    // capacity — a bounded one-time cost per publication lifetime,
+    // never a steady-state regrow.
     WheelSnapshots snapshots_{};
 
     // Construction-sized scratch for the hot path (R1): the view arrays
@@ -442,8 +449,11 @@ private:
     // strided off the patch structs — contiguous copies keep the span
     // contract without touching the snapshots). std::vector<bool> is a
     // bitset and cannot back a std::span<const bool>, so the working
-    // flags gather into persistent unique_ptr<bool[]> buffers sized at
-    // first use and regrown only when a snapshot outgrows them.
+    // flags gather into persistent unique_ptr<bool[]> buffers. Both are
+    // sized at construction to the tire writer's per-wheel patch bound
+    // (station_count for the distributed backend, one contact patch for
+    // compliant_2d); the regrowth guard in apply_forces_body stays as
+    // the defensive invariant.
     std::array<std::vector<double>, 2> patch_loads_;
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) vector<bool> is a bitset; the span<const bool> contract needs contiguous bool storage
     std::array<std::unique_ptr<bool[]>, 2> patch_working_{};

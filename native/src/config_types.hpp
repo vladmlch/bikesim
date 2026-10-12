@@ -213,9 +213,11 @@ namespace nativecfg {
         std::array<double, 2> valid_load_range_n{};
     };
 
-    // TireParameters (physical_config.py:23-35).
+    // TireParameters (physical_config.py:23-35). `material` engages iff the
+    // backend is compliant_2d — the distributed backend keeps its
+    // hinge-density material under TireConfig::distributed instead.
     struct TireParams {
-        TireMaterial material;
+        std::optional<TireMaterial> material;
         double tangent_k_n_m{}, mu{}, relaxation_length_m{};
     };
 
@@ -239,14 +241,44 @@ namespace nativecfg {
         std::vector<SurfaceSection> sections;
     };
 
-    // TireBackendConfig (physical_config.py:38-63), restricted to the backend the
-    // native port implements: 'compliant_2d'.
+    // HingeDensity (physics/distributed_tire.py:12-29) — radial stiffness as
+    // a density per radian over strictly increasing deflection knots.
+    struct HingeDensity {
+        std::vector<double> knots_m, stiffness_n_m;
+        double damping_ns_m{};
+        std::string provenance;
+    };
+
+    // DistributedWheelMaterial (distributed_tire.py:32-51) — one wheel's
+    // resolved material record: its density law, the fit identity, the
+    // declared validity domain and the fixed calibration status.
+    struct DistributedMaterial {
+        HingeDensity density;
+        std::string fitting_dataset_id;
+        std::array<double, 2> valid_load_range_n{}, valid_deflection_range_m{};
+        std::string calibration_status;
+    };
+
+    // DistributedTireConfig (distributed_tire.py:54-91) on the wire: the
+    // station count, the shared density law and the per-wheel records
+    // for_wheel resolves (a wheel override replaces the shared fields).
+    struct DistributedConfig {
+        int station_count{};
+        HingeDensity density;
+        DistributedMaterial front, rear;
+    };
+
+    // TireBackendConfig (physical_config.py:38-63), restricted to the backends
+    // the native port's config layer accepts: 'compliant_2d' and
+    // 'distributed_2d_reference'. `distributed` engages iff the backend is the
+    // distributed reference (spec section 6 wire rule).
     struct TireConfig {
         std::string backend;
         std::string surface_mode; // 'configured' | 'track'
         TireParams front, rear;
         double significant_delta_m{}, significance_fraction{}, distinct_normal_deg{};
         std::optional<SurfaceMap> surface_map;
+        std::optional<DistributedConfig> distributed;
     };
 
     // RiderForceApplier per-path state (rider_forces.py:35-76): the body's

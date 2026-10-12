@@ -14,7 +14,11 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
+#include <cmath>
 #include <exception>
+#include <memory>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -27,6 +31,8 @@
 #include <nanobind/stl/vector.h>
 #include "stepper.hpp"
 #include "config.hpp"
+#include "engaged.hpp"
+#include "tyre/distance.hpp"
 #include "binding_readers.hpp"
 #include "binding_arrays.hpp"
 #include "engine_call.hpp"
@@ -42,7 +48,9 @@
 #include "runtime/test_adapter.hpp"
 #include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
-#include "writers/tire.hpp"
+// The binding speaks the shared tyre value types; backend dispatch lives
+// behind Stepper::tire_writer()'s view.
+#include "writers/tire_common.hpp"
 
 namespace nb = nanobind;
 
@@ -129,6 +137,24 @@ namespace {
             };
         }
     };
+
+    // Owned (N,2) float64 array — the 2-D sibling of wire::owned_array for
+    // the _debug_signed_distance test surface, keeping the same
+    // capsule-owner discipline (the ndarray owns the released buffer).
+    nb::ndarray<nb::numpy, double, nb::shape<-1, -1>>
+    as_owned_grid(std::vector<double> values) {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) ndarray requires runtime-sized contiguous primitive storage
+        auto storage = std::make_unique<double[]>(values.size());
+        std::ranges::copy(values, storage.get());
+        auto [data, owner] = wire::detail::release_with_owner(
+            std::move(storage), [](double *value) {
+                return nb::capsule(value, [](void *p) noexcept {
+                    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) capsule owns the released unique_ptr array
+                    delete[] static_cast<double *>(p);
+                });
+            });
+        return {data, {values.size() / 2, 2}, owner};
+    }
 
     OwnedTireSideInput side_input(const nb::dict &snaps, const char *side) {
         if (!snaps.contains(side))
@@ -252,6 +278,69 @@ NB_MODULE(bike_native, m) {
             return std::pair{succeeded, std::string(error.message.data())};
         });
     });
+    // Debug-only oracle surface for the SignedProfile port — used by
+    // tests/reference/test_native_distributed_tire.py to compare
+    // biketyre::SignedProfile bitwise against terrain/profile_distance.py.
+    // Not part of the runtime API; batched so the oracle's whole-array
+    // validation order (finite before domain) is preserved.
+    m.def("_debug_signed_distance",
+          [](nb::handle raw_vertices, nb::handle raw_points) {
+        using Table = nb::ndarray<const double, nb::shape<-1, 2>,
+                                  nb::c_contig>;
+        Table vertices;
+        try {
+            vertices = nb::cast<Table>(raw_vertices);
+        } catch (const nb::cast_error &) {
+            throw std::invalid_argument(
+                "road vertices must be finite and strictly increasing in X");
+        }
+        const std::size_t vertex_count = vertices.shape(0);
+        std::vector<std::array<double, 2>> verts(vertex_count);
+        for (std::size_t i = 0; i < vertex_count; ++i)
+            verts[i] = {vertices(i, 0), vertices(i, 1)};
+        const biketyre::SignedProfile profile(std::move(verts));
+        Table points;
+        try {
+            points = nb::cast<Table>(raw_points);
+        } catch (const nb::cast_error &) {
+            throw std::invalid_argument(
+                "distance queries must be a finite (N, 2) array");
+        }
+        const std::size_t n = points.shape(0);
+        // profile_distance.py:42-44 — the oracle validates finiteness of
+        // the whole batch, then heights over the whole batch (the domain
+        // gate), before the per-point loop. Keep that error order.
+        for (std::size_t i = 0; i < n; ++i)
+            if (!std::isfinite(points(i, 0)) || !std::isfinite(points(i, 1)))
+                throw std::invalid_argument(
+                    "distance queries must be a finite (N, 2) array");
+        for (std::size_t i = 0; i < n; ++i)
+            static_cast<void>(profile.height(points(i, 0)));
+        std::vector<double> distance(n);
+        std::vector<double> normal(2 * n);
+        std::vector<double> point(2 * n);
+        std::vector<std::int64_t> segment(n);
+        std::vector<char> nonsmooth(n);
+        for (std::size_t i = 0; i < n; ++i) {
+            const biketyre::PointDistance row =
+                profile.query({points(i, 0), points(i, 1)});
+            distance[i] = row.distance;
+            normal[2 * i] = row.normal[0];
+            normal[2 * i + 1] = row.normal[1];
+            point[2 * i] = row.point[0];
+            point[2 * i + 1] = row.point[1];
+            segment[i] = row.segment;
+            nonsmooth[i] = static_cast<char>(row.nonsmooth);
+        }
+        return nb::make_tuple(as_owned(std::move(distance)),
+                              as_owned_grid(std::move(normal)),
+                              as_owned_grid(std::move(point)),
+                              wire::owned_array<std::int64_t>(segment),
+                              as_owned_bool(std::move(nonsmooth)));
+    }, nb::arg("vertices"), nb::arg("points"),
+        "Debug test surface: signed profile distance oracle rows "
+        "(distance, normal, point, segment, nonsmooth) for (N,2) inputs.")
+    ;
     stepper_class
             .def(nb::init<const std::string &>())
             .def(nb::init<const std::string &, nb::handle>(),
@@ -418,13 +507,11 @@ NB_MODULE(bike_native, m) {
                 return as_owned(s.tire_qfrc(wire::finite_real(dt, "tire_qfrc.dt")));
             })
             .def("tire_snapshots", [](Stepper &s) {
-                const TireWriter *t = s.tire();
-                if (!t)
-                    throw std::logic_error(
-                        "tire writer: Stepper was built without a tire config "
-                        "(pass the dict from tools.native_config.project)");
+                // The view throws the documented kNoTire message when no
+                // tire config was given — identical to the previous
+                // explicit check.
                 nb::dict out;
-                const auto &snaps = t->snapshots();
+                const auto snaps = s.tire_writer().snapshots();
                 const std::array<const char *, 2> sides = {"front", "rear"};
                 for (std::size_t i = 0; i < 2; ++i)
                     if (snaps[i])
@@ -432,37 +519,67 @@ NB_MODULE(bike_native, m) {
                 return out;
             })
             .def("tire_diagnostics", [](Stepper &s) {
-                const TireWriter *t = s.tire();
-                if (!t)
-                    throw std::logic_error(
-                        "tire writer: Stepper was built without a tire config "
-                        "(pass the dict from tools.native_config.project)");
+                const TireWriterView view = s.tire_writer();
                 nb::dict out;
-                const auto &diags = t->diagnostics();
+                const auto diags = view.diagnostics();
                 const std::array<const char *, 2> sides = {"front", "rear"};
                 for (std::size_t i = 0; i < 2; ++i) {
                     if (!diags[i])
                         continue;
                     const TireDiagnostics &g = *diags[i];
                     nb::dict d;
-                    d["multi_support"] = g.multi_support;
-                    d["penetration_m"] = g.penetration_m;
-                    d["normal_speed_mps"] = g.normal_speed_mps;
-                    d["slip_mps"] = g.slip_mps;
-                    d["normal_load_n"] = g.normal_load_n;
-                    d["tangent_force_n"] = g.tangent_force_n;
-                    d["friction_coefficient"] = g.friction_coefficient;
-                    d["surface"] = g.surface;
-                    d["branch_release_loss_j"] = g.branch_release_loss_j;
-                    d["brush_loss_j"] = g.brush_loss_j;
-                    d["radial_energy_j"] = g.radial_energy_j;
-                    d["shear_energy_j"] = g.shear_energy_j;
-                    d["outside_material_load_range"] =
-                            g.outside_material_load_range;
+                    if (view.is_distributed()) {
+                        // distributed_tire_forces.py:204-213 — the
+                        // distributed dict's own key set (no compliant-
+                        // only fields like normal_speed_mps or surface).
+                        d["penetration_m"] = g.penetration_m;
+                        d["normal_load_n"] = g.normal_load_n;
+                        d["multi_support"] = g.multi_support;
+                        d["supports_multiple_contacts"] =
+                                g.supports_multiple_contacts;
+                        d["capability_status"] = g.capability_status;
+                        d["calibration_status"] = g.calibration_status;
+                        d["station_count"] = g.station_count;
+                        d["active_station_count"] = g.active_station_count;
+                        d["nonsmooth_station_count"] =
+                                g.nonsmooth_station_count;
+                        d["max_patch_count"] = g.max_patch_count;
+                        d["outside_material_load_range"] =
+                                g.outside_material_load_range;
+                        d["outside_material_deflection_range"] =
+                                g.outside_material_deflection_range;
+                        d["radial_energy_j"] = g.radial_energy_j;
+                        d["shear_energy_j"] = g.shear_energy_j;
+                        d["brush_loss_j"] = g.brush_loss_j;
+                    } else {
+                        d["multi_support"] = g.multi_support;
+                        d["penetration_m"] = g.penetration_m;
+                        d["normal_speed_mps"] = g.normal_speed_mps;
+                        d["slip_mps"] = g.slip_mps;
+                        d["normal_load_n"] = g.normal_load_n;
+                        d["tangent_force_n"] = g.tangent_force_n;
+                        d["friction_coefficient"] = g.friction_coefficient;
+                        d["surface"] = g.surface;
+                        d["branch_release_loss_j"] = g.branch_release_loss_j;
+                        d["brush_loss_j"] = g.brush_loss_j;
+                        d["radial_energy_j"] = g.radial_energy_j;
+                        d["shear_energy_j"] = g.shear_energy_j;
+                        d["outside_material_load_range"] =
+                                g.outside_material_load_range;
+                    }
                     out[sides[i]] = d;
                 }
                 return out;
             })
+            // _run_stand's ledger terms on the live mjData — thin forwards
+            // over the writer accessors, no new physics.
+            .def("tire_stored_energy", &Stepper::tire_stored_energy)
+            .def("tire_brush_loss_step_j",
+                 &Stepper::tire_brush_loss_step_j)
+            .def("tire_radial_dissipation_power_w",
+                 &Stepper::tire_radial_dissipation_power_w)
+            .def("kinetic_energy", &Stepper::kinetic_energy)
+            .def_prop_ro("contact_count", &Stepper::contact_count)
             .def_prop_ro("time", &Stepper::time);
     bind_drivetrain(m, stepper_class);
     bind_rider_contact_math(m);

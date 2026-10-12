@@ -17,32 +17,18 @@ import numpy as np
 from bike_sim.physics.checks import scalar
 from bike_sim.terrain.grade import GradeProfile
 from bike_sim.terrain.obstacles import Bump, Drop, RoadRoughness, Roots, SquareEdge
+from bike_sim.terrain.placement import (
+    CLEARANCE_M, PLACEMENT_TRIES, check_range as _range, is_free as _free, place as _place, rounded as _r,
+)
 from bike_sim.terrain.profile import TrackSpec
 from bike_sim.terrain.surface import SURFACES, SurfaceSection
 
-# Minimum clear distance between placed features and sections, in metres.
-CLEARANCE_M = 1.
-PLACEMENT_TRIES = 200
 FEATURE_TYPES = ('bump', 'edge', 'drop', 'roots')
 # A road crest sharper than the wheel makes the tyre touch two places at once, which the
 # 2D tyre model declares out of scope (front:multi_support -> model_violation). Bump
 # lengths are floored so the crest radius of curvature stays above this, with margin over
 # the ~0.37 m wheel radius. Vertical faces (edge/drop) are always multi-support: opt-in.
 MIN_CONTACT_RADIUS_M = .45
-
-
-def _range(value, name, *, minimum=0., integer=False):
-    if not isinstance(value, (tuple, list)) or len(value) != 2:
-        raise ValueError(f'{name} must be a (low, high) pair')
-    lo, hi = value
-    if integer:
-        if any(type(v) is not int for v in (lo, hi)):
-            raise ValueError(f'{name} must hold integers')
-    else:
-        lo, hi = scalar(lo, name, minimum=minimum), scalar(hi, name, minimum=minimum)
-    if lo > hi or lo < minimum:
-        raise ValueError(f'{name} must satisfy {minimum} <= low <= high')
-    return (lo, hi)
 
 
 @dataclass(frozen=True)
@@ -110,32 +96,6 @@ class TerrainGenSpec:
 
     def sha256(self):
         return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True).encode()).hexdigest()
-
-
-def _r(value, digits=4):
-    # Round so saved TOML files reproduce the track bit-for-bit.
-    return round(float(value), digits)
-
-
-def _free(start, end, taken):
-    return all(end+CLEARANCE_M <= a or start >= b+CLEARANCE_M for a, b in taken)
-
-
-def _place(rng, length, lo, hi, taken, *, shrink=False):
-    """Random start for an interval of `length` inside [lo, hi] clear of `taken`.
-
-    With shrink, the interval is halved (down to 1 m) when it cannot be placed.
-    Returns (start, length) or None.
-    """
-    while True:
-        if length <= hi-lo:
-            for _ in range(PLACEMENT_TRIES):
-                start = _r(rng.uniform(lo, hi-length), 2)
-                if _free(start, start+length, taken):
-                    return start, length
-        if not shrink or length/2. < 1.:
-            return None
-        length = _r(length/2., 2)
 
 
 def _grade(spec, rng, length):

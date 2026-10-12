@@ -48,10 +48,11 @@ class EpisodeArtifact:
 
 
 def _tire_state_row(tire) -> dict:
-    """Flatten both wheels' _BrushState fields into one leaf-named row."""
+    """One flat row of the tyre's wire state — `state_dict()` for either backend."""
     if tire is None:
         return {}
-    return flatten_row({side: asdict(state) for side, state in tire.states.items()})
+    wire = tire.state_dict()
+    return dict(zip(wire['names'], (float(v) for v in wire['row'])))
 
 
 def _tire_snapshot_row(tire) -> dict:

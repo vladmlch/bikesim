@@ -131,3 +131,35 @@ def test_measurement_cli_keeps_profile_dt_until_explicit_override():
     assert module.ride_arguments(args).resolved_physics.timestep_s == .00125
     args.dt = .0005
     assert module.ride_arguments(args).resolved_physics.timestep_s == .0005
+
+
+def _measurement_module():
+    root = Path(__file__).resolve().parents[2]
+    spec = importlib.util.spec_from_file_location('measure_realtime_test_module', root/'tools/measure_realtime.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # Imports definitions; the main guard is not entered.
+    return module
+
+
+def test_benchmark_mode_relaxes_only_the_monitor_and_marks_the_report():
+    """--benchmark makes the driver non-strict and stamps the report as a non-valid throughput sample;
+    without it the measurement stays strict and carries no benchmark marker."""
+    module = _measurement_module()
+    strict_args = module.parser().parse_args(['--out', 'unused'])
+    bench_args = module.parser().parse_args(['--out', 'unused', '--benchmark'])
+    assert module.monitor_strict(strict_args) is True
+    assert module.monitor_strict(bench_args) is False
+    # The ride CLI projection is identical: benchmark mode never changes physics inputs.
+    assert vars(module.ride_arguments(strict_args)) == vars(module.ride_arguments(bench_args))
+
+    strict_report = module.annotate_report(dict(schema_version=1), strict_args, .00125)
+    assert strict_report['benchmark_mode'] is False
+    assert strict_report['invocation']['monitor_strict'] is True
+    assert 'limitations' not in strict_report
+
+    bench_report = module.annotate_report(dict(schema_version=1), bench_args, .00125)
+    assert bench_report['benchmark_mode'] is True
+    assert bench_report['invocation']['monitor_strict'] is False
+    assert bench_report['invocation']['benchmark_mode'] is True
+    assert any('never a valid-ride claim' in line for line in bench_report['limitations'])
+

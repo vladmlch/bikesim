@@ -93,7 +93,8 @@ def _state_arrays(runtime):
         )
     tire = runtime.tire
     if tire is not None:
-        sides = tuple(tire.states)
+        distributed = tire.config.backend == 'distributed_2d_reference'
+        sides = tuple(sorted(tire.states)) if distributed else tuple(tire.states)
         state['state_tire_sides'] = np.asarray([json.dumps(key) for key in sides])
         state['state_tire_xi'] = np.asarray([tire.states[side].xi for side in sides], dtype=float)
         state['state_tire_tangent'] = np.asarray([
@@ -103,24 +104,25 @@ def _state_arrays(runtime):
         state['state_tire_tangent_valid'] = np.asarray([
             value.tangent is not None for value in (tire.states[side] for side in sides)
         ], dtype=bool)
-        state['state_tire_point'] = np.asarray([
-            value.point if value.point is not None else np.zeros(3)
-            for value in (tire.states[side] for side in sides)
-        ], dtype=float).reshape(-1,3)
-        state['state_tire_point_valid'] = np.asarray([
-            value.point is not None for value in (tire.states[side] for side in sides)
-        ], dtype=bool)
-        state['state_tire_segment'] = np.asarray([
-            -1 if value.segment is None else value.segment
-            for value in (tire.states[side] for side in sides)
-        ], dtype=int)
-        state['state_tire_center'] = np.asarray([
-            value.center if value.center is not None else np.zeros(3)
-            for value in (tire.states[side] for side in sides)
-        ], dtype=float).reshape(-1,3)
-        state['state_tire_center_valid'] = np.asarray([
-            value.center is not None for value in (tire.states[side] for side in sides)
-        ], dtype=bool)
+        if not distributed:
+            state['state_tire_point'] = np.asarray([
+                value.point if value.point is not None else np.zeros(3)
+                for value in (tire.states[side] for side in sides)
+            ], dtype=float).reshape(-1,3)
+            state['state_tire_point_valid'] = np.asarray([
+                value.point is not None for value in (tire.states[side] for side in sides)
+            ], dtype=bool)
+            state['state_tire_segment'] = np.asarray([
+                -1 if value.segment is None else value.segment
+                for value in (tire.states[side] for side in sides)
+            ], dtype=int)
+            state['state_tire_center'] = np.asarray([
+                value.center if value.center is not None else np.zeros(3)
+                for value in (tire.states[side] for side in sides)
+            ], dtype=float).reshape(-1,3)
+            state['state_tire_center_valid'] = np.asarray([
+                value.center is not None for value in (tire.states[side] for side in sides)
+            ], dtype=bool)
     return state
 
 
@@ -178,12 +180,11 @@ def restore_state(runtime, state):
     tire = runtime.tire
     tire_update=None
     if tire is not None:
-        required = {
-            'state_tire_sides', 'state_tire_xi', 'state_tire_tangent',
-            'state_tire_tangent_valid', 'state_tire_point',
-            'state_tire_point_valid', 'state_tire_segment', 'state_tire_center',
-            'state_tire_center_valid',
-        }
+        distributed = tire.config.backend == 'distributed_2d_reference'
+        required = {'state_tire_sides', 'state_tire_xi', 'state_tire_tangent', 'state_tire_tangent_valid'}
+        if not distributed:
+            required |= {'state_tire_point', 'state_tire_point_valid', 'state_tire_segment',
+                         'state_tire_center', 'state_tire_center_valid'}
         if not required.issubset(state):
             return False
         try:
@@ -191,7 +192,6 @@ def restore_state(runtime, state):
             sides = tuple(tuple(key) if isinstance(key,list) else key for key in decoded)
         except (ValueError,TypeError):
             return False
-        distributed = tire.config.backend == 'distributed_2d_reference'
         if not distributed and sides != tuple(tire.states):
             return False
         if distributed and (any(not isinstance(key,tuple) or len(key)!=2 or key[0] not in ('front','rear') or type(key[1]) is not int or not 0<=key[1]<tire.config.distributed.station_count for key in sides) or len(set(sides)) != len(sides)):
@@ -200,37 +200,46 @@ def restore_state(runtime, state):
             xi = np.asarray(state['state_tire_xi'],dtype=float)
             tangent = np.asarray(state['state_tire_tangent'],dtype=float)
             tangent_valid = np.asarray(state['state_tire_tangent_valid'],dtype=bool)
-            point = np.asarray(state['state_tire_point'],dtype=float)
-            point_valid = np.asarray(state['state_tire_point_valid'],dtype=bool)
-            segment = np.asarray(state['state_tire_segment'],dtype=float)
-            center = np.asarray(state['state_tire_center'],dtype=float)
-            center_valid = np.asarray(state['state_tire_center_valid'],dtype=bool)
         except (ValueError,TypeError):
             return False
         count = len(sides)
-        if (xi.shape != (count,) or tangent.shape != (count, 3)
-                or tangent_valid.shape != (count,) or point.shape != (count, 3)
-                or point_valid.shape != (count,) or segment.shape != (count,)
-                or center.shape != (count, 3) or center_valid.shape != (count,)):
+        if xi.shape != (count,) or tangent.shape != (count, 3) or tangent_valid.shape != (count,):
             return False
-        if (not np.isfinite(xi).all() or not np.isfinite(segment).all()
-                or (segment != np.trunc(segment)).any()
-                or not np.isfinite(tangent[tangent_valid]).all()
-                or not np.isfinite(point[point_valid]).all()
-                or not np.isfinite(center[center_valid]).all()
-                or (tangent_valid & (~point_valid | (segment < 0))).any()):
+        if not np.isfinite(xi).all() or not np.isfinite(tangent[tangent_valid]).all():
             return False
-        from bike_sim.sim.ride.tire_forces import _BrushState
-        updates={}
-        for index, side in enumerate(sides):
-            value = _BrushState() if distributed else tire.states.get(side,_BrushState())
-            updates[side] = type(value)(
-                float(xi[index]),
-                tangent[index].copy() if tangent_valid[index] else None,
-                point[index].copy() if point_valid[index] else None,
-                None if segment[index] < 0 else int(segment[index]),
-                center[index].copy() if center_valid[index] else None,
-            )
+        if distributed:
+            from bike_sim.sim.ride.distributed_tire_forces import _StationState
+            updates = {side: _StationState(float(xi[index]), tangent[index].copy() if tangent_valid[index] else None)
+                       for index, side in enumerate(sides)}
+        else:
+            try:
+                point = np.asarray(state['state_tire_point'],dtype=float)
+                point_valid = np.asarray(state['state_tire_point_valid'],dtype=bool)
+                segment = np.asarray(state['state_tire_segment'],dtype=float)
+                center = np.asarray(state['state_tire_center'],dtype=float)
+                center_valid = np.asarray(state['state_tire_center_valid'],dtype=bool)
+            except (ValueError,TypeError):
+                return False
+            if (point.shape != (count, 3) or point_valid.shape != (count,)
+                    or segment.shape != (count,) or center.shape != (count, 3)
+                    or center_valid.shape != (count,)):
+                return False
+            if (not np.isfinite(segment).all() or (segment != np.trunc(segment)).any()
+                    or not np.isfinite(point[point_valid]).all()
+                    or not np.isfinite(center[center_valid]).all()
+                    or (tangent_valid & (~point_valid | (segment < 0))).any()):
+                return False
+            from bike_sim.sim.ride.tire_forces import _BrushState
+            updates={}
+            for index, side in enumerate(sides):
+                value = tire.states.get(side,_BrushState())
+                updates[side] = type(value)(
+                    float(xi[index]),
+                    tangent[index].copy() if tangent_valid[index] else None,
+                    point[index].copy() if point_valid[index] else None,
+                    None if segment[index] < 0 else int(segment[index]),
+                    center[index].copy() if center_valid[index] else None,
+                )
         tire_update=(distributed,updates)
     elif any(key.startswith('state_tire_') for key in state):
         return False

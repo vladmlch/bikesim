@@ -12,6 +12,7 @@
 // bound); `min`/`max` are std::min/std::max (identical
 // `b<a?b:a` / `a<b?b:a` semantics, NaN included).
 #include "tire.hpp"
+#include "tire_common.hpp"
 #include "../config_validation.hpp"
 
 #include "../contact/laws.hpp"
@@ -46,7 +47,6 @@ namespace {
     using Vec3 = std::array<double, model_access::kXYZ>;
 
     using contactlaw::normal_contact;
-    using contactlaw::brush_step;
 
     // physical_mapping.py:6-11 — resolve_id. Site contract: the wheel
     // contact geoms take the plain name check (id >= 0) — the shared
@@ -105,25 +105,6 @@ namespace {
         double f_result = 0.0;
         double c_sum = 0.0;
     };
-
-    // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide)*exp(-|v|/str).
-    double surface_mu(const nativecfg::SurfaceSpec &s, double slip) {
-        const double decay =
-                std::exp(-std::abs(slip) / s.stribeck_speed_mps);
-        return s.mu_slide + (s.mu_peak - s.mu_slide) * decay;
-    }
-
-    // surface.py:194-206 — SurfaceMap.at: finite query, first matching
-    // half-open section wins, else the default material.
-    const nativecfg::SurfaceSpec &
-    surface_at(const nativecfg::SurfaceMap &map, double x_m) {
-        if (!std::isfinite(x_m))
-            throw std::invalid_argument("material query must be finite");
-        for (const auto &sec: map.sections)
-            if (sec.start_m <= x_m && x_m < sec.end_m)
-                return sec.surface;
-        return map.surface;
-    }
 
     // SurfaceSpec.__post_init__ (surface.py:54-69) — the checks project()'s
     // input already passed; kept so a hand-built dict fails the same way.
@@ -201,12 +182,28 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
         throw std::invalid_argument(
             "tire writer needs a model width in int range");
     nativecfg::validate(cfg_);
+    // This writer is the compliant_2d port. The Stepper dispatch routes
+    // 'distributed_2d_reference' to DistributedTireWriter — a direct
+    // TireWriter construction with it is a dispatch bug; reject the
+    // backend by name here instead of dereferencing the absent TireSpec
+    // material below.
+    if (cfg_.backend != "compliant_2d")
+        throw std::runtime_error(
+            "TireWriter implements only the compliant_2d backend; "
+            "'distributed_2d_reference' is served by "
+            "DistributedTireWriter through the Stepper dispatch");
     // Dataclass __post_init__ validation happened when Python built the
     // config — before TireForceApplier.__init__ — so these checks precede
     // the ctor body like they do in the Python flow.
     // TireSpec.__post_init__ (tire.py:52-69) on both sides.
     for (const nativecfg::TireParams *p: {&cfg_.front, &cfg_.rear}) {
-        const nativecfg::TireMaterial &mat = p->material;
+        // Engaged by the backend gate + validate() above — restated so the
+        // optional access stays checked (an invariant break is a logic
+        // error, not bad caller input).
+        if (!p->material)
+            throw std::logic_error(
+                "compliant_2d tire params carry no material");
+        const nativecfg::TireMaterial &mat = *p->material;
         if (!std::isfinite(mat.radial_k_n_m) ||
             !std::isfinite(mat.radial_c_ns_m) ||
             !std::isfinite(mat.pressure_pa_gauge))
@@ -635,6 +632,15 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
     // backend != 'compliant_2d' is rejected by the config reader, so the
     // zero-return path (line 129-131) is unreachable here.
     std::ranges::fill(out, 0.0);
+    // The TireSpec materials engage iff the backend is compliant_2d — the
+    // ctor's gate established it; restating once per call keeps the
+    // per-contact optional accesses below checked without a per-side
+    // branch. An invariant break is a logic error, not bad caller input.
+    if (!cfg_.front.material || !cfg_.rear.material)
+        throw std::logic_error(
+            "compliant_2d tire params carry no material");
+    const nativecfg::TireMaterial &front_mat = *cfg_.front.material;
+    const nativecfg::TireMaterial &rear_mat = *cfg_.rear.material;
     double energy = 0.0, loss = 0.0, radial_loss_power = 0.0;
     std::array<BrushState, 2> new_states;
     const std::span<const mjtNum> xpos = model_access::readonly_buffer(
@@ -675,8 +681,9 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         const double delta_dot = -dot3(velocity, n);
         const double slip = dot3(velocity, tangent);
         // TireSpec material branch (tire_forces.py:147-150).
-        const double rk = pcfg.material.radial_k_n_m;
-        const double rc = pcfg.material.radial_c_ns_m;
+        const nativecfg::TireMaterial &mat = s == 0 ? front_mat : rear_mat;
+        const double rk = mat.radial_k_n_m;
+        const double rc = mat.radial_c_ns_m;
         const auto [normal, radial_energy] =
                 normal_contact(contact.delta, delta_dot, rk, rc);
         const double elastic_force = rk * std::max(contact.delta, 0.0);
@@ -717,18 +724,10 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         // effective_friction (tire_forces.py:56-61). material_name stays
         // a view — assigning it into the persistent diagnostics stage
         // reuses string capacity instead of building a fresh string.
-        double mu = std::numeric_limits<double>::quiet_NaN();
-        std::string_view material_name;
-        if (!surface_map_) {
-            mu = pcfg.mu;
-            material_name = "configured";
-        } else {
-            const nativecfg::SurfaceSpec &surf =
-                    surface_at(*surface_map_, p[0]);
-            mu = std::min(pcfg.mu, surface_mu(surf, slip));
-            material_name = surf.name;
-        }
-        const auto [xi_new, force, brush_loss] = brush_step(
+        const auto [mu, material_name] = tirecommon::effective_friction(
+            pcfg.mu, surface_map_ ? &*surface_map_ : nullptr, p[0],
+            slip);
+        const auto [xi_new, force, brush_loss] = tirecommon::brush_step(
             xi, slip, dot3(center_velocity, tangent), normal, tk, mu,
             pcfg.relaxation_length_m, dt);
         // force_world = normal*n + force*tangent (two elementwise roundings)
@@ -803,8 +802,8 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         diag.brush_loss_j = brush_loss;
         diag.radial_energy_j = radial_energy;
         diag.shear_energy_j = 0.5 * tk * xi_new * xi_new;
-        diag.outside_material_load_range = !(pcfg.material.valid_load_range_n[0] <= normal &&
-                                             normal <= pcfg.material.valid_load_range_n[1]);
+        diag.outside_material_load_range = !(mat.valid_load_range_n[0] <= normal &&
+                                             normal <= mat.valid_load_range_n[1]);
         new_states[s] = {.xi = xi_new, .tangent = tangent, .point = p, .segment = contact.segment_id, .center = center};
     }
     // Commit persistent state only after both wheels evaluate successfully
@@ -839,9 +838,17 @@ double TireWriter::stored_energy(const mjData *d) const {
             "tire stored_energy needs a live mjData");
     const std::span<const mjtNum> xpos = model_access::readonly_buffer(
         d->geom_xpos, model_access::kXYZ * m_->ngeom);
+    // Same engaged-material invariant as the apply path — the ctor's
+    // compliant_2d gate plus validate() established it.
+    if (!cfg_.front.material || !cfg_.rear.material)
+        throw std::logic_error(
+            "compliant_2d tire params carry no material");
+    const nativecfg::TireMaterial &front_mat = *cfg_.front.material;
+    const nativecfg::TireMaterial &rear_mat = *cfg_.rear.material;
     double energy = 0.0;
     for (std::size_t s = 0; s < 2; ++s) {
         const nativecfg::TireParams &cfg = s == 0 ? cfg_.front : cfg_.rear;
+        const nativecfg::TireMaterial &mat = s == 0 ? front_mat : rear_mat;
         const BrushState &state = states_[s];
         const std::size_t g3 =
                 static_cast<std::size_t>(model_access::kXYZ) *
@@ -853,9 +860,9 @@ double TireWriter::stored_energy(const mjData *d) const {
         if (!std::isfinite(contact.delta))
             throw std::invalid_argument("tire deflection must be finite");
         const double penetration = std::max(0.0, contact.delta);
-        const double force = cfg.material.radial_k_n_m * penetration;
+        const double force = mat.radial_k_n_m * penetration;
         const double elastic =
-                0.5 * cfg.material.radial_k_n_m *
+                0.5 * mat.radial_k_n_m *
                 pyfloat::pow(penetration, 2.0);
         validation::derived(force, "TireSpec.elastic_response");
         validation::derived(elastic, "TireSpec.elastic_response");

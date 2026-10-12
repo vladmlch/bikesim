@@ -455,6 +455,32 @@ WireObject wire_tire_diagnostics(const TireDiagnostics &d) {
     return out;
 }
 
+// distributed_tire_forces.py:204-213 — the distributed per-side dict,
+// its own key set in the oracle's insertion order.
+WireObject wire_distributed_tire_diagnostics(const TireDiagnostics &d) {
+    WireObject out;
+    out.emplace_back("penetration_m", Wire(d.penetration_m));
+    out.emplace_back("normal_load_n", Wire(d.normal_load_n));
+    out.emplace_back("multi_support", Wire(d.multi_support));
+    out.emplace_back("supports_multiple_contacts",
+                     Wire(d.supports_multiple_contacts));
+    out.emplace_back("capability_status", Wire(d.capability_status));
+    out.emplace_back("calibration_status", Wire(d.calibration_status));
+    out.emplace_back("station_count", Wire(d.station_count));
+    out.emplace_back("active_station_count", Wire(d.active_station_count));
+    out.emplace_back("nonsmooth_station_count",
+                     Wire(d.nonsmooth_station_count));
+    out.emplace_back("max_patch_count", Wire(d.max_patch_count));
+    out.emplace_back("outside_material_load_range",
+                     Wire(d.outside_material_load_range));
+    out.emplace_back("outside_material_deflection_range",
+                     Wire(d.outside_material_deflection_range));
+    out.emplace_back("radial_energy_j", Wire(d.radial_energy_j));
+    out.emplace_back("shear_energy_j", Wire(d.shear_energy_j));
+    out.emplace_back("brush_loss_j", Wire(d.brush_loss_j));
+    return out;
+}
+
 // ---- observation helpers (physical_observations.py) -------------------
 
 // actuator_components — rows keyed by the bare actuator name in id
@@ -888,8 +914,12 @@ wire_settled_welds(const writers::RiderSettleOutcome &settle) {
     return out;
 }
 
-// compiled_center_of_mass (mass_properties.py:7-13) — the pairwise
-// column sum also shared by mass_observations.
+// compiled_center_of_mass (mass_properties.py:7-13) — the column sum also
+// shared by mass_observations. The oracle is
+// np.sum(masses[:, None] * xipos, axis=0): reducing the strided outer axis
+// of a C-order (nbody, 3) product is a plain sequential per-column fold in
+// numpy, not the contiguous pairwise reduction. Verified bitwise against
+// numpy 2.5.2 for nbody = 2..1000.
 std::array<double, 3> compiled_com(const mjModel *m, const mjData *d) {
     const std::size_t nbody = static_cast<std::size_t>(m->nbody);
     const auto body_mass = buf(m->body_mass, m->nbody);
@@ -897,12 +927,12 @@ std::array<double, 3> compiled_com(const mjModel *m, const mjData *d) {
     const double total = numpy_pairwise_sum(body_mass);
     if (!(total > 0.))
         throw std::invalid_argument("model has no positive physical mass");
-    std::vector<double> column(nbody);
     std::array<double, 3> com{};
     for (std::size_t k = 0; k < 3; ++k) {
+        double sum = 0.;
         for (std::size_t i = 0; i < nbody; ++i)
-            column[i] = body_mass[i] * xipos[3 * i + k];
-        com[k] = numpy_pairwise_sum(column) / total;
+            sum += body_mass[i] * xipos[3 * i + k];
+        com[k] = sum / total;
     }
     return com;
 }
@@ -972,9 +1002,37 @@ PhysicalStep::PhysicalStep(
     accel_sensor_adr_ = sensor_adr(m, "sensor_frame_accel");
     gyro_sensor_adr_ = sensor_adr(m, "sensor_frame_gyro");
     crash_geoms_ = crash_geom_ids(m);
-    if (stepper_->tire() == nullptr)
+    // Either tyre backend qualifies — the writer view dispatches on
+    // tire.backend; the gate is presence, not a specific backend.
+    if (!stepper_->has_tire())
         throw std::invalid_argument(
-            "physical step requires the compliant_2d tire writer");
+            "physical step requires a configured tire writer");
+    // Per-wheel staging bound: the writer reserves its published patch
+    // capacity at construction (station_count distributed, one contact
+    // patch compliant — snapshot_storage() exposes the committed slots
+    // it was reserved on). Sizing the resistance-input staging to that
+    // bound means the per-step assign reuses capacity instead of
+    // reallocating — the same construction-sized discipline the
+    // writers' marked commit uses. The durable snapshots_ slots mirror
+    // the oracle's `self.snapshots = {}` instead: disengaged until the
+    // first publish, which engages them with this same bound reserved
+    // (see refresh_contacts) so restore() can re-disengage them without
+    // losing the sizing discipline.
+    // The committed storage outlives the borrowed view (it lives on
+    // the writer) — the named view is also what GCC's
+    // -Wdangling-reference needs to see.
+    const TireWriterView tire_view = stepper_->tire_writer();
+    const std::array<TireSnapshot, 2> &tire_storage =
+            tire_view.snapshot_storage();
+    for (std::size_t i = 0; i < 2; ++i) {
+        const std::size_t bound = tire_storage[i].patches.capacity();
+        patch_loads_[i].reserve(bound);
+        if (bound > patch_working_capacity_[i]) {
+            // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) contiguous bool buffer — vector<bool> is a bitset
+            patch_working_[i] = std::make_unique<bool[]>(bound);
+            patch_working_capacity_[i] = bound;
+        }
+    }
     const std::size_t nv = static_cast<std::size_t>(m->nv);
     component_out_.assign(nv, 0.);
     mul_scratch_.assign(nv, 0.);
@@ -1005,7 +1063,7 @@ void PhysicalStep::refresh_forward(mjModel *m, mjData *d) {
 // ---- apply_forces (physical_runtime.py:219-349) -------------------------
 // The staged force assembly: writer evaluation order IS the arithmetic.
 
-std::pair<RuntimeContacts, WheelSnapshots>
+RuntimeContacts
 PhysicalStep::apply_forces(bool active, bool advance, double front,
                            double rear,
                            const std::optional<std::vector<double>> &external,
@@ -1013,13 +1071,13 @@ PhysicalStep::apply_forces(bool active, bool advance, double front,
                            std::optional<bool> braking_opt) {
     // The staged body sits in its own frame so the mutate lambda stays a
     // thin call; the debug/asan frame-budget sweep bounds each function.
-    return stepper_->mutate([&]() -> std::pair<RuntimeContacts, WheelSnapshots> {
+    return stepper_->mutate([&]() -> RuntimeContacts {
         return apply_forces_body(active, advance, front, rear, external,
                                  caller_control, braking_opt);
     });
 }
 
-std::pair<RuntimeContacts, WheelSnapshots>
+RuntimeContacts
 PhysicalStep::apply_forces_body(
     bool active, bool advance, double front, double rear,
     const std::optional<std::vector<double>> &external,
@@ -1109,20 +1167,33 @@ PhysicalStep::apply_forces_body(
                                                        component_out_);
         accumulator_.add("tires", component_out_);
         if (active) {
-            const WheelSnapshots snaps =
-                advance ? stepper_->tire_writer().snapshots()
-                        : stepper_->tire_writer().probe_snapshots();
+            // The resistance input reads the POST-compute committed
+            // state — snapshots_committed() is the same publication gate
+            // snapshots() projects into its optional pair, so the
+            // borrowed committed/probe storage holds exactly what the
+            // copying accessor would have returned. Reading it in place
+            // avoids the per-step snapshot copy (the distributed
+            // backend's patches vectors plus its non-SSO backend
+            // string).
+            const TireWriterView tires = stepper_->tire_writer();
+            const bool committed =
+                advance ? tires.snapshots_committed()
+                        : tires.probe_committed();
+            const std::array<TireSnapshot, 2> &snaps =
+                advance ? tires.snapshot_storage()
+                        : tires.probe_snapshot_storage();
             std::array<TireSideInput, 2> side_input{};
             for (std::size_t i = 0; i < 2; ++i) {
-                // One bound element: the optional-access checker cannot
-                // link has_value()/-> across separate snaps[i] calls.
-                const auto &snap = snaps[i];
+                const TireSnapshot &snap = snaps[i];
                 const auto *patches =
-                    snap.has_value() ? &snap->patches : nullptr;
+                    committed ? &snap.patches : nullptr;
                 const std::size_t n =
                     patches != nullptr ? patches->size() : 0;
                 patch_loads_[i].assign(n, 0.);
                 if (n > patch_working_capacity_[i]) {
+                    // Defensive regrowth only — construction sized the
+                    // buffer to the writer's patch bound, so this can
+                    // never trip on a valid snapshot.
                     // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) contiguous bool buffer — vector<bool> is a bitset
                     patch_working_[i] = std::make_unique<bool[]>(n);
                     patch_working_capacity_[i] = n;
@@ -1140,9 +1211,7 @@ PhysicalStep::apply_forces_body(
                                             static_cast<std::ptrdiff_t>(n))),
                     .patch_working = working,
                     .effective_radius_m =
-                        snap.has_value()
-                            ? snap->effective_radius_m
-                            : 0.};
+                        committed ? snap.effective_radius_m : 0.};
             }
             const std::span<const std::string_view> res_names =
                 stepper_->resistance().component_names();
@@ -1237,7 +1306,7 @@ PhysicalStep::apply_forces_body(
         std::ranges::copy(total,
                           wbuf(d->qfrc_applied, m->nv).begin());
         refresh_forward(m, d);
-        auto [contacts, snapshots] =
+        const RuntimeContacts contacts =
             refresh_contacts(false, std::nullopt, active && advance);
         if (stepper_->has_cruise()) {
             // sim.cruise.torque_nm = 0. — the oracle clears the scalar
@@ -1257,7 +1326,7 @@ PhysicalStep::apply_forces_body(
         const auto final_total = accumulator_.total();
         std::ranges::copy(final_total,
                           wbuf(d->qfrc_applied, m->nv).begin());
-        return {contacts, snapshots};
+        return contacts;
     }
 }
 
@@ -1468,8 +1537,7 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         snap.components.emplace_back("rear_static_brake",
                                      brake_components.second);
         last_constraint_snapshot_ = std::move(snap);
-        std::tie(contacts_, snapshots_) =
-            refresh_contacts(true, t, true);
+        contacts_ = refresh_contacts(true, t, true);
         in.tires = tire_channels(snapshots_, v);
         if (config_.intent.enabled) {
             WireObject signals_in = in.sensors;
@@ -1774,7 +1842,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
 // selects the durable query like `sim.contact_query if final else
 // self.probe_query`; handlebar_load is stateless either way.
 
-std::pair<RuntimeContacts, WheelSnapshots>
+RuntimeContacts
 PhysicalStep::refresh_contacts(bool final, std::optional<double> time_s,
                                bool update_grounded) {
     const mjModel *m = stepper_->model();
@@ -1782,18 +1850,47 @@ PhysicalStep::refresh_contacts(bool final, std::optional<double> time_s,
     const RuntimeContactQuery &query =
         final ? contact_query_ : probe_query_;
     const double handlebar = query.handlebar_load(m, d);
-    WheelSnapshots snapshots = stepper_->tire_writer().snapshots();
-    if (!snapshots[0].has_value() || !snapshots[1].has_value()) {
+    const TireWriterView tires = stepper_->tire_writer();
+    const bool committed = tires.snapshots_committed();
+    if (!committed) {
         // `if not snapshots` — committed snapshots stay empty until the
         // first advancing compute; the detached probe evaluates on a
         // cleared clock and only its snapshots cross back.
-        stepper_->tire_writer().probe_compute_into(d, config_.timestep_s,
-                                                   component_out_);
-        snapshots = stepper_->tire_writer().probe_snapshots();
+        tires.probe_compute_into(d, config_.timestep_s, component_out_);
+    }
+    // The engaged() contract the optional access carried: a probe that
+    // returned without publishing leaves no snapshot to read.
+    if (!committed && !tires.probe_committed())
+        throw std::logic_error("engagement invariant violated");
+    // self.snapshots — publish the committed pair (the detached probe's
+    // when nothing has committed yet) into the durable member. The
+    // slots mirror the oracle's publication lifecycle: disengaged from
+    // construction/restore until this first publish engages them — and
+    // the engagement reserves the committed slots' own construction
+    // bound, so the copy-assign reuses capacity forever after instead
+    // of materializing a fresh WheelSnapshots per refresh or regrowing
+    // when the active patch count climbs past the first-published size
+    // after a reset.
+    const std::array<TireSnapshot, 2> &storage =
+        committed ? tires.snapshot_storage()
+                  : tires.probe_snapshot_storage();
+    // The bound source is the committed storage — construction-reserved
+    // on both writers regardless of the publication gate (tire.cpp:331,
+    // distributed_tire.cpp:280-284); probe storage can carry less.
+    const std::array<TireSnapshot, 2> &bound_slots =
+        tires.snapshot_storage();
+    for (std::size_t i = 0; i < 2; ++i) {
+        if (!snapshots_[i].has_value()) {
+            snapshots_[i].emplace();
+            TireSnapshot &slot = engaged(snapshots_[i]);
+            slot.patches.reserve(bound_slots[i].patches.capacity());
+            slot.backend.reserve(bound_slots[i].backend.capacity());
+        }
+        snapshots_[i] = storage[i];
     }
     const double t = time_s.has_value() ? *time_s : d->time;
-    const TireSnapshot &front = engaged(snapshots[0]);
-    const TireSnapshot &rear = engaged(snapshots[1]);
+    const TireSnapshot &front = engaged(snapshots_[0]);
+    const TireSnapshot &rear = engaged(snapshots_[1]);
     // grounded[side] = filters[side].update(loaded,t) if final or
     // update_grounded else loaded — the second observation of this
     // interval is idempotent at its equal timestamp.
@@ -1813,7 +1910,7 @@ PhysicalStep::refresh_contacts(bool final, std::optional<double> time_s,
     contacts.rear_slip_mps = snapshot_slip(rear);
     contacts.front_controller_grounded = grounded[0];
     contacts.rear_controller_grounded = grounded[1];
-    return {contacts, snapshots};
+    return contacts;
 }
 
 // ---- _rollback_brake_demand (physical_runtime.py:196-213) ---------------
@@ -1879,8 +1976,10 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
     const std::size_t nv = static_cast<std::size_t>(m->nv);
-    const auto diags = stepper_->tire_writer().diagnostics();
-    const auto &radii = stepper_->tire_writer().radii();
+    const TireWriterView view = stepper_->tire_writer();
+    const auto diags = view.diagnostics();
+    const auto &radii = view.radii();
+    const bool distributed = view.is_distributed();
     constexpr std::array<const char *, 2> sides = {"front", "rear"};
     const std::array<std::optional<bool>, 2> grounded = {
         contacts_.front_controller_grounded,
@@ -1920,8 +2019,9 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
             row.emplace_back("slip_mps", Wire(p.slip_mps));
             row.emplace_back("world_force_n",
                              wire_vec3(patch_world_force(p)));
-            // The compliant_2d backend never carries a contact couple or
-            // a non-terrain source geom (contact_state.py defaults).
+            // The supported tire backends never carry a contact couple or
+            // a non-terrain source geom (contact_state.py defaults — the
+            // distributed writer's make_patch sets working_surface too).
             row.emplace_back("couple_world_nm",
                              wire_vec3({0., 0., 0.}));
             row.emplace_back(
@@ -1945,17 +2045,27 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
         }
         const double roll_speed =
             nl > 0. ? roll_num.total() / nl : velocity[0];
+        // dict(diagnostics, ...) — the backend's own diagnostic key set
+        // starts the row; observation keys then override/append in the
+        // oracle's keyword order.
         WireObject side =
-            diags[i].has_value() ? wire_tire_diagnostics(*diags[i])
-                                 : WireObject{};
+            diags[i].has_value()
+                ? (distributed
+                       ? wire_distributed_tire_diagnostics(*diags[i])
+                       : wire_tire_diagnostics(*diags[i]))
+                : WireObject{};
         const bool multi_support =
             diags[i].has_value() ? diags[i]->multi_support : false;
         const bool outside_load_range =
             diags[i].has_value() ? diags[i]->outside_material_load_range
                                  : false;
+        const bool supports_multiple =
+            diags[i].has_value() ? diags[i]->supports_multiple_contacts
+                                 : false;
         wire_set(side, "backend", Wire(std::string(s.backend)));
         wire_set(side, "unloaded_radius_m", Wire(radii[i]));
-        wire_set(side, "supports_multiple_contacts", Wire(false));
+        wire_set(side, "supports_multiple_contacts",
+                 Wire(supports_multiple));
         wire_set(side, "outside_material_load_range",
                  Wire(outside_load_range));
         wire_set(side, "patches", Wire(std::move(patches)));
@@ -2007,7 +2117,7 @@ WireObject PhysicalStep::stored_terms() const {
     out.emplace_back("shock_upper_stop", Wire(susp.shock_upper_stop));
     for (const auto &[key, value]: stepper_->drive().stored_energy())
         wire_set(out, key, diag_wire(value));
-    if (stepper_->tire() != nullptr)
+    if (stepper_->has_tire())
         wire_set(out, "tires",
                  Wire(stepper_->tire_writer().stored_energy(d)));
     if (rider_control_.has_value())
@@ -2147,7 +2257,7 @@ double PhysicalStep::loss_increment(
     loss += diag_number(last, "freehub_dissipation_power_w") * dt;
     loss += diag_number(last, "crank_clutch_dissipation_power_w") * dt;
     loss += diag_number(last, "motor_freewheel_dissipation_power_w") * dt;
-    if (stepper_->tire() != nullptr)
+    if (stepper_->has_tire())
         loss += stepper_->tire_writer().brush_loss_step_j() +
             stepper_->tire_writer().radial_dissipation_power_w() * dt;
     if (stepper_->has_rider_contacts()) {

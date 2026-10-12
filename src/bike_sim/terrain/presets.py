@@ -12,10 +12,11 @@ run-to-run noise.
 The three ``road_*`` presets are procedurally generated (see :mod:`bike_sim.terrain.road`)
 from a fixed seed, so they are just as pinned as the authored ones. A track loaded from a
 TOML file (:mod:`bike_sim.terrain.trackfile`) is the user's own experiment and is not
-registered here.
+registered here. The ``alpine_scree`` preset is likewise generated (:mod:`bike_sim.terrain.alpine`)
+from a pinned seed.
 """
 
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 
 from bike_sim.terrain.obstacles import (
     Drop,
@@ -30,6 +31,7 @@ from bike_sim.terrain.obstacles import (
 )
 from bike_sim.terrain.profile import TrackSpec
 from bike_sim.terrain.road import road_broken, road_smooth, road_worn
+from bike_sim.terrain.alpine import ALPINE_PRESET_SEED, ROCKY_PRESET_SEED, alpine_rocky, alpine_scree
 
 
 def enduro_aggressive() -> TrackSpec:
@@ -185,10 +187,18 @@ PRESETS: Dict[str, Callable[[], TrackSpec]] = {
     "road_smooth": road_smooth,
     "road_worn": road_worn,
     "road_broken": road_broken,
+    "alpine_scree": alpine_scree,
+    "alpine_rocky": alpine_rocky,
 }
 
 DEFAULT_PRESET = "enduro_aggressive"
 DEFAULT_ROAD_PRESET = "road_worn"
+
+# Presets that are generated from a seed and accept a seed override but no length override.
+SEEDED_PRESETS: Dict[str, Tuple[Callable[..., TrackSpec], int]] = {
+    "alpine_scree": (alpine_scree, ALPINE_PRESET_SEED),
+    "alpine_rocky": (alpine_rocky, ROCKY_PRESET_SEED),
+}
 
 
 def available_presets() -> List[str]:
@@ -218,11 +228,14 @@ def get_preset(name: str) -> TrackSpec:
 
 __all__ = [
     "PRESETS",
+    "SEEDED_PRESETS",
     "DEFAULT_PRESET",
     "DEFAULT_ROAD_PRESET",
     "available_presets",
     "get_preset",
     "enduro_aggressive",
+    "alpine_scree",
+    "alpine_rocky",
     "flat",
     "single_edge",
     "washboard_only",

@@ -22,6 +22,7 @@
 #include "../src/writers/rider_forces.hpp"
 #include "../src/writers/suspension.hpp"
 #include "../src/writers/tire.hpp"
+#include "../src/writers/distributed_tire.hpp"
 #include "allocation_faults.hpp"
 
 #include <algorithm>
@@ -2620,11 +2621,12 @@ namespace {
     }
 
     nativecfg::TireParams warm_tire_params() {
-        return {.material = {.radial_k_n_m = 150000.,
-                             .radial_c_ns_m = 800.,
-                             .pressure_pa_gauge = 250000.,
-                             .provenance = "contract-test",
-                             .valid_load_range_n = {0., 3000.}},
+        return {.material = nativecfg::TireMaterial{
+                    .radial_k_n_m = 150000.,
+                    .radial_c_ns_m = 800.,
+                    .pressure_pa_gauge = 250000.,
+                    .provenance = "contract-test",
+                    .valid_load_range_n = {0., 3000.}},
                 .tangent_k_n_m = 90000., .mu = 1.2,
                 .relaxation_length_m = .35};
     }
@@ -2635,7 +2637,8 @@ namespace {
             .surface_mode = track ? "track" : "configured",
             .front = warm_tire_params(), .rear = warm_tire_params(),
             .significant_delta_m = .0005, .significance_fraction = .3,
-            .distinct_normal_deg = 12., .surface_map = std::nullopt};
+            .distinct_normal_deg = 12., .surface_map = std::nullopt,
+            .distributed = std::nullopt};
         if (track) {
             // One material interval under the front wheel's contact x —
             // short names stay inside the diagnostics string's capacity so
@@ -2652,6 +2655,32 @@ namespace {
                                           .stribeck_speed_mps = .1}}}};
         }
         return cfg;
+    }
+
+    // The distributed backend's warm config: the shared three-knot hinge
+    // density and resolved per-wheel material records, with TireParams
+    // material disengaged — the wire rule reserves it for compliant_2d.
+    nativecfg::TireConfig warm_distributed_tire() {
+        const nativecfg::HingeDensity density{
+            .knots_m = {0., .004, .012},
+            .stiffness_n_m = {300000., 150000., 90000.},
+            .damping_ns_m = 800., .provenance = "contract-test"};
+        const nativecfg::DistributedMaterial material{
+            .density = density, .fitting_dataset_id = "contract-test",
+            .valid_load_range_n = {0., 3000.},
+            .valid_deflection_range_m = {0., .02},
+            .calibration_status = "experimental_unvalidated"};
+        const nativecfg::TireParams params{
+            .material = std::nullopt, .tangent_k_n_m = 90000., .mu = 1.2,
+            .relaxation_length_m = .35};
+        return {.backend = "distributed_2d_reference",
+                .surface_mode = "configured",
+                .front = params, .rear = params,
+                .significant_delta_m = .0005, .significance_fraction = .3,
+                .distinct_normal_deg = 12., .surface_map = std::nullopt,
+                .distributed = nativecfg::DistributedConfig{
+                    .station_count = 32, .density = density,
+                    .front = material, .rear = material}};
     }
 
     nativecfg::ResistanceConfig warm_resistance() {
@@ -2704,7 +2733,7 @@ namespace {
                      joint_dof(model.get(), "front_wheel_spin"))] = 4.;
             engine::forward(model.get(), data.get());
             // Tent bump under the front wheel: raster columns 22-24 rise
-            // {0.01, 0.03, 0.01} m so the wheel's [0.55,0.65] contact
+            // {0.1, 0.3, 0.1} m so the wheel's [0.55,0.65] contact
             // window covers a height change every tick. Both raster rows
             // get identical columns — compliant_2d rejects lateral
             // terrain variation.
@@ -2763,6 +2792,30 @@ namespace {
             rider_out.resize(nv);
         }
     };
+
+    // The distributed backend's twin of WarmRig — the same warm context
+    // (the wheel bodies' geoms are collision-disabled, so the distributed
+    // construction gate passes) plus the writer's own nv scratch.
+    struct DistributedWarmRig {
+        WarmContext context;
+        DistributedTireWriter tire;
+        std::vector<double> tire_out;
+
+        DistributedWarmRig()
+            : context(),
+              tire(context.model.get(), context.data.get(),
+                   warm_distributed_tire()) {
+            tire_out.resize(static_cast<std::size_t>(context.model->nv));
+        }
+    };
+
+    // One production-shaped distributed tick: advance the sim clock, then
+    // the marked entry — mirrors warm_tick's tire call.
+    CoreStatus distributed_tick(DistributedWarmRig &rig, double dt) {
+        rig.context.data->time += dt;
+        return rig.tire.try_compute_into(rig.context.data.get(), dt,
+                                         rig.tire_out);
+    }
 
     drivetrain::TickInputs warm_tick_inputs(double dt, bool advance = true,
                                             bool active = true) {
@@ -3025,6 +3078,176 @@ namespace {
                unreset->try_components_into(warm_tick_inputs(.002),
                                             rig->drive_views),
                CoreStatus::invalid_geometry);
+    }
+
+    // The distributed backend's zero-allocation twin of
+    // test_warm_core_zero_allocation: warmup covers the first commit (the
+    // staging slots' one-time fill), then steady ticks plus a changed
+    // active-station set — the +x shift moves the front wheel across the
+    // bump edge — must stay at zero allocator activity.
+    void test_warm_distributed_zero_allocation() {
+        const auto rig = std::make_unique<DistributedWarmRig>();
+        for (int warmup = 0; warmup < 2; ++warmup)
+            require(distributed_tick(*rig, .002) == CoreStatus::ok,
+                    "distributed warmup ticks");
+        require(rig->tire.snapshots_committed(),
+                "distributed warmup did not commit snapshots");
+        allocation_counter::reset();
+        for (int tick = 0; tick < 4; ++tick)
+            require(distributed_tick(*rig, .002) == CoreStatus::ok,
+                    "steady distributed tick must succeed");
+        drivetrain::buffer(rig->context.data->qpos,
+                           rig->context.model->nq)
+            [static_cast<std::size_t>(
+                 joint_qpos(rig->context.model.get(), "root_x"))] += .06;
+        engine::forward(rig->context.model.get(),
+                        rig->context.data.get());
+        require(distributed_tick(*rig, .002) == CoreStatus::ok,
+                "distributed tick over a changing contact must succeed");
+        require(allocation_counter::count() == 0 &&
+                    allocation_counter::freed() == 0,
+                "the distributed warm tick allocated or released storage");
+    }
+
+    // The distributed twin of the try_* rejection matrix: every declared
+    // CoreStatus control flow returns through the status value with zero
+    // allocation inside the window.
+    void test_distributed_status_control() {
+        const auto rig = std::make_unique<DistributedWarmRig>();
+        require(distributed_tick(*rig, .002) == CoreStatus::ok,
+                "distributed status warmup");
+        const auto expect = [](std::string_view label, CoreStatus got,
+                               CoreStatus want) {
+            if (got != want)
+                throw std::runtime_error(
+                        std::string(label) + ": unexpected status");
+            if (allocation_counter::count() != 0 ||
+                allocation_counter::freed() != 0)
+                throw std::runtime_error(
+                        std::string(label) +
+                        ": allocation in the marked status path");
+            allocation_counter::reset();
+        };
+        const mjData *d = rig->context.data.get();
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        allocation_counter::reset();
+        expect("distributed/null",
+               rig->tire.try_compute_into(nullptr, .002, rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("distributed/width",
+               rig->tire.try_compute_into(
+                   d, .002, std::span{rig->tire_out}.first(3)),
+               CoreStatus::invalid_input);
+        expect("distributed/dt",
+               rig->tire.try_compute_into(d, -1., rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("distributed/dt-nan",
+               rig->tire.try_compute_into(d, nan, rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("distributed/double-advance",
+               rig->tire.try_compute_into(d, .002, rig->tire_out),
+               CoreStatus::invalid_input);
+    }
+
+    // Probe isolation: probe_compute_into evaluates on an isolated writer
+    // copy — the committed station wire, the committed snapshots and the
+    // interval clock are untouched, while probe_snapshots() publishes
+    // what the probe staged. The state wire contains NaN cells, so the
+    // unchanged check is a bitwise memcmp, not vector equality.
+    void test_distributed_probe_isolation() {
+        const auto rig = std::make_unique<DistributedWarmRig>();
+        require(distributed_tick(*rig, .002) == CoreStatus::ok,
+                "distributed probe warmup");
+        const auto state = rig->tire.state();
+        require(rig->tire.snapshots_committed(),
+                "distributed warmup did not commit snapshots");
+        // snapshot_storage() is the committed slot itself — raw storage,
+        // no optional access; the probe must leave it byte-identical.
+        const auto &committed = rig->tire.snapshot_storage();
+        const std::int64_t committed_id = committed[0].interval_id;
+        const double committed_time = committed[0].time_s;
+        const std::size_t committed_patches =
+                committed[0].patches.size();
+        rig->tire.probe_compute_into(rig->context.data.get(), .002,
+                                     rig->tire_out);
+        require(rig->tire.probe_committed(),
+                "distributed probe did not publish snapshots");
+        require(rig->tire.probe_snapshots()[0].has_value(),
+                "distributed probe front snapshot missing");
+        const auto after = rig->tire.state();
+        require(after.size() == state.size() &&
+                std::ranges::equal(after, state, [](double a, double b) {
+                    // The wire carries NaN cells — compare bits, not IEEE.
+                    return std::bit_cast<std::uint64_t>(a) ==
+                           std::bit_cast<std::uint64_t>(b);
+                }),
+                "probe touched committed station state");
+        const auto &stayed = rig->tire.snapshot_storage();
+        require(stayed[0].interval_id == committed_id &&
+                stayed[0].time_s == committed_time &&
+                stayed[0].patches.size() == committed_patches,
+                "probe overwrote committed snapshots");
+        // The probe never consumed the clock: the next advancing tick at
+        // +dt is still legal.
+        require(distributed_tick(*rig, .002) == CoreStatus::ok,
+                "tick after probe must advance");
+    }
+
+    // The committed-storage read path the physical step uses instead of
+    // the by-value snapshots()/probe_snapshots(): snapshots_committed()
+    // is the same publication gate the copying accessor projects into
+    // its optional pair, so snapshot_storage()/probe_snapshot_storage()
+    // hold exactly what the copy would have returned. This case pins
+    // the contract apply_forces_body and refresh_contacts rely on: the
+    // gate reads, the raw-storage borrows, and the durable-publication
+    // copy-assign into slots reserved to the writer's own patch bound
+    // all measure zero allocator activity. (apply_forces_body itself
+    // lives in step.cpp, outside this binary — the measured window here
+    // covers the writer-side primitives it calls.)
+    void test_distributed_committed_snapshot_borrow() {
+        const auto rig = std::make_unique<DistributedWarmRig>();
+        for (int warmup = 0; warmup < 2; ++warmup)
+            require(distributed_tick(*rig, .002) == CoreStatus::ok,
+                    "distributed borrow warmup ticks");
+        require(rig->tire.snapshots_committed(),
+                "distributed warmup did not commit snapshots");
+        // The cold probe path allocates by design (the detached copy
+        // duplicates construction-sized scratch) — run it before the
+        // measured window; only its publication reads are measured.
+        rig->tire.probe_compute_into(rig->context.data.get(), .002,
+                                     rig->tire_out);
+        require(rig->tire.probe_committed(),
+                "distributed probe did not publish snapshots");
+        // The durable destination, staged exactly like PhysicalStep's
+        // snapshots_ slots after their first publish: engaged with
+        // patches/backend capacity reserved to the writer's own bound
+        // (refresh_contacts engages disengaged slots with that reserve
+        // before the copy-assign — the engagement itself is the
+        // one-time cold cost, outside this window).
+        const std::array<TireSnapshot, 2> &committed =
+                rig->tire.snapshot_storage();
+        std::array<std::optional<TireSnapshot>, 2> durable{};
+        for (std::size_t i = 0; i < 2; ++i) {
+            TireSnapshot &slot = durable[i].emplace();
+            slot.patches.reserve(committed[i].patches.capacity());
+            slot.backend.reserve(committed[i].backend.capacity());
+        }
+        allocation_counter::reset();
+        const std::array<TireSnapshot, 2> &probe =
+                rig->tire.probe_snapshot_storage();
+        durable[0] = probe[0];
+        durable[1] = probe[1];
+        durable[0] = committed[0];
+        durable[1] = committed[1];
+        const std::optional<TireSnapshot> &published = durable[0];
+        require(published.has_value() &&
+                    published->patches.size() ==
+                        committed[0].patches.size() &&
+                    published->backend == committed[0].backend,
+                "publication copy diverged from committed storage");
+        require(allocation_counter::count() == 0 &&
+                    allocation_counter::freed() == 0,
+                "committed snapshot borrow or publication allocated");
     }
 
     // The R1 allocation matrix: for each warm surface row — fixture
@@ -3673,7 +3896,7 @@ namespace {
                 "batch columns carry the energy channel projection");
     }
 
-    constexpr std::array<TestCase, 35> cases{{
+    constexpr std::array<TestCase, 39> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -3704,6 +3927,10 @@ namespace {
         {.name = "force_component_layout", .run = test_force_component_layout},
         {.name = "warm_core_zero_allocation", .run = test_warm_core_zero_allocation},
         {.name = "rtsan_invalid_status_control", .run = test_rtsan_invalid_status_control},
+        {.name = "warm_distributed_zero_allocation", .run = test_warm_distributed_zero_allocation},
+        {.name = "distributed_status_control", .run = test_distributed_status_control},
+        {.name = "distributed_probe_isolation", .run = test_distributed_probe_isolation},
+        {.name = "distributed_committed_snapshot_borrow", .run = test_distributed_committed_snapshot_borrow},
         {.name = "warm_allocation_matrix", .run = test_warm_allocation_matrix},
         {.name = "rider_contacts_config_domain", .run = test_rider_contacts_config_domain},
         {.name = "owned_episode_batch_ranges", .run = test_owned_episode_batch_ranges},

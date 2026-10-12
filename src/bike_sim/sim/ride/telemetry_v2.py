@@ -21,12 +21,18 @@ class ForceSample:
         if not isfinite(self.time_s):
             raise ValueError("force sample time is not finite")
         for name in ("qpos", "qvel"):
-            value = np.array(getattr(self, name), dtype=float, copy=True)
+            value = getattr(self, name)
+            if is_frozen_array(value) and value.ndim == 1:
+                continue
+            value = np.array(value, dtype=float, copy=True)
             if value.ndim != 1 or not np.isfinite(value).all():
                 raise ValueError("force sample state shape or value mismatch")
             object.__setattr__(self, name, _frozen_copy(value))
         copied: dict[str, np.ndarray] = {}
         for name, force in self.components.items():
+            if is_frozen_array(force) and force.shape == self.qvel.shape:
+                copied[name] = force
+                continue
             value = np.array(force, dtype=float, copy=True)
             if value.shape != self.qvel.shape or not np.isfinite(value).all():
                 raise ValueError("force sample shape or value mismatch")
@@ -36,7 +42,27 @@ class ForceSample:
 
 def _frozen_copy(value: np.ndarray) -> np.ndarray:
     """Use immutable bytes as backing storage so write flags cannot be re-enabled."""
-    return np.frombuffer(value.tobytes(), dtype=float).reshape(value.shape)
+    frozen = np.frombuffer(value.tobytes(), dtype=float)
+    # A same-shape reshape view would report the interim ndarray as its base,
+    # hiding the immutable bytes from is_frozen_array.
+    return frozen if value.ndim == 1 else frozen.reshape(value.shape)
+
+
+def is_frozen_array(value) -> bool:
+    """True only for the bytes-backed float64 arrays produced by freeze_force."""
+    return (type(value) is np.ndarray and value.dtype == np.float64
+            and not value.flags.writeable
+            and value.base is not None and not isinstance(value.base, np.ndarray))
+
+
+def freeze_force(value, nv: int) -> np.ndarray:
+    """One finite, immutable float64 copy; the only way to make a frozen array."""
+    if is_frozen_array(value) and value.shape == (nv,):
+        return value
+    array = np.array(value, dtype=float, copy=True)
+    if array.shape != (nv,) or not np.isfinite(array).all():
+        raise ValueError('force sample shape or value mismatch')
+    return _frozen_copy(array)
 
 
 def component_powers(sample: ForceSample) -> dict[str, float]:
@@ -44,4 +70,4 @@ def component_powers(sample: ForceSample) -> dict[str, float]:
     return {name: float(force @ sample.qvel) for name, force in sample.components.items()}
 
 
-__all__ = ["ForceSample", "component_powers"]
+__all__ = ["ForceSample", "component_powers", "freeze_force", "is_frozen_array"]

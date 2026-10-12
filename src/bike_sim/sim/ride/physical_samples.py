@@ -4,11 +4,12 @@ from types import MappingProxyType
 from collections.abc import Mapping, Sequence
 import numpy as np
 from bike_sim.physics.checks import array, scalar
+from bike_sim.sim.ride.telemetry_v2 import is_frozen_array
 
 
 def freeze(value):
     if isinstance(value, np.ndarray):
-        return array(value, 'sample array', readonly=True)
+        return value if is_frozen_array(value) else array(value, 'sample array', readonly=True)
     if isinstance(value, Mapping):
         return MappingProxyType({str(k): freeze(v) for k, v in value.items()})
     if isinstance(value, (tuple, list)):
@@ -52,10 +53,14 @@ class PhysicalSample:
         end = scalar(self.end_time_s, 'interval end', minimum=0)
         if end <= t:
             raise ValueError('force interval must have positive duration')
-        q, v = array(self.qpos, 'sample qpos', readonly=True), array(self.qvel, 'sample qvel', readonly=True)
+        def frozen(value, name, shape=None):
+            if is_frozen_array(value) and value.ndim == 1 and (shape is None or value.shape == shape):
+                return value
+            return array(value, name, shape, readonly=True)
+        q, v = frozen(self.qpos, 'sample qpos'), frozen(self.qvel, 'sample qvel')
         if q.ndim != 1 or v.ndim != 1:
             raise ValueError('sample coordinates must be vectors')
-        forces = {name: array(f, name, v.shape, readonly=True) for name, f in self.forces.items()}
+        forces = {name: frozen(f, name, v.shape) for name, f in self.forces.items()}
         object.__setattr__(self, 'qpos', q)
         object.__setattr__(self, 'qvel', v)
         object.__setattr__(self, 'forces', MappingProxyType(forces))

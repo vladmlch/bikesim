@@ -21,13 +21,13 @@ from bike_sim.sim.ride.rider_control import ArticulatedRiderController, RiderCom
 from bike_sim.sim.ride.physical_mapping import resolve_id
 from bike_sim.sim.ride.rider_state import rider_kinematic_state, road_grade_for_posture, road_grade_preview
 from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory, freeze
-from bike_sim.sim.ride.telemetry_v2 import ForceSample
+from bike_sim.sim.ride.telemetry_v2 import ForceSample, freeze_force, is_frozen_array
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
 from bike_sim.sim.ride.physical_observations import (
     tire_channels, preview_tire_channels, energy_state, actuator_components,
     constraint_components, sensor_channels, numerical_constraint_powers,
 )
-from bike_sim.sim.ride.physical_energy import mass_observations
+from bike_sim.sim.ride.physical_energy import com_observations, mass_observations
 from bike_sim.sim.ride.rider_intent import RiderIntentResolver, signals_from_channels
 from bike_sim.physics.seated_climb import SeatedClimbSignals
 from bike_sim.sim.ride.balance_monitor import BalanceMonitor
@@ -113,6 +113,7 @@ class PhysicalRuntime:
         self.live_real_time_factor = None
         self.research_accounting_valid = True
         self._rollback_hold = False
+        self._last_endpoint_mass = None
 
     def set_strict(self, strict: bool) -> None:
         if not isinstance(strict, bool):
@@ -258,7 +259,16 @@ class PhysicalRuntime:
             rear_in_contact=bool(sim.contacts.rear_controller_grounded),
             rear_slip_mps=None if rear_snapshot is None else float(rear_snapshot.slip_mps),
             effort_ceiling_nm=control.human_torque_nm if automatic_effort else None)
-        mujoco.mj_forward(m,d)
+        # Init callers mutate qpos/qvel or constraint-defining model constants
+        # between apply_forces calls -- the equilibrium relaxation steps without
+        # a post-step forward and the least-squares refiner rewrites the pose for
+        # every trial -- and rely on this pass to refresh xpos/xmat/site/geom
+        # poses and equality efc_pos before the force writers below read them.
+        # The running loop enters with derived state already current from the
+        # post-mj_step forward, so the zero-input solve here would feed only
+        # warmstarts.
+        if getattr(self, 'initializing', False):
+            mujoco.mj_forward(m,d)
         acc = sim.force_accumulator
         acc.clear()
         for name,force in sim.applier.compute_qfrc_components(m,d).items():
@@ -439,6 +449,7 @@ class PhysicalRuntime:
             # senses the solved t=0 reactions, not the relaxation's last ones.
             self.rider_contacts.settle_welds(m,d)
         mass,elastic,total=energy_state(self)
+        self._last_endpoint_mass=mass
         self.initial_energy_j=total
         self.energy_scale_j=max(1.,mass['kinetic_energy_j']+sum(elastic.values()))
         self.initial_battery_j=self.drive.battery.energy_j
@@ -582,11 +593,17 @@ class PhysicalRuntime:
         # runs a second pair of mj_kinematics/mj_comPos calls just for telemetry.
         attachment_prepared = (None if self.rider_contacts is None else
                                self.rider_contacts.prepare_attachment_raw(m,d))
+        # The energy/momentum solve belongs to full telemetry intervals only;
+        # every raw of a period reports the period's closing measurement (see
+        # _close_period). Decimated intervals keep the compiled mass and CoM
+        # rows the per-interval truth consumers read, at kinematic cost only.
+        full = (sim.steps % self.record_decimation == 0
+                or (sim.steps+1) % self.control_clock.steps_per_period == 0)
         # Save incoming auxiliary energies before the solve overwrites no state.
-        mass0=mass_observations(m,d)
-        sim.last_force_sample=ForceSample(t,q,v,sim.force_accumulator.components)
+        mass0 = mass_observations(m,d) if full else com_observations(m,d)
+        components={k:freeze_force(f,m.nv) for k,f in sim.force_accumulator.components.items()}
+        sim.last_force_sample=ForceSample(t,q,v,components)
         sim.last_force_snapshot=(t,sim.last_force_sample.qpos,sim.last_force_sample.qvel,sim.last_force_sample.components)
-        components={k:np.array(f,copy=True) for k,f in sim.force_accumulator.components.items()}
         warning_counts=np.array([w.number for w in d.warning],copy=True)
         mujoco.mj_step(m,d)
         constraint_powers=numerical_constraint_powers(m,d,v)
@@ -647,7 +664,7 @@ class PhysicalRuntime:
         mujoco.mj_forward(m,d)
         if not np.isfinite(d.qpos).all() or not np.isfinite(d.qvel).all():
             raise RuntimeError('non-finite physical simulation state')
-        mass,elastic,total=energy_state(self)
+        mass,elastic,total = energy_state(self) if full else (None,None,None)
         drive.update(chain_power_w=float(components['chain']@v),
             freehub_power_w=float((components['freehub']+components.get('ideal_transmission',np.zeros(m.nv)))@v),
             front_brake_power_w=float(components['front_static_brake']@v),rear_brake_power_w=float(components['rear_static_brake']@v),
@@ -663,7 +680,6 @@ class PhysicalRuntime:
             'shock_solver_limit_power_w':shock_limit_power,'linkage_closure_max_m':linkage_error,
             'generalized_force_components_n':{n:float(f[sim.applier.fork_dofadr if n.startswith('fork') else sim.applier.shock_dofadr])
                 for n,f in components.items() if n.startswith(('fork_','shock_'))}}
-        full = sim.steps % self.record_decimation == 0 or (sim.steps+1) % self.control_clock.steps_per_period == 0
         channels = {'tires':tires, 'drive':drive, 'suspension':suspension,
                     'sensors':sensors, 'mass':mass0, 'contact_crash_cause':contact_crash,
                     'control':asdict(self.applied_control),
@@ -679,6 +695,9 @@ class PhysicalRuntime:
             rider_allocation={} if self.rider_control is None else self.rider_control.allocation_diagnostics,
             rider_ik_saturation={} if self.rider_control is None else self.rider_control.saturated_ik,
             rider_support_targets={} if self.rider_control is None else self.rider_control.support_diagnostics)
+        # Freeze once per step: every later update wrote fresh mutable arrays,
+        # and the published sample reuses these without copying or re-checking.
+        components={k:(f if is_frozen_array(f) else freeze_force(f,m.nv)) for k,f in components.items()}
         raw = RawStep(sim.steps,t,float(d.time),q,v,components,attachment_raw,
             solved_actuator_force,solved_passive,tires,
             dict(channels=channels, diagnostics=diagnostics, attachment_errors=attachment_errors,
@@ -719,6 +738,23 @@ class PhysicalRuntime:
         if not raws:
             return
         report = evaluate_period(self, raws, self.cfg.articulated.attachment_budget())
+        # The energy/momentum solve runs on full intervals only. A raw that
+        # measured its state reports its own energy; an unmeasured raw carries
+        # the closing measurement of its period. A crash or flush can drain a
+        # partial period holding no measured interval at all -- then the
+        # ledger keeps its previous datum instead of fabricating one.
+        closing_total = closing_elastic = None
+        endpoint_mass = getattr(self, '_last_endpoint_mass', None)
+        for raw in reversed(raws):
+            if raw.metadata['mechanical_energy_j'] is not None:
+                closing_total = raw.metadata['mechanical_energy_j']
+                closing_elastic = raw.metadata['elastic_energy_j']
+                endpoint_mass = raw.metadata['diagnostics']['endpoint_mass']
+                break
+        if closing_total is None:
+            closing_total = self.energy['mechanical_energy_j']
+            closing_elastic = self.energy['elastic_energy_j']
+        self._last_endpoint_mass = endpoint_mass
         published = []
         failures = []
         self.interval_constraints = {}
@@ -744,7 +780,13 @@ class PhysicalRuntime:
             # roundoff budget is absolute; it never grows with step count.
             if index == len(raws)-1 and not work_ok:
                 violations += ('energy.constraint_work',)
-            total=raw.metadata['mechanical_energy_j']; elastic=raw.metadata['elastic_energy_j']
+            total=raw.metadata['mechanical_energy_j']
+            elastic=raw.metadata['elastic_energy_j']
+            if total is None:
+                # Copy the forwarded closing elastic so each published sample
+                # owns its dict instead of aliasing the period's shared one.
+                total, elastic = (closing_total,
+                                  dict(closing_elastic) if isinstance(closing_elastic, dict) else closing_elastic)
             self.energy={'mechanical_energy_j':total,'elastic_energy_j':elastic,
                 'active_work_j':self.active_work_j,'external_work_j':self.external_work_j,
                 'loss_j':self.loss_j,'loss_step_j':loss_step,'solver_constraint_work_j':self.solver_work_j,'energy_scale_j':self.energy_scale_j,
@@ -779,9 +821,14 @@ class PhysicalRuntime:
             full = raw.metadata['full'] or index == len(raws)-1
             if full:
                 diagnostics = raw.metadata['diagnostics']
+                endpoint_mass = diagnostics['endpoint_mass']
+                if endpoint_mass is None:
+                    endpoint_mass = self._last_endpoint_mass
+                if isinstance(endpoint_mass, dict):
+                    endpoint_mass = dict(endpoint_mass)
                 channels.update(rider=copy.deepcopy(diagnostics['rider']),
                     rider_welds=copy.deepcopy(diagnostics['rider_welds']),
-                    endpoint_mass=diagnostics['endpoint_mass'],
+                    endpoint_mass=endpoint_mass,
                     rider_intent={} if diagnostics['rider_intent'] is None else
                         dict(asdict(diagnostics['rider_intent']), inclination_rad=diagnostics['inclination_rad']),
                     rider_allocation={k:tuple(float(x) for x in value) if isinstance(value,np.ndarray) else value
@@ -791,7 +838,12 @@ class PhysicalRuntime:
                 channels['attachment_samples'] = {name:asdict(value) for name,value in attachments.items()}
                 channels['component_work_j'] = {n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()}
                 channels['rider_control'] = {} if self.rider_control is None else copy.deepcopy(self.rider_control.last_terms)
-            self.model_status.observe(raw.interval_id,raw.time_s,channels)
+            # Energy quality judges a measurement; unmeasured intervals carry a
+            # forwarded closing total whose hybrid residual must not feed the
+            # (sticky) numerically_valid verdict.
+            self.model_status.observe(raw.interval_id,raw.time_s,
+                channels if raw.metadata['mechanical_energy_j'] is not None else
+                {k:v for k,v in channels.items() if k!='energy'})
             channels['model_status'] = self.model_status.as_dict()
             sample = PhysicalSample(raw.interval_id,raw.time_s,raw.end_time_s,
                                     raw.qpos,raw.qvel,components,channels)

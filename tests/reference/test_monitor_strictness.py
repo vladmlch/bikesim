@@ -77,6 +77,47 @@ def test_raw_failure_time_and_sticky_status_ignore_decimation(strict, decimation
     assert not runtime._buffer._raws
 
 
+def test_unmeasured_partial_period_keeps_previous_energy_datum():
+    """A crash/flush tail with no measured interval forwards the ledger datum."""
+    from dataclasses import replace
+    runtime = runtime_for_raws(strict=False, decimation=400)
+    runtime.energy = {'mechanical_energy_j': 42., 'elastic_energy_j': {'x': 1.}}
+    for i in range(3):
+        metadata = dict(neutral_raw(i).metadata,
+            mechanical_energy_j=None, elastic_energy_j=None)
+        runtime._buffer.push(replace(neutral_raw(i), metadata=metadata))
+    runtime.flush()
+    assert len(runtime.completed_samples) == 3
+    for sample in runtime.completed_samples:
+        assert sample.channels['energy']['mechanical_energy_j'] == 42.
+        assert sample.channels['energy']['elastic_energy_j'] == {'x': 1.}
+
+
+def test_partial_period_reports_last_measured_energy_on_every_raw():
+    """Unmeasured raws carry the period's closing measurement; measured raws
+    keep their own."""
+    from dataclasses import replace
+    runtime = runtime_for_raws(strict=False, decimation=400)
+    for i in range(3):
+        measured = i == 1
+        metadata = dict(neutral_raw(i).metadata,
+            mechanical_energy_j=1. if measured else None,
+            elastic_energy_j={'k': 1.} if measured else None,
+            diagnostics=dict(neutral_raw(i).metadata['diagnostics'],
+                             endpoint_mass=({'com_m': np.array([1., 0., 0.])}
+                                            if measured else None)))
+        runtime._buffer.push(replace(neutral_raw(i), metadata=metadata))
+    runtime.flush()
+    assert len(runtime.completed_samples) == 3
+    for sample in runtime.completed_samples:
+        assert sample.channels['energy']['mechanical_energy_j'] == 1.
+        assert sample.channels['energy']['elastic_energy_j'] == {'k': 1.}
+    # The tail raw never measured its endpoint; the period's last measured
+    # endpoint mass is forwarded through the full-channel extras.
+    assert np.array_equal(runtime.completed_samples[-1].channels['endpoint_mass']['com_m'],
+                          np.array([1., 0., 0.]))
+
+
 def test_monitor_mode_cannot_change_after_a_step():
     runtime = runtime_for_raws()
     for bad in (0, None, 'false'):

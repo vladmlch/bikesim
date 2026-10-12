@@ -238,6 +238,9 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
     env = research_cli.make_environment(args)
     sim, runtime = env.sim, env.sim.physical
     command = RideControl(motor_torque_nm=0., human_torque_nm=0.)
+    # Put both paths through the identical settled-cache reset; the first cold
+    # equilibrium solve can leave a different allocator warm-start iterate.
+    env.reset()
     expected = []
     for index in range(2003):
         step_reference(runtime, control=command)
@@ -247,6 +250,9 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
         runtime.reference_monitor.accept(sample.end_time_s, sample.channels['attachment_violations'])
     failure = runtime.reference_monitor.first_failure
     env.reset()
+    # The scalar oracle is the decimation-1 reference: every interval measures
+    # its own energy state, so per-interval fields compare step-for-step.
+    runtime.set_record_decimation(1)
     actual = []
     for _ in range(2003):
         sim.step(control=command)
@@ -281,3 +287,111 @@ def test_runtime_batch_matches_preserved_scalar_step_and_flush(tmp_path):
         assert scalar.channels['attachment_violations'] == sample.channels['attachment_violations']
         assert sample.channels['energy']['muscle_positive_j'] == pytest.approx(
             scalar.channels['energy']['muscle_positive_j'], abs=1e-9)
+
+
+@pytest.mark.slow
+def test_record_decimation_forwards_period_closing_energy(tmp_path):
+    """Decimation drops the energy/momentum solve on non-full intervals only.
+
+    Published invariants, runtime-vs-runtime so the check is independent of
+    the scalar-oracle step equivalence:
+
+    - every interval keeps its own accumulated work/loss and its own
+      compiled mass/CoM;
+    - a measured (``full``) interval reports its own solved energy;
+    - an unmeasured interval forwards the closing measurement of its period,
+      or the previous period's closing datum in a flush/crash tail that holds
+      no measured interval at all;
+    - violation and monitor accounting are decimation-invariant.
+    """
+    from pathlib import Path
+    from bike_sim.cli import research as research_cli
+    from bike_sim.sim.ride.control import RideControl
+    track = tmp_path / 'flat.toml'
+    track.write_text('name = "probe"\nlength_m = 200.0\nsurface = "hardpack"\n'
+                     'grade_profile = { knots = [[0.0, 0.0], [200.0, 0.0]] }\n')
+    args = research_cli.parser().parse_args([
+        '--physics-config', str(Path(__file__).resolve().parents[2] /
+                                'examples/research/viewer_physics_welded.toml'),
+        '--track-file', str(track), '--dt', '.0005', '--duration', '1.',
+        '--diagnostic-model-limits', '--out', str(tmp_path / 'out')])
+    env = research_cli.make_environment(args)
+    sim, runtime = env.sim, env.sim.physical
+    command = RideControl(motor_torque_nm=0., human_torque_nm=0.)
+    steps = runtime.control_clock.steps_per_period*81+3  # unmeasured flush tail
+    def collect(decimation):
+        env.reset()
+        runtime.set_record_decimation(decimation)
+        rows = []
+        for _ in range(steps):
+            sim.step(control=command)
+            rows.extend(runtime.completed_samples)
+        runtime.flush()
+        rows.extend(runtime.completed_samples)
+        return rows
+    baseline = collect(1)
+    decimated = collect(80)
+    assert len(baseline) == len(decimated) == steps
+    n = steps
+    period = runtime.control_clock.steps_per_period
+    accumulators = ('active_work_j', 'external_work_j', 'loss_j', 'loss_step_j',
+        'muscle_signed_j', 'muscle_positive_j', 'motor_signed_j', 'motor_positive_j',
+        'constraint_absolute_j', 'constraint_signed_j', 'solver_constraint_work_j',
+        'electrical_work_j', 'source_positive_work_j')
+    def closing(interval_id):
+        """The interval whose measurement an unmeasured raw's energy reports."""
+        start = interval_id-interval_id % period
+        measured = [j for j in range(start, min(start+period, n))
+                    if j % 80 == 0 or (j+1) % period == 0]
+        if measured:
+            return measured[-1]
+        # An unmeasured tail keeps the previous period's closing datum.
+        previous = [j for j in range(start) if j % 80 == 0 or (j+1) % period == 0]
+        return previous[-1]
+    def elastic_equal(energy, expected_elastic, i):
+        assert set(energy['elastic_energy_j']) == set(expected_elastic)
+        for name, value in expected_elastic.items():
+            assert energy['elastic_energy_j'][name] == pytest.approx(value, abs=1e-9), (name, i)
+    full_ids = {s.interval_id for s in decimated if 'rider_control' in s.channels}
+    assert full_ids == {i for i in range(steps)
+                        if i % 80 == 0 or (i+1) % period == 0 or i == steps-1}
+    for base, sample in zip(baseline, decimated):
+        i = sample.interval_id
+        assert base.interval_id == i
+        assert base.channels['attachment_violations'] == sample.channels['attachment_violations']
+        for name in accumulators:
+            assert sample.channels['energy'][name] == pytest.approx(
+                base.channels['energy'][name], abs=1e-9), (name, i)
+        # Every interval still reports its own compiled mass and CoM.
+        assert sample.channels['mass']['mass_kg'] == pytest.approx(
+            base.channels['mass']['mass_kg'])
+        np.testing.assert_allclose(sample.channels['mass']['com_m'],
+            base.channels['mass']['com_m'], rtol=0., atol=1e-12)
+        if i % 80 == 0 or (i+1) % period == 0:
+            # A measured interval reports its own solved energy/mass state.
+            for name in ('mechanical_energy_j', 'residual_j'):
+                assert sample.channels['energy'][name] == pytest.approx(
+                    base.channels['energy'][name], abs=1e-9), (name, i)
+            elastic_equal(sample.channels['energy'], base.channels['energy']['elastic_energy_j'], i)
+            assert set(sample.channels['mass']) == set(base.channels['mass'])
+        else:
+            # Unmeasured intervals forward the period-closing measurement and
+            # keep only the mass/CoM rows.
+            assert set(sample.channels['mass']) == {'mass_kg', 'com_m'}
+            forwarded = baseline[closing(i)].channels['energy']
+            assert sample.channels['energy']['mechanical_energy_j'] == pytest.approx(
+                forwarded['mechanical_energy_j'], abs=1e-9), i
+            elastic_equal(sample.channels['energy'], forwarded['elastic_energy_j'], i)
+            # The forwarded residual keeps the interval's own accumulators.
+            assert sample.channels['energy']['residual_j'] == pytest.approx(
+                base.channels['energy']['residual_j']
+                + forwarded['mechanical_energy_j']
+                - base.channels['energy']['mechanical_energy_j'], abs=1e-9), i
+    # Violation and monitor accounting are decimation-invariant.
+    for name in ('model_violation_counts', 'model_valid', 'numerically_valid'):
+        assert (decimated[-1].channels['model_status'][name]
+                == baseline[-1].channels['model_status'][name]), name
+    # The unmeasured flush tail still reports the last measured endpoint mass.
+    assert decimated[-1].channels['endpoint_mass'] is not None
+    np.testing.assert_allclose(decimated[-1].channels['endpoint_mass']['com_m'],
+        baseline[closing(steps-1)].channels['endpoint_mass']['com_m'], rtol=0., atol=1e-12)

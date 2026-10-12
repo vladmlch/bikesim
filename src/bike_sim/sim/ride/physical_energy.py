@@ -42,6 +42,23 @@ def fork_air_energy(air_spring, travel_m):
     return max(energy, 0.)
 
 
+def com_observations(model, data):
+    """Compiled total mass and CoM only — the decimated-step mass channel.
+
+    Every published interval still reports where its incoming state put the
+    compiled centre of mass (the per-interval truth consumers read ``com_m``),
+    without the momentum/energy solves ``mass_observations`` performs. The
+    values are the same formula ``mass_observations`` uses, so a ``com_m``
+    column is identical across full and decimated intervals.
+    """
+    mass = np.asarray(model.body_mass)
+    total = float(mass.sum())
+    if total <= 0:
+        raise ValueError('model has no physical mass')
+    return {'mass_kg': total,
+            'com_m': (mass[:, None]*data.xipos).sum(axis=0)/total}
+
+
 def mass_observations(model, data):
     """Compiled CoM, kinetic/potential energy and full spatial momentum."""
     import mujoco

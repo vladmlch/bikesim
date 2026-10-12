@@ -16,3 +16,4 @@ that this branch ports from; numbers on this branch may differ.
 | 2026-10-11 | b614c5d | energy_state + mass_observations only on full samples (decimation-gated telemetry) | 0.729 | 1.725 |
 | 2026-10-11 | 34129dc | skip apply_forces entry mj_forward in running loop (3.25->2.25 calls/step) | 0.710 | 1.70 |
 | 2026-10-11 | dacf00d | numba njit(cache) on directional_capacity/_brush_step/_normal_contact/_box_pad_contact | 0.774 | 1.54 |
+| 2026-10-12 | e3b1d9e | impl/cpp-port-p2 post-port measurement (this branch); note: this repo's measure_realtime.py has no --no-strict flag and every run aborts at step 4 (reason=invalid_controller, pre-existing `energy.constraint_work` reference violation at t=0.005s — same on base d52ed38), so median RTF is a 4-step prefix figure; per-step is the honest 1600-step number | 0.576 | 1.609 |

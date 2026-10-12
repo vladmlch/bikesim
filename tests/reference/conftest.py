@@ -150,3 +150,24 @@ def environment_pair(environment_factory, native_module):
                 native._directory.cleanup()
         else:
             native.close()
+
+
+@pytest.fixture(autouse=True)
+def _pin_oracle_kernels(request, monkeypatch):
+    """Native bitwise tests compare C++ against reference arithmetic, not
+    the njit kernels: pin every imported core name to its ``*_py`` twin so
+    oracle-side numerics stay bit-identical (njit may drift ~1 ulp)."""
+    if not request.node.path.name.startswith('test_native_'):
+        return
+    from bike_sim.physics import joint_strength, tire
+    from bike_sim.sim.ride import (distributed_tire_forces, rider_contacts,
+                                    rider_control, support_geometry,
+                                    tire_forces)
+    for module in (tire, tire_forces, distributed_tire_forces, rider_contacts):
+        monkeypatch.setattr(module, '_brush_step', tire._brush_step_py)
+    for module in (tire, tire_forces, rider_contacts, rider_control):
+        monkeypatch.setattr(module, '_normal_contact', tire._normal_contact_py)
+    monkeypatch.setattr(joint_strength, '_capacity_core',
+                        joint_strength._capacity_core_py)
+    monkeypatch.setattr(support_geometry, '_box_pad_contact_core',
+                        support_geometry._box_pad_contact_core_py)

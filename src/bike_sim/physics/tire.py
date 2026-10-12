@@ -8,6 +8,10 @@ Synthetic material parameters are not experimental calibration.
 from dataclasses import dataclass
 from math import isfinite
 from numbers import Real
+
+import numba
+from numba.extending import register_jitable
+
 from bike_sim.physics.checks import scalar
 
 
@@ -15,9 +19,14 @@ def _scalar(value: float, name: str) -> float:
     return scalar(value, name)
 
 
+@register_jitable
 def _finite_result(*values: float) -> None:
-    if not all(isfinite(value) for value in values):
-        raise OverflowError("tire calculation exceeds finite floating-point range")
+    # Loop form of `not all(isfinite(v) for v in values)` -- same contract
+    # (isfinite is pure), and compilable inside the njit brush/contact cores.
+    for value in values:
+        if not isfinite(value):
+            raise OverflowError(
+                "tire calculation exceeds finite floating-point range")
 
 
 @dataclass(frozen=True)
@@ -64,14 +73,12 @@ class TireSpec:
         self, penetration_m: float, penetration_rate_m_s: float
     ) -> tuple[float, float]:
         """Evaluate this instance's parameters; return force [N], energy [J]."""
-        self.validate()
         return normal_contact(
             penetration_m, penetration_rate_m_s,
             self.radial_k_n_m, self.radial_c_ns_m,
         )
 
     def elastic_response(self, penetration_m: float) -> tuple[float, float]:
-        self.validate()
         penetration = max(0., _scalar(penetration_m, 'tire deflection'))
         force = self.radial_k_n_m * penetration
         energy = .5 * self.radial_k_n_m * penetration**2
@@ -80,7 +87,6 @@ class TireSpec:
 
     def is_load_in_valid_range(self, load_n: float) -> bool:
         """Report applicability without modifying physical force or pressure."""
-        self.validate()
         load = _scalar(load_n, "load_n")
         lower, upper = self.valid_load_range_n
         return lower <= load <= upper
@@ -116,8 +122,21 @@ def normal_contact(
     return _normal_contact(delta, delta_dot, k, c)
 
 
+@numba.njit(cache=True)
 def _normal_contact(delta: float, delta_dot: float, k: float, c: float) -> tuple[float, float]:
     """Core of `normal_contact` for callers that already validated inputs."""
+    if delta <= 0.0:
+        return 0.0, 0.0
+    spring_force = k * delta
+    damping_force = c * delta_dot
+    energy = 0.5 * spring_force * delta
+    total_force = spring_force + damping_force
+    _finite_result(spring_force, damping_force, total_force, energy)
+    return max(0.0, total_force), energy
+
+
+def _normal_contact_py(delta: float, delta_dot: float, k: float, c: float) -> tuple[float, float]:
+    """Pure-Python reference kept for the compiled-core equivalence test."""
     if delta <= 0.0:
         return 0.0, 0.0
     spring_force = k * delta
@@ -160,11 +179,48 @@ def brush_step(
     return _brush_step(xi, u, v_roll, Fn, k, mu, length, dt)
 
 
+@numba.njit(cache=True)
 def _brush_step(
     xi: float, u: float, v_roll: float, Fn: float,
     k: float, mu: float, length: float, dt: float,
 ) -> tuple[float, float, float]:
     """Core of `brush_step` for callers that already validated inputs."""
+    old_energy = 0.5 * k * xi * xi
+    _finite_result(old_energy)
+    if Fn == 0.0 or mu == 0.0:
+        return 0.0, 0.0, old_energy
+
+    relaxation = dt * (abs(v_roll) / length)
+    denominator = 1.0 + relaxation
+    trial_numerator = xi + dt * u
+    friction_limit = mu * Fn
+    _finite_result(relaxation, denominator, trial_numerator, friction_limit)
+    trial = trial_numerator / denominator
+    limit = friction_limit / k
+    _finite_result(trial, limit)
+    new_xi = max(-limit, min(limit, trial))
+    force = -k * new_xi
+    new_energy = 0.5 * k * new_xi * new_xi
+
+    # Algebraically the work residual, expressed as nonnegative terms to avoid
+    # subtracting nearly equal spring energies. Projection ensures that
+    # new_xi*(trial-new_xi) >= 0, even when the normal load suddenly drops.
+    change = new_xi - xi
+    implicit_loss = 0.5 * k * change * change
+    relaxation_loss = 2.0 * relaxation * new_energy
+    projection_loss = (k * new_xi) * (denominator * (trial - new_xi))
+    loss = implicit_loss + relaxation_loss + projection_loss
+    _finite_result(force, new_energy, loss)
+    if loss < 0.0:
+        raise ArithmeticError("brush update violates discrete passivity")
+    return new_xi, force, loss
+
+
+def _brush_step_py(
+    xi: float, u: float, v_roll: float, Fn: float,
+    k: float, mu: float, length: float, dt: float,
+) -> tuple[float, float, float]:
+    """Pure-Python reference kept for the compiled-core equivalence test."""
     old_energy = 0.5 * k * xi * xi
     _finite_result(old_energy)
     if Fn == 0.0 or mu == 0.0:

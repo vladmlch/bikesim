@@ -18,6 +18,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 
+import numba
 import numpy as np
 
 from bike_sim.physics.rider_envelope import JointEnvelope
@@ -45,6 +46,59 @@ class TorqueCurve:
             raise ValueError('invalid force-velocity parameters')
         if not self.source.strip():
             raise ValueError('missing strength provenance')
+        # float64 copies for the compiled capacity core; the tuple fields stay
+        # authoritative so equality/hash/repr keep their declared shape.
+        object.__setattr__(self, '_angles',
+                           np.array(self.angles_rad, dtype=float, copy=True))
+        object.__setattr__(self, '_torques',
+                           np.array(self.torques_nm, dtype=float, copy=True))
+
+
+@numba.njit(cache=True)
+def _capacity_core(angles, torques, vmax, hill_c, eccentric_ratio,
+                   angle, velocity, direction):
+    """Compiled isometric*Hill bound over already validated knot arrays.
+
+    Verbatim port of the arithmetic in ``directional_capacity``; numba's
+    ``np.interp`` is a facsimile of numpy's ``arr_interp`` and float codegen
+    may differ by ~1 ulp (measured <=1e-13 relative over random curves).
+    """
+    iso = np.interp(angle, angles, torques)
+    speed = direction * velocity / vmax
+    if speed >= 0:
+        factor = max(0., (1. - speed) / (1. + speed / hill_c))
+    else:
+        factor = 1. + (eccentric_ratio - 1.) * (-speed) / (1. - speed)
+    return iso * factor
+
+
+def _capacity_core_py(angles, torques, vmax, hill_c, eccentric_ratio,
+                      angle, velocity, direction):
+    """Pure-Python twin of ``_capacity_core`` — the bitwise oracle pinned
+    by native tests (the compiled core may differ by ~1 ulp)."""
+    iso = np.interp(angle, angles, torques)
+    speed = direction * velocity / vmax
+    if speed >= 0:
+        factor = max(0., (1. - speed) / (1. + speed / hill_c))
+    else:
+        factor = 1. + (eccentric_ratio - 1.) * (-speed) / (1. - speed)
+    return iso * factor
+
+
+def _directional_capacity_py(curve: TorqueCurve, angle_rad: float,
+                             velocity_rad_s: float, direction: int) -> float:
+    """Pure-Python reference kept for the compiled-core equivalence test."""
+    if direction not in (-1, 1) or not np.isfinite([angle_rad, velocity_rad_s]).all():
+        raise ValueError('invalid joint state or direction')
+    if not curve.angles_rad[0] <= angle_rad <= curve.angles_rad[-1]:
+        raise ValueError('strength evaluation outside documented angle range')
+    iso = float(np.interp(angle_rad, curve.angles_rad, curve.torques_nm))
+    speed = direction * velocity_rad_s / curve.vmax_rad_s
+    if speed >= 0:
+        factor = max(0., (1. - speed) / (1. + speed / curve.hill_c))
+    else:
+        factor = 1. + (curve.eccentric_ratio - 1.) * (-speed) / (1. - speed)
+    return iso * factor
 
 
 def directional_capacity(curve: TorqueCurve, angle_rad: float,
@@ -60,13 +114,10 @@ def directional_capacity(curve: TorqueCurve, angle_rad: float,
         raise ValueError('invalid joint state or direction')
     if not curve.angles_rad[0] <= angle_rad <= curve.angles_rad[-1]:
         raise ValueError('strength evaluation outside documented angle range')
-    iso = float(np.interp(angle_rad, curve.angles_rad, curve.torques_nm))
-    speed = direction * velocity_rad_s / curve.vmax_rad_s
-    if speed >= 0:
-        factor = max(0., (1. - speed) / (1. + speed / curve.hill_c))
-    else:
-        factor = 1. + (curve.eccentric_ratio - 1.) * (-speed) / (1. - speed)
-    return iso * factor
+    return float(_capacity_core(curve._angles, curve._torques,
+                                curve.vmax_rad_s, curve.hill_c,
+                                curve.eccentric_ratio,
+                                angle_rad, velocity_rad_s, direction))
 
 
 def _torque_curve(payload, joint, direction_label):

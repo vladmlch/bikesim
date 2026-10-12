@@ -8,7 +8,10 @@ planar model and is explicitly excluded by ``within_width``.
 """
 from dataclasses import dataclass
 from math import hypot
+
+import numba
 import numpy as np
+
 from bike_sim.physics.checks import array, scalar
 
 
@@ -58,8 +61,56 @@ def box_pad_contact(center_m, radius_m, box_origin_m, box_rotation, half_size_m)
     return _box_pad_contact(center,radius,origin,rotation,half)
 
 
-def _box_pad_contact(center, radius, origin, rotation, half):
-    """Evaluate already validated compiled planar support geometry."""
+@numba.njit(cache=True)
+def _box_pad_contact_core(center, radius, origin, rotation, half):
+    """Compiled core of `_box_pad_contact` over float64 vectors.
+
+    Returns ``(point, normal, gap, within_width, within_footprint)`` -- the
+    BoxPadContact fields without the dataclass, so callers that need only the
+    scalars skip the wrapper entirely. Verbatim arithmetic port; codegen may
+    reorder float ops by ~1 ulp versus the Python reference.
+    """
+    local = rotation.T @ (center-origin)
+    planar_x,planar_z=float(local[0]),float(local[2])
+    extent_x,extent_z=float(half[0]),float(half[2])
+    closest_x=min(max(planar_x,-extent_x),extent_x)
+    closest_z=min(max(planar_z,-extent_z),extent_z)
+    delta_x,delta_z=planar_x-closest_x,planar_z-closest_z
+    distance=hypot(delta_x,delta_z)
+    if distance > 1e-14:
+        normal_x,normal_z=delta_x/distance,delta_z/distance
+        signed_distance = distance
+    else:
+        clearance_x,clearance_z=extent_x-abs(planar_x),extent_z-abs(planar_z)
+        axis=0 if clearance_x<=clearance_z else 2
+        coordinate=planar_x if axis==0 else planar_z
+        sign=1. if coordinate>0. else -1. if coordinate<0. else 0.
+        if sign == 0.:
+            # At a medial-axis tie choose the upward face deterministically.
+            sign = 1. if rotation[2,axis] >= 0. else -1.
+        normal_x,normal_z=(sign,0.) if axis==0 else (0.,sign)
+        if axis==0:
+            closest_x=sign*extent_x
+        else:
+            closest_z=sign*extent_z
+        signed_distance=-(clearance_x if axis==0 else clearance_z)
+    point = origin+rotation @ np.array([closest_x, local[1], closest_z])
+    normal = rotation @ np.array([normal_x, 0., normal_z])
+    width = bool(abs(local[1]) <= half[1]+1e-9)
+    footprint = width and bool(abs(local[0]) <= half[0]+radius)
+    return point, normal, signed_distance-radius, width, footprint
+
+
+def _box_pad_contact_core_py(center, radius, origin, rotation, half):
+    """Tuple-returning pure-Python twin of ``_box_pad_contact_core`` — the
+    bitwise oracle pinned by native tests."""
+    contact = _box_pad_contact_py(center, radius, origin, rotation, half)
+    return (contact.point_m, contact.normal, contact.gap_m,
+            contact.within_width, contact.within_footprint)
+
+
+def _box_pad_contact_py(center, radius, origin, rotation, half):
+    """Pure-Python reference kept for the compiled-core equivalence test."""
     local = rotation.T @ (center-origin)
     planar_x,planar_z=float(local[0]),float(local[2])
     extent_x,extent_z=float(half[0]),float(half[2])
@@ -89,6 +140,13 @@ def _box_pad_contact(center, radius, origin, rotation, half):
     width = bool(abs(local[1]) <= half[1]+1e-9)
     footprint = width and bool(abs(local[0]) <= half[0]+radius)
     return BoxPadContact(point, normal, signed_distance-radius, width, footprint)
+
+
+def _box_pad_contact(center, radius, origin, rotation, half):
+    """Evaluate already validated compiled planar support geometry."""
+    point, normal, gap, width, footprint = _box_pad_contact_core(
+        center, radius, origin, rotation, half)
+    return BoxPadContact(point, normal, gap, width, footprint)
 
 
 def upper_box_face(box_origin_m, box_rotation, half_size_m):
@@ -180,12 +238,15 @@ def sole_target_height(origin, rotation, half, sole_x_m, pad_half_length_m,
         total = derivative = 0.
         for offset in (-pad_half_length_m, pad_half_length_m):
             center = np.array([sole_x_m+offset, origin[1], height+pad_radius_m])
-            contact = _box_pad_contact(center, pad_radius_m, origin, rotation, half)
-            if contact.within_footprint and contact.gap_m < 0.:
-                if center[2] < origin[2] and contact.normal[2] < -.5:
+            # Bisection needs only the scalars -- call the compiled core and
+            # skip the BoxPadContact wrapper on this hot inner loop.
+            _, normal, gap, _, footprint = _box_pad_contact_core(
+                center, pad_radius_m, origin, rotation, half)
+            if footprint and gap < 0.:
+                if center[2] < origin[2] and normal[2] < -.5:
                     raise UnreachableSoleTarget('requested sole compression crosses the pedal surface')
-                total -= contact.gap_m
-                derivative += contact.normal[2]
+                total -= gap
+                derivative += normal[2]
         return total, derivative
 
     requested = 2.*compression_m

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from bike_sim.recording.capture import RunCapture
+from bike_sim.recording.capture import EpisodeJournal, RunCapture
 from bike_sim.recording.contracts import EpisodeEvidence, InputEvent, RunMetadata
 
 from _recording_support import (
@@ -113,6 +113,54 @@ def test_event_identity_and_order_are_validated():
         capture.event(_event(1, 3))   # duplicate identity
     with pytest.raises(ValueError):
         capture.event(_event(1, 2))   # out-of-order event id
+
+
+def test_episode_journal_owns_contiguous_ids_per_episode():
+    capture = RunCapture(run_metadata(), enabled=True)
+    journal = EpisodeJournal(capture, 0)
+    assert journal.episode_id == 0 and journal.next_id == 0
+    journal.emit('episode_start', received_wall_s=1., processed_step=0)
+    journal.emit('brake_toggle', received_wall_s=1.1, processed_step=4,
+                 applied_step=4, values={'record': 'requested'})
+    assert journal.next_id == 2
+    events = list(capture.iter_events())
+    assert [e.event_id for e in events] == [0, 1]
+    # emit_all journals a pre-built contiguous sequence (derived events).
+    journal.emit_all([_event(0, 2, kind='derived_transition'),
+                      _event(0, 3, kind='derived_transition')])
+    assert journal.next_id == 4
+    assert [e.kind for e in capture.iter_events()][-2:] == [
+        'derived_transition', 'derived_transition']
+    # A new episode's journal restarts its own cursor.
+    other = EpisodeJournal(capture, 1)
+    other.emit('episode_start', received_wall_s=2., processed_step=0)
+    assert [e.episode_id for e in capture.iter_events()][-1] == 1
+
+
+def test_episode_journal_rejects_non_contiguous_bulk_emission():
+    capture = RunCapture(run_metadata(), enabled=True)
+    journal = EpisodeJournal(capture, 0)
+    journal.emit('episode_start', received_wall_s=1., processed_step=0)
+    # Wrong episode or a skipped event id leaves the cursor unchanged.
+    with pytest.raises(ValueError, match='continue journal'):
+        journal.emit_all([_event(1, 1)])
+    with pytest.raises(ValueError, match='continue journal'):
+        journal.emit_all([_event(0, 2)])
+    assert journal.next_id == 1
+    # A mid-sequence rejection commits nothing past the valid prefix.
+    with pytest.raises(ValueError, match='continue journal'):
+        journal.emit_all([_event(0, 1), _event(0, 3)])
+    assert journal.next_id == 2
+
+
+def test_episode_journal_validates_its_construction():
+    capture = RunCapture(run_metadata(), enabled=True)
+    with pytest.raises(TypeError):
+        EpisodeJournal(object(), 0)
+    with pytest.raises(ValueError):
+        EpisodeJournal(capture, -1)
+    with pytest.raises(ValueError):
+        EpisodeJournal(capture, True)
 
 
 def test_event_field_validation():

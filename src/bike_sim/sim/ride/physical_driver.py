@@ -107,6 +107,11 @@ class PhysicalRideDriver:
         self._native = None
         self._sim = None
         self._terrain_stamp = None
+        # Sealed owned evidence per generation; episodes stay valid after a
+        # reset or close (the native values own their sample storage).
+        self._sealed = {}
+        self._seal_catalog = None
+        self._seal_assets = None
         sim.physical.set_strict(strict)
         sim.physical.set_recording_retention(retention)
         if backend == 'native':
@@ -301,6 +306,113 @@ class PhysicalRideDriver:
             json.dumps(summary, indent=2, sort_keys=True, allow_nan=False)+'\n', encoding='utf-8')
         return summary
 
+    def _episode_catalog(self):
+        """The reviewed field catalog bound to this model's joint map (lazy)."""
+        if self._seal_catalog is None:
+            from bike_sim.recording.catalog import build_catalog
+            from bike_sim.recording.native import model_joints
+            self._seal_catalog = build_catalog(
+                model_joints(self.make_render_model()))
+        return self._seal_catalog
+
+    def _episode_assets(self):
+        """Bundled recipe inputs, snapshotted once per driver (R12).
+
+        The resolved track and configuration are always bundled. Declared
+        rider-parameter inputs (joint envelope/strength files) are re-read
+        once at first seal: content whose digest no longer matches the hash
+        recorded at configuration time is not relabeled as the original
+        input — the discrepancy is reported in ``asset_identity.json``.
+        """
+        if self._seal_assets is not None:
+            return self._seal_assets
+        import hashlib
+        from bike_sim.recording.contracts import Asset
+        from bike_sim.sim.ride.physical_session import canonical_json
+        from bike_sim.terrain import dump_track
+        assets = []
+
+        def add(name, media_type, content):
+            assets.append(Asset(
+                name=name, media_type=media_type,
+                sha256=hashlib.sha256(content).hexdigest(), content=content))
+
+        add('track.toml', 'application/toml',
+            dump_track(self.track).encode('utf-8'))
+        add('resolved_config.json', 'application/json',
+            (canonical_json(self.metadata['resolved_config'])+'\n').encode('utf-8'))
+        resolved = self.metadata.get('resolved_config') or {}
+        articulated = (resolved.get('physics') or {}).get('articulated') or {}
+        identity = {}
+        media = {'.json': 'application/json', '.toml': 'application/toml',
+                 '.csv': 'text/csv'}
+        for key in ('joint_envelope', 'joint_strength'):
+            path = articulated.get(key + '_path')
+            recorded = resolved.get(key + '_sha256')
+            if path is None or recorded is None:
+                continue
+            file = Path(path)
+            try:
+                content = file.read_bytes()
+            except OSError:
+                identity[key] = {'status': 'missing',
+                                 'recorded_sha256': recorded}
+                continue
+            digest = hashlib.sha256(content).hexdigest()
+            if digest == recorded:
+                add(file.name, media.get(file.suffix.lower(),
+                                         'application/octet-stream'), content)
+            else:
+                # Not the input the hash identified; never relabel it.
+                identity[key] = {'status': 'changed',
+                                 'recorded_sha256': recorded,
+                                 'current_sha256': digest}
+        if identity:
+            add('asset_identity.json', 'application/json',
+                (canonical_json(identity)+'\n').encode('utf-8'))
+        self._seal_assets = tuple(assets)
+        return self._seal_assets
+
+    def seal_episode(self, episode_id, *, reason):
+        """Seal the active episode into owned immutable evidence (RAM only).
+
+        Captures the owned summary, typed physical source and bundled assets
+        once per generation; nothing is persisted here — publication is the
+        capture's ``finalize``. A strict trailing-flush rejection commits its
+        evidence prefix and sticky first failure, then raises; retrying this
+        call afterwards returns that owned prefix.
+        """
+        self._require_open()
+        if isinstance(episode_id, bool) or not isinstance(episode_id, Integral) \
+                or episode_id < 0:
+            raise ValueError('episode_id must be a nonnegative integer')
+        if not isinstance(reason, str) or not reason:
+            raise ValueError('reason must be a non-empty string')
+        if self._native is None:
+            raise ValueError('episode sealing requires the native backend')
+        episode_id = int(episode_id)
+        # Duplicate terminal notifications must not reseal: the current
+        # generation key is read before the sealing flush so a second call
+        # for the same episode returns the already-owned evidence.
+        generation = int(self._native.snapshot().generation)
+        sealed = self._sealed.get(generation)
+        if sealed is not None:
+            if sealed.episode_id != episode_id:
+                raise ValueError(
+                    f'generation {generation} already sealed as episode '
+                    f'{sealed.episode_id}')
+            return sealed
+        owned = self._native.seal_episode()
+        from bike_sim.recording.contracts import EpisodeEvidence
+        from bike_sim.recording.native import NativePhysicalSource
+        sealed = EpisodeEvidence(
+            episode_id=episode_id, generation=generation,
+            physical=NativePhysicalSource(owned, self._episode_catalog()),
+            summary=self.summary(reason=reason),
+            assets=self._episode_assets())
+        self._sealed[generation] = sealed
+        return sealed
+
     def close(self):
         if self._closed:
             return
@@ -315,6 +427,13 @@ def build_physical_driver(track, args, rider, *, seed=None, strict=None):
     require_backend(backend, args.resolved_physics, rider)
     from bike_sim.sim.ride.physical_session import build_physical_simulation
     sim = build_physical_simulation(track, args, rider)
+    if strict is None:
+        # --check-policy resolves before runtime construction; without it the
+        # historical headless-strict/viewer-diagnostic defaults apply.
+        policy = getattr(args, 'resolved_check_policy', None)
+        strict = (policy == 'strict') if policy is not None \
+            else bool(getattr(args, 'headless', False))
     return PhysicalRideDriver(sim, backend=backend,
-        strict=args.headless if strict is None else strict, decimation=args.decimate,
-        duration_s=args.duration, seed=seed)
+        strict=strict, decimation=args.decimate,
+        duration_s=args.duration, seed=seed,
+        record=getattr(args, 'record', None))

@@ -113,8 +113,8 @@ def test_cli_dispatches_every_live_and_headless_route(tmp_path, monkeypatch):
     driver = SimpleNamespace(backend='native')
     monkeypatch.setattr(physical_driver, 'build_physical_driver',
                         lambda track, args, rider, **kwargs: driver)
-    def viewer(d, *, out_root, time_scale):
-        calls.append(('ride-viewer', d is driver, out_root, time_scale))
+    def viewer(d, *, out_root, time_scale, record=False):
+        calls.append(('ride-viewer', d is driver, out_root, time_scale, record))
         return 0
     monkeypatch.setattr(physical_frontend, 'run_viewer', viewer)
     monkeypatch.setattr(physical_session, 'run_physical_headless',
@@ -141,7 +141,7 @@ def test_cli_dispatches_every_live_and_headless_route(tmp_path, monkeypatch):
                  '--research', '--out', out]) == 0
     assert research_cli.main(['--backend', 'native', '--duration', '1',
                               '--out', str(tmp_path/'research')]) == 9
-    assert calls[0] == ('ride-viewer', True, out, 2)
+    assert calls[0] == ('ride-viewer', True, out, 2, False)
     assert calls[1] == ('ride-headless', 'native')
     assert calls[2] == ('ride-research', 'native', 1)
     assert seen['args'].backend == 'native'

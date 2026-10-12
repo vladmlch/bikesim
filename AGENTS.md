@@ -19,6 +19,24 @@ Always use this code as a reference:
 
 A failed sweep names its CMake target; rerun it standalone with `cmake --build native/build --target check_<name>`. Alpha analyzer findings print but never block. A missing sweep tool fails the run on purpose — install the tool rather than skipping the target. For sanitizer/RTSan/coverage builds and sweep internals, reach `docs/TESTING.md`.
 
+Numba caveats: the ride-loop kernels in `physics/tire.py`,
+`physics/joint_strength.py` and `sim/ride/support_geometry.py` are
+`@numba.njit(cache=True)` — first call per process compiles (seconds)
+when the cache is cold, so a cold `step_profile`/`measure_realtime`
+overstates per-step cost; always run a warmup first. `cache=True`
+falls back to compiling on every process start when the package is
+installed read-only. `tools/research_sweep.py` pays the import+JIT
+startup in every child process; it is amortized inside each episode,
+not shared.
+
+Bitwise oracle pinning: njit codegen may drift float results ~1 ulp
+from the pure-Python arithmetic the C++ port is bitwise-locked to, so
+`tests/reference/conftest.py::_pin_oracle_kernels` rebinds the compiled
+cores to their `*_py` twins inside `test_native_*.py` files. The
+contract stays: C++ bitwise-equals reference arithmetic; production
+Python runs the compiled kernels. If a kernel signature changes, its
+`*_py` twin and the fixture must change with it.
+
 
 ## Behavioral Stability
 

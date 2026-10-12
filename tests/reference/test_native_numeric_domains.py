@@ -7,6 +7,7 @@ import pytest
 
 from native_loader import load_native
 from test_native_input_contracts import resolved, at
+from bike_sim.physics import domain_validation
 from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
 from bike_sim.physics.damper import Charger3Damper, SuperDeluxeDamper
 from bike_sim.physics.coil_shock import CoilShockSpecs, CoilShock
@@ -41,6 +42,9 @@ def python_suspension(config):
         damper = cls()
         for key, value in config[name].items():
             setattr(damper, key, value)
+        # Post-port the compute path no longer revalidates; the domain boundary
+        # is the explicit validator BaseDamper.__init__/set_clicks call.
+        domain_validation.damper(damper)
         damper.compute_damping_force(.7, 30.)
     coil = config['coil']
     CoilShock(CoilShockSpecs(**{key: value for key, value in coil.items() if key != 'legacy_behavior'}),
@@ -62,11 +66,13 @@ def test_suspension_domain_is_shared(resolved, location, value):
 
 
 @pytest.mark.parametrize('key', ['max_lsc', 'v_knee_comp', 'c_hsc_min'])
-def test_damper_mutable_parameters_revalidated(key):
+def test_damper_invalid_parameters_rejected(key):
+    # These fields have no constructor kwarg; the post-port boundary is the
+    # explicit domain validator the construction/setter path calls.
     damper = Charger3Damper()
     setattr(damper, key, 0 if key != 'c_hsc_min' else -1.)
     with pytest.raises(ValueError, match=key):
-        damper.compute_damping_force(.7, 61.3)
+        domain_validation.damper(damper)
 
 
 def test_air_pressure_intermediate_overflow_is_shared(resolved):
@@ -113,7 +119,7 @@ def test_activated_zero_hbo_denominator_rejected(resolved, legacy):
     ('assist', 'tau', 0.), ('assist', 'slew', 0.), ('assist', 'gain', -1.),
     ('assist', 'taper_width_mps', 0.), ('battery', 'energy_j', -1.),
 ])
-def test_mutated_policy_configs_are_revalidated(section, key, value):
+def test_mutated_policy_configs_are_rejected(section, key, value):
     from test_native_drive_policies import applier
     from tools.native_config import project_drive_policies
     drive = applier()
@@ -126,7 +132,9 @@ def test_mutated_policy_configs_are_revalidated(section, key, value):
         oracle = lambda: BatteryConfig(**config['battery'])
     elif section == 'assist':
         setattr(target, {'taper_width_mps':'width'}.get(key, key), value)
-        oracle = lambda: target.ceiling(80., 1.)
+        # ceiling() no longer revalidates; probe the controller's own
+        # validation entry (the same checks its constructor runs).
+        oracle = target._validate
     else:
         object.__setattr__(target.config, key, value)
         oracle = (lambda: target.update(0., 1., 80., 10., .001)) if section == 'pedaling' else (

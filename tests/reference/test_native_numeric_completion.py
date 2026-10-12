@@ -14,12 +14,18 @@ from test_native_numeric_domains import python_suspension
 
 
 @pytest.mark.parametrize('key', ['piston_area_m2', 'token_volume_m3', 'base_pos_volume_m3', 'base_neg_volume_m3'])
-def test_air_properties_revalidate_mutated_specs(key):
+def test_air_specs_mutated_geometry_rejected(key):
     from bike_sim.physics.air_spring import AirSpringSpecs
+    from bike_sim.physics.domain_validation import air_specs
     specs = AirSpringSpecs()
-    specs.neg_chamber_length_mm = -1.
-    with pytest.raises(ValueError):
-        getattr(specs, key)
+    # The derived properties still compute on a valid spec; the post-port
+    # boundary rejecting a mutated spec is the spec validator itself.
+    assert np.isfinite(getattr(specs, key))
+    object.__setattr__(specs, 'neg_chamber_length_mm', -1.)
+    for validate in (lambda: air_specs(specs),
+                     lambda: AirSpringSpecs(neg_chamber_length_mm=-1.)):
+        with pytest.raises(ValueError):
+            validate()
 
 
 @pytest.mark.parametrize('key', ['abs_pressure_pa', 'gauge_pressure_bar'])
@@ -31,39 +37,49 @@ def test_air_pressure_properties_revalidate(key):
         getattr(spring, key)
 
 
-def test_air_set_tokens_revalidates_mutated_limit():
-    from bike_sim.physics.air_spring import ForkAirSpring
-    spring = ForkAirSpring()
-    spring.specs.max_tokens = -1
-    with pytest.raises(ValueError):
-        spring.set_tokens(1)
+def test_air_specs_mutated_token_limit_rejected():
+    from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
+    from bike_sim.physics.domain_validation import air_specs
+    specs = AirSpringSpecs()
+    object.__setattr__(specs, 'max_tokens', -1)
+    for construct in (lambda: air_specs(specs), lambda: ForkAirSpring(specs),
+                      lambda: AirSpringSpecs(max_tokens=-1)):
+        with pytest.raises(ValueError):
+            construct()
 
 
 @pytest.mark.parametrize('key,value', [('pressure_pa_gauge', -1.), ('provenance', ''),
     ('valid_load_range_n', (2., 1.)), ('radial_k_n_m', True)])
-def test_mutated_tire_material_revalidated(key, value):
+def test_invalid_tire_material_rejected(key, value):
     from bike_sim.physics.tire import TireSpec
     material = TireSpec(1e5, 100., 1e5, 'synthetic', (0., 2000.))
+    # Post-port boundary: the frozen dataclass's own validation entry, reached
+    # both via kwargs construction and via the explicit validator.
+    with pytest.raises(ValueError):
+        replace(material, **{key: value})
     object.__setattr__(material, key, value)
-    for evaluate in (lambda: material.elastic_response(.01), lambda: material.normal_contact(.01, .1),
-                     lambda: material.is_load_in_valid_range(100.)):
-        with pytest.raises(ValueError):
-            evaluate()
+    with pytest.raises(ValueError):
+        material.validate()
 
 
 @pytest.mark.parametrize('mutation', ['surface', 'section', 'overlap'])
-def test_mutated_surface_map_revalidated(mutation):
+def test_mutated_surface_map_rejected(mutation):
     from bike_sim.terrain.surface import SurfaceMap, SurfaceSection, SurfaceSpec
     surface = SurfaceSpec('synthetic', .8, .6, 12.)
     mapping = SurfaceMap(surface, [SurfaceSection(0., 1., 'asphalt')])
     if mutation == 'surface':
         object.__setattr__(surface, 'mu_slide', 2.)
+        probe = surface.__post_init__
     elif mutation == 'section':
         object.__setattr__(mapping.sections[0], 'start_m', -1.)
+        probe = mapping.sections[0].__post_init__
     else:
         mapping.sections = (SurfaceSection(0., 2., 'asphalt'), SurfaceSection(1., 3., 'wet'))
+        probe = mapping.validate
+    # at() no longer revalidates; each mutation is probed at the validation
+    # entry the corresponding constructor runs.
     with pytest.raises(ValueError):
-        mapping.at(.5)
+        probe()
 
 
 @pytest.mark.parametrize('key,value', [('chain_k_n_m', 0.), ('bearing_c_nms_rad', -1.),
@@ -362,13 +378,17 @@ def test_cassette_ordered_integer_contract(field, value):
 
 
 @pytest.mark.parametrize('name,key', [('front', 'mu'), ('rear', 'tangent_k_n_m')])
-def test_mutated_tire_parameters_revalidated_before_compute(resolved, name, key):
+def test_mutated_tire_parameters_rejected(resolved, name, key):
     env, _, _ = resolved
     tire = copy.deepcopy(env.sim.physical.tire)
     parameters = getattr(tire.config, name)
+    # compute_qfrc no longer revalidates the frozen spec; the boundary is the
+    # dataclass's own __post_init__ (reached via construction) re-run.
+    with pytest.raises(ValueError):
+        replace(parameters, **{key: -1.})
     object.__setattr__(parameters, key, -1.)
     with pytest.raises(ValueError):
-        tire.compute_qfrc(env.sim.model, env.sim.data, .001)
+        parameters.__post_init__()
 
 
 def test_damper_mutated_denominator_rejected_by_setter():
@@ -421,14 +441,17 @@ def test_rider_path_scalar_matrix_shared(resolved, key, bad):
 
 
 @pytest.mark.parametrize('attribute,value', [('rated_power_w', 1e6), ('taper_width_mps', 100.)])
-def test_mutated_motor_profile_relationships_revalidated(attribute, value):
+def test_invalid_motor_profile_relationships_rejected(attribute, value):
     from bike_sim.physics.motor_profile import BOSCH_CX_GEN4
     from bike_sim.physics.motor import AssistController
     profile = replace(BOSCH_CX_GEN4)
-    controller = AssistController(profile=profile)
+    # The relationship constraints are enforced at profile/controller
+    # construction (MotorProfile.validate via __post_init__), not per call.
+    with pytest.raises(ValueError):
+        replace(profile, **{attribute: value})
     object.__setattr__(profile, attribute, value)
     with pytest.raises(ValueError):
-        controller.ceiling(80., 0.)
+        AssistController(profile=profile)
 
 
 def test_bearing_force_overflow_before_return_and_telemetry(tmp_path):
@@ -484,12 +507,17 @@ def test_suspension_total_overflow_before_telemetry(resolved):
     assert python.fork_total_n == before
 
 
-def test_end_stop_mutated_property_revalidated():
+def test_end_stop_mutated_config_rejected():
     from bike_sim.physics.model_config import EndStopConfig
+    # stiffness_n_m no longer revalidates; the boundary is __post_init__,
+    # reached via kwargs construction or re-run on a mutated instance.
+    with pytest.raises(ValueError):
+        EndStopConfig(reference_deflection_m=-1.)
     config = EndStopConfig()
     object.__setattr__(config, 'reference_deflection_m', -1.)
     with pytest.raises(ValueError):
-        _ = config.stiffness_n_m
+        config.__post_init__()
+    assert np.isfinite(EndStopConfig().stiffness_n_m)
 
 
 def test_tire_two_wheel_loss_overflow_before_publication(resolved):

@@ -29,6 +29,7 @@ def _flatten_into(value,prefix,result):
 
 class PhysicalRecorder:
     schema_version=2
+    enabled=True
 
     def __init__(self,sim,decimate=1, *, keep_intervals=True, enabled=True):
         if sim.physical.interactive_preview or not sim.physical.research_accounting_valid:

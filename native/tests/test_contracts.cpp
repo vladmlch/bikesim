@@ -2725,7 +2725,7 @@ namespace {
                      joint_dof(model.get(), "front_wheel_spin"))] = 4.;
             engine::forward(model.get(), data.get());
             // Tent bump under the front wheel: raster columns 22-24 rise
-            // {0.01, 0.03, 0.01} m so the wheel's [0.55,0.65] contact
+            // {0.1, 0.3, 0.1} m so the wheel's [0.55,0.65] contact
             // window covers a height change every tick. Both raster rows
             // get identical columns — compliant_2d rejects lateral
             // terrain variation.
@@ -3185,6 +3185,63 @@ namespace {
                 "tick after probe must advance");
     }
 
+    // The committed-storage read path the physical step uses instead of
+    // the by-value snapshots()/probe_snapshots(): snapshots_committed()
+    // is the same publication gate the copying accessor projects into
+    // its optional pair, so snapshot_storage()/probe_snapshot_storage()
+    // hold exactly what the copy would have returned. This case pins
+    // the contract apply_forces_body and refresh_contacts rely on: the
+    // gate reads, the raw-storage borrows, and the durable-publication
+    // copy-assign into slots reserved to the writer's own patch bound
+    // all measure zero allocator activity. (apply_forces_body itself
+    // lives in step.cpp, outside this binary — the measured window here
+    // covers the writer-side primitives it calls.)
+    void test_distributed_committed_snapshot_borrow() {
+        const auto rig = std::make_unique<DistributedWarmRig>();
+        for (int warmup = 0; warmup < 2; ++warmup)
+            require(distributed_tick(*rig, .002) == CoreStatus::ok,
+                    "distributed borrow warmup ticks");
+        require(rig->tire.snapshots_committed(),
+                "distributed warmup did not commit snapshots");
+        // The cold probe path allocates by design (the detached copy
+        // duplicates construction-sized scratch) — run it before the
+        // measured window; only its publication reads are measured.
+        rig->tire.probe_compute_into(rig->context.data.get(), .002,
+                                     rig->tire_out);
+        require(rig->tire.probe_committed(),
+                "distributed probe did not publish snapshots");
+        // The durable destination, staged exactly like PhysicalStep's
+        // snapshots_ slots after their first publish: engaged with
+        // patches/backend capacity reserved to the writer's own bound
+        // (refresh_contacts engages disengaged slots with that reserve
+        // before the copy-assign — the engagement itself is the
+        // one-time cold cost, outside this window).
+        const std::array<TireSnapshot, 2> &committed =
+                rig->tire.snapshot_storage();
+        std::array<std::optional<TireSnapshot>, 2> durable{};
+        for (std::size_t i = 0; i < 2; ++i) {
+            TireSnapshot &slot = durable[i].emplace();
+            slot.patches.reserve(committed[i].patches.capacity());
+            slot.backend.reserve(committed[i].backend.capacity());
+        }
+        allocation_counter::reset();
+        const std::array<TireSnapshot, 2> &probe =
+                rig->tire.probe_snapshot_storage();
+        durable[0] = probe[0];
+        durable[1] = probe[1];
+        durable[0] = committed[0];
+        durable[1] = committed[1];
+        const std::optional<TireSnapshot> &published = durable[0];
+        require(published.has_value() &&
+                    published->patches.size() ==
+                        committed[0].patches.size() &&
+                    published->backend == committed[0].backend,
+                "publication copy diverged from committed storage");
+        require(allocation_counter::count() == 0 &&
+                    allocation_counter::freed() == 0,
+                "committed snapshot borrow or publication allocated");
+    }
+
     // The R1 allocation matrix: for each warm surface row — fixture
     // construction, warmup, core tick, and the boxed convenience surface
     // — the always-on counters record the exact call count. Construction
@@ -3609,7 +3666,7 @@ namespace {
                       "attachment parsers stay noexcept");
     }
 
-    constexpr std::array<TestCase, 35> cases{{
+    constexpr std::array<TestCase, 36> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -3643,6 +3700,7 @@ namespace {
         {.name = "warm_distributed_zero_allocation", .run = test_warm_distributed_zero_allocation},
         {.name = "distributed_status_control", .run = test_distributed_status_control},
         {.name = "distributed_probe_isolation", .run = test_distributed_probe_isolation},
+        {.name = "distributed_committed_snapshot_borrow", .run = test_distributed_committed_snapshot_borrow},
         {.name = "warm_allocation_matrix", .run = test_warm_allocation_matrix},
         {.name = "rider_contacts_config_domain", .run = test_rider_contacts_config_domain},
     }};

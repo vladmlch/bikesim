@@ -445,6 +445,7 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'warm_distributed_zero_allocation',
         'distributed_status_control',
         'distributed_probe_isolation',
+        'distributed_committed_snapshot_borrow',
         'warm_allocation_matrix',
         'rider_contacts_config_domain',
     ]

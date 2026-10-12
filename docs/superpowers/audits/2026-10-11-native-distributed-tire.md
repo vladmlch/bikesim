@@ -170,7 +170,7 @@ contract cases in `test_native_runtime_performance_contract.py`.
 | `test_distributed_trajectory_matches_python_channel_wise_bitwise` | 1 s episode channel-wise bitwise incl. truth channels; both backends hit the t=0.005 `energy.constraint_work` monitor identically step-for-step |
 | Probe/clock (`test_distributed_probe_and_clock`) | probe fold bitwise vs `apply_forces(advance=False)`; committed state/clock untouched; clock `ValueError` once-per-increasing-timestamp; atomic `set_tire_state` rejection |
 | Wire semantics | `supports_multiple_contacts is True`, `backend='distributed_2d_reference'` on the committed channel; compliant wire disjoint from distributed keys |
-| Contract cases (`test_contracts.cpp`) | 35/35 incl. `warm_distributed_zero_allocation`, `distributed_status_control`, `distributed_probe_isolation`; CTest 6/6 |
+| Contract cases (`test_contracts.cpp`) | 36/36 incl. `warm_distributed_zero_allocation`, `distributed_status_control`, `distributed_probe_isolation`, `distributed_committed_snapshot_borrow`; CTest 6/6 |
 | `bash tools/run_tests.sh native` (Task-9 final run) | **2416 passed, 0 failed** (332.86 s): build, `check_frontends` (gcc 16.2.0, 60 TUs), `check_tidy` none, `check_analyzer` report-only alpha, `check_cppcheck` none, `check_odr` none, `check_scripts`, headers/diagnostic-controls/context SDK, CTest 6/6, `check_native_contracts` 9/9 |
 | `bash tools/run_tests.sh full` (Task-9 final run) | **24 failed, 3117 passed** (1071.77 s) — failed node IDs diff-verified **byte-identical** to the documented platform-baseline set (`docs/TESTING.md:717-742`), zero new / zero missing; none tyre-related |
 
@@ -213,3 +213,21 @@ contract cases in `test_native_runtime_performance_contract.py`.
 - RTSan evidence at the final tree is by rerun of the unchanged marked
   path (`git diff 87fee49..HEAD` empty for the writer at the Task-7
   rebuild); the marked tick has been RTSan-clean since Task 5.
+- The zero-allocation claim is writer-scoped, and stays so after the
+  review-fix commit: `try_compute_into` is proven allocation-free by
+  `warm_distributed_zero_allocation` plus the RTSan run; the enclosing
+  `apply_forces` path is not a marked region and keeps its pre-existing
+  non-tyre allocations (accumulator totals, rider envelopes). The
+  tyre-specific per-step heap traffic the review found there is gone:
+  `apply_forces_body` borrows committed snapshot storage for the
+  resistance input instead of materializing `snapshots()` (~4 heap
+  allocs + ~72 KB memcpy per active step at `station_count=128`),
+  `refresh_contacts` publishes into durable `snapshots_` slots that
+  engage once with the writer's bound reserved (disengaged mirrors
+  the oracle's `self.snapshots = {}`) rather than a fresh
+  `WheelSnapshots` pair per refresh, and the patch-load/working
+  staging is sized once to the
+  writer's per-wheel patch bound. The borrow/assign primitives are
+  counter-proven by `distributed_committed_snapshot_borrow`;
+  `apply_forces` itself cannot be instrumented because `step.cpp` is
+  not linked into `native_contract_tests`.

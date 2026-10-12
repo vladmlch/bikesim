@@ -182,16 +182,16 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
         throw std::invalid_argument(
             "tire writer needs a model width in int range");
     nativecfg::validate(cfg_);
-    // This writer is the compliant_2d port. The config layer accepts
-    // 'distributed_2d_reference' — section, domains and all — but the
-    // DistributedTireWriter lands with the Stepper dispatch; reject the
+    // This writer is the compliant_2d port. The Stepper dispatch routes
+    // 'distributed_2d_reference' to DistributedTireWriter — a direct
+    // TireWriter construction with it is a dispatch bug; reject the
     // backend by name here instead of dereferencing the absent TireSpec
     // material below.
     if (cfg_.backend != "compliant_2d")
         throw std::runtime_error(
             "TireWriter implements only the compliant_2d backend; "
-            "'distributed_2d_reference' is accepted by the config layer and "
-            "waits on the distributed tire writer");
+            "'distributed_2d_reference' is served by "
+            "DistributedTireWriter through the Stepper dispatch");
     // Dataclass __post_init__ validation happened when Python built the
     // config — before TireForceApplier.__init__ — so these checks precede
     // the ctor body like they do in the Python flow.

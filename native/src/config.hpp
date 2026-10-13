@@ -22,6 +22,7 @@
 #include <nanobind/stl/vector.h>
 #include "diag.hpp"
 #include "config_types.hpp"
+#include "config_validation.hpp"
 #include "binding_readers.hpp"
 #include "drivetrain/drive_binding.hpp"
 
@@ -113,7 +114,7 @@ namespace nativecfg {
             }
             if (name == "tire") {
                 constexpr auto required = wire::keys("backend", "surface_mode", "front", "rear", "significant_delta_m", "significance_fraction", "distinct_normal_deg");
-                constexpr auto optional = wire::keys("surface_map", "distributed");
+                constexpr auto optional = wire::keys("surface_map", "distributed", "pneumatic");
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
                 return;
             }
@@ -140,6 +141,25 @@ namespace nativecfg {
             }
             if (name == "tire.distributed.front" || name == "tire.distributed.rear") {
                 constexpr auto required = wire::keys("density", "fitting_dataset_id", "valid_load_range_n", "valid_deflection_range_m", "calibration_status");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.pneumatic") {
+                constexpr auto required = wire::keys("tier", "n_rays", "half_angle_deg", "discretised_brush", "timestep_s", "front", "rear", "profile");
+                constexpr auto optional = wire::keys("surface");
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.pneumatic.front" || name == "tire.pneumatic.rear") {
+                // The 18 TyreSpecs fields (physics/tyre.py:64-78).
+                constexpr auto required = wire::keys("name", "outer_radius_mm", "rim_radius_mm", "section_height_mm", "pressure_bar", "crr_reference", "casing_width_mm", "compressed_casing_mm", "area_factor", "carcass_stiffness_n_mm2", "contact_length_factor", "rate_stiffening", "rate_relaxation_s", "loss_factor", "hysteresis_rate_eps_mps", "relaxation_length_mm", "rim_stiffness_n_mm2", "tread_loss_crr");
+                constexpr auto optional = wire::keys();
+                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
+                return;
+            }
+            if (name == "tire.pneumatic.profile") {
+                constexpr auto required = wire::keys("x0_m", "dx_m", "z_m");
                 constexpr auto optional = wire::keys();
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
                 return;
@@ -447,18 +467,96 @@ namespace nativecfg {
         return m;
     }
 
+    // The 18 TyreSpecs fields under tire.pneumatic.{front,rear}
+    // (physics/tyre.py:64-78). The __post_init__ domains run in
+    // validate(PneumaticTyreSpec) after the struct is filled — same
+    // split as the Python schema's _check_tyre_specs.
+    inline PneumaticTyreSpec pneumatic_tyre_from_dict(const nb::dict &d,
+                                                      const char *s) {
+        detail::section_keys(d, s);
+        PneumaticTyreSpec t;
+        t.name = detail::req_str(d, s, "name");
+        t.outer_radius_mm = detail::req_f64(d, s, "outer_radius_mm");
+        t.rim_radius_mm = detail::req_f64(d, s, "rim_radius_mm");
+        t.section_height_mm = detail::req_f64(d, s, "section_height_mm");
+        t.pressure_bar = detail::req_f64(d, s, "pressure_bar");
+        t.crr_reference = detail::req_f64(d, s, "crr_reference");
+        t.casing_width_mm = detail::req_f64(d, s, "casing_width_mm");
+        t.compressed_casing_mm =
+                detail::req_f64(d, s, "compressed_casing_mm");
+        t.area_factor = detail::req_f64(d, s, "area_factor");
+        t.carcass_stiffness_n_mm2 =
+                detail::req_f64(d, s, "carcass_stiffness_n_mm2");
+        t.contact_length_factor =
+                detail::req_f64(d, s, "contact_length_factor");
+        t.rate_stiffening = detail::req_f64(d, s, "rate_stiffening");
+        t.rate_relaxation_s = detail::req_f64(d, s, "rate_relaxation_s");
+        t.loss_factor = detail::req_f64(d, s, "loss_factor");
+        t.hysteresis_rate_eps_mps =
+                detail::req_f64(d, s, "hysteresis_rate_eps_mps");
+        t.relaxation_length_mm =
+                detail::req_f64(d, s, "relaxation_length_mm");
+        t.rim_stiffness_n_mm2 =
+                detail::req_f64(d, s, "rim_stiffness_n_mm2");
+        t.tread_loss_crr = detail::req_f64(d, s, "tread_loss_crr");
+        return t;
+    }
+
+    // tire.pneumatic (native/config.py::_pneumatic_section): the tier
+    // name plus its resolved TIERS row, the presence-optional resolved
+    // surface, both TyreSpecs sides and the road profile. The section's
+    // domain rules (tier row equality, TyreSpecs and profile domains)
+    // run in validate(PneumaticConfig) at the end — the parser applies
+    // the same checks schema.py applies so a malformed wire fails at
+    // this boundary, and the writers re-check the shared validator.
+    inline PneumaticConfig pneumatic_from_dict(const nb::dict &d) {
+        const char *s = "tire.pneumatic";
+        detail::section_keys(d, s);
+        PneumaticConfig c;
+        c.tier = detail::req_str(d, s, "tier");
+        if (c.tier != "fast" && c.tier != "detailed")
+            throw std::invalid_argument(
+                "config.tire.pneumatic.tier must be 'fast' or "
+                "'detailed'");
+        c.n_rays = detail::req_int(d, s, "n_rays");
+        c.half_angle_deg = detail::req_f64(d, s, "half_angle_deg");
+        c.discretised_brush = detail::req_bool(d, s, "discretised_brush");
+        c.timestep_s = detail::req_f64(d, s, "timestep_s");
+        if (d.contains("surface"))
+            c.surface = surface_spec_from_dict(
+                detail::req_dict(d, s, "surface"), "tire.pneumatic.surface");
+        c.front = pneumatic_tyre_from_dict(
+            detail::req_dict(d, s, "front"), "tire.pneumatic.front");
+        c.rear = pneumatic_tyre_from_dict(
+            detail::req_dict(d, s, "rear"), "tire.pneumatic.rear");
+        {
+            const nb::dict p = detail::req_dict(d, s, "profile");
+            const char *sp = "tire.pneumatic.profile";
+            c.profile = PneumaticProfile{
+                .x0_m = detail::req_f64(p, sp, "x0_m"),
+                .dx_m = detail::req_f64(p, sp, "dx_m"),
+                .z_m = wire::vector(detail::req(p, sp, "z_m"),
+                                    "config.tire.pneumatic.profile.z_m"),
+            };
+        }
+        validate(c);
+        return c;
+    }
+
     inline TireConfig tire_from_dict(const nb::dict &top) {
         const char *s = "tire";
         const nb::dict d = detail::req_dict(top, "config", s);
         TireConfig c;
         c.backend = detail::req_str(d, s, "backend");
-        // Both backends are accepted at the config layer; the writer
-        // boundary stays honest about which law it implements (compliant_2d
-        // today — the distributed writer lands with the Stepper dispatch).
-        if (c.backend != "compliant_2d" && c.backend != "distributed_2d_reference")
+        // All three backends are accepted at the config layer; the writer
+        // boundary stays honest about which law it implements
+        // (compliant_2d and distributed_2d_reference today — the pneumatic
+        // writer lands with the Stepper dispatch task).
+        if (c.backend != "compliant_2d" && c.backend != "distributed_2d_reference" &&
+            c.backend != "pneumatic")
             throw std::invalid_argument(
-                "config.tire.backend must be 'compliant_2d' or "
-                "'distributed_2d_reference'");
+                "config.tire.backend must be 'compliant_2d', "
+                "'distributed_2d_reference' or 'pneumatic'");
         c.surface_mode = detail::req_str(d, s, "surface_mode");
         if (c.surface_mode != "configured" && c.surface_mode != "track")
             throw std::invalid_argument(
@@ -515,6 +613,20 @@ namespace nativecfg {
                 });
             }
             c.surface_map = std::move(map);
+        }
+        // tire.pneumatic follows the presence rule schema.py::
+        // validate_config applies (tire.distributed's mirror): required
+        // iff the backend selects it, forbidden otherwise; under a
+        // non-'track' surface mode the resolved surface must ship inside
+        // the section. validate(TireConfig) repeats the rule for
+        // programmatically built configs.
+        if (c.backend == "pneumatic") {
+            c.pneumatic = pneumatic_from_dict(detail::req_dict(d, s, "pneumatic"));
+            if (c.surface_mode != "track" && !c.pneumatic->surface)
+                wire::invalid("config.tire.pneumatic.surface",
+                              "missing required key");
+        } else if (d.contains("pneumatic")) {
+            wire::invalid("config.tire.pneumatic", "unknown key");
         }
         return c;
     }

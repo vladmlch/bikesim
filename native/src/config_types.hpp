@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -215,7 +216,8 @@ namespace nativecfg {
 
     // TireParameters (physical_config.py:23-35). `material` engages iff the
     // backend is compliant_2d — the distributed backend keeps its
-    // hinge-density material under TireConfig::distributed instead.
+    // hinge-density material under TireConfig::distributed and the
+    // pneumatic backend its TyreSpecs under TireConfig::pneumatic instead.
     struct TireParams {
         std::optional<TireMaterial> material;
         double tangent_k_n_m{}, mu{}, relaxation_length_m{};
@@ -268,10 +270,60 @@ namespace nativecfg {
         DistributedMaterial front, rear;
     };
 
+    // TyreSpecs (physics/tyre.py:35-81) — one pneumatic tyre on its rim:
+    // the 18 dataclass fields the wire carries verbatim. The derived
+    // members reproduce the Python properties' arithmetic exactly
+    // (tyre.py:111-124) so downstream math stays bitwise.
+    struct PneumaticTyreSpec {
+        std::string name;
+        double outer_radius_mm{}, rim_radius_mm{}, section_height_mm{};
+        double pressure_bar{}, crr_reference{};
+        double casing_width_mm{}, compressed_casing_mm{};
+        double area_factor{}, carcass_stiffness_n_mm2{}, contact_length_factor{};
+        double rate_stiffening{}, rate_relaxation_s{}, loss_factor{};
+        double hysteresis_rate_eps_mps{}, relaxation_length_mm{};
+        double rim_stiffness_n_mm2{}, tread_loss_crr{};
+
+        [[nodiscard]] double tyre_height_mm() const {
+            return outer_radius_mm - rim_radius_mm;
+        }
+        [[nodiscard]] double rim_strike_deflection_mm() const {
+            return tyre_height_mm() - compressed_casing_mm;
+        }
+        [[nodiscard]] double pressure_pa() const {
+            return pressure_bar * 100000.0; // BAR_TO_PA (tyre.py:24)
+        }
+    };
+
+    // The resolved road profile (sim/ride/tyre/geometry.py RoadProfile):
+    // grid origin, uniform sample spacing and the elevation row.
+    struct PneumaticProfile {
+        double x0_m{}, dx_m{};
+        std::vector<double> z_m;
+    };
+
+    // PneumaticTireConfig resolved on the wire (native/config.py
+    // _pneumatic_section): the tier name plus its resolved TIERS row —
+    // validate(PneumaticConfig) holds them equal bitwise — the resolved
+    // SurfaceSpec when pneumatic.surface names one (required under a
+    // non-'track' surface mode, absent otherwise), both TyreSpecs sides
+    // and the road profile.
+    struct PneumaticConfig {
+        std::string tier;
+        std::int64_t n_rays{};
+        double half_angle_deg{};
+        bool discretised_brush{};
+        double timestep_s{};
+        std::optional<SurfaceSpec> surface;
+        PneumaticTyreSpec front, rear;
+        PneumaticProfile profile;
+    };
+
     // TireBackendConfig (physical_config.py:38-63), restricted to the backends
-    // the native port's config layer accepts: 'compliant_2d' and
-    // 'distributed_2d_reference'. `distributed` engages iff the backend is the
-    // distributed reference (spec section 6 wire rule).
+    // the native port's config layer accepts: 'compliant_2d',
+    // 'distributed_2d_reference' and 'pneumatic'. `distributed`/`pneumatic`
+    // engage iff their backend is selected (spec section 6 wire rule); the
+    // pneumatic writer itself lands with the Stepper dispatch task.
     struct TireConfig {
         std::string backend;
         std::string surface_mode; // 'configured' | 'track'
@@ -279,6 +331,7 @@ namespace nativecfg {
         double significant_delta_m{}, significance_fraction{}, distinct_normal_deg{};
         std::optional<SurfaceMap> surface_map;
         std::optional<DistributedConfig> distributed;
+        std::optional<PneumaticConfig> pneumatic;
     };
 
     // RiderForceApplier per-path state (rider_forces.py:35-76): the body's

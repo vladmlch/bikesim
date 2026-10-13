@@ -309,31 +309,107 @@ namespace nativecfg {
         validation::positive(s.stribeck_speed_mps, std::string(path) + ".stribeck_speed_mps");
         if (s.mu_slide > s.mu_peak) throw std::invalid_argument(std::string(path) + ".mu_slide");
     }
+    // TyreSpecs.__post_init__ (tyre.py:83-109): positive geometry,
+    // pressure and fitted factors, nonnegative carcass/rate/loss
+    // fields, the rim inside the carcass, positive rim-strike travel
+    // and the unit ceilings on the area/contact-length/loss factors —
+    // the same list schema.py::_check_tyre_specs applies on the wire.
+    inline void validate(const PneumaticTyreSpec &s, std::string_view path) {
+        const std::string p(path);
+        validation::positive(s.outer_radius_mm, p + ".outer_radius_mm");
+        validation::positive(s.rim_radius_mm, p + ".rim_radius_mm");
+        validation::positive(s.section_height_mm, p + ".section_height_mm");
+        validation::positive(s.pressure_bar, p + ".pressure_bar");
+        validation::positive(s.crr_reference, p + ".crr_reference");
+        validation::positive(s.casing_width_mm, p + ".casing_width_mm");
+        validation::positive(s.compressed_casing_mm, p + ".compressed_casing_mm");
+        validation::positive(s.area_factor, p + ".area_factor");
+        validation::positive(s.contact_length_factor, p + ".contact_length_factor");
+        validation::positive(s.rate_relaxation_s, p + ".rate_relaxation_s");
+        validation::positive(s.hysteresis_rate_eps_mps, p + ".hysteresis_rate_eps_mps");
+        validation::positive(s.relaxation_length_mm, p + ".relaxation_length_mm");
+        validation::positive(s.rim_stiffness_n_mm2, p + ".rim_stiffness_n_mm2");
+        validation::nonnegative(s.carcass_stiffness_n_mm2, p + ".carcass_stiffness_n_mm2");
+        validation::nonnegative(s.rate_stiffening, p + ".rate_stiffening");
+        validation::nonnegative(s.loss_factor, p + ".loss_factor");
+        validation::nonnegative(s.tread_loss_crr, p + ".tread_loss_crr");
+        if (!(s.rim_radius_mm < s.outer_radius_mm))
+            throw std::invalid_argument(p + ".rim_radius_mm: rim is not inside the outer radius");
+        if (!(s.rim_strike_deflection_mm() > 0.))
+            throw std::invalid_argument(p + ".compressed_casing_mm: no travel above the rim");
+        if (s.area_factor > 1. || s.contact_length_factor > 1.)
+            throw std::invalid_argument(p + ": area and contact-length factors are at most 1");
+        if (!(s.loss_factor < 1.))
+            throw std::invalid_argument(p + ".loss_factor: must be below 1");
+    }
+    // schema.py::_check_pneumatic — the tier names a TIERS registry row
+    // (tyre.py:183-187) carried resolved on the wire: every resolved
+    // parameter must equal the registry entry bitwise so the wire stays
+    // single-sourced. Then both sides' TyreSpecs domains, the resolved
+    // surface when present, and the profile's uniform-grid invariants.
+    inline void validate(const PneumaticConfig &s) {
+        if (s.tier != "fast" && s.tier != "detailed")
+            throw std::invalid_argument("config.tire.pneumatic.tier: unsupported tier");
+        const bool fast = s.tier == "fast";
+        if (s.n_rays <= 0)
+            throw std::invalid_argument("config.tire.pneumatic.n_rays");
+        if (s.n_rays != (fast ? 64 : 256))
+            throw std::invalid_argument("config.tire.pneumatic.n_rays: not the resolved value for the tier");
+        if (s.half_angle_deg != 75.0)
+            throw std::invalid_argument("config.tire.pneumatic.half_angle_deg: not the resolved value for the tier");
+        if (s.discretised_brush == fast)
+            throw std::invalid_argument("config.tire.pneumatic.discretised_brush: not the resolved value for the tier");
+        if (s.timestep_s != (fast ? 0.0005 : 0.00025))
+            throw std::invalid_argument("config.tire.pneumatic.timestep_s: not the resolved value for the tier");
+        if (s.surface)
+            validate(*s.surface, "config.tire.pneumatic.surface");
+        validate(s.front, "config.tire.pneumatic.front");
+        validate(s.rear, "config.tire.pneumatic.rear");
+        validation::finite(s.profile.x0_m, "config.tire.pneumatic.profile.x0_m");
+        validation::positive(s.profile.dx_m, "config.tire.pneumatic.profile.dx_m");
+        if (s.profile.z_m.size() < 2)
+            throw std::invalid_argument("config.tire.pneumatic.profile.z_m: at least two samples required");
+        for (const double z: s.profile.z_m)
+            validation::finite(z, "config.tire.pneumatic.profile.z_m");
+    }
     inline void validate(const TireConfig &s) {
         const bool distributed = s.backend == "distributed_2d_reference";
-        if (s.backend != "compliant_2d" && !distributed)
+        const bool pneumatic = s.backend == "pneumatic";
+        if (s.backend != "compliant_2d" && !distributed && !pneumatic)
             throw std::invalid_argument("config.tire.backend");
         if (s.surface_mode != "track" && s.surface_mode != "configured")
             throw std::invalid_argument("config.tire.surface_mode");
-        // Spec section 6 wire rule: tire.distributed is required iff the
-        // backend is distributed_2d_reference, and the TireSpec material is
-        // required iff the backend is compliant_2d — the distributed
-        // material lives under the distributed section instead.
-        if (distributed) {
-            if (!s.distributed)
-                throw std::invalid_argument("config.tire.distributed");
+        // Spec section 6 wire rule (schema.py::validate_config): each
+        // backend section carries that backend's own law — required iff
+        // selected, forbidden otherwise — and the TireSpec material
+        // rides the wire only for compliant_2d.
+        if (distributed && !s.distributed)
+            throw std::invalid_argument("config.tire.distributed");
+        if (!distributed && s.distributed)
+            throw std::invalid_argument("config.tire.distributed");
+        if (pneumatic && !s.pneumatic)
+            throw std::invalid_argument("config.tire.pneumatic");
+        if (!pneumatic && s.pneumatic)
+            throw std::invalid_argument("config.tire.pneumatic");
+        if (distributed || pneumatic) {
             if (s.front.material)
                 throw std::invalid_argument("config.tire.front.material");
             if (s.rear.material)
                 throw std::invalid_argument("config.tire.rear.material");
-            validate(*s.distributed);
         } else {
-            if (s.distributed)
-                throw std::invalid_argument("config.tire.distributed");
             if (!s.front.material)
                 throw std::invalid_argument("config.tire.front.material");
             if (!s.rear.material)
                 throw std::invalid_argument("config.tire.rear.material");
+        }
+        if (distributed)
+            validate(*s.distributed);
+        if (pneumatic) {
+            // A configured (non-track) surface must ship resolved under
+            // tire.pneumatic.surface — the applier prefers it over the map.
+            if (s.surface_mode != "track" && !s.pneumatic->surface)
+                throw std::invalid_argument("config.tire.pneumatic.surface");
+            validate(*s.pneumatic);
         }
         validate(s.front, "config.tire.front"); validate(s.rear, "config.tire.rear");
         validation::nonnegative(s.significant_delta_m, "config.tire.significant_delta_m");

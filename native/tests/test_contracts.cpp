@@ -2638,7 +2638,7 @@ namespace {
             .front = warm_tire_params(), .rear = warm_tire_params(),
             .significant_delta_m = .0005, .significance_fraction = .3,
             .distinct_normal_deg = 12., .surface_map = std::nullopt,
-            .distributed = std::nullopt};
+            .distributed = std::nullopt, .pneumatic = std::nullopt};
         if (track) {
             // One material interval under the front wheel's contact x —
             // short names stay inside the diagnostics string's capacity so
@@ -2680,7 +2680,8 @@ namespace {
                 .distinct_normal_deg = 12., .surface_map = std::nullopt,
                 .distributed = nativecfg::DistributedConfig{
                     .station_count = 32, .density = density,
-                    .front = material, .rear = material}};
+                    .front = material, .rear = material},
+                .pneumatic = std::nullopt};
     }
 
     nativecfg::ResistanceConfig warm_resistance() {

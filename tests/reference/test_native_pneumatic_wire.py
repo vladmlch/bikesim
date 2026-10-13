@@ -1,11 +1,13 @@
 """The pneumatic backend's native wire: projection shape, schema
-round-trip, and the configured/track surface modes.
+round-trip, the configured/track surface modes, and the C++ parser
+boundary.
 
 ``project()`` is exercised end-to-end on a real physical RideSimulation;
 the structural and rejection checks mutate the emitted ``tire`` section
-and re-run ``validate_config`` — the native Stepper's parser for this
-section lands with Task 6, so these tests hold the Python side of the
-frozen wire.
+and re-run ``validate_config``, and the ``selected_native_parser_*``
+tests pin where the selected artifact accepts the wire — the C++ config
+layer (Task 6) parses and validates it while the pneumatic writer lands
+with the Stepper dispatch task.
 """
 import copy
 from dataclasses import asdict
@@ -300,14 +302,73 @@ def test_pneumatic_backend_reaches_the_backend_allow_list():
         validate_config(wire)
 
 
-def test_selected_native_parser_still_rejects_the_pneumatic_wire(
+def test_selected_native_parser_accepts_the_pneumatic_wire(
         track_sim, track_wire, tmp_path):
-    """Task 5 freezes this wire while config.hpp's allow-list still stops
-    at ``distributed_2d_reference``: the selected artifact must reject it
-    — on the unknown ``tire.pneumatic`` key or the backend discriminator —
-    until Task 6 lands the C++ parser."""
+    """Task 6 lands the C++ parser: the selected artifact parses and
+    domain-validates the pneumatic wire, so construction proceeds past
+    the config layer and stops at the writer boundary — a RuntimeError
+    naming the missing pneumatic writer (the Stepper dispatch lands with
+    Task 11) instead of a parser ValueError."""
     import mujoco
     mjb = tmp_path / 'model.mjb'
     mujoco.mj_saveModel(track_sim.model, str(mjb))
-    with pytest.raises(ValueError, match='tire'):
+    with pytest.raises(RuntimeError, match='pneumatic'):
         load_native().Stepper(str(mjb), track_wire)
+
+
+@pytest.mark.parametrize('mutate,match', [
+    # Presence rules: the section is required iff backend == 'pneumatic'.
+    (lambda c: c['tire'].pop('pneumatic'), 'tire.pneumatic'),
+    (lambda c: c['tire'].__setitem__('backend', 'compliant_2d'),
+     'tire.pneumatic'),
+    # The compliant-only material stays forbidden on the sides.
+    (lambda c: c['tire']['front'].__setitem__(
+        'material', {'radial_k_n_m': 1., 'radial_c_ns_m': 1.,
+                     'pressure_pa_gauge': 1., 'provenance': 'x',
+                     'valid_load_range_n': [0., 1.]}),
+     'tire.front.material'),
+    # Section shape and resolved-tier integrity.
+    (lambda c: c['tire']['pneumatic'].__setitem__('misspelled', 1.),
+     'tire.pneumatic.misspelled'),
+    (lambda c: c['tire']['pneumatic'].__setitem__('tier', 'ultra'),
+     'tire.pneumatic.tier'),
+    (lambda c: c['tire']['pneumatic'].__setitem__('n_rays', 128),
+     'tire.pneumatic.n_rays'),
+    (lambda c: c['tire']['pneumatic'].__setitem__('discretised_brush', 'yes'),
+     'tire.pneumatic.discretised_brush'),
+    (lambda c: c['tire']['pneumatic'].__setitem__('timestep_s', .001),
+     'tire.pneumatic.timestep_s'),
+    # TyreSpecs domains on both sides.
+    (lambda c: c['tire']['pneumatic']['front'].__setitem__('pressure_bar', -1.),
+     'tire.pneumatic.front.pressure_bar'),
+    (lambda c: c['tire']['pneumatic']['front'].__setitem__('rim_radius_mm', 400.),
+     'tire.pneumatic.front.rim_radius_mm'),
+    (lambda c: c['tire']['pneumatic']['rear'].__setitem__('area_factor', 1.5),
+     'tire.pneumatic.rear'),
+    (lambda c: c['tire']['pneumatic']['rear'].__setitem__('loss_factor', 1.),
+     'tire.pneumatic.rear.loss_factor'),
+    # The road profile holds the uniform-grid invariants.
+    (lambda c: c['tire']['pneumatic']['profile'].__setitem__('dx_m', 0.),
+     'profile.dx_m'),
+    (lambda c: c['tire']['pneumatic']['profile'].__setitem__('z_m', []),
+     'profile.z_m'),
+    (lambda c: c['tire']['pneumatic']['profile'].__setitem__('z_m', [.4]),
+     'profile.z_m'),
+    (lambda c: c['tire']['pneumatic']['profile'].__setitem__('z_m', [.4, np.nan]),
+     'profile.z_m'),
+    # A configured (non-track) surface must ship resolved in the section.
+    (lambda c: c['tire'].__setitem__('surface_mode', 'configured'),
+     'tire.pneumatic.surface'),
+])
+def test_selected_native_parser_rejects_malformed_pneumatic_wires(
+        track_sim, track_wire, tmp_path, mutate, match):
+    """Malformed pneumatic wires still fail closed at the selected
+    artifact — a ValueError naming the offending field, raised by the
+    parser or the shared config validator before the writer boundary."""
+    import mujoco
+    mjb = tmp_path / 'model.mjb'
+    mujoco.mj_saveModel(track_sim.model, str(mjb))
+    wire = copy.deepcopy(track_wire)
+    mutate(wire)
+    with pytest.raises(ValueError, match=match):
+        load_native().Stepper(str(mjb), wire)

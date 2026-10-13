@@ -447,6 +447,7 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'distributed_probe_isolation',
         'distributed_committed_snapshot_borrow',
         'warm_pneumatic_zero_allocation',
+        'pneumatic_long_surface_zero_allocation',
         'pneumatic_status_control',
         'pneumatic_probe_isolation',
         'pneumatic_state_wire',

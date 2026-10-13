@@ -96,9 +96,24 @@ namespace biketyre {
         std::optional<RimStrikeEvent> rim_event;
         double dissipated_power_w = 0.0;
         bool coverage_event = false, airborne = true;
-        // The oracle's Tuple[TyrePatchOutput, ...] — a live prefix
-        // here; the vector stays reserved at the model's patch bound.
-        std::vector<TyrePatchOutput> patches;
+        // The oracle's Tuple[TyrePatchOutput, ...] — the live rows are
+        // patch_slots[:patch_count]; the vector stays SIZED at the
+        // model's patch bound so evaluate writes every patch in place.
+        // A clear()+emplace_back idiom would destroy the elements (and
+        // their string storage) each call — the bound-sized slot bank
+        // keeps each element's surface_name capacity alive across
+        // ticks, which is what lets reserve_patch_names() prewarm the
+        // assign-into-capacity discipline for names past the inline
+        // string storage.
+        std::vector<TyrePatchOutput> patch_slots;
+        std::size_t patch_count = 0;
+        // The committed patch rows the oracle's `patches` tuple
+        // carries — the live prefix of the slot bank.
+        [[nodiscard]] std::span<const TyrePatchOutput> patches() const
+                noexcept {
+            return std::span<const TyrePatchOutput>(patch_slots)
+                    .first(patch_count);
+        }
     };
 
     // _PatchBrushState (model.py:111-118) — slip memory tied to a
@@ -181,10 +196,12 @@ namespace biketyre {
                  const nativecfg::SurfaceMap &surface_map, double dt_s);
 
         // The caller-buffer twin: identical values written into `out`
-        // (which must have patches.capacity() >= the model's patch
-        // bound — the *_into undersized-buffer contract). The oracle's
-        // `self.last_outputs = outputs` semantics still apply:
-        // last_outputs() reflects `out` after the call.
+        // (which must have patch_slots.size() >= the model's patch
+        // bound — the *_into undersized-buffer contract; callers
+        // needing a nonallocating write also reserve each slot's
+        // surface_name to the longest name their surface map can
+        // carry). The oracle's `self.last_outputs = outputs` semantics
+        // still apply: last_outputs() reflects `out` after the call.
         void evaluate_into(std::span<const double> hub_position_world_m,
                            std::span<const double> hub_velocity_world_mps,
                            double omega_forward_radps,
@@ -276,6 +293,15 @@ namespace biketyre {
         // only lazy allocation the model can otherwise perform at
         // patch-drift time).
         void prewarm_detailed_brushes();
+
+        // Reserves every patch slot's surface_name to `capacity` —
+        // the same configure-time prewarm as
+        // prewarm_detailed_brushes(): a surface name longer than the
+        // string's inline storage is legal input, and without the
+        // reserve its per-patch assign would heap-allocate on the
+        // marked warm path. Pass the longest name the surface map can
+        // carry.
+        void reserve_patch_names(std::size_t capacity);
 
     private:
         // _states_for_patches (model.py:425-468) — reuses slip state

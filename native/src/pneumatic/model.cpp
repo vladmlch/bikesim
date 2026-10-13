@@ -120,7 +120,9 @@ namespace biketyre {
             out.dissipated_power_w = 0.0;
             out.coverage_event = coverage_event;
             out.airborne = airborne;
-            out.patches.clear();
+            // The slot bank keeps its elements (and their string
+            // capacity) — only the live count resets.
+            out.patch_count = 0;
         }
 
         // WheelOutputs.empty (model.py:85-108) — the reset snapshot:
@@ -145,7 +147,7 @@ namespace biketyre {
             out.dissipated_power_w = 0.0;
             out.coverage_event = false;
             out.airborne = true;
-            out.patches.clear();
+            out.patch_count = 0;
         }
     } // namespace
 
@@ -242,8 +244,12 @@ namespace biketyre {
         used_.assign(bound, false);
         loss_scratch_.assign(n, 0.0);
         brushes_.resize(n + 1);
-        last_outputs_.patches.reserve(bound);
-        staging_.patches.reserve(bound);
+        // Bound-sized slot banks: evaluate() writes patch elements in
+        // place so their surface_name storage persists across calls —
+        // reserve_patch_names() then prewarms that capacity for
+        // callers needing a strictly allocation-free warm path.
+        last_outputs_.patch_slots.resize(bound);
+        staging_.patch_slots.resize(bound);
         write_empty(last_outputs_, tyre_);
     }
 
@@ -263,6 +269,13 @@ namespace biketyre {
     void PneumaticTyreModel::prewarm_detailed_brushes() {
         for (std::size_t w = 1; w <= ring_.n(); ++w)
             (void) brush_for_width(w);
+    }
+
+    void PneumaticTyreModel::reserve_patch_names(std::size_t capacity) {
+        for (TyrePatchOutput &p: last_outputs_.patch_slots)
+            p.surface_name.reserve(capacity);
+        for (TyrePatchOutput &p: staging_.patch_slots)
+            p.surface_name.reserve(capacity);
     }
 
     DiscretisedBrush &
@@ -430,6 +443,14 @@ namespace biketyre {
                     "hub position and velocity must be finite");
         if (!std::isfinite(omega_forward_radps))
             throw std::invalid_argument("wheel spin must be finite");
+        // The *_into undersized-buffer contract, up front like the
+        // carcass kernel's own out-row check (carcass.cpp): the caller
+        // buffer must carry the model's patch bound as sized slots —
+        // the writer's banks are construction-sized so this can never
+        // fire on the warm path.
+        if (out.patch_slots.size() < max_patches())
+            throw std::invalid_argument(
+                    "evaluate: out patch slots below the patch bound");
 
         // model.py:208-214 — ray/road intersection.
         RayHitBuffers hits{.r_m = hits_scratch_.r_m,
@@ -483,7 +504,7 @@ namespace biketyre {
         double weighted_deflection_m = 0.0, weighted_kappa = 0.0,
                 weighted_kappa_prime = 0.0;
         double total_contact_length_m = 0.0, brush_loss_w = 0.0;
-        out.patches.clear();
+        out.patch_count = 0;
 
         // model.py:276-280 — carcass hysteresis dissipation clipped at
         // zero per element, then the pairwise sum.
@@ -655,8 +676,10 @@ namespace biketyre {
             brush_loss_w += patch_loss_w;
 
             // model.py:364-392 — the patch record, then the
-            // accumulate block in the oracle's order.
-            TyrePatchOutput &po = out.patches.emplace_back();
+            // accumulate block in the oracle's order. Write the slot's
+            // fields first and publish it after — a throw mid-record
+            // leaves the live prefix holding only fully-written rows.
+            TyrePatchOutput &po = out.patch_slots[out.patch_count];
             po.ray_start = start_i;
             po.ray_stop = stop_i;
             po.surface_name = surface.name;
@@ -677,6 +700,7 @@ namespace biketyre {
                     brush_result.friction_coefficient;
             po.fully_sliding = brush_result.fully_sliding;
             po.dissipated_power_w = patch_loss_w;
+            ++out.patch_count;
 
             total_force_world_n[0] += patch_force_world_n[0];
             total_force_world_n[1] += patch_force_world_n[1];
@@ -714,7 +738,7 @@ namespace biketyre {
         out.slip_ratio = slip_ratio_out;
         out.transient_slip_ratio = transient_slip_ratio_out;
         out.fully_sliding =
-                std::ranges::any_of(out.patches,
+                std::ranges::any_of(out.patches(),
                                     [](const TyrePatchOutput &p) {
                                         return p.fully_sliding;
                                     });
@@ -746,10 +770,10 @@ namespace biketyre {
             double omega_forward_radps, const RoadProfile &road,
             const nativecfg::SurfaceMap &surface_map, double dt_s,
             WheelOutputs &out) {
-        if (out.patches.capacity() < max_patches())
+        if (out.patch_slots.size() < max_patches())
             throw std::invalid_argument(
-                    "evaluate_into: out.patches must hold the model's "
-                    "patch bound");
+                    "evaluate_into: out.patch_slots must hold the "
+                    "model's patch bound");
         evaluate_impl(hub_position_world_m, hub_velocity_world_mps,
                       omega_forward_radps, road, surface_map, dt_s,
                       out);

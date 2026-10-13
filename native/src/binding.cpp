@@ -647,7 +647,7 @@ namespace {
         d["coverage_event"] = out.coverage_event;
         d["airborne"] = out.airborne;
         nb::list patches;
-        for (const biketyre::TyrePatchOutput &p: out.patches)
+        for (const biketyre::TyrePatchOutput &p: out.patches())
             patches.append(debug_model_patch_dict(p));
         d["patches"] = std::move(patches);
         return d;

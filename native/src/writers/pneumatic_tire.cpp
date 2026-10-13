@@ -271,6 +271,17 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
     discretised_ = pneu.discretised_brush;
     const std::size_t n = static_cast<std::size_t>(n_rays_);
     const std::size_t nv = static_cast<std::size_t>(nv_);
+    // The longest surface name the per-tick path can meet — the map's
+    // default, the configured override and every section — sized once
+    // so the patch-slot surface_name strings and the diagnostics'
+    // surface field assign into capacity on the marked warm path.
+    std::size_t surface_capacity = surface_map_.surface.name.size();
+    if (pneu.surface.has_value())
+        surface_capacity =
+                std::max(surface_capacity, pneu.surface->name.size());
+    for (const auto &sec: surface_map_.sections)
+        surface_capacity =
+                std::max(surface_capacity, sec.surface.name.size());
     // :118-121 — the velocity/Jacobian scratch and the live tyre pair —
     // plus the two clone banks the rollback and probe paths evaluate
     // through (all six are construction-sized; only the live models
@@ -296,8 +307,15 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
         probe_[s] = std::make_unique<biketyre::PneumaticTyreModel>(
                 spec, n_rays_, pneu.half_angle_deg, discretised_);
         // Strictly allocation-free evaluate() on the warm path: every
-        // brush width the migration could size exists up front.
+        // brush width the migration could size exists up front, and
+        // every patch slot's surface_name is reserved to the longest
+        // name this writer's map can emit — the rollback/probe banks
+        // get the same reserve because assign() and probe evaluate()
+        // write those slots too.
         tyres_[s]->prewarm_detailed_brushes();
+        for (biketyre::PneumaticTyreModel *model:
+             {tyres_[s].get(), backup_[s].get(), probe_[s].get()})
+            model->reserve_patch_names(surface_capacity);
         dec_delta_[s].resize(n);
         dec_elastic_[s].resize(n);
         dec_maxwell_[s].resize(n);
@@ -316,13 +334,6 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
             slot->backend.reserve(kBackend.size());
         }
     }
-    std::size_t surface_capacity = surface_map_.surface.name.size();
-    if (pneu.surface.has_value())
-        surface_capacity =
-                std::max(surface_capacity, pneu.surface->name.size());
-    for (const auto &sec: surface_map_.sections)
-        surface_capacity =
-                std::max(surface_capacity, sec.surface.name.size());
     for (std::size_t s = 0; s < 2; ++s) {
         diagnostics_[s].surface.reserve(surface_capacity);
         diagnostics_stage_[s].surface.reserve(surface_capacity);
@@ -724,7 +735,7 @@ double PneumaticTireWriter::shear_energy_j(
         // wins on a duplicated key: take the LAST matching patch.
         const biketyre::TyrePatchOutput *patch = nullptr;
         for (const biketyre::TyrePatchOutput &p:
-             tyre.last_outputs().patches)
+             tyre.last_outputs().patches())
             if (p.ray_start == state.start && p.ray_stop == state.stop)
                 patch = &p;
         if (patch == nullptr)
@@ -908,7 +919,7 @@ void PneumaticTireWriter::evaluate_wheels(
         // ContactPatch pass (:387-398) is a second loop like the
         // oracle's — its post_init gates never fire while the force
         // fold is still running.
-        for (const biketyre::TyrePatchOutput &patch: outputs.patches) {
+        for (const biketyre::TyrePatchOutput &patch: outputs.patches()) {
             model_access::point_jacobian_into(
                     m_, d, body,
                     std::span<const mjtNum>(patch.centroid_world_m),
@@ -924,7 +935,7 @@ void PneumaticTireWriter::evaluate_wheels(
         }
         TireSnapshot &snap = snapshot_stage_[s];
         snap.patches.clear();
-        for (const biketyre::TyrePatchOutput &patch: outputs.patches) {
+        for (const biketyre::TyrePatchOutput &patch: outputs.patches()) {
             // :390-397 — the ContactPatch row: normal is the patch's
             // normal FORCE divided by its load — the oracle's
             // elementwise divide, not the model's normalized vector.
@@ -973,9 +984,9 @@ void PneumaticTireWriter::evaluate_wheels(
                 radial_energy_j(tyre, std::span<const double>(
                                               hits.delta_m));
         const double shear_energy = shear_energy_j(tyre);
-        const std::size_t patch_count = outputs.patches.size();
+        const std::size_t patch_count = outputs.patch_count;
         numeric::PythonSum brush_power;
-        for (const biketyre::TyrePatchOutput &patch: outputs.patches)
+        for (const biketyre::TyrePatchOutput &patch: outputs.patches())
             brush_power.add(patch.dissipated_power_w);
         const double brush_power_w = brush_power.total();
         const double load = outputs.normal_load_n;
@@ -986,7 +997,7 @@ void PneumaticTireWriter::evaluate_wheels(
         if (load > 0.0) {
             numeric::PythonSum slip_num, mu_num;
             for (const biketyre::TyrePatchOutput &patch:
-                 outputs.patches) {
+                 outputs.patches()) {
                 slip_num.add(patch.slip_speed_mps *
                              patch.normal_load_n);
                 mu_num.add(patch.friction_coefficient *
@@ -1004,7 +1015,7 @@ void PneumaticTireWriter::evaluate_wheels(
         const std::string_view surface_name =
                 patch_count > 0
                         ? std::string_view(
-                                  outputs.patches[0].surface_name)
+                                  outputs.patches()[0].surface_name)
                         : (pneu.surface.has_value()
                                    ? std::string_view(pneu.surface->name)
                                    : std::string_view(
@@ -1021,7 +1032,7 @@ void PneumaticTireWriter::evaluate_wheels(
         {
             numeric::PythonSum tangent_total;
             for (const biketyre::TyrePatchOutput &patch:
-                 outputs.patches)
+                 outputs.patches())
                 tangent_total.add(patch.tangential_force_n);
             diag.tangent_force_n = tangent_total.total();
         }

@@ -3346,6 +3346,54 @@ namespace {
                 "the pneumatic warm tick allocated or released storage");
     }
 
+    // A long configured surface name is legal input — SurfaceSpec.name
+    // is length-unbounded and the registry names are all short, so the
+    // short-name rig alone cannot see the per-patch surface_name write:
+    // each TyrePatchOutput element's string must carry enough reserved
+    // capacity that the marked warm tick never allocates for it.
+    void test_pneumatic_long_surface_zero_allocation() {
+        WarmContext context;
+        nativecfg::TireConfig cfg = warm_pneumatic_tire();
+        // Past libc++'s inline string capacity — a heap write would
+        // be required for every patch row if the slot strings were
+        // recreated per tick instead of construction-reserved. The
+        // warm config always sets both optionals; the checked access
+        // stays in an if-guard so the sweep can prove it.
+        if (!cfg.pneumatic.has_value() ||
+            !cfg.pneumatic->surface.has_value())
+            throw std::logic_error(
+                    "warm pneumatic config carries no surface");
+        cfg.pneumatic->surface->name =
+                "aggregate volcanic scree over wet bedrock";
+        const auto tire = std::make_unique<PneumaticTireWriter>(
+                context.model.get(), context.data.get(), std::move(cfg));
+        std::vector<double> out(
+                static_cast<std::size_t>(context.model->nv));
+        const auto tick = [&](double dt) {
+            context.data->time += dt;
+            return tire->try_compute_into(context.data.get(), dt, out);
+        };
+        for (int warmup = 0; warmup < 2; ++warmup)
+            require(tick(.002) == CoreStatus::ok,
+                    "long-surface warmup ticks");
+        require(tire->snapshots_committed() &&
+                    !tire->snapshot_storage()[0].patches.empty() &&
+                    !tire->snapshot_storage()[1].patches.empty(),
+                "long-surface warmup committed no patches");
+        allocation_counter::reset();
+        for (int i = 0; i < 4; ++i)
+            require(tick(.002) == CoreStatus::ok,
+                    "steady long-surface tick must succeed");
+        if (allocation_counter::count() != 0 ||
+            allocation_counter::freed() != 0)
+            throw std::runtime_error(
+                    "the long-surface warm tick allocated or released "
+                    "storage: " +
+                    std::to_string(allocation_counter::count()) + " new, " +
+                    std::to_string(allocation_counter::freed()) +
+                    " delete in 4 ticks");
+    }
+
     // The pneumatic twin of the try_* rejection matrix: every declared
     // CoreStatus control flow returns through the status value with zero
     // allocation inside the window.
@@ -4345,7 +4393,7 @@ namespace {
                 "batch columns carry the energy channel projection");
     }
 
-    constexpr std::array<TestCase, 45> cases{{
+    constexpr std::array<TestCase, 46> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -4381,6 +4429,7 @@ namespace {
         {.name = "distributed_probe_isolation", .run = test_distributed_probe_isolation},
         {.name = "distributed_committed_snapshot_borrow", .run = test_distributed_committed_snapshot_borrow},
         {.name = "warm_pneumatic_zero_allocation", .run = test_warm_pneumatic_zero_allocation},
+        {.name = "pneumatic_long_surface_zero_allocation", .run = test_pneumatic_long_surface_zero_allocation},
         {.name = "pneumatic_status_control", .run = test_pneumatic_status_control},
         {.name = "pneumatic_probe_isolation", .run = test_pneumatic_probe_isolation},
         {.name = "pneumatic_state_wire", .run = test_pneumatic_state_wire},

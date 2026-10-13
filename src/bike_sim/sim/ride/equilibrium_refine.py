@@ -21,7 +21,10 @@ def refine_equilibrium(runtime, *, max_evaluations=80, acceleration_tolerance=.0
     auxiliary=[]
     if runtime.tire is not None:
         for state in runtime.tire.states.values():
-            auxiliary.append((state,'xi',None))
+            # Only scalar-shear states take part: the pneumatic tyre's carcass
+            # and patch memory has no xi coordinate for the optimizer to own.
+            if hasattr(state,'xi'):
+                auxiliary.append((state,'xi',None))
     if runtime.rider_contacts is not None:
         for state in runtime.rider_contacts.states.values():
             auxiliary.append((state,'xi',None))

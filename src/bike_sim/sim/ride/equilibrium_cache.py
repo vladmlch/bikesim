@@ -92,7 +92,13 @@ def _state_arrays(runtime):
             [rider.pending_release_loss_j], dtype=float
         )
     tire = runtime.tire
-    if tire is not None:
+    if tire is not None and tire.config.backend == 'pneumatic':
+        # The pneumatic carcass/brush state is not expressible in the xi/tangent
+        # schema; its canonical wire is the applier's own state_dict.
+        wire = tire.state_dict()
+        state['state_tire_wire_names'] = np.asarray(wire['names'])
+        state['state_tire_wire_row'] = np.asarray(wire['row'],dtype=float)
+    elif tire is not None:
         distributed = tire.config.backend == 'distributed_2d_reference'
         sides = tuple(sorted(tire.states)) if distributed else tuple(tire.states)
         state['state_tire_sides'] = np.asarray([json.dumps(key) for key in sides])
@@ -179,7 +185,26 @@ def restore_state(runtime, state):
         return False
     tire = runtime.tire
     tire_update=None
-    if tire is not None:
+    if tire is not None and tire.config.backend == 'pneumatic':
+        required = {'state_tire_wire_names','state_tire_wire_row'}
+        if not required.issubset(state):
+            return False
+        try:
+            names = [str(value) for value in state['state_tire_wire_names']]
+            row = np.asarray(state['state_tire_wire_row'],dtype=float)
+        except (ValueError,TypeError):
+            return False
+        if row.shape != (len(names),):
+            return False
+        # set_state is the only decoder and is itself all-or-nothing: every
+        # canonical column and cell contract is checked before it commits.
+        # The rider and drive updates queued above cannot fail, so committing
+        # the tire here keeps the restore atomic.
+        try:
+            tire.set_state(names,row)
+        except (ValueError,TypeError):
+            return False
+    elif tire is not None:
         distributed = tire.config.backend == 'distributed_2d_reference'
         required = {'state_tire_sides', 'state_tire_xi', 'state_tire_tangent', 'state_tire_tangent_valid'}
         if not distributed:

@@ -42,6 +42,18 @@ def _guard(runtime):
         raise ValueError('physical initial states may only be transferred before the first step')
 
 
+def _json_cells(values):
+    """tolist() cells that survive allow_nan=False: NaN floats become null,
+    which np.asarray(..., dtype=float) reads back as nan. The pneumatic tire
+    wire marks unset bristle/rim/patch cells with NaN by contract; an inf
+    cell still fails the strict dump instead of silently changing value."""
+    if isinstance(values,list):
+        return [_json_cells(item) for item in values]
+    if isinstance(values,float) and np.isnan(values):
+        return None
+    return values
+
+
 @dataclass(frozen=True)
 class PhysicalInitialState:
     """JSON payload is immutable; each restoration receives fresh material arrays."""
@@ -62,7 +74,7 @@ class PhysicalInitialState:
         vertices=r.vertices
         centers=[d.geom_xpos[g][0] for g in (sim.contact_query.front_id,sim.contact_query.rear_id)]
         road_x=np.linspace(min(centers)-.5,max(centers)+.5,513)
-        state={k:{'dtype':str(v.dtype),'shape':list(v.shape),'values':v.tolist()} for k,v in _state_arrays(r).items()}
+        state={k:{'dtype':str(v.dtype),'shape':list(v.shape),'values':_json_cells(v.tolist())} for k,v in _state_arrays(r).items()}
         drive=r.drive
         payload={'schema_version':1,'contract_sha256':_contract(sim),
             'qpos':d.qpos.tolist(),'qvel':d.qvel.tolist(),'qacc_warmstart':d.qacc_warmstart.tolist(),

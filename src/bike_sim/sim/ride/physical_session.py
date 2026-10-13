@@ -169,6 +169,7 @@ def configuration_metadata(sim,seed=None):
         'component_provenance':{key:'synthetic' for key in sim.mass_specs.component_masses},
         'limitations':['planar X-Z dynamics','synthetic material and drive parameters',
                        ('experimental distributed tire; mesh/time/station gates required' if sim.physics_config.tires.backend=='distributed_2d_reference'
+                        else 'experimental pneumatic tire; carcass/brush parameters not calibrated' if sim.physics_config.tires.backend=='pneumatic'
                         else 'single equivalent tire support; multi-support peaks not calibrated'),
                        'native contact work is a solver diagnostic, not material tire hysteresis']}
 

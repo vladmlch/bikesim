@@ -226,7 +226,7 @@ class RideSimulation:
                 f"got {self.physics_config.timestep_s}"
             )
         if physical and self.tyre_config.pneumatic:
-            raise ValueError("legacy pneumatic tyre is not a physical backend; select tires.backend=compliant_2d")
+            raise ValueError("legacy pneumatic tyre is not a physical backend; select tires.backend=pneumatic (native) or compliant_2d")
         self.solver = HorstLinkageSolver(self.specs)
         self.start_x_m = float(start_x_m)
         # The legs choice lands on the rider *before* the pose is solved: `seated_pose`

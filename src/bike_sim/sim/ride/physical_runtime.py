@@ -92,6 +92,11 @@ class PhysicalRuntime:
         if self.cfg.tires.backend == 'distributed_2d_reference':
             from bike_sim.sim.ride.distributed_tire_forces import DistributedTireForceApplier
             self.tire = DistributedTireForceApplier(m,self.vertices,self.cfg.tires,sim.track.surface_map)
+        if self.cfg.tires.backend == 'pneumatic':
+            from bike_sim.sim.ride.pneumatic_tire_forces import PneumaticTireForceApplier
+            from bike_sim.sim.ride.tyre.profile import build_road_profile
+            self.tire = PneumaticTireForceApplier(m,build_road_profile(sim.track,sim.field,sim.specs),
+                self.cfg.tires,sim.track.surface_map)
         self.drive = DrivetrainForceApplier(m,self.cfg.drive,self.cfg.drive_mode)
         self.resistance = ExternalResistanceApplier(m,self.cfg.resistance)
         self.brake = StaticBrakeApplier(self.address('front_wheel_spin')[1],

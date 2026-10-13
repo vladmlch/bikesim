@@ -135,7 +135,7 @@ def finish_physical_topology(root,specs,mass_specs,physics_config):
         contact_geom = _find(body, 'geom', 'geom_'+side+'_contact')
         contact_geom.set('priority', '1')
         contact_geom.set('friction', f'{getattr(physics_config.tires, side).mu:.17g} 0.005 0.0001')
-        if physics_config.tires.backend in ('compliant_2d','distributed_2d_reference'):
+        if physics_config.tires.backend in ('compliant_2d','distributed_2d_reference','pneumatic'):
             for geom in body.iter('geom'):
                 geom.set('contype','0'); geom.set('conaffinity','0')
     # Terrain collisions matter only for crash detection: geom_handlebar feeds

@@ -5,11 +5,13 @@
 #include "../diag.hpp"
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <stdexcept>
+#include <variant>
 #include <vector>
 #include <nanobind/stl/string.h>
 
@@ -170,6 +172,86 @@ PhysicalSampleData history_sample(nb::handle value) {
     return sample;
 }
 
+// ---- authored-episode constructor for encoder parity tests ----
+// Accepts the canonical sample-row dict shape
+// (tests/reference/_recording_support.py::sample_row). The ColumnLayout is
+// zeroed on purpose: flat_columns is legacy surface the new typed export
+// must not consume, so the layout indices are never read here.
+// NOLINTNEXTLINE(misc-no-recursion) depth mirrors the authored value tree
+Wire python_to_wire(nb::handle value, const char *path) {
+    if (value.is_none()) return Wire{nullptr};
+    if (nb::isinstance<nb::bool_>(value)) return Wire{nb::cast<bool>(value)};
+    const nb::object numpy = nb::module_::import_("numpy");
+    // NumPy scalars unbox to their Python value first: np.bool_ is neither a
+    // PyBool nor a numbers lane, and nanobind's bool caster rejects it.
+    if (nb::isinstance(value, numpy.attr("generic")))
+        return python_to_wire(value.attr("item")(), path);
+    const auto numbers = nb::module_::import_("numbers");
+    if (nb::isinstance(value, numbers.attr("Integral")))
+        return Wire{wire::integer(value, path)};
+    if (nb::isinstance(value, numbers.attr("Real")))
+        return Wire{wire::real(value, path)};
+    if (nb::isinstance<nb::str>(value))
+        return Wire{wire::string(value, path)};
+    if (nb::isinstance<nb::dict>(value)) {
+        WireObject object;
+        for (const auto item : nb::borrow<nb::dict>(value))
+            object.emplace_back(wire::string(item.first, path),
+                                python_to_wire(item.second, path));
+        return Wire{std::move(object)};
+    }
+    if (nb::isinstance<nb::list>(value) || nb::isinstance<nb::tuple>(value) ||
+        nb::isinstance(value, numpy.attr("ndarray"))) {
+        // sequence() materializes tuples/arrays into a real list: borrowing
+        // them as nb::list would let PyList_GET_ITEM read tuple storage.
+        WireArray array;
+        for (const nb::handle item : wire::sequence(value, path))
+            array.push_back(python_to_wire(item, path));
+        return Wire{std::move(array)};
+    }
+    wire::invalid(path, "unsupported authored value type");
+}
+
+// The authored channels payload must root at a dict: production samples
+// always carry a (possibly empty) mapping, and encode paths index into it.
+WireObject object_of(Wire value, const char *path) {
+    if (auto *object = std::get_if<WireObject>(&value.value))
+        return std::move(*object);
+    throw std::invalid_argument(std::string(path) + ": expected a dict");
+}
+
+PhysicalSampleData authored_sample(nb::handle row) {
+    const wire::Dict dict{.value = wire::mapping(row, "sample row"),
+                          .path = "sample row"};
+    PhysicalSampleData sample;
+    sample.interval_id = wire::integer(wire::field(dict, "interval_id"), "interval_id");
+    sample.time_s = wire::real(wire::field(dict, "time_s"), "time_s");
+    sample.end_time_s = wire::real(wire::field(dict, "end_time_s"), "end_time_s");
+    sample.qpos = wire::vector(wire::field(dict, "qpos"), "qpos");
+    sample.qvel = wire::vector(wire::field(dict, "qvel"), "qvel");
+    for (const auto entry :
+         wire::mapping(wire::field(dict, "forces"), "forces"))
+        sample.forces.emplace_back(wire::string(entry.first, "force component"),
+            wire::vector(entry.second, "forces member"));
+    for (const auto entry :
+         wire::mapping(wire::field(dict, "powers_w"), "powers_w"))
+        sample.powers_w.emplace_back(wire::string(entry.first, "power name"),
+                                     Wire(wire::real(entry.second, "power value")));
+    sample.channels = object_of(
+        python_to_wire(wire::field(dict, "channels"), "channels"), "channels");
+    return sample;
+}
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) raw handles keep the Python argument types for the wire:: readers' path-labeled domain errors
+OwnedNativeEpisode make_episode(nb::handle rows, nb::handle generation) {
+    std::vector<SamplePtr> samples;
+    for (const nb::handle row : wire::sequence(rows, "rows"))
+        samples.push_back(std::make_shared<const PhysicalSampleData>(
+            authored_sample(row)));
+    const int gen = wire::integer32(generation, "generation");
+    return OwnedNativeEpisode::seal(gen, samples, ColumnLayout{});
+}
+
 // Pure production kernels surfaced for independent, deliberately adversarial
 // accounting tests. They neither step an engine nor synthesize oracle results.
 void bind_work_probes(nb::module_ &module) {
@@ -215,5 +297,7 @@ void bind_samples(nb::module_ &module) {
     bind_batch_value(module);
     bind_episode_value(module);
     bind_work_probes(module);
+    module.def("runtime_make_episode", &make_episode,
+               nb::arg("rows"), nb::arg("generation"));
 }
 } // namespace runtime

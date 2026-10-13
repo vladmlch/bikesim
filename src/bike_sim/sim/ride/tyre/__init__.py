@@ -5,6 +5,8 @@ Per-step kernels for the `pneumatic` tyre, in metres:
 
 - `geometry` -- the ring of radial elements against the road profile: where each ray meets
   the road, element deflections, contact patches, coverage.
+- `profile` -- the world-frame road polyline the rays are intersected against, built from
+  the track and the heightfield grid.
 - `carcass` -- element forces: pressure and carcass terms, rate stiffening, hysteresis, rim.
 - `brush` -- the tread: transient slip, lumped and discretised brush, tangential force.
 - `model` -- one wheel's tyre: the kernels in sequence, with the state they carry.

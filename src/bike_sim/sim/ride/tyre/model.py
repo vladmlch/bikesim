@@ -50,6 +50,9 @@ class TyrePatchOutput:
     slip_ratio: float
     transient_slip_ratio: float
     sliding_speed_mps: float
+    # Signed tread slip `v_x - omega * R_eff`: positive slides the tread forward over the
+    # road. `sliding_speed_mps` stays its magnitude for the Stribeck lookup.
+    slip_speed_mps: float
     friction_coefficient: float
     fully_sliding: bool
     dissipated_power_w: float
@@ -374,6 +377,7 @@ class PneumaticTyre:
                 slip_ratio=float(slip_ratio),
                 transient_slip_ratio=float(state.kappa_prime),
                 sliding_speed_mps=abs(float(v_s_mps)),
+                slip_speed_mps=float(v_s_mps),
                 friction_coefficient=brush_result.friction_coefficient,
                 fully_sliding=brush_result.fully_sliding,
                 dissipated_power_w=patch_loss_w,

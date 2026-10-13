@@ -20,7 +20,6 @@ import mujoco
 import numpy as np
 
 from bike_sim.geometry.specs import BikeSpecs
-from bike_sim.geometry.hardpoints import compute_ground_z
 from bike_sim.kinematics.solver import HorstLinkageSolver
 from bike_sim.mujoco.builder import generate_mujoco_xml
 from bike_sim.physics.air_spring import AirSpringSpecs, ForkAirSpring
@@ -57,14 +56,13 @@ from bike_sim.sim.ride.termination import (
     RunTerminator,
 )
 from bike_sim.sim.ride.tyre.applier import TyreForceApplier
-from bike_sim.sim.ride.tyre.geometry import RoadProfile
+from bike_sim.sim.ride.tyre.profile import build_road_profile
 from bike_sim.sim.ride.virtual_rider import CrashDetector, CrashEvent, PitchStabilizer
 from bike_sim.terrain import (
     DEFAULT_PRESET,
     HeightFieldSpec,
     TrackSpec,
     assert_track_fits,
-    build_profile,
     build_field_data,
     get_preset,
     SurfaceMap,
@@ -266,12 +264,7 @@ class RideSimulation:
         self.model.hfield_data[:] = build_field_data(self.track, self.field).reshape(-1)
         self.tyre_applier: Optional[TyreForceApplier] = None
         if self.tyre_config.pneumatic:
-            track_x = self.field.track_x()
-            road_z = (
-                compute_ground_z(self.specs) / 1000.0
-                + build_profile(self.track, track_x)
-            )
-            profile = RoadProfile.from_samples(track_x, road_z)
+            profile = build_road_profile(self.track, self.field, self.specs)
             self.tyre_applier = TyreForceApplier(
                 self.model,
                 self.tyre_config,

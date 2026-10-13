@@ -62,3 +62,31 @@ def test_export_reads_each_native_batch_once_without_legacy_columns():
     assert calls == [(0, 2), (2, 2), (4, 2)]
     assert sum(batch.row_count for batch in batches if batch.table == 'physics') == 5
     assert all(batch.row_count <= 2 for batch in batches)
+
+
+def test_ordinary_commands_tolerate_explicit_null_optional_drive():
+    """channels['drive'] = None is a valid explicit null, not a TypeError;
+    the required 'control' root still rejects absence and null alike."""
+    control = {'motor_torque_nm': 1., 'rider_enabled': True}
+    def owner(channels):
+        row = SimpleNamespace(interval_id=0, time_s=0., end_time_s=.001,
+            qpos=[0.] * 8, qvel=[0.] * 8, forces={}, powers_w={},
+            channels=channels)
+        return SimpleNamespace(generation=1, row_count=1,
+            batch=lambda start, limit: SimpleNamespace(samples=[row]))
+    for drive in (None, {'front_brake_demand': .5}):
+        source = NativePhysicalSource(owner({'control': control, 'drive': drive}),
+                                      support_catalog(), ordinary_commands=True)
+        # commands_applied is emitted before the channel tables of the same
+        # native batch; this check exercises only the applied projection.
+        applied = next(source.tables(batch_rows=4))
+        assert applied.table == 'commands_applied'
+        demand = applied.columns['front_brake_demand'][0]
+        present = applied.columns['front_brake_demand_present'][0]
+        assert (demand, present) == ((.5, True) if drive else (None, False))
+    from bike_sim.recording.encoding import UnknownFieldError
+    for missing in (None,):
+        source = NativePhysicalSource(owner({'control': missing, 'drive': {}}),
+                                      support_catalog(), ordinary_commands=True)
+        with pytest.raises(UnknownFieldError, match='ordinary applied control'):
+            list(source.tables(batch_rows=4))

@@ -339,40 +339,18 @@ def _database(capture, path, *, batch_rows):
                                           metadata.backend, metadata.mode, dumps(metadata.values))])
         _catalog(connection)
         specs = {spec.name: spec for spec in all_tables()}
-        ordinary = set()
         for evidence in capture.iter_episodes():
-            if evidence.research is None:
-                ordinary.add(evidence.episode_id)
             _episode(connection, evidence, specs, batch_rows=batch_rows)
-        pending, requests = [], []
-        request_episode, request_id = None, 0
-        from bike_sim.recording.encoding import encode_rows
-
-        def flush_requests():
-            if requests:
-                spec = specs['commands_requested']
-                _write_batch(connection, spec, encode_rows(spec, requests, episode_id=request_episode), request_episode)
-                requests.clear()
-
+        # commands_requested belongs to the research history stream only;
+        # ordinary requested commands stay queryable in `events`.
+        pending = []
         for event in capture.iter_events():
-            if event.episode_id in ordinary and event.kind == 'command_requested':
-                if request_episode != event.episode_id:
-                    flush_requests()
-                    request_episode, request_id = event.episode_id, 0
-                values = thaw(event.values)
-                requests.append(dict(request_id=request_id,
-                    **{key: values[key] for key in ('time_s', 'step', 'control',
-                        'front_brake_demand', 'rear_brake_demand')}))
-                request_id += 1
-                if len(requests) == batch_rows:
-                    flush_requests()
             pending.append((event.episode_id, event.event_id, event.kind, event.received_wall_s,
                             event.processed_step, event.applied_step, dumps(event.values)))
             if len(pending) == batch_rows:
                 _insert_rows(connection, 'events', pending)
                 pending = []
         _insert_rows(connection, 'events', pending)
-        flush_requests()
         create_views(connection)
         from bike_sim.recording.schema import create_legacy_view
         create_legacy_view(connection)

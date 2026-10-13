@@ -169,7 +169,10 @@ class NativePhysicalSource:
                 for row in canonical:
                     channels = row['channels']
                     control = channels.get('control')
-                    drive = channels.get('drive', {})
+                    # 'drive' is an optional root: absent and explicit-null
+                    # both mean no brake demands to mirror. 'control' stays
+                    # required — absent or explicit-null rejects below.
+                    drive = channels.get('drive') or {}
                     if control is None:
                         raise UnknownFieldError('ordinary applied control is missing from the physical source')
                     actual = {'control': plain(control),

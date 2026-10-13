@@ -5,7 +5,6 @@
 ``TableBatch`` values strictly through the production field catalog and
 encoder — never through the native adapter or a simulator.
 """
-from collections.abc import Mapping
 from datetime import datetime, timezone
 from uuid import UUID
 

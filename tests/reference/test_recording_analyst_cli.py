@@ -5,9 +5,6 @@ These tests never launch a simulator: recordings come from
 ``main(argv)`` entry point a user gets.
 """
 import csv
-import io
-
-import pytest
 
 from _recording_support import sample_row, synthetic_capture
 from bike_sim.cli.recording import main

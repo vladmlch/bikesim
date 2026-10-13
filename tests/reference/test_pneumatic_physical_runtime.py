@@ -81,3 +81,31 @@ def test_pneumatic_tire_state_round_trips_through_the_cache_codec():
     unknown = dict(arrays)
     unknown['state_tire_wire_names'] = np.asarray(list(names[:-1]) + ['front.ray.000.bogus'])
     assert restore_state(sim.physical, unknown) is False
+
+
+def test_pneumatic_tire_wire_round_trips_through_the_npz_cache_file(tmp_path, monkeypatch):
+    """The wire keys ride through the real ``save``/``load`` npz unchanged."""
+    from bike_sim.sim.ride import equilibrium_cache
+    monkeypatch.setenv('BIKE_SIM_EQUILIBRIUM_CACHE_DIR', str(tmp_path))
+    sim = _pneumatic_sim()
+    for _ in range(50):
+        sim.step()
+    tire = sim.physical.tire
+    equilibrium_cache.save(sim.physical, sim.data.qpos, sim.steps, 0.01)
+    cached = equilibrium_cache.load(sim.physical)
+    assert cached is not None
+    _, qpos, steps, _, state = cached
+    assert steps == sim.steps
+    np.testing.assert_array_equal(qpos, sim.data.qpos)
+    assert set(state) == {'state_tire_wire_names', 'state_tire_wire_row'}
+    names, row = state['state_tire_wire_names'], state['state_tire_wire_row']
+    assert names.dtype.kind == 'U' and row.dtype == np.float64
+    wire = tire.state_dict()
+    assert [str(name) for name in names] == wire['names']
+    assert np.array_equal(row, wire['row'], equal_nan=True)
+    # The loaded dict feeds restore_state verbatim.
+    tire.reset()
+    assert not tire.states['front'].carcass_state.initialized
+    assert equilibrium_cache.restore_state(sim.physical, dict(state)) is True
+    assert np.array_equal(tire.state_dict()['row'], row, equal_nan=True)
+    assert tire.states['front'].carcass_state.initialized

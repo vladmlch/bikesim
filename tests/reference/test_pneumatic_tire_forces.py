@@ -17,7 +17,8 @@ FRONT_R = FRONT_TYRE.outer_radius_mm / 1000.0
 REAR_R = REAR_TYRE.outer_radius_mm / 1000.0
 
 
-def _wheel_rig(dt_s=5e-4, *, tier='fast', front_drop_m=0.004, rear_z_m=5.0):
+def _wheel_rig(dt_s=5e-4, *, tier='fast', front_drop_m=0.004, rear_z_m=5.0,
+               rear_extra_geom=''):
     """Two named wheels on a flat road; the rear one starts airborne by default."""
     xml = f'''<mujoco><compiler angle="radian"/>
       <option timestep="{dt_s}" gravity="0 0 -9.81" integrator="Euler"/>
@@ -35,6 +36,7 @@ def _wheel_rig(dt_s=5e-4, *, tier='fast', front_drop_m=0.004, rear_z_m=5.0):
           <inertial mass="6" pos="0 0 0" diaginertia=".3 .5 .3"/>
           <geom name="geom_rear_contact" type="sphere" size="{REAR_R}"
                 contype="0" conaffinity="0" mass="0"/>
+          {rear_extra_geom}
         </body>
       </worldbody></mujoco>'''
     model = mujoco.MjModel.from_xml_string(xml)
@@ -87,6 +89,12 @@ def test_constructor_validates_contact_geom_contype_and_radius():
     model.geom_size[geom, 0] += 1e-4
     with pytest.raises(ValueError, match='does not'):
         PneumaticTireForceApplier(model, profile, config)
+    # The gate spans every geom on each wheel body, not only the contact
+    # sphere: topology clears them all for this backend, so a collidable
+    # non-contact wheel geom rejects the same way.
+    with pytest.raises(ValueError, match='collisions must be disabled'):
+        _wheel_rig(rear_extra_geom='<geom name="geom_rear_hub" type="cylinder" '
+                                     'fromto="0 -0.07 0 0 0.07 0" size="0.02" mass="0"/>')
 
 
 def test_qfrc_sanity_on_a_physical_model():
@@ -103,11 +111,13 @@ def test_qfrc_sanity_on_a_physical_model():
             pneumatic=PneumaticTireConfig(tier='fast', surface='asphalt')))
     model = mujoco.MjModel.from_xml_string(generate_mujoco_xml(
         specs, mode='ride', rider='none', physics_config=config))
+    # The applier gate covers every geom on each wheel body: zero them all,
+    # the same set the topology pass clears for this backend.
     for side in ('front', 'rear'):
-        geom = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM,
-                                 f'geom_{side}_contact')
-        model.geom_contype[geom] = 0
-        model.geom_conaffinity[geom] = 0
+        body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, f'{side}_wheel')
+        ids = np.flatnonzero(model.geom_bodyid == body)
+        model.geom_contype[ids] = 0
+        model.geom_conaffinity[ids] = 0
     data = mujoco.MjData(model)
     mujoco.mj_forward(model, data)
     bodies = {s: mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, f'{s}_wheel')

@@ -8,6 +8,7 @@ from bike_sim.physics.physical_config import (
 )
 from bike_sim.physics.checks import derived, scalar
 from bike_sim.physics.seated_climb import SeatedClimbConfig
+from bike_sim.physics.tyre import TIERS
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,16 @@ class SimulationPhysicsConfig:
                           ("articulated", ArticulatedConfig), ("seated_climb", SeatedClimbConfig)):
             if not isinstance(getattr(self, name), cls):
                 raise ValueError(f"{name} needs an immutable {cls.__name__}")
+        # The detailed discretised brush is written for its declared step: unlike the
+        # legacy applier (which rewrote model.opt.timestep), the physical runtime owns
+        # the step, so a mismatch would silently integrate at the wrong dt. The fast
+        # tier declares 5e-4 too but stays ungated, same as the legacy stack.
+        if (self.tires.backend == 'pneumatic' and self.tires.pneumatic.tier == 'detailed'
+                and self.timestep_s != TIERS['detailed'].timestep_s):
+            raise ValueError(
+                f"detailed pneumatic tyre requires timestep_s={TIERS['detailed'].timestep_s}; "
+                f"got {self.timestep_s}"
+            )
         if self.seated_climb.enabled and (legacy or self.drive_mode != 'articulated_effort'):
             raise ValueError('seated climb requires the articulated physical effort drive')
         if self.drive.motor_clutch and self.drive_mode not in ('crank_effort','articulated_effort'):

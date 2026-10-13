@@ -107,7 +107,9 @@ class ResearchEnvironment:
         cfg = sim.physics_config
         if cfg.physics_mode != 'physical' or cfg.drive_mode not in ('crank_effort', 'articulated_effort'):
             raise ValueError('research requires a physical effort drive, not a speed controller')
-        if cfg.pitch_assist or cfg.tires.backend not in ('compliant_2d','distributed_2d_reference','pneumatic') or cfg.tires.surface_mode != 'track':
+        if (cfg.pitch_assist or cfg.tires.backend not in ('compliant_2d','distributed_2d_reference','pneumatic')
+                or cfg.tires.surface_mode != 'track'
+                or (cfg.tires.backend == 'pneumatic' and cfg.tires.pneumatic.surface is not None)):
             raise ValueError('research requires no pitch assist and a track-material compliant_2d, distributed_2d_reference or pneumatic tire backend')
         self.dt_s = float(sim.model.opt.timestep)
         self.control_steps = _integer_steps(self.config.control_period_s, self.dt_s, 'control period')

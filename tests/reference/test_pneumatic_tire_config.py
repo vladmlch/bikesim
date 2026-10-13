@@ -32,12 +32,37 @@ def test_pneumatic_backend_resolves_from_toml():
 
 
 def test_pneumatic_backend_resolves_under_track_surface_mode():
-    cfg = resolve_physics_config({'physics_mode': 'physical', 'tires': {
+    cfg = resolve_physics_config({'physics_mode': 'physical',
+        'timestep_s': 0.00025, 'tires': {
         'backend': 'pneumatic',
         'surface_mode': 'track',
         'pneumatic': {'tier': 'detailed'}}})
     assert cfg.tires.surface_mode == 'track' and cfg.tires.pneumatic.surface is None
     assert cfg.tires.pneumatic.tier == 'detailed'
+
+
+def test_detailed_pneumatic_requires_the_tier_timestep():
+    # The physical runtime owns model.opt.timestep -- unlike the legacy xfrc
+    # applier nothing rewrites the step, so a dt that is not the declared tier
+    # step fails at config time (ride_sim.py enforces the same parity).
+    with pytest.raises(ValueError, match='detailed pneumatic tyre requires timestep_s'):
+        resolve_physics_config({'physics_mode': 'physical', 'tires': {
+            'backend': 'pneumatic',
+            'surface_mode': 'track',
+            'pneumatic': {'tier': 'detailed'}}})
+    cfg = resolve_physics_config({'physics_mode': 'physical',
+        'timestep_s': TIERS['detailed'].timestep_s, 'tires': {
+        'backend': 'pneumatic',
+        'surface_mode': 'track',
+        'pneumatic': {'tier': 'detailed'}}})
+    assert cfg.timestep_s == TIERS['detailed'].timestep_s
+    # The fast tier declares 5e-4 but stays ungated at any dt, same as legacy.
+    fast = resolve_physics_config({'physics_mode': 'physical',
+        'timestep_s': 0.00025, 'tires': {
+        'backend': 'pneumatic',
+        'surface_mode': 'track',
+        'pneumatic': {'tier': 'fast'}}})
+    assert fast.tires.pneumatic.tier == 'fast'
 
 
 def test_partial_tyre_tables_extend_the_default_specs():

@@ -97,15 +97,16 @@ class PneumaticTireForceApplier:
                                    'geom_rear_contact',
                                    pneumatic.rear.outer_radius_mm / 1000.0),
         }
-        # The contact sphere mirrors the tyre carcass: a zero contype can still
-        # pair through conaffinity, so both mask bits must be off -- matching
-        # the distributed applier's check. Other wheel-body geoms keep their
-        # own masks: the builder clears them only for the compliant and
-        # distributed backends, never for this one.
+        # The wheel bodies carry more than the contact sphere: the hub, rim,
+        # tyre and rotor cylinders collide by default, and the topology clears
+        # contype/conaffinity on every geom of each wheel body for this
+        # backend. The gate spans the same set -- matching the distributed
+        # applier's check -- so a hand-built model that left any wheel geom
+        # colliding fails here rather than double-counting a native contact.
+        # A zero contype can still pair through conaffinity: both bits off.
         for binding in self.wheels.values():
-            geom_id = binding.contact_geom_id
-            if (model.geom_contype[geom_id] != 0
-                    or model.geom_conaffinity[geom_id] != 0):
+            ids = np.flatnonzero(model.geom_bodyid == binding.body_id)
+            if np.any(model.geom_contype[ids]) or np.any(model.geom_conaffinity[ids]):
                 raise ValueError('native wheel collisions must be disabled for the pneumatic backend')
         self.bodies = {side: binding.body_id for side, binding in self.wheels.items()}
         self.geoms = {side: binding.contact_geom_id for side, binding in self.wheels.items()}

@@ -13,6 +13,18 @@ The module must stay importable without pyarrow — the assembler receives
 from __future__ import annotations
 
 
+# Flat-leaf dtypes the channels projector covers; map/struct fields compile
+# to None (whole table falls back to the oracle) until their emitters land.
+_LEAF_DTYPES = {'double', 'bigint', 'boolean', 'varchar',
+                'double[]', 'bigint[]', 'varchar[]'}
+
+# The runtime bool|str tri-state at this absolute channel path publishes as
+# lowercase verdict text — the same coercion NativePhysicalSource._canonical
+# applies before encoding; the leaf plan node carries it so the native
+# emitter reproduces it verbatim.
+_VERDICT_PATH = ('model_status', 'numerically_valid')
+
+
 def compile_plan(spec, all_roots=None):
     """TableSpec -> plain-data plan; None when a dtype is not covered yet.
 
@@ -21,9 +33,42 @@ def compile_plan(spec, all_roots=None):
     """
     if spec.kind in ('physics', 'forces'):
         return {'table': spec.name, 'kind': spec.kind}
-    if spec.kind == 'channels' and all_roots is None:
+    if all_roots is None:
         raise ValueError('channels plans require all_roots')
-    return None  # channels land in Tasks 3-5
+    columns, masks = [], []
+    for f in spec.fields:
+        if f.dtype not in _LEAF_DTYPES:
+            return None
+        columns.append({'name': f.key, 'dtype': f.dtype,
+                        'path': list(f.path), 'optional': f.optional,
+                        'shape': list(f.shape) if f.shape else None,
+                        'except_keys': list(f.except_keys),
+                        'convert': 'verdict' if tuple(f.path) == _VERDICT_PATH
+                                   else None})
+    # One mask pair per proper field-path prefix plus one per claimed root —
+    # the same name set schema.parent_masks computes, in field order.
+    for f in spec.fields:
+        for depth in range(1, len(f.path)):
+            prefix = f.path[:depth]
+            joined = '.'.join(prefix)
+            masks += [{'name': '__' + joined + '_present',
+                       'path': list(prefix), 'op': 'present'},
+                      {'name': '__' + joined + '_valid',
+                       'path': list(prefix), 'op': 'valid'}]
+    for root in sorted(spec.claims):
+        masks += [{'name': '__' + root + '_present',
+                   'path': [root], 'op': 'present'},
+                  {'name': '__' + root + '_valid',
+                   'path': [root], 'op': 'valid'}]
+    # Dedupe while preserving order (roots are both claims and prefixes).
+    out, have = [], set()
+    for m in masks:
+        if m['name'] not in have:
+            have.add(m['name'])
+            out.append(m)
+    return {'table': spec.name, 'kind': 'channels',
+            'roots': sorted(spec.claims), 'all_roots': list(all_roots),
+            'columns': columns, 'masks': out}
 
 
 _SCALAR = {'double': 'scalar', 'bigint': 'scalar', 'boolean': 'scalar',
@@ -53,8 +98,15 @@ def _assemble(node_dtype, piece, pa):
         child = _assemble('double' if node_dtype == 'double[]' else
                           'bigint' if node_dtype == 'bigint[]' else 'varchar',
                           {'kind': 'scalar', 'data': flat}, pa)
+        # Required x[] leaves can still be NULL when a parent root/prefix
+        # is absent-or-null, so list pieces carry a validity mask too.
+        mask = None
+        if piece.get('valid') is not None:
+            mask = pa.array(~np.asarray(piece['valid'], dtype=bool),
+                            type=pa.bool_())
         return pa.ListArray.from_arrays(
-            pa.array(np.asarray(piece['offsets'], dtype=np.int32)), child)
+            pa.array(np.asarray(piece['offsets'], dtype=np.int32)),
+            child, mask=mask)
     raise ValueError(f'unsupported piece kind {kind!r}')
 
 
@@ -67,7 +119,13 @@ def pieces_to_arrow(spec, row_count, pieces, episode_id, pa):
         if name == 'episode_id':
             arrays.append(pa.array([episode_id] * row_count, type=pa.int64()))
         else:
-            arrays.append(_assemble(by_key[name].dtype, pieces[name], pa))
+            field = by_key.get(name)
+            # Optional-leaf ``_present`` companions and ``__`` parent/root
+            # masks are not FieldSpecs; arrow_batch falls back to bool_ for
+            # them, so the matching pieces are boolean scalars.
+            arrays.append(_assemble(
+                field.dtype if field is not None else 'boolean',
+                pieces[name], pa))
         names.append(name)
     return pa.RecordBatch.from_arrays(arrays, names=names)
 

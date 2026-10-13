@@ -110,6 +110,134 @@ def energy_channels(**overrides):
     return channels
 
 
+def drive_channels(speed=0.0, **overrides):
+    """A complete authored ``channels`` row centred on the ``drive`` root.
+
+    Every ``channel_drive`` leaf appears — required ones always, optional
+    ones too, so the authored root exercises both lanes of the
+    optional-leaf encoding contract. ``speed`` perturbs the authored
+    values deterministically. ``overrides`` mirrors ``energy_channels``:
+    a ``drive`` mapping merges into the root, any other key becomes its
+    own root.
+    """
+    drive = {
+        'transmission_model': 'ideal_mid_drive',
+        'omits_suspension_coupling': True,
+        'chain_extension_m': 0.001 + speed,
+        'chain_extension_rate_mps': 0.002 - speed,
+        'chain_tension_n': 120.0 + speed,
+        'chain_energy_j': 0.06 + speed,
+        'chain_dissipation_power_w': -0.4 - speed,
+        'chain_power_w': 12.0 - speed,
+        'freehub_torque_nm': 8.0 + speed,
+        'freehub_energy_j': 0.02,
+        'freehub_engaged': speed < 0.5,
+        'freehub_deflection_rad': -0.05 + speed,
+        'freehub_dissipation_power_w': -0.0 if speed else 0.1,
+        'freehub_power_w': 12.1,
+        'cadence_rpm': 80.0 + speed,
+        'crank_rad_s': 8.4 + speed,
+        'drive_shaft_rad_s': 30.0 - speed,
+        'crank_phase_rad': 1.25,
+        'human_torque_nm': 20.0,
+        'human_sensor_nm': 19.8 + speed,
+        'human_setpoint_nm': 20.0,
+        'human_command_nm': 20.0,
+        'human_active_power_w': 168.0,
+        'human_joint_power_w': 170.0 - speed,
+        'assist_demand_gated': speed >= 0.5,
+        'assist_sensor_nm': 19.7,
+        'assist_mode': 'assist',
+        'assist_gain': 1.0,
+        'rider_mode': 'pedaling',
+        'coasting_reason': 'downhill',
+        'required_cadence_rpm': 72.0,
+        'crank_target_phase_rad': 1.0,
+        'crank_target_rate_rad_s': 8.0,
+        'motor_request_nm': 6.5 + speed,
+        'motor_setpoint_nm': 6.0,
+        'motor_limit_nm': 9.0,
+        'motor_limited_request_nm': 6.5,
+        'motor_torque_nm': 6.0 + speed,
+        'motor_control_source': 'assist',
+        'safety_limited': False,
+        'energy_limited': False,
+        'motor_enabled': True,
+        'battery_empty': False,
+        'battery_energy_j': 4100.0 - speed,
+        'motor_shaft_power_w': 150.0,
+        'electrical_power_w': 151.5,
+        'motor_freewheel_engaged': True,
+        'motor_freewheel_torque_nm': 0.4,
+        'motor_freewheel_dissipation_power_w': -0.05,
+        'crank_clutch_torque_nm': 0.3,
+        'crank_clutch_engaged': False,
+        'crank_clutch_dissipation_power_w': 0.0,
+        'gear_front_teeth': 44,
+        'gear_rear_teeth': 16,
+        'gear_ratio': 2.75,
+        'shift_active': False,
+        'shift_direction': 'none',
+        'shift_from_teeth': 16,
+        'shift_count': int(speed),
+        'shift_time_s': 0.5 + speed,
+        'shift_torque_factor': 1.0,
+        'front_brake_demand': 0.0,
+        'rear_brake_demand': 0.0,
+        'rollback_brake_demand': 0.0,
+        'front_brake_power_w': -0.0,
+        'rear_brake_power_w': 0.0,
+        'front_brake_torque_nm': 0.0,
+        'rear_brake_torque_nm': 0.0,
+        'transmission_phi_m': 0.02,
+        'transmission_boundary_m': 0.05,
+        'transmission_gap_m': 0.03,
+        'transmission_tension_n': 40.0,
+        'transmission_constraint_defect_m': 1e-9,
+        'transmission_interval_work_j': 0.01,
+        'transmission_reaction_error_n': 0.001,
+        'transmission_reference_status': 'qualified',
+        'shift_parameter_work_j': 0.0,
+        'shift_interval_constraint_work_j': 0.0,
+        'shift_constraint_work_cumulative_j': 0.0,
+    }
+    channels = {'drive': drive}
+    for key, value in overrides.items():
+        if key == 'drive':
+            channels['drive'].update(value)
+        else:
+            channels[key] = value
+    return channels
+
+
+def sensors_channels(speed=0.0, **overrides):
+    """A complete authored ``channels`` row centred on the ``sensors`` root.
+
+    All seven ``channel_sensors`` leaves are required; ``encoders_rad_s``
+    covers the depth-3 nested-leaf path. ``overrides`` merge like
+    ``energy_channels``.
+    """
+    channels = {
+        'sensors': {
+            'frame_specific_force_body_mps2': [9.81 + speed, 0.0, -0.0],
+            'frame_gyro_body_rad_s': [0.0, 0.01 * (speed + 1.0), 0.0],
+            'encoders_rad_s': {
+                'front_wheel': 4.0 + speed,
+                'rear_wheel': 4.0 + speed,
+                'crank': 1.4,
+            },
+            'motor_torque_nm': 12.0 + speed,
+            'human_torque_nm': 20.0,
+        },
+    }
+    for key, value in overrides.items():
+        if key == 'sensors':
+            channels['sensors'].update(value)
+        else:
+            channels[key] = value
+    return channels
+
+
 class TreePhysicalSource:
     """PhysicalSource over authored sample trees, encoded via the catalog.
 

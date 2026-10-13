@@ -18,6 +18,11 @@ def oracle_batch(spec, rows, episode_id=0):
     return encode_rows(spec, rows, episode_id=episode_id)
 
 
+def compile_plan(spec, all_roots=None):
+    from bike_sim.recording.native_encode import compile_plan as _compile
+    return _compile(spec, all_roots=all_roots)
+
+
 def native_record_batch(spec, episode, episode_id=0, catalog=None):
     # Lazy import: this module exists in Task 1 before native_encode.py
     # lands in Task 2, and the module must not require pyarrow's siblings.

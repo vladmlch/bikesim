@@ -41,4 +41,13 @@ std::pair<std::int64_t, nb::dict> encode_table(
     const OwnedNativeEpisode &episode, nb::handle plan,
     std::int64_t start, std::int64_t limit);
 
+// Applied-command diff projection for ordinary rides — the C++ twin of the
+// Python mirror in recording/native.py::NativePhysicalSource.tables: one
+// row dict per interval whose (control, brake demands) tuple differs from
+// the previous interval's, so a ride's commands_applied table emits only
+// control-boundary rows. Rows [0, start) are replayed to seed the compare
+// and application_id, keeping chunked calls identical to one full pass.
+nb::list applied_command_rows(const OwnedNativeEpisode &episode,
+                              std::int64_t start, std::int64_t limit);
+
 } // namespace runtime

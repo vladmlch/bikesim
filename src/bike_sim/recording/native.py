@@ -164,10 +164,10 @@ class NativePhysicalSource:
         plans = {spec.name: compile_plan(
             spec, all_roots=sorted(claimed)) for spec in specs}
         # Tables without a native plan keep flowing through the reviewed
-        # canonical + encode_rows path. The applied-command mirror stays
-        # there too until the native ``applied_rows`` projection lands; an
-        # ordinary capture without it keeps canonical materialization (and
-        # the channel-root rejection below) for every spec.
+        # canonical + encode_rows path. The applied-command mirror joins the
+        # native side when the episode exposes ``applied_rows``; an ordinary
+        # capture without it keeps canonical materialization (and the
+        # channel-root rejection below) for every spec.
         native_ok = encoder is not None and not (
             self.ordinary_commands and not hasattr(self._episode, 'applied_rows'))
         materialize = not native_ok or any(plan is None for plan in plans.values())
@@ -183,9 +183,7 @@ class NativePhysicalSource:
                         raise UnknownFieldError(f'channels: unrecognized domains {sorted(unknown)}')
             if self.ordinary_commands:
                 if native_ok:
-                    yield encode_rows(applied_spec,
-                                      self._episode.applied_rows(start, limit),
-                                      episode_id=episode_id)
+                    applied = self._episode.applied_rows(start, limit)
                 else:
                     applied = []
                     for row in canonical:
@@ -205,8 +203,8 @@ class NativePhysicalSource:
                                                 step=row['interval_id'], **actual))
                             previous_applied = actual
                             application_id += 1
-                    if applied:
-                        yield encode_rows(applied_spec, applied, episode_id=episode_id)
+                if applied:
+                    yield encode_rows(applied_spec, applied, episode_id=episode_id)
             for spec in specs:
                 plan = plans[spec.name]
                 if native_ok and plan is not None:

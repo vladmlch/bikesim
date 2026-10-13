@@ -235,7 +235,7 @@ def _forwarded(rows):
 def synthetic_capture(rows=None, *, episodes=1, summary=None, assets=(),
                       channels=None, forces=False, forwarded=False,
                       value_cases=False, events=(), metadata=None,
-                      enabled=True):
+                      catalog=None, enabled=True):
     """A reviewed ``RunCapture`` over ``TreePhysicalSource`` sample trees.
 
     No simulator ever runs: ``rows`` are hand-authored canonical sample
@@ -256,6 +256,9 @@ def synthetic_capture(rows=None, *, episodes=1, summary=None, assets=(),
     * ``events`` — pre-built ``InputEvent`` values journaled in order.
     * ``summary`` — one mapping for every episode, or a per-episode
       sequence; ``assets``/``metadata`` forward verbatim.
+    * ``catalog`` — a catalog override for every episode's
+      ``TreePhysicalSource`` (e.g. a renamed joint map for
+      coordinate-identity mismatch tests).
     """
     capture = RunCapture(run_metadata() if metadata is None else metadata,
                          enabled=enabled)
@@ -280,9 +283,9 @@ def synthetic_capture(rows=None, *, episodes=1, summary=None, assets=(),
             materialized = _forwarded(materialized)
         episode_summary = (summary[index] if isinstance(summary, (list, tuple))
                            else summary)
-        capture.add_episode(episode(TreePhysicalSource(materialized), index,
-                                    generation=index,
-                                    summary=episode_summary, assets=assets))
+        capture.add_episode(episode(
+            TreePhysicalSource(materialized, catalog=catalog), index,
+            generation=index, summary=episode_summary, assets=assets))
     for event in events:
         capture.event(event)
     return capture

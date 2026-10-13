@@ -411,7 +411,7 @@ OwnedResearchEpisode NativeResearchRuntime::seal_episode() {
     // Sealing never integrates or completes an external window. Frontends
     // drain a requested stop at the existing control boundary first.
     if (runtime_->accounting_->has_raws()) runtime_->flush_accounting();
-    auto &e = *episode_;
+    const auto &e = *episode_;
     return OwnedResearchEpisode{.physical = runtime_->accounting_->seal_episode(),
         .requested = e.requested, .applied = e.applied_records,
         .observations = e.observations, .transitions = e.transitions};

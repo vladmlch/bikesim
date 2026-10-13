@@ -1,6 +1,7 @@
 // Owns one physical runtime and all physics-rate research state. No callbacks.
 #pragma once
 #include <atomic>
+#include <cstdint>
 #include <deque>
 #include <memory>
 #include "programs.hpp"
@@ -10,7 +11,7 @@
 #include "sensors.hpp"
 
 namespace runtime {
-enum class ResearchCaptureMode { off, full, legacy, verify };
+enum class ResearchCaptureMode : std::uint8_t { off, full, legacy, verify };
 struct ResearchConfig {
     double timestep_s = 0., track_length_m = 0., start_position_m = 0.;
     double maximum_energy_residual_ratio = .05, wheelie_persistence_s = .02;

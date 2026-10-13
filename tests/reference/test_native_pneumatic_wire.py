@@ -303,17 +303,21 @@ def test_pneumatic_backend_reaches_the_backend_allow_list():
 
 
 def test_selected_native_parser_accepts_the_pneumatic_wire(
-        track_sim, track_wire, tmp_path):
-    """Task 6 lands the C++ parser: the selected artifact parses and
-    domain-validates the pneumatic wire, so construction proceeds past
-    the config layer and stops at the writer boundary — a RuntimeError
-    naming the missing pneumatic writer (the Stepper dispatch lands with
-    Task 11) instead of a parser ValueError."""
+        track_sim, track_wire, tmp_path, native_module):
+    """Task 6 landed the C++ parser and Task 11 the writer behind it:
+    the selected artifact parses, domain-validates and CONSTRUCTS the
+    pneumatic wire — Stepper dispatch selects PneumaticTireWriter, so
+    the canonical side-major state table comes back sized for the
+    projected tier instead of the construction-time writer rejection."""
     import mujoco
     mjb = tmp_path / 'model.mjb'
     mujoco.mj_saveModel(track_sim.model, str(mjb))
-    with pytest.raises(RuntimeError, match='pneumatic'):
-        load_native().Stepper(str(mjb), track_wire)
+    stepper = load_native().Stepper(str(mjb), track_wire)
+    n = track_wire['tire']['pneumatic']['n_rays']
+    max_patches = (n + 1) // 2
+    assert len(stepper.tire_state_names) == \
+        2 * (4 * n + 8 + 3 * max_patches)
+    assert stepper.tire_state_names[0] == 'front.ray.000.delta_prev_m'
 
 
 @pytest.mark.parametrize('mutate,match', [

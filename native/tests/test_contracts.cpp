@@ -23,6 +23,7 @@
 #include "../src/writers/suspension.hpp"
 #include "../src/writers/tire.hpp"
 #include "../src/writers/distributed_tire.hpp"
+#include "../src/writers/pneumatic_tire.hpp"
 #include "allocation_faults.hpp"
 
 #include <algorithm>
@@ -2684,6 +2685,48 @@ namespace {
                 .pneumatic = std::nullopt};
     }
 
+    // The pneumatic backend's warm config: the resolved 'fast' tier row,
+    // a configured surface and a flat sampled profile covering the warm
+    // rig's wheel span. The spec's 50 mm outer radius matches the warm
+    // XML's .05 m contact spheres — the writer's sphere/radius gate
+    // (pneumatic_tire_forces.py:_resolve_wheel) is bitwise about it.
+    nativecfg::PneumaticTyreSpec warm_pneumatic_spec() {
+        return {.name = "contract-test",
+                .outer_radius_mm = 50., .rim_radius_mm = 30.,
+                .section_height_mm = 20.,
+                .pressure_bar = 2., .crr_reference = .005,
+                .casing_width_mm = 55., .compressed_casing_mm = 15.,
+                .area_factor = .7, .carcass_stiffness_n_mm2 = 300.,
+                .contact_length_factor = .6, .rate_stiffening = .1,
+                .rate_relaxation_s = .005, .loss_factor = .2,
+                .hysteresis_rate_eps_mps = .01,
+                .relaxation_length_mm = 200.,
+                .rim_stiffness_n_mm2 = 2000., .tread_loss_crr = .003};
+    }
+
+    nativecfg::TireConfig warm_pneumatic_tire() {
+        const nativecfg::PneumaticTyreSpec spec = warm_pneumatic_spec();
+        const nativecfg::TireParams params{
+            .material = std::nullopt, .tangent_k_n_m = 90000., .mu = 1.2,
+            .relaxation_length_m = .35};
+        const nativecfg::SurfaceSpec asphalt{
+            .name = "asphalt", .mu_peak = 1.1, .mu_slide = .9,
+            .slip_stiffness_per_load = .02, .stribeck_speed_mps = .1};
+        return {.backend = "pneumatic",
+                .surface_mode = "configured",
+                .front = params, .rear = params,
+                .significant_delta_m = .0005, .significance_fraction = .3,
+                .distinct_normal_deg = 12., .surface_map = std::nullopt,
+                .distributed = std::nullopt,
+                .pneumatic = nativecfg::PneumaticConfig{
+                    .tier = "fast", .n_rays = 64, .half_angle_deg = 75.,
+                    .discretised_brush = false, .timestep_s = .0005,
+                    .surface = asphalt,
+                    .front = spec, .rear = spec,
+                    .profile = {.x0_m = -2., .dx_m = .01,
+                                .z_m = std::vector<double>(500, 0.)}}};
+    }
+
     nativecfg::ResistanceConfig warm_resistance() {
         return {.crr = .004, .rolling_taper_rad_s = 1.,
                 .rho_kg_m3 = 1.2, .cda_m2 = .5,
@@ -2813,6 +2856,28 @@ namespace {
     // One production-shaped distributed tick: advance the sim clock, then
     // the marked entry — mirrors warm_tick's tire call.
     CoreStatus distributed_tick(DistributedWarmRig &rig, double dt) {
+        rig.context.data->time += dt;
+        return rig.tire.try_compute_into(rig.context.data.get(), dt,
+                                         rig.tire_out);
+    }
+
+    // The pneumatic backend's twin — the same warm context (all wheel
+    // geoms carry the shared collision-disabled default, so the
+    // writer's every-geom gate passes) plus the writer's own nv scratch.
+    struct PneumaticWarmRig {
+        WarmContext context;
+        PneumaticTireWriter tire;
+        std::vector<double> tire_out;
+
+        PneumaticWarmRig()
+            : context(),
+              tire(context.model.get(), context.data.get(),
+                   warm_pneumatic_tire()) {
+            tire_out.resize(static_cast<std::size_t>(context.model->nv));
+        }
+    };
+
+    CoreStatus pneumatic_tick(PneumaticWarmRig &rig, double dt) {
         rig.context.data->time += dt;
         return rig.tire.try_compute_into(rig.context.data.get(), dt,
                                          rig.tire_out);
@@ -3249,6 +3314,389 @@ namespace {
         require(allocation_counter::count() == 0 &&
                     allocation_counter::freed() == 0,
                 "committed snapshot borrow or publication allocated");
+    }
+
+    // The pneumatic twin of test_warm_distributed_zero_allocation: two
+    // warmup ticks cover the first commit (staging slots' and snapshot
+    // patch vectors' one-time fills), then steady ticks plus a changed
+    // contact set — the +x shift moves both wheel hubs so every ray's
+    // hit set changes inside the same scratch extents — must stay at
+    // zero allocator activity.
+    void test_warm_pneumatic_zero_allocation() {
+        const auto rig = std::make_unique<PneumaticWarmRig>();
+        for (int warmup = 0; warmup < 2; ++warmup)
+            require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                    "pneumatic warmup ticks");
+        require(rig->tire.snapshots_committed(),
+                "pneumatic warmup did not commit snapshots");
+        allocation_counter::reset();
+        for (int tick = 0; tick < 4; ++tick)
+            require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                    "steady pneumatic tick must succeed");
+        drivetrain::buffer(rig->context.data->qpos,
+                           rig->context.model->nq)
+            [static_cast<std::size_t>(
+                 joint_qpos(rig->context.model.get(), "root_x"))] += .06;
+        engine::forward(rig->context.model.get(),
+                        rig->context.data.get());
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "pneumatic tick over a changing contact must succeed");
+        require(allocation_counter::count() == 0 &&
+                    allocation_counter::freed() == 0,
+                "the pneumatic warm tick allocated or released storage");
+    }
+
+    // The pneumatic twin of the try_* rejection matrix: every declared
+    // CoreStatus control flow returns through the status value with zero
+    // allocation inside the window.
+    void test_pneumatic_status_control() {
+        const auto rig = std::make_unique<PneumaticWarmRig>();
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "pneumatic status warmup");
+        const auto expect = [](std::string_view label, CoreStatus got,
+                               CoreStatus want) {
+            if (got != want)
+                throw std::runtime_error(
+                        std::string(label) + ": unexpected status");
+            if (allocation_counter::count() != 0 ||
+                allocation_counter::freed() != 0)
+                throw std::runtime_error(
+                        std::string(label) +
+                        ": allocation in the marked status path");
+            allocation_counter::reset();
+        };
+        const mjData *d = rig->context.data.get();
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        allocation_counter::reset();
+        expect("pneumatic/null",
+               rig->tire.try_compute_into(nullptr, .002, rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("pneumatic/width",
+               rig->tire.try_compute_into(
+                   d, .002, std::span{rig->tire_out}.first(3)),
+               CoreStatus::invalid_input);
+        expect("pneumatic/dt",
+               rig->tire.try_compute_into(d, -1., rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("pneumatic/dt-nan",
+               rig->tire.try_compute_into(d, nan, rig->tire_out),
+               CoreStatus::invalid_input);
+        expect("pneumatic/double-advance",
+               rig->tire.try_compute_into(d, .002, rig->tire_out),
+               CoreStatus::invalid_input);
+    }
+
+    // Probe isolation, pneumatic edition: probe_compute_into evaluates on
+    // construction-made detached model clones — the committed ray/carcass/
+    // patch wire, the committed snapshots and the interval clock are
+    // untouched, while probe_snapshots() publishes what the probe staged.
+    // The state wire carries NaN cells (bristle, inactive-rim and
+    // unused-patch slots), so the unchanged check is a bitwise memcmp.
+    void test_pneumatic_probe_isolation() {
+        const auto rig = std::make_unique<PneumaticWarmRig>();
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "pneumatic probe warmup");
+        const auto state = rig->tire.state();
+        require(rig->tire.snapshots_committed(),
+                "pneumatic warmup did not commit snapshots");
+        const auto &committed = rig->tire.snapshot_storage();
+        const std::int64_t committed_id = committed[0].interval_id;
+        const double committed_time = committed[0].time_s;
+        const std::size_t committed_patches =
+                committed[0].patches.size();
+        rig->tire.probe_compute_into(rig->context.data.get(), .002,
+                                     rig->tire_out);
+        require(rig->tire.probe_committed(),
+                "pneumatic probe did not publish snapshots");
+        require(rig->tire.probe_snapshots()[0].has_value(),
+                "pneumatic probe front snapshot missing");
+        const auto after = rig->tire.state();
+        require(after.size() == state.size() &&
+                std::ranges::equal(after, state, [](double a, double b) {
+                    return std::bit_cast<std::uint64_t>(a) ==
+                           std::bit_cast<std::uint64_t>(b);
+                }),
+                "probe touched committed tyre state");
+        const auto &stayed = rig->tire.snapshot_storage();
+        require(stayed[0].interval_id == committed_id &&
+                stayed[0].time_s == committed_time &&
+                stayed[0].patches.size() == committed_patches,
+                "probe overwrote committed snapshots");
+        // The probe never consumed the clock: the next advancing tick at
+        // +dt is still legal.
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "tick after probe must advance");
+    }
+
+    // The canonical state wire on the pneumatic backend: state() emits
+    // the side-major canonical row (4 ray leaves + carcass + rim +
+    // patch slots per side), set_state consumes it back bitwise, a
+    // mutated cell lands where the schema says it does, and the lumped
+    // 'fast' tier keeps every bristle cell NaN — including inside a
+    // written patch, where the detailed tier would require them finite.
+    void test_pneumatic_state_wire() {
+        const auto rig = std::make_unique<PneumaticWarmRig>();
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "pneumatic state warmup (first tick)");
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "pneumatic state warmup (second tick)");
+        const std::vector<std::string> &names = rig->tire.state_names();
+        const std::vector<double> row = rig->tire.state();
+        constexpr std::size_t n = 64, width = (n + 1) / 2;
+        require(names.size() == 2 * (4 * n + 8 + 3 * width) &&
+                row.size() == names.size(),
+                "pneumatic canonical width");
+        require(names[0] == "front.ray.000.delta_prev_m" &&
+                names[1] == "front.ray.000.elastic_prev_n" &&
+                names[2] == "front.ray.000.maxwell_n" &&
+                names[3] == "front.ray.000.bristle_m" &&
+                names[4] == "front.ray.001.delta_prev_m" &&
+                names[4 * n] == "front.carcass.initialized" &&
+                names[4 * n + 1] == "front.rim.active" &&
+                names[4 * n + 7] == "front.patch.count" &&
+                names[4 * n + 8] == "front.patch.00.start" &&
+                names[4 * n + 9] == "front.patch.00.stop" &&
+                names[4 * n + 10] == "front.patch.00.kappa_prime" &&
+                names[4 * n + 8 + 3 * width] == "rear.ray.000.delta_prev_m",
+                "pneumatic canonical ordering");
+        // The lumped tier writes NaN bristle everywhere on the ring.
+        for (std::size_t i = 0; i < names.size(); ++i)
+            if (names[i].ends_with("bristle_m"))
+                require(std::isnan(row[i]),
+                        "fast tier emitted a finite bristle cell");
+        // Feeding the row back is a bitwise no-op.
+        rig->tire.set_state(names, row);
+        const std::vector<double> again = rig->tire.state();
+        require(again.size() == row.size() &&
+                std::ranges::equal(again, row, [](double a, double b) {
+                    return std::bit_cast<std::uint64_t>(a) ==
+                           std::bit_cast<std::uint64_t>(b);
+                }), "pneumatic state round trip changed the wire");
+        // A mutated ray cell lands back exactly.
+        std::vector<double> mutated = row;
+        mutated[0] = 1.25e-4;
+        rig->tire.set_state(names, mutated);
+        require(std::bit_cast<std::uint64_t>(rig->tire.state()[0]) ==
+                std::bit_cast<std::uint64_t>(1.25e-4),
+                "set_state did not write the mutated ray cell");
+        // A written patch slot round-trips (bounds, count, kappa); the
+        // lumped tier still leaves its bristle cells NaN. The committed
+        // row may already carry patches, so every slot is scrubbed to
+        // the NaN sentinel before the single new patch is written.
+        std::vector<double> patched = row;
+        patched[4 * n + 7] = 1.;
+        for (std::size_t k = 0; k < width; ++k)
+            for (std::size_t leaf = 0; leaf < 3; ++leaf)
+                patched[4 * n + 8 + 3 * k + leaf] =
+                        std::numeric_limits<double>::quiet_NaN();
+        patched[4 * n + 8] = 10.;
+        patched[4 * n + 9] = 20.;
+        patched[4 * n + 10] = .5;
+        rig->tire.set_state(names, patched);
+        const std::vector<double> reread = rig->tire.state();
+        require(reread[4 * n + 7] == 1. && reread[4 * n + 8] == 10. &&
+                reread[4 * n + 9] == 20. && reread[4 * n + 10] == .5,
+                "set_state did not write the patch slot");
+        require(std::isnan(reread[4 * 10 + 3]),
+                "lumped tier fabricated a bristle cell inside the patch");
+        // Rim event fields round-trip while active.
+        std::vector<double> rimmed = row;
+        rimmed[4 * n + 1] = 1.;
+        rimmed[4 * n + 2] = .12;   // x_m
+        rimmed[4 * n + 3] = 1.5;   // speed_mps
+        rimmed[4 * n + 4] = 800.;  // peak_load_n
+        rimmed[4 * n + 5] = 900.;  // peak_force_n
+        rimmed[4 * n + 6] = .04;   // energy_j
+        rig->tire.set_state(names, rimmed);
+        const std::vector<double> rim_read = rig->tire.state();
+        require(rim_read[4 * n + 1] == 1. && rim_read[4 * n + 2] == .12 &&
+                rim_read[4 * n + 3] == 1.5 && rim_read[4 * n + 4] == 800. &&
+                rim_read[4 * n + 5] == 900. && rim_read[4 * n + 6] == .04,
+                "set_state did not write the rim event slot");
+    }
+
+    // The two-phase decode contract: every malformed row throws
+    // std::runtime_error (the pinned wire surface) BEFORE any live
+    // state is touched — so after each rejection state() re-emits the
+    // committed row bitwise.
+    void test_pneumatic_state_rejection_atomic() {
+        const auto rig = std::make_unique<PneumaticWarmRig>();
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "pneumatic rejection warmup");
+        const std::vector<std::string> &names = rig->tire.state_names();
+        const std::vector<double> baseline = rig->tire.state();
+        const auto bits_equal = [&] {
+            const std::vector<double> now = rig->tire.state();
+            return now.size() == baseline.size() &&
+                   std::ranges::equal(now, baseline, [](double a, double b) {
+                       return std::bit_cast<std::uint64_t>(a) ==
+                              std::bit_cast<std::uint64_t>(b);
+                   });
+        };
+        constexpr std::size_t n = 64, width = (n + 1) / 2;
+        const auto reject = [&](std::span<const std::string> cols,
+                                std::span<const double> cells,
+                                std::string_view label) {
+            require_throws<std::runtime_error>(
+                [&] { rig->tire.set_state(cols, cells); }, label);
+            require(bits_equal(),
+                    "rejected row still mutated pneumatic state");
+        };
+        // Wrong row width, unknown column, missing canonical column.
+        reject(names,
+               std::span<const double>{baseline}.first(baseline.size() - 1),
+               "short row accepted");
+        {
+            std::vector<std::string> wide_names(names.begin(), names.end());
+            wide_names.emplace_back("front.bogus");
+            std::vector<double> wide_row(baseline.begin(), baseline.end());
+            wide_row.push_back(0.);
+            reject(wide_names, wide_row, "unknown column accepted");
+            std::vector<std::string> short_names(names.begin() + 1,
+                                                 names.end());
+            std::vector<double> short_row(baseline.begin() + 1,
+                                          baseline.end());
+            reject(short_names, short_row, "missing column accepted");
+        }
+        // Ray cells must be finite; bristle must stay NaN on the lumped
+        // tier even inside a written patch.
+        {
+            std::vector<double> bad = baseline;
+            bad[0] = std::numeric_limits<double>::quiet_NaN();
+            reject(names, bad, "NaN delta cell accepted");
+            bad = baseline;
+            bad[1] = std::numeric_limits<double>::infinity();
+            reject(names, bad, "inf elastic cell accepted");
+            bad = baseline;
+            bad[4 * n + 7] = 1.;
+            for (std::size_t k = 0; k < width; ++k)
+                for (std::size_t leaf = 0; leaf < 3; ++leaf)
+                    bad[4 * n + 8 + 3 * k + leaf] =
+                            std::numeric_limits<double>::quiet_NaN();
+            bad[4 * n + 8] = 10.;
+            bad[4 * n + 9] = 20.;
+            bad[4 * n + 10] = .5;
+            bad[4 * 10 + 3] = 1e-4;   // bristle inside the patch
+            reject(names, bad, "finite lumped bristle accepted");
+        }
+        // Flag domains and the rim-active field coherence. The warm
+        // rig's 10 mm deflection exceeds the spec's 5 mm rim-strike
+        // deflection, so the committed row IS rim-active with finite
+        // event fields — the coherence gates reject either mismatch.
+        require(baseline[4 * n + 1] == 1. &&
+                std::isfinite(baseline[4 * n + 2]) &&
+                std::isfinite(baseline[4 * n + 3]) &&
+                std::isfinite(baseline[4 * n + 4]) &&
+                std::isfinite(baseline[4 * n + 5]) &&
+                std::isfinite(baseline[4 * n + 6]),
+                "warmup did not latch the rim event");
+        {
+            std::vector<double> bad = baseline;
+            bad[4 * n] = .5;
+            reject(names, bad, "nonbinary carcass flag accepted");
+            bad = baseline;
+            bad[4 * n + 1] = 2.;
+            reject(names, bad, "nonbinary rim flag accepted");
+            bad = baseline;
+            bad[4 * n + 1] = 0.;      // inactive, event fields finite
+            reject(names, bad, "inactive rim with fields accepted");
+            bad = baseline;
+            bad[4 * n + 3] =          // active, one field NaN
+                    std::numeric_limits<double>::quiet_NaN();
+            reject(names, bad, "active rim without fields accepted");
+        }
+        // Patch count domain, past-count slots, bounds and disjointness.
+        // The baseline may already carry committed patches, so each
+        // case scrubs the slot cells to NaN before writing its own
+        // arrangement — every rejection here is the labelled check, not
+        // a side effect of leftover slots.
+        {
+            const auto scrub_slots = [](std::vector<double> &v) {
+                for (std::size_t k = 0; k < width; ++k)
+                    for (std::size_t leaf = 0; leaf < 3; ++leaf)
+                        v[4 * n + 8 + 3 * k + leaf] =
+                                std::numeric_limits<double>::quiet_NaN();
+            };
+            std::vector<double> bad = baseline;
+            bad[4 * n + 7] = 1.5;
+            reject(names, bad, "noninteger patch count accepted");
+            bad = baseline;
+            bad[4 * n + 7] = static_cast<double>(width) + 1.;
+            reject(names, bad, "oversized patch count accepted");
+            bad = baseline;
+            bad[4 * n + 7] = 0.;
+            scrub_slots(bad);
+            bad[4 * n + 8] = 4.;      // finite slot while count stays 0
+            reject(names, bad, "patch slot past count accepted");
+            bad = baseline;
+            bad[4 * n + 7] = 1.;
+            scrub_slots(bad);
+            bad[4 * n + 8] = 10.;
+            bad[4 * n + 9] = 10.;     // stop == start: empty span
+            bad[4 * n + 10] = .5;
+            reject(names, bad, "empty patch span accepted");
+            bad[4 * n + 9] = static_cast<double>(n) + 1.;
+            reject(names, bad, "out-of-ring patch accepted");
+            bad = baseline;
+            bad[4 * n + 7] = 2.;
+            scrub_slots(bad);
+            bad[4 * n + 8] = 10.;
+            bad[4 * n + 9] = 20.;
+            bad[4 * n + 10] = .5;
+            bad[4 * n + 11] = 15.;    // patch.01 overlaps patch.00
+            bad[4 * n + 12] = 25.;
+            bad[4 * n + 13] = .5;
+            reject(names, bad, "overlapping patches accepted");
+        }
+        // And a clean row still commits after the rejection barrage.
+        rig->tire.set_state(names, baseline);
+        require(bits_equal(), "clean row rejected after failures");
+    }
+
+    // Post-commit agreement: stored_energy() re-evaluates the radial
+    // fold at the current pose, so it must bitwise-match the elastic
+    // fold the tick committed (the header's contract line); committed
+    // snapshots carry the pneumatic schema with unit in-plane patch
+    // normals and nonnegative loads.
+    void test_pneumatic_stored_energy_and_snapshots() {
+        const auto rig = std::make_unique<PneumaticWarmRig>();
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "pneumatic stored-energy warmup");
+        require(rig->tire.snapshots_committed(),
+                "pneumatic snapshots not committed");
+        const auto &snaps = rig->tire.snapshot_storage();
+        require(snaps[0].backend == "pneumatic" &&
+                snaps[1].backend == "pneumatic",
+                "pneumatic snapshot carried another backend");
+        require(snaps[0].time_s == rig->context.data->time &&
+                snaps[1].time_s == rig->context.data->time,
+                "pneumatic snapshot timestamp mismatch");
+        for (const TireSnapshot &snap : snaps)
+            for (const TirePatch &p : snap.patches) {
+                const double norm = std::sqrt(p.normal[0] * p.normal[0] +
+                                              p.normal[1] * p.normal[1] +
+                                              p.normal[2] * p.normal[2]);
+                require(std::abs(norm - 1.) <= 1e-8 && p.normal[1] == 0. &&
+                        p.normal_load_n >= 0. && p.working_surface,
+                        "malformed pneumatic patch");
+            }
+        const double stored =
+                rig->tire.stored_energy(rig->context.data.get());
+        require(std::bit_cast<std::uint64_t>(stored) ==
+                std::bit_cast<std::uint64_t>(rig->tire.elastic_energy_j()),
+                "stored_energy diverged from the committed elastic fold");
+        require(std::isfinite(stored) && stored >= 0.,
+                "pneumatic stored energy not finite and nonnegative");
+        // reset() clears state, snapshots, diagnostics and counters —
+        // the next tick re-initialises from a clean ring.
+        rig->tire.reset();
+        require(!rig->tire.snapshots_committed() &&
+                rig->tire.elastic_energy_j() == 0. &&
+                rig->tire.brush_loss_step_j() == 0. &&
+                rig->tire.radial_dissipation_power_w() == 0.,
+                "pneumatic reset left residue");
+        require(pneumatic_tick(*rig, .002) == CoreStatus::ok,
+                "pneumatic tick after reset failed");
     }
 
     // The R1 allocation matrix: for each warm surface row — fixture
@@ -3897,7 +4345,7 @@ namespace {
                 "batch columns carry the energy channel projection");
     }
 
-    constexpr std::array<TestCase, 39> cases{{
+    constexpr std::array<TestCase, 45> cases{{
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -3932,6 +4380,12 @@ namespace {
         {.name = "distributed_status_control", .run = test_distributed_status_control},
         {.name = "distributed_probe_isolation", .run = test_distributed_probe_isolation},
         {.name = "distributed_committed_snapshot_borrow", .run = test_distributed_committed_snapshot_borrow},
+        {.name = "warm_pneumatic_zero_allocation", .run = test_warm_pneumatic_zero_allocation},
+        {.name = "pneumatic_status_control", .run = test_pneumatic_status_control},
+        {.name = "pneumatic_probe_isolation", .run = test_pneumatic_probe_isolation},
+        {.name = "pneumatic_state_wire", .run = test_pneumatic_state_wire},
+        {.name = "pneumatic_state_rejection_atomic", .run = test_pneumatic_state_rejection_atomic},
+        {.name = "pneumatic_stored_energy_and_snapshots", .run = test_pneumatic_stored_energy_and_snapshots},
         {.name = "warm_allocation_matrix", .run = test_warm_allocation_matrix},
         {.name = "rider_contacts_config_domain", .run = test_rider_contacts_config_domain},
         {.name = "owned_episode_batch_ranges", .run = test_owned_episode_batch_ranges},

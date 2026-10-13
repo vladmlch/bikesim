@@ -1495,6 +1495,43 @@ NB_MODULE(bike_native, m) {
                         d["radial_energy_j"] = g.radial_energy_j;
                         d["shear_energy_j"] = g.shear_energy_j;
                         d["brush_loss_j"] = g.brush_loss_j;
+                    } else if (view.is_pneumatic()) {
+                        // pneumatic_tire_forces.py:426-455 — the
+                        // pneumatic dict's own key set in the oracle's
+                        // insertion order.
+                        d["normal_load_n"] = g.normal_load_n;
+                        d["support_n"] = g.support_n;
+                        d["tangent_force_n"] = g.tangent_force_n;
+                        d["slip_mps"] = g.slip_mps;
+                        d["slip_ratio"] = g.slip_ratio;
+                        d["transient_slip_ratio"] =
+                                g.transient_slip_ratio;
+                        d["friction_coefficient"] = g.friction_coefficient;
+                        d["penetration_m"] = g.penetration_m;
+                        d["contact_length_m"] = g.contact_length_m;
+                        d["patch_count"] = g.patch_count;
+                        d["multi_support"] = g.multi_support;
+                        d["supports_multiple_contacts"] =
+                                g.supports_multiple_contacts;
+                        d["fully_sliding"] = g.fully_sliding;
+                        d["airborne"] = g.airborne;
+                        d["coverage_event"] = g.coverage_event;
+                        d["rim_strike_active"] = g.rim_strike_active;
+                        d["rim_event_x_m"] = g.rim_event_x_m;
+                        d["rim_event_speed_mps"] = g.rim_event_speed_mps;
+                        d["rim_event_peak_load_n"] =
+                                g.rim_event_peak_load_n;
+                        d["rim_event_peak_force_n"] =
+                                g.rim_event_peak_force_n;
+                        d["rim_event_energy_j"] = g.rim_event_energy_j;
+                        d["pressure_bar"] = g.pressure_bar;
+                        d["dissipated_power_w"] = g.dissipated_power_w;
+                        d["brush_loss_j"] = g.brush_loss_j;
+                        d["radial_energy_j"] = g.radial_energy_j;
+                        d["shear_energy_j"] = g.shear_energy_j;
+                        d["outside_material_load_range"] =
+                                g.outside_material_load_range;
+                        d["surface"] = g.surface;
                     } else {
                         d["multi_support"] = g.multi_support;
                         d["penetration_m"] = g.penetration_m;

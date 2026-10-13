@@ -9,16 +9,14 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace {
+namespace tirecommon {
     // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide)*exp(-|v|/str).
     double surface_mu(const nativecfg::SurfaceSpec &s, double slip) {
         const double decay =
                 std::exp(-std::abs(slip) / s.stribeck_speed_mps);
         return s.mu_slide + (s.mu_peak - s.mu_slide) * decay;
     }
-} // namespace
 
-namespace tirecommon {
     // surface.py:194-206 — SurfaceMap.at: finite query, first matching
     // half-open section wins, else the default material.
     const nativecfg::SurfaceSpec &

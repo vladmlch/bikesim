@@ -26,6 +26,7 @@ struct CruiseState;
 class ResistanceWriter;
 class TireWriter;
 class DistributedTireWriter;
+class PneumaticTireWriter;
 class RiderForcesWriter;
 
 namespace drivetrain {
@@ -47,13 +48,14 @@ struct TireSideInput;
 
 // Borrowed-pointer view over whichever tyre backend `tire.backend`
 // selected: `compliant_2d` → TireWriter, `distributed_2d_reference` →
-// DistributedTireWriter. Callers obtain it through Stepper::tire_writer()
-// (throws when no tire is configured); the view never outlives its
-// Stepper. Every method forwards through the pointer variant to the
-// engaged writer — the two writers share this surface by contract
-// (writers/tire_common.hpp), so dispatch adds one load and one indirect
-// call, never an allocation or a copy. `is_distributed()` exists for the
-// few places the schemas genuinely differ (diagnostic keys).
+// DistributedTireWriter, `pneumatic` → PneumaticTireWriter. Callers
+// obtain it through Stepper::tire_writer() (throws when no tire is
+// configured); the view never outlives its Stepper. Every method
+// forwards through the pointer variant to the engaged writer — the
+// writers share this surface by contract (writers/tire_common.hpp), so
+// dispatch adds one load and one indirect call, never an allocation or
+// a copy. `is_distributed()`/`is_pneumatic()` exist for the few places
+// the schemas genuinely differ (diagnostic keys).
 class TireWriterView {
 public:
     void compute_into(const mjData *d, double dt,
@@ -94,10 +96,14 @@ public:
     // True when the engaged backend is the distributed reference — the
     // binding emits its extended diagnostics dict for it.
     [[nodiscard]] bool is_distributed() const noexcept;
+    // True when the engaged backend is the pneumatic radial-carcass
+    // tyre — its diagnostics dict is the pneumatic schema.
+    [[nodiscard]] bool is_pneumatic() const noexcept;
 
 private:
     friend class Stepper;
-    using Variant = std::variant<TireWriter *, DistributedTireWriter *>;
+    using Variant = std::variant<TireWriter *, DistributedTireWriter *,
+                                 PneumaticTireWriter *>;
     explicit TireWriterView(Variant writer) noexcept : writer_(writer) {}
     Variant writer_;
 };
@@ -303,9 +309,10 @@ public:
 
     // The writer itself — snapshots()/diagnostics() are read here by the
     // binding. True without a tire config is the callers' absence gate;
-    // the dispatched writer is one of the two configured backends.
+    // the dispatched writer is one of the three configured backends.
     [[nodiscard]] bool has_tire() const noexcept {
-        return tire_ != nullptr || distributed_tire_ != nullptr;
+        return tire_ != nullptr || distributed_tire_ != nullptr ||
+               pneumatic_tire_ != nullptr;
     }
 
     // ---- Owned-writer access for the runtime's physical step (plan A3) --
@@ -459,12 +466,14 @@ private:
     [[nodiscard]] CruiseWriter &require_cruise() const;
 
     std::unique_ptr<ResistanceWriter> resistance_;
-    // Exactly one is engaged (both are null when cfg.tire is absent);
-    // tire_writer() selects on which. Two concrete owners rather than a
-    // variant of objects: each writer is large and stays heap-anchored so
-    // a probe's writer copy never aliases Stepper state.
+    // Exactly one is engaged (all null when cfg.tire is absent);
+    // tire_writer() selects on which. Separate concrete owners rather
+    // than a variant of objects: each writer is large and stays
+    // heap-anchored so a probe's detached state copy never aliases
+    // Stepper state.
     std::unique_ptr<TireWriter> tire_;
     std::unique_ptr<DistributedTireWriter> distributed_tire_;
+    std::unique_ptr<PneumaticTireWriter> pneumatic_tire_;
     std::unique_ptr<RiderForcesWriter> rider_forces_;
     std::unique_ptr<drivetrain::DrivetrainWriter> drive_;
     // T3b-1 — the model-owned RiderContactWriter plus its construction-

@@ -74,6 +74,19 @@ struct TireDiagnostics {
             nonsmooth_station_count{}, max_patch_count{};
     bool outside_material_deflection_range{};
     std::string calibration_status, capability_status;
+    // The pneumatic backend's per-side dict (pneumatic_tire_forces.py
+    // :426-455) — same all-default contract as the distributed fields
+    // above: neither existing backend assigns them, so their staged
+    // zeros change nothing on the compliant/distributed wire.
+    double support_n{}, slip_ratio{}, transient_slip_ratio{},
+            contact_length_m{};
+    int patch_count{};
+    bool fully_sliding{}, airborne{}, coverage_event{},
+            rim_strike_active{};
+    double rim_event_x_m{}, rim_event_speed_mps{},
+            rim_event_peak_load_n{}, rim_event_peak_force_n{},
+            rim_event_energy_j{};
+    double pressure_bar{}, dissipated_power_w{};
 };
 
 namespace tirecommon {
@@ -97,6 +110,13 @@ namespace tirecommon {
                                        dt);
         return {.xi = new_xi, .force = force, .loss = loss};
     }
+
+    // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide) *
+    // exp(-|slip|/stribeck_speed_mps). Exported for the pneumatic
+    // writer's zero-load `surface_map.at(hub_x).mu(0.0)` fallback;
+    // the body moved out of the anonymous namespace unchanged.
+    [[nodiscard]] double surface_mu(const nativecfg::SurfaceSpec &s,
+                                    double slip);
 
     // surface.py:194-206 — SurfaceMap.at: finite query, first matching
     // half-open section wins, else the default material.

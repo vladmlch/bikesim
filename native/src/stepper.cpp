@@ -19,6 +19,7 @@
 #include "writers/suspension.hpp"
 #include "writers/tire.hpp"
 #include "writers/distributed_tire.hpp"
+#include "writers/pneumatic_tire.hpp"
 #include "writers/drivetrain.hpp"
 
 // The stepper.hpp view scratch is literal-sized (the writer constants live
@@ -107,6 +108,9 @@ Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
             // rejects a distributed-only config and vice versa).
             if (cfg.tire->backend == "distributed_2d_reference")
                 distributed_tire_ = std::make_unique<DistributedTireWriter>(
+                        m_, d_, *cfg.tire);
+            else if (cfg.tire->backend == "pneumatic")
+                pneumatic_tire_ = std::make_unique<PneumaticTireWriter>(
                         m_, d_, *cfg.tire);
             else
                 tire_ = std::make_unique<TireWriter>(m_, d_, *cfg.tire);
@@ -288,6 +292,7 @@ void Stepper::reset() {
         if (drive_) drive_->reset();
         if (tire_) tire_->reset();
         if (distributed_tire_) distributed_tire_->reset();
+        if (pneumatic_tire_) pneumatic_tire_->reset();
         if (cruise_) cruise_->reset();
         // reset(model, data) on the post-forward pose — re-anchors grips and
         // revalidates the planar support topology like the oracle applier.
@@ -349,6 +354,7 @@ RiderForcesWriter &Stepper::rider_forces() const {
 TireWriterView Stepper::tire_writer() const {
     if (tire_) return TireWriterView(tire_.get());
     if (distributed_tire_) return TireWriterView(distributed_tire_.get());
+    if (pneumatic_tire_) return TireWriterView(pneumatic_tire_.get());
     throw std::logic_error(kNoTire);
 }
 
@@ -486,6 +492,10 @@ bool TireWriterView::is_distributed() const noexcept {
     return std::holds_alternative<DistributedTireWriter *>(writer_);
 }
 
+bool TireWriterView::is_pneumatic() const noexcept {
+    return std::holds_alternative<PneumaticTireWriter *>(writer_);
+}
+
 void Stepper::set_inputs(std::span<const double> ctrl,
                          std::span<const double> force) {
     require_healthy();
@@ -580,6 +590,7 @@ void Stepper::set_state(std::span<const double> qpos,
             if (drive_) drive_->reset();
             if (tire_) tire_->reset();
             if (distributed_tire_) distributed_tire_->reset();
+            if (pneumatic_tire_) pneumatic_tire_->reset();
             if (cruise_) cruise_->reset();
             if (rider_contacts_) rider_contacts_->reset(d_);
         } catch (...) {
@@ -708,6 +719,7 @@ const std::vector<std::string> &Stepper::tire_state_names() const {
     // binding documents state_names as the default artifact's names.
     if (tire_) return tire_->state_names();
     if (distributed_tire_) return distributed_tire_->state_names();
+    if (pneumatic_tire_) return pneumatic_tire_->state_names();
     return TireWriter::state_names();
 }
 

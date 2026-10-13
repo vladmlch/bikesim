@@ -481,6 +481,46 @@ WireObject wire_distributed_tire_diagnostics(const TireDiagnostics &d) {
     return out;
 }
 
+// pneumatic_tire_forces.py:426-455 — the pneumatic per-side dict, its
+// own key set in the oracle's insertion order.
+WireObject wire_pneumatic_tire_diagnostics(const TireDiagnostics &d) {
+    WireObject out;
+    out.emplace_back("normal_load_n", Wire(d.normal_load_n));
+    out.emplace_back("support_n", Wire(d.support_n));
+    out.emplace_back("tangent_force_n", Wire(d.tangent_force_n));
+    out.emplace_back("slip_mps", Wire(d.slip_mps));
+    out.emplace_back("slip_ratio", Wire(d.slip_ratio));
+    out.emplace_back("transient_slip_ratio",
+                     Wire(d.transient_slip_ratio));
+    out.emplace_back("friction_coefficient", Wire(d.friction_coefficient));
+    out.emplace_back("penetration_m", Wire(d.penetration_m));
+    out.emplace_back("contact_length_m", Wire(d.contact_length_m));
+    out.emplace_back("patch_count", Wire(d.patch_count));
+    out.emplace_back("multi_support", Wire(d.multi_support));
+    out.emplace_back("supports_multiple_contacts",
+                     Wire(d.supports_multiple_contacts));
+    out.emplace_back("fully_sliding", Wire(d.fully_sliding));
+    out.emplace_back("airborne", Wire(d.airborne));
+    out.emplace_back("coverage_event", Wire(d.coverage_event));
+    out.emplace_back("rim_strike_active", Wire(d.rim_strike_active));
+    out.emplace_back("rim_event_x_m", Wire(d.rim_event_x_m));
+    out.emplace_back("rim_event_speed_mps", Wire(d.rim_event_speed_mps));
+    out.emplace_back("rim_event_peak_load_n",
+                     Wire(d.rim_event_peak_load_n));
+    out.emplace_back("rim_event_peak_force_n",
+                     Wire(d.rim_event_peak_force_n));
+    out.emplace_back("rim_event_energy_j", Wire(d.rim_event_energy_j));
+    out.emplace_back("pressure_bar", Wire(d.pressure_bar));
+    out.emplace_back("dissipated_power_w", Wire(d.dissipated_power_w));
+    out.emplace_back("brush_loss_j", Wire(d.brush_loss_j));
+    out.emplace_back("radial_energy_j", Wire(d.radial_energy_j));
+    out.emplace_back("shear_energy_j", Wire(d.shear_energy_j));
+    out.emplace_back("outside_material_load_range",
+                     Wire(d.outside_material_load_range));
+    out.emplace_back("surface", Wire(d.surface));
+    return out;
+}
+
 // ---- observation helpers (physical_observations.py) -------------------
 
 // actuator_components — rows keyed by the bare actuator name in id
@@ -1980,6 +2020,7 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
     const auto diags = view.diagnostics();
     const auto &radii = view.radii();
     const bool distributed = view.is_distributed();
+    const bool pneumatic = view.is_pneumatic();
     constexpr std::array<const char *, 2> sides = {"front", "rear"};
     const std::array<std::optional<bool>, 2> grounded = {
         contacts_.front_controller_grounded,
@@ -2052,7 +2093,9 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
             diags[i].has_value()
                 ? (distributed
                        ? wire_distributed_tire_diagnostics(*diags[i])
-                       : wire_tire_diagnostics(*diags[i]))
+                       : pneumatic ? wire_pneumatic_tire_diagnostics(
+                                 *diags[i])
+                                   : wire_tire_diagnostics(*diags[i]))
                 : WireObject{};
         const bool multi_support =
             diags[i].has_value() ? diags[i]->multi_support : false;

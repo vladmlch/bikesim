@@ -3,6 +3,7 @@ from collections.abc import Mapping, Sequence
 from numbers import Integral
 import numpy as np
 from bike_sim.physics.checks import scalar
+from bike_sim.physics.tyre import TIERS
 
 # Required/optional keys are paired with the C++ parser constants.
 DAMPER = ('max_hsc max_lsc max_reb hsc_clicks lsc_clicks rebound_clicks '
@@ -20,12 +21,15 @@ SCHEMAS = {
     'cruise': ('target_speed_kmh kp_nm_per_mps ki_nm_per_mps_s torque_ceiling_nm', ''),
     'resistance': ('crr rolling_taper_rad_s rho_kg_m3 cda_m2 wind_world_mps point_body_m bodies', ''),
     'resistance.bodies': ('frame front_wheel rear_wheel', ''),
-    'tire': ('backend surface_mode front rear significant_delta_m significance_fraction distinct_normal_deg', 'surface_map distributed'),
+    'tire': ('backend surface_mode front rear significant_delta_m significance_fraction distinct_normal_deg', 'surface_map distributed pneumatic'),
     'tire.side': ('tangent_k_n_m mu relaxation_length_m', 'material'),
     'tire.side.material': ('radial_k_n_m radial_c_ns_m pressure_pa_gauge provenance valid_load_range_n', ''),
     'tire.distributed': ('station_count density front rear', ''),
     'tire.distributed.density': ('knots_m stiffness_n_m damping_ns_m provenance', ''),
     'tire.distributed.material': ('density fitting_dataset_id valid_load_range_n valid_deflection_range_m calibration_status', ''),
+    'tire.pneumatic': ('tier n_rays half_angle_deg discretised_brush timestep_s front rear profile', 'surface'),
+    'tire.pneumatic.side': ('name outer_radius_mm rim_radius_mm section_height_mm pressure_bar crr_reference casing_width_mm compressed_casing_mm area_factor carcass_stiffness_n_mm2 contact_length_factor rate_stiffening rate_relaxation_s loss_factor hysteresis_rate_eps_mps relaxation_length_mm rim_stiffness_n_mm2 tread_loss_crr', ''),
+    'tire.pneumatic.profile': ('x0_m dx_m z_m', ''),
     'surface': ('name mu_peak mu_slide slip_stiffness_per_load stribeck_speed_mps', ''),
     'tire.surface_map': ('surface sections', ''),
     'tire.surface_map.sections': ('start_m end_m surface', ''),
@@ -42,11 +46,11 @@ SCHEMAS = {
     'drive.battery': ('enabled energy_j copper_w_per_nm2 speed_w_per_rad_s2 idle_w', ''),
     'rider_contacts': ('arm_reach_m saddle_patch_half_length_m pedal_patch_half_length_m support_pad_radius_m support_k_n_m support_c_ns_m pedal_c_ns_m support_tangent_k_n_m support_mu support_length_m grip_k_n_m grip_c_ns_m grip_release_distance_m grip_capture_distance_m grip_capture_speed_mps pedal_attachment saddle_attachment grip_attachment', 'grip_pair_force_limit_n'),
 }
-BOOLEAN = frozenset('enabled lockout_firm legacy_behavior unilateral motor_clutch rollback_brake'.split())
-INTEGER = frozenset('schema max_tokens num_tokens max_hsc max_lsc max_reb hsc_clicks lsc_clicks rebound_clicks max_hbo hbo_clicks front_teeth rear_teeth station_count'.split())
-STRING = frozenset('physics_mode fork shock frame front_wheel rear_wheel provenance name backend surface_mode joint drive_mode transmission_model upshift_slip_mode mode pedal_attachment saddle_attachment grip_attachment fitting_dataset_id calibration_status'.split())
+BOOLEAN = frozenset('enabled lockout_firm legacy_behavior unilateral motor_clutch rollback_brake discretised_brush'.split())
+INTEGER = frozenset('schema max_tokens num_tokens max_hsc max_lsc max_reb hsc_clicks lsc_clicks rebound_clicks max_hbo hbo_clicks front_teeth rear_teeth station_count n_rays'.split())
+STRING = frozenset('physics_mode fork shock frame front_wheel rear_wheel provenance name backend surface_mode joint drive_mode transmission_model upshift_slip_mode mode pedal_attachment saddle_attachment grip_attachment fitting_dataset_id calibration_status tier'.split())
 WIDTHS = {'wind_world_mps': 3, 'point_body_m': 3, 'valid_load_range_n': 2, 'valid_deflection_range_m': 2, 'emtb': 2}
-REAL_SEQUENCES = frozenset('knots_m stiffness_n_m'.split())
+REAL_SEQUENCES = frozenset('knots_m stiffness_n_m z_m'.split())
 
 
 def exact_keys(value, required, optional, path):
@@ -92,6 +96,8 @@ def _schema(name):
         return 'tire.side.material'
     if name in ('tire.distributed.front', 'tire.distributed.rear'):
         return 'tire.distributed.material'
+    if name in ('tire.pneumatic.front', 'tire.pneumatic.rear'):
+        return 'tire.pneumatic.side'
     if name.endswith('.density'):
         return 'tire.distributed.density'
     if name.endswith('.surface'):
@@ -111,7 +117,10 @@ def validate_mapping(value, name, path):
             for index, row in enumerate(sequence(item, child)):
                 validate_mapping(row, nested, f'{child}.{index}')
         elif _schema(nested) in SCHEMAS:
-            if item is None and key == 'profile':
+            # drive.assist.profile is the one nullable nested mapping on the
+            # wire; other schema'd children (tire.pneumatic.profile among
+            # them) must be dicts.
+            if item is None and _schema(nested) == 'drive.assist.profile':
                 continue
             validate_mapping(item, nested, child)
         elif key in WIDTHS:
@@ -123,10 +132,12 @@ def validate_mapping(value, name, path):
         elif key == 'cassette':
             for index, number in enumerate(sequence(item, child)):
                 integer(number, f'{child}.{index}')
-        elif key in REAL_SEQUENCES and _schema(name) == 'tire.distributed.density':
+        elif key in REAL_SEQUENCES and _schema(name) in ('tire.distributed.density',
+                                                        'tire.pneumatic.profile'):
             # knots_m/stiffness_n_m are sequences only inside a hinge-density
-            # mapping — the same key names are scalars under suspension and
-            # rider_forces, so the dispatch stays scoped to this schema.
+            # mapping and z_m only inside the pneumatic road profile — the
+            # density key names are scalars under suspension and
+            # rider_forces, so the dispatch stays scoped to these schemas.
             for index, number in enumerate(sequence(item, child)):
                 scalar(number, f'{child}.{index}')
         elif key == 'grip_pair_force_limit_n':
@@ -240,6 +251,51 @@ def _check_distributed(dist):
     _check_distributed_material(dist['rear'], f'{path}.rear')
 
 
+def _check_tyre_specs(spec, path):
+    """TyreSpecs.__post_init__ (tyre.py) domains: positive geometry,
+    pressure and fitted factors, nonnegative carcass/rate/loss fields, the
+    rim inside the carcass, positive rim-strike travel, and the unit
+    ceilings on the area/contact-length/loss factors."""
+    for key in ('outer_radius_mm', 'rim_radius_mm', 'section_height_mm',
+                'pressure_bar', 'crr_reference', 'casing_width_mm',
+                'compressed_casing_mm', 'area_factor', 'contact_length_factor',
+                'rate_relaxation_s', 'hysteresis_rate_eps_mps',
+                'relaxation_length_mm', 'rim_stiffness_n_mm2'):
+        scalar(spec[key], f'{path}.{key}', positive=True)
+    for key in ('carcass_stiffness_n_mm2', 'rate_stiffening', 'loss_factor',
+                'tread_loss_crr'):
+        scalar(spec[key], f'{path}.{key}', minimum=0.)
+    if not spec['rim_radius_mm'] < spec['outer_radius_mm']:
+        raise ValueError(f'{path}.rim_radius_mm: rim is not inside the outer radius')
+    if not spec['outer_radius_mm'] - spec['rim_radius_mm'] > spec['compressed_casing_mm']:
+        raise ValueError(f'{path}.compressed_casing_mm: no travel above the rim')
+    if spec['area_factor'] > 1. or spec['contact_length_factor'] > 1.:
+        raise ValueError(f'{path}: area and contact-length factors are at most 1')
+    if not spec['loss_factor'] < 1.:
+        raise ValueError(f'{path}.loss_factor: must be below 1')
+
+
+def _check_pneumatic(pneu):
+    """PneumaticTireConfig.__post_init__ plus the resolved-wire invariants:
+    the tier is a TIERS row carried resolved on the wire (its parameters
+    must match the registry entry bitwise), each side passes the TyreSpecs
+    domains, and the road profile holds its uniform-grid shape."""
+    path = 'config.tire.pneumatic'
+    if pneu['tier'] not in TIERS:
+        raise ValueError(f'{path}.tier: unsupported tier')
+    tier = TIERS[pneu['tier']]
+    for key in ('n_rays', 'half_angle_deg', 'discretised_brush', 'timestep_s'):
+        if pneu[key] != getattr(tier, key):
+            raise ValueError(f'{path}.{key}: not the resolved value for the tier')
+    _check_tyre_specs(pneu['front'], f'{path}.front')
+    _check_tyre_specs(pneu['rear'], f'{path}.rear')
+    profile = pneu['profile']
+    scalar(profile['x0_m'], f'{path}.profile.x0_m')
+    scalar(profile['dx_m'], f'{path}.profile.dx_m', positive=True)
+    if len(profile['z_m']) < 2:
+        raise ValueError(f'{path}.profile.z_m: at least two samples required')
+
+
 def validate_config(config):
     if not isinstance(config, dict):
         raise ValueError('config: expected dict')
@@ -264,30 +320,43 @@ def validate_config(config):
             raise ValueError('config.suspension.fork_damper.hbo_start_mm: invalid modern HBO zone')
     tire = config.get('tire')
     if tire:
-        if tire['backend'] not in ('compliant_2d', 'distributed_2d_reference'):
+        if tire['backend'] not in ('compliant_2d', 'distributed_2d_reference',
+                                   'pneumatic'):
             raise ValueError('config.tire.backend: unsupported backend')
         if tire['surface_mode'] not in ('configured', 'track'):
             raise ValueError('config.tire.surface_mode: unsupported mode')
         if tire['surface_mode'] == 'track' and 'surface_map' not in tire:
             raise ValueError('config.tire.surface_map: missing required key')
-        # tire.distributed carries the hinge-density material: required iff
-        # the backend is the distributed reference, forbidden otherwise —
-        # the same presence rule validate(TireConfig) applies natively. The
-        # TireSpec material follows the mirror-image rule on the sides.
+        # tire.distributed and tire.pneumatic carry their backend's own
+        # material law: each is required iff that backend is selected and
+        # forbidden otherwise — the same presence rule validate(TireConfig)
+        # applies natively. The TireSpec material follows the mirror-image
+        # rule on the sides, riding the wire only for compliant_2d.
         distributed = tire['backend'] == 'distributed_2d_reference'
+        pneumatic = tire['backend'] == 'pneumatic'
         if distributed and 'distributed' not in tire:
             raise ValueError('config.tire.distributed: missing required key')
         if not distributed and 'distributed' in tire:
             raise ValueError('config.tire.distributed: unknown key')
+        if pneumatic and 'pneumatic' not in tire:
+            raise ValueError('config.tire.pneumatic: missing required key')
+        if not pneumatic and 'pneumatic' in tire:
+            raise ValueError('config.tire.pneumatic: unknown key')
         for side in ('front', 'rear'):
             present = 'material' in tire[side]
             path = f'config.tire.{side}.material'
-            if distributed and present:
+            if (distributed or pneumatic) and present:
                 raise ValueError(f'{path}: unknown key')
-            if not distributed and not present:
+            if not distributed and not pneumatic and not present:
                 raise ValueError(f'{path}: missing required key')
         if distributed:
             _check_distributed(tire['distributed'])
+        if pneumatic:
+            if (tire['surface_mode'] != 'track'
+                    and 'surface' not in tire['pneumatic']):
+                raise ValueError(
+                    'config.tire.pneumatic.surface: missing required key')
+            _check_pneumatic(tire['pneumatic'])
     drive = config.get('drive')
     if drive:
         if drive['drive_mode'] not in ('crank_effort', 'articulated_effort', 'coast', 'ideal_speed_control'):

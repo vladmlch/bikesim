@@ -78,6 +78,39 @@ def test_native_capability_rejects_distributed_backend_without_section():
         validate_supported(replace(cfg, tires=tires), rider)
 
 
+def test_native_capability_accepts_pneumatic_backend_with_section():
+    """pneumatic is supported when tires.pneumatic resolves — under track
+    mode and under configured mode with a named surface."""
+    cfg, rider = _supported()
+    tires = replace(cfg.tires, backend="pneumatic")
+    validate_supported(replace(cfg, tires=tires), rider)
+    configured = replace(
+        cfg.tires, backend="pneumatic", surface_mode="configured",
+        pneumatic=replace(cfg.tires.pneumatic, surface="asphalt"))
+    validate_supported(replace(cfg, tires=configured), rider)
+
+
+def test_native_capability_rejects_pneumatic_backend_without_section():
+    """The pneumatic backend without its resolved section is rejected."""
+    cfg, rider = _supported()
+    tires = _mutated(replace(cfg.tires, backend="pneumatic"),
+                     "pneumatic", None)
+    with pytest.raises(ValueError, match=r"tires\.pneumatic"):
+        validate_supported(replace(cfg, tires=tires), rider)
+
+
+def test_native_capability_rejects_pneumatic_configured_without_surface():
+    """Pneumatic under configured surface mode needs the named surface the
+    wire ships resolved — the same gate TireBackendConfig applies."""
+    cfg, rider = _supported()
+    tires = replace(
+        cfg.tires, backend="pneumatic", surface_mode="configured",
+        pneumatic=replace(cfg.tires.pneumatic, surface="asphalt"))
+    tires = _mutated(tires, "pneumatic.surface", None)
+    with pytest.raises(ValueError, match=r"tires\.pneumatic\.surface"):
+        validate_supported(replace(cfg, tires=tires), rider)
+
+
 def _mutated(cfg, path, value):
     """Write one leaf past __post_init__ so the validator itself is tested.
 

@@ -5,6 +5,7 @@ from math import isfinite
 
 from bike_sim.physics.physical_config import (
     TireBackendConfig, PhysicalDriveConfig, ResistanceConfig, ArticulatedConfig,
+    PneumaticTireConfig,
 )
 from bike_sim.physics.checks import derived, scalar
 from bike_sim.physics.seated_climb import SeatedClimbConfig
@@ -114,7 +115,9 @@ class SimulationPhysicsConfig:
         # legacy applier (which rewrote model.opt.timestep), the physical runtime owns
         # the step, so a mismatch would silently integrate at the wrong dt. The fast
         # tier declares 5e-4 too but stays ungated, same as the legacy stack.
-        if (self.tires.backend == 'pneumatic' and self.tires.pneumatic.tier == 'detailed'
+        if (self.tires.backend == 'pneumatic'
+                and isinstance(self.tires.pneumatic, PneumaticTireConfig)
+                and self.tires.pneumatic.tier == 'detailed'
                 and self.timestep_s != TIERS['detailed'].timestep_s):
             raise ValueError(
                 f"detailed pneumatic tyre requires timestep_s={TIERS['detailed'].timestep_s}; "

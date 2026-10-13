@@ -17,6 +17,7 @@ import numpy as np
 from bike_sim.native.config import project as _project_writers
 from bike_sim.physics.distributed_tire import DistributedTireConfig
 from bike_sim.physics.model_config import SimulationPhysicsConfig
+from bike_sim.physics.physical_config import PneumaticTireConfig
 from bike_sim.physics.rider import RiderSpecs
 from bike_sim.physics.tire import TireSpec
 from bike_sim.sim.ride.physical_samples import plain
@@ -53,8 +54,8 @@ def validate_supported(cfg: SimulationPhysicsConfig,
         'articulated.saddle_attachment': (cfg.articulated.saddle_attachment, ('pin',)),
         'articulated.grip_attachment': (cfg.articulated.grip_attachment, ('connect',)),
         'tires.backend': (cfg.tires.backend,
-                          ('compliant_2d', 'distributed_2d_reference')),
-        'tires.surface_mode': (cfg.tires.surface_mode, ('track',)),
+                          ('compliant_2d', 'distributed_2d_reference',
+                           'pneumatic')),
         'drive.transmission_model': (cfg.drive.transmission_model, ('ideal_mid_drive',)),
         'drive.motor_clutch': (cfg.drive.motor_clutch, (False,)),
         'drive.rotor_inertia_kgm2': (cfg.drive.rotor_inertia_kgm2, (0.,)),
@@ -63,6 +64,16 @@ def validate_supported(cfg: SimulationPhysicsConfig,
         if actual not in supported:
             _reject(path, actual, supported[0] if len(supported) == 1
                     else supported)
+    # surface_mode's supported set is backend-dependent: the compliant and
+    # distributed writers read the track's surface map only, while the
+    # pneumatic writer additionally accepts a configured uniform surface
+    # shipped resolved under tire.pneumatic.surface.
+    if cfg.tires.backend == 'pneumatic':
+        if cfg.tires.surface_mode not in ('track', 'configured'):
+            _reject('tires.surface_mode', cfg.tires.surface_mode,
+                    ('track', 'configured'))
+    elif cfg.tires.surface_mode != 'track':
+        _reject('tires.surface_mode', cfg.tires.surface_mode, 'track')
     # The TireSpec material is a compliant_2d input; the distributed backend
     # reads its hinge-density record from tires.distributed instead, which
     # must resolve (the wire's `tire.distributed` section is built from it).
@@ -76,6 +87,17 @@ def validate_supported(cfg: SimulationPhysicsConfig,
             and not isinstance(cfg.tires.distributed, DistributedTireConfig)):
         _reject('tires.distributed', cfg.tires.distributed,
                 'a resolved DistributedTireConfig')
+    # The pneumatic backend's tyre law lives in tires.pneumatic — the
+    # wire's `tire.pneumatic` section is built from it — and a configured
+    # (non-track) surface mode needs the named surface it ships resolved.
+    if cfg.tires.backend == 'pneumatic':
+        if not isinstance(cfg.tires.pneumatic, PneumaticTireConfig):
+            _reject('tires.pneumatic', cfg.tires.pneumatic,
+                    'a resolved PneumaticTireConfig')
+        elif (cfg.tires.surface_mode != 'track'
+                and cfg.tires.pneumatic.surface is None):
+            _reject('tires.pneumatic.surface', cfg.tires.pneumatic.surface,
+                    'a named surface under configured surface_mode')
 
 
 def _posture_dict(posture) -> dict | None:

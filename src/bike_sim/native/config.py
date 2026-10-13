@@ -29,17 +29,21 @@ actually read, as a versioned dict::
                         <resolved ArticulatedConfig contact fields>},
     }
 
-The 'tire' section is emitted for the two backends the native port's
-config layer accepts — ``compliant_2d`` and ``distributed_2d_reference``
-(``native_reference`` produces no tire writer in Python either, so no
-section). For ``compliant_2d`` each side's material must be a
-``TireSpec``; a ``TabulatedTireSpec`` follows a different force law the
+The 'tire' section is emitted for the three backends the native port's
+config layer accepts — ``compliant_2d``, ``distributed_2d_reference`` and
+``pneumatic`` (``native_reference`` produces no tire writer in Python
+either, so no section). For ``compliant_2d`` each side's material must be
+a ``TireSpec``; a ``TabulatedTireSpec`` follows a different force law the
 native writer does not implement and is rejected here. For
 ``distributed_2d_reference`` the material is the hinge-density law under
 ``tire.distributed`` — the resolved ``for_wheel`` records per side — so
 ``front``/``rear`` carry only the shared tangential parameters and
-``material`` is not projected. The surface map is serialized with every
-named surface resolved to its numeric fields.
+``material`` is not projected. The pneumatic backend likewise skips
+``material`` and instead carries ``tire.pneumatic``: the resolved tier
+parameters, the per-side ``TyreSpecs``, the configured uniform surface
+when one is named (the track map still ships under ``surface_mode =
+'track'``), and the sampled road profile. The surface map is serialized
+with every named surface resolved to its numeric fields.
 
 The 'rider_contacts' section is emitted only when ``sim.physical`` owns a
 ``RiderContactApplier`` (an ``articulated_planar`` rider; ``None`` otherwise
@@ -67,6 +71,8 @@ unknown versions. Schema 2 carries the exact fork ``legacy_behavior`` flag.
 Schema 1 infers legacy when resolved ``hbo_start_mm == 160.0`` and keeps
 resolved damping parameters, including the ambiguous modern 180 mm fork.
 """
+from dataclasses import asdict
+
 import mujoco
 import numpy as np
 from bike_sim.native.schema import validate_config, validate_drive_policies, plain, sequence
@@ -107,26 +113,27 @@ def _surface_spec(spec) -> dict:
             'stribeck_speed_mps': spec.stribeck_speed_mps}
 
 
-def _tire_side(params, *, distributed) -> dict:
+def _tire_side(params, *, material) -> dict:
     """TireParameters -> the fields the native tire writer reads per side.
 
     The compliant backend projects its analytic ``TireSpec`` material; the
-    distributed backend keeps its hinge-density material under
-    ``tire.distributed`` instead, so ``material`` is skipped here.
+    distributed and pneumatic backends carry their own material laws under
+    ``tire.distributed``/``tire.pneumatic`` instead, so ``material`` is
+    skipped here.
     """
     out = {}
-    if not distributed:
+    if material:
         from bike_sim.physics.tire import TireSpec
-        material = params.material
-        if not isinstance(material, TireSpec):
+        spec = params.material
+        if not isinstance(spec, TireSpec):
             raise ValueError('native tire port requires TireSpec material, '
-                             f'got {type(material).__name__}')
+                             f'got {type(spec).__name__}')
         out['material'] = {
-            'radial_k_n_m': material.radial_k_n_m,
-            'radial_c_ns_m': material.radial_c_ns_m,
-            'pressure_pa_gauge': material.pressure_pa_gauge,
-            'provenance': material.provenance,
-            'valid_load_range_n': material.valid_load_range_n,
+            'radial_k_n_m': spec.radial_k_n_m,
+            'radial_c_ns_m': spec.radial_c_ns_m,
+            'pressure_pa_gauge': spec.pressure_pa_gauge,
+            'provenance': spec.provenance,
+            'valid_load_range_n': spec.valid_load_range_n,
         }
     out.update({
         'tangent_k_n_m': params.tangent_k_n_m,
@@ -136,17 +143,67 @@ def _tire_side(params, *, distributed) -> dict:
     return out
 
 
-def _tire_section(cfg_tires, surface_map) -> dict:
-    """TireBackendConfig + SurfaceMap -> the tire writer's section."""
+def _pneumatic_section(cfg_pneumatic, road_profile) -> dict:
+    """PneumaticTireConfig + RoadProfile -> the pneumatic writer's section.
+
+    The tier is emitted resolved: the native writer never re-derives the
+    tier parameters from the name. ``front``/``rear`` carry the 18
+    ``TyreSpecs`` dataclass fields; derived properties
+    (``rim_strike_deflection_mm``, ``pressure_pa``) stay off the wire — the
+    C++ side reproduces them with the same arithmetic. ``surface`` is the
+    resolved ``SurfaceSpec`` and appears only when a named surface is
+    configured; ``profile`` is the sampled road polyline (float64 values
+    verbatim — bitwise-critical, no quantization).
+    """
+    from bike_sim.physics.physical_config import PneumaticTireConfig
+    from bike_sim.physics.tyre import TIERS
+    from bike_sim.sim.ride.tyre.geometry import RoadProfile
+    if not isinstance(cfg_pneumatic, PneumaticTireConfig):
+        raise ValueError('native pneumatic tire port requires a resolved '
+                         'PneumaticTireConfig, got '
+                         f'{type(cfg_pneumatic).__name__}')
+    if not isinstance(road_profile, RoadProfile):
+        raise ValueError('native pneumatic tire port requires a sampled '
+                         f'RoadProfile, got {type(road_profile).__name__}')
+    tier = TIERS[cfg_pneumatic.tier]
+    out = {
+        'tier': cfg_pneumatic.tier,
+        'n_rays': tier.n_rays,
+        'half_angle_deg': tier.half_angle_deg,
+        'discretised_brush': tier.discretised_brush,
+        'timestep_s': tier.timestep_s,
+    }
+    if cfg_pneumatic.surface is not None:
+        from bike_sim.terrain.surface import get_surface
+        out['surface'] = _surface_spec(get_surface(cfg_pneumatic.surface))
+    out['front'] = asdict(cfg_pneumatic.front)
+    out['rear'] = asdict(cfg_pneumatic.rear)
+    out['profile'] = {
+        'x0_m': road_profile.x0_m,
+        'dx_m': road_profile.dx_m,
+        'z_m': list(road_profile.z_m),
+    }
+    return out
+
+
+def _tire_section(cfg_tires, surface_map, road_profile=None) -> dict:
+    """TireBackendConfig + SurfaceMap -> the tire writer's section.
+
+    ``road_profile`` is the sampled ``RoadProfile`` the pneumatic backend
+    projects into ``tire.pneumatic.profile``; the other backends ignore it.
+    """
     distributed = cfg_tires.backend == 'distributed_2d_reference'
+    pneumatic = cfg_tires.backend == 'pneumatic'
     out = {
         'backend': cfg_tires.backend,
         'surface_mode': cfg_tires.surface_mode,
         'significant_delta_m': cfg_tires.significant_delta_m,
         'significance_fraction': cfg_tires.significance_fraction,
         'distinct_normal_deg': cfg_tires.distinct_normal_deg,
-        'front': _tire_side(cfg_tires.front, distributed=distributed),
-        'rear': _tire_side(cfg_tires.rear, distributed=distributed),
+        'front': _tire_side(cfg_tires.front,
+                            material=cfg_tires.backend == 'compliant_2d'),
+        'rear': _tire_side(cfg_tires.rear,
+                           material=cfg_tires.backend == 'compliant_2d'),
     }
     if cfg_tires.surface_mode == 'track':
         if surface_map is None:
@@ -177,6 +234,8 @@ def _tire_section(cfg_tires, surface_map) -> dict:
                     'calibration_status': m.calibration_status}
         out['distributed'] = {'station_count': dist.station_count, 'density': density(dist.density),
                               'front': material('front'), 'rear': material('rear')}
+    if pneumatic:
+        out['pneumatic'] = _pneumatic_section(cfg_tires.pneumatic, road_profile)
     return out
 
 
@@ -247,7 +306,8 @@ def _project(env) -> dict:
     res = cfg.resistance
     # sim.physics_config is the object the runtime's tire writer read.
     tires = sim.physics_config.tires
-    if tires.backend not in ('compliant_2d', 'native_reference', 'distributed_2d_reference'):
+    if tires.backend not in ('compliant_2d', 'native_reference',
+                           'distributed_2d_reference', 'pneumatic'):
         raise ValueError(f"native tire backend '{tires.backend}' is not ported")
     out = {
         'schema': SCHEMA,
@@ -320,11 +380,16 @@ def _project(env) -> dict:
             },
         },
     }
-    if tires.backend in ('compliant_2d', 'distributed_2d_reference'):
+    if tires.backend in ('compliant_2d', 'distributed_2d_reference', 'pneumatic'):
         # sim.track.surface_map is a fresh SurfaceMap per access; the tire
         # writer captured an equal-valued one at construction — content is
-        # what crosses the boundary.
-        out['tire'] = _tire_section(tires, sim.track.surface_map)
+        # what crosses the boundary. The pneumatic writer's road profile is
+        # the same build_road_profile product the applier received.
+        road_profile = None
+        if tires.backend == 'pneumatic':
+            from bike_sim.sim.ride.tyre.profile import build_road_profile
+            road_profile = build_road_profile(sim.track, sim.field, sim.specs)
+        out['tire'] = _tire_section(tires, sim.track.surface_map, road_profile)
     if sim.rider_forces.active:
         # _paths order is apply()'s order. Joint names re-resolve through
         # _resolve_slide on the native side, like the suspension joints.

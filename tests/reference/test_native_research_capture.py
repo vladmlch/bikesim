@@ -7,7 +7,11 @@ import pytest
 from bike_sim.recording.json_codec import thaw
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.research.replay import integration_state
+from native_loader import load_native
 from test_research_capture import _noise
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 def test_native_off_full_are_passive_and_full_records_every_interval(environment_pair, monkeypatch, assert_tree):

@@ -1,7 +1,11 @@
 """Native new-container replay shares the Python/legacy verifier."""
 from bike_sim.sim.research.replay import replay_episode
 from bike_sim.sim.research.replay_session import ReplaySession
+from native_loader import load_native
 from test_replay_recording_v3 import save_run
+
+# The selected-artifact import doubles as the sanitizer-runtime check.
+bike_native = load_native()
 
 
 def test_native_replay_v3_and_suffix_capture(environment_pair, tmp_path):

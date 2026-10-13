@@ -1,14 +1,15 @@
 """Strict TOML resolution: defaults < TOML < explicitly supplied CLI values."""
-from dataclasses import fields
+from dataclasses import fields, asdict, MISSING
 import copy
 from pathlib import Path
 import tomllib
 from bike_sim.physics.model_config import SimulationPhysicsConfig, EndStopConfig
 from bike_sim.physics.physical_config import (
-    TireParameters,TireBackendConfig,PhysicalDriveConfig,AssistConfig,
+    TireParameters,TireBackendConfig,PneumaticTireConfig,PhysicalDriveConfig,AssistConfig,
     BatteryConfig,ResistanceConfig,ArticulatedConfig,PedalingConfig,ShiftingConfig,
 )
 from bike_sim.physics.tire import TireSpec
+from bike_sim.physics.tyre import TyreSpecs
 from bike_sim.physics.tire_curve import TabulatedTireSpec
 from bike_sim.physics.distributed_tire import DistributedTireConfig, HingeDensity, DistributedWheelMaterial
 from bike_sim.physics.chain import DrivetrainSpecs
@@ -18,7 +19,9 @@ CHILDREN={
     SimulationPhysicsConfig:{'end_stops':EndStopConfig,'tires':TireBackendConfig,
                              'drive':PhysicalDriveConfig,'resistance':ResistanceConfig,'articulated':ArticulatedConfig,
                              'seated_climb':SeatedClimbConfig},
-    TireBackendConfig:{'front':TireParameters,'rear':TireParameters,'distributed':DistributedTireConfig},
+    TireBackendConfig:{'front':TireParameters,'rear':TireParameters,'distributed':DistributedTireConfig,
+                       'pneumatic':PneumaticTireConfig},
+    PneumaticTireConfig:{'front':TyreSpecs,'rear':TyreSpecs},
     DistributedTireConfig:{'density':HingeDensity,
                            'front_material':DistributedWheelMaterial,
                            'rear_material':DistributedWheelMaterial},
@@ -26,6 +29,14 @@ CHILDREN={
     TireParameters:{'material':TireSpec},
     PhysicalDriveConfig:{'gearing':DrivetrainSpecs,'assist':AssistConfig,'battery':BatteryConfig,
                          'pedaling':PedalingConfig,'shifting':ShiftingConfig},
+}
+
+# Child sections that EXTEND the field default instead of building the child
+# from the TOML table alone: a partial `[tires.pneumatic.front]` table like
+# `pressure_bar = 1.9` lands on the default tyre spec. Scoped so existing
+# sections keep their all-keys-required strictness.
+EXTENDS_DEFAULT={
+    PneumaticTireConfig:('front','rear'),
 }
 
 
@@ -41,6 +52,15 @@ def _merge(base,override):
     return result
 
 
+def _field_default(cls,name):
+    entry=next(f for f in fields(cls) if f.name==name)
+    if entry.default is not MISSING:
+        return entry.default
+    if entry.default_factory is not MISSING:
+        return entry.default_factory()
+    return None
+
+
 def _construct(cls,values):
     if not isinstance(values,dict):
         raise ValueError(f'{cls.__name__} requires a TOML table')
@@ -53,7 +73,12 @@ def _construct(cls,values):
     kwargs=copy.deepcopy(values)
     for name,child in CHILDREN.get(cls,{}).items():
         if name in kwargs and kwargs[name] is not None:
-            kwargs[name]=_construct(child,kwargs[name])
+            section=kwargs[name]
+            if name in EXTENDS_DEFAULT.get(cls,()) and isinstance(section,dict):
+                base=_field_default(cls,name)
+                if isinstance(base,child):
+                    section=_merge(asdict(base),section)
+            kwargs[name]=_construct(child,section)
     try:
         return cls(**kwargs)
     except (TypeError,OverflowError) as exc:

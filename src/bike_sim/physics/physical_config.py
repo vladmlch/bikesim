@@ -9,6 +9,7 @@ from math import pi, radians
 from bike_sim.physics.checks import integer, scalar, sequence
 from bike_sim.physics.attachment_budget import AttachmentBudget
 from bike_sim.physics.tire import TireSpec
+from bike_sim.physics.tyre import TyreSpecs, FRONT_TYRE, REAR_TYRE, TIERS
 from bike_sim.physics.tire_curve import TabulatedTireSpec
 from bike_sim.physics.distributed_tire import DistributedTireConfig
 from bike_sim.physics.chain import DrivetrainSpecs
@@ -37,6 +38,33 @@ class TireParameters:
 
 
 @dataclass(frozen=True)
+class PneumaticTireConfig:
+    """``tires.backend = "pneumatic"`` child section: the radial-carcass/brush
+    tyre of docs/RIDE.md section 3.1 carried into the physical runtime.
+
+    ``surface`` is an optional surface NAME resolved against the terrain
+    surface registry; ``None`` means the backend reads the track's surface
+    map (``surface_mode = "track"``).
+    """
+    tier: str = "fast"
+    front: TyreSpecs = field(default=FRONT_TYRE)
+    rear: TyreSpecs = field(default=REAR_TYRE)
+    surface: str | None = None
+
+    def __post_init__(self):
+        if self.tier not in TIERS:
+            raise ValueError(f"unknown pneumatic tyre tier '{self.tier}'; available: {', '.join(TIERS)}")
+        if not isinstance(self.front,TyreSpecs) or not isinstance(self.rear,TyreSpecs):
+            raise ValueError('pneumatic tires need explicit TyreSpecs')
+        self.front.__post_init__()
+        self.rear.__post_init__()
+        if self.surface is not None:
+            from bike_sim.terrain.surface import SURFACES  # pure data, no cycle at import time
+            if not isinstance(self.surface,str) or self.surface not in SURFACES:
+                raise ValueError(f"unknown surface '{self.surface}'; available: {', '.join(SURFACES)}")
+
+
+@dataclass(frozen=True)
 class TireBackendConfig:
     backend: str = 'native_reference'
     front: TireParameters = field(default_factory=TireParameters)
@@ -46,16 +74,22 @@ class TireBackendConfig:
     distinct_normal_deg: float = 20.
     surface_mode: str = 'configured'
     distributed: DistributedTireConfig = field(default_factory=DistributedTireConfig)
+    pneumatic: PneumaticTireConfig = field(default_factory=PneumaticTireConfig)
 
     def __post_init__(self):
-        if self.backend not in ('native_reference','compliant_2d','distributed_2d_reference'):
+        if self.backend not in ('native_reference','compliant_2d','distributed_2d_reference','pneumatic'):
             raise ValueError('unknown physical tire backend')
         if self.surface_mode not in ('configured', 'track'):
             raise ValueError('surface_mode must be configured or track')
-        if self.surface_mode == 'track' and self.backend not in ('compliant_2d','distributed_2d_reference'):
+        if self.surface_mode == 'track' and self.backend not in ('compliant_2d','distributed_2d_reference','pneumatic'):
             raise ValueError('track material resolution requires compliant_2d tires')
         if not isinstance(self.distributed,DistributedTireConfig):
             raise ValueError('distributed tire configuration must be explicit')
+        if not isinstance(self.pneumatic,PneumaticTireConfig):
+            raise ValueError('pneumatic tire configuration must be explicit')
+        self.pneumatic.__post_init__()
+        if self.backend == 'pneumatic' and self.surface_mode != 'track' and self.pneumatic.surface is None:
+            raise ValueError('pneumatic tires require surface_mode track or a named surface')
         if not isinstance(self.front,TireParameters) or not isinstance(self.rear,TireParameters):
             raise ValueError('front and rear tires need explicit TireParameters')
         self.front.__post_init__()

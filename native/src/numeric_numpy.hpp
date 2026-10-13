@@ -22,15 +22,22 @@
 //                                 max, -0 for min — NOT the
 //                                 `(a >= b || isnan(a)) ? a : b`
 //                                 textbook expression.
+//   numeric::np_sign          — DOUBLE_sign generic loop
+//                                 (loops.c.src:1433-1442): +1/-1/+0,
+//                                 NaN passthrough unquieted.
 //   numeric::np_interp_unit_grid — np.interp(x, np.arange(n), values,
 //                                 left=lval, right=rval) for one query:
-//                                 arr_interp (compiled_base.c:703-739)
+//                                 arr_interp (compiled_base.c:671-739)
 //                                 specialized to integer knots
-//                                 0..n-1. Verified bitwise against
-//                                 np.interp on 13,431,042 queries
-//                                 (fractional bins, out-of-range
+//                                 0..n-1, including the dedicated
+//                                 lenxp == 1 loop that runs BEFORE the
+//                                 NaN check (a NaN query returns
+//                                 values[0], not NaN). Verified bitwise
+//                                 against np.interp on 13,431,042
+//                                 queries (fractional bins, out-of-range
 //                                 sentinels, exact knots, n = 3..256),
-//                                 0 mismatches.
+//                                 0 mismatches; n = 1 coverage added
+//                                 with the dedicated-branch port.
 //
 // Compile flags: this header's arithmetic relies on the project-wide
 // -ffp-contract=off — plain `a*b + c` expressions stay two rounded
@@ -181,6 +188,17 @@ namespace numeric {
         return r;
     }
 
+    // np.sign(x) — the DOUBLE_sign generic loop
+    // (numpy/_core/src/umath/loops.c.src:1433-1442, the float branch of
+    // the "#TYPE = FLOAT, DOUBLE, LONGDOUBLE" repeat):
+    //   in > 0 -> +1.0; in < 0 -> -1.0; in == 0 -> +0.0 (the literal
+    //   `0` — np.sign(-0.0) is +0.0, the sign is NOT preserved);
+    //   otherwise -> the input itself, so a NaN passes through with its
+    //   payload (and quiet bit) intact, unquieted.
+    [[nodiscard]] inline double np_sign(double x) noexcept {
+        return x > 0.0 ? 1.0 : (x < 0.0 ? -1.0 : (x == 0.0 ? 0.0 : x));
+    }
+
     // np.clip(x, lo, hi) with ARRAY bounds — the umath DOUBLE_clip
     // generic loop (numpy/_core/src/umath/clip.cpp:148-153, 239-246):
     // _NPY_CLIP = _NPY_MIN(_NPY_MAX(x, lo), hi) where, for the floating
@@ -205,7 +223,14 @@ namespace numeric {
 
     // np.interp(x, np.arange(n), values, left=lval, right=rval) — one
     // query on the integer knot grid. arr_interp behavior:
-    //   x NaN              -> x (NaN passthrough keeps the payload);
+    //   lenxp == 1         -> dedicated loop (compiled_base.c:671-682):
+    //                         (x < 0.0) ? lval : (x > 0.0) ? rval
+    //                         : values[0]. Runs BEFORE the NaN check,
+    //                         so a NaN query returns values[0], and
+    //                         -0.0 compares equal to the knot (both
+    //                         tests false -> values[0]). NOT the same
+    //                         tree as the general path.
+    //   x NaN (n >= 2)     -> x (NaN passthrough keeps the payload);
     //   x < 0.0            -> lval        (searchsorted j == -1);
     //   x > n - 1          -> rval        (j == lenxp);
     //   j == n - 1         -> values[n-1] (last-knot special case);
@@ -213,8 +238,6 @@ namespace numeric {
     //   otherwise          -> fma(slope, x - j, values[j]) with the
     //                         forward-point NaN fallback — unreachable
     //                         on finite `values` but kept verbatim.
-    // The lenxp == 1 dedicated loop in arr_interp is the same decision
-    // tree (lval / rval / fp[0]) the general path reduces to here.
     [[nodiscard]] inline double np_interp_unit_grid(
             double x, std::span<const double> values, double lval,
             double rval) {
@@ -222,6 +245,14 @@ namespace numeric {
         if (n == 0)
             throw std::invalid_argument(
                     "array of sample points is empty");
+        if (n == 1) {
+            // compiled_base.c:678-679 verbatim: two comparisons
+            // against the single knot dx[0] == 0.0, everything else
+            // (x == 0.0, +/-0.0, NaN) falls through to fp[0].
+            if (x < 0.0) return lval;
+            if (x > 0.0) return rval;
+            return values[0];
+        }
         if (std::isnan(x)) return x;
         const double last = static_cast<double>(n - 1);
         if (x < 0.0) return lval;

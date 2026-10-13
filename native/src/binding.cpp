@@ -37,6 +37,7 @@
 #include "pneumatic/brush.hpp"
 #include "pneumatic/carcass.hpp"
 #include "pneumatic/geometry.hpp"
+#include "pneumatic/model.hpp"
 #include "pneumatic/profile.hpp"
 #include "tyre/distance.hpp"
 #include "binding_readers.hpp"
@@ -405,6 +406,253 @@ namespace {
         return wire::real(raw, "tread_stiffness_n_m2");
     }
 
+    // --- Pneumatic model debug-surface intake ----------------------
+    // The {x0_m, dx_m, z_m} road profile (the native/config.py
+    // pneumatic.profile projection — the same keys
+    // _debug_pneumatic_intersect reads), the {surface, sections}
+    // SurfaceMap wire (tire.surface_map — config.hpp:180-191), the
+    // tier dict's three model-consumed fields (name/timestep_s ride
+    // along unused like the oracle's TierSpec), and the
+    // {carcass, patch_states} semantic-state projection — patch state
+    // entries carry the oracle's _PatchBrushState fields with
+    // `detailed` as None-or-{bristle_deflection_m, kappa_prime}.
+
+    biketyre::RoadProfile debug_model_profile(nb::handle raw) {
+        const wire::Dict profile{.value = wire::mapping(raw, "profile"),
+                                 .path = "profile"};
+        wire::exact(profile, wire::keys("x0_m", "dx_m", "z_m"));
+        const auto z_wire = debug_carcass_row64(profile["z_m"],
+                                                "profile.z_m");
+        const std::span<const double> z_span =
+                debug_carcass_span(z_wire);
+        return {
+                wire::finite_real(profile["x0_m"], "profile.x0_m"),
+                wire::finite_real(profile["dx_m"], "profile.dx_m"),
+                {z_span.begin(), z_span.end()}};
+    }
+
+    nativecfg::SurfaceMap debug_model_surface_map(nb::handle raw) {
+        const wire::Dict map{.value = wire::mapping(raw, "surface_map"),
+                             .path = "surface_map"};
+        wire::exact(map, wire::keys("surface", "sections"));
+        nativecfg::SurfaceMap out;
+        out.surface = debug_brush_surface(map["surface"]);
+        const nb::list sections =
+                wire::sequence(map["sections"], "surface_map.sections");
+        out.sections.reserve(sections.size());
+        for (nb::handle const item: sections) {
+            const wire::Dict section{
+                    .value = wire::mapping(item,
+                                           "surface_map.sections"),
+                    .path = "surface_map.sections"};
+            wire::exact(section,
+                        wire::keys("start_m", "end_m", "surface"));
+            out.sections.push_back(nativecfg::SurfaceSection{
+                    .start_m = wire::real(section["start_m"],
+                                          "surface_map.sections."
+                                          "start_m"),
+                    .end_m = wire::real(section["end_m"],
+                                        "surface_map.sections.end_m"),
+                    .surface = debug_brush_surface(
+                            section["surface"])});
+        }
+        return out;
+    }
+
+    // {n_rays, half_angle_deg, discretised_brush} — the tier fields
+    // PneumaticTyre consumes (model.py:160-164); name/timestep_s ride
+    // along unused exactly like the oracle's stored TierSpec.
+    struct DebugModelTier {
+        std::int64_t n_rays;
+        double half_angle_deg;
+        bool discretised_brush;
+    };
+
+    DebugModelTier debug_model_tier(nb::handle raw) {
+        const wire::Dict tier{.value = wire::mapping(raw, "tier"),
+                              .path = "tier"};
+        wire::exact(tier,
+                    wire::keys("n_rays", "half_angle_deg",
+                               "discretised_brush"),
+                    wire::keys("name", "timestep_s"));
+        return {.n_rays =
+                        wire::integer(tier["n_rays"], "tier.n_rays"),
+                .half_angle_deg = wire::real(tier["half_angle_deg"],
+                                             "tier.half_angle_deg"),
+                .discretised_brush = wire::boolean(
+                        tier["discretised_brush"],
+                        "tier.discretised_brush")};
+    }
+
+    // The _PatchBrushState dict projection: {start, stop, kappa_prime,
+    // detailed} where detailed is None or {bristle_deflection_m,
+    // kappa_prime}. Row length is the detailed brush's n_elements —
+    // it may differ from (stop - start) under injection, exactly like
+    // the oracle's free-standing DiscretisedBrush objects.
+    biketyre::PatchBrushState debug_model_patch_state(nb::handle raw) {
+        const wire::Dict entry{.value = wire::mapping(
+                                       raw,
+                                       "state.patch_states"),
+                               .path = "state.patch_states"};
+        wire::exact(entry, wire::keys("start", "stop", "kappa_prime",
+                                      "detailed"));
+        biketyre::PatchBrushState s;
+        s.start = wire::integer32(entry["start"],
+                                  "state.patch_states.start");
+        s.stop = wire::integer32(entry["stop"],
+                                 "state.patch_states.stop");
+        s.kappa_prime =
+                wire::real(entry["kappa_prime"],
+                           "state.patch_states.kappa_prime");
+        nb::handle const detailed = entry["detailed"];
+        if (detailed.is_none()) {
+            s.has_detailed = false;
+            return s;
+        }
+        const wire::Dict d{.value = wire::mapping(
+                                   detailed,
+                                   "state.patch_states.detailed"),
+                           .path = "state.patch_states.detailed"};
+        wire::exact(d, wire::keys("bristle_deflection_m",
+                                  "kappa_prime"));
+        const auto row = debug_carcass_row64(
+                d["bristle_deflection_m"],
+                "state.patch_states.detailed.bristle_deflection_m");
+        const std::span<const double> bristle =
+                debug_carcass_span(row);
+        s.has_detailed = true;
+        s.detailed_kappa_prime = wire::real(
+                d["kappa_prime"],
+                "state.patch_states.detailed.kappa_prime");
+        s.bristle_deflection_m.assign(bristle.begin(), bristle.end());
+        return s;
+    }
+
+    // The {carcass, patch_states} semantic-state intake — carcass
+    // rows are checked against the ring inside assign(), like the
+    // oracle's state-vs-ring gate; the patch pool validates bristle
+    // capacity.
+    void debug_model_restore_state(const nb::dict &raw,
+                                   biketyre::PneumaticTyreModel &model) {
+        const wire::Dict state{.value = raw, .path = "state"};
+        wire::exact(state, wire::keys("carcass", "patch_states"));
+        model.carcass_state().assign(
+                debug_carcass_state(state["carcass"]));
+        const nb::list slots = wire::sequence(
+                state["patch_states"], "state.patch_states");
+        std::vector<biketyre::PatchBrushState> states;
+        states.reserve(slots.size());
+        for (nb::handle const item: slots)
+            states.push_back(debug_model_patch_state(item));
+        model.restore_patch_states(states);
+    }
+
+    nb::dict debug_model_patch_state_dict(
+            const biketyre::PatchBrushState &s) {
+        nb::dict d;
+        d["start"] = s.start;
+        d["stop"] = s.stop;
+        d["kappa_prime"] = s.kappa_prime;
+        if (s.has_detailed) {
+            nb::dict det;
+            det["bristle_deflection_m"] = wire::owned_array<double>(
+                    s.bristle_deflection_m);
+            det["kappa_prime"] = s.detailed_kappa_prime;
+            d["detailed"] = det;
+        } else {
+            d["detailed"] = nb::none();
+        }
+        return d;
+    }
+
+    nb::dict debug_model_state_dict(
+            const biketyre::PneumaticTyreModel &model) {
+        nb::dict d;
+        d["carcass"] = debug_carcass_state_dict(model.carcass_state());
+        nb::list slots;
+        for (const biketyre::PatchBrushState &s:
+             model.patch_states())
+            slots.append(debug_model_patch_state_dict(s));
+        d["patch_states"] = std::move(slots);
+        return d;
+    }
+
+    nb::dict debug_model_rim_event_dict(
+            const biketyre::RimStrikeEvent &ev) {
+        nb::dict d;
+        d["x_m"] = ev.x_m;
+        d["speed_mps"] = ev.speed_mps;
+        d["peak_load_n"] = ev.peak_load_n;
+        d["peak_rim_force_n"] = ev.peak_rim_force_n;
+        d["absorbed_energy_j"] = ev.absorbed_energy_j;
+        return d;
+    }
+
+    // Every TyrePatchOutput / WheelOutputs field (model.py:34-108) —
+    // fixed 3-arrays stand in for the oracle's (3,) ndarrays.
+    nb::dict debug_model_patch_dict(
+            const biketyre::TyrePatchOutput &p) {
+        nb::dict d;
+        d["ray_start"] = p.ray_start;
+        d["ray_stop"] = p.ray_stop;
+        d["surface_name"] = p.surface_name;
+        d["normal_load_n"] = p.normal_load_n;
+        d["support_n"] = p.support_n;
+        d["tangential_force_n"] = p.tangential_force_n;
+        d["normal_force_world_n"] =
+                wire::owned_array<double>(p.normal_force_world_n);
+        d["tangent_world"] =
+                wire::owned_array<double>(p.tangent_world);
+        d["force_world_n"] =
+                wire::owned_array<double>(p.force_world_n);
+        d["centroid_world_m"] =
+                wire::owned_array<double>(p.centroid_world_m);
+        d["mean_deflection_m"] = p.mean_deflection_m;
+        d["contact_length_m"] = p.contact_length_m;
+        d["slip_ratio"] = p.slip_ratio;
+        d["transient_slip_ratio"] = p.transient_slip_ratio;
+        d["sliding_speed_mps"] = p.sliding_speed_mps;
+        d["slip_speed_mps"] = p.slip_speed_mps;
+        d["friction_coefficient"] = p.friction_coefficient;
+        d["fully_sliding"] = p.fully_sliding;
+        d["dissipated_power_w"] = p.dissipated_power_w;
+        return d;
+    }
+
+    nb::dict debug_model_outputs_dict(
+            const biketyre::WheelOutputs &out) {
+        nb::dict d;
+        d["tyre_name"] = out.tyre_name;
+        d["pressure_bar"] = out.pressure_bar;
+        d["hub_position_world_m"] =
+                wire::owned_array<double>(out.hub_position_world_m);
+        d["hub_velocity_world_mps"] =
+                wire::owned_array<double>(out.hub_velocity_world_mps);
+        d["omega_forward_radps"] = out.omega_forward_radps;
+        d["force_world_n"] =
+                wire::owned_array<double>(out.force_world_n);
+        d["normal_load_n"] = out.normal_load_n;
+        d["support_n"] = out.support_n;
+        d["mean_deflection_m"] = out.mean_deflection_m;
+        d["contact_length_m"] = out.contact_length_m;
+        d["slip_ratio"] = out.slip_ratio;
+        d["transient_slip_ratio"] = out.transient_slip_ratio;
+        d["fully_sliding"] = out.fully_sliding;
+        d["rim_strike_active"] = out.rim_strike_active;
+        if (out.rim_event.has_value())
+            d["rim_event"] = debug_model_rim_event_dict(*out.rim_event);
+        else
+            d["rim_event"] = nb::none();
+        d["dissipated_power_w"] = out.dissipated_power_w;
+        d["coverage_event"] = out.coverage_event;
+        d["airborne"] = out.airborne;
+        nb::list patches;
+        for (const biketyre::TyrePatchOutput &p: out.patches)
+            patches.append(debug_model_patch_dict(p));
+        d["patches"] = std::move(patches);
+        return d;
+    }
+
     OwnedTireSideInput side_input(const nb::dict &snaps, const char *side) {
         if (!snaps.contains(side))
             throw std::invalid_argument(
@@ -451,6 +699,133 @@ namespace {
         try { working = nb::cast<B1>(arr("patch_working")); }
         catch (const nb::cast_error &) { wire::invalid(parsed.child("patch_working"), "expected 1-D flag array"); }
         return {.loads = loads, .working = working, .effective_radius_m = wire::finite_real(arr("eff_radius"), parsed.child("eff_radius"))};
+    }
+
+    // Debug-only oracle surfaces for the whole-wheel pneumatic model
+    // — used by tests/reference/test_native_pneumatic_model.py to run
+    // identical multi-step sequences through
+    // biketyre::PneumaticTyreModel and sim/ride/tyre/model.py
+    // PneumaticTyre. The spec dict is the 18-field TyreSpecs wire; the
+    // tier dict carries the three consumed fields (name/timestep_s
+    // ride along unused); profile is {x0_m, dx_m, z_m}; surface_map is
+    // the {surface, sections} tire.surface_map wire; state is
+    // {carcass, patch_states}; step carries the per-call inputs —
+    // {hub, velocity, omega_forward_radps, dt_s} plus an optional
+    // {pressure} — so the bound signature stays under nine args
+    // (g++-16 -flto ICEs in the final RTL pass emitting the nanobind
+    // trampoline for a 9+ arg def in this TU). hub/velocity arrive as
+    // contiguous f64 rows the model itself length-checks (the
+    // oracle's ndarray shape gate), and the scalars go through
+    // wire::real so NaN/inf reach the model's own validation in
+    // oracle order. Returned is every WheelOutputs field — patches as
+    // a list of the 19 TyrePatchOutput fields — plus the post-call
+    // state.
+    // Kept out of NB_MODULE's body: the module-init function is large
+    // enough that g++-16 -flto ICEs in the final RTL pass when these
+    // lambdas are inlined into it. noinline keeps each trampoline out
+    // of the exec_impl ltrans partition too.
+    [[gnu::noinline]] void
+    bind_pneumatic_evaluate_debug(nb::module_ &m) {
+        m.def("_debug_pneumatic_evaluate",
+              // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python surface signature
+              [](nb::handle raw_spec, nb::handle raw_tier,
+                 nb::handle raw_profile, nb::handle raw_surface_map,
+                 nb::handle raw_state, nb::handle raw_step) {
+        const nativecfg::PneumaticTyreSpec spec =
+                debug_carcass_spec(raw_spec);
+        const DebugModelTier tier = debug_model_tier(raw_tier);
+        biketyre::PneumaticTyreModel model(
+                spec, tier.n_rays, tier.half_angle_deg,
+                tier.discretised_brush);
+        const biketyre::RoadProfile road =
+                debug_model_profile(raw_profile);
+        const nativecfg::SurfaceMap map =
+                debug_model_surface_map(raw_surface_map);
+        debug_model_restore_state(wire::mapping(raw_state, "state"),
+                                  model);
+        const wire::Dict step{
+                .value = wire::mapping(raw_step, "step"),
+                .path = "step"};
+        wire::exact(step,
+                    wire::keys("hub", "velocity",
+                               "omega_forward_radps", "dt_s"),
+                    wire::keys("pressure"));
+        // model.py:173-175 — an optional set_pressure call applied
+        // before the step, exercising the with_pressure mutation path
+        // (clamped write into the live spec).
+        if (step.contains("pressure") &&
+            !step["pressure"].is_none())
+            model.set_pressure(
+                    wire::real(step["pressure"], "step.pressure"));
+        const auto hub = debug_carcass_row64(
+                step["hub"], "step.hub");
+        const auto velocity = debug_carcass_row64(
+                step["velocity"], "step.velocity");
+        const biketyre::WheelOutputs &out = model.evaluate(
+                debug_carcass_span(hub), debug_carcass_span(velocity),
+                wire::real(step["omega_forward_radps"],
+                           "step.omega_forward_radps"),
+                road, map,
+                wire::real(step["dt_s"], "step.dt_s"));
+        nb::dict d = debug_model_outputs_dict(out);
+        d["state"] = debug_model_state_dict(model);
+        return d;
+    }, nb::arg("spec"), nb::arg("tier"), nb::arg("profile"),
+        nb::arg("surface_map"), nb::arg("state"), nb::arg("step"),
+        "Debug test surface: one PneumaticTyre.evaluate step — all "
+        "WheelOutputs fields (patches included) plus the post-call "
+        "carcass/patch state. step is {hub, velocity, "
+        "omega_forward_radps, dt_s[, pressure]}; a non-None pressure "
+        "runs set_pressure before the step.")
+    ;
+    }
+
+    [[gnu::noinline]] void
+    bind_pneumatic_pressure_debug(nb::module_ &m) {
+        m.def("_debug_pneumatic_model_set_pressure",
+              // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) named nb::args mirror the oracle's keyword order
+              [](nb::handle raw_spec, nb::handle raw_tier,
+                 double pressure_bar) {
+        const DebugModelTier tier = debug_model_tier(raw_tier);
+        biketyre::PneumaticTyreModel model(
+                debug_carcass_spec(raw_spec), tier.n_rays,
+                tier.half_angle_deg, tier.discretised_brush);
+        model.set_pressure(pressure_bar);
+        return model.tyre().pressure_bar;
+    }, nb::arg("spec"), nb::arg("tier"), nb::arg("pressure_bar"),
+        "Debug test surface: PneumaticTyre.set_pressure — returns the "
+        "post-clamp spec pressure_bar.")
+    ;
+    }
+
+    [[gnu::noinline]] void
+    bind_pneumatic_reset_debug(nb::module_ &m) {
+        m.def("_debug_pneumatic_model_reset",
+              // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) named nb::args mirror the oracle's keyword order
+              [](nb::handle raw_spec, nb::handle raw_tier,
+                 nb::handle raw_state) {
+        const DebugModelTier tier = debug_model_tier(raw_tier);
+        biketyre::PneumaticTyreModel model(
+                debug_carcass_spec(raw_spec), tier.n_rays,
+                tier.half_angle_deg, tier.discretised_brush);
+        debug_model_restore_state(wire::mapping(raw_state, "state"),
+                                  model);
+        model.reset();
+        nb::dict d;
+        d["outputs"] = debug_model_outputs_dict(model.last_outputs());
+        d["state"] = debug_model_state_dict(model);
+        return d;
+    }, nb::arg("spec"), nb::arg("tier"), nb::arg("state"),
+        "Debug test surface: PneumaticTyre.reset — restores the given "
+        "state, clears it and returns the WheelOutputs.empty snapshot "
+        "plus the cleared state.")
+    ;
+    }
+
+    void bind_pneumatic_model_debug(nb::module_ &m) {
+        bind_pneumatic_evaluate_debug(m);
+        bind_pneumatic_pressure_debug(m);
+        bind_pneumatic_reset_debug(m);
     }
 } // namespace
 
@@ -897,6 +1272,19 @@ NB_MODULE(bike_native, m) {
         "fields plus the post-call state (bristle_deflection_m, "
         "kappa_prime).")
     ;
+    m.def("_debug_pneumatic_interp",
+          [](double x, nb::handle raw_values, double left,
+             double right) {
+        const auto values = debug_carcass_row64(raw_values, "values");
+        return numeric::np_interp_unit_grid(
+                x, debug_carcass_span(values), left, right);
+    }, nb::arg("x"), nb::arg("values"), nb::arg("left"),
+        nb::arg("right"),
+        "Debug test surface: np.interp(x, np.arange(n), values, "
+        "left=lval, right=rval) for one query — covers the lenxp == 1 "
+        "branch, NaN/+-inf queries and out-of-range sentinels.")
+    ;
+    bind_pneumatic_model_debug(m);
     stepper_class
             .def(nb::init<const std::string &>())
             .def(nb::init<const std::string &, nb::handle>(),

@@ -806,3 +806,63 @@ def test_carcass_negative_zero_delta_and_inf_hits():
                        0.002, 3.0, 1.0)
     _assert_result_bitwise(got, want, '-0.0 delta')
     _assert_state_bitwise(got['state'], state, '-0.0 delta')
+
+
+# --------------------------------------------------------------------
+# np.interp on the unit knot grid — the dedicated lenxp == 1 branch
+# --------------------------------------------------------------------
+
+def test_pneumatic_interp_single_knot_bitwise():
+    """``_debug_pneumatic_interp`` with one value hits arr_interp's
+    dedicated lenxp == 1 loop (compiled_base.c:671-682), which runs
+    BEFORE any NaN check: x < 0 -> lval, x > 0 -> rval, everything
+    else — x == 0, -0.0 AND NaN — returns values[0]."""
+    xs = [0.0, -0.0, np.nan, -np.nan, 1e-300, -1e-300, 0.5, -0.5,
+          np.inf, -np.inf, np.nextafter(0.0, 1.0),
+          np.nextafter(0.0, -1.0)]
+    for x in xs:
+        want = float(np.interp(x, np.arange(1), np.array([7.25]),
+                               left=-9.5, right=11.75))
+        got = bike_native._debug_pneumatic_interp(
+            float(x), np.array([7.25]), -9.5, 11.75)
+        assert_bitwise_equal(got, want, f'len1 x={x!r}')
+
+
+def test_pneumatic_interp_multi_knot_bitwise():
+    """n >= 2 keeps the general path: NaN queries pass the payload
+    through, interior/exact-knot/last-knot/out-of-range probes all
+    match np.interp bitwise."""
+    values = np.array([2.0, -4.5, 8.25, -1.0])
+    xs = [np.nan, -np.nan, 0.0, -0.0, 1.0, 2.0, 3.0, 0.25, 1.5, 2.999,
+          3.0000000001, -1e-9, 4.0, np.inf, -np.inf,
+          np.nextafter(3.0, 0.0), np.nextafter(0.0, 1.0)]
+    for x in xs:
+        want = float(np.interp(x, np.arange(4), values, left=-9.5,
+                               right=11.75))
+        got = bike_native._debug_pneumatic_interp(
+            float(x), values, -9.5, 11.75)
+        assert_bitwise_equal(got, want, f'len4 x={x!r}')
+
+
+def test_pneumatic_interp_two_knot_and_empty():
+    """The n == 2 minimum-size general path, a zero-slope segment, and
+    the empty-row rejection on both sides."""
+    # Zero slope between equal knots — fma(0, x-x0, v) stays exact.
+    values = np.array([1.5, 1.5])
+    assert_bitwise_equal(
+        bike_native._debug_pneumatic_interp(0.5, values, -1.0, 1.0),
+        float(np.interp(0.5, np.arange(2), values, left=-1.0,
+                        right=1.0)))
+    # Two-element interpolation through the slope formula.
+    values = np.array([-3.0, 9.0])
+    for x in (0.25, 0.5, 0.75, np.nextafter(1.0, 0.0)):
+        assert_bitwise_equal(
+            bike_native._debug_pneumatic_interp(x, values, -7.0, 7.0),
+            float(np.interp(x, np.arange(2), values, left=-7.0,
+                            right=7.0)),
+            f'len2 x={x!r}')
+    # Empty values raise on both sides.
+    with pytest.raises(ValueError):
+        bike_native._debug_pneumatic_interp(0.5, np.empty(0), 0.0, 1.0)
+    with pytest.raises(ValueError):
+        np.interp(0.5, np.arange(0), np.empty(0), left=0.0, right=1.0)

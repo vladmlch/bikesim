@@ -34,6 +34,7 @@
 #include "config.hpp"
 #include "engaged.hpp"
 #include "numeric_numpy.hpp"
+#include "pneumatic/brush.hpp"
 #include "pneumatic/carcass.hpp"
 #include "pneumatic/geometry.hpp"
 #include "pneumatic/profile.hpp"
@@ -330,6 +331,78 @@ namespace {
         d["rim_event_peak_force_n"] = s.rim_event_peak_force_n();
         d["rim_event_energy_j"] = s.rim_event_energy_j();
         return d;
+    }
+
+    // --- Pneumatic brush debug-surface intake ----------------------
+    // The SurfaceSpec dict projection (terrain/surface.py:31-53) the
+    // brush surfaces share, plus the DiscretisedBrush state dict
+    // (bristle row + kappa_prime). Fields use wire::real — the kernels'
+    // own validation decides the domain, like the oracle's SurfaceSpec
+    // / brush.py checks.
+
+    nativecfg::SurfaceSpec debug_brush_surface(nb::handle raw) {
+        const wire::Dict surface{.value = wire::mapping(raw, "surface"),
+                                 .path = "surface"};
+        constexpr auto required = wire::keys(
+                "name", "mu_peak", "mu_slide",
+                "slip_stiffness_per_load", "stribeck_speed_mps");
+        wire::exact(surface, required);
+        nativecfg::SurfaceSpec s;
+        s.name = wire::string(surface["name"], surface.child("name"));
+        s.mu_peak =
+                wire::real(surface["mu_peak"], "surface.mu_peak");
+        s.mu_slide =
+                wire::real(surface["mu_slide"], "surface.mu_slide");
+        s.slip_stiffness_per_load =
+                wire::real(surface["slip_stiffness_per_load"],
+                           "surface.slip_stiffness_per_load");
+        s.stribeck_speed_mps =
+                wire::real(surface["stribeck_speed_mps"],
+                           "surface.stribeck_speed_mps");
+        return s;
+    }
+
+    biketyre::DiscretisedBrush debug_brush_state(nb::handle raw) {
+        const wire::Dict state{.value = wire::mapping(raw, "state"),
+                               .path = "state"};
+        constexpr auto required =
+                wire::keys("bristle_deflection_m", "kappa_prime");
+        wire::exact(state, required);
+        const auto row = debug_carcass_row64(
+                state["bristle_deflection_m"],
+                "state.bristle_deflection_m");
+        const std::span<const double> bristle = debug_carcass_span(row);
+        biketyre::DiscretisedBrush brush(
+                static_cast<std::int64_t>(bristle.size()));
+        std::ranges::copy(bristle,
+                          brush.bristle_deflection_m().begin());
+        brush.restore_kappa_prime(
+                wire::real(state["kappa_prime"], "state.kappa_prime"));
+        return brush;
+    }
+
+    nb::dict debug_brush_state_dict(const biketyre::DiscretisedBrush &b) {
+        nb::dict d;
+        d["bristle_deflection_m"] =
+                wire::owned_array<double>(b.bristle_deflection_m());
+        d["kappa_prime"] = b.kappa_prime();
+        return d;
+    }
+
+    nb::dict debug_brush_result_dict(const biketyre::BrushResult &r) {
+        nb::dict d;
+        d["force_n"] = r.force_n;
+        d["fully_sliding"] = r.fully_sliding;
+        d["friction_coefficient"] = r.friction_coefficient;
+        return d;
+    }
+
+    // Optional tread_stiffness_n_m2 — None maps to std::nullopt; the
+    // value itself stays wire::real so the kernel's own finite/nonneg
+    // check fires like the oracle's (brush.py:82-83).
+    std::optional<double> debug_optional_tread(nb::handle raw) {
+        if (raw.is_none()) return std::nullopt;
+        return wire::real(raw, "tread_stiffness_n_m2");
     }
 
     OwnedTireSideInput side_input(const nb::dict &snaps, const char *side) {
@@ -740,6 +813,89 @@ NB_MODULE(bike_native, m) {
         "Debug test surface: np.tanh(xs) and np.hypot(xs, ys) "
         "transcendental probes — the two non-trivial lowerings the "
         "carcass kernel uses.")
+    ;
+    // Debug-only oracle surfaces for the pneumatic brush kernels —
+    // used by tests/reference/test_native_pneumatic_brush.py to compare
+    // biketyre::relax / sigma_x / tread_stiffness_n_m2 / surface_mu /
+    // lumped_brush / DiscretisedBrush bitwise against
+    // sim/ride/tyre/brush.py. Not part of the runtime API. Scalar
+    // arguments arrive as raw doubles: each kernel's own validation
+    // order is the oracle's.
+    m.def("_debug_pneumatic_relax",
+          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python surface signature
+          [](double kappa_prime, double v_x_mps, double v_s_mps,
+             double sigma_m, double dt_s) {
+        return biketyre::relax(kappa_prime, v_x_mps, v_s_mps, sigma_m,
+                               dt_s);
+    }, nb::arg("kappa_prime"), nb::arg("v_x_mps"), nb::arg("v_s_mps"),
+        nb::arg("sigma_m"), nb::arg("dt_s"),
+        "Debug test surface: brush.relax scalar update.")
+    ;
+    m.def("_debug_pneumatic_sigma_x",
+          [](double kappa_prime) {
+        return biketyre::sigma_x(kappa_prime);
+    }, nb::arg("kappa_prime"),
+        "Debug test surface: brush._sigma_x slip input.")
+    ;
+    m.def("_debug_pneumatic_surface_mu",
+          [](nb::handle raw_surface, double sliding_speed_mps) {
+        return biketyre::surface_mu(debug_brush_surface(raw_surface),
+                                    sliding_speed_mps);
+    }, nb::arg("surface"), nb::arg("sliding_speed_mps"),
+        "Debug test surface: SurfaceSpec.mu Stribeck coefficient.")
+    ;
+    m.def("_debug_pneumatic_tread_stiffness",
+          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python surface signature
+          [](double normal_load_n, double half_length_m,
+             nb::handle raw_surface, nb::handle raw_tread) {
+        return biketyre::tread_stiffness_n_m2(
+                normal_load_n, half_length_m,
+                debug_brush_surface(raw_surface),
+                debug_optional_tread(raw_tread));
+    }, nb::arg("normal_load_n"), nb::arg("half_length_m"),
+        nb::arg("surface"), nb::arg("tread_stiffness_n_m2").none(),
+        "Debug test surface: brush._tread_stiffness_n_m2 c_px "
+        "resolution.")
+    ;
+    m.def("_debug_pneumatic_lumped_brush",
+          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python surface signature
+          [](double kappa_prime, double normal_load_n,
+             double half_length_m, nb::handle raw_surface,
+             nb::handle raw_tread, double sliding_speed_mps) {
+        return debug_brush_result_dict(biketyre::lumped_brush(
+                kappa_prime, normal_load_n, half_length_m,
+                debug_brush_surface(raw_surface),
+                debug_optional_tread(raw_tread), sliding_speed_mps));
+    }, nb::arg("kappa_prime"), nb::arg("normal_load_n"),
+        nb::arg("half_length_m"), nb::arg("surface"),
+        nb::arg("tread_stiffness_n_m2").none(),
+        nb::arg("sliding_speed_mps"),
+        "Debug test surface: brush.lumped_brush — BrushResult fields "
+        "(force_n, fully_sliding, friction_coefficient).")
+    ;
+    m.def("_debug_pneumatic_discretised_brush",
+          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python surface signature
+          [](nb::handle raw_loads, nb::handle raw_state,
+             double half_length_m, double v_x_mps, double v_s_mps,
+             double sigma_m, nb::handle raw_surface, double dt_s) {
+        const auto loads = debug_carcass_row64(raw_loads,
+                                               "normal_loads_n");
+        biketyre::DiscretisedBrush brush =
+                debug_brush_state(raw_state);
+        const biketyre::BrushResult result = brush.step(
+                debug_carcass_span(loads), half_length_m, v_x_mps,
+                v_s_mps, sigma_m, debug_brush_surface(raw_surface),
+                dt_s);
+        nb::dict d = debug_brush_result_dict(result);
+        d["state"] = debug_brush_state_dict(brush);
+        return d;
+    }, nb::arg("normal_loads_n"), nb::arg("state"),
+        nb::arg("half_length_m"), nb::arg("v_x_mps"),
+        nb::arg("v_s_mps"), nb::arg("sigma_m"), nb::arg("surface"),
+        nb::arg("dt_s"),
+        "Debug test surface: one DiscretisedBrush.step — BrushResult "
+        "fields plus the post-call state (bristle_deflection_m, "
+        "kappa_prime).")
     ;
     stepper_class
             .def(nb::init<const std::string &>())

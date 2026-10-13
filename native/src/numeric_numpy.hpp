@@ -181,6 +181,28 @@ namespace numeric {
         return r;
     }
 
+    // np.clip(x, lo, hi) with ARRAY bounds — the umath DOUBLE_clip
+    // generic loop (numpy/_core/src/umath/clip.cpp:148-153, 239-246):
+    // _NPY_CLIP = _NPY_MIN(_NPY_MAX(x, lo), hi) where, for the floating
+    // point tag, _NPY_MAX(a,b) = isnan(a) ? a : (a>b ? a : b) and
+    // _NPY_MIN(a,b) = isnan(a) ? a : (a<b ? a : b) — PyArray_MAX/MIN
+    // ternaries, NOT the fmaxnm/fminnm semantics of np_maximum/
+    // np_minimum. Observable differences (verified bitwise against
+    // numpy 2.5.2, array-bound form): clip(+0.0, -0.0, hi) yields
+    // -0.0 — the bound (second operand) wins every tie — where
+    // maximum/minimum composition yields +0.0, and a signaling-NaN
+    // input propagates with its payload unquieted. Do NOT use this
+    // helper for scalar-bounds clip: the const-minmax fast path
+    // (steps[1]==steps[2]==0, clip.cpp:162-201) is a DIFFERENT loop
+    // whose `x < min / x > max` tests resolve ties to the input —
+    // np.clip(+0.0, -0.0 scalar, hi) yields +0.0.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional bounds mirror np.clip(x, lo, hi)
+    [[nodiscard]] inline double np_clip(double x, double lo,
+                                        double hi) noexcept {
+        const double y = std::isnan(x) ? x : (x > lo ? x : lo);
+        return std::isnan(y) ? y : (y < hi ? y : hi);
+    }
+
     // np.interp(x, np.arange(n), values, left=lval, right=rval) — one
     // query on the integer knot grid. arr_interp behavior:
     //   x NaN              -> x (NaN passthrough keeps the payload);

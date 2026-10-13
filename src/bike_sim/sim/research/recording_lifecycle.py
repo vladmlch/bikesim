@@ -13,6 +13,7 @@ from uuid import uuid4
 
 from bike_sim.recording.capture import EpisodeJournal, RunCapture
 from bike_sim.recording.contracts import InputEvent, RunMetadata
+from bike_sim.recording.interrupt import InterruptShield
 from bike_sim.recording.native import iter_derived_events
 
 
@@ -117,6 +118,23 @@ class ResearchRun:
                 self.journal.emit_all((event,))
         return self._evidence
 
+    def _journal_deferred(self, shield):
+        """Journal a deferred operator interrupt while events are accepted.
+
+        Runs after the episode commits and before publication, so the
+        event stays inside a sealed episode's contiguous identity. A
+        journal or capture rejection is best-effort — observability never
+        breaks the shielded section. Returns True when journaled.
+        """
+        if not shield.deferred or not self.capture.enabled:
+            return False
+        try:
+            self.event('operator_stop_deferred',
+                       values={'deferred_during': 'publication'})
+        except Exception:
+            return False
+        return True
+
     def finish(self, *, primary=None, stop=False):
         if self.finalization_attempted:
             # Do not turn a failed publication into an automatic second attempt.
@@ -139,20 +157,44 @@ class ResearchRun:
         if cause is not None and not isinstance(cause, KeyboardInterrupt):
             self.env.run_metadata['launch_failure'] = {
                 'error_type': type(cause).__name__, 'error': str(cause)}
+        # Seal+finalize is one shielded section (R04): a second Ctrl-C is
+        # deferred behind the write instead of stranding journaled events
+        # against an unsealed episode. A deferred interrupt is journaled
+        # while events are still accepted, then re-raised where the
+        # launch would otherwise continue — and rides the notes of an
+        # in-flight error that is already propagating.
+        shield = InterruptShield()
+        journaled = False
         try:
-            if cause is not None:
-                self.event('launch_interrupted' if isinstance(cause, KeyboardInterrupt) else 'launch_failed',
-                           values={'error_type': type(cause).__name__, 'error': str(cause),
-                                   'cleanup_notes': list(getattr(cause, '__notes__', ()))})
-            reason = self.env.reason or ('operator_stop' if isinstance(cause, KeyboardInterrupt)
-                                         else 'simulation_error' if cause is not None else 'viewer_closed')
-            self.seal(reason=reason)
-            self.path = self.capture.finalize(self.out_root)
+            with shield:
+                if cause is not None:
+                    self.event('launch_interrupted' if isinstance(cause, KeyboardInterrupt) else 'launch_failed',
+                               values={'error_type': type(cause).__name__, 'error': str(cause),
+                                       'cleanup_notes': list(getattr(cause, '__notes__', ()))})
+                reason = self.env.reason or ('operator_stop' if isinstance(cause, KeyboardInterrupt)
+                                             else 'simulation_error' if cause is not None else 'viewer_closed')
+                self.seal(reason=reason)
+                journaled = self._journal_deferred(shield)
+                self.path = self.capture.finalize(self.out_root)
         except BaseException as error:
+            if shield.deferred and not journaled:
+                error.add_note('operator interrupt deferred during recording publication')
             if cause is not None:
                 cause.add_note(f'recording finalization failed: {type(error).__name__}: {error}')
                 raise cause from error
             raise
+        if shield.deferred:
+            propagating = cleanup_primary if cleanup_primary is not None else cause
+            if propagating is not None:
+                # Already unwinding: the deferral rides the notes instead
+                # of replacing the exception that owns the traceback.
+                if not journaled:
+                    propagating.add_note('operator interrupt deferred during recording publication')
+            else:
+                stop = KeyboardInterrupt()
+                if not journaled:
+                    stop.add_note('operator interrupt deferred during recording publication')
+                raise stop
         if cleanup_primary is not None:
             raise cleanup_primary
         return self.path

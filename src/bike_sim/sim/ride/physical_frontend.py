@@ -19,6 +19,7 @@ from uuid import uuid4
 
 from bike_sim.recording.capture import EpisodeJournal, RunCapture
 from bike_sim.recording.contracts import RunMetadata
+from bike_sim.recording.interrupt import InterruptShield
 from bike_sim.recording.native import iter_derived_events
 from bike_sim.sim.playback import PlaybackClock, COMPUTE_SLICE_S, RENDER_INTERVAL_S, speed_key
 from bike_sim.sim.ride.physical_driver import build_physical_driver
@@ -93,8 +94,10 @@ def _seal_episode(driver, capture, journal, *, reason, sealed, counter):
     Returns the episode summary, or ``None`` on a duplicate terminal
     notification for an already-sealed generation. A strict sealing
     rejection commits its owned prefix and sticky first failure, adjusts
-    the reason and retries once. Source facts (the monitor's first
-    failure) precede the derived transitions re-read from sealed channels.
+    the reason and retries once. The episode commits before any journal
+    emission, matching ``ResearchRun.seal``; source facts (the monitor's
+    first failure) precede the derived transitions re-read from sealed
+    channels.
     """
     from bike_sim.recording.native import episode_interval_for_time
     frame = driver.snapshot()
@@ -109,6 +112,11 @@ def _seal_episode(driver, capture, journal, *, reason, sealed, counter):
         if reason != 'simulation_error':
             reason = 'invalid_controller'
         evidence = driver.seal_episode(episode_id, reason=reason)
+    # Commit before journaling seal-time facts: an abort between them can
+    # then only leave a committed episode short of its derived events,
+    # never events referencing an unsealed episode (which finalize would
+    # be required to reject, losing the whole recording).
+    capture.add_episode(evidence)
     if journal is not None and journal.episode_id == episode_id:
         failure = _failure_fields(evidence.summary.get('first_failure'))
         if failure[1]:
@@ -126,7 +134,6 @@ def _seal_episode(driver, capture, journal, *, reason, sealed, counter):
             evidence.physical.episode, episode_id,
             start_event_id=journal.next_id,
             received_wall_s=time.monotonic()))
-    capture.add_episode(evidence)
     sealed.add(frame.generation)
     counter[0] += 1
     return evidence.summary
@@ -140,6 +147,39 @@ def _new_journal(capture, episode_id, *, step, generation=None):
                          'generation': (None if generation is None
                                         else int(generation))})
     return journal
+
+
+def _journal_deferred(capture, journal, shield, *, step):
+    """Journal a deferred operator interrupt while events are accepted.
+
+    Runs after the episode commits and before publication, so the event
+    stays inside a sealed episode's contiguous identity. A journal or
+    capture rejection is best-effort — observability never breaks the
+    shielded section. Returns True when the interrupt was journaled.
+    """
+    if not shield.deferred or journal is None or capture is None \
+            or not capture.enabled:
+        return False
+    try:
+        journal.emit('operator_stop_deferred',
+                     received_wall_s=time.monotonic(),
+                     processed_step=int(step), applied_step=None,
+                     values={'record': 'lifecycle'})
+    except Exception:
+        return False
+    return True
+
+
+def _deferred_stop(*, journaled):
+    """Re-raise the deferred operator interrupt after evidence is safe.
+
+    When the interrupt landed too late to journal (mid-finalize), the
+    note keeps it observable on the propagating exception instead.
+    """
+    stop = KeyboardInterrupt()
+    if not journaled:
+        stop.add_note('operator interrupt deferred during recording publication')
+    return stop
 
 
 def run_headless(track, args, seed, rider, *, capture=None):
@@ -186,19 +226,35 @@ def run_headless(track, args, seed, rider, *, capture=None):
             driver.metadata['failure'] = f'{type(error).__name__}: {error}'
         if recording:
             sealed, counter = set(), [0]
-            summary = _seal_episode(
-                driver, capture, journal, reason=reason,
-                sealed=sealed, counter=counter)
-            if summary is None:
-                summary = driver.summary(reason)
+            # Seal+finalize is one shielded section (R04): a second
+            # Ctrl-C mid-write is deferred and honored after the
+            # recording is safe, never delivered into the write itself.
+            shield = InterruptShield()
+            journaled = False
             try:
-                published = capture.finalize(out)
-            except BaseException as publish_error:
-                if driver.metadata.get('failure'):
-                    publish_error.add_note(
-                        f'primary failure before publication: '
-                        f'{driver.metadata["failure"]}')
+                with shield:
+                    summary = _seal_episode(
+                        driver, capture, journal, reason=reason,
+                        sealed=sealed, counter=counter)
+                    if summary is None:
+                        summary = driver.summary(reason)
+                    journaled = _journal_deferred(
+                        capture, journal, shield, step=driver.step)
+                    try:
+                        published = capture.finalize(out)
+                    except BaseException as publish_error:
+                        if driver.metadata.get('failure'):
+                            publish_error.add_note(
+                                f'primary failure before publication: '
+                                f'{driver.metadata["failure"]}')
+                        raise
+            except BaseException as error:
+                if shield.deferred and not journaled:
+                    error.add_note('operator interrupt deferred during '
+                                   'recording publication')
                 raise
+            if shield.deferred:
+                raise _deferred_stop(journaled=journaled)
         else:
             # Recording off writes nothing — not even empty artifacts.
             # Explicit programmatic driver.export() remains the opt-in for
@@ -423,8 +479,18 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
                             last_hud = now
                     time.sleep(.001)
             reason = driver.reason or 'viewer_closed'
-            seal_episode(reason)
-            published = capture.finalize(out)
+            # Seal+finalize under the SIGINT shield (R04): a Ctrl-C here
+            # is deferred until the recording is committed on disk, then
+            # re-raised as the operator's intent into the cleanup path.
+            shield = InterruptShield()
+            journaled = False
+            with shield:
+                seal_episode(reason)
+                journaled = _journal_deferred(
+                    capture, journal, shield, step=driver.step)
+                published = capture.finalize(out)
+            if shield.deferred:
+                raise _deferred_stop(journaled=journaled)
             if preview is not None:
                 frame = driver.snapshot()
                 preview.write(frame.time_s, frame.generation,
@@ -453,15 +519,26 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
         interrupt = isinstance(error, KeyboardInterrupt)
         if not interrupt:
             driver.metadata['failure'] = f'{type(error).__name__}: {error}'
-        try:
-            seal_episode('operator_stop' if interrupt else 'simulation_error')
-        except BaseException as cleanup:
-            error.add_note(f'physical episode sealing failed: {type(cleanup).__name__}: {cleanup}')
-        try:
-            if capture is not None:
-                capture.finalize(out)
-        except BaseException as cleanup:
-            error.add_note(f'run recording finalize failed: {type(cleanup).__name__}: {cleanup}')
+        # The same shielded seal+finalize runs during cleanup (R04): a
+        # repeat/forwarded Ctrl-C is deferred behind the write instead of
+        # corrupting the evidence the launch still owns. The in-flight
+        # error re-raises regardless, so the deferral rides its notes.
+        shield = InterruptShield()
+        journaled = False
+        with shield:
+            try:
+                seal_episode('operator_stop' if interrupt else 'simulation_error')
+            except BaseException as cleanup:
+                error.add_note(f'physical episode sealing failed: {type(cleanup).__name__}: {cleanup}')
+            journaled = _journal_deferred(
+                capture, journal, shield, step=driver.step)
+            try:
+                if capture is not None:
+                    capture.finalize(out)
+            except BaseException as cleanup:
+                error.add_note(f'run recording finalize failed: {type(cleanup).__name__}: {cleanup}')
+        if shield.deferred and not journaled:
+            error.add_note('operator interrupt deferred during recording cleanup')
         raise
     finally:
         driver.close()

@@ -1,10 +1,13 @@
 """RunCapture contract tests: ownership, identity, ordering, finalization."""
 from pathlib import Path
+import signal
+import threading
 
 import pytest
 
 from bike_sim.recording.capture import EpisodeJournal, RunCapture
 from bike_sim.recording.contracts import EpisodeEvidence, InputEvent, RunMetadata
+from bike_sim.recording.interrupt import InterruptShield
 
 from _recording_support import (
     TreePhysicalSource, episode, run_metadata, sample_row,
@@ -293,3 +296,43 @@ def test_appends_are_rejected_after_publication(tmp_path):
         failed.finalize(tmp_path / 'x')
     with pytest.raises(RuntimeError):
         failed.event(_event(0, 0))
+
+
+def test_interrupt_shield_defers_sigint_and_restores_handler():
+    """On the main thread a shielded Ctrl-C is counted, not raised, and
+    the previous handler is always restored on exit."""
+    previous = signal.getsignal(signal.SIGINT)
+    shield = InterruptShield()
+    with shield:
+        signal.raise_signal(signal.SIGINT)
+        assert shield.deferred == 1
+        signal.raise_signal(signal.SIGINT)
+        assert signal.getsignal(signal.SIGINT) == shield.note
+    assert shield.deferred == 2
+    assert signal.getsignal(signal.SIGINT) is previous
+
+
+def test_interrupt_shield_restores_on_body_failure():
+    previous = signal.getsignal(signal.SIGINT)
+    shield = InterruptShield()
+    with pytest.raises(RuntimeError, match='boom'):
+        with shield:
+            raise RuntimeError('boom')
+    assert signal.getsignal(signal.SIGINT) is previous
+
+
+def test_interrupt_shield_is_a_flag_holder_off_main_thread():
+    """``signal.signal`` cannot install handlers off the main thread; the
+    shield degrades to a flag holder and the section still runs."""
+    shield = InterruptShield()
+    outcome = []
+    def work():
+        with shield:
+            shield.note()   # the injected-hook seam still records
+            outcome.append('done')
+    worker = threading.Thread(target=work)
+    worker.start()
+    worker.join(timeout=10)
+    assert outcome == ['done']
+    assert shield.deferred == 1
+    assert shield._previous is None

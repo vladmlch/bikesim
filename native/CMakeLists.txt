@@ -457,7 +457,9 @@ endif()
 # Share Python-free core code with direct native contract tests: the
 # drivetrain/policy TUs plus the owning writer cores (suspension, brake,
 # resistance, rider_forces, tire) whose warm-core entries the R1 contract
-# cases exercise. The object is compiled once with the extension's complete
+# cases exercise, plus the pneumatic geometry kernel the same single-TU
+# convention keeps linkable for later writer work. The object is compiled
+# once with the extension's complete
 # warning, hardening, sanitizer, and coverage context, and remains PIC for
 # module linkage. The contract binary links these objects directly, so each
 # TU keeps exactly one translation unit across all targets (the ODR sweep
@@ -471,6 +473,7 @@ add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/drivetrain/freehub.cpp src/writers/drivetrain.cpp
   src/writers/cruise.cpp src/tyre/profile.cpp
   src/tyre/distance.cpp src/tyre/station.cpp
+  src/pneumatic/geometry.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp
   src/rider/least_squares.cpp src/runtime/samples.cpp
   src/runtime/wire.cpp

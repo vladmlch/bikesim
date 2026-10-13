@@ -18,6 +18,7 @@
 #include <cmath>
 #include <exception>
 #include <memory>
+#include <numbers>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -32,6 +33,8 @@
 #include "stepper.hpp"
 #include "config.hpp"
 #include "engaged.hpp"
+#include "pneumatic/geometry.hpp"
+#include "pneumatic/profile.hpp"
 #include "tyre/distance.hpp"
 #include "binding_readers.hpp"
 #include "binding_arrays.hpp"
@@ -154,6 +157,31 @@ namespace {
                 });
             });
         return {data, {values.size() / 2, 2}, owner};
+    }
+
+    // Owned (K,2) int32 array — the same capsule-owner discipline as
+    // as_owned_grid, for the _debug_pneumatic_patches surface's index
+    // pairs.
+    nb::ndarray<nb::numpy, std::int32_t, nb::shape<-1, -1>>
+    as_owned_pairs32(std::span<const std::pair<int, int>> pairs) {
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) ndarray requires runtime-sized contiguous primitive storage
+        auto storage = std::make_unique<std::int32_t[]>(2 * pairs.size());
+        const std::span<std::int32_t> destination = std::views::counted(
+            storage.get(),
+            static_cast<std::ptrdiff_t>(2 * pairs.size()));
+        for (std::size_t i = 0; i < pairs.size(); ++i) {
+            destination[2 * i] = static_cast<std::int32_t>(pairs[i].first);
+            destination[2 * i + 1] =
+                static_cast<std::int32_t>(pairs[i].second);
+        }
+        auto [data, owner] = wire::detail::release_with_owner(
+            std::move(storage), [](std::int32_t *value) {
+                return nb::capsule(value, [](void *p) noexcept {
+                    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) capsule owns the released unique_ptr array
+                    delete[] static_cast<std::int32_t *>(p);
+                });
+            });
+        return {data, {pairs.size(), 2}, owner};
     }
 
     OwnedTireSideInput side_input(const nb::dict &snaps, const char *side) {
@@ -340,6 +368,86 @@ NB_MODULE(bike_native, m) {
     }, nb::arg("vertices"), nb::arg("points"),
         "Debug test surface: signed profile distance oracle rows "
         "(distance, normal, point, segment, nonsmooth) for (N,2) inputs.")
+    ;
+    // Debug-only oracle surfaces for the pneumatic geometry kernel —
+    // used by tests/reference/test_native_pneumatic_geometry.py to
+    // compare biketyre::RayRing / RoadProfile / intersect / patches
+    // bitwise against sim/ride/tyre/geometry.py. Not part of the runtime
+    // API. The half angle arrives in degrees and is converted with the
+    // oracle's own expression (model.py:30,162 — deg * (np.pi/180)).
+    m.def("_debug_pneumatic_ring",
+          [](std::int64_t n_rays, double half_angle_deg) {
+        const biketyre::RayRing ring(
+            n_rays, half_angle_deg * (std::numbers::pi / 180.0));
+        nb::dict d;
+        d["theta_rad"] = wire::owned_array<double>(ring.theta_rad());
+        d["ux"] = wire::owned_array<double>(ring.ux());
+        d["uz"] = wire::owned_array<double>(ring.uz());
+        d["dtheta_rad"] = ring.dtheta_rad();
+        return d;
+    }, nb::arg("n_rays"), nb::arg("half_angle_deg"),
+        "Debug test surface: pneumatic RayRing rows "
+        "(theta_rad, ux, uz, dtheta_rad) for (n_rays, half_angle_deg).")
+    ;
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional args mirror the Python oracle's intersect()
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional args mirror the Python oracle's intersect()
+    m.def("_debug_pneumatic_intersect",
+          [](nb::handle raw_profile, double centre_x_m, double centre_z_m,
+             double radius_m, std::int64_t n_rays, double half_angle_deg) {
+        // NOLINTEND(bugprone-easily-swappable-parameters)
+        const wire::Dict profile{.value = wire::mapping(raw_profile,
+                                                       "profile"),
+                                 .path = "profile"};
+        wire::exact(profile, wire::keys("x0_m", "dx_m", "z_m"));
+        using Row = nb::ndarray<const double, nb::shape<-1>, nb::c_contig>;
+        Row z_wire;
+        try {
+            z_wire = nb::cast<Row>(profile["z_m"]);
+        } catch (const nb::cast_error &) {
+            wire::invalid("profile.z_m",
+                          "expected a contiguous float64 array");
+        }
+        std::vector<double> z(z_wire.shape(0));
+        for (std::size_t i = 0; i < z.size(); ++i)
+            z[i] = z_wire(static_cast<std::ptrdiff_t>(i));
+        const biketyre::RoadProfile road(
+            wire::finite_real(profile["x0_m"], "profile.x0_m"),
+            wire::finite_real(profile["dx_m"], "profile.dx_m"),
+            std::move(z));
+        const biketyre::RayRing ring(
+            n_rays, half_angle_deg * (std::numbers::pi / 180.0));
+        const biketyre::RayHits hits = biketyre::intersect(
+            ring, centre_x_m, centre_z_m, radius_m, road);
+        nb::dict d;
+        d["r_m"] = wire::owned_array<double>(hits.r_m);
+        d["delta_m"] = wire::owned_array<double>(hits.delta_m);
+        d["road_x_m"] = wire::owned_array<double>(hits.road_x_m);
+        d["road_z_m"] = wire::owned_array<double>(hits.road_z_m);
+        d["coverage_event"] = hits.coverage_event;
+        d["airborne"] = hits.airborne;
+        return d;
+    }, nb::arg("profile"), nb::arg("centre_x_m"), nb::arg("centre_z_m"),
+        nb::arg("radius_m"), nb::arg("n_rays"), nb::arg("half_angle_deg"),
+        "Debug test surface: pneumatic intersect row set "
+        "(r_m, delta_m, road_x_m, road_z_m, coverage_event, airborne) for "
+        "a {x0_m, dx_m, z_m} profile dict.")
+    ;
+    m.def("_debug_pneumatic_patches",
+          [](nb::handle raw_delta) {
+        using Row = nb::ndarray<const double, nb::shape<-1>, nb::c_contig>;
+        Row delta;
+        try {
+            delta = nb::cast<Row>(raw_delta);
+        } catch (const nb::cast_error &) {
+            wire::invalid("delta_m",
+                          "expected a contiguous float64 array");
+        }
+        const std::span<const double> delta_m = std::views::counted(
+            delta.data(), static_cast<std::ptrdiff_t>(delta.shape(0)));
+        return as_owned_pairs32(biketyre::patches(delta_m));
+    }, nb::arg("delta_m"),
+        "Debug test surface: pneumatic patches() as an int32 (K,2) "
+        "(start, stop) array for a 1-D deflection row.")
     ;
     stepper_class
             .def(nb::init<const std::string &>())

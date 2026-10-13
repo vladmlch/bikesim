@@ -192,7 +192,7 @@ def run_headless(track, args, seed, rider, *, capture=None):
             if summary is None:
                 summary = driver.summary(reason)
             try:
-                capture.finalize(out)
+                published = capture.finalize(out)
             except BaseException as publish_error:
                 if driver.metadata.get('failure'):
                     publish_error.add_note(
@@ -203,6 +203,7 @@ def run_headless(track, args, seed, rider, *, capture=None):
             # Recording off writes nothing — not even empty artifacts.
             # Explicit programmatic driver.export() remains the opt-in for
             # callers that want the legacy bundle (R02).
+            published = None
             reason = _check_tail_failure(driver, reason)
             summary = driver.summary(reason=reason)
         if recording and not args.no_plots and driver.recorder.rows:
@@ -210,7 +211,11 @@ def run_headless(track, args, seed, rider, *, capture=None):
             plot_physical_ride(driver.recorder.columns(), out)
         from bike_sim.sim.ride.console import outcome
         end = summary['outcome']
-        outcome(f"[bike-ride] {reason}: {end['time_s']:.6f} s, {end['position_m']:.3f} m -> {out}")
+        # Name only what exists: the sealed recording, or nothing at all.
+        detail = f' -> {published}' if published is not None \
+            else '; recording off (no files)'
+        outcome(f"[bike-ride] {reason}: {end['time_s']:.6f} s, "
+                f"{end['position_m']:.3f} m{detail}")
         return physical_exit_code(reason, summary)
     finally:
         driver.close()

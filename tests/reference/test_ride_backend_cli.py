@@ -124,10 +124,15 @@ def test_cli_dispatches_every_live_and_headless_route(tmp_path, monkeypatch):
                         lambda track, args, rider:
                         calls.append(('ride-research', args.backend, args.time_scale)) or 0)
     seen = {}
-    def environment(args):
+    def environment(args, **kwargs):
         seen['args'] = args
+        seen['kwargs'] = kwargs
         return SimpleNamespace(done=True, save=lambda *a, **k: None,
-            reason='duration_reached', error=None,
+            reason='duration_reached', error=None, backend=args.backend,
+            capture_mode=kwargs.get('capture_mode', 'off'),
+            metadata={}, execution={}, run_metadata={},
+            config=SimpleNamespace(stop_on_model_violation=True),
+            sim=SimpleNamespace(steps=0, time_s=0.),
             tracker=SimpleNamespace(metrics={}), close=lambda *a, **k: None)
     monkeypatch.setattr(research_cli, 'make_environment', environment)
     monkeypatch.setattr(research_cli, 'episode_exit_code', lambda env: 9)

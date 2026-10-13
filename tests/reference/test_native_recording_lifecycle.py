@@ -522,6 +522,31 @@ def test_headless_zero_step_failure_keeps_owned_episode(tmp_path, monkeypatch):
     assert driver.closed
 
 
+@pytest.mark.parametrize('record', [False, True])
+def test_headless_trailer_names_only_existing_artifacts(
+        tmp_path, monkeypatch, capsys, record):
+    """Off-record the run dir is never created, so the trailer says so;
+    on-record it names the actual sealed path the publisher returned."""
+    import bike_sim.sim.ride.physical_frontend as frontend
+    driver = _headless_driver()
+    monkeypatch.setattr(frontend, 'build_physical_driver',
+                        lambda *args, **kwargs: driver)
+    published = []
+    capture = _capture(published, mode='headless') if record else None
+    code = frontend.run_headless(
+        SimpleNamespace(name='fake'), _headless_args(tmp_path, record=record),
+        0, None, capture=capture)
+    assert code == 0
+    line = capsys.readouterr().out.strip().splitlines()[-1]
+    if record:
+        marker = str(published[0][1]/'recording.marker')
+        assert line.endswith(f'-> {marker}')
+        assert 'no files' not in line
+    else:
+        assert 'recording off (no files)' in line
+        assert '->' not in line
+
+
 def test_headless_off_writes_no_artifact_files(native_module, tmp_path):
     """Without --record a real native headless launch writes NOTHING under
     --out: no telemetry.csv, intervals.jsonl or preview artifacts — not

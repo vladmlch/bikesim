@@ -164,7 +164,8 @@ def _journal_deferred(capture, journal, shield, *, step):
         journal.emit('operator_stop_deferred',
                      received_wall_s=time.monotonic(),
                      processed_step=int(step), applied_step=None,
-                     values={'record': 'lifecycle'})
+                     values={'record': 'lifecycle',
+                             'deferred_during': 'publication'})
     except Exception:
         return False
     return True

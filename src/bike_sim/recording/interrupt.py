@@ -30,6 +30,7 @@ class InterruptShield:
 
     def __init__(self):
         self.deferred = 0
+        self._installed = False
         self._previous = None
 
     def note(self, signum=None, frame=None):
@@ -37,15 +38,27 @@ class InterruptShield:
         self.deferred += 1
 
     def __enter__(self):
+        if self._installed:
+            raise RuntimeError('InterruptShield is not re-entrant')
         if threading.current_thread() is threading.main_thread():
             try:
+                # signal.signal returns None when the previous handler was
+                # installed from C; track installation separately so the
+                # restore below can never leak this shield's handler.
                 self._previous = signal.signal(signal.SIGINT, self.note)
+                self._installed = True
             except (ValueError, OSError, RuntimeError):
                 self._previous = None
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        if self._previous is not None:
-            signal.signal(signal.SIGINT, self._previous)
+        if self._installed:
+            self._installed = False
+            try:
+                signal.signal(signal.SIGINT,
+                              signal.default_int_handler
+                              if self._previous is None else self._previous)
+            except (ValueError, OSError, RuntimeError):
+                pass
             self._previous = None
         return False

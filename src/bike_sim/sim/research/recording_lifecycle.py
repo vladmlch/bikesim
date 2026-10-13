@@ -184,17 +184,16 @@ class ResearchRun:
                 raise cause from error
             raise
         if shield.deferred:
-            propagating = cleanup_primary if cleanup_primary is not None else cause
-            if propagating is not None:
+            if cause is not None:
                 # Already unwinding: the deferral rides the notes instead
                 # of replacing the exception that owns the traceback.
                 if not journaled:
-                    propagating.add_note('operator interrupt deferred during recording publication')
+                    cause.add_note('operator interrupt deferred during recording publication')
             else:
-                stop = KeyboardInterrupt()
+                interrupt = KeyboardInterrupt()
                 if not journaled:
-                    stop.add_note('operator interrupt deferred during recording publication')
-                raise stop
+                    interrupt.add_note('operator interrupt deferred during recording publication')
+                raise interrupt
         if cleanup_primary is not None:
             raise cleanup_primary
         return self.path

@@ -76,6 +76,20 @@ def _tire_snapshot_row(tire) -> dict:
     return row
 
 
+def _tire_diagnostics_row(tire) -> dict:
+    """JSON-able per-side copy of the committed diagnostics dict for one step.
+
+    The backend diagnostics are plain scalars (floats, ints, bools, names) —
+    ``dict(diag)`` copies the published row so a later commit cannot mutate
+    the recorded one. JSON round-trips every cell exactly (binary64 repr for
+    floats, literals for the flag/int/string cells).
+    """
+    diagnostics = getattr(tire, 'diagnostics', None) if tire is not None else None
+    if not diagnostics:
+        return {}
+    return {side: dict(diag) for side, diag in diagnostics.items()}
+
+
 def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
     sim = env.sim
     runtime = sim.physical
@@ -125,6 +139,7 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
     acc.add = spied_add
     runtime.apply_forces = spied_apply
     controls, rows, tire_snapshots = [], [], []
+    tire_diagnostics = []
     tire = runtime.tire
     try:
         for _ in range(steps):
@@ -132,6 +147,7 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
             controls.append(asdict(runtime.applied_control))
             rows.extend(s.as_dict() for s in runtime.completed_samples)
             tire_snapshots.append(_tire_snapshot_row(tire))
+            tire_diagnostics.append(_tire_diagnostics_row(tire))
     finally:
         # Removing the instance attributes restores the class-bound methods.
         del acc.add
@@ -140,9 +156,10 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
 
     nq, nv, na, nu = sim.model.nq, sim.model.nv, sim.model.na, sim.model.nu
     k = len(records)
-    if k != len(tire_snapshots):
-        raise RuntimeError('capture_episode: physics records and tire snapshot '
-                           'rows must have equal length')
+    if k != len(tire_snapshots) or k != len(tire_diagnostics):
+        raise RuntimeError('capture_episode: physics records, tire snapshot '
+                           'rows and tire diagnostics rows must have equal '
+                           'length')
     def stack(key, width):
         return (np.array([r[key] for r in records]) if records
                 else np.empty((0, width)))
@@ -171,6 +188,7 @@ def capture_episode(env, steps: int, control: RideControl) -> EpisodeArtifact:
         'physics_steps': k,
         'dt_s': float(sim.model.opt.timestep),
         'tire_snapshots': tire_snapshots,
+        'tire_diagnostics': tire_diagnostics,
     }
     if stray_adds:
         # acc.add ran with no open step record — an instrumentation anomaly,

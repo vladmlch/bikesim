@@ -33,6 +33,8 @@
 #include "stepper.hpp"
 #include "config.hpp"
 #include "engaged.hpp"
+#include "numeric_numpy.hpp"
+#include "pneumatic/carcass.hpp"
 #include "pneumatic/geometry.hpp"
 #include "pneumatic/profile.hpp"
 #include "tyre/distance.hpp"
@@ -182,6 +184,152 @@ namespace {
                 });
             });
         return {data, {pairs.size(), 2}, owner};
+    }
+
+    // --- Pneumatic carcass debug-surface intake ---------------------
+    // Contiguous float64 row plus the TyreSpecs / RayHits /
+    // CarcassState dict projections the _debug_pneumatic_carcass*
+    // surfaces share. State dicts omit n_rays — the shared row length
+    // stands in for it (the kernel's own state-vs-ring check then
+    // fires exactly like the oracle's).
+
+    nb::ndarray<const double, nb::shape<-1>, nb::c_contig>
+    debug_carcass_row64(nb::handle value, std::string_view path) {
+        try {
+            return nb::cast<nb::ndarray<const double, nb::shape<-1>,
+                                        nb::c_contig>>(value);
+        } catch (const nb::cast_error &) {
+            wire::invalid(path, "expected a contiguous float64 array");
+        }
+    }
+
+    std::span<const double> debug_carcass_span(
+            const nb::ndarray<const double, nb::shape<-1>,
+                              nb::c_contig> &row) noexcept {
+        return std::views::counted(
+                row.data(), static_cast<std::ptrdiff_t>(row.shape(0)));
+    }
+
+    std::vector<double> debug_carcass_row_vec(const wire::Dict &d,
+                                              const char *key) {
+        const auto row = debug_carcass_row64(d[key], d.child(key));
+        const std::span<const double> s = debug_carcass_span(row);
+        return {s.begin(), s.end()};
+    }
+
+    // The 18 TyreSpecs fields (physics/tyre.py:64-78) — wire::real
+    // keeps the oracle's domain (TyreSpecs.__post_init__ only bounds
+    // signs: an inf passes `> 0`, and the kernel would propagate it).
+    nativecfg::PneumaticTyreSpec debug_carcass_spec(nb::handle raw) {
+        const wire::Dict spec{.value = wire::mapping(raw, "spec"),
+                              .path = "spec"};
+        constexpr auto required = wire::keys(
+                "name", "outer_radius_mm", "rim_radius_mm",
+                "section_height_mm", "pressure_bar", "crr_reference",
+                "casing_width_mm", "compressed_casing_mm", "area_factor",
+                "carcass_stiffness_n_mm2", "contact_length_factor",
+                "rate_stiffening", "rate_relaxation_s", "loss_factor",
+                "hysteresis_rate_eps_mps", "relaxation_length_mm",
+                "rim_stiffness_n_mm2", "tread_loss_crr");
+        wire::exact(spec, required);
+        nativecfg::PneumaticTyreSpec t;
+        t.name = wire::string(spec["name"], spec.child("name"));
+        t.outer_radius_mm =
+                wire::real(spec["outer_radius_mm"], "spec.outer_radius_mm");
+        t.rim_radius_mm =
+                wire::real(spec["rim_radius_mm"], "spec.rim_radius_mm");
+        t.section_height_mm = wire::real(spec["section_height_mm"],
+                                         "spec.section_height_mm");
+        t.pressure_bar =
+                wire::real(spec["pressure_bar"], "spec.pressure_bar");
+        t.crr_reference =
+                wire::real(spec["crr_reference"], "spec.crr_reference");
+        t.casing_width_mm = wire::real(spec["casing_width_mm"],
+                                       "spec.casing_width_mm");
+        t.compressed_casing_mm = wire::real(spec["compressed_casing_mm"],
+                                            "spec.compressed_casing_mm");
+        t.area_factor =
+                wire::real(spec["area_factor"], "spec.area_factor");
+        t.carcass_stiffness_n_mm2 = wire::real(
+                spec["carcass_stiffness_n_mm2"],
+                "spec.carcass_stiffness_n_mm2");
+        t.contact_length_factor = wire::real(
+                spec["contact_length_factor"], "spec.contact_length_factor");
+        t.rate_stiffening =
+                wire::real(spec["rate_stiffening"], "spec.rate_stiffening");
+        t.rate_relaxation_s = wire::real(spec["rate_relaxation_s"],
+                                         "spec.rate_relaxation_s");
+        t.loss_factor =
+                wire::real(spec["loss_factor"], "spec.loss_factor");
+        t.hysteresis_rate_eps_mps = wire::real(
+                spec["hysteresis_rate_eps_mps"],
+                "spec.hysteresis_rate_eps_mps");
+        t.relaxation_length_mm = wire::real(spec["relaxation_length_mm"],
+                                            "spec.relaxation_length_mm");
+        t.rim_stiffness_n_mm2 = wire::real(
+                spec["rim_stiffness_n_mm2"], "spec.rim_stiffness_n_mm2");
+        t.tread_loss_crr = wire::real(spec["tread_loss_crr"],
+                                      "spec.tread_loss_crr");
+        return t;
+    }
+
+    biketyre::CarcassState debug_carcass_state(nb::handle raw) {
+        const wire::Dict state{.value = wire::mapping(raw, "state"),
+                               .path = "state"};
+        constexpr auto required = wire::keys(
+                "delta_prev_m", "elastic_prev_n", "maxwell_force_n",
+                "initialized", "rim_strike_active", "rim_event_x_m",
+                "rim_event_speed_mps", "rim_event_peak_load_n",
+                "rim_event_peak_force_n", "rim_event_energy_j");
+        wire::exact(state, required);
+        const auto delta = debug_carcass_row64(state["delta_prev_m"],
+                                               "state.delta_prev_m");
+        const auto elastic = debug_carcass_row64(state["elastic_prev_n"],
+                                                 "state.elastic_prev_n");
+        const auto maxwell = debug_carcass_row64(state["maxwell_force_n"],
+                                                 "state.maxwell_force_n");
+        if (elastic.shape(0) != delta.shape(0) ||
+            maxwell.shape(0) != delta.shape(0))
+            wire::invalid("state", "history rows must share one width");
+        biketyre::CarcassState s(
+                static_cast<std::int64_t>(delta.shape(0)));
+        const auto d = debug_carcass_span(delta);
+        std::ranges::copy(d, s.delta_prev_m().begin());
+        const auto e = debug_carcass_span(elastic);
+        std::ranges::copy(e, s.elastic_prev_n().begin());
+        const auto v = debug_carcass_span(maxwell);
+        std::ranges::copy(v, s.maxwell_force_n().begin());
+        s.restore_fields(
+                wire::boolean(state["initialized"], "state.initialized"),
+                wire::boolean(state["rim_strike_active"],
+                              "state.rim_strike_active"),
+                wire::real(state["rim_event_x_m"], "state.rim_event_x_m"),
+                wire::real(state["rim_event_speed_mps"],
+                           "state.rim_event_speed_mps"),
+                wire::real(state["rim_event_peak_load_n"],
+                           "state.rim_event_peak_load_n"),
+                wire::real(state["rim_event_peak_force_n"],
+                           "state.rim_event_peak_force_n"),
+                wire::real(state["rim_event_energy_j"],
+                           "state.rim_event_energy_j"));
+        return s;
+    }
+
+    nb::dict debug_carcass_state_dict(const biketyre::CarcassState &s) {
+        nb::dict d;
+        d["delta_prev_m"] = wire::owned_array<double>(s.delta_prev_m());
+        d["elastic_prev_n"] =
+                wire::owned_array<double>(s.elastic_prev_n());
+        d["maxwell_force_n"] =
+                wire::owned_array<double>(s.maxwell_force_n());
+        d["initialized"] = s.initialized();
+        d["rim_strike_active"] = s.rim_strike_active();
+        d["rim_event_x_m"] = s.rim_event_x_m();
+        d["rim_event_speed_mps"] = s.rim_event_speed_mps();
+        d["rim_event_peak_load_n"] = s.rim_event_peak_load_n();
+        d["rim_event_peak_force_n"] = s.rim_event_peak_force_n();
+        d["rim_event_energy_j"] = s.rim_event_energy_j();
+        return d;
     }
 
     OwnedTireSideInput side_input(const nb::dict &snaps, const char *side) {
@@ -448,6 +596,150 @@ NB_MODULE(bike_native, m) {
     }, nb::arg("delta_m"),
         "Debug test surface: pneumatic patches() as an int32 (K,2) "
         "(start, stop) array for a 1-D deflection row.")
+    ;
+    // Debug-only oracle surfaces for the pneumatic carcass kernel —
+    // used by tests/reference/test_native_pneumatic_carcass.py to run
+    // identical multi-step sequences through biketyre::CarcassState /
+    // evaluate_carcass and carcass.CarcassState / evaluate_carcass.
+    // The spec dict is the 18-field TyreSpecs wire
+    // (config.hpp:155-156); the hits dict is the six RayHits fields
+    // (r_m/coverage_event/airborne ride along unused, like the oracle
+    // reads them); the state dict is every CarcassState field minus
+    // n_rays (the rows' shared length stands in for it).
+    m.def("_debug_pneumatic_carcass",
+          [](nb::handle raw_spec, std::int64_t n_rays,
+             // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python surface signature
+             double half_angle_deg, nb::handle raw_hits,
+             nb::handle raw_state, double dt_s, double omega_radps,
+             double speed_mps) {
+        const nativecfg::PneumaticTyreSpec tyre =
+                debug_carcass_spec(raw_spec);
+        const wire::Dict hits{.value = wire::mapping(raw_hits, "hits"),
+                              .path = "hits"};
+        wire::exact(hits,
+                    wire::keys("r_m", "delta_m", "road_x_m", "road_z_m",
+                               "coverage_event", "airborne"));
+        // r_m / coverage_event / airborne ride along for interface
+        // fidelity — the carcass kernel never reads them, exactly like
+        // evaluate_carcass in the oracle.
+        const biketyre::RayHits hits_v{
+                .r_m = debug_carcass_row_vec(hits, "r_m"),
+                .delta_m = debug_carcass_row_vec(hits, "delta_m"),
+                .road_x_m = debug_carcass_row_vec(hits, "road_x_m"),
+                .road_z_m = debug_carcass_row_vec(hits, "road_z_m"),
+                .coverage_event = wire::boolean(hits["coverage_event"],
+                                                hits.child(
+                                                        "coverage_event")),
+                .airborne = wire::boolean(hits["airborne"],
+                                          hits.child("airborne"))};
+        biketyre::CarcassState state = debug_carcass_state(raw_state);
+        const biketyre::RayRing ring(
+                n_rays, half_angle_deg * (std::numbers::pi / 180.0));
+        const biketyre::CarcassResult result = biketyre::evaluate_carcass(
+                ring, hits_v, tyre, state, dt_s, omega_radps, speed_mps);
+        nb::dict d;
+        d["pressure_force_n"] =
+                wire::owned_array<double>(result.pressure_force_n);
+        d["elastic_force_n"] =
+                wire::owned_array<double>(result.elastic_force_n);
+        d["maxwell_force_n"] =
+                wire::owned_array<double>(result.maxwell_force_n);
+        d["hysteresis_force_n"] =
+                wire::owned_array<double>(result.hysteresis_force_n);
+        d["rim_force_n"] =
+                wire::owned_array<double>(result.rim_force_n);
+        d["total_element_force_n"] =
+                wire::owned_array<double>(result.total_element_force_n);
+        d["material_rate_mps"] =
+                wire::owned_array<double>(result.material_rate_mps);
+        d["contact_patches"] = as_owned_pairs32(result.contact_patches);
+        d["contact_lengths_m"] =
+                wire::owned_array<double>(result.contact_lengths_m);
+        d["force_x_n"] = result.force_x_n;
+        d["force_z_n"] = result.force_z_n;
+        d["normal_load_n"] = result.normal_load_n;
+        d["rim_energy_j"] = result.rim_energy_j;
+        d["rim_strike_active"] = result.rim_strike_active;
+        if (result.rim_event.has_value()) {
+            nb::dict ev;
+            ev["x_m"] = result.rim_event->x_m;
+            ev["speed_mps"] = result.rim_event->speed_mps;
+            ev["peak_load_n"] = result.rim_event->peak_load_n;
+            ev["peak_rim_force_n"] =
+                    result.rim_event->peak_rim_force_n;
+            ev["absorbed_energy_j"] =
+                    result.rim_event->absorbed_energy_j;
+            d["rim_event"] = ev;
+        } else {
+            d["rim_event"] = nb::none();
+        }
+        d["state"] = debug_carcass_state_dict(state);
+        return d;
+    }, nb::arg("spec"), nb::arg("n_rays"), nb::arg("half_angle_deg"),
+        nb::arg("hits"), nb::arg("state"), nb::arg("dt_s"),
+        nb::arg("omega_radps"), nb::arg("speed_mps"),
+        "Debug test surface: one evaluate_carcass step — all "
+        "CarcassResult fields plus the post-call CarcassState.")
+    ;
+    m.def("_debug_pneumatic_advance_unloaded",
+          [](nb::handle raw_state, double omega_radps, double dt_s,
+             double dtheta_rad, double relaxation_s) {
+        biketyre::CarcassState state = debug_carcass_state(raw_state);
+        state.advance_unloaded(omega_radps, dt_s, dtheta_rad,
+                               relaxation_s);
+        return debug_carcass_state_dict(state);
+    }, nb::arg("state"), nb::arg("omega_radps"), nb::arg("dt_s"),
+        nb::arg("dtheta_rad"), nb::arg("relaxation_s"),
+        "Debug test surface: CarcassState.advance_unloaded — returns "
+        "the post-call state dict.")
+    ;
+    m.def("_debug_pneumatic_material_rate",
+          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python surface signature
+          [](nb::handle raw_delta, nb::handle raw_prev,
+             double omega_radps, double dt_s, double dtheta_rad) {
+        const auto delta = debug_carcass_row64(raw_delta, "delta_m");
+        const auto prev = debug_carcass_row64(raw_prev, "delta_prev_m");
+        return wire::owned_array<double>(
+                biketyre::material_deflection_rate_mps(
+                        debug_carcass_span(delta),
+                        debug_carcass_span(prev), omega_radps, dt_s,
+                        dtheta_rad));
+    }, nb::arg("delta_m"), nb::arg("delta_prev_m"),
+        nb::arg("omega_radps"), nb::arg("dt_s"), nb::arg("dtheta_rad"),
+        "Debug test surface: material_deflection_rate_mps row.")
+    ;
+    m.def("_debug_pneumatic_advect",
+          [](nb::handle raw_values, double omega_radps, double dt_s,
+             double dtheta_rad) {
+        const auto values = debug_carcass_row64(raw_values, "values");
+        return wire::owned_array<double>(biketyre::advect_material(
+                debug_carcass_span(values), omega_radps, dt_s,
+                dtheta_rad));
+    }, nb::arg("values"), nb::arg("omega_radps"), nb::arg("dt_s"),
+        nb::arg("dtheta_rad"),
+        "Debug test surface: _advect_material row (unit-grid np.interp "
+        "with left=right=0.0).")
+    ;
+    m.def("_debug_pneumatic_math",
+          [](nb::handle raw_xs, nb::handle raw_ys) {
+        const auto xs = debug_carcass_row64(raw_xs, "xs");
+        const auto ys = debug_carcass_row64(raw_ys, "ys");
+        const std::size_t nx = xs.shape(0), ny = ys.shape(0);
+        const std::size_t pairs = std::min(nx, ny);
+        std::vector<double> tanh_out(nx), hypot_out(pairs);
+        for (std::size_t i = 0; i < nx; ++i)
+            tanh_out[i] = numeric::np_tanh(xs(static_cast<std::ptrdiff_t>(i)));
+        for (std::size_t i = 0; i < pairs; ++i)
+            hypot_out[i] = std::hypot(xs(static_cast<std::ptrdiff_t>(i)),
+                                      ys(static_cast<std::ptrdiff_t>(i)));
+        nb::dict d;
+        d["tanh"] = wire::owned_array<double>(tanh_out);
+        d["hypot"] = wire::owned_array<double>(hypot_out);
+        return d;
+    }, nb::arg("xs"), nb::arg("ys"),
+        "Debug test surface: np.tanh(xs) and np.hypot(xs, ys) "
+        "transcendental probes — the two non-trivial lowerings the "
+        "carcass kernel uses.")
     ;
     stepper_class
             .def(nb::init<const std::string &>())

@@ -98,14 +98,24 @@ def column_bits(array):
 
 
 def assert_identical(spec, episode_or_rows, episode_id=0, catalog=None):
-    """Encode the same rows/episode through both paths; compare bytes."""
+    """Encode the same rows/episode through both paths; compare bytes.
+
+    The oracle always reads the sealed episode through the production
+    ``NativePhysicalSource``. Authored ``dt_s`` is advisory — the runtime
+    never retains it and both ``PhysicalSampleData::dt_s`` and
+    ``_canonical`` recompute ``end_time_s - time_s`` — so feeding raw rows
+    to ``encode_rows`` would make the oracle disagree with both production
+    and the native encoder in the last ulp. It would also fail outright on
+    forces/channels specs, whose claims do not cover raw row keys
+    (``qpos``, ``time_s``, ``channels`` → ``UnknownFieldError``); the
+    canonical projection carries exactly each spec's keys.
+    """
     if hasattr(episode_or_rows, 'row_count'):   # real OwnedNativeEpisode
-        episode, rows = episode_or_rows, None
+        episode = episode_or_rows
     else:
-        rows, episode = list(episode_or_rows), make_episode(episode_or_rows)
+        episode = make_episode(list(episode_or_rows))
     oracle_rb = oracle_record_batch_from_episode(spec, episode, episode_id,
-                                                 catalog=catalog) \
-        if rows is None else oracle_record_batch(spec, rows, episode_id)
+                                                 catalog=catalog)
     native_rb = native_record_batch(spec, episode, episode_id,
                                     catalog=catalog)
     assert oracle_rb.schema.equals(native_rb.schema), spec.name

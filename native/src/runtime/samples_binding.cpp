@@ -177,19 +177,27 @@ PhysicalSampleData history_sample(nb::handle value) {
 // (tests/reference/_recording_support.py::sample_row). The ColumnLayout is
 // zeroed on purpose: flat_columns is legacy surface the new typed export
 // must not consume, so the layout indices are never read here.
+// ABCs consulted once per authored value node; imported a single time in
+// make_episode instead of paying a module-import + attr lookup per node.
+struct authored_types {
+    nb::object np_generic;   // numpy.generic — unboxed via .item()
+    nb::object np_ndarray;   // numpy.ndarray — read as a sequence
+    nb::object integral;     // numbers.Integral
+    nb::object real;         // numbers.Real
+};
+
 // NOLINTNEXTLINE(misc-no-recursion) depth mirrors the authored value tree
-Wire python_to_wire(nb::handle value, const char *path) {
+Wire python_to_wire(nb::handle value, const char *path,
+                    const authored_types &types) {
     if (value.is_none()) return Wire{nullptr};
     if (nb::isinstance<nb::bool_>(value)) return Wire{nb::cast<bool>(value)};
-    const nb::object numpy = nb::module_::import_("numpy");
     // NumPy scalars unbox to their Python value first: np.bool_ is neither a
     // PyBool nor a numbers lane, and nanobind's bool caster rejects it.
-    if (nb::isinstance(value, numpy.attr("generic")))
-        return python_to_wire(value.attr("item")(), path);
-    const auto numbers = nb::module_::import_("numbers");
-    if (nb::isinstance(value, numbers.attr("Integral")))
+    if (nb::isinstance(value, types.np_generic))
+        return python_to_wire(value.attr("item")(), path, types);
+    if (nb::isinstance(value, types.integral))
         return Wire{wire::integer(value, path)};
-    if (nb::isinstance(value, numbers.attr("Real")))
+    if (nb::isinstance(value, types.real))
         return Wire{wire::real(value, path)};
     if (nb::isinstance<nb::str>(value))
         return Wire{wire::string(value, path)};
@@ -197,16 +205,16 @@ Wire python_to_wire(nb::handle value, const char *path) {
         WireObject object;
         for (const auto item : nb::borrow<nb::dict>(value))
             object.emplace_back(wire::string(item.first, path),
-                                python_to_wire(item.second, path));
+                                python_to_wire(item.second, path, types));
         return Wire{std::move(object)};
     }
     if (nb::isinstance<nb::list>(value) || nb::isinstance<nb::tuple>(value) ||
-        nb::isinstance(value, numpy.attr("ndarray"))) {
+        nb::isinstance(value, types.np_ndarray)) {
         // sequence() materializes tuples/arrays into a real list: borrowing
         // them as nb::list would let PyList_GET_ITEM read tuple storage.
         WireArray array;
         for (const nb::handle item : wire::sequence(value, path))
-            array.push_back(python_to_wire(item, path));
+            array.push_back(python_to_wire(item, path, types));
         return Wire{std::move(array)};
     }
     wire::invalid(path, "unsupported authored value type");
@@ -220,7 +228,8 @@ WireObject object_of(Wire value, const char *path) {
     throw std::invalid_argument(std::string(path) + ": expected a dict");
 }
 
-PhysicalSampleData authored_sample(nb::handle row) {
+PhysicalSampleData authored_sample(nb::handle row,
+                                   const authored_types &types) {
     const wire::Dict dict{.value = wire::mapping(row, "sample row"),
                           .path = "sample row"};
     PhysicalSampleData sample;
@@ -238,16 +247,24 @@ PhysicalSampleData authored_sample(nb::handle row) {
         sample.powers_w.emplace_back(wire::string(entry.first, "power name"),
                                      Wire(wire::real(entry.second, "power value")));
     sample.channels = object_of(
-        python_to_wire(wire::field(dict, "channels"), "channels"), "channels");
+        python_to_wire(wire::field(dict, "channels"), "channels", types),
+        "channels");
     return sample;
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) raw handles keep the Python argument types for the wire:: readers' path-labeled domain errors
 OwnedNativeEpisode make_episode(nb::handle rows, nb::handle generation) {
+    const nb::module_ numpy = nb::module_::import_("numpy");
+    const nb::module_ numbers = nb::module_::import_("numbers");
+    const authored_types types{
+        .np_generic = nb::object(numpy.attr("generic")),
+        .np_ndarray = nb::object(numpy.attr("ndarray")),
+        .integral = nb::object(numbers.attr("Integral")),
+        .real = nb::object(numbers.attr("Real"))};
     std::vector<SamplePtr> samples;
     for (const nb::handle row : wire::sequence(rows, "rows"))
         samples.push_back(std::make_shared<const PhysicalSampleData>(
-            authored_sample(row)));
+            authored_sample(row, types)));
     const int gen = wire::integer32(generation, "generation");
     return OwnedNativeEpisode::seal(gen, samples, ColumnLayout{});
 }

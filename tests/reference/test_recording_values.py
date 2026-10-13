@@ -4,7 +4,9 @@ import math
 from types import SimpleNamespace
 import pytest
 
-from _recording_support import energy_channels, sample_row, support_catalog
+from _recording_support import (energy_channels, sample_row,
+                                support_catalog, synthetic_capture,
+                                value_case_rows)
 from test_recording_storage import capture_rows
 from bike_sim.recording.json_codec import dumps, loads
 from bike_sim.recording.native import NativePhysicalSource
@@ -27,6 +29,33 @@ def test_optional_leaf_and_nullable_parent_have_separate_masks(tmp_path):
         assert rows[1:] == [(None, True, True, True), (None, False, True, True),
                            (None, False, True, False), (None, False, False, False)]
         assert recording.connection.execute('SELECT typeof(interval_id),typeof(qpos) FROM physics LIMIT 1').fetchone() == ('BIGINT', 'DOUBLE[]')
+
+
+def test_synthetic_value_cases_cover_the_reviewed_optional_matrix(tmp_path):
+    """value_cases=True emits NaN/null/absent leaf, null/absent parent and
+    the signed-zero/nonfinite values, each self-measured."""
+    path = synthetic_capture(value_cases=True).finalize(tmp_path)
+    with Recording(path) as recording:
+        rows = recording.connection.execute(
+            'SELECT residual_j,residual_j_present,__energy_present,__energy_valid,'
+            'measured,source_interval_id,source_time_s FROM channel_energy '
+            'ORDER BY interval_id').fetchall()
+        value, present, parent, valid = 0, 1, 2, 3
+        assert math.isnan(rows[0][value]) and rows[0][present:valid + 1] == (True, True, True)
+        assert rows[1][value:valid + 1] == (None, True, True, True)
+        assert rows[2][value:valid + 1] == (None, False, True, True)
+        assert rows[3][value:valid + 1] == (None, False, True, False)
+        assert rows[4][value:valid + 1] == (None, False, False, False)
+        assert [row[value] for row in rows[5:]] == \
+            [0., -0., float('inf'), -float('inf')]
+        # DuckDB's on-disk float compression may normalize the -0.0 sign
+        # bit (layout-dependent, observed across reopen); authored fidelity
+        # is asserted on the fixture itself rather than the stored column.
+        assert math.copysign(1., value_case_rows()[6]['channels']
+                             ['energy']['residual_j']) == -1.
+        assert all(row[present] is True for row in rows[5:])
+        assert all(row[4:7] == (True, i, i / 8)
+                   for i, row in enumerate(rows) if row[valid])
 
 
 def test_resealed_presence_contradiction_is_rejected(tmp_path):

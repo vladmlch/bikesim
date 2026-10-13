@@ -61,16 +61,26 @@ def render_report(reader):
                         'failure', 'tail_failure', 'source_changed_during_run', 'execution_changed_during_run')}, indent=2),
                   '```', '', '### Important events', '',
                   'Source events keep their recorded classification. `derived_transition` events '
-                  'describe retained channel changes under a named rule; they are not controller explanations.', '']
-        events = reader.rows('SELECT event_id,kind,processed_step,applied_step,values_json '
-                             'FROM events WHERE episode_id=? ORDER BY event_id LIMIT 201', [identity])
-        lines += ['| Event | Kind | Processed step | Applied step | Recorded detail |',
-                  '| --- | --- | --- | --- | --- |']
+                  'describe retained channel changes under a named rule; they are not controller explanations.', '',
+                  'Clock semantics: `received_wall_s` is the monotonic receipt timestamp '
+                  '(a wall clock, not simulation time); `interval_time_s` is the simulation '
+                  'start time of the interval the input was processed on, and is null when no '
+                  'interval carries that `processed_step`.', '']
+        events = reader.rows('SELECT e.event_id,e.kind,e.received_wall_s,e.processed_step,'
+                             'e.applied_step,e.values_json,p.time_s AS interval_time_s '
+                             'FROM events e LEFT JOIN physics p '
+                             'ON p.episode_id=e.episode_id AND p.interval_id=e.processed_step '
+                             'WHERE e.episode_id=? ORDER BY e.event_id LIMIT 201', [identity])
+        lines += ['| Event | Kind | Received wall (s) | Sim time (s) | Processed step | '
+                  'Applied step | Recorded detail |',
+                  '| --- | --- | --- | --- | --- | --- | --- |']
         for event in events[:200]:
-            lines.append(f'| {event["event_id"]} | {event["kind"]} | {event["processed_step"]} | '
-                         f'{_value(event["applied_step"])} | {_value(loads(event["values_json"]))} |')
+            lines.append(f'| {event["event_id"]} | {event["kind"]} | '
+                         f'{_value(event["received_wall_s"])} | {_value(event["interval_time_s"])} | '
+                         f'{event["processed_step"]} | {_value(event["applied_step"])} | '
+                         f'{_value(loads(event["values_json"]))} |')
         if not events:
-            lines.append('| - | No source events recorded | - | - | - |')
+            lines.append('| - | No source events recorded | - | - | - | - | - |')
         if len(events) > 200:
             lines += ['', 'Event display truncated at 200; remaining evidence is available with '
                       f'`SELECT * FROM events WHERE episode_id={identity} ORDER BY event_id`.']

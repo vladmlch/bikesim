@@ -5,9 +5,11 @@
 ``TableBatch`` values strictly through the production field catalog and
 encoder — never through the native adapter or a simulator.
 """
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from uuid import UUID
 
+from bike_sim.recording.capture import RunCapture
 from bike_sim.recording.catalog import JointCoords, build_catalog
 from bike_sim.recording.contracts import EpisodeEvidence, RunMetadata
 from bike_sim.recording.encoding import encode_rows, force_rows
@@ -168,3 +170,119 @@ def episode(source, episode_id=0, *, generation=0, summary=None, assets=()):
     return EpisodeEvidence(
         episode_id=episode_id, generation=generation, physical=source,
         summary={} if summary is None else summary, assets=tuple(assets))
+
+
+def value_case_rows(dt=1 / 8):
+    """The reviewed optional-leaf and nonfinite matrix on ``energy.residual_j``.
+
+    Intervals 0-2 hold a NaN, an explicit null and an absent leaf
+    (``residual_j_present`` True, True, False); intervals 3-4 hold an
+    explicitly null and an absent ``energy`` parent; intervals 5-8 hold
+    +0.0, -0.0, +inf and -inf. Every interval is self-measured so the
+    source/measurement provenance stays consistent. NaN and ±inf
+    round-trip verbatim; the container's float compression may normalize
+    the -0.0 sign bit on disk (layout-dependent), so signed-zero fidelity
+    is an authored-level guarantee here, not a storage one.
+    """
+    leaves = (float('nan'), None, 'absent', 'parent-null', 'parent-absent',
+              0., -0., float('inf'), -float('inf'))
+    rows = []
+    for i, value in enumerate(leaves):
+        channels = energy_channels(energy={'measured': True,
+                                           'source_interval_id': i,
+                                           'source_time_s': i * dt})
+        if value == 'parent-absent':
+            del channels['energy']
+        elif value == 'parent-null':
+            channels['energy'] = None
+        elif value == 'absent':
+            del channels['energy']['residual_j']
+        else:
+            channels['energy']['residual_j'] = value
+        rows.append(sample_row(i, start=i * dt, dt=dt, channels=channels))
+    return rows
+
+
+def _with_forces(row):
+    """Hand-computed per-component powers (``qfrc·qvel``) and work (``·dt``)."""
+    n = len(_SYNTHETIC_JOINTS)
+    qfrc = {'chain': [3.] + [0.] * (n - 1),
+            'tires': [-1., 0.] + [0.] * (n - 2)}
+    powers = {name: sum(f * v for f, v in zip(vector, row['qvel']))
+              for name, vector in qfrc.items()}
+    dt = row['dt_s']
+    channels = dict(row['channels'])
+    channels['component_work_j'] = {name: power * dt
+                                    for name, power in powers.items()}
+    return dict(row, forces=qfrc, powers_w=powers, channels=channels)
+
+
+def _forwarded(rows):
+    """Unmeasured rows forwarding the LAST interval's measurement metadata."""
+    closing = rows[-1]
+    out = []
+    for row in rows:
+        measured = row['interval_id'] == closing['interval_id']
+        channels = dict(row['channels'],
+                        energy=dict(row['channels'].get('energy') or {},
+                                    measured=measured,
+                                    source_interval_id=closing['interval_id'],
+                                    source_time_s=closing['time_s']))
+        out.append(dict(row, channels=channels))
+    return out
+
+
+def synthetic_capture(rows=None, *, episodes=1, summary=None, assets=(),
+                      channels=None, forces=False, forwarded=False,
+                      value_cases=False, events=(), metadata=None,
+                      enabled=True):
+    """A reviewed ``RunCapture`` over ``TreePhysicalSource`` sample trees.
+
+    No simulator ever runs: ``rows`` are hand-authored canonical sample
+    trees (see ``sample_row``); per-component powers/work are computed
+    inline. Options cover the reviewed synthetic matrix:
+
+    * ``episodes`` — a count sharing ``rows`` (``episodes=0`` seals
+      nothing), or an explicit sequence of per-episode row iterables.
+    * ``value_cases`` — replaces ``rows`` with the optional-leaf and
+      nonfinite matrix of ``value_case_rows``.
+    * ``forces`` — adds two force components whose ``powers_w`` and
+      ``component_work_j`` are the hand-computed ``qfrc·qvel`` and
+      ``qfrc·qvel·dt`` values.
+    * ``forwarded`` — marks all but the last interval unmeasured, carrying
+      the closing interval's ``source_interval_id``/``source_time_s``.
+    * ``channels`` — a payload merged into every row's ``channels`` (or a
+      callable returning it per row), for categorical/boolean coverage.
+    * ``events`` — pre-built ``InputEvent`` values journaled in order.
+    * ``summary`` — one mapping for every episode, or a per-episode
+      sequence; ``assets``/``metadata`` forward verbatim.
+    """
+    capture = RunCapture(run_metadata() if metadata is None else metadata,
+                         enabled=enabled)
+    if value_cases:
+        per_episode = [value_case_rows()]
+    elif type(episodes) is int:
+        shared = list(() if rows is None else rows)
+        per_episode = [shared] * episodes
+    else:
+        per_episode = [list(each) for each in episodes]
+
+    def materialize(row):
+        row = dict(row)
+        if channels is not None:
+            extra = channels(row) if callable(channels) else channels
+            row['channels'] = {**row['channels'], **extra}
+        return _with_forces(row) if forces else row
+
+    for index, episode_rows in enumerate(per_episode):
+        materialized = [materialize(row) for row in episode_rows]
+        if forwarded:
+            materialized = _forwarded(materialized)
+        episode_summary = (summary[index] if isinstance(summary, (list, tuple))
+                           else summary)
+        capture.add_episode(episode(TreePhysicalSource(materialized), index,
+                                    generation=index,
+                                    summary=episode_summary, assets=assets))
+    for event in events:
+        capture.event(event)
+    return capture

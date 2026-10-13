@@ -5,18 +5,17 @@ import math
 
 import pytest
 
-from _recording_support import TreePhysicalSource, energy_channels, episode, run_metadata, sample_row
+from _recording_support import (energy_channels, run_metadata, sample_row,
+                                synthetic_capture)
 from bike_sim.recording.capture import RunCapture
-from bike_sim.recording.contracts import Asset
+from bike_sim.recording.contracts import Asset, InputEvent
 from bike_sim.recording.json_codec import dumps, loads
 from bike_sim.recording.reader import Recording, RecordingError
 from bike_sim.recording.storage import write_recording
 
 
 def capture_rows(rows=(), *, summary=None, assets=()):
-    capture = RunCapture(run_metadata(), enabled=True)
-    capture.add_episode(episode(TreePhysicalSource(rows), summary=summary, assets=assets))
-    return capture
+    return synthetic_capture(rows, summary=summary, assets=assets)
 
 
 def test_roundtrip_typed_nonfinite_presence_and_owned_asset(tmp_path):
@@ -143,3 +142,68 @@ def test_assets_are_verified_before_publication(tmp_path):
     with pytest.raises(ValueError, match='asset checksum'):
         capture.finalize(tmp_path)
     assert not list(tmp_path.glob('*/manifest.json'))
+
+
+def test_multi_episode_round_trip_keeps_extents_and_events_isolated(tmp_path):
+    episodes = ([sample_row(i, start=i / 8, dt=1 / 8) for i in range(3)],
+                [sample_row(i, start=i / 4, dt=1 / 4) for i in range(2)])
+    events = (
+        InputEvent(episode_id=0, event_id=0, kind='episode_start',
+                   received_wall_s=0.1, processed_step=0, applied_step=None),
+        InputEvent(episode_id=0, event_id=1, kind='quit',
+                   received_wall_s=0.2, processed_step=2, applied_step=None,
+                   values={'reason': 'user'}),
+        InputEvent(episode_id=1, event_id=0, kind='episode_start',
+                   received_wall_s=0.3, processed_step=0, applied_step=None),
+    )
+    path = synthetic_capture(
+        episodes=episodes, events=events,
+        summary=[{'outcome': {'reason': 'first'}},
+                 {'outcome': {'reason': 'second'}}]).finalize(tmp_path)
+    with Recording(path) as reader:
+        assert reader.episode_ids == (0, 1)
+        extents = reader.rows(
+            'SELECT episode_id,count(*) AS n,min(interval_id) AS lo,'
+            'max(interval_id) AS hi,min(time_s) AS t0,'
+            'max(interval_end_s) AS t1 FROM physics GROUP BY episode_id '
+            'ORDER BY episode_id')
+        assert [(row['episode_id'], row['n'], row['lo'], row['hi'],
+                 row['t0'], row['t1']) for row in extents] == \
+            [(0, 3, 0, 2, 0., 3 / 8), (1, 2, 0, 1, 0., .5)]
+        journal = reader.rows('SELECT episode_id,event_id,kind,values_json '
+                              'FROM events ORDER BY episode_id,event_id')
+        assert [(row['episode_id'], row['event_id'], row['kind'])
+                for row in journal] == \
+            [(0, 0, 'episode_start'), (0, 1, 'quit'), (1, 0, 'episode_start')]
+        assert loads(journal[1]['values_json']) == {'reason': 'user'}
+        assert [row['n'] for row in reader.rows(
+            'SELECT count(*) AS n FROM events WHERE episode_id=1')] == [1]
+        summaries = reader.rows('SELECT episode_id,summary_json FROM episodes '
+                                'ORDER BY episode_id')
+        assert [loads(row['summary_json'])['outcome']['reason']
+                for row in summaries] == ['first', 'second']
+
+
+def test_forces_round_trip_records_components_and_checks_qfrc_width(tmp_path):
+    qvel = [2.] + [0.] * 7
+    rows = [sample_row(i, start=i / 8, dt=1 / 8, qvel=qvel) for i in range(2)]
+    path = synthetic_capture(rows, forces=True).finalize(tmp_path)
+    with Recording(path) as reader:
+        stored = reader.rows('SELECT episode_id,interval_id,component,qfrc,power_w '
+                             'FROM forces ORDER BY interval_id,component')
+        assert [(row['episode_id'], row['interval_id'], row['component'])
+                for row in stored] == \
+            [(0, i, component) for i in (0, 1) for component in ('chain', 'tires')]
+        expected = {'chain': (3., 6.), 'tires': (-1., -2.)}
+        for row in stored:
+            qfrc0, power = expected[row['component']]
+            assert list(row['qfrc']) == [qfrc0] + [0.] * 7
+            assert row['power_w'] == power
+        work = reader.rows('SELECT component_work_j FROM channel_energy '
+                           'ORDER BY interval_id')
+        assert [dict(row['component_work_j']) for row in work] == \
+            [{'chain': .75, 'tires': -.25}] * 2
+    bad = synthetic_capture([sample_row(0, forces={'chain': [1., 2.]},
+                                        powers={'chain': 1.5})])
+    with pytest.raises(ValueError, match='force coordinate width'):
+        bad.finalize(tmp_path / 'bad')

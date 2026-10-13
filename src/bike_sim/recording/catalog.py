@@ -433,7 +433,7 @@ def _energy_table() -> TableSpec:
            'interval_id when measured', path=('energy', 'source_interval_id')),
         _f('source_time_s', 'double', 's', 'interval', True, 'declared',
            _SRC_CLOSE,
-           'start time of the interval the forwarded measurement belongs to',
+           'end time of the interval the forwarded measurement belongs to',
            path=('energy', 'source_time_s')),
         _f('component_work_j', 'map<double>', 'J', 'interval', True,
            'derived', _SRC_CLOSE,

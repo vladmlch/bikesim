@@ -54,7 +54,7 @@ def test_synthetic_value_cases_cover_the_reviewed_optional_matrix(tmp_path):
         assert math.copysign(1., value_case_rows()[6]['channels']
                              ['energy']['residual_j']) == -1.
         assert all(row[present] is True for row in rows[5:])
-        assert all(row[4:7] == (True, i, i / 8)
+        assert all(row[4:7] == (True, i, (i + 1) / 8)
                    for i, row in enumerate(rows) if row[valid])
 
 

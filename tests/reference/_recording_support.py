@@ -98,7 +98,7 @@ def energy_channels(**overrides):
             'electrical_residual_j': 0.0,
             'measured': True,
             'source_interval_id': 0,
-            'source_time_s': 0.0,
+            'source_time_s': 0.001,
         },
         'component_work_j': {'chain': 0.1, 'tires': -0.2},
     }
@@ -189,7 +189,7 @@ def value_case_rows(dt=1 / 8):
     for i, value in enumerate(leaves):
         channels = energy_channels(energy={'measured': True,
                                            'source_interval_id': i,
-                                           'source_time_s': i * dt})
+                                           'source_time_s': (i + 1) * dt})
         if value == 'parent-absent':
             del channels['energy']
         elif value == 'parent-null':
@@ -226,7 +226,7 @@ def _forwarded(rows):
                         energy=dict(row['channels'].get('energy') or {},
                                     measured=measured,
                                     source_interval_id=closing['interval_id'],
-                                    source_time_s=closing['time_s']))
+                                    source_time_s=closing['end_time_s']))
         out.append(dict(row, channels=channels))
     return out
 

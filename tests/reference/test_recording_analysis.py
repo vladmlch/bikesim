@@ -197,7 +197,7 @@ def test_exact_comparison_rejects_differing_measurement_provenance(tmp_path):
     right_rows = _rows()
     right_rows[2] = sample_row(2, start=2 / 8, dt=1 / 8, channels=energy_channels(
         energy={'residual_j': .2, 'measured': False,
-                'source_interval_id': 1, 'source_time_s': .125}))
+                'source_interval_id': 1, 'source_time_s': .25}))
     a = capture_rows(_rows()).finalize(tmp_path / 'a')
     b = capture_rows(right_rows).finalize(tmp_path / 'b')
     with Recording(a) as left, Recording(b) as right:

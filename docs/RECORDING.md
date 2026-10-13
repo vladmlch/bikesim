@@ -158,6 +158,17 @@ to decode tagged results without losing their distinctions.
 `legacy_telemetry` provides compatible scalar aliases. Forces are not joined into
 the base view because component rows would multiply physical intervals.
 
+Event kinds are mode-specific evidence, not a shared enum: ordinary physical
+runs journal `episode_start` (opening, at launch), `model_first_failure`,
+`derived_transition` facts re-read from sealed channels, operator inputs and
+`operator_stop_deferred`; research runs journal `episode_started`/
+`episode_ended` plus `launch_interrupted`/`launch_failed`/`operator_stop_deferred`.
+The terminal reason itself always lives in `episodes.summary_json`; a physical
+journal has no explicit episode-end marker. `events.received_wall_s` is the
+monotonic receipt clock and never feeds physics; `interval_time_s` joins the
+simulation interval that carried `processed_step` (null when the step precedes
+or follows the recorded interval extent).
+
 ## Analyst workflow
 
 Set `RUN` to an actual published directory. These commands never construct a

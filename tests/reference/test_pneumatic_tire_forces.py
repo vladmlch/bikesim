@@ -55,6 +55,11 @@ def test_constructor_rejects_wrong_backend_and_missing_surface():
     profile = RoadProfile.from_samples(x, np.zeros_like(x))
     with pytest.raises(ValueError, match='pneumatic backend'):
         PneumaticTireForceApplier(model, profile, TireBackendConfig())
+    # A legacy TyreConfig is a wrong type, not a wrong value: ValueError,
+    # never AttributeError from the missing `pneumatic` config field.
+    from bike_sim.physics.tyre import TyreConfig
+    with pytest.raises(ValueError, match='explicit pneumatic config'):
+        PneumaticTireForceApplier(model, profile, TyreConfig(model='pneumatic'))
     with pytest.raises(ValueError, match='surface map'):
         PneumaticTireForceApplier(
             model, profile,
@@ -73,7 +78,12 @@ def test_constructor_validates_contact_geom_contype_and_radius():
     model.geom_contype[geom] = 1
     with pytest.raises(ValueError, match='collisions must be disabled'):
         PneumaticTireForceApplier(model, profile, config)
+    # A zero contype still pairs through a nonzero conaffinity.
     model.geom_contype[geom] = 0
+    model.geom_conaffinity[geom] = 1
+    with pytest.raises(ValueError, match='collisions must be disabled'):
+        PneumaticTireForceApplier(model, profile, config)
+    model.geom_conaffinity[geom] = 0
     model.geom_size[geom, 0] += 1e-4
     with pytest.raises(ValueError, match='does not'):
         PneumaticTireForceApplier(model, profile, config)
@@ -243,6 +253,53 @@ def test_detailed_tier_bristle_wire():
                      for i in range(64)]).all()
 
 
+def test_detailed_tier_leaves_model_timestep_untouched():
+    """Unlike the legacy xfrc writer, the applier never rewrites the step."""
+    model, _, tire = _wheel_rig(dt_s=7e-4, tier='detailed')
+    assert tire.tier is TIERS['detailed']
+    assert float(model.opt.timestep) == 7e-4
+
+
+def test_set_state_rejects_out_of_contract_cells():
+    """Cells violating the canonical wire are rejected before any rebuild."""
+    model, data, tire = _wheel_rig(tier='detailed')
+    tire.compute_qfrc(model, data, float(model.opt.timestep))
+    names = tire.state_names()
+    row = tire.state_dict()['row']
+
+    def corrupted(cells):
+        rewired = row.copy()
+        for name, value in cells.items():
+            rewired[names.index(name)] = value
+        return rewired
+
+    # A finite bristle cell outside every declared patch range.
+    covered = np.zeros(TIERS['detailed'].n_rays, dtype=bool)
+    for start, stop in tire.states['front']._patch_states:
+        covered[start:stop] = True
+    outside = int(np.flatnonzero(~covered)[0])
+    with pytest.raises(ValueError, match='bristle cells are set outside every patch'):
+        tire.set_state(names, corrupted({f'front.ray.{outside:03d}.bristle_m': 0.0}))
+    # Non-integer patch bounds.
+    for leaf in ('start', 'stop'):
+        cell = f'front.patch.00.{leaf}'
+        with pytest.raises(ValueError, match='bounds must be integers'):
+            tire.set_state(names, corrupted({cell: row[names.index(cell)] + 0.5}))
+    # Finite rim-event fields while the rim record is inactive.
+    with pytest.raises(ValueError, match='must be NaN while inactive'):
+        tire.set_state(names, corrupted({'front.rim.x_m': 0.0}))
+    # Rejection is decode-phase: the committed state still round-trips.
+    assert np.array_equal(tire.state_dict()['row'], row, equal_nan=True)
+    # On the lumped tier every bristle cell must stay NaN.
+    model_f, data_f, tire_f = _wheel_rig()
+    tire_f.compute_qfrc(model_f, data_f, float(model_f.opt.timestep))
+    names_f = tire_f.state_names()
+    row_f = tire_f.state_dict()['row']
+    row_f[names_f.index('front.ray.000.bristle_m')] = 0.0
+    with pytest.raises(ValueError, match='must be NaN on the lumped tier'):
+        tire_f.set_state(names_f, row_f)
+
+
 def test_rim_event_wire_round_trip():
     """A deep press drives rays past rim_strike_deflection_mm and fills rim cells."""
     model, data, tire = _wheel_rig(front_drop_m=0.055)
@@ -312,11 +369,21 @@ def test_reset_clears_history_and_counters():
 
 
 def test_stored_energy_matches_committed_counter():
-    model, data, tire = _wheel_rig()
+    """BOTH wheels loaded: the counter and the fresh ledger agree bitwise."""
+    model, data, tire = _wheel_rig(tier='detailed', rear_z_m=REAR_R - 0.004)
     dt = float(model.opt.timestep)
-    # The front wheel starts pre-loaded: the pose alone already stores energy.
+    # Rear spin gives the second wheel real bristle deflection, so its shear
+    # term is nonzero -- that is the only case where `E + (R + S)` and
+    # `(E + R) + S` can diverge (the fast tier has S == 0.0 identically).
+    spin = model.jnt_dofadr[
+        mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, 'rear_wheel_spin')]
+    data.qvel[spin] = 2.0
+    mujoco.mj_forward(model, data)
+    # The pose alone already stores energy before any commit.
     assert tire.stored_energy(model, data) > 0.
     tire.compute_qfrc(model, data, dt)
+    assert tire.snapshots['front'].patches and tire.snapshots['rear'].patches
+    assert tire.diagnostics['rear']['shear_energy_j'] > 0.
     assert tire.stored_energy(model, data) == tire.elastic_energy_j > 0.
     assert tire.brush_loss_step_j >= 0.
     data.time += dt
@@ -345,17 +412,20 @@ def test_failure_atomicity_restores_front_state():
     assert tire.snapshots['rear'].normal_load_n > 0.
 
 
-def test_oracle_parity_with_xfrc_writer():
+@pytest.mark.parametrize('tier', list(TIERS))
+def test_oracle_parity_with_xfrc_writer(tier):
     """The xfrc writer and this applier step the same PneumaticTyre, bit-for-bit."""
     from bike_sim.physics.tyre import TyreConfig
     from bike_sim.sim.ride.tyre.applier import TyreForceApplier
-    model, data, tire = _wheel_rig()
-    model_l, data_l, _ = _wheel_rig()
+    model, data, tire = _wheel_rig(tier=tier)
+    model_l, data_l, _ = _wheel_rig(tier=tier)
     x = np.linspace(-2.0, 3.0, 1001)
     legacy = TyreForceApplier(
-        model_l, TyreConfig(model='pneumatic', tier='fast', surface='asphalt'),
+        model_l, TyreConfig(model='pneumatic', tier=tier, surface='asphalt'),
         RoadProfile.from_samples(x, np.zeros_like(x)), SurfaceMap.uniform('asphalt'))
-    dt = float(model.opt.timestep)
+    # The legacy writer rewrites model.opt.timestep on the detailed tier; the
+    # applier takes dt per call, so both sides advance with the legacy step.
+    dt = float(model_l.opt.timestep)
     for m, d in ((model, data), (model_l, data_l)):
         spin = m.jnt_dofadr[
             mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, 'front_wheel_spin')]
@@ -374,6 +444,10 @@ def test_oracle_parity_with_xfrc_writer():
             assert set(a._patch_states) == set(b._patch_states)
             for key, state in a._patch_states.items():
                 assert state.kappa_prime == b._patch_states[key].kappa_prime
+                if state.detailed is not None:
+                    np.testing.assert_array_equal(
+                        state.detailed.bristle_deflection_m,
+                        b._patch_states[key].detailed.bristle_deflection_m)
             for pa, pb in zip(a.last_outputs.patches, b.last_outputs.patches):
                 np.testing.assert_array_equal(pa.force_world_n, pb.force_world_n)
                 assert pa.slip_speed_mps == pb.slip_speed_mps

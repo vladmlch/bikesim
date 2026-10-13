@@ -75,11 +75,11 @@ class PneumaticTireForceApplier:
     """
 
     def __init__(self, model, road_profile, config, surface_map=None):
-        if config.backend != 'pneumatic':
-            raise ValueError('pneumatic force applier requires the pneumatic backend')
         pneumatic = getattr(config, 'pneumatic', None)
         if not isinstance(pneumatic, PneumaticTireConfig):
             raise ValueError('pneumatic tires need an explicit pneumatic config')
+        if config.backend != 'pneumatic':
+            raise ValueError('pneumatic force applier requires the pneumatic backend')
         if not isinstance(road_profile, RoadProfile):
             raise ValueError('pneumatic tires need a sampled RoadProfile')
         self.config = config
@@ -97,8 +97,15 @@ class PneumaticTireForceApplier:
                                    'geom_rear_contact',
                                    pneumatic.rear.outer_radius_mm / 1000.0),
         }
+        # The contact sphere mirrors the tyre carcass: a zero contype can still
+        # pair through conaffinity, so both mask bits must be off -- matching
+        # the distributed applier's check. Other wheel-body geoms keep their
+        # own masks: the builder clears them only for the compliant and
+        # distributed backends, never for this one.
         for binding in self.wheels.values():
-            if model.geom_contype[binding.contact_geom_id] != 0:
+            geom_id = binding.contact_geom_id
+            if (model.geom_contype[geom_id] != 0
+                    or model.geom_conaffinity[geom_id] != 0):
                 raise ValueError('native wheel collisions must be disabled for the pneumatic backend')
         self.bodies = {side: binding.body_id for side, binding in self.wheels.items()}
         self.geoms = {side: binding.contact_geom_id for side, binding in self.wheels.items()}
@@ -286,8 +293,13 @@ class PneumaticTireForceApplier:
 
     def _intersect(self, tyre, hub_x_m, hub_z_m):
         """The wheel's ray ring against the profile at the given hub position."""
+        # Radius conversion is deliberately split: the intersect radius uses
+        # ``/ 1000.0`` to bitwise-match the force-path call in
+        # ``PneumaticTyre.evaluate`` (model.py); the energy terms in
+        # ``_radial_energy_j`` keep ``* _MM_TO_M`` to mirror the ``carcass.py``
+        # convention they quote.
         return intersect(tyre.ring, hub_x_m, hub_z_m,
-                         tyre.tyre.outer_radius_mm * _MM_TO_M, self.profile)
+                         tyre.tyre.outer_radius_mm / 1000.0, self.profile)
 
     def _shear_energy_j(self, tyre):
         """Bristle shear of committed patches: ``0.5*k_px*dx*b^2`` summed (detailed tier).
@@ -403,6 +415,12 @@ class PneumaticTireForceApplier:
                 else:
                     slip_mps = 0.0
                     mu = float(self.surface_map.at(float(hub[0])).mu(0.0))
+                # No patch this step: the configured surface wins, else the
+                # track lookup at hub x -- the same fallback `mu` uses above.
+                # The value is always a name string, never None.
+                surface_name = (outputs.patches[0].surface_name if patch_count
+                                else self.config.pneumatic.surface
+                                or self.surface_map.at(float(hub[0])).name)
                 rim_event = outputs.rim_event
                 diagnostics[side] = {
                     'normal_load_n': load,
@@ -433,10 +451,13 @@ class PneumaticTireForceApplier:
                     'radial_energy_j': radial_energy,
                     'shear_energy_j': shear_energy,
                     'outside_material_load_range': False,
-                    'surface': (outputs.patches[0].surface_name if patch_count
-                                else self.config.pneumatic.surface),
+                    'surface': surface_name,
                 }
-                energy += radial_energy + shear_energy
+                # Two sequential adds -- the same association `stored_energy`
+                # uses, so `elastic_energy_j` stays bitwise-identical to a
+                # post-commit `stored_energy` call.
+                energy += radial_energy
+                energy += shear_energy
                 brush_loss += brush_power_w * dt
                 radial_power += float(outputs.dissipated_power_w) - brush_power_w
             derived_array(result, 'PneumaticTireForceApplier.qfrc')

@@ -1,5 +1,6 @@
 #include "samples_binding.hpp"
 #include "accounting.hpp"
+#include "encode.hpp"
 #include "../binding_arrays.hpp"
 #include "../binding_readers.hpp"
 #include "../diag.hpp"
@@ -13,6 +14,7 @@
 #include <stdexcept>
 #include <variant>
 #include <vector>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 
 namespace nb = nanobind;
@@ -134,7 +136,13 @@ void bind_episode_value(const nb::module_ &module) {
                          nb::handle limit) {
             return episode.batch(episode_index(start, "start"),
                                  episode_index(limit, "limit"));
-        }, nb::arg("start"), nb::arg("limit"));
+        }, nb::arg("start"), nb::arg("limit"))
+        .def("encode_table", [](const OwnedNativeEpisode &episode,
+                                nb::handle plan, nb::handle start,
+                                nb::handle limit) {
+            return encode_table(episode, plan, episode_index(start, "start"),
+                                episode_index(limit, "limit"));
+        }, nb::arg("plan"), nb::arg("start"), nb::arg("limit"));
 }
 
 PhysicalSampleData history_sample(nb::handle value) {

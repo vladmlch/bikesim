@@ -1,0 +1,44 @@
+// Catalog-plan column projector for the native recording encoder.
+// Emits raw column payloads ("pieces") — flat buffers, offsets, validity
+// masks and nested child pieces — never Arrow objects and never per-row
+// Python dicts; recording/native_encode.py assembles the RecordBatch.
+#pragma once
+
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <nanobind/nanobind.h>
+
+#include "samples.hpp"
+
+namespace nb = nanobind;
+
+namespace runtime {
+
+// One emitted Arrow column's raw payload; kind picks which members are live.
+struct Piece {
+    enum class Kind : std::uint8_t { scalar_d, scalar_i, scalar_b, scalar_s,
+                      list_d, list_i, list_s, structure, map }
+        kind = Kind::scalar_d;
+    std::vector<double> d;
+    std::vector<std::int64_t> i;
+    std::vector<char> b;                    // bool payload
+    std::vector<std::string> s;             // varchar payload / map keys
+    std::vector<std::int32_t> offsets;      // list/struct[]/map member spans
+    std::vector<char> valid;                // empty => all-valid
+    std::map<std::string, Piece> children;  // struct members incl *_present
+    std::unique_ptr<Piece> items;           // map values / struct[] elements
+};
+
+struct EncodePlan;                          // parsed plan, Task 3 grows it
+
+// Dispatch entry: parses plan, runs the emitter, boxes pieces.
+std::pair<std::int64_t, nb::dict> encode_table(
+    const OwnedNativeEpisode &episode, nb::handle plan,
+    std::int64_t start, std::int64_t limit);
+
+} // namespace runtime

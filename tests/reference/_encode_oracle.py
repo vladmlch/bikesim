@@ -34,6 +34,36 @@ def oracle_record_batch(spec, rows, episode_id=0):
                        episode_id, pa)
 
 
+class _PythonPathEpisode:
+    """Duck-typed read surface hiding ``encode_table``.
+
+    ``NativePhysicalSource`` dispatches to the native projector whenever
+    the wrapped episode exposes ``encode_table``; the oracle must stay on
+    the reviewed canonical + ``encode_rows`` path to remain a differential
+    reference, so this delegates only the sample/batch surface the Python
+    path consumes.
+    """
+
+    def __init__(self, episode):
+        self._episode = episode
+
+    @property
+    def generation(self):
+        return self._episode.generation
+
+    @property
+    def row_count(self):
+        return self._episode.row_count
+
+    def batch(self, start, limit):
+        # Exists only to satisfy NativePhysicalSource's constructor probe;
+        # _sample_batch prefers sample_batch, so this is never invoked.
+        return self._episode.batch(start, limit)
+
+    def sample_batch(self, start, limit):
+        return self._episode.sample_batch(start, limit)
+
+
 def oracle_record_batch_from_episode(spec, episode, episode_id=0,
                                      catalog=None):
     """Oracle RecordBatch through the production ``NativePhysicalSource``.
@@ -43,7 +73,8 @@ def oracle_record_batch_from_episode(spec, episode, episode_id=0,
     """
     from bike_sim.recording.native import NativePhysicalSource
     source = NativePhysicalSource(
-        episode, support.support_catalog() if catalog is None else catalog)
+        _PythonPathEpisode(episode),
+        support.support_catalog() if catalog is None else catalog)
     parts = [arrow_batch(spec, batch, episode_id, pa)
              for batch in source.tables(batch_rows=7)
              if batch.table == spec.name]

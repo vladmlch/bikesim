@@ -166,6 +166,24 @@ class TableBatch:
         object.__setattr__(self, 'columns', MappingProxyType(frozen))
 
 
+@dataclass(frozen=True)
+class PieceBatch:
+    """Native-emitted table fragment: column pieces for the Arrow assembler.
+
+    ``pieces`` maps emitted column name to the projector's piece dict; the
+    mapping is proxied while the buffers inside stay owned by the binding.
+    """
+
+    table: str
+    row_count: int
+    pieces: Mapping[str, Any]
+
+    def __post_init__(self):
+        _text(self.table, 'table')
+        _integer(self.row_count, 'row_count')
+        object.__setattr__(self, 'pieces', MappingProxyType(dict(self.pieces)))
+
+
 class PhysicalSource(Protocol):
     """Owned physical evidence: typed table batches on demand (R14)."""
 

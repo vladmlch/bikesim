@@ -83,7 +83,10 @@ def _write_batch(connection, spec, batch, episode_id):
     import pyarrow as pa
     if not batch.row_count:
         return
-    record = arrow_batch(spec, batch, episode_id, pa)
+    from bike_sim.recording.contracts import PieceBatch
+    from bike_sim.recording.native_encode import pieces_to_arrow
+    record = pieces_to_arrow(spec, batch.row_count, batch.pieces, episode_id, pa) \
+        if isinstance(batch, PieceBatch) else arrow_batch(spec, batch, episode_id, pa)
     name = '_owned_recording_batch'
     connection.register(name, pa.Table.from_batches([record]))
     try:

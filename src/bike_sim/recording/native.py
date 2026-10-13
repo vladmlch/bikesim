@@ -157,44 +157,73 @@ class NativePhysicalSource:
             return
         # One native batch conversion feeds every domain. In particular, do
         # not box all samples again for every column family (R07/R21).
+        from bike_sim.recording.contracts import PieceBatch
+        from bike_sim.recording.native_encode import (
+            compile_plan, piece_fragments)
+        encoder = getattr(self._episode, 'encode_table', None)
+        plans = {spec.name: compile_plan(
+            spec, all_roots=sorted(claimed)) for spec in specs}
+        # Tables without a native plan keep flowing through the reviewed
+        # canonical + encode_rows path. The applied-command mirror stays
+        # there too until the native ``applied_rows`` projection lands; an
+        # ordinary capture without it keeps canonical materialization (and
+        # the channel-root rejection below) for every spec.
+        native_ok = encoder is not None and not (
+            self.ordinary_commands and not hasattr(self._episode, 'applied_rows'))
+        materialize = not native_ok or any(plan is None for plan in plans.values())
         for start in range(0, self.row_count, batch_rows):
-            native = _sample_batch(self._episode, start, batch_rows)
-            canonical = [self._canonical(sample) for sample in native.samples]
-            for row in canonical:
-                unknown = set(row['channels']) - claimed
-                if unknown:
-                    raise UnknownFieldError(f'channels: unrecognized domains {sorted(unknown)}')
+            limit = min(batch_rows, self.row_count - start)
+            canonical = None
+            if materialize:
+                native = _sample_batch(self._episode, start, batch_rows)
+                canonical = [self._canonical(sample) for sample in native.samples]
+                for row in canonical:
+                    unknown = set(row['channels']) - claimed
+                    if unknown:
+                        raise UnknownFieldError(f'channels: unrecognized domains {sorted(unknown)}')
             if self.ordinary_commands:
-                applied = []
-                for row in canonical:
-                    channels = row['channels']
-                    control = channels.get('control')
-                    # 'drive' is an optional root: absent and explicit-null
-                    # both mean no brake demands to mirror. 'control' stays
-                    # required — absent or explicit-null rejects below.
-                    drive = channels.get('drive') or {}
-                    if control is None:
-                        raise UnknownFieldError('ordinary applied control is missing from the physical source')
-                    actual = {'control': plain(control),
-                              **{key: drive[key] for key in ('front_brake_demand', 'rear_brake_demand',
-                                                            'rollback_brake_demand') if key in drive}}
-                    if actual != previous_applied:
-                        applied.append(dict(application_id=application_id, time_s=row['time_s'],
-                                            step=row['interval_id'], **actual))
-                        previous_applied = actual
-                        application_id += 1
-                if applied:
-                    yield encode_rows(applied_spec, applied, episode_id=episode_id)
+                if native_ok:
+                    yield encode_rows(applied_spec,
+                                      self._episode.applied_rows(start, limit),
+                                      episode_id=episode_id)
+                else:
+                    applied = []
+                    for row in canonical:
+                        channels = row['channels']
+                        control = channels.get('control')
+                        # 'drive' is an optional root: absent and explicit-null
+                        # both mean no brake demands to mirror. 'control' stays
+                        # required — absent or explicit-null rejects below.
+                        drive = channels.get('drive') or {}
+                        if control is None:
+                            raise UnknownFieldError('ordinary applied control is missing from the physical source')
+                        actual = {'control': plain(control),
+                                  **{key: drive[key] for key in ('front_brake_demand', 'rear_brake_demand',
+                                                                'rollback_brake_demand') if key in drive}}
+                        if actual != previous_applied:
+                            applied.append(dict(application_id=application_id, time_s=row['time_s'],
+                                                step=row['interval_id'], **actual))
+                            previous_applied = actual
+                            application_id += 1
+                    if applied:
+                        yield encode_rows(applied_spec, applied, episode_id=episode_id)
             for spec in specs:
-                pending = []
-                for row in canonical:
-                    for projected in self._sample_rows(spec, row):
-                        pending.append(projected)
-                        if len(pending) == batch_rows:
-                            yield encode_rows(spec, pending, episode_id=episode_id)
-                            pending = []
-                if pending:
-                    yield encode_rows(spec, pending, episode_id=episode_id)
+                plan = plans[spec.name]
+                if native_ok and plan is not None:
+                    count, pieces = encoder(plan, start, limit)
+                    for count, fragment in piece_fragments(pieces, count, batch_rows):
+                        yield PieceBatch(table=spec.name, row_count=count,
+                                         pieces=fragment)
+                else:
+                    pending = []
+                    for row in canonical:
+                        for projected in self._sample_rows(spec, row):
+                            pending.append(projected)
+                            if len(pending) == batch_rows:
+                                yield encode_rows(spec, pending, episode_id=episode_id)
+                                pending = []
+                    if pending:
+                        yield encode_rows(spec, pending, episode_id=episode_id)
 
 
 # Derived-transition derivation rule, versioned. v1: for each tracked

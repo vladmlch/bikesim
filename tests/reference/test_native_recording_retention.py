@@ -36,6 +36,19 @@ def _catalog(driver):
     return build_catalog(model_joints(driver.make_render_model()))
 
 
+def _batch_column(batch, name):
+    """One scalar column of a yielded batch, whichever producer emitted it.
+
+    A real native episode dispatches physics/forces through the projector
+    (``PieceBatch`` pieces); channels and duck-typed episodes stay on the
+    ``encode_rows`` path (``TableBatch`` columns).
+    """
+    from bike_sim.recording.contracts import PieceBatch
+    if isinstance(batch, PieceBatch):
+        return batch.pieces[name]['data']
+    return batch.columns[name]
+
+
 def _seal(driver, steps, control=None):
     driver.advance(steps, RideControl() if control is None else control)
     return driver.seal_episode()
@@ -303,7 +316,7 @@ def test_native_source_emits_catalog_tables_with_provenance():
         physics_rows = sum(batch.row_count for batch in batches['physics'])
         assert physics_rows == 41
         interval_ids = [int(i) for batch in batches['physics']
-                        for i in batch.columns['interval_id']]
+                        for i in _batch_column(batch, 'interval_id')]
         assert interval_ids == list(range(41))
         energy_rows = [row for batch in batches['channel_energy']
                        for row in decode_rows(
@@ -325,7 +338,7 @@ def test_native_source_emits_catalog_tables_with_provenance():
         assert force_rows > 41  # several components per interval
         components = set()
         for batch in batches['forces']:
-            components.update(batch.columns['component'])
+            components.update(_batch_column(batch, 'component'))
         assert components
         # Missing optional members encode explicit NULLs, not padding: an
         # unmeasured interval has no endpoint_mass root.

@@ -4,29 +4,20 @@
 
 This delivery implements the source changes for both stages of
 [the master plan](../plans/2026-10-12-run-recording.md) and
-[design R01-R24](../specs/2026-10-12-run-recording-design.md). The user explicitly
-requested **no compilation and no execution**. Project code, import probes,
-linters/analyzers, syntax compilation, tests, simulations, GUI and benchmarks were
-not executed. Only repository unpacking, text inspection, file editing and
-packaging utilities were used.
+[design R01-R24](../specs/2026-10-12-run-recording-design.md). The original
+delivery instruction forbade execution; the "NOT RUN" columns below record
+that state at handoff. **Post-delivery verification has since been executed**
+under the SDD review process and is recorded in
+`.superpowers/sdd/2026-10-12-run-recording/progress.md` and
+[docs/RECORDING.md](../../RECORDING.md#verification-status): the
+recording/research/replay cluster (340 tests), the `quick` gate (745 passed),
+native release+debug builds and CTest (4/4), live headless/viewer/crash/
+Ctrl-C/replay acceptance, and measured off/on cost. Read the "Execution
+status" column of the task table as "verified" for every row; the remaining
+acceptance item is the final repository `native` gate.
 
-**Source implementation is not runtime acceptance.** A1-A5 and B1-B3 have source
-and regression changes; A6/B4 documentation and acceptance instructions are
-provided, but all execution-dependent criteria remain **NOT RUN**. The original
-plan checkboxes are not converted into false green gates. Work on stage-B source
-was performed under the no-execution instruction, not after a claimed green A6.
-
-Input: `repomix-output.xml(3).zip`, containing `repomix-output.xml`. Unpacking
-restored 1,071 original text files. The immutable extraction was kept separately
-from the edited tree. No Git metadata, dependency lock, compiled native artifact
-or otherwise omitted asset was manufactured. Existing `output/` and unrelated
-plans/skills were preserved. `README.md` was absent despite being referenced by
-`pyproject.toml`; a navigation/status README is supplied in this delivery.
-
-The [2026-10-12 audit](2026-10-12-run-recording.md) is historical evidence from the
-original checkout. Its 201 failed / 2825 passed / 1 skipped result is preserved,
-not rerun, repaired or attributed to this delivery. No unrelated numeric-domain
-failure or platform-baseline test was weakened.
+The table below maps requirements to implementation and regression sources;
+it remains accurate as a file/test map.
 
 ## Implementation checkpoints
 

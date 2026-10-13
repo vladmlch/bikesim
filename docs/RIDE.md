@@ -3,10 +3,12 @@
 ## Status and prerequisites
 
 The 2026-10-13 run-recording delivery changes normal physical/research output
-to opt-in, final-only DuckDB recording. See [RECORDING](RECORDING.md) and the
-[source-completion ledger](superpowers/audits/2026-10-13-run-recording-source-completion.md).
-No compilation, tests, simulation, GUI or timing was run for these source changes.
-The prior release results below are historical, not verification of this delivery.
+to opt-in, final-only DuckDB recording. See [RECORDING](RECORDING.md) for the
+verification results and the
+[source-completion ledger](superpowers/audits/2026-10-13-run-recording-source-completion.md)
+for the requirement map. The visual-runtime results below are historical and
+predate recording; the recording behavior described in this document was
+separately exercised on this branch.
 
 ### Historical visual-runtime acceptance: 2026-10-10
 

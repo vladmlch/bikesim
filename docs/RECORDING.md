@@ -2,17 +2,18 @@
 
 ## Delivery status
 
-The ordinary-native and Python/native research paths are implemented in source in
-this delivery. Compilation, tests, analyzers, simulations, GUI checks and timing
-were **not run**: the delivery instruction explicitly forbids execution. This is
-not a claim that the A6/B4 acceptance gates are green. See the
-[source-completion ledger](superpowers/audits/2026-10-13-run-recording-source-completion.md)
-for the requirement-to-code/test map and the unrun gates.
+The ordinary-native and Python/native research paths are implemented and
+verified on this branch. The recording/research/replay test cluster and the
+repository `quick` gate are green, native release+debug builds and CTest pass,
+and the acceptance commands below were executed against a published run under
+`output/recording-acceptance/`. The SDD ledger
+(`.superpowers/sdd/2026-10-12-run-recording/progress.md`) records the review
+rounds, the live-verified findings (including the repeat-SIGINT publication
+defect fixed in `6438f32`), and the final gate results.
 
-The examples below are usage references, not commands executed for this delivery.
-Use a complete project checkout with its dependency lock and the matching native
-artifact. The supplied repomix did not include `uv.lock`, `.git`, compiled native
-artifacts or all ignored/untracked assets. No lock or binary identity was invented.
+The examples below were executed on macOS arm64 with the release native build.
+Use a complete project checkout with its dependency lock and the matching
+native artifact.
 
 ## Opt-in and supported paths
 
@@ -254,12 +255,38 @@ metadata and setup-time assets before I/O. Native compatibility columns are
 projected only for that explicit export. New normal CLI recording does not retain
 or write a duplicate legacy history.
 
-## Verification still required
+## Verification status
 
-The source-completion ledger maps all R01-R24 requirements and A1-A6/B1-B4 tasks to
-files and regression sources. All newly authored and adapted tests are **NOT RUN**.
-Required remaining acceptance is sequential focused Python/native checks, the
-repository `full` profile on the selected matching artifact, real viewer reset/
-close interaction, and separate capture-on/off wall time, peak RSS, export cost,
-size and query measurements at the unchanged timestep. Existing audit numbers
-and stored output files are historical inputs, not results of this delivery.
+Executed on this branch (macOS arm64, release native build):
+
+- `pytest tests/reference/ -k 'recording or research or replay or catalog'`:
+  340 passed. `bash tools/run_tests.sh quick`: 745 passed, 1 skipped.
+- Native release and debug builds link; release CTest 4/4.
+- Recording-on/off passivity holds bitwise in-process
+  (`test_recording_does_not_change_committed_trajectory`, slow).
+- Live acceptance: headless and GUI-viewer `--record` runs publish;
+  a real crash at 31.2 s published 24,943 retained physical rows with
+  failure events and `replay_eligible=false`; a single and a repeated
+  Ctrl-C publish sealed evidence (`operator_stop_deferred` is journaled
+  when a second interrupt is deferred behind the write);
+  `bike-research`/`bike-ride --research` publish on both backends;
+  `bike-replay` reproduces a v3 recording bitwise and a schema-2 legacy
+  `save()` export bitwise; a checksum-corrupt legacy artifact is rejected.
+- Off/on measurement at the unchanged timestep (headless diagnostic,
+  30 s sim): off 10.49 s wall / 246 MB RSS; on 87.21 s wall / 3.11 GB RSS;
+  193 MB `run.duckdb`. The in-memory retention cost is the documented
+  R04/R06 tradeoff, measured — not estimated.
+- Cross-process trajectory divergence observed off-vs-on (49.853 m vs
+  49.893 m over 30 s) is pre-existing platform nondeterminism: a second
+  identical recording-off run also produced 49.893 m. The recording
+  contract's bitwise passivity is asserted in-process by the test above.
+
+Known limits: DuckDB may normalize a persisted `-0.0` sign bit
+(compression-dependent; authored-level fidelity is asserted before
+persistence). Abrupt termination (SIGKILL, SIGTERM, power loss) before
+finalization loses the in-RAM recording by design — a second SIGINT
+*during* finalization is deferred behind the write, journaled as
+`operator_stop_deferred`, then honored.
+
+The final repository `native` gate is the last acceptance step and is
+recorded in the SDD ledger.

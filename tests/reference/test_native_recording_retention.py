@@ -49,6 +49,29 @@ def _batch_column(batch, name):
     return batch.columns[name]
 
 
+def _batch_rows(spec, batch):
+    """``decode_rows`` over either producer's batch.
+
+    A ``PieceBatch`` reassembles through the Arrow assembler first; map
+    columns come back as entry lists and are restored to the dicts
+    ``encode_rows`` columns carry, so ``decode_rows`` sees one shape.
+    """
+    from bike_sim.recording.contracts import PieceBatch, TableBatch
+    if not isinstance(batch, PieceBatch):
+        return decode_rows(spec, batch)
+    import pyarrow as pa
+    from bike_sim.recording.native_encode import pieces_to_arrow
+    record = pieces_to_arrow(spec, batch.row_count, batch.pieces, 0, pa)
+    map_keys = {f.key for f in spec.fields if f.dtype.startswith('map<')}
+    columns = {name: record.column(name).to_pylist()
+               for name in record.schema.names}
+    for key in map_keys & set(columns):
+        columns[key] = [None if value is None else dict(value)
+                        for value in columns[key]]
+    return decode_rows(spec, TableBatch(table=spec.name, columns=columns,
+                                        row_count=batch.row_count))
+
+
 def _seal(driver, steps, control=None):
     driver.advance(steps, RideControl() if control is None else control)
     return driver.seal_episode()
@@ -319,7 +342,7 @@ def test_native_source_emits_catalog_tables_with_provenance():
                         for i in _batch_column(batch, 'interval_id')]
         assert interval_ids == list(range(41))
         energy_rows = [row for batch in batches['channel_energy']
-                       for row in decode_rows(
+                       for row in _batch_rows(
                            catalog.table('channel_energy'), batch)]
         assert len(energy_rows) == 41
         for index, row in enumerate(energy_rows):
@@ -343,7 +366,7 @@ def test_native_source_emits_catalog_tables_with_provenance():
         # Missing optional members encode explicit NULLs, not padding: an
         # unmeasured interval has no endpoint_mass root.
         mass_rows = [row for batch in batches['channel_mass']
-                     for row in decode_rows(
+                     for row in _batch_rows(
                          catalog.table('channel_mass'), batch)]
         assert 'mass' in mass_rows[1]
         assert 'endpoint_mass' not in mass_rows[1]

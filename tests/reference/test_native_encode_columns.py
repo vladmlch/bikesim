@@ -97,8 +97,12 @@ def test_compile_plan_contract():
     energy = cat.table('channel_energy')
     with pytest.raises(ValueError, match='all_roots'):
         compile_plan(energy)
+    # channel_energy's map<double> leaves compile now; channel_tires is
+    # still struct-bound and falls back.
     assert compile_plan(
-        energy, all_roots=sorted(cat.channel_roots())) is None
+        energy, all_roots=sorted(cat.channel_roots())) is not None
+    assert compile_plan(cat.table('channel_tires'),
+                        all_roots=sorted(cat.channel_roots())) is None
 
 
 def test_encode_table_piece_shape_and_domain():
@@ -253,6 +257,180 @@ def test_unknown_channel_member_rejected():
         episode.encode_table(plan, 0, 1)
 
 
+def test_map_channel_tables_bitwise():
+    """``channel_energy``/``channel_suspension`` ``map<double>`` leaves.
+
+    Row 0 carries full maps; row 1 exercises the empty-vs-absent split —
+    an empty dict at a *deeper* map path is a present empty map, while an
+    empty dict at a claimed-root map path routes an empty remainder and so
+    encodes the leaf absent (``_distribute`` never assigns it); row 2 drops
+    every root.
+    """
+    cat = support.support_catalog()
+    rows = [
+        support.sample_row(interval_id=0, start=0.0, channels={
+            **support.energy_channels(),
+            'component_work_j': {'chain': 0.1, 'tires': -0.2},
+            **support.suspension_channels()}),
+        support.sample_row(interval_id=1, start=0.001, channels={
+            **support.energy_channels(energy={'elastic_energy_j': {}}),
+            'component_work_j': {},
+            **support.suspension_channels(
+                suspension={'generalized_force_components_n': {}})}),
+        support.sample_row(interval_id=2, start=0.002, channels={}),
+    ]
+    for name in ('channel_energy', 'channel_suspension'):
+        oracle.assert_identical(cat.table(name), rows, catalog=cat)
+    # The empty-vs-absent distinction is real in the native output, not a
+    # vacuous byte match on both sides.
+    spec = cat.table('channel_energy')
+    native_rb = oracle.native_record_batch(
+        spec, oracle.make_episode(rows), catalog=cat)
+    assert native_rb.column('elastic_energy_j').to_pylist() == \
+        [[('fork_spring', 0.25)], [], None]
+    assert native_rb.column('elastic_energy_j_present').to_pylist() == \
+        [True, True, False]
+    assert native_rb.column('component_work_j').to_pylist() == \
+        [[('chain', 0.1), ('tires', -0.2)], None, None]
+    assert native_rb.column('component_work_j_present').to_pylist() == \
+        [True, False, False]
+    suspension_rb = oracle.native_record_batch(
+        cat.table('channel_suspension'), oracle.make_episode(rows),
+        catalog=cat)
+    assert suspension_rb.column(
+        'generalized_force_components_n').to_pylist() == [
+            [('fork_slide', 12.5), ('shock_slide', -3.0)], [], None]
+
+
+def test_map_leaf_rejects_non_dict_and_bad_member():
+    """Map conversion gates, asserted on BOTH paths: the oracle raises
+    EncodingError (a ValueError) and the native side must reject too."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_suspension')
+    plan = oracle.compile_plan(spec, all_roots=sorted(cat.channel_roots()))
+    for member in ('a-string', {'fork_slide': 'text'},
+                   {'fork_slide': [1.0]}, 5):
+        channels = support.suspension_channels(
+            suspension={'generalized_force_components_n': member})
+        with pytest.raises(ValueError):
+            oracle.oracle_batch(
+                spec, [{'interval_id': 0,
+                        'suspension': channels['suspension']}])
+        episode = oracle.make_episode(
+            [support.sample_row(interval_id=0, channels=channels)])
+        with pytest.raises(ValueError):
+            episode.encode_table(plan, 0, 1)
+
+
+def test_map_required_leaf_missing_rejects():
+    """A required ``map<double>`` absent under a present parent rejects on
+    both paths; an absent root still encodes NULL via the exemption."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_suspension')
+    channels = support.suspension_channels()
+    del channels['suspension']['generalized_force_components_n']
+    with pytest.raises(ValueError, match='required'):
+        oracle.oracle_batch(
+            spec, [{'interval_id': 0, 'suspension': channels['suspension']}])
+    plan = oracle.compile_plan(spec, all_roots=sorted(cat.channel_roots()))
+    episode = oracle.make_episode(
+        [support.sample_row(interval_id=0, channels=channels)])
+    with pytest.raises(ValueError, match='required'):
+        episode.encode_table(plan, 0, 1)
+
+
+def test_map_except_keys_routes_owned_member():
+    """``except_keys`` remainder routing on a depth-1 map leaf.
+
+    Mirrors ``channel_rider``'s ``rider_welds``/``weld_crank_torque_nm``
+    split (still ``map<struct>``-bound until Task 5): a member claimed by
+    a deeper sibling leaf is its own column and never a map entry, and a
+    payload whose members are ALL owned leaves the map itself absent.
+    """
+    from bike_sim.recording.catalog import (
+        Catalog, FieldSpec, TableSpec, _EPISODE_KEY, _INTERVAL_KEY)
+
+    def leaf(key, dtype, path, optional=False, **kwargs):
+        return FieldSpec(key, dtype, 'n/a', 'interval', optional,
+                         'diagnostic', 'test', f'{key} leaf', path=path,
+                         **kwargs)
+
+    spec = TableSpec(
+        'channel_owned_map', 'channels', (_EPISODE_KEY, _INTERVAL_KEY),
+        (leaf('bag', 'map<double>', ('bag',), optional=True,
+              except_keys=('owned',)),
+         leaf('owned_value', 'double', ('bag', 'owned'), optional=True)),
+        'map remainder routing', 'test', claims=frozenset({'bag'}))
+    mini = Catalog((spec,), support.synthetic_joints(), ())
+    rows = [
+        support.sample_row(interval_id=0, channels={'bag': {
+            'owned': 3.5, 'free_a': 1.5, 'free_b': -0.25}}),
+        # Only the owned member: the map routes an empty remainder away.
+        support.sample_row(interval_id=1, channels={'bag': {'owned': 1}}),
+        # An empty payload is not an empty map either — the leaf is absent.
+        support.sample_row(interval_id=2, channels={'bag': {}}),
+    ]
+    oracle.assert_identical(spec, rows, catalog=mini)
+    native_rb = oracle.native_record_batch(
+        spec, oracle.make_episode(rows), catalog=mini)
+    assert native_rb.column('bag').to_pylist() == [
+        [('free_a', 1.5), ('free_b', -0.25)], None, None]
+    assert native_rb.column('bag_present').to_pylist() == [True, False, False]
+    assert native_rb.column('owned_value').to_pylist() == [3.5, 1.0, None]
+    assert native_rb.column('owned_value_present').to_pylist() == \
+        [True, True, False]
+
+
+def test_all_list_and_map_dtypes_bitwise():
+    """The full leaf matrix of this task in one mini-spec: ``bigint[]``,
+    ``varchar[]`` (root-level list lanes incl. a str payload exploding to
+    code points) and ``map<boolean>``/``map<varchar>``/``map<double[]>``
+    alongside ``map<double>``."""
+    from bike_sim.recording.catalog import (
+        Catalog, FieldSpec, TableSpec, _EPISODE_KEY, _INTERVAL_KEY)
+
+    def leaf(key, dtype, optional=False):
+        return FieldSpec(key, dtype, 'n/a', 'interval', optional,
+                         'diagnostic', 'test', f'{key} leaf', path=(key,))
+
+    spec = TableSpec(
+        'channel_dtypes', 'channels', (_EPISODE_KEY, _INTERVAL_KEY),
+        (leaf('ints', 'bigint[]'), leaf('tags', 'varchar[]'),
+         leaf('map_d', 'map<double>', optional=True),
+         leaf('map_b', 'map<boolean>', optional=True),
+         leaf('map_s', 'map<varchar>', optional=True),
+         leaf('map_v', 'map<double[]>', optional=True)),
+        'list/map dtype matrix', 'test',
+        claims=frozenset({'ints', 'tags', 'map_d', 'map_b', 'map_s',
+                          'map_v'}))
+    mini = Catalog((spec,), support.synthetic_joints(), ())
+    rows = [
+        support.sample_row(interval_id=0, channels={
+            'ints': [1, 2, -3], 'tags': ['a', 'b'],
+            'map_d': {'x': 1.5, 'y': -0.0}, 'map_b': {'on': True},
+            'map_s': {'k': 'v'}, 'map_v': {'p': [1.0, 2.0], 'q': []}}),
+        support.sample_row(interval_id=1, channels={
+            'ints': [], 'tags': 'hé',
+            'map_d': {}, 'map_b': {}, 'map_s': {}, 'map_v': {}}),
+        support.sample_row(interval_id=2, channels={}),
+    ]
+    oracle.assert_identical(spec, rows, catalog=mini)
+    native_rb = oracle.native_record_batch(
+        spec, oracle.make_episode(rows), catalog=mini)
+    assert native_rb.column('ints').to_pylist() == \
+        [[1, 2, -3], [], None]
+    assert native_rb.column('tags').to_pylist() == \
+        [['a', 'b'], ['h', 'é'], None]
+    assert native_rb.column('map_d').to_pylist() == \
+        [[('x', 1.5), ('y', -0.0)], None, None]
+    assert native_rb.column('map_b').to_pylist() == \
+        [[('on', True)], None, None]
+    assert native_rb.column('map_s').to_pylist() == \
+        [[('k', 'v')], None, None]
+    assert native_rb.column('map_v').to_pylist() == \
+        [[('p', [1.0, 2.0]), ('q', [])], None, None]
+
+
 def test_applied_rows_bitwise_vs_python_mirror():
     """``episode.applied_rows`` == the Python diff mirror, chunk-stable.
 
@@ -381,6 +559,42 @@ def test_forces_fragments_respect_batch_rows_bound():
             oracle.column_bits(assembled.column(name))
 
 
+def test_map_fragments_respect_batch_rows_bound():
+    """Map/list piece slicing across fragment boundaries matches oracle.
+
+    ``_slice_piece`` re-bases a map's key offsets and slices the shared
+    items payload; the row boundaries land mid-entry-set so any off-by-one
+    in the entry span shows up here.
+    """
+    cat = support.support_catalog()
+    rows = [
+        support.sample_row(interval_id=i, start=i * 0.001, channels={
+            **support.energy_channels(energy={'elastic_energy_j': {
+                f'k{i}': float(i), f'k{i}b': -float(i)}}),
+            'component_work_j': {'only': 0.5} if i % 2 == 0 else {}})
+        for i in range(5)]
+    episode = oracle.make_episode(rows)
+    from bike_sim.recording.contracts import PieceBatch
+    from bike_sim.recording.native import NativePhysicalSource
+    from bike_sim.recording.native_encode import pieces_to_arrow
+    import pyarrow as pa
+    spec = cat.table('channel_energy')
+    source = NativePhysicalSource(episode, cat)
+    batches = [batch for batch in source.tables(batch_rows=2)
+               if batch.table == 'channel_energy']
+    assert batches and all(isinstance(b, PieceBatch) for b in batches)
+    assert all(b.row_count <= 2 for b in batches)
+    assert sum(b.row_count for b in batches) == 5
+    assembled = pa.concat_batches(
+        [pieces_to_arrow(spec, b.row_count, b.pieces, 0, pa)
+         for b in batches])
+    reference = oracle.oracle_record_batch_from_episode(spec, episode, 0)
+    assert reference.num_rows == assembled.num_rows
+    for name in reference.schema.names:
+        assert oracle.column_bits(reference.column(name)) == \
+            oracle.column_bits(assembled.column(name)), name
+
+
 def test_real_episode_flat_tables_bitwise():
     from _native_runtime_support import make_python_ride
     from bike_sim.native.runtime import create_native_ride
@@ -393,7 +607,8 @@ def test_real_episode_flat_tables_bitwise():
         driver.flush()
         episode = driver._native.seal_episode()
         cat = build_catalog(model_joints(driver.make_render_model()))
-        for name in ('physics', 'forces', 'channel_drive', 'channel_sensors'):
+        for name in ('physics', 'forces', 'channel_drive', 'channel_sensors',
+                     'channel_energy', 'channel_suspension'):
             oracle.assert_identical(cat.table(name), episode, catalog=cat)
     finally:
         driver.close()

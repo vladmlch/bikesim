@@ -13,10 +13,16 @@ The module must stay importable without pyarrow — the assembler receives
 from __future__ import annotations
 
 
-# Flat-leaf dtypes the channels projector covers; map/struct fields compile
-# to None (whole table falls back to the oracle) until their emitters land.
+# Flat-leaf dtypes the channels projector covers; struct fields compile
+# to None (whole table falls back to the oracle) until their emitter lands.
 _LEAF_DTYPES = {'double', 'bigint', 'boolean', 'varchar',
-                'double[]', 'bigint[]', 'varchar[]'}
+                'double[]', 'bigint[]', 'varchar[]',
+                'map<double>', 'map<boolean>', 'map<varchar>',
+                'map<double[]>'}
+
+# map<K> member dtype -> the leaf dtype the items piece assembles as.
+_MAP_MEMBER = {'map<double>': 'double', 'map<boolean>': 'boolean',
+               'map<varchar>': 'varchar', 'map<double[]>': 'double[]'}
 
 # The runtime bool|str tri-state at this absolute channel path publishes as
 # lowercase verdict text — the same coercion NativePhysicalSource._canonical
@@ -107,6 +113,19 @@ def _assemble(node_dtype, piece, pa):
         return pa.ListArray.from_arrays(
             pa.array(np.asarray(piece['offsets'], dtype=np.int32)),
             child, mask=mask)
+    if kind == 'map':
+        import numpy as np
+        keys = pa.array(list(piece['keys']), type=pa.string())
+        items = _assemble(_MAP_MEMBER[node_dtype], piece['items'], pa)
+        # Same absent-vs-null convention as list leaves: a NULL map slot
+        # carries an empty key span plus a validity bit.
+        mask = None
+        if piece.get('valid') is not None:
+            mask = pa.array(~np.asarray(piece['valid'], dtype=bool),
+                            type=pa.bool_())
+        return pa.MapArray.from_arrays(
+            pa.array(np.asarray(piece['offsets'], dtype=np.int32)),
+            keys, items, mask=mask)
     raise ValueError(f'unsupported piece kind {kind!r}')
 
 
@@ -145,6 +164,14 @@ def _slice_piece(piece, first, last):
         offsets = np.asarray(piece['offsets'])
         low, high = int(offsets[first]), int(offsets[last])
         out['data'] = piece['data'][low:high]
+        out['offsets'] = offsets[first:last + 1] - low
+        return out
+    if kind == 'map':
+        import numpy as np
+        offsets = np.asarray(piece['offsets'])
+        low, high = int(offsets[first]), int(offsets[last])
+        out['keys'] = piece['keys'][low:high]
+        out['items'] = _slice_piece(piece['items'], low, high)
         out['offsets'] = offsets[first:last + 1] - low
         return out
     raise ValueError(f'unsupported piece kind {kind!r}')

@@ -238,6 +238,36 @@ def sensors_channels(speed=0.0, **overrides):
     return channels
 
 
+def suspension_channels(**overrides):
+    """A complete authored ``channels`` row centred on the ``suspension``
+    root.
+
+    All six ``channel_suspension`` scalar leaves are required, and so is
+    the ``map<double>`` leaf ``generalized_force_components_n`` — its
+    per-component dict is the production map-member shape (one int member
+    included to exercise the int->double lane). ``overrides`` merge like
+    ``energy_channels``.
+    """
+    channels = {
+        'suspension': {
+            'fork_travel_m': 0.01,
+            'shock_stroke_m': 0.005,
+            'fork_velocity_mps': -0.2,
+            'shock_velocity_mps': 0.1,
+            'shock_solver_limit_power_w': 0.0,
+            'linkage_closure_max_m': 1e-9,
+            'generalized_force_components_n': {
+                'fork_slide': 12.5, 'shock_slide': -3},
+        },
+    }
+    for key, value in overrides.items():
+        if key == 'suspension':
+            channels['suspension'].update(value)
+        else:
+            channels[key] = value
+    return channels
+
+
 class TreePhysicalSource:
     """PhysicalSource over authored sample trees, encoded via the catalog.
 

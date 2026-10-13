@@ -36,8 +36,14 @@ struct PlanColumn {
     std::vector<std::string> path;
     bool optional = false;
     std::int64_t shape = -1;              // >= 0 pins the x[] element count
-    std::vector<std::string> except_keys; // parsed; only map emitters read it
+    std::vector<std::string> except_keys; // map members deeper leaves own
     std::string convert;                  // "" | "verdict"
+    // True when a proper prefix at depth >= 2 is itself a leaf: routing
+    // only enters non-leaf members (the root call still routes claimed
+    // members at a depth-1 leaf before the terminal gets the remainder),
+    // so a leaf nested under a deeper terminal is unreachable and encodes
+    // absent on every row.
+    bool shadowed = false;
     // Indices of the op=='valid' masks whose paths are this leaf's prefix
     // chain (path[:1..len-1]; the claim mask itself for depth-1 leaves). A
     // required leaf encodes NULL iff one of them reads invalid this row —
@@ -62,9 +68,12 @@ struct PlanView {
     std::vector<std::string> roots;       // this table's claimed roots
     std::set<std::string> all_roots;      // every catalog channel root
     // Routing indexes mirroring encoding.py::_distribute's lookups: full
-    // leaf paths, and each internal prefix's routed member components.
+    // leaf paths, each internal prefix's routed member components, and the
+    // leaf path -> leaf_columns slot map so the walker can read a
+    // terminal's dtype when a dict arrives at a leaf prefix.
     std::set<std::vector<std::string>> leaf_paths;
     std::map<std::vector<std::string>, std::set<std::string>> deeper;
+    std::map<std::vector<std::string>, std::size_t> leaf_index;
 };
 
 constexpr std::array<std::string_view, 6> kPhysicsColumns{
@@ -73,12 +82,20 @@ constexpr std::array<std::string_view, 4> kForcesColumns{
     "interval_id", "component", "qfrc", "power_w"};
 
 // constexpr array — a std::set initializer could throw at static init.
-constexpr std::array<std::string_view, 7> kLeafDtypes{
+constexpr std::array<std::string_view, 11> kLeafDtypes{
     "double", "bigint", "boolean", "varchar",
-    "double[]", "bigint[]", "varchar[]"};
+    "double[]", "bigint[]", "varchar[]",
+    "map<double>", "map<boolean>", "map<varchar>", "map<double[]>"};
 
 bool is_leaf_dtype(const std::string &dtype) {
     return std::ranges::find(kLeafDtypes, dtype) != kLeafDtypes.end();
+}
+
+// The container terminals _distribute lets absorb the dict members deeper
+// fields did not claim; scalar/x[] terminals reject the same remainder.
+bool is_container_dtype(std::string_view dtype) {
+    return dtype.starts_with("map<") || dtype == "struct" ||
+           dtype == "struct[]";
 }
 
 PlanColumn parse_column(nb::handle item) {
@@ -163,17 +180,43 @@ void parse_channels_plan(const wire::Dict &dict, PlanView &parsed) {
         parsed.all_roots.insert(wire::string(item, "encode plan.all_roots"));
     const std::set<std::string> claims(parsed.roots.begin(),
                                        parsed.roots.end());
-    for (const PlanColumn &column : parsed.leaf_columns) {
+    for (std::size_t c = 0; c < parsed.leaf_columns.size(); ++c) {
+        const PlanColumn &column = parsed.leaf_columns[c];
         if (!claims.contains(column.path.front()))
             throw std::invalid_argument(
                 "encode plan.columns: '" + column.name +
                 "' path is outside the claimed roots");
         parsed.leaf_paths.insert(column.path);
+        parsed.leaf_index.emplace(column.path, c);
         for (std::size_t depth = 1; depth < column.path.size(); ++depth)
             parsed.deeper[std::vector<std::string>(
                 column.path.begin(),
                 column.path.begin() + static_cast<std::ptrdiff_t>(depth))]
                 .insert(column.path[depth]);
+    }
+    for (PlanColumn &column : parsed.leaf_columns) {
+        for (std::size_t depth = 2;
+             depth < column.path.size() && !column.shadowed; ++depth)
+            column.shadowed = parsed.leaf_paths.contains(
+                std::vector<std::string>(
+                    column.path.begin(),
+                    column.path.begin() + static_cast<std::ptrdiff_t>(depth)));
+        // A map terminal at a claimed root receives the remainder left by
+        // deeper sibling routing; except_keys is the catalog's declaration
+        // of that ownership, so the plan must agree with the routing index
+        // or the two encoders would split the members differently.
+        if (column.path.size() == 1 &&
+            column.dtype.starts_with("map<")) {
+            const auto owned = parsed.deeper.find(column.path);
+            const std::set<std::string> routed =
+                owned == parsed.deeper.end() ? std::set<std::string>{}
+                                             : owned->second;
+            if (routed != std::set<std::string>(column.except_keys.begin(),
+                                                column.except_keys.end()))
+                throw std::invalid_argument(
+                    "encode plan.columns: '" + column.name +
+                    "' except_keys do not name the deeper sibling members");
+        }
     }
     // Resolve each leaf's absent-or-null prefix chain to its valid-mask
     // slot; the plan must carry every mask the exemption consults.
@@ -374,27 +417,15 @@ const Wire *walk_path(const WireObject &channels,
 // NOLINTNEXTLINE(misc-no-recursion) depth mirrors the declared field paths
 void distribute_validate(const PlanView &plan, std::vector<std::string> &prefix,
                          const Wire &payload, const std::string &label) {
-    const bool is_leaf = plan.leaf_paths.contains(prefix);
+    const auto terminal = plan.leaf_index.find(prefix);
     if (sample_wire::is_none(payload)) return;
     const auto *object = std::get_if<WireObject>(&payload.value);
     if (object == nullptr) {
         // A scalar/list payload under a non-leaf prefix mirrors the oracle's
         // "unrouted" rejection; leaf prefixes pass it to the leaf walk.
-        if (!is_leaf)
+        if (terminal == plan.leaf_index.end())
             throw std::invalid_argument(
                 label + ": no reviewed field accepts the payload");
-        return;
-    }
-    if (is_leaf) {
-        // A leaf-dtype terminal cannot absorb object members (map/struct
-        // terminals belong to the Task-4/5 machinery); name them all.
-        if (!object->empty()) {
-            std::vector<std::string_view> members;
-            members.reserve(object->size());
-            for (const auto &[member, _] : *object) members.push_back(member);
-            throw std::invalid_argument(label + ": unknown channel members " +
-                                        quoted_list(std::move(members)));
-        }
         return;
     }
     const auto deeper = plan.deeper.find(prefix);
@@ -415,13 +446,19 @@ void distribute_validate(const PlanView &plan, std::vector<std::string> &prefix,
             distribute_validate(plan, prefix, value, child_label);
         prefix.pop_back();
     }
-    if (!unrouted.empty())
+    if (unrouted.empty()) return;
+    // _distribute remainder routing: a map/struct terminal absorbs the
+    // members deeper sibling fields did not claim (the leaf walk reads
+    // them back out of the same dict); every other prefix names and
+    // rejects the leftover members.
+    if (terminal == plan.leaf_index.end() ||
+        !is_container_dtype(plan.leaf_columns[terminal->second].dtype))
         throw std::invalid_argument(label + ": unknown channel members " +
                                     quoted_list(std::move(unrouted)));
 }
 
 // One NULL slot in a leaf piece: placeholder payload behind a false
-// validity bit (or an empty span for a list leaf).
+// validity bit (or an empty member/key span for list and map leaves).
 void push_null(Piece &piece) {
     switch (piece.kind) {
         case Piece::Kind::scalar_d: piece.d.push_back(0.0); break;
@@ -431,13 +468,15 @@ void push_null(Piece &piece) {
         case Piece::Kind::list_d:
         case Piece::Kind::list_i:
         case Piece::Kind::list_s:
+        case Piece::Kind::map:
+            // list_* offsets count flat payload elements; map offsets
+            // count entries, which the keys vector tracks one-to-one.
             piece.offsets.push_back(static_cast<std::int32_t>(
                 piece.kind == Piece::Kind::list_i ? piece.i.size()
-                : piece.kind == Piece::Kind::list_s ? piece.s.size()
-                : piece.d.size()));
+                : piece.kind == Piece::Kind::list_d ? piece.d.size()
+                : piece.s.size()));
             break;
         case Piece::Kind::structure:
-        case Piece::Kind::map:
             throw std::invalid_argument(
                 "encode: non-leaf piece kind in a channels leaf column");
     }
@@ -492,6 +531,110 @@ std::size_t utf8_width(char lead, const std::string &text,
     if (!well_formed)
         throw std::invalid_argument(label + ": invalid UTF-8");
     return width;
+}
+
+// A map entry's member value converted at the map's member dtype — the
+// encoding.py::_convert recursion inside the map<K> branch. items is the
+// member piece the row loop allocated for this column.
+void append_map_member(const PlanColumn &column, Piece &items,
+                       const Wire &member, const std::string &label) {
+    switch (items.kind) {
+        case Piece::Kind::scalar_d: {
+            const auto *real = std::get_if<double>(&member.value);
+            const auto *whole = std::get_if<std::int64_t>(&member.value);
+            if (real != nullptr) items.d.push_back(*real);
+            else if (whole != nullptr)
+                items.d.push_back(static_cast<double>(*whole));
+            else
+                throw std::invalid_argument(
+                    label + ": expected a real number");
+            return;
+        }
+        case Piece::Kind::scalar_b:
+            if (const auto *flag = std::get_if<bool>(&member.value)) {
+                items.b.push_back(static_cast<char>(*flag));
+                return;
+            }
+            throw std::invalid_argument(label + ": expected a bool");
+        case Piece::Kind::scalar_s:
+            if (const auto *text = std::get_if<std::string>(&member.value)) {
+                items.s.push_back(*text);
+                return;
+            }
+            throw std::invalid_argument(label + ": expected a string");
+        case Piece::Kind::list_d: {
+            // map<double[]> members walk the same iterable lanes as an
+            // x[] leaf — array elements, str code points and dict keys —
+            // and hit the same per-element and shape gates; an empty
+            // iterable stays an empty member list.
+            std::size_t count = 0;
+            const auto element_label = [&]() {
+                return label + "[" + std::to_string(count) + "]";
+            };
+            if (const auto *values =
+                    std::get_if<WireArray>(&member.value)) {
+                for (const Wire &element : *values) {
+                    append_list_element(items, element, element_label());
+                    ++count;
+                }
+            } else if (const auto *text =
+                           std::get_if<std::string>(&member.value)) {
+                for (std::size_t at = 0; at < text->size(); ++count) {
+                    const std::size_t width =
+                        utf8_width((*text)[at], *text, at, label);
+                    const Wire element{text->substr(at, width)};
+                    append_list_element(items, element, element_label());
+                    at += width;
+                }
+            } else if (const auto *bag =
+                           std::get_if<WireObject>(&member.value)) {
+                for (const auto &[name, ignored] : *bag) {
+                    const Wire element{name};
+                    append_list_element(items, element, element_label());
+                    ++count;
+                }
+            } else {
+                throw std::invalid_argument(
+                    label + ": expected a sequence");
+            }
+            if (column.shape >= 0 &&
+                std::cmp_not_equal(count, column.shape))
+                throw std::invalid_argument(
+                    label + ": expected " + std::to_string(column.shape) +
+                    " elements, got " + std::to_string(count));
+            items.offsets.push_back(
+                static_cast<std::int32_t>(items.d.size()));
+            return;
+        }
+        case Piece::Kind::scalar_i:
+        case Piece::Kind::list_i:
+        case Piece::Kind::list_s:
+        case Piece::Kind::structure:
+        case Piece::Kind::map:
+            break;
+    }
+    throw std::invalid_argument(
+        "encode: unsupported map member piece kind");
+}
+
+// True when `member` is owned by a deeper sibling leaf rather than being a
+// map entry. Routing strips owned members only at a depth-1 leaf — that is
+// the only prefix _distribute visits on the terminal itself; a deeper map
+// leaf receives its dict verbatim, so it keeps every member.
+bool owned_map_member(const PlanColumn &column, const std::string &member) {
+    return column.path.size() == 1 &&
+           std::ranges::find(column.except_keys, member) !=
+               column.except_keys.end();
+}
+
+// The routed remainder of a depth-1 map leaf: a dict whose members are all
+// owned by deeper siblings encodes the leaf absent rather than an empty
+// map (encoding.py::_distribute assigns only a non-empty remainder).
+bool map_remainder_nonempty(const PlanColumn &column,
+                            const WireObject &object) {
+    for (const auto &[member, ignored] : object)
+        if (!owned_map_member(column, member)) return true;
+    return false;
 }
 
 // Converts one resolved (non-null) leaf value into its piece; lists append
@@ -589,8 +732,33 @@ void append_leaf(const PlanColumn &column, const Wire &value, Piece &piece,
                 : piece.d.size()));
             return;
         }
+        case Piece::Kind::map: {
+            // _convert's map branch: the payload must be a dict, every
+            // remaining key must be a nonempty string (_check_map_keys
+            // runs ahead of any member conversion), and each member
+            // converts at the member dtype in dict order.
+            const auto *object = std::get_if<WireObject>(&value.value);
+            if (object == nullptr)
+                throw std::invalid_argument(label + ": expected a dict");
+            for (const auto &[member, ignored] : *object)
+                if (!owned_map_member(column, member) && member.empty())
+                    throw std::invalid_argument(
+                        label + ": map keys must be nonempty strings");
+            for (const auto &[member, entry] : *object) {
+                if (owned_map_member(column, member)) continue;
+                piece.s.push_back(member);
+                std::string member_label{label};
+                member_label += "['";
+                member_label += member;
+                member_label += "']";
+                append_map_member(column, *piece.items, entry,
+                                  member_label);
+            }
+            piece.offsets.push_back(
+                static_cast<std::int32_t>(piece.s.size()));
+            return;
+        }
         case Piece::Kind::structure:
-        case Piece::Kind::map:
             throw std::invalid_argument(
                 "encode: non-leaf piece kind in a channels leaf column");
     }
@@ -603,7 +771,16 @@ Piece::Kind leaf_kind(std::string_view dtype) {
     if (dtype == "varchar") return Piece::Kind::scalar_s;
     if (dtype == "double[]") return Piece::Kind::list_d;
     if (dtype == "bigint[]") return Piece::Kind::list_i;
-    return Piece::Kind::list_s;
+    if (dtype == "varchar[]") return Piece::Kind::list_s;
+    return Piece::Kind::map;   // map<...>; is_leaf_dtype gated the rest
+}
+
+// The member-value piece kind inside a map leaf's `items` child.
+Piece::Kind map_member_kind(std::string_view dtype) {
+    if (dtype == "map<double>") return Piece::Kind::scalar_d;
+    if (dtype == "map<boolean>") return Piece::Kind::scalar_b;
+    if (dtype == "map<varchar>") return Piece::Kind::scalar_s;
+    return Piece::Kind::list_d;  // map<double[]>
 }
 
 std::int64_t emit_channels(std::span<const SamplePtr> rows,
@@ -630,8 +807,19 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
                 piece.offsets.reserve(rows.size() + 1);
                 piece.offsets.push_back(0);
                 break;
-            case Piece::Kind::structure:
             case Piece::Kind::map:
+                // keys live in piece.s; the items child carries the
+                // member-value payload for every entry across all rows
+                // (a list child starts its own offsets span at 0).
+                piece.offsets.reserve(rows.size() + 1);
+                piece.offsets.push_back(0);
+                piece.items = std::make_unique<Piece>();
+                piece.items->kind =
+                    map_member_kind(plan.leaf_columns[c].dtype);
+                if (piece.items->kind == Piece::Kind::list_d)
+                    piece.items->offsets.push_back(0);
+                break;
+            case Piece::Kind::structure:
                 throw std::invalid_argument(
                     "encode: non-leaf piece kind in a channels leaf column");
         }
@@ -692,12 +880,22 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
             bool complete = false;
             const Wire *leaf =
                 walk_path(sample.channels, column.path, complete);
-            // A dict payload under a depth-1 claim routes nothing (non-empty
-            // already threw above; an empty dict leaves the leaf absent).
-            const bool resolved =
-                leaf != nullptr &&
-                (column.path.size() > 1 ||
-                 !std::holds_alternative<WireObject>(leaf->value));
+            // A dict payload at a leaf path routes nothing itself: a
+            // scalar/list leaf under a depth-1 claim is absent (non-empty
+            // dicts already threw in distribute_validate), while a map
+            // leaf owns the routed remainder — absent when every member
+            // went to a deeper sibling (or the dict is empty), an empty
+            // map only when routing assigned it verbatim at depth > 1.
+            // A shadowed leaf sits under a container terminal; routing
+            // never reaches it, so it encodes absent on every row.
+            bool resolved = leaf != nullptr && !column.shadowed;
+            if (resolved)
+                if (const auto *object =
+                        std::get_if<WireObject>(&leaf->value))
+                    resolved = piece.kind == Piece::Kind::map
+                        ? column.path.size() > 1 ||
+                              map_remainder_nonempty(column, *object)
+                        : column.path.size() > 1;
             if (resolved && sample_wire::is_none(*leaf)) {
                 if (!column.optional)
                     throw std::invalid_argument(

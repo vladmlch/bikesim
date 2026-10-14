@@ -46,6 +46,10 @@ def parser():
     p.add_argument('--sensor-period', type=float, default=.005, help='acquisition period, s')
     p.add_argument('--rider-program', type=Path)
     p.add_argument('--policy', help='motor policy factory, module:factory')
+    p.add_argument('--record', action='store_true',
+                   help='retain every accounted interval in RAM and publish one run at launch end')
+    p.add_argument('--check-policy', choices=('strict', 'diagnostic'), default=None,
+                   help='model-check policy, independent of recording (default: strict)')
     p.add_argument('--diagnostic-model-limits', action='store_true',
                    help='continue out-of-scope diagnostic runs; validity remains false')
     p.add_argument('--scenario', choices=RESEARCH_SCENARIOS+('generated', 'alpine'), default='rough_uphill',
@@ -90,10 +94,10 @@ def parser():
     p.add_argument('--front-teeth', type=int, default=34, action=ExplicitPhysicsValue)
     p.add_argument('--rear-teeth', type=int, default=51, action=ExplicitPhysicsValue)
     p.add_argument('--record-decimation', type=int, default=80,
-        help='keep every Nth physics interval in telemetry; for 10-30 s episodes use >= 80 (memory and file size scale with duration/dt/N)')
+        help='expensive-measurement cadence; --record still retains every accounted physics interval')
     p.add_argument('--energy-tolerance', type=float, default=.05, help='maximum normalized numerical energy residual')
     p.add_argument('--out', type=Path, default=Path('output/antiwheelie'))
-    p.add_argument('--overwrite', action='store_true')
+    p.add_argument('--overwrite', action='store_true', help='legacy compatibility flag; new recordings always use exclusive unique directories')
     return p
 
 
@@ -148,7 +152,16 @@ def build_demand(args):
     return None if args.demand is None else DemandProgram.constant(args.demand)
 
 
-def make_environment(args):
+def resolve_check_policy(args):
+    explicit = getattr(args, 'check_policy', None)
+    diagnostic = getattr(args, 'diagnostic_model_limits', False)
+    if diagnostic and explicit == 'strict':
+        raise ValueError('--diagnostic-model-limits conflicts with --check-policy strict')
+    return explicit or ('diagnostic' if diagnostic else 'strict')
+
+
+def make_environment(args, *, capture_mode='legacy'):
+    policy = resolve_check_policy(args)
     track = build_track(args)
     if args.posture != 'neutral' and args.rider != 'articulated_planar':
         raise ValueError('dynamic posture requires --rider articulated_planar')
@@ -174,13 +187,13 @@ def make_environment(args):
     experiment = ExperimentConfig(control_period_s=args.control_period, actuator_delay_s=args.actuator_delay,
         duration_s=args.duration, seed=args.seed, record_decimation=args.record_decimation,
         maximum_energy_residual_ratio=args.energy_tolerance,
-        stop_on_model_violation=not args.diagnostic_model_limits)
+        stop_on_model_violation=policy == 'strict')
     sensors = SensorConfig.ideal() if args.ideal_sensors else SensorConfig(latency_s=args.sensor_delay)
     sensors = replace(sensors, sample_period_s=args.sensor_period)
     rider, program = build_rider(args)
     return build_environment(track=track, rider=rider, physics_config=cfg,
         experiment=experiment, sensors=sensors, road_resolution_m=args.road_resolution,
-        demand=build_demand(args), rider_program=program, backend=getattr(args, 'backend', 'python'))
+        demand=build_demand(args), rider_program=program, backend=getattr(args, 'backend', 'python'), capture_mode=capture_mode)
 
 
 def posture_at(name, time_s):
@@ -209,42 +222,53 @@ def command_for(env, args):
 def main(argv=None):
     p = parser()
     args = p.parse_args(argv)
-    env = None
-    session = None
+    from bike_sim.recording.json_codec import dumps
+    from bike_sim.sim.research.recording_lifecycle import ResearchRun, close_environment
+    env = session = launch = primary = None
     try:
-        # Validate a complete command before compiling the plant or touching outputs.
+        args.resolved_check_policy = resolve_check_policy(args)
         RideControl(motor_torque_nm=None if args.assist else args.motor_torque,
                     motor_limit_nm=args.motor_limit, human_torque_nm=args.human_torque)
-        if args.out.exists() and any(args.out.iterdir()) and not args.overwrite:
-            raise FileExistsError(f'output exists; choose another --out or pass --overwrite: {args.out}')
-        policy = None if args.policy is None else load_policy(args.policy)
-        env = make_environment(args)
+        env = make_environment(args, capture_mode='full' if args.record else 'off')
+        launch = ResearchRun(env, args.out, enabled=args.record, mode='research_headless',
+                             invocation=None if argv is None else ['bike-research', *argv])
+        try:
+            policy = None if args.policy is None else load_policy(args.policy)
+        except Exception as error:
+            env.fail_policy(error)
+            raise
         if policy is not None:
             session = PolicySession(env, policy, reference=args.policy)
+            launch.attach(session)
         while not env.done:
             if session is None:
                 env.step(command_for(env, args))
             else:
                 session.advance()
-        if session is None:
-            env.save(args.out, overwrite=args.overwrite)
-        else:
-            session.save(args.out, overwrite=args.overwrite)
-        from bike_sim.sim.ride.physical_samples import plain
-        print(json.dumps(plain(dict(output=str(args.out), outcome=env.reason,
-                                    metrics=env.tracker.metrics)), indent=2))
+        output = launch.finish()
+        print(dumps(dict(output=None if output is None else str(output),
+                         recording='off' if output is None else 'published',
+                         outcome=env.reason, metrics=env.tracker.metrics), indent=2))
         return episode_exit_code(env)
-    except Exception as exc:
-        if env is not None and env.error is not None:
-            if session is None:
-                env.save(args.out, overwrite=args.overwrite)
-            else:
-                session.save(args.out, overwrite=args.overwrite)
-        print(f'ERROR: {exc}', file=sys.stderr)
-        return 3 if env is not None and env.error is not None else 2
+    except BaseException as exc:
+        primary = exc
+        if launch is not None and not launch.finalization_attempted:
+            try:
+                launch.finish(primary=exc, stop=True)
+            except BaseException as secondary:
+                if secondary is not exc:
+                    exc.add_note(f'research finalization also failed: {type(secondary).__name__}: {secondary}')
+        if not isinstance(exc, (Exception, KeyboardInterrupt)):
+            raise
+        print(f'ERROR: {type(exc).__name__}: {exc}', file=sys.stderr)
+        for note in getattr(exc, '__notes__', ()):
+            print(f'  {note}', file=sys.stderr)
+        if isinstance(exc, KeyboardInterrupt):
+            return 130
+        return 3 if env is not None else 2
     finally:
         if env is not None:
-            env.close(discard_pending=True)
+            close_environment(env, primary)
 
 
 if __name__ == '__main__':

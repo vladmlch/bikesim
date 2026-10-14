@@ -1,10 +1,13 @@
 """RunCapture contract tests: ownership, identity, ordering, finalization."""
 from pathlib import Path
+import signal
+import threading
 
 import pytest
 
-from bike_sim.recording.capture import RunCapture
+from bike_sim.recording.capture import EpisodeJournal, RunCapture
 from bike_sim.recording.contracts import EpisodeEvidence, InputEvent, RunMetadata
+from bike_sim.recording.interrupt import InterruptShield
 
 from _recording_support import (
     TreePhysicalSource, episode, run_metadata, sample_row,
@@ -115,6 +118,54 @@ def test_event_identity_and_order_are_validated():
         capture.event(_event(1, 2))   # out-of-order event id
 
 
+def test_episode_journal_owns_contiguous_ids_per_episode():
+    capture = RunCapture(run_metadata(), enabled=True)
+    journal = EpisodeJournal(capture, 0)
+    assert journal.episode_id == 0 and journal.next_id == 0
+    journal.emit('episode_start', received_wall_s=1., processed_step=0)
+    journal.emit('brake_toggle', received_wall_s=1.1, processed_step=4,
+                 applied_step=4, values={'record': 'requested'})
+    assert journal.next_id == 2
+    events = list(capture.iter_events())
+    assert [e.event_id for e in events] == [0, 1]
+    # emit_all journals a pre-built contiguous sequence (derived events).
+    journal.emit_all([_event(0, 2, kind='derived_transition'),
+                      _event(0, 3, kind='derived_transition')])
+    assert journal.next_id == 4
+    assert [e.kind for e in capture.iter_events()][-2:] == [
+        'derived_transition', 'derived_transition']
+    # A new episode's journal restarts its own cursor.
+    other = EpisodeJournal(capture, 1)
+    other.emit('episode_start', received_wall_s=2., processed_step=0)
+    assert [e.episode_id for e in capture.iter_events()][-1] == 1
+
+
+def test_episode_journal_rejects_non_contiguous_bulk_emission():
+    capture = RunCapture(run_metadata(), enabled=True)
+    journal = EpisodeJournal(capture, 0)
+    journal.emit('episode_start', received_wall_s=1., processed_step=0)
+    # Wrong episode or a skipped event id leaves the cursor unchanged.
+    with pytest.raises(ValueError, match='continue journal'):
+        journal.emit_all([_event(1, 1)])
+    with pytest.raises(ValueError, match='continue journal'):
+        journal.emit_all([_event(0, 2)])
+    assert journal.next_id == 1
+    # A mid-sequence rejection commits nothing past the valid prefix.
+    with pytest.raises(ValueError, match='continue journal'):
+        journal.emit_all([_event(0, 1), _event(0, 3)])
+    assert journal.next_id == 2
+
+
+def test_episode_journal_validates_its_construction():
+    capture = RunCapture(run_metadata(), enabled=True)
+    with pytest.raises(TypeError):
+        EpisodeJournal(object(), 0)
+    with pytest.raises(ValueError):
+        EpisodeJournal(capture, -1)
+    with pytest.raises(ValueError):
+        EpisodeJournal(capture, True)
+
+
 def test_event_field_validation():
     capture = RunCapture(run_metadata(), enabled=True)
     with pytest.raises(ValueError):
@@ -221,13 +272,13 @@ def test_failed_publication_keeps_capture_retryable(tmp_path):
     assert capture.state == 'published'
 
 
-def test_finalize_without_a_publisher_fails_without_side_effect(tmp_path):
+def test_finalize_uses_default_duckdb_publisher(tmp_path):
+    from bike_sim.recording.reader import Recording
     capture = RunCapture(run_metadata(), enabled=True)
-    target = tmp_path / 'run'
-    with pytest.raises(Exception):
-        capture.finalize(target)
-    assert capture.state == 'publication_failed'
-    assert not target.exists()
+    target = capture.finalize(tmp_path / 'run')
+    assert capture.state == 'published'
+    with Recording(target) as saved:
+        assert saved.episode_ids == ()
 
 
 def test_appends_are_rejected_after_publication(tmp_path):
@@ -238,8 +289,50 @@ def test_appends_are_rejected_after_publication(tmp_path):
         capture.event(_event(0, 0))
     with pytest.raises(RuntimeError):
         capture.add_episode(episode(TreePhysicalSource([])))
-    failed = RunCapture(run_metadata(), enabled=True)
-    with pytest.raises(Exception):
+    def fail_publisher(capture, target):
+        raise OSError('injected publisher failure')
+    failed = RunCapture(run_metadata(), enabled=True, _publisher=fail_publisher)
+    with pytest.raises(OSError, match='injected'):
         failed.finalize(tmp_path / 'x')
     with pytest.raises(RuntimeError):
         failed.event(_event(0, 0))
+
+
+def test_interrupt_shield_defers_sigint_and_restores_handler():
+    """On the main thread a shielded Ctrl-C is counted, not raised, and
+    the previous handler is always restored on exit."""
+    previous = signal.getsignal(signal.SIGINT)
+    shield = InterruptShield()
+    with shield:
+        signal.raise_signal(signal.SIGINT)
+        assert shield.deferred == 1
+        signal.raise_signal(signal.SIGINT)
+        assert signal.getsignal(signal.SIGINT) == shield.note
+    assert shield.deferred == 2
+    assert signal.getsignal(signal.SIGINT) is previous
+
+
+def test_interrupt_shield_restores_on_body_failure():
+    previous = signal.getsignal(signal.SIGINT)
+    shield = InterruptShield()
+    with pytest.raises(RuntimeError, match='boom'):
+        with shield:
+            raise RuntimeError('boom')
+    assert signal.getsignal(signal.SIGINT) is previous
+
+
+def test_interrupt_shield_is_a_flag_holder_off_main_thread():
+    """``signal.signal`` cannot install handlers off the main thread; the
+    shield degrades to a flag holder and the section still runs."""
+    shield = InterruptShield()
+    outcome = []
+    def work():
+        with shield:
+            shield.note()   # the injected-hook seam still records
+            outcome.append('done')
+    worker = threading.Thread(target=work)
+    worker.start()
+    worker.join(timeout=10)
+    assert outcome == ['done']
+    assert shield.deferred == 1
+    assert shield._previous is None

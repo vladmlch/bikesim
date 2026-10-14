@@ -25,9 +25,67 @@ PUBLICATION_FAILED = 'publication_failed'
 
 
 def _default_publisher():
-    """Resolve the storage writer lazily; absent until A4 lands storage.py."""
+    """Resolve the storage writer only when enabled capture is finalized."""
     from bike_sim.recording.storage import write_recording
     return write_recording
+
+
+class EpisodeJournal:
+    """Per-episode input-event cursor over one ``RunCapture`` (R11).
+
+    The journal owns the episode's sequential ``event_id`` counter; every
+    emission still goes through ``RunCapture.event`` validation, so journal
+    order stays the journal's identity order. One journal exists per
+    reset-separated episode; a frontend replaces it on reset.
+    """
+
+    def __init__(self, capture: 'RunCapture', episode_id: int):
+        if not isinstance(capture, RunCapture):
+            raise TypeError('capture must be a RunCapture')
+        if isinstance(episode_id, bool) or not isinstance(episode_id, int) \
+                or episode_id < 0:
+            raise ValueError('episode_id must be a nonnegative integer')
+        self._capture = capture
+        self.episode_id = int(episode_id)
+        self.next_id = 0
+
+    def emit(self, kind: str, *, received_wall_s: float,
+             processed_step: int, applied_step: int | None = None,
+             values=None) -> InputEvent:
+        """Journal one event at the cursor, then advance it.
+
+        ``received_wall_s`` is a monotonic wall timestamp; it is evidence
+        metadata only and never feeds a physics input. ``processed_step``
+        is the committed step the input was associated with;
+        ``applied_step`` records when the request took effect (or ``None``
+        for requests that never apply, like a quit or a toggle after the
+        terminal state).
+        """
+        event = InputEvent(
+            episode_id=self.episode_id, event_id=self.next_id, kind=kind,
+            received_wall_s=float(received_wall_s),
+            processed_step=int(processed_step),
+            applied_step=applied_step,
+            values={} if values is None else values)
+        self._capture.event(event)
+        self.next_id += 1
+        return event
+
+    def emit_all(self, events) -> int:
+        """Journal a pre-built event sequence (e.g. derived transitions).
+
+        The sequence must start at the cursor and use consecutive ids.
+        Returns the new cursor position.
+        """
+        for event in events:
+            if event.episode_id != self.episode_id \
+                    or event.event_id != self.next_id:
+                raise ValueError(
+                    f'event {event.episode_id, event.event_id} does not '
+                    f'continue journal {(self.episode_id, self.next_id)}')
+            self._capture.event(event)
+            self.next_id += 1
+        return self.next_id
 
 
 class RunCapture:
@@ -84,9 +142,9 @@ class RunCapture:
             raise ValueError(
                 f'event identity {key} does not follow '
                 f'{self._last_event_key}')
-        self._last_event_key = key
         if self._enabled:
             self._events.append(event)
+        self._last_event_key = key
 
     def add_episode(self, evidence: EpisodeEvidence) -> None:
         """Commit one sealed episode, atomically.
@@ -108,7 +166,7 @@ class RunCapture:
         episode_id = int(evidence.episode_id)
         existing = self._episodes.get(episode_id)
         if existing is not None:
-            if existing is evidence or existing == evidence:
+            if existing is evidence:
                 return
             raise ValueError(
                 f'conflicting evidence for episode {episode_id}')
@@ -117,8 +175,12 @@ class RunCapture:
             raise ValueError(
                 f'episode identifier {episode_id} breaks prefix continuity: '
                 f'expected {self._episode_order[-1] + 1}')
-        self._episodes[episode_id] = evidence
         self._episode_order.append(episode_id)
+        try:
+            self._episodes[episode_id] = evidence
+        except BaseException:
+            self._episode_order.pop()
+            raise
 
     def iter_episodes(self) -> Iterator[EpisodeEvidence]:
         """Committed episodes in identity order; read-only, non-consuming."""

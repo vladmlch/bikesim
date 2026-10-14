@@ -292,8 +292,8 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/runtime/accounting.cpp
   src/runtime/period_buffer.cpp
   src/runtime/samples_binding.cpp
+  src/runtime/encode.cpp
   src/runtime/status.cpp
-  src/runtime/control.cpp
   src/runtime/runtime_binding.cpp
   src/runtime/static_brake.cpp
   src/runtime/step.cpp
@@ -478,6 +478,7 @@ add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp
   src/rider/least_squares.cpp src/runtime/samples.cpp
   src/runtime/wire.cpp
+  src/runtime/control.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
   src/writers/tire_common.cpp src/writers/tire.cpp

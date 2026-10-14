@@ -10,6 +10,7 @@ from time import monotonic
 import mujoco
 from bike_sim.physics.checks import scalar
 from bike_sim.sim.ride.control import RideControl
+from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
 from bike_sim.sim.ride.physical_recorder import PhysicalRecorder
 from bike_sim.sim.ride.physical_session import configuration_metadata
 from bike_sim.sim.ride.wheelie import WheelieTracker, WheelieTruth, truth_from_sample
@@ -88,8 +89,19 @@ def _integer_steps(seconds, dt, name):
 
 class ResearchEnvironment:
     backend = "python"
+    # Episode-scope defaults keep __new__ test doubles on the pre-capture
+    # behavior (legacy history, unsealed); __init__/_begin_episode set the
+    # real per-episode state.
+    capture_mode = "legacy"
+    _sealed_episode = None
+    _keep_history = True
+    _requested_count = 0
 
-    def __init__(self, sim, config=None, sensors=None, *, demand=None, rider_behavior=None, rider_program=None):
+    def __init__(self, sim, config=None, sensors=None, *, demand=None, rider_behavior=None, rider_program=None, capture_mode="legacy"):
+        from bike_sim.recording.research import capture_mode as validate_capture_mode
+        self.capture_mode = validate_capture_mode(capture_mode)
+        self._keep_history = self.capture_mode in ('legacy', 'full')
+        self._generation = -1
         self.sim = sim
         self.config = ExperimentConfig() if config is None else config
         self.sensor_config = SensorConfig() if sensors is None else sensors
@@ -126,6 +138,12 @@ class ResearchEnvironment:
         self._begin_episode()
 
     def _begin_episode(self):
+        self._generation += 1
+        self._sealed_episode = None
+        self._capture_samples = []
+        self._capture_cursor = -1
+        self._completed_count = self._requested_count = self._applied_base = 0
+        self._last_requested = None
         self._window = None
         self._stop_requested = False
         self._closed = False
@@ -134,7 +152,10 @@ class ResearchEnvironment:
         self.run_metadata = {}
         if self.rider_behavior is not None:
             self.rider_behavior.reset(self.seed)
-        self.recorder = PhysicalRecorder(self.sim, decimate=self.config.record_decimation)
+        self.recorder = PhysicalRecorder(self.sim, decimate=self.config.record_decimation,
+                                         enabled=self.capture_mode == 'legacy')
+        self.sim.physical.set_recording_retention(
+            'full' if self.capture_mode == 'full' else 'legacy' if self.capture_mode == 'legacy' else 'off')
         # Diagnostic mode may keep recording a violating episode; the run's
         # model_valid flag still goes false and stays false.
         self.sim.physical.set_strict(self.config.stop_on_model_violation)
@@ -162,8 +183,9 @@ class ResearchEnvironment:
             human_torque_nm=None if self.sim.physics_config.seated_climb.enabled else 0.)
         self._motor_applied = self._applied
         self.commands_requested = []
-        self.commands_applied = [dict(time_s=0., step=0, control=asdict(self._applied))]
-        self.observations = [self.observation]
+        self.commands_applied = ([dict(time_s=0., step=0, control=asdict(self._applied))]
+                                 if self.capture_mode != 'off' else [])
+        self.observations = [self.observation] if self._keep_history else []
         self.trace = []
         self._sample_cursor = -1
         self.terminated = self.truncated = False
@@ -183,7 +205,18 @@ class ResearchEnvironment:
         self.demand_nm = None if self.demand is None else self.demand.at(0.)
         self.metadata = configuration_metadata(self.sim, seed=self.seed)
         from bike_sim.sim.research.replay import integration_state
-        self.initial_integration_state = integration_state(self.sim).copy()
+        from bike_sim.recording.contracts import freeze
+        self.initial_integration_state = freeze(integration_state(self.sim))
+        self._recording_assets = ()
+        self._recording_catalog = None
+        if self.capture_mode in ('full', 'legacy'):
+            from bike_sim.recording.assets import snapshot_assets, research_recipe
+            self._recording_assets = snapshot_assets(track=self.sim.track,
+                vertices=self.sim.physical.vertices, metadata=self.metadata, recipe=research_recipe(self))
+        if self.capture_mode == 'full':
+            from bike_sim.recording.catalog import build_catalog
+            from bike_sim.recording.native import model_joints
+            self._recording_catalog = build_catalog(model_joints(self.sim.model))
 
     @property
     def done(self):
@@ -208,7 +241,20 @@ class ResearchEnvironment:
         self._begin_episode()
         return self.observation
 
+    def _retain_published_samples(self):
+        if self.capture_mode != 'full':
+            return
+        from bike_sim.recording.research import OwnedSample
+        # Retain all committed accounting rows before evaluation can stop on
+        # an earlier outcome or fail. This does not create a control transition.
+        for sample in self.sim.physical.completed_samples:
+            if sample.interval_id > self._capture_cursor:
+                owned = OwnedSample.capture(sample)
+                self._capture_samples.append(owned)
+                self._capture_cursor = sample.interval_id
+
     def _consume_completed_samples(self, *, stop_at_outcome=True):
+        self._retain_published_samples()
         for sample in self.sim.physical.completed_samples:
             if sample.interval_id <= self._sample_cursor:
                 continue
@@ -275,8 +321,8 @@ class ResearchEnvironment:
         return self.advance_control()
 
     def begin_control(self, control, *, front_brake_demand=0., rear_brake_demand=0.):
-        if self._closed:
-            raise RuntimeError('research environment is closed')
+        if self._closed or self._sealed_episode is not None:
+            raise RuntimeError('research environment is closed or sealed; reset before advancing')
         if self.control_pending:
             raise RuntimeError('an external control interval is already active')
         if self.done:
@@ -297,15 +343,27 @@ class ResearchEnvironment:
                 control = replace(control, posture=posture)
         control.validate_for(self.sim.physics_config, self.sim.rider.variant)
         start_step = self.sim.steps
-        self._queue.append((start_step+self.delay_steps, control))
-        self.commands_requested.append(dict(time_s=self.sim.time_s, step=start_step, control=asdict(control),
-            front_brake_demand=front_brake_demand, rear_brake_demand=rear_brake_demand))
+        request = dict(time_s=self.sim.time_s, step=start_step, control=asdict(control),
+            front_brake_demand=front_brake_demand, rear_brake_demand=rear_brake_demand)
         target_step = min(start_step+self.control_steps, self.max_steps)
-        self._window = (control, front_brake_demand, rear_brake_demand,
-                        start_step, target_step, seen_demand_nm)
+        window = (control, front_brake_demand, rear_brake_demand,
+                  start_step, target_step, seen_demand_nm)
+        next_count = self._requested_count + 1
+        # Stage allocations before publishing the request/window pair.
+        if self._keep_history:
+            self.commands_requested.append(request)
+        try:
+            self._queue.append((start_step+self.delay_steps, control))
+        except BaseException:
+            if self._keep_history:
+                self.commands_requested.pop()
+            raise
+        self._last_requested = request
+        self._requested_count = next_count
+        self._window = window
 
     def advance_control(self, *, wall_budget_s=None, target_step=None):
-        if self._closed or not self.control_pending:
+        if self._closed or self._sealed_episode is not None or not self.control_pending:
             raise RuntimeError("begin an external control interval before advancing")
         if wall_budget_s is not None:
             wall_budget_s = scalar(wall_budget_s, "wall_budget_s", minimum=0.)
@@ -328,9 +386,10 @@ class ResearchEnvironment:
                     crank_target_rate_rad_s=rider_control.crank_target_rate_rad_s,
                     posture=rider_control.posture, rider_enabled=rider_control.rider_enabled)
                 if effective != self._applied:
+                    if self.capture_mode != 'off':
+                        self.commands_applied.append(dict(time_s=self.sim.time_s, step=self.sim.steps,
+                                                           control=asdict(effective)))
                     self._applied = effective
-                    self.commands_applied.append(dict(time_s=self.sim.time_s, step=self.sim.steps,
-                                                       control=asdict(self._applied)))
                 # Brakes are an immediate out-of-band safety input, not queued.
                 self.sim.step(front_brake_demand, rear_brake_demand, control=self._applied)
                 self._consume_completed_samples()
@@ -366,15 +425,67 @@ class ResearchEnvironment:
             self.truncated, self.reason = True, 'duration'
         self.demand_nm = None if self.demand is None else self.demand.at(self.sim.time_s)
         self.observation = self.pipeline.read(self.sim.time_s)
-        self.observations.append(self.observation)
         result = ResearchStep(self.observation, self.last_truth, self.tracker.state,
                               self.terminated, self.truncated, self.reason, self.sim.steps-start_step, self.numerically_valid,
                               demand_nm=seen_demand_nm, model_valid=self.model_valid)
-        self.trace.append(result)
+        if self._keep_history:
+            self.trace.append(result)
+            try:
+                self.observations.append(self.observation)
+            except BaseException:
+                self.trace.pop()
+                raise
+        self._completed_count += 1
         self._window = None
         if self._stop_requested:
             self.stop()
         return result
+
+    @property
+    def last_requested(self):
+        from bike_sim.recording.contracts import freeze
+        return freeze(self._last_requested)
+
+    def applied_since(self, cursor):
+        from bike_sim.recording.contracts import _integer, freeze
+        cursor = _integer(cursor, 'cursor')
+        end = self._applied_base + len(self.commands_applied)
+        if not self._applied_base <= cursor <= end:
+            raise ValueError('applied cursor is stale or beyond the committed prefix')
+        result = (freeze(self.commands_applied[cursor - self._applied_base:]), end)
+        # Prepare the complete Python-owned result before consuming anything.
+        if self.capture_mode == 'verify':
+            del self.commands_applied[:end - self._applied_base]
+            self._applied_base = end
+        return result
+
+    def seal_episode(self, episode_id, *, reason):
+        if self.capture_mode != 'full':
+            raise RuntimeError('sealing research evidence requires full capture')
+        if self._sealed_episode is not None:
+            if self._sealed_episode.episode_id != episode_id:
+                raise ValueError('an episode cannot be sealed under two identities')
+            return self._sealed_episode
+        if self.sim.physical._buffer._raws:
+            try:
+                self.sim.physical.flush()
+            except InvalidReferenceRun as error:
+                # The monitor has published the failing prefix already. Own
+                # that prefix without integrating or fabricating a transition.
+                self.error = self.error or f'{type(error).__name__}: {error}'
+                if not self.done:
+                    self.terminated, self.reason = True, 'invalid_controller'
+        self._retain_published_samples()
+        from bike_sim.recording.research import OwnedPythonEpisode, ResearchHistory, seal_research
+        from bike_sim.recording.native import NativePhysicalSource
+        physical = NativePhysicalSource(OwnedPythonEpisode(self._generation, tuple(self._capture_samples)),
+                                        self._recording_catalog)
+        history = ResearchHistory(requested=self.commands_requested, applied=self.commands_applied,
+                                  observations=self.observations, transitions=self.trace)
+        evidence = seal_research(self, episode_id, reason=reason, physical=physical, history=history)
+        self._capture_samples = physical.episode.samples
+        self._sealed_episode = evidence
+        return evidence
 
     def save(self, directory, *, overwrite=False):
         from bike_sim.native.recording import export_recording
@@ -403,3 +514,7 @@ class ResearchEnvironment:
             raise RuntimeError("finish the active interval before closing the environment")
         self._window = None
         self._closed = True
+        owner = getattr(self, "_replay_assets_owner", None)
+        if owner is not None:
+            owner.cleanup()
+            self._replay_assets_owner = None

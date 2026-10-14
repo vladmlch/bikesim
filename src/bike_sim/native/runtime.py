@@ -103,7 +103,8 @@ class NativeRideDriver:
         self._native.set_finish_position(position_m)
 
     def release_samples(self):
-        """Release pending delivery, retaining native decimated recording."""
+        """Release pending delivery; the configured retention policy keeps
+        whichever committed intervals it selected (off/full/legacy)."""
         self._native.release_samples()
 
     def seal_episode(self):

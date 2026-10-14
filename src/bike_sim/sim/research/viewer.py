@@ -14,27 +14,43 @@ from bike_sim.sim.research.sensors import SensorConfig
 DEFAULT_POLICY = 'bike_sim.sim.research.policies:passthrough_factory'
 
 
-def make_ride_session(track, args, rider):
+def make_ride_session(track, args, rider, *, capture_mode='legacy'):
     reference = args.policy or DEFAULT_POLICY
-    policy = load_policy(reference)
     experiment = ExperimentConfig(
         duration_s=90. if args.duration is None else args.duration,
         control_period_s=args.control_period, actuator_delay_s=args.actuator_delay,
         seed=0 if args.seed is None else args.seed, record_decimation=args.decimate,
-        stop_on_model_violation=args.headless)
+        stop_on_model_violation=getattr(args, 'resolved_check_policy', None) == 'strict'
+            if getattr(args, 'resolved_check_policy', None) is not None else args.headless)
     sensors = SensorConfig(sample_period_s=args.sensor_period, latency_s=args.sensor_delay)
     program = None if args.rider_program is None else RiderProgram.load(args.rider_program)
     demand = None if args.demand is None else DemandProgram.constant(args.demand)
     env = build_environment(track=track, rider=rider, physics_config=args.resolved_physics,
         experiment=experiment, sensors=sensors, road_resolution_m=args.road_resolution,
-        demand=demand, rider_program=program, backend=getattr(args, 'backend', 'python'))
+        demand=demand, rider_program=program, backend=getattr(args, 'backend', 'python'), capture_mode=capture_mode)
+    from bike_sim.sim.research.recording_lifecycle import ResearchRun, close_environment
+    launch = None
     try:
-        return PolicySession(env, policy, reference=reference)
-    except BaseException as error:
+        if capture_mode != 'legacy':
+            launch = ResearchRun(env, args.out, enabled=capture_mode == 'full',
+                                 mode='research_headless' if args.headless else 'research_viewer')
         try:
-            env.close(discard_pending=True)
-        except BaseException as cleanup:
-            error.add_note(f'research setup cleanup failed: {type(cleanup).__name__}: {cleanup}')
+            policy = load_policy(reference)
+        except Exception as error:
+            env.fail_policy(error)
+            raise
+        session = PolicySession(env, policy, reference=reference)
+        if launch is not None:
+            launch.attach(session)
+        return session
+    except BaseException as error:
+        if launch is not None:
+            try:
+                launch.finish(primary=error, stop=True)
+            except BaseException as cleanup:
+                if cleanup is not error:
+                    error.add_note(f'research setup finalization failed: {type(cleanup).__name__}: {cleanup}')
+        close_environment(env, error)
         raise
 
 
@@ -69,20 +85,26 @@ def stop_at_boundary(session):
         session.advance_pending(wall_budget_s=COMPUTE_SLICE_S)
 
 
-def run_research_viewer(session, output_dir, *, time_scale=1):
+def run_research_viewer(session, output_dir, *, time_scale=1, record=None, capture=None):
     """Owned snapshots, bounded slices, boundary-safe pause/stop/save/reset."""
+    from bike_sim.sim.research.recording_lifecycle import ResearchRun, close_environment
     env = session.env
+    enabled = getattr(env, 'capture_mode', 'legacy') == 'full' if record is None else bool(record)
+    launch = getattr(env, 'recording_run', None)
+    if launch is None:
+        launch = ResearchRun(env, output_dir, enabled=enabled, mode='research_viewer', capture=capture)
+        launch.attach(session)
     keys = SimpleQueue()
-    generation = 0
+    primary = None
     saved = False
     paused = braking = stop = reset_requested = False
 
     def save_episode():
         nonlocal saved
         if not saved:
-            destination = Path(output_dir)/f'episode-{generation:04d}'
-            session.save(destination)
-            print(f'[bike-ride research] {env.reason}: {destination}', flush=True)
+            launch.seal(reason=env.reason or 'viewer_closed')
+            if launch.capture.enabled:
+                print(f'[bike-ride research] episode {launch.episode_id}: {env.reason}; retained in RAM', flush=True)
             saved = True
 
     try:
@@ -95,9 +117,9 @@ def run_research_viewer(session, output_dir, *, time_scale=1):
         model = env.make_render_model() if env.backend == 'native' else copy(env.sim.model)
         presenter = FramePresenter(model)
         presenter.replica.apply(environment_snapshot(env))
-        print('[bike-ride research] Space pause | R save/reset | B brakes | C/1/2 camera | '
+        print('[bike-ride research] Space pause | R close/reset | B brakes | C/1/2 camera | '
               'T telemetry | G markers | Q stop | F6/F7/F8 speed', flush=True)
-        with mujoco.viewer.launch_passive(model, presenter.replica.data, key_callback=keys.put,
+        with mujoco.viewer.launch_passive(model, presenter.replica.data, key_callback=lambda key: keys.put((key, time.monotonic())),
                 show_left_ui=False, show_right_ui=False) as viewer:
             now = last_sync = last_hud = time.monotonic()
             clock.rebase(now, step=env.sim.steps)
@@ -105,13 +127,18 @@ def run_research_viewer(session, output_dir, *, time_scale=1):
             while viewer.is_running():
                 while True:
                     try:
-                        key = keys.get_nowait()
+                        received = keys.get_nowait()
                     except Empty:
                         break
                     now = time.monotonic()
+                    key, received_wall_s = received if isinstance(received, tuple) else (received, now)
+                    launch.event('key_received', received_wall_s=received_wall_s,
+                                 values={'key': key, 'terminal': env.done})
                     scale = speed_key(key, clock.scale)
                     if scale is not None:
+                        launch.event('time_scale_requested', values={'scale': scale})
                         clock.set_scale(scale, now=now, step=env.sim.steps)
+                        launch.event('time_scale_applied', applied=True, values={'scale': scale})
                         rate.rebase(now, env.sim.time_s)
                     elif key == 32:
                         paused = not paused
@@ -119,6 +146,7 @@ def run_research_viewer(session, output_dir, *, time_scale=1):
                         clock.set_paused(paused, now=now, step=env.sim.steps)
                         rate.rebase(now, env.sim.time_s)
                     elif key in (ord('R'), ord('r')):
+                        launch.event('reset_requested', values={'terminal': env.done})
                         reset_requested = True
                         session.stop()
                     elif key in (ord('B'), ord('b')):
@@ -143,8 +171,7 @@ def run_research_viewer(session, output_dir, *, time_scale=1):
                     if stop:
                         break
                     if reset_requested:
-                        generation += 1
-                        session.reset()
+                        launch.reset()
                         saved = paused = braking = reset_requested = False
                         now = time.monotonic()
                         clock.set_paused(False, now=now, step=env.sim.steps)
@@ -165,50 +192,43 @@ def run_research_viewer(session, output_dir, *, time_scale=1):
                             prefix=f'[research {env.backend} {quality} {env.reason or ("paused" if paused else "running")}] ')
                         last_hud = now
                 time.sleep(.001)
-        stop_at_boundary(session)
-        save_episode()
+        output = launch.finish(stop=True)
+        print(f'[bike-ride research] {env.reason}: ' +
+              ('recording off' if output is None else str(output)), flush=True)
         return episode_exit_code(env)
     except BaseException as error:
-        try:
-            stop_at_boundary(session)
-            save_episode()
-        except BaseException as cleanup:
-            error.add_note(f'research finalization failed: {type(cleanup).__name__}: {cleanup}')
+        primary = error
+        if not launch.finalization_attempted:
+            launch.finish(primary=error, stop=True)
         raise
     finally:
-        env.close(discard_pending=True)
+        close_environment(env, primary)
 
 
 def run_ride_research(track, args, rider):
     if not args.headless:
         from bike_sim.sim.playground import ensure_macos_mjpython
         ensure_macos_mjpython()
-    output = Path(args.out)
-    if output.exists() and (not output.is_dir() or any(output.iterdir())):
-        raise FileExistsError('research output already exists; choose a new --out directory')
-    session = make_ride_session(track, args, rider)
+    from bike_sim.sim.research.recording_lifecycle import close_environment
+    session = make_ride_session(track, args, rider,
+                                capture_mode='full' if getattr(args, 'record', False) else 'off')
+    launch = session.env.recording_run
+    if not args.headless:
+        return run_research_viewer(session, args.out, time_scale=getattr(args, 'time_scale', 1),
+                                   record=getattr(args, 'record', False))
+    primary = None
     try:
-        if not args.headless:
-            try:
-                return run_research_viewer(session, output, time_scale=getattr(args, 'time_scale', 1))
-            except Exception:
-                if session.env.error is None:
-                    raise
-                print(f'[bike-ride research] {session.env.error}', flush=True)
-                return episode_exit_code(session.env)
-        try:
-            while not session.env.done:
-                session.advance()
-        except KeyboardInterrupt:
-            stop_at_boundary(session)
-        except Exception:
-            if session.env.error is None:
-                raise
-            print(f'[bike-ride research] {session.env.error}', flush=True)
-        finally:
-            session.save(output/'episode-0000')
+        while not session.env.done:
+            session.advance()
+        output = launch.finish()
         print(f'[bike-ride research] {session.env.reason}: '
-              f'{session.env.sim.time_s:.3f}s x={session.env.sim.position_m:.3f}m -> {output}')
+              f'{session.env.sim.time_s:.3f}s x={session.env.sim.position_m:.3f}m; ' +
+              ('recording off' if output is None else str(output)))
         return episode_exit_code(session.env)
+    except BaseException as error:
+        primary = error
+        if not launch.finalization_attempted:
+            launch.finish(primary=error, stop=True)
+        raise
     finally:
-        session.env.close(discard_pending=True)
+        close_environment(session.env, primary)

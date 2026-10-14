@@ -101,12 +101,22 @@ class PhysicalRideDriver:
                           else math.ceil(duration_s / self.dt_s))
         self.limit_reason = 'step_cap' if duration_s is None else 'duration_reached'
         self._decimation = decimation
+        self._retention = retention
         self._closed = False
         self.reason = None
         self.step, self.time_s = int(sim.steps), float(sim.time_s)
         self._native = None
         self._sim = None
         self._terrain_stamp = None
+        # Sealed owned evidence per generation; episodes stay valid after a
+        # reset or close (the native values own their sample storage).
+        self._sealed = {}
+        self._seal_catalog = None
+        self._seal_assets = None
+        if record is True:
+            # Read bytes now, while they still match the identity used to
+            # construct this model. No recipe input is first read at shutdown.
+            self._episode_assets()
         sim.physical.set_strict(strict)
         sim.physical.set_recording_retention(retention)
         if backend == 'native':
@@ -122,7 +132,10 @@ class PhysicalRideDriver:
             self.recorder = NativePhysicalRecorder(native)
         else:
             self._sim = sim
+            # Construct through the bound symbol positionally; the retention
+            # policy is an attribute so injected positional doubles still work.
             self.recorder = PhysicalRecorder(sim, decimation)
+            self.recorder.enabled = retention != 'off'
         self.start()
 
     def start(self):
@@ -148,6 +161,9 @@ class PhysicalRideDriver:
     def advance(self, target_step, control=None, *, front_brake_demand=0.,
                 rear_brake_demand=0., wall_budget_s=None):
         self._require_open()
+        if self._sealed and self._native is not None \
+                and int(self._native.snapshot().generation) in self._sealed:
+            raise RuntimeError('cannot advance a sealed episode; reset first')
         if isinstance(target_step, bool) or not isinstance(target_step, Integral) or target_step < self.step:
             raise ValueError('target_step must be an integer at or after the committed step')
         if wall_budget_s is not None and (isinstance(wall_budget_s, bool) or
@@ -265,6 +281,7 @@ class PhysicalRideDriver:
         else:
             self._sim.reset()
             self.recorder = PhysicalRecorder(self._sim, self._decimation)
+            self.recorder.enabled = self._retention != 'off'
         self.step, self.time_s, self.reason = 0, 0., None
         self.start()
         return self.snapshot()
@@ -301,6 +318,77 @@ class PhysicalRideDriver:
             json.dumps(summary, indent=2, sort_keys=True, allow_nan=False)+'\n', encoding='utf-8')
         return summary
 
+    def _episode_catalog(self):
+        """The reviewed field catalog bound to this model's joint map (lazy)."""
+        if self._seal_catalog is None:
+            from bike_sim.recording.catalog import build_catalog
+            from bike_sim.recording.native import model_joints
+            self._seal_catalog = build_catalog(
+                model_joints(self.make_render_model()))
+        return self._seal_catalog
+
+    def _episode_assets(self):
+        """Owned setup-time bytes shared by all generations of this driver."""
+        if self._seal_assets is None:
+            from bike_sim.recording.assets import snapshot_assets
+            self._seal_assets = snapshot_assets(track=self.track, vertices=self.vertices,
+                                                metadata=self.metadata)
+        return self._seal_assets
+
+    def seal_episode(self, episode_id, *, reason):
+        """Seal the active episode into owned immutable evidence (RAM only).
+
+        Captures the owned summary, typed physical source and bundled assets
+        once per generation; nothing is persisted here — publication is the
+        capture's ``finalize``. A strict trailing-flush rejection commits its
+        evidence prefix and sticky first failure, then raises; retrying this
+        call afterwards returns that owned prefix.
+        """
+        self._require_open()
+        if isinstance(episode_id, bool) or not isinstance(episode_id, Integral) \
+                or episode_id < 0:
+            raise ValueError('episode_id must be a nonnegative integer')
+        if not isinstance(reason, str) or not reason:
+            raise ValueError('reason must be a non-empty string')
+        if self._native is None:
+            raise ValueError('episode sealing requires the native backend')
+        episode_id = int(episode_id)
+        # Duplicate terminal notifications must not reseal: the current
+        # generation key is read before the sealing flush so a second call
+        # for the same episode returns the already-owned evidence.
+        generation = int(self._native.snapshot().generation)
+        sealed = self._sealed.get(generation)
+        if sealed is not None:
+            if sealed.episode_id != episode_id:
+                raise ValueError(
+                    f'generation {generation} already sealed as episode '
+                    f'{sealed.episode_id}')
+            return sealed
+        owned = self._native.seal_episode()
+        from bike_sim.recording.contracts import EpisodeEvidence
+        from bike_sim.recording.native import NativePhysicalSource
+        sealed = EpisodeEvidence(
+            episode_id=episode_id, generation=generation,
+            physical=NativePhysicalSource(owned, self._episode_catalog(),
+                                          ordinary_commands=True),
+            summary=self._recording_summary(reason),
+            assets=self._episode_assets())
+        self._sealed[generation] = sealed
+        return sealed
+
+    def _recording_summary(self, reason):
+        from bike_sim.recording.assets import identity_changes
+        result = self.summary(reason=reason)
+        try:
+            result.update(identity_changes(self.metadata))
+        except Exception as error:
+            # A source identity inspection failure must not discard physical
+            # evidence. It is an explicit limitation, never "unchanged".
+            result['identity_check_error'] = f'{type(error).__name__}: {error}'
+        result['recording_retention'] = self._retention
+        result['measurement_decimation'] = self.record_decimation
+        return result
+
     def close(self):
         if self._closed:
             return
@@ -315,6 +403,13 @@ def build_physical_driver(track, args, rider, *, seed=None, strict=None):
     require_backend(backend, args.resolved_physics, rider)
     from bike_sim.sim.ride.physical_session import build_physical_simulation
     sim = build_physical_simulation(track, args, rider)
+    if strict is None:
+        # --check-policy resolves before runtime construction; without it the
+        # historical headless-strict/viewer-diagnostic defaults apply.
+        policy = getattr(args, 'resolved_check_policy', None)
+        strict = (policy == 'strict') if policy is not None \
+            else bool(getattr(args, 'headless', False))
     return PhysicalRideDriver(sim, backend=backend,
-        strict=args.headless if strict is None else strict, decimation=args.decimate,
-        duration_s=args.duration, seed=seed)
+        strict=strict, decimation=args.decimate,
+        duration_s=args.duration, seed=seed,
+        record=getattr(args, 'record', None))

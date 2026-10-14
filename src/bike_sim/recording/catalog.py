@@ -108,8 +108,14 @@ class FieldSpec:
         }
         if self.dtype in scalar:
             return scalar[self.dtype]
-        inner = ', '.join(f'{c.key} {c.duckdb_type()}' for c in self.children)
-        struct = f'STRUCT<{inner}>'
+        members = []
+        for child in self.children:
+            name = '"' + child.key.replace('"', '""') + '"'
+            members.append(f'{name} {child.duckdb_type()}')
+            if child.optional:
+                present = '"' + (child.key + '_present').replace('"', '""') + '"'
+                members.append(f'{present} BOOLEAN')
+        struct = 'STRUCT(' + ', '.join(members) + ')' 
         if self.dtype == 'struct':
             return struct
         if self.dtype == 'struct[]':
@@ -427,7 +433,7 @@ def _energy_table() -> TableSpec:
            'interval_id when measured', path=('energy', 'source_interval_id')),
         _f('source_time_s', 'double', 's', 'interval', True, 'declared',
            _SRC_CLOSE,
-           'start time of the interval the forwarded measurement belongs to',
+           'end time of the interval the forwarded measurement belongs to',
            path=('energy', 'source_time_s')),
         _f('component_work_j', 'map<double>', 'J', 'interval', True,
            'derived', _SRC_CLOSE,

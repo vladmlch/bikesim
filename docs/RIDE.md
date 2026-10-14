@@ -2,8 +2,17 @@
 
 ## Status and prerequisites
 
-This document describes the **verified** native visual-runtime release as of the
-2026-10-10 acceptance session (branch `impl/cpp-port-p2`). Verified status:
+The 2026-10-13 run-recording delivery changes normal physical/research output
+to opt-in, final-only DuckDB recording. See [RECORDING](RECORDING.md) for the
+verification results and the
+[source-completion ledger](superpowers/audits/2026-10-13-run-recording-source-completion.md)
+for the requirement map. The visual-runtime results below are historical and
+predate recording; the recording behavior described in this document was
+separately exercised on this branch.
+
+### Historical visual-runtime acceptance: 2026-10-10
+
+The original acceptance session (branch `impl/cpp-port-p2`) recorded:
 
 - The native extension builds clean under the documented Release workflow below;
   `bash tools/run_tests.sh native` is green and the `full` profile fails only
@@ -86,17 +95,18 @@ support.
 F6 lowers the scale, F7 raises it, F8 restores 1x. C cycles the camera, 1/2 select
 2D/3D, T toggles terminal telemetry and G toggles model markers. Q/Escape closes.
 Physical Space toggles braking; comma/period lower/raise brake strength. Physical
-R exports the current generation and resets the same compiled setup.
+R seals the current generation in RAM and resets the same compiled setup.
 
-The physical viewer writes a root `preview.csv`, including generation/reset
-markers and requested/achieved pacing values. Full accounted data are exported
-under `generation-0001`, `generation-0002`, etc., with `summary.json`,
-`telemetry.csv`, `intervals.jsonl` and `terrain_vertices.npy`. The run directory
-includes the track, drive mode and configuration hash. Headless physical output
-uses the same evidence files directly in that run directory. Physical reset
-starts fresh accounting and recorder state; finalization exports before close.
-A run that reaches a terminal outcome (e.g. `crash`) announces `[RUN ENDED]`,
-exports the generation, then holds the final frame until the window is closed.
+Physical/research persistence now requires `--record`; `--out` alone does not
+enable it. The ordinary new recording adapter requires `--backend native`.
+Without recording there are no automatic preview CSV, per-generation legacy
+bundles or recording-derived HTML files. With recording, every accounted interval
+and all reset-separated episodes remain in RAM until launch close. Finalization
+publishes one exclusive run directory containing `run.duckdb`, `manifest.json` and
+a successful `summary.md`; the CLI prints the actual directory. A terminal
+outcome announces `[RUN ENDED]`, seals its episode in RAM, then holds the final
+frame without publishing until the window closes. See [RECORDING](RECORDING.md)
+for failure/retry behavior, check policy, analysis commands and explicit legacy exports.
 
 The window holds an independent render model/data pair. An owning frame carries
 full `mjSTATE_INTEGRATION`, the six declared mutable model arrays, native/Python
@@ -124,15 +134,17 @@ same `--backend` selection. `bike-research --backend python|native` remains
 headless and has no playback-scale switch. Example:
 
 ```bash
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-ride --backend native --research --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 1 --time-scale 1 --out output/track-c-research
+BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-ride --backend native --research --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 1 --time-scale 1 --record --out output/track-c-research
 ```
 
-Use a new/empty research output directory. Episodes are saved as
-`episode-0000`, `episode-0001`, etc. Space pauses/resumes; B toggles brakes; R
-saves and resets. Pause/brake/stop/reset requests take effect at the external
-control boundary. Closing the research window finishes only its already active
-control interval, saves it, then closes; it does not request another policy
-command.
+Space pauses/resumes; B toggles brakes; R seals the outgoing episode in RAM and
+resets. With `--record`, finalization creates a unique run directory beneath
+`--out` without replacing existing runs. Episodes are rows in that run, not
+automatically exported `episode-0000` directories. Pause/brake/stop/reset requests
+take effect at the external control boundary. Closing the window finishes only
+its already accepted control interval and then publishes; it does not request
+another policy command. Both Python and native research support the new recorder.
+Explicit programmatic legacy `save()` remains available.
 
 A `module:factory` motor policy stays in Python. `PolicySession.begin_advance()`
 invokes it once; repeated `advance_pending(wall_budget_s=..., target_step=...)`
@@ -144,12 +156,17 @@ pacing debt cap. Default no-target synchronous APIs remain compatible.
 ## Checked replay
 
 ```bash
-uv run --frozen --group native bike-replay output/track-c-research/episode-0000
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-replay output/track-c-research/episode-0000 --viewer --time-scale 2
+# Set RUN to the actual unique directory printed by a recorded research launch.
+RUN=/absolute/path/to/published/run
+uv run --frozen --group native bike-replay "$RUN" --episode 0
+BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-replay "$RUN" --episode 0 --viewer --time-scale 2
 ```
 
-There is no replay backend override. Schema 1 selects Python; schema 2 selects
-its recorded backend and execution identity. File hashes, source/runtime,
+There is no replay backend override. Legacy replay schema 1 selects Python;
+schema 2 selects its recorded backend and execution identity. New DuckDB
+containers use container schema 1 and separate replay contract 3; `--episode` is
+required when selection is ambiguous. Old directories retain their original
+reader and are not upgraded in place. File hashes, source/runtime,
 recorded binary/library identity and supported native capabilities are checked
 before constructing the replay plant. Bundled rider parameter files replace
 untrusted original recipe paths. Recorded policy metadata is data only: no
@@ -159,8 +176,10 @@ Headless and viewer share `ReplaySession`: initial state/observation, requested
 commands and times, transitions, observations, applied events, outcome, model
 status, event/episode metrics and final integration state are checked with the
 existing `1e-9` tolerances. A saved `not_finished` prefix is valid replay input:
-passing verifies that recorded prefix, not a completed physical ride. The
-2026-10-10 native episode (truncated `numerical_quality`, 104 steps) replayed
+passing verifies that recorded prefix, not a completed physical ride. New v3
+error/incomplete/invalid evidence remains analyzable but is not eligible to claim
+completed successful replay. The following is historical legacy evidence only:
+the 2026-10-10 native episode (truncated `numerical_quality`, 104 steps) replayed
 with `passed=true` and `final_state_max_abs_error=0.0` in the real viewer.
 
 Viewer Space pauses without completing a pending command. R constructs a fresh,

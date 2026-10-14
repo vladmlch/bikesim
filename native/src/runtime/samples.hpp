@@ -102,6 +102,9 @@ struct OwnedNativeEpisode {
     // as the empty suffix).
     [[nodiscard]] RuntimeSampleBatch batch(std::int64_t start,
                                            std::int64_t limit) const;
+    // New typed exports must not compute the explicit legacy flat view.
+    [[nodiscard]] RuntimeSampleBatch sample_batch(std::int64_t start,
+                                                  std::int64_t limit) const;
 };
 
 [[nodiscard]] SampleColumns make_columns(std::span<const SamplePtr> samples,

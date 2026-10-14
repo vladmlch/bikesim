@@ -20,7 +20,8 @@ def test_native_recording_replays_same_backend_and_restarts(environment_pair, tm
     try:
         session.advance(wall_budget_s=0.)
         assert session.pending and session.step == 0
-        assert len(session._env.commands_requested) == 1
+        assert session._env.commands_requested == []
+        assert session._env.last_requested['step'] == 0
         while not session.advance(target_step=session.step+1):
             pass
         assert session.report() == expected

@@ -16,6 +16,7 @@ dependencies = [
     "numba>=0.68",
     "duckdb==1.5.6",
     "pyarrow==26.0.0",
+    "pytz>=2026.5",
 ]
 
 [project.scripts]
@@ -25,6 +26,7 @@ bike-export = "bike_sim.cli.export:main"
 bike-ride = "bike_sim.cli.ride:main"
 bike-research = "bike_sim.cli.research:main"
 bike-replay = "bike_sim.cli.replay:main"
+bike-recording = "bike_sim.cli.recording:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]

@@ -424,7 +424,7 @@ OwnedNativeEpisode OwnedNativeEpisode::seal(
             .columns = columns};
 }
 
-RuntimeSampleBatch OwnedNativeEpisode::batch(std::int64_t start,
+RuntimeSampleBatch OwnedNativeEpisode::sample_batch(std::int64_t start,
                                              std::int64_t limit) const {
     const auto size = static_cast<std::int64_t>(samples.size());
     if (start < 0 || start > size)
@@ -434,9 +434,13 @@ RuntimeSampleBatch OwnedNativeEpisode::batch(std::int64_t start,
     const auto last = start + std::min(limit, size - start);
     std::vector<SamplePtr> slice(samples.begin() + start,
                                  samples.begin() + last);
-    SampleColumns flat = make_columns(slice, columns);
-    return {.generation = generation, .samples = std::move(slice),
-            .columns = std::move(flat)};
+    return {.generation = generation, .samples = std::move(slice), .columns = {}};
+}
+
+RuntimeSampleBatch OwnedNativeEpisode::batch(std::int64_t start, std::int64_t limit) const {
+    auto result = sample_batch(start, limit);
+    result.columns = make_columns(result.samples, columns);
+    return result;
 }
 
 void WorkHistory::add(const PhysicalSampleData &sample) {

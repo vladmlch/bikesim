@@ -27,6 +27,8 @@ other declared keys such as ``component`` are required per row.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 import numpy as np
 
 from bike_sim.recording.catalog import TableSpec
@@ -99,7 +101,7 @@ def _convert(value, label, dtype, field=None):
                 f'{label}: expected {field.shape[0]} elements, got {len(seq)}')
         return seq
     if dtype.startswith('map<'):
-        if not isinstance(value, dict):
+        if not isinstance(value, Mapping):
             raise EncodingError(
                 f'{label}: expected a dict, got {type(value).__name__}')
         member_dtype = _MAP_MEMBER[dtype]
@@ -122,7 +124,7 @@ def _check_map_keys(value, label):
 
 
 def _convert_struct(value, label, field):
-    if not isinstance(value, dict):
+    if not isinstance(value, Mapping):
         raise EncodingError(
             f'{label}: expected a dict, got {type(value).__name__}')
     children = {child.key: child for child in field.children}
@@ -133,6 +135,8 @@ def _convert_struct(value, label, field):
     row = {}
     for child in field.children:
         member = value.get(child.key)
+        if child.optional:
+            row[child.key + "_present"] = child.key in value
         if member is None:
             if not child.optional:
                 raise MissingFieldError(f'{label}.{child.key}: required')
@@ -160,7 +164,9 @@ def _distribute(spec, prefix, payload, view, label):
     """Route a ``channels`` payload at ``prefix`` into the flat field view."""
     terminal = _terminal_at(spec, prefix)
     deeper = _deeper_at(spec, prefix)
-    if not isinstance(payload, dict):
+    if payload is None and terminal is None:
+        return
+    if not isinstance(payload, Mapping):
         if terminal is None:
             raise UnknownFieldError(
                 f'{label}: no reviewed field accepts {payload!r}')
@@ -176,7 +182,7 @@ def _distribute(spec, prefix, payload, view, label):
         leaf = _terminal_at(spec, prefix + [member])
         if leaf is not None:
             view[leaf.key] = value
-        elif isinstance(value, dict):
+        elif value is None or isinstance(value, Mapping):
             _distribute(spec, prefix + [member], value, view, member_label)
         else:
             raise UnknownFieldError(
@@ -228,15 +234,20 @@ def encode_rows(spec: TableSpec, rows, *, episode_id=None) -> TableBatch:
     if episode_id is not None and not _is_int(episode_id):
         raise EncodingError('episode_id must be an integer')
     columns = {}
+    parents = sorted({field.path[:depth] for field in spec.fields
+                      for depth in range(1, len(field.path))})
     key_state = {key.key: [] for key in spec.keys}
     rows = list(rows)
     for row_index, row in enumerate(rows):
-        if not isinstance(row, dict):
+        if not isinstance(row, Mapping):
             raise EncodingError(f'{spec.name}[{row_index}]: row must be a dict')
         view = _view(row, spec, row_index)
         label = f'{spec.name}[{row_index}]'
-        present_roots = set(row) & spec.claims if spec.kind == 'channels' \
-            else set()
+        present_roots = {root for root in spec.claims if row.get(root) is not None} \
+            if spec.kind == 'channels' else set()
+        for root in sorted(spec.claims):
+            columns.setdefault('__' + root + '_present', []).append(root in row)
+            columns.setdefault('__' + root + '_valid', []).append(row.get(root) is not None)
         for key in spec.keys:
             value = view.get(key.key)
             if key.key == 'episode_id' and episode_id is not None:
@@ -248,6 +259,19 @@ def encode_rows(spec: TableSpec, rows, *, episode_id=None) -> TableBatch:
             if value is None and key.key not in _INJECTABLE_KEYS:
                 raise MissingFieldError(f'{label}.{key.key}: required key')
             key_state[key.key].append(value)
+        absent_parents = set()
+        for parent in parents:
+            node, present = row, True
+            for member in parent:
+                if not isinstance(node, Mapping) or member not in node:
+                    present, node = False, None
+                    break
+                node = node[member]
+            marker = '__' + '.'.join(parent)
+            columns.setdefault(marker + '_present', []).append(present) if len(parent) > 1 else None
+            columns.setdefault(marker + '_valid', []).append(node is not None) if len(parent) > 1 else None
+            if node is None:
+                absent_parents.add(parent)
         for field_spec in spec.fields:
             field_label = f'{label}.{field_spec.key}'
             if field_spec.key in view:
@@ -261,7 +285,9 @@ def encode_rows(spec: TableSpec, rows, *, episode_id=None) -> TableBatch:
             elif field_spec.optional:
                 encoded, present = None, False
             elif spec.kind == 'channels' \
-                    and field_spec.path[0] not in present_roots:
+                    and (field_spec.path[0] not in present_roots
+                         or any(field_spec.path[:len(parent)] == parent
+                                for parent in absent_parents)):
                 # The parent ``channels`` root is absent on this row: a
                 # required member encodes NULL (requiredness binds within a
                 # present parent; NULL in a required column therefore always
@@ -298,6 +324,12 @@ def decode_rows(spec: TableSpec, batch: TableBatch) -> list:
     field_by_key = {f.key: f for f in spec.keys + spec.fields}
     extras = set(batch.columns) - set(field_by_key) \
         - {k + '_present' for k in field_by_key}
+    masks = {'__' + '.'.join(field.path[:depth]) + suffix
+             for field in spec.fields for depth in range(1, len(field.path))
+             for suffix in ('_present', '_valid')}
+    masks |= {'__' + root + suffix for root in spec.claims
+              for suffix in ('_present', '_valid')}
+    extras -= masks
     if extras:
         raise UnknownFieldError(f'{spec.name}: unknown columns {sorted(extras)}')
     rows = []
@@ -319,6 +351,19 @@ def decode_rows(spec: TableSpec, batch: TableBatch) -> list:
             elif value is None:
                 continue   # NULL in a required column: parent root absent
             _place(row, field_spec.path, _decode_value(value, field_spec))
+        # Restore explicitly null parents after the leaf projection. A missing
+        # parent stays missing; an empty struct stays present and empty.
+        parents = {f.path[:depth] for f in spec.fields
+                   for depth in range(1, len(f.path))}
+        for parent in sorted(parents, key=lambda p: (-len(p), p)):
+            marker = '__' + '.'.join(parent)
+            present = batch.columns.get(marker + '_present')
+            valid = batch.columns.get(marker + '_valid')
+            if present is not None and present[index]:
+                if valid is not None and not valid[index]:
+                    _place(row, parent, None)
+                elif len(parent) == 1:
+                    row.setdefault(parent[0], {})
         rows.append(row)
     return rows
 
@@ -343,15 +388,15 @@ def _decode_value(value, field):
     if field.dtype == 'map<struct>':
         return {key: _decode_struct(member, field)
                 for key, member in value.items()}
-    if isinstance(value, np.ndarray):
-        return value.tolist()
-    return value
+    from bike_sim.recording.json_codec import thaw
+    return thaw(value)
 
 
 def _decode_struct(value, field):
     return {child.key: _decode_value(value.get(child.key), child)
             for child in field.children
-            if value.get(child.key) is not None}
+            if not child.optional or value.get(child.key + '_present',
+                                               value.get(child.key) is not None)}
 
 
 def force_rows(sample) -> list:

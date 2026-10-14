@@ -172,6 +172,15 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
                         help='physical/research execution backend; never falls back')
     parser.add_argument('--time-scale', type=int, choices=(1, 2, 4, 8), default=None,
                         help='interactive physical/research playback speed (default 1)')
+    parser.add_argument('--record', action='store_true',
+                        help='physical native and both research backends: retain the full run '
+                             'recording in memory and publish a run recording under --out '
+                             'at launch end (default off)')
+    parser.add_argument('--check-policy', choices=('strict', 'diagnostic'), default=None,
+                        help='physical/research model-check policy: strict rejects the run '
+                             'at the first violated reference budget; diagnostic warns once '
+                             'and keeps the sticky first failure (default: strict for '
+                             '--headless, diagnostic for the viewer)')
     parser.add_argument("--drive", choices=("coast","ideal_speed_control","crank_effort","articulated_effort"), default=None)
     parser.add_argument("--physics-config", default=None, metavar="PATH")
     parser.add_argument("--initial-speed", type=float, default=None, metavar="KMH")
@@ -236,6 +245,21 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             parser.error('--research uses the resolved physical config; fit sag in a separate run')
         if args.preview:
             parser.error('--research runs an experiment; --preview only draws the track')
+    if args.record:
+        if args.physics != 'physical':
+            parser.error('--record is supported for physical runs only; '
+                         f'--physics {args.physics} has no recording adapter')
+        if args.backend != 'native' and not args.research:
+            parser.error('--record requires --backend native; the ordinary physical '
+                         'Python backend has no recording adapter in this version')
+        if args.preview:
+            parser.error('--record journals a run; --preview only draws the track')
+    if args.check_policy is not None:
+        if args.physics != 'physical':
+            parser.error('--check-policy is a physical option; '
+                         f'--physics {args.physics} has no model-check policy')
+        if args.preview:
+            parser.error('--check-policy does not apply to --preview')
     if args.duration is not None and (not isfinite(args.duration) or args.duration<=0):
         parser.error("--duration must be finite and positive")
     if args.physics=="physical":
@@ -259,7 +283,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             parser.error("articulated_effort requires --rider articulated_planar")
         if args.headless and args.drive=="coast" and args.resolved_physics.initial_speed_mps==0 and args.duration is None:
             parser.error("a stationary physical coast run needs --duration or nonzero --initial-speed")
+        # The check policy resolves before runtime construction and is
+        # independent of --record; defaults preserve the historical
+        # strict-headless/diagnostic-viewer split.
+        args.resolved_check_policy = (args.check_policy if args.check_policy is not None
+                                      else ('strict' if args.headless else 'diagnostic'))
     else:
+        args.resolved_check_policy = None
         if args.assist == 'emtb':
             parser.error('--assist emtb requires physical mode')
         if any(v is not None for v in (args.initial_speed,args.human_torque,args.assist_gain,args.duration)):
@@ -779,8 +809,9 @@ def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, 
         ensure_macos_mjpython()
         from bike_sim.sim.ride.physical_driver import build_physical_driver
         from bike_sim.sim.ride.physical_frontend import run_viewer
-        return run_viewer(build_physical_driver(track, args, rider, seed=args.seed, strict=False),
-                          out_root=args.out, time_scale=args.time_scale)
+        return run_viewer(build_physical_driver(track, args, rider, seed=args.seed),
+                          out_root=args.out, time_scale=args.time_scale,
+                          record=getattr(args, 'record', False))
     if args.sag is not None:
         print(f"{PREFIX} --sag applies to headless runs only; the viewer uses the shipped tune "
               f"(P cycles damper presets, -/= change pressure)", file=sys.stderr)
@@ -866,9 +897,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         try:
             return run_ride_research(track, args, rider)
         except KeyboardInterrupt:
-            return 0
+            return 130
         except Exception as error:
             print(f'{PREFIX} research error: {type(error).__name__}: {error}', file=sys.stderr)
+            for note in getattr(error, '__notes__', ()):
+                print(f'  {note}', file=sys.stderr)
             return 2 if isinstance(error, (ValueError, OSError)) else 3
     try:
         tyre = _tyre_config(args)

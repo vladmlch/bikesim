@@ -22558,5 +22558,15 @@
       "disposition": "planned",
       "evidence": []
     }
-  ]
+  ],
+  "checkout_reconciliation": {
+    "task": "T00",
+    "checkout_head": "3cc805c2a281aac2ac11be30237fa57407617b14",
+    "application_commit": "4667639c6b2917d1aa1f65ff159d45c90544421d",
+    "source_path_count": 146,
+    "record_count": 1611,
+    "all_source_paths_tracked": true,
+    "missing_or_moved_test_files": [],
+    "note": "All test source files verified byte-identical modulo trailing-newline normalization against the supplied snapshot. project/tests/reference/test_constraint_mode_search.py is the only project/ test file and remains an independent entry; no same-name duplicate exists in the checkout. Collected pytest node IDs are acquired in T01, not T00."
+  }
 }

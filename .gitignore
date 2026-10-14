@@ -9,6 +9,10 @@ output/plots/*.png
 output/models/*.xml
 output/divergence_*.json
 output/divergence_*.toml
+# output/ is scratch space for run artifacts (telemetry.csv, intervals.jsonl,
+# generation dirs) — bulk data stays local; only top-level *.md notes are tracked
+output/*
+!output/*.md
 MUJOCO_LOG.TXT
 
 # Offline bundles (built artifacts — published as GitHub Releases)

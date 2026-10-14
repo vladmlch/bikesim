@@ -30,63 +30,15 @@ if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
   bike_verify_apple_sdk_compatibility()
 endif()
 
-# Resolve the interpreter first so mujoco/nanobind paths below are queried from
+# Resolve the interpreter first so tools/native_dependencies.py is probed by
 # the SAME python we compile against (uv run exposes .venv via VIRTUAL_ENV).
 find_package(Python 3.13 REQUIRED COMPONENTS Interpreter Development.Module)
 
-execute_process(COMMAND "${Python_EXECUTABLE}" -c "import mujoco; print(mujoco.__version__)"
-  RESULT_VARIABLE _native_mujoco_version_result
-  OUTPUT_VARIABLE _native_mujoco_version
-  ERROR_VARIABLE _native_mujoco_version_error
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(NOT _native_mujoco_version_result EQUAL 0 OR NOT _native_mujoco_version STREQUAL "3.12.0")
-  message(FATAL_ERROR
-    "bike_native requires the pinned MuJoCo 3.12.0 error ABI; configured Python '${Python_EXECUTABLE}' found '${_native_mujoco_version}': ${_native_mujoco_version_error}")
-endif()
-
-execute_process(COMMAND "${Python_EXECUTABLE}" -c "import mujoco,os;print(os.path.dirname(mujoco.__file__))"
-  OUTPUT_VARIABLE MJ_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
-  OUTPUT_VARIABLE NB_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
-find_package(nanobind CONFIG REQUIRED)
-
-# The stock 3.12.0 Python binding uses these private TLS functions. Check both
-# declarations and linked symbols against the installed wheel before building
-# any target that could otherwise fall back to MuJoCo's process-exiting handler.
-include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src" "${MJ_DIR}/include")
-set(CMAKE_REQUIRED_LIBRARIES "${MJ_DIR}/libmujoco.3.12.0.dylib")
-unset(BIKE_MUJOCO_ERROR_ABI_312 CACHE)
-check_cxx_source_compiles([=[
-#include "engine_abi_312.hpp"
-int main() {
-  mjfLogHandler previous = _mjPRIVATE_setTlsLogHandler(nullptr);
-  (void) _mjPRIVATE_setTlsLogHandler(previous);
-  void (*volatile raw_data)(mjData**, const mjModel*) = &mj_makeRawData;
-  return _mjPRIVATE_getGlobalLogHandler() == nullptr || raw_data == nullptr;
-}
-]=] BIKE_MUJOCO_ERROR_ABI_312)
-unset(CMAKE_REQUIRED_INCLUDES)
-unset(CMAKE_REQUIRED_LIBRARIES)
-if(NOT BIKE_MUJOCO_ERROR_ABI_312)
-  message(FATAL_ERROR "MuJoCo 3.12.0 private TLS error-handler ABI is unavailable for ${Python_EXECUTABLE}")
-endif()
-
-# Resolve standalone third-party header roots before adding the direct-contract
-# targets; their header sweep compiles every first-party native/src header.
-execute_process(
-  COMMAND "${Python_EXECUTABLE}" -m nanobind --include_dir
-  RESULT_VARIABLE _native_nb_include_result
-  OUTPUT_VARIABLE _native_nb_include
-  ERROR_VARIABLE _native_nb_include_error
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-if(NOT _native_nb_include_result EQUAL 0 OR NOT IS_DIRECTORY "${_native_nb_include}")
-  message(FATAL_ERROR "Cannot resolve nanobind include directory: ${_native_nb_include_error}")
-endif()
-get_filename_component(_native_nb_package "${_native_nb_include}/.." REALPATH)
-get_filename_component(_native_robin_include "${_native_nb_package}/ext/robin_map/include" REALPATH)
-get_filename_component(_native_python_include "${Python_INCLUDE_DIRS}" REALPATH)
+# Dependency discovery: BikeDependencies.cmake runs the probe inside the
+# selected interpreter, validates the schema-1 document it returns, then
+# creates the imported Bike::MuJoCo target plus MJ_DIR/_native_mujoco_library
+# and the nanobind/python include roots consumed below.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeDependencies.cmake")
 
 set(_native_hardening_probe_dir "${CMAKE_BINARY_DIR}/native_check_work/libcpp-hardening")
 file(MAKE_DIRECTORY "${_native_hardening_probe_dir}")
@@ -400,7 +352,7 @@ if(_native_contract_include_directories)
 endif()
 target_include_directories(bike_native_engine SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-target_link_libraries(bike_native_engine PUBLIC "${MJ_DIR}/libmujoco.3.12.0.dylib")
+target_link_libraries(bike_native_engine PUBLIC Bike::MuJoCo)
 target_link_libraries(bike_native PRIVATE bike_native_engine)
 
 # allocation_faults.cpp overrides the test binary's throwing allocation
@@ -432,12 +384,14 @@ target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core bi
 # chain.cpp's GeometryWorkspace resolves CBLAS through Apple Accelerate, the
 # same BLAS provider bike_native links.
 target_link_libraries(native_contract_tests PRIVATE "-framework Accelerate")
-add_custom_command(TARGET native_contract_tests POST_BUILD
-  COMMAND install_name_tool -change
-    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
-    "${MJ_DIR}/libmujoco.3.12.0.dylib"
-    "$<TARGET_FILE:native_contract_tests>"
-  VERBATIM)
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  add_custom_command(TARGET native_contract_tests POST_BUILD
+    COMMAND install_name_tool -change
+      "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+      "${MJ_DIR}/libmujoco.3.12.0.dylib"
+      "$<TARGET_FILE:native_contract_tests>"
+    VERBATIM)
+endif()
 
 # tyre/distance.cpp (SignedProfile) contract cases — same build context as
 # native_contract_tests, without the allocation-fault override TU.
@@ -465,12 +419,14 @@ target_link_libraries(native_distance_tests PRIVATE bike_native_contract_core bi
 # tyre/distance.cpp resolves CBLAS through Apple Accelerate, the same BLAS
 # provider bike_native links.
 target_link_libraries(native_distance_tests PRIVATE "-framework Accelerate")
-add_custom_command(TARGET native_distance_tests POST_BUILD
-  COMMAND install_name_tool -change
-    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
-    "${MJ_DIR}/libmujoco.3.12.0.dylib"
-    "$<TARGET_FILE:native_distance_tests>"
-  VERBATIM)
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  add_custom_command(TARGET native_distance_tests POST_BUILD
+    COMMAND install_name_tool -change
+      "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+      "${MJ_DIR}/libmujoco.3.12.0.dylib"
+      "$<TARGET_FILE:native_distance_tests>"
+    VERBATIM)
+endif()
 
 # tyre/station.cpp (scalar station law) contract cases — same build context
 # as native_distance_tests.
@@ -496,12 +452,14 @@ if(_native_contract_link_options)
 endif()
 target_link_libraries(native_station_tests PRIVATE bike_native_contract_core bike_native_engine)
 target_link_libraries(native_station_tests PRIVATE "-framework Accelerate")
-add_custom_command(TARGET native_station_tests POST_BUILD
-  COMMAND install_name_tool -change
-    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
-    "${MJ_DIR}/libmujoco.3.12.0.dylib"
-    "$<TARGET_FILE:native_station_tests>"
-  VERBATIM)
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  add_custom_command(TARGET native_station_tests POST_BUILD
+    COMMAND install_name_tool -change
+      "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+      "${MJ_DIR}/libmujoco.3.12.0.dylib"
+      "$<TARGET_FILE:native_station_tests>"
+    VERBATIM)
+endif()
 
 # Prototype native benchmark (native-safety runtime plan task R2). The TU
 # lives outside native/, so its directory joins the first-party source roots
@@ -536,12 +494,14 @@ if(_native_contract_link_options)
   target_link_options(native_bench PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(native_bench PRIVATE bike_native_engine)
-add_custom_command(TARGET native_bench POST_BUILD
-  COMMAND install_name_tool -change
-    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
-    "${MJ_DIR}/libmujoco.3.12.0.dylib"
-    "$<TARGET_FILE:native_bench>"
-  VERBATIM)
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  add_custom_command(TARGET native_bench POST_BUILD
+    COMMAND install_name_tool -change
+      "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+      "${MJ_DIR}/libmujoco.3.12.0.dylib"
+      "$<TARGET_FILE:native_bench>"
+    VERBATIM)
+endif()
 
 include(CTest)
 if(BUILD_TESTING)
@@ -565,7 +525,7 @@ add_custom_target(check_native_contracts
   COMMENT "native structural contract checks"
   VERBATIM)
 
-target_link_libraries(bike_native PRIVATE "${MJ_DIR}/libmujoco.3.12.0.dylib")
+target_link_libraries(bike_native PRIVATE Bike::MuJoCo)
 
 # The resistance writer calls the legacy CBLAS symbols numpy's `@`/`np.dot`
 # resolve to on this platform (numpy's BLAS is Apple Accelerate — see
@@ -578,12 +538,14 @@ target_link_libraries(bike_native PRIVATE "-framework Accelerate")
 # directory to anchor the @rpath. Rewrite the recorded name to the absolute
 # path so `import bike_native` works even before mujoco is loaded.
 # (-headerpad_max_install_names above reserves room for the longer name.)
-add_custom_command(TARGET bike_native POST_BUILD
-  COMMAND install_name_tool -change
-    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
-    "${MJ_DIR}/libmujoco.3.12.0.dylib"
-    "$<TARGET_FILE:bike_native>"
-  VERBATIM)
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  add_custom_command(TARGET bike_native POST_BUILD
+    COMMAND install_name_tool -change
+      "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+      "${MJ_DIR}/libmujoco.3.12.0.dylib"
+      "$<TARGET_FILE:bike_native>"
+    VERBATIM)
+endif()
 
 # Multi-compiler sweep: same TU set through GCC's frontend, warnings-as-errors.
 add_custom_target(check_frontends
@@ -651,7 +613,8 @@ function(_native_json_array output)
   set(${output} "${_json}" PARENT_SCOPE)
 endfunction()
 
-get_filename_component(_native_mujoco_library "${MJ_DIR}/libmujoco.3.12.0.dylib" REALPATH)
+# _native_mujoco_library is set by BikeDependencies.cmake (realpath of the
+# selected engine image reported by the probe).
 
 set(_native_required_includes
   "${CMAKE_CURRENT_SOURCE_DIR}/src"

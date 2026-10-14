@@ -1,7 +1,7 @@
 {
   "database": "run.duckdb",
   "file_sha256": {
-    "run.duckdb": "bc16ae44833c2a8b3b7a5b2c948aad1fb59313f57f029bf561470933159bb2f2",
+    "run.duckdb": "8b4b3e43bdc4a38993239f6e3a40ddccd9c5ad5956ebce4ecc47eb4cd504c65b",
     "summary.md": "4957f6e9da1581a35d8f3f749a165b3dd6f396587aed99882b35146a8990b4ca"
   },
   "report_error": null,

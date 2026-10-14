@@ -1,7 +1,7 @@
 {
   "database": "run.duckdb",
   "file_sha256": {
-    "run.duckdb": "afbac3204c3d8f92713da5c0c0d2f6e0825b7abe77e62bed6d8747bb37460a11"
+    "run.duckdb": "53be9105d8d5a202808fe25bb45736c1077435050bdd48f0ce44b75fe6c31e56"
   },
   "report_error": "RuntimeError: injected report failure",
   "report_status": "failed",

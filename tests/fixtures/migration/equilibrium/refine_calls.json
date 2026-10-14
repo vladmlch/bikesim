@@ -37,7 +37,7 @@
             ]
           }
         ],
-        "callback": "<function refine_equilibrium.<locals>.stop_when_converged at 0x11e886ae0>",
+        "callback": "<function refine_equilibrium.<locals>.stop_when_converged>",
         "ftol": 1e-10,
         "gtol": 1e-10,
         "jac": "3-point",
@@ -93,7 +93,7 @@
             ]
           }
         ],
-        "callback": "<function refine_equilibrium.<locals>.stop_when_converged at 0x11e886ae0>",
+        "callback": "<function refine_equilibrium.<locals>.stop_when_converged>",
         "ftol": 1e-10,
         "gtol": 1e-10,
         "jac": "3-point",

@@ -1,8 +1,8 @@
 {
   "note": "evidence only \u2014 never a performance gate; the four-step prefix cannot qualify speed",
-  "s_per_step": 0.0018266304093413055,
+  "s_per_step": 0.001988266659900546,
   "sim_dt_s": 0.00125,
   "sim_time_s": 0.1500000000000001,
   "steps": 100,
-  "wall_s": 0.18266304093413055
+  "wall_s": 0.1988266659900546
 }

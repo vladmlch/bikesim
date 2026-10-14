@@ -1,5 +1,5 @@
 {
-  "extra": "(<scipy.optimize._constraints.LinearConstraint object at 0x10cbcf770>, <scipy.optimize._constraints.NonlinearConstraint object at 0x11dda1d30>)",
+  "extra": "(<scipy.optimize._constraints.LinearConstraint object>, <scipy.optimize._constraints.NonlinearConstraint object>)",
   "problem": {
     "aeq": {
       "$array": "allocation/nonlinear_grip.arrays/a001.f64",

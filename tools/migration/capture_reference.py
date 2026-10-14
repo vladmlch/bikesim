@@ -71,6 +71,20 @@ SUFFIX_DTYPE = {".f64": "<f8", ".i32": "<i4", ".i64": "<i8",
 
 COMPARISON_CLASSES = ("B", "N", "S", "Q", "P")
 
+# Object reprs embed ASLR-dependent memory addresses ("<… at 0x11e7c8bf0>"),
+# which makes fixture bytes nondeterministic across identical oracle runs.
+# Strip the address so recorded identities (module + qualname + type) are
+# stable for bitwise comparison.
+_ADDR_RE = __import__("re").compile(r" at 0x[0-9a-fA-F]+")
+
+
+def _strip_addr(text: str) -> str:
+    return _ADDR_RE.sub("", text)
+
+
+def _stable_repr(value) -> str:
+    return _strip_addr(repr(value))
+
 
 # ---------------------------------------------------------------------------
 # Hashing / filesystem helpers
@@ -879,11 +893,20 @@ def _bootstrap_faults(ctx: Context, sim, stem: str):
     work = ctx.tmp / "faults_base"
     work.mkdir(parents=True, exist_ok=True)
     boot = capture_bootstrap(sim, work)
-    model_bytes = (work / "model.mjb").read_bytes()
 
-    # Locate the oracle-built native extension, if the baseline built it.
-    build = ctx.oracle / "native" / "build"
-    native = any(build.glob("bike_native*.so"))
+    # Load the oracle-built extension ONCE through the oracle's own loader
+    # (bike_sim.native.artifact.load_native_extension — the same path tests
+    # use).  A C extension can only be initialised once per process; the
+    # loader caches the module in sys.modules so every ctor call below sees
+    # the same bound NativeRideRuntime.  If the extension cannot be loaded
+    # the whole fault group is a blocker — never a per-case "expected".
+    try:
+        ctor = _native_ctor(ctx)
+    except Exception as exc:
+        rec.blocker(f"{stem}", "RCP-01",
+                    f"native extension unavailable — fault verdicts not "
+                    f"captured: {type(exc).__name__}: {exc}")
+        return
 
     def _plain(obj):
         return json.loads(json.dumps(obj, default=_jd))
@@ -933,21 +956,17 @@ def _bootstrap_faults(ctx: Context, sim, stem: str):
                 out, f"{entry_dir}/state.json", mutated_state)
         files += write_canonical(
             out, f"{entry_dir}/config.json", mutated_config)
-        expected = {"kind": "invalid"}
-        error = None
-        if native is not None:
-            try:
-                _run_native_ctor(ctx, work / "model.mjb",
-                                 mutated_config,
-                                 mutated_state if mutated_state is not None
-                                 else _plain(base_state))
-                expected = {"kind": "unexpected-acceptance"}
-                error = "native runtime accepted the mutated bootstrap"
-            except Exception as exc:
-                expected = {"kind": "invalid",
-                            "error": type(exc).__name__,
-                            "message": str(exc)}
-                error = f"{type(exc).__name__}: {exc}"
+        try:
+            ctor(str(work / "model.mjb"), mutated_config,
+                 mutated_state if mutated_state is not None
+                 else _plain(base_state))
+            expected = {"kind": "unexpected-acceptance"}
+            error = "native runtime accepted the mutated bootstrap"
+        except Exception as exc:
+            expected = {"kind": "invalid",
+                        "error": type(exc).__name__,
+                        "message": str(exc)}
+            error = f"{type(exc).__name__}: {exc}"
         files += write_canonical(
             out, f"{entry_dir}/expected.json",
             {"mutation": where, "expected": expected})
@@ -955,26 +974,47 @@ def _bootstrap_faults(ctx: Context, sim, stem: str):
                 comparison="S", expected=expected,
                 produced_by="mutated capture_bootstrap payload + native ctor",
                 files=files,
-                notes=f"mutation {where}; oracle response: {error or 'not run'}")
+                notes=f"mutation {where}; oracle response: {error}")
 
 
-def _run_native_ctor(ctx, model_path, config, state):
-    """Instantiate the oracle-built NativeRideRuntime on a mutated payload."""
-    oracle = ctx.oracle
-    build = oracle / "native" / "build"
-    import importlib.util
-    candidates = sorted(build.glob("bike_native*.so"))
-    if not candidates:
-        raise RuntimeError("no bike_native extension under native/build")
-    spec = importlib.util.spec_from_file_location(
-        "bike_native", candidates[0])
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    ctor = getattr(module, "NativeRideRuntime", None) or getattr(
-        module, "RideRuntime", None)
-    if ctor is None:
-        raise RuntimeError("bike_native has no NativeRideRuntime")
-    return ctor(str(model_path), config, state)
+def _native_ctor(ctx: Context):
+    """Return the oracle-built ``NativeRideRuntime``, loaded exactly once.
+
+    Uses ``bike_sim.native.artifact.load_native_extension`` — the oracle's
+    own verified import path (sys.modules-cached, provenance-checked) — so
+    repeated calls never re-execute the C extension's module init, which is
+    what produced attribute-less module objects under the previous
+    spec_from_file_location/exec_module approach.  Raises on any failure;
+    callers convert that to a blocker/control-failure, never an expected.
+    """
+    cached = getattr(ctx, "_native_ctor_cache", None)
+    if cached is not None:
+        ctor, err = cached
+        if err is not None:
+            raise err
+        return ctor
+    try:
+        from bike_sim.native.artifact import (
+            extension_artifacts, load_native_extension)
+        build = None
+        for cand in (ctx.oracle / "native" / "build" / "release",
+                     ctx.oracle / "native" / "build"):
+            if cand.is_dir() and extension_artifacts(cand):
+                build = cand
+                break
+        if build is None:
+            raise RuntimeError("no bike_native extension under "
+                               f"{ctx.oracle / 'native' / 'build'}")
+        module = load_native_extension(build)
+        ctor = getattr(module, "NativeRideRuntime", None) or getattr(
+            module, "RideRuntime", None)
+        if ctor is None:
+            raise RuntimeError("bike_native has no NativeRideRuntime")
+        ctx._native_ctor_cache = (ctor, None)
+        return ctor
+    except Exception as exc:
+        ctx._native_ctor_cache = (None, exc)
+        raise
 
 
 def _rcp01_bootstrap(ctx: Context):
@@ -1065,10 +1105,12 @@ def _rcp01_bootstrap(ctx: Context):
     # -- reset twice -> byte-identical bootstrap digests -------------------
     try:
         digests = []
+        files = []
         for idx in (1, 2):
             sim.reset()
-            files, meta = _bootstrap_payload(
+            iter_files, meta = _bootstrap_payload(
                 ctx, sim, f"bootstrap/welded/reset/{idx}")
+            files += iter_files
             digests.append(meta["model_sha256"])
         rec.add("bootstrap/welded/reset", recipe="RCP-01", group="bootstrap",
                 comparison="B",
@@ -1300,7 +1342,7 @@ def _rcp03_research(ctx: Context):
             {"config": dataclasses.asdict(env.config),
              "sensors": dataclasses.asdict(env.sensor_config)
              if dataclasses.is_dataclass(env.sensor_config)
-             else repr(env.sensor_config),
+             else _stable_repr(env.sensor_config),
              "backend": getattr(env, "backend", None),
              "delay_steps": env.delay_steps,
              "control_steps": env.control_steps,
@@ -1374,14 +1416,14 @@ def _least_squares_spy(ctx: Context, label: str):
             return {str(k): _argval(x) for k, x in v.items()}
         if isinstance(v, (bool, int, float, str)) or v is None:
             return v
-        return repr(v)
+        return _stable_repr(v)
 
     def _spy(fun, x0, *a, **kw):
         result = real_ls(fun, x0, *a, **kw)
         calls.append({
             "x0": np.asarray(x0, dtype=float),
             "kwargs": {k: _argval(v) for k, v in kw.items()},
-            "args": [str(x) for x in a],
+            "args": [_strip_addr(str(x)) for x in a],
             "nfev": int(result.nfev),
             "njev": None if result.njev is None else int(result.njev),
             "cost": float(result.cost),
@@ -1479,7 +1521,10 @@ def _rcp04_equilibrium(ctx: Context):
         np.savez(trunc, **arrays)
         files = [out.copy("equilibrium/truncated.npz", trunc)]
         try:
-            _sim(equilibrium_state_file=str(trunc))
+            # Point at the fixture copy, not ctx.tmp, so the recorded
+            # rejection message carries a stable path across capture runs.
+            _sim(equilibrium_state_file=str(
+                out.root / "equilibrium" / "truncated.npz"))
             expected = {"kind": "unexpected-acceptance"}
             err = "accepted truncated pose"
         except Exception as exc:
@@ -1502,7 +1547,8 @@ def _rcp04_equilibrium(ctx: Context):
         np.savez(bad, **arrays)
         files = [out.copy("equilibrium/bad_residual.npz", bad)]
         try:
-            _sim(equilibrium_state_file=str(bad))
+            _sim(equilibrium_state_file=str(
+                out.root / "equilibrium" / "bad_residual.npz"))
             expected = {"kind": "unexpected-acceptance"}
             err = "accepted shifted pose"
         except Exception as exc:
@@ -1519,7 +1565,8 @@ def _rcp04_equilibrium(ctx: Context):
             cfg = SimulationPhysicsConfig(
                 "physical", drive_mode="coast",
                 tires=TireBackendConfig(backend="compliant_2d"),
-                equilibrium_state_file=str(pose))
+                equilibrium_state_file=str(
+                    out.root / "equilibrium" / "legacy_state.npz"))
             RideSimulation(
                 track=get_preset("flat"),
                 rider=RiderSpecs(variant="lumped", mass_kg=75.0),
@@ -1589,7 +1636,8 @@ def _rcp04_equilibrium(ctx: Context):
                 files = write_canonical(
                     out, f"allocation/{name}.json",
                     {"problem": {k: v for k, v in prob.items()},
-                     "extra": str(extra) if extra is not None else None,
+                     "extra": (_strip_addr(str(extra))
+                               if extra is not None else None),
                      "x0": x0,
                      "result": {"solution": result.solution,
                                 "feasible": bool(result.feasible),
@@ -1921,7 +1969,9 @@ def _rcp05_recording(ctx: Context):
         # publication against an unwritable root
         rows = [rs.sample_row(interval_id=0)]
         capture = rs.synthetic_capture(rows=rows)
-        bad_root = ctx.tmp / "notadir"
+        # A fixed /tmp path keeps the recorded Errno message deterministic
+        # (ctx.tmp paths differ every run).
+        bad_root = Path("/tmp/bike-sim-t01-notadir")
         bad_root.write_text("not a directory")
         try:
             storage.write_recording(capture, bad_root)
@@ -1930,6 +1980,8 @@ def _rcp05_recording(ctx: Context):
             failures["unwritable_root"] = {
                 "kind": "invalid", "error": type(exc).__name__,
                 "message": str(exc)}
+        finally:
+            bad_root.unlink(missing_ok=True)
         # stages: write/commit/checkpoint/hash/report/link/manifest — the
         # report stage is covered by recording/report_failed; the rest are
         # enumerated with their code location for the native port.
@@ -1960,6 +2012,32 @@ def _rcp05_recording(ctx: Context):
 # ---------------------------------------------------------------------------
 # RCP-06 replay + CLI contracts
 # ---------------------------------------------------------------------------
+
+def _reader_expected(verdict: dict) -> dict:
+    """Map a ``replay_episode`` outcome onto the manifest ``expected``.
+
+    ``expected`` records the oracle *reader's adjudication*, not merely that
+    bytes were captured — the same contract ``replay/tampered`` uses:
+
+    * reader rejection  → ``{"kind": "invalid", error, message}`` verbatim;
+    * clean replay      → ``{"kind": "accepted"}``;
+    * clean replay of a run captured under ``--diagnostic-model-limits``
+      (``result.model_valid is False``) → ``kind: "diagnostic"`` with
+      ``valid: False`` — a diagnostic episode is never physically valid.
+    """
+    if "error" in verdict:
+        return {"kind": "invalid", "error": verdict["error"],
+                "message": verdict.get("message", "")}
+    result = verdict.get("result") or {}
+    if result.get("model_valid") is False:
+        return {"kind": "diagnostic", "valid": False,
+                "diagnostic": "model-limits",
+                "replay": ("passed" if result.get("passed") else "failed"),
+                "reason": "episode captured under "
+                          "--diagnostic-model-limits; replay may pass "
+                          "numerically but validity remains false"}
+    return {"kind": "accepted"}
+
 
 def _rcp06_replay(ctx: Context):
     out, rec = ctx.out, ctx.rec
@@ -1998,12 +2076,12 @@ def _rcp06_replay(ctx: Context):
         files += write_canonical(out, "replay/legacy_v2/verdict.json",
                                  verdict)
         rec.add("replay/legacy_v2", recipe="RCP-06", group="replay",
-                comparison="B", expected={"kind": "accepted"},
+                comparison="B", expected=_reader_expected(verdict),
                 produced_by="capture_legacy + write_replay_files "
                             "(schema 2 file set)",
                 files=files,
-                notes="source-produced legacy replay bundle + "
-                      "replay_episode verdict")
+                notes="source-produced legacy replay bundle; expected "
+                      "records the oracle reader's adjudication of it")
     except Exception as exc:
         rec.blocker("replay/legacy_v2", "RCP-06",
                     "".join(traceback.format_exception(exc))[-1500:])
@@ -2045,13 +2123,13 @@ def _rcp06_replay(ctx: Context):
         files += write_canonical(out, "replay/legacy_v1/verdict.json",
                                  verdict)
         rec.add("replay/legacy_v1", recipe="RCP-06", group="replay",
-                comparison="B", expected={"kind": "accepted"},
+                comparison="B", expected=_reader_expected(verdict),
                 produced_by="schema-1 derivation from replay/legacy_v2 "
                             "(no v1 writer in the source)",
                 files=files,
                 inputs=[src_dir],
-                notes="derived v1 file set + manifest; verdict records "
-                      "whether the current reader still replays schema 1")
+                notes="derived v1 file set + manifest; expected records "
+                      "the oracle reader's adjudication of schema 1")
     except Exception as exc:
         rec.blocker("replay/legacy_v1", "RCP-06",
                     "".join(traceback.format_exception(exc))[-1500:])
@@ -2081,12 +2159,12 @@ def _rcp06_replay(ctx: Context):
             out, "replay/historical_v2/verdict.json",
             {"source": str(src_dir), "verdict": verdict})
         rec.add("replay/historical_v2", recipe="RCP-06", group="replay",
-                comparison="B", expected={"kind": "accepted"},
+                comparison="B", expected=_reader_expected(verdict),
                 produced_by="verbatim copy of a pre-existing schema-2 "
                             "recording on disk",
                 files=files, inputs=[src_dir],
-                notes="written by an earlier source revision; verdict from "
-                      "the current reader records whether it still replays")
+                notes="written by an earlier source revision; expected "
+                      "records the current reader's adjudication of it")
     except Exception as exc:
         rec.blocker("replay/historical_v2", "RCP-06",
                     f"{type(exc).__name__}: {exc}")
@@ -2129,11 +2207,15 @@ def _rcp06_replay(ctx: Context):
         files += write_canonical(out, "replay/native_v3/replay_result.json",
                                  verdict)
         rec.add("replay/native_v3", recipe="RCP-06", group="replay",
-                comparison="B", expected={"kind": "accepted"},
+                comparison="B", expected=_reader_expected(verdict),
                 produced_by="research env capture_mode=full + "
-                            "close_environment publication",
+                            "close_environment publication under "
+                            "--diagnostic-model-limits",
                 files=files,
-                notes="genuine v3 DuckDB recording + checked-replay verdict")
+                notes="genuine v3 DuckDB recording + checked-replay verdict; "
+                      "produced under --diagnostic-model-limits so "
+                      "model_valid is false even though checked replay "
+                      "passes numerically")
 
         # tampered copy: flip one byte inside run.duckdb
         tampered = ctx.tmp / "v3_tampered"
@@ -2165,7 +2247,7 @@ def _rcp06_replay(ctx: Context):
 
 def _cli_battery(ctx: Context) -> dict:
     """All nine CLI surfaces: help, parse battery, subprocess invocations."""
-    out = ctx.out
+    out, rec = ctx.out, ctx.rec
     env = dict(os.environ)
     env.setdefault("MPLCONFIGDIR", "/tmp/matplotlib_cache")
 
@@ -2278,35 +2360,53 @@ def _cli_battery(ctx: Context) -> dict:
                 entry["cases"].append(case)
         else:
             # parser hidden inside main(); capture help via subprocess
-            code, stdout, stderr = _run_cli(ctx, prog, ["--help"], env)
+            code, stdout, stderr, via = _run_cli(ctx, prog, ["--help"], env)
             record = out.text(f"cli/{prog}.help.txt", stdout)
             entry["help"] = {"path": f"cli/{prog}.help.txt",
                              "sha256": record["sha256"],
-                             "exit": code}
+                             "exit": code, "via": via}
             entry["cases"].append({"argv": ["--help"], "result": "subprocess",
-                                   "exit": code})
+                                   "exit": code, "via": via})
+            if code != 0 or not stdout.strip():
+                rec.blocker(
+                    f"cli/{prog}.help", "RCP-06",
+                    f"--help via {via} yielded exit={code} and "
+                    f"{len(stdout)} stdout bytes — the captured help "
+                    "fixture is empty and must not be mistaken for a "
+                    "real contract")
         # invalid flag via subprocess for every program
-        code, stdout, stderr = _run_cli(ctx, prog, ["--bogus-flag"], env)
+        code, stdout, stderr, via = _run_cli(ctx, prog, ["--bogus-flag"], env)
         entry["cases"].append({"argv": ["--bogus-flag"],
                                "result": "subprocess", "exit": code,
+                               "via": via,
                                "cwd": str(ctx.out.root),
                                "stderr_tail": stderr[-400:]})
+        if code == 0 and not stdout and not stderr:
+            rec.blocker(
+                f"cli/{prog}.bogus-flag", "RCP-06",
+                "--bogus-flag exited 0 with no output — the invocation was "
+                "a no-op, not a genuine parser rejection")
         result["programs"][prog] = entry
 
-    # real valid subprocess invocations that are cheap
+    # real valid subprocess invocations that are cheap.  Output paths use
+    # fixed /tmp names (not ctx.tmp) so recorded argv and any path-bearing
+    # stdout stay byte-identical across capture runs.
     good = out.root / "recording" / "good"
+    scratch = Path("/tmp/bike-sim-t01-cli")
+    shutil.rmtree(scratch, ignore_errors=True)
+    scratch.mkdir(parents=True, exist_ok=True)
     valid = [
         ("bike-ride", ["--list-tracks"]),
         ("bike-ride", ["--dump-track", "flat"]),
-        ("bike-export", ["-o", str(ctx.tmp / "export"), "--json-only"]),
+        ("bike-export", ["-o", str(scratch / "export"), "--json-only"]),
         ("bike-recording", ["overview", str(good), "--json"]),
         ("bike-recording", ["fields", str(good), "--pattern", "*torque*"]),
         ("bike-recording", ["export", str(good), "--episode", "0",
                             "--format", "csv",
-                            "--output", str(ctx.tmp / "telemetry.csv")]),
+                            "--output", str(scratch / "telemetry.csv")]),
         ("bike-recording", ["export", str(good), "--episode", "0",
                             "--format", "jsonl",
-                            "--output", str(ctx.tmp / "telemetry.jsonl")]),
+                            "--output", str(scratch / "telemetry.jsonl")]),
         ("bike-recording", ["compare", str(good), str(good),
                             "--left-episode", "0", "--right-episode", "0",
                             "--mode", "exact"]),
@@ -2322,27 +2422,90 @@ def _cli_battery(ctx: Context) -> dict:
     if (v3 / "manifest.json").is_file():
         valid.append(("bike-replay", [str(v3)]))
     for prog, argv in valid:
-        code, stdout, stderr = _run_cli(ctx, prog, argv, env)
+        code, stdout, stderr, via = _run_cli(ctx, prog, argv, env)
         result["programs"].setdefault(prog, {"cases": []})["cases"].append(
             {"argv": argv, "result": "subprocess", "exit": code,
-             "cwd": str(ctx.out.root),
+             "via": via, "cwd": str(ctx.out.root),
              "stdout_sha256": sha256_bytes(stdout.encode()),
              "stderr_tail": stderr[-400:]})
+        if not stdout and not stderr:
+            rec.blocker(
+                f"cli/{prog}.positive", "RCP-06",
+                f"positive invocation {argv!r} via {via} exited {code} "
+                "with no output — cannot distinguish a real contract from "
+                "a missing entry point; recorded as a blocker instead of "
+                "a fabricated pass")
     return result
 
 
+def _console_script(prog: str) -> Path | None:
+    """Locate ``prog``'s installed console script without resolving links.
+
+    ``sys.executable`` inside a uv-managed venv is ``.venv/bin/python`` — a
+    symlink into the shared interpreter store.  ``resolve().parent`` lands
+    on the store's ``bin/`` which holds *no* project console scripts, so the
+    unresolved parent must be searched first.
+    """
+    exe = Path(sys.executable)
+    candidates = [exe.parent / prog]
+    try:
+        candidates.append(exe.resolve().parent / prog)
+    except OSError:
+        pass
+    try:
+        import sysconfig
+        candidates.append(Path(sysconfig.get_path("scripts")) / prog)
+    except Exception:
+        pass
+    for cand in candidates:
+        if cand.is_file():
+            return cand
+    return None
+
+
+def _cli_shim_command(prog: str, argv: list) -> list:
+    """``python -c`` fallback resolving the console entry point by name.
+
+    Unlike the previous shim, ``main`` is *always* invoked: ``argv`` is
+    passed when the signature accepts a positional parameter (the
+    ``main(argv=None)`` convention), otherwise ``sys.argv`` is pre-seeded
+    and ``main()`` is called — ``sys.exit(0)`` is never reached without
+    calling ``main`` first.
+    """
+    code = (
+        "import sys, inspect\n"
+        "from importlib.metadata import entry_points\n"
+        f"sys.argv = {[prog, *argv]!r}\n"
+        "ep = next((e for e in entry_points(group='console_scripts') "
+        f"if e.name == {prog!r}), None)\n"
+        "if ep is None:\n"
+        f"    sys.stderr.write({('no console_scripts entry point ' + prog)!r})\n"
+        "    sys.exit(127)\n"
+        "main = ep.load()\n"
+        "params = inspect.signature(main).parameters\n"
+        "accepts = any(p.kind in (p.POSITIONAL_ONLY, "
+        "p.POSITIONAL_OR_KEYWORD, p.VAR_POSITIONAL) "
+        "for p in params.values())\n"
+        f"rv = main({list(argv)!r}) if accepts else main()\n"
+        "sys.exit(0 if rv is None else rv)\n")
+    return [sys.executable, "-c", code]
+
+
 def _run_cli(ctx: Context, prog: str, argv: list, env: dict) -> tuple:
-    """Run a console script inside the oracle venv without a shell."""
-    bin_dir = Path(sys.executable).resolve().parent
-    script = bin_dir / prog
-    cmd = [str(script), *argv] if script.exists() else [
-        sys.executable, "-c",
-        "import sys; sys.argv = [%r, *%r]; "
-        "from %s import main; sys.exit(main() if main.__code__.co_argcount "
-        "else 0)" % (prog, argv, _module_for(prog))]
+    """Run a console script inside the oracle venv without a shell.
+
+    Returns ``(exit_code, stdout, stderr, via)`` where ``via`` is
+    ``"script"`` (installed console entry point) or ``"shim"`` (metadata
+    fallback) so callers can record the invocation provenance.
+    """
+    script = _console_script(prog)
+    if script is not None:
+        cmd, via = [str(script), *argv], "script"
+    else:
+        cmd, via = _cli_shim_command(prog, argv), "shim"
     proc = subprocess.run(cmd, capture_output=True, text=True,
                           cwd=str(ctx.out.root), env=env, timeout=300)
-    return proc.returncode, proc.stdout, proc.stderr
+    return proc.returncode, proc.stdout, proc.stderr, via
 
 
 def _module_for(prog: str) -> str:
@@ -2491,23 +2654,49 @@ def _negative_controls(ctx: Context):
         rec.control("bitwise.force-bit-flip", False,
                     f"{type(exc).__name__}: {exc}")
 
-    # 2. invalid strict-reference prefix stays invalid with first-failure id
-    #    (payloads come from the already-captured bootstrap/welded fixtures;
-    #    the cached sim has advanced past t=0 by this point)
+    # 2. invalid strict-reference prefix stays invalid with first-failure id.
+    #    The stored state.json carries the canonical-codec $array tags, which
+    #    the native ctor never sees — so the t=0 bootstrap state is rebuilt
+    #    via capture_bootstrap (byte-identical to the fixture payload, proven
+    #    by comparing the externalised integration.f64 bytes) and element 0
+    #    of the real integration_state array is set to NaN.
     try:
+        from bike_sim.native.setup import capture_bootstrap
         base = out.root / "bootstrap" / "welded"
-        state = json.loads((base / "state.json").read_text())
-        config = json.loads((base / "config.json").read_text())
-        st = dict(state)
-        st["integration_state"] = list(state["integration_state"])
+        tag = json.loads((base / "state.json").read_text())[
+            "integration_state"]
+        fixture_bytes = (out.root / tag["$array"]).read_bytes()
+        sim = ctx.sim_cache.get("welded")
+        if sim is None:
+            sim = _support(ctx.oracle).make_python_ride(strict=False,
+                                                        decimation=1)
+        else:
+            sim.reset()
+        work = ctx.tmp / "strict_prefix"
+        work.mkdir(parents=True, exist_ok=True)
+        boot = capture_bootstrap(sim, work)
+        live = np.asarray(boot.state["integration_state"], dtype="<f8")
+        fixture_match = live.tobytes() == fixture_bytes
+        st = json.loads(json.dumps(boot.state, default=_jd))
         st["integration_state"][0] = float("nan")
+        # Load the ctor OUTSIDE the inner try so a missing/broken extension
+        # fails the control honestly instead of posing as the first-failure
+        # identity of the mutated prefix.
+        ctor = _native_ctor(ctx)
         try:
-            _run_native_ctor(ctx, base / "model.mjb", config, st)
+            ctor(str(base / "model.mjb"),
+                 json.loads((base / "config.json").read_text()), st)
             rec.control("invalid-strict-prefix", False,
                         "mutated prefix accepted")
         except Exception as exc:
+            # Gate on the oracle rejecting the mutated prefix; the
+            # fixture-match bit is recorded as provenance (pinned *_py
+            # kernels may drift the rebuilt state ~1 ulp from the
+            # production-Numba fixture bytes).
             rec.control("invalid-strict-prefix", True,
-                        f"first failure: {type(exc).__name__}: {exc}")
+                        f"first failure: {type(exc).__name__}: {exc}; "
+                        f"fixture integration_state matches live state: "
+                        f"{fixture_match}")
     except Exception as exc:
         rec.control("invalid-strict-prefix", False,
                     f"{type(exc).__name__}: {exc}")

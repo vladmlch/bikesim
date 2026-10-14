@@ -1,0 +1,13 @@
+usage: bike-export [-h] [--output-dir OUTPUT_DIR] [--json-only] [--xml-only]
+
+Export MuJoCo MJCF XML models and JSON geometry data.
+
+options:
+  -h, --help            show this help message and exit
+  --output-dir, -o OUTPUT_DIR
+                        Target output directory for generated MJCF XML and
+                        JSON files (default: output/models).
+  --json-only           Export only coordinates.json without generating XML
+                        models.
+  --xml-only            Export only MuJoCo XML models without exporting JSON
+                        data.

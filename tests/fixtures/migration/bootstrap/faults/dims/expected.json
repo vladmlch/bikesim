@@ -1,8 +1,8 @@
 {
   "expected": {
-    "error": "RuntimeError",
+    "error": "ValueError",
     "kind": "invalid",
-    "message": "bike_native has no NativeRideRuntime"
+    "message": "state.model_dims.nq: model dimension mismatch"
   },
   "mutation": "state.model_dims.nq+=1"
 }

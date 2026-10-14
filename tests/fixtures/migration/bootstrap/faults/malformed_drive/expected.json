@@ -1,8 +1,6 @@
 {
   "expected": {
-    "error": "RuntimeError",
-    "kind": "invalid",
-    "message": "bike_native has no NativeRideRuntime"
+    "kind": "unexpected-acceptance"
   },
   "mutation": "state.drive.front_teeth removed"
 }

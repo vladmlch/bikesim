@@ -1,0 +1,42 @@
+{
+  "execution": {
+    "backend": "python",
+    "build_context": null,
+    "extension_sha256": null,
+    "mujoco_library_sha256": null,
+    "mujoco_version": "3.12.0",
+    "native_source_sha256": null,
+    "python_source_sha256": "9f976759d8baa87e1f7096b19bdf5bdbd5bfa1dc11931824187a637681dbc92d",
+    "runtime_schema": 1
+  },
+  "file_sha256": {
+    "commands_applied.jsonl": "bcb6ec0a59a4682f13af01b7cacaadba8f05163039e84b291c40d36e0e747f7c",
+    "commands_requested.jsonl": "a4dd5e9002894d34347a8146f19c32f0ea9edcef68f149608636cfc29f24aa36",
+    "episode_metrics.json": "8142d110ca1bd9d9fe0441ceecd70ae4afdf22c9b1f2188b09c7fd386ddd07dc",
+    "intervals.jsonl": "7b8c3e6335ad4fb4ba83324047a0644a343197acb11b3ff6703cdc79680b425d",
+    "observations.jsonl": "aa0acd5c5fb73e74bdd6cd79dba906fa952d8dacf347ba1027273a29ab2aab51",
+    "rider_joint_envelope.json": "4e9cacbce5b7a39d369f3e1d7eacedbef5386c56e1707045ea140621baa43f64",
+    "rider_joint_strength.json": "0921312611e18611da3e384d2827e63c183eb642f0b9be1cbbf0a58480eee5f8",
+    "states.npz": "f0b86619a1e1db371479840f858fad6b5b3e00f78ca34b016da58c5254ad3526",
+    "summary.json": "ef0376a3c9ecc2e54aae9f9d3f205d44629e128527a1f558822d2e9c923d4ed0",
+    "telemetry.csv": "66ad8d43f1ce8ef098565cd28aa383aba4a3e3aeac948034f0f23952042fe027",
+    "terrain_vertices.npy": "67a239a8ea64cf7ee883706db8cafe2d70e6bf433fad7af7dce2f6e5ae50c2c3",
+    "trace.csv": "db8412bd30a0b17edce52a4bdee032abdf78b02f5d70d723f6005e124418bf00",
+    "track.toml": "cada1729fa7de786f012d128ce70d39aadcbc243e602adc3f7cefbc4740bbb0d",
+    "transitions.jsonl": "c6da1cd32a96ceaa3d1af816706f5b12d9e25c6a4319306253148ee68231c233"
+  },
+  "heightfield": {
+    "base_m": 0.5,
+    "datum_z_m": 2.8,
+    "elevation_m": 30.1,
+    "ncol": 26001,
+    "nrow": 2,
+    "radius_x_m": 65.0,
+    "radius_y_m": 0.5
+  },
+  "joint_envelope_file": "rider_joint_envelope.json",
+  "joint_strength_file": "rider_joint_strength.json",
+  "schema_version": 2,
+  "start_x_m": 2.0,
+  "state_signature": "mjSTATE_INTEGRATION"
+}

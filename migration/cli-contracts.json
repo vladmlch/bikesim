@@ -90,7 +90,8 @@
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
           "exit": 2,
           "result": "subprocess",
-          "stderr_tail": "usage: bike-batch [-h] --spec SPEC --out OUT [--jobs JOBS] [--serial]\n                  [--dry-run] [--overwrite]\nbike-batch: error: the following arguments are required: --spec, --out\n"
+          "stderr_tail": "usage: bike-batch [-h] --spec SPEC --out OUT [--jobs JOBS] [--serial]\n                  [--dry-run] [--overwrite]\nbike-batch: error: the following arguments are required: --spec, --out\n",
+          "via": "script"
         }
       ],
       "help": {
@@ -106,34 +107,38 @@
             "--help"
           ],
           "exit": 0,
-          "result": "subprocess"
+          "result": "subprocess",
+          "via": "script"
         },
         {
           "argv": [
             "--bogus-flag"
           ],
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
-          "exit": 0,
+          "exit": 2,
           "result": "subprocess",
-          "stderr_tail": ""
+          "stderr_tail": "usage: bike-export [-h] [--output-dir OUTPUT_DIR] [--json-only] [--xml-only]\nbike-export: error: unrecognized arguments: --bogus-flag\n",
+          "via": "script"
         },
         {
           "argv": [
             "-o",
-            "/var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/export",
+            "/tmp/bike-sim-t01-cli/export",
             "--json-only"
           ],
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "stdout_sha256": "9ad61856415688750d150d1cfade49e110e357aabbc3d7b6ff4e29722d4015e8",
+          "via": "script"
         }
       ],
       "help": {
         "exit": 0,
         "path": "cli/bike-export.help.txt",
-        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        "sha256": "88b1fe6d67a2de10b60b80f01beeedd10a316d4c2c5977a94b00e4a867673ec0",
+        "via": "script"
       },
       "module": "bike_sim.cli.export"
     },
@@ -144,22 +149,25 @@
             "--help"
           ],
           "exit": 0,
-          "result": "subprocess"
+          "result": "subprocess",
+          "via": "script"
         },
         {
           "argv": [
             "--bogus-flag"
           ],
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
-          "exit": 0,
+          "exit": 2,
           "result": "subprocess",
-          "stderr_tail": ""
+          "stderr_tail": "usage: bike-playground [-h]\nbike-playground: error: unrecognized arguments: --bogus-flag\n",
+          "via": "script"
         }
       ],
       "help": {
         "exit": 0,
         "path": "cli/bike-playground.help.txt",
-        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        "sha256": "749eedd975bdf2916172a993c99d670ec48a6d042b664f33f39062160e6c7e48",
+        "via": "script"
       },
       "module": "bike_sim.cli.playground"
     },
@@ -314,7 +322,8 @@
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
           "exit": 2,
           "result": "subprocess",
-          "stderr_tail": "usage: bike-recording [-h]\n                      {overview,fields,events,window,sql,export,compare} ...\nbike-recording: error: the following arguments are required: command\n"
+          "stderr_tail": "usage: bike-recording [-h]\n                      {overview,fields,events,window,sql,export,compare} ...\nbike-recording: error: the following arguments are required: command\n",
+          "via": "script"
         },
         {
           "argv": [
@@ -326,7 +335,8 @@
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "688990f4a6de41252b2e0b5907e13a63020d286a1eac027cc4b3a11b72b041ce"
+          "stdout_sha256": "fffbc9ccabf4c52c356dda6106a1ee0d3767eac1f2f7e100c0402f136fb0d6b9",
+          "via": "script"
         },
         {
           "argv": [
@@ -339,7 +349,8 @@
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "4df452d87dfd041c6116f4855253a2031eb3cdf6f1ec3fae782d5e4aaae01aee"
+          "stdout_sha256": "4df452d87dfd041c6116f4855253a2031eb3cdf6f1ec3fae782d5e4aaae01aee",
+          "via": "script"
         },
         {
           "argv": [
@@ -350,13 +361,14 @@
             "--format",
             "csv",
             "--output",
-            "/var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/telemetry.csv"
+            "/tmp/bike-sim-t01-cli/telemetry.csv"
           ],
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "883665481a3a478ce8ab16e226faa274e0fcef710f03233bbbfb3e12552e3ddf"
+          "stdout_sha256": "4a40977d77b99263f8cad0b6b97c1c16658f3b86fc9b0ab944f3d5379bb2c9c0",
+          "via": "script"
         },
         {
           "argv": [
@@ -367,13 +379,14 @@
             "--format",
             "jsonl",
             "--output",
-            "/var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/telemetry.jsonl"
+            "/tmp/bike-sim-t01-cli/telemetry.jsonl"
           ],
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "3731ed84ead3caf3cdcec0f3932318de28970c40bb9a5e9e280754f2e9253472"
+          "stdout_sha256": "249017236cf67ba48128941ba5050191caeb77c42584ee61d7e948b1dc8915bf",
+          "via": "script"
         },
         {
           "argv": [
@@ -391,7 +404,8 @@
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "bb7dce6bc99993367b6cc1b52f5d3f2ff6a1024eb2ca65776b709a488225e016"
+          "stdout_sha256": "bb7dce6bc99993367b6cc1b52f5d3f2ff6a1024eb2ca65776b709a488225e016",
+          "via": "script"
         },
         {
           "argv": [
@@ -409,7 +423,8 @@
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "e7957770cd5ee9ccb72351ef91b328bf8c12c8cb062d499e5077ac574627edb2"
+          "stdout_sha256": "e7957770cd5ee9ccb72351ef91b328bf8c12c8cb062d499e5077ac574627edb2",
+          "via": "script"
         },
         {
           "argv": [
@@ -422,7 +437,8 @@
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "5b83190c333b1ff3eb0758671bd797734bec95d06fa1f9d37bd7110700388625"
+          "stdout_sha256": "5b83190c333b1ff3eb0758671bd797734bec95d06fa1f9d37bd7110700388625",
+          "via": "script"
         }
       ],
       "help": {
@@ -438,16 +454,8 @@
             "--help"
           ],
           "exit": 0,
-          "result": "subprocess"
-        },
-        {
-          "argv": [
-            "--bogus-flag"
-          ],
-          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
-          "exit": 2,
           "result": "subprocess",
-          "stderr_tail": "usage: bike-replay [-h] [--episode EPISODE] [--viewer]\n                   [--time-scale {1,2,4,8}] [--view] [--speed SPEED] [--loop]\n                   [--fps FPS] [--dry-run]\n                   recording\nbike-replay: error: the following arguments are required: recording\n"
+          "via": "script"
         },
         {
           "argv": [
@@ -457,7 +465,18 @@
           "exit": 2,
           "result": "subprocess",
           "stderr_tail": "usage: bike-replay [-h] [--episode EPISODE] [--viewer]\n                   [--time-scale {1,2,4,8}] [--view] [--speed SPEED] [--loop]\n                   [--fps FPS] [--dry-run]\n                   recording\nbike-replay: error: the following arguments are required: recording\n",
-          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          "via": "script"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 2,
+          "result": "subprocess",
+          "stderr_tail": "usage: bike-replay [-h] [--episode EPISODE] [--viewer]\n                   [--time-scale {1,2,4,8}] [--view] [--speed SPEED] [--loop]\n                   [--fps FPS] [--dry-run]\n                   recording\nbike-replay: error: the following arguments are required: recording\n",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "via": "script"
         },
         {
           "argv": [
@@ -467,13 +486,15 @@
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/reference-oracle/src/bike_sim/sim/ride/physical_runtime.py:815: RuntimeWarning: invalid reference step at 0.005000000: ('energy.constraint_work',)\n  self.reference_monitor.accept(time_s,violations)\n",
-          "stdout_sha256": "73d95029e1308b2ab238077db2fb17eb9d34d35460be80a04ec4b22332a48ecd"
+          "stdout_sha256": "73d95029e1308b2ab238077db2fb17eb9d34d35460be80a04ec4b22332a48ecd",
+          "via": "script"
         }
       ],
       "help": {
         "exit": 0,
         "path": "cli/bike-replay.help.txt",
-        "sha256": "b92a69692c5fae2073cef797849cae51105c8206f57c230de6b063d1fdfcc588"
+        "sha256": "b92a69692c5fae2073cef797849cae51105c8206f57c230de6b063d1fdfcc588",
+        "via": "script"
       },
       "module": "bike_sim.cli.replay"
     },
@@ -1083,7 +1104,8 @@
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
           "exit": 2,
           "result": "subprocess",
-          "stderr_tail": "                   [--freehub-stiffness FREEHUB_STIFFNESS]\n                     [--front-teeth FRONT_TEETH] [--rear-teeth REAR_TEETH]\n                     [--fast-telemetry]\n                     [--record-decimation RECORD_DECIMATION]\n                     [--energy-tolerance ENERGY_TOLERANCE] [--out OUT]\n                     [--overwrite]\nbike-research: error: unrecognized arguments: --bogus-flag\n"
+          "stderr_tail": "                   [--freehub-stiffness FREEHUB_STIFFNESS]\n                     [--front-teeth FRONT_TEETH] [--rear-teeth REAR_TEETH]\n                     [--fast-telemetry]\n                     [--record-decimation RECORD_DECIMATION]\n                     [--energy-tolerance ENERGY_TOLERANCE] [--out OUT]\n                     [--overwrite]\nbike-research: error: unrecognized arguments: --bogus-flag\n",
+          "via": "script"
         }
       ],
       "help": {
@@ -1295,7 +1317,8 @@
             "--help"
           ],
           "exit": 0,
-          "result": "subprocess"
+          "result": "subprocess",
+          "via": "script"
         },
         {
           "argv": [
@@ -1304,7 +1327,8 @@
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
           "exit": 2,
           "result": "subprocess",
-          "stderr_tail": "      [--async-telemetry] [--policy POLICY]\n                 [--control-period CONTROL_PERIOD]\n                 [--sensor-period SENSOR_PERIOD] [--sensor-delay SENSOR_DELAY]\n                 [--actuator-delay ACTUATOR_DELAY]\n                 [--road-resolution ROAD_RESOLUTION] [--demand DEMAND]\n                 [--rider-program RIDER_PROGRAM]\nbike-ride: error: unrecognized arguments: --bogus-flag\n"
+          "stderr_tail": "      [--async-telemetry] [--policy POLICY]\n                 [--control-period CONTROL_PERIOD]\n                 [--sensor-period SENSOR_PERIOD] [--sensor-delay SENSOR_DELAY]\n                 [--actuator-delay ACTUATOR_DELAY]\n                 [--road-resolution ROAD_RESOLUTION] [--demand DEMAND]\n                 [--rider-program RIDER_PROGRAM]\nbike-ride: error: unrecognized arguments: --bogus-flag\n",
+          "via": "script"
         },
         {
           "argv": [
@@ -1314,7 +1338,8 @@
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "f51ab3251857ee9cd5191b3d3843f5904a80a8b32fbdd271f903f559489c388d"
+          "stdout_sha256": "f51ab3251857ee9cd5191b3d3843f5904a80a8b32fbdd271f903f559489c388d",
+          "via": "script"
         },
         {
           "argv": [
@@ -1325,7 +1350,8 @@
           "exit": 0,
           "result": "subprocess",
           "stderr_tail": "",
-          "stdout_sha256": "87b2a2735348c34e0d9037439244ca11e61fe2199d52acdf2b362e703b9213f2"
+          "stdout_sha256": "87b2a2735348c34e0d9037439244ca11e61fe2199d52acdf2b362e703b9213f2",
+          "via": "script"
         }
       ],
       "defaults": {
@@ -1697,7 +1723,8 @@
       "help": {
         "exit": 0,
         "path": "cli/bike-ride.help.txt",
-        "sha256": "81831509df0c3cd9e802bc5330ce37fa592e9a35aab5b6b6086d8ff93b620a2d"
+        "sha256": "81831509df0c3cd9e802bc5330ce37fa592e9a35aab5b6b6086d8ff93b620a2d",
+        "via": "script"
       },
       "module": "bike_sim.cli.ride"
     },
@@ -1744,7 +1771,8 @@
             "--help"
           ],
           "exit": 0,
-          "result": "subprocess"
+          "result": "subprocess",
+          "via": "script"
         },
         {
           "argv": [
@@ -1753,14 +1781,16 @@
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
           "exit": 2,
           "result": "subprocess",
-          "stderr_tail": "crank_effort,articulated_effort}]\n                   [--timestep S] [--initial-speed KMH] [--human-torque NM]\n                   [--assist-gain ASSIST_GAIN]\n                   [--assist {off,eco,tour,sport,turbo,emtb}]\n                   [--crank-phase DEG] [--max-steps MAX_STEPS]\n                   [--tolerance TOLERANCE] --out PATH\nbike-settle: error: the following arguments are required: --out\n"
+          "stderr_tail": "crank_effort,articulated_effort}]\n                   [--timestep S] [--initial-speed KMH] [--human-torque NM]\n                   [--assist-gain ASSIST_GAIN]\n                   [--assist {off,eco,tour,sport,turbo,emtb}]\n                   [--crank-phase DEG] [--max-steps MAX_STEPS]\n                   [--tolerance TOLERANCE] --out PATH\nbike-settle: error: the following arguments are required: --out\n",
+          "via": "script"
         }
       ],
       "defaults_error": "SystemExit(2)",
       "help": {
         "exit": 0,
         "path": "cli/bike-settle.help.txt",
-        "sha256": "085db8e6b321ceec709c2fb4f9c528269ff5bc61d15117add785f40d0bcac3cd"
+        "sha256": "085db8e6b321ceec709c2fb4f9c528269ff5bc61d15117add785f40d0bcac3cd",
+        "via": "script"
       },
       "module": "bike_sim.cli.settle"
     },
@@ -1771,16 +1801,18 @@
             "--help"
           ],
           "exit": 0,
-          "result": "subprocess"
+          "result": "subprocess",
+          "via": "script"
         },
         {
           "argv": [
             "--bogus-flag"
           ],
           "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
-          "exit": 0,
+          "exit": 2,
           "result": "subprocess",
-          "stderr_tail": ""
+          "stderr_tail": "usage: bike-sim [-h] [--print-table] [--plot] [--plot-damper] [--export-json]\n                [--export-mujoco] [--playground]\n                [--output-plots-dir OUTPUT_PLOTS_DIR]\n                [--output-models-dir OUTPUT_MODELS_DIR] [--all]\nbike-sim: error: unrecognized arguments: --bogus-flag\n",
+          "via": "script"
         }
       ],
       "defaults": {
@@ -1797,7 +1829,8 @@
       "help": {
         "exit": 0,
         "path": "cli/bike-sim.help.txt",
-        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        "sha256": "6e462d0012ff573fd205e7a61656402a115d93fcd955d5dfa1bb8e3eeb5488cb",
+        "via": "script"
       },
       "module": "bike_sim.cli.main"
     }

@@ -1,8 +1,8 @@
 {
   "expected": {
-    "error": "RuntimeError",
+    "error": "ValueError",
     "kind": "invalid",
-    "message": "bike_native has no NativeRideRuntime"
+    "message": "state.unexpected_future_field: unknown key"
   },
   "mutation": "state.+unexpected_future_field"
 }

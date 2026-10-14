@@ -1358,3 +1358,4 @@ tests/reference/test_native_runtime_step.py::test_native_intent_lanes_match_pyth
 ** On entry to DLASCL, parameter number  4 had an illegal value
 ** On entry to DLASCL, parameter number  5 had an illegal value
 ** On entry to DLASCL, parameter number  4 had an illegal value
+NATIVE_EXIT=0

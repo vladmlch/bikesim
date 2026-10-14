@@ -1,8 +1,8 @@
 {
   "expected": {
-    "error": "RuntimeError",
+    "error": "ValueError",
     "kind": "invalid",
-    "message": "bike_native has no NativeRideRuntime"
+    "message": "state.integration_state: width does not match the model"
   },
   "mutation": "state.integration_state[:-1]"
 }

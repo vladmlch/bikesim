@@ -1,8 +1,8 @@
 {
   "expected": {
-    "error": "RuntimeError",
+    "error": "ValueError",
     "kind": "invalid",
-    "message": "bike_native has no NativeRideRuntime"
+    "message": "config.control_period_steps: expected positive integer"
   },
   "mutation": "config.control_period_steps=0"
 }

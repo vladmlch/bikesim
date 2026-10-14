@@ -1,0 +1,28 @@
+usage: bike-sim [-h] [--print-table] [--plot] [--plot-damper] [--export-json]
+                [--export-mujoco] [--playground]
+                [--output-plots-dir OUTPUT_PLOTS_DIR]
+                [--output-models-dir OUTPUT_MODELS_DIR] [--all]
+
+Bicycle Frame Geometry and Horst-Link Suspension Kinematics CLI Runner.
+
+options:
+  -h, --help            show this help message and exit
+  --print-table         Print formatted ASCII tables of uncompressed and
+                        compressed hardpoint coordinates and geometry metrics.
+  --plot                Generate 3 publication-quality kinematic and geometry
+                        plots (PNG).
+  --plot-damper         Generate publication-quality RockShox ZEB Ultimate &
+                        Super Deluxe damper dyno curves.
+  --export-json         Export all hardpoint coordinates and geometry metadata
+                        to JSON.
+  --export-mujoco       Export complete MuJoCo MJCF XML models.
+  --playground          Launch interactive 2D MuJoCo suspension test stand
+                        viewer.
+  --output-plots-dir OUTPUT_PLOTS_DIR
+                        Directory where plot images will be saved (default:
+                        output/plots).
+  --output-models-dir OUTPUT_MODELS_DIR
+                        Directory where MJCF XML and JSON files will be saved
+                        (default: output/models).
+  --all                 Execute all operations: print tables, generate plots,
+                        export JSON, and export MuJoCo models.

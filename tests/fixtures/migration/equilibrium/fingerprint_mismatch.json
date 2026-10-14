@@ -2,7 +2,7 @@
   "expected": {
     "error": "ValueError",
     "kind": "invalid",
-    "message": "equilibrium state file /var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/pose.npz: fingerprint mismatch \u2014 the pose was settled for a different configuration"
+    "message": "equilibrium state file /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/equilibrium/legacy_state.npz: fingerprint mismatch \u2014 the pose was settled for a different configuration"
   },
   "pose": "equilibrium/legacy_state.npz",
   "rider_mass_kg": 75.0

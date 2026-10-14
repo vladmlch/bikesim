@@ -1,8 +1,8 @@
 {
   "expected": {
-    "error": "RuntimeError",
+    "error": "ValueError",
     "kind": "invalid",
-    "message": "bike_native has no NativeRideRuntime"
+    "message": "state.integration_state: expected finite real scalar"
   },
   "mutation": "state.integration_state[0]=nan"
 }

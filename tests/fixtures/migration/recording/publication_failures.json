@@ -3,7 +3,7 @@
     "unwritable_root": {
       "error": "FileExistsError",
       "kind": "invalid",
-      "message": "[Errno 17] File exists: '/var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/notadir'"
+      "message": "[Errno 17] File exists: '/tmp/bike-sim-t01-notadir'"
     }
   },
   "stages": {

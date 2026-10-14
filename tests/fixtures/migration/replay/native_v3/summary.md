@@ -1,8 +1,8 @@
 # Run recording
 
-Run UUID: `b3b40375-bb30-486f-8930-4bbb213d37be`
+Run UUID: `a96bf2a7-d35d-4682-ac31-8e2b1460c6bb`
 
-Started (UTC): `2026-10-14 21:39:15.236137+02:00`. Backend: `python`. Mode: `research_headless`.
+Started (UTC): `2026-10-15 01:24:36.258257+02:00`. Backend: `python`. Mode: `research_headless`.
 
 ## Invocation and provenance
 
@@ -25,7 +25,7 @@ Evidence: `runs.metadata_json`; per-episode setup identity is in `episodes.summa
     "bike-research",
     "--fixture"
   ],
-  "monotonic_origin_s": 1040927.533805916,
+  "monotonic_origin_s": 1054448.517783791,
   "setup": {
     "calibration_status": "parameterized_unvalidated",
     "component_provenance": {
@@ -811,31 +811,31 @@ Clock semantics: `received_wall_s` is the monotonic receipt timestamp (a wall cl
 
 | Event | Kind | Received wall (s) | Sim time (s) | Processed step | Applied step | Recorded detail |
 | --- | --- | --- | --- | --- | --- | --- |
-| 0 | episode_started | 1040927.533955083 | 0.0 | 0 | unavailable / null | {"capture_mode":"full","check_policy":"diagnostic","time_s":0.0} |
-| 1 | derived_transition | 1040927.7937275 | 0.00375 | 3 | 3 | {"changes":{"model_valid":false,"model_violation_counts":{"energy.constraint_work":1}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":3} |
-| 2 | derived_transition | 1040927.7937275 | 0.00375 | 3 | 3 | {"changes":{"first_model_violation":{"interval_id":3,"reasons":["energy.constraint_work"],"time_s":0.00375}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_first_failure","interval_id":3} |
-| 3 | derived_transition | 1040927.7937275 | 0.00875 | 7 | 7 | {"changes":{"model_violation_counts":{"energy.constraint_work":2}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":7} |
-| 4 | derived_transition | 1040927.7937275 | 0.013749999999999998 | 11 | 11 | {"changes":{"model_violation_counts":{"energy.constraint_work":3}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":11} |
-| 5 | derived_transition | 1040927.7937275 | 0.01875 | 15 | 15 | {"changes":{"model_violation_counts":{"energy.constraint_work":4}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":15} |
-| 6 | derived_transition | 1040927.7937275 | 0.023750000000000004 | 19 | 19 | {"changes":{"model_violation_counts":{"energy.constraint_work":5}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":19} |
-| 7 | derived_transition | 1040927.7937275 | 0.028750000000000008 | 23 | 23 | {"changes":{"model_violation_counts":{"energy.constraint_work":6}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":23} |
-| 8 | derived_transition | 1040927.7937275 | 0.03375000000000001 | 27 | 27 | {"changes":{"model_violation_counts":{"energy.constraint_work":7}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":27} |
-| 9 | derived_transition | 1040927.7937275 | 0.038750000000000014 | 31 | 31 | {"changes":{"model_violation_counts":{"energy.constraint_work":8}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":31} |
-| 10 | derived_transition | 1040927.7937275 | 0.04375000000000002 | 35 | 35 | {"changes":{"model_violation_counts":{"energy.constraint_work":9}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":35} |
-| 11 | derived_transition | 1040927.7937275 | 0.04875000000000002 | 39 | 39 | {"changes":{"model_violation_counts":{"energy.constraint_work":10}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":39} |
-| 12 | derived_transition | 1040927.7937275 | 0.05375000000000003 | 43 | 43 | {"changes":{"model_violation_counts":{"energy.constraint_work":11}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":43} |
-| 13 | derived_transition | 1040927.7937275 | 0.05875000000000003 | 47 | 47 | {"changes":{"model_violation_counts":{"energy.constraint_work":12}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":47} |
-| 14 | derived_transition | 1040927.7937275 | 0.06375000000000003 | 51 | 51 | {"changes":{"model_violation_counts":{"energy.constraint_work":13}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":51} |
-| 15 | derived_transition | 1040927.7937275 | 0.06875000000000003 | 55 | 55 | {"changes":{"model_violation_counts":{"energy.constraint_work":14}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":55} |
-| 16 | derived_transition | 1040927.7937275 | 0.07375000000000004 | 59 | 59 | {"changes":{"model_violation_counts":{"energy.constraint_work":15}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":59} |
-| 17 | derived_transition | 1040927.7937275 | 0.07875000000000004 | 63 | 63 | {"changes":{"model_violation_counts":{"energy.constraint_work":16}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":63} |
-| 18 | derived_transition | 1040927.7937275 | 0.08375000000000005 | 67 | 67 | {"changes":{"model_violation_counts":{"energy.constraint_work":17}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":67} |
-| 19 | derived_transition | 1040927.7937275 | 0.08875000000000005 | 71 | 71 | {"changes":{"model_violation_counts":{"energy.constraint_work":18}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":71} |
-| 20 | derived_transition | 1040927.7937275 | 0.09375000000000006 | 75 | 75 | {"changes":{"model_violation_counts":{"energy.constraint_work":19}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":75} |
-| 21 | derived_transition | 1040927.7937275 | 0.09750000000000006 | 78 | 78 | {"changes":{"model_violation_counts":{"energy.constraint_work":19,"foot_rear.normal":1}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":78} |
-| 22 | derived_transition | 1040927.7937275 | 0.09875000000000006 | 79 | 79 | {"changes":{"model_violation_counts":{"energy.constraint_work":20,"foot_rear.normal":2}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":79} |
-| 23 | model_first_failure | 1040927.7937275 | unavailable / null | 80 | unavailable / null | {"classification":"measured","evidence":[0.005,["energy.constraint_work"]]} |
-| 24 | episode_ended | 1040927.7937275 | unavailable / null | 80 | unavailable / null | {"processed_wall_s":1040927.7937275,"reason":"duration","time_s":0.10000000000000006} |
+| 0 | episode_started | 1054448.517920041 | 0.0 | 0 | unavailable / null | {"capture_mode":"full","check_policy":"diagnostic","time_s":0.0} |
+| 1 | derived_transition | 1054448.752808333 | 0.00375 | 3 | 3 | {"changes":{"model_valid":false,"model_violation_counts":{"energy.constraint_work":1}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":3} |
+| 2 | derived_transition | 1054448.752808333 | 0.00375 | 3 | 3 | {"changes":{"first_model_violation":{"interval_id":3,"reasons":["energy.constraint_work"],"time_s":0.00375}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_first_failure","interval_id":3} |
+| 3 | derived_transition | 1054448.752808333 | 0.00875 | 7 | 7 | {"changes":{"model_violation_counts":{"energy.constraint_work":2}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":7} |
+| 4 | derived_transition | 1054448.752808333 | 0.013749999999999998 | 11 | 11 | {"changes":{"model_violation_counts":{"energy.constraint_work":3}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":11} |
+| 5 | derived_transition | 1054448.752808333 | 0.01875 | 15 | 15 | {"changes":{"model_violation_counts":{"energy.constraint_work":4}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":15} |
+| 6 | derived_transition | 1054448.752808333 | 0.023750000000000004 | 19 | 19 | {"changes":{"model_violation_counts":{"energy.constraint_work":5}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":19} |
+| 7 | derived_transition | 1054448.752808333 | 0.028750000000000008 | 23 | 23 | {"changes":{"model_violation_counts":{"energy.constraint_work":6}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":23} |
+| 8 | derived_transition | 1054448.752808333 | 0.03375000000000001 | 27 | 27 | {"changes":{"model_violation_counts":{"energy.constraint_work":7}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":27} |
+| 9 | derived_transition | 1054448.752808333 | 0.038750000000000014 | 31 | 31 | {"changes":{"model_violation_counts":{"energy.constraint_work":8}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":31} |
+| 10 | derived_transition | 1054448.752808333 | 0.04375000000000002 | 35 | 35 | {"changes":{"model_violation_counts":{"energy.constraint_work":9}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":35} |
+| 11 | derived_transition | 1054448.752808333 | 0.04875000000000002 | 39 | 39 | {"changes":{"model_violation_counts":{"energy.constraint_work":10}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":39} |
+| 12 | derived_transition | 1054448.752808333 | 0.05375000000000003 | 43 | 43 | {"changes":{"model_violation_counts":{"energy.constraint_work":11}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":43} |
+| 13 | derived_transition | 1054448.752808333 | 0.05875000000000003 | 47 | 47 | {"changes":{"model_violation_counts":{"energy.constraint_work":12}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":47} |
+| 14 | derived_transition | 1054448.752808333 | 0.06375000000000003 | 51 | 51 | {"changes":{"model_violation_counts":{"energy.constraint_work":13}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":51} |
+| 15 | derived_transition | 1054448.752808333 | 0.06875000000000003 | 55 | 55 | {"changes":{"model_violation_counts":{"energy.constraint_work":14}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":55} |
+| 16 | derived_transition | 1054448.752808333 | 0.07375000000000004 | 59 | 59 | {"changes":{"model_violation_counts":{"energy.constraint_work":15}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":59} |
+| 17 | derived_transition | 1054448.752808333 | 0.07875000000000004 | 63 | 63 | {"changes":{"model_violation_counts":{"energy.constraint_work":16}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":63} |
+| 18 | derived_transition | 1054448.752808333 | 0.08375000000000005 | 67 | 67 | {"changes":{"model_violation_counts":{"energy.constraint_work":17}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":67} |
+| 19 | derived_transition | 1054448.752808333 | 0.08875000000000005 | 71 | 71 | {"changes":{"model_violation_counts":{"energy.constraint_work":18}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":71} |
+| 20 | derived_transition | 1054448.752808333 | 0.09375000000000006 | 75 | 75 | {"changes":{"model_violation_counts":{"energy.constraint_work":19}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":75} |
+| 21 | derived_transition | 1054448.752808333 | 0.09750000000000006 | 78 | 78 | {"changes":{"model_violation_counts":{"energy.constraint_work":19,"foot_rear.normal":1}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":78} |
+| 22 | derived_transition | 1054448.752808333 | 0.09875000000000006 | 79 | 79 | {"changes":{"model_violation_counts":{"energy.constraint_work":20,"foot_rear.normal":2}},"classification":"derived_transition","derivation_rule":"channel_value_change.v1","derived_kind":"model_validity","interval_id":79} |
+| 23 | model_first_failure | 1054448.752808333 | unavailable / null | 80 | unavailable / null | {"classification":"measured","evidence":[0.005,["energy.constraint_work"]]} |
+| 24 | episode_ended | 1054448.752808333 | unavailable / null | 80 | unavailable / null | {"processed_wall_s":1054448.752808333,"reason":"duration","time_s":0.10000000000000006} |
 
 ### Scalar coverage and extrema
 

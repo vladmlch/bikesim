@@ -1,6 +1,6 @@
 {
   "blockers": [],
-  "created_utc": "2026-10-14T19:39:40.439005+00:00",
+  "created_utc": "2026-10-14T23:24:57.615571+00:00",
   "environment": {
     "executable": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/reference-oracle/.venv/bin/python3",
     "machine": "arm64",
@@ -14005,6 +14005,206 @@
       "files": [
         {
           "bytes": 5808840,
+          "path": "bootstrap/welded/reset/1/model.mjb",
+          "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
+        },
+        {
+          "bytes": 25805,
+          "path": "bootstrap/welded/reset/1/config.json",
+          "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
+        },
+        {
+          "bytes": 32544,
+          "path": "bootstrap/welded/reset/1/state.json",
+          "sha256": "7444dfaea049756b6a45c19adb6326cff7abd1a95acde008d9bdc9459d8cd3f5"
+        },
+        {
+          "bytes": 2336,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a000.f64",
+          "sha256": "e90057d97bc37630b6a7a033dc54abe695fb0f2c1fbc640c8654b18ae1d85d22",
+          "shape": [
+            292
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a001.f64",
+          "sha256": "ce9c03adcdb5cc0a9ae0b2ce03dc3c9ef0962cbf909481023feb314ca069b8e2",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 176,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a002.f64",
+          "sha256": "97d806e07b74ef3bfd633d3ced469fe16c6da25d9b6c71df248a3d0852103460",
+          "shape": [
+            22
+          ]
+        },
+        {
+          "bytes": 16,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a003.f64",
+          "sha256": "409af86427f0f6e74266fbd14ce311f1bbfb1476822e6f7711dc2d582807de8b",
+          "shape": [
+            2
+          ]
+        },
+        {
+          "bytes": 8,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a004.f64",
+          "sha256": "c20c0eafaee1306daf1cd4a44da1d051b5cc4d1545218187ee4f5c8b75d56c95",
+          "shape": [
+            1
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a005.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a006.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a007.f64",
+          "sha256": "73f0bd6ff8f904c8d226e369bfe060888fb53ad46cfa62d69fc428936657d0e6",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a008.f64",
+          "sha256": "d6a6ba1952d30d2c0e5caed0ccaa2952ca0b703bcc87986ac71d19e650ae5559",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a009.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a010.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a011.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a012.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a013.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 24,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a014.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        {
+          "bytes": 72,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a015.f64",
+          "sha256": "d6ccdbcee6a9fb2337841c9e045f538c5be90e2795852278d23c813b15ecee4e",
+          "shape": [
+            9
+          ]
+        },
+        {
+          "bytes": 72,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/state.arrays/a016.f64",
+          "sha256": "d6ccdbcee6a9fb2337841c9e045f538c5be90e2795852278d23c813b15ecee4e",
+          "shape": [
+            9
+          ]
+        },
+        {
+          "bytes": 2336,
+          "dtype": "<f8",
+          "order": "C",
+          "path": "bootstrap/welded/reset/1/integration.f64",
+          "sha256": "e90057d97bc37630b6a7a033dc54abe695fb0f2c1fbc640c8654b18ae1d85d22",
+          "shape": [
+            292
+          ]
+        },
+        {
+          "bytes": 351,
+          "path": "bootstrap/welded/reset/1/meta.json",
+          "sha256": "4e1a0ec934c6b26a9e96268964fdd5889163eac9fb7bfcb6084b92133951bd59"
+        },
+        {
+          "bytes": 5808840,
           "path": "bootstrap/welded/reset/2/model.mjb",
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
@@ -14722,9 +14922,9 @@
     {
       "comparison": "S",
       "expected": {
-        "error": "RuntimeError",
+        "error": "ValueError",
         "kind": "invalid",
-        "message": "bike_native has no NativeRideRuntime"
+        "message": "state.model_digest: model artifact bytes do not match"
       },
       "files": [
         {
@@ -14738,24 +14938,24 @@
           "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
         },
         {
-          "bytes": 173,
+          "bytes": 188,
           "path": "bootstrap/faults/digest/expected.json",
-          "sha256": "272b63e524631aaa63ef02a5fc4b5890ff184976482c1045232b5505264a841c"
+          "sha256": "06c16009a92c5ca9abf4686d39163fdf57a0c933115cc045575b03e415ea1588"
         }
       ],
       "group": "bootstrap",
       "inputs": [],
       "name": "bootstrap/faults/digest",
-      "notes": "mutation state.model_digest zeroed; oracle response: RuntimeError: bike_native has no NativeRideRuntime",
+      "notes": "mutation state.model_digest zeroed; oracle response: ValueError: state.model_digest: model artifact bytes do not match",
       "produced_by": "mutated capture_bootstrap payload + native ctor",
       "recipe": "RCP-01"
     },
     {
       "comparison": "S",
       "expected": {
-        "error": "RuntimeError",
+        "error": "ValueError",
         "kind": "invalid",
-        "message": "bike_native has no NativeRideRuntime"
+        "message": "state.model_dims.nq: model dimension mismatch"
       },
       "files": [
         {
@@ -14769,24 +14969,24 @@
           "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
         },
         {
-          "bytes": 170,
+          "bytes": 177,
           "path": "bootstrap/faults/dims/expected.json",
-          "sha256": "79bc36ecb2b1cc29385b4e48d0aa068f8716b4a25bd870d849bd81c0b85f195a"
+          "sha256": "043e0661847dd30f0af882d7092da365cfad2e87281c12934095222e38d03f16"
         }
       ],
       "group": "bootstrap",
       "inputs": [],
       "name": "bootstrap/faults/dims",
-      "notes": "mutation state.model_dims.nq+=1; oracle response: RuntimeError: bike_native has no NativeRideRuntime",
+      "notes": "mutation state.model_dims.nq+=1; oracle response: ValueError: state.model_dims.nq: model dimension mismatch",
       "produced_by": "mutated capture_bootstrap payload + native ctor",
       "recipe": "RCP-01"
     },
     {
       "comparison": "S",
       "expected": {
-        "error": "RuntimeError",
+        "error": "ValueError",
         "kind": "invalid",
-        "message": "bike_native has no NativeRideRuntime"
+        "message": "state.integration_state: width does not match the model"
       },
       "files": [
         {
@@ -14800,24 +15000,24 @@
           "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
         },
         {
-          "bytes": 176,
+          "bytes": 193,
           "path": "bootstrap/faults/width/expected.json",
-          "sha256": "d3ae6a72adc1f9db34c5657845a5c7bb482166e46afac8abc364f220b6ef5c45"
+          "sha256": "d7d2e27c17cb8305b336f2038fbf339ba4eaa5786ce7198ac27a29183ee5bdbb"
         }
       ],
       "group": "bootstrap",
       "inputs": [],
       "name": "bootstrap/faults/width",
-      "notes": "mutation state.integration_state[:-1]; oracle response: RuntimeError: bike_native has no NativeRideRuntime",
+      "notes": "mutation state.integration_state[:-1]; oracle response: ValueError: state.integration_state: width does not match the model",
       "produced_by": "mutated capture_bootstrap payload + native ctor",
       "recipe": "RCP-01"
     },
     {
       "comparison": "S",
       "expected": {
-        "error": "RuntimeError",
+        "error": "ValueError",
         "kind": "invalid",
-        "message": "bike_native has no NativeRideRuntime"
+        "message": "state.integration_state: expected finite real scalar"
       },
       "files": [
         {
@@ -14831,24 +15031,24 @@
           "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
         },
         {
-          "bytes": 178,
+          "bytes": 192,
           "path": "bootstrap/faults/nonfinite/expected.json",
-          "sha256": "6752b99059de14d3f1eb405863a48eec942a0739fa2248beb6b899dba2ecb378"
+          "sha256": "27616d0d83452f081b56f0f815aa0eb8641aaea24899281befbbb301a86f5137"
         }
       ],
       "group": "bootstrap",
       "inputs": [],
       "name": "bootstrap/faults/nonfinite",
-      "notes": "mutation state.integration_state[0]=nan; oracle response: RuntimeError: bike_native has no NativeRideRuntime",
+      "notes": "mutation state.integration_state[0]=nan; oracle response: ValueError: state.integration_state: expected finite real scalar",
       "produced_by": "mutated capture_bootstrap payload + native ctor",
       "recipe": "RCP-01"
     },
     {
       "comparison": "S",
       "expected": {
-        "error": "RuntimeError",
+        "error": "ValueError",
         "kind": "invalid",
-        "message": "bike_native has no NativeRideRuntime"
+        "message": "state.runtime.step: missing required key"
       },
       "files": [
         {
@@ -14862,24 +15062,24 @@
           "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
         },
         {
-          "bytes": 174,
+          "bytes": 176,
           "path": "bootstrap/faults/missing_key/expected.json",
-          "sha256": "e0556a7a4c4a7fea1afdc4db0e59dc6bcf740a6431961af1dfd110314c15c5ca"
+          "sha256": "01577c26dc05067d09711615d8032b4ca5be8c494646828a616efcbd8688dc13"
         }
       ],
       "group": "bootstrap",
       "inputs": [],
       "name": "bootstrap/faults/missing_key",
-      "notes": "mutation state.runtime.step removed; oracle response: RuntimeError: bike_native has no NativeRideRuntime",
+      "notes": "mutation state.runtime.step removed; oracle response: ValueError: state.runtime.step: missing required key",
       "produced_by": "mutated capture_bootstrap payload + native ctor",
       "recipe": "RCP-01"
     },
     {
       "comparison": "S",
       "expected": {
-        "error": "RuntimeError",
+        "error": "ValueError",
         "kind": "invalid",
-        "message": "bike_native has no NativeRideRuntime"
+        "message": "state.unexpected_future_field: unknown key"
       },
       "files": [
         {
@@ -14893,24 +15093,22 @@
           "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
         },
         {
-          "bytes": 178,
+          "bytes": 182,
           "path": "bootstrap/faults/unknown_key/expected.json",
-          "sha256": "fd9eda3584aff707cc70541d6bb4f19e31bde575e66c953b9b25c38813100cbb"
+          "sha256": "e57a1cdac75c4144e37ef1aaab593f94637ec18e1dd6e16e59e1e98d4a1af387"
         }
       ],
       "group": "bootstrap",
       "inputs": [],
       "name": "bootstrap/faults/unknown_key",
-      "notes": "mutation state.+unexpected_future_field; oracle response: RuntimeError: bike_native has no NativeRideRuntime",
+      "notes": "mutation state.+unexpected_future_field; oracle response: ValueError: state.unexpected_future_field: unknown key",
       "produced_by": "mutated capture_bootstrap payload + native ctor",
       "recipe": "RCP-01"
     },
     {
       "comparison": "S",
       "expected": {
-        "error": "RuntimeError",
-        "kind": "invalid",
-        "message": "bike_native has no NativeRideRuntime"
+        "kind": "unexpected-acceptance"
       },
       "files": [
         {
@@ -14924,24 +15122,24 @@
           "sha256": "8d596b11e610c198917a9d254be2d4f50ef7f59a75321c76e2ede8d50ec9c2be"
         },
         {
-          "bytes": 179,
+          "bytes": 109,
           "path": "bootstrap/faults/malformed_drive/expected.json",
-          "sha256": "7f2baccaa185ad6c96a04f85d8c268df56b3fad14ae86726b168ba36d3ad3925"
+          "sha256": "1006a076638e8eccbf9673967e6cc4d1f81e27fec6665865e2f9670465de247a"
         }
       ],
       "group": "bootstrap",
       "inputs": [],
       "name": "bootstrap/faults/malformed_drive",
-      "notes": "mutation state.drive.front_teeth removed; oracle response: RuntimeError: bike_native has no NativeRideRuntime",
+      "notes": "mutation state.drive.front_teeth removed; oracle response: native runtime accepted the mutated bootstrap",
       "produced_by": "mutated capture_bootstrap payload + native ctor",
       "recipe": "RCP-01"
     },
     {
       "comparison": "S",
       "expected": {
-        "error": "RuntimeError",
+        "error": "ValueError",
         "kind": "invalid",
-        "message": "bike_native has no NativeRideRuntime"
+        "message": "config.control_period_steps: expected positive integer"
       },
       "files": [
         {
@@ -14950,15 +15148,15 @@
           "sha256": "4b295eaf02fa6f5298fdd6f7109a9313f9561742c0a7e222095fb46969e81b94"
         },
         {
-          "bytes": 177,
+          "bytes": 193,
           "path": "bootstrap/faults/control_period/expected.json",
-          "sha256": "e4838e1a285d205e1ae7083f2f71483595676f7b6932acb79fe5d7dbb07d7877"
+          "sha256": "f922c1ae185ff9f54f7f956c23f4eebd26b237e5646b4c7ff82ab89504f355a9"
         }
       ],
       "group": "bootstrap",
       "inputs": [],
       "name": "bootstrap/faults/control_period",
-      "notes": "mutation config.control_period_steps=0; oracle response: RuntimeError: bike_native has no NativeRideRuntime",
+      "notes": "mutation config.control_period_steps=0; oracle response: ValueError: config.control_period_steps: expected positive integer",
       "produced_by": "mutated capture_bootstrap payload + native ctor",
       "recipe": "RCP-01"
     },
@@ -15146,7 +15344,7 @@
       "expected": {
         "error": "ValueError",
         "kind": "invalid",
-        "message": "equilibrium state file /var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/truncated.npz: state payload does not fit this runtime"
+        "message": "equilibrium state file /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/equilibrium/truncated.npz: state payload does not fit this runtime"
       },
       "files": [
         {
@@ -15158,7 +15356,7 @@
       "group": "equilibrium",
       "inputs": [],
       "name": "equilibrium/truncated.npz",
-      "notes": "rejection: equilibrium state file /var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/truncated.npz: state payload does not fit this runtime",
+      "notes": "rejection: equilibrium state file /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/equilibrium/truncated.npz: state payload does not fit this runtime",
       "produced_by": "npz rewrite dropping state_tire_xi",
       "recipe": "RCP-04"
     },
@@ -15167,7 +15365,7 @@
       "expected": {
         "error": "ValueError",
         "kind": "invalid",
-        "message": "equilibrium state file /var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/bad_residual.npz: restored residual 677.954 exceeds tolerance 0.05"
+        "message": "equilibrium state file /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/equilibrium/bad_residual.npz: restored residual 677.954 exceeds tolerance 0.05"
       },
       "files": [
         {
@@ -15179,7 +15377,7 @@
       "group": "equilibrium",
       "inputs": [],
       "name": "equilibrium/bad_residual.npz",
-      "notes": "residual recheck rejection: equilibrium state file /var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/bad_residual.npz: restored residual 677.954 exceeds tolerance 0.05",
+      "notes": "residual recheck rejection: equilibrium state file /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/equilibrium/bad_residual.npz: restored residual 677.954 exceeds tolerance 0.05",
       "produced_by": "npz rewrite with qpos[root_z]+=0.05",
       "recipe": "RCP-04"
     },
@@ -15188,19 +15386,19 @@
       "expected": {
         "error": "ValueError",
         "kind": "invalid",
-        "message": "equilibrium state file /var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/pose.npz: fingerprint mismatch \u2014 the pose was settled for a different configuration"
+        "message": "equilibrium state file /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/equilibrium/legacy_state.npz: fingerprint mismatch \u2014 the pose was settled for a different configuration"
       },
       "files": [
         {
-          "bytes": 346,
+          "bytes": 394,
           "path": "equilibrium/fingerprint_mismatch.json",
-          "sha256": "d9ab45ca6b2c01b651aeb7f069fb5cd3c85b7ed0952993b749056a7a3abe8d87"
+          "sha256": "81483c63422a3fd6e23d8024a2a47952ae3524055390c338cdc52de0899e6e7a"
         }
       ],
       "group": "equilibrium",
       "inputs": [],
       "name": "equilibrium/fingerprint_mismatch",
-      "notes": "fingerprint rejection: equilibrium state file /var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/pose.npz: fingerprint mismatch \u2014 the pose was settled for a different configuration",
+      "notes": "fingerprint rejection: equilibrium state file /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/equilibrium/legacy_state.npz: fingerprint mismatch \u2014 the pose was settled for a different configuration",
       "produced_by": "equilibrium_state_file + rider_mass 75kg",
       "recipe": "RCP-04"
     },
@@ -15211,9 +15409,9 @@
       },
       "files": [
         {
-          "bytes": 4534,
+          "bytes": 4504,
           "path": "equilibrium/refine_calls.json",
-          "sha256": "954cf5b79efcf89581ff2a16c20edd3d23a04c3e05b5f3642064b2f38426dc53"
+          "sha256": "989ca26f815ddb2b2cca55a4b9171cb57d3f725e80d0fdfd712f1f5d9a826bbc"
         },
         {
           "bytes": 128,
@@ -15535,9 +15733,9 @@
       },
       "files": [
         {
-          "bytes": 2241,
+          "bytes": 2211,
           "path": "allocation/nonlinear_grip.json",
-          "sha256": "96413d180dd2a2a308796ddee917657a3abe2adc2f1340aca408d2cc4f15a61f"
+          "sha256": "9196a68ebe0fc107e64905a26a238b99c33163ec0e78626d2d5c152faff0aa02"
         },
         {
           "bytes": 16,
@@ -16034,12 +16232,12 @@
         {
           "bytes": 985,
           "path": "recording/good/manifest.json",
-          "sha256": "0e6542eb6717ca7f5401356847c6d0d2878bf813c8de771d0929e7f60624b745"
+          "sha256": "d8bdb854390cec34bf1bffd9ff3a819a9464906049242b8cb602c91f6d206732"
         },
         {
           "bytes": 9973760,
           "path": "recording/good/run.duckdb",
-          "sha256": "bc16ae44833c2a8b3b7a5b2c948aad1fb59313f57f029bf561470933159bb2f2"
+          "sha256": "8b4b3e43bdc4a38993239f6e3a40ddccd9c5ad5956ebce4ecc47eb4cd504c65b"
         },
         {
           "bytes": 15860,
@@ -16049,7 +16247,7 @@
         {
           "bytes": 2175,
           "path": "recording/good/overview.json",
-          "sha256": "d576ae2269669ceb629875affec199693b546e559e85c8d2a8a2508e211be545"
+          "sha256": "a89782b3a9e3ac0983647524726d45e4aaba2ff89c49a3dfe7b16a9d59e3e9a5"
         },
         {
           "bytes": 181507,
@@ -16073,12 +16271,12 @@
         {
           "bytes": 985,
           "path": "recording/value_cases/manifest.json",
-          "sha256": "d604da13333df984bf2641b41812d0893d9c5073584642d4bc9a4810cf66e2a4"
+          "sha256": "300c8ac99e498d82390c6dc77842b4916ae372d25bde9d219439d40562caf03e"
         },
         {
           "bytes": 9449472,
           "path": "recording/value_cases/run.duckdb",
-          "sha256": "0f2d74362c85b7b9e712bdc1aa779c7737223c835edf240be1525651953e092f"
+          "sha256": "f57b18e73d490cb905efb5aed1578483b1f6c11fc3a3bbaaa64d79f5383ce54e"
         },
         {
           "bytes": 15504,
@@ -16088,7 +16286,7 @@
         {
           "bytes": 2175,
           "path": "recording/value_cases/overview.json",
-          "sha256": "ab2bd920d4cc6b94a4a43ac30aa3415bc3eff5d13e46aad06cd8d41d2f4ee2b3"
+          "sha256": "9e479af0cafbe8458d567196b116b098803b371967e46b5c76d1e4f6c85c6e74"
         }
       ],
       "group": "recording",
@@ -16109,12 +16307,12 @@
         {
           "bytes": 985,
           "path": "recording/bad_presence/manifest.json",
-          "sha256": "9ca96b1c738f1f465efc8913b47ece04f7a6273a881507d014db66ba0c72da3c"
+          "sha256": "4bf23c39d9618b262ca2a2857ac6418393ba7bebfe8b3457762c4c1cc0dea1d8"
         },
         {
           "bytes": 10235904,
           "path": "recording/bad_presence/run.duckdb",
-          "sha256": "d93ea5f4453729611a9d932d8e0a4234ef0ab19f86a0c5221e32a9f5040be3b3"
+          "sha256": "7aef0f4ec6a1743d8a82b5767ddf93e55fd5a23656c2b161c0bad3ee23d3ac8a"
         },
         {
           "bytes": 15836,
@@ -16145,7 +16343,7 @@
         {
           "bytes": 9449472,
           "path": "recording/no_manifest/run.duckdb",
-          "sha256": "53be9105d8d5a202808fe25bb45736c1077435050bdd48f0ce44b75fe6c31e56"
+          "sha256": "0b347924e3c13c89f9a1a91469c7ed89951199b554a6779dd095af6781c1e9be"
         },
         {
           "bytes": 15834,
@@ -16176,12 +16374,12 @@
         {
           "bytes": 932,
           "path": "recording/report_failed/manifest.json",
-          "sha256": "ce41d14e814caa5aa58f879c18d67ec2d53c6b6c6f42a3900a22d5676e98a32e"
+          "sha256": "aec28fe7c2c2973639a0cfce025c44c50f5a7237f417fffe22f2c67725e7e632"
         },
         {
           "bytes": 9449472,
           "path": "recording/report_failed/run.duckdb",
-          "sha256": "afbac3204c3d8f92713da5c0c0d2f6e0825b7abe77e62bed6d8747bb37460a11"
+          "sha256": "53be9105d8d5a202808fe25bb45736c1077435050bdd48f0ce44b75fe6c31e56"
         }
       ],
       "group": "recording",
@@ -16236,9 +16434,9 @@
       },
       "files": [
         {
-          "bytes": 649,
+          "bytes": 591,
           "path": "recording/publication_failures.json",
-          "sha256": "bef31788c09e15f85bd88a5efc051878677a16421678c2ce3190815043dea3d0"
+          "sha256": "4867787c65a96d19c0e5c6e90367220ed9a27403cd3742e15869406e33efbc8c"
         }
       ],
       "group": "recording",
@@ -16251,7 +16449,9 @@
     {
       "comparison": "B",
       "expected": {
-        "kind": "accepted"
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "initial integration state differs (maximum absolute error 2.17355364e-07)"
       },
       "files": [
         {
@@ -16338,14 +16538,16 @@
       "group": "replay",
       "inputs": [],
       "name": "replay/legacy_v2",
-      "notes": "source-produced legacy replay bundle + replay_episode verdict",
+      "notes": "source-produced legacy replay bundle; expected records the oracle reader's adjudication of it",
       "produced_by": "capture_legacy + write_replay_files (schema 2 file set)",
       "recipe": "RCP-06"
     },
     {
       "comparison": "B",
       "expected": {
-        "kind": "accepted"
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "legacy recording lacks a bundled joint_strength; external recipe paths are not trusted"
       },
       "files": [
         {
@@ -16413,14 +16615,16 @@
         }
       ],
       "name": "replay/legacy_v1",
-      "notes": "derived v1 file set + manifest; verdict records whether the current reader still replays schema 1",
+      "notes": "derived v1 file set + manifest; expected records the oracle reader's adjudication of schema 1",
       "produced_by": "schema-1 derivation from replay/legacy_v2 (no v1 writer in the source)",
       "recipe": "RCP-06"
     },
     {
       "comparison": "B",
       "expected": {
-        "kind": "accepted"
+        "error": "FileNotFoundError",
+        "kind": "invalid",
+        "message": "[Errno 2] No such file or directory: '/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/output/perf-roadmap/13-batch/N1/seed-0/ep/replay.json'"
       },
       "files": [
         {
@@ -16437,11 +16641,6 @@
           "bytes": 8838,
           "path": "replay/historical_v2/episode_metrics.json",
           "sha256": "34a2650f9adbd83b1866380de9f2ae7902983926fbff2ff0a9771d5c13375c94"
-        },
-        {
-          "bytes": 4927,
-          "path": "replay/historical_v2/replay.json",
-          "sha256": "7795e5a31b3e8db77c54e5e3e08f4ec5d95d542701644fbe390fc42d001ff17b"
         },
         {
           "bytes": 3420,
@@ -16484,9 +16683,9 @@
           "sha256": "174b25dde01a807d072d57fce320a7d4c96981dd02e37a5802a814bc0f4c51a8"
         },
         {
-          "bytes": 233,
+          "bytes": 328,
           "path": "replay/historical_v2/verdict.json",
-          "sha256": "07f01e052d4bead3dae214a0215e99cfd8e63a34346d5897f7fb03fafc50096f"
+          "sha256": "702ccf07ffe3d9be9f60ca903ecd08e3490e2eadc21af53b4314ee6b34618c48"
         }
       ],
       "group": "replay",
@@ -16498,30 +16697,34 @@
         }
       ],
       "name": "replay/historical_v2",
-      "notes": "written by an earlier source revision; verdict from the current reader records whether it still replays",
+      "notes": "written by an earlier source revision; expected records the current reader's adjudication of it",
       "produced_by": "verbatim copy of a pre-existing schema-2 recording on disk",
       "recipe": "RCP-06"
     },
     {
       "comparison": "B",
       "expected": {
-        "kind": "accepted"
+        "diagnostic": "model-limits",
+        "kind": "diagnostic",
+        "reason": "episode captured under --diagnostic-model-limits; replay may pass numerically but validity remains false",
+        "replay": "passed",
+        "valid": false
       },
       "files": [
         {
           "bytes": 1004,
           "path": "replay/native_v3/manifest.json",
-          "sha256": "b29bfca3e9da1c1da313b77c3f5ba632d7e1daad105a6f23133cbfccf354eb5c"
+          "sha256": "ba26db74c40b61eb7efc3f4da0bd87f79ec5516a514cf97f362ecfd50a93edfc"
         },
         {
           "bytes": 15216640,
           "path": "replay/native_v3/run.duckdb",
-          "sha256": "154f78a246f3a10d9e7b7e43ae1820c1cb1f5b0124d513ff5272d066aea3ff7f"
+          "sha256": "76305ab6c53a77f17c6e14c3e33a4c127478ace6790930f06d893fbeb7ce14c1"
         },
         {
-          "bytes": 66161,
+          "bytes": 66211,
           "path": "replay/native_v3/summary.md",
-          "sha256": "24e899b94a7280124d4743a6c1c131480389089dcfb16d8345742385fd19c022"
+          "sha256": "765a8ecde5a8d273e23443311c19dd9870118d0124950c98d27608f0b66cd7c4"
         },
         {
           "bytes": 533,
@@ -16532,8 +16735,8 @@
       "group": "replay",
       "inputs": [],
       "name": "replay/native_v3",
-      "notes": "genuine v3 DuckDB recording + checked-replay verdict",
-      "produced_by": "research env capture_mode=full + close_environment publication",
+      "notes": "genuine v3 DuckDB recording + checked-replay verdict; produced under --diagnostic-model-limits so model_valid is false even though checked replay passes numerically",
+      "produced_by": "research env capture_mode=full + close_environment publication under --diagnostic-model-limits",
       "recipe": "RCP-06"
     },
     {
@@ -16547,17 +16750,17 @@
         {
           "bytes": 1004,
           "path": "replay/tampered/manifest.json",
-          "sha256": "b29bfca3e9da1c1da313b77c3f5ba632d7e1daad105a6f23133cbfccf354eb5c"
+          "sha256": "ba26db74c40b61eb7efc3f4da0bd87f79ec5516a514cf97f362ecfd50a93edfc"
         },
         {
           "bytes": 15216640,
           "path": "replay/tampered/run.duckdb",
-          "sha256": "12ff922dd52cfe818e3691005d95e78735ab60f16f731989ad1d3ae919c44a7f"
+          "sha256": "bfb3c9e013079fd75d65430a90a815ba2b84444adf65fa2e9c2e0c59d450d637"
         },
         {
-          "bytes": 66161,
+          "bytes": 66211,
           "path": "replay/tampered/summary.md",
-          "sha256": "24e899b94a7280124d4743a6c1c131480389089dcfb16d8345742385fd19c022"
+          "sha256": "765a8ecde5a8d273e23443311c19dd9870118d0124950c98d27608f0b66cd7c4"
         },
         {
           "bytes": 181,
@@ -16627,9 +16830,9 @@
       },
       "files": [
         {
-          "bytes": 252,
+          "bytes": 250,
           "path": "validation/baselines/perf.json",
-          "sha256": "b356cd996bdfb87805fe9671f58164df2aa1d822915a708b1b3c5b6f80c2dd86"
+          "sha256": "4d9e7753af78a995b804d0facecc00fe5b12732eacdf847928fd432730eff1af"
         }
       ],
       "group": "validation",
@@ -16687,7 +16890,7 @@
       "result": true
     },
     {
-      "detail": "first failure: ValueError: state.integration_state: expected finite real scalar",
+      "detail": "first failure: ValueError: state.integration_state: expected finite real scalar; fixture integration_state matches live state: True",
       "name": "invalid-strict-prefix",
       "result": true
     },
@@ -16734,6 +16937,6 @@
       "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/migration/config-contracts.json"
     ],
     "path": "tools/migration/capture_reference.py",
-    "sha256": "4586bf777efd9bc2c0c286a0e5d1afcc616fa97dac50ebe946ae7264852890f3"
+    "sha256": "3cfea2f1a8559a105f250094ff3d2506cf86dbd7793c3f005bb847ee1e5e5b7c"
   }
 }

@@ -222,7 +222,8 @@ __all__ = [
 ]
 
 
-def run_physical_viewer(sim, out_root="output/ride", *, time_scale=1) -> int:
+def run_physical_viewer(sim, out_root="output/ride", *, time_scale=1,
+                        async_telemetry=False) -> int:
     """Show an already resolved physical simulation; never rebuild it as legacy.
 
     The default keeps the session/pacer loop this entry has always had: a caller
@@ -235,6 +236,8 @@ def run_physical_viewer(sim, out_root="output/ride", *, time_scale=1) -> int:
         from bike_sim.sim.ride.physical_driver import PhysicalRideDriver
         from bike_sim.sim.ride.physical_frontend import run_viewer
         return run_viewer(PhysicalRideDriver(sim), out_root=out_root, time_scale=time_scale)
+    if async_telemetry:
+        sim.physical.set_async_close(True)
     import mujoco.viewer
     from bike_sim.sim.playground import ensure_macos_mjpython
     from bike_sim.sim.ride.physical_session import (
@@ -244,6 +247,8 @@ def run_physical_viewer(sim, out_root="output/ride", *, time_scale=1) -> int:
     )
     ensure_macos_mjpython()
     sim.physical.set_strict(False)
+    if async_telemetry:
+        sim.physical.set_async_close(True)
     session=RideSession(sim)
     pacer=RealTimePacer(float(sim.model.opt.timestep))
     metadata=configuration_metadata(sim)

@@ -93,6 +93,11 @@ def parser():
     p.add_argument('--freehub-stiffness', type=float, default=None, action=ExplicitPhysicsValue, help='override freehub spring rate, N*m/rad')
     p.add_argument('--front-teeth', type=int, default=34, action=ExplicitPhysicsValue)
     p.add_argument('--rear-teeth', type=int, default=51, action=ExplicitPhysicsValue)
+    p.add_argument('--fast-telemetry', action='store_true',
+                   help='evaluate period telemetry in a spawned worker process; samples and '
+                        'model_status surface one step later, and channels snapshotted from '
+                        'rider effort diagnostics in that window can differ from a synchronous '
+                        'run -- episodes are not guaranteed bitwise-identical to --serial runs')
     p.add_argument('--record-decimation', type=int, default=80,
         help='expensive-measurement cadence; --record still retains every accounted physics interval')
     p.add_argument('--energy-tolerance', type=float, default=.05, help='maximum normalized numerical energy residual')
@@ -187,7 +192,8 @@ def make_environment(args, *, capture_mode='legacy'):
     experiment = ExperimentConfig(control_period_s=args.control_period, actuator_delay_s=args.actuator_delay,
         duration_s=args.duration, seed=args.seed, record_decimation=args.record_decimation,
         maximum_energy_residual_ratio=args.energy_tolerance,
-        stop_on_model_violation=policy == 'strict')
+        stop_on_model_violation=policy == 'strict',
+        async_telemetry=args.fast_telemetry)
     sensors = SensorConfig.ideal() if args.ideal_sensors else SensorConfig(latency_s=args.sensor_delay)
     sensors = replace(sensors, sample_period_s=args.sensor_period)
     rider, program = build_rider(args)

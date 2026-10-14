@@ -397,7 +397,8 @@ class PhysicalRideDriver:
         self._closed = True
 
 
-def build_physical_driver(track, args, rider, *, seed=None, strict=None):
+def build_physical_driver(track, args, rider, *, seed=None, strict=None,
+                          async_telemetry=False):
     # Validate capabilities/artifact BEFORE equilibrium, file output or capture.
     backend = getattr(args, 'backend', 'python')
     require_backend(backend, args.resolved_physics, rider)
@@ -409,6 +410,10 @@ def build_physical_driver(track, args, rider, *, seed=None, strict=None):
         policy = getattr(args, 'resolved_check_policy', None)
         strict = (policy == 'strict') if policy is not None \
             else bool(getattr(args, 'headless', False))
+    if async_telemetry:
+        # Period evaluation moves to a spawned worker; results surface one
+        # step later. Viewer-only path — no mid-period consumers.
+        sim.physical.set_async_close(True)
     return PhysicalRideDriver(sim, backend=backend,
         strict=strict, decimation=args.decimate,
         duration_s=args.duration, seed=seed,

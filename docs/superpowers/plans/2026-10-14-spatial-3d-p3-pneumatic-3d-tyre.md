@@ -38,7 +38,7 @@
 | Create `tests/reference/test_native_pneumatic_3d.py` | Unit, state wire, flat consistency, T1–T4, lateral bands, ceiling, determinism, RTSan |
 | Modify `native/tests/test_contracts.cpp` | Geometry/patch/brush unit cases |
 | Delete `native/src/writers/pneumatic_3d_flat_stub.{hpp,cpp}` | Task 8 |
-| Modify `docs/RIDE.md` | Capability sentence; §3.1 gains the 3D subsection |
+| Modify `docs/RIDE.md`, `docs/reference/tyre-calibration.md` | `RIDE.md`: capability sentence; `tyre-calibration.md` §3.1 gains the 3D subsection (the planar §3.1 text lives there since 2026-10-14) |
 | Create `docs/superpowers/audits/2026-10-14-spatial-3d-p3.md` | Evidence |
 
 ---
@@ -118,7 +118,7 @@
 ### Task 8: Remove the P1 stub; `validate_supported`; docs
 
 - [ ] **Step 1:** Delete `pneumatic_3d_flat_stub.*`; variant dispatch routes `pneumatic_3d` to the real writer; P1 regression bridge re-run (`full`) — must still pass with identical numbers reported in the audit (the real writer on a flat extrusion must behave like the planar backend within the Layer C tolerances; the 2 % consistency gate makes this expected).
-- [ ] **Step 2:** `docs/RIDE.md` §3.1 3D subsection + capability sentence; `CONTEXT.md` term *element grid*.
+- [ ] **Step 2:** `docs/reference/tyre-calibration.md` §3.1 3D subsection; `docs/RIDE.md` capability sentence; `CONTEXT.md` term *element grid*.
 - [ ] **Step 3:** Commit `feat(native): pneumatic_3d replaces the flat stub; docs`.
 
 ### Task 9: Phase audit and gate

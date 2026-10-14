@@ -1,0 +1,16 @@
+# bike-batch spec: [base] flags apply to every job, [grid] expands a cartesian
+# product, [[job]] adds explicit one-off jobs. Run:
+#   bike-batch --spec examples/research/batch_seed_sweep.toml --out output/batch_demo -j 12
+# Paths resolve against the working directory where bike-batch runs.
+
+[base]
+physics-config = "examples/research/viewer_physics_welded.toml"
+scenario = "rough_uphill"
+duration = 10
+record-decimation = 80
+
+[grid]
+# Monte-Carlo rider sampling: 12 seeds. Range table = {start, count}
+# (or {start, stop, step}); a plain list works too.
+seed = {start = 0, count = 12}
+rider-random = [true]

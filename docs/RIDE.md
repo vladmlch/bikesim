@@ -90,6 +90,12 @@ material; see
 selection does not add elastic-chain, alternative-support or legacy drive
 support.
 
+The `pneumatic` tyre's model contract, fitted constants and literature targets —
+the sections the code cites as `RIDE.md §3.1`, `§4.1`, `§11.2` and `§12 item 10`,
+which this file no longer carries — live in
+[docs/reference/tyre-calibration.md](reference/tyre-calibration.md) under those
+same section numbers.
+
 ## Interactive controls and rendering
 
 F6 lowers the scale, F7 raises it, F8 restores 1x. C cycles the camera, 1/2 select

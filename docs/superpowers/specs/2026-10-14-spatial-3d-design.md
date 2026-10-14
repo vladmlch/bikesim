@@ -351,7 +351,7 @@ Patches = connected components of loaded elements (8-connectivity on the (i, j) 
 
 ### 10.4 Lateral coefficient provenance
 
-`examples/research/tyre_lateral_reference.json`: `{name, source, C_alpha_per_load_per_rad, C_gamma_per_load_per_rad, sigma_y_over_sigma_x, load_exponent, pressure_exponent, valid_load_n, valid_pressure_bar, provenance}`; pinned in Phase 0 from Dressel (2013), Doria et al. (2013), Cole & Khoo (2001). The physical ceiling `C_γ ≤ F_z·tan γ / γ` is asserted at load.
+`examples/research/tyre_lateral_reference.json`: `{name, source, C_alpha_per_load_per_rad, C_gamma_per_load_per_rad, sigma_y_over_sigma_x, load_exponent, pressure_exponent, valid_load_n, valid_pressure_bar, provenance}`; pinned in Phase 0 from Dressel (2013), Doria et al. (2013), Cole & Khoo (2001), and cross-checked against Dell'Orto et al. (2024, *Vehicle System Dynamics*, DOI 10.1080/00423114.2024.2338143; open data Zenodo 7866646 / 7920415, fit code `mechmotum/Magic-Formula-89`) — the only one of the four with published raw measurements, but urban/cargo tyres at 300–500 kPa, 343–526 N, camber ±5°, saturation not reached: it enters as a measured point for `C_α/F_z` (from the Magic Formula `B·C·D`) and the pressure trend *inside its own ranges*, never as an extrapolation to 1.5 bar knobby tyres, and its ranges are recorded in the provenance entry, not merged into `valid_load_n`/`valid_pressure_bar`. The physical ceiling `C_γ ≤ F_z·tan γ / γ` is asserted at load. (Added 2026-10-14 from `docs/superpowers/audits/2026-10-14-tire-research-vs-implementation.md` §6.)
 
 ### 10.5 Determinism and threads
 
@@ -387,7 +387,7 @@ Metal only (M4 Max). Three hypotheses with pre-registered kill criteria: (a) per
 
 ## 13. Documentation repairs (Phase 0)
 
-`CONTEXT.md`: C++17 → C++23; "~100-channel contract" → "schema-2 channel tree (~920 flattened columns)"; add 3D terms. `docs/RIDE.md`: add the pneumatic section the code cites as §3.1 and the literature list cited as §11.2 (from `physics/tyre.py:245-273` and the pneumatic docstrings), then the 3D capability sentences. `docs/agents/native-engineering.md`: fix the two dangling links to non-existent spec/plan files (point to this spec and ADR 0002 where appropriate).
+`CONTEXT.md`: C++17 → C++23; "~100-channel contract" → "schema-2 channel tree (~920 flattened columns)"; add 3D terms. `docs/RIDE.md`: ~~add the pneumatic section the code cites as §3.1 and the literature list cited as §11.2~~ — done 2026-10-14 outside Phase 0: the original §3.1/§4.1/§11.2/§12 text was recovered from git (`2e93585`) into `docs/reference/tyre-calibration.md` under the same section numbers, and `RIDE.md` points there; Phase 0 only adds the 3D capability sentences. `docs/agents/native-engineering.md`: fix the two dangling links to non-existent spec/plan files (point to this spec and ADR 0002 where appropriate).
 
 ## 14. Risks
 

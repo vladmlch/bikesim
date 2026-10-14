@@ -22,9 +22,9 @@ EXTENSION_MODULE = 'bike_native'
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_BUILD = _REPO_ROOT / 'native' / 'build' / 'release'
-# Mirror of the == pins in pyproject.toml's 'native' dependency group;
-# required_dependencies() prefers the live file and falls back to this in
-# environments where the checkout layout is absent.
+# Minimal == pin set for required_dependencies() when the live
+# pyproject.toml cannot be read (no checkout layout); the live file's
+# 'native' dependency group carries the full exact-pin list.
 _FALLBACK_DEPENDENCIES = {'mujoco': '3.12.0'}
 
 

@@ -564,15 +564,18 @@ struct Label {
 
 // 'label.member' — the '.member' segment the old member_label produced.
 Label member_of(const Label &parent, std::string_view member) {
-    return {&parent, member, 0, Label::Seg::member};
+    return {.parent = &parent, .text = member, .index = 0,
+            .seg = Label::Seg::member};
 }
 // 'label[i]' — the per-element segment _convert renders for lists.
 Label index_of(const Label &parent, std::size_t i) {
-    return {&parent, {}, i, Label::Seg::index};
+    return {.parent = &parent, .text = {}, .index = i,
+            .seg = Label::Seg::index};
 }
 // "label['key']" — the map-entry segment the oracle renders.
 Label key_of(const Label &parent, std::string_view key) {
-    return {&parent, key, 0, Label::Seg::key};
+    return {.parent = &parent, .text = key, .index = 0,
+            .seg = Label::Seg::key};
 }
 
 // sorted() member names rendered the way Python prints the oracle's
@@ -1222,7 +1225,8 @@ Piece structure_piece(const std::vector<PlanColumn> &children,
                                     std::move(companion))
                            .first->second;
         }
-        piece.member_slots.push_back({member, present});
+        piece.member_slots.push_back(
+            {.member = member, .present = present});
     }
     return piece;
 }
@@ -1307,9 +1311,10 @@ void resolve_paths(const PlanView &plan, const WireObject &channels,
         for (const auto &[member, value] : *node.object) {
             const std::size_t child = path_edge(plan.path_nodes[n], member);
             if (child != PlanView::kNoNode && !resolved[child].complete)
-                resolved[child] = {&value,
-                                   std::get_if<WireObject>(&value.value),
-                                   true};
+                resolved[child] = {.wire = &value,
+                                   .object =
+                                       std::get_if<WireObject>(&value.value),
+                                   .complete = true};
         }
     }
 }
@@ -1349,12 +1354,14 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
 
     std::vector<char> mask_valid(plan.masks.size());
     std::vector<ResolvedPath> resolved;
-    const Label table_label{nullptr, plan.table, 0, Label::Seg::text};
+    const Label table_label{.parent = nullptr, .text = plan.table,
+                            .index = 0, .seg = Label::Seg::text};
     for (std::size_t row = 0; row < rows.size(); ++row) {
         const PhysicalSampleData &sample = *rows[row];
         ids.i.push_back(sample.interval_id);
         resolve_paths(plan, sample.channels, resolved);
-        const Label row_label{&table_label, {}, row, Label::Seg::index};
+        const Label row_label{.parent = &table_label, .text = {},
+                              .index = row, .seg = Label::Seg::index};
         // _view() routes every claimed root's payload first: unknown
         // members and unrouted payloads reject ahead of field conversion.
         for (std::size_t i = 0; i < plan.roots.size(); ++i) {
@@ -1394,13 +1401,13 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
             // verbatim, so members under it stay entries/unknowns. The
             // column's owned set resolves at plan-compile time.
             const std::set<std::string> *owned = plan.column_owned[c];
-            bool complete = false;
+            // The resolved wire is non-null exactly when the path's
+            // member chain resolved, matching walk_path's terminal.
             const Wire *leaf = nullptr;
             if (plan.column_nodes[c] != PlanView::kNoNode) {
-                const ResolvedPath &hit = resolved[plan.column_nodes[c]];
-                complete = hit.complete;
-                leaf = hit.wire;
+                leaf = resolved[plan.column_nodes[c]].wire;
             } else {
+                bool complete = false;
                 leaf = walk_path(sample.channels, column.path, complete);
             }
             // A dict payload at a leaf path routes nothing itself: a

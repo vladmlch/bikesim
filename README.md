@@ -4,6 +4,17 @@ Bicycle suspension/kinematics, physical ride simulation, torque-control
 research and checked replay. Python code is in `src/bike_sim`; the native
 runtime is in `native`.
 
+## Development commands
+
+`tools/dev.py` is the explicit cross-platform development driver:
+`bootstrap`, `configure`, `build`, `doctor` and `test` (the last delegates
+the quick/native/full profiles to `tools/run_tests.sh`). All commands run
+through the frozen uv environment, e.g.:
+
+```sh
+uv run --frozen --group native --no-sync python tools/dev.py --help
+```
+
 ## Documentation
 
 - [Physical ride, research and replay](docs/RIDE.md)

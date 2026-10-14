@@ -883,11 +883,13 @@ class PhysicalRuntime:
         """Replay a worker-computed close onto this runtime, in order."""
         from bike_sim.sim.ride.async_close import _sample_restore
         samples = tuple(_sample_restore(spec) for spec in result['samples'])
-        self.completed_samples = samples
+        # Several closes can land on one step boundary; every applied period's
+        # samples publish here, in submission order — deferral, never a drop.
+        self.completed_samples = tuple(self.completed_samples) + samples
         self.sample = samples[-1]
         for key, value in result['fields'].items():
             setattr(self, key, value)
-        self.interval_constraints = result['interval_constraints']
+        self.interval_constraints.update(result['interval_constraints'])
         if self.rider_control is not None and result['rider_control'] is not None:
             self.rider_control.effort_diagnostics = result['rider_control']['effort_diagnostics']
             self.rider_control.last_terms = result['rider_control']['last_terms']
@@ -927,6 +929,11 @@ class PhysicalRuntime:
                 self._publish_and_accept(raws)
             return bool(pending)
         applied = False
+        if results:
+            # The batch publishes this window's samples together; the
+            # constraint map must cover every applied period, so rebuild it
+            # rather than letting the last result's map win.
+            self.interval_constraints = {}
         for result in results:
             self._apply_close_result(result)
             applied = True

@@ -29,14 +29,30 @@ def _env(tmp_path, *, async_telemetry, rider='articulated_planar', duration=1.2,
 
 
 def _collect(env):
-    """Every published sample across the episode, in publication order."""
+    """Every published sample across the episode, in publication order.
+
+    Samples publish per physics step inside an env.step window, so reading
+    `completed_samples` once per env.step misses windows that closed earlier.
+    The real consumer observes each physics step — spy at that boundary.
+    """
     from bike_sim.sim.ride.control import RideControl
-    seen = []
+    seen, seen_ids = [], set()
+    consume = env._consume_completed_samples
+
+    def spy(**kwargs):
+        for sample in env.sim.physical.completed_samples:
+            if sample.interval_id not in seen_ids:
+                seen_ids.add(sample.interval_id)
+                seen.append(sample)
+        consume(**kwargs)
+
+    env._consume_completed_samples = spy
     while not env.done:
         env.step(RideControl(motor_torque_nm=0., human_torque_nm=0.))
-        seen.extend(env.sim.physical.completed_samples)
     env.sim.physical.flush()
-    seen.extend(env.sim.physical.completed_samples)
+    for sample in env.sim.physical.completed_samples:
+        if sample.interval_id not in seen_ids:
+            seen.append(sample)
     return seen
 
 

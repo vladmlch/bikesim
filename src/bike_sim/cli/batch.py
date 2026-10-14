@@ -146,6 +146,7 @@ def _run_job(task):
     """Worker: run one episode in-process. Exceptions become results, never propagate."""
     from bike_sim.cli import research
     index, name, argv, out_dir = task
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
     buf_out, buf_err = io.StringIO(), io.StringIO()
     t0 = time.perf_counter()
     try:

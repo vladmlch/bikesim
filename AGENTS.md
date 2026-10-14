@@ -49,13 +49,13 @@ installed read-only. `tools/research_sweep.py` pays the import+JIT
 startup in every child process; it is amortized inside each episode,
 not shared.
 
-Bitwise oracle pinning: njit codegen may drift float results ~1 ulp
-from the pure-Python arithmetic the C++ port is bitwise-locked to, so
-`tests/reference/conftest.py::_pin_oracle_kernels` rebinds the compiled
-cores to their `*_py` twins inside `test_native_*.py` files. The
-contract stays: C++ bitwise-equals reference arithmetic; production
-Python runs the compiled kernels. If a kernel signature changes, its
-`*_py` twin and the fixture must change with it.
+Oracle parity is dropped (ADR-0002): C++ no longer has to reproduce
+Python-reference results bitwise or within a tolerance. The Python
+physics code stays as the readable specification and setup stack;
+`*_py` kernel twins remain as reference implementations. What is still
+required of native code: determinism within a build (same binary +
+same input → same bytes), CTest/contract tests, and cheap physics
+invariants — see docs/adr/0002-drop-python-oracle-parity.md.
 
 
 ## Behavioral Stability

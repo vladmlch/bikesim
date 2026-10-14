@@ -1,6 +1,8 @@
 # Интеграция результатов deep-research (раунд 2 + трасса) — мастер-план по агентам
 
 Дата: 2026-10-14. Worktree `mujoco_clean-3d` (ветка `main`). Статус: план, ждёт утверждения.
+Поправка 2026-10-14: побитовый паритет C++↔Python отменён [ADR-0002](../../adr/0002-drop-python-oracle-parity.md) —
+правила §6.3 и пакет C1 обновлены; численный контракт сводится к детерминизму внутри сборки.
 
 Входы: `docs/superpowers/audits/2026-10-14-deep-research-round-2.md` (шина/сыпуха, 14 углов),
 `docs/superpowers/audits/2026-10-14-track-deep-research.md` (трасса, 10 углов), четыре внешних
@@ -100,7 +102,7 @@ ChatGPT считает тренд не установленным → тест �
    P8 сценарии v2 ◄─ S5 (и P7 для «ступень под задним»)
         │
 Волна 3  C++ (профиль native/full; последовательно внутри, параллельно с волной 2)
-   C1 pinned math ◄─ V5   C2 soft_layer ядро ◄─ S1 (и C1, если V5 скажет «надо»)
+   C1 pinned math — ОТМЕНЕНО по ADR-0002   C2 soft_layer ядро ◄─ S1
    C3 провод конфига soft ◄─ S1   C4 интеграция в PneumaticTyreModel ◄─ C2,C3
    C5 стенды и эталоны ◄─ C4      C6 RTF + аудит фазы ◄─ C5
         │
@@ -242,7 +244,7 @@ spin-out slope, dig-test `g_s`, разведка слоя) + «второй пр
 
 | WP | Владеет | Делает | Гейт |
 |---|---|---|---|
-| **C1** pinned math | новый `native/src/numeric_pow.hpp` (+ `exp`/`tanh`, если V5 скажет), `native/tests/test_numeric_pow.cpp`, CMake | вендоренная корректно-округлённая реализация (CORE-MATH/fdlibm) с таблицей тестов против эталонных значений; **не** подключать к существующим формулам без решения V5 (иначе ломаются байты Python-оракула, который считает хостовым `libm`) | CTest + `native`; оба компилятора |
+| **C1** pinned math | ~~`native/src/numeric_pow.hpp`~~ **не требуется по ADR-0002** — паритет C++↔Python отменён; pinned-math остаётся опцией только если понадобится кросс-платформенный детерминизм (другая libm) — решать при появлении второй платформы | — | — |
 | **C2** ядро `soft_layer` | новые `native/src/pneumatic/soft_layer.{hpp,cpp}`, `native/tests/test_soft_layer.cpp` | `split_approach` (бисекция 32, упрочнение с `z_o`, крышка `H_s`, флаг bedrock), `compaction_force_per_arc`, `shear_cap_ratio` (с φ-split, уклонная поправка, slab-cap), `slip_softening`; чистые функции `noexcept BIKE_NONBLOCKING`; property-тесты: единственность, невязка, монотонность, пределы (`k_eq→∞`, `H_s→0`), эталон штампа `z = (f/(w·k_eq))^{1/n}` и работа уплотнения по формуле RoverDevKit | CTest + `native` |
 | **C3** провод `soft` | `src/bike_sim/native/schema.py`, `native/src/config.hpp`, `config_types.hpp`, `config_validation.hpp`, Python `SurfaceSpec.soft`/`SoftLayerSpec`, запреты (Python-бэкенд → `ValueError`; `compliant_2d`/`distributed` → reject), тесты проекции | таблица `soft` необязательная; отсутствие = `nullopt`; все старые конфиги проецируются байт-в-байт | `native` |
 | **C4** интеграция | `native/src/pneumatic/model.{hpp,cpp}` (пред-проход по лучам, `SoftScratch`), `writers/pneumatic_tire.cpp` (телеметрия), `recording/catalog.py` (каналы `soil.*`) | мягкий путь только при `H_s > 0`; энергия в `rolling_loss_w`; **все** `test_native_*` побитово; новый self-golden `alpine_scree` + `scree_soft` | `full` |
@@ -260,9 +262,11 @@ spin-out slope, dig-test `g_s`, разведка слоя) + «второй пр
    WP, сообщение `<type>: <summary>`.
 2. **Владение файлами.** Менять только файлы из списка «владеет». Если для задачи нужно
    тронуть чужой файл — остановиться и написать в hand-back, что и зачем; не делать.
-3. **Байты планарного режима священны** (master plan spatial-3d): любой существующий пресет,
-   TOML, golden, `test_native_*` — побитово. Новое поведение — новые имена
-   (`scree_soft`, `AlpineGenSpecV2`, `DrainDip`), старые не переопределяются.
+3. **Существующие артефакты не переопределяются.** Пресеты, TOML и генераторские
+   golden держатся стабильными; новое поведение — новые имена (`scree_soft`,
+   `AlpineGenSpecV2`, `DrainDip`). Побитовый паритет C++↔Python **отменён ADR-0002**
+   (2026-10-14): `test_native_*` больше не сравнивают C++ с Python-эталоном; что
+   остаётся — детерминизм внутри сборки, контрактные тесты и инварианты.
 4. **Провенанс на каждое число.** Любая константа в коде или спеке несёт источник и пометку
    `measured/digitised/standard/authored/extrapolated/disputed`. Числа из внешних отчётов
    (`docs/researches/`) без первоисточника — только `authored`.

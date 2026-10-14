@@ -21,9 +21,11 @@ evidence that the check already exists.
 
 ## Implement the shared behavior
 
-Use the specification's strict input domains in Python and C++ together. Preserve valid-input binary64 operation order
-and existing deliberate saturation. Keep exceptional sentinels local to named fields. Field errors identify the public
-API and full field path and use the shared exception class.
+Use the specification's strict input domains in Python and C++ together. Since ADR-0002 there is no binary64
+operation-order parity requirement toward the Python reference; what remains required is determinism within a build —
+the same binary on the same input produces the same bytes. Preserve existing deliberate saturation. Keep exceptional
+sentinels local to named fields. Field errors identify the public API and full field path and use the shared exception
+class.
 
 Validate and stage before committing state. Include model coefficients, policies, telemetry, clocks, pending actuation,
 and energy in the transaction boundary. Python-result boxing happens before commit when its failure could otherwise

@@ -1,5 +1,11 @@
 # Running tests
 
+> **Note (2026-10-14, ADR-0002):** the Python↔C++ bitwise-parity contract is dropped —
+> `test_native_*` no longer compare C++ against the Python oracle. Sections below that
+> describe "oracle"/"bitwise vs oracle" comparisons refer to the old contract and are
+> being reworked to determinism-in-build + physics invariants. What stays required:
+> CTest, contract tests, determinism within a build, and self-golden baselines.
+
 ## Track C verification status (2026-10-10)
 
 The Track C source delivery has been applied and executed in this checkout. The

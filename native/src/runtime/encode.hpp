@@ -31,7 +31,27 @@ struct Piece {
     std::vector<std::int32_t> offsets;      // list/struct[]/map member spans
     std::vector<char> valid;                // empty => all-valid
     std::map<std::string, Piece> children;  // struct members incl *_present
+    // Struct member dispatch cache, parallel to the declaring plan node's
+    // children order: slot i addresses children[child.name] and, for an
+    // optional member, its *_present companion (nullptr when required).
+    // structure_piece fills it once — the pointed-to children are std::map
+    // nodes, so their addresses survive every move of this piece — and the
+    // per-row converters index it instead of repeating the tree lookups.
+    struct MemberSlot {
+        Piece *member = nullptr;
+        Piece *present = nullptr;
+    };
+    std::vector<MemberSlot> member_slots;
     std::unique_ptr<Piece> items;           // map values / struct[] elements
+
+    Piece() = default;
+    // Copying a structure piece would leave member_slots pointing at the
+    // source's children; pieces are moved or emplaced, never copied.
+    Piece(const Piece &) = delete;
+    Piece &operator=(const Piece &) = delete;
+    Piece(Piece &&) = default;
+    Piece &operator=(Piece &&) = default;
+    ~Piece() = default;
 };
 
 struct EncodePlan;                          // parsed plan, Task 3 grows it

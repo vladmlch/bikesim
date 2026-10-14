@@ -1,4 +1,11 @@
-"""Persistent cache for validated physical initial poses."""
+"""Persistent cache for validated physical initial poses.
+
+Two reuse mechanisms share this module's wire format and strict ``restore_state``
+contract: the derived-name auto-cache (``equilibrium_cache_enabled``) and explicit
+user-managed pose files (``equilibrium_state_file``, written by ``bike-settle``).
+The auto-cache names entries by :func:`fingerprint`; the pose file embeds it so a
+load can prove the pose belongs to the resolved configuration.
+"""
 import hashlib
 import json
 import os
@@ -39,14 +46,26 @@ def _update_array(digest, name, value):
     digest.update(array.tobytes())
 
 
-def _cache_path(runtime):
+def fingerprint(runtime) -> str:
+    """The configuration digest a settled pose is pinned to.
+
+    Covers everything that can change the equilibrium itself: source, engine,
+    physics config, geometry, track and the compiled model. The reuse
+    *mechanism* knobs — the auto-cache toggle and the pose-file pointer — are
+    deliberately excluded (``initial_state._contract`` pops them likewise): a
+    file path or a cache flag is not physics, and pinning them would make a
+    written pose reject a consumer that only differs in how it reuses poses.
+    """
     sim = runtime.sim
     source_root = Path(__file__).resolve().parents[2]
+    physics = _serializable(sim.physics_config)
+    for mechanism in ('equilibrium_cache_enabled', 'equilibrium_state_file'):
+        physics.pop(mechanism, None)
     payload = {
         'version': CACHE_VERSION,
         'source': source_fingerprint(source_root),
         'mujoco': mujoco.mj_versionString(),
-        'physics': _serializable(sim.physics_config),
+        'physics': physics,
         'specs': _serializable(sim.specs),
         'mass_specs': _serializable(sim.mass_specs),
         'rider': _serializable(sim.rider),
@@ -59,9 +78,13 @@ def _cache_path(runtime):
                  'jnt_range', 'hfield_data'):
         _update_array(digest, name, getattr(sim.model, name))
     _update_array(digest, 'timestep', np.array([sim.model.opt.timestep], dtype='<f8'))
+    return digest.hexdigest()
+
+
+def _cache_path(runtime):
     root = os.environ.get('BIKE_SIM_EQUILIBRIUM_CACHE_DIR')
     directory = Path(root) if root else Path(tempfile.gettempdir()) / 'bike_sim_equilibrium'
-    return directory / f'{digest.hexdigest()}.npz'
+    return directory / f'{fingerprint(runtime)}.npz'
 
 
 def _state_arrays(runtime):
@@ -303,8 +326,41 @@ def load(runtime):
     return path, qpos, steps, residual, state
 
 
-def save(runtime, qpos, steps, residual):
-    path = _cache_path(runtime)
+def load_state_file(runtime, path):
+    """Read an explicit equilibrium pose file pinned to this configuration.
+
+    Unlike the derived-name auto-cache, an explicit file is user-managed
+    state: every failure is a ``ValueError`` naming the file rather than a
+    silent miss. The embedded fingerprint must equal this runtime's
+    configuration digest — ``save_state_file`` writes it — and the strict
+    state payload checks are identical to ``load``'s.
+    """
+    path = Path(path)
+    try:
+        with np.load(path, allow_pickle=False) as cached:
+            embedded = str(np.asarray(cached['fingerprint_sha256']))
+            qpos = np.array(cached['qpos'], dtype=float, copy=True)
+            steps = int(cached['steps'])
+            residual = float(cached['residual_qacc'])
+            state = {key: np.array(cached[key], copy=True)
+                     for key in cached.files if key.startswith('state_')}
+    except (OSError, KeyError, ValueError, TypeError, EOFError) as exc:
+        raise ValueError(f'equilibrium state file {path}: unreadable or missing fingerprint ({exc})') from exc
+    if embedded != fingerprint(runtime):
+        raise ValueError(
+            f'equilibrium state file {path}: fingerprint mismatch — the pose was '
+            'settled for a different configuration')
+    if qpos.shape != (runtime.sim.model.nq,) or not np.isfinite(qpos).all():
+        raise ValueError(f'equilibrium state file {path}: invalid settled pose')
+    if steps <= 0 or not np.isfinite(residual) or residual < 0.:
+        raise ValueError(f'equilibrium state file {path}: invalid settle metadata')
+    return path, qpos, steps, residual, state
+
+
+def _write(path, runtime, qpos, steps, residual):
+    """Single npz writer behind ``save``/``save_state_file``; the payload is the
+    pose, the settle provenance, the material state and the configuration
+    fingerprint the file is pinned to."""
     temporary = None
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -312,8 +368,24 @@ def save(runtime, qpos, steps, residual):
             temporary = Path(stream.name)
             np.savez_compressed(stream, qpos=np.asarray(qpos, dtype=float),
                                 steps=int(steps), residual_qacc=float(residual),
+                                fingerprint_sha256=fingerprint(runtime),
                                 **_state_arrays(runtime))
         temporary.replace(path)
     except (OSError, ValueError):
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+        raise
+
+
+def save(runtime, qpos, steps, residual):
+    # A missed cache write must not fail the run that just settled.
+    try:
+        _write(_cache_path(runtime), runtime, qpos, steps, residual)
+    except (OSError, ValueError):
+        pass
+
+
+def save_state_file(path, runtime, qpos, steps, residual):
+    """Write an explicit pose file; unlike the auto-cache, a failed write is
+    reported to the caller."""
+    _write(Path(path), runtime, qpos, steps, residual)

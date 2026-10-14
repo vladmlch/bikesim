@@ -619,9 +619,9 @@ def test_pneumatic_qfrc_bitwise_detailed_tier(tmp_path):
     bitwise-equal to the live applier across a sinking/spinning sweep.
 
     (The research-env gate requires timestep_s = tier's 0.00025, where
-    the static equilibrium solver does not converge within its 80000-step
-    budget — so the detailed tier is covered on this rig instead, which
-    exercises the identical writer path.)"""
+    the static equilibrium solver only converges after ~59 s of simulated
+    tread creep — so the detailed tier is covered on this rig instead,
+    which exercises the identical writer path.)"""
     from bike_sim.physics.physical_config import (
         PneumaticTireConfig, TireBackendConfig)
     from bike_sim.sim.ride.pneumatic_tire_forces import (

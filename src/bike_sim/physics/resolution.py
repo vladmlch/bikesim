@@ -111,4 +111,9 @@ def resolve_config_paths(values, directory):
             file=Path(path)
             if not file.is_absolute():
                 result['articulated'][key]=str((Path(directory)/file).resolve())
+    path=result.get('equilibrium_state_file')
+    if path is not None:
+        file=Path(path)
+        if not file.is_absolute():
+            result['equilibrium_state_file']=str((Path(directory)/file).resolve())
     return result

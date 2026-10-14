@@ -418,7 +418,10 @@ class PhysicalRuntime:
         self.initializing=True
         try:
             seed = sim.physical_initial_state
-            sim.equilibrium = solve_physical_equilibrium(self) if seed is None else seed.prepare(self)
+            sim.equilibrium = (solve_physical_equilibrium(
+                self, max_steps=sim.equilibrium_max_steps,
+                tolerance=sim.equilibrium_tolerance)
+                if seed is None else seed.prepare(self))
         finally:
             self.initializing=False
         self.generation += 1

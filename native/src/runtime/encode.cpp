@@ -36,7 +36,7 @@ struct PlanColumn {
     std::vector<std::string> path;
     bool optional = false;
     std::int64_t shape = -1;              // >= 0 pins the x[] element count
-    std::vector<std::string> except_keys; // map members deeper leaves own
+    std::vector<std::string> except_keys; // members deeper leaves own
     std::string convert;                  // "" | "verdict"
     // True when a proper prefix at depth >= 2 is itself a leaf: routing
     // only enters non-leaf members (the root call still routes claimed
@@ -47,8 +47,13 @@ struct PlanColumn {
     // Indices of the op=='valid' masks whose paths are this leaf's prefix
     // chain (path[:1..len-1]; the claim mask itself for depth-1 leaves). A
     // required leaf encodes NULL iff one of them reads invalid this row —
-    // the encode_rows "ancestor absent-or-null" exemption.
+    // the encode_rows "ancestor absent-or-null" exemption. Top-level only.
     std::vector<std::size_t> ancestors;
+    // struct/struct[] member schemas and map<struct> entry members, in
+    // catalog order; each child's path is the single relative member name.
+    // Empty on leaf dtypes — _convert_struct consumes members only through
+    // this list, so unknown members reject there.
+    std::vector<PlanColumn> children;
 };
 
 struct PlanMask {
@@ -91,6 +96,12 @@ bool is_leaf_dtype(const std::string &dtype) {
     return std::ranges::find(kLeafDtypes, dtype) != kLeafDtypes.end();
 }
 
+// The recursive member-carrying dtypes: their plan nodes keep `children`.
+bool is_struct_dtype(std::string_view dtype) {
+    return dtype == "struct" || dtype == "struct[]" ||
+           dtype == "map<struct>";
+}
+
 // The container terminals _distribute lets absorb the dict members deeper
 // fields did not claim; scalar/x[] terminals reject the same remainder.
 bool is_container_dtype(std::string_view dtype) {
@@ -98,17 +109,18 @@ bool is_container_dtype(std::string_view dtype) {
            dtype == "struct[]";
 }
 
+// NOLINTNEXTLINE(misc-no-recursion) children mirror the finite plan tree
 PlanColumn parse_column(nb::handle item) {
     const wire::Dict dict{.value = wire::mapping(item, "encode plan.columns[]"),
                           .path = "encode plan.columns[]"};
     wire::exact(dict, wire::keys("name", "dtype", "path", "optional"),
-                wire::keys("shape", "except_keys", "convert"));
+                wire::keys("shape", "except_keys", "convert", "children"));
     PlanColumn column;
     column.name = wire::string(wire::field(dict, "name"),
                                dict.child("name"));
     column.dtype = wire::string(wire::field(dict, "dtype"),
                                 dict.child("dtype"));
-    if (!is_leaf_dtype(column.dtype))
+    if (!is_leaf_dtype(column.dtype) && !is_struct_dtype(column.dtype))
         throw std::invalid_argument("encode plan.columns: unsupported "
                                     "channels dtype '" + column.dtype + "'");
     for (const nb::handle part :
@@ -139,6 +151,23 @@ PlanColumn parse_column(nb::handle item) {
             throw std::invalid_argument("encode plan.columns: unknown "
                                         "convert '" + column.convert + "'");
     }
+    if (dict.contains("children"))
+        for (const nb::handle child : wire::sequence(
+                 dict["children"], dict.child("children")))
+            column.children.push_back(parse_column(child));
+    // Member schemas belong to the struct dtypes only; a container node
+    // without members would emit a childless struct Arrow never declares.
+    if (is_struct_dtype(column.dtype) == column.children.empty())
+        throw std::invalid_argument(
+            "encode plan.columns: '" + column.name + "' children do not "
+            "match dtype '" + column.dtype + "'");
+    // Child nodes address struct members, not catalog paths: each child's
+    // path is exactly its member name.
+    for (const PlanColumn &child : column.children)
+        if (child.path.size() != 1 || child.path.front() != child.name)
+            throw std::invalid_argument(
+                "encode plan.columns: '" + column.name +
+                "' child paths must be single member names");
     return column;
 }
 
@@ -201,12 +230,14 @@ void parse_channels_plan(const wire::Dict &dict, PlanView &parsed) {
                 std::vector<std::string>(
                     column.path.begin(),
                     column.path.begin() + static_cast<std::ptrdiff_t>(depth)));
-        // A map terminal at a claimed root receives the remainder left by
-        // deeper sibling routing; except_keys is the catalog's declaration
-        // of that ownership, so the plan must agree with the routing index
-        // or the two encoders would split the members differently.
+        // A container terminal at a claimed root receives the remainder
+        // left by deeper sibling routing; except_keys is the catalog's
+        // declaration of that ownership, so the plan must agree with the
+        // routing index or the two encoders would split the members
+        // differently. (Routing only strips at depth-1 terminals — the
+        // root-level _distribute call.)
         if (column.path.size() == 1 &&
-            column.dtype.starts_with("map<")) {
+            is_container_dtype(column.dtype)) {
             const auto owned = parsed.deeper.find(column.path);
             const std::set<std::string> routed =
                 owned == parsed.deeper.end() ? std::set<std::string>{}
@@ -457,9 +488,39 @@ void distribute_validate(const PlanView &plan, std::vector<std::string> &prefix,
                                     quoted_list(std::move(unrouted)));
 }
 
-// One NULL slot in a leaf piece: placeholder payload behind a false
-// validity bit (or an empty member/key span for list and map leaves).
-void push_null(Piece &piece) {
+// Slot count of a piece — scalars count payload lanes, list/map count
+// offsets (one end mark per slot beyond the seed), and a structure counts
+// member slots through any child: member columns and their `_present`
+// companions advance one slot per struct value, so every child agrees.
+// NOLINTNEXTLINE(misc-no-recursion) structure pieces nest finitely
+std::size_t piece_rows(const Piece &piece) {
+    switch (piece.kind) {
+        case Piece::Kind::scalar_d: return piece.d.size();
+        case Piece::Kind::scalar_i: return piece.i.size();
+        case Piece::Kind::scalar_b: return piece.b.size();
+        case Piece::Kind::scalar_s: return piece.s.size();
+        case Piece::Kind::list_d:
+        case Piece::Kind::list_i:
+        case Piece::Kind::list_s:
+        case Piece::Kind::map:
+            return piece.offsets.size() - 1;
+        case Piece::Kind::structure:
+            return piece.children.empty()
+                ? 0 : piece_rows(piece.children.begin()->second);
+    }
+    return 0;
+}
+
+// One slot of placeholder payload behind an explicit validity bit —
+// `valid` 0 writes a NULL (absent member, explicit None, exempted
+// required leaf), 1 a *valid default*: the state Arrow's `pa.array`
+// infers for the children of a NULL struct slot (zero scalars, empty
+// spans and default-valid nested structs with every companion False —
+// probed against pa.array([{...}, None], type=struct<...>)). A list or
+// map slot contributes an empty span either way; the entry/element
+// payloads never see it. A 'struct' slot fills every member recursively.
+// NOLINTNEXTLINE(misc-no-recursion) depth mirrors the finite plan tree
+void append_placeholder(const PlanColumn &node, Piece &piece, char valid) {
     switch (piece.kind) {
         case Piece::Kind::scalar_d: piece.d.push_back(0.0); break;
         case Piece::Kind::scalar_i: piece.i.push_back(0); break;
@@ -468,19 +529,37 @@ void push_null(Piece &piece) {
         case Piece::Kind::list_d:
         case Piece::Kind::list_i:
         case Piece::Kind::list_s:
-        case Piece::Kind::map:
-            // list_* offsets count flat payload elements; map offsets
-            // count entries, which the keys vector tracks one-to-one.
+            // list_* offsets count flat payload elements.
             piece.offsets.push_back(static_cast<std::int32_t>(
                 piece.kind == Piece::Kind::list_i ? piece.i.size()
                 : piece.kind == Piece::Kind::list_d ? piece.d.size()
                 : piece.s.size()));
             break;
+        case Piece::Kind::map:
+            // map offsets count entries, which the keys vector tracks
+            // one-to-one; a NULL/empty map span contributes no entries.
+            piece.offsets.push_back(
+                static_cast<std::int32_t>(piece.s.size()));
+            break;
         case Piece::Kind::structure:
-            throw std::invalid_argument(
-                "encode: non-leaf piece kind in a channels leaf column");
+            if (node.dtype == "struct[]") {
+                piece.offsets.push_back(static_cast<std::int32_t>(
+                    piece.children.empty() ? 0 :
+                        piece_rows(piece.children.begin()->second)));
+                break;
+            }
+            for (const PlanColumn &child : node.children) {
+                append_placeholder(child, piece.children[child.name], 1);
+                if (child.optional)
+                    piece.children[child.name + "_present"].b.push_back(0);
+            }
+            break;
     }
-    piece.valid.push_back(0);
+    piece.valid.push_back(valid);
+}
+
+void append_null(const PlanColumn &node, Piece &piece) {
+    append_placeholder(node, piece, 0);
 }
 
 // One element of an x[] leaf, mirroring the member dtype's per-element
@@ -617,32 +696,36 @@ void append_map_member(const PlanColumn &column, Piece &items,
         "encode: unsupported map member piece kind");
 }
 
-// True when `member` is owned by a deeper sibling leaf rather than being a
-// map entry. Routing strips owned members only at a depth-1 leaf — that is
-// the only prefix _distribute visits on the terminal itself; a deeper map
-// leaf receives its dict verbatim, so it keeps every member.
-bool owned_map_member(const PlanColumn &column, const std::string &member) {
-    return column.path.size() == 1 &&
-           std::ranges::find(column.except_keys, member) !=
-               column.except_keys.end();
+// Members a deeper sibling leaf owns — routing strips them before the
+// container terminal at this path sees the dict (encoding.py::_distribute
+// pops them out of the remainder). `owned` is the routing index's member
+// set at the leaf's own path, nullptr when no deeper field claims below.
+bool owned_member(const std::set<std::string> *owned,
+                  const std::string &member) {
+    return owned != nullptr && owned->contains(member);
 }
 
-// The routed remainder of a depth-1 map leaf: a dict whose members are all
+// The routed remainder of a container leaf: a dict whose members are all
 // owned by deeper siblings encodes the leaf absent rather than an empty
-// map (encoding.py::_distribute assigns only a non-empty remainder).
-bool map_remainder_nonempty(const PlanColumn &column,
-                            const WireObject &object) {
+// container (encoding.py::_distribute assigns only a non-empty
+// remainder). This binds at every depth a container terminal sits at — a
+// depth-1 root dict is the common case.
+bool remainder_nonempty(const std::set<std::string> *owned,
+                        const WireObject &object) {
     for (const auto &[member, ignored] : object)
-        if (!owned_map_member(column, member)) return true;
+        if (!owned_member(owned, member)) return true;
     return false;
 }
 
 // Converts one resolved (non-null) leaf value into its piece; lists append
 // their elements plus the end offset. Mirrors encoding.py::_convert's
 // dtype/shape gates; a dict routed to a deeper leaf still converts, so no
-// Mapping check precedes the dtype gates.
+// Mapping check precedes the dtype gates. `owned` carries the member set
+// deeper sibling fields claim at this leaf's path (nullptr nested or when
+// nothing is claimed); container leaves skip owned members.
 void append_leaf(const PlanColumn &column, const Wire &value, Piece &piece,
-                 const std::string &label) {
+                 const std::string &label,
+                 const std::set<std::string> *owned) {
     switch (piece.kind) {
         case Piece::Kind::scalar_d: {
             const auto *real = std::get_if<double>(&value.value);
@@ -736,16 +819,18 @@ void append_leaf(const PlanColumn &column, const Wire &value, Piece &piece,
             // _convert's map branch: the payload must be a dict, every
             // remaining key must be a nonempty string (_check_map_keys
             // runs ahead of any member conversion), and each member
-            // converts at the member dtype in dict order.
+            // converts at the member dtype in dict order. Members a
+            // deeper sibling leaf owns are not entries — routing already
+            // stripped them from the remainder this leaf sees.
             const auto *object = std::get_if<WireObject>(&value.value);
             if (object == nullptr)
                 throw std::invalid_argument(label + ": expected a dict");
             for (const auto &[member, ignored] : *object)
-                if (!owned_map_member(column, member) && member.empty())
+                if (!owned_member(owned, member) && member.empty())
                     throw std::invalid_argument(
                         label + ": map keys must be nonempty strings");
             for (const auto &[member, entry] : *object) {
-                if (owned_map_member(column, member)) continue;
+                if (owned_member(owned, member)) continue;
                 piece.s.push_back(member);
                 std::string member_label{label};
                 member_label += "['";
@@ -759,9 +844,126 @@ void append_leaf(const PlanColumn &column, const Wire &value, Piece &piece,
             return;
         }
         case Piece::Kind::structure:
+            // struct/struct[] dispatch is append_node's, not append_leaf's.
             throw std::invalid_argument(
-                "encode: non-leaf piece kind in a channels leaf column");
+                "encode: append_leaf reached a structure piece");
     }
+}
+
+// NOLINTNEXTLINE(misc-no-recursion) node tree mirrors the finite plan tree
+void append_node(const PlanColumn &node, const Wire &value, Piece &piece,
+                 const std::string &label,
+                 const std::set<std::string> *owned);
+
+// One declared member of a struct value -> its child piece plus its
+// `_present` companion. Mirrors encoding.py::_convert_struct's member
+// loop: `present` is `child.key in value` — an explicit None reads present
+// with a NULL member — and a required member absent-or-null rejects.
+// NOLINTNEXTLINE(misc-no-recursion) member tree mirrors the plan tree
+void append_member(const PlanColumn &child, const Wire *member,
+                   Piece &child_piece, Piece *companion,
+                   const std::string &label) {
+    if (member == nullptr || sample_wire::is_none(*member)) {
+        if (!child.optional)
+            throw std::invalid_argument(label + ": required");
+        append_placeholder(child, child_piece, 0);
+        companion->b.push_back(member != nullptr ? 1 : 0);
+        return;
+    }
+    append_node(child, *member, child_piece, label, nullptr);
+    child_piece.valid.push_back(1);
+    if (companion != nullptr) companion->b.push_back(1);
+}
+
+// encoding.py::_convert_struct: dict payload, unknown-member rejection
+// ahead of conversion, then every declared member in catalog order.
+// `owned` strips members claimed by deeper sibling leaves (remainder
+// routing); nested calls always pass nullptr — routing ends at the leaf.
+// NOLINTNEXTLINE(misc-no-recursion) member tree mirrors the plan tree
+void convert_struct(const PlanColumn &node, const Wire &value, Piece &piece,
+                    const std::string &label,
+                    const std::set<std::string> *owned) {
+    const auto *object = std::get_if<WireObject>(&value.value);
+    if (object == nullptr)
+        throw std::invalid_argument(label + ": expected a dict");
+    std::vector<std::string_view> unknown;
+    for (const auto &[member, ignored] : *object)
+        if (!owned_member(owned, member) &&
+            std::ranges::find(node.children, member, &PlanColumn::name) ==
+                node.children.end())
+            unknown.push_back(member);
+    if (!unknown.empty())
+        throw std::invalid_argument(label + ": unknown struct members " +
+                                    quoted_list(std::move(unknown)));
+    for (const PlanColumn &child : node.children) {
+        Piece *companion = child.optional
+            ? &piece.children[child.name + "_present"] : nullptr;
+        // A member owned by a deeper sibling leaf is stripped from the
+        // remainder the container sees — for member lookup it is absent.
+        const Wire *member = owned_member(owned, child.name)
+            ? nullptr : sample_wire::find(*object, child.name);
+        append_member(child, member, piece.children[child.name],
+                      companion, member_label(label, child.name));
+    }
+}
+
+// encoding.py::_convert's `struct[]` branch: every element converts
+// through _convert_struct into the shared member columns; this piece's
+// offsets close the slot once, like a list leaf.
+// NOLINTNEXTLINE(misc-no-recursion) element tree mirrors the plan tree
+void convert_struct_list(const PlanColumn &node, const Wire &value,
+                         Piece &piece, const std::string &label) {
+    const auto *items = std::get_if<WireArray>(&value.value);
+    if (items == nullptr)
+        throw std::invalid_argument(label + ": expected a list");
+    for (std::size_t index = 0; index < items->size(); ++index)
+        convert_struct(node, (*items)[index], piece,
+                       label + "[" + std::to_string(index) + "]", nullptr);
+    piece.offsets.push_back(static_cast<std::int32_t>(
+        piece.children.empty() ? 0 :
+            piece_rows(piece.children.begin()->second)));
+}
+
+// A `map<struct>` slot: `_check_map_keys` ahead of member conversion
+// (owned members skipped — they are columns, not entries), then each entry
+// converts through the shared `items` struct in authored key order.
+// NOLINTNEXTLINE(misc-no-recursion) entry tree mirrors the plan tree
+void convert_map_struct(const PlanColumn &node, const Wire &value,
+                        Piece &piece, const std::string &label,
+                        const std::set<std::string> *owned) {
+    const auto *object = std::get_if<WireObject>(&value.value);
+    if (object == nullptr)
+        throw std::invalid_argument(label + ": expected a dict");
+    for (const auto &[member, ignored] : *object)
+        if (!owned_member(owned, member) && member.empty())
+            throw std::invalid_argument(
+                label + ": map keys must be nonempty strings");
+    for (const auto &[member, entry] : *object) {
+        if (owned_member(owned, member)) continue;
+        piece.s.push_back(member);
+        convert_struct(node, entry, *piece.items,
+                       member_label(label, member), nullptr);
+    }
+    piece.offsets.push_back(static_cast<std::int32_t>(piece.s.size()));
+}
+
+// NOLINTNEXTLINE(misc-no-recursion) node tree mirrors the finite plan tree
+void append_node(const PlanColumn &node, const Wire &value, Piece &piece,
+                 const std::string &label,
+                 const std::set<std::string> *owned) {
+    if (piece.kind == Piece::Kind::structure) {
+        if (node.dtype == "struct[]") {
+            convert_struct_list(node, value, piece, label);
+            return;
+        }
+        convert_struct(node, value, piece, label, owned);
+        return;
+    }
+    if (node.dtype == "map<struct>") {
+        convert_map_struct(node, value, piece, label, owned);
+        return;
+    }
+    append_leaf(node, value, piece, label, owned);
 }
 
 Piece::Kind leaf_kind(std::string_view dtype) {
@@ -783,6 +985,86 @@ Piece::Kind map_member_kind(std::string_view dtype) {
     return Piece::Kind::list_d;  // map<double[]>
 }
 
+Piece node_piece(const PlanColumn &node, std::size_t reserve_rows);
+
+// A structure piece seeded from a member list: one member piece per
+// child plus a `_present` scalar_b companion per optional child, in
+// catalog order. Shared by 'struct'/'struct[]' columns and the entry
+// struct that backs a 'map<struct>' piece's `items` — Arrow's layout
+// uses one shared entries array per map column.
+// NOLINTNEXTLINE(misc-no-recursion) children mirror the finite plan tree
+Piece structure_piece(const std::vector<PlanColumn> &children,
+                      std::size_t reserve_rows) {
+    Piece piece;
+    piece.kind = Piece::Kind::structure;
+    piece.valid.reserve(reserve_rows);
+    for (const PlanColumn &child : children) {
+        piece.children.emplace(child.name, node_piece(child, 0));
+        if (child.optional) {
+            Piece present;
+            present.kind = Piece::Kind::scalar_b;
+            present.b.reserve(reserve_rows);
+            piece.children.emplace(child.name + "_present",
+                                   std::move(present));
+        }
+    }
+    return piece;
+}
+
+// The piece tree for one plan node: flat leaves map one-to-one; `struct`
+// and `struct[]` are structure pieces (`struct[]` keeps slot offsets on
+// the piece itself); `map<struct>` is a map piece whose `items` is the
+// shared entry struct.
+// NOLINTNEXTLINE(misc-no-recursion) children mirror the finite plan tree
+Piece node_piece(const PlanColumn &node, std::size_t reserve_rows) {
+    Piece piece;
+    if (node.dtype == "struct" || node.dtype == "struct[]") {
+        piece = structure_piece(node.children, reserve_rows);
+        if (node.dtype == "struct[]") {
+            piece.offsets.reserve(reserve_rows + 1);
+            piece.offsets.push_back(0);
+        }
+        return piece;
+    }
+    if (node.dtype == "map<struct>") {
+        piece.kind = Piece::Kind::map;
+        piece.offsets.reserve(reserve_rows + 1);
+        piece.offsets.push_back(0);
+        piece.valid.reserve(reserve_rows);
+        piece.items =
+            std::make_unique<Piece>(structure_piece(node.children, 0));
+        return piece;
+    }
+    piece.kind = leaf_kind(node.dtype);
+    piece.valid.reserve(reserve_rows);
+    switch (piece.kind) {
+        case Piece::Kind::scalar_d: piece.d.reserve(reserve_rows); break;
+        case Piece::Kind::scalar_i: piece.i.reserve(reserve_rows); break;
+        case Piece::Kind::scalar_b: piece.b.reserve(reserve_rows); break;
+        case Piece::Kind::scalar_s: piece.s.reserve(reserve_rows); break;
+        case Piece::Kind::list_d:
+        case Piece::Kind::list_i:
+        case Piece::Kind::list_s:
+            piece.offsets.reserve(reserve_rows + 1);
+            piece.offsets.push_back(0);
+            break;
+        case Piece::Kind::map:
+            // keys live in piece.s; the items child carries the
+            // member-value payload for every entry across all rows
+            // (a list child starts its own offsets span at 0).
+            piece.offsets.reserve(reserve_rows + 1);
+            piece.offsets.push_back(0);
+            piece.items = std::make_unique<Piece>();
+            piece.items->kind = map_member_kind(node.dtype);
+            if (piece.items->kind == Piece::Kind::list_d)
+                piece.items->offsets.push_back(0);
+            break;
+        case Piece::Kind::structure:
+            break;   // unreachable: struct dtypes return above
+    }
+    return piece;
+}
+
 std::int64_t emit_channels(std::span<const SamplePtr> rows,
                            const PlanView &plan,
                            std::map<std::string, Piece> &emitted) {
@@ -793,36 +1075,7 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
     ids.kind = Piece::Kind::scalar_i;
     ids.i.reserve(rows.size());
     for (std::size_t c = 0; c < plan.leaf_columns.size(); ++c) {
-        Piece &piece = values[c];
-        piece.kind = leaf_kind(plan.leaf_columns[c].dtype);
-        piece.valid.reserve(rows.size());
-        switch (piece.kind) {
-            case Piece::Kind::scalar_d: piece.d.reserve(rows.size()); break;
-            case Piece::Kind::scalar_i: piece.i.reserve(rows.size()); break;
-            case Piece::Kind::scalar_b: piece.b.reserve(rows.size()); break;
-            case Piece::Kind::scalar_s: piece.s.reserve(rows.size()); break;
-            case Piece::Kind::list_d:
-            case Piece::Kind::list_i:
-            case Piece::Kind::list_s:
-                piece.offsets.reserve(rows.size() + 1);
-                piece.offsets.push_back(0);
-                break;
-            case Piece::Kind::map:
-                // keys live in piece.s; the items child carries the
-                // member-value payload for every entry across all rows
-                // (a list child starts its own offsets span at 0).
-                piece.offsets.reserve(rows.size() + 1);
-                piece.offsets.push_back(0);
-                piece.items = std::make_unique<Piece>();
-                piece.items->kind =
-                    map_member_kind(plan.leaf_columns[c].dtype);
-                if (piece.items->kind == Piece::Kind::list_d)
-                    piece.items->offsets.push_back(0);
-                break;
-            case Piece::Kind::structure:
-                throw std::invalid_argument(
-                    "encode: non-leaf piece kind in a channels leaf column");
-        }
+        values[c] = node_piece(plan.leaf_columns[c], rows.size());
         if (plan.leaf_columns[c].optional) {
             presence[c].kind = Piece::Kind::scalar_b;
             presence[c].b.reserve(rows.size());
@@ -877,37 +1130,49 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
             Piece &piece = values[c];
             const std::string label =
                 member_label(row_label, join_path(column.path));
+            // Members deeper sibling fields claim under this leaf's path
+            // never reach its payload — routing strips them before the
+            // container sees the remainder. Routing strips only at a
+            // depth-1 terminal's own call — the only prefix _distribute
+            // visits on a leaf; a deeper container receives its dict
+            // verbatim, so members under it stay entries/unknowns.
+            const std::set<std::string> *owned = nullptr;
+            if (column.path.size() == 1) {
+                const auto routed = plan.deeper.find(column.path);
+                if (routed != plan.deeper.end()) owned = &routed->second;
+            }
             bool complete = false;
             const Wire *leaf =
                 walk_path(sample.channels, column.path, complete);
             // A dict payload at a leaf path routes nothing itself: a
             // scalar/list leaf under a depth-1 claim is absent (non-empty
-            // dicts already threw in distribute_validate), while a map
-            // leaf owns the routed remainder — absent when every member
-            // went to a deeper sibling (or the dict is empty), an empty
-            // map only when routing assigned it verbatim at depth > 1.
-            // A shadowed leaf sits under a container terminal; routing
-            // never reaches it, so it encodes absent on every row.
+            // dicts already threw in distribute_validate), while a
+            // container leaf owns the routed remainder — absent when
+            // every member went to a deeper sibling (or the dict is
+            // empty), an empty container only when routing assigned it
+            // verbatim at depth > 1. A shadowed leaf sits under a
+            // container terminal; routing never reaches it, so it encodes
+            // absent on every row.
             bool resolved = leaf != nullptr && !column.shadowed;
             if (resolved)
                 if (const auto *object =
                         std::get_if<WireObject>(&leaf->value))
-                    resolved = piece.kind == Piece::Kind::map
+                    resolved = is_container_dtype(column.dtype)
                         ? column.path.size() > 1 ||
-                              map_remainder_nonempty(column, *object)
+                              remainder_nonempty(owned, *object)
                         : column.path.size() > 1;
             if (resolved && sample_wire::is_none(*leaf)) {
                 if (!column.optional)
                     throw std::invalid_argument(
                         label + ": required field may not be null");
-                push_null(piece);
+                append_null(column, piece);
                 presence[c].b.push_back(1);
             } else if (resolved) {
-                append_leaf(column, *leaf, piece, label);
+                append_node(column, *leaf, piece, label, owned);
                 piece.valid.push_back(1);
                 if (column.optional) presence[c].b.push_back(1);
             } else if (column.optional) {
-                push_null(piece);
+                append_null(column, piece);
                 presence[c].b.push_back(0);
             } else {
                 // A required leaf encodes NULL iff an ancestor on its path
@@ -918,7 +1183,7 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
                     [&](std::size_t j) { return mask_valid[j] == 0; });
                 if (!exempt)
                     throw std::invalid_argument(label + ": required");
-                push_null(piece);
+                append_null(column, piece);
             }
         }
     }
@@ -1145,13 +1410,17 @@ nb::dict to_python(const Piece &piece) {
             out["offsets"] = wire::owned_array<std::int32_t>(piece.offsets);
             break;
         case Piece::Kind::structure: {
-            out["kind"] = nb::str("structure");
+            out["kind"] = nb::str("struct");
             nb::dict children;
             for (const auto &[name, child] : piece.children)
                 children[nb::str(name.c_str(), name.size())] =
                     to_python(child);
             out["children"] = children;
-            if (piece.items) out["items"] = to_python(*piece.items);
+            // 'struct[]' slots keep their own offsets; a plain 'struct'
+            // piece carries none, and Python tells them apart by the key.
+            if (!piece.offsets.empty())
+                out["offsets"] =
+                    wire::owned_array<std::int32_t>(piece.offsets);
             break;
         }
         case Piece::Kind::map:

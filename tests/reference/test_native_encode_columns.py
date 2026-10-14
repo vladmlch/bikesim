@@ -97,12 +97,13 @@ def test_compile_plan_contract():
     energy = cat.table('channel_energy')
     with pytest.raises(ValueError, match='all_roots'):
         compile_plan(energy)
-    # channel_energy's map<double> leaves compile now; channel_tires is
-    # still struct-bound and falls back.
+    # channel_energy's map<double> leaves compile; every physical table in
+    # the catalog compiles now — including the struct-bound channel tables.
     assert compile_plan(
         energy, all_roots=sorted(cat.channel_roots())) is not None
-    assert compile_plan(cat.table('channel_tires'),
-                        all_roots=sorted(cat.channel_roots())) is None
+    all_roots = sorted(cat.channel_roots())
+    for spec in cat.table_order():
+        assert compile_plan(spec, all_roots=all_roots) is not None, spec.name
 
 
 def test_encode_table_piece_shape_and_domain():
@@ -431,6 +432,291 @@ def test_all_list_and_map_dtypes_bitwise():
         [[('p', [1.0, 2.0]), ('q', [])], None, None]
 
 
+def test_struct_field_bitwise_channel_mass():
+    """``endpoint_mass``: a depth-1 optional ``struct`` field authored only
+    on measured rows; its own optional members stay absent inside a present
+    struct (member-level ``_present`` lanes)."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_mass')
+    rows = [support.sample_row(
+        interval_id=i, start=i * 0.001,
+        channels=support.mass_channels(measured=(i % 2 == 0)))
+        for i in range(3)]
+    oracle.assert_identical(spec, rows, catalog=cat)
+    rb = oracle.native_record_batch(
+        spec, oracle.make_episode(rows), catalog=cat)
+    assert rb.column('endpoint_mass_present').to_pylist() == \
+        [True, False, True]
+    endpoint = rb.column('endpoint_mass').to_pylist()
+    assert endpoint[1] is None
+    assert endpoint[0]['mass_kg'] == 95.1
+    # Absent optional members encode NULL + a False companion inside a
+    # present parent struct.
+    assert endpoint[0]['angular_momentum_kg_m2_s'] is None
+    assert endpoint[0]['angular_momentum_kg_m2_s_present'] is False
+    assert endpoint[0]['kinetic_energy_j_present'] is True
+
+
+def test_struct_field_optional_member_channel_control():
+    """``control.posture`` — present struct with an absent optional
+    ``pelvis_offset_m``, a present member, then the whole field absent."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_control')
+    rows = [
+        support.sample_row(
+            interval_id=0, channels=support.control_channels()),
+        support.sample_row(
+            interval_id=1,
+            channels=support.control_channels(pelvis_offset=True)),
+        support.sample_row(
+            interval_id=2,
+            channels=support.control_channels(posture=False)),
+    ]
+    oracle.assert_identical(spec, rows, catalog=cat)
+    rb = oracle.native_record_batch(
+        spec, oracle.make_episode(rows), catalog=cat)
+    assert rb.column('posture_present').to_pylist() == [True, True, False]
+    posture = rb.column('posture').to_pylist()
+    assert posture[0]['pelvis_offset_m'] is None
+    assert posture[0]['pelvis_offset_m_present'] is False
+    assert posture[1]['pelvis_offset_m'] == [0.02, 0.01]
+    assert posture[1]['pelvis_offset_m_present'] is True
+    assert posture[2] is None
+
+
+def test_struct_nested_and_verdict_channel_model_status():
+    """``model_status`` — a required struct carrying a nested optional
+    struct (``first_model_violation``), a required ``map<double>`` member
+    and the ``numerically_valid`` verdict leaf (bool -> text)."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_model_status')
+    rows = [
+        support.sample_row(
+            interval_id=0,
+            channels=support.model_status_channels(verdict=True)),
+        support.sample_row(
+            interval_id=1,
+            channels=support.model_status_channels(
+                verdict=False, violation=True,
+                contact_crash_cause='tire_blowout',
+                attachment_violations=['left pedal'])),
+        support.sample_row(
+            interval_id=2,
+            channels=support.model_status_channels(
+                verdict='not_evaluated')),
+    ]
+    oracle.assert_identical(spec, rows, catalog=cat)
+    rb = oracle.native_record_batch(
+        spec, oracle.make_episode(rows), catalog=cat)
+    status = rb.column('model_status').to_pylist()
+    assert [row['numerically_valid'] for row in status] == \
+        ['true', 'false', 'not_evaluated']
+    assert status[0]['first_model_violation'] is None
+    assert status[0]['first_model_violation_present'] is False
+    assert status[1]['first_model_violation']['interval_id'] == 4
+    assert status[1]['first_model_violation']['reasons'] == \
+        ['energy_closure']
+    assert status[1]['first_model_violation_present'] is True
+    assert rb.column('contact_crash_cause').to_pylist() == \
+        [None, 'tire_blowout', None]
+    assert rb.column('attachment_violations').to_pylist() == \
+        [None, ['left pedal'], None]
+
+
+def test_struct_list_patches_channel_tires():
+    """``tires.front``/``tires.rear`` structs with a ``struct[]`` ``patches``
+    member: two patches on front, zero on rear, then the root absent."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_tires')
+    rows = [
+        support.sample_row(
+            interval_id=0,
+            channels=support.tires_channels(
+                front_patches=[support.tire_patch(160.0),
+                               support.tire_patch(95.0, couple_world=False)],
+                rear_patches=[])),
+        support.sample_row(
+            interval_id=1,
+            channels=support.tires_channels(
+                front_patches=[support.tire_patch(300.0)],
+                rear_patches=[support.tire_patch(180.0)])),
+        support.sample_row(interval_id=2, channels={}),
+    ]
+    oracle.assert_identical(spec, rows, catalog=cat)
+    rb = oracle.native_record_batch(
+        spec, oracle.make_episode(rows), catalog=cat)
+    front = rb.column('front').to_pylist()
+    assert len(front[0]['patches']) == 2
+    assert front[0]['patches'][0]['couple_world_nm'] == [0.0, 0.05, 0.0]
+    assert front[0]['patches'][0]['couple_world_nm_present'] is True
+    assert front[0]['patches'][1]['couple_world_nm'] is None
+    assert front[0]['patches'][1]['couple_world_nm_present'] is False
+    rear = rb.column('rear').to_pylist()
+    assert rear[0]['patches'] == []
+    assert front[2] is None and rear[2] is None
+
+
+def test_map_struct_except_keys_and_nesting_channel_rider():
+    """``rider``/``rider_welds`` ``map<struct>`` roots: entries 'saddle' and
+    'bar' with sparse optional members; ``crank_torque_nm`` is routed to the
+    sibling ``weld_crank_torque_nm`` leaf (``except_keys``), never a map
+    entry; ``rider_support_targets`` nests ``map<struct>`` and ``struct``
+    members inside a top-level struct."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_rider')
+    welds_owned_only = support.rider_channels()
+    welds_owned_only['rider_welds'] = {'crank_torque_nm': 4.0}
+    rows = [
+        support.sample_row(interval_id=0,
+                           channels=support.rider_channels()),
+        support.sample_row(interval_id=1, channels=welds_owned_only),
+        support.sample_row(interval_id=2, channels={}),
+    ]
+    oracle.assert_identical(spec, rows, catalog=cat)
+    rb = oracle.native_record_batch(
+        spec, oracle.make_episode(rows), catalog=cat)
+    assert rb.column('weld_crank_torque_nm').to_pylist() == \
+        [6.25, 4.0, None]
+    assert rb.column('weld_crank_torque_nm_present').to_pylist() == \
+        [True, True, False]
+    welds = rb.column('rider_welds').to_pylist()
+    assert dict(welds[0])['pedal_left']['normal_n'] == 45.0
+    assert 'crank_torque_nm' not in dict(welds[0])
+    # An all-owned remainder encodes the map field absent, not empty.
+    assert welds[1] is None
+    assert rb.column('rider_welds_present').to_pylist() == \
+        [True, False, False]
+    rider = rb.column('rider').to_pylist()
+    assert set(dict(rider[0])) == {'saddle', 'bar'}
+    saddle, bar = dict(rider[0])['saddle'], dict(rider[0])['bar']
+    assert saddle['normal_load_n'] == 310.0
+    assert len(saddle['patches']) == 1
+    assert saddle['force_on_rider_n'] is None
+    assert saddle['force_on_rider_n_present'] is False
+    assert bar['hand_gap_m'] == 0.005
+    assert bar['normal_load_n'] is None
+    assert bar['patches'] is None
+    assert rider[2] is None
+    targets = rb.column('rider_support_targets').to_pylist()
+    left = dict(targets[0]['feet'])['left']
+    assert left['ik_saturated'] is False
+    assert left['goal_geometry']['weld'] is True
+    assert left['actual_sole_position_m'] is None
+    assert targets[0]['requested_vertical_forces_n'] == \
+        [('saddle', 300.0)]
+    assert rb.column('rider_control').to_pylist() == [None, None, None]
+
+
+def test_struct_member_validation_parity():
+    """Struct projection rejects exactly where the oracle does: unknown
+    members, missing required members, non-dict payloads and bad map keys —
+    on both the authored-oracle and the native paths."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_mass')
+    plan = oracle.compile_plan(spec, all_roots=sorted(cat.channel_roots()))
+
+    def as_row(channels):
+        return {'interval_id': 0,
+                **{root: channels[root] for root in spec.claims
+                   if root in channels}}
+
+    bad_member = support.mass_channels()
+    bad_member['endpoint_mass']['bogus'] = 1
+    with pytest.raises(ValueError, match='bogus'):
+        oracle.oracle_batch(spec, [as_row(bad_member)])
+    episode = oracle.make_episode(
+        [support.sample_row(interval_id=0, channels=bad_member)])
+    with pytest.raises(ValueError, match='bogus'):
+        episode.encode_table(plan, 0, 1)
+
+    missing = support.mass_channels()
+    del missing['endpoint_mass']['mass_kg']
+    with pytest.raises(ValueError, match='required'):
+        oracle.oracle_batch(spec, [as_row(missing)])
+    episode = oracle.make_episode(
+        [support.sample_row(interval_id=0, channels=missing)])
+    with pytest.raises(ValueError, match='required'):
+        episode.encode_table(plan, 0, 1)
+
+    non_dict = support.mass_channels()
+    non_dict['endpoint_mass'] = [1.0, 2.0]
+    with pytest.raises(ValueError):
+        oracle.oracle_batch(spec, [as_row(non_dict)])
+    episode = oracle.make_episode(
+        [support.sample_row(interval_id=0, channels=non_dict)])
+    with pytest.raises(ValueError):
+        episode.encode_table(plan, 0, 1)
+
+
+def test_map_struct_bad_key_and_member_parity():
+    """``map<struct>``: an empty key rejects via ``_check_map_keys`` and a
+    missing required entry member rejects inside the entry struct."""
+    cat = support.support_catalog()
+    spec = cat.table('channel_rider')
+    plan = oracle.compile_plan(spec, all_roots=sorted(cat.channel_roots()))
+
+    def as_row(channels):
+        return {'interval_id': 0,
+                **{root: channels[root] for root in spec.claims
+                   if root in channels}}
+
+    bad_key = support.rider_channels()
+    bad_key['rider_welds'] = {
+        '': {'force_on_rider_n': [0.0, 0.0, -1.0]}}
+    with pytest.raises(ValueError, match='nonempty'):
+        oracle.oracle_batch(spec, [as_row(bad_key)])
+    episode = oracle.make_episode(
+        [support.sample_row(interval_id=0, channels=bad_key)])
+    with pytest.raises(ValueError, match='nonempty'):
+        episode.encode_table(plan, 0, 1)
+
+    missing_member = support.rider_channels()
+    del missing_member['rider_welds']['pedal_left']['force_on_rider_n']
+    with pytest.raises(ValueError, match='required'):
+        oracle.oracle_batch(spec, [as_row(missing_member)])
+    episode = oracle.make_episode(
+        [support.sample_row(interval_id=0, channels=missing_member)])
+    with pytest.raises(ValueError, match='required'):
+        episode.encode_table(plan, 0, 1)
+
+
+def test_struct_fragments_respect_batch_rows_bound():
+    """Recursive pieces slice across fragment boundaries: row windows rebase
+    ``struct[]``/``map<struct>`` offsets and the shared child arrays."""
+    cat = support.support_catalog()
+    rows = [
+        support.sample_row(
+            interval_id=i,
+            channels={**support.tires_channels(
+                front_patches=[support.tire_patch(float(i) + 1.0)]
+                if i % 2 == 0 else [],
+                rear_patches=[support.tire_patch(2.0 * i)] * i),
+                **support.rider_channels()})
+        for i in range(5)]
+    episode = oracle.make_episode(rows)
+    from bike_sim.recording.contracts import PieceBatch
+    from bike_sim.recording.native import NativePhysicalSource
+    from bike_sim.recording.native_encode import pieces_to_arrow
+    import pyarrow as pa
+    for name in ('channel_tires', 'channel_rider', 'channel_model_status'):
+        spec = cat.table(name)
+        source = NativePhysicalSource(episode, cat)
+        batches = [batch for batch in source.tables(batch_rows=2)
+                   if batch.table == name]
+        assert batches and all(isinstance(b, PieceBatch) for b in batches)
+        assert all(b.row_count <= 2 for b in batches)
+        assert sum(b.row_count for b in batches) == 5
+        assembled = pa.concat_batches(
+            [pieces_to_arrow(spec, b.row_count, b.pieces, 0, pa)
+             for b in batches])
+        reference = oracle.oracle_record_batch_from_episode(
+            spec, episode, 0, catalog=cat)
+        assert reference.num_rows == assembled.num_rows
+        for col in reference.schema.names:
+            assert oracle.column_bits(reference.column(col)) == \
+                oracle.column_bits(assembled.column(col)), col
+
+
 def test_applied_rows_bitwise_vs_python_mirror():
     """``episode.applied_rows`` == the Python diff mirror, chunk-stable.
 
@@ -595,7 +881,10 @@ def test_map_fragments_respect_batch_rows_bound():
             oracle.column_bits(assembled.column(name)), name
 
 
-def test_real_episode_flat_tables_bitwise():
+def test_real_episode_all_tables_bitwise():
+    """Every table in catalog.table_order() is emitted natively and
+    byte-identical to the oracle — including the struct-bound channel
+    tables this task unlocks."""
     from _native_runtime_support import make_python_ride
     from bike_sim.native.runtime import create_native_ride
     from bike_sim.recording.catalog import build_catalog
@@ -607,8 +896,43 @@ def test_real_episode_flat_tables_bitwise():
         driver.flush()
         episode = driver._native.seal_episode()
         cat = build_catalog(model_joints(driver.make_render_model()))
-        for name in ('physics', 'forces', 'channel_drive', 'channel_sensors',
-                     'channel_energy', 'channel_suspension'):
-            oracle.assert_identical(cat.table(name), episode, catalog=cat)
+        for spec in cat.table_order():
+            oracle.assert_identical(spec, episode, catalog=cat)
+    finally:
+        driver.close()
+
+
+def test_whole_episode_single_pass(monkeypatch):
+    """A real episode streams every catalog table through ``encode_table``
+    in one pass — ``encode_rows`` is never called for physical tables."""
+    from _native_runtime_support import make_python_ride
+    import bike_sim.recording.native as native_module
+    from bike_sim.native.runtime import create_native_ride
+    from bike_sim.recording.catalog import build_catalog
+    from bike_sim.recording.contracts import PieceBatch
+    from bike_sim.recording.native import NativePhysicalSource, model_joints
+    sim = make_python_ride()
+    driver = create_native_ride(sim, record_decimation=80, retention='full')
+    try:
+        driver.advance(65)
+        driver.flush()
+        episode = driver._native.seal_episode()
+        cat = build_catalog(model_joints(driver.make_render_model()))
+        calls = []
+
+        def spy(*args, **kwargs):
+            calls.append(args)
+            raise AssertionError('encode_rows must not run on the '
+                                 'all-native path')
+
+        monkeypatch.setattr(native_module, 'encode_rows', spy)
+        source = NativePhysicalSource(episode, cat)
+        batches = list(source.tables(batch_rows=8))
+        assert calls == []
+        emitted = {batch.table for batch in batches}
+        assert emitted == {spec.name for spec in cat.table_order()}
+        assert all(isinstance(batch, PieceBatch) for batch in batches)
+        assert sum(batch.row_count for batch in batches
+                   if batch.table == 'physics') == episode.row_count
     finally:
         driver.close()

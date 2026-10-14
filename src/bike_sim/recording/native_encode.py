@@ -13,12 +13,13 @@ The module must stay importable without pyarrow — the assembler receives
 from __future__ import annotations
 
 
-# Flat-leaf dtypes the channels projector covers; struct fields compile
-# to None (whole table falls back to the oracle) until their emitter lands.
+# Leaf dtypes the channels projector covers, plus the recursive container
+# set — every dtype the catalog can declare compiles natively.
 _LEAF_DTYPES = {'double', 'bigint', 'boolean', 'varchar',
                 'double[]', 'bigint[]', 'varchar[]',
                 'map<double>', 'map<boolean>', 'map<varchar>',
                 'map<double[]>'}
+_STRUCT_DTYPES = {'struct', 'struct[]', 'map<struct>'}
 
 # map<K> member dtype -> the leaf dtype the items piece assembles as.
 _MAP_MEMBER = {'map<double>': 'double', 'map<boolean>': 'boolean',
@@ -29,6 +30,29 @@ _MAP_MEMBER = {'map<double>': 'double', 'map<boolean>': 'boolean',
 # applies before encoding; the leaf plan node carries it so the native
 # emitter reproduces it verbatim.
 _VERDICT_PATH = ('model_status', 'numerically_valid')
+
+
+def _leaf_plan(field, abs_path):
+    """One plan node: ``field``'s leaf metadata plus recursive ``children``
+    for struct/struct[]/map<struct>. Child ``path``s are the relative
+    member names; ``abs_path`` is the flattened catalog path the verdict
+    conversion (and any future whole-path rule) keys on. Returns ``None``
+    when a dtype is not covered."""
+    if field.dtype not in _LEAF_DTYPES | _STRUCT_DTYPES:
+        return None
+    node = {'name': field.key, 'dtype': field.dtype,
+            'path': list(field.path), 'optional': field.optional,
+            'shape': list(field.shape) if field.shape else None,
+            'except_keys': list(field.except_keys),
+            'convert': 'verdict' if tuple(abs_path) == _VERDICT_PATH
+                       else None}
+    if field.dtype in _STRUCT_DTYPES:
+        children = [_leaf_plan(child, tuple(abs_path) + tuple(child.path))
+                    for child in field.children]
+        if any(child is None for child in children):
+            return None
+        node['children'] = children
+    return node
 
 
 def compile_plan(spec, all_roots=None):
@@ -43,14 +67,10 @@ def compile_plan(spec, all_roots=None):
         raise ValueError('channels plans require all_roots')
     columns, masks = [], []
     for f in spec.fields:
-        if f.dtype not in _LEAF_DTYPES:
+        node = _leaf_plan(f, f.path)
+        if node is None:
             return None
-        columns.append({'name': f.key, 'dtype': f.dtype,
-                        'path': list(f.path), 'optional': f.optional,
-                        'shape': list(f.shape) if f.shape else None,
-                        'except_keys': list(f.except_keys),
-                        'convert': 'verdict' if tuple(f.path) == _VERDICT_PATH
-                                   else None})
+        columns.append(node)
     # One mask pair per proper field-path prefix plus one per claimed root —
     # the same name set schema.parent_masks computes, in field order.
     for f in spec.fields:
@@ -81,8 +101,58 @@ _SCALAR = {'double': 'scalar', 'bigint': 'scalar', 'boolean': 'scalar',
            'varchar': 'scalar'}
 
 
-def _assemble(node_dtype, piece, pa):
-    """Piece dict -> pa.Array for one catalog column."""
+def _null_mask(piece):
+    """Numpy boolean mask for a piece's ``valid`` lane (None marks null).
+
+    ``valid`` flags mark *valid* slots, so the Arrow mask inverts them.
+    All-valid pieces return None: Arrow then leaves the validity buffer
+    absent entirely, matching what ``pa.array`` produces for a source
+    without nulls — a real byte difference under a ``StructArray``'s
+    always-read buffer 0. ``pa.array`` on numpy data requires a numpy
+    mask; ``from_arrays`` constructors wrap this into a ``pa.array``.
+    """
+    valid = piece.get('valid')
+    if valid is None:
+        return None
+    import numpy as np
+    invalid = ~np.asarray(valid, dtype=bool)
+    return None if not invalid.any() else invalid
+
+
+def _arrow_mask(piece, pa):
+    """The ``_null_mask`` result boxed for ``from_arrays`` constructors."""
+    mask = _null_mask(piece)
+    return None if mask is None else pa.array(mask, type=pa.bool_())
+
+
+def _assemble_struct(field, piece, pa, mask):
+    """One struct piece -> ``pa.StructArray``.
+
+    ``field`` is the catalog FieldSpec whose ``children`` give member
+    order; each optional child contributes a ``<key>_present`` boolean
+    member immediately after the child itself — the same member order
+    ``schema.arrow_type`` declares.
+    """
+    from bike_sim.recording.schema import arrow_type
+    children = piece['children']
+    arrays, fields = [], []
+    for child in field.children:
+        arrays.append(_assemble(child, children[child.key], pa))
+        fields.append(pa.field(child.key, arrow_type(child, pa)))
+        if child.optional:
+            arrays.append(_assemble(
+                'boolean', children[child.key + '_present'], pa))
+            fields.append(pa.field(child.key + '_present', pa.bool_()))
+    return pa.StructArray.from_arrays(arrays, fields=fields, mask=mask)
+
+
+def _assemble(node, piece, pa):
+    """Piece dict -> pa.Array for one catalog column.
+
+    ``node`` is the catalog FieldSpec (struct dtypes need its children) or
+    a bare dtype string for generated columns (``_present``/``__`` masks).
+    """
+    node_dtype = getattr(node, 'dtype', node)
     kind = piece['kind']
     if kind == 'scalar':
         import numpy as np
@@ -91,13 +161,10 @@ def _assemble(node_dtype, piece, pa):
         data = raw if node_dtype == 'varchar' else np.asarray(raw)
         if node_dtype == 'boolean' and getattr(data, 'dtype', None) != bool:
             data = np.asarray(data).astype(bool)
-        mask = None
-        if piece.get('valid') is not None:
-            mask = ~np.asarray(piece['valid'], dtype=bool)
         return pa.array(data, type={
             'double': pa.float64(), 'bigint': pa.int64(),
             'boolean': pa.bool_(), 'varchar': pa.string()}[node_dtype],
-            mask=mask)
+            mask=_null_mask(piece))
     if kind == 'list':
         import numpy as np
         flat = piece['data']
@@ -106,26 +173,33 @@ def _assemble(node_dtype, piece, pa):
                           {'kind': 'scalar', 'data': flat}, pa)
         # Required x[] leaves can still be NULL when a parent root/prefix
         # is absent-or-null, so list pieces carry a validity mask too.
-        mask = None
-        if piece.get('valid') is not None:
-            mask = pa.array(~np.asarray(piece['valid'], dtype=bool),
-                            type=pa.bool_())
         return pa.ListArray.from_arrays(
             pa.array(np.asarray(piece['offsets'], dtype=np.int32)),
-            child, mask=mask)
+            child, mask=_arrow_mask(piece, pa))
     if kind == 'map':
         import numpy as np
         keys = pa.array(list(piece['keys']), type=pa.string())
-        items = _assemble(_MAP_MEMBER[node_dtype], piece['items'], pa)
+        # map<struct> shares one entry struct across every entry — the
+        # piece's `items` children already span all slots.
+        items = _assemble_struct(node, piece['items'], pa, mask=None) \
+            if node_dtype == 'map<struct>' else \
+            _assemble(_MAP_MEMBER[node_dtype], piece['items'], pa)
         # Same absent-vs-null convention as list leaves: a NULL map slot
         # carries an empty key span plus a validity bit.
-        mask = None
-        if piece.get('valid') is not None:
-            mask = pa.array(~np.asarray(piece['valid'], dtype=bool),
-                            type=pa.bool_())
         return pa.MapArray.from_arrays(
             pa.array(np.asarray(piece['offsets'], dtype=np.int32)),
-            keys, items, mask=mask)
+            keys, items, mask=_arrow_mask(piece, pa))
+    if kind == 'struct':
+        import numpy as np
+        # struct[] pieces carry their own offsets; the struct child spans
+        # every element and is always valid (a list slot may be NULL, its
+        # elements never are).
+        if 'offsets' in piece:
+            children = _assemble_struct(node, piece, pa, mask=None)
+            return pa.ListArray.from_arrays(
+                pa.array(np.asarray(piece['offsets'], dtype=np.int32)),
+                children, mask=_arrow_mask(piece, pa))
+        return _assemble_struct(node, piece, pa, mask=_arrow_mask(piece, pa))
     raise ValueError(f'unsupported piece kind {kind!r}')
 
 
@@ -143,7 +217,7 @@ def pieces_to_arrow(spec, row_count, pieces, episode_id, pa):
             # masks are not FieldSpecs; arrow_batch falls back to bool_ for
             # them, so the matching pieces are boolean scalars.
             arrays.append(_assemble(
-                field.dtype if field is not None else 'boolean',
+                field if field is not None else 'boolean',
                 pieces[name], pa))
         names.append(name)
     return pa.RecordBatch.from_arrays(arrays, names=names)
@@ -173,6 +247,22 @@ def _slice_piece(piece, first, last):
         out['keys'] = piece['keys'][low:high]
         out['items'] = _slice_piece(piece['items'], low, high)
         out['offsets'] = offsets[first:last + 1] - low
+        return out
+    if kind == 'struct':
+        if 'offsets' in piece:
+            # struct[]: children span elements; the window's element span
+            # comes from the slot offsets, rebased like a list piece.
+            import numpy as np
+            offsets = np.asarray(piece['offsets'])
+            low, high = int(offsets[first]), int(offsets[last])
+            out['offsets'] = offsets[first:last + 1] - low
+            out['children'] = {name: _slice_piece(child, low, high)
+                               for name, child in
+                               piece['children'].items()}
+        else:
+            out['children'] = {name: _slice_piece(child, first, last)
+                               for name, child in
+                               piece['children'].items()}
         return out
     raise ValueError(f'unsupported piece kind {kind!r}')
 

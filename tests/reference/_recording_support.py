@@ -238,6 +238,226 @@ def sensors_channels(speed=0.0, **overrides):
     return channels
 
 
+def mass_channels(measured=True, **overrides):
+    """A complete authored ``channels`` row centred on the ``mass`` root.
+
+    ``channel_mass`` holds every required leaf plus the optional
+    ``endpoint_mass`` ``struct`` field — authored only on measured rows so
+    the optional-struct present/absent split is exercised. Some of
+    ``endpoint_mass``'s optional members are deliberately absent inside a
+    present struct (member-level ``_present`` companions).
+    ``overrides`` merge like ``energy_channels``.
+    """
+    mass = {
+        'mass_kg': 95.0,
+        'com_m': [0.05, 0.0, 0.9],
+        'com_velocity_mps': [0.0, 0.0, -0.1],
+        'linear_momentum_kg_mps': [0.0, 0.0, -9.5],
+        'angular_momentum_kg_m2_s': [0.0, 1.0, 0.0],
+        'kinetic_energy_j': 4.5,
+        'gravitational_energy_j': 838.0,
+        'measurement_scope': 'full',
+    }
+    channels = {'mass': mass}
+    if measured:
+        # Optional members angular_momentum_kg_m2_s and
+        # linear_momentum_kg_mps stay absent inside the present struct.
+        channels['endpoint_mass'] = {
+            'mass_kg': 95.1,
+            'com_m': [0.05, 0.0, 0.9],
+            'com_velocity_mps': [0.0, 0.0, -0.1],
+            'kinetic_energy_j': 4.5,
+            'gravitational_energy_j': 838.0,
+        }
+    for key, value in overrides.items():
+        if key in channels:
+            channels[key].update(value)
+        else:
+            channels[key] = value
+    return channels
+
+
+def control_channels(*, posture=True, pelvis_offset=False, **overrides):
+    """A complete authored ``channels`` row centred on the ``control`` root.
+
+    All ``channel_control`` leaves are optional except ``rider_enabled``;
+    the optional ``posture`` struct field appears by default, with the
+    optional ``pelvis_offset_m`` member authored only on request.
+    """
+    control = {
+        'motor_torque_nm': 5.5,
+        'motor_limit_nm': 12.0,
+        'human_torque_nm': 30.0,
+        'crank_target_rate_rad_s': 8.0,
+        'rider_enabled': True,
+    }
+    if posture:
+        control['posture'] = {
+            'torso_lean_rad': 0.15,
+            'pelvis_pitch_rad': 0.02,
+            'use_saddle': True,
+        }
+        if pelvis_offset:
+            control['posture']['pelvis_offset_m'] = [0.02, 0.01]
+    channels = {'control': control}
+    for key, value in overrides.items():
+        if key == 'control':
+            channels['control'].update(value)
+        else:
+            channels[key] = value
+    return channels
+
+
+def model_status_channels(*, verdict=True, violation=False, **overrides):
+    """A complete authored ``channels`` row centred on ``model_status``.
+
+    ``model_status`` is a required ``struct`` field whose children include
+    a nested optional struct (``first_model_violation``), a required
+    ``map<double>`` member and the ``numerically_valid`` verdict leaf —
+    authored as a bool so the native ``convert: 'verdict'`` coercion is
+    exercised (``_canonical`` does the same rewrite on the oracle path).
+    """
+    status = {
+        'model_valid': True,
+        'model_violation_counts': {'impact_load': 2.0, 'edge_drop': 1.0},
+        'numerically_valid': verdict,
+        'calibration_status': 'qualified',
+    }
+    if violation:
+        status['first_model_violation'] = {
+            'interval_id': 4,
+            'time_s': 0.004,
+            'reasons': ['energy_closure'],
+        }
+    channels = {'model_status': status}
+    for key, value in overrides.items():
+        if key == 'model_status':
+            channels['model_status'].update(value)
+        else:
+            channels[key] = value
+    return channels
+
+
+def tire_patch(load=160.0, *, couple_world=True, source_geom='terrain'):
+    """One authored ``patches`` element of a ``tires`` side struct."""
+    patch = {
+        'point_m': [0.0, 0.02, 0.0],
+        'normal': [0.0, 0.0, 1.0],
+        'normal_load_n': load,
+        'tangent_force_n': -1.5,
+        'slip_mps': 0.01,
+        'world_force_n': [0.0, -1.5, load],
+        'source_geom': source_geom,
+    }
+    if couple_world:
+        patch['couple_world_nm'] = [0.0, 0.05, 0.0]
+    return patch
+
+
+def tire_side(patches=(), *, seed=0.0):
+    """A complete authored ``tires.front``/``tires.rear`` struct value.
+
+    Every required member appears; ``patches`` (a required ``struct[]``)
+    takes the authored patch list — a handful of optional leaf members
+    (``penetration_m``/``surface``/``radial_energy_j``/``station_count``)
+    are authored while the rest stay absent, so the member-level
+    ``_present`` lanes split both ways.
+    """
+    contact = len(patches) > 0
+    return {
+        'backend': 'point',
+        'unloaded_radius_m': 0.34,
+        'supports_multiple_contacts': True,
+        'outside_material_load_range': False,
+        'outside_material_deflection_range': not contact,
+        'patches': list(patches),
+        'geometric_contact': contact,
+        'raw_contact': contact,
+        'controller_grounded': contact,
+        'multi_support': len(patches) > 1,
+        'normal_load_n': 320.0 + seed,
+        'world_force_n': [0.0, -1.5, 320.0 + seed],
+        'vertical_force_n': 320.0 + seed,
+        'normal_vertical_n': 318.0 + seed,
+        'tangent_force_n': -2.5,
+        'effective_radius_m': 0.335,
+        'wheel_axis_m': [0.0, 1.05, 0.34],
+        'wheel_axis_moment_nm': 0.8,
+        'omega_abs_rad_s': 4.0 + seed,
+        'omega_rel_rad_s': 4.0 + seed,
+        'slip_mps': 0.02,
+        'slip_ratio': 0.01,
+        'tangent_center_speed_mps': 2.0,
+        'penetration_m': 0.003 if contact else 0.0,
+        'surface': 'asphalt',
+        'radial_energy_j': 0.4 + seed,
+        'station_count': 24,
+    }
+
+
+def tires_channels(front_patches=(), rear_patches=()):
+    """``{'tires': {'front': ..., 'rear': ...}}`` for channel_tires."""
+    return {'tires': {'front': tire_side(front_patches, seed=0.0),
+                      'rear': tire_side(rear_patches, seed=10.0)}}
+
+
+def rider_channels(**overrides):
+    """A complete authored ``channels`` row for ``channel_rider``.
+
+    Populates the ``rider``/``rider_welds`` ``map<struct>`` roots (entries
+    'saddle'/'bar' with deliberately sparse optional members, and the
+    ``except_keys`` member ``crank_torque_nm`` routed to the sibling
+    ``weld_crank_torque_nm`` leaf), ``rider_support_targets`` (a struct
+    carrying a nested ``map<struct>`` ``feet`` whose entries hold a nested
+    ``goal_geometry`` struct) and ``rider_intent``. The remaining claimed
+    roots stay absent so their optional columns encode NULL.
+    """
+    channels = {
+        'rider': {
+            'saddle': {
+                'enabled': True, 'in_platform': True,
+                'normal_load_n': 310.0, 'gap_m': 0.0,
+                'patches': [{
+                    'in_platform': True, 'normal_load_n': 150.0,
+                    'gap_m': 0.0, 'point_m': [0.0, 0.0, 0.0],
+                    'force_on_rider_n': [0.0, 0.0, -150.0],
+                    'radial_energy_j': 0.2, 'shear_energy_j': 0.01}],
+            },
+            'bar': {'enabled': True, 'reachable': True,
+                    'hand_gap_m': 0.005},
+        },
+        'rider_welds': {
+            'pedal_left': {'force_on_rider_n': [0.0, 0.0, -45.0],
+                           'normal_n': 45.0, 'would_separate': False},
+            # Owned by the weld_crank_torque_nm leaf — never a map entry.
+            'crank_torque_nm': 6.25,
+        },
+        'rider_support_targets': {
+            'stance': {'front': False, 'rear': True},
+            'requested_vertical_forces_n': {'saddle': 300.0},
+            'feasible_pedal_force_on_bike_n': {'left': [0.0, 0.0, -200.0]},
+            'posture': {'torso_lean_rad': 0.12, 'pelvis_pitch_rad': 0.0,
+                        'use_saddle': True},
+            'crank_tracking': {'actual_phase_rad': 1.0,
+                               'actual_rate_rad_s': 7.9},
+            'feet': {'left': {'ik_saturated': False,
+                              'goal_geometry': {'saturated': False,
+                                                'weld': True}}},
+        },
+        'rider_intent': {
+            'posture': {'torso_lean_rad': 0.1, 'pelvis_pitch_rad': 0.0,
+                        'use_saddle': True},
+            'effort_ceiling_nm': 90.0,
+        },
+    }
+    for key, value in overrides.items():
+        if key in channels:
+            channels[key].update(value)
+        else:
+            channels[key] = value
+    return channels
+
+
 def suspension_channels(**overrides):
     """A complete authored ``channels`` row centred on the ``suspension``
     root.

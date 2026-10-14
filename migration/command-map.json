@@ -1,0 +1,237 @@
+{
+  "source": "pyproject.toml [project.scripts]",
+  "entries": [
+    {
+      "command": "bike-sim",
+      "source_path": "src/bike_sim/cli/main.py",
+      "entry_symbol": "main",
+      "owner_task": "T47",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    },
+    {
+      "command": "bike-playground",
+      "source_path": "src/bike_sim/cli/playground.py",
+      "entry_symbol": "main",
+      "owner_task": "T47",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    },
+    {
+      "command": "bike-export",
+      "source_path": "src/bike_sim/cli/export.py",
+      "entry_symbol": "main",
+      "owner_task": "T47",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    },
+    {
+      "command": "bike-ride",
+      "source_path": "src/bike_sim/cli/ride.py",
+      "entry_symbol": "main",
+      "owner_task": "T47",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    },
+    {
+      "command": "bike-settle",
+      "source_path": "src/bike_sim/cli/settle.py",
+      "entry_symbol": "main",
+      "owner_task": "T47",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    },
+    {
+      "command": "bike-research",
+      "source_path": "src/bike_sim/cli/research.py",
+      "entry_symbol": "main",
+      "owner_task": "T47",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    },
+    {
+      "command": "bike-batch",
+      "source_path": "src/bike_sim/cli/batch.py",
+      "entry_symbol": "main",
+      "owner_task": "T51",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/batch/plan.hpp",
+        "native/src/batch/plan.cpp",
+        "native/src/batch/executor.cpp",
+        "native/src/batch/summary.cpp",
+        "native/src/cli/batch.cpp",
+        "native/src/tools/research_sweep_main.cpp",
+        "native/tests/migration/test_t51.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    },
+    {
+      "command": "bike-replay",
+      "source_path": "src/bike_sim/cli/replay.py",
+      "entry_symbol": "main",
+      "owner_task": "T47",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    },
+    {
+      "command": "bike-recording",
+      "source_path": "src/bike_sim/cli/recording.py",
+      "entry_symbol": "main",
+      "owner_task": "T46",
+      "parser_contract_acquisition": "T01",
+      "native_targets": [
+        "native/src/cli/recording.cpp",
+        "native/src/cli/recording_main.cpp",
+        "native/tests/cli/recording.cmake"
+      ],
+      "required_checks": [
+        "help/stdout/stderr/exit",
+        "defaults and invalid combinations",
+        "representative successful invocation",
+        "installed no-Python execution"
+      ],
+      "status": "planned"
+    }
+  ],
+  "status": "planned; parser/default details must be captured in T01"
+}

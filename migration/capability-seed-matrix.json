@@ -1,0 +1,1071 @@
+{
+  "purpose": "Concrete workstream seeds, not a claim that every resolved mode combination has been enumerated. T00/T01 and source owners expand these against actual parser/schema/runtime acceptance.",
+  "rows": [
+    {
+      "id": "fresh_physical_startup",
+      "owner_tasks": [
+        "T12",
+        "T18",
+        "T22",
+        "T25"
+      ],
+      "contract": "physical setup and complete step-zero bootstrap",
+      "source_authority": [
+        "src/bike_sim/native/setup.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/configuration/model_config.hpp",
+        "native/src/configuration/physical_config.hpp",
+        "native/src/configuration/rider_spec.hpp",
+        "native/src/configuration/suspension_spec.hpp",
+        "native/src/configuration/validate.cpp",
+        "native/src/configuration/schema.cpp",
+        "native/tests/migration/test_t12.cpp",
+        "native/src/model/mapping.hpp",
+        "native/src/model/mapping.cpp",
+        "native/src/runtime/project_config.hpp",
+        "native/src/runtime/project_config.cpp",
+        "native/tests/migration/test_t18.cpp",
+        "native/src/initialization/equilibrium.hpp",
+        "native/src/initialization/equilibrium.cpp",
+        "native/src/initialization/initial_pose.cpp",
+        "native/src/initialization/settle_contacts.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/tests/migration/test_t22.cpp",
+        "native/src/app/prepare.hpp",
+        "native/src/app/prepare.cpp",
+        "native/src/app/physical_session.hpp",
+        "native/src/app/physical_session.cpp",
+        "native/src/app/setup.hpp",
+        "native/tests/migration/test_t25.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "reusable_native_core",
+      "owner_tasks": [
+        "T07",
+        "T08",
+        "T09",
+        "T26"
+      ],
+      "contract": "existing native kernels, runtime/reset/poison contracts",
+      "source_authority": [
+        "src/bike_sim/native/runtime.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/writer_config.hpp",
+        "native/src/writer_config.cpp",
+        "native/src/config.hpp",
+        "native/src/config_types.hpp",
+        "native/src/stepper.hpp",
+        "native/src/stepper.cpp",
+        "native/src/binding.cpp",
+        "native/tests/migration/test_t07.cpp",
+        "native/src/rider/attachment_wire.hpp",
+        "native/src/rider/intent_wire.hpp",
+        "native/src/rider/spindle_wire.hpp",
+        "native/src/rider/rider_contact_binding.hpp",
+        "native/src/drivetrain/drive_binding.hpp",
+        "native/src/rider/state_codec.hpp",
+        "native/src/rider/state_codec.cpp",
+        "native/src/drivetrain/state_codec.hpp",
+        "native/src/drivetrain/state_codec.cpp",
+        "native/tests/migration/test_t08.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/runtime_binding.hpp",
+        "native/src/runtime/runtime_binding.cpp",
+        "native/src/runtime/config.hpp",
+        "native/src/runtime/bootstrap.hpp",
+        "native/src/runtime/bootstrap.cpp",
+        "native/src/runtime/bootstrap_io.hpp",
+        "native/src/runtime/bootstrap_io.cpp",
+        "native/tests/migration/test_t09.cpp",
+        "native/tests/migration/kernel_parity.cpp",
+        "native/tests/migration/kernel_properties.cpp",
+        "migration/kernel-reuse-map.json"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "research_startup",
+      "owner_tasks": [
+        "T19",
+        "T34",
+        "T36"
+      ],
+      "contract": "seeded research construction, accepted pending windows and lifecycle",
+      "source_authority": [
+        "src/bike_sim/native/research.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/random/numpy_compat.hpp",
+        "native/src/random/numpy_compat.cpp",
+        "native/src/random/seed_sequence.cpp",
+        "native/src/random/distributions.cpp",
+        "native/src/random/noise_tape.cpp",
+        "native/tests/migration/test_t19.cpp",
+        "native/src/research/environment.hpp",
+        "native/src/research/environment.cpp",
+        "native/src/research/configuration.cpp",
+        "native/src/research/program_loader.cpp",
+        "native/src/research/rider_random.cpp",
+        "native/tests/migration/test_t34.cpp",
+        "native/src/research/policy_session.hpp",
+        "native/src/research/policy_session.cpp",
+        "native/src/research/lifecycle.cpp",
+        "native/src/research/exit_codes.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "compliant_2d",
+      "owner_tasks": [
+        "T21",
+        "T25",
+        "T26"
+      ],
+      "contract": "source-supported physical tire profile and invalid combinations",
+      "source_authority": [
+        "src/bike_sim/native/setup.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/terrain/generator.cpp",
+        "native/src/terrain/road.cpp",
+        "native/src/terrain/alpine.cpp",
+        "native/src/terrain/placement.cpp",
+        "native/src/terrain/trackfile.hpp",
+        "native/src/terrain/trackfile.cpp",
+        "native/src/terrain/presets.cpp",
+        "native/tests/migration/test_t21.cpp",
+        "native/src/app/prepare.hpp",
+        "native/src/app/prepare.cpp",
+        "native/src/app/physical_session.hpp",
+        "native/src/app/physical_session.cpp",
+        "native/src/app/setup.hpp",
+        "native/tests/migration/test_t25.cpp",
+        "native/tests/migration/kernel_parity.cpp",
+        "native/tests/migration/kernel_properties.cpp",
+        "migration/kernel-reuse-map.json"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "distributed_2d_reference",
+      "owner_tasks": [
+        "T21",
+        "T25",
+        "T26"
+      ],
+      "contract": "source-supported distributed tire profile and terrain restrictions",
+      "source_authority": [
+        "src/bike_sim/native/setup.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/terrain/generator.cpp",
+        "native/src/terrain/road.cpp",
+        "native/src/terrain/alpine.cpp",
+        "native/src/terrain/placement.cpp",
+        "native/src/terrain/trackfile.hpp",
+        "native/src/terrain/trackfile.cpp",
+        "native/src/terrain/presets.cpp",
+        "native/tests/migration/test_t21.cpp",
+        "native/src/app/prepare.hpp",
+        "native/src/app/prepare.cpp",
+        "native/src/app/physical_session.hpp",
+        "native/src/app/physical_session.cpp",
+        "native/src/app/setup.hpp",
+        "native/tests/migration/test_t25.cpp",
+        "native/tests/migration/kernel_parity.cpp",
+        "native/tests/migration/kernel_properties.cpp",
+        "migration/kernel-reuse-map.json"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "pneumatic",
+      "owner_tasks": [
+        "T21",
+        "T25",
+        "T26"
+      ],
+      "contract": "source-supported pneumatic tire profile and terrain restrictions",
+      "source_authority": [
+        "src/bike_sim/native/setup.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/terrain/generator.cpp",
+        "native/src/terrain/road.cpp",
+        "native/src/terrain/alpine.cpp",
+        "native/src/terrain/placement.cpp",
+        "native/src/terrain/trackfile.hpp",
+        "native/src/terrain/trackfile.cpp",
+        "native/src/terrain/presets.cpp",
+        "native/tests/migration/test_t21.cpp",
+        "native/src/app/prepare.hpp",
+        "native/src/app/prepare.cpp",
+        "native/src/app/physical_session.hpp",
+        "native/src/app/physical_session.cpp",
+        "native/src/app/setup.hpp",
+        "native/tests/migration/test_t25.cpp",
+        "native/tests/migration/kernel_parity.cpp",
+        "native/tests/migration/kernel_properties.cpp",
+        "migration/kernel-reuse-map.json"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "drive_variants",
+      "owner_tasks": [
+        "T27"
+      ],
+      "contract": "elastic-chain, clutch and reflected-rotor cases accepted by source",
+      "source_authority": [
+        "src/bike_sim/native/setup.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/drivetrain/elastic_chain.cpp",
+        "native/src/drivetrain/motor_clutch.cpp",
+        "native/src/drivetrain/transmission.cpp",
+        "native/src/writers/drivetrain.cpp",
+        "native/src/runtime/project_config.cpp",
+        "native/tests/migration/test_t27.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "rider_allocation",
+      "owner_tasks": [
+        "T28",
+        "T29"
+      ],
+      "contract": "constraint/mode/LP/NNLS and existing source validity rules",
+      "source_authority": [
+        "project/tests/reference/test_constraint_mode_search.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/numerics/slsqp.hpp",
+        "native/src/numerics/slsqp.cpp",
+        "native/src/numerics/linear_feasibility.cpp",
+        "native/src/numerics/nnls.cpp",
+        "native/src/rider/allocation.hpp",
+        "native/src/rider/allocation.cpp",
+        "native/tests/migration/test_t28.cpp",
+        "native/src/rider/constraint_dynamics.hpp",
+        "native/src/rider/constraint_dynamics.cpp",
+        "native/src/rider/response_allocation.cpp",
+        "native/src/rider/activation_allocation.cpp",
+        "native/src/rider/mode_search.cpp",
+        "native/src/rider/legacy_controller.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "alternative_supports",
+      "owner_tasks": [
+        "T30"
+      ],
+      "contract": "source-supported contacts/supports beyond initial native subset",
+      "source_authority": [
+        "src/bike_sim/native/setup.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/rider/support_dispatch.cpp",
+        "native/src/rider/flat_contacts.cpp",
+        "native/src/rider/weld_settle.cpp",
+        "native/src/rider/grip_springs.cpp",
+        "native/src/runtime/capabilities.hpp",
+        "native/src/runtime/capabilities.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "legacy_ride",
+      "owner_tasks": [
+        "T31",
+        "T32"
+      ],
+      "contract": "legacy tire/nonphysical ride, metrics and filtering",
+      "source_authority": [
+        "src/bike_sim/cli/ride.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/legacy/tyre.hpp",
+        "native/src/legacy/tyre.cpp",
+        "native/src/legacy/ride.hpp",
+        "native/src/legacy/ride.cpp",
+        "native/src/legacy/force_accumulator.cpp",
+        "native/src/legacy/recorder.cpp",
+        "native/tests/migration/test_t31.cpp",
+        "native/src/legacy/controls.cpp",
+        "native/src/legacy/rider.cpp",
+        "native/src/legacy/legs.cpp",
+        "native/src/legacy/metrics.cpp",
+        "native/src/numerics/filter.hpp",
+        "native/src/numerics/filter.cpp",
+        "native/tests/migration/test_t32.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "playground_stand",
+      "owner_tasks": [
+        "T17",
+        "T33"
+      ],
+      "contract": "source playground/stand and model variants",
+      "source_authority": [
+        "src/bike_sim/cli/playground.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/model/legacy_topology.cpp",
+        "native/src/model/export.hpp",
+        "native/src/model/export.cpp",
+        "native/src/model/assets.cpp",
+        "native/src/model/environment.cpp",
+        "native/src/model/sensors.cpp",
+        "native/tests/migration/test_t17.cpp",
+        "native/src/legacy/playground.hpp",
+        "native/src/legacy/playground.cpp",
+        "native/src/legacy/suspension_controller.cpp",
+        "native/src/legacy/static_equilibrium.cpp",
+        "native/src/legacy/telemetry.cpp",
+        "native/tests/migration/test_t33.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "geometry_model_export",
+      "owner_tasks": [
+        "T14",
+        "T15",
+        "T16",
+        "T17",
+        "T18"
+      ],
+      "contract": "geometry/mass/kinematics/MJCF/topology/export parity",
+      "source_authority": [
+        "src/bike_sim/cli/export.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/geometry/specs.hpp",
+        "native/src/geometry/hardpoints.cpp",
+        "native/src/geometry/cockpit.cpp",
+        "native/src/geometry/validation.cpp",
+        "native/src/kinematics/linkage_math.hpp",
+        "native/src/kinematics/linkage_math.cpp",
+        "native/src/kinematics/solver.hpp",
+        "native/src/kinematics/solver.cpp",
+        "native/src/kinematics/curves.cpp",
+        "native/tests/migration/test_t14.cpp",
+        "native/src/model/mass.hpp",
+        "native/src/model/mass.cpp",
+        "native/src/model/rider_geometry.hpp",
+        "native/src/model/rider_geometry.cpp",
+        "native/src/model/suspension_setup.hpp",
+        "native/src/model/suspension_setup.cpp",
+        "native/tests/migration/test_t15.cpp",
+        "native/src/model/builder.hpp",
+        "native/src/model/builder.cpp",
+        "native/src/model/xml_writer.cpp",
+        "native/src/model/physical_topology.cpp",
+        "native/src/model/articulated_rider.cpp",
+        "native/src/model/drivetrain.cpp",
+        "native/src/model/linkage.cpp",
+        "native/src/model/terrain.cpp",
+        "native/tests/migration/test_t16.cpp",
+        "native/src/model/legacy_topology.cpp",
+        "native/src/model/export.hpp",
+        "native/src/model/export.cpp",
+        "native/src/model/assets.cpp",
+        "native/src/model/environment.cpp",
+        "native/src/model/sensors.cpp",
+        "native/tests/migration/test_t17.cpp",
+        "native/src/model/mapping.hpp",
+        "native/src/model/mapping.cpp",
+        "native/src/runtime/project_config.hpp",
+        "native/src/runtime/project_config.cpp",
+        "native/tests/migration/test_t18.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "equilibrium_and_state",
+      "owner_tasks": [
+        "T22",
+        "T23",
+        "T24"
+      ],
+      "contract": "settling/refinement/cache and historical state import",
+      "source_authority": [
+        "tests/reference/test_equilibrium_state_file.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/initialization/equilibrium.hpp",
+        "native/src/initialization/equilibrium.cpp",
+        "native/src/initialization/initial_pose.cpp",
+        "native/src/initialization/settle_contacts.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/tests/migration/test_t22.cpp",
+        "native/src/numerics/least_squares.hpp",
+        "native/src/numerics/least_squares.cpp",
+        "native/src/initialization/refine.cpp",
+        "native/src/initialization/sag_fit.cpp",
+        "native/tests/migration/test_t23.cpp",
+        "native/src/initialization/state_file.hpp",
+        "native/src/initialization/state_file.cpp",
+        "native/src/initialization/equilibrium_cache.cpp",
+        "native/src/io/npy.hpp",
+        "native/src/io/npy.cpp",
+        "native/src/io/npz.cpp",
+        "native/tests/migration/test_t24.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "rng_and_terrain",
+      "owner_tasks": [
+        "T19",
+        "T20",
+        "T21"
+      ],
+      "contract": "SeedSequence/PCG64 transforms and track/preset generation",
+      "source_authority": [
+        "src/bike_sim/native/research.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/random/numpy_compat.hpp",
+        "native/src/random/numpy_compat.cpp",
+        "native/src/random/seed_sequence.cpp",
+        "native/src/random/distributions.cpp",
+        "native/src/random/noise_tape.cpp",
+        "native/tests/migration/test_t19.cpp",
+        "native/src/terrain/types.hpp",
+        "native/src/terrain/profile.cpp",
+        "native/src/terrain/obstacles.cpp",
+        "native/src/terrain/surface.cpp",
+        "native/src/terrain/heightfield.cpp",
+        "native/src/terrain/contact_safety.cpp",
+        "native/src/terrain/wheelpath.cpp",
+        "native/src/terrain/profile.hpp",
+        "native/tests/migration/test_t20.cpp",
+        "native/src/terrain/generator.cpp",
+        "native/src/terrain/road.cpp",
+        "native/src/terrain/alpine.cpp",
+        "native/src/terrain/placement.cpp",
+        "native/src/terrain/trackfile.hpp",
+        "native/src/terrain/trackfile.cpp",
+        "native/src/terrain/presets.cpp",
+        "native/tests/migration/test_t21.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "built_in_and_external_policy",
+      "owner_tasks": [
+        "T35",
+        "T36"
+      ],
+      "contract": "built-in parity and required external policy C ABI ports",
+      "source_authority": [
+        "src/bike_sim/cli/research.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/research/policy.hpp",
+        "native/src/research/policy.cpp",
+        "native/src/research/builtin_policies.cpp",
+        "native/include/bike/policy_v1.h",
+        "native/src/research/plugin_policy.cpp",
+        "examples/policies/traction_control.cpp",
+        "docs/NATIVE_POLICIES.md",
+        "native/tests/migration/test_t35.cpp",
+        "native/src/research/policy_session.hpp",
+        "native/src/research/policy_session.cpp",
+        "native/src/research/lifecycle.cpp",
+        "native/src/research/exit_codes.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "recording_opt_in",
+      "owner_tasks": [
+        "T38",
+        "T39",
+        "T40"
+      ],
+      "contract": "opt-in full RAM retention, exact channel/value schemas",
+      "source_authority": [
+        "src/bike_sim/recording/schema.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/resources/recording/catalog-v1.json",
+        "native/src/recording/catalog.hpp",
+        "native/src/recording/catalog.cpp",
+        "native/src/recording/coordinates.cpp",
+        "native/src/recording/schema.cpp",
+        "native/tests/migration/test_t38.cpp",
+        "native/src/recording/encoding.hpp",
+        "native/src/recording/encoding.cpp",
+        "native/src/recording/plan.cpp",
+        "native/src/recording/duckdb_chunks.cpp",
+        "native/src/recording/contracts.hpp",
+        "native/src/recording/capture.hpp",
+        "native/src/recording/capture.cpp",
+        "native/src/recording/physical_source.cpp",
+        "native/src/recording/research_source.cpp",
+        "native/src/recording/events.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "recording_publication",
+      "owner_tasks": [
+        "T41",
+        "T42"
+      ],
+      "contract": "final-only exclusive publication, manifest-last, retries/signals",
+      "source_authority": [
+        "src/bike_sim/cli/recording.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/recording/database.hpp",
+        "native/src/recording/database.cpp",
+        "native/src/recording/database_validate.cpp",
+        "native/src/recording/assets.cpp",
+        "native/tests/migration/test_t41.cpp",
+        "native/src/recording/publish.hpp",
+        "native/src/recording/publish.cpp",
+        "native/src/recording/finalize.cpp",
+        "native/src/recording/interrupt.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "recording_analysis_exports",
+      "owner_tasks": [
+        "T43",
+        "T45",
+        "T46"
+      ],
+      "contract": "read-only analysis and CSV/JSONL output semantics",
+      "source_authority": [
+        "src/bike_sim/cli/recording.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/recording/reader.hpp",
+        "native/src/recording/reader.cpp",
+        "native/src/recording/analysis.cpp",
+        "native/src/recording/query.cpp",
+        "native/tests/migration/test_t43.cpp",
+        "native/src/recording/report.hpp",
+        "native/src/recording/report.cpp",
+        "native/src/recording/export.hpp",
+        "native/src/recording/export.cpp",
+        "native/resources/reports/summary.md.in",
+        "native/tests/migration/test_t45.cpp",
+        "native/src/cli/recording.cpp",
+        "native/src/cli/recording_main.cpp",
+        "native/tests/cli/recording.cmake"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "historical_replay",
+      "owner_tasks": [
+        "T44"
+      ],
+      "contract": "versions 1/2/3 and honest checked-replay execution identity",
+      "source_authority": [
+        "src/bike_sim/cli/replay.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/replay/input.hpp",
+        "native/src/replay/input.cpp",
+        "native/src/replay/session.hpp",
+        "native/src/replay/session.cpp",
+        "native/src/replay/legacy.cpp",
+        "native/src/replay/playback.cpp",
+        "native/tests/migration/test_t44.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "native_viewer",
+      "owner_tasks": [
+        "T48",
+        "T49"
+      ],
+      "contract": "independent render owner, initial frame, HUD/camera/input/pacing",
+      "source_authority": [
+        "src/bike_sim/cli/ride.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/viewer/render_owner.hpp",
+        "native/src/viewer/render_owner.cpp",
+        "native/src/viewer/glfw_context.hpp",
+        "native/src/viewer/glfw_context.cpp",
+        "native/src/viewer/snapshot.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/tests/migration/test_t48.cpp",
+        "native/src/viewer/input.hpp",
+        "native/src/viewer/input.cpp",
+        "native/src/viewer/hud.cpp",
+        "native/src/viewer/camera.cpp",
+        "native/src/viewer/pacer.hpp",
+        "native/src/viewer/pacer.cpp",
+        "native/src/viewer/ride.cpp",
+        "native/src/viewer/research.cpp",
+        "native/src/viewer/replay.cpp",
+        "native/tests/migration/test_t49.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "plots_reports",
+      "owner_tasks": [
+        "T50"
+      ],
+      "contract": "native raster and offline HTML plots without Python subprocesses",
+      "source_authority": [
+        "src/bike_sim/cli/research.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/viz/plot.hpp",
+        "native/src/viz/plot.cpp",
+        "native/src/viz/svg.cpp",
+        "native/src/viz/png.cpp",
+        "native/src/viz/html.cpp",
+        "native/src/viz/tables.cpp",
+        "native/resources/plotly/",
+        "native/tests/migration/test_t50.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "batch_seed_sweeps",
+      "owner_tasks": [
+        "T51"
+      ],
+      "contract": "deterministic experiment products, process exits and evidence",
+      "source_authority": [
+        "src/bike_sim/cli/batch.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/batch/plan.hpp",
+        "native/src/batch/plan.cpp",
+        "native/src/batch/executor.cpp",
+        "native/src/batch/summary.cpp",
+        "native/src/cli/batch.cpp",
+        "native/src/tools/research_sweep_main.cpp",
+        "native/tests/migration/test_t51.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "all_assertions",
+      "owner_tasks": [
+        "T52",
+        "T53",
+        "T57"
+      ],
+      "contract": "collected source tests and helpers fully mapped to native evidence",
+      "source_authority": [
+        "tests/reference/conftest.py"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "migration/test-port-map.json",
+        "native/tests/support/property_cases.hpp",
+        "native/tests/integration/test_rider_welds.cpp",
+        "native/tests/reference/project_test_constraint_mode_search.cpp",
+        "native/tests/reference/test_acceptance_interval_capture.cpp",
+        "native/tests/reference/test_alpine_track.cpp",
+        "native/tests/reference/test_articulated_config.cpp",
+        "native/tests/reference/test_assist_controller.cpp",
+        "native/tests/reference/test_attachment_budget.cpp",
+        "native/tests/reference/test_attachment_wrench.cpp",
+        "native/tests/reference/test_balance_monitor.cpp",
+        "native/tests/reference/test_cadence_shifter.cpp",
+        "native/tests/reference/test_closed_form_rider.cpp",
+        "native/tests/reference/test_contact_safety.cpp",
+        "native/tests/reference/test_control_clock.cpp",
+        "native/tests/reference/test_coupled_rider_task.cpp",
+        "native/tests/reference/test_crank_split.cpp",
+        "native/tests/reference/test_distributed_tire_reference.cpp",
+        "native/tests/reference/test_divergence_horizon.cpp",
+        "native/tests/reference/test_drivetrain_policy_clone.cpp",
+        "native/tests/reference/test_energy_ledger.cpp",
+        "native/tests/reference/test_episode_compare.cpp",
+        "native/tests/reference/test_frozen_force_arrays.cpp",
+        "native/tests/reference/test_golden_episode.cpp",
+        "native/tests/reference/test_golden_episode_v2.cpp",
+        "native/tests/reference/test_hud_columns.cpp",
+        "native/tests/reference/test_joint_strength.cpp",
+        "native/tests/reference/test_lean_limit.cpp",
+        "native/tests/reference/test_leg_loop.cpp",
+        "native/tests/reference/test_monitor_strictness.cpp",
+        "native/tests/reference/test_motor_freewheel_topology.cpp",
+        "native/tests/reference/test_motor_profile.cpp",
+        "native/tests/reference/test_native_attachment_wrench.cpp",
+        "native/tests/reference/test_native_benchmark.cpp",
+        "native/tests/reference/test_native_brake_resistance.cpp",
+        "native/tests/reference/test_native_clock_contracts.cpp",
+        "native/tests/reference/test_native_cruise.cpp",
+        "native/tests/reference/test_native_distributed_stands.cpp",
+        "native/tests/reference/test_native_distributed_tire.cpp",
+        "native/tests/reference/test_native_drive_policies.cpp",
+        "native/tests/reference/test_native_drivetrain.cpp",
+        "native/tests/reference/test_native_encode_columns.cpp",
+        "native/tests/reference/test_native_numeric_completion.cpp",
+        "native/tests/reference/test_native_numeric_domains.cpp",
+        "native/tests/reference/test_native_pneumatic_brush.cpp",
+        "native/tests/reference/test_native_pneumatic_carcass.cpp",
+        "native/tests/reference/test_native_pneumatic_geometry.cpp",
+        "native/tests/reference/test_native_pneumatic_model.cpp",
+        "native/tests/reference/test_native_pneumatic_tire.cpp",
+        "native/tests/reference/test_native_pneumatic_wire.cpp",
+        "native/tests/reference/test_native_rider_contact_math.cpp",
+        "native/tests/reference/test_native_rider_contacts.cpp",
+        "native/tests/reference/test_native_rider_forces.cpp",
+        "native/tests/reference/test_native_rider_intent.cpp",
+        "native/tests/reference/test_native_spindle_controller.cpp",
+        "native/tests/reference/test_native_static_brake.cpp",
+        "native/tests/reference/test_native_stepper.cpp",
+        "native/tests/reference/test_native_suspension.cpp",
+        "native/tests/reference/test_native_tire.cpp",
+        "native/tests/reference/test_numba_kernels.cpp",
+        "native/tests/reference/test_pedal_waveform.cpp",
+        "native/tests/reference/test_pedaling_policy.cpp",
+        "native/tests/reference/test_period_buffer.cpp",
+        "native/tests/reference/test_pinned_topology.cpp",
+        "native/tests/reference/test_planar_arms.cpp",
+        "native/tests/reference/test_playback_clock.cpp",
+        "native/tests/reference/test_pneumatic_tire_config.cpp",
+        "native/tests/reference/test_pneumatic_tire_forces.cpp",
+        "native/tests/reference/test_realistic_pedelec_acceptance.cpp",
+        "native/tests/reference/test_recorder_columns.cpp",
+        "native/tests/reference/test_reference_monitor.cpp",
+        "native/tests/reference/test_ride_backend_cli.cpp",
+        "native/tests/reference/test_ride_plots_html_markers.cpp",
+        "native/tests/reference/test_rider_allocation.cpp",
+        "native/tests/reference/test_rider_dynamics.cpp",
+        "native/tests/reference/test_rider_information_boundary.cpp",
+        "native/tests/reference/test_savage_track_surface.cpp",
+        "native/tests/reference/test_seated_climb_surge.cpp",
+        "native/tests/reference/test_seated_pedaling_cycle.cpp",
+        "native/tests/reference/test_seated_posture_program.cpp",
+        "native/tests/reference/test_seated_topology.cpp",
+        "native/tests/reference/test_sensor_noise.cpp",
+        "native/tests/reference/test_system_momentum_drive.cpp",
+        "native/tests/reference/test_terrain_placement_regression.cpp",
+        "native/tests/reference/test_tyre_road_profile.cpp",
+        "native/tests/reference/test_welded_profile_config.cpp",
+        "native/tests/support/process_fixture.cpp",
+        "native/tests/integration/test_async_close.cpp",
+        "native/tests/integration/test_batch.cpp",
+        "native/tests/integration/test_replay_playback.cpp",
+        "native/tests/reference/test_equilibrium_state_file.cpp",
+        "native/tests/reference/test_frontend_windows.cpp",
+        "native/tests/reference/test_measure_realtime_report.cpp",
+        "native/tests/reference/test_native_atomicity.cpp",
+        "native/tests/reference/test_native_check_tools.cpp",
+        "native/tests/reference/test_native_contract_checks.cpp",
+        "native/tests/reference/test_native_engine_errors.cpp",
+        "native/tests/reference/test_native_input_contracts.cpp",
+        "native/tests/reference/test_native_loader.cpp",
+        "native/tests/reference/test_native_recording_lifecycle.cpp",
+        "native/tests/reference/test_native_recording_retention.cpp",
+        "native/tests/reference/test_native_replay_recording_v3.cpp",
+        "native/tests/reference/test_native_replay_session.cpp",
+        "native/tests/reference/test_native_research_capture.cpp",
+        "native/tests/reference/test_native_research_environment.cpp",
+        "native/tests/reference/test_native_research_failures.cpp",
+        "native/tests/reference/test_native_research_frontend.cpp",
+        "native/tests/reference/test_native_research_policy.cpp",
+        "native/tests/reference/test_native_research_programs.cpp",
+        "native/tests/reference/test_native_research_recording.cpp",
+        "native/tests/reference/test_native_research_sensors.cpp",
+        "native/tests/reference/test_native_ride_frontend.cpp",
+        "native/tests/reference/test_native_runtime_accounting.cpp",
+        "native/tests/reference/test_native_runtime_bootstrap.cpp",
+        "native/tests/reference/test_native_runtime_commands.cpp",
+        "native/tests/reference/test_native_runtime_config.cpp",
+        "native/tests/reference/test_native_runtime_ownership.cpp",
+        "native/tests/reference/test_native_runtime_performance_contract.cpp",
+        "native/tests/reference/test_native_runtime_rollout.cpp",
+        "native/tests/reference/test_native_runtime_step.cpp",
+        "native/tests/reference/test_native_state_bundle.cpp",
+        "native/tests/reference/test_native_state_fuzz.cpp",
+        "native/tests/reference/test_native_state_restore.cpp",
+        "native/tests/reference/test_native_view_contracts.cpp",
+        "native/tests/reference/test_native_viewer_snapshot.cpp",
+        "native/tests/reference/test_pedelec_replay_contract.cpp",
+        "native/tests/reference/test_physical_view.cpp",
+        "native/tests/reference/test_pinned_measurement.cpp",
+        "native/tests/reference/test_pneumatic_physical_runtime.cpp",
+        "native/tests/reference/test_realtime_deferred_checks.cpp",
+        "native/tests/reference/test_realtime_gate.cpp",
+        "native/tests/reference/test_realtime_measurement.cpp",
+        "native/tests/reference/test_recording_analysis.cpp",
+        "native/tests/reference/test_recording_analyst_cli.cpp",
+        "native/tests/reference/test_recording_capture.cpp",
+        "native/tests/reference/test_recording_catalog.cpp",
+        "native/tests/reference/test_recording_cli.cpp",
+        "native/tests/reference/test_recording_publication.cpp",
+        "native/tests/reference/test_recording_report.cpp",
+        "native/tests/reference/test_recording_storage.cpp",
+        "native/tests/reference/test_recording_values.cpp",
+        "native/tests/reference/test_replay_manifest_v2.cpp",
+        "native/tests/reference/test_replay_recording_v3.cpp",
+        "native/tests/reference/test_replay_session.cpp",
+        "native/tests/reference/test_research_capture.cpp",
+        "native/tests/reference/test_research_frontend.cpp",
+        "native/tests/reference/test_research_recording_lifecycle.cpp",
+        "native/tests/reference/test_research_sweep.cpp",
+        "native/tests/reference/test_runtime_single_path.cpp",
+        "native/src/tools/test_runner_main.cpp",
+        "native/src/tools/coverage_main.cpp",
+        "native/cmake/Sanitizers.cmake",
+        "native/cmake/Coverage.cmake",
+        "tools/run_tests.sh",
+        "native/tests/support/provenance.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "validation_tools",
+      "owner_tasks": [
+        "T54",
+        "T55"
+      ],
+      "contract": "native calibration, diagnostics and benchmark tooling",
+      "source_authority": [
+        "tools/run_tests.sh"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/validation/rigs.cpp",
+        "native/src/validation/tire.cpp",
+        "native/src/validation/rider.cpp",
+        "native/src/validation/drivetrain.cpp",
+        "native/src/validation/acceptance.cpp",
+        "native/src/validation/evidence.cpp",
+        "native/src/tools/validate_main.cpp",
+        "native/src/validation/acceptance.hpp",
+        "native/tests/migration/test_t54.cpp",
+        "native/src/tools/golden_episode_main.cpp",
+        "native/src/tools/episode_compare_main.cpp",
+        "native/src/tools/divergence_horizon_main.cpp",
+        "native/src/tools/measure_realtime_main.cpp",
+        "native/src/tools/step_profile_main.cpp",
+        "native/src/tools/diag_main.cpp",
+        "native/src/tools/finalize_bench_main.cpp",
+        "native/src/tools/benchmark_main.cpp",
+        "native/src/tools/state_format.hpp",
+        "native/src/tools/state_format.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "native_preflight",
+      "owner_tasks": [
+        "T56",
+        "T57"
+      ],
+      "contract": "both native and full shared preflight safety/check classes",
+      "source_authority": [
+        "tools/run_tests.sh"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/src/tools/checks_main.cpp",
+        "native/src/tools/check_context.cpp",
+        "native/src/tools/check_frontends.cpp",
+        "native/src/tools/check_contracts.cpp",
+        "native/src/tools/check_reports.cpp",
+        "native/cmake/Checks.cmake",
+        "tools/native_common.sh",
+        "tools/run_native_checks.sh",
+        "native/src/tools/python_audit_main.cpp",
+        "migration/no-python-policy.json",
+        "native/src/tools/test_runner_main.cpp",
+        "native/src/tools/coverage_main.cpp",
+        "native/cmake/Sanitizers.cmake",
+        "native/cmake/Coverage.cmake",
+        "tools/run_tests.sh",
+        "native/tests/support/provenance.cpp"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "supported_platform_release",
+      "owner_tasks": [
+        "T58",
+        "T59",
+        "T60"
+      ],
+      "contract": "macOS and Linux headless native distribution and active docs",
+      "source_authority": [
+        "native/CMakeLists.txt"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "native/cmake/PlatformLinux.cmake",
+        "native/cmake/PlatformApple.cmake",
+        "native/src/numeric/provider_linux.cpp",
+        "packaging/platform-matrix.json",
+        "native/tests/platform/",
+        "packaging/CMakeLists.txt",
+        "packaging/manifest.schema.json",
+        "packaging/install.sh",
+        "native/src/tools/package_verify_main.cpp",
+        "native/src/tools/install_main.cpp",
+        "docs/installation.md",
+        "README.md",
+        "AGENTS.md",
+        "docs/native-workflow.md",
+        "docs/python-to-cpp-compatibility.md",
+        "migration/cli-contracts.json",
+        "migration/command-map.json"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    },
+    {
+      "id": "zero_python_closure",
+      "owner_tasks": [
+        "T61",
+        "T62",
+        "T63"
+      ],
+      "contract": "runtime/developer/source/package closure after reviewed deletion",
+      "source_authority": [
+        "pyproject.toml"
+      ],
+      "resolved_input_capture": "T01 plus source-owning task; actual source-supported combinations must be expanded into separate rows",
+      "comparison_classes": "Assigned per oracle using B/N/S/Q/P; no global tolerance",
+      "native_targets": [
+        "migration/release-evidence.json",
+        "migration/capability-matrix.json",
+        "migration/compatibility-approvals.json",
+        "docs/releases/python-free-qualification.md",
+        "native/src/tools/python_audit_main.cpp",
+        "migration/no-python-policy.json",
+        "native/tests/package/no_python.cmake",
+        "native/tests/package/audit_negative_controls.cmake",
+        "migration/python-removal.json",
+        "migration/test-port-map.json",
+        "migration/final-closure.json",
+        "native/CMakeLists.txt",
+        "tools/run_tests.sh",
+        "README.md"
+      ],
+      "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
+      "status": "planned",
+      "evidence": []
+    }
+  ]
+}

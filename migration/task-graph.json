@@ -1,0 +1,2102 @@
+{
+  "tasks": [
+    {
+      "id": "T00",
+      "title": "Freeze the actual checkout and a complete removal ledger",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-00-foundation.md",
+      "deps": [],
+      "targets": [
+        "migration/source-manifest.json",
+        "migration/python-removal.json",
+        "migration/test-port-map.json",
+        "migration/baseline.md"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T01",
+      "title": "Capture reference behavior before deleting any oracle",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-00-foundation.md",
+      "deps": [
+        "T00"
+      ],
+      "targets": [
+        "migration/oracle-manifest.json",
+        "migration/cli-contracts.json",
+        "migration/config-contracts.json",
+        "tests/fixtures/migration/",
+        "tools/migration/capture_reference.py"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T02",
+      "title": "Introduce a standalone contract-test harness and binary fixtures",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-00-foundation.md",
+      "deps": [
+        "T00",
+        "T01"
+      ],
+      "targets": [
+        "native/CMakeLists.txt",
+        "native/tests/support/migration_test.hpp",
+        "native/tests/support/migration_test.cpp",
+        "native/tests/migration/CMakeLists.txt",
+        "native/tests/migration/test_t02.cpp"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T03",
+      "title": "Build the application without finding Python or wheel directories",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-00-foundation.md",
+      "deps": [
+        "T00",
+        "T02"
+      ],
+      "targets": [
+        "CMakeLists.txt",
+        "native/CMakeLists.txt",
+        "native/cmake/Dependencies.cmake",
+        "native/cmake/CompilerPolicy.cmake",
+        "native/cmake/Provenance.cmake",
+        "native/CMakePresets.json",
+        "native/dependencies.lock.json"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/__init__.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T04",
+      "title": "Preserve numerical providers and fatal-engine containment",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-00-foundation.md",
+      "deps": [
+        "T03"
+      ],
+      "targets": [
+        "native/src/engine_call.cpp",
+        "native/src/engine_call.hpp",
+        "native/src/engine_abi_312.hpp",
+        "native/src/cblas_abi.hpp",
+        "native/src/numeric_numpy.hpp",
+        "native/src/numeric_sincos.hpp",
+        "native/src/engine_identity.hpp",
+        "native/tests/migration/test_t04.cpp"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T05",
+      "title": "Create strict lossless data and JSON boundaries",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-00-foundation.md",
+      "deps": [
+        "T02",
+        "T03"
+      ],
+      "targets": [
+        "native/src/io/value.hpp",
+        "native/src/io/json.hpp",
+        "native/src/io/json.cpp",
+        "native/src/io/hash.hpp",
+        "native/src/io/hash.cpp",
+        "native/tests/migration/test_t05.cpp",
+        "native/tests/support/migration_test.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/json_codec.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T06",
+      "title": "Introduce filesystem, subprocess and provenance primitives",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-00-foundation.md",
+      "deps": [
+        "T03",
+        "T05"
+      ],
+      "targets": [
+        "native/src/platform/files.hpp",
+        "native/src/platform/files.cpp",
+        "native/src/platform/process.hpp",
+        "native/src/platform/process.cpp",
+        "native/src/platform/signals.hpp",
+        "native/src/platform/signals.cpp",
+        "native/src/platform/provenance.hpp",
+        "native/src/platform/provenance.cpp",
+        "native/tests/migration/test_t06.cpp"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T07",
+      "title": "Separate typed writer construction from nanobind parsing",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-01-core-boundaries.md",
+      "deps": [
+        "T03",
+        "T04",
+        "T05"
+      ],
+      "targets": [
+        "native/src/writer_config.hpp",
+        "native/src/writer_config.cpp",
+        "native/src/config.hpp",
+        "native/src/config_types.hpp",
+        "native/src/stepper.hpp",
+        "native/src/stepper.cpp",
+        "native/src/binding.cpp",
+        "native/tests/migration/test_t07.cpp"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T08",
+      "title": "Remove binding types from rider and drivetrain state wires",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-01-core-boundaries.md",
+      "deps": [
+        "T07"
+      ],
+      "targets": [
+        "native/src/rider/attachment_wire.hpp",
+        "native/src/rider/intent_wire.hpp",
+        "native/src/rider/spindle_wire.hpp",
+        "native/src/rider/rider_contact_binding.hpp",
+        "native/src/drivetrain/drive_binding.hpp",
+        "native/src/rider/state_codec.hpp",
+        "native/src/rider/state_codec.cpp",
+        "native/src/drivetrain/state_codec.hpp",
+        "native/src/drivetrain/state_codec.cpp",
+        "native/tests/migration/test_t08.cpp"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T09",
+      "title": "Extract owned ride runtime and bootstrap into a pure C++ API",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-01-core-boundaries.md",
+      "deps": [
+        "T07",
+        "T08"
+      ],
+      "targets": [
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/runtime_binding.hpp",
+        "native/src/runtime/runtime_binding.cpp",
+        "native/src/runtime/config.hpp",
+        "native/src/runtime/bootstrap.hpp",
+        "native/src/runtime/bootstrap.cpp",
+        "native/src/runtime/bootstrap_io.hpp",
+        "native/src/runtime/bootstrap_io.cpp",
+        "native/src/stepper.hpp",
+        "native/src/stepper.cpp",
+        "native/tests/migration/test_t09.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/runtime.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T10",
+      "title": "Make the research runtime consume only native owned records",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-01-core-boundaries.md",
+      "deps": [
+        "T09"
+      ],
+      "targets": [
+        "native/src/runtime/research.hpp",
+        "native/src/runtime/research.cpp",
+        "native/src/runtime/research_binding.cpp",
+        "native/src/runtime/research_binding.hpp",
+        "native/src/runtime/research_io.hpp",
+        "native/src/runtime/research_io.cpp",
+        "native/tests/migration/test_t10.cpp"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T11",
+      "title": "Separate native samples and column pieces from their Python boxers",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-01-core-boundaries.md",
+      "deps": [
+        "T09",
+        "T10"
+      ],
+      "targets": [
+        "native/src/runtime/encode.hpp",
+        "native/src/runtime/encode.cpp",
+        "native/src/runtime/encode_binding.cpp",
+        "native/src/runtime/samples_binding.cpp",
+        "native/src/runtime/provenance.hpp",
+        "native/src/runtime/provenance.cpp",
+        "native/tests/migration/test_t11.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/ride/period_buffer.py",
+        "src/bike_sim/sim/ride/physical_samples.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T12",
+      "title": "Port configuration and parameter schemas without changing defaults",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-02-configuration-models.md",
+      "deps": [
+        "T05",
+        "T07"
+      ],
+      "targets": [
+        "native/src/configuration/model_config.hpp",
+        "native/src/configuration/physical_config.hpp",
+        "native/src/configuration/rider_spec.hpp",
+        "native/src/configuration/suspension_spec.hpp",
+        "native/src/configuration/validate.cpp",
+        "native/src/configuration/schema.cpp",
+        "native/tests/migration/test_t12.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/schema.py",
+        "src/bike_sim/physics/__init__.py",
+        "src/bike_sim/physics/checks.py",
+        "src/bike_sim/physics/domain_validation.py",
+        "src/bike_sim/physics/joint_strength.py",
+        "src/bike_sim/physics/model_config.py",
+        "src/bike_sim/physics/physical_config.py",
+        "src/bike_sim/physics/rider_envelope.py",
+        "src/bike_sim/physics/rider_posture.py",
+        "src/bike_sim/physics/rider_program.py",
+        "src/bike_sim/physics/suspension_config.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T13",
+      "title": "Port TOML/JSON loading, merge precedence and asset resolution",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-02-configuration-models.md",
+      "deps": [
+        "T12",
+        "T06"
+      ],
+      "targets": [
+        "native/src/configuration/load.hpp",
+        "native/src/configuration/load.cpp",
+        "native/src/configuration/paths.cpp",
+        "native/src/configuration/profile_writer.cpp",
+        "native/tests/migration/test_t13.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/physics/plant_profile.py",
+        "src/bike_sim/physics/resolution.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T14",
+      "title": "Port geometry and Horst-link kinematics",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-02-configuration-models.md",
+      "deps": [
+        "T12"
+      ],
+      "targets": [
+        "native/src/geometry/specs.hpp",
+        "native/src/geometry/hardpoints.cpp",
+        "native/src/geometry/cockpit.cpp",
+        "native/src/geometry/validation.cpp",
+        "native/src/kinematics/linkage_math.hpp",
+        "native/src/kinematics/linkage_math.cpp",
+        "native/src/kinematics/solver.hpp",
+        "native/src/kinematics/solver.cpp",
+        "native/src/kinematics/curves.cpp",
+        "native/tests/migration/test_t14.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/geometry/__init__.py",
+        "src/bike_sim/geometry/cockpit.py",
+        "src/bike_sim/geometry/hardpoints.py",
+        "src/bike_sim/geometry/specs.py",
+        "src/bike_sim/geometry/validation.py",
+        "src/bike_sim/kinematics/__init__.py",
+        "src/bike_sim/kinematics/curves.py",
+        "src/bike_sim/kinematics/linkage_math.py",
+        "src/bike_sim/kinematics/solver.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T15",
+      "title": "Port mass properties, suspension setup and rider geometry",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-02-configuration-models.md",
+      "deps": [
+        "T14",
+        "T12"
+      ],
+      "targets": [
+        "native/src/model/mass.hpp",
+        "native/src/model/mass.cpp",
+        "native/src/model/rider_geometry.hpp",
+        "native/src/model/rider_geometry.cpp",
+        "native/src/model/suspension_setup.hpp",
+        "native/src/model/suspension_setup.cpp",
+        "native/tests/migration/test_t15.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/physics/air_spring.py",
+        "src/bike_sim/physics/coil_shock.py",
+        "src/bike_sim/physics/component_masses.py",
+        "src/bike_sim/physics/damper.py",
+        "src/bike_sim/physics/inertia.py",
+        "src/bike_sim/physics/mass.py",
+        "src/bike_sim/physics/rider.py",
+        "src/bike_sim/physics/rider_segments.py",
+        "src/bike_sim/physics/seated_climb.py",
+        "src/bike_sim/physics/tuning.py",
+        "src/bike_sim/sim/ride/mass_properties.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T16",
+      "title": "Generate and compile physical MJCF entirely in C++",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-02-configuration-models.md",
+      "deps": [
+        "T13",
+        "T14",
+        "T15",
+        "T04"
+      ],
+      "targets": [
+        "native/src/model/builder.hpp",
+        "native/src/model/builder.cpp",
+        "native/src/model/xml_writer.cpp",
+        "native/src/model/physical_topology.cpp",
+        "native/src/model/articulated_rider.cpp",
+        "native/src/model/drivetrain.cpp",
+        "native/src/model/linkage.cpp",
+        "native/src/model/terrain.cpp",
+        "native/tests/migration/test_t16.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/mujoco/_xml_format.py",
+        "src/bike_sim/mujoco/actuators.py",
+        "src/bike_sim/mujoco/articulated_rider.py",
+        "src/bike_sim/mujoco/drivetrain.py",
+        "src/bike_sim/mujoco/linkage.py",
+        "src/bike_sim/mujoco/physical_topology.py",
+        "src/bike_sim/mujoco/rear_linkage.py",
+        "src/bike_sim/mujoco/steering_fork.py",
+        "src/bike_sim/mujoco/terrain.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T17",
+      "title": "Port standard, stand, playground and legacy MJCF exports",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-02-configuration-models.md",
+      "deps": [
+        "T16"
+      ],
+      "targets": [
+        "native/src/model/legacy_topology.cpp",
+        "native/src/model/export.hpp",
+        "native/src/model/export.cpp",
+        "native/src/model/assets.cpp",
+        "native/src/model/environment.cpp",
+        "native/src/model/sensors.cpp",
+        "native/tests/migration/test_t17.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/mujoco/__init__.py",
+        "src/bike_sim/mujoco/assets.py",
+        "src/bike_sim/mujoco/builder.py",
+        "src/bike_sim/mujoco/environment.py",
+        "src/bike_sim/mujoco/exporter.py",
+        "src/bike_sim/mujoco/frame.py",
+        "src/bike_sim/mujoco/reference_rider.py",
+        "src/bike_sim/mujoco/rider.py",
+        "src/bike_sim/mujoco/sensors.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T18",
+      "title": "Resolve model names into typed native writer/runtime configuration",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-02-configuration-models.md",
+      "deps": [
+        "T07",
+        "T08",
+        "T13",
+        "T16"
+      ],
+      "targets": [
+        "native/src/model/mapping.hpp",
+        "native/src/model/mapping.cpp",
+        "native/src/runtime/project_config.hpp",
+        "native/src/runtime/project_config.cpp",
+        "native/tests/migration/test_t18.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/config.py",
+        "src/bike_sim/sim/ride/physical_mapping.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T19",
+      "title": "Reproduce seeded random streams and distribution transforms",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-03-terrain-initialization.md",
+      "deps": [
+        "T05",
+        "T13"
+      ],
+      "targets": [
+        "native/src/random/numpy_compat.hpp",
+        "native/src/random/numpy_compat.cpp",
+        "native/src/random/seed_sequence.cpp",
+        "native/src/random/distributions.cpp",
+        "native/src/random/noise_tape.cpp",
+        "native/tests/migration/test_t19.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/research/rider_random.py",
+        "src/bike_sim/sim/research/sensor_noise.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T20",
+      "title": "Port terrain primitives, profiles, surfaces and heightfields",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-03-terrain-initialization.md",
+      "deps": [
+        "T14",
+        "T19"
+      ],
+      "targets": [
+        "native/src/terrain/types.hpp",
+        "native/src/terrain/profile.cpp",
+        "native/src/terrain/obstacles.cpp",
+        "native/src/terrain/surface.cpp",
+        "native/src/terrain/heightfield.cpp",
+        "native/src/terrain/contact_safety.cpp",
+        "native/src/terrain/wheelpath.cpp",
+        "native/src/terrain/profile.hpp",
+        "native/tests/migration/test_t20.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/terrain/contact_profile.py",
+        "src/bike_sim/terrain/contact_safety.py",
+        "src/bike_sim/terrain/grade.py",
+        "src/bike_sim/terrain/heightfield.py",
+        "src/bike_sim/terrain/profile.py",
+        "src/bike_sim/terrain/profile_distance.py",
+        "src/bike_sim/terrain/road.py",
+        "src/bike_sim/terrain/surface.py",
+        "src/bike_sim/terrain/wheelpath.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T21",
+      "title": "Port all track generators, presets and track-file round trips",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-03-terrain-initialization.md",
+      "deps": [
+        "T20",
+        "T13"
+      ],
+      "targets": [
+        "native/src/terrain/generator.cpp",
+        "native/src/terrain/road.cpp",
+        "native/src/terrain/alpine.cpp",
+        "native/src/terrain/placement.cpp",
+        "native/src/terrain/trackfile.hpp",
+        "native/src/terrain/trackfile.cpp",
+        "native/src/terrain/presets.cpp",
+        "native/tests/migration/test_t21.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/terrain/__init__.py",
+        "src/bike_sim/terrain/alpine.py",
+        "src/bike_sim/terrain/generator.py",
+        "src/bike_sim/terrain/obstacles.py",
+        "src/bike_sim/terrain/placement.py",
+        "src/bike_sim/terrain/presets.py",
+        "src/bike_sim/terrain/research.py",
+        "src/bike_sim/terrain/trackfile.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T22",
+      "title": "Port physical settling without a reference RideSimulation",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-03-terrain-initialization.md",
+      "deps": [
+        "T18",
+        "T20",
+        "T09"
+      ],
+      "targets": [
+        "native/src/initialization/equilibrium.hpp",
+        "native/src/initialization/equilibrium.cpp",
+        "native/src/initialization/initial_pose.cpp",
+        "native/src/initialization/settle_contacts.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/tests/migration/test_t22.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/ride/physical_equilibrium.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T23",
+      "title": "Port bounded least squares, equilibrium refinement and sag fitting",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-03-terrain-initialization.md",
+      "deps": [
+        "T22",
+        "T15"
+      ],
+      "targets": [
+        "native/src/numerics/least_squares.hpp",
+        "native/src/numerics/least_squares.cpp",
+        "native/src/initialization/refine.cpp",
+        "native/src/initialization/sag_fit.cpp",
+        "native/tests/migration/test_t23.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/equilibrium.py",
+        "src/bike_sim/sim/ride/equilibrium_refine.py",
+        "src/bike_sim/sim/ride/sag_fit.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T24",
+      "title": "Replace Python equilibrium cache/state files and retain old readers",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-03-terrain-initialization.md",
+      "deps": [
+        "T22",
+        "T23",
+        "T06"
+      ],
+      "targets": [
+        "native/src/initialization/state_file.hpp",
+        "native/src/initialization/state_file.cpp",
+        "native/src/initialization/equilibrium_cache.cpp",
+        "native/src/io/npy.hpp",
+        "native/src/io/npy.cpp",
+        "native/src/io/npz.cpp",
+        "native/tests/migration/test_t24.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/artifact.py",
+        "src/bike_sim/sim/ride/equilibrium_cache.py",
+        "src/bike_sim/sim/ride/initial_state.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T25",
+      "title": "Construct standalone native rides from user configuration",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-03-terrain-initialization.md",
+      "deps": [
+        "T13",
+        "T16",
+        "T18",
+        "T21",
+        "T24"
+      ],
+      "targets": [
+        "native/src/app/prepare.hpp",
+        "native/src/app/prepare.cpp",
+        "native/src/app/physical_session.hpp",
+        "native/src/app/physical_session.cpp",
+        "native/src/app/setup.hpp",
+        "native/tests/migration/test_t25.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/setup.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T26",
+      "title": "Close parity for already-ported kernels and retire their Python mirrors",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-04-remaining-physics.md",
+      "deps": [
+        "T11",
+        "T25"
+      ],
+      "targets": [
+        "native/tests/migration/kernel_parity.cpp",
+        "native/tests/migration/kernel_properties.cpp",
+        "migration/kernel-reuse-map.json"
+      ],
+      "owned_sources": [
+        "src/bike_sim/physics/attachment_budget.py",
+        "src/bike_sim/physics/battery.py",
+        "src/bike_sim/physics/distributed_tire.py",
+        "src/bike_sim/physics/drivetrain.py",
+        "src/bike_sim/physics/energy_ledger.py",
+        "src/bike_sim/physics/external_resistance.py",
+        "src/bike_sim/physics/freehub.py",
+        "src/bike_sim/physics/grip_release.py",
+        "src/bike_sim/physics/motor.py",
+        "src/bike_sim/physics/motor_profile.py",
+        "src/bike_sim/physics/pedaling.py",
+        "src/bike_sim/physics/rider_activation.py",
+        "src/bike_sim/physics/shifting.py",
+        "src/bike_sim/physics/stops.py",
+        "src/bike_sim/physics/tire.py",
+        "src/bike_sim/sim/ride/_step_oracle.py",
+        "src/bike_sim/sim/ride/attachment_wrench.py",
+        "src/bike_sim/sim/ride/balance_monitor.py",
+        "src/bike_sim/sim/ride/braking.py",
+        "src/bike_sim/sim/ride/constraint_forces.py",
+        "src/bike_sim/sim/ride/contact_filter.py",
+        "src/bike_sim/sim/ride/contact_state.py",
+        "src/bike_sim/sim/ride/contacts.py",
+        "src/bike_sim/sim/ride/control_clock.py",
+        "src/bike_sim/sim/ride/crank_split.py",
+        "src/bike_sim/sim/ride/cruise.py",
+        "src/bike_sim/sim/ride/distributed_tire_forces.py",
+        "src/bike_sim/sim/ride/drivetrain_forces.py",
+        "src/bike_sim/sim/ride/force_accumulator.py",
+        "src/bike_sim/sim/ride/geometric_freehub.py",
+        "src/bike_sim/sim/ride/ideal_freehub.py",
+        "src/bike_sim/sim/ride/lean_limit.py",
+        "src/bike_sim/sim/ride/pedal_recovery.py",
+        "src/bike_sim/sim/ride/physical_crash.py",
+        "src/bike_sim/sim/ride/physical_driver.py",
+        "src/bike_sim/sim/ride/physical_energy.py",
+        "src/bike_sim/sim/ride/physical_observations.py",
+        "src/bike_sim/sim/ride/physical_resistance.py",
+        "src/bike_sim/sim/ride/physical_runtime.py",
+        "src/bike_sim/sim/ride/pneumatic_tire_forces.py",
+        "src/bike_sim/sim/ride/reference_monitor.py",
+        "src/bike_sim/sim/ride/rider_contacts.py",
+        "src/bike_sim/sim/ride/rider_effort.py",
+        "src/bike_sim/sim/ride/rider_forces.py",
+        "src/bike_sim/sim/ride/rider_intent.py",
+        "src/bike_sim/sim/ride/rider_state.py",
+        "src/bike_sim/sim/ride/rim_events.py",
+        "src/bike_sim/sim/ride/static_braking.py",
+        "src/bike_sim/sim/ride/termination.py",
+        "src/bike_sim/sim/ride/tyre/__init__.py",
+        "src/bike_sim/sim/ride/tyre/applier.py",
+        "src/bike_sim/sim/ride/tyre/brush.py",
+        "src/bike_sim/sim/ride/tyre/carcass.py",
+        "src/bike_sim/sim/ride/tyre/geometry.py",
+        "src/bike_sim/sim/ride/tyre/model.py",
+        "src/bike_sim/sim/ride/tyre/profile.py",
+        "src/bike_sim/sim/ride/virtual_rider.py",
+        "src/bike_sim/sim/ride/wheel_kinematics.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T27",
+      "title": "Implement remaining drivetrain capabilities",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-04-remaining-physics.md",
+      "deps": [
+        "T26",
+        "T18"
+      ],
+      "targets": [
+        "native/src/drivetrain/elastic_chain.cpp",
+        "native/src/drivetrain/motor_clutch.cpp",
+        "native/src/drivetrain/transmission.cpp",
+        "native/src/writers/drivetrain.cpp",
+        "native/src/runtime/project_config.cpp",
+        "native/tests/migration/test_t27.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/physics/chain.py",
+        "src/bike_sim/physics/transmission_constraint.py",
+        "src/bike_sim/sim/ride/drivetrain.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T28",
+      "title": "Port constrained allocation, linear feasibility and calibration solvers",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-04-remaining-physics.md",
+      "deps": [
+        "T23",
+        "T15"
+      ],
+      "targets": [
+        "native/src/numerics/slsqp.hpp",
+        "native/src/numerics/slsqp.cpp",
+        "native/src/numerics/linear_feasibility.cpp",
+        "native/src/numerics/nnls.cpp",
+        "native/src/rider/allocation.hpp",
+        "native/src/rider/allocation.cpp",
+        "native/tests/migration/test_t28.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/physics/rider_allocation.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T29",
+      "title": "Port remaining rider dynamics and coupled task controllers",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-04-remaining-physics.md",
+      "deps": [
+        "T28",
+        "T26"
+      ],
+      "targets": [
+        "native/src/rider/constraint_dynamics.hpp",
+        "native/src/rider/constraint_dynamics.cpp",
+        "native/src/rider/response_allocation.cpp",
+        "native/src/rider/activation_allocation.cpp",
+        "native/src/rider/mode_search.cpp",
+        "native/src/rider/legacy_controller.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/ride/rider_activation_allocation.py",
+        "src/bike_sim/sim/ride/rider_balance.py",
+        "src/bike_sim/sim/ride/rider_control.py",
+        "src/bike_sim/sim/ride/rider_dynamics.py",
+        "src/bike_sim/sim/ride/rider_response_allocation.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T30",
+      "title": "Implement flat/weld/spring rider supports and missing physical modes",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-04-remaining-physics.md",
+      "deps": [
+        "T29",
+        "T27",
+        "T16"
+      ],
+      "targets": [
+        "native/src/rider/support_dispatch.cpp",
+        "native/src/rider/flat_contacts.cpp",
+        "native/src/rider/weld_settle.cpp",
+        "native/src/rider/grip_springs.cpp",
+        "native/src/runtime/capabilities.hpp",
+        "native/src/runtime/capabilities.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/ride/control.py",
+        "src/bike_sim/sim/ride/rider_support.py",
+        "src/bike_sim/sim/ride/support_geometry.py",
+        "src/bike_sim/sim/ride/weld_pedals.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T31",
+      "title": "Port legacy tire backends and nonphysical ride integration",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-04-remaining-physics.md",
+      "deps": [
+        "T20",
+        "T27",
+        "T30"
+      ],
+      "targets": [
+        "native/src/legacy/tyre.hpp",
+        "native/src/legacy/tyre.cpp",
+        "native/src/legacy/ride.hpp",
+        "native/src/legacy/ride.cpp",
+        "native/src/legacy/force_accumulator.cpp",
+        "native/src/legacy/recorder.cpp",
+        "native/tests/migration/test_t31.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/physics/tyre.py",
+        "src/bike_sim/sim/ride/__init__.py",
+        "src/bike_sim/sim/ride/forces.py",
+        "src/bike_sim/sim/ride/resistance.py",
+        "src/bike_sim/sim/ride/tire_forces.py",
+        "src/bike_sim/sim/ride/wheels.py",
+        "src/bike_sim/sim/ride_sim.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T32",
+      "title": "Port remaining legacy rider/control/measurement behavior",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-04-remaining-physics.md",
+      "deps": [
+        "T31",
+        "T15"
+      ],
+      "targets": [
+        "native/src/legacy/controls.cpp",
+        "native/src/legacy/rider.cpp",
+        "native/src/legacy/legs.cpp",
+        "native/src/legacy/metrics.cpp",
+        "native/src/numerics/filter.hpp",
+        "native/src/numerics/filter.cpp",
+        "native/tests/migration/test_t32.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/ride/energy.py",
+        "src/bike_sim/sim/ride/leg_drive.py",
+        "src/bike_sim/sim/ride/leg_loop.py",
+        "src/bike_sim/sim/ride/metrics.py",
+        "src/bike_sim/sim/ride/wheelie.py",
+        "src/bike_sim/sim/telemetry.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T33",
+      "title": "Port suspension playground and stand controllers",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-04-remaining-physics.md",
+      "deps": [
+        "T17",
+        "T32"
+      ],
+      "targets": [
+        "native/src/legacy/playground.hpp",
+        "native/src/legacy/playground.cpp",
+        "native/src/legacy/suspension_controller.cpp",
+        "native/src/legacy/static_equilibrium.cpp",
+        "native/src/legacy/telemetry.cpp",
+        "native/tests/migration/test_t33.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/controllers.py",
+        "src/bike_sim/sim/playground.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T34",
+      "title": "Construct research environments, programs and sensor tapes natively",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-05-research-policies.md",
+      "deps": [
+        "T25",
+        "T19",
+        "T10"
+      ],
+      "targets": [
+        "native/src/research/environment.hpp",
+        "native/src/research/environment.cpp",
+        "native/src/research/configuration.cpp",
+        "native/src/research/program_loader.cpp",
+        "native/src/research/rider_random.cpp",
+        "native/tests/migration/test_t34.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/research.py",
+        "src/bike_sim/sim/research/__init__.py",
+        "src/bike_sim/sim/research/backend.py",
+        "src/bike_sim/sim/research/configuration.py",
+        "src/bike_sim/sim/research/demand.py",
+        "src/bike_sim/sim/research/environment.py",
+        "src/bike_sim/sim/research/observations.py",
+        "src/bike_sim/sim/research/rider_behavior.py",
+        "src/bike_sim/sim/research/rider_program.py",
+        "src/bike_sim/sim/research/sensors.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T35",
+      "title": "Replace Python motor policies with built-ins and a versioned native ABI",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-05-research-policies.md",
+      "deps": [
+        "T34",
+        "T06"
+      ],
+      "targets": [
+        "native/src/research/policy.hpp",
+        "native/src/research/policy.cpp",
+        "native/src/research/builtin_policies.cpp",
+        "native/include/bike/policy_v1.h",
+        "native/src/research/plugin_policy.cpp",
+        "examples/policies/traction_control.cpp",
+        "docs/NATIVE_POLICIES.md",
+        "native/tests/migration/test_t35.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/research/policies.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T36",
+      "title": "Port policy sessions, pacing boundaries and lifecycle coordination",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-05-research-policies.md",
+      "deps": [
+        "T35"
+      ],
+      "targets": [
+        "native/src/research/policy_session.hpp",
+        "native/src/research/policy_session.cpp",
+        "native/src/research/lifecycle.cpp",
+        "native/src/research/exit_codes.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/research/policy_session.py",
+        "src/bike_sim/sim/research/recording_lifecycle.py",
+        "src/bike_sim/sim/ride/physical_session.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T37",
+      "title": "Port research metrics, validity and experiment evidence",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-05-research-policies.md",
+      "deps": [
+        "T34",
+        "T36"
+      ],
+      "targets": [
+        "native/src/research/metrics.cpp",
+        "native/src/research/quality.cpp",
+        "native/src/research/evidence.cpp",
+        "native/src/research/metadata.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/research/metrics.py",
+        "src/bike_sim/sim/research/quality.py",
+        "src/bike_sim/sim/research/validity.py",
+        "src/bike_sim/sim/ride/model_status.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T38",
+      "title": "Port the full recording catalog and schema descriptors",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T05",
+        "T18"
+      ],
+      "targets": [
+        "native/resources/recording/catalog-v1.json",
+        "native/src/recording/catalog.hpp",
+        "native/src/recording/catalog.cpp",
+        "native/src/recording/coordinates.cpp",
+        "native/src/recording/schema.cpp",
+        "native/tests/migration/test_t38.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/catalog.py",
+        "src/bike_sim/recording/contracts.py",
+        "src/bike_sim/recording/schema.py",
+        "src/bike_sim/sim/ride/telemetry_v2.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T39",
+      "title": "Port source encoding plans and ingest native column pieces",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T38",
+        "T11"
+      ],
+      "targets": [
+        "native/src/recording/encoding.hpp",
+        "native/src/recording/encoding.cpp",
+        "native/src/recording/plan.cpp",
+        "native/src/recording/duckdb_chunks.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/encoding.py",
+        "src/bike_sim/recording/native_encode.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T40",
+      "title": "Port RAM-only run/episode capture and retained evidence",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T37",
+        "T39"
+      ],
+      "targets": [
+        "native/src/recording/contracts.hpp",
+        "native/src/recording/capture.hpp",
+        "native/src/recording/capture.cpp",
+        "native/src/recording/physical_source.cpp",
+        "native/src/recording/research_source.cpp",
+        "native/src/recording/events.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/assets.py",
+        "src/bike_sim/recording/capture.py",
+        "src/bike_sim/recording/native.py",
+        "src/bike_sim/recording/research.py",
+        "src/bike_sim/sim/ride/physical_recorder.py",
+        "src/bike_sim/sim/ride/recorder.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T41",
+      "title": "Write and validate DuckDB recordings natively",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T40",
+        "T06"
+      ],
+      "targets": [
+        "native/src/recording/database.hpp",
+        "native/src/recording/database.cpp",
+        "native/src/recording/database_validate.cpp",
+        "native/src/recording/assets.cpp",
+        "native/tests/migration/test_t41.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/storage.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T42",
+      "title": "Preserve exclusive final publication and retry semantics",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T41",
+        "T06"
+      ],
+      "targets": [
+        "native/src/recording/publish.hpp",
+        "native/src/recording/publish.cpp",
+        "native/src/recording/finalize.cpp",
+        "native/src/recording/interrupt.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/interrupt.py",
+        "src/bike_sim/sim/ride/async_close.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T43",
+      "title": "Port read-only recording validation and analyst operations",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T41",
+        "T42"
+      ],
+      "targets": [
+        "native/src/recording/reader.hpp",
+        "native/src/recording/reader.cpp",
+        "native/src/recording/analysis.cpp",
+        "native/src/recording/query.cpp",
+        "native/tests/migration/test_t43.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/__init__.py",
+        "src/bike_sim/recording/analysis.py",
+        "src/bike_sim/recording/reader.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T44",
+      "title": "Port checked replay and versioned legacy compatibility",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T43",
+        "T34",
+        "T36",
+        "T24"
+      ],
+      "targets": [
+        "native/src/replay/input.hpp",
+        "native/src/replay/input.cpp",
+        "native/src/replay/session.hpp",
+        "native/src/replay/session.cpp",
+        "native/src/replay/legacy.cpp",
+        "native/src/replay/playback.cpp",
+        "native/tests/migration/test_t44.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/replay_input.py",
+        "src/bike_sim/sim/playback.py",
+        "src/bike_sim/sim/research/playback.py",
+        "src/bike_sim/sim/research/replay.py",
+        "src/bike_sim/sim/research/replay_session.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T45",
+      "title": "Port summary reports and explicit data exports",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T43",
+        "T11"
+      ],
+      "targets": [
+        "native/src/recording/report.hpp",
+        "native/src/recording/report.cpp",
+        "native/src/recording/export.hpp",
+        "native/src/recording/export.cpp",
+        "native/resources/reports/summary.md.in",
+        "native/tests/migration/test_t45.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/recording.py",
+        "src/bike_sim/recording/report.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T46",
+      "title": "Deliver the standalone bike-recording analyst command",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-06-recording-replay.md",
+      "deps": [
+        "T45"
+      ],
+      "targets": [
+        "native/src/cli/recording.cpp",
+        "native/src/cli/recording_main.cpp",
+        "native/tests/cli/recording.cmake"
+      ],
+      "owned_sources": [
+        "src/bike_sim/cli/recording.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T47",
+      "title": "Replace all remaining Python CLI entrypoints with installed native commands",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-07-cli-viewer-batch.md",
+      "deps": [
+        "T25",
+        "T33",
+        "T36",
+        "T44",
+        "T46"
+      ],
+      "targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/__init__.py",
+        "src/bike_sim/cli/__init__.py",
+        "src/bike_sim/cli/export.py",
+        "src/bike_sim/cli/main.py",
+        "src/bike_sim/cli/playground.py",
+        "src/bike_sim/cli/replay.py",
+        "src/bike_sim/cli/research.py",
+        "src/bike_sim/cli/ride.py",
+        "src/bike_sim/cli/settle.py",
+        "src/bike_sim/config.py",
+        "src/bike_sim/sim/__init__.py",
+        "src/bike_sim/sim/backend.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T48",
+      "title": "Implement a native render owner with independent simulation state",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-07-cli-viewer-batch.md",
+      "deps": [
+        "T25",
+        "T11",
+        "T03"
+      ],
+      "targets": [
+        "native/src/viewer/render_owner.hpp",
+        "native/src/viewer/render_owner.cpp",
+        "native/src/viewer/glfw_context.hpp",
+        "native/src/viewer/glfw_context.cpp",
+        "native/src/viewer/snapshot.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/tests/migration/test_t48.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/ride/physical_view.py",
+        "src/bike_sim/sim/ride/presentation.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T49",
+      "title": "Port viewer controls, HUD, cameras and cooperative pacing",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-07-cli-viewer-batch.md",
+      "deps": [
+        "T48",
+        "T36",
+        "T44",
+        "T47"
+      ],
+      "targets": [
+        "native/src/viewer/input.hpp",
+        "native/src/viewer/input.cpp",
+        "native/src/viewer/hud.cpp",
+        "native/src/viewer/camera.cpp",
+        "native/src/viewer/pacer.hpp",
+        "native/src/viewer/pacer.cpp",
+        "native/src/viewer/ride.cpp",
+        "native/src/viewer/research.cpp",
+        "native/src/viewer/replay.cpp",
+        "native/tests/migration/test_t49.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/camera.py",
+        "src/bike_sim/sim/hud.py",
+        "src/bike_sim/sim/input_handler.py",
+        "src/bike_sim/sim/research/replay_viewer.py",
+        "src/bike_sim/sim/research/viewer.py",
+        "src/bike_sim/sim/ride/console.py",
+        "src/bike_sim/sim/ride/hud.py",
+        "src/bike_sim/sim/ride/input.py",
+        "src/bike_sim/sim/ride/livery.py",
+        "src/bike_sim/sim/ride/physical_frontend.py",
+        "src/bike_sim/sim/ride/playback_viewer.py",
+        "src/bike_sim/sim/ride/session.py",
+        "src/bike_sim/sim/ride/viewer.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T50",
+      "title": "Replace Matplotlib and Python Plotly construction with native artifact generation",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-07-cli-viewer-batch.md",
+      "deps": [
+        "T14",
+        "T15",
+        "T32",
+        "T37",
+        "T43",
+        "T06"
+      ],
+      "targets": [
+        "native/src/viz/plot.hpp",
+        "native/src/viz/plot.cpp",
+        "native/src/viz/svg.cpp",
+        "native/src/viz/png.cpp",
+        "native/src/viz/html.cpp",
+        "native/src/viz/tables.cpp",
+        "native/resources/plotly/",
+        "native/tests/migration/test_t50.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/viz/__init__.py",
+        "src/bike_sim/viz/comparison_plot.py",
+        "src/bike_sim/viz/dyno_plot.py",
+        "src/bike_sim/viz/geometry_plot.py",
+        "src/bike_sim/viz/leverage_plot.py",
+        "src/bike_sim/viz/plots.py",
+        "src/bike_sim/viz/ride_plots.py",
+        "src/bike_sim/viz/tables.py",
+        "src/bike_sim/viz/theme.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T51",
+      "title": "Port batch jobs and research sweeps with deterministic process ownership",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-07-cli-viewer-batch.md",
+      "deps": [
+        "T47",
+        "T37",
+        "T42",
+        "T06"
+      ],
+      "targets": [
+        "native/src/batch/plan.hpp",
+        "native/src/batch/plan.cpp",
+        "native/src/batch/executor.cpp",
+        "native/src/batch/summary.cpp",
+        "native/src/cli/batch.cpp",
+        "native/src/tools/research_sweep_main.cpp",
+        "native/tests/migration/test_t51.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/cli/batch.py",
+        "tools/research_sweep.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T52",
+      "title": "Port every numerical, unit and property assertion out of pytest",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T26",
+        "T27",
+        "T29",
+        "T30",
+        "T31",
+        "T32",
+        "T33",
+        "T37",
+        "T45",
+        "T51"
+      ],
+      "targets": [
+        "migration/test-port-map.json",
+        "native/tests/support/property_cases.hpp",
+        "native/tests/integration/test_rider_welds.cpp",
+        "native/tests/reference/project_test_constraint_mode_search.cpp",
+        "native/tests/reference/test_acceptance_interval_capture.cpp",
+        "native/tests/reference/test_alpine_track.cpp",
+        "native/tests/reference/test_articulated_config.cpp",
+        "native/tests/reference/test_assist_controller.cpp",
+        "native/tests/reference/test_attachment_budget.cpp",
+        "native/tests/reference/test_attachment_wrench.cpp",
+        "native/tests/reference/test_balance_monitor.cpp",
+        "native/tests/reference/test_cadence_shifter.cpp",
+        "native/tests/reference/test_closed_form_rider.cpp",
+        "native/tests/reference/test_contact_safety.cpp",
+        "native/tests/reference/test_control_clock.cpp",
+        "native/tests/reference/test_coupled_rider_task.cpp",
+        "native/tests/reference/test_crank_split.cpp",
+        "native/tests/reference/test_distributed_tire_reference.cpp",
+        "native/tests/reference/test_divergence_horizon.cpp",
+        "native/tests/reference/test_drivetrain_policy_clone.cpp",
+        "native/tests/reference/test_energy_ledger.cpp",
+        "native/tests/reference/test_episode_compare.cpp",
+        "native/tests/reference/test_frozen_force_arrays.cpp",
+        "native/tests/reference/test_golden_episode.cpp",
+        "native/tests/reference/test_golden_episode_v2.cpp",
+        "native/tests/reference/test_hud_columns.cpp",
+        "native/tests/reference/test_joint_strength.cpp",
+        "native/tests/reference/test_lean_limit.cpp",
+        "native/tests/reference/test_leg_loop.cpp",
+        "native/tests/reference/test_monitor_strictness.cpp",
+        "native/tests/reference/test_motor_freewheel_topology.cpp",
+        "native/tests/reference/test_motor_profile.cpp",
+        "native/tests/reference/test_native_attachment_wrench.cpp",
+        "native/tests/reference/test_native_benchmark.cpp",
+        "native/tests/reference/test_native_brake_resistance.cpp",
+        "native/tests/reference/test_native_clock_contracts.cpp",
+        "native/tests/reference/test_native_cruise.cpp",
+        "native/tests/reference/test_native_distributed_stands.cpp",
+        "native/tests/reference/test_native_distributed_tire.cpp",
+        "native/tests/reference/test_native_drive_policies.cpp",
+        "native/tests/reference/test_native_drivetrain.cpp",
+        "native/tests/reference/test_native_encode_columns.cpp",
+        "native/tests/reference/test_native_numeric_completion.cpp",
+        "native/tests/reference/test_native_numeric_domains.cpp",
+        "native/tests/reference/test_native_pneumatic_brush.cpp",
+        "native/tests/reference/test_native_pneumatic_carcass.cpp",
+        "native/tests/reference/test_native_pneumatic_geometry.cpp",
+        "native/tests/reference/test_native_pneumatic_model.cpp",
+        "native/tests/reference/test_native_pneumatic_tire.cpp",
+        "native/tests/reference/test_native_pneumatic_wire.cpp",
+        "native/tests/reference/test_native_rider_contact_math.cpp",
+        "native/tests/reference/test_native_rider_contacts.cpp",
+        "native/tests/reference/test_native_rider_forces.cpp",
+        "native/tests/reference/test_native_rider_intent.cpp",
+        "native/tests/reference/test_native_spindle_controller.cpp",
+        "native/tests/reference/test_native_static_brake.cpp",
+        "native/tests/reference/test_native_stepper.cpp",
+        "native/tests/reference/test_native_suspension.cpp",
+        "native/tests/reference/test_native_tire.cpp",
+        "native/tests/reference/test_numba_kernels.cpp",
+        "native/tests/reference/test_pedal_waveform.cpp",
+        "native/tests/reference/test_pedaling_policy.cpp",
+        "native/tests/reference/test_period_buffer.cpp",
+        "native/tests/reference/test_pinned_topology.cpp",
+        "native/tests/reference/test_planar_arms.cpp",
+        "native/tests/reference/test_playback_clock.cpp",
+        "native/tests/reference/test_pneumatic_tire_config.cpp",
+        "native/tests/reference/test_pneumatic_tire_forces.cpp",
+        "native/tests/reference/test_realistic_pedelec_acceptance.cpp",
+        "native/tests/reference/test_recorder_columns.cpp",
+        "native/tests/reference/test_reference_monitor.cpp",
+        "native/tests/reference/test_ride_backend_cli.cpp",
+        "native/tests/reference/test_ride_plots_html_markers.cpp",
+        "native/tests/reference/test_rider_allocation.cpp",
+        "native/tests/reference/test_rider_dynamics.cpp",
+        "native/tests/reference/test_rider_information_boundary.cpp",
+        "native/tests/reference/test_savage_track_surface.cpp",
+        "native/tests/reference/test_seated_climb_surge.cpp",
+        "native/tests/reference/test_seated_pedaling_cycle.cpp",
+        "native/tests/reference/test_seated_posture_program.cpp",
+        "native/tests/reference/test_seated_topology.cpp",
+        "native/tests/reference/test_sensor_noise.cpp",
+        "native/tests/reference/test_system_momentum_drive.cpp",
+        "native/tests/reference/test_terrain_placement_regression.cpp",
+        "native/tests/reference/test_tyre_road_profile.cpp",
+        "native/tests/reference/test_welded_profile_config.cpp"
+      ],
+      "owned_sources": [
+        "project/tests/reference/test_constraint_mode_search.py",
+        "tests/reference/_bits.py",
+        "tests/reference/_encode_oracle.py",
+        "tests/reference/_legacy_sensor_oracle.py",
+        "tests/reference/_physical_hud_oracle.py",
+        "tests/reference/test_acceptance_interval_capture.py",
+        "tests/reference/test_alpine_track.py",
+        "tests/reference/test_articulated_config.py",
+        "tests/reference/test_assist_controller.py",
+        "tests/reference/test_attachment_budget.py",
+        "tests/reference/test_attachment_wrench.py",
+        "tests/reference/test_balance_monitor.py",
+        "tests/reference/test_cadence_shifter.py",
+        "tests/reference/test_closed_form_rider.py",
+        "tests/reference/test_contact_safety.py",
+        "tests/reference/test_control_clock.py",
+        "tests/reference/test_coupled_rider_task.py",
+        "tests/reference/test_crank_split.py",
+        "tests/reference/test_distributed_tire_reference.py",
+        "tests/reference/test_divergence_horizon.py",
+        "tests/reference/test_drivetrain_policy_clone.py",
+        "tests/reference/test_energy_ledger.py",
+        "tests/reference/test_episode_compare.py",
+        "tests/reference/test_frozen_force_arrays.py",
+        "tests/reference/test_golden_episode.py",
+        "tests/reference/test_golden_episode_v2.py",
+        "tests/reference/test_hud_columns.py",
+        "tests/reference/test_joint_strength.py",
+        "tests/reference/test_lean_limit.py",
+        "tests/reference/test_leg_loop.py",
+        "tests/reference/test_monitor_strictness.py",
+        "tests/reference/test_motor_freewheel_topology.py",
+        "tests/reference/test_motor_profile.py",
+        "tests/reference/test_native_attachment_wrench.py",
+        "tests/reference/test_native_benchmark.py",
+        "tests/reference/test_native_brake_resistance.py",
+        "tests/reference/test_native_clock_contracts.py",
+        "tests/reference/test_native_cruise.py",
+        "tests/reference/test_native_distributed_stands.py",
+        "tests/reference/test_native_distributed_tire.py",
+        "tests/reference/test_native_drive_policies.py",
+        "tests/reference/test_native_drivetrain.py",
+        "tests/reference/test_native_encode_columns.py",
+        "tests/reference/test_native_numeric_completion.py",
+        "tests/reference/test_native_numeric_domains.py",
+        "tests/reference/test_native_pneumatic_brush.py",
+        "tests/reference/test_native_pneumatic_carcass.py",
+        "tests/reference/test_native_pneumatic_geometry.py",
+        "tests/reference/test_native_pneumatic_model.py",
+        "tests/reference/test_native_pneumatic_tire.py",
+        "tests/reference/test_native_pneumatic_wire.py",
+        "tests/reference/test_native_rider_contact_math.py",
+        "tests/reference/test_native_rider_contacts.py",
+        "tests/reference/test_native_rider_forces.py",
+        "tests/reference/test_native_rider_intent.py",
+        "tests/reference/test_native_spindle_controller.py",
+        "tests/reference/test_native_static_brake.py",
+        "tests/reference/test_native_stepper.py",
+        "tests/reference/test_native_suspension.py",
+        "tests/reference/test_native_tire.py",
+        "tests/reference/test_numba_kernels.py",
+        "tests/reference/test_pedal_waveform.py",
+        "tests/reference/test_pedaling_policy.py",
+        "tests/reference/test_period_buffer.py",
+        "tests/reference/test_pinned_topology.py",
+        "tests/reference/test_planar_arms.py",
+        "tests/reference/test_playback_clock.py",
+        "tests/reference/test_pneumatic_tire_config.py",
+        "tests/reference/test_pneumatic_tire_forces.py",
+        "tests/reference/test_realistic_pedelec_acceptance.py",
+        "tests/reference/test_recorder_columns.py",
+        "tests/reference/test_reference_monitor.py",
+        "tests/reference/test_ride_backend_cli.py",
+        "tests/reference/test_ride_plots_html_markers.py",
+        "tests/reference/test_rider_allocation.py",
+        "tests/reference/test_rider_dynamics.py",
+        "tests/reference/test_rider_information_boundary.py",
+        "tests/reference/test_savage_track_surface.py",
+        "tests/reference/test_seated_climb_surge.py",
+        "tests/reference/test_seated_pedaling_cycle.py",
+        "tests/reference/test_seated_posture_program.py",
+        "tests/reference/test_seated_topology.py",
+        "tests/reference/test_sensor_noise.py",
+        "tests/reference/test_system_momentum_drive.py",
+        "tests/reference/test_terrain_placement_regression.py",
+        "tests/reference/test_tyre_road_profile.py",
+        "tests/reference/test_welded_profile_config.py",
+        "tests/test_rider_welds.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T53",
+      "title": "Port integration, frontend, replay and failure-path test suites",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T46",
+        "T49",
+        "T51",
+        "T52"
+      ],
+      "targets": [
+        "native/tests/support/process_fixture.cpp",
+        "migration/test-port-map.json",
+        "native/tests/integration/test_async_close.cpp",
+        "native/tests/integration/test_batch.cpp",
+        "native/tests/integration/test_replay_playback.cpp",
+        "native/tests/reference/test_equilibrium_state_file.cpp",
+        "native/tests/reference/test_frontend_windows.cpp",
+        "native/tests/reference/test_measure_realtime_report.cpp",
+        "native/tests/reference/test_native_atomicity.cpp",
+        "native/tests/reference/test_native_check_tools.cpp",
+        "native/tests/reference/test_native_contract_checks.cpp",
+        "native/tests/reference/test_native_engine_errors.cpp",
+        "native/tests/reference/test_native_input_contracts.cpp",
+        "native/tests/reference/test_native_loader.cpp",
+        "native/tests/reference/test_native_recording_lifecycle.cpp",
+        "native/tests/reference/test_native_recording_retention.cpp",
+        "native/tests/reference/test_native_replay_recording_v3.cpp",
+        "native/tests/reference/test_native_replay_session.cpp",
+        "native/tests/reference/test_native_research_capture.cpp",
+        "native/tests/reference/test_native_research_environment.cpp",
+        "native/tests/reference/test_native_research_failures.cpp",
+        "native/tests/reference/test_native_research_frontend.cpp",
+        "native/tests/reference/test_native_research_policy.cpp",
+        "native/tests/reference/test_native_research_programs.cpp",
+        "native/tests/reference/test_native_research_recording.cpp",
+        "native/tests/reference/test_native_research_sensors.cpp",
+        "native/tests/reference/test_native_ride_frontend.cpp",
+        "native/tests/reference/test_native_runtime_accounting.cpp",
+        "native/tests/reference/test_native_runtime_bootstrap.cpp",
+        "native/tests/reference/test_native_runtime_commands.cpp",
+        "native/tests/reference/test_native_runtime_config.cpp",
+        "native/tests/reference/test_native_runtime_ownership.cpp",
+        "native/tests/reference/test_native_runtime_performance_contract.cpp",
+        "native/tests/reference/test_native_runtime_rollout.cpp",
+        "native/tests/reference/test_native_runtime_step.cpp",
+        "native/tests/reference/test_native_state_bundle.cpp",
+        "native/tests/reference/test_native_state_fuzz.cpp",
+        "native/tests/reference/test_native_state_restore.cpp",
+        "native/tests/reference/test_native_view_contracts.cpp",
+        "native/tests/reference/test_native_viewer_snapshot.cpp",
+        "native/tests/reference/test_pedelec_replay_contract.cpp",
+        "native/tests/reference/test_physical_view.cpp",
+        "native/tests/reference/test_pinned_measurement.cpp",
+        "native/tests/reference/test_pneumatic_physical_runtime.cpp",
+        "native/tests/reference/test_realtime_deferred_checks.cpp",
+        "native/tests/reference/test_realtime_gate.cpp",
+        "native/tests/reference/test_realtime_measurement.cpp",
+        "native/tests/reference/test_recording_analysis.cpp",
+        "native/tests/reference/test_recording_analyst_cli.cpp",
+        "native/tests/reference/test_recording_capture.cpp",
+        "native/tests/reference/test_recording_catalog.cpp",
+        "native/tests/reference/test_recording_cli.cpp",
+        "native/tests/reference/test_recording_publication.cpp",
+        "native/tests/reference/test_recording_report.cpp",
+        "native/tests/reference/test_recording_storage.cpp",
+        "native/tests/reference/test_recording_values.cpp",
+        "native/tests/reference/test_replay_manifest_v2.cpp",
+        "native/tests/reference/test_replay_recording_v3.cpp",
+        "native/tests/reference/test_replay_session.cpp",
+        "native/tests/reference/test_research_capture.cpp",
+        "native/tests/reference/test_research_frontend.cpp",
+        "native/tests/reference/test_research_recording_lifecycle.cpp",
+        "native/tests/reference/test_research_sweep.cpp",
+        "native/tests/reference/test_runtime_single_path.cpp"
+      ],
+      "owned_sources": [
+        "tests/reference/_native_runtime_support.py",
+        "tests/reference/_recording_support.py",
+        "tests/reference/test_equilibrium_state_file.py",
+        "tests/reference/test_frontend_windows.py",
+        "tests/reference/test_measure_realtime_report.py",
+        "tests/reference/test_native_atomicity.py",
+        "tests/reference/test_native_check_tools.py",
+        "tests/reference/test_native_contract_checks.py",
+        "tests/reference/test_native_engine_errors.py",
+        "tests/reference/test_native_input_contracts.py",
+        "tests/reference/test_native_loader.py",
+        "tests/reference/test_native_recording_lifecycle.py",
+        "tests/reference/test_native_recording_retention.py",
+        "tests/reference/test_native_replay_recording_v3.py",
+        "tests/reference/test_native_replay_session.py",
+        "tests/reference/test_native_research_capture.py",
+        "tests/reference/test_native_research_environment.py",
+        "tests/reference/test_native_research_failures.py",
+        "tests/reference/test_native_research_frontend.py",
+        "tests/reference/test_native_research_policy.py",
+        "tests/reference/test_native_research_programs.py",
+        "tests/reference/test_native_research_recording.py",
+        "tests/reference/test_native_research_sensors.py",
+        "tests/reference/test_native_ride_frontend.py",
+        "tests/reference/test_native_runtime_accounting.py",
+        "tests/reference/test_native_runtime_bootstrap.py",
+        "tests/reference/test_native_runtime_commands.py",
+        "tests/reference/test_native_runtime_config.py",
+        "tests/reference/test_native_runtime_ownership.py",
+        "tests/reference/test_native_runtime_performance_contract.py",
+        "tests/reference/test_native_runtime_rollout.py",
+        "tests/reference/test_native_runtime_step.py",
+        "tests/reference/test_native_state_bundle.py",
+        "tests/reference/test_native_state_fuzz.py",
+        "tests/reference/test_native_state_restore.py",
+        "tests/reference/test_native_view_contracts.py",
+        "tests/reference/test_native_viewer_snapshot.py",
+        "tests/reference/test_pedelec_replay_contract.py",
+        "tests/reference/test_physical_view.py",
+        "tests/reference/test_pinned_measurement.py",
+        "tests/reference/test_pneumatic_physical_runtime.py",
+        "tests/reference/test_realtime_deferred_checks.py",
+        "tests/reference/test_realtime_gate.py",
+        "tests/reference/test_realtime_measurement.py",
+        "tests/reference/test_recording_analysis.py",
+        "tests/reference/test_recording_analyst_cli.py",
+        "tests/reference/test_recording_capture.py",
+        "tests/reference/test_recording_catalog.py",
+        "tests/reference/test_recording_cli.py",
+        "tests/reference/test_recording_publication.py",
+        "tests/reference/test_recording_report.py",
+        "tests/reference/test_recording_storage.py",
+        "tests/reference/test_recording_values.py",
+        "tests/reference/test_replay_manifest_v2.py",
+        "tests/reference/test_replay_recording_v3.py",
+        "tests/reference/test_replay_session.py",
+        "tests/reference/test_research_capture.py",
+        "tests/reference/test_research_frontend.py",
+        "tests/reference/test_research_recording_lifecycle.py",
+        "tests/reference/test_research_sweep.py",
+        "tests/reference/test_runtime_single_path.py",
+        "tests/test_async_close.py",
+        "tests/test_batch.py",
+        "tests/test_replay_playback.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T54",
+      "title": "Port validation rigs, calibration and physical release evidence",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T29",
+        "T30",
+        "T31",
+        "T37",
+        "T50",
+        "T52"
+      ],
+      "targets": [
+        "native/src/validation/rigs.cpp",
+        "native/src/validation/tire.cpp",
+        "native/src/validation/rider.cpp",
+        "native/src/validation/drivetrain.cpp",
+        "native/src/validation/acceptance.cpp",
+        "native/src/validation/evidence.cpp",
+        "native/src/tools/validate_main.cpp",
+        "native/src/validation/acceptance.hpp",
+        "native/tests/migration/test_t54.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/physics/tire_calibration.py",
+        "src/bike_sim/physics/tire_curve.py",
+        "src/bike_sim/validation/__init__.py",
+        "src/bike_sim/validation/antiwheelie_bench.py",
+        "src/bike_sim/validation/antiwheelie_reports.py",
+        "src/bike_sim/validation/benchmarks.py",
+        "src/bike_sim/validation/climbing_benchmark.py",
+        "src/bike_sim/validation/climbing_evidence.py",
+        "src/bike_sim/validation/contact_acceptance.py",
+        "src/bike_sim/validation/contact_manifold_rigs.py",
+        "src/bike_sim/validation/contact_resolution.py",
+        "src/bike_sim/validation/datasets.py",
+        "src/bike_sim/validation/drive_suspension_rig.py",
+        "src/bike_sim/validation/environment.py",
+        "src/bike_sim/validation/experiment_acceptance.py",
+        "src/bike_sim/validation/fidelity_sweep.py",
+        "src/bike_sim/validation/grade_feasibility.py",
+        "src/bike_sim/validation/load_transfer.py",
+        "src/bike_sim/validation/plant_prefix.py",
+        "src/bike_sim/validation/plant_release.py",
+        "src/bike_sim/validation/plant_torque_rig.py",
+        "src/bike_sim/validation/reference_release.py",
+        "src/bike_sim/validation/ride_cases.py",
+        "src/bike_sim/validation/rider_cases.py",
+        "src/bike_sim/validation/rider_factor_matrix.py",
+        "src/bike_sim/validation/rider_replay.py",
+        "src/bike_sim/validation/rider_work.py",
+        "src/bike_sim/validation/rigs.py",
+        "src/bike_sim/validation/system_momentum.py",
+        "src/bike_sim/validation/tire_characterization.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T55",
+      "title": "Port performance, diagnostic and native-benchmark developer tools",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T25",
+        "T37",
+        "T44",
+        "T54",
+        "T06"
+      ],
+      "targets": [
+        "native/src/tools/golden_episode_main.cpp",
+        "native/src/tools/episode_compare_main.cpp",
+        "native/src/tools/divergence_horizon_main.cpp",
+        "native/src/tools/measure_realtime_main.cpp",
+        "native/src/tools/step_profile_main.cpp",
+        "native/src/tools/diag_main.cpp",
+        "native/src/tools/finalize_bench_main.cpp",
+        "native/src/tools/benchmark_main.cpp",
+        "native/src/tools/state_format.hpp",
+        "native/src/tools/state_format.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/realtime_measurement.py",
+        "tools/diag_run.py",
+        "tools/divergence_horizon.py",
+        "tools/episode_compare.py",
+        "tools/golden_episode.py",
+        "tools/measure_realtime.py",
+        "tools/proto_native_bench/bench.py",
+        "tools/proto_native_bench/dump_model.py",
+        "tools/proto_native_bench/state_format.py",
+        "tools/recording_finalize_bench.py",
+        "tools/step_profile.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T56",
+      "title": "Replace Python native-check orchestration and inline interpreter scripts",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T03",
+        "T06",
+        "T02"
+      ],
+      "targets": [
+        "native/src/tools/checks_main.cpp",
+        "native/src/tools/check_context.cpp",
+        "native/src/tools/check_frontends.cpp",
+        "native/src/tools/check_contracts.cpp",
+        "native/src/tools/check_reports.cpp",
+        "native/cmake/Checks.cmake",
+        "tools/native_common.sh",
+        "tools/run_native_checks.sh",
+        "native/src/tools/python_audit_main.cpp",
+        "migration/no-python-policy.json"
+      ],
+      "owned_sources": [
+        "src/bike_sim/native/contracts.py",
+        "tools/check_native_contracts.py",
+        "tools/native_checks.py",
+        "tools/native_config.py",
+        "tools/native_schema.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T57",
+      "title": "Deliver a native test runner, sanitizers and coverage provenance",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T52",
+        "T53",
+        "T56",
+        "T55"
+      ],
+      "targets": [
+        "native/src/tools/test_runner_main.cpp",
+        "native/src/tools/coverage_main.cpp",
+        "native/cmake/Sanitizers.cmake",
+        "native/cmake/Coverage.cmake",
+        "tools/run_tests.sh",
+        "native/tests/support/provenance.cpp"
+      ],
+      "owned_sources": [
+        "conftest.py",
+        "tests/reference/conftest.py",
+        "tests/reference/native_loader.py",
+        "tests/reference/native_safety_helpers.py",
+        "tests/reference/native_test_reporter.py",
+        "tools/native_coverage.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T58",
+      "title": "Qualify Linux headless native support without changing macOS arithmetic silently",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T04",
+        "T25",
+        "T54",
+        "T57"
+      ],
+      "targets": [
+        "native/cmake/PlatformLinux.cmake",
+        "native/cmake/PlatformApple.cmake",
+        "native/src/numeric/provider_linux.cpp",
+        "packaging/platform-matrix.json",
+        "native/tests/platform/"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T59",
+      "title": "Replace Python wheel installers with offline native distributions",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T47",
+        "T50",
+        "T51",
+        "T55",
+        "T56",
+        "T57",
+        "T58"
+      ],
+      "targets": [
+        "packaging/CMakeLists.txt",
+        "packaging/manifest.schema.json",
+        "packaging/install.sh",
+        "native/src/tools/package_verify_main.cpp",
+        "native/src/tools/install_main.cpp",
+        "docs/installation.md"
+      ],
+      "owned_sources": [
+        "tools/check_offline_sources.py",
+        "tools/install_offline.py"
+      ],
+      "status": "planned"
+    },
+    {
+      "id": "T60",
+      "title": "Update active documentation and agent contracts to the native workflow",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-08-tests-tools-packaging.md",
+      "deps": [
+        "T47",
+        "T54",
+        "T55",
+        "T56",
+        "T57",
+        "T59"
+      ],
+      "targets": [
+        "README.md",
+        "AGENTS.md",
+        "docs/native-workflow.md",
+        "docs/python-to-cpp-compatibility.md",
+        "migration/cli-contracts.json",
+        "migration/command-map.json"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T61",
+      "title": "Run end-to-end release qualification and close capability parity",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-09-qualification-removal.md",
+      "deps": [
+        "T53",
+        "T54",
+        "T55",
+        "T58",
+        "T59",
+        "T60"
+      ],
+      "targets": [
+        "migration/release-evidence.json",
+        "migration/capability-matrix.json",
+        "migration/compatibility-approvals.json",
+        "docs/releases/python-free-qualification.md"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T62",
+      "title": "Enforce executable and dependency-level absence of Python",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-09-qualification-removal.md",
+      "deps": [
+        "T57",
+        "T59",
+        "T61"
+      ],
+      "targets": [
+        "native/src/tools/python_audit_main.cpp",
+        "migration/no-python-policy.json",
+        "native/tests/package/no_python.cmake",
+        "native/tests/package/audit_negative_controls.cmake"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    },
+    {
+      "id": "T63",
+      "title": "Delete Python implementations, adapters and packaging only after parity gates",
+      "plan": "docs/superpowers/plans/2026-10-14-python-free-cpp-09-qualification-removal.md",
+      "deps": [
+        "T61",
+        "T62"
+      ],
+      "targets": [
+        "migration/python-removal.json",
+        "migration/test-port-map.json",
+        "migration/final-closure.json",
+        "native/CMakeLists.txt",
+        "tools/run_tests.sh",
+        "README.md"
+      ],
+      "owned_sources": [],
+      "status": "planned"
+    }
+  ],
+  "dependency_waves": [
+    [
+      "T00"
+    ],
+    [
+      "T01"
+    ],
+    [
+      "T02"
+    ],
+    [
+      "T03"
+    ],
+    [
+      "T04",
+      "T05"
+    ],
+    [
+      "T06",
+      "T07"
+    ],
+    [
+      "T08",
+      "T12",
+      "T56"
+    ],
+    [
+      "T09",
+      "T13",
+      "T14"
+    ],
+    [
+      "T10",
+      "T15",
+      "T19"
+    ],
+    [
+      "T11",
+      "T16",
+      "T20"
+    ],
+    [
+      "T17",
+      "T18",
+      "T21"
+    ],
+    [
+      "T22",
+      "T38"
+    ],
+    [
+      "T23",
+      "T39"
+    ],
+    [
+      "T24",
+      "T28"
+    ],
+    [
+      "T25"
+    ],
+    [
+      "T26",
+      "T34",
+      "T48"
+    ],
+    [
+      "T27",
+      "T29",
+      "T35"
+    ],
+    [
+      "T30",
+      "T36"
+    ],
+    [
+      "T31",
+      "T37"
+    ],
+    [
+      "T32",
+      "T40"
+    ],
+    [
+      "T33",
+      "T41"
+    ],
+    [
+      "T42"
+    ],
+    [
+      "T43"
+    ],
+    [
+      "T44",
+      "T45",
+      "T50"
+    ],
+    [
+      "T46"
+    ],
+    [
+      "T47"
+    ],
+    [
+      "T49",
+      "T51"
+    ],
+    [
+      "T52"
+    ],
+    [
+      "T53",
+      "T54"
+    ],
+    [
+      "T55"
+    ],
+    [
+      "T57"
+    ],
+    [
+      "T58"
+    ],
+    [
+      "T59"
+    ],
+    [
+      "T60"
+    ],
+    [
+      "T61"
+    ],
+    [
+      "T62"
+    ],
+    [
+      "T63"
+    ]
+  ],
+  "shared_file_rule": "Waves are completion dependencies, not permission to concurrently edit shared files. Domain leaf cards may begin after their own immutable contracts/fixtures are ready; completion still requires all package dependencies."
+}

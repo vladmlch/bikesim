@@ -1,0 +1,408 @@
+{
+  "scope": "Handoff structural/inventory/source-integrity checks only; application compilation, tests, parity, performance and platform qualification were not executed.",
+  "date": "2026-10-14",
+  "passed": true,
+  "checks": [
+    {
+      "check": "64_unique_work_packages",
+      "passed": true,
+      "detail": 64
+    },
+    {
+      "check": "all_supplied_python_paths_owned_once",
+      "passed": true,
+      "detail": 459
+    },
+    {
+      "check": "all_python_files_covered",
+      "passed": true,
+      "detail": "Exact path-set equality"
+    },
+    {
+      "check": "file_units_match_removal_set",
+      "passed": true,
+      "detail": "459 declaration-level work units"
+    },
+    {
+      "check": "unique_static_qualified_test_ids",
+      "passed": true,
+      "detail": "Static index; not pytest collection"
+    },
+    {
+      "check": "known_owners_and_dependencies",
+      "passed": true,
+      "detail": "No unknown task IDs"
+    },
+    {
+      "check": "dependency_wave_0",
+      "passed": true,
+      "detail": [
+        "T00"
+      ]
+    },
+    {
+      "check": "dependency_wave_1",
+      "passed": true,
+      "detail": [
+        "T01"
+      ]
+    },
+    {
+      "check": "dependency_wave_2",
+      "passed": true,
+      "detail": [
+        "T02"
+      ]
+    },
+    {
+      "check": "dependency_wave_3",
+      "passed": true,
+      "detail": [
+        "T03"
+      ]
+    },
+    {
+      "check": "dependency_wave_4",
+      "passed": true,
+      "detail": [
+        "T04",
+        "T05"
+      ]
+    },
+    {
+      "check": "dependency_wave_6",
+      "passed": true,
+      "detail": [
+        "T06",
+        "T07"
+      ]
+    },
+    {
+      "check": "dependency_wave_8",
+      "passed": true,
+      "detail": [
+        "T08",
+        "T12",
+        "T56"
+      ]
+    },
+    {
+      "check": "dependency_wave_11",
+      "passed": true,
+      "detail": [
+        "T09",
+        "T13",
+        "T14"
+      ]
+    },
+    {
+      "check": "dependency_wave_14",
+      "passed": true,
+      "detail": [
+        "T10",
+        "T15",
+        "T19"
+      ]
+    },
+    {
+      "check": "dependency_wave_17",
+      "passed": true,
+      "detail": [
+        "T11",
+        "T16",
+        "T20"
+      ]
+    },
+    {
+      "check": "dependency_wave_20",
+      "passed": true,
+      "detail": [
+        "T17",
+        "T18",
+        "T21"
+      ]
+    },
+    {
+      "check": "dependency_wave_23",
+      "passed": true,
+      "detail": [
+        "T22",
+        "T38"
+      ]
+    },
+    {
+      "check": "dependency_wave_25",
+      "passed": true,
+      "detail": [
+        "T23",
+        "T39"
+      ]
+    },
+    {
+      "check": "dependency_wave_27",
+      "passed": true,
+      "detail": [
+        "T24",
+        "T28"
+      ]
+    },
+    {
+      "check": "dependency_wave_29",
+      "passed": true,
+      "detail": [
+        "T25"
+      ]
+    },
+    {
+      "check": "dependency_wave_30",
+      "passed": true,
+      "detail": [
+        "T26",
+        "T34",
+        "T48"
+      ]
+    },
+    {
+      "check": "dependency_wave_33",
+      "passed": true,
+      "detail": [
+        "T27",
+        "T29",
+        "T35"
+      ]
+    },
+    {
+      "check": "dependency_wave_36",
+      "passed": true,
+      "detail": [
+        "T30",
+        "T36"
+      ]
+    },
+    {
+      "check": "dependency_wave_38",
+      "passed": true,
+      "detail": [
+        "T31",
+        "T37"
+      ]
+    },
+    {
+      "check": "dependency_wave_40",
+      "passed": true,
+      "detail": [
+        "T32",
+        "T40"
+      ]
+    },
+    {
+      "check": "dependency_wave_42",
+      "passed": true,
+      "detail": [
+        "T33",
+        "T41"
+      ]
+    },
+    {
+      "check": "dependency_wave_44",
+      "passed": true,
+      "detail": [
+        "T42"
+      ]
+    },
+    {
+      "check": "dependency_wave_45",
+      "passed": true,
+      "detail": [
+        "T43"
+      ]
+    },
+    {
+      "check": "dependency_wave_46",
+      "passed": true,
+      "detail": [
+        "T44",
+        "T45",
+        "T50"
+      ]
+    },
+    {
+      "check": "dependency_wave_49",
+      "passed": true,
+      "detail": [
+        "T46"
+      ]
+    },
+    {
+      "check": "dependency_wave_50",
+      "passed": true,
+      "detail": [
+        "T47"
+      ]
+    },
+    {
+      "check": "dependency_wave_51",
+      "passed": true,
+      "detail": [
+        "T49",
+        "T51"
+      ]
+    },
+    {
+      "check": "dependency_wave_53",
+      "passed": true,
+      "detail": [
+        "T52"
+      ]
+    },
+    {
+      "check": "dependency_wave_54",
+      "passed": true,
+      "detail": [
+        "T53",
+        "T54"
+      ]
+    },
+    {
+      "check": "dependency_wave_56",
+      "passed": true,
+      "detail": [
+        "T55"
+      ]
+    },
+    {
+      "check": "dependency_wave_57",
+      "passed": true,
+      "detail": [
+        "T57"
+      ]
+    },
+    {
+      "check": "dependency_wave_58",
+      "passed": true,
+      "detail": [
+        "T58"
+      ]
+    },
+    {
+      "check": "dependency_wave_59",
+      "passed": true,
+      "detail": [
+        "T59"
+      ]
+    },
+    {
+      "check": "dependency_wave_60",
+      "passed": true,
+      "detail": [
+        "T60"
+      ]
+    },
+    {
+      "check": "dependency_wave_61",
+      "passed": true,
+      "detail": [
+        "T61"
+      ]
+    },
+    {
+      "check": "dependency_wave_62",
+      "passed": true,
+      "detail": [
+        "T62"
+      ]
+    },
+    {
+      "check": "dependency_wave_63",
+      "passed": true,
+      "detail": [
+        "T63"
+      ]
+    },
+    {
+      "check": "acyclic_graph_covers_every_task",
+      "passed": true,
+      "detail": "All 64 tasks reached in topological waves"
+    },
+    {
+      "check": "all_task_plans_and_cards_exist",
+      "passed": true,
+      "detail": "Every assignment has a readable context card"
+    },
+    {
+      "check": "all_command_source_paths_exist",
+      "passed": true,
+      "detail": "Exact [project.scripts] mapping"
+    },
+    {
+      "check": "source_snapshot_hashes",
+      "passed": true,
+      "detail": "All restored source hashes still match; no application changes"
+    },
+    {
+      "check": "removed_source_unit_targets_in_sync",
+      "passed": true,
+      "detail": "Final targets synchronized after interface corrections"
+    },
+    {
+      "check": "task_statuses_remain_planned",
+      "passed": true,
+      "detail": "No implementation completion claims"
+    },
+    {
+      "check": "plan_headers",
+      "passed": true,
+      "detail": "11 plan headers checked"
+    },
+    {
+      "check": "no_handwritten_plan_placeholders",
+      "passed": true,
+      "detail": "No TODO/TBD/implement-later instructions in authored execution documents"
+    },
+    {
+      "check": "balanced_code_fences",
+      "passed": true,
+      "detail": "Plan/spec/interface/consolidated fences balanced"
+    },
+    {
+      "check": "bootstrap_does_not_require_future_root_build",
+      "passed": true,
+      "detail": "T02 uses legacy pinned native build before T03 introduces root build"
+    },
+    {
+      "check": "native_full_shared_preflight",
+      "passed": true,
+      "detail": "Preserves actual shared source-runner preflight"
+    },
+    {
+      "check": "correct_drive_snapshot_source",
+      "passed": true,
+      "detail": "Existing pure type reused, not incorrectly relocated from binding header"
+    },
+    {
+      "check": "csv_jsonl_exports",
+      "passed": true,
+      "detail": "No invented Parquet requirement"
+    }
+  ],
+  "counts": {
+    "source_files": 1075,
+    "python_files": 459,
+    "static_test_functions": 1611,
+    "tasks": 64,
+    "subsystem_plans": 10,
+    "command_entrypoints": 9,
+    "capability_seed_rows": 27
+  },
+  "unexecuted_application_checks": [
+    "configure/build",
+    "native/quick/full tests",
+    "fixture generation",
+    "numeric/solver/RNG parity",
+    "recording/replay compatibility",
+    "GUI",
+    "platform packages",
+    "performance",
+    "post-removal no-Python audit"
+  ]
+}

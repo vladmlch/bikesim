@@ -106,41 +106,49 @@ def energy_state(runtime):
     return mass,elastic,float(total)
 
 
-def actuator_components(model,data):
-    """All physical actuators are scalar joint motors with explicit gear=1."""
-    result={}
+def actuator_layout(model):
+    """Model-static per-actuator (name, dofadr, gear) table in actuator order."""
+    layout = []
     for aid in range(model.nu):
         name=mujoco.mj_id2name(model,mujoco.mjtObj.mjOBJ_ACTUATOR,aid)
         jid=int(model.actuator_trnid[aid,0])
         if int(model.actuator_trntype[aid]) != int(mujoco.mjtTrn.mjTRN_JOINT):
             raise ValueError('physical actuation requires direct joint motors')
+        layout.append((name,int(model.jnt_dofadr[jid]),float(model.actuator_gear[aid,0]),aid))
+    return tuple(layout)
+
+
+def actuator_components(model,data,layout=None):
+    """All physical actuators are scalar joint motors with explicit gear=1."""
+    if layout is None:
+        layout = actuator_layout(model)
+    result={}
+    for name,dofadr,gear,aid in layout:
         force=np.zeros(model.nv)
-        force[model.jnt_dofadr[jid]]=data.actuator_force[aid]*model.actuator_gear[aid,0]
+        force[dofadr]=data.actuator_force[aid]*gear
         result[name]=force
     return result
 
 
 def constraint_components(model,data):
     """Separate contacts, joint limits and closure work using solved EFC rows."""
-    groups={'native_contact':[], 'joint_limits':[], 'closure':[]}
-    for i,t in enumerate(data.efc_type[:data.nefc]):
-        # NumPy scalar membership against pybind enum tuples is not reliable.
-        # A Python integer preserves every actual MuJoCo row category.
-        t = int(t)
-        if t in (mujoco.mjtConstraint.mjCNSTR_CONTACT_FRICTIONLESS,
-                 mujoco.mjtConstraint.mjCNSTR_CONTACT_PYRAMIDAL,
-                 mujoco.mjtConstraint.mjCNSTR_CONTACT_ELLIPTIC):
-            groups['native_contact'].append(i)
-        elif t in (mujoco.mjtConstraint.mjCNSTR_LIMIT_JOINT,mujoco.mjtConstraint.mjCNSTR_LIMIT_TENDON):
-            groups['joint_limits'].append(i)
-        elif t==mujoco.mjtConstraint.mjCNSTR_EQUALITY:
-            groups['closure'].append(i)
+    nefc=data.nefc
+    types=data.efc_type[:nefc]
+    contact=np.isin(types,[int(mujoco.mjtConstraint.mjCNSTR_CONTACT_FRICTIONLESS),
+                           int(mujoco.mjtConstraint.mjCNSTR_CONTACT_PYRAMIDAL),
+                           int(mujoco.mjtConstraint.mjCNSTR_CONTACT_ELLIPTIC)])
+    limited=np.isin(types,[int(mujoco.mjtConstraint.mjCNSTR_LIMIT_JOINT),
+                           int(mujoco.mjtConstraint.mjCNSTR_LIMIT_TENDON)])
+    equality=types==int(mujoco.mjtConstraint.mjCNSTR_EQUALITY)
+    groups={'native_contact':np.nonzero(contact)[0],
+            'joint_limits':np.nonzero(limited)[0],
+            'closure':np.nonzero(equality)[0]}
     result={}
     for name,indices in groups.items():
         force=np.zeros(model.nv)
-        weights=np.zeros(data.nefc)
+        weights=np.zeros(nefc)
         weights[indices]=data.efc_force[indices]
-        if indices:
+        if indices.size:
             mujoco.mj_mulJacTVec(model,data,force,weights)
         result[name]=force
     return result

@@ -1,5 +1,6 @@
 """Capture every solved interval; evaluate attachments together at period close."""
-from dataclasses import dataclass, field
+import copy
+from dataclasses import asdict, dataclass, field
 import numpy as np
 from bike_sim.physics.attachment_budget import AttachmentSample
 from bike_sim.physics.energy_ledger import step_work
@@ -185,3 +186,108 @@ def evaluate_period(runtime, raws, budget):
         constraint = np.array(list(raw.metadata['numerical_constraint_power_w'].values()))
         works.append(step_work(muscle, motor, constraint, runtime.control_clock.timestep_s))
     return PeriodReport(tuple(violations), tuple(works), first, tuple(attachments), tuple(efforts))
+
+
+_EXTERNAL_FORCE_NAMES = frozenset({'external', 'rear_drive', 'road_rolling',
+                                   'aerodynamic', 'native_contact'})
+
+
+def publish_close(rt, raws):
+    """Evaluate a drained period and publish its samples onto ``rt``.
+
+    ``rt`` is the runtime-like object that owns the close state: the real
+    PhysicalRuntime on the synchronous path, or a worker-side replica of just
+    the fields below when period evaluation runs off the stepping process.
+    Nothing here touches live mjData, so the result is a pure function of the
+    raws plus the carried state.
+
+    Sets rt.completed_samples/sample/period_violations and returns the ordered
+    ``(time_s, violations)`` failures for the caller's monitor to accept.
+    """
+    from bike_sim.physics.energy_ledger import constraint_work_ok
+    from bike_sim.sim.ride.physical_samples import PhysicalSample
+    report = evaluate_period(rt, raws, rt.cfg.articulated.attachment_budget())
+    published = []
+    failures = []
+    rt.interval_constraints = {}
+    for index, (raw, attachments, violations, work, effort) in enumerate(zip(
+            raws, report.attachments, report.violations_by_step, report.works, report.efforts)):
+        dt=rt.control_clock.timestep_s; v=raw.qvel
+        components=raw.components
+        loss_step=raw.metadata['loss_step_j']; rt.loss_j+=loss_step
+        rt.muscle_signed_j+=work.muscle_signed_j
+        rt.muscle_positive_j+=work.muscle_positive_j
+        rt.motor_signed_j+=work.motor_signed_j
+        rt.motor_positive_j+=work.motor_positive_j
+        rt.constraint_absolute_j+=work.constraint_absolute_j
+        rt.solver_work_j+=work.constraint_signed_j
+        rt.active_work_j+=work.muscle_signed_j+work.motor_signed_j
+        rt.external_work_j+=sum(float(components[n]@v)*dt for n in _EXTERNAL_FORCE_NAMES if n in components)
+        rt.electrical_work_j+=raw.metadata['electrical_power_w']*dt
+        source_positive = rt.muscle_positive_j+rt.motor_positive_j
+        work_ok = constraint_work_ok(rt.constraint_absolute_j, source_positive)
+        # This is an integral criterion, published at the closing physical
+        # interval, including a partial terminal period. S8's zero-source
+        # roundoff budget is absolute; it never grows with step count.
+        if index == len(raws)-1 and not work_ok:
+            violations += ('energy.constraint_work',)
+        total=raw.metadata['mechanical_energy_j']; elastic=raw.metadata['elastic_energy_j']
+        rt.energy={'mechanical_energy_j':total,'elastic_energy_j':elastic,
+            'active_work_j':rt.active_work_j,'external_work_j':rt.external_work_j,
+            'loss_j':rt.loss_j,'loss_step_j':loss_step,'solver_constraint_work_j':rt.solver_work_j,'energy_scale_j':rt.energy_scale_j,
+            'muscle_signed_j':rt.muscle_signed_j,'muscle_positive_j':rt.muscle_positive_j,
+            'motor_signed_j':rt.motor_signed_j,'motor_positive_j':rt.motor_positive_j,
+            'source_positive_work_j':rt.muscle_positive_j+rt.motor_positive_j,
+            'constraint_signed_j':rt.solver_work_j,'constraint_absolute_j':rt.constraint_absolute_j,
+            'constraint_work_ratio':(rt.constraint_absolute_j/source_positive
+                                     if source_positive > 0. else None),
+            'constraint_work_ok':work_ok,
+            'residual_j':total-rt.initial_energy_j-rt.active_work_j-rt.external_work_j+rt.loss_j,
+            'electrical_work_j':rt.electrical_work_j,
+            'electrical_residual_j':(rt.initial_battery_j-raw.metadata['battery_energy_j']-rt.electrical_work_j
+                                    if rt.cfg.drive.battery.enabled else 0.)}
+        rt.attachment_samples = attachments
+        rt.attachment_errors = tuple(raw.metadata['attachment_errors']) + tuple(
+            name+':unobservable_attachment_wrench' for name in raw.attachment_raw if name not in attachments)
+        rt.step_violations = violations
+        if rt.rider_contacts is not None:
+            rt.rider_contacts.last_attachment_samples = attachments
+            rt.rider_contacts.last_attachment_errors = rt.attachment_errors
+        if rt.rider_control is not None:
+            rt.rider_control.effort_diagnostics = dict(effort)
+            rt.rider_control.last_terms = {name:dict(terms) for name, terms in
+                                            raw.metadata['rider_control_terms'].items()}
+            for name, (_, dof, aid) in rt.rider_control.joints.items():
+                delivered = float(raw.actuator_force[aid])
+                rt.rider_control.last_terms[name].update(solved_force_nm=delivered,
+                    solved_active_nm=delivered, solved_passive_nm=float(raw.qfrc_passive[dof]))
+        channels = dict(raw.metadata['channels'], **effort, energy=rt.energy,
+                        attachment_violations=violations)
+        full = raw.metadata['full'] or index == len(raws)-1
+        if full:
+            diagnostics = raw.metadata['diagnostics']
+            channels.update(rider=copy.deepcopy(diagnostics['rider']),
+                rider_welds=copy.deepcopy(diagnostics['rider_welds']),
+                endpoint_mass=diagnostics['endpoint_mass'],
+                rider_intent={} if diagnostics['rider_intent'] is None else
+                    dict(asdict(diagnostics['rider_intent']), inclination_rad=diagnostics['inclination_rad']),
+                rider_allocation={k:tuple(float(x) for x in value) if isinstance(value,np.ndarray) else value
+                    for k,value in diagnostics['rider_allocation'].items() if not k.startswith('solution_')},
+                rider_ik_saturation=copy.deepcopy(diagnostics['rider_ik_saturation']),
+                rider_support_targets=copy.deepcopy(diagnostics['rider_support_targets']))
+            channels['attachment_samples'] = {name:asdict(value) for name,value in attachments.items()}
+            channels['component_work_j'] = {n:rt.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()}
+            channels['rider_control'] = {} if rt.rider_control is None else copy.deepcopy(rt.rider_control.last_terms)
+        rt.model_status.observe(raw.interval_id,raw.time_s,channels)
+        channels['model_status'] = rt.model_status.as_dict()
+        sample = PhysicalSample(raw.interval_id,raw.time_s,raw.end_time_s,
+                                raw.qpos,raw.qvel,components,channels)
+        rt.history.add(sample)
+        published.append(sample)
+        rt.interval_constraints[raw.interval_id] = raw.metadata['constraint_snapshot']
+        if violations:
+            failures.append((raw.end_time_s,violations))
+    rt.completed_samples = tuple(published)
+    rt.sample = published[-1]
+    rt.period_violations = tuple(failures)
+    return failures

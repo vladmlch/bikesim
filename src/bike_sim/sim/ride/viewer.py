@@ -222,7 +222,7 @@ __all__ = [
 ]
 
 
-def run_physical_viewer(sim, out_root="output/ride") -> int:
+def run_physical_viewer(sim, out_root="output/ride", *, async_telemetry=False) -> int:
     """Show an already resolved physical simulation; never rebuild it as legacy."""
     import mujoco.viewer
     from bike_sim.sim.playground import ensure_macos_mjpython
@@ -233,6 +233,8 @@ def run_physical_viewer(sim, out_root="output/ride") -> int:
     )
     ensure_macos_mjpython()
     sim.physical.set_strict(False)
+    if async_telemetry:
+        sim.physical.set_async_close(True)
     session=RideSession(sim)
     pacer=RealTimePacer(float(sim.model.opt.timestep))
     metadata=configuration_metadata(sim)

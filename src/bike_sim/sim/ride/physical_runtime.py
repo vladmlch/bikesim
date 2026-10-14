@@ -20,7 +20,7 @@ from bike_sim.sim.ride.rider_contacts import RiderContactApplier
 from bike_sim.sim.ride.rider_control import ArticulatedRiderController, RiderCommand
 from bike_sim.sim.ride.physical_mapping import resolve_id
 from bike_sim.sim.ride.rider_state import rider_kinematic_state, road_grade_for_posture, road_grade_preview
-from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory, freeze
+from bike_sim.sim.ride.physical_samples import PhysicalSample, WorkHistory
 from bike_sim.sim.ride.telemetry_v2 import ForceSample
 from bike_sim.sim.ride.constraint_forces import ConstraintForceSnapshot, shock_joint_limit_qfrc
 from bike_sim.sim.ride.physical_observations import (
@@ -33,7 +33,7 @@ from bike_sim.physics.seated_climb import SeatedClimbSignals
 from bike_sim.sim.ride.balance_monitor import BalanceMonitor
 
 
-def _connect_equality_rows(model, data):
+def _connect_equality_rows(model, data, linkage=None):
     """EFC rows owned by `connect` equalities (the suspension linkage closures).
 
     The linkage closure metric is metre-denominated, so it must see connect
@@ -45,16 +45,27 @@ def _connect_equality_rows(model, data):
     if not np.any(rows):
         return rows
     rows = rows.copy()
-    linkage = np.array([
-        model.eq_type[i] == mujoco.mjtEq.mjEQ_CONNECT and not
-        (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_EQUALITY, i) or '').startswith(
-            ('connect_saddle', 'connect_grip_', 'connect_foot_'))
-        for i in range(model.neq)], dtype=bool)
+    if linkage is None:
+        linkage = _connect_linkage_mask(model)
     rows[rows] = linkage[data.efc_id[:n][rows]]
     return rows
 
 
+def _connect_linkage_mask(model):
+    """Model-static mask of equality ids that close the suspension linkage."""
+    return np.array([
+        model.eq_type[i] == mujoco.mjtEq.mjEQ_CONNECT and not
+        (mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_EQUALITY, i) or '').startswith(
+            ('connect_saddle', 'connect_grip_', 'connect_foot_'))
+        for i in range(model.neq)], dtype=bool)
+
+
 class PhysicalRuntime:
+    # Class defaults keep __new__-built test doubles (no __init__) sane:
+    # async close is simply disabled on them.
+    _async_close = None
+    _async_ctx_dirty = False
+
     def __init__(self, sim, *, strict: bool = True):
         if not isinstance(strict, bool):
             raise ValueError('monitor strictness must be a bool')
@@ -68,6 +79,12 @@ class PhysicalRuntime:
         self.period_violations = ()
         self.interval_constraints = {}
         self._held_rider_terms = None
+        self._addr_cache = {}
+        self._applied_control_dict = None
+        self._actuator_layout = None
+        self._connect_linkage = None
+        self._async_close = None
+        self._async_ctx_dirty = True
         if self.cfg.seated_climb.enabled and sim.rider.variant != 'articulated_planar':
             raise ValueError('seated climb needs an articulated planar rider')
         self.rider_intent = RiderIntentResolver(self.cfg.seated_climb, float(sim.model.opt.timestep))
@@ -133,11 +150,15 @@ class PhysicalRuntime:
         return self.live_real_time_factor
 
     def address(self, name):
-        m = self.sim.model
-        jid = mujoco.mj_name2id(m,mujoco.mjtObj.mjOBJ_JOINT,name)
-        if jid < 0:
-            raise ValueError(f'physical model needs joint {name!r}')
-        return int(m.jnt_qposadr[jid]),int(m.jnt_dofadr[jid])
+        out = self._addr_cache.get(name)
+        if out is None:
+            m = self.sim.model
+            jid = mujoco.mj_name2id(m,mujoco.mjtObj.mjOBJ_JOINT,name)
+            if jid < 0:
+                raise ValueError(f'physical model needs joint {name!r}')
+            out = int(m.jnt_qposadr[jid]),int(m.jnt_dofadr[jid])
+            self._addr_cache[name] = out
+        return out
 
     def _contacts(self, *, final=False, time_s=None, qvel=None, update_grounded=False):
         sim = self.sim
@@ -224,6 +245,7 @@ class PhysicalRuntime:
                 active=active, advance=advance)
         if advance:
             self.applied_control = control
+            self._applied_control_dict = None
         if braking is None:
             braking = front > 0. or rear > 0.
         elif not isinstance(braking, bool):
@@ -309,7 +331,11 @@ class PhysicalRuntime:
                     if not getattr(self, 'initializing', False):
                         # One immutable command-term snapshot per control tick,
                         # shared by its raw intervals even across a manual flush.
-                        self._held_rider_terms = freeze(self.rider_control.last_terms)
+                        # Plain nested dicts: RawStep must stay picklable for
+                        # the async close worker, and last_terms is rebound —
+                        # never mutated in place — by compute() each tick.
+                        self._held_rider_terms = {name: dict(terms) for name, terms in
+                                                  self.rider_control.last_terms.items()}
             else:
                 torques = self.control_clock.held()
             self.rider_control.write(d,torques)
@@ -347,6 +373,7 @@ class PhysicalRuntime:
         self.balance_monitor.reset()
         self.rider_intent_signals = SeatedClimbSignals()
         self.applied_control = RideControl()
+        self._applied_control_dict = None
         self.research_accounting_valid=False
         self.live_real_time_factor=None
         self.initializing=True
@@ -429,6 +456,7 @@ class PhysicalRuntime:
                       'residual_j':0.,'energy_scale_j':self.energy_scale_j}
         sim._update_compiled_com_marker()
         self.research_accounting_valid=True
+        self._async_ctx_dirty = self._async_close is not None
         if self.cfg.seated_climb.enabled:
             self.update_rider_intent_signals(sensor_channels(self,
                 drive_channels=getattr(self.drive, 'probe_last', self.drive.last)))
@@ -535,6 +563,10 @@ class PhysicalRuntime:
     def step(self, front=0., rear=0., external=None, *, control=None):
         self.completed_samples = ()
         self.period_violations = ()
+        # Results from earlier closes surface here — one step boundary later
+        # than the synchronous path. Same values, same order, same contract.
+        if self._async_close is not None:
+            self._drain_async()
         raw = self._advance_physics(front,rear,external,control=control)
         self._buffer.push(raw)
         if self._buffer.full or self.sim.crash is not None:
@@ -569,11 +601,14 @@ class PhysicalRuntime:
         sim.last_force_sample=ForceSample(t,q,v,sim.force_accumulator.components)
         sim.last_force_snapshot=(t,sim.last_force_sample.qpos,sim.last_force_sample.qvel,sim.last_force_sample.components)
         components={k:np.array(f,copy=True) for k,f in sim.force_accumulator.components.items()}
-        warning_counts=np.array([w.number for w in d.warning],copy=True)
+        warnings_before=(int(d.warning[int(mujoco.mjtWarning.mjWARN_BADQPOS)].number),
+            int(d.warning[int(mujoco.mjtWarning.mjWARN_BADQVEL)].number),
+            int(d.warning[int(mujoco.mjtWarning.mjWARN_BADQACC)].number))
         mujoco.mj_step(m,d)
         constraint_powers=numerical_constraint_powers(m,d,v)
-        for warning in (mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,mujoco.mjtWarning.mjWARN_BADQACC):
-            if d.warning[int(warning)].number>warning_counts[int(warning)]:
+        for warning,before in zip((mujoco.mjtWarning.mjWARN_BADQPOS,mujoco.mjtWarning.mjWARN_BADQVEL,
+                                 mujoco.mjtWarning.mjWARN_BADQACC),warnings_before):
+            if d.warning[int(warning)].number>before:
                 raise RuntimeError(f'MuJoCo numerical failure: {warning.name}')
         # Read first: efc_force and poses still belong to this solved interval.
         # (q, v) are the interval's start state, where MuJoCo built efc_J.
@@ -586,7 +621,10 @@ class PhysicalRuntime:
         contact_crash=physical_contact_crash(m,d)
         transmission = self.drive.settle_actuation(m,d)
         sensors = sensor_channels(self, qvel=v)
-        components.update(actuator_components(m,d))
+        if self._actuator_layout is None:
+            from bike_sim.sim.ride.physical_observations import actuator_layout
+            self._actuator_layout = actuator_layout(m)
+        components.update(actuator_components(m,d,layout=self._actuator_layout))
         if self.rider_control is not None:
             passive=np.zeros(m.nv)
             for name,(_,dof,aid) in self.rider_control.joints.items():
@@ -621,7 +659,9 @@ class PhysicalRuntime:
         # Capture all solved quantities before refreshing the endpoint kinematics.
         # Only connect-equality rows measure linkage closure; weld rows 3-5 are
         # rotational residuals in radians and must stay out of a metre metric.
-        connect_rows=_connect_equality_rows(m,d)
+        if self._connect_linkage is None:
+            self._connect_linkage = _connect_linkage_mask(m)
+        connect_rows=_connect_equality_rows(m,d,self._connect_linkage)
         linkage_error=float(np.max(np.abs(d.efc_pos[:d.nefc][connect_rows]))) if np.any(connect_rows) else 0.
         shock_limit_power=float(sim.last_constraint_snapshot.components['shock_solver_limit']@v)
         solved_actuator_force=d.actuator_force.copy()
@@ -646,9 +686,11 @@ class PhysicalRuntime:
             'generalized_force_components_n':{n:float(f[sim.applier.fork_dofadr if n.startswith('fork') else sim.applier.shock_dofadr])
                 for n,f in components.items() if n.startswith(('fork_','shock_'))}}
         full = sim.steps % self.record_decimation == 0 or (sim.steps+1) % self.control_clock.steps_per_period == 0
+        if self._applied_control_dict is None:
+            self._applied_control_dict = asdict(self.applied_control)
         channels = {'tires':tires, 'drive':drive, 'suspension':suspension,
                     'sensors':sensors, 'mass':mass0, 'contact_crash_cause':contact_crash,
-                    'control':asdict(self.applied_control),
+                    'control':dict(self._applied_control_dict),
                     'rider_balance':self._balance_channel(front,rear,braking=braking,
                                                          rider_enabled=control.rider_enabled)}
         if self.rider_control is not None:
@@ -691,104 +733,148 @@ class PhysicalRuntime:
         """Evaluate the trailing partial period before termination or reset."""
         if self._buffer._raws:
             self._close_period()
-        else:
+        elif self._async_close is None:
             self.completed_samples = ()
+        if self._async_close is not None:
+            applied = self._drain_async(block=True)
+            if not applied and not self._buffer._raws:
+                self.completed_samples = ()
         return self.completed_samples
 
     def _close_period(self):
-        from bike_sim.physics.energy_ledger import constraint_work_ok
         raws = self._buffer.drain()
         if not raws:
             return
-        report = evaluate_period(self, raws, self.cfg.articulated.attachment_budget())
-        published = []
-        failures = []
-        self.interval_constraints = {}
-        for index, (raw, attachments, violations, work, effort) in enumerate(zip(
-                raws, report.attachments, report.violations_by_step, report.works, report.efforts)):
-            sim = self.sim; dt=self.control_clock.timestep_s; v=raw.qvel
-            components=raw.components
-            loss_step=raw.metadata['loss_step_j']; self.loss_j+=loss_step
-            external_names={'external','rear_drive','road_rolling','aerodynamic','native_contact'}
-            self.muscle_signed_j+=work.muscle_signed_j
-            self.muscle_positive_j+=work.muscle_positive_j
-            self.motor_signed_j+=work.motor_signed_j
-            self.motor_positive_j+=work.motor_positive_j
-            self.constraint_absolute_j+=work.constraint_absolute_j
-            self.solver_work_j+=work.constraint_signed_j
-            self.active_work_j+=work.muscle_signed_j+work.motor_signed_j
-            self.external_work_j+=sum(float(components[n]@v)*dt for n in external_names if n in components)
-            self.electrical_work_j+=raw.metadata['electrical_power_w']*dt
-            source_positive = self.muscle_positive_j+self.motor_positive_j
-            work_ok = constraint_work_ok(self.constraint_absolute_j, source_positive)
-            # This is an integral criterion, published at the closing physical
-            # interval, including a partial terminal period. S8's zero-source
-            # roundoff budget is absolute; it never grows with step count.
-            if index == len(raws)-1 and not work_ok:
-                violations += ('energy.constraint_work',)
-            total=raw.metadata['mechanical_energy_j']; elastic=raw.metadata['elastic_energy_j']
-            self.energy={'mechanical_energy_j':total,'elastic_energy_j':elastic,
-                'active_work_j':self.active_work_j,'external_work_j':self.external_work_j,
-                'loss_j':self.loss_j,'loss_step_j':loss_step,'solver_constraint_work_j':self.solver_work_j,'energy_scale_j':self.energy_scale_j,
-                'muscle_signed_j':self.muscle_signed_j,'muscle_positive_j':self.muscle_positive_j,
-                'motor_signed_j':self.motor_signed_j,'motor_positive_j':self.motor_positive_j,
-                'source_positive_work_j':self.muscle_positive_j+self.motor_positive_j,
-                'constraint_signed_j':self.solver_work_j,'constraint_absolute_j':self.constraint_absolute_j,
-                'constraint_work_ratio':(self.constraint_absolute_j/source_positive
-                                         if source_positive > 0. else None),
-                'constraint_work_ok':work_ok,
-                'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
-                'electrical_work_j':self.electrical_work_j,
-                'electrical_residual_j':(self.initial_battery_j-raw.metadata['battery_energy_j']-self.electrical_work_j
-                                        if self.cfg.drive.battery.enabled else 0.)}
-            self.attachment_samples = attachments
-            self.attachment_errors = tuple(raw.metadata['attachment_errors']) + tuple(
-                name+':unobservable_attachment_wrench' for name in raw.attachment_raw if name not in attachments)
-            self.step_violations = violations
-            if self.rider_contacts is not None:
-                self.rider_contacts.last_attachment_samples = attachments
-                self.rider_contacts.last_attachment_errors = self.attachment_errors
-            if self.rider_control is not None:
-                self.rider_control.effort_diagnostics = dict(effort)
-                self.rider_control.last_terms = {name:dict(terms) for name, terms in
-                                                raw.metadata['rider_control_terms'].items()}
-                for name, (_, dof, aid) in self.rider_control.joints.items():
-                    delivered = float(raw.actuator_force[aid])
-                    self.rider_control.last_terms[name].update(solved_force_nm=delivered,
-                        solved_active_nm=delivered, solved_passive_nm=float(raw.qfrc_passive[dof]))
-            channels = dict(raw.metadata['channels'], **effort, energy=self.energy,
-                            attachment_violations=violations)
-            full = raw.metadata['full'] or index == len(raws)-1
-            if full:
-                diagnostics = raw.metadata['diagnostics']
-                channels.update(rider=copy.deepcopy(diagnostics['rider']),
-                    rider_welds=copy.deepcopy(diagnostics['rider_welds']),
-                    endpoint_mass=diagnostics['endpoint_mass'],
-                    rider_intent={} if diagnostics['rider_intent'] is None else
-                        dict(asdict(diagnostics['rider_intent']), inclination_rad=diagnostics['inclination_rad']),
-                    rider_allocation={k:tuple(float(x) for x in value) if isinstance(value,np.ndarray) else value
-                        for k,value in diagnostics['rider_allocation'].items() if not k.startswith('solution_')},
-                    rider_ik_saturation=copy.deepcopy(diagnostics['rider_ik_saturation']),
-                    rider_support_targets=copy.deepcopy(diagnostics['rider_support_targets']))
-                channels['attachment_samples'] = {name:asdict(value) for name,value in attachments.items()}
-                channels['component_work_j'] = {n:self.history.work_j.get(n,0.)+float(f@v)*dt for n,f in components.items()}
-                channels['rider_control'] = {} if self.rider_control is None else copy.deepcopy(self.rider_control.last_terms)
-            self.model_status.observe(raw.interval_id,raw.time_s,channels)
-            channels['model_status'] = self.model_status.as_dict()
-            sample = PhysicalSample(raw.interval_id,raw.time_s,raw.end_time_s,
-                                    raw.qpos,raw.qvel,components,channels)
-            self.history.add(sample)
-            published.append(sample)
-            self.interval_constraints[raw.interval_id] = raw.metadata['constraint_snapshot']
-            if violations:
-                failures.append((raw.end_time_s,violations))
-        self.completed_samples = tuple(published)
-        self.sample = published[-1]
-        self.period_violations = tuple(failures)
+        if self._async_close is not None:
+            self._async_submit(raws)
+            return
+        self._publish_and_accept(raws)
+
+    def _publish_and_accept(self, raws):
+        from bike_sim.sim.ride.period_buffer import publish_close
+        failures = publish_close(self, raws)
         # Strict rejection keeps its originating interval time even though the
         # whole period has been captured and accounted before publication.
         for time_s, violations in failures:
             self.reference_monitor.accept(time_s,violations)
+
+    def set_async_close(self, enabled: bool) -> None:
+        """Move period evaluation and sample assembly to a spawned process.
+
+        Publication is deferred by up to one physics step: samples, energy and
+        diagnostics appear when the worker's result is applied at the next
+        step boundary instead of inside the closing step. Everything else —
+        sample content, ordering, ledger arithmetic — is computed by the same
+        code, so episodes without consumers that act on mid-period published
+        state stay bitwise identical. Interactive viewers have no such
+        consumers; policy sessions that read ``physical.sample`` for control
+        decisions may observe one-period-older observations.
+        """
+        if not isinstance(enabled, bool):
+            raise ValueError('async close must be a bool')
+        if enabled and self._async_close is None:
+            from bike_sim.sim.ride.async_close import AsyncCloseRunner
+            self._async_close = AsyncCloseRunner()
+            self._async_ctx_dirty = True
+        elif not enabled and self._async_close is not None:
+            self._async_close.drain(self._apply_close_result)
+            self._async_close.close()
+            self._async_close = None
+            self._async_ctx_dirty = False
+
+    def _async_context(self):
+        """Snapshot of everything publish_close reads beyond the raws."""
+        c = self.rider_control
+        rider = None if c is None else {
+            'joints': dict(c.joints), 'config': c.config, 'strength': c.strength,
+            'strength_coordinates': dict(c.strength_coordinates),
+            'effort_diagnostics': dict(c.effort_diagnostics),
+            'last_terms': {n: dict(t) for n, t in c.last_terms.items()}}
+        return {'cfg': self.cfg, 'timestep_s': self.control_clock.timestep_s,
+                'rider_control': rider,
+                'has_rider_contacts': self.rider_contacts is not None,
+                'initial_energy_j': self.initial_energy_j,
+                'energy_scale_j': self.energy_scale_j,
+                'initial_battery_j': self.initial_battery_j,
+                'electrical_work_j': self.electrical_work_j,
+                'loss_j': self.loss_j, 'active_work_j': self.active_work_j,
+                'external_work_j': self.external_work_j,
+                'solver_work_j': self.solver_work_j,
+                'muscle_signed_j': self.muscle_signed_j,
+                'muscle_positive_j': self.muscle_positive_j,
+                'motor_signed_j': self.motor_signed_j,
+                'motor_positive_j': self.motor_positive_j,
+                'constraint_absolute_j': self.constraint_absolute_j,
+                'history': self.history, 'model_status': self.model_status}
+
+    def _async_submit(self, raws):
+        runner = self._async_close
+        if self._async_ctx_dirty:
+            self._async_ctx_dirty = False
+            runner.send_context(self._async_context())
+        try:
+            runner.submit(raws)
+        except Exception as exc:
+            # Serialization failures must not lose the period: fall back to
+            # synchronous publication and disable the worker for good.
+            import sys
+            print(f'[bike] async close disabled: {exc}', file=sys.stderr)
+            runner.close()
+            self._async_close = None
+            self._publish_and_accept(raws)
+
+    def _apply_close_result(self, result):
+        """Replay a worker-computed close onto this runtime, in order."""
+        from bike_sim.sim.ride.async_close import _sample_restore
+        samples = tuple(_sample_restore(spec) for spec in result['samples'])
+        self.completed_samples = samples
+        self.sample = samples[-1]
+        for key, value in result['fields'].items():
+            setattr(self, key, value)
+        self.interval_constraints = result['interval_constraints']
+        if self.rider_control is not None and result['rider_control'] is not None:
+            self.rider_control.effort_diagnostics = result['rider_control']['effort_diagnostics']
+            self.rider_control.last_terms = result['rider_control']['last_terms']
+        if self.rider_contacts is not None:
+            self.rider_contacts.last_attachment_samples = result['last_attachment_samples']
+            self.rider_contacts.last_attachment_errors = result['last_attachment_errors']
+        for time_s, violations in result['failures']:
+            self.reference_monitor.accept(time_s,violations)
+
+    def _drain_async(self, block=False):
+        """Apply finished close results in order; returns True if any applied.
+
+        Transport failures replay the unacknowledged periods synchronously and
+        stay synchronous. Publication errors (including strict-mode monitor
+        rejections) propagate exactly as they would from a synchronous close.
+        """
+        runner = self._async_close
+        if runner is None:
+            return False
+        try:
+            results = runner.collect(block=block)
+        except Exception as exc:
+            from bike_sim.sim.ride.async_close import AsyncWorkerLost
+            if not isinstance(exc, (AsyncWorkerLost, EOFError, OSError)):
+                # Worker-side publication errors propagate like a synchronous
+                # close would; only transport loss triggers the replay below.
+                raise
+            # A dead worker must not lose unacknowledged periods: replay them
+            # synchronously from the last applied state, then stay synchronous.
+            import sys
+            print('[bike] async close worker lost; replaying periods synchronously',
+                  file=sys.stderr)
+            pending = runner.detach_pending()
+            runner.close()
+            self._async_close = None
+            for raws in pending:
+                self._publish_and_accept(raws)
+            return bool(pending)
+        applied = False
+        for result in results:
+            self._apply_close_result(result)
+            applied = True
+        return applied
 
     def _attachment_violations(self):
         """First-order budget check of this interval's attachment samples."""

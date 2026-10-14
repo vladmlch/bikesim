@@ -175,6 +175,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--timestep", type=float, default=None, metavar="S")
     parser.add_argument("--duration", type=float, default=None, metavar="S", help="physical run duration; permits stationary rigs")
     parser.add_argument('--research', action='store_true', help='accounted policy loop in viewer or headless mode')
+    parser.add_argument('--async-telemetry', action='store_true',
+                        help='publish period telemetry from a spawned worker process; the viewer '
+                             'step path then pays only serialization. Policy loops that read '
+                             'physical.sample between steps may see one-period-older data')
     parser.add_argument('--policy', help='motor policy factory, module:factory')
     parser.add_argument('--control-period', type=float)
     parser.add_argument('--sensor-period', type=float)
@@ -760,7 +764,8 @@ def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, 
         ensure_macos_mjpython()
         from bike_sim.sim.ride.physical_session import build_physical_simulation
         from bike_sim.sim.ride.viewer import run_physical_viewer
-        return run_physical_viewer(build_physical_simulation(track,args,rider), out_root=args.out)
+        return run_physical_viewer(build_physical_simulation(track,args,rider), out_root=args.out,
+                                   async_telemetry=args.async_telemetry)
     if args.sag is not None:
         print(f"{PREFIX} --sag applies to headless runs only; the viewer uses the shipped tune "
               f"(P cycles damper presets, -/= change pressure)", file=sys.stderr)

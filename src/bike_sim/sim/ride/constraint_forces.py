@@ -59,6 +59,24 @@ class ConstraintForceSnapshot:
             copied[name] = _frozen_copy(value)
         object.__setattr__(self, "components", MappingProxyType(copied))
 
+    def __getstate__(self):
+        """Pickle support: MappingProxyType and read-only arrays do not
+        survive the wire; restore them on the other side."""
+        return (self.interval_start_s, self.interval_end_s,
+                self.qvel_start, dict(self.components))
+
+    def __setstate__(self, state):
+        start_s, end_s, qvel, components = state
+        object.__setattr__(self, "interval_start_s", float(start_s))
+        object.__setattr__(self, "interval_end_s", float(end_s))
+        object.__setattr__(self, "qvel_start",
+                           _frozen_copy(np.array(qvel, dtype=float, copy=True)))
+        copied = {
+            name: _frozen_copy(np.array(force, dtype=float, copy=True))
+            for name, force in components.items()
+        }
+        object.__setattr__(self, "components", MappingProxyType(copied))
+
     def powers_w(self) -> dict[str, float]:
         """Estimate interval power from solved force and incoming velocity."""
         return {

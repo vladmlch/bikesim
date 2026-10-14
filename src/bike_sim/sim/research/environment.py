@@ -37,6 +37,7 @@ class ExperimentConfig:
     wheelie_persistence_s: float = .02
     maximum_energy_residual_ratio: float = .05
     stop_on_model_violation: bool = True
+    async_telemetry: bool = False
 
     def __post_init__(self):
         for name in ('control_period_s', 'duration_s', 'maximum_energy_residual_ratio'):
@@ -45,6 +46,8 @@ class ExperimentConfig:
             scalar(getattr(self, name), name, minimum=0.)
         if type(self.stop_on_model_violation) is not bool:
             raise ValueError('stop_on_model_violation must be a bool')
+        if type(self.async_telemetry) is not bool:
+            raise ValueError('async_telemetry must be a bool')
         if type(self.seed) is not int or self.seed < 0:
             raise ValueError('experiment seed must be a nonnegative integer')
         if type(self.record_decimation) is not int or self.record_decimation < 1:
@@ -135,6 +138,7 @@ class ResearchEnvironment:
         # Diagnostic mode may keep recording a violating episode; the run's
         # model_valid flag still goes false and stays false.
         self.sim.physical.set_strict(self.config.stop_on_model_violation)
+        self.sim.physical.set_async_close(self.config.async_telemetry)
         self.sim.physical.set_record_decimation(self.config.record_decimation)
         self.tracker = WheelieTracker(persistence_s=self.config.wheelie_persistence_s)
         self.pipeline = SensorPipeline(self.sensor_config, seed=self.seed)

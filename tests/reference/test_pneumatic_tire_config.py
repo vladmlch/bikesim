@@ -122,10 +122,37 @@ def test_pneumatic_rejects_unknown_tyre_keys():
                                                         'front': {'pressure_baar': 1.9}}}})
 
 
+def test_research_environment_rejects_a_named_pneumatic_surface():
+    """environment.py's research gate: a named pneumatic surface shadows the
+    track map (the applier prefers it), so research mode -- pinned to
+    track-material resolution -- rejects the override. The same gate
+    admits pneumatic on the track map (no named surface): the stub sim
+    then fails downstream on its missing model, a different failure."""
+    from types import SimpleNamespace
+    from bike_sim.physics.model_config import SimulationPhysicsConfig
+    from bike_sim.sim.research.environment import ResearchEnvironment
+
+    def env_with(tires):
+        cfg = SimulationPhysicsConfig(
+            'physical', drive_mode='articulated_effort', tires=tires)
+        return ResearchEnvironment(SimpleNamespace(physics_config=cfg))
+
+    named = TireBackendConfig(
+        backend='pneumatic', surface_mode='track',
+        pneumatic=PneumaticTireConfig(surface='asphalt'))
+    with pytest.raises(ValueError, match='track-material'):
+        env_with(named)
+    # No named surface: the clause passes and the gate admits the config.
+    with pytest.raises(AttributeError):
+        env_with(TireBackendConfig(backend='pneumatic', surface_mode='track',
+                                   pneumatic=PneumaticTireConfig()))
+
+
 def test_existing_backend_gates_are_unchanged():
     with pytest.raises(ValueError, match='unknown physical tire backend'):
         TireBackendConfig(backend='pneumtic')
-    with pytest.raises(ValueError, match='track material resolution requires compliant_2d tires'):
+    with pytest.raises(ValueError, match='track material resolution requires a compliant_2d, '
+                                         'distributed_2d_reference or pneumatic tire backend'):
         TireBackendConfig(backend='native_reference', surface_mode='track')
     with pytest.raises(ValueError, match='unknown TireBackendConfig parameter'):
         resolve_physics_config({'tires': {'pneumtic': {}}})

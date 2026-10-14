@@ -120,11 +120,16 @@ public:
     // loop (mj_objectVelocity → PneumaticTyreModel::evaluate →
     // patch-centroid mj_jac force mapping → staged ContactPatch /
     // WheelContactSnapshot / diagnostics / energy folds), the derived
-    // overflow gates, and the atomic commit. `try_compute_into` reports
-    // the same preconditions through CoreStatus, catches residual
-    // rejections and maps them, so the valid warm path is noexcept and
-    // allocation-free (BIKE_NONBLOCKING) end to end — the brushes are
-    // prewarmed at construction and every buffer is construction-sized.
+    // overflow gates, and the atomic commit. `out` accumulates in
+    // place, so a thrown call — e.g. the second wheel's evaluate — can
+    // leave it holding a partial fold: discard `out` on a non-ok
+    // status (model state itself rolls back atomically; the caller
+    // buffer convention is evaluate_into's). `try_compute_into`
+    // reports the same preconditions through CoreStatus, catches
+    // residual rejections and maps them, so the valid warm path is
+    // noexcept and allocation-free (BIKE_NONBLOCKING) end to end — the
+    // brushes are prewarmed at construction and every buffer is
+    // construction-sized.
     [[nodiscard]] std::vector<double> qfrc(const mjData *d, double dt);
     void compute_into(const mjData *d, double dt, std::span<double> out);
     [[nodiscard]] CoreStatus try_compute_into(

@@ -120,8 +120,9 @@ namespace nativecfg {
             }
             if (name == "tire.front" || name == "tire.rear") {
                 // material is backend-conditional: required for compliant_2d,
-                // forbidden for distributed_2d_reference — the domain rule
-                // lives in validate(TireConfig), the key table stays open.
+                // forbidden for distributed_2d_reference and pneumatic —
+                // the domain rule lives in validate(TireConfig), the key
+                // table stays open.
                 constexpr auto required = wire::keys("tangent_k_n_m", "mu", "relaxation_length_m");
                 constexpr auto optional = wire::keys("material");
                 wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));

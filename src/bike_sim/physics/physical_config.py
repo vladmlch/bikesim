@@ -82,7 +82,7 @@ class TireBackendConfig:
         if self.surface_mode not in ('configured', 'track'):
             raise ValueError('surface_mode must be configured or track')
         if self.surface_mode == 'track' and self.backend not in ('compliant_2d','distributed_2d_reference','pneumatic'):
-            raise ValueError('track material resolution requires compliant_2d tires')
+            raise ValueError('track material resolution requires a compliant_2d, distributed_2d_reference or pneumatic tire backend')
         if not isinstance(self.distributed,DistributedTireConfig):
             raise ValueError('distributed tire configuration must be explicit')
         if not isinstance(self.pneumatic,PneumaticTireConfig):

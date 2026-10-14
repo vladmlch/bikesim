@@ -425,6 +425,15 @@ std::vector<double> PneumaticTireWriter::state() const {
                 continue;
             // `bristle[start:stop] = row` — the NumPy slice-assign's
             // width-mismatch ValueError lands as invalid_argument.
+            // Patch (start, stop) keys pass restore_patch_states
+            // unchecked — dict semantics — so bound the range
+            // defensively before the scatter, the same
+            // 0 <= start < stop <= n_rays the wire decode enforces.
+            if (state.start < 0 || state.start >= state.stop ||
+                state.stop > n_rays_)
+                throw std::invalid_argument(
+                    "pneumatic bristle patch range falls outside the "
+                    "ray ring");
             const std::size_t want =
                     static_cast<std::size_t>(state.stop - state.start);
             if (state.bristle_deflection_m.size() != want)

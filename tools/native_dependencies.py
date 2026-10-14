@@ -25,11 +25,34 @@ Dependency document, ``schema_version=1``::
       "mujoco":    {"version": "3.12.0", "include_dir": abs,
                     "library_path": abs},
       "nanobind":  {"cmake_dir": abs, "include_dir": abs},
-      "numerics":  null | object   # populated by T06
+      "numerics":  {backend, numpy_version, numpy_package, site_packages,
+                    blas_integer_bits, lapack_integer_bits, symbols,
+                    numpy_imports, library_paths, threading,
+                    provider_config}
     }
 
 Every filesystem path is absolute and exists; ``mujoco.library_path`` resolves
 to the one exact platform engine image (see ``select_mujoco_library``).
+
+The ``numerics`` record is the numerical-provider qualification produced by
+``discover_numpy_provider`` inside the child probe: which BLAS/LAPACK image
+NumPy actually uses, which exact exported symbols satisfy ddot/dgemv/dgemm/
+dgelsd, and the integer width of each interface. A wrong width is memory
+corruption, so qualification separates metadata validation
+(``validate_numerics``, ``require_same_library``, ``checked_symbol``) from
+unsafe symbol invocation: foreign names are regex- and export-table-checked
+before they are ever declared in generated C or looked up through ctypes, and
+the executable ABI check runs in a disposable subprocess whose death is a
+hard provider failure. Qualified profiles today:
+
+- ``ACCELERATE`` (Darwin): the system framework loaded by NumPy — dyld-cache
+  images carry ``identity_kind="apple-system"`` (null sha256, real
+  macOS/provider/SDK build id), legacy 32-bit CBLAS plus 64-bit NEWLAPACK
+  DGELSD;
+- ``NUMPY_OPENBLAS`` (Linux): the single ILP64 scipy-openblas shared object
+  recorded in the NumPy wheel's installed distribution records — file
+  identity with a real SHA-256, ``scipy_cblas_*64_``/``scipy_*_64_``
+  spellings, BLAS and LAPACK both 64-bit.
 
 CLI:
 
@@ -41,17 +64,23 @@ named dependency errors go to stderr with a nonzero exit.
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import os
 import platform
+import re
+import shutil
 import subprocess
 import sys
 import sysconfig
+import tempfile
 from pathlib import Path
 
 REQUIRED_MUJOCO_VERSION = "3.12.0"
+REQUIRED_NUMPY_VERSION = "2.5.2"
 SCHEMA_VERSION = 1
-_PROBE_TIMEOUT = 120
+_PROBE_TIMEOUT = 300
 
 # Exact, platform-specific candidate filenames only — never a glob and never
 # an unrestricted system library search. The first entry is the canonical
@@ -108,6 +137,347 @@ def select_mujoco_library(directory: Path, system: str, version: str) -> Path:
             f"found {sorted(str(path) for path in found)}"
         )
     return found.pop()
+
+
+# --------------------------------------------------------------------------
+# Numerics symbol/library hygiene (pure stdlib; runs in any interpreter)
+# --------------------------------------------------------------------------
+
+# Exported numerical symbols are C/Fortran identifiers that may also carry
+# Accelerate's ``$NEWLAPACK$ILP64`` decorations — letters, digits, underscore,
+# dollar only. Anything else is unsafe to emit into generated C or hand to a
+# dynamic-symbol lookup.
+SYMBOL = re.compile(r"[A-Za-z_][A-Za-z0-9_$]*")
+
+_NUMERICS_BACKENDS = ("ACCELERATE", "NUMPY_OPENBLAS")
+_NUMERICS_OPS = ("ddot", "dgemv", "dgemm", "dgelsd")
+_NUMERICS_BLAS_OPS = ("ddot", "dgemv", "dgemm")
+# The qualified integer widths per backend: Darwin keeps Accelerate's legacy
+# 32-bit CBLAS with the 64-bit NEWLAPACK DGELSD; the Linux wheel provider is
+# ILP64 on both interfaces. No other profile is qualified — an LP64 or mixed
+# record is a hard failure, never reinterpreted.
+_NUMERICS_WIDTHS = {"ACCELERATE": (32, 64), "NUMPY_OPENBLAS": (64, 64)}
+_NUMERICS_ROLES = ("blas", "lapack", "blas_lapack")
+_NUMERICS_IDENTITY_KINDS = ("file", "apple-system")
+_ACCELERATE_IMAGE_PREFIX = "/System/Library/Frameworks/Accelerate.framework/"
+_SHA256_HEX = re.compile(r"[0-9a-f]{64}")
+
+
+def checked_symbol(value: str) -> str:
+    """Return ``value`` iff it is a safe exported-symbol identifier.
+
+    The gate between untrusted metadata and unsafe invocation: only strings
+    passing this check may be placed in a generated asm label or resolved
+    through ctypes. ``$`` stays allowed because Accelerate's documented
+    ``dgelsd$NEWLAPACK$ILP64`` spelling requires it; the character can never
+    escape a double-quoted C string or a subprocess argument array.
+    """
+    if not isinstance(value, str) or SYMBOL.fullmatch(value) is None:
+        raise ValueError(
+            f"invalid exported numerical symbol identifier: {value!r}"
+        )
+    return value
+
+
+def require_same_library(numpy_path: Path, native_path: Path) -> None:
+    """The image the native build links must be the one NumPy uses.
+
+    Resolution is by realpath of existing files — a symlink alias for the
+    same inode is one library, a different file with the same basename is a
+    substitution and a named failure.
+    """
+    try:
+        resolved_numpy = Path(numpy_path).resolve(strict=True)
+        resolved_native = Path(native_path).resolve(strict=True)
+    except OSError as exc:
+        raise ValueError(
+            "cannot prove the native numerical library is the NumPy "
+            f"provider: {exc}"
+        ) from exc
+    if resolved_numpy != resolved_native:
+        raise ValueError(
+            "native numerical library differs from the NumPy provider: "
+            f"{resolved_native} != {resolved_numpy}"
+        )
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as stream:
+        for chunk in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def validate_numerics(value: dict) -> dict:
+    """Validate a ``numerics`` record; return it unchanged.
+
+    Pure metadata validation — no symbol is invoked and nothing is executed
+    here. Fail-closed on: unknown backend, an unqualified integer width
+    (BLAS not matching the backend's pinned width, LAPACK not 64-bit),
+    missing/duplicate/unsafe symbol names, library paths outside the
+    recorded NumPy distribution, fabricated digests, apple-system entries
+    carrying a file hash, and threading records without a positive count.
+    """
+    if not isinstance(value, dict):
+        raise ValueError(
+            f"numerics record must be an object, found {value!r}"
+        )
+    backend = _require_string(value, "backend", "numerics.backend")
+    if backend not in _NUMERICS_BACKENDS:
+        raise ValueError(
+            f"unsupported numerics backend {backend!r}; expected one of "
+            f"{_NUMERICS_BACKENDS}"
+        )
+
+    # The integer-ABI check runs first: an unqualified width makes every
+    # other field moot and is the failure this whole record exists to stop.
+    blas_bits = value.get("blas_integer_bits")
+    lapack_bits = value.get("lapack_integer_bits")
+    need_blas, need_lapack = _NUMERICS_WIDTHS[backend]
+    if (
+        not isinstance(blas_bits, int)
+        or isinstance(blas_bits, bool)
+        or not isinstance(lapack_bits, int)
+        or isinstance(lapack_bits, bool)
+        or (blas_bits, lapack_bits) != (need_blas, need_lapack)
+    ):
+        raise ValueError(
+            f"unqualified BLAS/LAPACK integer ABI for backend {backend}: "
+            f"blas_integer_bits={blas_bits!r} "
+            f"lapack_integer_bits={lapack_bits!r}; the qualified profile is "
+            f"{need_blas}-bit BLAS with {need_lapack}-bit LAPACK"
+        )
+
+    _require_string(value, "numpy_version", "numerics.numpy_version")
+    numpy_package = _require_path(
+        value, "numpy_package", "numerics.numpy_package", directory=True
+    )
+    site_packages = _require_path(
+        value, "site_packages", "numerics.site_packages", directory=True
+    )
+    site_resolved = site_packages.resolve()
+    if numpy_package.resolve().parent != site_resolved:
+        raise ValueError(
+            "numerics.numpy_package is not inside the recorded "
+            f"site_packages tree: {numpy_package} vs {site_packages} — the "
+            "record must describe one installed distribution"
+        )
+
+    symbols = _require_object(value, "symbols")
+    symbol_keys = set(symbols)
+    if symbol_keys != set(_NUMERICS_OPS):
+        missing = sorted(set(_NUMERICS_OPS) - symbol_keys)
+        extra = sorted(symbol_keys - set(_NUMERICS_OPS))
+        raise ValueError(
+            "numerics.symbols must map exactly the four qualified "
+            f"operations {_NUMERICS_OPS}; missing={missing} extra={extra}"
+        )
+    accepted = {
+        op: checked_symbol(symbols[op]) for op in _NUMERICS_OPS
+    }
+    if backend == "NUMPY_OPENBLAS":
+        for op in _NUMERICS_BLAS_OPS:
+            name = accepted[op]
+            if not (
+                name.startswith("scipy_cblas_") and name.endswith("64_")
+            ):
+                raise ValueError(
+                    f"numerics symbol {name!r} for '{op}' is not the "
+                    "scipy-openblas ILP64 CBLAS spelling "
+                    "(scipy_cblas_<op>64_); it cannot back a 64-bit "
+                    "integer ABI claim"
+                )
+        lapack_name = accepted["dgelsd"]
+        if not (
+            lapack_name.startswith("scipy_")
+            and lapack_name.endswith("_64_")
+            and "cblas" not in lapack_name.lower()
+            and "lapacke" not in lapack_name.lower()
+        ):
+            raise ValueError(
+                f"numerics symbol {lapack_name!r} for 'dgelsd' is not the "
+                "scipy-openblas ILP64 Fortran spelling (scipy_<op>_64_); "
+                "it cannot back a 64-bit integer ABI claim"
+            )
+    else:  # ACCELERATE
+        for op in _NUMERICS_BLAS_OPS:
+            name = accepted[op]
+            if not name.startswith("cblas_") or "NEWLAPACK" in name:
+                raise ValueError(
+                    f"numerics symbol {name!r} for '{op}' is not the "
+                    "qualified legacy 32-bit CBLAS interface — a NEWLAPACK "
+                    "variant claims a different integer ABI"
+                )
+        lapack_name = accepted["dgelsd"]
+        if "NEWLAPACK" not in lapack_name or "ILP64" not in lapack_name:
+            raise ValueError(
+                f"numerics symbol {lapack_name!r} for 'dgelsd' is not the "
+                "Accelerate NEWLAPACK ILP64 interface — an unmarked symbol "
+                "would carry the legacy 32-bit integer ABI"
+            )
+
+    imports = _require_object(value, "numpy_imports")
+    if set(imports) != set(_NUMERICS_OPS):
+        raise ValueError(
+            "numerics.numpy_imports must map exactly the four qualified "
+            f"operations {_NUMERICS_OPS}"
+        )
+    for op in _NUMERICS_OPS:
+        listed = imports[op]
+        if not isinstance(listed, list):
+            raise ValueError(
+                f"numerics.numpy_imports.{op} must be a list, "
+                f"found {listed!r}"
+            )
+        for name in listed:
+            checked_symbol(name)
+
+    library_paths = value.get("library_paths")
+    if not isinstance(library_paths, list) or not library_paths:
+        raise ValueError(
+            f"numerics.library_paths must be a nonempty list, "
+            f"found {library_paths!r}"
+        )
+    seen_paths: set[Path] = set()
+    covered_roles: set[str] = set()
+    for index, entry in enumerate(library_paths):
+        label = f"numerics.library_paths[{index}]"
+        if not isinstance(entry, dict):
+            raise ValueError(f"{label} must be an object, found {entry!r}")
+        raw_path = _require_string(entry, "path", f"{label}.path")
+        path = Path(raw_path)
+        if not path.is_absolute():
+            raise ValueError(f"{label}.path is not absolute: {raw_path}")
+        role = _require_string(entry, "role", f"{label}.role")
+        if role not in _NUMERICS_ROLES:
+            raise ValueError(
+                f"{label}.role must be one of {_NUMERICS_ROLES}, "
+                f"found {role!r}"
+            )
+        identity = _require_string(
+            entry, "identity_kind", f"{label}.identity_kind"
+        )
+        if identity not in _NUMERICS_IDENTITY_KINDS:
+            raise ValueError(
+                f"{label}.identity_kind must be one of "
+                f"{_NUMERICS_IDENTITY_KINDS}, found {identity!r}"
+            )
+        sha = entry.get("sha256")
+        build_id = entry.get("build_id")
+        if identity == "file":
+            if backend != "NUMPY_OPENBLAS":
+                raise ValueError(
+                    f"{label} uses a file identity under backend "
+                    f"{backend} — only the wheel-backed OpenBLAS profile "
+                    "has a hashable provider file"
+                )
+            if not path.is_file():
+                raise ValueError(
+                    f"{label}.path does not name an existing provider "
+                    f"file: {raw_path}"
+                )
+            if not isinstance(sha, str) or _SHA256_HEX.fullmatch(sha) is None:
+                raise ValueError(
+                    f"{label}.sha256 must be a lowercase 64-hex digest, "
+                    f"found {sha!r}"
+                )
+            actual = _sha256_file(path)
+            if actual != sha:
+                raise ValueError(
+                    f"{label}.sha256 does not match the provider file: "
+                    f"recorded {sha}, content hashes to {actual}"
+                )
+            if build_id is not None:
+                raise ValueError(
+                    f"{label}.build_id must be null for a file identity, "
+                    f"found {build_id!r}"
+                )
+            resolved = path.resolve()
+            if not resolved.is_relative_to(site_resolved):
+                raise ValueError(
+                    f"{label}.path is outside the installed NumPy "
+                    f"distribution records: {resolved} is not under "
+                    f"{site_resolved}"
+                )
+        else:  # apple-system
+            if backend != "ACCELERATE":
+                raise ValueError(
+                    f"{label} uses an apple-system identity under backend "
+                    f"{backend} — that identity is only legal for the "
+                    "Darwin system framework"
+                )
+            if sha is not None:
+                raise ValueError(
+                    f"{label}.sha256 must be null for an apple-system "
+                    "identity — a dyld-cache image is not a hashable "
+                    f"provider file (got {sha!r})"
+                )
+            if not isinstance(build_id, str) or not build_id:
+                raise ValueError(
+                    f"{label}.build_id must be a nonempty string for an "
+                    f"apple-system identity, found {build_id!r}"
+                )
+            if not raw_path.startswith(_ACCELERATE_IMAGE_PREFIX):
+                raise ValueError(
+                    f"{label}.path is not a system Accelerate.framework "
+                    f"image: {raw_path}"
+                )
+            resolved = path  # dyld-cache path — no file to resolve
+        if resolved in seen_paths:
+            raise ValueError(
+                f"duplicate numerical provider entry: {resolved} is "
+                "listed twice"
+            )
+        seen_paths.add(resolved)
+        covered_roles.update(role.split("_"))
+    if not {"blas", "lapack"} <= covered_roles:
+        raise ValueError(
+            "numerics.library_paths does not cover both blas and lapack "
+            f"roles: covered {sorted(covered_roles)}"
+        )
+
+    threading = _require_object(value, "threading")
+    _require_string(
+        threading, "implementation", "numerics.threading.implementation"
+    )
+    num_threads = threading.get("num_threads")
+    if (
+        not isinstance(num_threads, int)
+        or isinstance(num_threads, bool)
+        or num_threads < 1
+    ):
+        raise ValueError(
+            "numerics.threading.num_threads must be a positive integer, "
+            f"found {num_threads!r}"
+        )
+
+    config = _require_object(value, "provider_config")
+    if backend == "NUMPY_OPENBLAS":
+        openblas = config.get("openblas")
+        if not isinstance(openblas, dict):
+            raise ValueError(
+                "numerics.provider_config.openblas must be an object, "
+                f"found {openblas!r}"
+            )
+        openblas_config = openblas.get("config")
+        if (
+            not isinstance(openblas_config, str)
+            or "USE64BITINT" not in openblas_config
+        ):
+            raise ValueError(
+                "numerics.provider_config.openblas.config must carry the "
+                "USE64BITINT build flag — the provider-side evidence for "
+                f"the 64-bit integer ABI, found {openblas_config!r}"
+            )
+        _require_string(openblas, "core", "numerics.provider_config.openblas.core")
+        _require_string(
+            openblas, "version", "numerics.provider_config.openblas.version"
+        )
+    else:
+        for key in ("macos_build", "sdk_build", "accelerate_uuid"):
+            _require_string(config, key, f"numerics.provider_config.{key}")
+    return value
 
 
 # --------------------------------------------------------------------------
@@ -237,12 +607,1097 @@ def validate_dependencies(value: dict) -> dict:
     )
 
     numerics = value.get("numerics")
-    if numerics is not None and not isinstance(numerics, dict):
-        raise ValueError(
-            f"dependency probe field 'numerics' must be an object or null, "
-            f"found {numerics!r}"
-        )
+    if numerics is not None:
+        # A populated record must pass the full provider qualification —
+        # it cannot be partially right. ``null`` stays acceptable here so
+        # pre-T06 documents keep validating; ``doctor --numerics`` and the
+        # CMake side are the consumers that require it non-null.
+        validate_numerics(numerics)
     return value
+
+
+# --------------------------------------------------------------------------
+# Numerical-provider discovery — runs inside the SELECTED interpreter only
+# --------------------------------------------------------------------------
+#
+# Layering contract: everything below this line executes inside the probe
+# child, which is a disposable interpreter process. It imports NumPy (and
+# SciPy once, deliberately, for the interposition control), enumerates the
+# loaded numerical providers, inspects their export tables with platform
+# tools, and only then compiles/links/runs a C probe against the qualified
+# signatures in a *second* disposable subprocess. Metadata validation
+# (validate_numerics) never calls foreign code; foreign invocation only ever
+# sees identifiers that passed checked_symbol + provider export membership.
+
+_NUMPY_INSTALL_INSTRUCTION = (
+    "the native build requires the locked NumPy "
+    f"{REQUIRED_NUMPY_VERSION} wheel — run `uv sync --locked --group "
+    "native` (tools/dev.py bootstrap); a system/distribution NumPy is not "
+    "qualified"
+)
+
+# Op-stem + recognised suffix forms: scipy-openblas spells ILP64 exports
+# `scipy_<op>_64_` (Fortran) and `scipy_cblas_<op>64_` (CBLAS); LP64 drops the
+# 64 markers; Accelerate spells its new interface `...$NEWLAPACK[$ILP64]` and
+# legacy Fortran adds a trailing underscore. Matching is anchored at the end
+# so kernel names like ``ddot_k_NEOVERSEN1`` or ``dgemmt`` never qualify.
+_OP_SYMBOL_TAIL = re.compile(
+    r"(ddot|dgemv|dgemm|dgelsd)"
+    r"(?:\$NEWLAPACK\$ILP64|\$NEWLAPACK|_64_|64_|_)?$"
+)
+
+
+def _run_tool(argv: list[str], *, timeout: int = 60) -> str:
+    """Run an inspection tool; nonzero exits are named failures, and the
+    tool itself must exist — PATH resolution is explicit, never implicit."""
+    executable = shutil.which(argv[0])
+    if executable is None:
+        raise ValueError(
+            f"required inspection tool {argv[0]!r} is not installed"
+        )
+    try:
+        completed = subprocess.run(
+            [executable, *argv[1:]],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError(f"{argv[0]!r} probe failed: {exc}") from exc
+    if completed.returncode != 0:
+        detail = completed.stderr.strip() or "(no stderr)"
+        raise ValueError(
+            f"{argv[0]} {' '.join(argv[1:])} failed "
+            f"(exit {completed.returncode}): {detail}"
+        )
+    return completed.stdout
+
+
+def _elf_defined_symbols(path: Path) -> set[str]:
+    """Exported dynamic symbols of an ELF image via ``nm -D``."""
+    output = _run_tool(["nm", "-D", "--defined-only", str(path)])
+    names: set[str] = set()
+    for line in output.splitlines():
+        parts = line.split()
+        # `addr T name` or bare `T name` for zero-address/special entries
+        if len(parts) >= 2 and parts[-2] in "TtWwDdBbRrVvIi":
+            names.add(parts[-1])
+    return names
+
+
+def _elf_undefined_symbols(path: Path) -> set[str]:
+    """Undefined dynamic imports of an ELF image via ``nm -D``."""
+    output = _run_tool(["nm", "-D", "--undefined-only", str(path)])
+    names: set[str] = set()
+    for line in output.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0] in ("U", "u", "w"):
+            names.add(parts[-1])
+        elif len(parts) == 1:
+            names.add(parts[0])
+    return names
+
+
+def _macho_defined_symbols(image_path: str) -> set[str]:
+    """Exported symbols of a Mach-O image — works for dyld-cache paths that
+    have no on-disk file by reading through ``dyld_info``. Returned names
+    are stripped of the Mach-O leading underscore so records carry the
+    ABI-level spelling."""
+    output = _run_tool(["dyld_info", "-exports", image_path])
+    names: set[str] = set()
+    for line in output.splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[0].startswith("0x"):
+            name = parts[1]
+            names.add(name[1:] if name.startswith("_") else name)
+    return names
+
+
+def _macho_undefined_symbols(path: Path) -> set[str]:
+    """Undefined imports of a Mach-O extension via ``nm -u``; leading
+    underscores stripped to the ABI-level spelling."""
+    output = _run_tool(["nm", "-u", str(path)])
+    names: set[str] = set()
+    for line in output.splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        name = parts[0]
+        if name.startswith("_"):
+            name = name[1:]
+        if SYMBOL.fullmatch(name) is not None:
+            names.add(name)
+    return names
+
+
+def _dyld_loaded_images() -> dict[str, int]:
+    """Map loaded-image install names to their mach_header addresses.
+
+    Read-only process introspection through libSystem's public ``_dyld_*``
+    API — the only way to name the dyld-cache images NumPy actually bound,
+    since they do not exist as files on disk.
+    """
+    import ctypes
+
+    lib = ctypes.CDLL(None)
+    lib._dyld_image_count.restype = ctypes.c_uint32
+    lib._dyld_get_image_name.restype = ctypes.c_char_p
+    lib._dyld_get_image_name.argtypes = [ctypes.c_uint32]
+    lib._dyld_get_image_header.restype = ctypes.c_void_p
+    lib._dyld_get_image_header.argtypes = [ctypes.c_uint32]
+    images: dict[str, int] = {}
+    for index in range(lib._dyld_image_count()):
+        raw = lib._dyld_get_image_name(index)
+        if raw:
+            header = lib._dyld_get_image_header(index)
+            images[os.fsdecode(raw)] = int(header) if header else 0
+    return images
+
+
+def _macho_uuid_at(header_address: int) -> str | None:
+    """LC_UUID of a loaded Mach-O image, parsed from its load commands."""
+    import ctypes
+
+    if not header_address:
+        return None
+    magic = ctypes.c_uint32.from_address(header_address).value
+    if magic != 0xFEEDFACF:  # MH_MAGIC_64 — in-process images are thin
+        return None
+    ncmds = ctypes.c_uint32.from_address(header_address + 16).value
+    offset = header_address + 32  # sizeof(mach_header_64)
+    for _ in range(ncmds):
+        command = ctypes.c_uint32.from_address(offset).value
+        size = ctypes.c_uint32.from_address(offset + 4).value
+        if size < 8:
+            return None  # corrupt command table — never keep walking
+        if command == 0x1B:  # LC_UUID
+            raw = ctypes.string_at(offset + 8, 16).hex()
+            return (
+                f"{raw[0:8]}-{raw[8:12]}-{raw[12:16]}-"
+                f"{raw[16:20]}-{raw[20:32]}"
+            )
+        offset += size
+    return None
+
+
+def _numpy_extension_imports(
+    package: Path, system: str
+) -> dict[str, list[str]]:
+    """Which BLAS/LAPACK entry points NumPy's own extension images import.
+
+    Evidence-driven symbol derivation: every ``*.so`` under the installed
+    NumPy package is scanned for undefined ddot/dgemv/dgemm/dgelsd imports —
+    the accepted names are what NumPy actually calls, not what a table of
+    constants guesses.
+    """
+    undefined: set[str] = set()
+    extensions = sorted(package.rglob("*.so"))
+    if not extensions:
+        raise ValueError(
+            f"the installed NumPy package {package} has no extension "
+            "modules to inspect — an incomplete or stub install cannot "
+            "qualify a numerical provider"
+        )
+    for extension in extensions:
+        if system == "Linux":
+            undefined |= _elf_undefined_symbols(extension)
+        else:
+            undefined |= _macho_undefined_symbols(extension)
+    per_op: dict[str, set[str]] = {op: set() for op in _NUMERICS_OPS}
+    for name in undefined:
+        match = _OP_SYMBOL_TAIL.search(name)
+        if match is not None:
+            per_op[match.group(1)].add(name)
+    return {op: sorted(names) for op, names in per_op.items()}
+
+
+def _jsonable(value):
+    """Deep-convert numpy/tool output to JSON-safe data for the record."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        asdict = getattr(value, "_asdict", None)
+        if callable(asdict):  # namedtuple (uname_result & friends)
+            return _jsonable(asdict())
+        return [_jsonable(item) for item in value]
+    return str(value)
+
+
+def _numpy_runtime_info(np):
+    """``np.show_runtime`` prints its table to stdout — capture it so the
+    child's stdout stays JSON-only while still recording the data."""
+    import contextlib
+    import io
+
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        result = np.show_runtime()
+    return _jsonable(result if result is not None else buffer.getvalue())
+
+
+def _numpy_build_dependencies(np) -> dict:
+    """The blas/lapack entries of NumPy's own build-time config."""
+    try:
+        config = np.__config__.show(mode="dicts")
+    except Exception as exc:
+        raise ValueError(
+            f"numpy.__config__.show(mode='dicts') failed: {exc}"
+        ) from exc
+    if not isinstance(config, dict):
+        raise ValueError(
+            "numpy.__config__ did not return a dict; cannot qualify the "
+            "NumPy build"
+        )
+    dependencies = config.get("Build Dependencies")
+    if not isinstance(dependencies, dict):
+        raise ValueError(
+            "NumPy build configuration has no 'Build Dependencies' "
+            f"section: {sorted(config)}"
+        )
+    return dependencies
+
+
+def _numpy_distribution():
+    """The installed NumPy distribution: package files, RECORD hashes,
+    wheel tags — everything needed to bind a provider path to the wheel."""
+    import importlib.metadata
+
+    try:
+        distribution = importlib.metadata.distribution("numpy")
+    except importlib.metadata.PackageNotFoundError as exc:
+        raise ValueError(
+            "NumPy is not an installed distribution — "
+            + _NUMPY_INSTALL_INSTRUCTION
+        ) from exc
+    files = distribution.files
+    if not files:
+        raise ValueError(
+            "the installed NumPy distribution has no file records — an "
+            "editable or non-wheel install cannot qualify a provider; "
+            + _NUMPY_INSTALL_INSTRUCTION
+        )
+    members: dict[str, Path] = {}
+    for entry in files:
+        located = Path(distribution.locate_file(str(entry))).resolve()
+        members[str(entry)] = located
+    site_packages = Path(distribution.locate_file("")).resolve()
+    wheel_text = distribution.read_text("WHEEL") or ""
+    tags = [
+        line.split(":", 1)[1].strip()
+        for line in wheel_text.splitlines()
+        if line.startswith("Tag:")
+    ]
+    record_hashes: dict[str, tuple[str, int | None]] = {}
+    record_entry = next(
+        (name for name in members if name.endswith(".dist-info/RECORD")),
+        None,
+    )
+    if record_entry is not None:
+        record_file = members[record_entry]
+        for raw in record_file.read_text().splitlines():
+            if ",sha256=" not in raw:
+                continue
+            path_field, hash_field, size_field = raw.rsplit(",", 2)
+            record_hashes[path_field] = (
+                hash_field.removeprefix("sha256="),
+                int(size_field) if size_field.isdigit() else None,
+            )
+    return distribution, members, record_hashes, site_packages, tags
+
+
+def _numerics_abi_probe_source(backend: str, symbols: dict) -> str:
+    """The generated C probe: qualified integer widths and exact exported
+    symbols land inside ``__asm__`` labels — nothing is retyped from
+    memory, and every symbol passed ``checked_symbol`` first."""
+    if backend == "ACCELERATE":
+        blas_int = "int32_t"
+        label_prefix = "_"  # Mach-O symbol prefix
+    elif backend == "NUMPY_OPENBLAS":
+        blas_int = "int64_t"
+        label_prefix = ""   # ELF symbols carry no leading underscore
+    else:
+        raise ValueError(
+            f"cannot generate an ABI probe for unqualified backend "
+            f"{backend!r}"
+        )
+    qualified = {
+        op: label_prefix + checked_symbol(symbols[op])
+        for op in _NUMERICS_OPS
+    }
+    blas_bits = 4 if backend == "ACCELERATE" else 8
+    return f"""/* bike numerics ABI probe — generated by tools/native_dependencies.py.
+ * Compile, link and run may only happen in a disposable subprocess: a
+ * declared-but-wrong integer width is memory corruption, never a stub.
+ */
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef {blas_int} blas_int;
+typedef int64_t lapack_int;
+_Static_assert(sizeof(blas_int) == {blas_bits},
+               "BLAS integer width does not match the qualified ABI");
+_Static_assert(sizeof(lapack_int) == 8,
+               "LAPACK integer width does not match the qualified ABI");
+
+extern double probe_ddot(blas_int n, const double *x, blas_int incx,
+                         const double *y, blas_int incy)
+    __asm__("{qualified['ddot']}");
+extern void probe_dgemv(blas_int order, blas_int transa, blas_int m,
+                        blas_int n, double alpha, const double *a,
+                        blas_int lda, const double *x, blas_int incx,
+                        double beta, double *y, blas_int incy)
+    __asm__("{qualified['dgemv']}");
+extern void probe_dgemm(blas_int order, blas_int transa, blas_int transb,
+                        blas_int m, blas_int n, blas_int k, double alpha,
+                        const double *a, blas_int lda, const double *b,
+                        blas_int ldb, double beta, double *c, blas_int ldc)
+    __asm__("{qualified['dgemm']}");
+extern void probe_dgelsd(const lapack_int *m, const lapack_int *n,
+                         const lapack_int *nrhs, double *a,
+                         const lapack_int *lda, double *b,
+                         const lapack_int *ldb, double *s,
+                         const double *rcond, lapack_int *rank,
+                         double *work, const lapack_int *lwork,
+                         lapack_int *iwork, lapack_int *info)
+    __asm__("{qualified['dgelsd']}");
+
+static int failures = 0;
+static void check(int ok, const char *name) {{
+    if (!ok) {{
+        ++failures;
+        fprintf(stderr, "BIKE-ABI-FAIL %s\\n", name);
+    }}
+}}
+
+int main(void) {{
+    /* dot: [1 2 3] . [4 5 6] == 32 */
+    double x3[3] = {{1., 2., 3.}};
+    double y3[3] = {{4., 5., 6.}};
+    check(probe_ddot(3, x3, 1, y3, 1) == 32., "ddot");
+
+    /* rectangular dgemv, row-major 3x4 NoTrans: row sums {{10, 26, 42}} */
+    double a34[12] = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
+    double x4[4] = {{1, 1, 1, 1}};
+    double yv[3] = {{0, 0, 0}};
+    probe_dgemv(101, 111, 3, 4, 1.0, a34, 4, x4, 1, 0.0, yv, 1);
+    check(yv[0] == 10. && yv[1] == 26. && yv[2] == 42., "dgemv");
+
+    /* rectangular dgemm, row-major (2x3)*(3x2) -> [[4,5],[10,11]] */
+    double a23[6] = {{1, 2, 3, 4, 5, 6}};
+    double b32[6] = {{1, 0, 0, 1, 1, 1}};
+    double c22[4] = {{0, 0, 0, 0}};
+    probe_dgemm(101, 111, 111, 2, 2, 3, 1.0, a23, 3, b32, 2, 0.0, c22, 2);
+    check(c22[0] == 4. && c22[1] == 5. && c22[2] == 10. && c22[3] == 11.,
+          "dgemm");
+
+    /* dgelsd: workspace query, then a rank-1-deficient 3x2 solve.
+       A = cols (1,2,3) and (2,4,6); b = 3*col1 -> min-norm x = (0.6, 1.2). */
+    lapack_int m = 3, n = 2, nrhs = 1, lda = 3, ldb = 3;
+    lapack_int info = 0, rank = 0;
+    double a[6] = {{1, 2, 3, 2, 4, 6}};
+    double b[3] = {{3, 6, 9}};
+    double s[2];
+    double rcond = -1.;
+    lapack_int lwork = -1;
+    double work_size = 0.;
+    lapack_int iwork_size = 0;
+    probe_dgelsd(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank,
+                 &work_size, &lwork, &iwork_size, &info);
+    check(info == 0, "dgelsd.workspace_query");
+    check(work_size > 0. && iwork_size > 0, "dgelsd.workspace_sizes");
+    lwork = (lapack_int) work_size;
+    double *work = malloc(sizeof(double) * (size_t) lwork);
+    lapack_int *iwork = malloc(sizeof(lapack_int) * (size_t) iwork_size);
+    check(work != NULL && iwork != NULL, "dgelsd.workspace_alloc");
+    a[0] = 1; a[1] = 2; a[2] = 3; a[3] = 2; a[4] = 4; a[5] = 6;
+    b[0] = 3; b[1] = 6; b[2] = 9;
+    info = 0; rank = 0;
+    probe_dgelsd(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank,
+                 work, &lwork, iwork, &info);
+    check(info == 0, "dgelsd.solve");
+    check(rank == 1, "dgelsd.rank");
+    check(fabs(b[0] - 0.6) < 1e-9 && fabs(b[1] - 1.2) < 1e-9,
+          "dgelsd.solution");
+    free(work);
+    free(iwork);
+    printf("BIKE-ABI-OK ddot=32 dgemv=[10 26 42] dgemm=[4 5;10 11] "
+           "dgelsd_rank=%lld x=[%g %g]\\n",
+           (long long) rank, b[0], b[1]);
+    return failures ? 1 : 0;
+}}
+"""
+
+
+def _verify_abi_compile_link_run(
+    backend: str, symbols: dict, provider_path: Path | None
+) -> dict:
+    """Compile-only type check, then compile+link+run in a disposable
+    subprocess. Any failure — compiler diagnostics, unresolved symbols, a
+    crash, a wrong result — is a hard provider failure; there is no
+    'probably right' state for an integer ABI."""
+    compiler_name = os.environ.get("CC") or "cc"
+    compiler = shutil.which(compiler_name)
+    if compiler is None:
+        raise ValueError(
+            f"cannot verify the numerical ABI: C compiler "
+            f"{compiler_name!r} is not installed"
+        )
+    source = _numerics_abi_probe_source(backend, symbols)
+    with tempfile.TemporaryDirectory(prefix="bike-numerics-") as workdir:
+        work = Path(workdir)
+        source_file = work / "abi_probe.c"
+        binary = work / "abi_probe"
+        source_file.write_text(source, encoding="utf-8")
+
+        def _stage(
+            argv: list[str], stage: str, env: dict | None = None
+        ) -> subprocess.CompletedProcess:
+            try:
+                completed = subprocess.run(
+                    argv, capture_output=True, text=True, timeout=120,
+                    check=False, cwd=workdir, env=env,
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                raise ValueError(
+                    f"numerics ABI {stage} could not run: {exc}"
+                ) from exc
+            if completed.returncode != 0:
+                raise ValueError(
+                    f"numerics ABI {stage} failed (exit "
+                    f"{completed.returncode}): "
+                    f"{(completed.stderr or completed.stdout).strip()}"
+                )
+            return completed
+
+        _stage(
+            [
+                compiler, "-fsyntax-only", "-std=c11",
+                "-Wall", "-Wextra", "-Werror", str(source_file),
+            ],
+            "compile-only type check",
+        )
+        if backend == "ACCELERATE":
+            link_argv = [
+                compiler, "-std=c11", "-O2", str(source_file),
+                "-o", str(binary), "-framework", "Accelerate",
+            ]
+            run_env = None
+        else:
+            if provider_path is None:
+                raise ValueError(
+                    "the NUMPY_OPENBLAS ABI check requires the provider "
+                    "library path"
+                )
+            link_argv = [
+                compiler, "-std=c11", "-O2", str(source_file),
+                str(provider_path),
+                "-Wl,-rpath," + str(provider_path.parent),
+                "-o", str(binary),
+            ]
+            run_env = dict(os.environ)
+            run_env["LD_LIBRARY_PATH"] = (
+                str(provider_path.parent)
+                + os.pathsep
+                + run_env.get("LD_LIBRARY_PATH", "")
+            )
+        _stage(link_argv, "link check")
+        completed = _stage([str(binary)], "run check", env=run_env)
+        if "BIKE-ABI-OK" not in completed.stdout:
+            raise ValueError(
+                "numerics ABI run check did not report success: "
+                f"{completed.stdout.strip()}"
+            )
+    version = _run_tool([compiler, "--version"]).splitlines()[0]
+    return {
+        "compiler": version,
+        "compile_only": "pass",
+        "link_run": "pass",
+        "output": completed.stdout.strip(),
+    }
+
+
+def _exercise_numpy(np):
+    """Deterministic dot/lstsq results — bitwise-comparable across the
+    SciPy-interposition boundary."""
+    a = np.arange(72, dtype=np.float64).reshape(8, 9) * 0.03125
+    b = np.arange(45, dtype=np.float64).reshape(9, 5) * -0.0625
+    product = a @ b
+    solution, residuals, rank, singular = np.linalg.lstsq(
+        a, np.linspace(1.0, 8.0, 8), rcond=None
+    )
+    return (
+        product.tobytes(),
+        solution.tobytes(),
+        residuals.tobytes(),
+        rank,
+        singular.tobytes(),
+    )
+
+
+def _blas_pool(threadpoolctl) -> list[dict]:
+    return [
+        entry
+        for entry in threadpoolctl.threadpool_info()
+        if isinstance(entry, dict) and entry.get("user_api") == "blas"
+    ]
+
+
+def _discover_numpy_provider_linux(np, threadpoolctl, package: Path,
+                                   site_packages: Path,
+                                   build_dependencies: dict) -> dict:
+    """The Linux profile: the single ILP64 scipy-openblas shared object the
+    NumPy wheel ships — proven by wheel RECORD membership, a matching file
+    digest, the USE64BITINT build flag, and the exact ``scipy_*64_``
+    export/imports sets."""
+    blas_dep = build_dependencies.get("blas")
+    lapack_dep = build_dependencies.get("lapack")
+    blas_name = blas_dep.get("name") if isinstance(blas_dep, dict) else None
+    lapack_name = (
+        lapack_dep.get("name") if isinstance(lapack_dep, dict) else None
+    )
+    if blas_name != "scipy-openblas" or lapack_name != "scipy-openblas":
+        raise ValueError(
+            f"NumPy {np.__version__} was built against "
+            f"blas={blas_name!r}/lapack={lapack_name!r}, not the bundled "
+            "scipy-openblas profile — " + _NUMPY_INSTALL_INSTRUCTION
+        )
+    for label in ("blas", "lapack"):
+        entry = build_dependencies[label]
+        config_text = entry.get("openblas configuration")
+        if not isinstance(config_text, str):
+            raise ValueError(
+                f"NumPy build dependencies.{label} carries no OpenBLAS "
+                "configuration string — cannot prove the integer ABI"
+            )
+        if "USE64BITINT" not in config_text:
+            raise ValueError(
+                f"the NumPy wheel's {label} OpenBLAS was not built with "
+                "USE64BITINT — an LP64 provider cannot qualify the 64-bit "
+                "integer ABI profile; " + _NUMPY_INSTALL_INSTRUCTION
+            )
+
+    pool = _blas_pool(threadpoolctl)
+    if not pool:
+        raise ValueError(
+            "no BLAS provider is loaded after exercising NumPy — cannot "
+            "qualify what the process did not load"
+        )
+    distribution, members, record_hashes, dist_site, wheel_tags = (
+        _numpy_distribution()
+    )
+    owned = [
+        entry
+        for entry in pool
+        if isinstance(entry.get("filepath"), str)
+        and Path(entry["filepath"]).resolve() in set(members.values())
+    ]
+    foreign = [entry for entry in pool if entry not in owned]
+    if not owned:
+        raise ValueError(
+            "the loaded BLAS provider "
+            f"{sorted(e.get('filepath') for e in pool)} is not part of the "
+            "installed NumPy wheel's records — " + _NUMPY_INSTALL_INSTRUCTION
+        )
+    if len(owned) > 1:
+        raise ValueError(
+            "duplicate NumPy BLAS providers are loaded: "
+            f"{sorted(e['filepath'] for e in owned)}"
+        )
+    entry = owned[0]
+    provider_path = Path(entry["filepath"]).resolve()
+    if entry.get("internal_api") != "openblas":
+        raise ValueError(
+            f"the NumPy BLAS provider reports internal_api "
+            f"{entry.get('internal_api')!r}, not openblas — cannot "
+            "qualify an unknown provider ABI"
+        )
+    record_relative = next(
+        rel for rel, located in members.items() if located == provider_path
+    )
+    require_same_library(provider_path, members[record_relative])
+    digest = _sha256_file(provider_path)
+    declared = record_hashes.get(record_relative)
+    if declared is not None:
+        actual_b64 = base64.urlsafe_b64encode(
+            bytes.fromhex(digest)
+        ).decode().rstrip("=")
+        if declared[0] != actual_b64:
+            raise ValueError(
+                f"provider {provider_path} content does not match the "
+                "NumPy wheel RECORD hash — the installed file is not the "
+                "shipped wheel image"
+            )
+        if declared[1] is not None and declared[1] != provider_path.stat().st_size:
+            raise ValueError(
+                f"provider {provider_path} size does not match the NumPy "
+                "wheel RECORD size"
+            )
+
+    exports = _elf_defined_symbols(provider_path)
+    imports = _numpy_extension_imports(package, "Linux")
+    symbols: dict[str, str] = {}
+    for op in _NUMERICS_OPS:
+        imported = imports.get(op) or []
+        candidates = sorted(name for name in imported if name in exports)
+        if not candidates:
+            raise ValueError(
+                f"no provider export satisfies NumPy's '{op}' imports "
+                f"{imported} — the library cannot serve the qualified "
+                "operation"
+            )
+        preferred = (
+            f"scipy_cblas_{op}64_"
+            if op in _NUMERICS_BLAS_OPS
+            else f"scipy_{op}_64_"
+        )
+        if preferred in candidates:
+            accepted = preferred
+        elif len(candidates) == 1 and candidates[0].endswith("64_"):
+            accepted = candidates[0]
+        else:
+            raise ValueError(
+                f"ambiguous '{op}' symbol set {candidates}: no unique "
+                "scipy-openblas ILP64 spelling — refusing to guess an "
+                "integer ABI"
+            )
+        if not accepted.endswith("64_"):
+            raise ValueError(
+                f"NumPy imports '{accepted}' for '{op}' — an LP64 "
+                "spelling cannot back the 64-bit integer ABI profile"
+            )
+        symbols[op] = checked_symbol(accepted)
+
+    # Foreign-code boundary: the query symbols are regex-validated AND
+    # verified members of the provider's export table before ctypes sees
+    # them — never an assumed spelling.
+    import ctypes
+
+    provider = ctypes.CDLL(str(provider_path))
+
+    def _query(name: str, restype):
+        symbol = checked_symbol(name)
+        if symbol not in exports:
+            raise ValueError(
+                f"provider {provider_path} does not export required "
+                f"configuration symbol {symbol!r}"
+            )
+        function = getattr(provider, symbol)
+        function.restype = restype
+        function.argtypes = []
+        return function()
+
+    openblas_config = _query(
+        "scipy_openblas_get_config64_", ctypes.c_char_p
+    )
+    openblas_core = _query(
+        "scipy_openblas_get_corename64_", ctypes.c_char_p
+    )
+    openblas_threads = _query(
+        "scipy_openblas_get_num_threads64_", ctypes.c_int
+    )
+    if openblas_config is None:
+        raise ValueError(
+            "openblas_get_config returned NULL — the provider cannot "
+            "describe its own build"
+        )
+    config_text = openblas_config.decode("utf-8", "replace")
+    if "USE64BITINT" not in config_text:
+        raise ValueError(
+            f"the loaded provider reports {config_text!r} — without "
+            "USE64BITINT the 64-bit integer ABI claim has no support"
+        )
+    num_threads = entry.get("num_threads")
+    if not isinstance(num_threads, int) or num_threads < 1:
+        raise ValueError(
+            f"threadpoolctl reports invalid num_threads {num_threads!r}"
+        )
+    if openblas_threads != num_threads:
+        raise ValueError(
+            f"OpenBLAS reports {openblas_threads} threads but "
+            f"threadpoolctl observed {num_threads} — inconsistent "
+            "provider state"
+        )
+
+    abi_check = _verify_abi_compile_link_run(
+        "NUMPY_OPENBLAS", symbols, provider_path
+    )
+
+    record = {
+        "backend": "NUMPY_OPENBLAS",
+        "numpy_version": str(np.__version__),
+        "numpy_package": str(package),
+        "site_packages": str(site_packages),
+        "blas_integer_bits": 64,
+        "lapack_integer_bits": 64,
+        "symbols": symbols,
+        "numpy_imports": {op: list(imports.get(op, [])) for op in _NUMERICS_OPS},
+        "library_paths": [
+            {
+                "path": str(provider_path),
+                "role": "blas_lapack",
+                "identity_kind": "file",
+                "sha256": digest,
+                "build_id": None,
+            }
+        ],
+        "threading": {
+            "implementation": str(entry.get("threading_layer") or "openblas"),
+            "num_threads": num_threads,
+        },
+        "provider_config": {
+            "openblas": {
+                "version": str(entry.get("version") or ""),
+                "core": openblas_core.decode("utf-8", "replace")
+                if isinstance(openblas_core, bytes)
+                else str(openblas_core),
+                "config": config_text,
+                "record_path": record_relative,
+                "num_threads_reported": int(openblas_threads),
+            },
+            "wheel": {"tags": wheel_tags},
+            "foreign_providers_loaded": _jsonable(foreign),
+            "numpy_show_config": _jsonable(np.__config__.CONFIG)
+            if isinstance(getattr(np.__config__, "CONFIG", None), dict)
+            else {},
+            "numpy_show_runtime": _numpy_runtime_info(np),
+            "abi_check": abi_check,
+        },
+    }
+    return record
+
+
+def _measure_accelerate_threads(np) -> dict:
+    """Accelerate has no threadpool query API — count the threads it
+    actually spawns for a fixed dgemm workload. The number is measured
+    evidence (workload + method recorded), never a guessed constant."""
+    import threading
+    import time
+
+    def _thread_count() -> int:
+        output = _run_tool(
+            ["ps", "-M", "-o", "comm=", "-p", str(os.getpid())]
+        )
+        return sum(1 for line in output.splitlines() if line.strip())
+
+    baseline = _thread_count()
+    workload = np.full((3000, 3000), 1.25, dtype=np.float64)
+    _ = workload @ workload  # warm-up: spawn the pool before measuring
+    stop = threading.Event()
+
+    def _work() -> None:
+        while not stop.is_set():
+            _ = workload @ workload
+
+    worker = threading.Thread(target=_work, daemon=True)
+    worker.start()
+    peak = baseline
+    try:
+        for _ in range(40):
+            time.sleep(0.05)
+            peak = max(peak, _thread_count())
+    finally:
+        stop.set()
+        worker.join(timeout=30)
+    spawned = peak - baseline
+    if spawned < 0:
+        raise ValueError(
+            "thread measurement is inconsistent: "
+            f"baseline {baseline} > peak {peak}"
+        )
+    return {
+        "implementation": "accelerate",
+        "num_threads": max(1, spawned + 1),
+        "measured": {
+            "baseline_threads": baseline,
+            "peak_threads": peak,
+            "workload": "float64 dgemm 3000x3000, 40 x 50ms samples",
+            "veclib_maximum_threads": os.environ.get(
+                "VECLIB_MAXIMUM_THREADS"
+            ),
+        },
+    }
+
+
+def _discover_numpy_provider_darwin(np, threadpoolctl, package: Path,
+                                    site_packages: Path,
+                                    build_dependencies: dict) -> dict:
+    """The Darwin profile: the system Accelerate framework NumPy links —
+    dyld-cache images qualified by the loaded-provider list, real export
+    tables, the macOS/SDK build identity, and a live ABI run."""
+    blas_dep = build_dependencies.get("blas")
+    lapack_dep = build_dependencies.get("lapack")
+    blas_name = blas_dep.get("name") if isinstance(blas_dep, dict) else None
+    lapack_name = (
+        lapack_dep.get("name") if isinstance(lapack_dep, dict) else None
+    )
+    if blas_name != "accelerate" or lapack_name != "accelerate":
+        raise ValueError(
+            f"NumPy {np.__version__} was built against "
+            f"blas={blas_name!r}/lapack={lapack_name!r}, not the system "
+            "Accelerate framework — " + _NUMPY_INSTALL_INSTRUCTION
+        )
+
+    images = _dyld_loaded_images()
+    blas_image = _ACCELERATE_IMAGE_PREFIX + (
+        "Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib"
+    )
+    lapack_image = _ACCELERATE_IMAGE_PREFIX + (
+        "Versions/A/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib"
+    )
+    umbrella = _ACCELERATE_IMAGE_PREFIX + "Versions/A/Accelerate"
+    loaded = [name for name in images if name.startswith(_ACCELERATE_IMAGE_PREFIX)]
+    for required in (blas_image, lapack_image, umbrella):
+        if required not in images:
+            raise ValueError(
+                f"the Accelerate provider image {required} is not loaded "
+                f"after exercising NumPy — loaded images: {loaded}"
+            )
+        if Path(required).is_file():
+            # Modern macOS keeps these in the dyld cache only; a real file
+            # would be noteworthy but the identity rule stays apple-system.
+            pass
+
+    blas_exports = _macho_defined_symbols(blas_image)
+    lapack_exports = _macho_defined_symbols(lapack_image)
+    symbols = {
+        "ddot": "cblas_ddot",
+        "dgemv": "cblas_dgemv",
+        "dgemm": "cblas_dgemm",
+        "dgelsd": "dgelsd$NEWLAPACK$ILP64",
+    }
+    for op in _NUMERICS_BLAS_OPS:
+        if symbols[op] not in blas_exports:
+            raise ValueError(
+                f"Accelerate's libBLAS does not export the qualified "
+                f"legacy CBLAS symbol {symbols[op]!r} — exports check "
+                f"against {blas_image}"
+            )
+    if symbols["dgelsd"] not in lapack_exports:
+        raise ValueError(
+            "Accelerate's libLAPACK does not export the qualified ILP64 "
+            f"symbol {symbols['dgelsd']!r} — exports check against "
+            f"{lapack_image}"
+        )
+
+    imports = _numpy_extension_imports(package, "Darwin")
+    for op in _NUMERICS_OPS:
+        available = lapack_exports if op == "dgelsd" else blas_exports
+        missing = [name for name in imports.get(op, []) if name not in available]
+        if missing:
+            raise ValueError(
+                f"NumPy imports {missing} for '{op}' which the loaded "
+                "Accelerate does not export — the wheel and the system "
+                "provider disagree"
+            )
+
+    macos_build = _run_tool(["sw_vers", "-buildVersion"]).strip()
+    macos_version = _run_tool(["sw_vers", "-productVersion"]).strip()
+    sdk_version = _run_tool(
+        ["xcrun", "--sdk", "macosx", "--show-sdk-version"]
+    ).strip()
+    sdk_build = _run_tool(
+        ["xcrun", "--sdk", "macosx", "--show-sdk-build-version"]
+    ).strip()
+    sdk_path = _run_tool(
+        ["xcrun", "--sdk", "macosx", "--show-sdk-path"]
+    ).strip()
+    uuid = _macho_uuid_at(images[umbrella])
+    if not uuid:
+        raise ValueError(
+            f"could not read LC_UUID of the loaded Accelerate image "
+            f"{umbrella} — the apple-system identity has no provider "
+            "evidence"
+        )
+    build_id = f"macos-{macos_build}+accelerate-{uuid}+sdk-{sdk_build}"
+
+    threading = _measure_accelerate_threads(np)
+    abi_check = _verify_abi_compile_link_run("ACCELERATE", symbols, None)
+
+    record = {
+        "backend": "ACCELERATE",
+        "numpy_version": str(np.__version__),
+        "numpy_package": str(package),
+        "site_packages": str(site_packages),
+        "blas_integer_bits": 32,
+        "lapack_integer_bits": 64,
+        "symbols": symbols,
+        "numpy_imports": {
+            op: list(imports.get(op, [])) for op in _NUMERICS_OPS
+        },
+        "library_paths": [
+            {
+                "path": blas_image,
+                "role": "blas",
+                "identity_kind": "apple-system",
+                "sha256": None,
+                "build_id": build_id,
+            },
+            {
+                "path": lapack_image,
+                "role": "lapack",
+                "identity_kind": "apple-system",
+                "sha256": None,
+                "build_id": build_id,
+            },
+        ],
+        "threading": {
+            "implementation": threading["implementation"],
+            "num_threads": threading["num_threads"],
+        },
+        "provider_config": {
+            "macos_version": macos_version,
+            "macos_build": macos_build,
+            "sdk_version": sdk_version,
+            "sdk_build": sdk_build,
+            "sdk_path": sdk_path,
+            "accelerate_uuid": uuid,
+            "accelerate_images": sorted(loaded),
+            "thread_measure": threading["measured"],
+            "wheel": {"tags": _numpy_distribution()[4]},
+            "numpy_show_config": _jsonable(np.__config__.CONFIG)
+            if isinstance(getattr(np.__config__, "CONFIG", None), dict)
+            else {},
+            "numpy_show_runtime": _numpy_runtime_info(np),
+            "abi_check": abi_check,
+        },
+    }
+    return record
+
+
+def _scipy_interposition_check(
+    np, system: str, baseline: tuple, provider_paths: list[str]
+) -> dict:
+    """Import SciPy AFTER the NumPy evidence was captured, exercise its
+    BLAS, then re-verify the NumPy provider identity and recompute the
+    baseline — bitwise. A changed provider or changed result is a hard
+    failure, not a record field."""
+    import importlib.util
+
+    if importlib.util.find_spec("scipy") is None:
+        return {
+            "checked": False,
+            "reason": "scipy is not installed in the selected interpreter",
+        }
+    try:
+        import scipy.linalg
+    except ImportError as exc:
+        raise ValueError(
+            f"scipy is installed but cannot import scipy.linalg: {exc}"
+        ) from exc
+    a = np.arange(72, dtype=np.float64).reshape(8, 9) * 0.03125
+    scipy.linalg.lstsq(a, np.linspace(1.0, 8.0, 8), cond=None)
+    after = _exercise_numpy(np)
+    if after != baseline:
+        raise ValueError(
+            "NumPy results changed after SciPy loaded its own BLAS — "
+            "provider interposition is live; refusing to qualify this "
+            "environment"
+        )
+    check: dict = {
+        "checked": True,
+        "scipy_version": str(getattr(scipy, "__version__", "unknown")),
+        "stable": True,
+    }
+    if system == "Linux":
+        import threadpoolctl
+
+        remaining = {
+            entry.get("filepath")
+            for entry in _blas_pool(threadpoolctl)
+        }
+        missing = [p for p in provider_paths if p not in remaining]
+        if missing:
+            raise ValueError(
+                f"the NumPy BLAS provider {missing} disappeared from the "
+                "loaded pool after SciPy imported — interposition is live"
+            )
+        check["providers_after_scipy"] = sorted(
+            str(p) for p in remaining if p
+        )
+    else:
+        still = [
+            name
+            for name in _dyld_loaded_images()
+            if name.startswith(_ACCELERATE_IMAGE_PREFIX)
+        ]
+        missing = [p for p in provider_paths if p not in still]
+        if missing:
+            raise ValueError(
+                f"Accelerate images {missing} are no longer loaded after "
+                "SciPy imported — provider identity is unstable"
+            )
+        check["providers_after_scipy"] = sorted(still)
+    return check
+
+
+def discover_numpy_provider() -> dict:
+    """Qualify the BLAS/LAPACK provider of *this* interpreter's NumPy.
+
+    Runs only inside the selected-interpreter child probe. Sequence:
+    version pin -> numpy-only exercise -> provider identification by
+    threadpoolctl/dyld introspection bound to wheel records -> export-table
+    symbol qualification -> a compile/link/run C probe in a disposable
+    subprocess -> the SciPy interposition control. Every failure mode is a
+    named ``ValueError``; the returned record is re-validated by
+    ``validate_numerics`` before it is handed back.
+    """
+    system = platform.system()
+    if system not in _MUJOCO_LIBRARY_CANDIDATES:
+        raise ValueError(f"unsupported native platform: {system}")
+    try:
+        import numpy
+    except ImportError as exc:
+        raise ValueError(
+            f"selected interpreter {sys.executable} cannot import numpy: "
+            f"{exc} — " + _NUMPY_INSTALL_INSTRUCTION
+        ) from exc
+    if str(numpy.__version__) != REQUIRED_NUMPY_VERSION:
+        raise ValueError(
+            f"native requires the locked NumPy {REQUIRED_NUMPY_VERSION}, "
+            f"found {numpy.__version__} in {sys.executable} — "
+            + _NUMPY_INSTALL_INSTRUCTION
+        )
+    try:
+        import threadpoolctl
+    except ImportError as exc:
+        raise ValueError(
+            f"selected interpreter {sys.executable} cannot import "
+            f"threadpoolctl: {exc} — run `uv sync --locked --group native`"
+        ) from exc
+
+    baseline = _exercise_numpy(numpy)
+    package = Path(numpy.__file__).resolve().parent
+    if package.name != "numpy":
+        raise ValueError(
+            f"unexpected NumPy package location {package} — cannot bind "
+            "provider records to an unknown tree"
+        )
+    site_packages = package.parent
+    build_dependencies = _numpy_build_dependencies(numpy)
+
+    if system == "Linux":
+        record = _discover_numpy_provider_linux(
+            numpy, threadpoolctl, package, site_packages, build_dependencies
+        )
+        provider_paths = [
+            entry["path"] for entry in record["library_paths"]
+        ]
+    else:
+        record = _discover_numpy_provider_darwin(
+            numpy, threadpoolctl, package, site_packages, build_dependencies
+        )
+        provider_paths = [
+            entry["path"] for entry in record["library_paths"]
+        ]
+    record["provider_config"]["interposition"] = _scipy_interposition_check(
+        numpy, system, baseline, provider_paths
+    )
+    return validate_numerics(record)
 
 
 # --------------------------------------------------------------------------
@@ -307,6 +1762,11 @@ def _child_probe() -> dict:
             f"sysconfig data: soabi={soabi!r} include={python_include!r}"
         )
 
+    # The numerical provider is qualified last: the MuJoCo/nanobind checks
+    # keep their failure precedence, and discover_numpy_provider owns the
+    # NumPy-only -> SciPy-loaded interposition window itself.
+    numerics = discover_numpy_provider()
+
     return {
         "schema_version": SCHEMA_VERSION,
         "platform": {
@@ -329,7 +1789,7 @@ def _child_probe() -> dict:
             "cmake_dir": str(nb_cmake_dir),
             "include_dir": str(nb_include_dir),
         },
-        "numerics": None,  # populated by T06's provider qualification
+        "numerics": numerics,
     }
 
 

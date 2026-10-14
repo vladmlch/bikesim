@@ -1,0 +1,39 @@
+{
+  "database": "run.duckdb",
+  "file_sha256": {
+    "run.duckdb": "0f2d74362c85b7b9e712bdc1aa779c7737223c835edf240be1525651953e092f",
+    "summary.md": "a504402f071c85309442efbe7b7394f7c82dbf5a2aeda9c6798a43b659770d48"
+  },
+  "report_error": null,
+  "report_status": "complete",
+  "row_counts": {
+    "alias_catalog": 50,
+    "assets": 0,
+    "channel_control": 9,
+    "channel_drive": 9,
+    "channel_energy": 9,
+    "channel_mass": 9,
+    "channel_model_status": 9,
+    "channel_rider": 9,
+    "channel_sensors": 9,
+    "channel_suspension": 9,
+    "channel_tires": 9,
+    "commands_applied": 0,
+    "commands_requested": 0,
+    "coordinate_catalog": 16,
+    "episodes": 1,
+    "events": 0,
+    "field_catalog": 395,
+    "forces": 0,
+    "integration_states": 0,
+    "metrics": 0,
+    "observations": 0,
+    "physics": 9,
+    "recording_meta": 1,
+    "runs": 1,
+    "transitions": 0
+  },
+  "run_id": "00000000-0000-0000-0000-000000000001",
+  "schema_version": 1,
+  "sealed": true
+}

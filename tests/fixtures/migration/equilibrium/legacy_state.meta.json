@@ -1,0 +1,18 @@
+{
+  "equilibrium": {
+    "cache_hit": false,
+    "fork_travel_mm": 73.26446811499254,
+    "initial_crank_phase_rad": 0.0,
+    "pitch_rad": 0.019681271255861537,
+    "rear_travel_mm": 40.92626456594158,
+    "residual_qacc": 0.026575780650335234,
+    "root_z_m": -0.053905065724703646,
+    "settled_crank_phase_rad": -0.06141612790662315,
+    "shock_stroke_mm": 12.835524451309116,
+    "static_front_load_n": 498.55266179431703,
+    "static_rear_load_n": 525.4724894479195,
+    "steps": 2000,
+    "total_vertical_force_n": 1024.0251512422365
+  },
+  "fingerprint": "499d29e1959c729a1bea50d8902d1f567ccd608718a53bb64e724258f3d27c03"
+}

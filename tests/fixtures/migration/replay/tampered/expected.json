@@ -1,0 +1,8 @@
+{
+  "expected": {
+    "error": "RecordingError",
+    "kind": "invalid",
+    "message": "recording checksum mismatch: run.duckdb"
+  },
+  "tamper": "single byte flip in run.duckdb"
+}

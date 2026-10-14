@@ -1,0 +1,143 @@
+usage: bike-ride [-h] [--track TRACK] [--seed SEED] [--length M] [--speed KMH]
+                 [--headless] [--sag PCT] [--out DIR] [--decimate N]
+                 [--rider {none,lumped,seated,articulated_planar}]
+                 [--rider-mass KG] [--rider-height M] [--rider-inseam M]
+                 [--no-rider] [--legs {articulated,rigid}] [--preview]
+                 [--dump-track NAME] [--list-tracks] [--no-plots] [--html DIR]
+                 [--tyre-model {sphere,pneumatic}]
+                 [--tyre-tier {fast,detailed}] [--tyre-pressure FRONT/REAR]
+                 [--drive-mode {motor,pedal,pedelec}]
+                 [--assist {off,eco,tour,sport,turbo,emtb}]
+                 [--gearing CHAINRINGxCOG] [--ripple-depth D]
+                 [--crank-phase DEG] [--visual-pedalling]
+                 [--surface {asphalt,hardpack,loose,wet,scree}]
+                 [--physics {legacy,physical}] [--backend {python,native}]
+                 [--time-scale {1,2,4,8}] [--record]
+                 [--check-policy {strict,diagnostic}]
+                 [--drive {coast,ideal_speed_control,crank_effort,articulated_effort}]
+                 [--physics-config PATH] [--initial-speed KMH]
+                 [--human-torque NM] [--assist-gain ASSIST_GAIN]
+                 [--timestep S] [--duration S] [--research]
+                 [--async-telemetry] [--policy POLICY]
+                 [--control-period CONTROL_PERIOD]
+                 [--sensor-period SENSOR_PERIOD] [--sensor-delay SENSOR_DELAY]
+                 [--actuator-delay ACTUATOR_DELAY]
+                 [--road-resolution ROAD_RESOLUTION] [--demand DEMAND]
+                 [--rider-program RIDER_PROGRAM]
+
+Ride the bike over a track in MuJoCo. Default: the interactive viewer on the
+'road_worn' road. --headless writes telemetry.csv, summary.json and plots
+instead.
+
+options:
+  -h, --help            show this help message and exit
+  --track TRACK         preset name or path to a .toml track file (default:
+                        road_worn); presets: alpine_rocky, alpine_scree,
+                        climb_steps, enduro_aggressive, flat, road_broken,
+                        road_smooth, road_worn, single_edge, washboard_only
+  --seed SEED           override the generator seed of a road preset or track
+                        file
+  --length M            override the track length in metres of a road preset
+                        or track file
+  --speed KMH           cruise target in km/h, 15-45 (default 25, or 16 for
+                        climb_steps)
+  --headless            run without a viewer and write telemetry, summary and
+                        plots
+  --sag PCT             fit fork pressure and coil rate to this static sag
+                        (both ends) instead of the shipped tune; headless only
+  --out DIR             root directory for run artifacts (default output/ride)
+  --decimate N          store every N-th step (default 80 in research,
+                        otherwise 1)
+  --rider {none,lumped,seated,articulated_planar}
+                        rider model: seated biodynamic rider (default), the
+                        lumped standing rider, or none (default seated)
+  --rider-mass KG       rider mass including helmet and kit (default 80)
+  --rider-height M      rider stature; sets segment lengths and, for the
+                        seated rider, the saddle height via the inseam
+                        (default 1.80)
+  --rider-inseam M      rider inseam (crotch height); default 0.47 x height
+  --no-rider            alias for --rider none
+  --legs {articulated,rigid}
+                        seated rider's legs: articulated hip/knee/ankle chains
+                        welded to the pedals, or rigid slide-mounted masses
+                        (default: articulated when the crankset turns --
+                        pedal/pedelec or --visual-pedalling --, rigid
+                        otherwise)
+  --preview             render the track profile with effective pothole drops
+                        and exit
+  --dump-track NAME     print a preset as a TOML track file and exit
+  --list-tracks         list the built-in presets and exit
+  --no-plots            headless: skip the PNG figures
+  --html DIR            render an interactive ride.html from DIR/preview.csv
+                        and exit (needs plotly: uv run --with plotly)
+  --tyre-model {sphere,pneumatic}
+                        wheel contact model: sphere or pneumatic (default
+                        sphere, or pneumatic for climb_steps)
+  --tyre-tier {fast,detailed}
+                        pneumatic brush fidelity (default fast)
+  --tyre-pressure FRONT/REAR
+                        front/rear tyre pressure in bar (default 1.5/1.7)
+  --drive-mode {motor,pedal,pedelec}
+                        propulsion: motor (ideal wheel torque, the baseline),
+                        pedal (rider cranks), pedelec (rider plus mid-drive)
+                        (default motor, or pedelec for climb_steps)
+  --assist {off,eco,tour,sport,turbo,emtb}
+                        assist mode: physical profile supports
+                        eco/tour/emtb/turbo; legacy pedelec supports
+                        off/eco/tour/sport/turbo
+  --gearing CHAINRINGxCOG
+                        single gear for the pedalled drivetrain (default
+                        32x14, which is 82 rpm at 25 km/h)
+  --ripple-depth D      depth of the crank torque pulse in [0, 1] (default
+                        0.85); 0 is a smooth crank and reproduces the motor
+                        baseline
+  --crank-phase DEG     crank angle at the start of the run (default 0, the
+                        built 3/9 o'clock pose). Deliberately not tied to
+                        --seed: the phase a jump is met in is its own variable
+  --visual-pedalling    motor mode only: build the turning crankset and let
+                        the chain equality spin it off the driven wheel, so
+                        the articulated legs visibly pedal while the ideal
+                        wheel actuator does the driving
+  --surface {asphalt,hardpack,loose,wet,scree}
+                        override the track surface friction preset (default:
+                        track surface)
+  --physics {legacy,physical}
+  --backend {python,native}
+                        physical/research execution backend; never falls back
+  --time-scale {1,2,4,8}
+                        interactive physical/research playback speed (default
+                        1)
+  --record              physical native and both research backends: retain the
+                        full run recording in memory and publish a run
+                        recording under --out at launch end (default off)
+  --check-policy {strict,diagnostic}
+                        physical/research model-check policy: strict rejects
+                        the run at the first violated reference budget;
+                        diagnostic warns once and keeps the sticky first
+                        failure (default: strict for --headless, diagnostic
+                        for the viewer)
+  --drive {coast,ideal_speed_control,crank_effort,articulated_effort}
+  --physics-config PATH
+  --initial-speed KMH
+  --human-torque NM
+  --assist-gain ASSIST_GAIN
+  --timestep S
+  --duration S          physical run duration; permits stationary rigs
+  --research            accounted policy loop in viewer or headless mode
+  --async-telemetry     publish period telemetry from a spawned worker
+                        process; the viewer step path then pays only
+                        serialization. Policy loops that read physical.sample
+                        between steps may see one-period-older data
+  --policy POLICY       motor policy factory, module:factory
+  --control-period CONTROL_PERIOD
+  --sensor-period SENSOR_PERIOD
+  --sensor-delay SENSOR_DELAY
+  --actuator-delay ACTUATOR_DELAY
+  --road-resolution ROAD_RESOLUTION
+  --demand DEMAND       external crank-side demand, Nm; omitted selects
+                        pedelec
+  --rider-program RIDER_PROGRAM
+
+Track sizes and shapes live in the track file ([[obstacles]] and [generator]);
+see docs/RIDE.md. `bike-ride --dump-track road_worn > my.toml` gives you one
+to edit.

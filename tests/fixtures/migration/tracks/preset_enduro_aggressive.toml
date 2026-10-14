@@ -1,0 +1,86 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "enduro_aggressive"
+length_m = 115.0
+description = "Braking bumps, square edges, rock gardens, pothole, G-out, drop and kicker."
+surface = "hardpack"
+
+[[obstacles]]
+type = "washboard"
+start_m = 12.0
+amplitude_m = 0.035
+wavelength_m = 0.9
+n_waves = 9
+
+[[obstacles]]
+type = "square_edge"
+start_m = 22.0
+height_m = 0.09
+ledge_length_m = 0.25
+
+[[obstacles]]
+type = "rock_garden"
+start_m = 26.0
+section_length_m = 8.0
+amplitude_m = 0.06
+correlation_length_m = 0.25
+seed = 1701
+
+[[obstacles]]
+type = "pothole"
+edge = "sharp"
+start_m = 38.0
+depth_m = 0.18
+hole_length_m = 0.6
+
+[[obstacles]]
+type = "g_out"
+start_m = 42.0
+depth_m = 0.35
+dip_length_m = 5.0
+
+[[obstacles]]
+type = "drop"
+start_m = 52.0
+height_m = 0.6
+ramp_m = 0.0
+
+[[obstacles]]
+type = "kicker"
+start_m = 57.0
+height_m = 0.35
+ramp_m = 1.4
+gap_m = 2.5
+landing_angle_deg = 20.0
+landing_m = 5.0
+
+[[obstacles]]
+type = "roots"
+start_m = 69.0
+n_bumps = 7
+height_m = 0.08
+width_m = 0.25
+section_length_m = 7.0
+jitter = 0.35
+seed = 2029
+
+[[obstacles]]
+type = "square_edge"
+start_m = 80.0
+height_m = 0.07
+ledge_length_m = 0.25
+
+[[obstacles]]
+type = "square_edge"
+start_m = 80.8
+height_m = 0.09
+ledge_length_m = 0.25
+
+[[obstacles]]
+type = "rock_garden"
+start_m = 84.0
+section_length_m = 11.0
+amplitude_m = 0.09
+correlation_length_m = 0.2
+seed = 3301

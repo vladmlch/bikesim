@@ -1,0 +1,14 @@
+{
+  "description": "Run-up and one 90 mm square edge at 20 m.",
+  "length_m": 40.0,
+  "name": "single_edge",
+  "obstacles": [
+    {
+      "height_m": 0.09,
+      "ledge_length_m": 0.25,
+      "start_m": 20.0,
+      "type": "square_edge"
+    }
+  ],
+  "surface": "hardpack"
+}

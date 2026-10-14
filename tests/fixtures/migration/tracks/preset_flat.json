@@ -1,0 +1,7 @@
+{
+  "description": "No obstacles; sag, rolling resistance and coast-down reference.",
+  "length_m": 112.0,
+  "name": "flat",
+  "obstacles": [],
+  "surface": "hardpack"
+}

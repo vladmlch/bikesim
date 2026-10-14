@@ -1,0 +1,60 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "road_smooth"
+length_m = 100.0
+description = "Well-kept asphalt."
+surface = "asphalt"
+
+[[obstacles]]
+type = "roughness"
+start_m = 10.0
+section_length_m = 41.3
+amplitude_m = 0.002
+correlation_length_m = 0.2
+seed = 1818006482
+
+[[obstacles]]
+type = "pothole"
+edge = "sharp"
+start_m = 51.300000000000004
+depth_m = 0.038
+hole_length_m = 0.308
+
+[[obstacles]]
+type = "roughness"
+start_m = 51.608000000000004
+section_length_m = 16.302
+amplitude_m = 0.002
+correlation_length_m = 0.2
+seed = 377217572
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 67.91
+height_m = 0.035
+bump_length_m = 0.40900000000000003
+
+[[obstacles]]
+type = "roughness"
+start_m = 68.319
+section_length_m = 10.631
+amplitude_m = 0.002
+correlation_length_m = 0.2
+seed = 191741830
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 78.95
+height_m = 0.036000000000000004
+bump_length_m = 0.483
+
+[[obstacles]]
+type = "roughness"
+start_m = 79.433
+section_length_m = 15.567
+amplitude_m = 0.002
+correlation_length_m = 0.2
+seed = 1853662620

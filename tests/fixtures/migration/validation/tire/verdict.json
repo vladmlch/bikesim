@@ -1,0 +1,93 @@
+{
+  "cases": [
+    {
+      "configured_ckappa_n": 4000.0,
+      "force_n": -0.0,
+      "loss_j": 0.0,
+      "mu_used": 1.05,
+      "normal_load_n": 400.0,
+      "slip_mps": -0.0,
+      "slip_ratio": 0.0,
+      "stored_energy_j": 0.0,
+      "surface_ckappa_per_load_metadata": 15.0
+    },
+    {
+      "configured_ckappa_n": 4000.0,
+      "force_n": -0.0,
+      "loss_j": 0.0,
+      "mu_used": 1.05,
+      "normal_load_n": 800.0,
+      "slip_mps": -0.0,
+      "slip_ratio": 0.0,
+      "stored_energy_j": 0.0,
+      "surface_ckappa_per_load_metadata": 15.0
+    },
+    {
+      "configured_ckappa_n": 4000.0,
+      "force_n": 198.631277851783,
+      "loss_j": 7.027327607956161,
+      "mu_used": 1.0434068617453802,
+      "normal_load_n": 400.0,
+      "slip_mps": -0.1,
+      "slip_ratio": 0.05,
+      "stored_energy_j": 0.9863596135258057,
+      "surface_ckappa_per_load_metadata": 15.0
+    },
+    {
+      "configured_ckappa_n": 4000.0,
+      "force_n": 198.631277851783,
+      "loss_j": 7.027327607956161,
+      "mu_used": 1.0434068617453802,
+      "normal_load_n": 800.0,
+      "slip_mps": -0.1,
+      "slip_ratio": 0.05,
+      "stored_energy_j": 0.9863596135258057,
+      "surface_ckappa_per_load_metadata": 15.0
+    },
+    {
+      "configured_ckappa_n": 4000.0,
+      "force_n": 397.262555703566,
+      "loss_j": 28.109310431824643,
+      "mu_used": 1.0369586217309088,
+      "normal_load_n": 400.0,
+      "slip_mps": -0.2,
+      "slip_ratio": 0.1,
+      "stored_energy_j": 3.945438454103223,
+      "surface_ckappa_per_load_metadata": 15.0
+    },
+    {
+      "configured_ckappa_n": 4000.0,
+      "force_n": 397.262555703566,
+      "loss_j": 28.109310431824643,
+      "mu_used": 1.0369586217309088,
+      "normal_load_n": 800.0,
+      "slip_mps": -0.2,
+      "slip_ratio": 0.1,
+      "stored_energy_j": 3.945438454103223,
+      "surface_ckappa_per_load_metadata": 15.0
+    },
+    {
+      "configured_ckappa_n": 4000.0,
+      "force_n": 409.79366744760375,
+      "loss_j": 72.60937160466976,
+      "mu_used": 1.0244841686190094,
+      "normal_load_n": 400.0,
+      "slip_mps": -0.4,
+      "slip_ratio": 0.2,
+      "stored_energy_j": 4.198271247003931,
+      "surface_ckappa_per_load_metadata": 15.0
+    },
+    {
+      "configured_ckappa_n": 4000.0,
+      "force_n": 794.525111407132,
+      "loss_j": 112.43724172729857,
+      "mu_used": 1.0244841686190094,
+      "normal_load_n": 800.0,
+      "slip_mps": -0.4,
+      "slip_ratio": 0.2,
+      "stored_energy_j": 15.781753816412891,
+      "surface_ckappa_per_load_metadata": 15.0
+    }
+  ],
+  "surface": "asphalt"
+}

@@ -1,0 +1,8 @@
+# validation/tire/config.toml — authored fixture input
+# steady_brush_force(tire, surface, slip_ratio, load_n)
+surface = "asphalt"
+speed_mps = 2.0
+dt_s = 0.000625
+duration_s = 0.5
+slip_ratios = [0.0, 0.05, 0.1, 0.2]
+loads_n = [400.0, 800.0]

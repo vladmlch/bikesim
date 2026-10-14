@@ -1,0 +1,38 @@
+{
+  "database": "run.duckdb",
+  "file_sha256": {
+    "run.duckdb": "afbac3204c3d8f92713da5c0c0d2f6e0825b7abe77e62bed6d8747bb37460a11"
+  },
+  "report_error": "RuntimeError: injected report failure",
+  "report_status": "failed",
+  "row_counts": {
+    "alias_catalog": 50,
+    "assets": 0,
+    "channel_control": 1,
+    "channel_drive": 1,
+    "channel_energy": 1,
+    "channel_mass": 1,
+    "channel_model_status": 1,
+    "channel_rider": 1,
+    "channel_sensors": 1,
+    "channel_suspension": 1,
+    "channel_tires": 1,
+    "commands_applied": 0,
+    "commands_requested": 0,
+    "coordinate_catalog": 16,
+    "episodes": 1,
+    "events": 0,
+    "field_catalog": 395,
+    "forces": 0,
+    "integration_states": 0,
+    "metrics": 0,
+    "observations": 0,
+    "physics": 1,
+    "recording_meta": 1,
+    "runs": 1,
+    "transitions": 0
+  },
+  "run_id": "00000000-0000-0000-0000-000000000001",
+  "schema_version": 1,
+  "sealed": true
+}

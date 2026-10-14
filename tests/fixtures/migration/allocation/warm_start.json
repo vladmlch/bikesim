@@ -1,0 +1,92 @@
+{
+  "extra": null,
+  "problem": {
+    "aeq": {
+      "$array": "allocation/warm_start.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "5f07eef034c5a21fedede8ef2f970fefbcc8ea44c02fd970117dacbee5483005",
+      "shape": [
+        1,
+        2
+      ]
+    },
+    "beq": {
+      "$array": "allocation/warm_start.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6c3c396ed6b5c36dcae172271f462051b1266b851e92df3deea8ac65478fd712",
+      "shape": [
+        1
+      ]
+    },
+    "g": {
+      "$array": "allocation/warm_start.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0,
+        2
+      ]
+    },
+    "h": {
+      "$array": "allocation/warm_start.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0
+      ]
+    },
+    "lower": {
+      "$array": "allocation/warm_start.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "735c9c1d84a5765dce6af1009689b7a3df3472c960bdfbef4381605ca74f5e8e",
+      "shape": [
+        2
+      ]
+    },
+    "target": {
+      "$array": "allocation/warm_start.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d48b908d1d6ca42c0a573fd78626b6508904e1a44aab41682a843912901ead1f",
+      "shape": [
+        2
+      ]
+    },
+    "upper": {
+      "$array": "allocation/warm_start.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e28b77045029f15dc09fb9745a7ea4395a5116ff77ed66311cbe64dcbd90e66d",
+      "shape": [
+        2
+      ]
+    }
+  },
+  "result": {
+    "feasible": true,
+    "solution": {
+      "$array": "allocation/warm_start.arrays/a008.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "0d234fe25a8944e27466ebf2347181cae2bdacc1feea728300942329807db24b",
+      "shape": [
+        2
+      ]
+    },
+    "violation": 0.0
+  },
+  "x0": {
+    "$array": "allocation/warm_start.arrays/a007.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "cf703264ffe755c4e2cbf0a8c94f316768bcb9c3720ce283afebe3873623f19b",
+    "shape": [
+      2
+    ]
+  }
+}

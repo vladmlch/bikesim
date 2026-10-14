@@ -1,0 +1,70 @@
+{
+  "error": "allocation matrices must be finite",
+  "problem": {
+    "aeq": {
+      "$array": "allocation/nan_target.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0,
+        2
+      ]
+    },
+    "beq": {
+      "$array": "allocation/nan_target.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0
+      ]
+    },
+    "g": {
+      "$array": "allocation/nan_target.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0,
+        2
+      ]
+    },
+    "h": {
+      "$array": "allocation/nan_target.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0
+      ]
+    },
+    "lower": {
+      "$array": "allocation/nan_target.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e077172409ed971e7cbc8aaf3f5fc99ffd5806da65b60973369d000cf6a32fc6",
+      "shape": [
+        2
+      ]
+    },
+    "target": {
+      "$array": "allocation/nan_target.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ef93880aec06c9cd085eed72b7fe85fc1a98d6f7d6807431131f7dd70f82478a",
+      "shape": [
+        2
+      ]
+    },
+    "upper": {
+      "$array": "allocation/nan_target.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "5f07eef034c5a21fedede8ef2f970fefbcc8ea44c02fd970117dacbee5483005",
+      "shape": [
+        2
+      ]
+    }
+  }
+}

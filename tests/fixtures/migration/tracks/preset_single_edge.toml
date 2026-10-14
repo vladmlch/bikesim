@@ -1,0 +1,13 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "single_edge"
+length_m = 40.0
+description = "Run-up and one 90 mm square edge at 20 m."
+surface = "hardpack"
+
+[[obstacles]]
+type = "square_edge"
+start_m = 20.0
+height_m = 0.09
+ledge_length_m = 0.25

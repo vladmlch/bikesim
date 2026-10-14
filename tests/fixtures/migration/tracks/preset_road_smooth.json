@@ -1,0 +1,61 @@
+{
+  "description": "Well-kept asphalt.",
+  "length_m": 100.0,
+  "name": "road_smooth",
+  "obstacles": [
+    {
+      "amplitude_m": 0.002,
+      "correlation_length_m": 0.2,
+      "section_length_m": 41.3,
+      "seed": 1818006482,
+      "start_m": 10.0,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.038,
+      "edge": "sharp",
+      "hole_length_m": 0.308,
+      "start_m": 51.300000000000004,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.002,
+      "correlation_length_m": 0.2,
+      "section_length_m": 16.302,
+      "seed": 377217572,
+      "start_m": 51.608000000000004,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.40900000000000003,
+      "height_m": 0.035,
+      "shape": "cosine",
+      "start_m": 67.91,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.002,
+      "correlation_length_m": 0.2,
+      "section_length_m": 10.631,
+      "seed": 191741830,
+      "start_m": 68.319,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.483,
+      "height_m": 0.036000000000000004,
+      "shape": "cosine",
+      "start_m": 78.95,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.002,
+      "correlation_length_m": 0.2,
+      "section_length_m": 15.567,
+      "seed": 1853662620,
+      "start_m": 79.433,
+      "type": "roughness"
+    }
+  ],
+  "surface": "asphalt"
+}

@@ -1,0 +1,84 @@
+{
+  "extra": null,
+  "problem": {
+    "aeq": {
+      "$array": "allocation/box_projection.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0,
+        2
+      ]
+    },
+    "beq": {
+      "$array": "allocation/box_projection.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0
+      ]
+    },
+    "g": {
+      "$array": "allocation/box_projection.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0,
+        2
+      ]
+    },
+    "h": {
+      "$array": "allocation/box_projection.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0
+      ]
+    },
+    "lower": {
+      "$array": "allocation/box_projection.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d88d753d344f4857bb091e2ffd00fc8950d3f1089848b137c60576c4b5fe1a22",
+      "shape": [
+        2
+      ]
+    },
+    "target": {
+      "$array": "allocation/box_projection.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "631c2f0071e20c8b7093bb9f232d6b5ff4b36e85051ea249c5fe81f65206035f",
+      "shape": [
+        2
+      ]
+    },
+    "upper": {
+      "$array": "allocation/box_projection.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "5f07eef034c5a21fedede8ef2f970fefbcc8ea44c02fd970117dacbee5483005",
+      "shape": [
+        2
+      ]
+    }
+  },
+  "result": {
+    "feasible": true,
+    "solution": {
+      "$array": "allocation/box_projection.arrays/a007.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "b74fce6cd8bcafd014a1ce8c6585beac59c5f4098a6d499f5d1d42d464146633",
+      "shape": [
+        2
+      ]
+    },
+    "violation": 0.0
+  },
+  "x0": null
+}

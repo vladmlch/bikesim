@@ -1,0 +1,8 @@
+{
+  "expected": {
+    "error": "ValueError",
+    "kind": "invalid",
+    "message": "channel_control: inconsistent presence or missing required value"
+  },
+  "tamper": "channel_control.motor_torque_nm_present set NULL in first row"
+}

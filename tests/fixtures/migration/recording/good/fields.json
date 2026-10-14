@@ -1,0 +1,5689 @@
+{
+  "has_more": true,
+  "limit": 200,
+  "rows": [
+    {
+      "canonical": "channel_control.__control_present",
+      "definition": {
+        "parent_mask": "__control_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__control_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_control",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_control.__control_valid",
+      "definition": {
+        "parent_mask": "__control_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__control_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_control",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_control.crank_target_rate_rad_s",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "requested crank rate target",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "crank_target_rate_rad_s",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "control",
+          "crank_target_rate_rad_s"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/control.py::RideControl",
+        "unit": "rad/s"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "crank_target_rate_rad_s",
+      "frame": "crank shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "rad/s"
+    },
+    {
+      "canonical": "channel_control.crank_target_rate_rad_s_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "crank_target_rate_rad_s"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "crank_target_rate_rad_s_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_control.episode_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "episode identity within the owning run",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "episode_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "episode_id"
+        ],
+        "phase": "n/a",
+        "shape": null,
+        "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "episode_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "n/a",
+      "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+      "table_name": "channel_control",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_control.human_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "requested human crank-torque target (crank-side torque)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "human_torque_nm",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "control",
+          "human_torque_nm"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/control.py::RideControl",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "human_torque_nm",
+      "frame": "crank shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_control.human_torque_nm_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "human_torque_nm"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "human_torque_nm_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_control.interval_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "accounted physics interval identifier, consecutive per episode",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "interval_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "interval_id"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "interval_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+      "table_name": "channel_control",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_control.motor_limit_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "requested immediate safety ceiling on motor torque (ceiling, not a target); NULL applies the default bound",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "motor_limit_nm",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "control",
+          "motor_limit_nm"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/control.py::RideControl",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_limit_nm",
+      "frame": "mid-drive shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_control.motor_limit_nm_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "motor_limit_nm"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "motor_limit_nm_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_control.motor_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "requested motor torque target; NULL selects configured assistance",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "motor_torque_nm",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "control",
+          "motor_torque_nm"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/control.py::RideControl",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_torque_nm",
+      "frame": "mid-drive shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_control.motor_torque_nm_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "motor_torque_nm"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "motor_torque_nm_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_control.posture",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "forward torso lean request",
+            "dtype": "double",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "torso_lean_rad",
+            "measurement": "declared",
+            "optional": false,
+            "path": [
+              "torso_lean_rad"
+            ],
+            "phase": "control_period",
+            "shape": null,
+            "source": "src/bike_sim/physics/rider_posture.py::RiderPosture",
+            "unit": "rad"
+          },
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "pelvis pitch request",
+            "dtype": "double",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "pelvis_pitch_rad",
+            "measurement": "declared",
+            "optional": false,
+            "path": [
+              "pelvis_pitch_rad"
+            ],
+            "phase": "control_period",
+            "shape": null,
+            "source": "src/bike_sim/physics/rider_posture.py::RiderPosture",
+            "unit": "rad"
+          },
+          {
+            "aliases": [],
+            "axes": [
+              "forward",
+              "up"
+            ],
+            "children": [],
+            "description": "optional (forward, upward) hip offset; NULL keeps the support-following IK",
+            "dtype": "double[]",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "pelvis_offset_m",
+            "measurement": "declared",
+            "optional": true,
+            "path": [
+              "pelvis_offset_m"
+            ],
+            "phase": "control_period",
+            "shape": [
+              2
+            ],
+            "source": "src/bike_sim/physics/rider_posture.py::RiderPosture",
+            "unit": "m"
+          },
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "requested saddle support (not the contact itself)",
+            "dtype": "boolean",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "use_saddle",
+            "measurement": "declared",
+            "optional": false,
+            "path": [
+              "use_saddle"
+            ],
+            "phase": "control_period",
+            "shape": null,
+            "source": "src/bike_sim/physics/rider_posture.py::RiderPosture",
+            "unit": "n/a"
+          }
+        ],
+        "description": "requested rider posture offsets",
+        "dtype": "struct",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "posture",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "control",
+          "posture"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/control.py::RideControl",
+        "unit": "n/a"
+      },
+      "dtype": "STRUCT(\"torso_lean_rad\" DOUBLE, \"pelvis_pitch_rad\" DOUBLE, \"pelvis_offset_m\" DOUBLE[], \"pelvis_offset_m_present\" BOOLEAN, \"use_saddle\" BOOLEAN)",
+      "field_name": "posture",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_control.posture_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "posture"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "posture_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_control.rider_enabled",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "rider torques enabled for this interval",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "rider_enabled",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "control",
+          "rider_enabled"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/control.py::RideControl",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "rider_enabled",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/control.py::RideControl",
+      "table_name": "channel_control",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.__drive_present",
+      "definition": {
+        "parent_mask": "__drive_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__drive_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.__drive_valid",
+      "definition": {
+        "parent_mask": "__drive_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__drive_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.assist_demand_gated",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "assist request gated by braking/torque/cadence thresholds",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "assist_demand_gated",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "assist_demand_gated"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "assist_demand_gated",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.assist_gain",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "dimensionless assist gain applied to the sensor torque",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "assist_gain",
+        "measurement": "diagnostic",
+        "optional": true,
+        "path": [
+          "drive",
+          "assist_gain"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "1"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "assist_gain",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.assist_gain_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "assist_gain"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "assist_gain_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.assist_mode",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "assist controller mode/state name",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "assist_mode",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "assist_mode"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "assist_mode",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.assist_sensor_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "crank torque the assist controller uses as input",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "assist_sensor_nm",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "assist_sensor_nm"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "assist_sensor_nm",
+      "frame": "crank shaft",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.battery_empty",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "battery energy exhausted",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "battery_empty",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "battery_empty"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "battery_empty",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.battery_energy_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "remaining battery energy (battery-enabled drivetrains)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "battery_energy_j",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "battery_energy_j"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "battery_energy_j",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_drive.battery_energy_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "battery_energy_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "battery_energy_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.cadence_rpm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "crank cadence at the incoming state",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "cadence_rpm",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "cadence_rpm"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "rpm"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "cadence_rpm",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "rpm"
+    },
+    {
+      "canonical": "channel_drive.chain_dissipation_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "chain damping dissipation rate",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "chain_dissipation_power_w",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "chain_dissipation_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "chain_dissipation_power_w",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.chain_energy_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "elastic chain energy",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "chain_energy_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "chain_energy_j"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "chain_energy_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_drive.chain_extension_m",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "chain stretch at the incoming state",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "chain_extension_m",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "chain_extension_m"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "chain_extension_m",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "m"
+    },
+    {
+      "canonical": "channel_drive.chain_extension_rate_mps",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "chain stretch rate",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "chain_extension_rate_mps",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "chain_extension_rate_mps"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "m/s"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "chain_extension_rate_mps",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "m/s"
+    },
+    {
+      "canonical": "channel_drive.chain_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "chain component interval power",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "chain_power_w",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "chain_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "chain_power_w",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.chain_tension_n",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "chain tension at the incoming state",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "chain_tension_n",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "chain_tension_n"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "chain_tension_n",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N"
+    },
+    {
+      "canonical": "channel_drive.coasting_reason",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "why the pedaling policy is coasting; NULL while pedaling",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "coasting_reason",
+        "measurement": "diagnostic",
+        "optional": true,
+        "path": [
+          "drive",
+          "coasting_reason"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "coasting_reason",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.coasting_reason_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "coasting_reason"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "coasting_reason_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.crank_clutch_dissipation_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "crank clutch catch dissipation",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "crank_clutch_dissipation_power_w",
+        "measurement": "derived",
+        "optional": true,
+        "path": [
+          "drive",
+          "crank_clutch_dissipation_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "crank_clutch_dissipation_power_w",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.crank_clutch_dissipation_power_w_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "crank_clutch_dissipation_power_w"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "crank_clutch_dissipation_power_w_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.crank_clutch_engaged",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "crank clutch carrying torque",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "crank_clutch_engaged",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "crank_clutch_engaged"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "crank_clutch_engaged",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.crank_clutch_engaged_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "crank_clutch_engaged"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "crank_clutch_engaged_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.crank_clutch_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "crank clutch transmitted torque (when fitted)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "crank_clutch_torque_nm",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "crank_clutch_torque_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "crank_clutch_torque_nm",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.crank_clutch_torque_nm_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "crank_clutch_torque_nm"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "crank_clutch_torque_nm_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.crank_phase_rad",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "crank angle at the incoming state",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "crank_phase_rad",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "crank_phase_rad"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "rad"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "crank_phase_rad",
+      "frame": "crank shaft",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "rad"
+    },
+    {
+      "canonical": "channel_drive.crank_rad_s",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "crank shaft angular rate",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "crank_rad_s",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "crank_rad_s"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "rad/s"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "crank_rad_s",
+      "frame": "crank shaft",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "rad/s"
+    },
+    {
+      "canonical": "channel_drive.crank_target_phase_rad",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "pedaling policy crank phase target (when phase tracking)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "crank_target_phase_rad",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "drive",
+          "crank_target_phase_rad"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "rad"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "crank_target_phase_rad",
+      "frame": "crank shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "rad"
+    },
+    {
+      "canonical": "channel_drive.crank_target_phase_rad_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "crank_target_phase_rad"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "crank_target_phase_rad_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.crank_target_rate_rad_s",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "requested crank rate target (control or policy)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "crank_target_rate_rad_s",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "drive",
+          "crank_target_rate_rad_s"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "rad/s"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "crank_target_rate_rad_s",
+      "frame": "crank shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "rad/s"
+    },
+    {
+      "canonical": "channel_drive.crank_target_rate_rad_s_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "crank_target_rate_rad_s"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "crank_target_rate_rad_s_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.drive_shaft_rad_s",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "motor/mid-drive shaft angular rate",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "drive_shaft_rad_s",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "drive_shaft_rad_s"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "rad/s"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "drive_shaft_rad_s",
+      "frame": "mid-drive shaft",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "rad/s"
+    },
+    {
+      "canonical": "channel_drive.electrical_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "settled electrical draw including losses",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "electrical_power_w",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "electrical_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "electrical_power_w",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.electrical_power_w_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "electrical_power_w"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "electrical_power_w_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.energy_limited",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "the battery power budget clamped this interval request",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "energy_limited",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "energy_limited"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "energy_limited",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.episode_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "episode identity within the owning run",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "episode_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "episode_id"
+        ],
+        "phase": "n/a",
+        "shape": null,
+        "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "episode_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "n/a",
+      "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.freehub_deflection_rad",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "freehub spring wind-up",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "freehub_deflection_rad",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "freehub_deflection_rad"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "rad"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "freehub_deflection_rad",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "rad"
+    },
+    {
+      "canonical": "channel_drive.freehub_dissipation_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "freehub overrun dissipation",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "freehub_dissipation_power_w",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "freehub_dissipation_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "freehub_dissipation_power_w",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.freehub_energy_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "freehub spring energy",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "freehub_energy_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "freehub_energy_j"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "freehub_energy_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_drive.freehub_engaged",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "freehub carrying torque",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "freehub_engaged",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "freehub_engaged"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "freehub_engaged",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.freehub_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "freehub plus ideal-transmission interval power",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "freehub_power_w",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "freehub_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "freehub_power_w",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.freehub_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "freehub transmitted torque",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "freehub_torque_nm",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "freehub_torque_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "freehub_torque_nm",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.front_brake_demand",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "effective front brake demand applied this interval (includes a rollback hold)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "front_brake_demand",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "drive",
+          "front_brake_demand"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "1"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "front_brake_demand",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.front_brake_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "front static-brake interval power",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "front_brake_power_w",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "front_brake_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "front_brake_power_w",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.front_brake_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "front static-brake torque at the wheel spin DOF",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "front wheel spin joint",
+        "key": "front_brake_torque_nm",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "front_brake_torque_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "front_brake_torque_nm",
+      "frame": "front wheel spin joint",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.gear_front_teeth",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "chainring tooth count",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "gear_front_teeth",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "drive",
+          "gear_front_teeth"
+        ],
+        "phase": "n/a",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "gear_front_teeth",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "n/a",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.gear_ratio",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "front/rear tooth ratio",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "gear_ratio",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "gear_ratio"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "1"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "gear_ratio",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.gear_rear_teeth",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "current sprocket teeth",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "gear_rear_teeth",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "gear_rear_teeth"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "gear_rear_teeth",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.human_active_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "sum of rider actuator interval powers",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "human_active_power_w",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "human_active_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "human_active_power_w",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.human_command_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "pedaling-effort mean request handed to the rider/drive policy",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "human_command_nm",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "drive",
+          "human_command_nm"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "human_command_nm",
+      "frame": "crank shaft",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.human_joint_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "rider actuator plus passive tissue damping interval power",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "human_joint_power_w",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "human_joint_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "human_joint_power_w",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.human_sensor_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "pedal torque as the crank-shaft sensor reports it (crank-side, not wheel-side torque); solved weld reaction under an articulated rider",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "human_sensor_nm",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "human_sensor_nm"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "human_sensor_nm",
+      "frame": "crank shaft",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.human_setpoint_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "requested human crank-torque target of the applied control",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "human_setpoint_nm",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "drive",
+          "human_setpoint_nm"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "human_setpoint_nm",
+      "frame": "crank shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.human_setpoint_nm_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "human_setpoint_nm"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "human_setpoint_nm_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.human_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "human torque applied at the crank shaft (crank-side; wheel-side torque differs by the transmission ratio)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "crank shaft",
+        "key": "human_torque_nm",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "human_torque_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "human_torque_nm",
+      "frame": "crank shaft",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.interval_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "accounted physics interval identifier, consecutive per episode",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "interval_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "interval_id"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "interval_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.motor_control_source",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "assist | external_request: which demand produced the request",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "motor_control_source",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "drive",
+          "motor_control_source"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "motor_control_source",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.motor_enabled",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "motor delivered nonzero torque this interval",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "motor_enabled",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "motor_enabled"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "motor_enabled",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.motor_freewheel_dissipation_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "motor freewheel overrun dissipation",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "motor_freewheel_dissipation_power_w",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "drive",
+          "motor_freewheel_dissipation_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_freewheel_dissipation_power_w",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.motor_freewheel_engaged",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "motor-side freewheel carrying torque",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "motor_freewheel_engaged",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "motor_freewheel_engaged"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "motor_freewheel_engaged",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.motor_freewheel_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "motor-side freewheel transmitted torque",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "motor_freewheel_torque_nm",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "motor_freewheel_torque_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_freewheel_torque_nm",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.motor_limit_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "immediate safety ceiling on motor torque (applied after the lag and before energy limiting); a ceiling caps the request, it is not the requested target itself",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "motor_limit_nm",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "drive",
+          "motor_limit_nm"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_limit_nm",
+      "frame": "mid-drive shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.motor_limit_nm_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "motor_limit_nm"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "motor_limit_nm_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.motor_limited_request_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "request after the safety ceiling (safety_request)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "motor_limited_request_nm",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "motor_limited_request_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_limited_request_nm",
+      "frame": "mid-drive shaft",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.motor_request_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "assist policy torque request before ceilings and energy limiting",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "motor_request_nm",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "motor_request_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_request_nm",
+      "frame": "mid-drive shaft",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.motor_setpoint_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "requested motor torque target of the applied control (external request; NULL selects configured assistance)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "motor_setpoint_nm",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "drive",
+          "motor_setpoint_nm"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_setpoint_nm",
+      "frame": "mid-drive shaft",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.motor_setpoint_nm_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "motor_setpoint_nm"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "motor_setpoint_nm_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.motor_shaft_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "mechanical shaft power of the motor",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "motor_shaft_power_w",
+        "measurement": "derived",
+        "optional": true,
+        "path": [
+          "drive",
+          "motor_shaft_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_shaft_power_w",
+      "frame": "mid-drive shaft",
+      "measurement": "derived",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.motor_shaft_power_w_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "motor_shaft_power_w"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "motor_shaft_power_w_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.motor_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "motor torque actually delivered at the mid-drive shaft",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "mid-drive shaft",
+        "key": "motor_torque_nm",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "motor_torque_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_torque_nm",
+      "frame": "mid-drive shaft",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.omits_suspension_coupling",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "ideal mid-drive model decouples the drivetrain from suspension",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "omits_suspension_coupling",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "drive",
+          "omits_suspension_coupling"
+        ],
+        "phase": "n/a",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "omits_suspension_coupling",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "n/a",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.rear_brake_demand",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "effective rear brake demand applied this interval",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "rear_brake_demand",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "drive",
+          "rear_brake_demand"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "1"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "rear_brake_demand",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.rear_brake_power_w",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "rear static-brake interval power",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "rear_brake_power_w",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "rear_brake_power_w"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "W"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "rear_brake_power_w",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "W"
+    },
+    {
+      "canonical": "channel_drive.rear_brake_torque_nm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "rear static-brake torque at the wheel spin DOF",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "rear wheel spin joint",
+        "key": "rear_brake_torque_nm",
+        "measurement": "solved",
+        "optional": false,
+        "path": [
+          "drive",
+          "rear_brake_torque_nm"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "N\u00b7m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "rear_brake_torque_nm",
+      "frame": "rear wheel spin joint",
+      "measurement": "solved",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_drive",
+      "unit": "N\u00b7m"
+    },
+    {
+      "canonical": "channel_drive.required_cadence_rpm",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cadence the wheel speed would require through the current gear",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "required_cadence_rpm",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "drive",
+          "required_cadence_rpm"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "rpm"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "required_cadence_rpm",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "rpm"
+    },
+    {
+      "canonical": "channel_drive.rider_mode",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "pedaling state machine mode (e.g. pedaling, coasting)",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "rider_mode",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "rider_mode"
+        ],
+        "phase": "control_period",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "rider_mode",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "control_period",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.rollback_brake_demand",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "hill-hold reflex contribution inside the effective demands",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "rollback_brake_demand",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "drive",
+          "rollback_brake_demand"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._rollback_brake_demand",
+        "unit": "1"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "rollback_brake_demand",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._rollback_brake_demand",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.safety_limited",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "the ceiling clamped this interval request",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "safety_limited",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "safety_limited"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "safety_limited",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.shift_active",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "a torque-cut shift is in progress",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_active",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "shift_active"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "shift_active",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.shift_constraint_work_cumulative_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative shift constraint work",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_constraint_work_cumulative_j",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "shift_constraint_work_cumulative_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "shift_constraint_work_cumulative_j",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_drive.shift_constraint_work_cumulative_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "shift_constraint_work_cumulative_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "shift_constraint_work_cumulative_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.shift_count",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "completed shifts this episode",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_count",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "shift_count"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "shift_count",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.shift_direction",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "up/down/none shift direction",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_direction",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "shift_direction"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "shift_direction",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.shift_from_teeth",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "sprocket teeth before the in-progress shift",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_from_teeth",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "shift_from_teeth"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "shift_from_teeth",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.shift_interval_constraint_work_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "shift-step constraint work",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_interval_constraint_work_j",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "shift_interval_constraint_work_j"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "shift_interval_constraint_work_j",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_drive.shift_interval_constraint_work_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "shift_interval_constraint_work_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "shift_interval_constraint_work_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.shift_parameter_work_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative work attributed to shifting geometry",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_parameter_work_j",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "shift_parameter_work_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "shift_parameter_work_j",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_drive.shift_parameter_work_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "shift_parameter_work_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "shift_parameter_work_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.shift_time_s",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "time of the latest shift",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_time_s",
+        "measurement": "diagnostic",
+        "optional": true,
+        "path": [
+          "drive",
+          "shift_time_s"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "s"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "shift_time_s",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "s"
+    },
+    {
+      "canonical": "channel_drive.shift_time_s_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "shift_time_s"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "shift_time_s_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.shift_torque_factor",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "torque scale during a shift cut",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "shift_torque_factor",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "drive",
+          "shift_torque_factor"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+        "unit": "1"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "shift_torque_factor",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._shift_diagnostics",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.transmission_boundary_m",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "wrap boundary of the geometric freehub",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_boundary_m",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "drive",
+          "transmission_boundary_m"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "transmission_boundary_m",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "m"
+    },
+    {
+      "canonical": "channel_drive.transmission_boundary_m_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "transmission_boundary_m"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "transmission_boundary_m_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.transmission_constraint_defect_m",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "wrap constraint residual",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_constraint_defect_m",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "transmission_constraint_defect_m"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "transmission_constraint_defect_m",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "m"
+    },
+    {
+      "canonical": "channel_drive.transmission_constraint_defect_m_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "transmission_constraint_defect_m"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "transmission_constraint_defect_m_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.transmission_gap_m",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "distance to the wrap boundary",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_gap_m",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "transmission_gap_m"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "transmission_gap_m",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "m"
+    },
+    {
+      "canonical": "channel_drive.transmission_gap_m_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "transmission_gap_m"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "transmission_gap_m_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.transmission_interval_work_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "wrap constraint signed work of this interval",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_interval_work_j",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "transmission_interval_work_j"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "transmission_interval_work_j",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_drive.transmission_interval_work_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "transmission_interval_work_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "transmission_interval_work_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.transmission_model",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "configured transmission model name",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_model",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "drive",
+          "transmission_model"
+        ],
+        "phase": "n/a",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "transmission_model",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "n/a",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.transmission_phi_m",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "geometric transmission coordinate (geometric freehub)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_phi_m",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "transmission_phi_m"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "m"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "transmission_phi_m",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "m"
+    },
+    {
+      "canonical": "channel_drive.transmission_phi_m_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "transmission_phi_m"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "transmission_phi_m_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.transmission_reaction_error_n",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "geometric reaction consistency error",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_reaction_error_n",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "transmission_reaction_error_n"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "N"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "transmission_reaction_error_n",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "N"
+    },
+    {
+      "canonical": "channel_drive.transmission_reaction_error_n_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "transmission_reaction_error_n"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "transmission_reaction_error_n_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.transmission_reference_status",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "geometric backend qualification marker",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_reference_status",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "drive",
+          "transmission_reference_status"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "transmission_reference_status",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_drive.transmission_reference_status_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "transmission_reference_status"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "transmission_reference_status_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_drive.transmission_tension_n",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "geometric transmission belt tension",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "transmission_tension_n",
+        "measurement": "solved",
+        "optional": true,
+        "path": [
+          "drive",
+          "transmission_tension_n"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+        "unit": "N"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "transmission_tension_n",
+      "frame": "n/a",
+      "measurement": "solved",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "N"
+    },
+    {
+      "canonical": "channel_drive.transmission_tension_n_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "transmission_tension_n"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "transmission_tension_n_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
+      "table_name": "channel_drive",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.__component_work_j_present",
+      "definition": {
+        "parent_mask": "__component_work_j_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__component_work_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.__component_work_j_valid",
+      "definition": {
+        "parent_mask": "__component_work_j_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__component_work_j_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.__energy_present",
+      "definition": {
+        "parent_mask": "__energy_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__energy_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.__energy_valid",
+      "definition": {
+        "parent_mask": "__energy_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__energy_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.active_work_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative muscle + motor work over the episode",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "active_work_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "active_work_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "active_work_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.component_work_j",
+      "definition": {
+        "aliases": [
+          "{component}_work_j"
+        ],
+        "axes": null,
+        "children": [],
+        "description": "per-component work qfrc\u00b7qvel\u00b7dt of this interval, keyed by force component",
+        "dtype": "map<double>",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "component_work_j",
+        "measurement": "derived",
+        "optional": true,
+        "path": [
+          "component_work_j"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "MAP(VARCHAR, DOUBLE)",
+      "field_name": "component_work_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.component_work_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "component_work_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "component_work_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.constraint_absolute_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative absolute numerical constraint work",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "constraint_absolute_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "constraint_absolute_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "constraint_absolute_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.constraint_signed_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative signed numerical constraint work",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "constraint_signed_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "constraint_signed_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "constraint_signed_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.constraint_work_ok",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "integral energy-closure verdict evaluated at the period-closing interval",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "constraint_work_ok",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "constraint_work_ok"
+        ],
+        "phase": "interval_end",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "constraint_work_ok",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval_end",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_energy.constraint_work_ratio",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "constraint_absolute_j / source_positive_work_j; NULL when no positive source work exists yet (division is undefined, not zero)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "constraint_work_ratio",
+        "measurement": "derived",
+        "optional": true,
+        "path": [
+          "energy",
+          "constraint_work_ratio"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "1"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "constraint_work_ratio",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": true,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.constraint_work_ratio_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "constraint_work_ratio"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "constraint_work_ratio_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.elastic_energy_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "stored elastic energy by term (forwarded with the closing measurement when unmeasured)",
+        "dtype": "map<double>",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "elastic_energy_j",
+        "measurement": "forwarded",
+        "optional": true,
+        "path": [
+          "energy",
+          "elastic_energy_j"
+        ],
+        "phase": "interval_end",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "MAP(VARCHAR, DOUBLE)",
+      "field_name": "elastic_energy_j",
+      "frame": "n/a",
+      "measurement": "forwarded",
+      "optional": true,
+      "phase": "interval_end",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.elastic_energy_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "elastic_energy_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "elastic_energy_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval_end",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.electrical_residual_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "battery bookkeeping residual (0 when the battery is disabled)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "electrical_residual_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "electrical_residual_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "electrical_residual_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.electrical_work_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative electrical work drawn from the battery model",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "electrical_work_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "electrical_work_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "electrical_work_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.energy_scale_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "energy normalization scale fixed at episode initialization",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "energy_scale_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "energy_scale_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime.reset",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "energy_scale_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime.reset",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.episode_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "episode identity within the owning run",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "episode_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "episode_id"
+        ],
+        "phase": "n/a",
+        "shape": null,
+        "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "episode_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "n/a",
+      "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+      "table_name": "channel_energy",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_energy.external_work_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative signed work of external/environment components",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "external_work_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "external_work_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "external_work_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.interval_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "accounted physics interval identifier, consecutive per episode",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "interval_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "interval_id"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "interval_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+      "table_name": "channel_energy",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_energy.loss_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative material dissipation (dampers, brush, bearings)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "loss_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "loss_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "loss_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.loss_step_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "material dissipation of this interval",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "loss_step_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "loss_step_j"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._loss_increment",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "loss_step_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._loss_increment",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.measured",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "whether this row carries a fresh endpoint measurement (mechanical/elastic) or the forwarded period-closing values",
+        "dtype": "boolean",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "measured",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "energy",
+          "measured"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "n/a"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "measured",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_energy.mechanical_energy_j",
+      "definition": {
+        "aliases": [
+          "mechanical_energy_j"
+        ],
+        "axes": null,
+        "children": [],
+        "description": "mechanical energy of the last measured interval; on unmeasured intervals this is the forwarded period-closing measurement, not a fresh instantaneous value",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "mechanical_energy_j",
+        "measurement": "forwarded",
+        "optional": false,
+        "path": [
+          "energy",
+          "mechanical_energy_j"
+        ],
+        "phase": "interval_end",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "mechanical_energy_j",
+      "frame": "n/a",
+      "measurement": "forwarded",
+      "optional": false,
+      "phase": "interval_end",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.motor_positive_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative positive motor work",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "motor_positive_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "motor_positive_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_positive_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.motor_signed_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative signed motor work",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "motor_signed_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "motor_signed_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "motor_signed_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.muscle_positive_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative positive muscle work",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "muscle_positive_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "muscle_positive_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "muscle_positive_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.muscle_signed_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative signed muscle (rider actuator + crank) work",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "muscle_signed_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "muscle_signed_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "muscle_signed_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.residual_j",
+      "definition": {
+        "aliases": [
+          "energy_residual_j"
+        ],
+        "axes": null,
+        "children": [],
+        "description": "hybrid energy residual vs the initial datum; forwarded with the closing measurement and excluded from the validity verdict when unmeasured",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "residual_j",
+        "measurement": "forwarded",
+        "optional": true,
+        "path": [
+          "energy",
+          "residual_j"
+        ],
+        "phase": "interval_end",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "residual_j",
+      "frame": "n/a",
+      "measurement": "forwarded",
+      "optional": true,
+      "phase": "interval_end",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.residual_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "residual_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "residual_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval_end",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.solver_constraint_work_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "cumulative signed work of equality/limit constraint rows",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "solver_constraint_work_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "solver_constraint_work_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "solver_constraint_work_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.source_interval_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "interval the forwarded measurement was taken on; equals interval_id when measured",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "source_interval_id",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "energy",
+          "source_interval_id"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "source_interval_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_energy.source_interval_id_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "source_interval_id"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "source_interval_id_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_energy.source_positive_work_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "muscle_positive_j + motor_positive_j reference for the constraint-work ratio",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "source_positive_work_j",
+        "measurement": "derived",
+        "optional": false,
+        "path": [
+          "energy",
+          "source_positive_work_j"
+        ],
+        "phase": "episode",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "source_positive_work_j",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": false,
+      "phase": "episode",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_energy.source_time_s",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "end time of the interval the forwarded measurement belongs to",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "source_time_s",
+        "measurement": "declared",
+        "optional": true,
+        "path": [
+          "energy",
+          "source_time_s"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "s"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "source_time_s",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "s"
+    },
+    {
+      "canonical": "channel_energy.source_time_s_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "source_time_s"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "source_time_s_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_energy",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.__endpoint_mass_present",
+      "definition": {
+        "parent_mask": "__endpoint_mass_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__endpoint_mass_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.__endpoint_mass_valid",
+      "definition": {
+        "parent_mask": "__endpoint_mass_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__endpoint_mass_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.__mass_present",
+      "definition": {
+        "parent_mask": "__mass_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__mass_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.__mass_valid",
+      "definition": {
+        "parent_mask": "__mass_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__mass_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.angular_momentum_kg_m2_s",
+      "definition": {
+        "aliases": [],
+        "axes": [
+          "x",
+          "y",
+          "z"
+        ],
+        "children": [],
+        "description": "spatial angular momentum (full measurement intervals only)",
+        "dtype": "double[]",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "angular_momentum_kg_m2_s",
+        "measurement": "measured",
+        "optional": true,
+        "path": [
+          "mass",
+          "angular_momentum_kg_m2_s"
+        ],
+        "phase": "interval_start",
+        "shape": [
+          3
+        ],
+        "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+        "unit": "kg\u00b7m\u00b2/s"
+      },
+      "dtype": "DOUBLE[]",
+      "field_name": "angular_momentum_kg_m2_s",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": true,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "kg\u00b7m\u00b2/s"
+    },
+    {
+      "canonical": "channel_mass.angular_momentum_kg_m2_s_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "angular_momentum_kg_m2_s"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "angular_momentum_kg_m2_s_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.com_m",
+      "definition": {
+        "aliases": [],
+        "axes": [
+          "x",
+          "y",
+          "z"
+        ],
+        "children": [],
+        "description": "compiled centre-of-mass position at the incoming state",
+        "dtype": "double[]",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "com_m",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "mass",
+          "com_m"
+        ],
+        "phase": "interval_start",
+        "shape": [
+          3
+        ],
+        "source": "src/bike_sim/sim/ride/physical_energy.py::com_observations",
+        "unit": "m"
+      },
+      "dtype": "DOUBLE[]",
+      "field_name": "com_m",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::com_observations",
+      "table_name": "channel_mass",
+      "unit": "m"
+    },
+    {
+      "canonical": "channel_mass.com_velocity_mps",
+      "definition": {
+        "aliases": [],
+        "axes": [
+          "x",
+          "y",
+          "z"
+        ],
+        "children": [],
+        "description": "compiled centre-of-mass velocity (full measurement intervals only)",
+        "dtype": "double[]",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "com_velocity_mps",
+        "measurement": "measured",
+        "optional": true,
+        "path": [
+          "mass",
+          "com_velocity_mps"
+        ],
+        "phase": "interval_start",
+        "shape": [
+          3
+        ],
+        "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+        "unit": "m/s"
+      },
+      "dtype": "DOUBLE[]",
+      "field_name": "com_velocity_mps",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": true,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "m/s"
+    },
+    {
+      "canonical": "channel_mass.com_velocity_mps_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "com_velocity_mps"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "com_velocity_mps_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.endpoint_mass",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "compiled total model mass",
+            "dtype": "double",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "mass_kg",
+            "measurement": "measured",
+            "optional": false,
+            "path": [
+              "mass_kg"
+            ],
+            "phase": "interval_start",
+            "shape": null,
+            "source": "src/bike_sim/sim/ride/physical_energy.py::com_observations",
+            "unit": "kg"
+          },
+          {
+            "aliases": [],
+            "axes": [
+              "x",
+              "y",
+              "z"
+            ],
+            "children": [],
+            "description": "compiled centre-of-mass position at the incoming state",
+            "dtype": "double[]",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "com_m",
+            "measurement": "measured",
+            "optional": false,
+            "path": [
+              "com_m"
+            ],
+            "phase": "interval_start",
+            "shape": [
+              3
+            ],
+            "source": "src/bike_sim/sim/ride/physical_energy.py::com_observations",
+            "unit": "m"
+          },
+          {
+            "aliases": [],
+            "axes": [
+              "x",
+              "y",
+              "z"
+            ],
+            "children": [],
+            "description": "compiled centre-of-mass velocity (full measurement intervals only)",
+            "dtype": "double[]",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "com_velocity_mps",
+            "measurement": "measured",
+            "optional": true,
+            "path": [
+              "com_velocity_mps"
+            ],
+            "phase": "interval_start",
+            "shape": [
+              3
+            ],
+            "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+            "unit": "m/s"
+          },
+          {
+            "aliases": [],
+            "axes": [
+              "x",
+              "y",
+              "z"
+            ],
+            "children": [],
+            "description": "spatial linear momentum (full measurement intervals only)",
+            "dtype": "double[]",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "linear_momentum_kg_mps",
+            "measurement": "measured",
+            "optional": true,
+            "path": [
+              "linear_momentum_kg_mps"
+            ],
+            "phase": "interval_start",
+            "shape": [
+              3
+            ],
+            "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+            "unit": "kg\u00b7m/s"
+          },
+          {
+            "aliases": [],
+            "axes": [
+              "x",
+              "y",
+              "z"
+            ],
+            "children": [],
+            "description": "spatial angular momentum (full measurement intervals only)",
+            "dtype": "double[]",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "angular_momentum_kg_m2_s",
+            "measurement": "measured",
+            "optional": true,
+            "path": [
+              "angular_momentum_kg_m2_s"
+            ],
+            "phase": "interval_start",
+            "shape": [
+              3
+            ],
+            "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+            "unit": "kg\u00b7m\u00b2/s"
+          },
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "kinetic energy \u00bd\u00b7qvel\u1d40\u00b7M\u00b7qvel (full measurement intervals only)",
+            "dtype": "double",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "kinetic_energy_j",
+            "measurement": "measured",
+            "optional": true,
+            "path": [
+              "kinetic_energy_j"
+            ],
+            "phase": "interval_start",
+            "shape": null,
+            "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+            "unit": "J"
+          },
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "gravitational potential energy (full measurement intervals only)",
+            "dtype": "double",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "gravitational_energy_j",
+            "measurement": "measured",
+            "optional": true,
+            "path": [
+              "gravitational_energy_j"
+            ],
+            "phase": "interval_start",
+            "shape": null,
+            "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+            "unit": "J"
+          }
+        ],
+        "description": "mass observations at the post-solve endpoint of a measured interval; forwarded from the period-closing measurement on unmeasured intervals",
+        "dtype": "struct",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "endpoint_mass",
+        "measurement": "forwarded",
+        "optional": true,
+        "path": [
+          "endpoint_mass"
+        ],
+        "phase": "interval_end",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "n/a"
+      },
+      "dtype": "STRUCT(\"mass_kg\" DOUBLE, \"com_m\" DOUBLE[], \"com_velocity_mps\" DOUBLE[], \"com_velocity_mps_present\" BOOLEAN, \"linear_momentum_kg_mps\" DOUBLE[], \"linear_momentum_kg_mps_present\" BOOLEAN, \"angular_momentum_kg_m2_s\" DOUBLE[], \"angular_momentum_kg_m2_s_present\" BOOLEAN, \"kinetic_energy_j\" DOUBLE, \"kinetic_energy_j_present\" BOOLEAN, \"gravitational_energy_j\" DOUBLE, \"gravitational_energy_j_present\" BOOLEAN)",
+      "field_name": "endpoint_mass",
+      "frame": "n/a",
+      "measurement": "forwarded",
+      "optional": true,
+      "phase": "interval_end",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_mass",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_mass.endpoint_mass_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "endpoint_mass"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "endpoint_mass_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval_end",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.episode_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "episode identity within the owning run",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "episode_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "episode_id"
+        ],
+        "phase": "n/a",
+        "shape": null,
+        "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "episode_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "n/a",
+      "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+      "table_name": "channel_mass",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_mass.gravitational_energy_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "gravitational potential energy (full measurement intervals only)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "gravitational_energy_j",
+        "measurement": "measured",
+        "optional": true,
+        "path": [
+          "mass",
+          "gravitational_energy_j"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "gravitational_energy_j",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": true,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_mass.gravitational_energy_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "gravitational_energy_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "gravitational_energy_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.interval_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "accounted physics interval identifier, consecutive per episode",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "interval_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "interval_id"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "interval_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+      "table_name": "channel_mass",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_mass.kinetic_energy_j",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "kinetic energy \u00bd\u00b7qvel\u1d40\u00b7M\u00b7qvel (full measurement intervals only)",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "kinetic_energy_j",
+        "measurement": "measured",
+        "optional": true,
+        "path": [
+          "mass",
+          "kinetic_energy_j"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+        "unit": "J"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "kinetic_energy_j",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": true,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "J"
+    },
+    {
+      "canonical": "channel_mass.kinetic_energy_j_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "kinetic_energy_j"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "kinetic_energy_j_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.linear_momentum_kg_mps",
+      "definition": {
+        "aliases": [],
+        "axes": [
+          "x",
+          "y",
+          "z"
+        ],
+        "children": [],
+        "description": "spatial linear momentum (full measurement intervals only)",
+        "dtype": "double[]",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "linear_momentum_kg_mps",
+        "measurement": "measured",
+        "optional": true,
+        "path": [
+          "mass",
+          "linear_momentum_kg_mps"
+        ],
+        "phase": "interval_start",
+        "shape": [
+          3
+        ],
+        "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+        "unit": "kg\u00b7m/s"
+      },
+      "dtype": "DOUBLE[]",
+      "field_name": "linear_momentum_kg_mps",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": true,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "kg\u00b7m/s"
+    },
+    {
+      "canonical": "channel_mass.linear_momentum_kg_mps_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "linear_momentum_kg_mps"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "linear_momentum_kg_mps_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::mass_observations",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_mass.mass_kg",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "compiled total model mass",
+        "dtype": "double",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "mass_kg",
+        "measurement": "measured",
+        "optional": false,
+        "path": [
+          "mass",
+          "mass_kg"
+        ],
+        "phase": "interval_start",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_energy.py::com_observations",
+        "unit": "kg"
+      },
+      "dtype": "DOUBLE",
+      "field_name": "mass_kg",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": false,
+      "phase": "interval_start",
+      "source": "src/bike_sim/sim/ride/physical_energy.py::com_observations",
+      "table_name": "channel_mass",
+      "unit": "kg"
+    },
+    {
+      "canonical": "channel_mass.measurement_scope",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "which mass measurement ran: 'full' (mass_observations with energy/momentum) or 'com' (com_observations kinematic only)",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "measurement_scope",
+        "measurement": "derived",
+        "optional": true,
+        "path": [
+          "mass",
+          "measurement_scope"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "measurement_scope",
+      "frame": "n/a",
+      "measurement": "derived",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_mass",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_mass.measurement_scope_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "measurement_scope"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "measurement_scope_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_mass",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.__attachment_violations_present",
+      "definition": {
+        "parent_mask": "__attachment_violations_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__attachment_violations_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+      "table_name": "channel_model_status",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.__attachment_violations_valid",
+      "definition": {
+        "parent_mask": "__attachment_violations_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__attachment_violations_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+      "table_name": "channel_model_status",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.__contact_crash_cause_present",
+      "definition": {
+        "parent_mask": "__contact_crash_cause_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__contact_crash_cause_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+      "table_name": "channel_model_status",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.__contact_crash_cause_valid",
+      "definition": {
+        "parent_mask": "__contact_crash_cause_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__contact_crash_cause_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+      "table_name": "channel_model_status",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.__model_status_present",
+      "definition": {
+        "parent_mask": "__model_status_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__model_status_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+      "table_name": "channel_model_status",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.__model_status_valid",
+      "definition": {
+        "parent_mask": "__model_status_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__model_status_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+      "table_name": "channel_model_status",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.attachment_violations",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "attachment-budget violation tags recorded for this interval",
+        "dtype": "varchar[]",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "attachment_violations",
+        "measurement": "diagnostic",
+        "optional": true,
+        "path": [
+          "attachment_violations"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR[]",
+      "field_name": "attachment_violations",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_model_status",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_model_status.attachment_violations_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "attachment_violations"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "attachment_violations_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
+      "table_name": "channel_model_status",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.contact_crash_cause",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "physical crash cause classified from contacts; NULL while no crash is observed",
+        "dtype": "varchar",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "contact_crash_cause",
+        "measurement": "measured",
+        "optional": true,
+        "path": [
+          "contact_crash_cause"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+        "unit": "n/a"
+      },
+      "dtype": "VARCHAR",
+      "field_name": "contact_crash_cause",
+      "frame": "n/a",
+      "measurement": "measured",
+      "optional": true,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_model_status",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_model_status.contact_crash_cause_present",
+      "definition": {
+        "description": "field existed in source payload",
+        "presence_of": "contact_crash_cause"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "contact_crash_cause_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._advance_physics",
+      "table_name": "channel_model_status",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_model_status.episode_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "episode identity within the owning run",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "episode_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "episode_id"
+        ],
+        "phase": "n/a",
+        "shape": null,
+        "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "episode_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "n/a",
+      "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+      "table_name": "channel_model_status",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_model_status.interval_id",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [],
+        "description": "accounted physics interval identifier, consecutive per episode",
+        "dtype": "bigint",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "interval_id",
+        "measurement": "declared",
+        "optional": false,
+        "path": [
+          "interval_id"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+        "unit": "n/a"
+      },
+      "dtype": "BIGINT",
+      "field_name": "interval_id",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+      "table_name": "channel_model_status",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_model_status.model_status",
+      "definition": {
+        "aliases": [],
+        "axes": null,
+        "children": [
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "no recorded model violations",
+            "dtype": "boolean",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "model_valid",
+            "measurement": "diagnostic",
+            "optional": false,
+            "path": [
+              "model_valid"
+            ],
+            "phase": "interval",
+            "shape": null,
+            "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+            "unit": "n/a"
+          },
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [
+              {
+                "aliases": [],
+                "axes": null,
+                "children": [],
+                "description": "violating interval",
+                "dtype": "bigint",
+                "except_keys": [],
+                "frame": "n/a",
+                "key": "interval_id",
+                "measurement": "diagnostic",
+                "optional": false,
+                "path": [
+                  "interval_id"
+                ],
+                "phase": "interval",
+                "shape": null,
+                "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+                "unit": "n/a"
+              },
+              {
+                "aliases": [],
+                "axes": null,
+                "children": [],
+                "description": "violation time",
+                "dtype": "double",
+                "except_keys": [],
+                "frame": "n/a",
+                "key": "time_s",
+                "measurement": "diagnostic",
+                "optional": false,
+                "path": [
+                  "time_s"
+                ],
+                "phase": "interval",
+                "shape": null,
+                "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+                "unit": "s"
+              },
+              {
+                "aliases": [],
+                "axes": null,
+                "children": [],
+                "description": "violation reason list",
+                "dtype": "varchar[]",
+                "except_keys": [],
+                "frame": "n/a",
+                "key": "reasons",
+                "measurement": "diagnostic",
+                "optional": false,
+                "path": [
+                  "reasons"
+                ],
+                "phase": "interval",
+                "shape": null,
+                "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+                "unit": "n/a"
+              }
+            ],
+            "description": "first recorded violation (sticky)",
+            "dtype": "struct",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "first_model_violation",
+            "measurement": "diagnostic",
+            "optional": true,
+            "path": [
+              "first_model_violation"
+            ],
+            "phase": "interval",
+            "shape": null,
+            "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+            "unit": "n/a"
+          },
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "violation reason -> count",
+            "dtype": "map<double>",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "model_violation_counts",
+            "measurement": "diagnostic",
+            "optional": false,
+            "path": [
+              "model_violation_counts"
+            ],
+            "phase": "episode",
+            "shape": null,
+            "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+            "unit": "n/a"
+          },
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "tri-state numeric verdict: 'true' | 'false' | 'not_evaluated' (the runtime's bool verdict publishes as lowercase verdict text)",
+            "dtype": "varchar",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "numerically_valid",
+            "measurement": "diagnostic",
+            "optional": false,
+            "path": [
+              "numerically_valid"
+            ],
+            "phase": "interval",
+            "shape": null,
+            "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+            "unit": "n/a"
+          },
+          {
+            "aliases": [],
+            "axes": null,
+            "children": [],
+            "description": "model calibration status string",
+            "dtype": "varchar",
+            "except_keys": [],
+            "frame": "n/a",
+            "key": "calibration_status",
+            "measurement": "declared",
+            "optional": false,
+            "path": [
+              "calibration_status"
+            ],
+            "phase": "interval",
+            "shape": null,
+            "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus",
+            "unit": "n/a"
+          }
+        ],
+        "description": "episode-local applicability and numerical-quality status",
+        "dtype": "struct",
+        "except_keys": [],
+        "frame": "n/a",
+        "key": "model_status",
+        "measurement": "diagnostic",
+        "optional": false,
+        "path": [
+          "model_status"
+        ],
+        "phase": "interval",
+        "shape": null,
+        "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus.as_dict",
+        "unit": "n/a"
+      },
+      "dtype": "STRUCT(\"model_valid\" BOOLEAN, \"first_model_violation\" STRUCT(\"interval_id\" BIGINT, \"time_s\" DOUBLE, \"reasons\" VARCHAR[]), \"first_model_violation_present\" BOOLEAN, \"model_violation_counts\" MAP(VARCHAR, DOUBLE), \"numerically_valid\" VARCHAR, \"calibration_status\" VARCHAR)",
+      "field_name": "model_status",
+      "frame": "n/a",
+      "measurement": "diagnostic",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/model_status.py::ModelStatus.as_dict",
+      "table_name": "channel_model_status",
+      "unit": "n/a"
+    },
+    {
+      "canonical": "channel_rider.__attachment_samples_present",
+      "definition": {
+        "parent_mask": "__attachment_samples_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__attachment_samples_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
+      "table_name": "channel_rider",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_rider.__attachment_samples_valid",
+      "definition": {
+        "parent_mask": "__attachment_samples_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__attachment_samples_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
+      "table_name": "channel_rider",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_rider.__rider_activation_saturated_present",
+      "definition": {
+        "parent_mask": "__rider_activation_saturated_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__rider_activation_saturated_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
+      "table_name": "channel_rider",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_rider.__rider_activation_saturated_valid",
+      "definition": {
+        "parent_mask": "__rider_activation_saturated_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__rider_activation_saturated_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
+      "table_name": "channel_rider",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_rider.__rider_active_delivered_nm_present",
+      "definition": {
+        "parent_mask": "__rider_active_delivered_nm_present"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__rider_active_delivered_nm_present",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
+      "table_name": "channel_rider",
+      "unit": "1"
+    },
+    {
+      "canonical": "channel_rider.__rider_active_delivered_nm_valid",
+      "definition": {
+        "parent_mask": "__rider_active_delivered_nm_valid"
+      },
+      "dtype": "BOOLEAN",
+      "field_name": "__rider_active_delivered_nm_valid",
+      "frame": "n/a",
+      "measurement": "declared",
+      "optional": false,
+      "phase": "interval",
+      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
+      "table_name": "channel_rider",
+      "unit": "1"
+    }
+  ],
+  "total": 395,
+  "truncated": true
+}

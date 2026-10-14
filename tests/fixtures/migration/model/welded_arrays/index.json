@@ -1,0 +1,515 @@
+{
+  "actuator_biasprm": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/actuator_biasprm.f64",
+    "sha256": "3dc463a76fc170607c07b104c3cb531362ce7d6e10c1a34e0c0f370aeae08ce8",
+    "shape": [
+      12,
+      10
+    ]
+  },
+  "actuator_ctrlrange": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/actuator_ctrlrange.f64",
+    "sha256": "fb0443a9c603072aab018111bcb48c0b00ab3e4520fbaefd4a896fe2a52efb43",
+    "shape": [
+      12,
+      2
+    ]
+  },
+  "actuator_forcerange": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/actuator_forcerange.f64",
+    "sha256": "5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5",
+    "shape": [
+      12,
+      2
+    ]
+  },
+  "actuator_gainprm": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/actuator_gainprm.f64",
+    "sha256": "1615e5d9c29b2a2419c8bc3f58468338af0f8f44a9c08d3906afe5a5521c7dec",
+    "shape": [
+      12,
+      10
+    ]
+  },
+  "body_inertia": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/body_inertia.f64",
+    "sha256": "e4e1d9c10d58335a1a40a3328e95e7f2df2ab3094ec2dfda04c4b01c643df64d",
+    "shape": [
+      28,
+      3
+    ]
+  },
+  "body_ipos": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/body_ipos.f64",
+    "sha256": "4e71b1c74822c34cbaf0828d2bf892819787d109e34d9da2729f757caaaf1ed9",
+    "shape": [
+      28,
+      3
+    ]
+  },
+  "body_iquat": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/body_iquat.f64",
+    "sha256": "8d20652a995b8676d5753dd73b348f70dd572b53872e3166563b40418f200830",
+    "shape": [
+      28,
+      4
+    ]
+  },
+  "body_mass": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/body_mass.f64",
+    "sha256": "627afb6273dc41d170a8307e18aaf2c1a02376767dc42e7110b86c282a964919",
+    "shape": [
+      28
+    ]
+  },
+  "dims": {
+    "na": 0,
+    "nbody": 28,
+    "neq": 7,
+    "ngeom": 94,
+    "nhfield": 1,
+    "nhfielddata": 52002,
+    "njnt": 26,
+    "nmesh": 0,
+    "nq": 26,
+    "nsensor": 17,
+    "nsensordata": 31,
+    "nsite": 33,
+    "ntendon": 1,
+    "nu": 12,
+    "nv": 26,
+    "nwrap": 2
+  },
+  "dof_armature": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/dof_armature.f64",
+    "sha256": "46f531b7ea0428fbf2c3ca2b60e8dc33d6bbfa000e0fd1b489c5e39140a47006",
+    "shape": [
+      26
+    ]
+  },
+  "dof_damping": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/dof_damping.f64",
+    "sha256": "fde948fbe5f768d362d7eb793b2c25cfcb312d9ad4c16a3eb1af48cce6411b00",
+    "shape": [
+      26
+    ]
+  },
+  "dof_frictionloss": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/dof_frictionloss.f64",
+    "sha256": "c7ab62d78f74c0431a4f3496844475fdbc12119f5b61193e0b5577d30e9663cc",
+    "shape": [
+      26
+    ]
+  },
+  "dof_solimp": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/dof_solimp.f64",
+    "sha256": "b8b10a93df4c2ad13c300e722ced5d21445e7c1fd2126c290ae0d3de48377009",
+    "shape": [
+      26,
+      5
+    ]
+  },
+  "dof_solref": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/dof_solref.f64",
+    "sha256": "2bcd7ea44a84a7a977d5176e08a1667c16aa87ff4c50fbb57331f41755def247",
+    "shape": [
+      26,
+      2
+    ]
+  },
+  "eq_active0": {
+    "dtype": "|u1",
+    "file": "model/welded_arrays/eq_active0.u8",
+    "sha256": "c36336f242c655c52fa06c4d03f665ca9ea0bb84f20f1b1f90976aa58ca40a4a",
+    "shape": [
+      7
+    ]
+  },
+  "eq_data": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/eq_data.f64",
+    "sha256": "4dbecbc99977433a28ab84a6b77b3725f1a502d53b168f6dfe72883d39a66c5f",
+    "shape": [
+      7,
+      11
+    ]
+  },
+  "geom_friction": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/geom_friction.f64",
+    "sha256": "38f487f0e8a9d07dbdf127d4230225e36a7ad1bb38a31a10e1d41d4559445c58",
+    "shape": [
+      94,
+      3
+    ]
+  },
+  "geom_solimp": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/geom_solimp.f64",
+    "sha256": "e24693a58ae482860c088de5d8957d755175c905f90be3cfec3bd5f47f4ff51b",
+    "shape": [
+      94,
+      5
+    ]
+  },
+  "geom_solref": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/geom_solref.f64",
+    "sha256": "20bd0718d2e6f441ef90fe7089152d9cac49a28134d33a599fd42de11097430c",
+    "shape": [
+      94,
+      2
+    ]
+  },
+  "jnt_axis": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/jnt_axis.f64",
+    "sha256": "53904d52ef2360d8b1d1f8ee204814e447774688097805074ad94f300fb45808",
+    "shape": [
+      26,
+      3
+    ]
+  },
+  "jnt_pos": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/jnt_pos.f64",
+    "sha256": "afc249b32e5549092c980b1995ea5401e73af3fcda168c1da9ae1bdbfce0d447",
+    "shape": [
+      26,
+      3
+    ]
+  },
+  "jnt_range": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/jnt_range.f64",
+    "sha256": "4dad2119b32c4b6725647aa29187beca6c8fd5b210f4560aadd3b84a8a4ba324",
+    "shape": [
+      26,
+      2
+    ]
+  },
+  "jnt_stiffness": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/jnt_stiffness.f64",
+    "sha256": "46f531b7ea0428fbf2c3ca2b60e8dc33d6bbfa000e0fd1b489c5e39140a47006",
+    "shape": [
+      26
+    ]
+  },
+  "names": {
+    "actuator": [
+      "front_brake",
+      "rear_brake",
+      "mid_drive",
+      "act_rider_torso_hinge",
+      "act_rider_shoulder_left",
+      "act_rider_elbow_left",
+      "act_rider_shoulder_right",
+      "act_rider_elbow_right",
+      "act_rider_hip_front",
+      "act_rider_knee_front",
+      "act_rider_hip_rear",
+      "act_rider_knee_rear"
+    ],
+    "body": [
+      "world",
+      "frame",
+      "crank",
+      "pedal_front",
+      "pedal_rear",
+      "steer",
+      "fork_lower",
+      "front_wheel",
+      "chainstay",
+      "seatstay",
+      "rear_wheel",
+      "rocker",
+      "shock_yoke",
+      "shock_shaft",
+      "shock_body",
+      "rider_pelvis",
+      "rider_torso",
+      "rider_head",
+      "rider_upper_arm_left",
+      "rider_forearm_left",
+      "rider_upper_arm_right",
+      "rider_forearm_right",
+      "rider_thigh_front",
+      "rider_shank_front",
+      "rider_foot_front",
+      "rider_thigh_rear",
+      "rider_shank_rear",
+      "rider_foot_rear"
+    ],
+    "equality": [
+      "seatstay_rocker_joint",
+      "shock_frame_joint",
+      "connect_foot_front",
+      "connect_foot_rear",
+      "connect_saddle",
+      "connect_grip_left",
+      "connect_grip_right"
+    ],
+    "geom": [
+      "catch_plane",
+      "terrain",
+      "geom_bb_shell",
+      "geom_motor_core",
+      "geom_downtube",
+      "geom_battery_pack",
+      "geom_headtube",
+      "geom_toptube_bridge",
+      "geom_toptube_main",
+      "geom_seattube",
+      "geom_frame_casting",
+      "geom_seatpost",
+      "geom_seatpost_upper",
+      "geom_seat_gusset",
+      "geom_frame_junction",
+      "geom_saddle",
+      "geom_p0_mount",
+      "geom_p5_mount",
+      "geom_p7_mount",
+      "geom_crank_spindle",
+      "geom_crank_arm_front",
+      "geom_crank_arm_rear",
+      "geom_pedal_front",
+      "geom_pedal_rear",
+      "geom_steerer_tube",
+      "geom_stem",
+      "geom_handlebar",
+      "geom_fork_crown",
+      "geom_stanchion_l",
+      "geom_stanchion_r",
+      "geom_fork_lower_l",
+      "geom_fork_lower_r",
+      "geom_fork_arch",
+      "geom_front_dropout",
+      "geom_front_hub",
+      "geom_front_rim",
+      "geom_front_tire",
+      "geom_front_rotor",
+      "geom_front_contact",
+      "geom_cs_sleeve",
+      "geom_cs_left",
+      "geom_cs_right",
+      "geom_cs_bridge",
+      "geom_horst_sleeve_l",
+      "geom_horst_sleeve_r",
+      "geom_ss_left",
+      "geom_ss_right",
+      "geom_dropout_bottom_l",
+      "geom_dropout_rear_l",
+      "geom_dropout_front_l",
+      "geom_dropout_bottom_r",
+      "geom_dropout_rear_r",
+      "geom_dropout_front_r",
+      "geom_ss_bridge",
+      "geom_rear_hub",
+      "geom_rear_rim",
+      "geom_rear_tire",
+      "geom_rear_contact",
+      "geom_rear_cassette",
+      "geom_rear_rotor",
+      "geom_rocker_sleeve",
+      "geom_roc_arm_l1",
+      "geom_roc_arm_r1",
+      "geom_roc_arm_l2",
+      "geom_roc_arm_r2",
+      "geom_roc_arm_l3",
+      "geom_roc_arm_r3",
+      "geom_yoke_pivot_p4",
+      "geom_yoke_arm_l",
+      "geom_yoke_arm_r",
+      "geom_yoke_bridge",
+      "geom_yoke_eyelet",
+      "geom_shock_lower_eyelet",
+      "geom_shock_shaft",
+      "geom_shock_travel_indicator",
+      "geom_shock_trunnion_boss_l",
+      "geom_shock_trunnion_boss_r",
+      "geom_shock_trunnion_overhang",
+      "geom_shock_body",
+      "geom_shock_piggyback",
+      "geom_shock_piggy_bridge",
+      "geom_rider_pelvis",
+      "geom_rider_torso",
+      "geom_rider_head",
+      "geom_rider_upper_arm_left",
+      "geom_rider_forearm_left",
+      "geom_rider_upper_arm_right",
+      "geom_rider_forearm_right",
+      "geom_rider_thigh_front",
+      "geom_rider_shank_front",
+      "geom_rider_foot_front",
+      "geom_rider_thigh_rear",
+      "geom_rider_shank_rear",
+      "geom_rider_foot_rear"
+    ],
+    "joint": [
+      "root_x",
+      "root_z",
+      "root_pitch",
+      "crank_spin",
+      "pedal_front_spin",
+      "pedal_rear_spin",
+      "fork_travel",
+      "front_wheel_spin",
+      "main_pivot",
+      "horst_pivot",
+      "rear_wheel_spin",
+      "rocker_frame_pivot",
+      "yoke_pivot",
+      "shock_stroke",
+      "rider_root_x",
+      "rider_root_z",
+      "rider_root_pitch",
+      "rider_torso_hinge",
+      "rider_shoulder_left",
+      "rider_elbow_left",
+      "rider_shoulder_right",
+      "rider_elbow_right",
+      "rider_hip_front",
+      "rider_knee_front",
+      "rider_hip_rear",
+      "rider_knee_rear"
+    ],
+    "sensor": [
+      "sensor_shock_stroke",
+      "sensor_shock_velocity",
+      "sensor_fork_travel",
+      "sensor_fork_velocity",
+      "sensor_chainstay_angle",
+      "sensor_horst_angle",
+      "sensor_rocker_angle",
+      "sensor_yoke_angle",
+      "sensor_front_wheel_speed",
+      "sensor_rear_wheel_speed",
+      "sensor_frame_accel",
+      "sensor_frame_gyro",
+      "sensor_rear_axle_pos",
+      "sensor_front_axle_pos",
+      "sensor_subtree_com",
+      "sensor_bar_accel",
+      "sensor_saddle_accel"
+    ],
+    "site": [
+      "site_BB",
+      "site_P0",
+      "site_P5",
+      "site_P7",
+      "site_P8",
+      "site_P9",
+      "site_P10",
+      "site_P11",
+      "site_HT_bot",
+      "site_CG",
+      "site_top_tube_kink",
+      "site_seat_collar",
+      "site_seatpost_top",
+      "site_seat_tube_junction",
+      "site_headtube_top",
+      "site_headtube_bottom",
+      "site_pedal_front",
+      "site_pedal_rear",
+      "site_handlebar",
+      "site_PFA",
+      "site_P2_cs",
+      "site_P3_ss",
+      "site_P12_ss",
+      "site_PRA",
+      "site_P3_rocker",
+      "site_P4_rocker",
+      "site_P6_yoke",
+      "site_P7_shock",
+      "site_rider_saddle",
+      "site_rider_grip_left",
+      "site_rider_grip_right",
+      "site_rider_sole_front",
+      "site_rider_sole_rear"
+    ],
+    "tendon": [
+      "ideal_mid_drive_freehub"
+    ]
+  },
+  "opt_timestep": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/opt_timestep.f64",
+    "sha256": "43e3b98a99c97747dd7c8574ad59b7a6a2abe3c9b0630626fc2da06f1e87f352",
+    "shape": [
+      1
+    ]
+  },
+  "qpos0": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/qpos0.f64",
+    "sha256": "46f531b7ea0428fbf2c3ca2b60e8dc33d6bbfa000e0fd1b489c5e39140a47006",
+    "shape": [
+      26
+    ]
+  },
+  "site_pos": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/site_pos.f64",
+    "sha256": "31880a3295e8dc436066b32d9cfdc5ebd0b9b932b911de2936772671dc21d7bb",
+    "shape": [
+      33,
+      3
+    ]
+  },
+  "tendon_damping": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/tendon_damping.f64",
+    "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+    "shape": [
+      1
+    ]
+  },
+  "tendon_length0": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/tendon_length0.f64",
+    "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+    "shape": [
+      1
+    ]
+  },
+  "tendon_lengthspring": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/tendon_lengthspring.f64",
+    "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb",
+    "shape": [
+      1,
+      2
+    ]
+  },
+  "tendon_range": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/tendon_range.f64",
+    "sha256": "409af86427f0f6e74266fbd14ce311f1bbfb1476822e6f7711dc2d582807de8b",
+    "shape": [
+      1,
+      2
+    ]
+  },
+  "tendon_stiffness": {
+    "dtype": "<f8",
+    "file": "model/welded_arrays/tendon_stiffness.f64",
+    "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+    "shape": [
+      1
+    ]
+  }
+}

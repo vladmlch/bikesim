@@ -1,0 +1,130 @@
+{
+  "declared": {
+    "equilibrium_refine": {
+      "call_site_excerpt": "ef stop_when_converged(intermediate_result):\n        if best[0][0]==0:\n            raise StopIteration\n    try:\n        least_squares(residual,np.zeros_like(x0),jac='3-point',x_scale='jac',max_nfev=max_evaluations,\n                      callback=stop_when_converged,\n                      xtol=1e-10,ftol=1e-10,gtol=1e-1",
+      "module": "bike_sim/sim/ride/equilibrium_refine.py",
+      "signature": "(runtime, *, max_evaluations=80, acceleration_tolerance=0.05)",
+      "source_sha256": "dfec4c0575eeee6b73463698d581d96a688aef73911d0a599ddae0bc41bbae8f"
+    },
+    "sag_fit": {
+      "call_site_excerpt": "sured).all():\n            raise ValueError(\"invalid equilibrium output\")\n        return measured - target\n\n    result = least_squares(\n        residual, np.log(x0), bounds=(np.log(lower), np.log(upper)),\n        # Default machine-epsilon differences are smaller than the equilibrium\n        # stopping tolerance. Resolve a real pressure/rate perturbation inste",
+      "module": "bike_sim/sim/ride/sag_fit.py",
+      "source_sha256": "43ebce58c58579d3532ee0dcea1c44821b9bc80bb029406ec3fc1f46f99b5643"
+    }
+  },
+  "flat_build": [
+    {
+      "args": [],
+      "cost": 0.0522257592606281,
+      "kwargs": {
+        "bounds": [
+          {
+            "$array": "equilibrium/refine_calls.arrays/a001.f64",
+            "dtype": "<f8",
+            "order": "C",
+            "sha256": "bfe2765cdffbd9165977632f98653762725d704f7582261bddf0d1a2fcbcde5d",
+            "shape": [
+              16
+            ]
+          },
+          {
+            "$array": "equilibrium/refine_calls.arrays/a002.f64",
+            "dtype": "<f8",
+            "order": "C",
+            "sha256": "dbd8ebb4d364765882694170cedf5afc7702dd5338a7198705c45b613f6e1c9d",
+            "shape": [
+              16
+            ]
+          }
+        ],
+        "callback": "<function refine_equilibrium.<locals>.stop_when_converged at 0x11e886ae0>",
+        "ftol": 1e-10,
+        "gtol": 1e-10,
+        "jac": "3-point",
+        "max_nfev": 80,
+        "x_scale": "jac",
+        "xtol": 1e-10
+      },
+      "message": "The maximum number of function evaluations is exceeded.",
+      "nfev": 80,
+      "njev": 67,
+      "optimality": 223.98868559551605,
+      "status": 0,
+      "x": {
+        "$array": "equilibrium/refine_calls.arrays/a003.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "69dcd95a53e02d44a0a56a65a994dc66ee6415f685cb082aea2bb3d2df997c42",
+        "shape": [
+          16
+        ]
+      },
+      "x0": {
+        "$array": "equilibrium/refine_calls.arrays/a000.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca",
+        "shape": [
+          16
+        ]
+      }
+    },
+    {
+      "args": [],
+      "cost": 3.380183137089416e-05,
+      "kwargs": {
+        "bounds": [
+          {
+            "$array": "equilibrium/refine_calls.arrays/a005.f64",
+            "dtype": "<f8",
+            "order": "C",
+            "sha256": "bfe2765cdffbd9165977632f98653762725d704f7582261bddf0d1a2fcbcde5d",
+            "shape": [
+              16
+            ]
+          },
+          {
+            "$array": "equilibrium/refine_calls.arrays/a006.f64",
+            "dtype": "<f8",
+            "order": "C",
+            "sha256": "dbd8ebb4d364765882694170cedf5afc7702dd5338a7198705c45b613f6e1c9d",
+            "shape": [
+              16
+            ]
+          }
+        ],
+        "callback": "<function refine_equilibrium.<locals>.stop_when_converged at 0x11e886ae0>",
+        "ftol": 1e-10,
+        "gtol": 1e-10,
+        "jac": "3-point",
+        "max_nfev": 80,
+        "x_scale": "jac",
+        "xtol": 1e-10
+      },
+      "message": "Stopped because `callback` function raised `StopIteration` or returned `True`",
+      "nfev": 8,
+      "njev": 6,
+      "optimality": 1.8790272500482412,
+      "status": -2,
+      "x": {
+        "$array": "equilibrium/refine_calls.arrays/a007.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "a8003f8a63ebfe07b4b24783ee7427a97d1728baf818e415759c2ff7507d4606",
+        "shape": [
+          16
+        ]
+      },
+      "x0": {
+        "$array": "equilibrium/refine_calls.arrays/a004.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca",
+        "shape": [
+          16
+        ]
+      }
+    }
+  ],
+  "welded_build": []
+}

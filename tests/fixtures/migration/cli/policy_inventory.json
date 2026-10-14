@@ -1,0 +1,27 @@
+{
+  "builtins": [
+    {
+      "factory": "bike_sim.sim.research.policies:FixedLimitPolicy",
+      "name": "FixedLimitPolicy"
+    },
+    {
+      "factory": "bike_sim.sim.research.policies:PassthroughPolicy",
+      "name": "PassthroughPolicy"
+    },
+    {
+      "factory": "bike_sim.sim.research.policies:TractionControlPolicy",
+      "name": "TractionControlPolicy"
+    },
+    {
+      "factory": "bike_sim.sim.research.policies:ZeroPolicy",
+      "name": "ZeroPolicy"
+    }
+  ],
+  "loader": "research._load_policy / environment policy resolution",
+  "native_mapping": {
+    "builtin": "native static registry (interface-contracts \u00a76)",
+    "module:factory": "explicit native library path + bike_policy_v1 ABI identity; never Python"
+  },
+  "note": "untrusted plugins are not executed during capture",
+  "seam": "--policy module:factory (bike_sim.cli.research)"
+}

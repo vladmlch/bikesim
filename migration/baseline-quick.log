@@ -1,0 +1,43 @@
+........................................................................ [  7%]
+........................................................................ [ 15%]
+........................................................................ [ 23%]
+....................................s................................... [ 31%]
+........................................................................ [ 38%]
+........................................................................ [ 46%]
+........................................................................ [ 54%]
+........................................................................ [ 62%]
+........................................................................ [ 69%]
+........................................................................ [ 77%]
+........................................................................ [ 85%]
+........................................................................ [ 93%]
+...............................................................          [100%]
+=============================== warnings summary ===============================
+tests/reference/test_physical_view.py: 3 warnings
+tests/reference/test_pneumatic_physical_runtime.py: 3 warnings
+tests/reference/test_replay_recording_v3.py: 12 warnings
+tests/reference/test_replay_session.py: 14 warnings
+tests/reference/test_research_capture.py: 6 warnings
+tests/reference/test_research_frontend.py: 1 warning
+tests/reference/test_research_recording_lifecycle.py: 5 warnings
+  /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/reference-oracle/src/bike_sim/sim/ride/physical_runtime.py:815: RuntimeWarning: invalid reference step at 0.005000000: ('energy.constraint_work',)
+    self.reference_monitor.accept(time_s,violations)
+
+tests/test_async_close.py::test_worker_roundtrip_publishes_period
+tests/test_async_close.py::test_worker_reports_publication_error
+  /Users/vladislav.molchanov/.local/share/uv/python/cpython-3.14.3-macos-aarch64-none/lib/python3.14/multiprocessing/popen_fork.py:70: DeprecationWarning: This process (pid=72775) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+============================= slowest 10 durations =============================
+100.61s call     tests/reference/test_native_check_tools.py::test_standalone_header_sweep_compiles_first_party_headers
+21.58s call     tests/reference/test_replay_session.py::test_python_headless_and_incremental_replay_share_checks[2]
+20.63s call     tests/reference/test_replay_recording_v3.py::test_new_recording_requires_all_verification_before_report
+19.56s call     tests/reference/test_replay_session.py::test_python_headless_and_incremental_replay_share_checks[0]
+18.28s call     tests/reference/test_replay_recording_v3.py::test_multi_episode_selection_is_explicit
+16.40s call     tests/reference/test_native_check_tools.py::test_context_control_records_sdk_hardening_and_timing_evidence
+7.90s call     tests/reference/test_replay_recording_v3.py::test_resealed_final_state_tamper_fails_last_boundary_not_format_loading
+7.86s call     tests/reference/test_replay_recording_v3.py::test_new_replay_does_not_load_recorded_policy
+6.41s call     tests/reference/test_replay_session.py::test_early_close_never_finishes_a_pending_replay
+6.39s call     tests/reference/test_replay_session.py::test_last_frame_remains_unverified_until_final_state_comparison
+926 passed, 1 skipped, 65 deselected, 46 warnings in 451.66s (0:07:31)
+QUICK_EXIT=0

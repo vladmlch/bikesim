@@ -1,0 +1,8 @@
+{
+  "mutation": "qpos[0]=NaN after one valid step",
+  "outcome": {
+    "error": "ValueError",
+    "kind": "rejected",
+    "message": "force sample state shape or value mismatch"
+  }
+}

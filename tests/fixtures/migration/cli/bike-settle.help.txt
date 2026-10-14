@@ -1,0 +1,60 @@
+usage: bike-settle [-h] [--physics-config PATH] [--physics {legacy,physical}]
+                   [--track TRACK] [--seed SEED] [--length M]
+                   [--rider {none,lumped,seated,articulated_planar}]
+                   [--rider-mass KG] [--rider-height M] [--rider-inseam M]
+                   [--no-rider] [--speed KMH]
+                   [--drive {coast,ideal_speed_control,crank_effort,articulated_effort}]
+                   [--timestep S] [--initial-speed KMH] [--human-torque NM]
+                   [--assist-gain ASSIST_GAIN]
+                   [--assist {off,eco,tour,sport,turbo,emtb}]
+                   [--crank-phase DEG] [--max-steps MAX_STEPS]
+                   [--tolerance TOLERANCE] --out PATH
+
+Settle a physical-mode scenario into its validated initial equilibrium and
+write the pose to --out. Runs whose physics config sets equilibrium_state_file
+to the written file start from that pose instead of re-settling.
+
+options:
+  -h, --help            show this help message and exit
+  --physics-config PATH
+                        physical-mode TOML profile; overrides below win over
+                        its values
+  --physics {legacy,physical}
+                        'physical' selects the physical model without a TOML
+  --track TRACK         preset name or path to a .toml track file (default:
+                        road_worn); presets: alpine_rocky, alpine_scree,
+                        climb_steps, enduro_aggressive, flat, road_broken,
+                        road_smooth, road_worn, single_edge, washboard_only
+  --seed SEED           generator seed override for road presets and seeded
+                        track files
+  --length M            track length override in metres, same applicability as
+                        --seed
+  --rider {none,lumped,seated,articulated_planar}
+                        rider model (default: articulated_planar for
+                        articulated_effort, lumped otherwise)
+  --rider-mass KG       rider mass including helmet and kit, kg (default 80)
+  --rider-height M      rider stature in metres (default 1.80)
+  --rider-inseam M      rider inseam in metres (default 0.47 x height)
+  --no-rider            settle the bike alone (alias for --rider none)
+  --speed KMH           cruise target in km/h; only an ideal_speed_control
+                        target
+  --drive {coast,ideal_speed_control,crank_effort,articulated_effort}
+                        physical drive mode override: coast,
+                        ideal_speed_control, crank_effort, articulated_effort
+  --timestep S          integration step in seconds
+  --initial-speed KMH   initial speed in km/h
+  --human-torque NM     rider crank torque for effort drive modes, N m
+  --assist-gain ASSIST_GAIN
+                        assist gain override
+  --assist {off,eco,tour,sport,turbo,emtb}
+                        assist mode override
+  --crank-phase DEG     crank angle at the start of the run, degrees
+  --max-steps MAX_STEPS
+                        settle budget in integration steps (default 400000)
+  --tolerance TOLERANCE
+                        convergence tolerance on max |qacc| (default .05)
+  --out PATH            the pose file to write (.npz)
+
+The pose file embeds the fingerprint of the resolved configuration; a run
+loads it only when track, rider, physics config and compiled model all match.
+bike-settle never runs the ride itself.

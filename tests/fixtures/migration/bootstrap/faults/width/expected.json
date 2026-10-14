@@ -1,0 +1,8 @@
+{
+  "expected": {
+    "error": "RuntimeError",
+    "kind": "invalid",
+    "message": "bike_native has no NativeRideRuntime"
+  },
+  "mutation": "state.integration_state[:-1]"
+}

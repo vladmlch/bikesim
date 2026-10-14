@@ -1,0 +1,10 @@
+usage: capture_reference.py [-h]
+                            {overview,fields,events,window,sql,export,compare} ...
+
+Inspect a sealed run without constructing a simulator or importing a policy.
+
+positional arguments:
+  {overview,fields,events,window,sql,export,compare}
+
+options:
+  -h, --help            show this help message and exit

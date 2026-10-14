@@ -1,0 +1,4 @@
+{
+  "error": "ValueError",
+  "message": "legacy recording lacks a bundled joint_strength; external recipe paths are not trusted"
+}

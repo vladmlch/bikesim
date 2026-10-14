@@ -1,0 +1,23 @@
+{
+  "DATABASE": "run.duckdb",
+  "MANIFEST": "manifest.json",
+  "REPORT": "summary.md",
+  "SCHEMA_VERSION": 1,
+  "tables": [
+    "physics",
+    "forces",
+    "channel_mass",
+    "channel_energy",
+    "channel_sensors",
+    "channel_drive",
+    "channel_tires",
+    "channel_suspension",
+    "channel_control",
+    "channel_rider",
+    "channel_model_status",
+    "commands_requested",
+    "commands_applied",
+    "observations",
+    "transitions"
+  ]
+}

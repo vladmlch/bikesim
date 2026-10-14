@@ -1,0 +1,15 @@
+{
+  "description": "Run-up and 20 waves of 35 mm braking bumps.",
+  "length_m": 60.0,
+  "name": "washboard_only",
+  "obstacles": [
+    {
+      "amplitude_m": 0.035,
+      "n_waves": 20,
+      "start_m": 15.0,
+      "type": "washboard",
+      "wavelength_m": 0.9
+    }
+  ],
+  "surface": "hardpack"
+}

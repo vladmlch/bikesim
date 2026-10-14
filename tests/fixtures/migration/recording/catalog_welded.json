@@ -1,0 +1,1334 @@
+{
+  "aliases": [
+    {
+      "alias": "x_m",
+      "canonical": "physics.qpos",
+      "index": 0,
+      "note": "legacy scalar column bound by meaning",
+      "parameter": null
+    },
+    {
+      "alias": "speed_mps",
+      "canonical": "physics.qvel",
+      "index": 0,
+      "note": "legacy scalar column bound by meaning",
+      "parameter": null
+    },
+    {
+      "alias": "pitch_rad",
+      "canonical": "physics.qpos",
+      "index": 2,
+      "note": "legacy scalar column bound by meaning",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.0",
+      "canonical": "physics.qpos",
+      "index": 0,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_0",
+      "canonical": "physics.qpos",
+      "index": 0,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.1",
+      "canonical": "physics.qpos",
+      "index": 1,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_1",
+      "canonical": "physics.qpos",
+      "index": 1,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.2",
+      "canonical": "physics.qpos",
+      "index": 2,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_2",
+      "canonical": "physics.qpos",
+      "index": 2,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.3",
+      "canonical": "physics.qpos",
+      "index": 3,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_3",
+      "canonical": "physics.qpos",
+      "index": 3,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.4",
+      "canonical": "physics.qpos",
+      "index": 4,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_4",
+      "canonical": "physics.qpos",
+      "index": 4,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.5",
+      "canonical": "physics.qpos",
+      "index": 5,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_5",
+      "canonical": "physics.qpos",
+      "index": 5,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.6",
+      "canonical": "physics.qpos",
+      "index": 6,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_6",
+      "canonical": "physics.qpos",
+      "index": 6,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.7",
+      "canonical": "physics.qpos",
+      "index": 7,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_7",
+      "canonical": "physics.qpos",
+      "index": 7,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.8",
+      "canonical": "physics.qpos",
+      "index": 8,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_8",
+      "canonical": "physics.qpos",
+      "index": 8,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.9",
+      "canonical": "physics.qpos",
+      "index": 9,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_9",
+      "canonical": "physics.qpos",
+      "index": 9,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.10",
+      "canonical": "physics.qpos",
+      "index": 10,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_10",
+      "canonical": "physics.qpos",
+      "index": 10,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.11",
+      "canonical": "physics.qpos",
+      "index": 11,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_11",
+      "canonical": "physics.qpos",
+      "index": 11,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.12",
+      "canonical": "physics.qpos",
+      "index": 12,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_12",
+      "canonical": "physics.qpos",
+      "index": 12,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.13",
+      "canonical": "physics.qpos",
+      "index": 13,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_13",
+      "canonical": "physics.qpos",
+      "index": 13,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.14",
+      "canonical": "physics.qpos",
+      "index": 14,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_14",
+      "canonical": "physics.qpos",
+      "index": 14,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.15",
+      "canonical": "physics.qpos",
+      "index": 15,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_15",
+      "canonical": "physics.qpos",
+      "index": 15,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.16",
+      "canonical": "physics.qpos",
+      "index": 16,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_16",
+      "canonical": "physics.qpos",
+      "index": 16,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.17",
+      "canonical": "physics.qpos",
+      "index": 17,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_17",
+      "canonical": "physics.qpos",
+      "index": 17,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.18",
+      "canonical": "physics.qpos",
+      "index": 18,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_18",
+      "canonical": "physics.qpos",
+      "index": 18,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.19",
+      "canonical": "physics.qpos",
+      "index": 19,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_19",
+      "canonical": "physics.qpos",
+      "index": 19,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.20",
+      "canonical": "physics.qpos",
+      "index": 20,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_20",
+      "canonical": "physics.qpos",
+      "index": 20,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.21",
+      "canonical": "physics.qpos",
+      "index": 21,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_21",
+      "canonical": "physics.qpos",
+      "index": 21,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.22",
+      "canonical": "physics.qpos",
+      "index": 22,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_22",
+      "canonical": "physics.qpos",
+      "index": 22,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.23",
+      "canonical": "physics.qpos",
+      "index": 23,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_23",
+      "canonical": "physics.qpos",
+      "index": 23,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.24",
+      "canonical": "physics.qpos",
+      "index": 24,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_24",
+      "canonical": "physics.qpos",
+      "index": 24,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qpos.25",
+      "canonical": "physics.qpos",
+      "index": 25,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qpos_25",
+      "canonical": "physics.qpos",
+      "index": 25,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.0",
+      "canonical": "physics.qvel",
+      "index": 0,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_0",
+      "canonical": "physics.qvel",
+      "index": 0,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.1",
+      "canonical": "physics.qvel",
+      "index": 1,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_1",
+      "canonical": "physics.qvel",
+      "index": 1,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.2",
+      "canonical": "physics.qvel",
+      "index": 2,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_2",
+      "canonical": "physics.qvel",
+      "index": 2,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.3",
+      "canonical": "physics.qvel",
+      "index": 3,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_3",
+      "canonical": "physics.qvel",
+      "index": 3,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.4",
+      "canonical": "physics.qvel",
+      "index": 4,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_4",
+      "canonical": "physics.qvel",
+      "index": 4,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.5",
+      "canonical": "physics.qvel",
+      "index": 5,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_5",
+      "canonical": "physics.qvel",
+      "index": 5,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.6",
+      "canonical": "physics.qvel",
+      "index": 6,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_6",
+      "canonical": "physics.qvel",
+      "index": 6,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.7",
+      "canonical": "physics.qvel",
+      "index": 7,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_7",
+      "canonical": "physics.qvel",
+      "index": 7,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.8",
+      "canonical": "physics.qvel",
+      "index": 8,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_8",
+      "canonical": "physics.qvel",
+      "index": 8,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.9",
+      "canonical": "physics.qvel",
+      "index": 9,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_9",
+      "canonical": "physics.qvel",
+      "index": 9,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.10",
+      "canonical": "physics.qvel",
+      "index": 10,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_10",
+      "canonical": "physics.qvel",
+      "index": 10,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.11",
+      "canonical": "physics.qvel",
+      "index": 11,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_11",
+      "canonical": "physics.qvel",
+      "index": 11,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.12",
+      "canonical": "physics.qvel",
+      "index": 12,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_12",
+      "canonical": "physics.qvel",
+      "index": 12,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.13",
+      "canonical": "physics.qvel",
+      "index": 13,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_13",
+      "canonical": "physics.qvel",
+      "index": 13,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.14",
+      "canonical": "physics.qvel",
+      "index": 14,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_14",
+      "canonical": "physics.qvel",
+      "index": 14,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.15",
+      "canonical": "physics.qvel",
+      "index": 15,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_15",
+      "canonical": "physics.qvel",
+      "index": 15,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.16",
+      "canonical": "physics.qvel",
+      "index": 16,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_16",
+      "canonical": "physics.qvel",
+      "index": 16,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.17",
+      "canonical": "physics.qvel",
+      "index": 17,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_17",
+      "canonical": "physics.qvel",
+      "index": 17,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.18",
+      "canonical": "physics.qvel",
+      "index": 18,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_18",
+      "canonical": "physics.qvel",
+      "index": 18,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.19",
+      "canonical": "physics.qvel",
+      "index": 19,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_19",
+      "canonical": "physics.qvel",
+      "index": 19,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.20",
+      "canonical": "physics.qvel",
+      "index": 20,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_20",
+      "canonical": "physics.qvel",
+      "index": 20,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.21",
+      "canonical": "physics.qvel",
+      "index": 21,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_21",
+      "canonical": "physics.qvel",
+      "index": 21,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.22",
+      "canonical": "physics.qvel",
+      "index": 22,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_22",
+      "canonical": "physics.qvel",
+      "index": 22,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.23",
+      "canonical": "physics.qvel",
+      "index": 23,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_23",
+      "canonical": "physics.qvel",
+      "index": 23,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.24",
+      "canonical": "physics.qvel",
+      "index": 24,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_24",
+      "canonical": "physics.qvel",
+      "index": 24,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "qvel.25",
+      "canonical": "physics.qvel",
+      "index": 25,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "prestep_qvel_25",
+      "canonical": "physics.qvel",
+      "index": 25,
+      "note": "flattened schema-2 element name",
+      "parameter": null
+    },
+    {
+      "alias": "interval_start_s",
+      "canonical": "physics.time_s",
+      "index": null,
+      "note": "legacy interval-start alias",
+      "parameter": null
+    },
+    {
+      "alias": "interval_dt_s",
+      "canonical": "physics.dt_s",
+      "index": null,
+      "note": "legacy interval-duration alias",
+      "parameter": null
+    },
+    {
+      "alias": "compiled_mass_kg",
+      "canonical": "channel_mass.mass_kg",
+      "index": null,
+      "note": "PhysicalRecorder compiled-mass column",
+      "parameter": null
+    },
+    {
+      "alias": "kinetic_energy_j",
+      "canonical": "channel_mass.kinetic_energy_j",
+      "index": null,
+      "note": "PhysicalRecorder mass energy column",
+      "parameter": null
+    },
+    {
+      "alias": "gravitational_energy_j",
+      "canonical": "channel_mass.gravitational_energy_j",
+      "index": null,
+      "note": "PhysicalRecorder mass energy column",
+      "parameter": null
+    },
+    {
+      "alias": "mechanical_energy_j",
+      "canonical": "channel_energy.mechanical_energy_j",
+      "index": null,
+      "note": "PhysicalRecorder energy column",
+      "parameter": null
+    },
+    {
+      "alias": "energy_residual_j",
+      "canonical": "channel_energy.residual_j",
+      "index": null,
+      "note": "PhysicalRecorder energy residual column",
+      "parameter": null
+    },
+    {
+      "alias": "compiled_com_x_m",
+      "canonical": "channel_mass.com_m",
+      "index": 0,
+      "note": "PhysicalRecorder compiled-CoM column",
+      "parameter": null
+    },
+    {
+      "alias": "compiled_com_y_m",
+      "canonical": "channel_mass.com_m",
+      "index": 1,
+      "note": "PhysicalRecorder compiled-CoM column",
+      "parameter": null
+    },
+    {
+      "alias": "compiled_com_z_m",
+      "canonical": "channel_mass.com_m",
+      "index": 2,
+      "note": "PhysicalRecorder compiled-CoM column",
+      "parameter": null
+    },
+    {
+      "alias": "powers_w.{component}",
+      "canonical": "forces.power_w",
+      "index": null,
+      "note": "schema-2 power object member",
+      "parameter": null
+    },
+    {
+      "alias": "power_{component}_w",
+      "canonical": "forces.power_w",
+      "index": null,
+      "note": "PhysicalRecorder power column",
+      "parameter": null
+    },
+    {
+      "alias": "{component}_power_w",
+      "canonical": "forces.power_w",
+      "index": null,
+      "note": "PhysicalRecorder power column",
+      "parameter": null
+    },
+    {
+      "alias": "{component}_work_j",
+      "canonical": "channel_energy.component_work_j",
+      "index": null,
+      "note": "PhysicalRecorder work column",
+      "parameter": null
+    },
+    {
+      "alias": "component_work_j.{component}",
+      "canonical": "channel_energy.component_work_j",
+      "index": null,
+      "note": "schema-2 work object member",
+      "parameter": null
+    }
+  ],
+  "channel_roots": [
+    "attachment_samples",
+    "attachment_violations",
+    "component_work_j",
+    "contact_crash_cause",
+    "control",
+    "drive",
+    "endpoint_mass",
+    "energy",
+    "mass",
+    "model_status",
+    "rider",
+    "rider_activation_saturated",
+    "rider_active_delivered_nm",
+    "rider_active_positive_power_limit_w",
+    "rider_active_request_nm",
+    "rider_allocation",
+    "rider_balance",
+    "rider_control",
+    "rider_effort_budget_exceeded",
+    "rider_effort_observation",
+    "rider_ik_saturation",
+    "rider_intent",
+    "rider_joint_capacity_nm",
+    "rider_joint_positive_power_w",
+    "rider_joint_power_violations",
+    "rider_joint_speed_violations",
+    "rider_joint_torques",
+    "rider_lean_limit_rad",
+    "rider_passive_power_w",
+    "rider_passive_work_step_j",
+    "rider_positive_power_w",
+    "rider_positive_work_step_j",
+    "rider_strength_limited",
+    "rider_strength_violations",
+    "rider_support_targets",
+    "rider_welds",
+    "sensors",
+    "suspension",
+    "tires"
+  ],
+  "coordinates": {
+    "dof": [
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 0,
+        "joint": "root_x",
+        "kind": "dof",
+        "unit": "m/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 1,
+        "joint": "root_z",
+        "kind": "dof",
+        "unit": "m/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 2,
+        "joint": "root_pitch",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 3,
+        "joint": "crank_spin",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 4,
+        "joint": "pedal_front_spin",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 5,
+        "joint": "pedal_rear_spin",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 6,
+        "joint": "fork_travel",
+        "kind": "dof",
+        "unit": "m/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 7,
+        "joint": "front_wheel_spin",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 8,
+        "joint": "main_pivot",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 9,
+        "joint": "horst_pivot",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 10,
+        "joint": "rear_wheel_spin",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 11,
+        "joint": "rocker_frame_pivot",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 12,
+        "joint": "yoke_pivot",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 13,
+        "joint": "shock_stroke",
+        "kind": "dof",
+        "unit": "m/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 14,
+        "joint": "rider_root_x",
+        "kind": "dof",
+        "unit": "m/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 15,
+        "joint": "rider_root_z",
+        "kind": "dof",
+        "unit": "m/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 16,
+        "joint": "rider_root_pitch",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 17,
+        "joint": "rider_torso_hinge",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 18,
+        "joint": "rider_shoulder_left",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 19,
+        "joint": "rider_elbow_left",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 20,
+        "joint": "rider_shoulder_right",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 21,
+        "joint": "rider_elbow_right",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 22,
+        "joint": "rider_hip_front",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 23,
+        "joint": "rider_knee_front",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 24,
+        "joint": "rider_hip_rear",
+        "kind": "dof",
+        "unit": "rad/s"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 25,
+        "joint": "rider_knee_rear",
+        "kind": "dof",
+        "unit": "rad/s"
+      }
+    ],
+    "qpos": [
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 0,
+        "joint": "root_x",
+        "kind": "qpos",
+        "unit": "m"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 1,
+        "joint": "root_z",
+        "kind": "qpos",
+        "unit": "m"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 2,
+        "joint": "root_pitch",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 3,
+        "joint": "crank_spin",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 4,
+        "joint": "pedal_front_spin",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 5,
+        "joint": "pedal_rear_spin",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 6,
+        "joint": "fork_travel",
+        "kind": "qpos",
+        "unit": "m"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 7,
+        "joint": "front_wheel_spin",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 8,
+        "joint": "main_pivot",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 9,
+        "joint": "horst_pivot",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 10,
+        "joint": "rear_wheel_spin",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 11,
+        "joint": "rocker_frame_pivot",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 12,
+        "joint": "yoke_pivot",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 13,
+        "joint": "shock_stroke",
+        "kind": "qpos",
+        "unit": "m"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 14,
+        "joint": "rider_root_x",
+        "kind": "qpos",
+        "unit": "m"
+      },
+      {
+        "component": "",
+        "dof_kind": "translation",
+        "index": 15,
+        "joint": "rider_root_z",
+        "kind": "qpos",
+        "unit": "m"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 16,
+        "joint": "rider_root_pitch",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 17,
+        "joint": "rider_torso_hinge",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 18,
+        "joint": "rider_shoulder_left",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 19,
+        "joint": "rider_elbow_left",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 20,
+        "joint": "rider_shoulder_right",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 21,
+        "joint": "rider_elbow_right",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 22,
+        "joint": "rider_hip_front",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 23,
+        "joint": "rider_knee_front",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 24,
+        "joint": "rider_hip_rear",
+        "kind": "qpos",
+        "unit": "rad"
+      },
+      {
+        "component": "",
+        "dof_kind": "rotation",
+        "index": 25,
+        "joint": "rider_knee_rear",
+        "kind": "qpos",
+        "unit": "rad"
+      }
+    ]
+  },
+  "tables": [
+    "physics",
+    "forces",
+    "channel_mass",
+    "channel_energy",
+    "channel_sensors",
+    "channel_drive",
+    "channel_tires",
+    "channel_suspension",
+    "channel_control",
+    "channel_rider",
+    "channel_model_status"
+  ]
+}

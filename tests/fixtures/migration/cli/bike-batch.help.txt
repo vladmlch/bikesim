@@ -1,0 +1,31 @@
+usage: capture_reference.py [-h] --spec SPEC --out OUT [--jobs JOBS]
+                            [--serial] [--dry-run] [--overwrite]
+
+Parallel research episodes: expand a TOML spec into bike-research jobs and run them in a process pool.
+
+Spec shape:
+
+    [base]                      # any bike-research long flag; merged into every job
+    physics-config = "examples/research/viewer_physics_welded.toml"
+    duration = 10
+
+    [grid]                      # cartesian product; a list per flag, or {start, stop, step}/{start, count}
+    seed = {start = 0, count = 12}
+    rider-mass = [60.0, 80.0]
+
+    [[job]]                     # optional explicit jobs: base merged with these overrides
+    seed = 7
+    rider-random = true
+
+Relative paths in flag values resolve against the directory bike-batch runs in
+(workers inherit the parent's cwd), not against the spec file.
+
+options:
+  -h, --help       show this help message and exit
+  --spec SPEC      TOML spec: [base] + [grid] and/or [[job]]
+  --out OUT        batch directory; one job-NNNN subdir per job
+  --jobs, -j JOBS  worker processes (default: performance-core count via
+                   sysctl hw.perflevel0.physicalcpu)
+  --serial         run jobs in-process, one after another (debugging)
+  --dry-run        print the expanded job list and exit
+  --overwrite

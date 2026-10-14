@@ -1,0 +1,5 @@
+name = "unknown_obstacle"
+length_m = 10.0
+[[obstacles]]
+type = "hovercraft"
+start_m = 1.0

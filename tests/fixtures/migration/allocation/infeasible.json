@@ -1,0 +1,84 @@
+{
+  "extra": null,
+  "problem": {
+    "aeq": {
+      "$array": "allocation/infeasible.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6c3c396ed6b5c36dcae172271f462051b1266b851e92df3deea8ac65478fd712",
+      "shape": [
+        1,
+        1
+      ]
+    },
+    "beq": {
+      "$array": "allocation/infeasible.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "a7ca1349517e14c0690dccc98bf9a515019b2018116a3191f6c7d53831c0432a",
+      "shape": [
+        1
+      ]
+    },
+    "g": {
+      "$array": "allocation/infeasible.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0,
+        1
+      ]
+    },
+    "h": {
+      "$array": "allocation/infeasible.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0
+      ]
+    },
+    "lower": {
+      "$array": "allocation/infeasible.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+      "shape": [
+        1
+      ]
+    },
+    "target": {
+      "$array": "allocation/infeasible.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+      "shape": [
+        1
+      ]
+    },
+    "upper": {
+      "$array": "allocation/infeasible.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6c3c396ed6b5c36dcae172271f462051b1266b851e92df3deea8ac65478fd712",
+      "shape": [
+        1
+      ]
+    }
+  },
+  "result": {
+    "feasible": false,
+    "solution": {
+      "$array": "allocation/infeasible.arrays/a007.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6c3c396ed6b5c36dcae172271f462051b1266b851e92df3deea8ac65478fd712",
+      "shape": [
+        1
+      ]
+    },
+    "violation": 4.0
+  },
+  "x0": null
+}

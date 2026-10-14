@@ -1,0 +1,8 @@
+{
+  "expected": {
+    "error": "ValueError",
+    "kind": "invalid",
+    "message": "state.schema: unsupported bootstrap schema"
+  },
+  "mutation": "state.schema=99"
+}

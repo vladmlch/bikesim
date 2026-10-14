@@ -1,0 +1,261 @@
+{
+  "description": "Broken-up road.",
+  "length_m": 100.0,
+  "name": "road_broken",
+  "obstacles": [
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 8.559999,
+      "seed": 1793051917,
+      "start_m": 10.0,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.559,
+      "height_m": 0.084,
+      "shape": "cosine",
+      "start_m": 18.56,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 5.461,
+      "seed": 1627210303,
+      "start_m": 19.119,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.457,
+      "height_m": 0.067,
+      "shape": "cosine",
+      "start_m": 24.580000000000002,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 1.273,
+      "seed": 875079008,
+      "start_m": 25.037000000000003,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.063,
+      "edge": "sloped",
+      "edge_m": 0.1,
+      "hole_length_m": 0.838,
+      "start_m": 26.310000000000002,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 1.301999,
+      "seed": 1068207104,
+      "start_m": 27.148000000000003,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.674,
+      "height_m": 0.094,
+      "shape": "cosine",
+      "start_m": 28.45,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 6.556,
+      "seed": 902462478,
+      "start_m": 29.124,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.138,
+      "edge": "sharp",
+      "hole_length_m": 0.725,
+      "start_m": 35.68,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 4.095,
+      "seed": 1136689207,
+      "start_m": 36.405,
+      "type": "roughness"
+    },
+    {
+      "height_m": 0.061,
+      "plateau_m": 0.21960000000000002,
+      "ramp_m": 0.1647,
+      "shape": "trapezoid",
+      "start_m": 40.5,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 2.511,
+      "seed": 494452712,
+      "start_m": 41.049,
+      "type": "roughness"
+    },
+    {
+      "height_m": 0.084,
+      "plateau_m": 0.22400000000000003,
+      "ramp_m": 0.168,
+      "shape": "trapezoid",
+      "start_m": 43.56,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 3.47,
+      "seed": 1687461942,
+      "start_m": 44.120000000000005,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.429,
+      "height_m": 0.079,
+      "shape": "cosine",
+      "start_m": 47.59,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 7.160999,
+      "seed": 166879142,
+      "start_m": 48.019000000000005,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.098,
+      "edge": "sharp",
+      "hole_length_m": 0.417,
+      "start_m": 55.18,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 7.893,
+      "seed": 890466655,
+      "start_m": 55.597,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.133,
+      "edge": "sloped",
+      "edge_m": 0.1,
+      "hole_length_m": 0.402,
+      "start_m": 63.49,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 1.038,
+      "seed": 605291690,
+      "start_m": 63.892,
+      "type": "roughness"
+    },
+    {
+      "height_m": 0.076,
+      "plateau_m": 0.16960000000000003,
+      "ramp_m": 0.12719999999999998,
+      "shape": "trapezoid",
+      "start_m": 64.93,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 1.755999,
+      "seed": 1577291459,
+      "start_m": 65.35400000000001,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.084,
+      "edge": "sharp",
+      "hole_length_m": 0.425,
+      "start_m": 67.11,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 2.425,
+      "seed": 1609096917,
+      "start_m": 67.535,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.6990000000000001,
+      "height_m": 0.069,
+      "shape": "cosine",
+      "start_m": 69.96000000000001,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 9.330999,
+      "seed": 1527167700,
+      "start_m": 70.659,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.133,
+      "edge": "bowl",
+      "hole_length_m": 0.9480000000000001,
+      "start_m": 79.99,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 1.722,
+      "seed": 1985281331,
+      "start_m": 80.93799999999999,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.126,
+      "edge": "sharp",
+      "hole_length_m": 0.726,
+      "start_m": 82.66,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 5.724,
+      "seed": 2001582934,
+      "start_m": 83.386,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.354,
+      "height_m": 0.069,
+      "shape": "cosine",
+      "start_m": 89.11,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.005,
+      "correlation_length_m": 0.15,
+      "section_length_m": 5.536,
+      "seed": 396530695,
+      "start_m": 89.464,
+      "type": "roughness"
+    }
+  ],
+  "surface": "asphalt"
+}

@@ -1,0 +1,11 @@
+request_schema = 1
+physics_file = "../config/viewer_physics_welded.toml"
+track_file = "../tracks/flat.toml"
+model_mode = "research"
+rider_variant = "articulated_planar"
+speed_kph = 2.0
+seed_decimal = "210"
+use_equilibrium_cache = false
+actuator_delay_s = 0.01
+sensor_delay_s = 0.01
+duration_s = 0.1

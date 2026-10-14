@@ -1,0 +1,256 @@
+{
+  "balance_lost": true,
+  "balance_lost_at_m": 50.06118267152367,
+  "demand_integral_nms": null,
+  "duration_s": 29.999999999990838,
+  "endo": false,
+  "finish_time_s": null,
+  "loop_out": false,
+  "max_energy_residual_ratio": 0.17470389404906048,
+  "max_fork_travel_m": 0.1089795566689202,
+  "max_shock_stroke_m": 0.04140091982292561,
+  "mean_speed_mps": 1.8715228517542277,
+  "model_status": {
+    "calibration_status": "parameterized_unvalidated",
+    "first_model_violation": {
+      "interval_id": 3,
+      "reasons": [
+        "energy.constraint_work"
+      ],
+      "time_s": 0.00375
+    },
+    "model_valid": false,
+    "model_violation_counts": {
+      "energy.constraint_work": 6000,
+      "foot_front.friction": 2340,
+      "foot_front.normal": 1548,
+      "foot_rear.friction": 3393,
+      "foot_rear.normal": 2022,
+      "front:multi_support": 54,
+      "grip_left.pull": 78,
+      "grip_right.pull": 78,
+      "rear:material_load_range": 40,
+      "rear:multi_support": 178,
+      "rider_power.positive": 3858,
+      "rider_power.rider_elbow_left": 1,
+      "rider_power.rider_elbow_right": 1,
+      "rider_power.rider_hip_front": 1113,
+      "rider_power.rider_hip_rear": 1019,
+      "rider_power.rider_knee_front": 146,
+      "rider_power.rider_knee_rear": 183,
+      "rider_power.rider_torso_hinge": 27,
+      "rider_strength.rider_elbow_left": 2749,
+      "rider_strength.rider_elbow_right": 2749,
+      "rider_strength.rider_hip_front": 72,
+      "rider_strength.rider_hip_rear": 115,
+      "rider_strength.rider_knee_front": 926,
+      "rider_strength.rider_knee_rear": 977,
+      "rider_strength.rider_shoulder_left": 165,
+      "rider_strength.rider_shoulder_right": 165,
+      "rider_strength.rider_torso_hinge": 4357,
+      "saddle.friction": 16343,
+      "saddle.normal": 6546
+    },
+    "numerically_valid": false
+  },
+  "motor_pass_fraction": 0.37835805937539957,
+  "numerically_valid": true,
+  "operator_intervention": false,
+  "outcome": "duration",
+  "progress_m": 56.145685552609685,
+  "torque_delivered_nms": 907.9079992769855,
+  "torque_requested_nms": 2399.5999999994096,
+  "wheelie": {
+    "contact_state_time_s": {
+      "flight": 0.018749999999982947,
+      "front_lift": 0.7237499999996007,
+      "front_unloaded": 3.228749999998401,
+      "rear_lift": 0.02749999999999453,
+      "rear_unloaded": 0.4812499999999611,
+      "two_wheels": 23.51624999999418,
+      "unsupported": 0.12249999999988859,
+      "wheelie_candidate": 1.88124999999883
+    },
+    "duration_s": 29.999999999990838,
+    "flight_time_s": 0.018749999999982947,
+    "front_lift_time_s": 2.6049999999984306,
+    "front_load_fraction_mean": 0.24216390661694318,
+    "front_load_fraction_min": 0.0,
+    "front_unloaded_time_s": 5.974999999996704,
+    "max_front_clearance_m": 0.12245946108411787,
+    "max_pitch_rate_up_rad_s": 1.9743434220395262,
+    "max_relative_pitch_rad": 0.11903046518672811,
+    "min_front_load_n": 0.0,
+    "rear_slip_distance_m": 8.687044815412639,
+    "wheelie_candidate_time_s": 2.04874999999875,
+    "wheelie_episode_records": [
+      {
+        "confirmed": true,
+        "end_s": 0.8099999999999883,
+        "max_front_clearance_m": 0.10031277097034252,
+        "max_relative_pitch_rad": 0.08243559846708103,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 55.285823965121466,
+          "pitch_rate_up_rad_s": 0.4279095916238445,
+          "road_pitch_rad": 0.0,
+          "speed_mps": 1.409681965369451
+        },
+        "start_s": 0.41874999999999657
+      },
+      {
+        "confirmed": true,
+        "end_s": 11.037500000001033,
+        "max_front_clearance_m": 0.04280603561330126,
+        "max_relative_pitch_rad": 0.058002615924427826,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 46.73154123004101,
+          "pitch_rate_up_rad_s": 0.36060584131958484,
+          "road_pitch_rad": 0.18933645623391773,
+          "speed_mps": 1.8134435059342668
+        },
+        "start_s": 10.930000000000978
+      },
+      {
+        "confirmed": true,
+        "end_s": 12.870000000001971,
+        "max_front_clearance_m": 0.03833999434392643,
+        "max_relative_pitch_rad": 0.06276632408329394,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 30.479973600705392,
+          "pitch_rate_up_rad_s": 0.07895380452349485,
+          "road_pitch_rad": 0.1677255300600566,
+          "speed_mps": 2.2055551763367864
+        },
+        "start_s": 12.793750000001932
+      },
+      {
+        "confirmed": true,
+        "end_s": 20.632499999999357,
+        "max_front_clearance_m": 0.09680148584276232,
+        "max_relative_pitch_rad": 0.08256764897524121,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 49.26288204357332,
+          "pitch_rate_up_rad_s": 0.3973170405018948,
+          "road_pitch_rad": 0.27491120361195875,
+          "speed_mps": 2.4400993297507907
+        },
+        "start_s": 20.492499999999485
+      },
+      {
+        "confirmed": true,
+        "end_s": 21.206249999998835,
+        "max_front_clearance_m": 0.07671472105728944,
+        "max_relative_pitch_rad": 0.06167347574008487,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 0.0,
+          "pitch_rate_up_rad_s": 0.6940413212340738,
+          "road_pitch_rad": 0.24497856761584216,
+          "speed_mps": 2.1773306498798424
+        },
+        "start_s": 21.128749999998906
+      },
+      {
+        "confirmed": true,
+        "end_s": 21.7937499999983,
+        "max_front_clearance_m": 0.05758830827914041,
+        "max_relative_pitch_rad": 0.06923979308364991,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 5.196529787996154,
+          "pitch_rate_up_rad_s": 1.9491751323772004,
+          "road_pitch_rad": 0.255138736055756,
+          "speed_mps": 1.867378169297851
+        },
+        "start_s": 21.659999999998423
+      },
+      {
+        "confirmed": true,
+        "end_s": 23.0049999999972,
+        "max_front_clearance_m": 0.11281023436016807,
+        "max_relative_pitch_rad": 0.106446185748441,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 56.96528381271743,
+          "pitch_rate_up_rad_s": 1.0082422129096922,
+          "road_pitch_rad": 0.17878206804709743,
+          "speed_mps": 1.2504578649284652
+        },
+        "start_s": 22.546249999997617
+      },
+      {
+        "confirmed": true,
+        "end_s": 24.284999999996035,
+        "max_front_clearance_m": 0.0661971911726918,
+        "max_relative_pitch_rad": 0.0792945034321252,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 48.459717670433655,
+          "pitch_rate_up_rad_s": 0.14756284256083502,
+          "road_pitch_rad": 0.2736447230632287,
+          "speed_mps": 1.3098489376961753
+        },
+        "start_s": 24.12624999999618
+      },
+      {
+        "confirmed": true,
+        "end_s": 24.57624999999577,
+        "max_front_clearance_m": 0.024927636703280742,
+        "max_relative_pitch_rad": 0.05616875398959947,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 49.003762669734506,
+          "pitch_rate_up_rad_s": 0.34890063569298063,
+          "road_pitch_rad": 0.1921118420866766,
+          "speed_mps": 1.7186587262903863
+        },
+        "start_s": 24.5424999999958
+      },
+      {
+        "confirmed": true,
+        "end_s": 27.784999999992852,
+        "max_front_clearance_m": 0.011404002358804843,
+        "max_relative_pitch_rad": 0.1066241854050515,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 40.766514889364274,
+          "pitch_rate_up_rad_s": -0.028677654999471832,
+          "road_pitch_rad": 0.23246907320498839,
+          "speed_mps": 1.7161506095585157
+        },
+        "start_s": 27.758749999992876
+      },
+      {
+        "confirmed": true,
+        "end_s": 29.99874999999084,
+        "max_front_clearance_m": 0.12245946108411787,
+        "max_relative_pitch_rad": 0.10299826728754265,
+        "min_front_load_n": 0.0,
+        "onset": {
+          "applied_motor_nm": 80.0,
+          "delivered_motor_nm": 0.0,
+          "pitch_rate_up_rad_s": 0.5727132381515613,
+          "road_pitch_rad": 0.40653116805768186,
+          "speed_mps": 0.006923290000119463
+        },
+        "start_s": 29.56749999999123
+      }
+    ],
+    "wheelie_episodes": 11,
+    "wheelie_time_s": 1.8424999999988676
+  }
+}

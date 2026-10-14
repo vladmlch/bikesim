@@ -1,0 +1,18 @@
+{
+  "reproduced": {
+    "unwritable_root": {
+      "error": "FileExistsError",
+      "kind": "invalid",
+      "message": "[Errno 17] File exists: '/var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/notadir'"
+    }
+  },
+  "stages": {
+    "checkpoint": "storage._database CHECKPOINT",
+    "commit": "storage._database COMMIT",
+    "hash": "storage.sha256_file over payloads",
+    "link": "os.link into the timestamped destination",
+    "manifest": "sealed-manifest publication (LAST step)",
+    "report": "storage._report -> recording.report.write_summary",
+    "write": "storage._database BEGIN..COMMIT (duckdb write)"
+  }
+}

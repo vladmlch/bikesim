@@ -1,0 +1,7 @@
+# Baseline/collection logs are verbatim captured evidence (they contain
+# incidental trailing whitespace from tool output). Marking them binary keeps
+# bytes stable across checkouts and out of whitespace-fixup paths.
+*.log binary
+*.stderr.txt binary
+pytest-collection.txt binary
+pytest-collection-prebuild.txt binary

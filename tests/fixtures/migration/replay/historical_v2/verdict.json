@@ -1,0 +1,7 @@
+{
+  "source": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/output/perf-roadmap/13-batch/N1/seed-0/ep",
+  "verdict": {
+    "error": "ValueError",
+    "message": "recording requires a regular local file: intervals.jsonl"
+  }
+}

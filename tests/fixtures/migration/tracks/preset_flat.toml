@@ -1,0 +1,7 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "flat"
+length_m = 112.0
+description = "No obstacles; sag, rolling resistance and coast-down reference."
+surface = "hardpack"

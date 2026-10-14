@@ -1,0 +1,1 @@
+[PHYS|articulated_effort] initial condition RTF=----x

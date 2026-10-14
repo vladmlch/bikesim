@@ -1,0 +1,5 @@
+{
+  "physics_mode": "legacy",
+  "rider": "lumped",
+  "steps": 1
+}

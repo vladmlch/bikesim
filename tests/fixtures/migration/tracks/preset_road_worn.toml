@@ -1,0 +1,135 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "road_worn"
+length_m = 100.0
+description = "Worn urban asphalt."
+surface = "asphalt"
+
+[[obstacles]]
+type = "roughness"
+start_m = 10.0
+section_length_m = 22.259999
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 1444696807
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 32.26
+height_m = 0.073
+bump_length_m = 0.462
+
+[[obstacles]]
+type = "roughness"
+start_m = 32.722
+section_length_m = 9.598
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 1227350964
+
+[[obstacles]]
+type = "pothole"
+edge = "sharp"
+start_m = 42.32
+depth_m = 0.105
+hole_length_m = 0.756
+
+[[obstacles]]
+type = "roughness"
+start_m = 43.076
+section_length_m = 4.164
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 546762614
+
+[[obstacles]]
+type = "pothole"
+edge = "sharp"
+start_m = 47.24
+depth_m = 0.062
+hole_length_m = 0.32
+
+[[obstacles]]
+type = "roughness"
+start_m = 47.56
+section_length_m = 6.1
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 691209253
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 53.660000000000004
+height_m = 0.051000000000000004
+bump_length_m = 0.308
+
+[[obstacles]]
+type = "roughness"
+start_m = 53.968
+section_length_m = 1.632
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 1545136976
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 55.6
+height_m = 0.064
+bump_length_m = 0.494
+
+[[obstacles]]
+type = "roughness"
+start_m = 56.094
+section_length_m = 19.116
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 1276249595
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 75.21000000000001
+height_m = 0.032
+bump_length_m = 0.519
+
+[[obstacles]]
+type = "roughness"
+start_m = 75.72900000000001
+section_length_m = 6.520999
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 1083230752
+
+[[obstacles]]
+type = "bump"
+shape = "cosine"
+start_m = 82.25
+height_m = 0.07100000000000001
+bump_length_m = 0.301
+
+[[obstacles]]
+type = "roughness"
+start_m = 82.551
+section_length_m = 10.909
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 725658830
+
+[[obstacles]]
+type = "pothole"
+edge = "sharp"
+start_m = 93.46000000000001
+depth_m = 0.098
+hole_length_m = 0.5720000000000001
+
+[[obstacles]]
+type = "roughness"
+start_m = 94.03200000000001
+section_length_m = 0.967999
+amplitude_m = 0.003
+correlation_length_m = 0.2
+seed = 1633503581

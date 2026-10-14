@@ -1,0 +1,1806 @@
+{
+  "programs": {
+    "bike-batch": {
+      "actions": [
+        {
+          "choices": null,
+          "default": null,
+          "dest": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "spec",
+          "flags": [
+            "--spec"
+          ],
+          "nargs": null,
+          "required": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "out",
+          "flags": [
+            "--out"
+          ],
+          "nargs": null,
+          "required": true,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "jobs",
+          "flags": [
+            "--jobs",
+            "-j"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "int"
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "serial",
+          "flags": [
+            "--serial"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "dry_run",
+          "flags": [
+            "--dry-run"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "overwrite",
+          "flags": [
+            "--overwrite"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        }
+      ],
+      "cases": [
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 2,
+          "result": "subprocess",
+          "stderr_tail": "usage: bike-batch [-h] --spec SPEC --out OUT [--jobs JOBS] [--serial]\n                  [--dry-run] [--overwrite]\nbike-batch: error: the following arguments are required: --spec, --out\n"
+        }
+      ],
+      "help": {
+        "path": "cli/bike-batch.help.txt",
+        "sha256": "e413174e64764ca667e127c2887fd00f461ec2fb7f44c06e499d935bc8b87628"
+      },
+      "module": "bike_sim.cli.batch"
+    },
+    "bike-export": {
+      "cases": [
+        {
+          "argv": [
+            "--help"
+          ],
+          "exit": 0,
+          "result": "subprocess"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": ""
+        },
+        {
+          "argv": [
+            "-o",
+            "/var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/export",
+            "--json-only"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "help": {
+        "exit": 0,
+        "path": "cli/bike-export.help.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "module": "bike_sim.cli.export"
+    },
+    "bike-playground": {
+      "cases": [
+        {
+          "argv": [
+            "--help"
+          ],
+          "exit": 0,
+          "result": "subprocess"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": ""
+        }
+      ],
+      "help": {
+        "exit": 0,
+        "path": "cli/bike-playground.help.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "module": "bike_sim.cli.playground"
+    },
+    "bike-recording": {
+      "actions": [
+        {
+          "choices": null,
+          "default": null,
+          "dest": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": [
+            "'overview'",
+            "'fields'",
+            "'events'",
+            "'window'",
+            "'sql'",
+            "'export'",
+            "'compare'"
+          ],
+          "default": "None",
+          "dest": "command",
+          "flags": [],
+          "nargs": "A...",
+          "required": true,
+          "type": null
+        }
+      ],
+      "cases": [
+        {
+          "argv": [
+            "overview",
+            "recording/good",
+            "--json"
+          ],
+          "namespace": {
+            "command": "overview",
+            "json": true,
+            "limit": 200,
+            "run": "recording/good"
+          },
+          "result": "ok"
+        },
+        {
+          "argv": [
+            "fields",
+            "recording/good",
+            "--pattern",
+            "*torque*"
+          ],
+          "namespace": {
+            "command": "fields",
+            "json": false,
+            "limit": 200,
+            "pattern": "*torque*",
+            "run": "recording/good"
+          },
+          "result": "ok"
+        },
+        {
+          "argv": [
+            "window",
+            "recording/good",
+            "--episode",
+            "0",
+            "--start",
+            "0",
+            "--end",
+            "0.01",
+            "--fields",
+            "*"
+          ],
+          "namespace": {
+            "command": "window",
+            "end": 0.01,
+            "episode": 0,
+            "fields": "*",
+            "json": false,
+            "limit": 200,
+            "run": "recording/good",
+            "start": 0.0
+          },
+          "result": "ok"
+        },
+        {
+          "argv": [
+            "export",
+            "recording/good",
+            "--episode",
+            "0",
+            "--format",
+            "jsonl",
+            "--output",
+            "/tmp/exp.jsonl"
+          ],
+          "namespace": {
+            "command": "export",
+            "episode": 0,
+            "format": "jsonl",
+            "limit": null,
+            "output": "/tmp/exp.jsonl",
+            "run": "recording/good",
+            "table": "telemetry"
+          },
+          "result": "ok"
+        },
+        {
+          "argv": [
+            "compare",
+            "a",
+            "b",
+            "--left-episode",
+            "0",
+            "--right-episode",
+            "0",
+            "--mode",
+            "summary"
+          ],
+          "namespace": {
+            "atol": 1e-09,
+            "command": "compare",
+            "fields": null,
+            "json": false,
+            "left": "a",
+            "left_episode": 0,
+            "limit": 200,
+            "mode": "summary",
+            "right": "b",
+            "right_episode": 0,
+            "rtol": 1e-09
+          },
+          "result": "ok"
+        },
+        {
+          "argv": [
+            "overview"
+          ],
+          "exit": 2,
+          "result": "parse_error"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 2,
+          "result": "subprocess",
+          "stderr_tail": "usage: bike-recording [-h]\n                      {overview,fields,events,window,sql,export,compare} ...\nbike-recording: error: the following arguments are required: command\n"
+        },
+        {
+          "argv": [
+            "overview",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "--json"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "688990f4a6de41252b2e0b5907e13a63020d286a1eac027cc4b3a11b72b041ce"
+        },
+        {
+          "argv": [
+            "fields",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "--pattern",
+            "*torque*"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "4df452d87dfd041c6116f4855253a2031eb3cdf6f1ec3fae782d5e4aaae01aee"
+        },
+        {
+          "argv": [
+            "export",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "--episode",
+            "0",
+            "--format",
+            "csv",
+            "--output",
+            "/var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/telemetry.csv"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "883665481a3a478ce8ab16e226faa274e0fcef710f03233bbbfb3e12552e3ddf"
+        },
+        {
+          "argv": [
+            "export",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "--episode",
+            "0",
+            "--format",
+            "jsonl",
+            "--output",
+            "/var/folders/v_/j0xp44h14wz2swvhqy_s7dbw0000gn/T/capture-reference-x03vtzy1/telemetry.jsonl"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "3731ed84ead3caf3cdcec0f3932318de28970c40bb9a5e9e280754f2e9253472"
+        },
+        {
+          "argv": [
+            "compare",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "--left-episode",
+            "0",
+            "--right-episode",
+            "0",
+            "--mode",
+            "exact"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "bb7dce6bc99993367b6cc1b52f5d3f2ff6a1024eb2ca65776b709a488225e016"
+        },
+        {
+          "argv": [
+            "compare",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "--left-episode",
+            "0",
+            "--right-episode",
+            "0",
+            "--mode",
+            "summary"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "e7957770cd5ee9ccb72351ef91b328bf8c12c8cb062d499e5077ac574627edb2"
+        },
+        {
+          "argv": [
+            "sql",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/recording/good",
+            "--query",
+            "SELECT count(*) FROM episodes"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "5b83190c333b1ff3eb0758671bd797734bec95d06fa1f9d37bd7110700388625"
+        }
+      ],
+      "help": {
+        "path": "cli/bike-recording.help.txt",
+        "sha256": "18dce050403def43030f83bcc236d39714eea012606c52df270f4f9eceae1ad5"
+      },
+      "module": "bike_sim.cli.recording"
+    },
+    "bike-replay": {
+      "cases": [
+        {
+          "argv": [
+            "--help"
+          ],
+          "exit": 0,
+          "result": "subprocess"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 2,
+          "result": "subprocess",
+          "stderr_tail": "usage: bike-replay [-h] [--episode EPISODE] [--viewer]\n                   [--time-scale {1,2,4,8}] [--view] [--speed SPEED] [--loop]\n                   [--fps FPS] [--dry-run]\n                   recording\nbike-replay: error: the following arguments are required: recording\n"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 2,
+          "result": "subprocess",
+          "stderr_tail": "usage: bike-replay [-h] [--episode EPISODE] [--viewer]\n                   [--time-scale {1,2,4,8}] [--view] [--speed SPEED] [--loop]\n                   [--fps FPS] [--dry-run]\n                   recording\nbike-replay: error: the following arguments are required: recording\n",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "argv": [
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/replay/native_v3"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/reference-oracle/src/bike_sim/sim/ride/physical_runtime.py:815: RuntimeWarning: invalid reference step at 0.005000000: ('energy.constraint_work',)\n  self.reference_monitor.accept(time_s,violations)\n",
+          "stdout_sha256": "73d95029e1308b2ab238077db2fb17eb9d34d35460be80a04ec4b22332a48ecd"
+        }
+      ],
+      "help": {
+        "exit": 0,
+        "path": "cli/bike-replay.help.txt",
+        "sha256": "b92a69692c5fae2073cef797849cae51105c8206f57c230de6b063d1fdfcc588"
+      },
+      "module": "bike_sim.cli.replay"
+    },
+    "bike-research": {
+      "actions": [
+        {
+          "choices": null,
+          "default": null,
+          "dest": "help",
+          "flags": [
+            "-h",
+            "--help"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": [
+            "'python'",
+            "'native'"
+          ],
+          "default": "'python'",
+          "dest": "backend",
+          "flags": [
+            "--backend"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "physics_config",
+          "flags": [
+            "--physics-config"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "0.005",
+          "dest": "road_resolution",
+          "flags": [
+            "--road-resolution"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "0.005",
+          "dest": "sensor_period",
+          "flags": [
+            "--sensor-period"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "rider_program",
+          "flags": [
+            "--rider-program"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "policy",
+          "flags": [
+            "--policy"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "record",
+          "flags": [
+            "--record"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": [
+            "'strict'",
+            "'diagnostic'"
+          ],
+          "default": "None",
+          "dest": "check_policy",
+          "flags": [
+            "--check-policy"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "diagnostic_model_limits",
+          "flags": [
+            "--diagnostic-model-limits"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": [
+            "'flat'",
+            "'uphill'",
+            "'rough_uphill'",
+            "'crest'",
+            "'low_grip'",
+            "'step_up'",
+            "'generated'",
+            "'alpine'"
+          ],
+          "default": "'rough_uphill'",
+          "dest": "scenario",
+          "flags": [
+            "--scenario"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "gen_spec",
+          "flags": [
+            "--gen-spec"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "track_file",
+          "flags": [
+            "--track-file"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "0",
+          "dest": "seed",
+          "flags": [
+            "--seed"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "int"
+        },
+        {
+          "choices": [
+            "'lumped'",
+            "'articulated_planar'"
+          ],
+          "default": "'articulated_planar'",
+          "dest": "rider",
+          "flags": [
+            "--rider"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "80.0",
+          "dest": "rider_mass",
+          "flags": [
+            "--rider-mass"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "1.8",
+          "dest": "rider_height",
+          "flags": [
+            "--rider-height"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "rider_random",
+          "flags": [
+            "--rider-random"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "rider_seed",
+          "flags": [
+            "--rider-seed"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "int"
+        },
+        {
+          "choices": [
+            "'neutral'",
+            "'forward'",
+            "'crouched'",
+            "'standing'"
+          ],
+          "default": "'neutral'",
+          "dest": "posture",
+          "flags": [
+            "--posture"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "3.0",
+          "dest": "duration",
+          "flags": [
+            "--duration"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "dt",
+          "flags": [
+            "--dt"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "0.01",
+          "dest": "control_period",
+          "flags": [
+            "--control-period"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "0.005",
+          "dest": "actuator_delay",
+          "flags": [
+            "--actuator-delay"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "0.01",
+          "dest": "sensor_delay",
+          "flags": [
+            "--sensor-delay"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "ideal_sensors",
+          "flags": [
+            "--ideal-sensors"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "1.0",
+          "dest": "initial_brake_demand",
+          "flags": [
+            "--initial-brake-demand"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "2.0",
+          "dest": "initial_speed",
+          "flags": [
+            "--initial-speed"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "0.0",
+          "dest": "human_torque",
+          "flags": [
+            "--human-torque"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "80.0",
+          "dest": "motor_torque",
+          "flags": [
+            "--motor-torque"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "demand",
+          "flags": [
+            "--demand"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "demand_file",
+          "flags": [
+            "--demand-file"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "assist",
+          "flags": [
+            "--assist"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "motor_limit",
+          "flags": [
+            "--motor-limit"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "80.0",
+          "dest": "motor_max_torque",
+          "flags": [
+            "--motor-max-torque"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "500.0",
+          "dest": "motor_max_power",
+          "flags": [
+            "--motor-max-power"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": [
+            "'elastic_chain'",
+            "'ideal_mid_drive'",
+            "'geometric_ideal_mid_drive'"
+          ],
+          "default": "'ideal_mid_drive'",
+          "dest": "transmission",
+          "flags": [
+            "--transmission"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "chain_stiffness",
+          "flags": [
+            "--chain-stiffness"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "None",
+          "dest": "freehub_stiffness",
+          "flags": [
+            "--freehub-stiffness"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "34",
+          "dest": "front_teeth",
+          "flags": [
+            "--front-teeth"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "int"
+        },
+        {
+          "choices": null,
+          "default": "51",
+          "dest": "rear_teeth",
+          "flags": [
+            "--rear-teeth"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "int"
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "fast_telemetry",
+          "flags": [
+            "--fast-telemetry"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        },
+        {
+          "choices": null,
+          "default": "80",
+          "dest": "record_decimation",
+          "flags": [
+            "--record-decimation"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "int"
+        },
+        {
+          "choices": null,
+          "default": "0.05",
+          "dest": "energy_tolerance",
+          "flags": [
+            "--energy-tolerance"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "float"
+        },
+        {
+          "choices": null,
+          "default": "PosixPath('output/antiwheelie')",
+          "dest": "out",
+          "flags": [
+            "--out"
+          ],
+          "nargs": null,
+          "required": false,
+          "type": "Path"
+        },
+        {
+          "choices": null,
+          "default": "False",
+          "dest": "overwrite",
+          "flags": [
+            "--overwrite"
+          ],
+          "nargs": 0,
+          "required": false,
+          "type": null
+        }
+      ],
+      "cases": [
+        {
+          "argv": [
+            "--physics-config",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/viewer_physics_welded.toml",
+            "--track-file",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/tracks/flat.toml",
+            "--duration",
+            "0.1",
+            "--seed",
+            "210",
+            "--ideal-sensors"
+          ],
+          "namespace": {
+            "actuator_delay": 0.005,
+            "assist": false,
+            "backend": "python",
+            "chain_stiffness": null,
+            "check_policy": null,
+            "control_period": 0.01,
+            "demand": null,
+            "demand_file": null,
+            "diagnostic_model_limits": false,
+            "dt": null,
+            "duration": 0.1,
+            "energy_tolerance": 0.05,
+            "fast_telemetry": false,
+            "freehub_stiffness": null,
+            "front_teeth": 34,
+            "gen_spec": null,
+            "human_torque": 0.0,
+            "ideal_sensors": true,
+            "initial_brake_demand": 1.0,
+            "initial_speed": 2.0,
+            "motor_limit": null,
+            "motor_max_power": 500.0,
+            "motor_max_torque": 80.0,
+            "motor_torque": 80.0,
+            "out": "output/antiwheelie",
+            "overwrite": false,
+            "physics_config": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/viewer_physics_welded.toml",
+            "policy": null,
+            "posture": "neutral",
+            "rear_teeth": 51,
+            "record": false,
+            "record_decimation": 80,
+            "rider": "articulated_planar",
+            "rider_height": 1.8,
+            "rider_mass": 80.0,
+            "rider_program": null,
+            "rider_random": false,
+            "rider_seed": null,
+            "road_resolution": 0.005,
+            "scenario": "rough_uphill",
+            "seed": 210,
+            "sensor_delay": 0.01,
+            "sensor_period": 0.005,
+            "track_file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/tracks/flat.toml",
+            "transmission": "ideal_mid_drive"
+          },
+          "result": "ok"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 2,
+          "result": "subprocess",
+          "stderr_tail": "                   [--freehub-stiffness FREEHUB_STIFFNESS]\n                     [--front-teeth FRONT_TEETH] [--rear-teeth REAR_TEETH]\n                     [--fast-telemetry]\n                     [--record-decimation RECORD_DECIMATION]\n                     [--energy-tolerance ENERGY_TOLERANCE] [--out OUT]\n                     [--overwrite]\nbike-research: error: unrecognized arguments: --bogus-flag\n"
+        }
+      ],
+      "help": {
+        "path": "cli/bike-research.help.txt",
+        "sha256": "a785ed3db31fc9ee239e0bfe4282396397fb98f0b04a68838d1b517bc07f84d9"
+      },
+      "module": "bike_sim.cli.research"
+    },
+    "bike-ride": {
+      "cases": [
+        {
+          "argv": [
+            "--physics-config",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/viewer_physics_welded.toml",
+            "--track",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/tracks/flat.toml",
+            "--headless",
+            "--duration",
+            "0.1",
+            "--no-plots"
+          ],
+          "namespace": {
+            "actuator_delay": "0.005",
+            "assist": "None",
+            "assist_gain": "None",
+            "async_telemetry": "False",
+            "backend": "'python'",
+            "check_policy": "None",
+            "control_period": "0.01",
+            "crank_phase": "0.0",
+            "decimate": "1",
+            "demand": "None",
+            "drive": "'articulated_effort'",
+            "drive_mode": "'motor'",
+            "dump_track": "None",
+            "duration": "0.1",
+            "gearing": "None",
+            "headless": "True",
+            "html": "None",
+            "human_torque": "None",
+            "initial_speed": "None",
+            "legs": "None",
+            "length": "None",
+            "list_tracks": "False",
+            "no_plots": "True",
+            "no_rider": "False",
+            "out": "'output/ride'",
+            "physics": "'physical'",
+            "physics_config": "'/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/viewer_physics_welded.toml'",
+            "policy": "None",
+            "preview": "False",
+            "record": "False",
+            "research": "False",
+            "resolved_check_policy": "'strict'",
+            "resolved_physics": "SimulationPhysicsConfig(physics_mode='physical', drive_mode='articulated_effort', timestep_s=0.00125, control_period_s=0.005, pitch_assist=False, end_stops=EndStopConfig(reference_force_n=7000.0, reference_deflection_m=0.01, damping_n_s_m=500.0, overtravel_m=0.01, provenance='synthetic'), tires=TireBackendConfig(backend='compliant_2d', front=TireParameters(material=TireSpec(radial_k_n_m=130000.0, radial_c_ns_m=800.0, pressure_pa_gauge=200000.0, provenance='synthetic', valid_load_range_n=(0.0, 2000.0)), tangent_k_n_m=20000.0, mu=1.1, relaxation_length_m=0.2), rear=TireParameters(material=TireSpec(radial_k_n_m=130000.0, radial_c_ns_m=800.0, pressure_pa_gauge=200000.0, provenance='synthetic', valid_load_range_n=(0.0, 2000.0)), tangent_k_n_m=20000.0, mu=1.1, relaxation_length_m=0.2), significant_delta_m=0.0001, significance_fraction=0.05, distinct_normal_deg=20.0, surface_mode='track', distributed=DistributedTireConfig(station_count=128, density=HingeDensity(knots_m=(0.0, 0.004, 0.012), stiffness_n_m=(300000.0, 0.0, 0.0), damping_ns_m=2000.0, provenance='synthetic density; not fitted or measured'), fitting_dataset_id='none-synthetic', valid_load_range_n=(0.0, 2000.0), valid_deflection_range_m=(0.0, 0.04), calibration_status='experimental_unvalidated', front_material=None, rear_material=None), pneumatic=PneumaticTireConfig(tier='fast', front=TyreSpecs(name='Schwalbe Magic Mary 29x2.4', outer_radius_mm=372.0, rim_radius_mm=320.0, section_height_mm=57.0, pressure_bar=1.5, crr_reference=0.011, casing_width_mm=60.0, compressed_casing_mm=6.0, area_factor=0.4435, carcass_stiffness_n_mm2=0.1194, contact_length_factor=0.8589, rate_stiffening=0.2484, rate_relaxation_s=0.2, loss_factor=0.0662, hysteresis_rate_eps_mps=0.01, relaxation_length_mm=60.0, rim_stiffness_n_mm2=28.0, tread_loss_crr=0.00586), rear=TyreSpecs(name='Schwalbe Hans Dampf 27.5x2.4', outer_radius_mm=352.0, rim_radius_mm=300.0, section_height_mm=55.0, pressure_bar=1.7, crr_reference=0.0103, casing_width_mm=60.0, compressed_casing_mm=6.0, area_factor=0.4576, carcass_stiffness_n_mm2=0.1225, contact_length_factor=0.8801, rate_stiffening=0.2498, rate_relaxation_s=0.2, loss_factor=0.069, hysteresis_rate_eps_mps=0.01, relaxation_length_mm=60.0, rim_stiffness_n_mm2=28.0, tread_loss_crr=0.00481), surface=None)), drive=PhysicalDriveConfig(gearing=DrivetrainSpecs(front_teeth=22, rear_teeth=51, chain_pitch_m=0.0127), transmission_model='ideal_mid_drive', human_torque_nm=0.0, torque_ripple=0.35, crank_phase_rad=0.0, chain_k_n_m=200000.0, chain_c_ns_m=10.0, freehub_k_nm_rad=1000.0, freehub_c_nms_rad=0.5, bearing_c_nms_rad=0.03, brake_ceiling_nm=200.0, motor_clutch=False, rotor_inertia_kgm2=0.0, assist=AssistConfig(profile='bosch_cx_gen4', mode='turbo', gain=2.0, max_torque=80.0, max_power=500.0, tau=0.05, slew=400.0, engage_torque_nm=4.0, gate_min_crank_rad_s=0.08726646259971647, cutoff_mps=6.944444444444445, taper_width_mps=0.5555555555555556, torque_curve=((0.0, 85.0), (120.0, 85.0), (120.1, 47.7), (180.0, 0.0))), battery=BatteryConfig(enabled=False, energy_j=1800000.0, copper_w_per_nm2=0.02, speed_w_per_rad_s2=0.0, idle_w=5.0), pedaling=PedalingConfig(enabled=True, coast_above_rpm=120.0, resume_below_rpm=105.0, stop_time_s=0.35, coast_cadence_tau_s=0.35, mash_cadence_rpm=45.0, mash_torque_nm=60.0, effort_slew_nm_s=300.0, rollback_brake=True, rollback_engage_mps=0.25, rollback_release_mps=0.0, rollback_demand=1.0), shifting=ShiftingConfig(enabled=True, cassette=(10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51), target_cadence_min_rpm=75.0, target_cadence_max_rpm=110.0, shift_cooldown_s=0.4, shift_cut_duration_s=0.2, torque_factor=0.3, cadence_smoothing_tau_s=0.35, upshift_slip_limit_mps=0.5, upshift_slip_mode='legacy_signed')), resistance=ResistanceConfig(crr=0.015, rolling_taper_rad_s=0.2, rho_kg_m3=1.2, cda_m2=0.5, wind_world_mps=(0.0, 0.0, 0.0), point_body_m=(0.0, 0.0, 0.5)), articulated=ArticulatedConfig(pedal_support_fraction=0.33, bar_support_fraction=0.12, posture_sole_depth_m=0.003, swing_clearance_m=0.003, coasting_brake_d_nm_s_rad=2.0, coasting_brake_limit_nm=60.0, stance_blend_load_n=50.0, posture_pitch_k_nm_rad=600.0, posture_pitch_d_nms_rad=60.0, posture_pitch_limit_nm=60.0, posture_translation_k_n_m=1500.0, posture_translation_d_ns_m=150.0, posture_translation_limit_n=400.0, saddle_patch_half_length_m=0.045, pedal_patch_half_length_m=0.025, support_pad_radius_m=0.02, support_k_n_m=100000.0, support_c_ns_m=500.0, pedal_c_ns_m=100.0, support_tangent_k_n_m=20000.0, support_mu=0.8, support_length_m=0.1, grip_k_n_m=4000.0, grip_c_ns_m=150.0, grip_release_distance_m=0.12, grip_pair_force_limit_n=None, grip_capture_distance_m=0.02, grip_capture_speed_mps=0.2, arm_reach_fraction=0.92, joint_kp_nm_rad=600.0, joint_kd_nms_rad=15.0, joint_passive_damping_nms_rad=0.0, coupled_task_control=False, joint_limit_nm=100.0, joint_speed_limit_rad_s=20.0, joint_power_limit_w=250.0, joint_envelope_path='/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/rider_joint_envelope_anatomical.json', joint_envelope_soft_margin_rad=0.1, joint_envelope_soft_k_nm_rad=100.0, activation_tau_s=0.0, active_positive_power_limit_w=450.0, foot_mu=0.9, saddle_mu=0.6, pedal_min_normal_n=20.0, saddle_reserve_weight_fraction=0.15, grip_pull_per_hand_n=300.0, pedal_ankle_amplitude_rad=0.1, pedal_scrape_fraction=0.5, pedal_torque_ripple=0.5, return_foot_preload_n=40.0, link_max_gap_m=0.005, road_lookahead_m=2.0, joint_strength_path='/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/rider_strength_reference.json', pedal_attachment='spindle', saddle_attachment='pin', grip_attachment='connect', balance_floor_kmh=4.0, balance_dwell_s=0.5, balance_grace_s=3.0), seated_climb=SeatedClimbConfig(enabled=True, period_s=0.01, reaction_delay_s=0.15, target_crank_power_w=250.0, max_crank_torque_nm=60.0, torque_slew_nm_s=300.0, lean_gain=1.0, max_forward_lean_rad=0.35, max_backward_lean_rad=0.1, lean_rate_rad_s=0.5, orientation_tau_s=0.5, surge_power_w=400.0, surge_grade=0.2, surge_budget_s=15.0, surge_recovery_rate=0.3333333333333333, front_load_share_target=0.3, lean_trim_gain_rad_s=0.3, lean_trim_limit_rad=0.15, trim_dead_time_s=0.2), initial_speed_mps=0.0, initial_front_brake=1.0, initial_rear_brake=1.0, closure_time_constant_s=0.0025, equilibrium_refine_after_s=1.0, equilibrium_refine_period_s=3.0, equilibrium_cache_enabled=True, equilibrium_state_file=None)",
+            "rider": "'articulated_planar'",
+            "rider_height": "1.8",
+            "rider_inseam": "None",
+            "rider_mass": "80.0",
+            "rider_program": "None",
+            "ripple_depth": "None",
+            "road_resolution": "0.005",
+            "sag": "None",
+            "seed": "None",
+            "sensor_delay": "0.01",
+            "sensor_period": "0.005",
+            "speed": "None",
+            "surface": "None",
+            "time_scale": "1",
+            "timestep": "None",
+            "track": "'/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/tracks/flat.toml'",
+            "tyre_model": "'sphere'",
+            "tyre_pressure": "(1.5, 1.7)",
+            "tyre_tier": "'fast'",
+            "visual_pedalling": "False"
+          },
+          "result": "ok",
+          "via": "parse_args"
+        },
+        {
+          "argv": [
+            "--track",
+            "climb_steps",
+            "--speed",
+            "16"
+          ],
+          "namespace": {
+            "actuator_delay": "0.005",
+            "assist": "'turbo'",
+            "assist_gain": "None",
+            "async_telemetry": "False",
+            "backend": "'python'",
+            "check_policy": "None",
+            "control_period": "0.01",
+            "crank_phase": "0.0",
+            "decimate": "1",
+            "demand": "None",
+            "drive": "'ideal_speed_control'",
+            "drive_mode": "'pedelec'",
+            "dump_track": "None",
+            "duration": "None",
+            "gearing": "None",
+            "headless": "False",
+            "html": "None",
+            "human_torque": "None",
+            "initial_speed": "None",
+            "legs": "None",
+            "length": "None",
+            "list_tracks": "False",
+            "no_plots": "False",
+            "no_rider": "False",
+            "out": "'output/ride'",
+            "physics": "'legacy'",
+            "physics_config": "None",
+            "policy": "None",
+            "preview": "False",
+            "record": "False",
+            "research": "False",
+            "resolved_check_policy": "None",
+            "resolved_physics": "SimulationPhysicsConfig(physics_mode='legacy', drive_mode='ideal_speed_control', timestep_s=0.0005, control_period_s=0.005, pitch_assist=True, end_stops=EndStopConfig(reference_force_n=7000.0, reference_deflection_m=0.01, damping_n_s_m=500.0, overtravel_m=0.01, provenance='synthetic'), tires=TireBackendConfig(backend='native_reference', front=TireParameters(material=TireSpec(radial_k_n_m=130000.0, radial_c_ns_m=800.0, pressure_pa_gauge=200000.0, provenance='synthetic', valid_load_range_n=(0.0, 2000.0)), tangent_k_n_m=20000.0, mu=0.8, relaxation_length_m=0.2), rear=TireParameters(material=TireSpec(radial_k_n_m=130000.0, radial_c_ns_m=800.0, pressure_pa_gauge=200000.0, provenance='synthetic', valid_load_range_n=(0.0, 2000.0)), tangent_k_n_m=20000.0, mu=0.8, relaxation_length_m=0.2), significant_delta_m=0.0001, significance_fraction=0.05, distinct_normal_deg=20.0, surface_mode='configured', distributed=DistributedTireConfig(station_count=128, density=HingeDensity(knots_m=(0.0, 0.004, 0.012), stiffness_n_m=(300000.0, 0.0, 0.0), damping_ns_m=2000.0, provenance='synthetic density; not fitted or measured'), fitting_dataset_id='none-synthetic', valid_load_range_n=(0.0, 2000.0), valid_deflection_range_m=(0.0, 0.04), calibration_status='experimental_unvalidated', front_material=None, rear_material=None), pneumatic=PneumaticTireConfig(tier='fast', front=TyreSpecs(name='Schwalbe Magic Mary 29x2.4', outer_radius_mm=372.0, rim_radius_mm=320.0, section_height_mm=57.0, pressure_bar=1.5, crr_reference=0.011, casing_width_mm=60.0, compressed_casing_mm=6.0, area_factor=0.4435, carcass_stiffness_n_mm2=0.1194, contact_length_factor=0.8589, rate_stiffening=0.2484, rate_relaxation_s=0.2, loss_factor=0.0662, hysteresis_rate_eps_mps=0.01, relaxation_length_mm=60.0, rim_stiffness_n_mm2=28.0, tread_loss_crr=0.00586), rear=TyreSpecs(name='Schwalbe Hans Dampf 27.5x2.4', outer_radius_mm=352.0, rim_radius_mm=300.0, section_height_mm=55.0, pressure_bar=1.7, crr_reference=0.0103, casing_width_mm=60.0, compressed_casing_mm=6.0, area_factor=0.4576, carcass_stiffness_n_mm2=0.1225, contact_length_factor=0.8801, rate_stiffening=0.2498, rate_relaxation_s=0.2, loss_factor=0.069, hysteresis_rate_eps_mps=0.01, relaxation_length_mm=60.0, rim_stiffness_n_mm2=28.0, tread_loss_crr=0.00481), surface=None)), drive=PhysicalDriveConfig(gearing=DrivetrainSpecs(front_teeth=34, rear_teeth=24, chain_pitch_m=0.0127), transmission_model='elastic_chain', human_torque_nm=0.0, torque_ripple=0.35, crank_phase_rad=0.0, chain_k_n_m=200000.0, chain_c_ns_m=10.0, freehub_k_nm_rad=1000.0, freehub_c_nms_rad=0.5, bearing_c_nms_rad=0.03, brake_ceiling_nm=200.0, motor_clutch=False, rotor_inertia_kgm2=0.0, assist=AssistConfig(profile=None, mode='turbo', gain=2.0, max_torque=80.0, max_power=500.0, tau=0.05, slew=400.0, engage_torque_nm=4.0, gate_min_crank_rad_s=0.08726646259971647, cutoff_mps=6.944444444444445, taper_width_mps=0.5555555555555556, torque_curve=None), battery=BatteryConfig(enabled=True, energy_j=1800000.0, copper_w_per_nm2=0.02, speed_w_per_rad_s2=0.0, idle_w=5.0), pedaling=PedalingConfig(enabled=False, coast_above_rpm=110.0, resume_below_rpm=90.0, stop_time_s=0.35, coast_cadence_tau_s=0.0, mash_cadence_rpm=45.0, mash_torque_nm=60.0, effort_slew_nm_s=300.0, rollback_brake=True, rollback_engage_mps=0.25, rollback_release_mps=0.0, rollback_demand=1.0), shifting=ShiftingConfig(enabled=False, cassette=(10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51), target_cadence_min_rpm=65.0, target_cadence_max_rpm=85.0, shift_cooldown_s=0.4, shift_cut_duration_s=0.2, torque_factor=0.3, cadence_smoothing_tau_s=0.35, upshift_slip_limit_mps=0.5, upshift_slip_mode='legacy_signed')), resistance=ResistanceConfig(crr=0.015, rolling_taper_rad_s=0.2, rho_kg_m3=1.2, cda_m2=0.5, wind_world_mps=(0.0, 0.0, 0.0), point_body_m=(0.0, 0.0, 0.5)), articulated=ArticulatedConfig(pedal_support_fraction=0.33, bar_support_fraction=0.12, posture_sole_depth_m=0.003, swing_clearance_m=0.003, coasting_brake_d_nm_s_rad=2.0, coasting_brake_limit_nm=60.0, stance_blend_load_n=50.0, posture_pitch_k_nm_rad=600.0, posture_pitch_d_nms_rad=60.0, posture_pitch_limit_nm=60.0, posture_translation_k_n_m=1500.0, posture_translation_d_ns_m=150.0, posture_translation_limit_n=400.0, saddle_patch_half_length_m=0.045, pedal_patch_half_length_m=0.025, support_pad_radius_m=0.02, support_k_n_m=100000.0, support_c_ns_m=500.0, pedal_c_ns_m=100.0, support_tangent_k_n_m=20000.0, support_mu=0.8, support_length_m=0.1, grip_k_n_m=4000.0, grip_c_ns_m=150.0, grip_release_distance_m=0.12, grip_pair_force_limit_n=None, grip_capture_distance_m=0.02, grip_capture_speed_mps=0.2, arm_reach_fraction=0.92, joint_kp_nm_rad=600.0, joint_kd_nms_rad=15.0, joint_passive_damping_nms_rad=None, coupled_task_control=False, joint_limit_nm=100.0, joint_speed_limit_rad_s=20.0, joint_power_limit_w=250.0, joint_envelope_path=None, joint_envelope_soft_margin_rad=0.1, joint_envelope_soft_k_nm_rad=100.0, activation_tau_s=0.0, active_positive_power_limit_w=None, foot_mu=0.9, saddle_mu=0.6, pedal_min_normal_n=20.0, saddle_reserve_weight_fraction=0.15, grip_pull_per_hand_n=300.0, pedal_ankle_amplitude_rad=0.1, pedal_scrape_fraction=0.5, pedal_torque_ripple=0.35, return_foot_preload_n=0.0, link_max_gap_m=0.005, road_lookahead_m=0.0, joint_strength_path=None, pedal_attachment='flat', saddle_attachment='flat', grip_attachment='spring', balance_floor_kmh=4.0, balance_dwell_s=0.5, balance_grace_s=3.0), seated_climb=SeatedClimbConfig(enabled=False, period_s=0.01, reaction_delay_s=0.15, target_crank_power_w=225.0, max_crank_torque_nm=60.0, torque_slew_nm_s=300.0, lean_gain=1.0, max_forward_lean_rad=0.35, max_backward_lean_rad=0.1, lean_rate_rad_s=0.5, orientation_tau_s=0.5, surge_power_w=400.0, surge_grade=0.2, surge_budget_s=15.0, surge_recovery_rate=0.3333333333333333, front_load_share_target=0.3, lean_trim_gain_rad_s=0.3, lean_trim_limit_rad=0.15, trim_dead_time_s=0.2), initial_speed_mps=0.0, initial_front_brake=0.0, initial_rear_brake=0.0, closure_time_constant_s=0.001, equilibrium_refine_after_s=1.0, equilibrium_refine_period_s=3.0, equilibrium_cache_enabled=False, equilibrium_state_file=None)",
+            "rider": "None",
+            "rider_height": "1.8",
+            "rider_inseam": "None",
+            "rider_mass": "80.0",
+            "rider_program": "None",
+            "ripple_depth": "None",
+            "road_resolution": "0.005",
+            "sag": "None",
+            "seed": "None",
+            "sensor_delay": "0.01",
+            "sensor_period": "0.005",
+            "speed": "16.0",
+            "surface": "None",
+            "time_scale": "1",
+            "timestep": "None",
+            "track": "'climb_steps'",
+            "tyre_model": "'pneumatic'",
+            "tyre_pressure": "(1.5, 1.7)",
+            "tyre_tier": "'fast'",
+            "visual_pedalling": "False"
+          },
+          "result": "ok",
+          "via": "parse_args"
+        },
+        {
+          "argv": [
+            "--list-tracks"
+          ],
+          "namespace": {
+            "actuator_delay": "0.005",
+            "assist": "'tour'",
+            "assist_gain": "None",
+            "async_telemetry": "False",
+            "backend": "'python'",
+            "check_policy": "None",
+            "control_period": "0.01",
+            "crank_phase": "0.0",
+            "decimate": "1",
+            "demand": "None",
+            "drive": "'ideal_speed_control'",
+            "drive_mode": "'motor'",
+            "dump_track": "None",
+            "duration": "None",
+            "gearing": "None",
+            "headless": "False",
+            "html": "None",
+            "human_torque": "None",
+            "initial_speed": "None",
+            "legs": "None",
+            "length": "None",
+            "list_tracks": "True",
+            "no_plots": "False",
+            "no_rider": "False",
+            "out": "'output/ride'",
+            "physics": "'legacy'",
+            "physics_config": "None",
+            "policy": "None",
+            "preview": "False",
+            "record": "False",
+            "research": "False",
+            "resolved_check_policy": "None",
+            "resolved_physics": "SimulationPhysicsConfig(physics_mode='legacy', drive_mode='ideal_speed_control', timestep_s=0.0005, control_period_s=0.005, pitch_assist=True, end_stops=EndStopConfig(reference_force_n=7000.0, reference_deflection_m=0.01, damping_n_s_m=500.0, overtravel_m=0.01, provenance='synthetic'), tires=TireBackendConfig(backend='native_reference', front=TireParameters(material=TireSpec(radial_k_n_m=130000.0, radial_c_ns_m=800.0, pressure_pa_gauge=200000.0, provenance='synthetic', valid_load_range_n=(0.0, 2000.0)), tangent_k_n_m=20000.0, mu=0.8, relaxation_length_m=0.2), rear=TireParameters(material=TireSpec(radial_k_n_m=130000.0, radial_c_ns_m=800.0, pressure_pa_gauge=200000.0, provenance='synthetic', valid_load_range_n=(0.0, 2000.0)), tangent_k_n_m=20000.0, mu=0.8, relaxation_length_m=0.2), significant_delta_m=0.0001, significance_fraction=0.05, distinct_normal_deg=20.0, surface_mode='configured', distributed=DistributedTireConfig(station_count=128, density=HingeDensity(knots_m=(0.0, 0.004, 0.012), stiffness_n_m=(300000.0, 0.0, 0.0), damping_ns_m=2000.0, provenance='synthetic density; not fitted or measured'), fitting_dataset_id='none-synthetic', valid_load_range_n=(0.0, 2000.0), valid_deflection_range_m=(0.0, 0.04), calibration_status='experimental_unvalidated', front_material=None, rear_material=None), pneumatic=PneumaticTireConfig(tier='fast', front=TyreSpecs(name='Schwalbe Magic Mary 29x2.4', outer_radius_mm=372.0, rim_radius_mm=320.0, section_height_mm=57.0, pressure_bar=1.5, crr_reference=0.011, casing_width_mm=60.0, compressed_casing_mm=6.0, area_factor=0.4435, carcass_stiffness_n_mm2=0.1194, contact_length_factor=0.8589, rate_stiffening=0.2484, rate_relaxation_s=0.2, loss_factor=0.0662, hysteresis_rate_eps_mps=0.01, relaxation_length_mm=60.0, rim_stiffness_n_mm2=28.0, tread_loss_crr=0.00586), rear=TyreSpecs(name='Schwalbe Hans Dampf 27.5x2.4', outer_radius_mm=352.0, rim_radius_mm=300.0, section_height_mm=55.0, pressure_bar=1.7, crr_reference=0.0103, casing_width_mm=60.0, compressed_casing_mm=6.0, area_factor=0.4576, carcass_stiffness_n_mm2=0.1225, contact_length_factor=0.8801, rate_stiffening=0.2498, rate_relaxation_s=0.2, loss_factor=0.069, hysteresis_rate_eps_mps=0.01, relaxation_length_mm=60.0, rim_stiffness_n_mm2=28.0, tread_loss_crr=0.00481), surface=None)), drive=PhysicalDriveConfig(gearing=DrivetrainSpecs(front_teeth=34, rear_teeth=24, chain_pitch_m=0.0127), transmission_model='elastic_chain', human_torque_nm=0.0, torque_ripple=0.35, crank_phase_rad=0.0, chain_k_n_m=200000.0, chain_c_ns_m=10.0, freehub_k_nm_rad=1000.0, freehub_c_nms_rad=0.5, bearing_c_nms_rad=0.03, brake_ceiling_nm=200.0, motor_clutch=False, rotor_inertia_kgm2=0.0, assist=AssistConfig(profile=None, mode='turbo', gain=2.0, max_torque=80.0, max_power=500.0, tau=0.05, slew=400.0, engage_torque_nm=4.0, gate_min_crank_rad_s=0.08726646259971647, cutoff_mps=6.944444444444445, taper_width_mps=0.5555555555555556, torque_curve=None), battery=BatteryConfig(enabled=True, energy_j=1800000.0, copper_w_per_nm2=0.02, speed_w_per_rad_s2=0.0, idle_w=5.0), pedaling=PedalingConfig(enabled=False, coast_above_rpm=110.0, resume_below_rpm=90.0, stop_time_s=0.35, coast_cadence_tau_s=0.0, mash_cadence_rpm=45.0, mash_torque_nm=60.0, effort_slew_nm_s=300.0, rollback_brake=True, rollback_engage_mps=0.25, rollback_release_mps=0.0, rollback_demand=1.0), shifting=ShiftingConfig(enabled=False, cassette=(10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51), target_cadence_min_rpm=65.0, target_cadence_max_rpm=85.0, shift_cooldown_s=0.4, shift_cut_duration_s=0.2, torque_factor=0.3, cadence_smoothing_tau_s=0.35, upshift_slip_limit_mps=0.5, upshift_slip_mode='legacy_signed')), resistance=ResistanceConfig(crr=0.015, rolling_taper_rad_s=0.2, rho_kg_m3=1.2, cda_m2=0.5, wind_world_mps=(0.0, 0.0, 0.0), point_body_m=(0.0, 0.0, 0.5)), articulated=ArticulatedConfig(pedal_support_fraction=0.33, bar_support_fraction=0.12, posture_sole_depth_m=0.003, swing_clearance_m=0.003, coasting_brake_d_nm_s_rad=2.0, coasting_brake_limit_nm=60.0, stance_blend_load_n=50.0, posture_pitch_k_nm_rad=600.0, posture_pitch_d_nms_rad=60.0, posture_pitch_limit_nm=60.0, posture_translation_k_n_m=1500.0, posture_translation_d_ns_m=150.0, posture_translation_limit_n=400.0, saddle_patch_half_length_m=0.045, pedal_patch_half_length_m=0.025, support_pad_radius_m=0.02, support_k_n_m=100000.0, support_c_ns_m=500.0, pedal_c_ns_m=100.0, support_tangent_k_n_m=20000.0, support_mu=0.8, support_length_m=0.1, grip_k_n_m=4000.0, grip_c_ns_m=150.0, grip_release_distance_m=0.12, grip_pair_force_limit_n=None, grip_capture_distance_m=0.02, grip_capture_speed_mps=0.2, arm_reach_fraction=0.92, joint_kp_nm_rad=600.0, joint_kd_nms_rad=15.0, joint_passive_damping_nms_rad=None, coupled_task_control=False, joint_limit_nm=100.0, joint_speed_limit_rad_s=20.0, joint_power_limit_w=250.0, joint_envelope_path=None, joint_envelope_soft_margin_rad=0.1, joint_envelope_soft_k_nm_rad=100.0, activation_tau_s=0.0, active_positive_power_limit_w=None, foot_mu=0.9, saddle_mu=0.6, pedal_min_normal_n=20.0, saddle_reserve_weight_fraction=0.15, grip_pull_per_hand_n=300.0, pedal_ankle_amplitude_rad=0.1, pedal_scrape_fraction=0.5, pedal_torque_ripple=0.35, return_foot_preload_n=0.0, link_max_gap_m=0.005, road_lookahead_m=0.0, joint_strength_path=None, pedal_attachment='flat', saddle_attachment='flat', grip_attachment='spring', balance_floor_kmh=4.0, balance_dwell_s=0.5, balance_grace_s=3.0), seated_climb=SeatedClimbConfig(enabled=False, period_s=0.01, reaction_delay_s=0.15, target_crank_power_w=225.0, max_crank_torque_nm=60.0, torque_slew_nm_s=300.0, lean_gain=1.0, max_forward_lean_rad=0.35, max_backward_lean_rad=0.1, lean_rate_rad_s=0.5, orientation_tau_s=0.5, surge_power_w=400.0, surge_grade=0.2, surge_budget_s=15.0, surge_recovery_rate=0.3333333333333333, front_load_share_target=0.3, lean_trim_gain_rad_s=0.3, lean_trim_limit_rad=0.15, trim_dead_time_s=0.2), initial_speed_mps=0.0, initial_front_brake=0.0, initial_rear_brake=0.0, closure_time_constant_s=0.001, equilibrium_refine_after_s=1.0, equilibrium_refine_period_s=3.0, equilibrium_cache_enabled=False, equilibrium_state_file=None)",
+            "rider": "None",
+            "rider_height": "1.8",
+            "rider_inseam": "None",
+            "rider_mass": "80.0",
+            "rider_program": "None",
+            "ripple_depth": "None",
+            "road_resolution": "0.005",
+            "sag": "None",
+            "seed": "None",
+            "sensor_delay": "0.01",
+            "sensor_period": "0.005",
+            "speed": "25.0",
+            "surface": "None",
+            "time_scale": "1",
+            "timestep": "None",
+            "track": "'road_worn'",
+            "tyre_model": "'sphere'",
+            "tyre_pressure": "(1.5, 1.7)",
+            "tyre_tier": "'fast'",
+            "visual_pedalling": "False"
+          },
+          "result": "ok",
+          "via": "parse_args"
+        },
+        {
+          "argv": [
+            "--help"
+          ],
+          "exit": 0,
+          "result": "subprocess"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 2,
+          "result": "subprocess",
+          "stderr_tail": "      [--async-telemetry] [--policy POLICY]\n                 [--control-period CONTROL_PERIOD]\n                 [--sensor-period SENSOR_PERIOD] [--sensor-delay SENSOR_DELAY]\n                 [--actuator-delay ACTUATOR_DELAY]\n                 [--road-resolution ROAD_RESOLUTION] [--demand DEMAND]\n                 [--rider-program RIDER_PROGRAM]\nbike-ride: error: unrecognized arguments: --bogus-flag\n"
+        },
+        {
+          "argv": [
+            "--list-tracks"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "f51ab3251857ee9cd5191b3d3843f5904a80a8b32fbdd271f903f559489c388d"
+        },
+        {
+          "argv": [
+            "--dump-track",
+            "flat"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": "",
+          "stdout_sha256": "87b2a2735348c34e0d9037439244ca11e61fe2199d52acdf2b362e703b9213f2"
+        }
+      ],
+      "defaults": {
+        "actuator_delay": 0.005,
+        "assist": "tour",
+        "assist_gain": null,
+        "async_telemetry": false,
+        "backend": "python",
+        "check_policy": null,
+        "control_period": 0.01,
+        "crank_phase": 0.0,
+        "decimate": 1,
+        "demand": null,
+        "drive": "ideal_speed_control",
+        "drive_mode": "motor",
+        "dump_track": null,
+        "duration": null,
+        "gearing": null,
+        "headless": false,
+        "html": null,
+        "human_torque": null,
+        "initial_speed": null,
+        "legs": null,
+        "length": null,
+        "list_tracks": false,
+        "no_plots": false,
+        "no_rider": false,
+        "out": "output/ride",
+        "physics": "legacy",
+        "physics_config": null,
+        "policy": null,
+        "preview": false,
+        "record": false,
+        "research": false,
+        "resolved_check_policy": null,
+        "resolved_physics": {
+          "articulated": {
+            "activation_tau_s": 0.0,
+            "active_positive_power_limit_w": null,
+            "arm_reach_fraction": 0.92,
+            "balance_dwell_s": 0.5,
+            "balance_floor_kmh": 4.0,
+            "balance_grace_s": 3.0,
+            "bar_support_fraction": 0.12,
+            "coasting_brake_d_nm_s_rad": 2.0,
+            "coasting_brake_limit_nm": 60.0,
+            "coupled_task_control": false,
+            "foot_mu": 0.9,
+            "grip_attachment": "spring",
+            "grip_c_ns_m": 150.0,
+            "grip_capture_distance_m": 0.02,
+            "grip_capture_speed_mps": 0.2,
+            "grip_k_n_m": 4000.0,
+            "grip_pair_force_limit_n": null,
+            "grip_pull_per_hand_n": 300.0,
+            "grip_release_distance_m": 0.12,
+            "joint_envelope_path": null,
+            "joint_envelope_soft_k_nm_rad": 100.0,
+            "joint_envelope_soft_margin_rad": 0.1,
+            "joint_kd_nms_rad": 15.0,
+            "joint_kp_nm_rad": 600.0,
+            "joint_limit_nm": 100.0,
+            "joint_passive_damping_nms_rad": null,
+            "joint_power_limit_w": 250.0,
+            "joint_speed_limit_rad_s": 20.0,
+            "joint_strength_path": null,
+            "link_max_gap_m": 0.005,
+            "pedal_ankle_amplitude_rad": 0.1,
+            "pedal_attachment": "flat",
+            "pedal_c_ns_m": 100.0,
+            "pedal_min_normal_n": 20.0,
+            "pedal_patch_half_length_m": 0.025,
+            "pedal_scrape_fraction": 0.5,
+            "pedal_support_fraction": 0.33,
+            "pedal_torque_ripple": 0.35,
+            "posture_pitch_d_nms_rad": 60.0,
+            "posture_pitch_k_nm_rad": 600.0,
+            "posture_pitch_limit_nm": 60.0,
+            "posture_sole_depth_m": 0.003,
+            "posture_translation_d_ns_m": 150.0,
+            "posture_translation_k_n_m": 1500.0,
+            "posture_translation_limit_n": 400.0,
+            "return_foot_preload_n": 0.0,
+            "road_lookahead_m": 0.0,
+            "saddle_attachment": "flat",
+            "saddle_mu": 0.6,
+            "saddle_patch_half_length_m": 0.045,
+            "saddle_reserve_weight_fraction": 0.15,
+            "stance_blend_load_n": 50.0,
+            "support_c_ns_m": 500.0,
+            "support_k_n_m": 100000.0,
+            "support_length_m": 0.1,
+            "support_mu": 0.8,
+            "support_pad_radius_m": 0.02,
+            "support_tangent_k_n_m": 20000.0,
+            "swing_clearance_m": 0.003
+          },
+          "closure_time_constant_s": 0.001,
+          "control_period_s": 0.005,
+          "drive": {
+            "assist": {
+              "cutoff_mps": 6.944444444444445,
+              "engage_torque_nm": 4.0,
+              "gain": 2.0,
+              "gate_min_crank_rad_s": 0.08726646259971647,
+              "max_power": 500.0,
+              "max_torque": 80.0,
+              "mode": "turbo",
+              "profile": null,
+              "slew": 400.0,
+              "taper_width_mps": 0.5555555555555556,
+              "tau": 0.05,
+              "torque_curve": null
+            },
+            "battery": {
+              "copper_w_per_nm2": 0.02,
+              "enabled": true,
+              "energy_j": 1800000.0,
+              "idle_w": 5.0,
+              "speed_w_per_rad_s2": 0.0
+            },
+            "bearing_c_nms_rad": 0.03,
+            "brake_ceiling_nm": 200.0,
+            "chain_c_ns_m": 10.0,
+            "chain_k_n_m": 200000.0,
+            "crank_phase_rad": 0.0,
+            "freehub_c_nms_rad": 0.5,
+            "freehub_k_nm_rad": 1000.0,
+            "gearing": {
+              "chain_pitch_m": 0.0127,
+              "front_teeth": 34,
+              "rear_teeth": 24
+            },
+            "human_torque_nm": 0.0,
+            "motor_clutch": false,
+            "pedaling": {
+              "coast_above_rpm": 110.0,
+              "coast_cadence_tau_s": 0.0,
+              "effort_slew_nm_s": 300.0,
+              "enabled": false,
+              "mash_cadence_rpm": 45.0,
+              "mash_torque_nm": 60.0,
+              "resume_below_rpm": 90.0,
+              "rollback_brake": true,
+              "rollback_demand": 1.0,
+              "rollback_engage_mps": 0.25,
+              "rollback_release_mps": 0.0,
+              "stop_time_s": 0.35
+            },
+            "rotor_inertia_kgm2": 0.0,
+            "shifting": {
+              "cadence_smoothing_tau_s": 0.35,
+              "cassette": [
+                10,
+                12,
+                14,
+                16,
+                18,
+                21,
+                24,
+                28,
+                33,
+                39,
+                45,
+                51
+              ],
+              "enabled": false,
+              "shift_cooldown_s": 0.4,
+              "shift_cut_duration_s": 0.2,
+              "target_cadence_max_rpm": 85.0,
+              "target_cadence_min_rpm": 65.0,
+              "torque_factor": 0.3,
+              "upshift_slip_limit_mps": 0.5,
+              "upshift_slip_mode": "legacy_signed"
+            },
+            "torque_ripple": 0.35,
+            "transmission_model": "elastic_chain"
+          },
+          "drive_mode": "ideal_speed_control",
+          "end_stops": {
+            "damping_n_s_m": 500.0,
+            "overtravel_m": 0.01,
+            "provenance": "synthetic",
+            "reference_deflection_m": 0.01,
+            "reference_force_n": 7000.0
+          },
+          "equilibrium_cache_enabled": false,
+          "equilibrium_refine_after_s": 1.0,
+          "equilibrium_refine_period_s": 3.0,
+          "equilibrium_state_file": null,
+          "initial_front_brake": 0.0,
+          "initial_rear_brake": 0.0,
+          "initial_speed_mps": 0.0,
+          "physics_mode": "legacy",
+          "pitch_assist": true,
+          "resistance": {
+            "cda_m2": 0.5,
+            "crr": 0.015,
+            "point_body_m": [
+              0.0,
+              0.0,
+              0.5
+            ],
+            "rho_kg_m3": 1.2,
+            "rolling_taper_rad_s": 0.2,
+            "wind_world_mps": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "seated_climb": {
+            "enabled": false,
+            "front_load_share_target": 0.3,
+            "lean_gain": 1.0,
+            "lean_rate_rad_s": 0.5,
+            "lean_trim_gain_rad_s": 0.3,
+            "lean_trim_limit_rad": 0.15,
+            "max_backward_lean_rad": 0.1,
+            "max_crank_torque_nm": 60.0,
+            "max_forward_lean_rad": 0.35,
+            "orientation_tau_s": 0.5,
+            "period_s": 0.01,
+            "reaction_delay_s": 0.15,
+            "surge_budget_s": 15.0,
+            "surge_grade": 0.2,
+            "surge_power_w": 400.0,
+            "surge_recovery_rate": 0.3333333333333333,
+            "target_crank_power_w": 225.0,
+            "torque_slew_nm_s": 300.0,
+            "trim_dead_time_s": 0.2
+          },
+          "timestep_s": 0.0005,
+          "tires": {
+            "backend": "native_reference",
+            "distinct_normal_deg": 20.0,
+            "distributed": {
+              "calibration_status": "experimental_unvalidated",
+              "density": {
+                "damping_ns_m": 2000.0,
+                "knots_m": [
+                  0.0,
+                  0.004,
+                  0.012
+                ],
+                "provenance": "synthetic density; not fitted or measured",
+                "stiffness_n_m": [
+                  300000.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "fitting_dataset_id": "none-synthetic",
+              "front_material": null,
+              "rear_material": null,
+              "station_count": 128,
+              "valid_deflection_range_m": [
+                0.0,
+                0.04
+              ],
+              "valid_load_range_n": [
+                0.0,
+                2000.0
+              ]
+            },
+            "front": {
+              "material": {
+                "pressure_pa_gauge": 200000.0,
+                "provenance": "synthetic",
+                "radial_c_ns_m": 800.0,
+                "radial_k_n_m": 130000.0,
+                "valid_load_range_n": [
+                  0.0,
+                  2000.0
+                ]
+              },
+              "mu": 0.8,
+              "relaxation_length_m": 0.2,
+              "tangent_k_n_m": 20000.0
+            },
+            "pneumatic": {
+              "front": {
+                "area_factor": 0.4435,
+                "carcass_stiffness_n_mm2": 0.1194,
+                "casing_width_mm": 60.0,
+                "compressed_casing_mm": 6.0,
+                "contact_length_factor": 0.8589,
+                "crr_reference": 0.011,
+                "hysteresis_rate_eps_mps": 0.01,
+                "loss_factor": 0.0662,
+                "name": "Schwalbe Magic Mary 29x2.4",
+                "outer_radius_mm": 372.0,
+                "pressure_bar": 1.5,
+                "rate_relaxation_s": 0.2,
+                "rate_stiffening": 0.2484,
+                "relaxation_length_mm": 60.0,
+                "rim_radius_mm": 320.0,
+                "rim_stiffness_n_mm2": 28.0,
+                "section_height_mm": 57.0,
+                "tread_loss_crr": 0.00586
+              },
+              "rear": {
+                "area_factor": 0.4576,
+                "carcass_stiffness_n_mm2": 0.1225,
+                "casing_width_mm": 60.0,
+                "compressed_casing_mm": 6.0,
+                "contact_length_factor": 0.8801,
+                "crr_reference": 0.0103,
+                "hysteresis_rate_eps_mps": 0.01,
+                "loss_factor": 0.069,
+                "name": "Schwalbe Hans Dampf 27.5x2.4",
+                "outer_radius_mm": 352.0,
+                "pressure_bar": 1.7,
+                "rate_relaxation_s": 0.2,
+                "rate_stiffening": 0.2498,
+                "relaxation_length_mm": 60.0,
+                "rim_radius_mm": 300.0,
+                "rim_stiffness_n_mm2": 28.0,
+                "section_height_mm": 55.0,
+                "tread_loss_crr": 0.00481
+              },
+              "surface": null,
+              "tier": "fast"
+            },
+            "rear": {
+              "material": {
+                "pressure_pa_gauge": 200000.0,
+                "provenance": "synthetic",
+                "radial_c_ns_m": 800.0,
+                "radial_k_n_m": 130000.0,
+                "valid_load_range_n": [
+                  0.0,
+                  2000.0
+                ]
+              },
+              "mu": 0.8,
+              "relaxation_length_m": 0.2,
+              "tangent_k_n_m": 20000.0
+            },
+            "significance_fraction": 0.05,
+            "significant_delta_m": 0.0001,
+            "surface_mode": "configured"
+          }
+        },
+        "rider": null,
+        "rider_height": 1.8,
+        "rider_inseam": null,
+        "rider_mass": 80.0,
+        "rider_program": null,
+        "ripple_depth": null,
+        "road_resolution": 0.005,
+        "sag": null,
+        "seed": null,
+        "sensor_delay": 0.01,
+        "sensor_period": 0.005,
+        "speed": 25.0,
+        "surface": null,
+        "time_scale": 1,
+        "timestep": null,
+        "track": "road_worn",
+        "tyre_model": "sphere",
+        "tyre_pressure": [
+          1.5,
+          1.7
+        ],
+        "tyre_tier": "fast",
+        "visual_pedalling": false
+      },
+      "help": {
+        "exit": 0,
+        "path": "cli/bike-ride.help.txt",
+        "sha256": "81831509df0c3cd9e802bc5330ce37fa592e9a35aab5b6b6086d8ff93b620a2d"
+      },
+      "module": "bike_sim.cli.ride"
+    },
+    "bike-settle": {
+      "cases": [
+        {
+          "argv": [
+            "--physics-config",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/viewer_physics_welded.toml",
+            "--track",
+            "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/tracks/flat.toml",
+            "--out",
+            "/tmp/settle_pose.npz"
+          ],
+          "namespace": {
+            "assist": "None",
+            "assist_gain": "None",
+            "crank_phase": "None",
+            "drive": "None",
+            "human_torque": "None",
+            "initial_speed": "None",
+            "length": "None",
+            "max_steps": "400000",
+            "no_rider": "False",
+            "out": "'/tmp/settle_pose.npz'",
+            "physics": "None",
+            "physics_config": "'/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/viewer_physics_welded.toml'",
+            "ride_args": "Namespace(track='/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/tracks/flat.toml', seed=None, length=None, speed=None, headless=False, sag=None, out='output/ride', decimate=1, rider='articulated_planar', rider_mass=80.0, rider_height=1.8, rider_inseam=None, no_rider=False, legs=None, preview=False, dump_track=None, list_tracks=False, no_plots=False, html=None, tyre_model='sphere', tyre_tier='fast', tyre_pressure=(1.5, 1.7), drive_mode='motor', assist=None, gearing=None, ripple_depth=None, crank_phase=0.0, visual_pedalling=False, surface=None, physics='physical', backend='python', time_scale=1, record=False, check_policy=None, drive='articulated_effort', physics_config='/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/viewer_physics_welded.toml', initial_speed=None, human_torque=None, assist_gain=None, timestep=None, duration=None, research=False, async_telemetry=False, policy=None, control_period=0.01, sensor_period=0.005, sensor_delay=0.01, actuator_delay=0.005, road_resolution=0.005, demand=None, rider_program=None, resolved_physics=SimulationPhysicsConfig(physics_mode='physical', drive_mode='articulated_effort', timestep_s=0.00125, control_period_s=0.005, pitch_assist=False, end_stops=EndStopConfig(reference_force_n=7000.0, reference_deflection_m=0.01, damping_n_s_m=500.0, overtravel_m=0.01, provenance='synthetic'), tires=TireBackendConfig(backend='compliant_2d', front=TireParameters(material=TireSpec(radial_k_n_m=130000.0, radial_c_ns_m=800.0, pressure_pa_gauge=200000.0, provenance='synthetic', valid_load_range_n=(0.0, 2000.0)), tangent_k_n_m=20000.0, mu=1.1, relaxation_length_m=0.2), rear=TireParameters(material=TireSpec(radial_k_n_m=130000.0, radial_c_ns_m=800.0, pressure_pa_gauge=200000.0, provenance='synthetic', valid_load_range_n=(0.0, 2000.0)), tangent_k_n_m=20000.0, mu=1.1, relaxation_length_m=0.2), significant_delta_m=0.0001, significance_fraction=0.05, distinct_normal_deg=20.0, surface_mode='track', distributed=DistributedTireConfig(station_count=128, density=HingeDensity(knots_m=(0.0, 0.004, 0.012), stiffness_n_m=(300000.0, 0.0, 0.0), damping_ns_m=2000.0, provenance='synthetic density; not fitted or measured'), fitting_dataset_id='none-synthetic', valid_load_range_n=(0.0, 2000.0), valid_deflection_range_m=(0.0, 0.04), calibration_status='experimental_unvalidated', front_material=None, rear_material=None), pneumatic=PneumaticTireConfig(tier='fast', front=TyreSpecs(name='Schwalbe Magic Mary 29x2.4', outer_radius_mm=372.0, rim_radius_mm=320.0, section_height_mm=57.0, pressure_bar=1.5, crr_reference=0.011, casing_width_mm=60.0, compressed_casing_mm=6.0, area_factor=0.4435, carcass_stiffness_n_mm2=0.1194, contact_length_factor=0.8589, rate_stiffening=0.2484, rate_relaxation_s=0.2, loss_factor=0.0662, hysteresis_rate_eps_mps=0.01, relaxation_length_mm=60.0, rim_stiffness_n_mm2=28.0, tread_loss_crr=0.00586), rear=TyreSpecs(name='Schwalbe Hans Dampf 27.5x2.4', outer_radius_mm=352.0, rim_radius_mm=300.0, section_height_mm=55.0, pressure_bar=1.7, crr_reference=0.0103, casing_width_mm=60.0, compressed_casing_mm=6.0, area_factor=0.4576, carcass_stiffness_n_mm2=0.1225, contact_length_factor=0.8801, rate_stiffening=0.2498, rate_relaxation_s=0.2, loss_factor=0.069, hysteresis_rate_eps_mps=0.01, relaxation_length_mm=60.0, rim_stiffness_n_mm2=28.0, tread_loss_crr=0.00481), surface=None)), drive=PhysicalDriveConfig(gearing=DrivetrainSpecs(front_teeth=22, rear_teeth=51, chain_pitch_m=0.0127), transmission_model='ideal_mid_drive', human_torque_nm=0.0, torque_ripple=0.35, crank_phase_rad=0.0, chain_k_n_m=200000.0, chain_c_ns_m=10.0, freehub_k_nm_rad=1000.0, freehub_c_nms_rad=0.5, bearing_c_nms_rad=0.03, brake_ceiling_nm=200.0, motor_clutch=False, rotor_inertia_kgm2=0.0, assist=AssistConfig(profile='bosch_cx_gen4', mode='turbo', gain=2.0, max_torque=80.0, max_power=500.0, tau=0.05, slew=400.0, engage_torque_nm=4.0, gate_min_crank_rad_s=0.08726646259971647, cutoff_mps=6.944444444444445, taper_width_mps=0.5555555555555556, torque_curve=((0.0, 85.0), (120.0, 85.0), (120.1, 47.7), (180.0, 0.0))), battery=BatteryConfig(enabled=False, energy_j=1800000.0, copper_w_per_nm2=0.02, speed_w_per_rad_s2=0.0, idle_w=5.0), pedaling=PedalingConfig(enabled=True, coast_above_rpm=120.0, resume_below_rpm=105.0, stop_time_s=0.35, coast_cadence_tau_s=0.35, mash_cadence_rpm=45.0, mash_torque_nm=60.0, effort_slew_nm_s=300.0, rollback_brake=True, rollback_engage_mps=0.25, rollback_release_mps=0.0, rollback_demand=1.0), shifting=ShiftingConfig(enabled=True, cassette=(10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51), target_cadence_min_rpm=75.0, target_cadence_max_rpm=110.0, shift_cooldown_s=0.4, shift_cut_duration_s=0.2, torque_factor=0.3, cadence_smoothing_tau_s=0.35, upshift_slip_limit_mps=0.5, upshift_slip_mode='legacy_signed')), resistance=ResistanceConfig(crr=0.015, rolling_taper_rad_s=0.2, rho_kg_m3=1.2, cda_m2=0.5, wind_world_mps=(0.0, 0.0, 0.0), point_body_m=(0.0, 0.0, 0.5)), articulated=ArticulatedConfig(pedal_support_fraction=0.33, bar_support_fraction=0.12, posture_sole_depth_m=0.003, swing_clearance_m=0.003, coasting_brake_d_nm_s_rad=2.0, coasting_brake_limit_nm=60.0, stance_blend_load_n=50.0, posture_pitch_k_nm_rad=600.0, posture_pitch_d_nms_rad=60.0, posture_pitch_limit_nm=60.0, posture_translation_k_n_m=1500.0, posture_translation_d_ns_m=150.0, posture_translation_limit_n=400.0, saddle_patch_half_length_m=0.045, pedal_patch_half_length_m=0.025, support_pad_radius_m=0.02, support_k_n_m=100000.0, support_c_ns_m=500.0, pedal_c_ns_m=100.0, support_tangent_k_n_m=20000.0, support_mu=0.8, support_length_m=0.1, grip_k_n_m=4000.0, grip_c_ns_m=150.0, grip_release_distance_m=0.12, grip_pair_force_limit_n=None, grip_capture_distance_m=0.02, grip_capture_speed_mps=0.2, arm_reach_fraction=0.92, joint_kp_nm_rad=600.0, joint_kd_nms_rad=15.0, joint_passive_damping_nms_rad=0.0, coupled_task_control=False, joint_limit_nm=100.0, joint_speed_limit_rad_s=20.0, joint_power_limit_w=250.0, joint_envelope_path='/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/rider_joint_envelope_anatomical.json', joint_envelope_soft_margin_rad=0.1, joint_envelope_soft_k_nm_rad=100.0, activation_tau_s=0.0, active_positive_power_limit_w=450.0, foot_mu=0.9, saddle_mu=0.6, pedal_min_normal_n=20.0, saddle_reserve_weight_fraction=0.15, grip_pull_per_hand_n=300.0, pedal_ankle_amplitude_rad=0.1, pedal_scrape_fraction=0.5, pedal_torque_ripple=0.5, return_foot_preload_n=40.0, link_max_gap_m=0.005, road_lookahead_m=2.0, joint_strength_path='/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/rider_strength_reference.json', pedal_attachment='spindle', saddle_attachment='pin', grip_attachment='connect', balance_floor_kmh=4.0, balance_dwell_s=0.5, balance_grace_s=3.0), seated_climb=SeatedClimbConfig(enabled=True, period_s=0.01, reaction_delay_s=0.15, target_crank_power_w=250.0, max_crank_torque_nm=60.0, torque_slew_nm_s=300.0, lean_gain=1.0, max_forward_lean_rad=0.35, max_backward_lean_rad=0.1, lean_rate_rad_s=0.5, orientation_tau_s=0.5, surge_power_w=400.0, surge_grade=0.2, surge_budget_s=15.0, surge_recovery_rate=0.3333333333333333, front_load_share_target=0.3, lean_trim_gain_rad_s=0.3, lean_trim_limit_rad=0.15, trim_dead_time_s=0.2), initial_speed_mps=0.0, initial_front_brake=1.0, initial_rear_brake=1.0, closure_time_constant_s=0.0025, equilibrium_refine_after_s=1.0, equilibrium_refine_period_s=3.0, equilibrium_cache_enabled=True, equilibrium_state_file=None), resolved_check_policy='diagnostic')",
+            "rider": "None",
+            "rider_height": "None",
+            "rider_inseam": "None",
+            "rider_mass": "None",
+            "seed": "None",
+            "speed": "None",
+            "timestep": "None",
+            "tolerance": "0.05",
+            "track": "'/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/tracks/flat.toml'"
+          },
+          "result": "ok",
+          "via": "parse_args"
+        },
+        {
+          "argv": [
+            "--help"
+          ],
+          "exit": 0,
+          "result": "subprocess"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 2,
+          "result": "subprocess",
+          "stderr_tail": "crank_effort,articulated_effort}]\n                   [--timestep S] [--initial-speed KMH] [--human-torque NM]\n                   [--assist-gain ASSIST_GAIN]\n                   [--assist {off,eco,tour,sport,turbo,emtb}]\n                   [--crank-phase DEG] [--max-steps MAX_STEPS]\n                   [--tolerance TOLERANCE] --out PATH\nbike-settle: error: the following arguments are required: --out\n"
+        }
+      ],
+      "defaults_error": "SystemExit(2)",
+      "help": {
+        "exit": 0,
+        "path": "cli/bike-settle.help.txt",
+        "sha256": "085db8e6b321ceec709c2fb4f9c528269ff5bc61d15117add785f40d0bcac3cd"
+      },
+      "module": "bike_sim.cli.settle"
+    },
+    "bike-sim": {
+      "cases": [
+        {
+          "argv": [
+            "--help"
+          ],
+          "exit": 0,
+          "result": "subprocess"
+        },
+        {
+          "argv": [
+            "--bogus-flag"
+          ],
+          "cwd": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+          "exit": 0,
+          "result": "subprocess",
+          "stderr_tail": ""
+        }
+      ],
+      "defaults": {
+        "all": false,
+        "export_json": false,
+        "export_mujoco": false,
+        "output_models_dir": "output/models",
+        "output_plots_dir": "output/plots",
+        "playground": false,
+        "plot": true,
+        "plot_damper": false,
+        "print_table": true
+      },
+      "help": {
+        "exit": 0,
+        "path": "cli/bike-sim.help.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "module": "bike_sim.cli.main"
+    }
+  },
+  "schema": "migration-cli-contracts/v1"
+}

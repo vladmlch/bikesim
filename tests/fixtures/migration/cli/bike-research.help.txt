@@ -1,0 +1,142 @@
+usage: capture_reference.py [-h] [--backend {python,native}]
+                            [--physics-config PHYSICS_CONFIG]
+                            [--road-resolution ROAD_RESOLUTION]
+                            [--sensor-period SENSOR_PERIOD]
+                            [--rider-program RIDER_PROGRAM] [--policy POLICY]
+                            [--record] [--check-policy {strict,diagnostic}]
+                            [--diagnostic-model-limits]
+                            [--scenario {flat,uphill,rough_uphill,crest,low_grip,step_up,generated,alpine}]
+                            [--gen-spec GEN_SPEC] [--track-file TRACK_FILE]
+                            [--seed SEED]
+                            [--rider {lumped,articulated_planar}]
+                            [--rider-mass RIDER_MASS]
+                            [--rider-height RIDER_HEIGHT] [--rider-random]
+                            [--rider-seed RIDER_SEED]
+                            [--posture {neutral,forward,crouched,standing}]
+                            [--duration DURATION] [--dt DT]
+                            [--control-period CONTROL_PERIOD]
+                            [--actuator-delay ACTUATOR_DELAY]
+                            [--sensor-delay SENSOR_DELAY] [--ideal-sensors]
+                            [--initial-brake-demand INITIAL_BRAKE_DEMAND]
+                            [--initial-speed INITIAL_SPEED]
+                            [--human-torque HUMAN_TORQUE]
+                            [--motor-torque MOTOR_TORQUE] [--demand DEMAND]
+                            [--demand-file DEMAND_FILE] [--assist]
+                            [--motor-limit MOTOR_LIMIT]
+                            [--motor-max-torque MOTOR_MAX_TORQUE]
+                            [--motor-max-power MOTOR_MAX_POWER]
+                            [--transmission {elastic_chain,ideal_mid_drive,geometric_ideal_mid_drive}]
+                            [--chain-stiffness CHAIN_STIFFNESS]
+                            [--freehub-stiffness FREEHUB_STIFFNESS]
+                            [--front-teeth FRONT_TEETH]
+                            [--rear-teeth REAR_TEETH] [--fast-telemetry]
+                            [--record-decimation RECORD_DECIMATION]
+                            [--energy-tolerance ENERGY_TOLERANCE] [--out OUT]
+                            [--overwrite]
+
+Headless torque-control experiments; all dependencies are in the offline
+bundle.
+
+options:
+  -h, --help            show this help message and exit
+  --backend {python,native}
+                        headless research backend; no automatic fallback
+  --physics-config PHYSICS_CONFIG
+  --road-resolution ROAD_RESOLUTION
+                        compiled road spacing, m
+  --sensor-period SENSOR_PERIOD
+                        acquisition period, s
+  --rider-program RIDER_PROGRAM
+  --policy POLICY       motor policy factory, module:factory
+  --record              retain every accounted interval in RAM and publish one
+                        run at launch end
+  --check-policy {strict,diagnostic}
+                        model-check policy, independent of recording (default:
+                        strict)
+  --diagnostic-model-limits
+                        continue out-of-scope diagnostic runs; validity
+                        remains false
+  --scenario {flat,uphill,rough_uphill,crest,low_grip,step_up,generated,alpine}
+                        'generated' draws a seeded procedural rough climb,
+                        'alpine' a seeded alpine scree climb (see --gen-spec);
+                        the seed is --seed
+  --gen-spec GEN_SPEC   TOML of generator ranges: TerrainGenSpec for
+                        --scenario generated, AlpineGenSpec for --scenario
+                        alpine
+  --track-file TRACK_FILE
+                        TOML overrides --scenario; preserves its authored
+                        seed/geometry
+  --seed SEED
+  --rider {lumped,articulated_planar}
+  --rider-mass RIDER_MASS
+                        kg
+  --rider-height RIDER_HEIGHT
+                        m
+  --rider-random        sample rider mass/height/posture/effort from --rider-
+                        seed (articulated rider; replaces --rider-
+                        mass/-height)
+  --rider-seed RIDER_SEED
+                        default: --seed
+  --posture {neutral,forward,crouched,standing}
+  --duration DURATION   simulation seconds (10-30 s episodes are supported;
+                        see --record-decimation)
+  --dt DT               physics timestep, seconds (default: 0.0005 for the
+                        ideal transmissions, validated by
+                        tools/validate_antiwheelie.py; 0.000125 for
+                        elastic_chain, whose low gears oscillate at 0.5 ms)
+  --control-period CONTROL_PERIOD
+                        seconds, integer multiple of --dt
+  --actuator-delay ACTUATOR_DELAY
+                        seconds, integer multiple of --dt
+  --sensor-delay SENSOR_DELAY
+                        seconds
+  --ideal-sensors       zero noise and zero sensor latency
+  --initial-brake-demand INITIAL_BRAKE_DEMAND
+                        both brakes during static initialization only;
+                        released at t=0
+  --initial-speed INITIAL_SPEED
+                        m/s (unlike legacy bike-ride km/h)
+  --human-torque HUMAN_TORQUE
+                        mean crank torque, N*m
+  --motor-torque MOTOR_TORQUE
+                        external crank-side assist ceiling, N*m; forward
+                        cranks and rider torque are required
+  --demand DEMAND       constant assist ceiling, N*m: advisory echo as
+                        env.demand_nm; the CLI loop passes it to the motor
+                        controller
+  --demand-file DEMAND_FILE
+                        DemandProgram TOML ([[keyframes]] time_s/torque_nm)
+  --assist              use configured pedelec support without an external
+                        motor ceiling
+  --motor-limit MOTOR_LIMIT
+                        immediate crank-side safety ceiling, N*m
+  --motor-max-torque MOTOR_MAX_TORQUE
+                        synthetic motor envelope, N*m
+  --motor-max-power MOTOR_MAX_POWER
+                        synthetic shaft power envelope, W
+  --transmission {elastic_chain,ideal_mid_drive,geometric_ideal_mid_drive}
+                        ideal_mid_drive: one-way tendon, cheap, omits chain-
+                        growth/suspension coupling; geometric_ideal_mid_drive:
+                        experimental, tendon linearized from the chain
+                        geometry; elastic_chain: frozen reference for A/B
+                        comparison
+  --chain-stiffness CHAIN_STIFFNESS
+                        override chain spring rate, N/m
+  --freehub-stiffness FREEHUB_STIFFNESS
+                        override freehub spring rate, N*m/rad
+  --front-teeth FRONT_TEETH
+  --rear-teeth REAR_TEETH
+  --fast-telemetry      evaluate period telemetry in a spawned worker process;
+                        samples and model_status surface one step later, and
+                        channels snapshotted from rider effort diagnostics in
+                        that window can differ from a synchronous run --
+                        episodes are not guaranteed bitwise-identical to
+                        --serial runs
+  --record-decimation RECORD_DECIMATION
+                        expensive-measurement cadence; --record still retains
+                        every accounted physics interval
+  --energy-tolerance ENERGY_TOLERANCE
+                        maximum normalized numerical energy residual
+  --out OUT
+  --overwrite           legacy compatibility flag; new recordings always use
+                        exclusive unique directories

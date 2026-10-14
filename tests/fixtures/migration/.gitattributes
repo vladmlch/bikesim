@@ -1,0 +1,4 @@
+# Frozen oracle evidence: byte-exact payloads. Mark every file binary so git
+# never applies text normalization (CRLF/LF) or merges — recorded sha256
+# values in migration/oracle-manifest.json must survive checkout.
+* binary

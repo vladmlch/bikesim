@@ -1,0 +1,1 @@
+<mujoco><option timestep="0.001"/><worldbody><body name="load" pos="0 0 0.5"><joint name="slide" type="slide" axis="0 0 1"/><geom type="sphere" size="0.05" mass="1.0"/></body></worldbody></mujoco>

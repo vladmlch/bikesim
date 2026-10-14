@@ -1,0 +1,87 @@
+{
+  "description": "Braking bumps, square edges, rock gardens, pothole, G-out, drop and kicker.",
+  "length_m": 115.0,
+  "name": "enduro_aggressive",
+  "obstacles": [
+    {
+      "amplitude_m": 0.035,
+      "n_waves": 9,
+      "start_m": 12.0,
+      "type": "washboard",
+      "wavelength_m": 0.9
+    },
+    {
+      "height_m": 0.09,
+      "ledge_length_m": 0.25,
+      "start_m": 22.0,
+      "type": "square_edge"
+    },
+    {
+      "amplitude_m": 0.06,
+      "correlation_length_m": 0.25,
+      "section_length_m": 8.0,
+      "seed": 1701,
+      "start_m": 26.0,
+      "type": "rock_garden"
+    },
+    {
+      "depth_m": 0.18,
+      "edge": "sharp",
+      "hole_length_m": 0.6,
+      "start_m": 38.0,
+      "type": "pothole"
+    },
+    {
+      "depth_m": 0.35,
+      "dip_length_m": 5.0,
+      "start_m": 42.0,
+      "type": "g_out"
+    },
+    {
+      "height_m": 0.6,
+      "ramp_m": 0.0,
+      "start_m": 52.0,
+      "type": "drop"
+    },
+    {
+      "gap_m": 2.5,
+      "height_m": 0.35,
+      "landing_angle_deg": 20.0,
+      "landing_m": 5.0,
+      "ramp_m": 1.4,
+      "start_m": 57.0,
+      "type": "kicker"
+    },
+    {
+      "height_m": 0.08,
+      "jitter": 0.35,
+      "n_bumps": 7,
+      "section_length_m": 7.0,
+      "seed": 2029,
+      "start_m": 69.0,
+      "type": "roots",
+      "width_m": 0.25
+    },
+    {
+      "height_m": 0.07,
+      "ledge_length_m": 0.25,
+      "start_m": 80.0,
+      "type": "square_edge"
+    },
+    {
+      "height_m": 0.09,
+      "ledge_length_m": 0.25,
+      "start_m": 80.8,
+      "type": "square_edge"
+    },
+    {
+      "amplitude_m": 0.09,
+      "correlation_length_m": 0.2,
+      "section_length_m": 11.0,
+      "seed": 3301,
+      "start_m": 84.0,
+      "type": "rock_garden"
+    }
+  ],
+  "surface": "hardpack"
+}

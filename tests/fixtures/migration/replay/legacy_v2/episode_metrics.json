@@ -1,0 +1,55 @@
+{
+  "balance_lost": false,
+  "balance_lost_at_m": null,
+  "demand_integral_nms": null,
+  "duration_s": 0.040000000000000015,
+  "endo": false,
+  "finish_time_s": null,
+  "loop_out": false,
+  "max_energy_residual_ratio": 8.80950658124589e-05,
+  "max_fork_travel_m": 0.06088387071706992,
+  "max_shock_stroke_m": 0.014460397617227252,
+  "mean_speed_mps": 0.005999103861897834,
+  "model_status": {
+    "calibration_status": "parameterized_unvalidated",
+    "first_model_violation": {
+      "interval_id": 3,
+      "reasons": [
+        "energy.constraint_work"
+      ],
+      "time_s": 0.00375
+    },
+    "model_valid": false,
+    "model_violation_counts": {
+      "energy.constraint_work": 8
+    },
+    "numerically_valid": true
+  },
+  "motor_pass_fraction": 0.0,
+  "numerically_valid": true,
+  "operator_intervention": false,
+  "outcome": null,
+  "progress_m": 0.00023996415447591346,
+  "torque_delivered_nms": 0.0,
+  "torque_requested_nms": 0.35000000000000014,
+  "wheelie": {
+    "contact_state_time_s": {
+      "two_wheels": 0.040000000000000015
+    },
+    "duration_s": 0.040000000000000015,
+    "flight_time_s": 0.0,
+    "front_lift_time_s": 0.0,
+    "front_load_fraction_mean": 0.4155201232792201,
+    "front_load_fraction_min": 0.41086282388180145,
+    "front_unloaded_time_s": 0.0,
+    "max_front_clearance_m": 0.0,
+    "max_pitch_rate_up_rad_s": 0.015605905297027127,
+    "max_relative_pitch_rad": 0.0010947843941671968,
+    "min_front_load_n": 420.08414413186443,
+    "rear_slip_distance_m": 0.0003821883095421345,
+    "wheelie_candidate_time_s": 0.0,
+    "wheelie_episode_records": [],
+    "wheelie_episodes": 0,
+    "wheelie_time_s": 0.0
+  }
+}

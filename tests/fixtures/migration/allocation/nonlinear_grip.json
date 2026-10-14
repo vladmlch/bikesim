@@ -1,0 +1,84 @@
+{
+  "extra": "(<scipy.optimize._constraints.LinearConstraint object at 0x10cbcf770>, <scipy.optimize._constraints.NonlinearConstraint object at 0x11dda1d30>)",
+  "problem": {
+    "aeq": {
+      "$array": "allocation/nonlinear_grip.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0,
+        2
+      ]
+    },
+    "beq": {
+      "$array": "allocation/nonlinear_grip.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0
+      ]
+    },
+    "g": {
+      "$array": "allocation/nonlinear_grip.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0,
+        2
+      ]
+    },
+    "h": {
+      "$array": "allocation/nonlinear_grip.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shape": [
+        0
+      ]
+    },
+    "lower": {
+      "$array": "allocation/nonlinear_grip.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2913412aeca7f7267cb18514c55574d0994f6c76f201c2a806a2da43de209ff2",
+      "shape": [
+        2
+      ]
+    },
+    "target": {
+      "$array": "allocation/nonlinear_grip.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "467009c549623661484c3ef3d4e76ea665c9e60275f5d50287f2d665554307d1",
+      "shape": [
+        2
+      ]
+    },
+    "upper": {
+      "$array": "allocation/nonlinear_grip.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "094aea271a878f1252f203bac462c832b3130d15e56cf45d0e468cb2c056a25e",
+      "shape": [
+        2
+      ]
+    }
+  },
+  "result": {
+    "feasible": true,
+    "solution": {
+      "$array": "allocation/nonlinear_grip.arrays/a007.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "a7395f6d50be0e6d778d4bd9502ed4620c69a79e42bd3597f00fd5a4163b4a0c",
+      "shape": [
+        2
+      ]
+    },
+    "violation": 1.0595968547022494e-12
+  },
+  "x0": null
+}

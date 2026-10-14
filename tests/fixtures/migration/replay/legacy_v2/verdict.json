@@ -1,0 +1,4 @@
+{
+  "error": "ValueError",
+  "message": "initial integration state differs (maximum absolute error 2.17355364e-07)"
+}

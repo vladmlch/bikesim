@@ -1,0 +1,30 @@
+usage: bike-replay [-h] [--episode EPISODE] [--viewer]
+                   [--time-scale {1,2,4,8}] [--view] [--speed SPEED] [--loop]
+                   [--fps FPS] [--dry-run]
+                   recording
+
+Verify a saved research episode by physically replaying every recorded input.
+With ``--view`` the recording is instead played back visually in the MuJoCo
+viewer (see ``bike_sim.sim.ride.playback_viewer``); ``--view --dry-run``
+sweeps the trajectory headlessly without opening a window.
+
+positional arguments:
+  recording
+
+options:
+  -h, --help            show this help message and exit
+  --episode EPISODE     research episode ID; required for multi-episode
+                        containers
+  --viewer              show the same checked replay in a viewer
+  --time-scale {1,2,4,8}
+                        viewer playback speed; does not change recorded
+                        physics
+  --view                play the recording in the MuJoCo viewer instead of re-
+                        verifying it
+  --speed SPEED         initial playback speed multiplier (with --view)
+  --loop                wrap at the end instead of holding the last frame
+                        (with --view)
+  --fps FPS             viewer frame rate / dry-run frame granularity (with
+                        --view)
+  --dry-run             with --view: sweep the trajectory headlessly; no
+                        window opens

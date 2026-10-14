@@ -1,0 +1,4 @@
+{"control": {"crank_target_rate_rad_s": null, "human_torque_nm": null, "motor_limit_nm": null, "motor_torque_nm": 10.0, "posture": null, "rider_enabled": true}, "front_brake_demand": 0.0, "rear_brake_demand": 0.0, "step": 0, "time_s": 0.0}
+{"control": {"crank_target_rate_rad_s": null, "human_torque_nm": null, "motor_limit_nm": null, "motor_torque_nm": 10.0, "posture": null, "rider_enabled": true}, "front_brake_demand": 0.0, "rear_brake_demand": 0.0, "step": 8, "time_s": 0.01}
+{"control": {"crank_target_rate_rad_s": null, "human_torque_nm": null, "motor_limit_nm": null, "motor_torque_nm": 10.0, "posture": null, "rider_enabled": true}, "front_brake_demand": 0.0, "rear_brake_demand": 0.0, "step": 16, "time_s": 0.02}
+{"control": {"crank_target_rate_rad_s": null, "human_torque_nm": null, "motor_limit_nm": null, "motor_torque_nm": 10.0, "posture": null, "rider_enabled": true}, "front_brake_demand": 0.0, "rear_brake_demand": 0.0, "step": 24, "time_s": 0.03000000000000001}

@@ -1,0 +1,291 @@
+{
+  "description": "Alpine scree climb; seed=0; spec_sha256=c104859547cd0c8a2ba17649e3d7da2ba21bf5f9794a42f625b55f6e8ba34864",
+  "grade_profile": {
+    "knots": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        12.0,
+        0.177
+      ],
+      [
+        36.55,
+        0.177
+      ],
+      [
+        38.55,
+        0.0207
+      ],
+      [
+        42.71,
+        0.0207
+      ],
+      [
+        44.71,
+        0.262
+      ],
+      [
+        73.4,
+        0.262
+      ],
+      [
+        75.4,
+        0.0417
+      ],
+      [
+        82.32,
+        0.0417
+      ],
+      [
+        84.32,
+        0.1503
+      ],
+      [
+        103.0,
+        0.1503
+      ],
+      [
+        105.0,
+        0.0
+      ],
+      [
+        120.0,
+        0.0
+      ]
+    ]
+  },
+  "length_m": 120.0,
+  "name": "alpine_rocky",
+  "obstacles": [
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 1.39,
+      "seed": 302913355,
+      "start_m": 10.0,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.1746,
+      "edge": "bowl",
+      "hole_length_m": 0.65,
+      "start_m": 11.39,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 2.729999,
+      "seed": 1207383687,
+      "start_m": 12.040000000000001,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0268,
+      "correlation_length_m": 0.112,
+      "section_length_m": 13.49,
+      "seed": 1441526999,
+      "start_m": 14.77,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 6.78,
+      "seed": 1635307038,
+      "start_m": 28.259999999999998,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.1186,
+      "edge": "bowl",
+      "hole_length_m": 0.92,
+      "start_m": 35.04,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 2.28,
+      "seed": 555907480,
+      "start_m": 35.96,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.45,
+      "height_m": 0.1038,
+      "shape": "cosine",
+      "start_m": 38.24,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 3.849999,
+      "seed": 585528511,
+      "start_m": 38.690000000000005,
+      "type": "roughness"
+    },
+    {
+      "height_m": 0.0417,
+      "ledge_length_m": 0.49,
+      "start_m": 42.54,
+      "type": "square_edge"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 2.79,
+      "seed": 518994644,
+      "start_m": 43.03,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0218,
+      "correlation_length_m": 0.14,
+      "section_length_m": 7.35,
+      "seed": 1224268757,
+      "start_m": 45.82,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 1.949999,
+      "seed": 450152621,
+      "start_m": 53.17,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.1691,
+      "edge": "bowl",
+      "hole_length_m": 0.99,
+      "start_m": 55.12,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 1.58,
+      "seed": 1907219571,
+      "start_m": 56.11,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0705,
+      "correlation_length_m": 0.236,
+      "section_length_m": 6.92,
+      "seed": 172656924,
+      "start_m": 57.69,
+      "type": "rock_garden"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 3.52,
+      "seed": 469485975,
+      "start_m": 64.61,
+      "type": "roughness"
+    },
+    {
+      "height_m": 0.0723,
+      "ledge_length_m": 0.38,
+      "start_m": 68.13,
+      "type": "square_edge"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 1.38,
+      "seed": 485050904,
+      "start_m": 68.50999999999999,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0617,
+      "correlation_length_m": 0.162,
+      "section_length_m": 5.69,
+      "seed": 643626384,
+      "start_m": 69.89,
+      "type": "rock_garden"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 3.71,
+      "seed": 269386936,
+      "start_m": 75.58,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.66,
+      "height_m": 0.1397,
+      "shape": "cosine",
+      "start_m": 79.29,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 1.66,
+      "seed": 267479194,
+      "start_m": 79.95,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.5,
+      "height_m": 0.1606,
+      "shape": "cosine",
+      "start_m": 81.61,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.0072,
+      "correlation_length_m": 0.297,
+      "section_length_m": 2.76,
+      "seed": 1671748610,
+      "start_m": 82.11,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0248,
+      "correlation_length_m": 0.134,
+      "section_length_m": 12.17,
+      "seed": 290117535,
+      "start_m": 84.87,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0969,
+      "correlation_length_m": 0.188,
+      "section_length_m": 6.59,
+      "seed": 1728701087,
+      "start_m": 98.16,
+      "type": "rock_garden"
+    }
+  ],
+  "surface": "hardpack",
+  "surface_sections": [
+    {
+      "end_m": 28.26,
+      "start_m": 14.77,
+      "surface": "scree"
+    },
+    {
+      "end_m": 53.17,
+      "start_m": 45.82,
+      "surface": "scree"
+    },
+    {
+      "end_m": 97.04,
+      "start_m": 84.87,
+      "surface": "scree"
+    }
+  ]
+}

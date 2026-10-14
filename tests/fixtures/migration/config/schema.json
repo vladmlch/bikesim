@@ -1,0 +1,1550 @@
+{
+  "config_class": "SimulationPhysicsConfig",
+  "fields": [
+    {
+      "default": "legacy",
+      "default_factory": null,
+      "name": "physics_mode",
+      "type": "<class 'str'>"
+    },
+    {
+      "default": null,
+      "default_factory": null,
+      "name": "drive_mode",
+      "type": "str | None"
+    },
+    {
+      "default": 0.0005,
+      "default_factory": null,
+      "name": "timestep_s",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": 0.005,
+      "default_factory": null,
+      "name": "control_period_s",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": null,
+      "default_factory": null,
+      "name": "pitch_assist",
+      "type": "bool | None"
+    },
+    {
+      "default": null,
+      "default_factory": "EndStopConfig",
+      "fields": [
+        {
+          "default": 7000.0,
+          "default_factory": null,
+          "name": "reference_force_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.01,
+          "default_factory": null,
+          "name": "reference_deflection_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 500.0,
+          "default_factory": null,
+          "name": "damping_n_s_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.01,
+          "default_factory": null,
+          "name": "overtravel_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": "synthetic",
+          "default_factory": null,
+          "name": "provenance",
+          "type": "<class 'str'>"
+        }
+      ],
+      "name": "end_stops",
+      "type": "<class 'bike_sim.physics.model_config.EndStopConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": "TireBackendConfig",
+      "fields": [
+        {
+          "default": "native_reference",
+          "default_factory": null,
+          "name": "backend",
+          "type": "<class 'str'>"
+        },
+        {
+          "default": null,
+          "default_factory": "TireParameters",
+          "fields": [
+            {
+              "default": null,
+              "default_factory": "_material",
+              "name": "material",
+              "type": "bike_sim.physics.tire.TireSpec | bike_sim.physics.tire_curve.TabulatedTireSpec"
+            },
+            {
+              "default": 20000.0,
+              "default_factory": null,
+              "name": "tangent_k_n_m",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.8,
+              "default_factory": null,
+              "name": "mu",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.2,
+              "default_factory": null,
+              "name": "relaxation_length_m",
+              "type": "<class 'float'>"
+            }
+          ],
+          "name": "front",
+          "type": "<class 'bike_sim.physics.physical_config.TireParameters'>"
+        },
+        {
+          "default": null,
+          "default_factory": "TireParameters",
+          "fields": [
+            {
+              "default": null,
+              "default_factory": "_material",
+              "name": "material",
+              "type": "bike_sim.physics.tire.TireSpec | bike_sim.physics.tire_curve.TabulatedTireSpec"
+            },
+            {
+              "default": 20000.0,
+              "default_factory": null,
+              "name": "tangent_k_n_m",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.8,
+              "default_factory": null,
+              "name": "mu",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.2,
+              "default_factory": null,
+              "name": "relaxation_length_m",
+              "type": "<class 'float'>"
+            }
+          ],
+          "name": "rear",
+          "type": "<class 'bike_sim.physics.physical_config.TireParameters'>"
+        },
+        {
+          "default": 0.0001,
+          "default_factory": null,
+          "name": "significant_delta_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.05,
+          "default_factory": null,
+          "name": "significance_fraction",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 20.0,
+          "default_factory": null,
+          "name": "distinct_normal_deg",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": "configured",
+          "default_factory": null,
+          "name": "surface_mode",
+          "type": "<class 'str'>"
+        },
+        {
+          "default": null,
+          "default_factory": "DistributedTireConfig",
+          "fields": [
+            {
+              "default": 128,
+              "default_factory": null,
+              "name": "station_count",
+              "type": "<class 'int'>"
+            },
+            {
+              "default": null,
+              "default_factory": "HingeDensity",
+              "fields": [
+                {
+                  "default": {
+                    "$tuple": [
+                      0.0,
+                      0.004,
+                      0.012
+                    ]
+                  },
+                  "default_factory": null,
+                  "name": "knots_m",
+                  "type": "tuple[float, ...]"
+                },
+                {
+                  "default": {
+                    "$tuple": [
+                      300000.0,
+                      0.0,
+                      0.0
+                    ]
+                  },
+                  "default_factory": null,
+                  "name": "stiffness_n_m",
+                  "type": "tuple[float, ...]"
+                },
+                {
+                  "default": 2000.0,
+                  "default_factory": null,
+                  "name": "damping_ns_m",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": "synthetic density; not fitted or measured",
+                  "default_factory": null,
+                  "name": "provenance",
+                  "type": "<class 'str'>"
+                }
+              ],
+              "name": "density",
+              "type": "<class 'bike_sim.physics.distributed_tire.HingeDensity'>"
+            },
+            {
+              "default": "none-synthetic",
+              "default_factory": null,
+              "name": "fitting_dataset_id",
+              "type": "<class 'str'>"
+            },
+            {
+              "default": {
+                "$tuple": [
+                  0.0,
+                  2000.0
+                ]
+              },
+              "default_factory": null,
+              "name": "valid_load_range_n",
+              "type": "tuple[float, float]"
+            },
+            {
+              "default": {
+                "$tuple": [
+                  0.0,
+                  0.04
+                ]
+              },
+              "default_factory": null,
+              "name": "valid_deflection_range_m",
+              "type": "tuple[float, float]"
+            },
+            {
+              "default": "experimental_unvalidated",
+              "default_factory": null,
+              "name": "calibration_status",
+              "type": "<class 'str'>"
+            },
+            {
+              "default": null,
+              "default_factory": null,
+              "name": "front_material",
+              "type": "bike_sim.physics.distributed_tire.DistributedWheelMaterial | None"
+            },
+            {
+              "default": null,
+              "default_factory": null,
+              "name": "rear_material",
+              "type": "bike_sim.physics.distributed_tire.DistributedWheelMaterial | None"
+            }
+          ],
+          "name": "distributed",
+          "type": "<class 'bike_sim.physics.distributed_tire.DistributedTireConfig'>"
+        },
+        {
+          "default": null,
+          "default_factory": "PneumaticTireConfig",
+          "fields": [
+            {
+              "default": "fast",
+              "default_factory": null,
+              "name": "tier",
+              "type": "<class 'str'>"
+            },
+            {
+              "default": {
+                "$dataclass": "bike_sim.physics.tyre.TyreSpecs",
+                "fields": {
+                  "area_factor": 0.4435,
+                  "carcass_stiffness_n_mm2": 0.1194,
+                  "casing_width_mm": 60.0,
+                  "compressed_casing_mm": 6.0,
+                  "contact_length_factor": 0.8589,
+                  "crr_reference": 0.011,
+                  "hysteresis_rate_eps_mps": 0.01,
+                  "loss_factor": 0.0662,
+                  "name": "Schwalbe Magic Mary 29x2.4",
+                  "outer_radius_mm": 372.0,
+                  "pressure_bar": 1.5,
+                  "rate_relaxation_s": 0.2,
+                  "rate_stiffening": 0.2484,
+                  "relaxation_length_mm": 60.0,
+                  "rim_radius_mm": 320.0,
+                  "rim_stiffness_n_mm2": 28.0,
+                  "section_height_mm": 57.0,
+                  "tread_loss_crr": 0.00586
+                }
+              },
+              "default_factory": null,
+              "fields": [
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "name",
+                  "type": "<class 'str'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "outer_radius_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "rim_radius_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "section_height_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "pressure_bar",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "crr_reference",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 60.0,
+                  "default_factory": null,
+                  "name": "casing_width_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 6.0,
+                  "default_factory": null,
+                  "name": "compressed_casing_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.46,
+                  "default_factory": null,
+                  "name": "area_factor",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.1,
+                  "default_factory": null,
+                  "name": "carcass_stiffness_n_mm2",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.86,
+                  "default_factory": null,
+                  "name": "contact_length_factor",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.25,
+                  "default_factory": null,
+                  "name": "rate_stiffening",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.2,
+                  "default_factory": null,
+                  "name": "rate_relaxation_s",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.07,
+                  "default_factory": null,
+                  "name": "loss_factor",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.01,
+                  "default_factory": null,
+                  "name": "hysteresis_rate_eps_mps",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 60.0,
+                  "default_factory": null,
+                  "name": "relaxation_length_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 28.0,
+                  "default_factory": null,
+                  "name": "rim_stiffness_n_mm2",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.0,
+                  "default_factory": null,
+                  "name": "tread_loss_crr",
+                  "type": "<class 'float'>"
+                }
+              ],
+              "name": "front",
+              "type": "<class 'bike_sim.physics.tyre.TyreSpecs'>"
+            },
+            {
+              "default": {
+                "$dataclass": "bike_sim.physics.tyre.TyreSpecs",
+                "fields": {
+                  "area_factor": 0.4576,
+                  "carcass_stiffness_n_mm2": 0.1225,
+                  "casing_width_mm": 60.0,
+                  "compressed_casing_mm": 6.0,
+                  "contact_length_factor": 0.8801,
+                  "crr_reference": 0.0103,
+                  "hysteresis_rate_eps_mps": 0.01,
+                  "loss_factor": 0.069,
+                  "name": "Schwalbe Hans Dampf 27.5x2.4",
+                  "outer_radius_mm": 352.0,
+                  "pressure_bar": 1.7,
+                  "rate_relaxation_s": 0.2,
+                  "rate_stiffening": 0.2498,
+                  "relaxation_length_mm": 60.0,
+                  "rim_radius_mm": 300.0,
+                  "rim_stiffness_n_mm2": 28.0,
+                  "section_height_mm": 55.0,
+                  "tread_loss_crr": 0.00481
+                }
+              },
+              "default_factory": null,
+              "fields": [
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "name",
+                  "type": "<class 'str'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "outer_radius_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "rim_radius_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "section_height_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "pressure_bar",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": null,
+                  "default_factory": null,
+                  "name": "crr_reference",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 60.0,
+                  "default_factory": null,
+                  "name": "casing_width_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 6.0,
+                  "default_factory": null,
+                  "name": "compressed_casing_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.46,
+                  "default_factory": null,
+                  "name": "area_factor",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.1,
+                  "default_factory": null,
+                  "name": "carcass_stiffness_n_mm2",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.86,
+                  "default_factory": null,
+                  "name": "contact_length_factor",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.25,
+                  "default_factory": null,
+                  "name": "rate_stiffening",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.2,
+                  "default_factory": null,
+                  "name": "rate_relaxation_s",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.07,
+                  "default_factory": null,
+                  "name": "loss_factor",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.01,
+                  "default_factory": null,
+                  "name": "hysteresis_rate_eps_mps",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 60.0,
+                  "default_factory": null,
+                  "name": "relaxation_length_mm",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 28.0,
+                  "default_factory": null,
+                  "name": "rim_stiffness_n_mm2",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.0,
+                  "default_factory": null,
+                  "name": "tread_loss_crr",
+                  "type": "<class 'float'>"
+                }
+              ],
+              "name": "rear",
+              "type": "<class 'bike_sim.physics.tyre.TyreSpecs'>"
+            },
+            {
+              "default": null,
+              "default_factory": null,
+              "name": "surface",
+              "type": "str | None"
+            }
+          ],
+          "name": "pneumatic",
+          "type": "<class 'bike_sim.physics.physical_config.PneumaticTireConfig'>"
+        }
+      ],
+      "name": "tires",
+      "type": "<class 'bike_sim.physics.physical_config.TireBackendConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": "PhysicalDriveConfig",
+      "fields": [
+        {
+          "default": null,
+          "default_factory": "DrivetrainSpecs",
+          "fields": [
+            {
+              "default": 34,
+              "default_factory": null,
+              "name": "front_teeth",
+              "type": "<class 'int'>"
+            },
+            {
+              "default": 24,
+              "default_factory": null,
+              "name": "rear_teeth",
+              "type": "<class 'int'>"
+            },
+            {
+              "default": 0.0127,
+              "default_factory": null,
+              "name": "chain_pitch_m",
+              "type": "<class 'float'>"
+            }
+          ],
+          "name": "gearing",
+          "type": "<class 'bike_sim.physics.chain.DrivetrainSpecs'>"
+        },
+        {
+          "default": "elastic_chain",
+          "default_factory": null,
+          "name": "transmission_model",
+          "type": "<class 'str'>"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "human_torque_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.35,
+          "default_factory": null,
+          "name": "torque_ripple",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "crank_phase_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 200000.0,
+          "default_factory": null,
+          "name": "chain_k_n_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 10.0,
+          "default_factory": null,
+          "name": "chain_c_ns_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 1000.0,
+          "default_factory": null,
+          "name": "freehub_k_nm_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.5,
+          "default_factory": null,
+          "name": "freehub_c_nms_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.03,
+          "default_factory": null,
+          "name": "bearing_c_nms_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 200.0,
+          "default_factory": null,
+          "name": "brake_ceiling_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": false,
+          "default_factory": null,
+          "name": "motor_clutch",
+          "type": "<class 'bool'>"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "rotor_inertia_kgm2",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": "AssistConfig",
+          "fields": [
+            {
+              "default": null,
+              "default_factory": null,
+              "name": "profile",
+              "type": "str | None"
+            },
+            {
+              "default": "turbo",
+              "default_factory": null,
+              "name": "mode",
+              "type": "<class 'str'>"
+            },
+            {
+              "default": 2.0,
+              "default_factory": null,
+              "name": "gain",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 80.0,
+              "default_factory": null,
+              "name": "max_torque",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 500.0,
+              "default_factory": null,
+              "name": "max_power",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.05,
+              "default_factory": null,
+              "name": "tau",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 400.0,
+              "default_factory": null,
+              "name": "slew",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 4.0,
+              "default_factory": null,
+              "name": "engage_torque_nm",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.08726646259971647,
+              "default_factory": null,
+              "name": "gate_min_crank_rad_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 6.944444444444445,
+              "default_factory": null,
+              "name": "cutoff_mps",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.5555555555555556,
+              "default_factory": null,
+              "name": "taper_width_mps",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": null,
+              "default_factory": null,
+              "name": "torque_curve",
+              "type": "tuple[tuple[float, float], ...] | None"
+            }
+          ],
+          "name": "assist",
+          "type": "<class 'bike_sim.physics.physical_config.AssistConfig'>"
+        },
+        {
+          "default": null,
+          "default_factory": "BatteryConfig",
+          "fields": [
+            {
+              "default": true,
+              "default_factory": null,
+              "name": "enabled",
+              "type": "<class 'bool'>"
+            },
+            {
+              "default": 1800000.0,
+              "default_factory": null,
+              "name": "energy_j",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.02,
+              "default_factory": null,
+              "name": "copper_w_per_nm2",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.0,
+              "default_factory": null,
+              "name": "speed_w_per_rad_s2",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 5.0,
+              "default_factory": null,
+              "name": "idle_w",
+              "type": "<class 'float'>"
+            }
+          ],
+          "name": "battery",
+          "type": "<class 'bike_sim.physics.physical_config.BatteryConfig'>"
+        },
+        {
+          "default": null,
+          "default_factory": "PedalingConfig",
+          "fields": [
+            {
+              "default": false,
+              "default_factory": null,
+              "name": "enabled",
+              "type": "<class 'bool'>"
+            },
+            {
+              "default": 110.0,
+              "default_factory": null,
+              "name": "coast_above_rpm",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 90.0,
+              "default_factory": null,
+              "name": "resume_below_rpm",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.35,
+              "default_factory": null,
+              "name": "stop_time_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.0,
+              "default_factory": null,
+              "name": "coast_cadence_tau_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 45.0,
+              "default_factory": null,
+              "name": "mash_cadence_rpm",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 60.0,
+              "default_factory": null,
+              "name": "mash_torque_nm",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 300.0,
+              "default_factory": null,
+              "name": "effort_slew_nm_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": true,
+              "default_factory": null,
+              "name": "rollback_brake",
+              "type": "<class 'bool'>"
+            },
+            {
+              "default": 0.25,
+              "default_factory": null,
+              "name": "rollback_engage_mps",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.0,
+              "default_factory": null,
+              "name": "rollback_release_mps",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 1.0,
+              "default_factory": null,
+              "name": "rollback_demand",
+              "type": "<class 'float'>"
+            }
+          ],
+          "name": "pedaling",
+          "type": "<class 'bike_sim.physics.physical_config.PedalingConfig'>"
+        },
+        {
+          "default": null,
+          "default_factory": "ShiftingConfig",
+          "fields": [
+            {
+              "default": false,
+              "default_factory": null,
+              "name": "enabled",
+              "type": "<class 'bool'>"
+            },
+            {
+              "default": {
+                "$tuple": [
+                  10,
+                  12,
+                  14,
+                  16,
+                  18,
+                  21,
+                  24,
+                  28,
+                  33,
+                  39,
+                  45,
+                  51
+                ]
+              },
+              "default_factory": null,
+              "name": "cassette",
+              "type": "tuple[int, ...]"
+            },
+            {
+              "default": 65.0,
+              "default_factory": null,
+              "name": "target_cadence_min_rpm",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 85.0,
+              "default_factory": null,
+              "name": "target_cadence_max_rpm",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.4,
+              "default_factory": null,
+              "name": "shift_cooldown_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.2,
+              "default_factory": null,
+              "name": "shift_cut_duration_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.3,
+              "default_factory": null,
+              "name": "torque_factor",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.35,
+              "default_factory": null,
+              "name": "cadence_smoothing_tau_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.5,
+              "default_factory": null,
+              "name": "upshift_slip_limit_mps",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": "legacy_signed",
+              "default_factory": null,
+              "name": "upshift_slip_mode",
+              "type": "<class 'str'>"
+            }
+          ],
+          "name": "shifting",
+          "type": "<class 'bike_sim.physics.physical_config.ShiftingConfig'>"
+        }
+      ],
+      "name": "drive",
+      "type": "<class 'bike_sim.physics.physical_config.PhysicalDriveConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": "ResistanceConfig",
+      "fields": [
+        {
+          "default": 0.015,
+          "default_factory": null,
+          "name": "crr",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.2,
+          "default_factory": null,
+          "name": "rolling_taper_rad_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 1.2,
+          "default_factory": null,
+          "name": "rho_kg_m3",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.5,
+          "default_factory": null,
+          "name": "cda_m2",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": {
+            "$tuple": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "default_factory": null,
+          "name": "wind_world_mps",
+          "type": "tuple[float, float, float]"
+        },
+        {
+          "default": {
+            "$tuple": [
+              0.0,
+              0.0,
+              0.5
+            ]
+          },
+          "default_factory": null,
+          "name": "point_body_m",
+          "type": "tuple[float, float, float]"
+        }
+      ],
+      "name": "resistance",
+      "type": "<class 'bike_sim.physics.physical_config.ResistanceConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": "ArticulatedConfig",
+      "fields": [
+        {
+          "default": 0.33,
+          "default_factory": null,
+          "name": "pedal_support_fraction",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.12,
+          "default_factory": null,
+          "name": "bar_support_fraction",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.003,
+          "default_factory": null,
+          "name": "posture_sole_depth_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.003,
+          "default_factory": null,
+          "name": "swing_clearance_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 2.0,
+          "default_factory": null,
+          "name": "coasting_brake_d_nm_s_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 60.0,
+          "default_factory": null,
+          "name": "coasting_brake_limit_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 50.0,
+          "default_factory": null,
+          "name": "stance_blend_load_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 600.0,
+          "default_factory": null,
+          "name": "posture_pitch_k_nm_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 60.0,
+          "default_factory": null,
+          "name": "posture_pitch_d_nms_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 60.0,
+          "default_factory": null,
+          "name": "posture_pitch_limit_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 1500.0,
+          "default_factory": null,
+          "name": "posture_translation_k_n_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 150.0,
+          "default_factory": null,
+          "name": "posture_translation_d_ns_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 400.0,
+          "default_factory": null,
+          "name": "posture_translation_limit_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.045,
+          "default_factory": null,
+          "name": "saddle_patch_half_length_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.025,
+          "default_factory": null,
+          "name": "pedal_patch_half_length_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.02,
+          "default_factory": null,
+          "name": "support_pad_radius_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 100000.0,
+          "default_factory": null,
+          "name": "support_k_n_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 500.0,
+          "default_factory": null,
+          "name": "support_c_ns_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 100.0,
+          "default_factory": null,
+          "name": "pedal_c_ns_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 20000.0,
+          "default_factory": null,
+          "name": "support_tangent_k_n_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.8,
+          "default_factory": null,
+          "name": "support_mu",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.1,
+          "default_factory": null,
+          "name": "support_length_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 4000.0,
+          "default_factory": null,
+          "name": "grip_k_n_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 150.0,
+          "default_factory": null,
+          "name": "grip_c_ns_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.12,
+          "default_factory": null,
+          "name": "grip_release_distance_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "grip_pair_force_limit_n",
+          "type": "float | None"
+        },
+        {
+          "default": 0.02,
+          "default_factory": null,
+          "name": "grip_capture_distance_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.2,
+          "default_factory": null,
+          "name": "grip_capture_speed_mps",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.92,
+          "default_factory": null,
+          "name": "arm_reach_fraction",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 600.0,
+          "default_factory": null,
+          "name": "joint_kp_nm_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 15.0,
+          "default_factory": null,
+          "name": "joint_kd_nms_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "joint_passive_damping_nms_rad",
+          "type": "float | None"
+        },
+        {
+          "default": false,
+          "default_factory": null,
+          "name": "coupled_task_control",
+          "type": "<class 'bool'>"
+        },
+        {
+          "default": 100.0,
+          "default_factory": null,
+          "name": "joint_limit_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 20.0,
+          "default_factory": null,
+          "name": "joint_speed_limit_rad_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 250.0,
+          "default_factory": null,
+          "name": "joint_power_limit_w",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "joint_envelope_path",
+          "type": "str | None"
+        },
+        {
+          "default": 0.1,
+          "default_factory": null,
+          "name": "joint_envelope_soft_margin_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 100.0,
+          "default_factory": null,
+          "name": "joint_envelope_soft_k_nm_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "activation_tau_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "active_positive_power_limit_w",
+          "type": "float | None"
+        },
+        {
+          "default": 0.9,
+          "default_factory": null,
+          "name": "foot_mu",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.6,
+          "default_factory": null,
+          "name": "saddle_mu",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 20.0,
+          "default_factory": null,
+          "name": "pedal_min_normal_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.15,
+          "default_factory": null,
+          "name": "saddle_reserve_weight_fraction",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 300.0,
+          "default_factory": null,
+          "name": "grip_pull_per_hand_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.1,
+          "default_factory": null,
+          "name": "pedal_ankle_amplitude_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.5,
+          "default_factory": null,
+          "name": "pedal_scrape_fraction",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.35,
+          "default_factory": null,
+          "name": "pedal_torque_ripple",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "return_foot_preload_n",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.005,
+          "default_factory": null,
+          "name": "link_max_gap_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "road_lookahead_m",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "joint_strength_path",
+          "type": "str | None"
+        },
+        {
+          "default": "flat",
+          "default_factory": null,
+          "name": "pedal_attachment",
+          "type": "<class 'str'>"
+        },
+        {
+          "default": "flat",
+          "default_factory": null,
+          "name": "saddle_attachment",
+          "type": "<class 'str'>"
+        },
+        {
+          "default": "spring",
+          "default_factory": null,
+          "name": "grip_attachment",
+          "type": "<class 'str'>"
+        },
+        {
+          "default": 4.0,
+          "default_factory": null,
+          "name": "balance_floor_kmh",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.5,
+          "default_factory": null,
+          "name": "balance_dwell_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 3.0,
+          "default_factory": null,
+          "name": "balance_grace_s",
+          "type": "<class 'float'>"
+        }
+      ],
+      "name": "articulated",
+      "type": "<class 'bike_sim.physics.physical_config.ArticulatedConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": "SeatedClimbConfig",
+      "fields": [
+        {
+          "default": false,
+          "default_factory": null,
+          "name": "enabled",
+          "type": "<class 'bool'>"
+        },
+        {
+          "default": 0.01,
+          "default_factory": null,
+          "name": "period_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.15,
+          "default_factory": null,
+          "name": "reaction_delay_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 225.0,
+          "default_factory": null,
+          "name": "target_crank_power_w",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 60.0,
+          "default_factory": null,
+          "name": "max_crank_torque_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 300.0,
+          "default_factory": null,
+          "name": "torque_slew_nm_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 1.0,
+          "default_factory": null,
+          "name": "lean_gain",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.35,
+          "default_factory": null,
+          "name": "max_forward_lean_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.1,
+          "default_factory": null,
+          "name": "max_backward_lean_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.5,
+          "default_factory": null,
+          "name": "lean_rate_rad_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.5,
+          "default_factory": null,
+          "name": "orientation_tau_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 400.0,
+          "default_factory": null,
+          "name": "surge_power_w",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.2,
+          "default_factory": null,
+          "name": "surge_grade",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 15.0,
+          "default_factory": null,
+          "name": "surge_budget_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.3333333333333333,
+          "default_factory": null,
+          "name": "surge_recovery_rate",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.3,
+          "default_factory": null,
+          "name": "front_load_share_target",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.3,
+          "default_factory": null,
+          "name": "lean_trim_gain_rad_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.15,
+          "default_factory": null,
+          "name": "lean_trim_limit_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": 0.2,
+          "default_factory": null,
+          "name": "trim_dead_time_s",
+          "type": "<class 'float'>"
+        }
+      ],
+      "name": "seated_climb",
+      "type": "<class 'bike_sim.physics.seated_climb.SeatedClimbConfig'>"
+    },
+    {
+      "default": 0.0,
+      "default_factory": null,
+      "name": "initial_speed_mps",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": 0.0,
+      "default_factory": null,
+      "name": "initial_front_brake",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": 0.0,
+      "default_factory": null,
+      "name": "initial_rear_brake",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": 0.001,
+      "default_factory": null,
+      "name": "closure_time_constant_s",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": 1.0,
+      "default_factory": null,
+      "name": "equilibrium_refine_after_s",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": 3.0,
+      "default_factory": null,
+      "name": "equilibrium_refine_period_s",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": false,
+      "default_factory": null,
+      "name": "equilibrium_cache_enabled",
+      "type": "<class 'bool'>"
+    },
+    {
+      "default": null,
+      "default_factory": null,
+      "name": "equilibrium_state_file",
+      "type": "str | None"
+    }
+  ]
+}

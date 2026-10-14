@@ -1,0 +1,110 @@
+{
+  "0": {
+    "program": {
+      "keyframes": {
+        "$tuple": [
+          {
+            "human_torque_nm": 20.33175598000681,
+            "posture": {
+              "pelvis_offset_m": null,
+              "pelvis_pitch_rad": 0.0013222108422823275,
+              "torso_lean_rad": 0.010243380984048672,
+              "use_saddle": true
+            },
+            "time_s": 0.0
+          }
+        ]
+      },
+      "reaction_delay_s": 0.0
+    },
+    "rider": {
+      "arm_resonance_hz": 4.0,
+      "bar_share": 0.12,
+      "damping_ratio": 0.4,
+      "height_m": 1.6674466784409676,
+      "helmet_mass_kg": 0.4,
+      "inseam_m": null,
+      "leg_resonance_hz": 5.0,
+      "legs": "rigid",
+      "mass_kg": 85.47846749285817,
+      "pedal_share": 0.33,
+      "saddle_interface_c_ns_m": 2762.0,
+      "saddle_interface_k_n_m": 101000.0,
+      "saddle_share": 0.55,
+      "torso_resonance_hz": 7.0,
+      "variant": "articulated_planar"
+    }
+  },
+  "210": {
+    "program": {
+      "keyframes": {
+        "$tuple": [
+          {
+            "human_torque_nm": 0.3888608015307826,
+            "posture": {
+              "pelvis_offset_m": null,
+              "pelvis_pitch_rad": 0.04934044927073735,
+              "torso_lean_rad": 0.10374263601806935,
+              "use_saddle": true
+            },
+            "time_s": 0.0
+          }
+        ]
+      },
+      "reaction_delay_s": 0.0
+    },
+    "rider": {
+      "arm_resonance_hz": 4.0,
+      "bar_share": 0.12,
+      "damping_ratio": 0.4,
+      "height_m": 1.7709348815280832,
+      "helmet_mass_kg": 0.4,
+      "inseam_m": null,
+      "leg_resonance_hz": 5.0,
+      "legs": "rigid",
+      "mass_kg": 88.87516218488412,
+      "pedal_share": 0.33,
+      "saddle_interface_c_ns_m": 2762.0,
+      "saddle_interface_k_n_m": 101000.0,
+      "saddle_share": 0.55,
+      "torso_resonance_hz": 7.0,
+      "variant": "articulated_planar"
+    }
+  },
+  "42": {
+    "program": {
+      "keyframes": {
+        "$tuple": [
+          {
+            "human_torque_nm": 2.3544336971912383,
+            "posture": {
+              "pelvis_offset_m": null,
+              "pelvis_pitch_rad": 0.05578944232474911,
+              "torso_lean_rad": 0.21464947997784561,
+              "use_saddle": true
+            },
+            "time_s": 0.0
+          }
+        ]
+      },
+      "reaction_delay_s": 0.0
+    },
+    "rider": {
+      "arm_resonance_hz": 4.0,
+      "bar_share": 0.12,
+      "damping_ratio": 0.4,
+      "height_m": 1.7097196099380132,
+      "helmet_mass_kg": 0.4,
+      "inseam_m": null,
+      "leg_resonance_hz": 5.0,
+      "legs": "rigid",
+      "mass_kg": 90.95824194223853,
+      "pedal_share": 0.33,
+      "saddle_interface_c_ns_m": 2762.0,
+      "saddle_interface_k_n_m": 101000.0,
+      "saddle_share": 0.55,
+      "torso_resonance_hz": 7.0,
+      "variant": "articulated_planar"
+    }
+  }
+}

@@ -1,0 +1,247 @@
+{
+  "description": "Alpine scree climb; seed=41; spec_sha256=7a83347d4bb0153c4c06b70cf6c4a0b3a9712c02875465442050525c6511597c",
+  "grade_profile": {
+    "knots": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        10.0,
+        0.0
+      ],
+      [
+        12.0,
+        0.2268
+      ],
+      [
+        41.31,
+        0.2268
+      ],
+      [
+        43.31,
+        0.0531
+      ],
+      [
+        47.81,
+        0.0531
+      ],
+      [
+        49.81,
+        0.2858
+      ],
+      [
+        70.06,
+        0.2858
+      ],
+      [
+        72.06,
+        0.0336
+      ],
+      [
+        78.47,
+        0.0336
+      ],
+      [
+        80.47,
+        0.2361
+      ],
+      [
+        103.0,
+        0.2361
+      ],
+      [
+        105.0,
+        0.0
+      ],
+      [
+        120.0,
+        0.0
+      ]
+    ]
+  },
+  "length_m": 120.0,
+  "name": "alpine_scree",
+  "obstacles": [
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 5.18,
+      "seed": 113147155,
+      "start_m": 10.0,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0593,
+      "correlation_length_m": 0.439,
+      "section_length_m": 6.38,
+      "seed": 1671052458,
+      "start_m": 15.18,
+      "type": "rock_garden"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 3.63,
+      "seed": 1987102996,
+      "start_m": 21.56,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0128,
+      "correlation_length_m": 0.179,
+      "section_length_m": 7.42,
+      "seed": 235416628,
+      "start_m": 25.19,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 4.52,
+      "seed": 867627500,
+      "start_m": 32.61,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.0977,
+      "edge": "bowl",
+      "hole_length_m": 1.46,
+      "start_m": 37.13,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 6.229999,
+      "seed": 1610455891,
+      "start_m": 38.59,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 1.12,
+      "height_m": 0.1388,
+      "shape": "cosine",
+      "start_m": 44.82,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 16.51,
+      "seed": 1246306415,
+      "start_m": 45.94,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 0.86,
+      "height_m": 0.0828,
+      "shape": "cosine",
+      "start_m": 62.45,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 4.98,
+      "seed": 1311573360,
+      "start_m": 63.31,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.1075,
+      "edge": "bowl",
+      "hole_length_m": 1.42,
+      "start_m": 68.29,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 5.699999,
+      "seed": 150993694,
+      "start_m": 69.71000000000001,
+      "type": "roughness"
+    },
+    {
+      "depth_m": 0.1186,
+      "edge": "bowl",
+      "hole_length_m": 1.05,
+      "start_m": 75.41,
+      "type": "pothole"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 1.82,
+      "seed": 277620370,
+      "start_m": 76.46,
+      "type": "roughness"
+    },
+    {
+      "bump_length_m": 1.1,
+      "height_m": 0.0914,
+      "shape": "cosine",
+      "start_m": 78.28,
+      "type": "bump"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 3.28,
+      "seed": 274032135,
+      "start_m": 79.38,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0184,
+      "correlation_length_m": 0.195,
+      "section_length_m": 9.14,
+      "seed": 1239545633,
+      "start_m": 82.66,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 2.05,
+      "seed": 1163793998,
+      "start_m": 91.8,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0179,
+      "correlation_length_m": 0.2,
+      "section_length_m": 7.32,
+      "seed": 682828266,
+      "start_m": 93.85,
+      "type": "roughness"
+    },
+    {
+      "amplitude_m": 0.0083,
+      "correlation_length_m": 0.213,
+      "section_length_m": 3.83,
+      "seed": 1402622616,
+      "start_m": 101.16999999999999,
+      "type": "roughness"
+    }
+  ],
+  "surface": "hardpack",
+  "surface_sections": [
+    {
+      "end_m": 32.61,
+      "start_m": 25.19,
+      "surface": "scree"
+    },
+    {
+      "end_m": 91.8,
+      "start_m": 82.66,
+      "surface": "scree"
+    },
+    {
+      "end_m": 101.17,
+      "start_m": 93.85,
+      "surface": "scree"
+    }
+  ]
+}

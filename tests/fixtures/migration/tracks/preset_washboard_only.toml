@@ -1,0 +1,14 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "washboard_only"
+length_m = 60.0
+description = "Run-up and 20 waves of 35 mm braking bumps."
+surface = "hardpack"
+
+[[obstacles]]
+type = "washboard"
+start_m = 15.0
+amplitude_m = 0.035
+wavelength_m = 0.9
+n_waves = 20

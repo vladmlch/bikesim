@@ -1,0 +1,6 @@
+{
+  "cutoff_hz": 100.0,
+  "order": 4,
+  "sample_interval_s": 0.001,
+  "short_passthrough": true
+}

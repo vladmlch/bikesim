@@ -24,7 +24,8 @@ def _hash(payload):
 def _contract(sim,*,station_count=None):
     cfg=asdict(sim.physics_config)
     if station_count is not None:cfg['tires']['distributed']['station_count']=station_count
-    for name in ('timestep_s','equilibrium_cache_enabled','equilibrium_refine_after_s','equilibrium_refine_period_s'):
+    for name in ('timestep_s','equilibrium_cache_enabled','equilibrium_state_file',
+                 'equilibrium_refine_after_s','equilibrium_refine_period_s'):
         cfg.pop(name,None)
     m=sim.model
     return _hash({'physics':cfg,'specs':asdict(sim.specs),'mass':asdict(sim.mass_specs),

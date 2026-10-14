@@ -10,8 +10,18 @@ import numpy as np
 def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     sim = runtime.sim
     model, data = sim.model, sim.data
+    if not np.isfinite(tolerance) or tolerance <= 0.:
+        raise ValueError('equilibrium tolerance must be finite and positive')
     cached = None
-    if sim.physics_config.equilibrium_cache_enabled:
+    state_file = sim.physics_config.equilibrium_state_file
+    if state_file is not None:
+        # An explicit pose file is read-only user-managed state: the embedded
+        # fingerprint, the material state and the re-measured residual are all
+        # verified below, and every failure names the file. It outranks the
+        # derived-name auto-cache; saving via the cache flag stays as-is.
+        from bike_sim.sim.ride.equilibrium_cache import load_state_file
+        cached = load_state_file(runtime, state_file)
+    elif sim.physics_config.equilibrium_cache_enabled:
         from bike_sim.sim.ride.equilibrium_cache import load
         cached = load(runtime)
     runtime.probe_query.reset()
@@ -58,17 +68,37 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     residual = float('inf')
     if cached is not None:
         from bike_sim.sim.ride.equilibrium_cache import restore_state
-        _, qpos, cached_steps, cached_residual, state = cached
-        if restore_state(runtime, state):
+        source, qpos, cached_steps, cached_residual, state = cached
+        if state_file is not None:
+            if not restore_state(runtime, state):
+                raise ValueError(
+                    f'equilibrium state file {source}: state payload does not fit this runtime')
+            data.qpos[:] = qpos
+            data.qvel.fill(0.)
+            runtime.apply_forces(active=False, advance=False,
+                                 front=sim.physics_config.initial_front_brake,
+                                 rear=sim.physics_config.initial_rear_brake)
+            mujoco.mj_forward(model, data)
+            residual = float(np.max(np.abs(data.qacc)))
+            if residual > tolerance:
+                raise ValueError(
+                    f'equilibrium state file {source}: restored residual '
+                    f'{residual:.6g} exceeds tolerance {tolerance}')
+            steps, cache_hit = cached_steps, True
+        elif restore_state(runtime, state):
             data.qpos[:] = qpos
             data.qvel.fill(0.)
             mujoco.mj_forward(model, data)
             steps, residual, cache_hit = cached_steps, cached_residual, True
     dt = float(model.opt.timestep)
     # A smaller integration step must not silently shorten the physical settling
-    # budget. The historical 40,000-step limit represented 20 seconds at 0.5 ms.
+    # budget, and a larger one must not stretch it: the budget is settling TIME,
+    # not steps. Standstill tangential shear self-tunes by tread creep through
+    # the regularized brake constraint; the slowest measured case (pneumatic
+    # detailed brush on the savage climb's compression branch) needs ~59 s of
+    # simulated time, so 80 s leaves margin without changing the step physics.
     if max_steps is None:
-        max_steps = max(40000, round(20.0/dt))
+        max_steps = max(40000, round(80.0/dt))
     if isinstance(max_steps, bool) or not isinstance(max_steps, int) or max_steps <= 0:
         raise ValueError('equilibrium max_steps must be a positive integer')
     cycle = max(1, round(.02/dt))
@@ -115,6 +145,8 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
             'initial_crank_phase_rad': phase,
             'settled_crank_phase_rad': float(data.qpos[runtime.address('crank_spin')[0]]),
             'cache_hit': cache_hit}
+    if state_file is not None:
+        result['state_file'] = str(state_file)
     if sim.physics_config.equilibrium_cache_enabled and not cache_hit:
         from bike_sim.sim.ride.equilibrium_cache import save
         save(runtime, data.qpos, steps, residual)

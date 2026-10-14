@@ -192,7 +192,8 @@ def physical_summary(sim,metadata,reason):
         duration_s=r.history.duration_s))
 
 
-def build_physical_simulation(track,args,rider):
+def build_physical_simulation(track,args,rider,*,equilibrium_max_steps=None,
+                              equilibrium_tolerance=None):
     from bike_sim.geometry.specs import BikeSpecs
     from bike_sim.sim.ride_sim import RideSimulation
     specs=BikeSpecs()
@@ -208,7 +209,8 @@ def build_physical_simulation(track,args,rider):
                        (specs.fork_initial_psi,specs.shock_stiffness),((10.,1000.),(400.,250000.)))
         specs=replace(specs,fork_initial_psi=float(values[0]),shock_stiffness=float(values[1]))
     sim=RideSimulation(track=track,specs=specs,rider=rider,
-        target_speed_kmh=args.speed if args.speed is not None else 25.,physics_config=cfg)
+        target_speed_kmh=args.speed if args.speed is not None else 25.,physics_config=cfg,
+        equilibrium_max_steps=equilibrium_max_steps,equilibrium_tolerance=equilibrium_tolerance)
     if args.sag is not None:
         sim.equilibrium['requested_sag_pct']=float(args.sag)
         errors=[abs(sim.equilibrium['fork_travel_mm']-specs.fork_travel*args.sag/100),

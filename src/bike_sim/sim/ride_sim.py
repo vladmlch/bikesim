@@ -108,6 +108,8 @@ class RideSimulation:
         physics_config: Optional[SimulationPhysicsConfig] = None,
         mass_specs: Optional[BikeMassSpecs] = None,
         physical_initial_state=None,
+        equilibrium_max_steps: Optional[int] = None,
+        equilibrium_tolerance: Optional[float] = None,
     ) -> None:
         """
         Compiles the model, rasterizes the track, and solves the starting equilibrium.
@@ -156,6 +158,11 @@ class RideSimulation:
             physics_config: Physical model selection and timestep. An omitted config uses
                 the existing legacy simulation and its historical drive mode.
             mass_specs: Component mass budget passed to the MJCF builder.
+            equilibrium_max_steps: Physical-mode only: override the settling budget of
+                the initial ``solve_physical_equilibrium`` (default: its 80 s of
+                simulated time). Tools like ``bike-settle`` widen it deliberately.
+            equilibrium_tolerance: Physical-mode only: override the residual tolerance
+                that ends the settle (default .05 max |qacc|).
 
         Raises:
             ValueError: If the track does not fit the heightfield envelope.
@@ -180,6 +187,16 @@ class RideSimulation:
         physical = self.physics_config.physics_mode == "physical"
         if physical and self.visual_pedalling:
             raise ValueError("physical mode has a dynamic crank; visual_pedalling is legacy only")
+        if not physical and (equilibrium_max_steps is not None
+                             or equilibrium_tolerance is not None):
+            raise ValueError(
+                'equilibrium_max_steps/equilibrium_tolerance require physics_mode="physical"')
+        if (equilibrium_max_steps is not None and (isinstance(equilibrium_max_steps, bool)
+                or not isinstance(equilibrium_max_steps, int) or equilibrium_max_steps <= 0)):
+            raise ValueError("equilibrium_max_steps must be a positive integer")
+        if (equilibrium_tolerance is not None
+                and (not isfinite(equilibrium_tolerance) or equilibrium_tolerance <= 0.)):
+            raise ValueError("equilibrium_tolerance must be finite and positive")
 
         self.track = track if track is not None else get_preset(DEFAULT_PRESET)
         self.field = field if field is not None else HeightFieldSpec.for_track(self.track)
@@ -338,6 +355,9 @@ class RideSimulation:
         self.equilibrium: Dict[str, Any] = {}
         self.physical = None
         self.physical_initial_state = physical_initial_state
+        self.equilibrium_max_steps = equilibrium_max_steps
+        self.equilibrium_tolerance = (
+            .05 if equilibrium_tolerance is None else float(equilibrium_tolerance))
         if physical_initial_state is not None:
             from bike_sim.sim.ride.initial_state import PhysicalInitialState
             if not physical or not isinstance(physical_initial_state, PhysicalInitialState):

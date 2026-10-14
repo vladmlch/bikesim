@@ -59,6 +59,7 @@ class SimulationPhysicsConfig:
     equilibrium_refine_after_s: float = 1.0
     equilibrium_refine_period_s: float = 3.0
     equilibrium_cache_enabled: bool = False
+    equilibrium_state_file: str | None = None
 
     def __post_init__(self) -> None:
         if self.physics_mode not in {"legacy", "physical"}:
@@ -106,6 +107,10 @@ class SimulationPhysicsConfig:
             raise ValueError("pitch_assist must be a bool")
         if not isinstance(self.equilibrium_cache_enabled, bool):
             raise ValueError("equilibrium_cache_enabled must be a bool")
+        if (self.equilibrium_state_file is not None
+                and (not isinstance(self.equilibrium_state_file, str)
+                     or not self.equilibrium_state_file.strip())):
+            raise ValueError("equilibrium_state_file must be a non-empty path or None")
         for name, cls in (("end_stops", EndStopConfig), ("tires", TireBackendConfig),
                           ("drive", PhysicalDriveConfig), ("resistance", ResistanceConfig),
                           ("articulated", ArticulatedConfig), ("seated_climb", SeatedClimbConfig)):

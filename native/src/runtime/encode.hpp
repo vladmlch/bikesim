@@ -50,4 +50,17 @@ std::pair<std::int64_t, nb::dict> encode_table(
 nb::list applied_command_rows(const OwnedNativeEpisode &episode,
                               std::int64_t start, std::int64_t limit);
 
+// Derived-transition scan — the C++ twin of the channel diff inside
+// recording/native.py::iter_derived_events: one row dict per
+// (interval, kind) whose tracked labels changed against the previous
+// retained interval, boxing only the changed values. `plan` is
+// {'fields': [{'kind': str, 'path': [str, ...]}, ...]}, compiled from
+// _DERIVED_FIELDS in native.py. Rows [0, start) are skipped but the
+// previous-row compare state seeds from row start-1, keeping chunked
+// calls identical to one full pass. event_id assignment and the
+// InputEvent wrap stay in Python.
+nb::list derived_event_rows(const OwnedNativeEpisode &episode,
+                            nb::handle plan, std::int64_t start,
+                            std::int64_t limit);
+
 } // namespace runtime

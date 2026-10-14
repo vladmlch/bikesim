@@ -1364,6 +1364,100 @@ bool applied_equal(const AppliedTuple &a, const AppliedTuple &b) {
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// derived-transition scan (the channel diff inside iter_derived_events)
+
+// One tracked (kind, path) entry from the plan; `label` mirrors the
+// oracle's changes key — '.'.join(path[1:]) or path[0] — and kind_slot
+// indexes the unique kinds in first-appearance order.
+struct DerivedField {
+    std::string kind;
+    std::vector<std::string> path;
+    std::string label;
+    std::size_t kind_slot = 0;
+};
+
+struct DerivedPlan {
+    std::vector<DerivedField> fields;
+    std::vector<std::string> kinds;
+};
+
+DerivedPlan parse_derived_plan(nb::handle plan) {
+    const wire::Dict dict{.value = wire::mapping(plan, "derived plan"),
+                          .path = "derived plan"};
+    wire::exact(dict, wire::keys("fields"));
+    DerivedPlan parsed;
+    std::map<std::string, std::size_t> slots;
+    for (const nb::handle item : wire::sequence(
+             wire::field(dict, "fields"), dict.child("fields"))) {
+        const wire::Dict entry{
+            .value = wire::mapping(item, "derived plan.fields[]"),
+            .path = "derived plan.fields[]"};
+        wire::exact(entry, wire::keys("kind", "path"));
+        DerivedField field;
+        field.kind = wire::string(wire::field(entry, "kind"),
+                                  entry.child("kind"));
+        for (const nb::handle part : wire::sequence(
+                 wire::field(entry, "path"), entry.child("path")))
+            field.path.push_back(wire::string(part, entry.child("path")));
+        if (field.path.empty())
+            throw std::invalid_argument(
+                "derived plan.fields: empty path");
+        // '.'.join(path[1:]) or path[0] — an empty join (single-element
+        // path or an empty last member) falls back to the root name.
+        field.label = join_path(std::span<const std::string>(field.path)
+                                    .subspan(1));
+        if (field.label.empty()) field.label = field.path.front();
+        const auto [slot, inserted] =
+            slots.emplace(field.kind, parsed.kinds.size());
+        if (inserted) parsed.kinds.push_back(field.kind);
+        field.kind_slot = slot->second;
+        parsed.fields.push_back(std::move(field));
+    }
+    return parsed;
+}
+
+// One kind's ordered label -> wire pointer view of a row — the
+// `current.setdefault(kind, {})[label] = value` fold: first-insertion
+// order per label, a repeated (kind, label) field writes through. The
+// string_views address the parsed plan, which outlives every scan.
+using KindValues = std::vector<std::pair<std::string_view, const Wire *>>;
+
+void tracked_set(KindValues &values, std::string_view label,
+                 const Wire &value) {
+    for (auto &[name, slot] : values)
+        if (name == label) {
+            slot = &value;
+            return;
+        }
+    values.emplace_back(label, &value);
+}
+
+// previous.get(kind, {}).get(label, _MISSING) — nullptr is the sentinel:
+// an absent label always differs from a present current value.
+const Wire *tracked_find(const KindValues &values, std::string_view label) {
+    for (const auto &[name, value] : values)
+        if (name == label) return value;
+    return nullptr;
+}
+
+// Resolve every tracked path on one retained row; present terminals fold
+// into their kind's label map. `current` is cleared, never reallocated.
+void resolve_derived(const DerivedPlan &plan,
+                     const PhysicalSampleData &sample,
+                     std::vector<KindValues> &current) {
+    for (KindValues &values : current) values.clear();
+    for (const DerivedField &field : plan.fields) {
+        bool complete = false;
+        const Wire *value =
+            walk_path(sample.channels, field.path, complete);
+        // complete implies a resolved (possibly null) terminal — an
+        // explicit None still tracks, matching _channel_at's present.
+        if (complete && value != nullptr)
+            tracked_set(current[field.kind_slot], field.label, *value);
+    }
+}
+
 // The scalar/list payload vector, boxed as an owned numpy array (numeric),
 // an owned flag array (bool) or a Python string list (varchar/map keys).
 nb::object piece_payload(const Piece &piece) {
@@ -1522,6 +1616,70 @@ nb::list applied_command_rows(const OwnedNativeEpisode &episode,
         }
         previous = actual;
         ++application_id;
+    }
+    return out;
+}
+
+nb::list derived_event_rows(const OwnedNativeEpisode &episode,
+                            nb::handle plan, std::int64_t start,
+                            std::int64_t limit) {
+    const DerivedPlan parsed = parse_derived_plan(plan);
+    // Same slice domain as encode_table/applied_rows: the retained prefix
+    // admits start == row_count as the empty suffix; limit must be
+    // positive.
+    const auto size = static_cast<std::int64_t>(episode.samples.size());
+    if (start < 0 || start > size)
+        throw std::invalid_argument(
+            "derived_rows start is outside the retained extent");
+    if (limit < 1)
+        throw std::invalid_argument("derived_rows limit must be positive");
+    const auto last = start + std::min(limit, size - start);
+
+    // iter_derived_events carries `previous` across the whole scan, so a
+    // windowed call seeds it from row start-1 — chunked calls then emit
+    // exactly the full-pass sequence, and the first row of a start-0 call
+    // never emits (previous is None until the first row resolves).
+    std::vector<KindValues> previous(parsed.kinds.size());
+    std::vector<KindValues> current(parsed.kinds.size());
+    bool have_previous = false;
+    if (start > 0) {
+        resolve_derived(parsed,
+                        *episode.samples[static_cast<std::size_t>(start - 1)],
+                        previous);
+        have_previous = true;
+    }
+    nb::list out;
+    for (std::int64_t i = start; i < last; ++i) {
+        const PhysicalSampleData &sample =
+            *episode.samples[static_cast<std::size_t>(i)];
+        resolve_derived(parsed, sample, current);
+        if (have_previous)
+            for (std::size_t slot = 0; slot < parsed.kinds.size(); ++slot) {
+                nb::dict changes;
+                bool any = false;
+                for (const auto &[label, value] : current[slot]) {
+                    const Wire *before =
+                        tracked_find(previous[slot], label);
+                    // Python `prev != cur` — an absent previous label
+                    // (_MISSING) or a wire difference both record the
+                    // change; boxing happens only for emitted values.
+                    if (before != nullptr && wire_equal(*before, *value))
+                        continue;
+                    changes[nb::str(label.data(), label.size())] =
+                        wire_to_python(*value);
+                    any = true;
+                }
+                if (!any) continue;
+                nb::dict row;
+                row["interval_id"] = nb::int_(sample.interval_id);
+                row["kind"] = nb::str("derived_transition");
+                const std::string &kind = parsed.kinds[slot];
+                row["derived_kind"] = nb::str(kind.c_str(), kind.size());
+                row["changes"] = std::move(changes);
+                out.append(std::move(row));
+            }
+        std::swap(previous, current);
+        have_previous = true;
     }
     return out;
 }

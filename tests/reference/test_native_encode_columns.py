@@ -936,3 +936,153 @@ def test_whole_episode_single_pass(monkeypatch):
                    if batch.table == 'physics') == episode.row_count
     finally:
         driver.close()
+
+
+# --- derived-transition scan: episode.derived_rows + the native branch of
+# iter_derived_events ---
+
+# (contact, coast, brake, counts, crash) per retained row. The staged
+# transitions: a contact flip at row 5, a null->value coasting_reason at
+# row 6, an absent->present crash cause and a model_valid flip at row 8,
+# a sticky NaN brake demand that must RE-emit every row (NaN != NaN), and
+# row 7's retyped-but-equal values (-0.0, {'energy': 1.0}) that must not.
+_DERIVED_STAGE = (
+    (True,  None,    0.0,  {'energy': 1},   None),   # 0-4 baseline
+    (True,  None,    0.0,  {'energy': 1},   None),
+    (True,  None,    0.0,  {'energy': 1},   None),
+    (True,  None,    0.0,  {'energy': 1},   None),
+    (True,  None,    0.0,  {'energy': 1},   None),
+    (False, None,    0.0,  {'energy': 1},   None),   # 5 contact flip
+    (False, 'coast', 0.0,  {'energy': 1},   None),   # 6 null -> 'coast'
+    (False, 'coast', -0.0, {'energy': 1.0}, None),   # 7 equal retypes
+    (False, 'coast', -0.0, {'energy': 1.0},
+     {'kind': 'tire_blowout'}),                      # 8 crash + invalid
+    (False, 'coast', float('nan'), {'energy': 1.0},
+     {'kind': 'tire_blowout'}),                      # 9 brake -> NaN
+    (False, 'coast', float('nan'), {'energy': 1.0},
+     {'kind': 'tire_blowout'}),                      # 10 NaN re-emits
+    (False, 'coast', 0.0,  {'energy': 1.0},
+     {'kind': 'tire_blowout'}),                      # 11 back to 0.0
+)
+
+
+def _derived_stage_rows(stages=_DERIVED_STAGE):
+    rows = []
+    for i, (contact, coast, brake, counts, crash) in enumerate(stages):
+        # model_valid flips once at row 8 and stays flipped — a second
+        # flip back would (correctly) emit a second model_validity event.
+        status = {'model_valid': i < 8, 'numerically_valid': True,
+                  'model_violation_counts': counts}
+        channels = {
+            'tires': {'front': {'raw_contact': contact,
+                                'controller_grounded': contact},
+                      'rear': {'raw_contact': contact,
+                               'controller_grounded': contact}},
+            'drive': {'coasting_reason': coast, 'freehub_engaged': True,
+                      'front_brake_demand': brake,
+                      'rear_brake_demand': brake},
+            'model_status': status}
+        if crash is not None:
+            channels['contact_crash_cause'] = crash
+        rows.append(support.sample_row(interval_id=i, start=i * 0.001,
+                                       channels=channels))
+    return rows
+
+
+def test_derived_events_bitwise_vs_oracle(monkeypatch):
+    """``iter_derived_events`` on an OwnedNativeEpisode emits exactly the
+    InputEvent sequence the Python scanner derives through the boxed
+    ``sample_batch`` surface — ids, kinds, steps and ``changes`` bitwise.
+
+    The ``_sample_batch`` spy proves the native branch never re-boxes the
+    channel tree: with ``derived_rows`` the per-row materialization is
+    gone entirely.
+    """
+    import bike_sim.recording.native as native_module
+    episode = oracle.make_episode(_derived_stage_rows())
+    expected = list(native_module.iter_derived_events(
+        oracle._PythonPathEpisode(episode), 7,
+        start_event_id=3, received_wall_s=1.5))
+
+    def no_boxed_scan(*args, **kwargs):
+        raise AssertionError('boxed sample scan ran on the native path')
+
+    monkeypatch.setattr(native_module, '_sample_batch', no_boxed_scan)
+    actual = list(native_module.iter_derived_events(
+        episode, 7, start_event_id=3, received_wall_s=1.5))
+    # The staged sequence is real, not vacuously equal: a flip at row 5,
+    # the null->value coast at 6, model_validity before contact_crash at
+    # row 8 (kind order follows _DERIVED_FIELDS), then the sticky NaN.
+    assert [e.values['derived_kind'] for e in actual] == [
+        'tire_contact', 'freehub_coast', 'model_validity',
+        'contact_crash', 'brake_gate', 'brake_gate', 'brake_gate']
+    assert [e.values['interval_id'] for e in actual] == \
+        [5, 6, 8, 8, 9, 10, 11]
+    assert [e.event_id for e in actual] == list(range(3, 10))
+    oracle.assert_derived_events(actual, expected)
+
+
+def test_derived_rows_window_seeding():
+    """Windowed ``derived_rows`` calls concatenate to the full pass: each
+    call seeds its previous-row state from row ``start - 1``."""
+    episode = oracle.make_episode(_derived_stage_rows())
+    plan = oracle.derived_plan()
+    whole = episode.derived_rows(plan, 0, episode.row_count)
+    chunked = [row for start in range(0, episode.row_count, 4)
+               for row in episode.derived_rows(plan, start, 4)]
+    oracle.assert_plain_bitwise(chunked, whole, 'chunked')
+    # A single-row window at the flip still emits it — the compare ran
+    # against row 4's state, not an empty seed.
+    seeded = episode.derived_rows(plan, 5, 1)
+    assert [(r['interval_id'], r['kind'], r['derived_kind'])
+            for r in seeded] == [(5, 'derived_transition', 'tire_contact')]
+    assert set(seeded[0]['changes']) == {
+        'front.raw_contact', 'rear.raw_contact',
+        'front.controller_grounded', 'rear.controller_grounded'}
+    # The retained prefix admits start == row_count as the empty suffix.
+    assert episode.derived_rows(plan, episode.row_count, 4) == []
+
+
+def test_derived_rows_rejects_bad_plans_and_ranges():
+    episode = oracle.make_episode(_derived_stage_rows()[:1])
+    plan = oracle.derived_plan()
+    for bad in ({}, {'fields': {}},
+                {'fields': [{'path': ['a']}]},
+                {'fields': [{'kind': 'k', 'path': []}]},
+                {'fields': [{'kind': 'k', 'path': [1]}]},
+                {'fields': [{'kind': 1, 'path': ['a']}]},
+                {'fields': [], 'extra': 1}):
+        with pytest.raises(ValueError):
+            episode.derived_rows(bad, 0, 1)
+    for start, limit in ((-1, 1), (0, 0), (2, 1)):
+        with pytest.raises(ValueError):
+            episode.derived_rows(plan, start, limit)
+
+
+def test_derived_events_real_episode_bitwise(monkeypatch):
+    """A sealed ride's derived_transition stream is identical whether the
+    C++ scan or the boxed Python scan produces it — including dict-valued
+    ``changes`` (model_violation_counts, first_model_violation). The
+    ``_sample_batch`` spy keeps the boxed scan out of the native path."""
+    from _native_runtime_support import make_python_ride
+    import bike_sim.recording.native as native_module
+    from bike_sim.native.runtime import create_native_ride
+    sim = make_python_ride()
+    driver = create_native_ride(sim, record_decimation=80, retention='full')
+    try:
+        driver.advance(65)
+        driver.flush()
+        episode = driver._native.seal_episode()
+        expected = list(native_module.iter_derived_events(
+            oracle._PythonPathEpisode(episode), 2,
+            start_event_id=5, received_wall_s=3.25))
+        monkeypatch.setattr(
+            native_module, '_sample_batch',
+            lambda *a, **k: (_ for _ in ()).throw(
+                AssertionError('boxed sample scan ran on the native path')))
+        actual = list(native_module.iter_derived_events(
+            episode, 2, start_event_id=5, received_wall_s=3.25))
+        assert len(expected) >= 5   # the ride really transitions
+        oracle.assert_derived_events(actual, expected)
+    finally:
+        driver.close()

@@ -147,7 +147,14 @@ void bind_episode_value(const nb::module_ &module) {
                                 nb::handle start, nb::handle limit) {
             return applied_command_rows(episode, episode_index(start, "start"),
                                         episode_index(limit, "limit"));
-        }, nb::arg("start"), nb::arg("limit"));
+        }, nb::arg("start"), nb::arg("limit"))
+        .def("derived_rows", [](const OwnedNativeEpisode &episode,
+                                nb::handle plan, nb::handle start,
+                                nb::handle limit) {
+            return derived_event_rows(episode, plan,
+                                      episode_index(start, "start"),
+                                      episode_index(limit, "limit"));
+        }, nb::arg("plan"), nb::arg("start"), nb::arg("limit"));
 }
 
 PhysicalSampleData history_sample(nb::handle value) {

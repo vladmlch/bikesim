@@ -259,6 +259,12 @@ _DERIVED_FIELDS = (
     ('contact_crash', ('contact_crash_cause',)),
 )
 
+# The scan plan ``iter_derived_events`` hands to an episode's native
+# ``derived_rows``: ``_DERIVED_FIELDS`` stays the single source; C++
+# resolves each path per retained row and boxes only the changed values.
+_DERIVED_PLAN = {'fields': [{'kind': kind, 'path': list(path)}
+                            for kind, path in _DERIVED_FIELDS]}
+
 
 def episode_interval_for_time(episode, time_s):
     """First retained interval whose span reaches ``time_s``.
@@ -298,8 +304,32 @@ def iter_derived_events(episode, episode_id, *, start_event_id,
     because optional roots may be absent on some backends.
     """
     event_id = int(start_event_id)
-    previous = None
     row_count = int(episode.row_count)
+    derived_rows = getattr(episode, 'derived_rows', None)
+    if derived_rows is not None:
+        # The native scan diffs the tracked paths inside C++ and boxes
+        # only the changed values; event identity, the derivation labels
+        # and the InputEvent wrap all stay here so the journaled shape is
+        # unchanged. Chunked calls keep the bounded-scan discipline —
+        # derived_rows seeds each window's compare from row start-1.
+        for start in range(0, row_count, _SCAN_ROWS):
+            for row in derived_rows(_DERIVED_PLAN, start, _SCAN_ROWS):
+                interval = int(row['interval_id'])
+                yield InputEvent(
+                    episode_id=episode_id, event_id=event_id,
+                    kind='derived_transition',
+                    received_wall_s=float(received_wall_s),
+                    processed_step=interval, applied_step=interval,
+                    values={'classification': 'derived_transition',
+                            'derived_kind': row['derived_kind'],
+                            'derivation_rule': DERIVED_TRANSITION_RULE,
+                            'interval_id': interval,
+                            'changes': row['changes']})
+                event_id += 1
+        return
+    # Duck-typed episodes without the native scan keep the reviewed
+    # per-row materialization below (OwnedPythonEpisode, test doubles).
+    previous = None
     for start in range(0, row_count, _SCAN_ROWS):
         batch = _sample_batch(episode, start, _SCAN_ROWS)
         for sample in batch.samples:

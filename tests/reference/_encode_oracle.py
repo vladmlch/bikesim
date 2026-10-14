@@ -2,11 +2,21 @@
 import numpy as np
 import pyarrow as pa
 from native_loader import load_native
+from _bits import assert_bitwise_equal
 import _recording_support as support
 from bike_sim.recording.encoding import encode_rows
 from bike_sim.recording.schema import arrow_batch
 
 bike_native = load_native()
+
+
+def derived_plan():
+    """A fresh copy of the plan ``iter_derived_events`` passes to
+    ``episode.derived_rows`` — the tracked (kind, path) table stays
+    authored in ``native.py::_DERIVED_FIELDS``."""
+    from bike_sim.recording.native import _DERIVED_FIELDS
+    return {'fields': [{'kind': kind, 'path': list(path)}
+                       for kind, path in _DERIVED_FIELDS]}
 
 
 def make_episode(rows, generation=1):
@@ -131,6 +141,58 @@ def column_bits(array):
             b'\xfe' + (x.encode() if isinstance(x, str) else repr(x).encode())
             for x in a.to_pylist()))
     return b'|'.join(parts)
+
+
+def assert_plain_bitwise(actual, expected, what='value'):
+    """Recursive bitwise compare over plain JSON-shaped value trees.
+
+    ``thaw`` normalizes the frozen InputEvent views (mappingproxy ->
+    dict, tuple -> list) before the walk, so both the boxing path's and
+    the oracle's event values compare in the same shape. Floats go
+    through ``assert_bitwise_equal`` — NaN payloads and -0.0 stay
+    distinct; ints/bools/strings compare by exact type+value.
+    """
+    from bike_sim.recording.json_codec import thaw
+    a, e = thaw(actual), thaw(expected)
+    if isinstance(e, dict):
+        assert isinstance(a, dict) and list(a) == list(e), \
+            f'{what}: {a!r} != {e!r}'
+        for key in e:
+            assert_plain_bitwise(a[key], e[key], f'{what}[{key!r}]')
+        return
+    if isinstance(e, list):
+        assert isinstance(a, list) and len(a) == len(e), \
+            f'{what}: {a!r} != {e!r}'
+        for index, pair in enumerate(zip(a, e)):
+            assert_plain_bitwise(pair[0], pair[1], f'{what}[{index}]')
+        return
+    if isinstance(e, float) or isinstance(a, float):
+        assert_bitwise_equal(a, e, what)
+        return
+    assert type(a) is type(e) and a == e, f'{what}: {a!r} != {e!r}'
+
+
+def assert_derived_events(actual, expected):
+    """Two ``iter_derived_events`` InputEvent sequences are identical:
+    identity (episode_id, event_id), kind, steps and received_wall_s
+    equal, ``values`` equal with ``changes`` compared bitwise."""
+    assert len(actual) == len(expected)
+    for index, (got, want) in enumerate(zip(actual, expected)):
+        label = f'event[{index}]'
+        assert (got.episode_id, got.event_id, got.kind,
+                got.received_wall_s, got.processed_step,
+                got.applied_step) == \
+               (want.episode_id, want.event_id, want.kind,
+                want.received_wall_s, want.processed_step,
+                want.applied_step), label
+        assert set(got.values) == set(want.values), label
+        for key in ('classification', 'derived_kind', 'derivation_rule',
+                    'interval_id'):
+            assert got.values[key] == want.values[key], \
+                f'{label}.{key}'
+        assert_plain_bitwise(got.values['changes'],
+                             want.values['changes'],
+                             f'{label}.changes')
 
 
 def assert_identical(spec, episode_or_rows, episode_id=0, catalog=None):

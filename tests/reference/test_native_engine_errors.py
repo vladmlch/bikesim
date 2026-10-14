@@ -864,4 +864,9 @@ def test_configure_rejects_unsupported_installed_mujoco_version(tmp_path: Path) 
         timeout=60,
     )
     assert configured.returncode != 0
-    assert 'requires the pinned MuJoCo 3.12.0 error ABI' in configured.stdout + configured.stderr
+    # Since T05 the child probe itself rejects a wrong-version MuJoCo before
+    # emitting a document; the configure failure carries that named probe
+    # error verbatim rather than the CMake-side pin check (which survives
+    # as defense-in-depth for a probe that reports the wrong version).
+    assert 'requires MuJoCo 3.12.0' in configured.stdout + configured.stderr
+    assert '3.15.0' in configured.stdout + configured.stderr

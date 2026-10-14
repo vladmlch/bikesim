@@ -676,7 +676,12 @@ def test_explicit_sdk_alias_is_retained_and_canonicalized(tmp_path: Path) -> Non
     )
     current_sdk = Path(current_context["sdk"])
     explicit_alias = current_sdk.parent / "MacOSX26.5.sdk"
-    assert explicit_alias.is_dir()
+    if not explicit_alias.is_dir():
+        pytest.skip(
+            f"sibling SDK {explicit_alias} is not installed next to "
+            f"{current_sdk} — the explicit-alias control requires a host "
+            "carrying MacOSX26.5.sdk under that SDK directory"
+        )
 
     configured, build = configure_native(
         tmp_path,

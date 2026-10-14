@@ -684,6 +684,12 @@ if(BUILD_TESTING)
             --artifacts "${_native_bench_dir}/artifacts")
 endif()
 
+# Migration contract-test harness and per-task regressions (T02): one
+# executable and one CTest name per task under native/tests/migration. The
+# subdirectory inherits this scope's _native_contract_* context and the
+# BUILD_TESTING gate from include(CTest) above.
+add_subdirectory(tests/migration)
+
 add_custom_target(check_native_contracts
   COMMAND uv run --frozen --group native python "${CMAKE_SOURCE_DIR}/../tools/check_native_contracts.py"
           --build "${CMAKE_BINARY_DIR}"
@@ -808,6 +814,17 @@ set(_native_source_separator "")
 set(_native_target_contexts "{")
 set(_native_target_separator "")
 get_property(_native_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+# BUILDSYSTEM_TARGETS is scoped to this directory — targets created through
+# add_subdirectory() (native/tests/migration) must be collected via
+# SUBDIRECTORIES or their first-party translation units never enter the
+# manifest while compile_commands.json still compiles them.
+get_property(_native_subdirectories DIRECTORY PROPERTY SUBDIRECTORIES)
+foreach(_native_subdirectory IN LISTS _native_subdirectories)
+  get_property(_native_subdirectory_targets DIRECTORY "${_native_subdirectory}"
+    PROPERTY BUILDSYSTEM_TARGETS)
+  list(APPEND _native_targets ${_native_subdirectory_targets})
+endforeach()
+list(REMOVE_DUPLICATES _native_targets)
 foreach(_target IN LISTS _native_targets)
   get_target_property(_target_type "${_target}" TYPE)
   if(NOT _target_type MATCHES "^(EXECUTABLE|STATIC_LIBRARY|SHARED_LIBRARY|MODULE_LIBRARY|OBJECT_LIBRARY)$")
@@ -818,11 +835,15 @@ foreach(_target IN LISTS _native_targets)
   if(NOT _target_sources OR _target_sources MATCHES "-NOTFOUND$")
     continue()
   endif()
+  # SOURCES entries are relative to the directory where the target was
+  # created — subdir targets (native/tests/migration) need their own
+  # SOURCE_DIR, not this scope's CMAKE_CURRENT_SOURCE_DIR.
+  get_target_property(_target_source_dir "${_target}" SOURCE_DIR)
   foreach(_source IN LISTS _target_sources)
     if(_source MATCHES "^\\$<")
       continue()
     endif()
-    get_filename_component(_source_absolute "${_source}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    get_filename_component(_source_absolute "${_source}" ABSOLUTE BASE_DIR "${_target_source_dir}")
     set(_source_is_first_party FALSE)
     foreach(_first_party_root IN LISTS _native_first_party_roots)
       if(NOT _source_is_first_party)
@@ -873,7 +894,7 @@ foreach(_target IN LISTS _native_targets)
     if(_include MATCHES "^\\$<")
       list(APPEND _resolved_target_includes "${_include}")
     else()
-      get_filename_component(_include_absolute "${_include}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+      get_filename_component(_include_absolute "${_include}" ABSOLUTE BASE_DIR "${_target_source_dir}")
       list(APPEND _resolved_target_includes "${_include_absolute}")
     endif()
   endforeach()

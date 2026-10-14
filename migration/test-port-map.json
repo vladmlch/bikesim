@@ -22568,5 +22568,34 @@
     "all_source_paths_tracked": true,
     "missing_or_moved_test_files": [],
     "note": "All test source files verified byte-identical modulo trailing-newline normalization against the supplied snapshot. project/tests/reference/test_constraint_mode_search.py is the only project/ test file and remains an independent entry; no same-name duplicate exists in the checkout. Collected pytest node IDs are acquired in T01, not T00."
+  },
+  "contract_test_harness": {
+    "task": "T02",
+    "ctest_name": "migration_T02",
+    "executable": "migration_T02",
+    "harness_library": "bike_migration_test",
+    "harness_header": "native/tests/support/migration_test.hpp",
+    "harness_source": "native/tests/support/migration_test.cpp",
+    "task_source": "native/tests/migration/test_t02.cpp",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt via add_subdirectory(tests/migration) in native/CMakeLists.txt",
+    "fixture_root": "BIKE_FIXTURE_ROOT compile definition computed from native/tests/migration/../../.. (repository root), never the process working directory",
+    "produced_api": [
+      "bt::run",
+      "bt::require",
+      "bt::fixture",
+      "bt::text",
+      "bt::read_f64",
+      "bt::golden_text",
+      "bt::golden_f64",
+      "bt::invalid"
+    ],
+    "comparison_contract": "golden_f64 compares uint64_t object representations — signed zero and NaN bit payloads are significant; no global epsilon and no auto-update mode; explicit little-endian binary64 decode with length checks, fixture-root containment and 512 MiB bounded reads",
+    "evidence": [
+      "ctest --test-dir native/build -R '^migration_T02$' --no-tests=error: 1/1 tests passed, exit 0",
+      "migration_T02 output: 'PASS 302 checks', exit 0",
+      "binary executed from / and /tmp and under CTest WORKING_DIRECTORY override: fixtures resolve independently of cwd",
+      "standalone -O2 -DNDEBUG compile+run: 'PASS 302 checks' — require() is real code, no assert/NDEBUG dependence"
+    ],
+    "note": "T02 owns no Python source rows in python-removal.json and no ported test records in this map; this task-scoped entry is its registration evidence. Later tasks add migration_TNN executables under the same registration pattern; each task owns its own native/tests/migration/test_tNN.cpp."
   }
 }

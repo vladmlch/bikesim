@@ -15,6 +15,22 @@ or checkout mutation. Machine-readable output:
 Gate logs: `output/portability/logs/{quick,native,full}.log` and
 `linux-configure.log`.
 
+## Evidence map — observed vs historical
+
+| Observed on this machine | Historical/source-only |
+|---|---|
+| Git/env identity: worktree branch `linux-macos-port`, HEAD `4667639`→`a1a2ae8`/`ecfff78`, dirty only via untracked entries; `.git` worktree pointer verified by `git rev-parse` (§1) | — |
+| Packages/lock: `uv.lock` sha256 `706c2e5c…` preserved; importlib.metadata versions — numpy 2.5.2, mujoco 3.12.0, nanobind 3.1.0, numba 0.68.0, scipy 1.17.0, duckdb 1.5.6, pyarrow 26.0.0 (§2, baseline.json) | source-comment claims of NumPy 2.5.2 / CPython 3.14.3 — consistent with, and now superseded by, observed values |
+| Toolchain/SDK: AppleClang 21.0.0, CMake 4.4.3, uv 0.12.9, git 2.50.1, Xcode 26.6; build SDK = Xcode `MacOSX.sdk` (default source); CLT `xcrun --show-sdk-version` fails rc=1 (§2, §4) | — |
+| `quick`: exit 1 on fresh tree (12 `test_native_check_tools` build-ordering failures) → exit 0, 930 passed after `native/build` configured (§4) | — |
+| `native`: exit 0, 2957 passed; build + 6 sweeps + headers/diag/context + CTest 6/6 + contracts all green (§4) | TESTING.md/RIDE.md "native profile is green" — re-confirmed here |
+| `full`: exit 1, 24 failed / 3878 passed; failing node IDs byte-identical to the documented set (§4) | the 24-ID baseline list and representative traces, TESTING.md ~line 717; `1ccdfcb` isolated-archive baseline |
+| Linux configure: exit 1 at `CMakeLists.txt:119` macOS-SDK check, verbatim on Ubuntu 24.04.5 **aarch64** container (§3) | source audit's same signature on Linux **x86_64** — different lane, not this measurement |
+| Missing inputs: `.python-version`, `.github/`, `docs/superpowers/{specs,plans}/2026-10-06-native-safety*.md` absent in the real checkout (§1) | snapshot absence ≠ real-repo absence — resolved by direct checkout inspection |
+| File modes and fixture assets: `tools/*.sh` exec bits; `proto_native_bench/artifacts/**` content hashes (§1, baseline.json) | — |
+| macOS host identity: macOS 27.0.1 arm64, CPython 3.14.3 (§2) | RIDE.md 2026-10-10 GUI acceptance and RTF figures (branch `impl/cpp-port-p2`) — not re-run |
+| Not run here: GUI acceptance, sanitizer/RTSan, coverage — pending later task gates | prior sanitizer/RTSan results in `2026-10-08-native-visual-runtime.md` |
+
 ## 1. Recovered checkout identity — [observed]
 
 - Worktree `.worktrees/linux-macos-port`, branch `linux-macos-port`, base

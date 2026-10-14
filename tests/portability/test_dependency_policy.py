@@ -68,6 +68,15 @@ def test_check_dependencies_enforces_exact_native_pins():
 
 
 def test_required_dependencies_fallback_is_retained(monkeypatch):
-    """Without the checkout layout the minimal mujoco pin still applies."""
+    """Without the checkout layout the full exact-pin set still applies."""
     monkeypatch.setattr(artifact, "_REPO_ROOT", Path("/nonexistent-checkout"))
-    assert artifact.required_dependencies() == {"mujoco": "3.12.0"}
+    assert artifact.required_dependencies() == {
+        "mujoco": "3.12.0",
+        "numpy": "2.5.2",
+    }
+
+
+def test_fallback_mirrors_the_exact_native_pins():
+    """A new ``==`` pin in the native group must update the bundled fallback
+    in the same change; drift is caught here, not silently in deployments."""
+    assert artifact._FALLBACK_DEPENDENCIES == artifact.required_dependencies()

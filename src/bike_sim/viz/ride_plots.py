@@ -423,10 +423,56 @@ def _shift_events(channels: Dict[str, np.ndarray]) -> List[Tuple[float, str]]:
     for i in range(1, len(count)):
         if count[i] != count[i - 1] and np.isfinite(count[i]):
             label = ""
-            if direction is not None and from_t is not None and to_t is not None:
+            if (direction is not None and from_t is not None and to_t is not None
+                    and np.isfinite(from_t[i]) and np.isfinite(to_t[i])):
                 label = f"{direction[i]}:{int(from_t[i])}->{int(to_t[i])}"
             events.append((float(time[i]), label))
     return events
+
+
+def _subplot_refs(fig: Any, row: int, col: int) -> Tuple[str, str]:
+    """``(xref, yref)`` axis ids for a make_subplots cell, e.g. ``("x4", "y4")``."""
+    cell = fig.get_subplot(row, col)
+    xaxis, yaxis = cell.xaxis.plotly_name, cell.yaxis.plotly_name
+    return xaxis.replace("axis", ""), yaxis.replace("axis", "")
+
+
+class _Markers:
+    """Collects vertical markers and labels, then applies them in one layout update.
+
+    ``fig.add_vline``/``add_annotation`` re-validate the whole figure on every
+    call, which made ``ride.html`` quadratic in ride length (perf-roadmap/09:
+    255 events on a 5-minute ride cost 37 s). Batching keeps it linear.
+    """
+
+    def __init__(self, fig: Any) -> None:
+        self.fig = fig
+        self.shapes: List[Dict[str, Any]] = []
+        self.annotations: List[Dict[str, Any]] = []
+
+    @staticmethod
+    def _domain(yref: str) -> str:
+        return yref if yref == "paper" else f"{yref} domain"
+
+    def vline(self, x: float, *, xref: str, yref: str, label: str) -> None:
+        line = dict(color=MARKER, dash="dot", width=1)
+        yref = self._domain(yref)
+        self.shapes.append(dict(type="line", xref=xref, yref=yref,
+                                x0=x, x1=x, y0=0.0, y1=1.0, line=line))
+        self.annotations.append(dict(x=x, y=1.0, xref=xref, yref=yref,
+                                     text=label, showarrow=False, textangle=-90,
+                                     font=dict(color=MARKER, size=9),
+                                     xanchor="left", yanchor="top"))
+
+    def vrect(self, x0: float, x1: float, *, xref: str, yref: str) -> None:
+        self.shapes.append(dict(type="rect", xref=xref, yref=self._domain(yref),
+                                x0=x0, x1=x1, y0=0.0, y1=1.0, fillcolor=MARKER,
+                                opacity=0.18, line=dict(width=0), layer="below"))
+
+    def apply(self) -> None:
+        if self.shapes or self.annotations:
+            self.fig.update_layout(shapes=list(self.fig.layout.shapes) + self.shapes,
+                                   annotations=list(self.fig.layout.annotations) + self.annotations)
 
 
 def _html_layout(fig: Any, title: str, height: int) -> None:
@@ -442,32 +488,16 @@ def _html_layout(fig: Any, title: str, height: int) -> None:
     fig.update_yaxes(gridcolor=GRID, zerolinecolor=GRID)
 
 
-def plot_physical_ride_html(channels: Dict[str, np.ndarray],
-                            output_dir: Union[str, Path],
-                            filename: str = "ride.html") -> Path:
-    """
-    Interactive HTML dashboards for a physical ``preview.csv`` recording.
+def physical_ride_figures(channels: Dict[str, np.ndarray]) -> Tuple[Any, Any]:
+    """Builds the two plotly dashboards for a physical ``preview.csv`` recording.
 
-    Two figures share one file: an effort/drivetrain view over time (speed and
-    grade, motor vs human power, cadence tracking with shift-cut shading, gear
-    steps with shift markers, motor request vs delivered torque) and a
-    suspension/load view over track position with obstacle markers. Unified
-    hover reports every curve at the cursor's x.
-
-    Args:
-        channels: Channels keyed by CSV column name (``load_ride_csv`` or
-            ``PhysicalRecorder.columns()``).
-        output_dir: Directory for the output file.
-        filename: Output file name.
-
-    Requires plotly (``uv run --with plotly``); imported lazily so the package
-    does not depend on it.
+    Figure 1: effort and drivetrain over time; figure 2: suspension and wheel
+    load over track distance. Event markers (gear shifts, obstacles) are batched
+    into one layout update per figure so generation stays linear in ride length.
     """
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
 
-    out = Path(output_dir)
-    out.mkdir(parents=True, exist_ok=True)
     time = _series(channels, "time_s")
     x_m = _series(channels, "x_m")
     if time is None or x_m is None:
@@ -491,6 +521,7 @@ def plot_physical_ride_html(channels: Dict[str, np.ndarray],
         subplot_titles=("Speed and grade", "Power: motor vs human", "Cadence vs required",
                         "Rear gear and freehub torque", "Motor request vs delivered"),
     )
+    markers1 = _Markers(fig1)
     add(fig1, time, "speed_kmh", 1, FORK)
     add(fig1, time, "grade_pct", 1, MUTED, secondary=True)
     cadence = _series(channels, "cadence_rpm")
@@ -506,17 +537,16 @@ def plot_physical_ride_html(channels: Dict[str, np.ndarray],
     if cut is not None:
         in_cut = cut < 0.999
         edges = np.diff(in_cut.astype(int))
+        xref, yref = _subplot_refs(fig1, 3, 1)
         for start, end in zip(np.where(edges == 1)[0], np.where(edges == -1)[0]):
-            fig1.add_vrect(float(time[start]), float(time[end]), row=3, col=1,
-                           fillcolor=MARKER, opacity=0.18, line_width=0)
+            markers1.vrect(float(time[start]), float(time[end]), xref=xref, yref=yref)
     add(fig1, time, "gear_rear_teeth", 4, SADDLE, step=True)
     add(fig1, time, "gear_front_teeth", 4, MUTED, step=True)
     add(fig1, time, "freehub_torque_nm", 4, RIDER, secondary=True)
+    xref, yref = _subplot_refs(fig1, 4, 1)
     for t, label in _shift_events(channels):
-        fig1.add_vline(t, row=4, col=1, line=dict(color=MARKER, dash="dot", width=1))
-        fig1.add_annotation(x=t, y=1.0, yref="y4 domain", text=label, showarrow=False,
-                            font=dict(color=MARKER, size=9), textangle=-90,
-                            xanchor="left", yanchor="top", row=4, col=1)
+        markers1.vline(t, xref=xref, yref=yref, label=label)
+    markers1.apply()
     add(fig1, time, "motor_request_nm", 5, MUTED)
     add(fig1, time, "motor_torque_nm", 5, SHOCK)
     fig1.update_yaxes(title_text="km/h | %", row=1, col=1)
@@ -535,16 +565,44 @@ def plot_physical_ride_html(channels: Dict[str, np.ndarray],
     add(fig2, x_m, "shock_stroke_mm", 1, SHOCK)
     add(fig2, x_m, "front_load_n", 2, BAR)
     add(fig2, x_m, "rear_load_n", 2, SADDLE)
+    markers2 = _Markers(fig2)
     for pos, label in _obstacle_positions(channels):
-        fig2.add_vline(pos, line=dict(color=MARKER, dash="dot", width=1))
-        fig2.add_annotation(x=pos, y=1.0, yref="paper", text=label, showarrow=False,
-                            font=dict(color=MARKER, size=9), textangle=-90,
-                            xanchor="left", yanchor="top")
+        # Full-height marker across both rows: paper-relative like add_vline()
+        # without a row argument.
+        markers2.vline(pos, xref="x", yref="paper", label=label)
+    markers2.apply()
     fig2.update_yaxes(title_text="mm", row=1, col=1)
     fig2.update_yaxes(title_text="N", row=2, col=1)
     fig2.update_xaxes(title_text="track x (m)", row=2, col=1)
     _html_layout(fig2, "Suspension and wheel load", height=650)
 
+    return fig1, fig2
+
+
+def plot_physical_ride_html(channels: Dict[str, np.ndarray],
+                            output_dir: Union[str, Path],
+                            filename: str = "ride.html") -> Path:
+    """
+    Interactive HTML dashboards for a physical ``preview.csv`` recording.
+
+    Two figures share one file: an effort/drivetrain view over time (speed and
+    grade, motor vs human power, cadence tracking with shift-cut shading, gear
+    steps with shift markers, motor request vs delivered torque) and a
+    suspension/load view over track position with obstacle markers. Unified
+    hover reports every curve at the cursor's x.
+
+    Args:
+        channels: Channels keyed by CSV column name (``load_ride_csv`` or
+            ``PhysicalRecorder.columns()``).
+        output_dir: Directory for the output file.
+        filename: Output file name.
+
+    Requires plotly (``uv run --with plotly``); imported lazily so the package
+    does not depend on it.
+    """
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    fig1, fig2 = physical_ride_figures(channels)
     path = out / filename
     path.write_text(
         "<!DOCTYPE html><html><head><meta charset='utf-8'>"

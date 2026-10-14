@@ -24,3 +24,13 @@ Ubiquitous language. Terms that resolved into stable shared vocabulary; use exac
 - **golden episode** — frozen Python-produced artifact (raw state + all recorder channels) serving as correctness oracle; Python is oracle via artifacts, not live comparison.
 - **replica-mjData** — the viewer's local copy of simulation state for rendering (snapshot per frame; core keeps the authoritative `mjData`).
 - **RTF** — real-time factor, simulated seconds per wall second; 1.0 = real time at dt=0.5 ms means step must cost ≤0.5 ms.
+
+## Performance effort (map in `.scratch/perf-roadmap/`)
+
+- **requested scale / achieved RTF** — what the viewer was asked to run at (1×, 2×, 4×, 8×) versus the measured simulated-time/wall-time ratio it sustained. Physics is scale-invariant; only the achieved number is evidence.
+- **lever** — one independent way to make the same simulation faster on the same hardware (threading, SIMD, render stack, GPU, ...). A lever changes speed, never fidelity.
+- **kill criterion** — a condition fixed before research starts under which a lever is dropped from the roadmap; stated per lever so the verdict is not post-hoc.
+- **headroom** — achieved RTF above 1.0 at the interactive gate; the margin that absorbs a dearer tyre model or a slower frame.
+- **benchmark mode** — a measurement run whose energy-residual cutoff is raised solely so the episode reaches steady state; marked as such in provenance, never a valid ride.
+- **baseline configuration** — the measured "today" column of the ledger: native backend, welded profile, distributed tyre at its default station count on `alpine_rocky`.
+- **order-changing optimization** — any speed-up that alters floating-point operation order (parallel sums, FMA, SIMD lanes, different BLAS); it cannot be bitwise and is admitted only opt-in through correctness layers 2–3.

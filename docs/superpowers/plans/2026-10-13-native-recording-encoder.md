@@ -72,7 +72,7 @@ Both sides of every later task's differential test need the same episode fed thr
   def assert_identical(spec, episode_or_rows, episode_id=0, catalog=None): ...
   ```
 
-- [ ] **Step 1: Write the failing test for the constructor and comparator**
+- [x] **Step 1: Write the failing test for the constructor and comparator**
 
 ```python
 # tests/reference/test_native_encode_columns.py
@@ -105,12 +105,12 @@ def test_column_bits_detects_negative_zero_and_nan():
     assert oracle.column_bits(a) == oracle.column_bits(pa.array([0.0, float('nan')]))
 ```
 
-- [ ] **Step 2: Run it — both tests fail**
+- [x] **Step 2: Run it — both tests fail**
 
 Run: `uv run --frozen --group native pytest tests/reference/test_native_encode_columns.py -x -q`
 Expected: FAIL — `runtime_make_episode` attribute missing; `_encode_oracle` missing.
 
-- [ ] **Step 3: Implement the episode constructor**
+- [x] **Step 3: Implement the episode constructor**
 
 Add to `native/src/runtime/samples_binding.cpp`, next to `history_sample`:
 
@@ -191,7 +191,7 @@ module.def("runtime_make_episode", &make_episode,
            nb::arg("rows"), nb::arg("generation"));
 ```
 
-- [ ] **Step 4: Implement `_encode_oracle.py`**
+- [x] **Step 4: Implement `_encode_oracle.py`**
 
 ```python
 """Shared oracle plumbing for native-encoder parity tests."""
@@ -279,12 +279,12 @@ def assert_identical(spec, episode_or_rows, episode_id=0, catalog=None):
 
 (`oracle_record_batch_from_episode` drives `NativePhysicalSource` on the native episode with a tiny `batch_rows` — e.g. 7 — and reassembles the oracle RecordBatch by chunking; write it as: collect `TableBatch`es via `source.tables(batch_rows=7)`, `pa.concat_batches` the `arrow_batch` of each. This keeps the oracle exactly on the production Python path.)
 
-- [ ] **Step 5: Run — constructor + comparator tests pass**
+- [x] **Step 5: Run — constructor + comparator tests pass**
 
 Run: `cmake --build native/build --target bike_native && uv run --frozen --group native pytest tests/reference/test_native_encode_columns.py -x -q`
 Expected: PASS (2 tests). Note: tests must come before encoder work lands — `native_record_batch` is not exercised yet.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add native/src/runtime/samples_binding.cpp tests/reference/_encode_oracle.py tests/reference/test_native_encode_columns.py
@@ -318,7 +318,7 @@ git commit -m "test(recording): authored-episode constructor and bitwise batch c
 - `contracts.PieceBatch` — `@dataclass(frozen=True) class PieceBatch: table: str; row_count: int; pieces: Mapping` (freeze: mapping-proxy the dict; pieces left owned by binding).
 - `storage._write_batch`: `record = pieces_to_arrow(spec, batch.row_count, batch.pieces, episode_id, pa) if isinstance(batch, PieceBatch) else arrow_batch(spec, batch, episode_id, pa)`.
 
-- [ ] **Step 1: Failing test — physics + forces bitwise on an authored episode**
+- [x] **Step 1: Failing test — physics + forces bitwise on an authored episode**
 
 ```python
 def test_physics_and_forces_bitwise_vs_oracle():
@@ -335,9 +335,9 @@ def test_physics_and_forces_bitwise_vs_oracle():
         oracle.assert_identical(cat.table(name), rows)
 ```
 
-- [ ] **Step 2: Run — fails** (`compile_plan` does not exist / `encode_table` missing).
+- [x] **Step 2: Run — fails** (`compile_plan` does not exist / `encode_table` missing).
 
-- [ ] **Step 3: Implement C++ core**
+- [x] **Step 3: Implement C++ core**
 
 `native/src/runtime/encode.hpp`:
 
@@ -407,7 +407,7 @@ Piece emit_physics_column(std::span<const SamplePtr> rows, std::string_view name
 
 `interval_id` is a `scalar_i` emitted per emitter (`forces` repeats it per component). `to_python(const Piece&)` → `nb::dict` with `owned_array<double>` / `owned_array<int64_t>` / `owned_flags` / `nb::list` for strings, `children`/`items` recursed.
 
-- [ ] **Step 4: Implement `native_encode.py` (physics/forces slice) + `PieceBatch` + routing**
+- [x] **Step 4: Implement `native_encode.py` (physics/forces slice) + `PieceBatch` + routing**
 
 ```python
 """Plan compiler + Arrow assembler for the native recording encoder."""
@@ -518,7 +518,7 @@ for start in range(0, self.row_count, batch_rows):
             ... existing pending/encode_rows loop over canonical ...
 ```
 
-- [ ] **Step 5: Rebuild + run**
+- [x] **Step 5: Rebuild + run**
 
 ```bash
 cmake --build native/build --target bike_native
@@ -526,7 +526,7 @@ uv run --frozen --group native pytest tests/reference/test_native_encode_columns
 ```
 Expected: PASS including `test_physics_and_forces_bitwise_vs_oracle`.
 
-- [ ] **Step 6: Sweeps covering the new file + commit**
+- [x] **Step 6: Sweeps covering the new file + commit**
 
 ```bash
 cmake --build native/build --target check_tidy
@@ -569,7 +569,7 @@ General path-walking emitter for `kind: 'channels'`. Covers every scalar/`x[]` l
 - `episode.applied_rows(start, limit) -> list[dict]`: emits `{application_id, time_s, step, control, front_brake_demand?, rear_brake_demand?, rollback_brake_demand?}` whenever the tuple `(control, *drive brake demands)` differs from the previous row's — same rule as the Python mirror (`native.py:167-187`), seeded from row `start-1` when `start>0`. `control` subtree is boxed only for changed rows.
 - `compile_plan` gains the channels branch; returns `None` while a field's dtype is unimplemented (Tasks 4-5 fill the remaining leaf dtypes).
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```python
 def test_flat_channel_tables_bitwise():
@@ -599,9 +599,9 @@ def test_unknown_channel_root_rejected():
 
 (Author the needed `_recording_support.drive_channels`/`sensors_channels` helpers — mirror `energy_channels` style; every required field of the spec must appear in the authored root.)
 
-- [ ] **Step 2: Run — fails.**
+- [x] **Step 2: Run — fails.**
 
-- [ ] **Step 3: Implement the walker**
+- [x] **Step 3: Implement the walker**
 
 `encode.cpp`: `EncodePlan` parsed once per call (column list + mask list + claims). Per row: resolve `channels[root]` subtree once per claimed root (`sample_wire::find`), then per leaf walk `path[1:]` through `WireObject`s. Rules mirroring `encode_rows`/`_distribute`:
 
@@ -614,7 +614,7 @@ def test_unknown_channel_root_rejected():
 
 `applied_command_rows(const OwnedNativeEpisode&, start, limit)`: per row read `channels.control` (required — missing → `invalid_argument`, parity with `'ordinary applied control is missing'`) and `channels.drive` brake demands (absent drive root → demands omitted — `channels.get('drive') or {}` semantics); compare the tuple against previous (wire-level `wire_equal` — write it: recursive variant compare, doubles compared with `==` exactly as Python `!=` on dicts does); on change emit dict `{application_id, time_s, step, control, ...demands}` with `wire_object_to_python` boxing of just the control subtree.
 
-- [ ] **Step 4: `compile_plan` channels branch**
+- [x] **Step 4: `compile_plan` channels branch**
 
 ```python
 _LEAF_DTYPES = {'double','bigint','boolean','varchar',
@@ -660,7 +660,7 @@ channels plan can never silently skip the unknown-root check.)
 
 In `tables()`: the applied-mirror Python loop is replaced by `self._episode.applied_rows(start, limit)` when available → `encode_rows(applied_spec, rows, ...)`.
 
-- [ ] **Step 5: Rebuild + run** — `test_flat_channel_tables_bitwise`, `test_optional_leaf_absent_vs_null`, `test_unknown_channel_root_rejected` PASS; add a real-episode check:
+- [x] **Step 5: Rebuild + run** — `test_flat_channel_tables_bitwise`, `test_optional_leaf_absent_vs_null`, `test_unknown_channel_root_rejected` PASS; add a real-episode check:
 
 ```python
 def test_real_episode_flat_tables_bitwise():
@@ -680,7 +680,7 @@ def test_real_episode_flat_tables_bitwise():
         driver.close()
 ```
 
-- [ ] **Step 6: Sweeps + commit** — `check_tidy`, `check_cppcheck`; commit `native(recording): flat channel projection + applied-command bridge`.
+- [x] **Step 6: Sweeps + commit** — `check_tidy`, `check_cppcheck`; commit `native(recording): flat channel projection + applied-command bridge`.
 
 ---
 
@@ -694,11 +694,11 @@ Adds `map<double>`, `map<boolean>`, `map<varchar>`, `map<double[]>`, `bigint[]`,
 - Piece for `map<K>`: `{'kind':'map','offsets':int32nd,'keys':list[str],'values':{'kind':'scalar','data':...}}` — `pa.MapArray.from_arrays(offsets, pa.array(keys), items)`.
 - `except_keys`: plan carries `f.except_keys` on map nodes; the C++ map emitter skips members owned by deeper sibling fields (parity with `_distribute` remainder routing — e.g. `rider_welds.crank_torque_nm` is its own column, never a map entry).
 
-- [ ] **Step 1:** failing tests — authored rows with `map<double>` (`energy.elastic_energy_j`), empty map on one row, absent root on another, a map member excluded by `except_keys` exercised on `channel_rider`-shaped authored data (that table still falls back as a whole until Task 5, so test `except_keys` at the plan/emitter level with a hand-built spec or via `channel_suspension`'s `map<double>` field plus a dedicated mini-spec fixture built in the test).
-- [ ] **Step 2:** run — fails.
-- [ ] **Step 3:** implement map walk: `WireObject` iterate → keys list + per-key leaf convert; offsets per row; empty map → `offsets[i]==offsets[i-1]`. `_assemble` `map` branch.
-- [ ] **Step 4:** run — PASS; extend `test_real_episode_flat_tables_bitwise` table list with `channel_energy`, `channel_suspension` (keep passing `catalog=cat`).
-- [ ] **Step 5:** sweeps + commit `native(recording): map and list channel dtypes`.
+- [x] **Step 1:** failing tests — authored rows with `map<double>` (`energy.elastic_energy_j`), empty map on one row, absent root on another, a map member excluded by `except_keys` exercised on `channel_rider`-shaped authored data (that table still falls back as a whole until Task 5, so test `except_keys` at the plan/emitter level with a hand-built spec or via `channel_suspension`'s `map<double>` field plus a dedicated mini-spec fixture built in the test).
+- [x] **Step 2:** run — fails.
+- [x] **Step 3:** implement map walk: `WireObject` iterate → keys list + per-key leaf convert; offsets per row; empty map → `offsets[i]==offsets[i-1]`. `_assemble` `map` branch.
+- [x] **Step 4:** run — PASS; extend `test_real_episode_flat_tables_bitwise` table list with `channel_energy`, `channel_suspension` (keep passing `catalog=cat`).
+- [x] **Step 5:** sweeps + commit `native(recording): map and list channel dtypes`.
 
 ---
 
@@ -716,11 +716,11 @@ The recursive container step: `channel_mass` (`endpoint_mass`), `channel_control
 - Reject unknown struct members (`_convert_struct` parity) and unknown map keys are impossible (maps accept any nonempty string key; empty-key check mirrors `_check_map_keys`).
 - `channel_model_status.numerically_valid` carries the verdict conversion from the Global Constraints — add `{'convert': 'verdict'}` to that leaf's plan node in `compile_plan`; C++ maps `true→'true'`, `false→'false'`, anything else passes through unchanged.
 
-- [ ] **Step 1:** failing tests — authored rows for `channel_mass` (endpoint_mass present on measured rows only), `channel_control` (posture with an absent optional `pelvis_offset_m`), `channel_model_status`, `channel_tires` (two patches on front, zero on rear), `channel_rider` (map entries 'saddle'/'bar', absent optional members, `except_keys` member routed to sibling leaf). One `assert_identical` per table.
-- [ ] **Step 2:** run — fails.
-- [ ] **Step 3:** implement recursive node walk (`project_node(path_node, wire_value, piece, row_index)`); plan children recursion in `compile_plan` (`_leaf_plan` returns node incl. children; dtype gating expands to the container set).
-- [ ] **Step 4:** run — PASS; extend real-episode test to **all** `catalog.table_order()` names (`assert_identical(cat.table(name), episode, catalog=cat)`); add `test_whole_episode_single_pass` asserting `tables()` emits every table natively (spy on `encode_rows` via monkeypatch — must not be called for physical streams).
-- [ ] **Step 5:** sweeps (`check_tidy`, `check_cppcheck`, `check_analyzer`) + commit `native(recording): recursive struct/map projection — full physical coverage`.
+- [x] **Step 1:** failing tests — authored rows for `channel_mass` (endpoint_mass present on measured rows only), `channel_control` (posture with an absent optional `pelvis_offset_m`), `channel_model_status`, `channel_tires` (two patches on front, zero on rear), `channel_rider` (map entries 'saddle'/'bar', absent optional members, `except_keys` member routed to sibling leaf). One `assert_identical` per table.
+- [x] **Step 2:** run — fails.
+- [x] **Step 3:** implement recursive node walk (`project_node(path_node, wire_value, piece, row_index)`); plan children recursion in `compile_plan` (`_leaf_plan` returns node incl. children; dtype gating expands to the container set).
+- [x] **Step 4:** run — PASS; extend real-episode test to **all** `catalog.table_order()` names (`assert_identical(cat.table(name), episode, catalog=cat)`); add `test_whole_episode_single_pass` asserting `tables()` emits every table natively (spy on `encode_rows` via monkeypatch — must not be called for physical streams).
+- [x] **Step 5:** sweeps (`check_tidy`, `check_cppcheck`, `check_analyzer`) + commit `native(recording): recursive struct/map projection — full physical coverage`.
 
 ---
 
@@ -735,11 +735,11 @@ The recursive container step: `channel_mass` (`endpoint_mass`), `channel_control
 - Returns `list[dict]`: `{'interval_id': int, 'kind': 'derived_transition', 'derived_kind': <kind>, 'changes': {label: boxed_value}}` in event order; Python wraps into `InputEvent` with `derivation_rule`, `received_wall_s`, `applied_step=processed_step` — same shape as today, journaling glue unchanged.
 - Fallback: episodes without `derived_rows` keep the Python scanner (duck-typed sources).
 
-- [ ] **Step 1:** failing test — authored episode with a flip at row 5 and a null→value transition; compare event sequence vs `iter_derived_events` oracle (ids, kinds, `changes` bitwise — assert `_bits.assert_bitwise_equal` on values).
-- [ ] **Step 2:** run — fails.
-- [ ] **Step 3:** implement: per row resolve the 19 paths once; compare to previous row's values with `wire_equal`; emit rows on change; box changed values only. Seed across `start` by loading row `start-1`.
-- [ ] **Step 4:** run — PASS + real-episode test asserting event sequence equals oracle.
-- [ ] **Step 5:** sweeps + commit `native(recording): derived-transition scan in C++`.
+- [x] **Step 1:** failing test — authored episode with a flip at row 5 and a null→value transition; compare event sequence vs `iter_derived_events` oracle (ids, kinds, `changes` bitwise — assert `_bits.assert_bitwise_equal` on values).
+- [x] **Step 2:** run — fails.
+- [x] **Step 3:** implement: per row resolve the 19 paths once; compare to previous row's values with `wire_equal`; emit rows on change; box changed values only. Seed across `start` by loading row `start-1`.
+- [x] **Step 4:** run — PASS + real-episode test asserting event sequence equals oracle.
+- [x] **Step 5:** sweeps + commit `native(recording): derived-transition scan in C++`.
 
 ---
 
@@ -747,10 +747,10 @@ The recursive container step: `channel_mass` (`endpoint_mass`), `channel_control
 
 **Files:** `tools/recording_finalize_bench.py` (new), `docs/RECORDING.md` (one paragraph under "Published layout"), `AGENTS.md` (nothing — rules already cover), this plan's checkboxes.
 
-- [ ] **Step 1:** write `tools/recording_finalize_bench.py`: builds a native driver (`create_native_ride` on a `make_python_ride`-equivalent sim — look at `tests/reference/_native_runtime_support.py`), advances `--steps` (default 5000), seals, times `source.tables(batch_rows=4096)` + the Arrow assembly + DuckDB write into `tempfile.mkdtemp`; prints per-stage timings; `--oracle` flag forces the Python path (monkeypatch `compile_plan` → `None`) for the side-by-side number.
-- [ ] **Step 2:** run both modes on a 5k-step episode; record wall times in the commit message and a new `docs/RECORDING.md` line in "Published layout and failure behavior" noting the columnar projector exists and `encoding.py` remains the reference path for non-native sources.
-- [ ] **Step 3:** regression assertion — add `test_native_encode_columns.py::test_no_encode_rows_on_native_episode` (Task 5's spy test covers this; reference it here rather than duplicating).
-- [ ] **Step 4:** final gate:
+- [x] **Step 1:** write `tools/recording_finalize_bench.py`: builds a native driver (`create_native_ride` on a `make_python_ride`-equivalent sim — look at `tests/reference/_native_runtime_support.py`), advances `--steps` (default 5000), seals, times `source.tables(batch_rows=4096)` + the Arrow assembly + DuckDB write into `tempfile.mkdtemp`; prints per-stage timings; `--oracle` flag forces the Python path (monkeypatch `compile_plan` → `None`) for the side-by-side number.
+- [x] **Step 2:** run both modes on a 5k-step episode; record wall times in the commit message and a new `docs/RECORDING.md` line in "Published layout and failure behavior" noting the columnar projector exists and `encoding.py` remains the reference path for non-native sources.
+- [x] **Step 3:** regression assertion — add `test_native_encode_columns.py::test_no_encode_rows_on_native_episode` (Task 5's spy test covers this; reference it here rather than duplicating).
+- [x] **Step 4:** final gate:
 
 ```bash
 bash tools/run_tests.sh native

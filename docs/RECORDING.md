@@ -116,6 +116,18 @@ the simulator. The primary simulation exception is preserved, with secondary
 publication/cleanup failures attached as notes. Publication failure after an
 otherwise successful run is an error exit.
 
+Stream encoding runs through a catalog-driven columnar projector on sealed
+`OwnedNativeEpisode` evidence: `recording/native_encode.py::compile_plan`
+compiles each table spec into an extraction plan that
+`OwnedNativeEpisode.encode_table` executes over retained samples, emitting flat
+column pieces that assemble into the same Arrow batches (and bytes) the Python
+encoder produces. `recording/encoding.py` remains the reference path: it is the
+differential oracle for the projector and the only encoder for non-native
+sources — duck-typed/`OwnedPythonEpisode` evidence, test doubles and any table
+whose plan compiles to `None` keep flowing through it unchanged.
+`tools/recording_finalize_bench.py` times both paths on a sealed episode
+(`--oracle` forces the Python encoder for the side-by-side number).
+
 ## Data model and type semantics
 
 Container schema version is **1**. Research replay contract version is **3**;

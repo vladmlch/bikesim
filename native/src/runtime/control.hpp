@@ -362,8 +362,31 @@ struct RoadSample {
     double x_m = 0., height_m = 0., grade = 0.;
 };
 
-// road_samples (rider_state.py:56-88): wheel positions + lookahead window
-// at .05 spacing, np.interp heights and per-segment grades.
+// RoadProfile — the compiled X-Z profile split once into contiguous
+// columns, validated once (rider_state.py validates per call, but the
+// result never changes: the vertices are immutable after construction).
+// The per-tick cost of road_samples was dominated by re-validating and
+// re-copying ~26k vertices every control tick (perf-roadmap/03).
+class RoadProfile {
+public:
+    RoadProfile() = default;
+    explicit RoadProfile(std::span<const std::array<double, 2>> vertices);
+    // road_samples (rider_state.py:56-88): wheel positions + lookahead
+    // window at .05 spacing, np.interp heights and per-segment grades.
+    [[nodiscard]] std::vector<RoadSample>
+    samples(std::span<const double> wheel_x_m, double lookahead_m,
+            double spacing_m = .05) const;
+    [[nodiscard]] std::size_t size() const noexcept { return x_.size(); }
+
+private:
+    std::vector<double> x_, z_;
+    // Validation failures are reported from samples(), exactly where the
+    // per-call oracle raised them, so error timing is unchanged.
+    std::optional<std::string> error_;
+};
+
+// Convenience form: validates and splits on every call (test/oracle
+// parity surface); the stepper keeps a RoadProfile instead.
 [[nodiscard]] std::vector<RoadSample>
 road_samples(std::span<const std::array<double, 2>> vertices,
              std::span<const double> wheel_x_m, double lookahead_m,
@@ -380,6 +403,10 @@ struct RiderKinematicState {
     std::vector<RoadSample> road;
 };
 
+[[nodiscard]] RiderKinematicState rider_kinematic_state(
+    const mjModel *model, const mjData *data, const RoadProfile &road,
+    std::span<const double> wheel_x_m, double lookahead_m,
+    double spacing_m = .05);
 [[nodiscard]] RiderKinematicState rider_kinematic_state(
     const mjModel *model, const mjData *data,
     std::span<const std::array<double, 2>> vertices,

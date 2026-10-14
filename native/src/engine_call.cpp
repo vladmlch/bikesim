@@ -246,6 +246,39 @@ void step_skip_operation(void *raw) noexcept {
     d->timer[mjTIMER_STEP].duration += (mjcb_time ? mjcb_time() : 0) - tm;
     d->timer[mjTIMER_STEP].number++;
 }
+// step_skip_operation minus the forward (see engine_call.hpp: step_skip_fresh).
+void step_skip_fresh_operation(void *raw) noexcept {
+    const auto *context = static_cast<ModelDataContext *>(raw);
+    const mjModel *m = context->model;
+    mjData *d = context->data;
+    const mjtNum tm = (mjcb_time ? mjcb_time() : 0);
+    mj_checkPos(m, d);
+    mj_checkVel(m, d);
+    // forward elided: the caller proved the acc-stage inputs unchanged.
+    mj_checkAcc(m, d);
+    if ((static_cast<unsigned>(m->opt.enableflags) &
+         static_cast<unsigned>(mjENBL_FWDINV)) != 0U)
+        mj_compareFwdInv(m, d);
+    // opt.integrator is an int in the ABI; switching on the raw value keeps
+    // the out-of-range default reachable (mj_step's verbatim behaviour).
+    switch (m->opt.integrator) {
+    case mjINT_EULER:
+        mj_Euler(m, d);
+        break;
+    case mjINT_RK4:
+        mj_RungeKutta(m, d, 4);
+        break;
+    case mjINT_IMPLICIT:
+    case mjINT_IMPLICITFAST:
+        mj_implicit(m, d);
+        break;
+    default:
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg) mju_error is the engine's fatal-error ABI — mj_step calls it verbatim
+        mju_error("invalid integrator");
+    }
+    d->timer[mjTIMER_STEP].duration += (mjcb_time ? mjcb_time() : 0) - tm;
+    d->timer[mjTIMER_STEP].number++;
+}
 void reset_operation(void *raw) noexcept {
     const auto *context = static_cast<ModelDataContext *>(raw);
     mj_resetData(context->model, context->data);
@@ -483,6 +516,20 @@ bool try_step_skip(const mjModel *model, mjData *data,
     return invoke(step_skip_operation, &context, error);
 }
 
+bool try_step_skip_fresh(const mjModel *model, mjData *data,
+                   ErrorBuffer &error) noexcept {
+    if (model->nplugin != 0) {
+        plugin_error(error);
+        return false;
+    }
+    if (model->opt.solver < mjSOL_PGS || model->opt.solver > mjSOL_NEWTON) {
+        invalid_solver_error(error, model->opt.solver);
+        return false;
+    }
+    ModelDataContext context{.model = model, .data = data};
+    return invoke(step_skip_fresh_operation, &context, error);
+}
+
 bool try_implicit(const mjModel *model, mjData *data,
                   ErrorBuffer &error) noexcept {
     if (model->nplugin != 0) {
@@ -511,6 +558,11 @@ void forward_skip(const mjModel *model, mjData *data) {
 void step_skip(const mjModel *model, mjData *data) {
     ErrorBuffer error;
     if (!try_step_skip(model, data, error)) throw_failure(error);
+}
+
+void step_skip_fresh(const mjModel *model, mjData *data) {
+    ErrorBuffer error;
+    if (!try_step_skip_fresh(model, data, error)) throw_failure(error);
 }
 
 void implicit(const mjModel *model, mjData *data) {

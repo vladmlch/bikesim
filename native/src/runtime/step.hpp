@@ -266,6 +266,16 @@ private:
     // on return either way. Callers keep the oracle's call sites verbatim;
     // only the redundant position/velocity stages are elided.
     void refresh_forward(mjModel *m, mjData *d);
+    // Pre-pass / control-tick freshness (perf-roadmap/17, R1): the
+    // acceleration stage computed there is never read before the next
+    // refresh_forward overwrites it, so only a stale pos/vel cache costs a
+    // (full) forward; a fresh cache costs nothing.
+    void ensure_posvel_fresh(mjModel *m, mjData *d);
+    // R2: byte snapshot of every acceleration-stage input right after the
+    // force-phase forward; step_skip may then omit its own forward.
+    void snapshot_acc_inputs(const mjModel *m, const mjData *d);
+    [[nodiscard]] bool acc_inputs_unchanged(const mjModel *m,
+                                            const mjData *d) const;
 
     // apply_forces tail — the contacts refresh at physical_runtime.py:337
     // (update_grounded = active && advance) and :631 (final=true). The
@@ -370,6 +380,7 @@ private:
     Stepper *stepper_;
     StepConfig config_;
     std::vector<std::array<double, 2>> vertices_;
+    RoadProfile road_profile_;  // validated/split once from vertices_
 
     // Resolved once at construction (physical_runtime.__init__ /
     // ride_sim.py accessors).
@@ -425,6 +436,8 @@ private:
     std::array<::ForceComponentView, 2> resistance_views_{};
     std::array<::ForceComponentView, 4> drive_views_{};
     std::vector<double> component_out_;
+    std::vector<double> acc_inputs_;  // qfrc_applied|xfrc_applied|ctrl|act|time|qpos|qvel
+    bool acc_inputs_valid_ = false;
     std::vector<double> mul_scratch_;
     // Per-side patch staging for TireSideInput (loads + working flags are
     // strided off the patch structs — contiguous copies keep the span

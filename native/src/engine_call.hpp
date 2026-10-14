@@ -48,6 +48,14 @@ void step(const mjModel *model, mjData *data);
 // the same stages (checks, FWDINV gate and integrator dispatch preserved).
 void forward_skip(const mjModel *model, mjData *data);
 void step_skip(const mjModel *model, mjData *data);
+// step_skip without the forward: legal only when every acceleration-stage
+// input (qfrc_applied, xfrc_applied, ctrl, act, time, qpos, qvel) is
+// byte-identical to the state the last forward_skip saw and the pos/vel
+// freshness contract holds — then the forward would reproduce the same
+// bits mj_step's forward leaves (no hidden state: warm-start is written
+// only by integrators). Checks, FWDINV gate, integrator dispatch and the
+// STEP timer bookkeeping stay verbatim (perf-roadmap/17, R2).
+void step_skip_fresh(const mjModel *model, mjData *data);
 void implicit(const mjModel *model, mjData *data);
 void reset_data(const mjModel *model, mjData *data);
 void set_const(mjModel *model, mjData *data);
@@ -87,6 +95,8 @@ void integrate_pos(const mjModel *model, mjtNum *qpos, const mjtNum *qvel,
                                     ErrorBuffer &error) noexcept;
 [[nodiscard]] bool try_step_skip(const mjModel *model, mjData *data,
                                  ErrorBuffer &error) noexcept;
+[[nodiscard]] bool try_step_skip_fresh(const mjModel *model, mjData *data,
+                                       ErrorBuffer &error) noexcept;
 [[nodiscard]] bool try_implicit(const mjModel *model, mjData *data,
                                 ErrorBuffer &error) noexcept;
 

@@ -10,8 +10,9 @@
 #include "step.hpp"
 
 #include <algorithm>
+#include <cstdint>
+#include <bit>
 #include <cmath>
-#include <cstring>
 #include <ranges>
 #include <stdexcept>
 
@@ -1003,6 +1004,7 @@ PhysicalStep::PhysicalStep(
     const std::optional<rider::SpindleConfig> &rider_config)
     : stepper_(&stepper), config_(config),
       vertices_(std::move(vertices)),
+      road_profile_(vertices_),
       rider_intent_(config_.intent, config_.timestep_s),
       brake_(brake),
       control_clock_(config_.timestep_s, config_.control_period_s),
@@ -1098,6 +1100,64 @@ void PhysicalStep::refresh_forward(mjModel *m, mjData *d) {
     else
         engine::forward(m, d);
     stepper_->note_posvel_fresh();
+    acc_inputs_valid_ = false;
+}
+
+void PhysicalStep::ensure_posvel_fresh(mjModel *m, mjData *d) {
+    if (!posvel_fresh()) {
+        engine::forward(m, d);
+        stepper_->note_posvel_fresh();
+    }
+    acc_inputs_valid_ = false;
+}
+
+namespace {
+std::size_t acc_input_count(const mjModel *m) {
+    return static_cast<std::size_t>(m->nv) +
+           static_cast<std::size_t>(m->nbody) * 6 +
+           static_cast<std::size_t>(m->nu) + static_cast<std::size_t>(m->na) +
+           1 + static_cast<std::size_t>(m->nq) + static_cast<std::size_t>(m->nv);
+}
+// Bitwise equality of two double views: -0.0 vs 0.0 and NaN payloads count
+// as differences, exactly as the engine would see them.
+bool same_bits(std::span<const double> a, std::span<const double> b) {
+    return std::ranges::equal(a, b, [](double x, double y) {
+        return std::bit_cast<std::uint64_t>(x) == std::bit_cast<std::uint64_t>(y);
+    });
+}
+// The acc-stage input views in snapshot order.
+std::array<std::span<const double>, 7> acc_input_views(const mjModel *m,
+                                                      const mjData *d) {
+    return {buf(d->qfrc_applied, m->nv), buf(d->xfrc_applied, m->nbody * 6),
+            buf(d->ctrl, m->nu),         buf(d->act, m->na),
+            std::span<const double>(&d->time, 1),
+            buf(d->qpos, m->nq),         buf(d->qvel, m->nv)};
+}
+} // namespace
+
+void PhysicalStep::snapshot_acc_inputs(const mjModel *m, const mjData *d) {
+    acc_inputs_.resize(acc_input_count(m));
+    const std::span<double> out(acc_inputs_);
+    std::size_t at = 0;
+    for (const auto view : acc_input_views(m, d)) {
+        std::ranges::copy(view, out.subspan(at, view.size()).begin());
+        at += view.size();
+    }
+    acc_inputs_valid_ = true;
+}
+
+bool PhysicalStep::acc_inputs_unchanged(const mjModel *m,
+                                        const mjData *d) const {
+    if (!acc_inputs_valid_ || acc_inputs_.size() != acc_input_count(m))
+        return false;
+    const std::span<const double> saved(acc_inputs_);
+    std::size_t at = 0;
+    for (const auto view : acc_input_views(m, d)) {
+        if (!same_bits(saved.subspan(at, view.size()), view))
+            return false;
+        at += view.size();
+    }
+    return true;
 }
 
 // ---- apply_forces (physical_runtime.py:219-349) -------------------------
@@ -1136,7 +1196,7 @@ PhysicalStep::apply_forces_body(
                           xpos[3 * static_cast<std::size_t>(
                               wheel_bodies_[1])]};
             rider_state_ = rider_kinematic_state(
-                m, d, vertices_, wheel_x_m_, config_.road_lookahead_m);
+                m, d, road_profile_, wheel_x_m_, config_.road_lookahead_m);
         }
         const bool automatic_effort =
             active && config_.intent.enabled &&
@@ -1185,9 +1245,13 @@ PhysicalStep::apply_forces_body(
         // and rely on this pass to refresh poses/efc_pos; the running
         // loop enters with derived state already current from the
         // post-step forward, so the zero-input solve here would feed
-        // only warmstarts (physical_runtime.py:262-271).
+        // only warmstarts (physical_runtime.py:262-271). Outside init a
+        // brake or transmission model write (a pos/vel-stage input)
+        // still falls back to the full stage.
         if (initializing_)
             refresh_forward(m, d);
+        else
+            ensure_posvel_fresh(m, d);
 
         accumulator_.clear();
         const std::span<const std::string_view> susp_names =
@@ -1327,7 +1391,7 @@ PhysicalStep::apply_forces_body(
                 std::ranges::copy(
                     total,
                     wbuf(d->qfrc_applied, m->nv).begin());
-                refresh_forward(m, d);
+                ensure_posvel_fresh(m, d);
                 torques = engaged(rider_control_).compute(
                     d, command, advance,
                     advance && !initializing_ ? control_clock_.period_s : dt,
@@ -1346,6 +1410,7 @@ PhysicalStep::apply_forces_body(
         std::ranges::copy(total,
                           wbuf(d->qfrc_applied, m->nv).begin());
         refresh_forward(m, d);
+        snapshot_acc_inputs(m, d);
         const RuntimeContacts contacts =
             refresh_contacts(false, std::nullopt, active && advance);
         if (stepper_->has_cruise()) {
@@ -1449,10 +1514,17 @@ RawStep PhysicalStep::advance_body(
         // stages skipped; the same freshness gate applies — a stale
         // cache gets the untouched full step. Integration invalidates
         // the flag for the next interval.
-        if (posvel_fresh())
-            engine::step_skip(m, d);
-        else
+        if (posvel_fresh()) {
+            // R2: identical acc-stage inputs since the force-phase forward
+            // mean mj_step's own forward would leave the same bits — skip it.
+            if (acc_inputs_unchanged(m, d))
+                engine::step_skip_fresh(m, d);
+            else
+                engine::step_skip(m, d);
+        } else {
             engine::step(m, d);
+        }
+        acc_inputs_valid_ = false;
         stepper_->note_posvel_stale();
         return solve_tail({.t = t,
                            .q = std::move(q),

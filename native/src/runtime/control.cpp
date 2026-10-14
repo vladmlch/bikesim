@@ -326,18 +326,30 @@ CrashDetector::check(const mjData *data, const RuntimeContacts &contacts) {
 }
 
 // ---- rider_state.py -------------------------------------------------------
-std::vector<RoadSample>
-road_samples(std::span<const std::array<double, 2>> vertices,
-             std::span<const double> wheel_x_m, double lookahead_m,
-             double spacing_m) {
-    if (vertices.size() < 2)
-        throw std::invalid_argument(
-            "road vertices must be an (N,2) X-Z profile");
-    // Strictly increasing x — np.diff(verts[:,0]) <= 0 check.
+RoadProfile::RoadProfile(std::span<const std::array<double, 2>> vertices) {
+    if (vertices.size() < 2) {
+        error_ = "road vertices must be an (N,2) X-Z profile";
+        return;
+    }
+    // Strictly increasing x — np.diff(verts[:,0]) <= 0 check, once.
     for (std::size_t i = 1; i < vertices.size(); ++i)
-        if (!(vertices[i][0] > vertices[i - 1][0]))
-            throw std::invalid_argument(
-                "road profile x must strictly increase");
+        if (!(vertices[i][0] > vertices[i - 1][0])) {
+            error_ = "road profile x must strictly increase";
+            return;
+        }
+    x_.reserve(vertices.size());
+    z_.reserve(vertices.size());
+    for (const auto &v : vertices) {
+        x_.push_back(v[0]);
+        z_.push_back(v[1]);
+    }
+}
+
+std::vector<RoadSample>
+RoadProfile::samples(std::span<const double> wheel_x_m, double lookahead_m,
+                     double spacing_m) const {
+    if (error_.has_value())
+        throw std::invalid_argument(*error_);
     if (!std::isfinite(lookahead_m) || lookahead_m < 0.)
         throw std::invalid_argument("road lookahead");
     if (!std::isfinite(spacing_m) || spacing_m <= 0.)
@@ -359,14 +371,9 @@ road_samples(std::span<const std::array<double, 2>> vertices,
     xs.push_back(front + lookahead_m);
     std::ranges::sort(xs);
     // np.interp on contiguous columns + per-segment grade (the oracle's
-    // exact NumPy lowerings).
-    std::vector<double> profile_x, profile_z;
-    profile_x.reserve(vertices.size());
-    profile_z.reserve(vertices.size());
-    for (const auto &v : vertices) {
-        profile_x.push_back(v[0]);
-        profile_z.push_back(v[1]);
-    }
+    // exact NumPy lowerings); the columns are the cached x_/z_.
+    const std::vector<double> &profile_x = x_;
+    const std::vector<double> &profile_z = z_;
     std::vector<RoadSample> out;
     out.reserve(xs.size());
     for (const double x : xs) {
@@ -395,6 +402,13 @@ road_samples(std::span<const std::array<double, 2>> vertices,
     return out;
 }
 
+std::vector<RoadSample>
+road_samples(std::span<const std::array<double, 2>> vertices,
+             std::span<const double> wheel_x_m, double lookahead_m,
+             double spacing_m) {
+    return RoadProfile(vertices).samples(wheel_x_m, lookahead_m, spacing_m);
+}
+
 double road_grade_for_posture(std::span<const RoadSample> road) {
     if (road.empty())
         throw std::invalid_argument(
@@ -416,6 +430,14 @@ RiderKinematicState rider_kinematic_state(
     std::span<const std::array<double, 2>> vertices,
     std::span<const double> wheel_x_m, double lookahead_m,
     double spacing_m) {
+    return rider_kinematic_state(model, data, RoadProfile(vertices),
+                                 wheel_x_m, lookahead_m, spacing_m);
+}
+
+RiderKinematicState rider_kinematic_state(
+    const mjModel *model, const mjData *data, const RoadProfile &road,
+    std::span<const double> wheel_x_m, double lookahead_m,
+    double spacing_m) {
     if (model == nullptr || data == nullptr)
         throw std::invalid_argument("kinematic state needs a model and data");
     const std::span<const mjtNum> qpos =
@@ -426,7 +448,7 @@ RiderKinematicState rider_kinematic_state(
         .qpos = std::vector<double>(qpos.begin(), qpos.end()),
         .qvel = std::vector<double>(qvel.begin(), qvel.end()),
         .rider_time_s = data->time,
-        .road = road_samples(vertices, wheel_x_m, lookahead_m, spacing_m)};
+        .road = road.samples(wheel_x_m, lookahead_m, spacing_m)};
     for (const double v : out.qpos)
         if (!std::isfinite(v))
             throw std::invalid_argument("rider state qpos");

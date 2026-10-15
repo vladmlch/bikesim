@@ -1084,6 +1084,337 @@ def test_unsupported_hardening_name_fails_configuration(tmp_path: Path) -> None:
     assert "BIKE_LIBCPP_HARDENING" in configured.stdout + configured.stderr
 
 
+# ---------------------------------------------------------------------------
+# T16 — RTSan qualification gates
+#
+# The realtime-sanitizer lane is qualified per toolchain: the flag and the
+# BIKE_NONBLOCKING annotation must compile+link together, the annotation
+# must demonstrably expand (the function-effects diagnostic must fire), and
+# the violation control must produce the real RealtimeSanitizer report when
+# run. A requested-but-unsupported lane is a configure error naming both
+# -fsanitize=realtime and the selected compiler; an unrequested unsupported
+# lane records supported=false — explicitly unavailable, never a green skip.
+# ---------------------------------------------------------------------------
+
+RTSAN_CONTROL_SOURCE = (
+    Path(__file__).resolve().parents[2] / "native" / "tests" / "rtsan_control.cpp"
+)
+
+
+def _driver_accepts_rtsan(driver: Path, work_dir: Path) -> bool:
+    """Probe: does this driver compile+link a TU under -fsanitize=realtime?"""
+    work_dir.mkdir(parents=True, exist_ok=True)
+    source = work_dir / "rtsan_accept_probe.cpp"
+    source.write_text("int main() { return 0; }\n")
+    completed = subprocess.run(
+        [
+            str(driver), "-std=c++23", "-fsanitize=realtime",
+            str(source), "-o", str(work_dir / "rtsan_accept_probe"),
+        ],
+        text=True, capture_output=True, check=False, timeout=120,
+    )
+    return completed.returncode == 0
+
+
+def _configured_compiler() -> Path | None:
+    """The compiler the selected build was configured with, if loadable."""
+    try:
+        context = load_context(configured_build_path())
+    except Exception:
+        return None
+    path = context.get("compiler", {}).get("path")
+    return Path(path) if isinstance(path, str) and path else None
+
+
+def _compiler_candidates() -> list[Path]:
+    """Real C++ drivers to probe, most relevant first."""
+    names: list[str] = []
+    configured = _configured_compiler()
+    if configured is not None:
+        names.append(str(configured))
+    names.extend(
+        [
+            os.environ.get("CXX", ""),
+            "c++",
+            "clang++",
+            "g++",
+            "/usr/bin/clang++",                      # AppleClang on macOS
+            "/opt/homebrew/opt/llvm/bin/clang++",    # brew LLVM (the documented macOS RTSan lane)
+            "/usr/local/opt/llvm/bin/clang++",       # brew LLVM on Intel macs
+        ]
+    )
+    # Versioned distro spellings (clang++-21/-20/-19/-18, g++-14/-13...).
+    for directory in ("/usr/bin", "/usr/local/bin", "/opt/homebrew/bin"):
+        root = Path(directory)
+        if root.is_dir():
+            names.extend(
+                str(path)
+                for path in sorted(root.glob("clang++-*"), reverse=True)
+            )
+            names.extend(
+                str(path)
+                for path in sorted(root.glob("g++-*"), reverse=True)
+            )
+    found: list[Path] = []
+    seen: set[str] = set()
+    for name in names:
+        if not name:
+            continue
+        located = Path(name) if Path(name).is_file() else (
+            Path(shutil.which(name)) if shutil.which(name) else None
+        )
+        if located is None:
+            continue
+        key = str(located.resolve())
+        if key not in seen:
+            seen.add(key)
+            found.append(located)
+    return found
+
+
+def _rtsan_capable_driver(tmp_path: Path) -> Path | None:
+    """The first real driver whose compile+link accepts -fsanitize=realtime."""
+    for index, candidate in enumerate(_compiler_candidates()):
+        if _driver_accepts_rtsan(candidate, tmp_path / f"probe{index}"):
+            return candidate
+    return None
+
+
+def _rtsan_lacking_driver(tmp_path: Path) -> Path | None:
+    """The first real driver measured to reject -fsanitize=realtime."""
+    for index, candidate in enumerate(_compiler_candidates()):
+        if not _driver_accepts_rtsan(candidate, tmp_path / f"probe{index}"):
+            return candidate
+    return None
+
+
+def _write_flag_rejecting_driver(tmp_path: Path, real_driver: Path) -> Path:
+    """A compiler-probe fixture: accepts C++23 (forwards to the real driver)
+    but rejects -fsanitize=realtime — a requested RTSan configure must fail
+    naming the flag and this selected compiler."""
+    driver = tmp_path / "no-rtsan-c++"
+    driver.write_text(
+        "#!/bin/sh\n"
+        'for arg in "$@"; do\n'
+        '  case "$arg" in\n'
+        "    *-fsanitize=realtime*)\n"
+        '      echo "no-rtsan-c++: unsupported argument'
+        ' -fsanitize=realtime" >&2\n'
+        "      exit 1 ;;\n"
+        "  esac\n"
+        "done\n"
+        f'exec {shlex.quote(str(real_driver))} "$@"\n'
+    )
+    driver.chmod(0o755)
+    return driver
+
+
+def _write_runtime_shadowing_driver(tmp_path: Path, real_driver: Path) -> Path:
+    """Forwards everything except rtsan -print-file-name queries, which echo
+    the bare name back unresolved — a toolchain missing its RTSan runtime."""
+    driver = tmp_path / "no-rtsan-runtime-c++"
+    driver.write_text(
+        "#!/bin/sh\n"
+        'for arg in "$@"; do\n'
+        '  case "$arg" in\n'
+        "    -print-file-name=*rtsan*)\n"
+        '      echo "${arg#-print-file-name=}"\n'
+        "      exit 0 ;;\n"
+        "  esac\n"
+        "done\n"
+        f'exec {shlex.quote(str(real_driver))} "$@"\n'
+    )
+    driver.chmod(0o755)
+    return driver
+
+
+def test_requested_rtsan_fails_on_a_flag_rejecting_compiler_fixture(
+    tmp_path: Path,
+) -> None:
+    """The brief's compiler-probe fixture: C++23 works, -fsanitize=realtime
+    is rejected; -DNATIVE_RTSAN=ON must fail naming flag and compiler."""
+    real = _configured_compiler()
+    if real is None:
+        candidates = _compiler_candidates()
+        if not candidates:
+            pytest.skip("no host C++ compiler")
+        real = candidates[0]
+    fake = _write_flag_rejecting_driver(tmp_path, real)
+    configured, _ = configure_native(
+        tmp_path, f"-DCMAKE_CXX_COMPILER={fake}", "-DNATIVE_RTSAN=ON"
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode != 0
+    assert "-fsanitize=realtime" in output
+    assert str(fake) in output
+
+
+def test_requested_rtsan_fails_on_a_known_lacking_compiler(
+    tmp_path: Path,
+) -> None:
+    """Step 4's negative path: explicitly request RTSan in a separate build
+    directory on a compiler measured to lack the flag — must fail naming
+    both the flag and the selected compiler."""
+    driver = _rtsan_lacking_driver(tmp_path)
+    if driver is None:
+        pytest.skip("every candidate compiler on this host accepts -fsanitize=realtime")
+    configured, _ = configure_native(
+        tmp_path, f"-DCMAKE_CXX_COMPILER={driver}", "-DNATIVE_RTSAN=ON"
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode != 0
+    assert "-fsanitize=realtime" in output
+    assert str(driver) in output
+
+
+def test_unrequested_rtsan_capability_is_explicitly_unsupported(
+    tmp_path: Path,
+) -> None:
+    """An unrequested lane on a lacking compiler configures fine and records
+    {requested:false, supported:false, enabled:false, runtime:null} with
+    evidence — explicitly unavailable, not a silent skip."""
+    driver = _rtsan_lacking_driver(tmp_path)
+    if driver is None:
+        pytest.skip("every candidate compiler on this host accepts -fsanitize=realtime")
+    configured, build = configure_native(
+        tmp_path, f"-DCMAKE_CXX_COMPILER={driver}"
+    )
+    assert configured.returncode == 0, configured.stdout + configured.stderr
+    context = json.loads((build / "native_check_context.json").read_text())
+    rtsan = context["capabilities"]["rtsan"]
+    assert rtsan["requested"] is False
+    assert rtsan["supported"] is False
+    assert rtsan["enabled"] is False
+    assert rtsan["runtime"] is None
+    assert rtsan["compiler_id"] == context["compiler"]["id"]
+    assert rtsan["evidence"]["control"], "missing probe evidence"
+
+
+def test_requested_rtsan_fails_when_the_runtime_is_unresolvable(
+    tmp_path: Path,
+) -> None:
+    """A capable compiler missing its RTSan runtime installation is a setup
+    failure — configure must fail on the unresolved runtime, distinct from
+    the flag-rejection path."""
+    driver = _rtsan_capable_driver(tmp_path)
+    if driver is None:
+        pytest.skip("no RTSan-capable compiler on this host")
+    shadowed = _write_runtime_shadowing_driver(tmp_path, driver)
+    configured, _ = configure_native(
+        tmp_path, f"-DCMAKE_CXX_COMPILER={shadowed}", "-DNATIVE_RTSAN=ON"
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode != 0
+    assert "rtsan" in output.lower()
+    assert str(shadowed) in output
+
+
+def test_qualified_rtsan_configure_enables_the_lane(tmp_path: Path) -> None:
+    """On an RTSan-capable toolchain the requested lane configures, records
+    enabled with a resolved runtime and run-control evidence, and the built
+    control binary behaves as contracted."""
+    driver = _rtsan_capable_driver(tmp_path)
+    if driver is None:
+        pytest.skip("no RTSan-capable compiler on this host")
+    configured, build = configure_native(
+        tmp_path, f"-DCMAKE_CXX_COMPILER={driver}", "-DNATIVE_RTSAN=ON"
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode == 0, output
+    context = json.loads((build / "native_check_context.json").read_text())
+    rtsan = context["capabilities"]["rtsan"]
+    assert rtsan["requested"] is True
+    assert rtsan["supported"] is True
+    assert rtsan["enabled"] is True
+    assert rtsan["runtime"] is not None and Path(rtsan["runtime"]).is_file()
+    assert "rtsan" in Path(rtsan["runtime"]).name
+    evidence = rtsan["evidence"]
+    assert evidence["control"]
+    assert evidence["run_control"]
+    # T16's deeper gates: the flag+annotation compile control, the
+    # load-bearing macro check and the violation run control all recorded.
+    assert evidence["annotation_control"]
+    assert evidence["macro_control"]
+    assert "RealtimeSanitizer" in evidence["violation_control"]
+    # The built control target runs both modes as contracted: clean exits 0,
+    # the violation dies with the RealtimeSanitizer diagnostic.
+    built = subprocess.run(
+        ["cmake", "--build", str(build), "--target", "native_rtsan_control"],
+        text=True, capture_output=True, check=False, timeout=300,
+    )
+    assert built.returncode == 0, built.stdout + built.stderr
+    binary = build / "native_rtsan_control"
+    clean = subprocess.run(
+        [str(binary)], text=True, capture_output=True, check=False,
+        timeout=60,
+    )
+    assert clean.returncode == 0, clean.stderr
+    violation = subprocess.run(
+        [str(binary), "forbidden-allocation"],
+        text=True, capture_output=True, check=False, timeout=60,
+    )
+    assert violation.returncode != 0
+    assert "RealtimeSanitizer" in violation.stderr
+    assert "malloc" in violation.stderr
+
+
+def test_rtsan_control_source_reports_the_sanitizer_diagnostic(
+    tmp_path: Path,
+) -> None:
+    """Subprocess control: compile native/tests/rtsan_control.cpp with the
+    toolchain's real RTSan flags; the violation must die with the selected
+    RealtimeSanitizer diagnostic (not a loader error or unrelated signal),
+    and the same source without the flag must exit cleanly — the annotation
+    is load-bearing, not decorative."""
+    driver = _rtsan_capable_driver(tmp_path)
+    if driver is None:
+        pytest.skip("no RTSan-capable compiler on this host")
+
+    instrumented = tmp_path / "rtsan_control"
+    compiled = subprocess.run(
+        [
+            str(driver), "-std=c++23", "-g", "-O0", "-fsanitize=realtime",
+            str(RTSAN_CONTROL_SOURCE), "-o", str(instrumented),
+        ],
+        text=True, capture_output=True, check=False, timeout=300,
+    )
+    assert compiled.returncode == 0, compiled.stderr
+
+    clean = subprocess.run(
+        [str(instrumented)], text=True, capture_output=True, check=False,
+        timeout=60,
+    )
+    assert clean.returncode == 0, clean.stderr
+
+    violation = subprocess.run(
+        [str(instrumented), "forbidden-allocation"],
+        text=True, capture_output=True, check=False, timeout=60,
+    )
+    assert violation.returncode != 0
+    output = violation.stdout + violation.stderr
+    assert "RealtimeSanitizer" in output
+    assert "malloc" in output
+
+    # Load-bearing annotation control: the identical source without
+    # -fsanitize=realtime expands BIKE_NONBLOCKING to nothing — malloc runs
+    # unmarked, the process exits 0 and no sanitizer diagnostic appears.
+    plain = tmp_path / "rtsan_control_plain"
+    compiled_plain = subprocess.run(
+        [
+            str(driver), "-std=c++23", "-g", "-O0",
+            str(RTSAN_CONTROL_SOURCE), "-o", str(plain),
+        ],
+        text=True, capture_output=True, check=False, timeout=300,
+    )
+    assert compiled_plain.returncode == 0, compiled_plain.stderr
+    uninstrumented = subprocess.run(
+        [str(plain), "forbidden-allocation"],
+        text=True, capture_output=True, check=False, timeout=60,
+    )
+    assert uninstrumented.returncode == 0
+    assert "RealtimeSanitizer" not in uninstrumented.stdout + uninstrumented.stderr
+
+
 def run_controller_kind(kind: str, *, timeout: int = 180) -> subprocess.CompletedProcess[str]:
     repository = Path(__file__).resolve().parents[2]
     return subprocess.run(

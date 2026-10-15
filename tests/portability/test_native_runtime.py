@@ -521,6 +521,85 @@ def test_gnu_rtsan_lane_never_resolves_a_runtime(tmp_path: Path) -> None:
         native_runtime.runtime_environment(context, {})
 
 
+def test_rtsan_requested_but_not_enabled_is_a_stale_context(
+    tmp_path: Path,
+) -> None:
+    """Same fail-closed rule as the ASan lane: a requested-but-disabled
+    rtsan record means the toolchain probe failed or the context is stale —
+    never run the test process uninstrumented."""
+    context = _context(
+        system="Linux",
+        rtsan=_capability(requested=True, supported=False, enabled=False),
+    )
+    with pytest.raises(
+        native_runtime.NativeRuntimeError, match="requested.*not enabled"
+    ):
+        native_runtime.runtime_environment(context, {})
+
+
+def test_darwin_rtsan_driver_query_selects_the_osx_dylib(
+    tmp_path: Path,
+) -> None:
+    """The brew/upstream Clang Darwin RTSan runtime name resolves through
+    the driver's -print-file-name and lands in DYLD_INSERT_LIBRARIES."""
+    name = "libclang_rt.rtsan_osx_dynamic.dylib"
+    runtime = _write_macho(tmp_path / name, "Darwin", platform.machine())
+    driver = _fake_driver(tmp_path, "clang++", {name: runtime})
+    context = _context(
+        system="Darwin",
+        compiler_id="Clang",
+        compiler_path=driver,
+        rtsan=_capability(requested=True, supported=True, enabled=True),
+    )
+    env = native_runtime.runtime_environment(context, {})
+    assert env["DYLD_INSERT_LIBRARIES"] == str(runtime)
+    assert env["NATIVE_TEST_SANITIZER_RUNTIME"] == str(runtime)
+    assert (tmp_path / "clang++.argv.log").read_text().strip() == (
+        f"-print-file-name={name}"
+    )
+
+
+def test_rtsan_record_named_for_the_wrong_lane_is_rejected(
+    tmp_path: Path,
+) -> None:
+    """An enabled rtsan record whose runtime file names the ASan image must
+    fail — the preloaded library has to be the lane's own runtime."""
+    machine = _normalize_machine(platform.machine())
+    wrong_lane = _write_elf(tmp_path / "libasan.so", "Linux", machine)
+    context = _context(
+        system="Linux",
+        compiler_id="GNU",
+        rtsan=_capability(
+            requested=True, supported=True, enabled=True,
+            runtime=wrong_lane,
+        ),
+    )
+    with pytest.raises(
+        native_runtime.NativeRuntimeError, match="rtsan"
+    ):
+        native_runtime.runtime_environment(context, {})
+
+
+def test_asan_record_named_for_the_wrong_lane_is_rejected(
+    tmp_path: Path,
+) -> None:
+    """Symmetric guard for the ASan lane."""
+    machine = _normalize_machine(platform.machine())
+    wrong_lane = _write_elf(
+        tmp_path / f"libclang_rt.rtsan-{machine}.so", "Linux", machine
+    )
+    context = _context(
+        system="Linux",
+        compiler_id="Clang",
+        asan=_capability(
+            requested=True, supported=True, enabled=True,
+            runtime=wrong_lane,
+        ),
+    )
+    with pytest.raises(native_runtime.NativeRuntimeError, match="asan"):
+        native_runtime.runtime_environment(context, {})
+
+
 # ---------------------------------------------------------------------------
 # The run --build CLI against a validated schema-2 context.
 # ---------------------------------------------------------------------------
@@ -530,6 +609,7 @@ def _cli_context(
     tmp_path: Path,
     *,
     asan_runtime: Path | None = None,
+    rtsan_runtime: Path | None = None,
     rtsan_requested: bool = False,
 ) -> dict[str, Any]:
     """A complete schema-2 context that load_context accepts on this host."""
@@ -566,6 +646,7 @@ def _cli_context(
             "requested_mode": "EXTENSIVE",
         }
     asan_on = asan_runtime is not None
+    rtsan_on = rtsan_runtime is not None
     return {
         "schema_version": 2,
         "platform": {
@@ -587,7 +668,12 @@ def _cli_context(
                 requested=asan_on, supported=asan_on, enabled=asan_on,
                 runtime=asan_runtime,
             ),
-            "rtsan": _capability(requested=rtsan_requested),
+            "rtsan": _capability(
+                requested=rtsan_requested or rtsan_on,
+                supported=rtsan_on,
+                enabled=rtsan_on,
+                runtime=rtsan_runtime,
+            ),
             "coverage": _capability(),
             "frontend_tools": {},
         },
@@ -609,6 +695,7 @@ def _cli_context(
 
 def _write_cli_build(
     tmp_path: Path, *, asan_runtime: Path | None = None,
+    rtsan_runtime: Path | None = None,
     cache_sanitize: str | None = None, cache_rtsan: str | None = None,
     compiler_id: str = "fixture",
 ) -> Path:
@@ -618,7 +705,9 @@ def _write_cli_build(
     source_root.mkdir(exist_ok=True)
     manifest = source_root / "analysis_suppressions.json"
     manifest.write_text(json.dumps({"schema_version": 1, "suppressions": []}))
-    context = _cli_context(tmp_path, asan_runtime=asan_runtime)
+    context = _cli_context(
+        tmp_path, asan_runtime=asan_runtime, rtsan_runtime=rtsan_runtime
+    )
     context["analysis_suppressions_manifest"] = str(manifest.resolve())
     context["compiler"]["id"] = compiler_id
     (build / "native_check_context.json").write_text(json.dumps(context))
@@ -705,6 +794,61 @@ def test_cli_cache_with_both_sanitizers_fails(tmp_path: Path) -> None:
     )
 
 
+def test_cli_cache_requests_rtsan_but_context_did_not_enable(
+    tmp_path: Path,
+) -> None:
+    """NATIVE_RTSAN=ON in the cache with a context that never enabled the
+    lane is a stale/inconsistent pair — the runner fails closed rather than
+    running uninstrumented."""
+    build = _write_cli_build(tmp_path, cache_rtsan="ON")
+    assert (
+        native_runtime.main(
+            ["run", "--build", str(build), "--", sys.executable, "-c", "pass"]
+        )
+        == 2
+    )
+
+
+def test_cli_enabled_rtsan_injects_the_real_runtime(
+    tmp_path: Path, capfd, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A real RTSan-capable driver feeds a real preload into the child.
+
+    Mirrors test_cli_enabled_asan_injects_the_real_runtime: the child proves
+    the preload by checking the runtime is *mapped* — the same check
+    native_loader.verify_sanitizer_runtime performs in production — and the
+    evidence line must name the rtsan lane, never the ASan-only env.
+    """
+    driver = _rtsan_capable_host_driver(tmp_path)
+    if driver is None:
+        pytest.skip("no RTSan-capable host driver (-fsanitize=realtime)")
+    compiler_id = _compiler_id(driver)
+    runtime = (
+        _real_rtsan_runtime(driver, compiler_id)
+        if compiler_id is not None
+        else None
+    )
+    if compiler_id is None or runtime is None:
+        pytest.skip("capable driver has no resolvable RTSan runtime")
+    build = _write_cli_build(
+        tmp_path, rtsan_runtime=runtime, cache_rtsan="ON",
+        compiler_id=compiler_id,
+    )
+    monkeypatch.setenv("PYTHONPATH", str(LOADER_DIR))
+    code = native_runtime.main(
+        ["run", "--build", str(build), "--", sys.executable, "-c",
+         "import native_loader; "
+         "mapped = native_loader.verify_sanitizer_runtime(); "
+         "assert mapped is not None; print('runtime-injected', mapped)"]
+    )
+    assert code == 0
+    captured = capfd.readouterr()
+    assert "runtime-injected" in captured.out
+    assert str(runtime.resolve()) in captured.out
+    assert str(runtime.resolve()) in captured.err  # the evidence line names it
+    assert "sanitizer=rtsan" in captured.err
+
+
 def _host_cxx() -> Path | None:
     """A real host C++ driver: $CXX first, then the usual spellings."""
     for spelling in (
@@ -750,6 +894,85 @@ def _real_asan_runtime(driver: Path, compiler_id: str) -> Path | None:
         name = "libasan.so"
     else:
         return None
+    try:
+        completed = subprocess.run(
+            [str(driver), f"-print-file-name={name}"],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    answer = completed.stdout.strip().splitlines()
+    if completed.returncode != 0 or not answer or answer[0].strip() == name:
+        return None
+    candidate = Path(answer[0].strip())
+    return candidate if candidate.is_file() else None
+
+
+def _driver_accepts_rtsan(driver: Path, work_dir: Path) -> bool:
+    """Probe: does this driver compile+link a TU under -fsanitize=realtime?"""
+    work_dir.mkdir(parents=True, exist_ok=True)
+    source = work_dir / "rtsan_accept_probe.cpp"
+    source.write_text("int main() { return 0; }\n")
+    try:
+        completed = subprocess.run(
+            [
+                str(driver), "-std=c++23", "-fsanitize=realtime",
+                str(source), "-o", str(work_dir / "rtsan_accept_probe"),
+            ],
+            text=True, capture_output=True, check=False, timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return completed.returncode == 0
+
+
+def _rtsan_capable_host_driver(tmp_path: Path) -> Path | None:
+    """The first real host driver whose toolchain qualifies for RTSan.
+
+    RTSan is upstream-Clang-only today: AppleClang and GCC reject
+    -fsanitize=realtime, so the usual host spellings get probed AND the
+    versioned/Homebrew LLVM installs where the lane actually lives.
+    """
+    names: list[str] = [
+        os.environ.get("CXX", ""), "c++", "clang++", "g++",
+        "/opt/homebrew/opt/llvm/bin/clang++",
+        "/usr/local/opt/llvm/bin/clang++",
+    ]
+    for directory in ("/usr/bin", "/usr/local/bin", "/opt/homebrew/bin"):
+        root = Path(directory)
+        if root.is_dir():
+            names.extend(
+                str(path)
+                for path in sorted(root.glob("clang++-*"), reverse=True)
+            )
+    seen: set[str] = set()
+    for index, name in enumerate(names):
+        if not name:
+            continue
+        located = Path(name) if Path(name).is_file() else (
+            Path(shutil.which(name)) if shutil.which(name) else None
+        )
+        if located is None:
+            continue
+        key = str(located.resolve())
+        if key in seen:
+            continue
+        seen.add(key)
+        if _driver_accepts_rtsan(located, tmp_path / f"probe{index}"):
+            return located
+    return None
+
+
+def _real_rtsan_runtime(driver: Path, compiler_id: str) -> Path | None:
+    """Ask a real RTSan-capable driver for its realtime runtime image."""
+    if compiler_id not in {"Clang", "AppleClang"}:
+        return None
+    machine = _normalize_machine(platform.machine())
+    name = (
+        "libclang_rt.rtsan_osx_dynamic.dylib"
+        if HOST_SYSTEM == "Darwin"
+        else f"libclang_rt.rtsan-{machine}.so"
+    )
     try:
         completed = subprocess.run(
             [str(driver), f"-print-file-name={name}"],
@@ -1034,3 +1257,56 @@ def test_selected_asan_extension_loads_in_a_fresh_process(tmp_path: Path) -> Non
             or "AddressSanitizer" in bare.stderr
         )
         assert loader_error, bare.stderr
+
+
+def _selected_rtsan_context() -> dict[str, Any] | None:
+    build_value = os.environ.get("NATIVE_TEST_BUILD_PATH")
+    if not build_value:
+        return None
+    build = Path(build_value)
+    try:
+        context = native_checks.load_context(build)
+    except native_checks.CheckError:
+        return None
+    rtsan = context.get("capabilities", {}).get("rtsan", {})
+    if not rtsan.get("enabled"):
+        return None
+    return context
+
+
+def test_selected_rtsan_extension_loads_in_a_fresh_process() -> None:
+    """The RTSan-enabled build imports in a fresh process under the computed
+    environment, with the rtsan runtime verifiably mapped."""
+    context = _selected_rtsan_context()
+    if context is None:
+        pytest.skip(
+            "no RTSan-enabled native build selected "
+            "(set NATIVE_TEST_BUILD_PATH)"
+        )
+    build = Path(os.environ["NATIVE_TEST_BUILD_PATH"])
+    artifacts = [
+        candidate for suffix in (
+            ".so", ".cpython-313-darwin.so", ".cpython-314-darwin.so",
+            ".cpython-313-aarch64-linux-gnu.so",
+            ".cpython-314-aarch64-linux-gnu.so",
+            ".cpython-313-x86_64-linux-gnu.so",
+            ".cpython-314-x86_64-linux-gnu.so",
+        )
+        if (candidate := build / f"bike_native{suffix}").is_file()
+    ]
+    assert len(artifacts) == 1, f"expected one extension in {build}"
+
+    env = native_runtime.runtime_environment(context, dict(os.environ))
+    env["PYTHONPATH"] = str(LOADER_DIR)
+    env["NATIVE_TEST_BUILD_PATH"] = str(build)
+    child = subprocess.run(
+        [
+            sys.executable, "-c",
+            "import native_loader; "
+            "module = native_loader.load_native(); "
+            "print('imported', module.__file__)",
+        ],
+        env=env, capture_output=True, text=True, timeout=120, check=False,
+    )
+    assert child.returncode == 0, child.stderr
+    assert "imported" in child.stdout

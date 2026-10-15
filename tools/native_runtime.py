@@ -21,7 +21,9 @@ basename:
   (the configure-time-resolved path) that path is authoritative — but it is
   revalidated before use;
 * the runtime must be a real ELF/Mach-O image whose machine matches the
-  recorded target — a Linux lane never preloads an Apple ``.dylib``.
+  recorded target and whose name belongs to the lane it serves — a Linux
+  lane never preloads an Apple ``.dylib``, and an ``rtsan`` record never
+  injects a ``libasan`` image.
 
 Environment contract for the enabled lane:
 
@@ -260,6 +262,28 @@ def _check_runtime_arch(runtime: Path, machine: str) -> None:
         )
 
 
+def _check_runtime_lane(runtime: Path, sanitizer: str) -> None:
+    """The runtime image must name the lane it claims to serve.
+
+    Every runtime spelling this runner selects carries the sanitizer name —
+    ``libasan.so``/``libclang_rt.asan-*`` for ASan and
+    ``libclang_rt.rtsan-*`` for RTSan — and the two spellings never overlap
+    (``rtsan`` does not contain the ``asan`` substring). A record that names
+    the other lane's image is inconsistent: the preloaded library could not
+    carry the lane's instrumentation.
+    """
+    if sanitizer == "rtsan" and "rtsan" not in runtime.name:
+        raise NativeRuntimeError(
+            f"capability rtsan recorded a runtime that is not a realtime "
+            f"sanitizer image: {runtime}"
+        )
+    if sanitizer == "asan" and "asan" not in runtime.name:
+        raise NativeRuntimeError(
+            f"capability asan recorded a runtime that is not an address "
+            f"sanitizer image: {runtime}"
+        )
+
+
 def resolve_sanitizer_runtime(
     context: Mapping[str, Any], sanitizer: str
 ) -> Path:
@@ -336,6 +360,7 @@ def _select_runtime(
             )
         _check_runtime_platform(runtime, system)
         _check_runtime_arch(runtime, machine)
+        _check_runtime_lane(runtime, sanitizer)
         return runtime
     return resolve_sanitizer_runtime(context, sanitizer)
 

@@ -42,11 +42,11 @@ int clean_control() {
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #endif
 int use_after_free_control(std::size_t index) {
-    auto values = std::make_unique<int[]>(4);
+    auto values = std::make_unique<int[]>(4);  // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) — make_unique<T[]> requires the array spelling
     values[0] = 7;
-    volatile int* escaped = values.get();
+    const int* volatile escaped = values.get();
     values.reset();
-    return escaped[index];
+    return escaped[index];  // NOLINT(clang-analyzer-cplusplus.NewDelete,cppcoreguidelines-pro-bounds-pointer-arithmetic) — the use-after-free IS the sanitizer control
 }
 #if defined(__clang__)
 #pragma clang diagnostic pop
@@ -65,9 +65,13 @@ int main(int argc, char** argv) {
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
-    if (arguments.size() > 1
-        && std::string_view(arguments[1]) == "use-after-free") {
-        return use_after_free_control(arguments.size() - 1);
+    try {
+        if (arguments.size() > 1
+            && std::string_view(arguments[1]) == "use-after-free") {
+            return use_after_free_control(arguments.size() - 1);
+        }
+        return clean_control();
+    } catch (...) {
+        return 2;
     }
-    return clean_control();
 }

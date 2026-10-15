@@ -355,6 +355,23 @@ set_target_properties(native_sanitizer_control PROPERTIES
   CXX_EXTENSIONS OFF)
 bike_apply_native_policy(native_sanitizer_control)
 
+# native/tests/rtsan_control.cpp — the T16 realtime-sanitizer control pair:
+# the default mode is a valid nonblocking arithmetic kernel (clean under an
+# instrumented build and under every ordinary build), and the
+# `forbidden-allocation` mode is the intentional violation the configure-time
+# qualification (BikeCompilerPolicy.cmake) and the subprocess controls in
+# tests/reference/test_native_check_tools.py require to die with the real
+# RealtimeSanitizer diagnostic. Built through the same policy application
+# as every first-party target: an NATIVE_RTSAN tree compiles it with the
+# lane's instrumentation, a normal tree compiles it with BIKE_NONBLOCKING
+# expanded to nothing — which is itself the load-bearing annotation check.
+add_executable(native_rtsan_control tests/rtsan_control.cpp)
+set_target_properties(native_rtsan_control PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+bike_apply_native_policy(native_rtsan_control)
+
 include(CTest)
 if(BUILD_TESTING)
   add_test(NAME native_contract_tests COMMAND native_contract_tests)
@@ -363,6 +380,10 @@ if(BUILD_TESTING)
   add_test(NAME native_platform_blas_tests COMMAND native_platform_blas_tests)
   add_test(NAME native_platform_lapack_tests COMMAND native_platform_lapack_tests)
   add_test(NAME native_sanitizer_control COMMAND native_sanitizer_control)
+  # Only the clean mode runs under CTest — the forbidden-allocation mode
+  # must die with the sanitizer report, so it is exercised by the
+  # configure-time qualification and the pytest subprocess controls.
+  add_test(NAME native_rtsan_control COMMAND native_rtsan_control)
   add_test(NAME native_bench_bare
     COMMAND native_bench bare 20 5
             --artifacts "${_native_bench_dir}/artifacts")

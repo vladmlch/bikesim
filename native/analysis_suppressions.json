@@ -164,6 +164,24 @@
       "remove_when": "Remove when the Linux clang-tidy toolchain handles the Wire writer recursion without this diagnostic."
     },
     {
+      "checker": "cplusplus.NewDelete",
+      "origin": "(?:^|/)tests/sanitizer_control\\.cpp$",
+      "message": "Use of memory after it is released",
+      "tool_version": "23.1.2",
+      "reason": "The read through `escaped[index]` at sanitizer_control.cpp:49 is the intentional injected defect of the T15 use-after-free control: the translation unit exists to prove the real ASan heap-use-after-free diagnostic fires in a fresh subprocess under the selected runtime. The defect must stay a true positive, so the analyzer record is suppressed in the manifest rather than NOLINT-ed, and the runtime control remains load-bearing evidence.",
+      "reproducer": "cmake --build native/build --target check_analyzer; cplusplus.NewDelete at native/tests/sanitizer_control.cpp:49 in use_after_free_control",
+      "remove_when": "Remove if the use-after-free control is deleted or rewritten so the escaped-pointer read no longer follows unique_ptr::reset."
+    },
+    {
+      "checker": "cplusplus.NewDelete",
+      "origin": "(?:^|/)tests/sanitizer_control\\.cpp$",
+      "message": "Use of memory after it is released",
+      "tool_version": "18.1.3",
+      "reason": "Same intentional T15 defect as the pinned LLVM 23 record: `escaped[index]` at sanitizer_control.cpp:49 reads storage after unique_ptr::reset to produce the heap-use-after-free the ASan control subprocess must observe. Emitted by the Ubuntu LLVM 18.1.3 analyzer on Linux with the identical diagnostic text.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_analyzer; cplusplus.NewDelete at native/tests/sanitizer_control.cpp:49 in use_after_free_control",
+      "remove_when": "Remove if the use-after-free control is deleted or rewritten so the escaped-pointer read no longer follows unique_ptr::reset."
+    },
+    {
       "checker": "misc-const-correctness",
       "origin": "(?:^|/)tests/test_platform_lapack\\.cpp$",
       "message": "variable 'lwork' of type 'integer'",

@@ -664,8 +664,10 @@ if(NATIVE_RTSAN)
     list(APPEND _bike_instrument_link_options -fsanitize=realtime)
   else()
     message(FATAL_ERROR
-      "NATIVE_RTSAN requires a Clang-family compiler (the brew LLVM clang); "
-      "${CMAKE_CXX_COMPILER_ID} has no -fsanitize=realtime")
+      "NATIVE_RTSAN requires a Clang-family compiler that accepts "
+      "-fsanitize=realtime (the brew LLVM clang); the selected compiler "
+      "${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} "
+      "${CMAKE_CXX_COMPILER_VERSION}) provides no realtime sanitizer lane")
   endif()
 endif()
 if(NATIVE_COVERAGE)
@@ -694,23 +696,50 @@ endif()
 set(_bike_capability_probe_dir "${_bike_policy_probe_dir}/capabilities")
 file(WRITE "${_bike_capability_probe_dir}/probe.cpp"
   "int main() { return 0; }\n")
+# The module's own location derives the native tree — a fixture project
+# including this file may place CMAKE_CURRENT_SOURCE_DIR elsewhere.
+get_filename_component(BIKE_NATIVE_ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+# The RTSan lane's capability probe is NOT the trivial TU: the flag, the
+# __has_feature query and the BIKE_NONBLOCKING annotation must compile and
+# link together, matching the production contract exactly. The macro sits
+# in the trailing declarator position — since LLVM 20 [[clang::nonblocking]]
+# is a function *type* attribute and the leading decl-specifier position is
+# a hard error, while trailing applies on every supported clang.
+file(WRITE "${_bike_capability_probe_dir}/rtsan_probe.cpp"
+  "#include \"rtsan.hpp\"\n"
+  "#if !defined(__has_feature)\n"
+  "#error realtime sanitizer feature query is unavailable\n"
+  "#elif !__has_feature(realtime_sanitizer)\n"
+  "#error realtime sanitizer instrumentation is unavailable\n"
+  "#endif\n"
+  "void control() BIKE_NONBLOCKING {}\n"
+  "int main() { control(); return 0; }\n")
 # _bike_probe_capability(<result-var> <label>
-#                        COMPILE_FLAGS <flags...> [LINK_FLAGS <flags...>])
-# Compile AND link a trivial TU with the flag set the real lane uses; the
+#                        COMPILE_FLAGS <flags...> [LINK_FLAGS <flags...>]
+#                        [SOURCE <file>] [INCLUDE_DIRS <dirs...>])
+# Compile AND link the probe TU with the flag set the real lane uses; the
 # link half proves the runtime image exists, not just the driver spelling.
 function(_bike_probe_capability result_var label)
-  cmake_parse_arguments(_cap "" "" "COMPILE_FLAGS;LINK_FLAGS" ${ARGN})
+  cmake_parse_arguments(_cap "" "SOURCE"
+    "COMPILE_FLAGS;LINK_FLAGS;INCLUDE_DIRS" ${ARGN})
   if(NOT DEFINED _cap_LINK_FLAGS OR _cap_LINK_FLAGS STREQUAL "")
     set(_cap_LINK_FLAGS ${_cap_COMPILE_FLAGS})
   endif()
+  if(NOT DEFINED _cap_SOURCE OR _cap_SOURCE STREQUAL "")
+    set(_cap_SOURCE "${_bike_capability_probe_dir}/probe.cpp")
+  endif()
+  set(_cap_include_flags "")
+  foreach(_cap_include_dir IN LISTS _cap_INCLUDE_DIRS)
+    list(APPEND _cap_include_flags "-I${_cap_include_dir}")
+  endforeach()
   try_compile(${result_var}
     "${_bike_capability_probe_dir}/build-${label}"
-    SOURCES "${_bike_capability_probe_dir}/probe.cpp"
+    SOURCES "${_cap_SOURCE}"
     CMAKE_FLAGS
       ${_bike_policy_sysroot_flags}
       "-DCMAKE_CXX_STANDARD:STRING=23"
       "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
-    COMPILE_DEFINITIONS ${_cap_COMPILE_FLAGS}
+    COMPILE_DEFINITIONS ${_cap_COMPILE_FLAGS} ${_cap_include_flags}
     LINK_OPTIONS ${_cap_LINK_FLAGS}
     OUTPUT_VARIABLE _bike_cap_probe_output)
   set(${result_var} "${${result_var}}" PARENT_SCOPE)
@@ -744,13 +773,18 @@ else()
   set(_bike_cap_compile_coverage -fprofile-arcs -ftest-coverage)
 endif()
 # -fsanitize=realtime has no GCC spelling — the probe itself measures that.
+# Its source is rtsan_probe.cpp above: flag, feature query and annotation
+# together, so a compiler that accepts the spelling without the realtime
+# instrumentation contract still reports supported=false.
 set(_bike_cap_compile_rtsan -fsanitize=realtime)
 set(_bike_cap_link_rtsan ${_bike_cap_compile_rtsan})
 
 _bike_probe_capability(BIKE_CAP_ASAN_SUPPORTED asan
   COMPILE_FLAGS ${_bike_cap_compile_asan} LINK_FLAGS ${_bike_cap_link_asan})
 _bike_probe_capability(BIKE_CAP_RTSAN_SUPPORTED rtsan
-  COMPILE_FLAGS ${_bike_cap_compile_rtsan} LINK_FLAGS ${_bike_cap_link_rtsan})
+  COMPILE_FLAGS ${_bike_cap_compile_rtsan} LINK_FLAGS ${_bike_cap_link_rtsan}
+  SOURCE "${_bike_capability_probe_dir}/rtsan_probe.cpp"
+  INCLUDE_DIRS "${BIKE_NATIVE_ROOT}/src")
 _bike_probe_capability(BIKE_CAP_COVERAGE_SUPPORTED coverage
   COMPILE_FLAGS ${_bike_cap_compile_coverage})
 
@@ -778,6 +812,24 @@ if(_bike_target_rc EQUAL 0 AND NOT _bike_target_out STREQUAL "")
 else()
   set(BIKE_SANITIZER_TARGET "")
 endif()
+
+# RTSan probe-cache invalidation (T16): check_cxx_source_compiles caches its
+# result in this build's CMakeCache, and the cache must never qualify a lane
+# measured under a different toolchain. The signature binds every cached
+# RTSan probe result to the selected compiler's path, identity, version and
+# target; a change drops the cached results so they re-probe.
+set(_bike_rtsan_signature
+  "${CMAKE_CXX_COMPILER}|${CMAKE_CXX_COMPILER_ID}|${CMAKE_CXX_COMPILER_VERSION}|${BIKE_TARGET_SYSTEM}|${BIKE_POLICY_MACHINE}|${BIKE_SANITIZER_TARGET}")
+if(DEFINED BIKE_RTSAN_TOOLCHAIN_SIGNATURE
+   AND NOT BIKE_RTSAN_TOOLCHAIN_SIGNATURE STREQUAL _bike_rtsan_signature)
+  # try_compile results are uncached and re-probe every configure; the
+  # CheckCXXSourceCompiles result below is the one cached value that must
+  # be dropped on a toolchain change.
+  unset(BIKE_RTSAN_INSTRUMENTATION_LINKS CACHE)
+endif()
+set(BIKE_RTSAN_TOOLCHAIN_SIGNATURE "${_bike_rtsan_signature}"
+  CACHE INTERNAL
+  "toolchain signature the cached RTSan probes were computed under")
 
 function(_bike_sanitizer_runtime_name out_var sanitizer)
   if(_bike_clang_family)
@@ -888,18 +940,105 @@ function(_bike_run_sanitizer_control sanitizer runtime rc_var detail_var)
     "stdout='${_control_out}' stderr='${_control_err}'" PARENT_SCOPE)
 endfunction()
 
+# _bike_run_rtsan_violation_control(<runtime> <result-var> <detail-var>)
+# The RTSan lane's negative gate: build the checked-in violation control
+# (native/tests/rtsan_control.cpp) with the lane's real instrumentation and
+# run its forbidden-allocation mode under the runner's preload contract.
+# TRUE is returned only when the process dies with the real
+# RealtimeSanitizer report — a clean exit proves the annotation never
+# instrumented the call, and a loader failure or unrelated signal without
+# the report is not sanitizer evidence.
+function(_bike_run_rtsan_violation_control runtime result_var detail_var)
+  set(_violation_dir "${_bike_capability_probe_dir}/violation-rtsan")
+  file(MAKE_DIRECTORY "${_violation_dir}")
+  try_compile(_violation_compiled
+    "${_violation_dir}/build"
+    SOURCES "${BIKE_NATIVE_ROOT}/tests/rtsan_control.cpp"
+    CMAKE_FLAGS
+      ${_bike_policy_sysroot_flags}
+      "-DCMAKE_CXX_STANDARD:STRING=23"
+      "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+    COMPILE_DEFINITIONS -fsanitize=realtime
+    LINK_OPTIONS -fsanitize=realtime
+    COPY_FILE "${_violation_dir}/violation_exe"
+    OUTPUT_VARIABLE _violation_build_log)
+  if(NOT _violation_compiled
+     OR NOT EXISTS "${_violation_dir}/violation_exe")
+    set(${result_var} FALSE PARENT_SCOPE)
+    set(${detail_var}
+      "violation control build failed under -fsanitize=realtime: "
+      "${_violation_build_log}" PARENT_SCOPE)
+    return()
+  endif()
+  if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+    set(_preload_var "DYLD_INSERT_LIBRARIES")
+    set(_existing_preload "$ENV{DYLD_INSERT_LIBRARIES}")
+  else()
+    set(_preload_var "LD_PRELOAD")
+    set(_existing_preload "$ENV{LD_PRELOAD}")
+  endif()
+  if(_existing_preload STREQUAL "")
+    set(_preload_value "${runtime}")
+  else()
+    set(_preload_value "${runtime}:${_existing_preload}")
+  endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E env
+      "${_preload_var}=${_preload_value}"
+      "${_violation_dir}/violation_exe" forbidden-allocation
+    RESULT_VARIABLE _violation_rc
+    OUTPUT_VARIABLE _violation_out
+    ERROR_VARIABLE _violation_err
+    TIMEOUT 60)
+  string(STRIP "${_violation_out}" _violation_out)
+  string(STRIP "${_violation_err}" _violation_err)
+  set(_violation_combined "${_violation_out}\n${_violation_err}")
+  if(_violation_rc EQUAL 0)
+    set(${result_var} FALSE PARENT_SCOPE)
+    set(${detail_var}
+      "violation control exited 0 — BIKE_NONBLOCKING produced no realtime "
+      "interception for the forbidden malloc/free pair" PARENT_SCOPE)
+  elseif(NOT _violation_combined MATCHES "RealtimeSanitizer"
+         OR NOT _violation_combined MATCHES "malloc")
+    set(${result_var} FALSE PARENT_SCOPE)
+    set(${detail_var}
+      "violation control died without a RealtimeSanitizer report "
+      "(rc=${_violation_rc}): '${_violation_combined}'" PARENT_SCOPE)
+  else()
+    set(${result_var} TRUE PARENT_SCOPE)
+    set(${detail_var}
+      "violation control reported the RealtimeSanitizer diagnostic "
+      "(rc=${_violation_rc}, ${_preload_var}=<selected>): "
+      "'${_violation_combined}'" PARENT_SCOPE)
+  endif()
+endfunction()
+
 _bike_sanitizer_runtime_name(BIKE_ASAN_RUNTIME_NAME asan)
 _bike_sanitizer_runtime_name(BIKE_RTSAN_RUNTIME_NAME rtsan)
 
 set(BIKE_CAP_ASAN_RUNTIME "")
 set(BIKE_CAP_ASAN_RUNTIME_QUERY "asan runtime not queried")
 set(BIKE_CAP_ASAN_RUN_CONTROL "asan run control not executed")
+set(BIKE_CAP_ASAN_ANNOTATION_CONTROL
+  "annotation gate not applicable to the asan lane")
+set(BIKE_CAP_ASAN_MACRO_CONTROL "macro gate not applicable to the asan lane")
+set(BIKE_CAP_ASAN_VIOLATION_CONTROL
+  "asan violation evidence lives in the pytest subprocess control")
 set(BIKE_CAP_RTSAN_RUNTIME "")
 set(BIKE_CAP_RTSAN_RUNTIME_QUERY "rtsan runtime not queried")
 set(BIKE_CAP_RTSAN_RUN_CONTROL "rtsan run control not executed")
+set(BIKE_CAP_RTSAN_ANNOTATION_CONTROL "rtsan annotation control not executed")
+set(BIKE_CAP_RTSAN_MACRO_CONTROL "rtsan macro control not executed")
+set(BIKE_CAP_RTSAN_VIOLATION_CONTROL "rtsan violation control not executed")
 set(BIKE_CAP_COVERAGE_RUNTIME "")
 set(BIKE_CAP_COVERAGE_RUNTIME_QUERY "coverage has no preload runtime")
 set(BIKE_CAP_COVERAGE_RUN_CONTROL "coverage has no preload runtime")
+set(BIKE_CAP_COVERAGE_ANNOTATION_CONTROL
+  "annotation gate not applicable to the coverage lane")
+set(BIKE_CAP_COVERAGE_MACRO_CONTROL
+  "macro gate not applicable to the coverage lane")
+set(BIKE_CAP_COVERAGE_VIOLATION_CONTROL
+  "violation gate not applicable to the coverage lane")
 
 if(BIKE_CAP_ASAN_SUPPORTED AND NOT BIKE_ASAN_RUNTIME_NAME STREQUAL "")
   _bike_driver_file_name(BIKE_CAP_ASAN_RUNTIME BIKE_CAP_ASAN_RUNTIME_QUERY
@@ -914,13 +1053,18 @@ endif()
 # that adds the flags anyway would break at the first instrumented TU.
 if(NATIVE_SANITIZE AND NOT BIKE_CAP_ASAN_SUPPORTED)
   message(FATAL_ERROR
-    "NATIVE_SANITIZE was requested but the selected toolchain failed the "
-    "ASan lane probe: ${BIKE_CAP_ASAN_SUPPORTED_EVIDENCE}")
+    "NATIVE_SANITIZE was requested but the selected toolchain "
+    "${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} "
+    "${CMAKE_CXX_COMPILER_VERSION}) failed the ASan lane probe: "
+    "${BIKE_CAP_ASAN_SUPPORTED_EVIDENCE}")
 endif()
 if(NATIVE_RTSAN AND NOT BIKE_CAP_RTSAN_SUPPORTED)
   message(FATAL_ERROR
-    "NATIVE_RTSAN was requested but the selected toolchain failed the "
-    "RTSan lane probe: ${BIKE_CAP_RTSAN_SUPPORTED_EVIDENCE}")
+    "NATIVE_RTSAN was requested but the selected toolchain "
+    "${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} "
+    "${CMAKE_CXX_COMPILER_VERSION}) failed the RTSan lane probe for "
+    "-fsanitize=realtime plus the BIKE_NONBLOCKING annotation: "
+    "${BIKE_CAP_RTSAN_SUPPORTED_EVIDENCE}")
 endif()
 
 # Enabled lanes must resolve a compiler-matched runtime AND prove it runs a
@@ -929,8 +1073,8 @@ if(NATIVE_SANITIZE)
   if(NOT BIKE_CAP_ASAN_RUNTIME)
     message(FATAL_ERROR
       "NATIVE_SANITIZE requires a resolvable ASan runtime; the selected "
-      "compiler could not resolve ${BIKE_ASAN_RUNTIME_NAME}: "
-      "${BIKE_CAP_ASAN_RUNTIME_QUERY}")
+      "compiler ${CMAKE_CXX_COMPILER} could not resolve "
+      "${BIKE_ASAN_RUNTIME_NAME}: ${BIKE_CAP_ASAN_RUNTIME_QUERY}")
   endif()
   _bike_run_sanitizer_control(asan "${BIKE_CAP_ASAN_RUNTIME}"
     _bike_asan_run_rc _bike_asan_run_detail)
@@ -942,11 +1086,97 @@ if(NATIVE_SANITIZE)
   endif()
 endif()
 if(NATIVE_RTSAN)
+  # T16 qualification gates, in order: flag+annotation compile/link, the
+  # load-bearing annotation proof, compiler-matched runtime resolution,
+  # the clean run control, and the forbidden-allocation violation control.
+  # Every gate fails the configure — an RTSan lane is qualified only when
+  # all of them passed under THIS toolchain.
+
+  # Requested-mode compile control: the brief's CMakePushCheckState/
+  # CheckCXXSourceCompiles pattern — CMAKE_REQUIRED_FLAGS carries the real
+  # lane flag, CMAKE_REQUIRED_INCLUDES makes "rtsan.hpp" resolve, and the
+  # source requires __has_feature(realtime_sanitizer) AND a BIKE_NONBLOCKING
+  # function to compile+link. BIKE_NONBLOCKING is in the trailing
+  # declarator position — since LLVM 20 [[clang::nonblocking]] is a
+  # function *type* attribute and the leading position is a hard error.
+  cmake_push_check_state(RESET)
+  set(CMAKE_REQUIRED_FLAGS "-std=c++23 -fsanitize=realtime")
+  set(CMAKE_REQUIRED_INCLUDES "${BIKE_NATIVE_ROOT}/src")
+  check_cxx_source_compiles([=[
+#include "rtsan.hpp"
+#if !defined(__has_feature)
+#error realtime sanitizer feature query is unavailable
+#elif !__has_feature(realtime_sanitizer)
+#error realtime sanitizer instrumentation is unavailable
+#endif
+void control() BIKE_NONBLOCKING {}
+int main() { control(); return 0; }
+]=] BIKE_RTSAN_INSTRUMENTATION_LINKS)
+  cmake_pop_check_state()
+  set(BIKE_CAP_RTSAN_ANNOTATION_CONTROL
+    "flag+annotation compile/link control: -fsanitize=realtime with "
+    "rtsan.hpp, __has_feature(realtime_sanitizer) and a BIKE_NONBLOCKING "
+    "function")
+  if(NOT BIKE_RTSAN_INSTRUMENTATION_LINKS)
+    message(FATAL_ERROR
+      "NATIVE_RTSAN requested but the RTSan compiler/annotation/link "
+      "control failed under ${CMAKE_CXX_COMPILER} "
+      "(${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}): "
+      "-fsanitize=realtime plus the BIKE_NONBLOCKING annotation did not "
+      "compile and link (see CMakeError.log)")
+  endif()
+
+  # The macro must be load-bearing, not an empty expansion: a malloc/free
+  # pair inside a BIKE_NONBLOCKING function must FAIL to compile under the
+  # function-effects checker, and the diagnostic must name the attribute.
+  # A clean compile means the macro expanded to nothing; an unrelated
+  # failure (unknown warning option, etc.) proves nothing either way.
+  file(WRITE "${_bike_policy_probe_dir}/rtsan_macro_active.cpp"
+    "#include <cstdlib>\n"
+    "#include \"rtsan.hpp\"\n"
+    "void forbidden_allocation() BIKE_NONBLOCKING {\n"
+    "  void* volatile pointer = std::malloc(32);\n"
+    "  std::free(pointer);\n"
+    "}\n"
+    "int main() { forbidden_allocation(); return 0; }\n")
+  try_compile(BIKE_RTSAN_ANNOTATION_INERT
+    "${_bike_policy_probe_dir}/rtsan-macro-active"
+    SOURCES "${_bike_policy_probe_dir}/rtsan_macro_active.cpp"
+    CMAKE_FLAGS
+      ${_bike_policy_sysroot_flags}
+      "-DCMAKE_CXX_STANDARD:STRING=23"
+      "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+    COMPILE_DEFINITIONS
+      -fsanitize=realtime -Werror -Wfunction-effects
+      "-I${BIKE_NATIVE_ROOT}/src"
+    LINK_OPTIONS -fsanitize=realtime
+    OUTPUT_VARIABLE _bike_rtsan_macro_output)
+  set(BIKE_CAP_RTSAN_MACRO_CONTROL
+    "macro-active control: forbidden malloc/free inside BIKE_NONBLOCKING "
+    "must fail under -fsanitize=realtime -Werror -Wfunction-effects "
+    "(compiled=${BIKE_RTSAN_ANNOTATION_INERT})")
+  if(BIKE_RTSAN_ANNOTATION_INERT)
+    message(FATAL_ERROR
+      "NATIVE_RTSAN requested but BIKE_NONBLOCKING did not activate the "
+      "function-effects checker on ${CMAKE_CXX_COMPILER} "
+      "(${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}) — the "
+      "macro expanded to nothing under -fsanitize=realtime")
+  endif()
+  if(NOT _bike_rtsan_macro_output MATCHES "nonblocking")
+    message(FATAL_ERROR
+      "NATIVE_RTSAN requested but the annotation control failed for an "
+      "unrelated reason under ${CMAKE_CXX_COMPILER} "
+      "(${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}) — "
+      "expected the -Wfunction-effects diagnostic naming 'nonblocking':\n"
+      "${_bike_rtsan_macro_output}")
+  endif()
+
   if(NOT BIKE_CAP_RTSAN_RUNTIME)
     message(FATAL_ERROR
       "NATIVE_RTSAN requires a resolvable RTSan runtime; the selected "
-      "compiler could not resolve ${BIKE_RTSAN_RUNTIME_NAME}: "
-      "${BIKE_CAP_RTSAN_RUNTIME_QUERY}")
+      "compiler ${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} "
+      "${CMAKE_CXX_COMPILER_VERSION}) could not resolve "
+      "${BIKE_RTSAN_RUNTIME_NAME}: ${BIKE_CAP_RTSAN_RUNTIME_QUERY}")
   endif()
   _bike_run_sanitizer_control(rtsan "${BIKE_CAP_RTSAN_RUNTIME}"
     _bike_rtsan_run_rc _bike_rtsan_run_detail)
@@ -954,7 +1184,18 @@ if(NATIVE_RTSAN)
   if(NOT _bike_rtsan_run_rc EQUAL 0)
     message(FATAL_ERROR
       "the RTSan runtime control failed to run cleanly under the selected "
-      "runtime ${BIKE_CAP_RTSAN_RUNTIME}: ${_bike_rtsan_run_detail}")
+      "runtime ${BIKE_CAP_RTSAN_RUNTIME} for compiler "
+      "${CMAKE_CXX_COMPILER}: ${_bike_rtsan_run_detail}")
+  endif()
+  _bike_run_rtsan_violation_control("${BIKE_CAP_RTSAN_RUNTIME}"
+    _bike_rtsan_violation_ok _bike_rtsan_violation_detail)
+  set(BIKE_CAP_RTSAN_VIOLATION_CONTROL "${_bike_rtsan_violation_detail}")
+  if(NOT _bike_rtsan_violation_ok)
+    message(FATAL_ERROR
+      "NATIVE_RTSAN requested but the violation control did not report a "
+      "RealtimeSanitizer diagnostic under ${CMAKE_CXX_COMPILER} "
+      "(${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}): "
+      "${_bike_rtsan_violation_detail}")
   endif()
 endif()
 

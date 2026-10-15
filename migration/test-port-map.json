@@ -22597,5 +22597,45 @@
       "standalone -O2 -DNDEBUG compile+run: 'PASS 302 checks' — require() is real code, no assert/NDEBUG dependence"
     ],
     "note": "T02 owns no Python source rows in python-removal.json and no ported test records in this map; this task-scoped entry is its registration evidence. Later tasks add migration_TNN executables under the same registration pattern; each task owns its own native/tests/migration/test_tNN.cpp."
+  },
+  "standalone_build_contract": {
+    "task": "T03",
+    "ctest_name": "migration_T03",
+    "build_target": "migration_T03",
+    "kind": "ctest-script",
+    "script_generator": "native/cmake/Provenance.cmake::bike_register_migration_t03",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt via bike_register_migration_t03(repo_root, BIKE_DEPENDENCY_ROOT, BIKE_DEPENDENCY_LOCK); registered by the standalone root build (add_subdirectory(native/tests/migration)) and by the legacy binding build (add_subdirectory(tests/migration))",
+    "build_target_dependencies": [
+      "native_distance_tests",
+      "native_station_tests"
+    ],
+    "produced_commands": [
+      "cmake -S . -B build/native-release -DCMAKE_BUILD_TYPE=Release -DBIKE_BUILD_PYTHON_BINDINGS=OFF -DBIKE_BUILD_GUI=OFF -DBIKE_DEPENDENCY_ROOT=$PWD/.deps",
+      "cmake --build build/native-release",
+      "ctest --test-dir build/native-release --output-on-failure",
+      "cmake -S . -B build/no-python -DBIKE_BUILD_PYTHON_BINDINGS=OFF -DBIKE_BUILD_GUI=OFF -DCMAKE_DISABLE_FIND_PACKAGE_Python=ON -DCMAKE_DISABLE_FIND_PACKAGE_Python3=ON -DBIKE_DEPENDENCY_ROOT=$PWD/.deps",
+      "cmake --build build/no-python --target native_distance_tests native_station_tests",
+      "ctest --test-dir build/no-python -R 'native_(distance|station)_tests' --output-on-failure --no-tests=error"
+    ],
+    "mandatory_cases": [
+      "bindings-OFF configure with CMAKE_DISABLE_FIND_PACKAGE_Python(3)=ON produces no Python include/lib/wheel/venv/site-package path in configure log, CMakeCache.txt or compile_commands.json",
+      "nested build of native_distance_tests + native_station_tests passes and nested ctest -R 'native_(distance|station)_tests' passes",
+      "otool -L/-l audit of produced binaries embeds no developer .venv/wheel path; libmujoco resolves to the locked .deps root",
+      "missing BIKE_DEPENDENCY_ROOT fails configure with 'dependency acquisition failure'",
+      "invalid MuJoCo version (BIKE_VERSION=3.99.0) fails configure with \"requires version '3.12.0'\"",
+      "sha256-tampered libmujoco.3.12.0.dylib fails configure with 'sha256 mismatch'",
+      "hash-clean dylib lacking _mjPRIVATE_setTlsLogHandler/_mjPRIVATE_getGlobalLogHandler/mj_makeRawData fails configure with 'error-handler ABI is unavailable'",
+      "dependency_provenance.json records every locked dependency version + archive sha256"
+    ],
+    "dependency_lock": "native/dependencies.lock.json",
+    "dependency_root": ".deps/ (explicit acquisition only; gitignored); entries verified by sha256 at configure time via native/cmake/Dependencies.cmake",
+    "shared_policy": "native/cmake/CompilerPolicy.cmake::bike_target_strict_policy — strict warnings, -ffp-contract=off, stack protection, libc++ hardening, optional NATIVE_SANITIZE/NATIVE_RTSAN/NATIVE_COVERAGE",
+    "evidence": [
+      "ctest --test-dir build/native-release -R '^migration_T03$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0",
+      "ctest --test-dir build/native-release --output-on-failure: 4/4 tests passed (native_distance_tests, native_station_tests, migration_T02, migration_T03)",
+      "no-python contract: configure exit 0 (Python discovery never attempted; CMAKE_DISABLE_FIND_PACKAGE_Python* reported unused), focused build exit 0, ctest -R 'native_(distance|station)_tests' 2/2 passed",
+      "bindings-ON root build (uv run --frozen --group native): configure+build exit 0; bike_native.cpython-314-darwin.so imports; otool -L resolves libmujoco to .deps/mujoco-3.12.0, no .venv path; links the same bike_core/bike_engine objects as the standalone tests"
+    ],
+    "note": "T03 owns src/bike_sim/native/__init__.py in python-removal.json as a ledger row only; the file remains present until the T63 deletion gate. Only already Python-free object/engine/distance/station targets compile under bindings OFF; coupled binding TUs build solely in the BIKE_BUILD_PYTHON_BINDINGS=ON transition, which links the identical bike_core/bike_engine objects."
   }
 }

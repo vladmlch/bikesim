@@ -1,0 +1,51 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "comments": [
+    "Presets for the legacy transition build (cmake -S native). The standalone",
+    "Python-free application build is configured from the repository root:",
+    "  cmake -S . -B build/native-release -DCMAKE_BUILD_TYPE=Release",
+    "    -DBIKE_BUILD_PYTHON_BINDINGS=OFF -DBIKE_BUILD_GUI=OFF",
+    "    -DBIKE_DEPENDENCY_ROOT=$PWD/.deps"
+  ],
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Transition extension build (default)",
+      "description": "Legacy nanobind extension build into native/build; identical to the tools/run_tests.sh native configuration.",
+      "binaryDir": "${sourceDir}/build"
+    },
+    {
+      "name": "asan",
+      "displayName": "Transition extension build (ASan+UBSan)",
+      "description": "Dedicated sanitizer build directory; run native tests through tools/run_tests.sh so the sanitizer runtime is injected.",
+      "binaryDir": "${sourceDir}/build/asan",
+      "cacheVariables": {
+        "NATIVE_SANITIZE": "ON"
+      }
+    },
+    {
+      "name": "rtsan",
+      "displayName": "Transition extension build (RTSan, brew clang)",
+      "description": "RealtimeSanitizer build; requires the Homebrew LLVM clang because Apple clang lacks the sanitizer.",
+      "binaryDir": "${sourceDir}/build/rtsan",
+      "cacheVariables": {
+        "NATIVE_RTSAN": "ON",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++"
+      }
+    },
+    {
+      "name": "coverage",
+      "displayName": "Transition extension build (llvm-cov)",
+      "description": "llvm-cov source coverage over the native translation units; consume via tools/native_coverage.sh.",
+      "binaryDir": "${sourceDir}/build/coverage",
+      "cacheVariables": {
+        "NATIVE_COVERAGE": "ON"
+      }
+    }
+  ]
+}

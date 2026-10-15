@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "purpose": "Checked dependency lock for the standalone Python-free native build (task T03). .deps/ is populated only by explicit acquisition before configure; configure, build and install make no network calls and run no dependency code-generation Python. Every entry records the real verified SHA-256 of the acquired archive plus the consumed files, the license, and the exact version/commit identity.",
+  "dependency_root": ".deps",
+  "archive_directory": "_archives",
+  "dependencies": {
+    "mujoco": {
+      "version": "3.12.0",
+      "license": "Apache-2.0",
+      "license_files": ["mujoco-3.12.0/LICENSE", "mujoco-3.12.0/LICENSES_THIRD_PARTY.md"],
+      "purpose": "Physics engine SDK: C headers plus the shared library pinned for the private TLS error-handler ABI (_mjPRIVATE_setTlsLogHandler / _mjPRIVATE_getGlobalLogHandler / mj_makeRawData).",
+      "acquisition": {
+        "kind": "pypi-wheel-extract",
+        "url": "https://files.pythonhosted.org/packages/d1/ac/57bec36f4c345f8bb87dc7788982677c20578bdddc6b1d879c413bc073ff/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl",
+        "archive": "_archives/mujoco-3.12.0-cp314-cp314-macosx_11_0_arm64.whl",
+        "archive_sha256": "3e353625f3fc2c3c8147ceddb2dcda3597bfd08c1d001ef0637a2080cd49cf77",
+        "pin_source": "uv.lock mujoco==3.12.0 cp314 macosx_11_0_arm64 wheel hash (verified identical to the downloaded artifact and to the installed .venv copy: libmujoco.3.12.0.dylib sha256 9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c matches the wheel-extracted dylib byte for byte)",
+        "note": "The wheel is only the transport for the already-pinned MuJoCo binaries; no Python interpreter, package or wheel directory enters the build closure."
+      },
+      "extracted_root": "mujoco-3.12.0",
+      "required_files": {
+        "include/mujoco/mujoco.h": "c7378e471cb951f4ff4bd4801139be41495a3df82c5ae643c4134ded850fb7ef",
+        "lib/libmujoco.3.12.0.dylib": "9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c"
+      }
+    },
+    "duckdb": {
+      "version": "1.5.6",
+      "license": "MIT",
+      "license_files": ["duckdb-1.5.6/LICENSE"],
+      "purpose": "DuckDB C API SDK (headers + shared library) for the native recording/replay publication path; pinned to match the input snapshot's duckdb==1.5.6.",
+      "acquisition": {
+        "kind": "github-release",
+        "url": "https://github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-osx-universal.zip",
+        "archive": "_archives/libduckdb-osx-universal-1.5.6.zip",
+        "archive_sha256": "e0bc007d9b0094c0970ac1847a8601d10aad07cbd2910ce586ec810f77b638d6",
+        "pin_source": "GitHub release tag v1.5.6 'DuckDB v1.5.6 Bugfix Release'; embedded DUCKDB_SOURCE_ID 069cc9f9b5 and DUCKDB_VERSION v1.5.6 in duckdb.hpp",
+        "note": "The PyPI duckdb wheel statically links the engine into _duckdb.so and ships no C SDK, so the native SDK comes from the upstream release; its embedded version macros identify the artifact."
+      },
+      "extracted_root": "duckdb-1.5.6",
+      "required_files": {
+        "include/duckdb.h": "e85f70155b5948c8575e59f66e60d43575cec8b252293534c9e8598eb313a293",
+        "include/duckdb.hpp": "5110331647a2ec48752c4a27064235fdca8a7d8c201e9a8202752a7202b2be01",
+        "lib/libduckdb.dylib": "75a519cb914ae36ca22cff0995a8a2e8c9a46990b8c0a479514f741a0d93f344"
+      }
+    },
+    "tomlplusplus": {
+      "version": "3.4.0",
+      "license": "MIT",
+      "license_files": ["tomlplusplus-3.4.0/LICENSE"],
+      "purpose": "Header-only TOML parser for configuration/request/track file loading (T13+).",
+      "acquisition": {
+        "kind": "git-tag-archive",
+        "url": "https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz",
+        "archive": "_archives/tomlplusplus-3.4.0.tar.gz",
+        "archive_sha256": "8517f65938a4faae9ccf8ebb36631a38c1cadfb5efa85d9a72e15b9e97d25155",
+        "pin_source": "GitHub tag v3.4.0"
+      },
+      "extracted_root": "tomlplusplus-3.4.0",
+      "required_files": {
+        "include/toml++/toml.hpp": "2ea2d34d13c358112176fbcd465936e159fa2dcd1c4f06f06939b6cd484e0f78"
+      }
+    },
+    "rapidjson": {
+      "version": "24b5e7a8b27f42fa16b96fc70aade9106cf7102f",
+      "license": "MIT",
+      "license_files": ["rapidjson-24b5e7a/LICENSE"],
+      "purpose": "Header-only JSON SAX/DOM parser; kParseNumbersAsStringsFlag exposes exact number lexemes for the lossless codec boundary (T05).",
+      "acquisition": {
+        "kind": "git-commit-archive",
+        "url": "https://github.com/Tencent/rapidjson/archive/24b5e7a8b27f42fa16b96fc70aade9106cf7102f.tar.gz",
+        "archive": "_archives/rapidjson-24b5e7a8b27f42fa16b96fc70aade9106cf7102f.tar.gz",
+        "archive_sha256": "2d2601a82d2d3b7e143a3c8d43ef616671391034bc46891a9816b79cf2d3e7a8",
+        "pin_source": "Tencent/rapidjson master commit 24b5e7a8b27f42fa16b96fc70aade9106cf7102f (2025-02-05), the upstream commit pinned for this migration"
+      },
+      "extracted_root": "rapidjson-24b5e7a",
+      "required_files": {
+        "include/rapidjson/document.h": "a91f6362f11813709bf7a9810ec4886c75b7e3415c732052f79a8e656606dc52",
+        "include/rapidjson/reader.h": "43cd0f9afc832c7011518f4d779022e6c3609df7918e854006252b3b24b30f87"
+      }
+    },
+    "glfw": {
+      "version": "3.4",
+      "license": "Zlib",
+      "license_files": ["glfw-3.4/LICENSE.md"],
+      "purpose": "Window/context/event layer for the MuJoCo passive-viewer GUI path (T48+); its upstream build is CMake-native (no Python).",
+      "acquisition": {
+        "kind": "github-release",
+        "url": "https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip",
+        "archive": "_archives/glfw-3.4.zip",
+        "archive_sha256": "b5ec004b2712fd08e8861dc271428f048775200a2df719ccf575143ba749a3e9",
+        "pin_source": "GitHub release tag 3.4"
+      },
+      "extracted_root": "glfw-3.4",
+      "required_files": {
+        "include/GLFW/glfw3.h": "aa370985f6b493bbe0358a36ab49f5780a6397c0209c6d98a62143dea595b73c"
+      }
+    },
+    "cairo": {
+      "version": "1.18.4",
+      "license": "LGPL-2.1-only OR MPL-1.1",
+      "license_files": ["cairo-1.18.4/COPYING", "cairo-1.18.4/COPYING-LGPL-2.1", "cairo-1.18.4/COPYING-MPL-1.1"],
+      "purpose": "Pinned native raster backend for PNG plot output (T50). Upstream build tooling (meson) needs Python, so the qualified workflow consumes a verified binary SDK rather than an upstream source build; the source archive is locked here for provenance and header access pending SDK acquisition (T50/T59).",
+      "acquisition": {
+        "kind": "upstream-release",
+        "url": "https://www.cairographics.org/releases/cairo-1.18.4.tar.xz",
+        "archive": "_archives/cairo-1.18.4.tar.xz",
+        "archive_sha256": "445ed8208a6e4823de1226a74ca319d3600e83f6369f99b14265006599c32ccb",
+        "pin_source": "cairographics.org release cairo-1.18.4"
+      },
+      "extracted_root": "cairo-1.18.4",
+      "required_files": {
+        "src/cairo.h": "2648b182afef057343b789551ccb4a0d44398278a7e0a63aaf65246cc7d13e80"
+      }
+    },
+    "eigen": {
+      "version": "3.4.0",
+      "license": "MPL-2.0",
+      "license_files": ["eigen-3.4.0/COPYING.MPL2"],
+      "purpose": "Header-only dense linear algebra (decompositions) for the bounded least-squares, allocation and rider-dynamics solver ports (T23/T28/T29); native math support locked at T03.",
+      "acquisition": {
+        "kind": "git-tag-archive",
+        "url": "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz",
+        "archive": "_archives/eigen-3.4.0.tar.gz",
+        "archive_sha256": "8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72",
+        "pin_source": "GitLab tag 3.4.0"
+      },
+      "extracted_root": "eigen-3.4.0",
+      "required_files": {
+        "Eigen/Dense": "5325c9d4d693e504ee012c5275ad4b10b135a701cbd87c14466d2ea21ea22ee5"
+      }
+    }
+  }
+}

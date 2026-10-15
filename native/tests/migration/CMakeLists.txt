@@ -45,6 +45,11 @@ get_filename_component(_migration_test_include_root
   "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
 target_include_directories(bike_migration_test PUBLIC
   "${_migration_test_include_root}")
+# In the standalone root build the _native_contract_* context belongs to the
+# legacy binding scope and is unset here — apply the shared policy directly.
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(bike_migration_test)
+endif()
 
 add_executable(migration_T02 test_t02.cpp)
 set_target_properties(migration_T02 PROPERTIES
@@ -61,6 +66,9 @@ if(_native_contract_link_options)
   target_link_options(migration_T02 PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(migration_T02 PRIVATE bike_migration_test)
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T02)
+endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T02 COMMAND migration_T02)
@@ -71,3 +79,11 @@ if(BUILD_TESTING)
   set_tests_properties(migration_T02 PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T02>")
 endif()
+
+# T03 build-contract regression: a CTest script test running the produced
+# configure/build/ctest command contract plus a real custom build target —
+# not a fake empty C++ executable. The dependency module anchors its
+# BIKE_DEPENDENCY_ROOT/LOCK defaults at the repository root, so both this
+# build and the legacy binding build hand the script the same .deps tree.
+bike_register_migration_t03(
+  "${_migration_repo_root}" "${BIKE_DEPENDENCY_ROOT}" "${BIKE_DEPENDENCY_LOCK}")

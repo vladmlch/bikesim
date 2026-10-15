@@ -28,6 +28,10 @@ build/
 .venv/
 .pytest_cache/
 
+# Explicitly acquired native dependency SDKs + archives for the standalone
+# build (native/dependencies.lock.json records their verified hashes).
+.deps/
+
 # MuJoCo generated legacy
 bike_model.xml
 bike_playground*.xml

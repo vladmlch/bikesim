@@ -47,6 +47,14 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeDependencies.cmake")
 # minimum that keeps this tree buildable; T10 owns the final target-graph
 # integration (policy application, LAPACK adapter, remaining consumers).
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeNumerics.cmake")
+if(TARGET bike_native_numerics)
+  # The standalone-header sweep compiles every first-party header under
+  # every target's compile context — the adapter must therefore see the
+  # same third-party include roots the contract targets carry, even though
+  # its own TU only needs mujoco.h plus the generated symbol header.
+  target_include_directories(bike_native_numerics SYSTEM PRIVATE
+    "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+endif()
 
 set(_native_hardening_probe_dir "${CMAKE_BINARY_DIR}/native_check_work/libcpp-hardening")
 file(MAKE_DIRECTORY "${_native_hardening_probe_dir}")

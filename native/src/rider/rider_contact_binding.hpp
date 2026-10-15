@@ -1,3 +1,8 @@
+// rider_contact_binding.hpp — the nanobind ADAPTER face for the rider
+// contacts writer. The Python-free Value twin of the state decode
+// (schema + writer-topology gates) is rider::decode_rider_contacts_state
+// in rider/state_codec.hpp (T08); RiderContactsState/RiderContactsProbe
+// remain owned by writers/rider_contacts.hpp.
 #pragma once
 #include <optional>
 #include <utility>
@@ -14,6 +19,7 @@ void bind_rider_contacts(const nanobind::module_ &module,
 
 // Schema+topology decode of the rider-contacts state dict — the same reader
 // 'set_rider_contacts_state' uses. Pure: no writer or model mutation.
+// The bike::io::Value twin is rider::decode_rider_contacts_state.
 [[nodiscard]] std::pair<writers::RiderContactsState,
                         std::optional<writers::RiderContactsProbe>>
 parse_rider_contacts_state(nanobind::handle raw,

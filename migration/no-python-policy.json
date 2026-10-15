@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "description": "bike-python-audit policy (T56-produced, T62-enforced). Source mode enumerates tracked Python removal-ledger paths still present plus interpreter invocation edges in first-party executable surfaces; package mode scans install/runtime trees for interpreter artifacts and linkage; documentation mode scans active fenced command blocks in live documentation.",
+  "removal_inventory": "migration/python-removal.json",
+  "source_mode": {
+    "invocation_globs": [
+      "tools/*.sh",
+      "tools/**/*.sh",
+      "native/**/*.cmake",
+      "**/CMakeLists.txt",
+      ".github/workflows/*",
+      "native/tests/**/*.cmake"
+    ],
+    "invocation_tokens": [
+      "python",
+      "python3",
+      "uv run",
+      "uvx",
+      "pip",
+      "pip3",
+      "mjpython",
+      "pytest"
+    ],
+    "exempt_globs": [
+      "build/**",
+      ".venv/**",
+      "output/**",
+      "docs/superpowers/**",
+      "migration/**",
+      "**/proto_native_bench/**"
+    ]
+  },
+  "package_mode": {
+    "forbidden_file_globs": [
+      "*.py",
+      "*.pyi",
+      "*.pyc",
+      "*.pyo",
+      "*.ipynb",
+      "*.whl"
+    ],
+    "forbidden_directory_names": [
+      ".venv",
+      "venv",
+      "site-packages",
+      "__pycache__"
+    ],
+    "forbidden_directory_globs": [
+      "*.dist-info",
+      "python*"
+    ],
+    "shebang_tokens": [
+      "python",
+      "mjpython",
+      "pypy"
+    ],
+    "mach_o_forbidden_loads": [
+      "Python.framework",
+      "libpython",
+      "nanobind",
+      "libnanobind"
+    ],
+    "exempt_globs": []
+  },
+  "documentation_mode": {
+    "document_globs": [
+      "*.md",
+      "docs/**/*.md",
+      "native/**/*.md",
+      "tools/**/*.md",
+      ".github/**/*.md"
+    ],
+    "exempt_globs": [
+      "docs/superpowers/**",
+      "docs/archive/**",
+      "migration/**",
+      "**/CHANGELOG*"
+    ],
+    "forbidden_command_tokens": [
+      "python",
+      "python3",
+      "uv",
+      "uvx",
+      "pip",
+      "pip3",
+      "mjpython",
+      "pytest"
+    ]
+  }
+}

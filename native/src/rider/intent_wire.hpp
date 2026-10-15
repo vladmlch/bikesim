@@ -1,6 +1,13 @@
 // rider/intent_wire.hpp — dict <-> struct conversion for the seated-climb
 // intent stack's config, signals, control and bootstrap-state surfaces.
 //
+// ADAPTER-ONLY: the nanobind-object readers/emissions for the
+// interpreter boundary. The owned bike::io::Value twins of these
+// decoders live in rider/state_codec.hpp (T08); IntentConfig/
+// IntentSignals/IntentControl/RiderIntent::State stay owned by
+// intent.hpp. No binding-only declaration enters the pure core include
+// graph.
+//
 // The wire shapes are the production ones: `config.rider_intent` is
 // `plain(asdict(SeatedClimbConfig))`; `state.rider_intent` is exactly
 // RiderIntentResolver.state_dict() output; `state.signals` is the

@@ -22755,6 +22755,36 @@
     ],
     "note": "T07 owns no Python source rows in python-removal.json and no ported test records in this map — its deliverable is the typed writer-config boundary itself (the stepper.hpp/cpp pair that T09's src/bike_sim/native/runtime.py row already lists as planned replacements gained the writer_config.hpp/cpp decode half plus test_t07.cpp, appended to that row's replacement_paths so the ledger stays complete). tools/native_config.py (T56) remains the projection oracle until the T63 deletion gate. NativeConfig is deleted outright — no alias is kept — because WriterConfig is the identical shape under the owned name. drive/policy nb-dict parse entry points stay binding-side adapters over the same shared decode, preserving extra_root_keys and root-path spellings."
   },
+  "state_wire_codec_boundary_contract": {
+    "task": "T08",
+    "ctest_name": "migration_T08",
+    "build_target": "migration_T08",
+    "kind": "executable",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T08 test_t08.cpp) linked against bike_migration_test + the Python-free core set (bike_core in the root graph, bike_native_contract_core in the legacy graph) + the engine lib + Accelerate; T08 added drivetrain/state_codec.cpp, rider/state_codec.cpp and rider/spindle_math.cpp (the spindle config decoder resolves torque-curve and joint-envelope validators) to BOTH core source lists and dropped spindle_math.cpp from the nanobind module list so the module reaches it through ${_native_core_lib}; compiling test_t08.cpp against state_codec.hpp in a target with no Python/nanobind include path is the include-closure contract itself",
+    "produced_apis": [
+      "rider::decode_spindle_config(const bike::io::Value&) — native/src/rider/state_codec.hpp; strict Value→SpindleConfig decode with the binding's key tables, integer-lexeme strictness, finite-real gates and 'path: reason' std::invalid_argument diagnostics; strength/envelope tables route through the same spindle_math validators",
+      "rider::decode_spindle_state / encode_spindle_state — controller state wire codec; pd_split/last_branch/last_solution unsupported-warm-carry rejections preserved",
+      "rider::decode_rider_posture / encode_rider_posture, decode_rider_command, decode_named_reals, decode_joint_terms — posture/command/terms codecs mirroring spindle_wire.cpp read and dict-literal emission order",
+      "rider::decode_intent_config / decode_intent_signals / decode_intent_step / decode_intent_control / decode_intent_state and encode_intent_state / encode_intent_signals / encode_intent_control — intent wire codecs; step accepts integer-spelled lexemes only ('type(step) is not int' parity)",
+      "rider::decode_attachment_geometry / decode_attachment_entry and encode_attachment_geometry / encode_attachment_entry — attachment codecs with the rider_jac raw-vs-sample distinction and truthy observable/rotational semantics",
+      "rider::decode_rider_contacts_state / encode_rider_contacts_state — topology-gated contacts codec taking the live RiderContactWriter; exact enabled/support key sets, fixed vectors, optional tangents/anchors, settled welds, attachment samples/errors, detailed diagnostics and the all-or-none probe triple",
+      "drivetrain::decode_drive_snapshot(const bike::io::Value&) / encode_drive_snapshot(const DriveSnapshot&) — native/src/drivetrain/state_codec.hpp; field-for-field parse_state/state_dict twin over the 12-key top level, fixed-width angle storage, typed 67-lane telemetry schema (presence 0/1/2, closed labels, integer floors, open lanes), transmission snapshots, pending actuation and the five-key policies object"
+    ],
+    "mandatory_cases": [
+      "round-trip drive/spindle/intent/signals/attachment/contacts captures byte-against canonical goldens with values_equal semantic verification (integer lexemes exact, float lexemes IEEE-754 bit-equal — -0.0 and the 2 vs 2.0 spelling distinction preserved; decoded doubles re-emit in Python repr form, e.g. -1000000000000.0 -> -1e+12)",
+      "minimal variants decode every optional to absent and re-emit the same shape; member emission order mirrors the binding dict-literal update order (drive top-level, policies, telemetry schema order)",
+      "each authored invalid fixture rejects with std::invalid_argument before any live state is touched — decode is a pure function so nothing partial escapes; a subsequent valid decode is unaffected",
+      "contacts topology gate: partial probe triple and foreign settled-weld names reject against the live welded_pinned writer",
+      "no nanobind/Python declaration enters the codec headers' transitive include graph (the test target carries no such include path)"
+    ],
+    "evidence": [
+      "RED recorded: 'cmake --build native/build --target migration_T08' failed before the codec sources existed (no rule to make target, then test_t08.cpp could not name decode_drive_snapshot); first compile surfaced -Wframe-larger-than on the snapshot-heavy check bodies (fixed by boxing decoded state) and -Wunused-parameter",
+      "ctest --test-dir native/build -R '^migration_T08$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (566 checks: 24 + 37 + 29 + 127 + 64 + 75 + 87 + 123)",
+      "cmake --build native/build --target migration_T05 + ctest -R '^migration_T05$': 1/1 passed — the 22 appended oracle-manifest entries (state group + config/rider_controller) validate and every declared file's sha256/bytes verifies",
+      "standalone codec-TU and header compiles under the project C++23/MuJoCo/strict-warning flags completed earlier in the task; the target-level build re-proves them inside the real graph"
+    ],
+    "note": "T08 owns no Python source rows itself; its produced boundaries are appended to the T09 src/bike_sim/native/runtime.py row's replacement_paths (runtime.py wires these wires together) so the ledger stays complete, matching the T07 convention. Python remains the oracle through T63."
+  },
   "configuration_boundary_contract": {
     "task": "T12",
     "ctest_name": "migration_T12",

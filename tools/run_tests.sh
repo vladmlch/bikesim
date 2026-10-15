@@ -24,6 +24,25 @@ native_uv() {
   uv run --frozen --group native "$@"
 }
 
+# T56: the produced check orchestrator replaces the Python sweep driver for
+# every kind. The binary lives in the standalone build; the transition gate
+# still analyzes the selected legacy build dir (--build below).
+# shellcheck source=/dev/null
+source "$REPO_ROOT/tools/native_common.sh"
+
+ensure_native_checks() {
+  # Configure the standalone graph on first use, then always (incrementally)
+  # rebuild the checker so the gate never sweeps with a stale binary.
+  local produced_dir="$REPO_ROOT/build/native-release"
+  if [[ ! -f "$produced_dir/CMakeCache.txt" ]]; then
+    cmake -S "$REPO_ROOT" -B "$produced_dir" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBIKE_BUILD_PYTHON_BINDINGS=OFF -DBIKE_BUILD_GUI=OFF \
+      -DBIKE_DEPENDENCY_ROOT="$REPO_ROOT/.deps"
+  fi
+  cmake --build "$produced_dir" --target bike-native-checks
+}
+
 profile="${1:-quick}"
 if (($# > 0)); then
   shift
@@ -164,11 +183,15 @@ preflight_native() {
   native_uv python -c 'import mujoco, nanobind, sys; sys.exit(0 if mujoco.__version__ == "3.12.0" else f"native build requires MuJoCo 3.12.0, found {mujoco.__version__}")'
   native_uv cmake -S "$REPO_ROOT/native" -B "$build_dir"
   native_uv cmake --build "$build_dir"
+  ensure_native_checks
+  local checks_bin
+  checks_bin="$(bike_checks_binary "$build_dir")"
+  printf 'produced check orchestrator: %s\n' "$checks_bin"
   for target in frontends tidy analyzer cppcheck odr scripts; do
     native_uv cmake --build "$build_dir" --target "check_$target"
   done
   for kind in headers diagnostic-controls context; do
-    native_uv python "$REPO_ROOT/tools/native_checks.py" --kind "$kind" --build "$build_dir"
+    "$checks_bin" --kind "$kind" --build "$build_dir"
   done
 
   resolve_native_runtime "$build_dir"
@@ -176,7 +199,7 @@ preflight_native() {
   local extension_path
   extension_path="$(run_with_native_runtime python -c 'from native_loader import load_native; print(load_native().__file__)')"
   printf 'selected native extension: %s\n' "$extension_path"
-  run_with_native_runtime cmake --build "$build_dir" --target check_native_contracts
+  run_with_native_runtime "$checks_bin" --kind contracts --build "$build_dir" --repo-root "$REPO_ROOT"
 }
 
 if [[ "$profile" == native || "$profile" == full ]]; then

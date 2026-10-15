@@ -1,6 +1,13 @@
 // rider/spindle_wire.hpp — dict <-> struct conversion for the spindle
 // controller's config, command, and bootstrap-state surfaces.
 //
+// ADAPTER-ONLY: these are the nanobind-object readers/emissions the
+// interpreter boundary uses. The owned bike::io::Value codecs for the
+// same documents live in rider/state_codec.hpp (T08) — SpindleConfig and
+// SpindleController::State themselves remain owned by
+// spindle_controller.hpp; no binding-only declaration enters the pure
+// core include graph.
+//
 // The wire shapes are the production ones: `config.rider_controller` is
 // `plain(asdict(ArticulatedConfig))` plus the resolved strength/envelope
 // tables appended by bike_sim.native.setup; `state` sections are exactly

@@ -267,7 +267,11 @@ target_include_directories(bike_rider_math SYSTEM PRIVATE
 add_library(bike_configuration STATIC
   "${_bike_native_dir}/src/configuration/schema.cpp"
   "${_bike_native_dir}/src/configuration/validate.cpp"
+  "${_bike_native_dir}/src/configuration/load.cpp"
+  "${_bike_native_dir}/src/configuration/paths.cpp"
+  "${_bike_native_dir}/src/configuration/profile_writer.cpp"
   "${_bike_native_dir}/src/configuration/fields.hpp"
+  "${_bike_native_dir}/src/configuration/load.hpp"
   "${_bike_native_dir}/src/configuration/model_config.hpp"
   "${_bike_native_dir}/src/configuration/physical_config.hpp"
   "${_bike_native_dir}/src/configuration/rider_spec.hpp"
@@ -278,7 +282,7 @@ bike_target_strict_policy(bike_configuration)
 target_include_directories(bike_configuration SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_rapidjson_ROOT}/include")
 target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
-  bike_rider_math)
+  bike_rider_math bike::tomlplusplus)
 
 # bike_engine: the pinned error interceptor shared by contract tests and the
 # extension (identical source/context to the legacy bike_native_engine).

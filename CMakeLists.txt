@@ -243,6 +243,23 @@ target_include_directories(bike_engine SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
 target_link_libraries(bike_engine PUBLIC bike::mujoco bike_io)
 
+# native_bench: the proto_native_bench prototype TU. The produced manifest
+# declares tools/proto_native_bench a first-party root exactly like the
+# legacy graph, so this target must exist here or the headers sweep has no
+# compile context for state_format.hpp (the oracle fails closed on that
+# hole). When the transition bindings are enabled, native/ owns the target.
+if(NOT BIKE_BUILD_PYTHON_BINDINGS)
+  add_executable(native_bench
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/bench.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/state_format.hpp")
+  bike_target_strict_policy(native_bench)
+  target_include_directories(native_bench SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(native_bench PRIVATE bike_engine)
+  bike_rewrite_mujoco_load_name(native_bench
+    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+endif()
+
 if(BUILD_TESTING)
   # tyre/distance.cpp SignedProfile + tyre/station.cpp scalar station law:
   # the produced-command contract's focused executable pair.
@@ -300,3 +317,12 @@ install(FILES "${CMAKE_BINARY_DIR}/dependency_provenance.json"
   DESTINATION share/bike_sim)
 install(FILES "${BIKE_DEPENDENCY_LOCK}" DESTINATION share/bike_sim
   RENAME dependencies.lock.json)
+
+# ---------------------------------------------------------------------------
+# Produced check orchestration (T56): bike-native-checks/bike-python-audit
+# executables, the emitted native_check_context.json/native_sources.json for
+# the standalone graph, the check_<kind> sweep targets and the migration_T56
+# fixture contract. Included last so every first-party target — root scope,
+# native/tests/migration, and the transition extension when bindings are on —
+# is already defined before the manifest enumerates it.
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Checks.cmake")

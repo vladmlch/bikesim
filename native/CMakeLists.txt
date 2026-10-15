@@ -17,11 +17,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(BIKE_LIBCPP_HARDENING "EXTENSIVE" CACHE STRING "libc++ hardening mode")
-set_property(CACHE BIKE_LIBCPP_HARDENING PROPERTY STRINGS EXTENSIVE FAST)
-if(NOT BIKE_LIBCPP_HARDENING STREQUAL "EXTENSIVE" AND NOT BIKE_LIBCPP_HARDENING STREQUAL "FAST")
-  message(FATAL_ERROR "BIKE_LIBCPP_HARDENING must be EXTENSIVE or FAST, got '${BIKE_LIBCPP_HARDENING}'")
-endif()
+# Compiler/architecture/standard-library policy — resolved once here and
+# applied DIRECTLY to every first-party target via bike_apply_native_policy().
+# The module declares NATIVE_SANITIZE/NATIVE_RTSAN/NATIVE_COVERAGE and
+# BIKE_LIBCPP_HARDENING, probes the real compiler/standard library for every
+# flag it emits (required flags fail configuration), and writes
+# bike_policy_report.json for tests/portability/test_compiler_policy.py.
+# Include before BikeNumerics.cmake so bike_native_numerics' guarded call
+# applies the policy too.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeCompilerPolicy.cmake")
 
 # The compiler identification check above is not enough on Apple hosts:
 # compile a source that includes an SDK header with the selected compiler and
@@ -48,57 +52,10 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeDependencies.cmake")
 # integration (policy application, LAPACK adapter, remaining consumers).
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeNumerics.cmake")
 
-set(_native_hardening_probe_dir "${CMAKE_BINARY_DIR}/native_check_work/libcpp-hardening")
-file(MAKE_DIRECTORY "${_native_hardening_probe_dir}")
-set(_native_libcpp_probe_source "${_native_hardening_probe_dir}/detect_libcpp.cpp")
-file(WRITE "${_native_libcpp_probe_source}"
-  "#include <__config>\n"
-  "#ifndef _LIBCPP_VERSION\n#error The configured standard library is not libc++\n#endif\n"
-  "int main() { return 0; }\n")
-unset(_native_uses_libcpp CACHE)
-try_compile(_native_uses_libcpp
-  "${_native_hardening_probe_dir}/detect-build"
-  SOURCES "${_native_libcpp_probe_source}"
-  CMAKE_FLAGS
-    "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
-    "-DCMAKE_CXX_STANDARD:STRING=23"
-    "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
-  OUTPUT_VARIABLE _native_libcpp_detection_output)
-
-set(_native_libcpp_hardening_supported FALSE)
-if(_native_uses_libcpp)
-  set(_native_hardening_mode_probe_source "${_native_hardening_probe_dir}/check_hardening_mode.cpp")
-  file(WRITE "${_native_hardening_mode_probe_source}"
-    "#include <__config>\n"
-    "#ifndef _LIBCPP_HARDENING_MODE_${BIKE_LIBCPP_HARDENING}\n"
-    "#error libc++ omitted the selected hardening mode macro\n#endif\n"
-    "#ifndef _LIBCPP_HARDENING_MODE\n#error libc++ omitted the hardening mode selection\n#endif\n"
-    "#if _LIBCPP_HARDENING_MODE != _LIBCPP_HARDENING_MODE_${BIKE_LIBCPP_HARDENING}\n"
-    "#error libc++ did not accept the selected hardening mode\n#endif\n"
-    "int main() { return 0; }\n")
-  unset(_native_libcpp_mode_probe_result)
-  unset(_native_libcpp_mode_probe_result CACHE)
-  try_compile(_native_libcpp_mode_probe_result
-    "${_native_hardening_probe_dir}/mode-build"
-    SOURCES "${_native_hardening_mode_probe_source}"
-    CMAKE_FLAGS
-      "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
-      "-DCMAKE_CXX_STANDARD:STRING=23"
-      "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
-    COMPILE_DEFINITIONS
-      "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_${BIKE_LIBCPP_HARDENING}"
-    OUTPUT_VARIABLE _native_libcpp_hardening_output)
-  if(NOT _native_libcpp_mode_probe_result)
-    message(FATAL_ERROR
-      "Configured libc++ does not support hardening mode ${BIKE_LIBCPP_HARDENING}:\n${_native_libcpp_hardening_output}")
-  endif()
-  set(_native_libcpp_hardening_supported TRUE)
-  set(_native_libcpp_hardening_mode "${BIKE_LIBCPP_HARDENING}")
-else()
-  message(STATUS "libc++ hardening is not applied: configured standard library is not libc++")
-  set(_native_libcpp_hardening_mode "NOT_APPLICABLE")
-endif()
-
+# Standard-library detection, hardening-mode selection and every flag probe
+# moved into cmake/BikeCompilerPolicy.cmake (included before the dependency
+# modules above): _native_uses_libcpp / _native_libcpp_hardening_supported /
+# _native_libcpp_hardening_mode are exported by that module.
 # NB_SUPPRESS_WARNINGS: nanobind/Python headers land as SYSTEM includes —
 # third-party TU internals stay outside our warning contract.
 # PROTECT_STACK: nanobind otherwise appends -fno-stack-protector in Release
@@ -138,11 +95,12 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
 
 set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
-# Strict flags are PRIVATE to our TUs: nanobind's own static-lib sources are
-# not expected to survive this warning set under -Werror.
-# -ffp-contract=off: clang's default (on) fuses mul+add into FMA on arm64 —
-# one rounding instead of two, breaking bitwise parity with the Python
-# oracle, whose interpreter rounds every operation separately.
+# The full compiler/architecture/standard-library policy — warning list,
+# required numerical/safety flags (-ffp-contract=off keeps bitwise parity
+# with the Python oracle), Release -O2, libc++ hardening / _FORTIFY_SOURCE,
+# and the NATIVE_SANITIZE/NATIVE_RTSAN/NATIVE_COVERAGE instrumentation —
+# is selected by cmake/BikeCompilerPolicy.cmake and applied DIRECTLY here
+# and to every other first-party target below via bike_apply_native_policy.
 if(CMAKE_CONFIGURATION_TYPES)
   set(_research_identity_configuration "$<CONFIG>")
 else()
@@ -150,144 +108,8 @@ else()
 endif()
 target_include_directories(bike_native PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/research_identity/${_research_identity_configuration}")
-target_compile_options(bike_native PRIVATE
-  -Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion
-  -Wdouble-promotion -Wshadow -Wcast-qual -Wformat=2 -Wundef
-  -Wimplicit-fallthrough -Wnon-virtual-dtor -Wold-style-cast
-  -Woverloaded-virtual -Wnull-dereference -Wunsafe-buffer-usage
-  # Declarations / ODR hygiene: free functions without a header decl get
-  # flagged so internal linkage is a deliberate choice, not an accident.
-  -Wmissing-declarations -Wmissing-variable-declarations -Wmissing-noreturn
-  -Wredundant-decls -Wredeclared-class-member -Wstatic-in-inline
-  # Casts beyond -Wcast-qual (no -Wcast-align=strict on Apple clang).
-  -Wcast-align -Wcast-function-type-strict -Wreinterpret-base-class
-  # Dead or conditionally-uninitialized code paths.
-  -Wunreachable-code-break -Wunreachable-code-return
-  -Wunreachable-code-aggressive -Wconditional-uninitialized
-  -Wloop-analysis -Wrange-loop-analysis -Winfinite-recursion
-  # Inheritance hygiene.
-  -Winconsistent-missing-override -Winconsistent-missing-destructor-override
-  -Wsuggest-override -Wsuggest-destructor-override
-  -Wweak-vtables -Wweak-template-vtables
-  -Wdelete-non-abstract-non-virtual-dtor -Wabstract-vbase-init
-  -Wctad-maybe-unsupported
-  # enum/switch discipline.
-  -Wswitch-enum -Wcovered-switch-default -Wassign-enum
-  -Wbitfield-enum-conversion -Wsigned-enum-bitfield -Wduplicate-enum
-  # Reserved identifiers/macros/UDLs.
-  -Wreserved-identifier -Wreserved-macro-identifier
-  -Wreserved-user-defined-literal
-  # Ambiguity and latent UB.
-  -Wunevaluated-expression -Wnull-pointer-arithmetic
-  -Warray-bounds-pointer-arithmetic -Watomic-implicit-seq-cst
-  -Wxor-used-as-pow -Wdangling
-  -Widiomatic-parentheses -Wredundant-parens -Wlogical-not-parentheses
-  -Wshift-op-parentheses
-  -Wunguarded-availability -Wunguarded-availability-new
-  -Wunicode-homoglyph -Wunicode-whitespace -Wunicode-zero-width
-  # Memory APIs and object layout.
-  -Wmemset-transposed-args -Wsuspicious-bzero -Wsuspicious-memaccess
-  -Wnontrivial-memaccess -Wdynamic-class-memaccess
-  -Wsizeof-array-div -Wsizeof-pointer-div -Wsizeof-pointer-memaccess
-  -Wover-aligned -Wpacked -Walloca -Walloca-with-align-alignof
-  -Wvla -Wzero-length-array
-  # Strings and format strings.
-  -Wstring-compare -Wstring-concatenation -Wstring-plus-int
-  -Wformat-pedantic -Wformat-type-confusion -Wfortify-source
-  # General hygiene / portability.
-  -Wheader-hygiene -Wcomma -Wkeyword-macro -Wlanguage-extension-token
-  -Wextra-tokens -Wextra-semi-stmt -Wignored-qualifiers -Wextra-qualification
-  -Wnonportable-include-path -Wnonportable-system-include-path
-  -Wunneeded-member-function -Wunneeded-internal-declaration
-  -Wunnamed-type-template-args -Wclass-varargs
-  -Wpredefined-identifier-outside-function -Wduplicate-method-arg
-  -Wmultichar -Wfour-char-constants -Wdate-time -Wnewline-eof
-  -Wused-but-marked-unused -Winit-self -Wsign-promo -Wctor-dtor-privacy
-  -Wpass-failed -Wstack-protector -Wlarge-by-value-copy
-  -Wframe-larger-than=8192
-  # Deliberately NOT enabled (verified on Apple clang 21):
-  #   noise tier: -Wfloat-equal -Wpadded -Wexit-time-destructors
-  #     -Wglobal-constructors -Wzero-as-null-pointer-constant -Wdocumentation
-  #   unsupported here: -Wcast-align=strict -Wenum-constexpr-conversion
-  #     -Wfixed-enum-extension -fsanitize=safe-stack/memory/dataflow
-  #   dead on target: -fstack-clash-protection (accepted, unused),
-  #     -fsanitize=thread (compiles, runtime aborts on arm64-darwin)
-  -ffp-contract=off
-  -fstack-protector-strong -ftrivial-auto-var-init=zero -fvisibility=hidden
-  -fvisibility-inlines-hidden -fstrict-flex-arrays=3
-  -mbranch-protection=standard)
-# The previous Release compile line ended in -Os (CMAKE's -O3, then
-# nanobind's -Os, last wins); -O2 measures ~7% faster than that stack on
-# this runtime's branchy code (verified arm64-apple, ~0.181 vs ~0.194
-# ms/step on the same session). Appending -O2 here overrides inherited -O
-# flags since the last one wins; this does not stomp a caller's -O choice
-# for other build types, and the option is recorded into
-# research_identity flags.
-target_compile_options(bike_native PRIVATE $<$<CONFIG:Release>:-O2>)
+bike_apply_native_policy(bike_native)
 target_include_directories(bike_native SYSTEM PRIVATE "${MJ_DIR}/include")
-# libc++ hardening modes do not change container layout. Keep the selected mode
-# consistent across this target's TUs; EXTENSIVE is the default in every build
-# type, while FAST is an explicit comparison option.
-if(_native_libcpp_hardening_supported)
-  target_compile_definitions(bike_native PRIVATE
-    "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_${BIKE_LIBCPP_HARDENING}")
-endif()
-target_link_options(bike_native PRIVATE -headerpad_max_install_names)
-
-option(NATIVE_SANITIZE "ASan+UBSan build" OFF)
-if(NOT NATIVE_SANITIZE)
-  # The ASan driver predefines _FORTIFY_SOURCE (and intercepts the same
-  # functions anyway) — redefining it would trip -Wmacro-redefined.
-  target_compile_definitions(bike_native PRIVATE _FORTIFY_SOURCE=3)
-endif()
-if(NATIVE_SANITIZE)
-  # local-bounds: checked access through bounds of stack/heap objects.
-  # float-cast-overflow: NOT part of the undefined group — out-of-range
-  # float→int conversions at the FFI boundary (tooth counts etc.).
-  # no-recover: UBSan findings abort instead of logging-and-continuing, so a
-  # violation under pytest can never pass silently.
-  # Available-but-rejected extras (verified arm64-apple): implicit-conversion
-  # and unsigned-integer-overflow are too noisy for numerics; thread/msan/
-  # cfi/safe-stack are unsupported or dead on this target.
-  # The 8192-byte -Wframe-larger-than budget guards production stack use;
-  # ASan wraps every alloca in >=32-byte redzones, roughly tripling the
-  # measured frame (DistributedTireWriter::accumulate_validated reports
-  # 9152 bytes instrumented), so the instrumented budget is raised 3x —
-  # appended last, clang's repeated-flag last-wins semantics verified on
-  # Apple clang 21.
-  target_compile_options(bike_native PRIVATE
-    -fsanitize=address,undefined,local-bounds,float-cast-overflow
-    -fno-sanitize-recover=all -fno-omit-frame-pointer
-    -Wframe-larger-than=24576)
-  target_link_options(bike_native PRIVATE
-    -fsanitize=address,undefined,local-bounds,float-cast-overflow -shared-libasan)
-endif()
-
-# RTSan (-fsanitize=realtime): flags allocation/locking inside
-# [[clang::nonblocking]] functions (BIKE_NONBLOCKING in rtsan.hpp). Requires
-# the BREW clang — Apple clang 21 lacks the sanitizer — so configure a
-# dedicated build dir:
-#   cmake -S native -B native/build/rtsan \
-#     -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DNATIVE_RTSAN=ON
-# and run native tests with the rtsan dylib in DYLD_INSERT_LIBRARIES, same
-# recipe as the asan build. Verified arm64-apple: mj_step/mj_forward do not
-# allocate, so the marked hot path is clean today.
-option(NATIVE_RTSAN "RealtimeSanitizer build (brew clang only)" OFF)
-if(NATIVE_RTSAN)
-  target_compile_options(bike_native PRIVATE -fsanitize=realtime)
-  target_link_options(bike_native PRIVATE -fsanitize=realtime)
-endif()
-
-# NATIVE_COVERAGE: llvm-cov source coverage over the native TUs. Build into a
-# dedicated dir (-DNATIVE_COVERAGE=ON), then tools/native_coverage.sh runs
-# the native tests, merges profraw and prints the uncovered-line report —
-# shows which ported code the oracle suite never reaches.
-option(NATIVE_COVERAGE "llvm-cov instrumented build" OFF)
-if(NATIVE_COVERAGE)
-  target_compile_options(bike_native PRIVATE
-    -fprofile-instr-generate -fcoverage-mapping)
-  target_link_options(bike_native PRIVATE -fprofile-instr-generate)
-endif()
 
 # Share Python-free core code with direct native contract tests: the
 # drivetrain/policy TUs plus the owning writer cores (suspension, brake,
@@ -323,21 +145,15 @@ set_target_properties(bike_native_contract_core PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-get_target_property(_native_contract_compile_options bike_native COMPILE_OPTIONS)
-get_target_property(_native_contract_compile_definitions bike_native COMPILE_DEFINITIONS)
+# Every first-party target below receives the compiler policy DIRECTLY via
+# bike_apply_native_policy (BikeCompilerPolicy.cmake) — no transitive-only
+# propagation. What remains target-specific is the shared include context:
+# the extension's private roots plus the third-party SYSTEM roots, mirrored
+# so the standalone-header sweep sees identical -isystem state per target.
 get_target_property(_native_contract_include_directories bike_native INCLUDE_DIRECTORIES)
 if(TARGET bike_native_numerics)
-  # The language/hardening contract and the standalone-header sweep inspect
-  # every first-party TU under its own target's context — the adapter must
-  # carry the same contract options/definitions and third-party include
-  # roots as the contract targets, even though its own TU only needs
-  # mujoco.h plus the generated symbol header.
-  if(_native_contract_compile_options)
-    target_compile_options(bike_native_numerics PRIVATE ${_native_contract_compile_options})
-  endif()
-  if(_native_contract_compile_definitions)
-    target_compile_definitions(bike_native_numerics PRIVATE ${_native_contract_compile_definitions})
-  endif()
+  # bike_native_numerics already received bike_apply_native_policy inside
+  # BikeNumerics.cmake; only the shared include roots still mirror here.
   if(_native_contract_include_directories)
     target_include_directories(bike_native_numerics SYSTEM PRIVATE
       ${_native_contract_include_directories})
@@ -345,12 +161,7 @@ if(TARGET bike_native_numerics)
   target_include_directories(bike_native_numerics SYSTEM PRIVATE
     "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 endif()
-if(_native_contract_compile_options)
-  target_compile_options(bike_native_contract_core PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_native_contract_core PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_policy(bike_native_contract_core)
 if(_native_contract_include_directories)
   target_include_directories(bike_native_contract_core SYSTEM PRIVATE
     ${_native_contract_include_directories})
@@ -367,12 +178,7 @@ set_target_properties(bike_native_engine PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_native_engine PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_native_engine PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_policy(bike_native_engine)
 if(_native_contract_include_directories)
   target_include_directories(bike_native_engine SYSTEM PRIVATE
     ${_native_contract_include_directories})
@@ -391,22 +197,13 @@ set_target_properties(native_contract_tests PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_contract_tests PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_contract_tests PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_policy(native_contract_tests)
 if(_native_contract_include_directories)
   target_include_directories(native_contract_tests SYSTEM PRIVATE
     ${_native_contract_include_directories})
 endif()
 target_include_directories(native_contract_tests SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-get_target_property(_native_contract_link_options bike_native LINK_OPTIONS)
-if(_native_contract_link_options)
-  target_link_options(native_contract_tests PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core bike_native_engine)
 # chain.cpp's GeometryWorkspace resolves CBLAS through the typed adapter —
 # Bike::Numerics carries the qualified provider transitively (Accelerate
@@ -428,21 +225,13 @@ set_target_properties(native_distance_tests PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_distance_tests PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_distance_tests PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_policy(native_distance_tests)
 if(_native_contract_include_directories)
   target_include_directories(native_distance_tests SYSTEM PRIVATE
     ${_native_contract_include_directories})
 endif()
 target_include_directories(native_distance_tests SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-if(_native_contract_link_options)
-  target_link_options(native_distance_tests PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(native_distance_tests PRIVATE bike_native_contract_core bike_native_engine)
 # tyre/distance.cpp resolves CBLAS through the typed adapter — Bike::Numerics
 # carries the qualified provider transitively.
@@ -463,21 +252,13 @@ set_target_properties(native_station_tests PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_station_tests PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_station_tests PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_policy(native_station_tests)
 if(_native_contract_include_directories)
   target_include_directories(native_station_tests SYSTEM PRIVATE
     ${_native_contract_include_directories})
 endif()
 target_include_directories(native_station_tests SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-if(_native_contract_link_options)
-  target_link_options(native_station_tests PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(native_station_tests PRIVATE bike_native_contract_core bike_native_engine)
 target_link_libraries(native_station_tests PRIVATE Bike::Numerics)
 if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
@@ -497,18 +278,10 @@ set_target_properties(native_platform_blas_tests PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_platform_blas_tests PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_platform_blas_tests PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_policy(native_platform_blas_tests)
 if(_native_contract_include_directories)
   target_include_directories(native_platform_blas_tests SYSTEM PRIVATE
     ${_native_contract_include_directories})
-endif()
-if(_native_contract_link_options)
-  target_link_options(native_platform_blas_tests PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(native_platform_blas_tests PRIVATE Bike::Numerics)
 
@@ -521,18 +294,10 @@ set_target_properties(native_platform_lapack_tests PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_platform_lapack_tests PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_platform_lapack_tests PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_policy(native_platform_lapack_tests)
 if(_native_contract_include_directories)
   target_include_directories(native_platform_lapack_tests SYSTEM PRIVATE
     ${_native_contract_include_directories})
-endif()
-if(_native_contract_link_options)
-  target_link_options(native_platform_lapack_tests PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(native_platform_lapack_tests PRIVATE Bike::Numerics)
 
@@ -555,18 +320,10 @@ set_target_properties(native_bench PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(native_bench PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(native_bench PRIVATE ${_native_contract_compile_definitions})
-endif()
+bike_apply_native_policy(native_bench)
 if(_native_contract_include_directories)
   target_include_directories(native_bench SYSTEM PRIVATE
     ${_native_contract_include_directories})
-endif()
-if(_native_contract_link_options)
-  target_link_options(native_bench PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(native_bench PRIVATE bike_native_engine)
 if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
@@ -670,25 +427,7 @@ add_custom_target(check_scripts
 
 # Emit the source and environment contract from the configured build graph.
 # Wrappers consume these files instead of independently globbing src/.
-function(_native_json_quote output value)
-  string(REPLACE "\\" "\\\\" _escaped "${value}")
-  string(REPLACE "\"" "\\\"" _escaped "${_escaped}")
-  string(REPLACE "\n" "\\n" _escaped "${_escaped}")
-  string(REPLACE "\r" "\\r" _escaped "${_escaped}")
-  set(${output} "\"${_escaped}\"" PARENT_SCOPE)
-endfunction()
-
-function(_native_json_array output)
-  set(_json "[")
-  set(_separator "")
-  foreach(_value IN LISTS ARGN)
-    _native_json_quote(_quoted "${_value}")
-    string(APPEND _json "${_separator}${_quoted}")
-    set(_separator ",")
-  endforeach()
-  string(APPEND _json "]")
-  set(${output} "${_json}" PARENT_SCOPE)
-endfunction()
+# (_native_json_quote/_native_json_array come from BikeCompilerPolicy.cmake.)
 
 # _native_mujoco_library is set by BikeDependencies.cmake (realpath of the
 # selected engine image reported by the probe).
@@ -822,7 +561,18 @@ _native_json_quote(_native_sdk_source_json "${_native_sdk_source}")
 _native_json_quote(_native_suppressions_manifest_json "${CMAKE_CURRENT_SOURCE_DIR}/analysis_suppressions.json")
 _native_json_quote(_native_python_json "${Python_EXECUTABLE}")
 _native_json_array(_native_include_paths_json ${_native_required_includes})
-_native_json_array(_native_library_paths_json "${_native_mujoco_library}" "${_native_sdk_path}/System/Library/Frameworks/Accelerate.framework")
+# library_paths records the real provider paths only: the Accelerate
+# framework directory is a Darwin artifact (there is no SDK path on Linux),
+# and the Linux numerics provider is the scipy-openblas wheel .so selected
+# by BikeNumerics.cmake — not an Apple framework.
+set(_native_library_path_entries "${_native_mujoco_library}")
+if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+  list(APPEND _native_library_path_entries
+    "${_native_sdk_path}/System/Library/Frameworks/Accelerate.framework")
+elseif(DEFINED _numerics_provider AND EXISTS "${_numerics_provider}")
+  list(APPEND _native_library_path_entries "${_numerics_provider}")
+endif()
+_native_json_array(_native_library_paths_json ${_native_library_path_entries})
 _native_json_array(_native_required_files_json ${_native_required_files})
 if(_native_libcpp_hardening_supported)
   set(_native_libcpp_hardening_supported_json "true")
@@ -850,7 +600,7 @@ string(APPEND _native_tool_overrides "}")
 file(WRITE "${CMAKE_BINARY_DIR}/native_sources.json"
   "{\"schema_version\":1,\"first_party_roots\":${_native_source_roots_json},\"sources\":${_native_source_entries}}\n")
 file(WRITE "${CMAKE_BINARY_DIR}/native_check_context.json"
-  "{\"schema_version\":1,\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"sdk\":${_native_sdk_json},\"sdk_requested\":${_native_sdk_requested_json},\"sdk_source\":${_native_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
+  "{\"schema_version\":1,\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"compiler_policy\":${BIKE_POLICY_REPORT_JSON},\"sdk\":${_native_sdk_json},\"sdk_requested\":${_native_sdk_requested_json},\"sdk_source\":${_native_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
 
 # Track B identity is compiled into the extension. It is not read from an
 # editable build-context JSON at runtime. Source-list and source-content changes

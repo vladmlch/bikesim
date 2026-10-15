@@ -1,11 +1,11 @@
-// least_squares.cpp — Accelerate ILP64 DGELSD driver.
+// least_squares.cpp — platform ILP64 DGELSD driver.
 //
-// The entry point is declared with an asm label rather than including
-// <Accelerate/Accelerate.h>: the SDK header marks the LAPACK surface
-// deprecated (a hard error under -Werror) and its vecLib headers do not
-// parse under the gcc frontends sweep. The pinned symbol is exactly the
-// undefined import numpy's _umath_linalg carries for its lstsq gufunc —
-// nm -u shows `_dgelsd$NEWLAPACK$ILP64` on both binaries.
+// The foreign entry point lives behind numeric_backend::dgelsd
+// (src/platform/lapack.hpp) — Accelerate's dgelsd$NEWLAPACK$ILP64 on
+// Darwin, the wheel's scipy_dgelsd_64_ on Linux — declared in exactly
+// one selected backend TU per platform. That symbol is exactly the
+// undefined import numpy's _umath_linalg carries for its lstsq gufunc
+// on each platform.
 //
 // Buffer/order contract mirrored from numpy/linalg/umath_linalg.cpp
 // (init_gelsd + the lstsq inner loop):
@@ -32,6 +32,7 @@
 #include "least_squares.hpp"
 
 #include "../model_access.hpp"
+#include "../platform/lapack.hpp"
 
 #include <algorithm>
 #include <cfenv>
@@ -44,35 +45,12 @@
 #include <type_traits>
 
 namespace {
-    // The ILP64 ABI numpy links: __LAPACK_int is `long` (signed 64-bit)
-    // under ACCELERATE_LAPACK_ILP64, and every Fortran argument arrives
-    // by reference. rider::lapack_int spells that width; the
-    // static_assert pins the declaration against the exported symbol's
-    // signature so a drifted prototype fails at compile time.
-    extern "C" void dgelsd_ilp64(const rider::lapack_int *m,
-                                 const rider::lapack_int *n,
-                                 const rider::lapack_int *nrhs, double *a,
-                                 const rider::lapack_int *lda, double *b,
-                                 const rider::lapack_int *ldb, double *s,
-                                 const double *rcond, rider::lapack_int *rank,
-                                 double *work, const rider::lapack_int *lwork,
-                                 rider::lapack_int *iwork,
-                                 rider::lapack_int *info)
-        __asm__("_dgelsd$NEWLAPACK$ILP64");
-
-    static_assert(sizeof(long) == 8,
-                  "dgelsd ILP64 requires a 64-bit long (__LAPACK_int)");
+    // numeric_backend::integer is the qualified ILP64 Fortran integer;
+    // rider::lapack_int spells the same width, so every call below is a
+    // verbatim forward — no casts of any kind reach the ABI.
     static_assert(
-        std::is_same_v<
-            decltype(&dgelsd_ilp64),
-            void (*)(const rider::lapack_int *, const rider::lapack_int *,
-                     const rider::lapack_int *, double *,
-                     const rider::lapack_int *, double *,
-                     const rider::lapack_int *, double *, const double *,
-                     rider::lapack_int *, double *,
-                     const rider::lapack_int *, rider::lapack_int *,
-                     rider::lapack_int *)>,
-        "dgelsd ILP64 prototype drifted");
+        std::is_same_v<rider::lapack_int, numeric_backend::integer>,
+        "lapack_int must match the qualified numeric_backend integer width");
 
     // numpy's message verbatim — the oracle raises
     // LinAlgError("SVD did not converge in Linear Least Squares") for any
@@ -223,9 +201,10 @@ namespace rider {
             const lapack_int query_lwork = -1;
             double work_query = 0.;
             lapack_int iwork_query = 0;
-            dgelsd_ilp64(&m, &n, &nrhs, a_.data(), &lda_l, b_.data(),
-                         &ldb_l, s_.data(), &rcond, &rank, &work_query,
-                         &query_lwork, &iwork_query, &info);
+            numeric_backend::dgelsd(&m, &n, &nrhs, a_.data(), &lda_l,
+                                    b_.data(), &ldb_l, s_.data(), &rcond,
+                                    &rank, &work_query, &query_lwork,
+                                    &iwork_query, &info);
             if (info != 0) raise_lapack_failure();
             // numpy truncates the queried sizes verbatim (fortran_int
             // work_count = (fortran_int)work_size_query) and hands them
@@ -263,9 +242,10 @@ namespace rider {
         // real minimum lands in INFO = -12 through DGELSD's own
         // argument check, like the oracle's.
         const lapack_int lwork = needed_work;
-        dgelsd_ilp64(&m, &n, &nrhs, a_.data(), &lda_l, b_.data(), &ldb_l,
-                     s_.data(), &rcond, &rank, work_.data(), &lwork,
-                     iwork_.data(), &info);
+        numeric_backend::dgelsd(&m, &n, &nrhs, a_.data(), &lda_l,
+                                b_.data(), &ldb_l, s_.data(), &rcond,
+                                &rank, work_.data(), &lwork,
+                                iwork_.data(), &info);
         // Only THIS call's info decides failure — like the oracle's
         // not_ok from call_gelsd; the entry flag is never an error.
         if (info != 0) raise_lapack_failure();

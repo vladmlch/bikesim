@@ -25,16 +25,19 @@
 #
 # Exports consumed by the rest of the native build:
 #   Bike::Numerics                  ALIAS of bike_native_numerics — the
-#                                   typed CBLAS adapter static library
-#                                   (link this; the provider arrives via
-#                                   its PUBLIC usage requirements)
+#                                   typed CBLAS/LAPACK adapter static
+#                                   library (link this; the provider
+#                                   arrives via its PUBLIC usage
+#                                   requirements)
 #   Bike::NumericsProvider          IMPORTED target — INTERFACE on Darwin
 #                                   (-framework Accelerate) or SHARED with
 #                                   IMPORTED_LOCATION on Linux
-#   bike_native_numerics            STATIC target holding exactly one
-#                                   backend TU (src/platform/blas_*.cpp);
-#                                   created only when CXX is enabled —
-#                                   record-only consumers configure fine
+#   bike_native_numerics            STATIC target holding exactly the two
+#                                   resolved backend TUs
+#                                   (src/platform/blas_*.cpp +
+#                                   lapack_*.cpp); created only when CXX
+#                                   is enabled — record-only consumers
+#                                   configure fine
 #   BIKE_NUMERICS_BACKEND_RESOLVED  ACCELERATE or NUMPY_OPENBLAS
 #   _native_numerics_blas_bits      qualified BLAS integer width
 #   _native_numerics_lapack_bits    qualified LAPACK integer width
@@ -326,26 +329,29 @@ set(_native_numerics_symbols_header
 
 # --------------------------------------------------------------------------
 # bike_native_numerics — the typed adapter: exactly one backend TU per
-# platform (verified against the generated record width at compile time),
-# strict ISO C++23, PIC so it can join the extension module, and the
-# provider through PUBLIC usage requirements so Python-free harnesses
-# receive the link too. bike_apply_native_policy (BikeCompilerPolicy,
-# T09) is applied when the includer has already defined it. The mujoco
-# include dir comes from the same schema-1 document — the backend TU
-# reaches cblas_abi.hpp's mjtNum assertion through it.
+# platform per interface (verified against the generated record width at
+# compile time), strict ISO C++23, PIC so it can join the extension
+# module, and the provider through PUBLIC usage requirements so
+# Python-free harnesses receive the link too. bike_apply_native_policy
+# (BikeCompilerPolicy, T09) is applied when the includer has already
+# defined it. The mujoco include dir comes from the same schema-1
+# document — the blas backend TU reaches cblas_abi.hpp's mjtNum
+# assertion through it.
 # --------------------------------------------------------------------------
 if(NOT DEFINED _native_numerics_target_guard)
   set(_native_numerics_target_guard TRUE)
   if(CMAKE_CXX_COMPILER_LOADED)
     if(_numerics_backend STREQUAL "ACCELERATE")
-      set(_numerics_backend_source
-        "${CMAKE_CURRENT_LIST_DIR}/../src/platform/blas_accelerate.cpp")
+      set(_numerics_backend_sources
+        "${CMAKE_CURRENT_LIST_DIR}/../src/platform/blas_accelerate.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/../src/platform/lapack_accelerate.cpp")
     else()
-      set(_numerics_backend_source
-        "${CMAKE_CURRENT_LIST_DIR}/../src/platform/blas_numpy_openblas.cpp")
+      set(_numerics_backend_sources
+        "${CMAKE_CURRENT_LIST_DIR}/../src/platform/blas_numpy_openblas.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/../src/platform/lapack_numpy_openblas.cpp")
     endif()
     _numerics_field(_numerics_mujoco_include mujoco include_dir)
-    add_library(bike_native_numerics STATIC "${_numerics_backend_source}")
+    add_library(bike_native_numerics STATIC "${_numerics_backend_sources}")
     set_target_properties(bike_native_numerics PROPERTIES
       CXX_STANDARD 23
       CXX_STANDARD_REQUIRED ON

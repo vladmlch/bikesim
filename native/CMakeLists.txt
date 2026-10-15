@@ -512,6 +512,30 @@ if(_native_contract_link_options)
 endif()
 target_link_libraries(native_platform_blas_tests PRIVATE Bike::Numerics)
 
+# tests/test_platform_lapack.cpp — the standalone LAPACK adapter harness.
+# It calls only numeric_backend::dgelsd and std headers, so
+# Bike::Numerics alone supplies the backend definition plus the
+# qualified provider link.
+add_executable(native_platform_lapack_tests tests/test_platform_lapack.cpp)
+set_target_properties(native_platform_lapack_tests PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(native_platform_lapack_tests PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(native_platform_lapack_tests PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_include_directories)
+  target_include_directories(native_platform_lapack_tests SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+if(_native_contract_link_options)
+  target_link_options(native_platform_lapack_tests PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(native_platform_lapack_tests PRIVATE Bike::Numerics)
+
 # Prototype native benchmark (native-safety runtime plan task R2). The TU
 # lives outside native/, so its directory joins the first-party source roots
 # below and the target inherits the extension's warning/hardening/sanitizer
@@ -560,6 +584,7 @@ if(BUILD_TESTING)
   add_test(NAME native_distance_tests COMMAND native_distance_tests)
   add_test(NAME native_station_tests COMMAND native_station_tests)
   add_test(NAME native_platform_blas_tests COMMAND native_platform_blas_tests)
+  add_test(NAME native_platform_lapack_tests COMMAND native_platform_lapack_tests)
   add_test(NAME native_bench_bare
     COMMAND native_bench bare 20 5
             --artifacts "${_native_bench_dir}/artifacts")

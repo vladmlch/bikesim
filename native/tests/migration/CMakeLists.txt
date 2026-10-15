@@ -273,14 +273,15 @@ if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(migration_T07)
   target_include_directories(migration_T07 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
-  target_link_libraries(migration_T07 PRIVATE bike_core bike_engine)
+  target_link_libraries(migration_T07 PRIVATE bike_core bike_engine
+    bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T07
     "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
 else()
   target_include_directories(migration_T07 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T07 PRIVATE
-    bike_native_contract_core bike_native_engine)
+    bike_native_contract_core bike_native_engine bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T07
     "${MJ_DIR}/libmujoco.3.12.0.dylib")
 endif()
@@ -295,7 +296,9 @@ endif()
 # the rider and drivetrain state documents (drivetrain/state_codec.cpp,
 # rider/state_codec.cpp) — the shared core object set (bike_core /
 # bike_native_contract_core) plus the pinned engine interceptor for the
-# welded_pinned Stepper that supplies the contacts topology gate. No
+# welded_pinned Stepper that supplies the contacts topology gate, plus
+# bike_rider_math: the OBJECT core now carries rider/state_codec.o whose
+# spindle:: validator refs need the single-compile library at final link. No
 # Python/nanobind include enters this target in either graph: compiling
 # test_t08.cpp against the codec headers is the include-closure contract
 # itself.
@@ -319,14 +322,15 @@ if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(migration_T08)
   target_include_directories(migration_T08 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
-  target_link_libraries(migration_T08 PRIVATE bike_core bike_engine)
+  target_link_libraries(migration_T08 PRIVATE bike_core bike_engine
+    bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T08
     "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
 else()
   target_include_directories(migration_T08 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
   target_link_libraries(migration_T08 PRIVATE
-    bike_native_contract_core bike_native_engine)
+    bike_native_contract_core bike_native_engine bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T08
     "${MJ_DIR}/libmujoco.3.12.0.dylib")
 endif()

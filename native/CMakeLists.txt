@@ -223,8 +223,8 @@ add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/pneumatic/brush.cpp src/pneumatic/model.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp
   src/rider/least_squares.cpp src/rider/attachment_wrench.cpp
-  src/rider/equality_reactions.cpp src/rider/spindle_math.cpp
-  src/rider/state_codec.cpp src/runtime/samples.cpp
+  src/rider/equality_reactions.cpp src/rider/state_codec.cpp
+  src/runtime/samples.cpp
   src/runtime/wire.cpp
   src/runtime/control.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
@@ -490,7 +490,8 @@ target_include_directories(native_contract_tests SYSTEM PRIVATE
 if(_native_contract_link_options)
   target_link_options(native_contract_tests PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core bike_native_engine)
+target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core bike_native_engine
+  bike_rider_math)
 # chain.cpp's GeometryWorkspace resolves CBLAS through Apple Accelerate, the
 # same BLAS provider bike_native links.
 target_link_libraries(native_contract_tests PRIVATE "-framework Accelerate")
@@ -518,7 +519,8 @@ target_include_directories(native_distance_tests SYSTEM PRIVATE
 if(_native_contract_link_options)
   target_link_options(native_distance_tests PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(native_distance_tests PRIVATE bike_native_contract_core bike_native_engine)
+target_link_libraries(native_distance_tests PRIVATE bike_native_contract_core bike_native_engine
+  bike_rider_math)
 # tyre/distance.cpp resolves CBLAS through Apple Accelerate, the same BLAS
 # provider bike_native links.
 target_link_libraries(native_distance_tests PRIVATE "-framework Accelerate")
@@ -546,7 +548,8 @@ target_include_directories(native_station_tests SYSTEM PRIVATE
 if(_native_contract_link_options)
   target_link_options(native_station_tests PRIVATE ${_native_contract_link_options})
 endif()
-target_link_libraries(native_station_tests PRIVATE bike_native_contract_core bike_native_engine)
+target_link_libraries(native_station_tests PRIVATE bike_native_contract_core bike_native_engine
+  bike_rider_math)
 target_link_libraries(native_station_tests PRIVATE "-framework Accelerate")
 bike_rewrite_mujoco_load_name(native_station_tests "${MJ_DIR}/libmujoco.3.12.0.dylib")
 

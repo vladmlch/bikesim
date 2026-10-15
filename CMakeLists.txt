@@ -92,8 +92,9 @@ set(_bike_native_tests_dir "${CMAKE_CURRENT_SOURCE_DIR}/native/tests")
 # nanobind/Python edge — the binding-side callback recognizer stays in
 # binding.cpp behind stepper_detail::foreign_time_callback_probe().
 # T08 adds the owned Value state codecs (drivetrain/state_codec.cpp,
-# rider/state_codec.cpp) and rider/spindle_math.cpp — the
-# torque-curve/joint-envelope validators the spindle config decode calls.
+# rider/state_codec.cpp); the torque-curve/joint-envelope validators the
+# rider codec calls stay in the single-compile bike_rider_math STATIC and
+# reach core consumers through the link edge below (one TU per graph).
 add_library(bike_core OBJECT
   "${_bike_native_dir}/src/stepper.cpp"
   "${_bike_native_dir}/src/writer_config.cpp"
@@ -118,7 +119,6 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/rider/least_squares.cpp"
   "${_bike_native_dir}/src/rider/attachment_wrench.cpp"
   "${_bike_native_dir}/src/rider/equality_reactions.cpp"
-  "${_bike_native_dir}/src/rider/spindle_math.cpp"
   "${_bike_native_dir}/src/rider/state_codec.cpp"
   "${_bike_native_dir}/src/runtime/samples.cpp"
   "${_bike_native_dir}/src/runtime/wire.cpp"
@@ -313,7 +313,8 @@ if(BUILD_TESTING)
   bike_target_strict_policy(native_distance_tests)
   target_include_directories(native_distance_tests SYSTEM PRIVATE
     "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
-  target_link_libraries(native_distance_tests PRIVATE bike_core bike_engine)
+  target_link_libraries(native_distance_tests PRIVATE bike_core bike_engine
+    bike_rider_math)
   target_link_libraries(native_distance_tests PRIVATE "-framework Accelerate")
   bike_rewrite_mujoco_load_name(native_distance_tests
     "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
@@ -322,7 +323,8 @@ if(BUILD_TESTING)
   bike_target_strict_policy(native_station_tests)
   target_include_directories(native_station_tests SYSTEM PRIVATE
     "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
-  target_link_libraries(native_station_tests PRIVATE bike_core bike_engine)
+  target_link_libraries(native_station_tests PRIVATE bike_core bike_engine
+    bike_rider_math)
   target_link_libraries(native_station_tests PRIVATE "-framework Accelerate")
   bike_rewrite_mujoco_load_name(native_station_tests
     "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")

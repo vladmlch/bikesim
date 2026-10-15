@@ -91,6 +91,9 @@ set(_bike_native_tests_dir "${CMAKE_CURRENT_SOURCE_DIR}/native/tests")
 # writer_config.cpp (the owned bike::io::Value decode). They carry no
 # nanobind/Python edge — the binding-side callback recognizer stays in
 # binding.cpp behind stepper_detail::foreign_time_callback_probe().
+# T08 adds the owned Value state codecs (drivetrain/state_codec.cpp,
+# rider/state_codec.cpp) and rider/spindle_math.cpp — the
+# torque-curve/joint-envelope validators the spindle config decode calls.
 add_library(bike_core OBJECT
   "${_bike_native_dir}/src/stepper.cpp"
   "${_bike_native_dir}/src/writer_config.cpp"
@@ -100,6 +103,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/drivetrain/shifting.cpp"
   "${_bike_native_dir}/src/drivetrain/motor.cpp"
   "${_bike_native_dir}/src/drivetrain/freehub.cpp"
+  "${_bike_native_dir}/src/drivetrain/state_codec.cpp"
   "${_bike_native_dir}/src/writers/drivetrain.cpp"
   "${_bike_native_dir}/src/writers/cruise.cpp"
   "${_bike_native_dir}/src/tyre/profile.cpp"
@@ -114,6 +118,8 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/rider/least_squares.cpp"
   "${_bike_native_dir}/src/rider/attachment_wrench.cpp"
   "${_bike_native_dir}/src/rider/equality_reactions.cpp"
+  "${_bike_native_dir}/src/rider/spindle_math.cpp"
+  "${_bike_native_dir}/src/rider/state_codec.cpp"
   "${_bike_native_dir}/src/runtime/samples.cpp"
   "${_bike_native_dir}/src/runtime/wire.cpp"
   "${_bike_native_dir}/src/runtime/control.cpp"

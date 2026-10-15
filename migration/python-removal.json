@@ -1362,7 +1362,12 @@
       "native/src/writer_config.hpp",
       "native/src/writer_config.cpp",
       "native/tests/migration/test_t07.cpp",
-      "native/tests/migration/test_t09.cpp"
+      "native/tests/migration/test_t09.cpp",
+      "native/src/drivetrain/state_codec.hpp",
+      "native/src/drivetrain/state_codec.cpp",
+      "native/src/rider/state_codec.hpp",
+      "native/src/rider/state_codec.cpp",
+      "native/tests/migration/test_t08.cpp"
     ],
     "verification_ids": [
       "migration_T09",

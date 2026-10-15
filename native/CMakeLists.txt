@@ -140,7 +140,6 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/rider/intent_wire.cpp
   src/rider/rider_contact_binding.cpp
   src/rider/spindle_controller.cpp
-  src/rider/spindle_math.cpp
   src/rider/spindle_wire.cpp
   src/runtime/sensors.cpp
   src/runtime/programs.cpp
@@ -216,14 +215,16 @@ add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/writer_config.cpp src/drivetrain/pedaling.cpp
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp
   src/drivetrain/shifting.cpp src/drivetrain/motor.cpp
-  src/drivetrain/freehub.cpp src/writers/drivetrain.cpp
+  src/drivetrain/freehub.cpp src/drivetrain/state_codec.cpp
+  src/writers/drivetrain.cpp
   src/writers/cruise.cpp src/tyre/profile.cpp
   src/tyre/distance.cpp src/tyre/station.cpp
   src/pneumatic/geometry.cpp src/pneumatic/carcass.cpp
   src/pneumatic/brush.cpp src/pneumatic/model.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp
   src/rider/least_squares.cpp src/rider/attachment_wrench.cpp
-  src/rider/equality_reactions.cpp src/runtime/samples.cpp
+  src/rider/equality_reactions.cpp src/rider/spindle_math.cpp
+  src/rider/state_codec.cpp src/runtime/samples.cpp
   src/runtime/wire.cpp
   src/runtime/control.cpp
   src/writers/suspension.cpp src/writers/brake.cpp

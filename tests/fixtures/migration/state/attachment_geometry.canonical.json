@@ -1,0 +1,1 @@
+{"bike_columns":[0,1],"bike_jac":[[-1.0,0.0],[0.0,-1.0],[0.0,0.0],[-0.5,0.25],[0.0,0.0],[0.0,0.0]],"eq_id":3,"half_patch_m":0.04,"kind":"saddle","normal":[0.0,0.0,1.0],"observable":true,"pull_direction":null,"rider_columns":[7,8],"rider_jac":[[1.0,0.0],[0.0,1.0],[0.0,0.0],[0.5,-0.25],[0.0,0.0],[1.0,0.0]],"rotational":false}

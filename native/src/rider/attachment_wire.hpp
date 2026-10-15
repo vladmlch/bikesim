@@ -5,6 +5,13 @@
 // every dataclass-or-mapping parse lives behind this one header so the
 // two paths can never disagree about the wire schema.
 //
+// ADAPTER-ONLY: nanobind handles, ndarray boxing and dataclass coercion
+// stay behind this header. The owned bike::io::Value codecs for the
+// attachment records (AttachmentGeometry / AttachmentRaw /
+// AttachmentSample) live in rider/state_codec.hpp (T08); the pure record
+// types stay in attachment_wrench.hpp. No binding-only declaration enters
+// the pure core include graph.
+//
 // Implementations live in attachment_binding.cpp — these are ordinary
 // external-linkage declarations, not an inline-header duplicate.
 #pragma once

@@ -291,6 +291,52 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T07>")
 endif()
 
+# T08 state-wire codec regression: the owned bike::io::Value codecs for
+# the rider and drivetrain state documents (drivetrain/state_codec.cpp,
+# rider/state_codec.cpp) — the shared core object set (bike_core /
+# bike_native_contract_core) plus the pinned engine interceptor for the
+# welded_pinned Stepper that supplies the contacts topology gate. No
+# Python/nanobind include enters this target in either graph: compiling
+# test_t08.cpp against the codec headers is the include-closure contract
+# itself.
+add_executable(migration_T08 test_t08.cpp)
+set_target_properties(migration_T08 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T08 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T08 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T08 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T08 PRIVATE bike_migration_test
+  "-framework Accelerate")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T08)
+  target_include_directories(migration_T08 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(migration_T08 PRIVATE bike_core bike_engine)
+  bike_rewrite_mujoco_load_name(migration_T08
+    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+else()
+  target_include_directories(migration_T08 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
+  target_link_libraries(migration_T08 PRIVATE
+    bike_native_contract_core bike_native_engine)
+  bike_rewrite_mujoco_load_name(migration_T08
+    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T08 COMMAND migration_T08)
+  set_tests_properties(migration_T08 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T08>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

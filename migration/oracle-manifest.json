@@ -16900,6 +16900,551 @@
       "notes": "T04 engine-boundary descriptor: resolved-library identity (version + loaded-dylib sha256 + recorded numeric provider) and the error-kind outcomes the guarded-call contract must produce. sha256 matches native/dependencies.lock.json lib/libmujoco.3.12.0.dylib; numeric_provider matches the T01 environment capture environment.blas.name.",
       "produced_by": "authored engine-identity descriptor; digest re-derived from .deps/mujoco-3.12.0/lib/libmujoco.3.12.0.dylib",
       "recipe": "RCP-00"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 2704,
+          "path": "state/drive.json",
+          "sha256": "27eade2cab3f95e0c42ac6e85e6d56d389c672070d19bf1b6f16bb34f97f6d73"
+        },
+        {
+          "bytes": 2693,
+          "path": "state/drive.canonical.json",
+          "sha256": "d7577aab73a53ad5cf0e1f450bcef147dce544a659ad6af2722e339f6b74e002"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/drive.json",
+          "sha256": "27eade2cab3f95e0c42ac6e85e6d56d389c672070d19bf1b6f16bb34f97f6d73"
+        }
+      ],
+      "name": "state/drive",
+      "notes": "welded_pinned bootstrap drive state wire capture (nanobind state_dict oracle export)",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 645,
+          "path": "state/drive_minimal.json",
+          "sha256": "80aff7cce7b6ed60145c07243ec5ab12bda40db135e3c28e7ea679ff3ea60899"
+        },
+        {
+          "bytes": 644,
+          "path": "state/drive_minimal.canonical.json",
+          "sha256": "de2bb2b4aab5f3c102d960fb45a7d91d490966fead7c587b7c46ec30470f0a2f"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/drive_minimal.json",
+          "sha256": "80aff7cce7b6ed60145c07243ec5ab12bda40db135e3c28e7ea679ff3ea60899"
+        }
+      ],
+      "name": "state/drive_minimal",
+      "notes": "authored minimal drive snapshot: absent optionals null, empty telemetry",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 4635,
+          "path": "state/rider_controller.json",
+          "sha256": "48d11f45f8ffde7699b7c7b3f50e2290f2685fde289160a1b63859050dfd50a7"
+        },
+        {
+          "bytes": 4634,
+          "path": "state/rider_controller.canonical.json",
+          "sha256": "3b25ce36013c2268037898469a1990e4536e1d36496abbd9b2be9cd63341d2b3"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/rider_controller.json",
+          "sha256": "48d11f45f8ffde7699b7c7b3f50e2290f2685fde289160a1b63859050dfd50a7"
+        }
+      ],
+      "name": "state/rider_controller",
+      "notes": "welded_pinned spindle controller state wire capture",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 384,
+          "path": "state/rider_intent.json",
+          "sha256": "2f0c7ab76e62f927c7fe77c7ea781e30b14f9809826e3bf3b2e5b6248b7d0861"
+        },
+        {
+          "bytes": 383,
+          "path": "state/rider_intent.canonical.json",
+          "sha256": "2aa951c18c5fed3290a53a0b30263535b1096ebf3a49a48249f7393d1ff805ec"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/rider_intent.json",
+          "sha256": "2f0c7ab76e62f927c7fe77c7ea781e30b14f9809826e3bf3b2e5b6248b7d0861"
+        }
+      ],
+      "name": "state/rider_intent",
+      "notes": "welded_pinned rider intent state wire capture",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 188,
+          "path": "state/signals.json",
+          "sha256": "6e802cd4abc269ee76795604497d02ac45b012b4b0070056c0a2a67075f85f5a"
+        },
+        {
+          "bytes": 187,
+          "path": "state/signals.canonical.json",
+          "sha256": "e1f60154d7e3279cafd2f2b06e9627b906ffed15c48fcc4cbbf82baed667d110"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/signals.json",
+          "sha256": "6e802cd4abc269ee76795604497d02ac45b012b4b0070056c0a2a67075f85f5a"
+        }
+      ],
+      "name": "state/signals",
+      "notes": "welded_pinned intent signals wire capture",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 326,
+          "path": "state/attachment_geometry.json",
+          "sha256": "d9c24b0c3ae8147c3f0cd2909888ff6aa38172b98ec701f29752519a91e64550"
+        },
+        {
+          "bytes": 325,
+          "path": "state/attachment_geometry.canonical.json",
+          "sha256": "8ea818595482b32e21135ead5bca11ecbacf63e207060a388745e7c4244c45fb"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/attachment_geometry.json",
+          "sha256": "d9c24b0c3ae8147c3f0cd2909888ff6aa38172b98ec701f29752519a91e64550"
+        }
+      ],
+      "name": "state/attachment_geometry",
+      "notes": "attachment geometry record wire capture",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 348,
+          "path": "state/attachment_raw.json",
+          "sha256": "8fac6c155cb1a66d29273fcb73742f1ac32b8ae6babbd8375ed07e0ac7e00c51"
+        },
+        {
+          "bytes": 347,
+          "path": "state/attachment_raw.canonical.json",
+          "sha256": "91532c08324090f5c9bc5631c93a622630bed67edb74885dfe40b8124c15033d"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/attachment_raw.json",
+          "sha256": "8fac6c155cb1a66d29273fcb73742f1ac32b8ae6babbd8375ed07e0ac7e00c51"
+        }
+      ],
+      "name": "state/attachment_raw",
+      "notes": "attachment raw record wire capture",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 124,
+          "path": "state/attachment_sample.json",
+          "sha256": "aec9905134586d77c67d0514130140e4052d4dc62ebc92240d6949f4c12c827d"
+        },
+        {
+          "bytes": 123,
+          "path": "state/attachment_sample.canonical.json",
+          "sha256": "7e865ac031a19276577c03ee69db6975099d3ff89d6e6acadf6c3d1a8d594e3d"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/attachment_sample.json",
+          "sha256": "aec9905134586d77c67d0514130140e4052d4dc62ebc92240d6949f4c12c827d"
+        }
+      ],
+      "name": "state/attachment_sample",
+      "notes": "attachment sample record wire capture",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 7192,
+          "path": "state/rider_contacts.json",
+          "sha256": "c2278b555a753e0923ac4c6b148a0ee84d8d7a7e24fd4fb1d94987aacef44f39"
+        },
+        {
+          "bytes": 7191,
+          "path": "state/rider_contacts.canonical.json",
+          "sha256": "7664b1a1157557698c5a2c93812b1706be1069f80c22ff19765e2b3b9f0dcc71"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/rider_contacts.json",
+          "sha256": "c2278b555a753e0923ac4c6b148a0ee84d8d7a7e24fd4fb1d94987aacef44f39"
+        }
+      ],
+      "name": "state/rider_contacts",
+      "notes": "welded_pinned rider contacts state wire capture (probe triple present)",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 772,
+          "path": "state/rider_contacts_minimal.json",
+          "sha256": "cd73f7da4a5c1706504e597990cd19f7000bd3f9879980783b16187c9f2eadc4"
+        },
+        {
+          "bytes": 771,
+          "path": "state/rider_contacts_minimal.canonical.json",
+          "sha256": "e4450faf1a05ca245f73d697bc7ea746ebe09fa0bdde76f3f548e7796d4d7e76"
+        }
+      ],
+      "group": "state",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/state/rider_contacts_minimal.json",
+          "sha256": "cd73f7da4a5c1706504e597990cd19f7000bd3f9879980783b16187c9f2eadc4"
+        }
+      ],
+      "name": "state/rider_contacts_minimal",
+      "notes": "authored minimal contacts state: no probe, no welds, unevaluated diagnostics",
+      "produced_by": "oracle wire capture via nanobind state_dict; canonical golden emitted by the produced bike::io::Value codec (T08)",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 10592,
+          "path": "config/rider_controller.json",
+          "sha256": "4d54d21a6ee698d29da5e27492932710b7375d4204474a6cdcee8017075a6af2"
+        }
+      ],
+      "group": "config",
+      "inputs": [
+        {
+          "path": "tests/fixtures/migration/config/rider_controller.json",
+          "sha256": "4d54d21a6ee698d29da5e27492932710b7375d4204474a6cdcee8017075a6af2"
+        }
+      ],
+      "name": "config/rider_controller",
+      "notes": "66-key spindle controller config resolved against the rider strength/envelope tables",
+      "produced_by": "resolved controller config capture for the T08 spindle config codec",
+      "recipe": "RCP-02"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "drive state angles list wider than the fixed drive-angle storage"
+      },
+      "files": [
+        {
+          "bytes": 654,
+          "path": "state/invalid/drive_angle_width.json",
+          "sha256": "ffa20ccb7f3fb8b61bd75dc3b7a4aa82c51f61df265a04b2cb522c72dd7f1dc7"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/drive_angle_width.json",
+      "notes": "drive state angles list wider than the fixed drive-angle storage",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "closed-label telemetry value outside the schema table"
+      },
+      "files": [
+        {
+          "bytes": 673,
+          "path": "state/invalid/drive_label.json",
+          "sha256": "99b9b00a93dcb54df025db39ee33912a0f9dbb8b9fe90c6bc59a371972d0abe7"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/drive_label.json",
+      "notes": "closed-label telemetry value outside the schema table",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "required top-level key missing from the drive snapshot"
+      },
+      "files": [
+        {
+          "bytes": 634,
+          "path": "state/invalid/drive_schema.json",
+          "sha256": "d70260525265358f4e6a97df49d9c020413a52c37b5caa4011a41cb8aa514f38"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/drive_schema.json",
+      "notes": "required top-level key missing from the drive snapshot",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "foreign top-level key in the drive snapshot"
+      },
+      "files": [
+        {
+          "bytes": 658,
+          "path": "state/invalid/drive_unknown_key.json",
+          "sha256": "20b6d2f7e378dd0fd2a363a2bb670754a01086aad6276233e4a0071d5c9747b4"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/drive_unknown_key.json",
+      "notes": "foreign top-level key in the drive snapshot",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "1e400 number lexeme overflows binary64 at the wire parser"
+      },
+      "files": [
+        {
+          "bytes": 646,
+          "path": "state/invalid/drive_nonfinite.json",
+          "sha256": "4d86e1449a4eca897c87397fd1257ed6c03e4680baaf2d28bf1689e5492f08d6"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/drive_nonfinite.json",
+      "notes": "1e400 number lexeme overflows binary64 at the wire parser",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "integer telemetry lane below its schema floor"
+      },
+      "files": [
+        {
+          "bytes": 665,
+          "path": "state/invalid/drive_telemetry_range.json",
+          "sha256": "efe37b23d2035e37e78dd2620b691e513373ac4edc3d756ec2eb0beb57e0c000"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/drive_telemetry_range.json",
+      "notes": "integer telemetry lane below its schema floor",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "pending_actuation dt is not positive"
+      },
+      "files": [
+        {
+          "bytes": 694,
+          "path": "state/invalid/drive_pending_dt.json",
+          "sha256": "7b2e13b2de1c20f3b919b3dd38b0566226ab9c48f6103be216ff49cde7f24aa9"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/drive_pending_dt.json",
+      "notes": "pending_actuation dt is not positive",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "partial probe triple violates the all-or-none probe contract"
+      },
+      "files": [
+        {
+          "bytes": 770,
+          "path": "state/invalid/contacts_probe_partial.json",
+          "sha256": "c44a0ea524983fc98f6199bb6f0e9ffe3310282a4ed1899328d05f05167719ef"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/contacts_probe_partial.json",
+      "notes": "partial probe triple violates the all-or-none probe contract",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "settled weld names a support outside the writer topology"
+      },
+      "files": [
+        {
+          "bytes": 818,
+          "path": "state/invalid/contacts_weld_name.json",
+          "sha256": "1dd88049525fa9f78e6d28d3594a01fc0736421093ccea34f5dcffbe4d5f81e8"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/contacts_weld_name.json",
+      "notes": "settled weld names a support outside the writer topology",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "spindle state carries a non-empty pd_split warm carry"
+      },
+      "files": [
+        {
+          "bytes": 393,
+          "path": "state/invalid/spindle_pd_split.json",
+          "sha256": "00558e5de06b34e38db407dd24911a0002c18cc8ab3f95a9a0ed0b3c07424250"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/spindle_pd_split.json",
+      "notes": "spindle state carries a non-empty pd_split warm carry",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "error": "ValueError",
+        "kind": "invalid",
+        "message": "optional real control member below its lower bound"
+      },
+      "files": [
+        {
+          "bytes": 137,
+          "path": "state/invalid/intent_negative_control.json",
+          "sha256": "5992d8452d4916bcc012a21386d577f28ce65c7b6f789d1632f7cd99fa36eb30"
+        }
+      ],
+      "group": "state",
+      "inputs": [],
+      "name": "state/invalid/intent_negative_control.json",
+      "notes": "optional real control member below its lower bound",
+      "produced_by": "authored single-defect variant of the accepted state capture",
+      "recipe": "RCP-04"
     }
   ],
   "negative_controls": [

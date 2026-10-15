@@ -131,6 +131,19 @@ namespace drivetrain {
                 bearing_joints_.push_back(j);
             }
         }
+        // joints_ is immutable from here on — resolve the warm-path lookups
+        // once (see the cache members' comment in the header for why a
+        // per-tick map key string would break the zero-allocation core on
+        // libstdc++).
+        crank_joint_ = joints_.at("crank_spin");
+        wheel_joint_ = joints_.at("rear_wheel_spin");
+        if (!simplified_)
+            cassette_joint_ = joints_.at("cassette_spin");
+        shaft_joint_ =
+                joints_.contains("drive_shaft_spin")
+                    ? joints_.at("drive_shaft_spin")
+                    : joints_.contains("rotor_spin") ? joints_.at("rotor_spin")
+                                                     : crank_joint_;
         if (config_.drive_mode == "articulated_effort" && human_actuator_ >= 0)
             throw std::invalid_argument(
                 "articulated effort must not have a human_crank actuator");
@@ -723,7 +736,7 @@ namespace drivetrain {
     void DrivetrainWriter::stage_pedal_advance(detail::TickBank &bank,
                                                const PrepareInputs &in,
                                                PedalingPolicy &pedaling) {
-        const auto crank = joints_.at("crank_spin"), wheel = joints_.at("rear_wheel_spin");
+        const auto crank = crank_joint_, wheel = wheel_joint_;
         const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
         double required = v[static_cast<std::size_t>(wheel.dof)] / shifting_.gear_ratio() *
                           60. / (2. * std::numbers::pi);
@@ -857,7 +870,7 @@ namespace drivetrain {
         bank.component_count = components_.size();
         for (auto &component: bank.components)
             std::ranges::fill(component, 0.);
-        const auto crank = joints_.at("crank_spin"), wheel = joints_.at("rear_wheel_spin");
+        const auto crank = crank_joint_, wheel = wheel_joint_;
         const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
         if (!simplified_) {
             m.angles.count = 2;
@@ -880,7 +893,7 @@ namespace drivetrain {
             m.energy = t.second;
             for (std::size_t i = 0; i < transmission_.size(); ++i)
                 bank.components[force_component_index(ForceComponent::chain)][i] = -m.tension * geometry_.jacobian[i];
-            const auto cassette = joints_.at("cassette_spin");
+            const auto cassette = cassette_joint_;
             hub_scratch_ = hub_;
             m.torque =
                     engaged(hub_scratch_).update(q[static_cast<std::size_t>(cassette.qpos)],
@@ -904,11 +917,7 @@ namespace drivetrain {
         m.cadence = validation::derived(
                 m.omega_crank * 60. / (2. * std::numbers::pi),
                 "DrivetrainWriter.cadence");
-        const auto shaft = joints_.contains("drive_shaft_spin")
-                               ? joints_.at("drive_shaft_spin")
-                               : joints_.contains("rotor_spin")
-                                     ? joints_.at("rotor_spin")
-                                     : crank;
+        const auto shaft = shaft_joint_;
         m.omega = v[static_cast<std::size_t>(shaft.dof)];
         const double rpm = validation::derived(
                 m.omega * 60. / (2. * std::numbers::pi),

@@ -94,6 +94,14 @@ set(_bike_native_tests_dir "${CMAKE_CURRENT_SOURCE_DIR}/native/tests")
 # T08 adds the owned Value state codecs (drivetrain/state_codec.cpp,
 # rider/state_codec.cpp) and rider/spindle_math.cpp — the
 # torque-curve/joint-envelope validators the spindle config decode calls.
+# T09 adds the owned ride runtime: runtime.cpp (NativeRideRuntime),
+# bootstrap.cpp/bootstrap_io.cpp (the typed config/state decoders plus the
+# capture-directory loader), and the previously module-hosted pure TUs the
+# runtime links — the physical step, accounting, presentation, samples
+# buffers, static brake and status faces, plus rider/intent.cpp and
+# rider/spindle_controller.cpp (the typed control/controller cores the
+# step consumes). The nanobind twins — *_wire.cpp, *_binding.cpp,
+# runtime_binding.cpp — stay in the optional extension.
 add_library(bike_core OBJECT
   "${_bike_native_dir}/src/stepper.cpp"
   "${_bike_native_dir}/src/writer_config.cpp"
@@ -120,9 +128,20 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/rider/equality_reactions.cpp"
   "${_bike_native_dir}/src/rider/spindle_math.cpp"
   "${_bike_native_dir}/src/rider/state_codec.cpp"
+  "${_bike_native_dir}/src/rider/intent.cpp"
+  "${_bike_native_dir}/src/rider/spindle_controller.cpp"
   "${_bike_native_dir}/src/runtime/samples.cpp"
   "${_bike_native_dir}/src/runtime/wire.cpp"
   "${_bike_native_dir}/src/runtime/control.cpp"
+  "${_bike_native_dir}/src/runtime/accounting.cpp"
+  "${_bike_native_dir}/src/runtime/period_buffer.cpp"
+  "${_bike_native_dir}/src/runtime/presentation.cpp"
+  "${_bike_native_dir}/src/runtime/status.cpp"
+  "${_bike_native_dir}/src/runtime/static_brake.cpp"
+  "${_bike_native_dir}/src/runtime/step.cpp"
+  "${_bike_native_dir}/src/runtime/bootstrap.cpp"
+  "${_bike_native_dir}/src/runtime/bootstrap_io.cpp"
+  "${_bike_native_dir}/src/runtime/runtime.cpp"
   "${_bike_native_dir}/src/writers/suspension.cpp"
   "${_bike_native_dir}/src/writers/brake.cpp"
   "${_bike_native_dir}/src/writers/resistance.cpp"

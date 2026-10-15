@@ -4,6 +4,8 @@
 #include <mujoco/mujoco.h>
 
 #include <array>
+#include <cstddef>
+#include <span>
 #include <stdexcept>
 
 namespace engine {
@@ -72,6 +74,9 @@ enum class TimeCallbackProvenance : unsigned char { none, native, foreign };
 void require_native_time_policy();
 
 [[nodiscard]] mjModel *load_model(const char *path);
+// The in-memory twin of load_model: same plugin rejection and framed
+// mj_loadModelBuffer over caller-owned bytes — the ModelImage path.
+[[nodiscard]] mjModel *load_model_image(std::span<const std::byte> image);
 [[nodiscard]] mjData *make_data(const mjModel *model);
 void forward(const mjModel *model, mjData *data);
 void step(const mjModel *model, mjData *data);

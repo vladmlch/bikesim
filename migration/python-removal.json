@@ -1357,6 +1357,7 @@
       "native/src/runtime/bootstrap.cpp",
       "native/src/runtime/bootstrap_io.hpp",
       "native/src/runtime/bootstrap_io.cpp",
+      "native/src/runtime/value_readers.hpp",
       "native/src/stepper.hpp",
       "native/src/stepper.cpp",
       "native/src/writer_config.hpp",

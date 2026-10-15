@@ -77,6 +77,33 @@ Stepper::Stepper(const std::string &mjb_path) : m_(nullptr), d_(nullptr) {
     std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
         engine::load_model(mjb_path.c_str()), &mj_deleteModel);
     if (!model) throw std::runtime_error("mj_loadModel failed: " + mjb_path);
+    init_engine_data(std::move(model));
+}
+
+Stepper::Stepper(std::span<const std::byte> image) : m_(nullptr), d_(nullptr) {
+    require_unmarked_time_callback();
+    std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+        engine::load_model_image(image),
+        &mj_deleteModel);
+    if (!model)
+        throw std::runtime_error("mj_loadModel failed on the model image");
+    init_engine_data(std::move(model));
+}
+
+Stepper::Stepper(const std::string &mjb_path,
+                 const nativecfg::WriterConfig &config)
+    : Stepper(mjb_path) {
+    install_writers(config);
+}
+
+Stepper::Stepper(std::span<const std::byte> image,
+                 const nativecfg::WriterConfig &config)
+    : Stepper(image) {
+    install_writers(config);
+}
+
+void Stepper::init_engine_data(
+    std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model) {
     std::unique_ptr<mjData, decltype(&mj_deleteData)> data(
         engine::make_data(model.get()), &mj_deleteData);
     if (!data) throw std::runtime_error("mj_makeData");
@@ -86,9 +113,7 @@ Stepper::Stepper(const std::string &mjb_path) : m_(nullptr), d_(nullptr) {
     posvel_fresh_ = true;
 }
 
-Stepper::Stepper(const std::string &mjb_path,
-                 const nativecfg::WriterConfig &config)
-    : Stepper(mjb_path) {
+void Stepper::install_writers(const nativecfg::WriterConfig &config) {
     // Decode happened at the boundary (nativecfg::decode for the owned
     // Value wire, nativecfg::writer_config_from_handle for the nanobind
     // adapter) BEFORE this constructor runs — the input here is already

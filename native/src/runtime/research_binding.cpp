@@ -249,7 +249,9 @@ void bind_research(nb::module_ &module) {
             auto config = parse_config(research_config);
             auto tape = parse_tape(noise, dropout);
             auto startup = parse_sensor_state(sensor_state);
-            auto ride = std::make_unique<NativeRideRuntime>(model, physical_config, physical_state);
+            auto ride = std::make_unique<NativeRideRuntime>(
+                compose_bootstrap_handles(model, physical_config,
+                                          physical_state));
             new (self) NativeResearchRuntime(std::move(ride), std::move(config), std::move(tape), std::move(startup));
         }, nb::arg("model_path"), nb::arg("config"), nb::arg("state"), nb::arg("research"),
            nb::arg("noise"), nb::arg("dropout_uniform"), nb::arg("sensor_state"))

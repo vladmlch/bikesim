@@ -130,16 +130,20 @@ set(_native_libcpp_hardening_mode "${BIKE_LIBCPP_HARDENING_EFFECTIVE}")
 # ${_native_core_lib} link edge like the writer bodies. Only adapter-side
 # translation units — nanobind parsing, boxing, the foreign-callback
 # recognizer — remain listed on the module.
+# T09 moved the owned-ride pure TUs into the shared core set below:
+# runtime/{step,accounting,period_buffer,presentation,status,static_brake,
+# bootstrap,bootstrap_io,runtime}.cpp and rider/{intent,
+# spindle_controller}.cpp reach the module through the same ${_native_core_lib}
+# link edge as the writers — only adapter TUs (nanobind parsing, boxing,
+# the research wrapper and probes) remain listed here.
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp
   src/drivetrain/policy_binding.cpp
   src/drivetrain/drive_binding.cpp
   src/rider/attachment_binding.cpp
   src/rider/contact_binding.cpp
-  src/rider/intent.cpp
   src/rider/intent_wire.cpp
   src/rider/rider_contact_binding.cpp
-  src/rider/spindle_controller.cpp
   src/rider/spindle_wire.cpp
   src/runtime/sensors.cpp
   src/runtime/programs.cpp
@@ -148,15 +152,9 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/runtime/research_binding.cpp
   src/runtime/recording.cpp
   src/runtime/provenance.cpp
-  src/runtime/accounting.cpp
-  src/runtime/period_buffer.cpp
   src/runtime/samples_binding.cpp
   src/runtime/encode.cpp
-  src/runtime/status.cpp
   src/runtime/runtime_binding.cpp
-  src/runtime/static_brake.cpp
-  src/runtime/step.cpp
-  src/runtime/presentation.cpp
   src/runtime/test_adapter.cpp)
 
 set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
@@ -227,6 +225,12 @@ add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/runtime/samples.cpp
   src/runtime/wire.cpp
   src/runtime/control.cpp
+  src/rider/intent.cpp src/rider/spindle_controller.cpp
+  src/runtime/accounting.cpp src/runtime/period_buffer.cpp
+  src/runtime/presentation.cpp src/runtime/status.cpp
+  src/runtime/static_brake.cpp src/runtime/step.cpp
+  src/runtime/bootstrap.cpp src/runtime/bootstrap_io.cpp
+  src/runtime/runtime.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
   src/writers/tire_common.cpp src/writers/tire.cpp

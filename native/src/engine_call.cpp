@@ -38,13 +38,15 @@ constexpr std::size_t plugin_size_index = 72;
 static_assert(model_size_names[plugin_size_index] == "nplugin");
 
 template <typename T>
-T read_native_value(std::span<const char> bytes, std::size_t offset) noexcept {
-    std::array<char, sizeof(T)> representation{};
-    std::ranges::copy(bytes.subspan(offset, sizeof(T)), representation.begin());
+T read_native_value(std::span<const std::byte> bytes,
+                    std::size_t offset) noexcept {
+    std::array<std::byte, sizeof(T)> representation{};
+    std::ranges::copy(bytes.subspan(offset, sizeof(T)),
+                      representation.begin());
     return std::bit_cast<T>(representation);
 }
 
-bool contains_plugins(std::span<const char> bytes) noexcept {
+bool contains_plugins(std::span<const std::byte> bytes) noexcept {
     constexpr std::size_t header_size = 5 * sizeof(int);
     constexpr std::size_t plugin_offset =
         header_size + plugin_size_index * sizeof(mjtSize);
@@ -553,10 +555,19 @@ mjModel *load_model(const char *path) {
     file.seekg(0);
     if (!file.read(bytes.data(), static_cast<std::streamsize>(bytes.size())))
         return nullptr;
-    if (contains_plugins(bytes))
+    return load_model_image(std::as_bytes(std::span{bytes}));
+}
+
+mjModel *load_model_image(std::span<const std::byte> image) {
+    // The path loader returned nullptr for an empty file; keep the same
+    // floor on the image path (an empty buffer is never a model).
+    if (image.empty() ||
+        image.size() > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+        return nullptr;
+    if (contains_plugins(image))
         throw std::invalid_argument("unsupported MuJoCo plugin model");
-    LoadContext context{.bytes = bytes.data(),
-                        .size = static_cast<int>(bytes.size()), .result = nullptr};
+    LoadContext context{.bytes = image.data(),
+                        .size = static_cast<int>(image.size()), .result = nullptr};
     ErrorBuffer error;
     if (!invoke(load_operation, &context, error)) throw_failure(error);
     return context.result;

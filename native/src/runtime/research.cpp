@@ -545,6 +545,8 @@ void NativeResearchRuntime::test_fail_at_step(std::int64_t step) {
     runtime_->test_fail_at_step(step);
 }
 void NativeResearchRuntime::emit_warning() {
-    const ResearchGuard guard(busy_); require_open(); runtime_->emit_reference_warning();
+    // Held-GIL boundary only: the pending non-strict rejection is pure
+    // runtime state; the RuntimeWarning emission is the adapter's job.
+    const ResearchGuard guard(busy_); require_open(); emit_reference_warning(*runtime_);
 }
 } // namespace runtime

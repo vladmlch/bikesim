@@ -2,6 +2,7 @@
 #pragma once
 #include <mujoco/mujoco.h>
 #include <array>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -119,6 +120,13 @@ public:
     // Stepper(path) contract. The decoded value is copied member-wise into
     // owned writers; nothing aliases the input.
     Stepper(const std::string &mjb_path,
+            const nativecfg::WriterConfig &config);
+
+    // Owned model-image ctors (T09): the pure runtime carries the captured
+    // model.mjb bytes — the loader is engine::load_model_image, sharing the
+    // plugin rejection and framed mj_loadModelBuffer with the path face.
+    explicit Stepper(std::span<const std::byte> image);
+    Stepper(std::span<const std::byte> image,
             const nativecfg::WriterConfig &config);
 
     ~Stepper();
@@ -461,6 +469,13 @@ private:
     bool unmarked_time_callback_safe_ = true;
     void require_healthy() const;
     void require_unmarked_time_callback();
+    // Shared engine-init half of the path and image ctors: make_data +
+    // the construction forward, then member publication.
+    void init_engine_data(
+        std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model);
+    // Shared writer-install half of the two typed-config ctors: decode is
+    // already done; each member installs when its section is present.
+    void install_writers(const nativecfg::WriterConfig &config);
     std::unique_ptr<SuspensionWriter> suspension_;
     std::unique_ptr<BrakeWriter> brake_;
     std::unique_ptr<CruiseWriter> cruise_;

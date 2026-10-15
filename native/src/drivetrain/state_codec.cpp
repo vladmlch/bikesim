@@ -97,13 +97,30 @@ namespace {
         [[nodiscard]] double real(std::string_view path) const {
             const auto *const number =
                 std::get_if<bio::Number>(&value->data);
-            if (number == nullptr)
+            if (number != nullptr) {
+                bool ok = false;
+                const double result =
+                    bio::detail::float_from_lexeme(number->lexeme, ok);
+                if (ok) return result;
                 ncd::invalid(path, "expected finite real scalar");
-            bool ok = false;
-            const double result =
-                bio::detail::float_from_lexeme(number->lexeme, ok);
-            if (!ok) ncd::invalid(path, "expected finite real scalar");
-            return result;
+            }
+            // The resolved {"$nonfinite": ...} capture tag — real() admits
+            // the sentinel exactly like the binding's wire::real passes a
+            // nonfinite Python float to the finite-only field readers.
+            if (const auto *const tagged =
+                    std::get_if<bio::Tagged>(&value->data)) {
+                if (tagged->kind == "float64" && tagged->fields.size() == 1 &&
+                    tagged->fields.front().first == "value") {
+                    const std::string &spelling = tagged->fields.front().second;
+                    if (spelling == "nan")
+                        return std::numeric_limits<double>::quiet_NaN();
+                    if (spelling == "+inf" || spelling == "inf")
+                        return std::numeric_limits<double>::infinity();
+                    if (spelling == "-inf")
+                        return -std::numeric_limits<double>::infinity();
+                }
+            }
+            ncd::invalid(path, "expected finite real scalar");
         }
         [[nodiscard]] double finite_real(std::string_view path) const {
             const double result = real(path);

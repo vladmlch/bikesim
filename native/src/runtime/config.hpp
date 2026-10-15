@@ -1,17 +1,20 @@
-// config.hpp — the runtime_schema=1 configuration envelope.
+// config.hpp — the runtime_schema=1 configuration envelope (task T09).
 //
 // bike_sim.native.setup.capture_bootstrap emits this dict beside the model
 // artifact and state inventory; NativeRideRuntime validates every field
 // before constructing anything (design doc section 3.1). Nested subtrees
-// without a native consumer yet (writer_config feeds the Stepper directly;
-// rider_controller/rider_intent/pose feed the A2/A3 native owners) are kept
-// as OWNED deep copies — the runtime never aliases caller objects.
+// whose decode positions sit later than the envelope validation
+// (writer_config feeds the Stepper construction, rider_controller/
+// rider_intent/pose feed the physical-step and accounting assemblies) are
+// kept as OWNED bike::io::Value documents — decoded at the same ordinal
+// positions the nanobind build ran them, never aliases of caller objects.
 #pragma once
-#include <nanobind/nanobind.h>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
+
+#include "../io/value.hpp"
 
 namespace runtime {
 
@@ -44,7 +47,10 @@ struct GeometryConfig {
     std::optional<std::string> front_wheel_body;
     std::optional<std::string> rear_wheel_body;
     std::optional<std::string> com_marker_site;
-    nanobind::object pose;  // owned dict copy or None
+    // Owned config.geometry.pose document — a null Value spells the
+    // absent-rider None exactly like the nanobind boundary. Decoded into
+    // rider::SpindlePose inside the physical-step assembly.
+    bike::io::Value pose;
 };
 
 struct RuntimeConfig {
@@ -58,21 +64,17 @@ struct RuntimeConfig {
     RetentionMode record_retention = RetentionMode::legacy;
     MonitorConfig monitors;
     GeometryConfig geometry;
-    nanobind::object writer_config;     // owned dict — the Stepper consumes it once
-    nanobind::object rider_controller;  // owned dict — staged for the A2 controller
-    nanobind::object rider_intent;      // owned dict — staged for the A2 scheduler
+    // Owned config.writer_config document — the runtime ctor decodes it
+    // into nativecfg::WriterConfig at the same position the nanobind
+    // adapter did (immediately before the Stepper's model load).
+    bike::io::Value writer_config;
+    // Owned config.rider_controller document — decoded into
+    // rider::SpindleConfig inside the physical-step assembly and re-read
+    // for the accounting attachment budget at accounting init.
+    bike::io::Value rider_controller;
+    // Owned config.rider_intent document — decoded into
+    // rider::IntentConfig inside the physical-step assembly.
+    bike::io::Value rider_intent;
 };
-
-// Throws std::invalid_argument naming the full config path on any deviation
-// from the runtime_schema=1 envelope.
-[[nodiscard]] RuntimeConfig parse_runtime_config(nanobind::handle raw);
-
-// Deep ownership copy of a plain-data tree (dict/list/tuple/str/bool/
-// integral/real/ndarray/None). Immutable scalars are shared; containers and
-// arrays are rebuilt so the caller cannot mutate the runtime's copy. Any
-// other object type is rejected — staged state must never capture arbitrary
-// __dict__ payloads.
-[[nodiscard]] nanobind::object owned_copy(nanobind::handle value,
-                                          std::string_view path);
 
 } // namespace runtime

@@ -17,6 +17,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <span>
@@ -182,6 +183,29 @@ void checks_process() {
         (void) pf::run({"/usr/bin/true"}, "/",
                        pf::ProcessOptions{.timeout_s = 0.0,
                                           .max_output_bytes = 16U});
+    });
+    // Nonfinite deadlines are the same input-domain violation: NaN and
+    // +/-inf can never arm a monotonic deadline.
+    bt::invalid([] {
+        (void) pf::run(
+            {"/usr/bin/true"}, "/",
+            pf::ProcessOptions{
+                .timeout_s = std::numeric_limits<double>::infinity(),
+                .max_output_bytes = 16U});
+    });
+    bt::invalid([] {
+        (void) pf::run(
+            {"/usr/bin/true"}, "/",
+            pf::ProcessOptions{
+                .timeout_s = std::numeric_limits<double>::quiet_NaN(),
+                .max_output_bytes = 16U});
+    });
+    // A zero output bound is rejected up front — capture is bounded by
+    // contract and zero is a misconfiguration, not "capture nothing".
+    bt::invalid([] {
+        (void) pf::run({"/usr/bin/true"}, "/",
+                       pf::ProcessOptions{.timeout_s = std::nullopt,
+                                          .max_output_bytes = 0U});
     });
 }
 
@@ -366,6 +390,16 @@ void checks_provenance() {
     bt::require(!identity.compiler.empty(), "compiler identity recorded");
     bt::require(!identity.compile_flags.empty(), "flag identity recorded");
     bt::require(!identity.platform.empty(), "platform identity recorded");
+#if defined(_LIBCPP_HARDENING_MODE)
+    // Compile definitions are part of the recorded flag surface: this TU and
+    // bike_platform share the same policy definitions, so when this TU sees
+    // the hardening-mode macro the recorded identity must carry it too —
+    // two builds differing only in BIKE_LIBCPP_HARDENING must not produce an
+    // identical flag string or execution identity.
+    bt::require(identity.compile_flags.find("_LIBCPP_HARDENING_MODE=") !=
+                    std::string::npos,
+                "flag surface records target compile definitions");
+#endif
     bt::require(hex64(identity.dependency_lock_sha256),
                 "dependency lock hash recorded");
     bt::require(hex64(identity.source_manifest_sha256),

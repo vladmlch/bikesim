@@ -192,6 +192,19 @@ foreach(_configuration IN LISTS _platform_identity_configurations)
 endforeach()
 string(APPEND _platform_effective_flags
   " $<JOIN:$<TARGET_GENEX_EVAL:bike_platform,$<TARGET_PROPERTY:bike_platform,COMPILE_OPTIONS>>, >")
+# COMPILE_DEFINITIONS are part of the effective flag surface too — the
+# hardening/fortify defines bike_target_strict_policy applies change the
+# generated code, so two builds differing only in BIKE_LIBCPP_HARDENING must
+# not record an identical identity. Map each stored definition back to its
+# -D spelling; generator-expression entries still resolve per configuration
+# inside file(GENERATE)'s target context.
+get_target_property(_platform_compile_definitions bike_platform
+  COMPILE_DEFINITIONS)
+if(_platform_compile_definitions)
+  foreach(_platform_definition IN LISTS _platform_compile_definitions)
+    string(APPEND _platform_effective_flags " -D${_platform_definition}")
+  endforeach()
+endif()
 set(_platform_sdk "")
 if(APPLE)
   set(_platform_sdk "${CMAKE_OSX_SYSROOT}")

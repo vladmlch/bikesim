@@ -345,6 +345,19 @@ foreach(_configuration IN LISTS _native_platform_configs)
 endforeach()
 string(APPEND _native_platform_flags
   " $<JOIN:$<TARGET_GENEX_EVAL:bike_platform,$<TARGET_PROPERTY:bike_platform,COMPILE_OPTIONS>>, >")
+# COMPILE_DEFINITIONS are part of the effective flag surface too — the
+# contract definitions (_LIBCPP_HARDENING_MODE/_FORTIFY_SOURCE) change the
+# generated code, so two builds differing only in BIKE_LIBCPP_HARDENING must
+# not record an identical identity. Map each stored definition back to its
+# -D spelling; generator-expression entries still resolve per configuration
+# inside file(GENERATE)'s target context.
+get_target_property(_native_platform_definitions bike_platform
+  COMPILE_DEFINITIONS)
+if(_native_platform_definitions)
+  foreach(_native_platform_definition IN LISTS _native_platform_definitions)
+    string(APPEND _native_platform_flags " -D${_native_platform_definition}")
+  endforeach()
+endif()
 set(_native_platform_gui_bool "false")
 if(BIKE_BUILD_GUI)
   set(_native_platform_gui_bool "true")

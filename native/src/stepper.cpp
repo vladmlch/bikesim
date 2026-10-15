@@ -177,9 +177,24 @@ void Stepper::refresh_time_callback_policy() {
         unmarked_time_callback_safe_ = unmarked_safe;
         time_callback_policy_ready_ = true;
     };
-    if (current == nullptr) {
+    // The engine boundary classifies the installed timer by address alone
+    // (T04 provenance): no callback or the documented native timer are
+    // accepted; every other owner is foreign at this layer. Only the
+    // foreign case needs the bindings adapter's vendor-Python recognition
+    // below — it stays reachable until T63, inside the bindings build.
+    switch (engine::time_callback_provenance()) {
+    case engine::TimeCallbackProvenance::none:
         record(nullptr, true);
         return;
+    case engine::TimeCallbackProvenance::native:
+        // engine::native_time — warm the epoch's static guard outside the
+        // marked regions, the same reason the vendored timers are called
+        // once below before their first marked step.
+        static_cast<void>(engine::native_time());
+        record(current, true);
+        return;
+    case engine::TimeCallbackProvenance::foreign:
+        break;
     }
 
     const nanobind::gil_scoped_acquire gil;

@@ -28,3 +28,16 @@ static_assert(std::is_same_v<decltype(&_mjPRIVATE_getGlobalLogHandler),
                              mjfLogHandler (*)()>);
 static_assert(std::is_same_v<decltype(&mj_makeRawData),
                              void (*)(mjData **, const mjModel *)>);
+
+// T04 callback-provenance pins: the public slot the provenance split reads
+// (mjcb_time is the only engine callback a standalone runtime may install —
+// the documented native timer in engine_call.hpp), the callback signature,
+// and the public version functions engine::identity() resolves.
+static_assert(std::is_same_v<mjfTime, mjtNum (*)()>,
+              "mjcb_time callback ABI drifted");
+static_assert(std::is_same_v<decltype(mjcb_time), mjfTime>,
+              "mjcb_time is no longer the process-global mjfTime slot");
+static_assert(std::is_same_v<decltype(&mj_version), int (*)()>,
+              "mj_version ABI drifted");
+static_assert(std::is_same_v<decltype(&mj_versionString), const char *(*)()>,
+              "mj_versionString ABI drifted");

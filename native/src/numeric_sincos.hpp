@@ -20,6 +20,12 @@
 // Use these wrappers only where the ported expression shares one angle
 // between sin and cos. Lone calls (no matching partner) keep plain
 // std::sin/std::cos — there is nothing to fuse.
+//
+// T04 provider identity: the calls below resolve to the platform libm —
+// the same supplier the recorded "accelerate" numeric-provider identity
+// implies on this platform (libSystem/libm ships with the OS ABI the
+// Accelerate framework belongs to). The anti-fusion idiom is part of the
+// same-provider bitwise contract, not a workaround to remove.
 #pragma once
 
 #include <cmath>

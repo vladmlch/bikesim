@@ -37,6 +37,40 @@ void set_poisoned_error(ErrorBuffer &error) noexcept;
 void set_unsupported_callback_error(ErrorBuffer &error, const char *name) noexcept;
 void require_supported_callbacks();
 
+// ---- Native callback provenance (T04) ------------------------------------
+//
+// mjcb_time is the one engine callback a standalone runtime may legitimately
+// install: the documented native timer below. Its provenance is classified
+// purely by address — no image/vendor/Python lookup — so the pure engine
+// boundary carries no interpreter dependency:
+//
+//   none     mjcb_time == nullptr;
+//   native   mjcb_time == &engine::native_time — the documented native timer;
+//   foreign  any other pointer: vendor-Python DefaultTimer/Timer trampolines,
+//            Python-managed set_mjcb_time callables' C trampolines, ctypes
+//            thunks and arbitrary C functions. Only the optional bindings
+//            adapter (stepper.cpp) sub-classifies this bucket against the
+//            vendored vendor images, and only until T63.
+enum class TimeCallbackProvenance : unsigned char { none, native, foreign };
+
+// The documented native mjcb_time: steady-clock seconds since the first
+// call's epoch, mirroring the vendored DefaultTimer (mujoco 3.12.0
+// python/mujoco/callbacks.cc:401-406). Call once at installation/setup time —
+// outside realtime and error regions — so the static epoch guard is taken
+// before a marked step can block on it.
+[[nodiscard]] mjtNum native_time() noexcept;
+
+// Classifies the currently installed mjcb_time by address; never calls the
+// callback. Safe inside and outside marked regions.
+[[nodiscard]] TimeCallbackProvenance time_callback_provenance() noexcept;
+
+// The standalone acceptance rule: `none` and `native` pass (the native
+// timer's epoch guard is also warmed here); `foreign` fills the canonical
+// unsupported-callback error and returns false. Bindings adapters call this
+// only as the native half of their wider vendor-aware policy.
+[[nodiscard]] bool try_native_time_policy(ErrorBuffer &error) noexcept;
+void require_native_time_policy();
+
 [[nodiscard]] mjModel *load_model(const char *path);
 [[nodiscard]] mjData *make_data(const mjModel *model);
 void forward(const mjModel *model, mjData *data);

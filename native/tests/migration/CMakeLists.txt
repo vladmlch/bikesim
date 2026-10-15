@@ -80,6 +80,47 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T02>")
 endif()
 
+# T04 engine-boundary regression: links the shared pinned-interceptor
+# library — bike_engine in the standalone root build, bike_native_engine in
+# the legacy binding build — so both graphs exercise the identical
+# engine_call.cpp TU. The src/MuJoCo include edges mirror the consuming
+# targets' SYSTEM treatment in each graph.
+add_executable(migration_T04 test_t04.cpp)
+set_target_properties(migration_T04 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T04 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T04 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T04 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T04 PRIVATE bike_migration_test)
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T04)
+  target_include_directories(migration_T04 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(migration_T04 PRIVATE bike_engine)
+  bike_rewrite_mujoco_load_name(migration_T04
+    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+else()
+  target_include_directories(migration_T04 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
+  target_link_libraries(migration_T04 PRIVATE bike_native_engine)
+  bike_rewrite_mujoco_load_name(migration_T04
+    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T04 COMMAND migration_T04)
+  set_tests_properties(migration_T04 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T04>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

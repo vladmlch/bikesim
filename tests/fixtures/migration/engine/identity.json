@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "produced_for": "T04",
+  "identity": {
+    "mujoco_version": "3.12.0",
+    "mujoco_library_sha256": "9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c",
+    "numeric_provider": "accelerate"
+  },
+  "timer_callback": {
+    "documented_native": "engine::native_time",
+    "standalone_acceptance": "mjcb_time == nullptr or mjcb_time == &engine::native_time; every other owner is foreign",
+    "bindings_adapter": "vendor-Python timers (mujoco._structs DefaultTimer / mujoco._simulate Timer) remain recognizable only in the bindings build until T63"
+  },
+  "error_outcomes": {
+    "invalid_integrator": {
+      "kind": "fatal",
+      "message_contains": "invalid integrator",
+      "committed_prefix": "the failed step never advances d->time, d->qpos/qvel or d->timer[mjTIMER_STEP].number; previously committed values stay readable"
+    },
+    "foreign_time_callback": {
+      "kind": "unsupported_callback",
+      "message": "unsupported installed MuJoCo callback: mjcb_time"
+    },
+    "foreign_control_callback": {
+      "kind": "unsupported_callback",
+      "message": "unsupported installed MuJoCo callback: mjcb_control"
+    },
+    "poisoned_owner": {
+      "kind": "poisoned",
+      "message": "Stepper is poisoned after a fatal MuJoCo error; call reset"
+    },
+    "invalid_model_buffer": {
+      "kind": "warning_forwarded",
+      "result": "engine::load_model returns nullptr for a non-MJB payload; MuJoCo header warnings forward to the previously installed TLS handler"
+    }
+  }
+}

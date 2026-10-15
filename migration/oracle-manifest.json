@@ -16881,6 +16881,25 @@
       "notes": "module:factory seam mapped to native registry/ABI replacements",
       "produced_by": "static policy-factory inventory (no plugin execution)",
       "recipe": "RCP-06"
+    },
+    {
+      "comparison": "Q",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 1530,
+          "path": "engine/identity.json",
+          "sha256": "07dfd5a720d41db3c63ee9661fcadb08644450b12efefe534a82da18e258d8f5"
+        }
+      ],
+      "group": "engine",
+      "inputs": [],
+      "name": "engine/identity",
+      "notes": "T04 engine-boundary descriptor: resolved-library identity (version + loaded-dylib sha256 + recorded numeric provider) and the error-kind outcomes the guarded-call contract must produce. sha256 matches native/dependencies.lock.json lib/libmujoco.3.12.0.dylib; numeric_provider matches the T01 environment capture environment.blas.name.",
+      "produced_by": "authored engine-identity descriptor; digest re-derived from .deps/mujoco-3.12.0/lib/libmujoco.3.12.0.dylib",
+      "recipe": "RCP-00"
     }
   ],
   "negative_controls": [

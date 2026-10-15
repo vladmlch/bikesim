@@ -22637,5 +22637,38 @@
       "bindings-ON root build (uv run --frozen --group native): configure+build exit 0; bike_native.cpython-314-darwin.so imports; otool -L resolves libmujoco to .deps/mujoco-3.12.0, no .venv path; links the same bike_core/bike_engine objects as the standalone tests"
     ],
     "note": "T03 owns src/bike_sim/native/__init__.py in python-removal.json as a ledger row only; the file remains present until the T63 deletion gate. Only already Python-free object/engine/distance/station targets compile under bindings OFF; coupled binding TUs build solely in the BIKE_BUILD_PYTHON_BINDINGS=ON transition, which links the identical bike_core/bike_engine objects."
+  },
+  "engine_boundary_contract": {
+    "task": "T04",
+    "ctest_name": "migration_T04",
+    "build_target": "migration_T04",
+    "kind": "executable",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T04 test_t04.cpp); the standalone root build links bike_engine + bike::mujoco (locked .deps) and the legacy binding build links bike_native_engine + ${MJ_DIR}/libmujoco.3.12.0.dylib — the identical engine_call.cpp TU in both graphs",
+    "produced_apis": [
+      "engine::Identity / engine::identity() / engine::verify_identity() — native/src/engine_identity.hpp declares; engine_call.cpp resolves mj_versionString, dladdr's the loaded image and SHA-256s the resolved libmujoco bytes",
+      "engine::TimeCallbackProvenance{none,native,foreign} / engine::native_time / engine::time_callback_provenance / engine::try_native_time_policy / engine::require_native_time_policy — engine_call.hpp; address-only classification carries no interpreter dependency",
+      "blas::provider_name == \"accelerate\" — cblas_abi.hpp; the recorded supplier engine::Identity.numeric_provider reports"
+    ],
+    "callback_split": "vendor/Python timer recognition stays in the bindings adapter (native/src/stepper.cpp refresh_time_callback_policy) and only runs for the foreign bucket; the standalone rule accepts mjcb_time == nullptr or == &engine::native_time",
+    "mandatory_cases": [
+      "nested handler restoration: inner framed fatal contained, inner framed call succeeds after it, a RAW mj_step fatal inside the operation lands on the outer frame (forked child)",
+      "thread-independent contexts: two workers each contain their own invalid-integrator fatal and recover; the main thread is unaffected (forked child)",
+      "fatal committed-prefix: opt.integrator=-1 step fails with kind=fatal 'invalid integrator'; d->time, d->timer[mjTIMER_STEP].number, qpos, qvel stay bit-identical to the committed prefix; a fresh framed call works (engine layer is stateless — poison-until-reset lives at the Stepper adapter via set_poisoned_error's canonical message)",
+      "same-provider bitwise: forward → reset_data → forward reproduces qfrc_smooth bit-identically; existing binary64 fixture corpus unchanged",
+      "foreign callback rejection: foreign mjcb_time → TimeCallbackProvenance::foreign → try_native_time_policy fails 'unsupported installed MuJoCo callback: mjcb_time' (unsupported_callback); foreign mjcb_control rejected by invoke inside load_model's frame verbatim",
+      "native/no-timer acceptance: nullptr and &engine::native_time pass the policy; native_time is monotone nonnegative steady-clock seconds; a foreign C timer reached inside a marked step (counted) neither corrupts nor escapes the frame",
+      "identity: engine::identity() == engine/identity.json descriptor verbatim (version, loaded-dylib sha256, provider); verify_identity accepts it and rejects each tampered field with std::invalid_argument naming the field and both values",
+      "non-MJB payload: load_model('harness/utf8.txt') returns nullptr while MuJoCo's header warning forwards to the pre-frame destination (observed on stderr)"
+    ],
+    "fixture": "tests/fixtures/migration/engine/identity.json — authored T04 descriptor (comparison Q, expected accepted, recipe RCP-00): mujoco_version 3.12.0, loaded-dylib sha256 9e7724614fb0b3f346758ff4158ef65e7c398f2caa3e9daab41ed210b4ab689c, numeric_provider 'accelerate', expected guarded-call error outcomes",
+    "evidence": [
+      "RED recorded: at the pre-T04 source state 'cmake --build build/native-release --target migration_T04' fails at test_t04.cpp:14 'engine_identity.hpp' file not found — missing produced API, the intended red",
+      "ctest --test-dir build/native-release -R '^migration_T04$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 ('PASS 60 checks')",
+      "ctest --test-dir native/build -R '^migration_T04$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 ('PASS 60 checks')",
+      "ctest --test-dir build/native-release --output-on-failure: 5/5 tests passed (native_distance_tests, native_station_tests, migration_T02, migration_T04, migration_T03)",
+      "ctest --test-dir native/build --output-on-failure: 9/9 tests passed (native_contract_tests, native_distance_tests, native_station_tests, 3x native_bench, migration_T02, migration_T04, migration_T03)",
+      "NATIVE_TEST_BUILD_PATH=$PWD/native/build uv run --frozen pytest tests/reference/test_native_engine_errors.py -x -q: 31 passed — bindings-side fatal/callback contract unchanged under the provenance split"
+    ],
+    "note": "T04 owns no Python source rows in python-removal.json and no ported test records in this map — its deliverable is the native boundary itself (migration card: 'owns no individual Python source file in the supplied removal inventory'). This task-scoped entry is its registration evidence. The test_native_engine_errors.py rows stay owned by T53; they were rerun here only as transition-environment source coverage."
   }
 }

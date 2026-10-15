@@ -23,6 +23,7 @@
 #include <mujoco/mujoco.h>
 
 #include <cstdint>
+#include <string_view>
 #include <type_traits>
 
 // Every caller moves mjtNum buffers — if the engine scalar ever widened,
@@ -35,6 +36,13 @@ static_assert(sizeof(int) == 4,
               "cblas_abi: the pinned CBLAS ABI requires a 32-bit int");
 
 namespace blas {
+
+    // The recorded BLAS/reduction supplier identity for this build —
+    // `environment.blas.name` in the T01 oracle manifest capture. T04's
+    // engine::Identity reports it as numeric_provider, so the resolved
+    // runtime identity stays tied to this single declaration site.
+    inline constexpr std::string_view provider_name = "accelerate";
+
     // Classic CBLAS integer constants (stable since the reference CBLAS;
     // the same values Accelerate's vecLib ABI accepts). enum class
     // arguments make the magic integers unrepresentable at call sites.

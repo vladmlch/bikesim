@@ -42,6 +42,12 @@
 // Compile flags: this header's arithmetic relies on the project-wide
 // -ffp-contract=off — plain `a*b + c` expressions stay two rounded
 // operations, while `std::fma` stays an explicit fused call.
+//
+// T04 provider identity: this kernel set is part of the numeric surface
+// engine::Identity.numeric_provider reports ("accelerate" — the recorded
+// supplier of the platform BLAS/libm these ports sit beside). The "np_"
+// prefix names the bitwise NumPy oracle contract, not a Python runtime
+// dependency; no interpreter symbol is reachable from this header.
 #pragma once
 
 #include <algorithm>

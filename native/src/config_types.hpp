@@ -354,15 +354,9 @@ namespace nativecfg {
         std::vector<RiderPathConfig> paths; // _paths order
     };
 
-    struct NativeConfig {
-        std::optional<drivetrain::DriveConfig> drive;
-        std::optional<CruiseConfig> cruise;
-        std::optional<SuspensionConfig> suspension;
-        std::optional<BrakeConfig> brake;
-        std::optional<ResistanceConfig> resistance;
-        std::optional<TireConfig> tire;
-        std::optional<RiderForcesConfig> rider_forces;
-        std::optional<rider::RiderContactsConfig> rider_contacts;
-    };
+    // The whole-config aggregate (formerly NativeConfig) lives in
+    // writer_config.hpp as nativecfg::WriterConfig — the owned T07
+    // boundary type shared by the bike::io::Value decode and the nanobind
+    // adapter.
 
 }

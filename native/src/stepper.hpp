@@ -11,11 +11,11 @@
 #include <utility>
 #include <variant>
 #include <vector>
-#include <nanobind/nanobind.h>
 #include "engine_call.hpp"
 #include "rtsan.hpp"
 #include "rider/attachment_wrench.hpp"
 #include "rider/equality_reactions.hpp"
+#include "writer_config.hpp"
 #include "writers/tire_common.hpp"
 #include "writers/writer_types.hpp"
 
@@ -112,12 +112,14 @@ class Stepper {
 public:
     explicit Stepper(const std::string &mjb_path);
 
-    // Config-bridge ctor: the dict from tools.native_config.project(env)
-    // (or an empty dict — every writer stays disabled). The dict is read
-    // ONCE here; nothing keeps a reference into Python objects.
-    Stepper(const std::string &mjb_path, const nanobind::dict &config);
-
-    Stepper(const std::string &mjb_path, nanobind::handle config);
+    // Typed-config ctor (T07): the DECODED tools.native_config.project(env)
+    // wire — nativecfg::WriterConfig, produced by nativecfg::decode on the
+    // owned bike::io::Value side or by the nanobind adapter on the binding
+    // side. An all-absent WriterConfig leaves every writer disabled, the
+    // Stepper(path) contract. The decoded value is copied member-wise into
+    // owned writers; nothing aliases the input.
+    Stepper(const std::string &mjb_path,
+            const nativecfg::WriterConfig &config);
 
     ~Stepper();
 
@@ -505,3 +507,24 @@ private:
     // nv change — never a per-call reallocation).
     [[nodiscard]] std::span<double> attachment_qfrc_scratch() const;
 };
+
+namespace stepper_detail {
+    // T07 seam — classifying a FOREIGN mjcb_time owner needs the vendor
+    // Python runtime (mujoco.get_mjcb_time, the _structs/_simulate module
+    // images). That recognition lives in the bindings; this process-local
+    // slot is what refresh_time_callback_policy() consults after the
+    // engine layer has already classified the installed callback by
+    // address. The Python-free build leaves it null, where every foreign
+    // owner is unsafe — the documented T04 contract for a core without a
+    // Python interpreter.
+    struct ForeignTimeCallbackVerdict {
+        mjfTime allowed;         // callback to whitelist, or nullptr
+        bool unmarked_safe;      // callable outside marked realtime regions
+    };
+    using ForeignTimeCallbackProbe =
+        ForeignTimeCallbackVerdict (*)(mjfTime current);
+    // The installed probe — a function-local static so the bindings can
+    // install during module init, before any Stepper construction.
+    [[nodiscard]] ForeignTimeCallbackProbe &
+    foreign_time_callback_probe() noexcept;
+} // namespace stepper_detail

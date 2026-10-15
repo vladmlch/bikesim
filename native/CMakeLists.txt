@@ -125,14 +125,17 @@ set(_native_libcpp_hardening_mode "${BIKE_LIBCPP_HARDENING_EFFECTIVE}")
 # third-party TU internals stay outside our warning contract.
 # PROTECT_STACK: nanobind otherwise appends -fno-stack-protector in Release
 # configs, which would silently nullify -fstack-protector-strong below.
+# stepper.cpp and writers/rider_contacts.cpp moved into the shared
+# Python-free core TU set (T07): the extension picks them up through the
+# ${_native_core_lib} link edge like the writer bodies. Only adapter-side
+# translation units — nanobind parsing, boxing, the foreign-callback
+# recognizer — remain listed on the module.
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
-  src/binding.cpp src/stepper.cpp
+  src/binding.cpp
   src/drivetrain/policy_binding.cpp
   src/drivetrain/drive_binding.cpp
   src/rider/attachment_binding.cpp
-  src/rider/attachment_wrench.cpp
   src/rider/contact_binding.cpp
-  src/rider/equality_reactions.cpp
   src/rider/intent.cpp
   src/rider/intent_wire.cpp
   src/rider/rider_contact_binding.cpp
@@ -155,8 +158,7 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/runtime/static_brake.cpp
   src/runtime/step.cpp
   src/runtime/presentation.cpp
-  src/runtime/test_adapter.cpp
-  src/writers/rider_contacts.cpp)
+  src/runtime/test_adapter.cpp)
 
 set_target_properties(bike_native PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 
@@ -210,7 +212,8 @@ if(BIKE_ROOT_BUILD)
   set(_native_core_lib bike_core)
   set(_native_engine_lib bike_engine)
 else()
-add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
+add_library(bike_native_contract_core OBJECT src/stepper.cpp
+  src/writer_config.cpp src/drivetrain/pedaling.cpp
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp
   src/drivetrain/shifting.cpp src/drivetrain/motor.cpp
   src/drivetrain/freehub.cpp src/writers/drivetrain.cpp
@@ -219,13 +222,15 @@ add_library(bike_native_contract_core OBJECT src/drivetrain/pedaling.cpp
   src/pneumatic/geometry.cpp src/pneumatic/carcass.cpp
   src/pneumatic/brush.cpp src/pneumatic/model.cpp
   src/rider/contact_math.cpp src/rider/support_geometry.cpp
-  src/rider/least_squares.cpp src/runtime/samples.cpp
+  src/rider/least_squares.cpp src/rider/attachment_wrench.cpp
+  src/rider/equality_reactions.cpp src/runtime/samples.cpp
   src/runtime/wire.cpp
   src/runtime/control.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
   src/writers/tire_common.cpp src/writers/tire.cpp
-  src/writers/distributed_tire.cpp src/writers/pneumatic_tire.cpp)
+  src/writers/distributed_tire.cpp src/writers/pneumatic_tire.cpp
+  src/writers/rider_contacts.cpp)
 set_target_properties(bike_native_contract_core PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   CXX_STANDARD 23
@@ -394,10 +399,13 @@ target_link_libraries(bike_native_engine PUBLIC "${MJ_DIR}/libmujoco.3.12.0.dyli
 set(_native_engine_lib bike_native_engine)
 
 # allocation_faults.cpp overrides the test binary's throwing allocation
-# operators — it must never land in a shipped target, so it joins the
-# executable's own sources, not the shared contract core.
+# operators — it must never land in a shipped target, so it reaches the
+# executable as an injected object, not through the shared contract core.
+# The single OBJECT compile lives in tests/migration (shared with
+# migration_T07 in both graphs); TARGET_OBJECTS resolves at generate
+# time, so the later add_subdirectory definition is fine.
 add_executable(native_contract_tests tests/test_contracts.cpp
-  tests/allocation_faults.cpp)
+  $<TARGET_OBJECTS:bike_test_allocation_faults>)
 set_target_properties(native_contract_tests PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON

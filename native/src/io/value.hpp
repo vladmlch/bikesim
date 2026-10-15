@@ -144,7 +144,7 @@ namespace detail {
         // frac_zeros. INT-part nonzero: magnitude < 1 iff
         // int_digits + E <= 0.
         if (int_digits == 0)
-            return exponent <= static_cast<long long>(frac_zeros);
+            return std::cmp_less_equal(exponent, frac_zeros);
         return static_cast<long long>(int_digits) + exponent <= 0;
     }
 

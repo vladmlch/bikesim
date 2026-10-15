@@ -2,6 +2,7 @@
 #include "../diag.hpp"
 #include "../binding_readers.hpp"
 #include "../binding_arrays.hpp"
+#include "../config.hpp"
 #include "../stepper.hpp"
 #include "chain.hpp"
 #include "policy_binding.hpp"
@@ -404,43 +405,15 @@ namespace {
         return s;
     }
 } // namespace
+// The 'config.drive' decode is the shared generic parser
+// (writer_config.hpp::decode_drive); this entry stays only as the
+// nanobind-dict adapter so the DrivePolicies/DebugWire paths keep their
+// wire:: reader strictness and paths.
 DriveConfig parse_drive_config(const nb::dict &input) {
-    const wire::Dict d{.value = input, .path = "config.drive"};
-    DriveConfig c;
-    constexpr auto extra_keys = wire::keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","chain_k_n_m","chain_c_ns_m","bearing_c_nms_rad","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm");
-    c.policies = parse_drive_policy_config(d.value, extra_keys);
-    c.drive_mode = string(d, "drive_mode");
-    c.transmission_model = string(d, "transmission_model");
-    if (c.drive_mode != "crank_effort" && c.drive_mode != "articulated_effort" &&
-        c.drive_mode != "coast" && c.drive_mode != "ideal_speed_control")
-        wire::invalid(d.child("drive_mode"), "unsupported mode");
-    if (c.transmission_model != "elastic_chain" &&
-        c.transmission_model != "ideal_mid_drive" &&
-        c.transmission_model != "geometric_ideal_mid_drive")
-        wire::invalid(d.child("transmission_model"), "unsupported model");
-    c.human_torque_nm = nonnegative(num(d, "human_torque_nm"), "human_torque_nm");
-    c.torque_ripple = nonnegative(num(d, "torque_ripple"), "torque_ripple");
-    if (c.torque_ripple >= 1.)
-        throw std::invalid_argument("torque_ripple");
-    c.crank_phase_rad = num(d, "crank_phase_rad");
-    c.chain_k_n_m = positive(num(d, "chain_k_n_m"), "chain_k_n_m");
-    c.chain_c_ns_m = nonnegative(num(d, "chain_c_ns_m"), "chain_c_ns_m");
-    c.bearing_c_nms_rad = nonnegative(num(d, "bearing_c_nms_rad"), "bearing_c_nms_rad");
-    c.rotor_inertia_kgm2 =
-            nonnegative(num(d, "rotor_inertia_kgm2"), "rotor_inertia_kgm2");
-    c.brake_ceiling_nm =
-            nonnegative(num(d, "brake_ceiling_nm"), "brake_ceiling_nm");
-    c.motor_clutch = boolean(d, "motor_clutch");
-    if (c.motor_clutch && c.rotor_inertia_kgm2 > 0.)
-        throw std::invalid_argument("rotor and clutch are exclusive");
-    if (c.transmission_model == "elastic_chain" &&
-        (c.motor_clutch || c.rotor_inertia_kgm2 > 0. || c.policies.shifting.enabled))
-        throw std::invalid_argument(
-            "rotor/clutch/shifting requires ideal transmission");
-    if ((c.drive_mode == "coast" || c.drive_mode == "ideal_speed_control") &&
-        (c.motor_clutch || c.rotor_inertia_kgm2 > 0.))
-        throw std::invalid_argument("passive drive cannot use rotor/clutch");
-    return c;
+    return nativecfg::detail::decode_drive(
+        nativecfg::detail::Dict<nativecfg::detail::NbNode>{
+            .value = nativecfg::detail::NbNode{nb::borrow<nb::object>(input)},
+            .path = "config.drive"});
 }
 
 drivetrain::DriveSnapshot parse_drive_snapshot(nb::handle state,

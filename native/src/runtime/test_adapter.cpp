@@ -38,7 +38,7 @@ namespace {
 class NativeTestAdapter {
 public:
     NativeTestAdapter(const std::string &mjb_path, nb::handle config)
-        : stepper_(mjb_path, nb::dict()) {
+        : stepper_(mjb_path) {
         const nb::dict probes = config.is_none()
                                     ? nb::dict()
                                     : wire::mapping(config, "adapter");

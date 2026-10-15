@@ -1359,6 +1359,9 @@
       "native/src/runtime/bootstrap_io.cpp",
       "native/src/stepper.hpp",
       "native/src/stepper.cpp",
+      "native/src/writer_config.hpp",
+      "native/src/writer_config.cpp",
+      "native/tests/migration/test_t07.cpp",
       "native/tests/migration/test_t09.cpp"
     ],
     "verification_ids": [

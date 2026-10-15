@@ -1,746 +1,141 @@
-// config.hpp — the config bridge: nanobind dict → typed writer configs.
+// config.hpp — the nanobind adapter side of the config bridge (task T07).
 //
-// `tools.native_config.project(env)` emits {'schema': 2, '<writer>': {...}}
-// carrying ONLY the fields the ported writers read. An empty dict leaves
-// every writer disabled (the Stepper(path) contract stays intact). Every
-// required key that is missing raises std::invalid_argument naming the
-// key — nanobind's default exception translator surfaces it as ValueError.
-// Readers validate exact keys, original scalar/sequence types and finiteness.
-// Physical invariants also remain enforced by each typed writer constructor.
-// Schema 1 migrates resolved fork metadata without reconstructing defaults.
+// The typed result (nativecfg::WriterConfig), the section/key tables and
+// the whole decode live in writer_config.hpp — Python-free and shared
+// with the owned bike::io::Value boundary. This header supplies only the
+// nanobind node: NbNode delegates every scalar/sequence/mapping read to
+// the existing wire:: readers so the Python-facing strictness
+// (numbers.Real/Integral membership, PyNumber_Index, ndarray bool
+// rejection, MemoryError passthrough) is unchanged, while the checks the
+// reads feed are the same code the Value decode runs.
+//
+// An empty dict leaves every writer disabled (the Stepper(path) contract
+// stays intact); native_config_from_dict mirrors decode(Value)'s empty
+// object → empty WriterConfig rule so no caller needs its own check.
+// Every missing
+// required key or unknown key raises std::invalid_argument naming the
+// path — nanobind's default exception translator surfaces it as
+// ValueError. Physical invariants remain enforced by each typed writer
+// constructor through the shared nativecfg::validate.
 #pragma once
 
-#include <algorithm>
-#include <array>
+#include <cstdint>
 #include <optional>
-#include <stdexcept>
+#include <span>
 #include <string>
-#include <vector>
+#include <string_view>
 
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
-#include <nanobind/stl/vector.h>
-#include "diag.hpp"
-#include "config_types.hpp"
-#include "config_validation.hpp"
 #include "binding_readers.hpp"
-#include "drivetrain/drive_binding.hpp"
+#include "writer_config.hpp"
 
 namespace nb = nanobind;
 
 namespace nativecfg {
-    // --- dict readers ----------------------------------------------------------
-
     namespace detail {
-        // The one-section-per-branch chain keeps every branch's path
-        // temporaries live under -O0 codegen, so this frame legitimately
-        // exceeds the 8KB guard whose target is the per-step realtime
-        // path — config projection runs once at construction, same
-        // rationale as the binding glue frames in test_contracts.cpp.
-        NATIVE_DIAG_PUSH
-        NATIVE_DIAG_IGNORE("-Wframe-larger-than")
-        inline void section_keys(const nb::dict &d, std::string_view name, std::string_view public_path = {}) {
-            if (name == "config") {
-                constexpr auto required = wire::keys("schema");
-                constexpr auto optional = wire::keys("drive", "cruise", "suspension", "brake", "resistance", "tire", "rider_forces", "rider_contacts");
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "suspension") {
-                constexpr auto required = wire::keys("physics_mode", "joints", "air_spring", "fork_damper", "shock_damper", "coil", "end_stops");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "suspension.joints") {
-                constexpr auto required = wire::keys("fork", "shock");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "suspension.air_spring") {
-                constexpr auto required = wire::keys("stanchion_inner_diam_mm", "total_travel_mm", "pos_chamber_length_mm", "neg_chamber_length_mm", "token_volume_cm3", "max_tokens", "gamma", "atm_pressure_pa", "num_tokens", "gauge_pressure_psi");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "suspension.fork_damper") {
-                constexpr auto required = wire::keys("max_hsc", "max_lsc", "max_reb", "hsc_clicks", "lsc_clicks", "rebound_clicks", "c_lsc_min", "c_lsc_max", "c_hsc_min", "c_hsc_max", "c_reb_min", "c_reb_max", "v_knee_comp", "v_knee_reb", "total_travel_mm", "hbo_start_mm", "c_hbo_base");
-                constexpr auto optional = wire::keys("legacy_behavior");
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "suspension.shock_damper") {
-                constexpr auto required = wire::keys("max_hsc", "max_lsc", "max_reb", "hsc_clicks", "lsc_clicks", "rebound_clicks", "c_lsc_min", "c_lsc_max", "c_hsc_min", "c_hsc_max", "c_reb_min", "c_reb_max", "v_knee_comp", "v_knee_reb", "total_stroke_mm", "max_hbo", "hbo_clicks", "lockout_firm", "legacy_behavior", "hbo_start_mm", "c_hbo_min", "c_hbo_max", "lockout_preload_n", "lockout_stiffness");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "suspension.coil") {
-                constexpr auto required = wire::keys("rate_n_m", "preload_mm", "stroke_mm", "bumper_length_mm", "bumper_peak_n", "legacy_behavior");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "suspension.end_stops") {
-                constexpr auto required = wire::keys("stiffness_n_m", "damping_n_s_m");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "brake") {
-                constexpr auto required = wire::keys("torque_ceiling_nm", "taper_radps");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "cruise") {
-                constexpr auto required = wire::keys("target_speed_kmh", "kp_nm_per_mps", "ki_nm_per_mps_s", "torque_ceiling_nm");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "resistance") {
-                constexpr auto required = wire::keys("crr", "rolling_taper_rad_s", "rho_kg_m3", "cda_m2", "wind_world_mps", "point_body_m", "bodies");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "resistance.bodies") {
-                constexpr auto required = wire::keys("frame", "front_wheel", "rear_wheel");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire") {
-                constexpr auto required = wire::keys("backend", "surface_mode", "front", "rear", "significant_delta_m", "significance_fraction", "distinct_normal_deg");
-                constexpr auto optional = wire::keys("surface_map", "distributed", "pneumatic");
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.front" || name == "tire.rear") {
-                // material is backend-conditional: required for compliant_2d,
-                // forbidden for distributed_2d_reference and pneumatic —
-                // the domain rule lives in validate(TireConfig), the key
-                // table stays open.
-                constexpr auto required = wire::keys("tangent_k_n_m", "mu", "relaxation_length_m");
-                constexpr auto optional = wire::keys("material");
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.front.material" || name == "tire.rear.material") {
-                constexpr auto required = wire::keys("radial_k_n_m", "radial_c_ns_m", "pressure_pa_gauge", "provenance", "valid_load_range_n");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.distributed") {
-                constexpr auto required = wire::keys("station_count", "density", "front", "rear");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.distributed.front" || name == "tire.distributed.rear") {
-                constexpr auto required = wire::keys("density", "fitting_dataset_id", "valid_load_range_n", "valid_deflection_range_m", "calibration_status");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.pneumatic") {
-                constexpr auto required = wire::keys("tier", "n_rays", "half_angle_deg", "discretised_brush", "timestep_s", "front", "rear", "profile");
-                constexpr auto optional = wire::keys("surface");
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.pneumatic.front" || name == "tire.pneumatic.rear") {
-                // The 18 TyreSpecs fields (physics/tyre.py:64-78).
-                constexpr auto required = wire::keys("name", "outer_radius_mm", "rim_radius_mm", "section_height_mm", "pressure_bar", "crr_reference", "casing_width_mm", "compressed_casing_mm", "area_factor", "carcass_stiffness_n_mm2", "contact_length_factor", "rate_stiffening", "rate_relaxation_s", "loss_factor", "hysteresis_rate_eps_mps", "relaxation_length_mm", "rim_stiffness_n_mm2", "tread_loss_crr");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.pneumatic.profile") {
-                constexpr auto required = wire::keys("x0_m", "dx_m", "z_m");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name.ends_with(".density")) {
-                // tire.distributed.density and each wheel's own density law.
-                constexpr auto required = wire::keys("knots_m", "stiffness_n_m", "damping_ns_m", "provenance");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name.ends_with(".surface")) {
-                constexpr auto required = wire::keys("name", "mu_peak", "mu_slide", "slip_stiffness_per_load", "stribeck_speed_mps");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.surface_map") {
-                constexpr auto required = wire::keys("surface", "sections");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "tire.surface_map.sections") {
-                constexpr auto required = wire::keys("start_m", "end_m", "surface");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "rider_forces") {
-                constexpr auto required = wire::keys("paths");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "rider_forces.paths") {
-                constexpr auto required = wire::keys("name", "joint", "stiffness_n_m", "damping_ns_m", "preload_deflection_m", "offset_m", "unilateral");
-                constexpr auto optional = wire::keys();
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-            if (name == "rider_contacts") {
-                constexpr auto required = wire::keys("arm_reach_m", "saddle_patch_half_length_m", "pedal_patch_half_length_m", "support_pad_radius_m", "support_k_n_m", "support_c_ns_m", "pedal_c_ns_m", "support_tangent_k_n_m", "support_mu", "support_length_m", "grip_k_n_m", "grip_c_ns_m", "grip_release_distance_m", "grip_capture_distance_m", "grip_capture_speed_mps", "pedal_attachment", "saddle_attachment", "grip_attachment");
-                constexpr auto optional = wire::keys("grip_pair_force_limit_n");
-                wire::exact_keys(d, required, optional, public_path.empty() ? (name == "config" ? "config" : "config." + std::string(name)) : std::string(public_path));
-                return;
-            }
-        }
-        NATIVE_DIAG_POP
+        // The nanobind flavor of the shared decode node (writer_config.hpp
+        // documents the protocol). Every read delegates to the existing
+        // wire:: reader, preserving the nb-side diagnostics verbatim.
+        struct NbNode {
+            nb::object value;
 
+            [[nodiscard]] bool is_none() const { return value.is_none(); }
+            [[nodiscard]] bool is_mapping() const {
+                return nb::isinstance<nb::dict>(value);
+            }
+            [[nodiscard]] bool contains(std::string_view key) const {
+                return nb::borrow<nb::dict>(value).contains(
+                    nb::str(key.data(), key.size()));
+            }
+            [[nodiscard]] NbNode member(std::string_view key) const {
+                return {nb::object(
+                    nb::borrow<nb::dict>(value)[nb::str(key.data(),
+                                                       key.size())])};
+            }
+            // const& — the sink is invoked once per member, so it must
+            // stay invocable for the whole iteration (no forwarding).
+            template <class F>
+            void each_key(std::string_view path, const F &f) const {
+                for (auto const item: nb::borrow<nb::dict>(value))
+                    f(wire::string(item.first, path));
+            }
+            [[nodiscard]] bool boolean(std::string_view path) const {
+                return wire::boolean(value, path);
+            }
+            [[nodiscard]] double real(std::string_view path) const {
+                return wire::real(value, path);
+            }
+            [[nodiscard]] double finite_real(std::string_view path) const {
+                return wire::finite_real(value, path);
+            }
+            [[nodiscard]] std::optional<double> optional_real(
+                std::string_view path) const {
+                return wire::optional_real(value, path);
+            }
+            [[nodiscard]] std::int64_t integer(std::string_view path) const {
+                return wire::integer(value, path);
+            }
+            [[nodiscard]] int integer32(std::string_view path) const {
+                return wire::integer32(value, path);
+            }
+            [[nodiscard]] std::string string(std::string_view path) const {
+                return wire::string(value, path);
+            }
+            [[nodiscard]] Seq<NbNode> sequence(std::string_view path) const {
+                return {{nb::borrow<nb::object>(
+                    wire::sequence(value, path))}};
+            }
+            [[nodiscard]] std::size_t seq_size() const {
+                return nb::borrow<nb::list>(value).size();
+            }
+            [[nodiscard]] NbNode seq_at(std::size_t index) const {
+                return {nb::object(nb::borrow<nb::list>(value)[index])};
+            }
+            void numeric_gate(std::string_view path) const {
+                wire::numeric_array_type(value, path);
+            }
+        };
+
+        // Legacy 3-arg spellings for binding.cpp's non-config dict reads
+        // (the cruise_state setter); new code uses the Dict<N> readers.
         inline nb::object req(const nb::dict &d, const char *section,
                               const char *key) {
             if (!d.contains(key))
                 throw std::invalid_argument(
-                    "native config: missing key '" + std::string(section) + "." +
-                    key + "'");
+                    "native config: missing key '" + std::string(section) +
+                    "." + key + "'");
             return d[key];
         }
 
-        inline nb::dict req_dict(const nb::dict &d, const char *section,
-                                 const char *key) {
-            nb::object const v = req(d, section, key);
-            if (!nb::isinstance<nb::dict>(v))
-                throw std::invalid_argument(
-                    "native config: '" + std::string(section) + "." + key +
-                    "' must be a dict");
-            const auto result = nb::borrow<nb::dict>(v);
-            const std::string name = std::string(section) == "config" ? key : std::string(section) + "." + key;
-            section_keys(result, name);
-            return result;
-        }
-
         inline std::string path(const char *s, const char *k) {
-            return std::string(s).starts_with("config") ? std::string(s) + "." + k : "config." + std::string(s) + "." + k;
+            return std::string(s).starts_with("config")
+                       ? std::string(s) + "." + k
+                       : "config." + std::string(s) + "." + k;
         }
 
-        inline double req_f64(const nb::dict &d, const char *s, const char *k) {
+        inline double req_f64(const nb::dict &d, const char *s,
+                              const char *k) {
             return wire::finite_real(req(d, s, k), path(s, k));
         }
-        inline int req_int(const nb::dict &d, const char *s, const char *k) {
-            return wire::integer32(req(d, s, k), path(s, k));
-        }
-        inline bool req_bool(const nb::dict &d, const char *s, const char *k) {
-            return wire::boolean(req(d, s, k), path(s, k));
-        }
-        inline std::string req_str(const nb::dict &d, const char *s, const char *k) {
-            return wire::string(req(d, s, k), path(s, k));
-        }
-        inline std::array<double, 3> req_vec3(const nb::dict &d, const char *s, const char *k) {
-            return wire::fixed<3>(req(d, s, k), path(s, k));
-        }
-        inline std::array<double, 2> req_vec2(const nb::dict &d, const char *s, const char *k) {
-            return wire::fixed<2>(req(d, s, k), path(s, k));
-        }
-
-        // Returns the parsed struct by value deliberately; -Wlarge-by-value-copy
-        // exists to flag by-value *parameters*, and clang gives no param/return split.
-        NATIVE_DIAG_PUSH
-        NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
-        inline DamperCore damper_core(const nb::dict &d, const char *s) {
-            DamperCore c{};
-            c.max_hsc = req_int(d, s, "max_hsc");
-            c.max_lsc = req_int(d, s, "max_lsc");
-            c.max_reb = req_int(d, s, "max_reb");
-            // BaseDamper.__init__ clamps clicks into range; project() emits the
-            // resolved attributes, so this is a no-op for well-formed input and
-            // keeps hand-built dicts on the same code path.
-            c.hsc_clicks = std::max(0, std::min(c.max_hsc, req_int(d, s, "hsc_clicks")));
-            c.lsc_clicks = std::max(0, std::min(c.max_lsc, req_int(d, s, "lsc_clicks")));
-            c.rebound_clicks =
-                    std::max(0, std::min(c.max_reb, req_int(d, s, "rebound_clicks")));
-            c.c_lsc_min = req_f64(d, s, "c_lsc_min");
-            c.c_lsc_max = req_f64(d, s, "c_lsc_max");
-            c.c_hsc_min = req_f64(d, s, "c_hsc_min");
-            c.c_hsc_max = req_f64(d, s, "c_hsc_max");
-            c.c_reb_min = req_f64(d, s, "c_reb_min");
-            c.c_reb_max = req_f64(d, s, "c_reb_max");
-            c.v_knee_comp = req_f64(d, s, "v_knee_comp");
-            c.v_knee_reb = req_f64(d, s, "v_knee_reb");
-            return c;
-        }
-
-        NATIVE_DIAG_POP
     } // namespace detail
 
-    inline SuspensionConfig suspension_from_dict(const nb::dict &top, int schema) {
-        const char *s = "suspension";
-        const nb::dict d = detail::req_dict(top, "config", s);
-        SuspensionConfig c;
-        c.physics_mode = detail::req_str(d, s, "physics_mode");
-        if (c.physics_mode != "legacy" && c.physics_mode != "physical")
-            throw std::invalid_argument(
-                "config.suspension.physics_mode must be 'legacy' or "
-                "'physical'");
-        {
-            const nb::dict j = detail::req_dict(d, s, "joints");
-            c.fork_joint = detail::req_str(j, "suspension.joints", "fork");
-            c.shock_joint = detail::req_str(j, "suspension.joints", "shock");
-        }
-        {
-            const nb::dict a = detail::req_dict(d, s, "air_spring");
-            const char *sa = "suspension.air_spring";
-            c.air_spring.specs = {
-                .stanchion_inner_diam_mm = detail::req_f64(a, sa, "stanchion_inner_diam_mm"),
-                .total_travel_mm = detail::req_f64(a, sa, "total_travel_mm"),
-                .pos_chamber_length_mm = detail::req_f64(a, sa, "pos_chamber_length_mm"),
-                .neg_chamber_length_mm = detail::req_f64(a, sa, "neg_chamber_length_mm"),
-                .token_volume_cm3 = detail::req_f64(a, sa, "token_volume_cm3"),
-                .max_tokens = detail::req_int(a, sa, "max_tokens"),
-                .gamma = detail::req_f64(a, sa, "gamma"),
-                .atm_pressure_pa = detail::req_f64(a, sa, "atm_pressure_pa"),
-            };
-            // ForkAirSpring.__init__ clamps num_tokens into [0, max_tokens].
-            c.air_spring.num_tokens = std::max(
-                0, std::min(c.air_spring.specs.max_tokens,
-                            detail::req_int(a, sa, "num_tokens")));
-            c.air_spring.gauge_pressure_psi =
-                    detail::req_f64(a, sa, "gauge_pressure_psi");
-        }
-        {
-            const nb::dict f = detail::req_dict(d, s, "fork_damper");
-            const char *sf = "suspension.fork_damper";
-            c.fork_damper.core = detail::damper_core(f, sf);
-            c.fork_damper.total_travel_mm = detail::req_f64(f, sf, "total_travel_mm");
-            c.fork_damper.hbo_start_mm = detail::req_f64(f, sf, "hbo_start_mm");
-            c.fork_damper.c_hbo_base = detail::req_f64(f, sf, "c_hbo_base");
-            if (schema == 1 && f.contains("legacy_behavior"))
-                wire::invalid("config.suspension.fork_damper.legacy_behavior", "unknown schema-1 key");
-            // Schema 1 retains the historical resolved branch; never reconstruct defaults.
-            c.fork_damper.legacy_behavior = schema == 1
-                ? c.fork_damper.hbo_start_mm == 160.0
-                : detail::req_bool(f, sf, "legacy_behavior");
-        }
-        {
-            const nb::dict h = detail::req_dict(d, s, "shock_damper");
-            const char *sh = "suspension.shock_damper";
-            c.shock_damper.core = detail::damper_core(h, sh);
-            c.shock_damper.total_stroke_mm = detail::req_f64(h, sh, "total_stroke_mm");
-            c.shock_damper.max_hbo = detail::req_int(h, sh, "max_hbo");
-            c.shock_damper.hbo_clicks = std::max(
-                0, std::min(c.shock_damper.max_hbo,
-                            detail::req_int(h, sh, "hbo_clicks")));
-            c.shock_damper.lockout_firm = detail::req_bool(h, sh, "lockout_firm");
-            c.shock_damper.legacy_behavior =
-                    detail::req_bool(h, sh, "legacy_behavior");
-            c.shock_damper.hbo_start_mm = detail::req_f64(h, sh, "hbo_start_mm");
-            c.shock_damper.c_hbo_min = detail::req_f64(h, sh, "c_hbo_min");
-            c.shock_damper.c_hbo_max = detail::req_f64(h, sh, "c_hbo_max");
-            c.shock_damper.lockout_preload_n =
-                    detail::req_f64(h, sh, "lockout_preload_n");
-            c.shock_damper.lockout_stiffness =
-                    detail::req_f64(h, sh, "lockout_stiffness");
-        }
-        {
-            const nb::dict k = detail::req_dict(d, s, "coil");
-            const char *sk = "suspension.coil";
-            c.coil = {
-                .rate_n_m = detail::req_f64(k, sk, "rate_n_m"),
-                .preload_mm = detail::req_f64(k, sk, "preload_mm"),
-                .stroke_mm = detail::req_f64(k, sk, "stroke_mm"),
-                .bumper_length_mm = detail::req_f64(k, sk, "bumper_length_mm"),
-                .bumper_peak_n = detail::req_f64(k, sk, "bumper_peak_n"),
-                .legacy_behavior = detail::req_bool(k, sk, "legacy_behavior"),
-            };
-        }
-        {
-            const nb::dict e = detail::req_dict(d, s, "end_stops");
-            const char *se = "suspension.end_stops";
-            c.end_stops = {
-                .stiffness_n_m = detail::req_f64(e, se, "stiffness_n_m"),
-                .damping_n_s_m = detail::req_f64(e, se, "damping_n_s_m"),
-            };
-        }
-        return c;
+    // Whole-config reader: an empty dict disables every writer (the
+    // decode(Value) empty-object rule, mirrored); a non-empty one must
+    // name the schema and may carry each writer's section — the shared
+    // decode_root.
+    inline WriterConfig native_config_from_dict(const nb::dict &d) {
+        if (d.empty()) return {};
+        return detail::decode_root(
+            detail::Dict<detail::NbNode>{
+                .value = detail::NbNode{nb::borrow<nb::object>(d)},
+                .path = "config"});
     }
 
-    inline BrakeConfig brake_from_dict(const nb::dict &top) {
-        const char *s = "brake";
-        const nb::dict d = detail::req_dict(top, "config", s);
-        BrakeConfig c{};
-        c.torque_ceiling_nm = detail::req_f64(d, s, "torque_ceiling_nm");
-        c.taper_radps = detail::req_f64(d, s, "taper_radps");
-        return c;
-    }
-
-    inline ResistanceConfig resistance_from_dict(const nb::dict &top) {
-        const char *s = "resistance";
-        const nb::dict d = detail::req_dict(top, "config", s);
-        ResistanceConfig c;
-        c.crr = detail::req_f64(d, s, "crr");
-        c.rolling_taper_rad_s = detail::req_f64(d, s, "rolling_taper_rad_s");
-        c.rho_kg_m3 = detail::req_f64(d, s, "rho_kg_m3");
-        c.cda_m2 = detail::req_f64(d, s, "cda_m2");
-        c.wind_world_mps = detail::req_vec3(d, s, "wind_world_mps");
-        c.point_body_m = detail::req_vec3(d, s, "point_body_m");
-        const nb::dict b = detail::req_dict(d, s, "bodies");
-        const char *sb = "resistance.bodies";
-        c.frame_body = detail::req_str(b, sb, "frame");
-        c.front_wheel_body = detail::req_str(b, sb, "front_wheel");
-        c.rear_wheel_body = detail::req_str(b, sb, "rear_wheel");
-        return c;
-    }
-
-    inline SurfaceSpec surface_spec_from_dict(const nb::dict &d, const char *s) {
-        detail::section_keys(d, s);
-        SurfaceSpec c;
-        c.name = detail::req_str(d, s, "name");
-        c.mu_peak = detail::req_f64(d, s, "mu_peak");
-        c.mu_slide = detail::req_f64(d, s, "mu_slide");
-        c.slip_stiffness_per_load =
-                detail::req_f64(d, s, "slip_stiffness_per_load");
-        c.stribeck_speed_mps = detail::req_f64(d, s, "stribeck_speed_mps");
-        return c;
-    }
-
-    inline TireParams tire_params_from_dict(const nb::dict &d, const char *s) {
-        detail::section_keys(d, s);
-        TireParams p;
-        // material rides the wire iff the backend is compliant_2d — the
-        // distributed backend's hinge-density law lives under
-        // tire.distributed. Parse what arrives; validate(TireConfig) owns
-        // the per-backend presence rule.
-        if (d.contains("material")) {
-            const nb::dict m = detail::req_dict(d, s, "material");
-            const std::string sm_path = std::string(s) + ".material";
-            const char *sm = sm_path.c_str();
-            p.material = TireMaterial{
-                .radial_k_n_m = detail::req_f64(m, sm, "radial_k_n_m"),
-                .radial_c_ns_m = detail::req_f64(m, sm, "radial_c_ns_m"),
-                .pressure_pa_gauge = detail::req_f64(m, sm, "pressure_pa_gauge"),
-                .provenance = detail::req_str(m, sm, "provenance"),
-                .valid_load_range_n = detail::req_vec2(m, sm, "valid_load_range_n"),
-            };
-        }
-        p.tangent_k_n_m = detail::req_f64(d, s, "tangent_k_n_m");
-        p.mu = detail::req_f64(d, s, "mu");
-        p.relaxation_length_m = detail::req_f64(d, s, "relaxation_length_m");
-        return p;
-    }
-
-    inline HingeDensity hinge_density_from_dict(const nb::dict &d, const char *s) {
-        detail::section_keys(d, s);
-        return {
-            .knots_m = wire::vector(detail::req(d, s, "knots_m"),
-                                    detail::path(s, "knots_m")),
-            .stiffness_n_m = wire::vector(detail::req(d, s, "stiffness_n_m"),
-                                          detail::path(s, "stiffness_n_m")),
-            .damping_ns_m = detail::req_f64(d, s, "damping_ns_m"),
-            .provenance = detail::req_str(d, s, "provenance"),
-        };
-    }
-
-    inline DistributedMaterial distributed_material_from_dict(const nb::dict &d,
-                                                            const std::string &s) {
-        detail::section_keys(d, s);
-        DistributedMaterial m;
-        const std::string density_path = s + ".density";
-        m.density = hinge_density_from_dict(
-            detail::req_dict(d, s.c_str(), "density"), density_path.c_str());
-        m.fitting_dataset_id = detail::req_str(d, s.c_str(), "fitting_dataset_id");
-        m.valid_load_range_n = detail::req_vec2(d, s.c_str(), "valid_load_range_n");
-        m.valid_deflection_range_m =
-                detail::req_vec2(d, s.c_str(), "valid_deflection_range_m");
-        m.calibration_status = detail::req_str(d, s.c_str(), "calibration_status");
-        return m;
-    }
-
-    // The 18 TyreSpecs fields under tire.pneumatic.{front,rear}
-    // (physics/tyre.py:64-78). The __post_init__ domains run in
-    // validate(PneumaticTyreSpec) after the struct is filled — same
-    // split as the Python schema's _check_tyre_specs.
-    inline PneumaticTyreSpec pneumatic_tyre_from_dict(const nb::dict &d,
-                                                      const char *s) {
-        detail::section_keys(d, s);
-        PneumaticTyreSpec t;
-        t.name = detail::req_str(d, s, "name");
-        t.outer_radius_mm = detail::req_f64(d, s, "outer_radius_mm");
-        t.rim_radius_mm = detail::req_f64(d, s, "rim_radius_mm");
-        t.section_height_mm = detail::req_f64(d, s, "section_height_mm");
-        t.pressure_bar = detail::req_f64(d, s, "pressure_bar");
-        t.crr_reference = detail::req_f64(d, s, "crr_reference");
-        t.casing_width_mm = detail::req_f64(d, s, "casing_width_mm");
-        t.compressed_casing_mm =
-                detail::req_f64(d, s, "compressed_casing_mm");
-        t.area_factor = detail::req_f64(d, s, "area_factor");
-        t.carcass_stiffness_n_mm2 =
-                detail::req_f64(d, s, "carcass_stiffness_n_mm2");
-        t.contact_length_factor =
-                detail::req_f64(d, s, "contact_length_factor");
-        t.rate_stiffening = detail::req_f64(d, s, "rate_stiffening");
-        t.rate_relaxation_s = detail::req_f64(d, s, "rate_relaxation_s");
-        t.loss_factor = detail::req_f64(d, s, "loss_factor");
-        t.hysteresis_rate_eps_mps =
-                detail::req_f64(d, s, "hysteresis_rate_eps_mps");
-        t.relaxation_length_mm =
-                detail::req_f64(d, s, "relaxation_length_mm");
-        t.rim_stiffness_n_mm2 =
-                detail::req_f64(d, s, "rim_stiffness_n_mm2");
-        t.tread_loss_crr = detail::req_f64(d, s, "tread_loss_crr");
-        return t;
-    }
-
-    // tire.pneumatic (native/config.py::_pneumatic_section): the tier
-    // name plus its resolved TIERS row, the presence-optional resolved
-    // surface, both TyreSpecs sides and the road profile. The section's
-    // domain rules (tier row equality, TyreSpecs and profile domains)
-    // run in validate(PneumaticConfig) at the end — the parser applies
-    // the same checks schema.py applies so a malformed wire fails at
-    // this boundary, and the writers re-check the shared validator.
-    inline PneumaticConfig pneumatic_from_dict(const nb::dict &d) {
-        const char *s = "tire.pneumatic";
-        detail::section_keys(d, s);
-        PneumaticConfig c;
-        c.tier = detail::req_str(d, s, "tier");
-        if (c.tier != "fast" && c.tier != "detailed")
-            throw std::invalid_argument(
-                "config.tire.pneumatic.tier must be 'fast' or "
-                "'detailed'");
-        c.n_rays = detail::req_int(d, s, "n_rays");
-        c.half_angle_deg = detail::req_f64(d, s, "half_angle_deg");
-        c.discretised_brush = detail::req_bool(d, s, "discretised_brush");
-        c.timestep_s = detail::req_f64(d, s, "timestep_s");
-        if (d.contains("surface"))
-            c.surface = surface_spec_from_dict(
-                detail::req_dict(d, s, "surface"), "tire.pneumatic.surface");
-        c.front = pneumatic_tyre_from_dict(
-            detail::req_dict(d, s, "front"), "tire.pneumatic.front");
-        c.rear = pneumatic_tyre_from_dict(
-            detail::req_dict(d, s, "rear"), "tire.pneumatic.rear");
-        {
-            const nb::dict p = detail::req_dict(d, s, "profile");
-            const char *sp = "tire.pneumatic.profile";
-            c.profile = PneumaticProfile{
-                .x0_m = detail::req_f64(p, sp, "x0_m"),
-                .dx_m = detail::req_f64(p, sp, "dx_m"),
-                .z_m = wire::vector(detail::req(p, sp, "z_m"),
-                                    "config.tire.pneumatic.profile.z_m"),
-            };
-        }
-        validate(c);
-        return c;
-    }
-
-    inline TireConfig tire_from_dict(const nb::dict &top) {
-        const char *s = "tire";
-        const nb::dict d = detail::req_dict(top, "config", s);
-        TireConfig c;
-        c.backend = detail::req_str(d, s, "backend");
-        // All three backends are accepted at the config layer; the writer
-        // boundary stays honest about which law it implements
-        // (compliant_2d and distributed_2d_reference today — the pneumatic
-        // writer lands with the Stepper dispatch task).
-        if (c.backend != "compliant_2d" && c.backend != "distributed_2d_reference" &&
-            c.backend != "pneumatic")
-            throw std::invalid_argument(
-                "config.tire.backend must be 'compliant_2d', "
-                "'distributed_2d_reference' or 'pneumatic'");
-        c.surface_mode = detail::req_str(d, s, "surface_mode");
-        if (c.surface_mode != "configured" && c.surface_mode != "track")
-            throw std::invalid_argument(
-                "config.tire.surface_mode must be 'configured' or "
-                "'track'");
-        c.front = tire_params_from_dict(
-            detail::req_dict(d, s, "front"), "tire.front");
-        c.rear = tire_params_from_dict(
-            detail::req_dict(d, s, "rear"), "tire.rear");
-        c.significant_delta_m = detail::req_f64(d, s, "significant_delta_m");
-        c.significance_fraction =
-                detail::req_f64(d, s, "significance_fraction");
-        c.distinct_normal_deg = detail::req_f64(d, s, "distinct_normal_deg");
-        if (d.contains("distributed")) {
-            const nb::dict dist = detail::req_dict(d, s, "distributed");
-            const char *sd = "tire.distributed";
-            c.distributed = DistributedConfig{
-                .station_count = detail::req_int(dist, sd, "station_count"),
-                .density = hinge_density_from_dict(
-                    detail::req_dict(dist, sd, "density"),
-                    "tire.distributed.density"),
-                .front = distributed_material_from_dict(
-                    detail::req_dict(dist, sd, "front"), "tire.distributed.front"),
-                .rear = distributed_material_from_dict(
-                    detail::req_dict(dist, sd, "rear"), "tire.distributed.rear"),
-            };
-        }
-        if (c.surface_mode == "track" || d.contains("surface_map")) {
-            const nb::dict sm =
-                    detail::req_dict(d, s, "surface_map");
-            const char *smn = "tire.surface_map";
-            SurfaceMap map;
-            map.surface = surface_spec_from_dict(
-                detail::req_dict(sm, smn, "surface"),
-                "tire.surface_map.surface");
-            const nb::object raw = detail::req(sm, smn, "sections");
-            const auto sections = wire::sequence(raw, "config.tire.surface_map.sections");
-            std::size_t section_index = 0;
-            for (nb::handle const item: sections) {
-                if (!nb::isinstance<nb::dict>(item))
-                    throw std::invalid_argument(
-                        "native config: 'tire.surface_map.sections' entries "
-                        "must be dicts");
-                const nb::dict sec = nb::borrow<nb::dict>(item);
-                const std::string section_path = "tire.surface_map.sections." + std::to_string(section_index++);
-                const char *ss = section_path.c_str();
-                detail::section_keys(sec, "tire.surface_map.sections", "config." + section_path);
-                map.sections.push_back({
-                    .start_m = detail::req_f64(sec, ss, "start_m"),
-                    .end_m = detail::req_f64(sec, ss, "end_m"),
-                    .surface = surface_spec_from_dict(
-                        detail::req_dict(sec, ss, "surface"),
-                        (section_path + ".surface").c_str()),
-                });
-            }
-            c.surface_map = std::move(map);
-        }
-        // tire.pneumatic follows the presence rule schema.py::
-        // validate_config applies (tire.distributed's mirror): required
-        // iff the backend selects it, forbidden otherwise; under a
-        // non-'track' surface mode the resolved surface must ship inside
-        // the section. validate(TireConfig) repeats the rule for
-        // programmatically built configs.
-        if (c.backend == "pneumatic") {
-            c.pneumatic = pneumatic_from_dict(detail::req_dict(d, s, "pneumatic"));
-            if (c.surface_mode != "track" && !c.pneumatic->surface)
-                wire::invalid("config.tire.pneumatic.surface",
-                              "missing required key");
-        } else if (d.contains("pneumatic")) {
-            wire::invalid("config.tire.pneumatic", "unknown key");
-        }
-        return c;
-    }
-
-    inline RiderForcesConfig rider_forces_from_dict(const nb::dict &top) {
-        const char *s = "rider_forces";
-        const nb::dict d = detail::req_dict(top, "config", s);
-        RiderForcesConfig c;
-        const nb::object raw = detail::req(d, s, "paths");
-        const auto paths = wire::sequence(raw, "config.rider_forces.paths");
-        std::size_t path_index = 0;
-        for (nb::handle const item: paths) {
-            if (!nb::isinstance<nb::dict>(item))
-                throw std::invalid_argument(
-                    "native config: 'rider_forces.paths' entries must be dicts");
-            const nb::dict p = nb::borrow<nb::dict>(item);
-            const std::string path = "rider_forces.paths." + std::to_string(path_index++);
-            const char *sp = path.c_str();
-            detail::section_keys(p, "rider_forces.paths", "config." + path);
-            c.paths.push_back({
-                .name = detail::req_str(p, sp, "name"),
-                .joint = detail::req_str(p, sp, "joint"),
-                .stiffness_n_m = detail::req_f64(p, sp, "stiffness_n_m"),
-                .damping_ns_m = detail::req_f64(p, sp, "damping_ns_m"),
-                .preload_deflection_m = detail::req_f64(p, sp, "preload_deflection_m"),
-                .offset_m = detail::req_f64(p, sp, "offset_m"),
-                .unilateral = detail::req_bool(p, sp, "unilateral"),
-            });
-        }
-        return c;
-    }
-
-    // rider_contacts (T3b-1): the ArticulatedConfig subset
-    // RiderContactApplier reads, plus the pose-resolved arm_reach_m. The
-    // closed-set parses name the field on rejection like the
-    // ArticulatedConfig.__post_init__ membership gates they mirror.
-    inline rider::RiderContactsConfig rider_contacts_from_dict(const nb::dict &top) {
-        const char *s = "rider_contacts";
-        const nb::dict d = detail::req_dict(top, "config", s);
-        rider::RiderContactsConfig c;
-        c.arm_reach_m = detail::req_f64(d, s, "arm_reach_m");
-        c.saddle_patch_half_length_m = detail::req_f64(d, s, "saddle_patch_half_length_m");
-        c.pedal_patch_half_length_m = detail::req_f64(d, s, "pedal_patch_half_length_m");
-        c.support_pad_radius_m = detail::req_f64(d, s, "support_pad_radius_m");
-        c.support_k_n_m = detail::req_f64(d, s, "support_k_n_m");
-        c.support_c_ns_m = detail::req_f64(d, s, "support_c_ns_m");
-        c.pedal_c_ns_m = detail::req_f64(d, s, "pedal_c_ns_m");
-        c.support_tangent_k_n_m = detail::req_f64(d, s, "support_tangent_k_n_m");
-        c.support_mu = detail::req_f64(d, s, "support_mu");
-        c.support_length_m = detail::req_f64(d, s, "support_length_m");
-        c.grip_k_n_m = detail::req_f64(d, s, "grip_k_n_m");
-        c.grip_c_ns_m = detail::req_f64(d, s, "grip_c_ns_m");
-        c.grip_release_distance_m = detail::req_f64(d, s, "grip_release_distance_m");
-        c.grip_capture_distance_m = detail::req_f64(d, s, "grip_capture_distance_m");
-        c.grip_capture_speed_mps = detail::req_f64(d, s, "grip_capture_speed_mps");
-        if (d.contains("grip_pair_force_limit_n"))
-            c.grip_pair_force_limit_n = wire::optional_real(
-                d["grip_pair_force_limit_n"],
-                "config.rider_contacts.grip_pair_force_limit_n");
-        const auto pedal =
-            rider::pedal_attachment(detail::req_str(d, s, "pedal_attachment"));
-        if (!pedal)
-            wire::invalid("config.rider_contacts.pedal_attachment",
-                          "unknown attachment");
-        c.pedal_attachment = *pedal;
-        const auto saddle =
-            rider::saddle_attachment(detail::req_str(d, s, "saddle_attachment"));
-        if (!saddle)
-            wire::invalid("config.rider_contacts.saddle_attachment",
-                          "unknown attachment");
-        c.saddle_attachment = *saddle;
-        const auto grip =
-            rider::grip_attachment(detail::req_str(d, s, "grip_attachment"));
-        if (!grip)
-            wire::invalid("config.rider_contacts.grip_attachment",
-                          "unknown attachment");
-        c.grip_attachment = *grip;
-        return c;
-    }
-
-    // Whole-config reader: an empty dict disables every writer (checked by the
-    // caller before this runs); a non-empty one must name the schema and may
-    // carry each writer's section.
-    inline NativeConfig native_config_from_dict(const nb::dict &d) {
-        detail::section_keys(d, "config");
-        const int schema = detail::req_int(d, "config", "schema");
-        if (schema != 1 && schema != 2)
-            throw std::invalid_argument(
-                "config.schema: unsupported schema " + std::to_string(schema));
-        NativeConfig c;
-        if (d.contains("drive"))
-            c.drive = parse_drive_config(detail::req_dict(d, "config", "drive"));
-        if (d.contains("cruise")) {
-            const auto section = detail::req_dict(d, "config", "cruise");
-            c.cruise = CruiseConfig{
-                .target_speed_kmh = detail::req_f64(section, "cruise", "target_speed_kmh"),
-                .kp_nm_per_mps = detail::req_f64(section, "cruise", "kp_nm_per_mps"),
-                .ki_nm_per_mps_s = detail::req_f64(section, "cruise", "ki_nm_per_mps_s"),
-                .torque_ceiling_nm = detail::req_f64(section, "cruise", "torque_ceiling_nm")
-            };
-        }
-        if (d.contains("suspension"))
-            c.suspension = suspension_from_dict(d, schema);
-        if (d.contains("brake"))
-            c.brake = brake_from_dict(d);
-        if (d.contains("resistance"))
-            c.resistance = resistance_from_dict(d);
-        if (d.contains("tire"))
-            c.tire = tire_from_dict(d);
-        if (d.contains("rider_forces"))
-            c.rider_forces = rider_forces_from_dict(d);
-        if (d.contains("rider_contacts"))
-            c.rider_contacts = rider_contacts_from_dict(d);
-        return c;
+    // The configured-ctor adapter used by binding.cpp: the nb::handle
+    // surface keeps its mapping() check (None or a non-dict raises
+    // "config: expected dict") before the shared decode.
+    inline WriterConfig writer_config_from_handle(nb::handle config) {
+        return native_config_from_dict(wire::mapping(config, "config"));
     }
 } // namespace nativecfg

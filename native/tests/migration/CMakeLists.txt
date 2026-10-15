@@ -69,6 +69,30 @@ if(BIKE_ROOT_BUILD)
   bike_target_strict_policy(bike_migration_test)
 endif()
 
+# allocation_faults.cpp is the throwing-allocation override TU: it defines
+# replacement operator new/delete plus the counting seam, so it must land
+# in test binaries directly, never in a shipped library. Two consumers
+# share it — native_contract_tests (legacy graph) and migration_T07 —
+# and the ODR sweep compiles every compile-database entry once before a
+# combined relocatable link, so per-target duplicate compiles would
+# collide. One OBJECT library = one compile entry; each executable gets
+# the same object through $<TARGET_OBJECTS:...> exactly like a listed
+# source.
+add_library(bike_test_allocation_faults OBJECT ../allocation_faults.cpp)
+set_target_properties(bike_test_allocation_faults PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(bike_test_allocation_faults PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_test_allocation_faults PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(bike_test_allocation_faults)
+endif()
+
 add_executable(migration_T02 test_t02.cpp)
 set_target_properties(migration_T02 PROPERTIES
   CXX_STANDARD 23
@@ -217,6 +241,54 @@ if(BUILD_TESTING)
   add_test(NAME migration_T06 COMMAND migration_T06)
   set_tests_properties(migration_T06 PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T06>")
+endif()
+
+# T07 writer-config boundary regression: the typed WriterConfig decode
+# (writer_config.cpp) plus the Python-free Stepper construction path —
+# the shared core object set (bike_core / bike_native_contract_core) and
+# the pinned engine interceptor, the identical TUs the transition
+# extension links. No Python/nanobind include enters this target in
+# either graph: compiling test_t07.cpp against stepper.hpp +
+# writer_config.hpp is the include-closure contract itself.
+# The allocation-override object lands via $<TARGET_OBJECTS:...> — see the
+# bike_test_allocation_faults comment above for why the TU compiles once.
+add_executable(migration_T07 test_t07.cpp
+  $<TARGET_OBJECTS:bike_test_allocation_faults>)
+set_target_properties(migration_T07 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T07 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T07 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T07 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T07 PRIVATE bike_migration_test
+  "-framework Accelerate")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T07)
+  target_include_directories(migration_T07 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(migration_T07 PRIVATE bike_core bike_engine)
+  bike_rewrite_mujoco_load_name(migration_T07
+    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+else()
+  target_include_directories(migration_T07 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
+  target_link_libraries(migration_T07 PRIVATE
+    bike_native_contract_core bike_native_engine)
+  bike_rewrite_mujoco_load_name(migration_T07
+    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T07 COMMAND migration_T07)
+  set_tests_properties(migration_T07 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T07>")
 endif()
 
 # T03 build-contract regression: a CTest script test running the produced

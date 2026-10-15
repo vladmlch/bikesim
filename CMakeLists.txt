@@ -86,7 +86,14 @@ set(_bike_native_tests_dir "${CMAKE_CURRENT_SOURCE_DIR}/native/tests")
 # bike_core: the Python-free core object library — the identical TU set the
 # binding build shares as bike_native_contract_core, so the optional
 # extension and the standalone tests exercise the same core objects.
+# T07 moved three more TUs into the shared pure set: stepper.cpp (the
+# typed WriterConfig construction path), writers/rider_contacts.cpp and
+# writer_config.cpp (the owned bike::io::Value decode). They carry no
+# nanobind/Python edge — the binding-side callback recognizer stays in
+# binding.cpp behind stepper_detail::foreign_time_callback_probe().
 add_library(bike_core OBJECT
+  "${_bike_native_dir}/src/stepper.cpp"
+  "${_bike_native_dir}/src/writer_config.cpp"
   "${_bike_native_dir}/src/drivetrain/pedaling.cpp"
   "${_bike_native_dir}/src/drivetrain/chain.cpp"
   "${_bike_native_dir}/src/drivetrain/transmission.cpp"
@@ -105,6 +112,8 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/rider/contact_math.cpp"
   "${_bike_native_dir}/src/rider/support_geometry.cpp"
   "${_bike_native_dir}/src/rider/least_squares.cpp"
+  "${_bike_native_dir}/src/rider/attachment_wrench.cpp"
+  "${_bike_native_dir}/src/rider/equality_reactions.cpp"
   "${_bike_native_dir}/src/runtime/samples.cpp"
   "${_bike_native_dir}/src/runtime/wire.cpp"
   "${_bike_native_dir}/src/runtime/control.cpp"
@@ -115,7 +124,8 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/writers/tire_common.cpp"
   "${_bike_native_dir}/src/writers/tire.cpp"
   "${_bike_native_dir}/src/writers/distributed_tire.cpp"
-  "${_bike_native_dir}/src/writers/pneumatic_tire.cpp")
+  "${_bike_native_dir}/src/writers/pneumatic_tire.cpp"
+  "${_bike_native_dir}/src/writers/rider_contacts.cpp")
 set_target_properties(bike_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_target_strict_policy(bike_core)
 target_include_directories(bike_core SYSTEM PRIVATE

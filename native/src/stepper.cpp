@@ -2,15 +2,11 @@
 #include "cblas_abi.hpp"
 #include "engine_call.hpp"
 #include "validation.hpp"
-#include <bit>
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <dlfcn.h>
-#include <filesystem>
 #include <stdexcept>
-#include <nanobind/stl/string.h>
-#include "config.hpp"
+#include "writer_config.hpp"
 #include "writers/brake.hpp"
 #include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
@@ -61,8 +57,15 @@ namespace {
     }
 } // namespace
 
-Stepper::Stepper(const std::string &mjb_path, nanobind::handle config)
-    : Stepper(mjb_path, wire::mapping(config, "config")) {}
+namespace stepper_detail {
+    ForeignTimeCallbackProbe &foreign_time_callback_probe() noexcept {
+        // Function-local static: the bindings' module init installs the
+        // recognizer before any Stepper is built; a plain store is the
+        // whole contract (no post-publish mutation).
+        static ForeignTimeCallbackProbe installed = nullptr;
+        return installed;
+    }
+} // namespace stepper_detail
 
 Stepper::Stepper(const std::string &mjb_path) : m_(nullptr), d_(nullptr) {
     // Reject raw C timers before any engine operation can call them while a
@@ -83,15 +86,19 @@ Stepper::Stepper(const std::string &mjb_path) : m_(nullptr), d_(nullptr) {
     posvel_fresh_ = true;
 }
 
-Stepper::Stepper(const std::string &mjb_path, const nanobind::dict &config)
+Stepper::Stepper(const std::string &mjb_path,
+                 const nativecfg::WriterConfig &config)
     : Stepper(mjb_path) {
-    // Config-parse or writer-construction failure must not leak m_/d_:
-    // ~Stepper never runs for an object whose constructor throws.
+    // Decode happened at the boundary (nativecfg::decode for the owned
+    // Value wire, nativecfg::writer_config_from_handle for the nanobind
+    // adapter) BEFORE this constructor runs — the input here is already
+    // the typed WriterConfig. An all-absent config installs nothing (the
+    // Stepper(path) contract). Writer-construction failure must not leak
+    // m_/d_: ~Stepper never runs for an object whose constructor throws,
+    // and an early-out leaves the writers' owned state exactly as the
+    // unconfigured ctor left it.
+    const nativecfg::WriterConfig &cfg = config;
     try {
-        if (config.empty())
-            return; // no sections → every writer stays disabled
-        nativecfg::NativeConfig cfg =
-                nativecfg::native_config_from_dict(config);
         if (cfg.cruise)
             cruise_ = std::make_unique<CruiseWriter>(m_, *cfg.cruise);
         if (cfg.suspension)
@@ -197,55 +204,15 @@ void Stepper::refresh_time_callback_policy() {
         break;
     }
 
-    const nanobind::gil_scoped_acquire gil;
-    const nanobind::object callback =
-        nanobind::module_::import_("mujoco").attr("get_mjcb_time")();
-    if (!callback.is_none()) {
-        const nanobind::object cfunc_type =
-            nanobind::module_::import_("ctypes").attr("_CFuncPtr");
-        const bool raw_c_callback = nanobind::cast<bool>(
-            nanobind::module_::import_("builtins").attr("isinstance")(
-                callback, cfunc_type));
-        record(nullptr, !raw_c_callback);
-        return;
-    }
-
-    // MuJoCo's own extension modules install process-global mjcb_time owners
-    // in supported flows: _structs installs GetTime when a stock MjData is
-    // constructed (structs_wrappers.cc in tag 3.12.0), and _simulate installs
-    // the passive-viewer timer when mujoco.viewer.launch_passive builds its
-    // Simulate handle. Identify the callback's owning image against each
-    // pinned vendored module before calling it; direct foreign C timer
-    // pointers are not part of this owner.
-    static_assert(sizeof(mjfTime) == sizeof(const void *));
-    Dl_info image{};
-    // dladdr requires an object pointer on Apple platforms; this pinned ABI
-    // uses equal-sized function and object pointers for module identification.
-    // NOLINTNEXTLINE(bugprone-bitwise-pointer-cast)
-    const auto address = std::bit_cast<const void *>(current);
-    if (dladdr(address, &image) == 0 || image.dli_fname == nullptr) {
-        record(nullptr, false);
-        return;
-    }
-    for (const char *module_name : {"mujoco._structs", "mujoco._simulate"}) {
-        nanobind::object module;
-        try {
-            module = nanobind::module_::import_(module_name);
-        } catch (...) {
-            // An unimportable module cannot own the installed callback.
-            continue;
-        }
-        const std::string expected =
-            nanobind::cast<std::string>(module.attr("__file__"));
-        if (!std::filesystem::equivalent(image.dli_fname, expected)) {
-            continue;
-        }
-
-        // The vendored timers initialize a static steady-clock epoch. Do that
-        // before entering BIKE_NONBLOCKING: the first call takes a C++ guard
-        // lock.
-        static_cast<void>(current());
-        record(current, true);
+    // Foreign owner: classifying it needs the vendor Python runtime
+    // (mujoco.get_mjcb_time / the _structs/_simulate vendored timers), so
+    // the recognizer lives on the bindings side and is reached through
+    // stepper_detail::foreign_time_callback_probe(). With no interpreter
+    // the slot stays null and every foreign callback is unsafe.
+    if (const auto probe = stepper_detail::foreign_time_callback_probe()) {
+        const stepper_detail::ForeignTimeCallbackVerdict verdict =
+            probe(current);
+        record(verdict.allowed, verdict.unmarked_safe);
         return;
     }
     record(nullptr, false);

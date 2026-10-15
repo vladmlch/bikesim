@@ -43,6 +43,7 @@
 
 #include "../binding_arrays.hpp"
 #include "../binding_readers.hpp"
+#include "../config.hpp"
 #include "../diag.hpp"
 #include "../engine_call.hpp"
 #include "../rider/intent_wire.hpp"
@@ -981,7 +982,8 @@ void NativeRideRuntime::init(nb::handle model_path, nb::handle state) {
     if (sha256_file(path) != expected_model_digest(state))
         throw std::invalid_argument(
             "state.model_digest: model artifact bytes do not match");
-    stepper_ = std::make_unique<Stepper>(path, config_.writer_config);
+    stepper_ = std::make_unique<Stepper>(
+        path, nativecfg::writer_config_from_handle(config_.writer_config));
     bootstrap_ = parse_bootstrap(state, *stepper_->model(), *stepper_);
     physical_ = make_physical_step(*stepper_, config_);
     bootstrap_step_state_ = parse_step_state(bootstrap_);

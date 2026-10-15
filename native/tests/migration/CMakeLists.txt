@@ -414,6 +414,38 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T09>")
 endif()
 
+# T13 configuration-loading regression: TOML/JSON decode into the typed
+# records, _merge precedence + resolve_physics, referenced-asset resolution
+# against the declaring file, and the candidate TOML writer — the same
+# bike_configuration objects in both build graphs.
+add_executable(migration_T13 test_t13.cpp)
+set_target_properties(migration_T13 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T13 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T13 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T13 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T13 PRIVATE bike_migration_test
+  bike_configuration bike_platform)
+target_include_directories(migration_T13 SYSTEM PRIVATE
+  "${_migration_repo_root}/native/src")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T13)
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T13 COMMAND migration_T13)
+  set_tests_properties(migration_T13 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T13>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

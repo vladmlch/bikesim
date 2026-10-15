@@ -383,9 +383,21 @@ target_include_directories(bike_platform PRIVATE
 # standalone root build compiles as bike_configuration, here in the legacy
 # warning/hardening context. The JSON profile loaders read bounded regular
 # files through bike_platform; the schema/wire surfaces only touch bike_io.
+# Pinned tomlplusplus include for the T13 loader — same dependency-root
+# anchoring as RapidJSON; a missing tree is a configure-time acquisition
+# failure, never a fallback.
+set(_native_tomlplusplus_include
+  "${BIKE_DEPENDENCY_ROOT}/tomlplusplus-3.4.0/include")
+if(NOT IS_DIRECTORY "${_native_tomlplusplus_include}")
+  message(FATAL_ERROR
+    "pinned tomlplusplus include tree is missing: ${_native_tomlplusplus_include} — acquire the locked .deps before configure")
+endif()
 add_library(bike_configuration STATIC
   src/configuration/schema.cpp src/configuration/validate.cpp
-  src/configuration/fields.hpp src/configuration/model_config.hpp
+  src/configuration/load.cpp src/configuration/paths.cpp
+  src/configuration/profile_writer.cpp
+  src/configuration/fields.hpp src/configuration/load.hpp
+  src/configuration/model_config.hpp
   src/configuration/physical_config.hpp src/configuration/rider_spec.hpp
   src/configuration/suspension_spec.hpp src/configuration/wire_decode.hpp)
 set_target_properties(bike_configuration PROPERTIES
@@ -400,7 +412,8 @@ if(_native_contract_compile_definitions)
   target_compile_definitions(bike_configuration PRIVATE ${_native_contract_compile_definitions})
 endif()
 target_include_directories(bike_configuration SYSTEM PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${_native_rapidjson_include}")
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${_native_rapidjson_include}"
+  "${_native_tomlplusplus_include}")
 # Same sweep widening as bike_io/bike_platform: every first-party header
 # under native/src compiles in each owning target's context.
 if(_native_contract_include_directories)

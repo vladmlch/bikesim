@@ -40,6 +40,14 @@ find_package(Python 3.13 REQUIRED COMPONENTS Interpreter Development.Module)
 # and the nanobind/python include roots consumed below.
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeDependencies.cmake")
 
+# PROVISIONAL T07 wiring ahead of T10: BikeNumerics.cmake consumes the same
+# schema-1 document, generates numerics_symbols.hpp, and builds the one
+# selected CBLAS backend TU into bike_native_numerics (alias Bike::Numerics).
+# The blas:: call face has no definitions without it — the link below is the
+# minimum that keeps this tree buildable; T10 owns the final target-graph
+# integration (policy application, LAPACK adapter, remaining consumers).
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeNumerics.cmake")
+
 set(_native_hardening_probe_dir "${CMAKE_BINARY_DIR}/native_check_work/libcpp-hardening")
 file(MAKE_DIRECTORY "${_native_hardening_probe_dir}")
 set(_native_libcpp_probe_source "${_native_hardening_probe_dir}/detect_libcpp.cpp")
@@ -381,9 +389,10 @@ if(_native_contract_link_options)
   target_link_options(native_contract_tests PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(native_contract_tests PRIVATE bike_native_contract_core bike_native_engine)
-# chain.cpp's GeometryWorkspace resolves CBLAS through Apple Accelerate, the
-# same BLAS provider bike_native links.
-target_link_libraries(native_contract_tests PRIVATE "-framework Accelerate")
+# chain.cpp's GeometryWorkspace resolves CBLAS through the typed adapter —
+# Bike::Numerics carries the qualified provider transitively (Accelerate
+# here, the scipy-openblas wheel .so on Linux).
+target_link_libraries(native_contract_tests PRIVATE Bike::Numerics)
 if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
   add_custom_command(TARGET native_contract_tests POST_BUILD
     COMMAND install_name_tool -change
@@ -416,9 +425,9 @@ if(_native_contract_link_options)
   target_link_options(native_distance_tests PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(native_distance_tests PRIVATE bike_native_contract_core bike_native_engine)
-# tyre/distance.cpp resolves CBLAS through Apple Accelerate, the same BLAS
-# provider bike_native links.
-target_link_libraries(native_distance_tests PRIVATE "-framework Accelerate")
+# tyre/distance.cpp resolves CBLAS through the typed adapter — Bike::Numerics
+# carries the qualified provider transitively.
+target_link_libraries(native_distance_tests PRIVATE Bike::Numerics)
 if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
   add_custom_command(TARGET native_distance_tests POST_BUILD
     COMMAND install_name_tool -change
@@ -451,7 +460,7 @@ if(_native_contract_link_options)
   target_link_options(native_station_tests PRIVATE ${_native_contract_link_options})
 endif()
 target_link_libraries(native_station_tests PRIVATE bike_native_contract_core bike_native_engine)
-target_link_libraries(native_station_tests PRIVATE "-framework Accelerate")
+target_link_libraries(native_station_tests PRIVATE Bike::Numerics)
 if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
   add_custom_command(TARGET native_station_tests POST_BUILD
     COMMAND install_name_tool -change
@@ -460,6 +469,29 @@ if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
       "$<TARGET_FILE:native_station_tests>"
     VERBATIM)
 endif()
+
+# tests/test_platform_blas.cpp — the standalone CBLAS adapter harness. It
+# calls only blas:: wrappers and std headers, so Bike::Numerics alone
+# supplies the backend definitions plus the qualified provider link.
+add_executable(native_platform_blas_tests tests/test_platform_blas.cpp)
+set_target_properties(native_platform_blas_tests PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(native_platform_blas_tests PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(native_platform_blas_tests PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_include_directories)
+  target_include_directories(native_platform_blas_tests SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+if(_native_contract_link_options)
+  target_link_options(native_platform_blas_tests PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(native_platform_blas_tests PRIVATE Bike::Numerics)
 
 # Prototype native benchmark (native-safety runtime plan task R2). The TU
 # lives outside native/, so its directory joins the first-party source roots
@@ -508,6 +540,7 @@ if(BUILD_TESTING)
   add_test(NAME native_contract_tests COMMAND native_contract_tests)
   add_test(NAME native_distance_tests COMMAND native_distance_tests)
   add_test(NAME native_station_tests COMMAND native_station_tests)
+  add_test(NAME native_platform_blas_tests COMMAND native_platform_blas_tests)
   add_test(NAME native_bench_bare
     COMMAND native_bench bare 20 5
             --artifacts "${_native_bench_dir}/artifacts")
@@ -527,11 +560,11 @@ add_custom_target(check_native_contracts
 
 target_link_libraries(bike_native PRIVATE Bike::MuJoCo)
 
-# The resistance writer calls the legacy CBLAS symbols numpy's `@`/`np.dot`
-# resolve to on this platform (numpy's BLAS is Apple Accelerate — see
-# writers/resistance.cpp). The symbols stay exported; only the SDK headers
-# deprecate them, so the TU declares the prototypes itself.
-target_link_libraries(bike_native PRIVATE "-framework Accelerate")
+# The blas:: call face (resistance/tire/etc.) resolves through the typed
+# adapter: Bike::Numerics provides the one selected backend TU and carries
+# the qualified provider transitively — Accelerate on Darwin, the
+# scipy-openblas wheel .so on Linux.
+target_link_libraries(bike_native PRIVATE Bike::Numerics)
 
 # The dylib's install name (@rpath/mujoco.framework/...) is unresolvable on
 # its own — the wheel ships the dylib flat under mujoco/, with no framework

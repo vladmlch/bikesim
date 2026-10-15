@@ -1824,8 +1824,9 @@ Value validate_ctest_contracts(const fs::path &build) {
 }
 
 // _check_pending_rules port: engine-call boundary and benchmark manifest
-// rules plus the T56 step-4.6 pure-core dependency policy (no Python/
-// nanobind/NumPy include edges in pure-core library TUs).
+// rules plus the T56 step-4.6 dependency policy (no Python/nanobind/NumPy
+// include edges in pure-core library TUs; no IO/GUI/database include edges
+// in hot-kernel sources).
 Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
     const Value *source_entries_value = member(sources, "sources");
     static const Array empty_entries;
@@ -2015,6 +2016,10 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
         }
     }
 
+    // Shared include-edge recognizer for the dependency rules below.
+    static const std::regex include_target(
+        R"(^[ \t]*#[ \t]*include[ \t]*[<"]([^>"]+)[>"])");
+
     // T56 step-4.6: pure-core library TUs must not gain Python/nanobind/NumPy
     // include edges — the executable-level dependency rule the removal gate
     // relies on.
@@ -2028,8 +2033,6 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
         // <Python.h> (incl. versioned paths), nanobind/pybind11/numpy/pythran
         // package prefixes and cpython internals. A first-party header whose
         // NAME mentions one of them (numeric_numpy.hpp) is not an edge.
-        static const std::regex include_target(
-            R"(^[ \t]*#[ \t]*include[ \t]*[<"]([^>"]+)[>"])");
         const auto interpreter_edge = [](const std::string &target) {
             return target == "Python.h" || target.ends_with("/Python.h") ||
                    target.starts_with("nanobind") ||
@@ -2088,11 +2091,89 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
         };
     }
 
+    // T56 step-4.6 clause 2: hot-kernel sources — the per-step physics TUs
+    // under native/src/{tyre,rider,drivetrain,pneumatic,contact} plus the
+    // single stepping path stepper.cpp — must not gain IO/GUI/database
+    // edges. Banned targets are the bike_io boundary (io/*), the bounded
+    // OS boundary (platform/*: files/process/signals/provenance), the
+    // pinned database headers (duckdb) and the pinned GUI headers
+    // (GLFW/cairo). The edge is positional, not target-gated: a kernel
+    // file manifested into any target is still a kernel.
+    Object hot_kernel_status;
+    {
+        static const std::set<std::string> kernel_dirs = {
+            "tyre", "rider", "drivetrain", "pneumatic", "contact",
+        };
+        const fs::path kernel_root = repo_root / "native" / "src";
+        const auto is_kernel_source = [&kernel_root](const fs::path &path) {
+            std::error_code ec;
+            const fs::path rel =
+                fs::relative(path, kernel_root, ec);
+            if (ec || rel.empty() || *rel.begin() == "..") return false;
+            if (rel == fs::path("stepper.cpp")) return true;
+            return kernel_dirs.contains(rel.begin()->string());
+        };
+        const auto cold_edge = [](const std::string &target) {
+            return target.starts_with("io/") ||
+                   target.find("/io/") != std::string::npos ||
+                   target.starts_with("platform/") ||
+                   target.find("/platform/") != std::string::npos ||
+                   target.find("duckdb") != std::string::npos ||
+                   target.find("GLFW") != std::string::npos ||
+                   target.find("glfw") != std::string::npos ||
+                   target.find("cairo") != std::string::npos;
+        };
+        std::vector<std::string> violations;
+        for (const Value &entry: source_entries) {
+            if (!std::holds_alternative<Object>(entry.data)) continue;
+            const auto *path = member(entry, "path") != nullptr
+                                   ? std::get_if<std::string>(
+                                         &member(entry, "path")->data)
+                                   : nullptr;
+            if (path == nullptr ||
+                !is_kernel_source(fs::path(*path)))
+                continue;
+            std::ifstream stream(*path, std::ios::binary);
+            if (!stream.is_open()) continue;
+            std::string line;
+            std::size_t line_number = 0;
+            while (std::getline(stream, line)) {
+                ++line_number;
+                std::smatch match;
+                if (std::regex_search(line, match, include_target) &&
+                    cold_edge(match.str(1))) {
+                    std::ostringstream detail;
+                    detail << fs::path(*path).filename().string() << ":"
+                           << line_number;
+                    violations.push_back(detail.str());
+                }
+            }
+        }
+        if (!violations.empty()) {
+            std::string joined;
+            for (const auto &violation: violations) {
+                if (!joined.empty()) joined += ", ";
+                joined += violation;
+            }
+            throw ContractError(
+                "hot-kernel translation units carry IO/GUI/database "
+                "include edges: " +
+                joined);
+        }
+        hot_kernel_status = {
+            {"status", vstr("passed")},
+            {"detail",
+             vstr("hot-kernel sources carry no IO/GUI/database include "
+                  "edges")},
+        };
+    }
+
     return vobj({
         {"engine_call_wrappers", vobj(std::move(engine_status))},
         {"benchmark_manifest_membership",
          vobj(std::move(benchmark_status))},
         {"pure_core_python_free", vobj(std::move(pure_core_status))},
+        {"hot_kernel_dependency_free", vobj(std::move(hot_kernel_status))},
     });
 }
 

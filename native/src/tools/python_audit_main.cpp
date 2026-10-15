@@ -19,6 +19,7 @@
 // remediation task when known. No hit is ever silently absorbed.
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -30,6 +31,8 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+
+#include <unistd.h>
 
 #include "../io/json.hpp"
 #include "../io/value.hpp"
@@ -244,6 +247,42 @@ bool is_elf(const std::string &head) {
            head[2] == 'L' && head[3] == 'F';
 }
 
+// shutil.which port — a local twin of checks_internal::which because the
+// audit TU links only bike_platform: PATH entries are searched in order
+// (an empty entry means the current directory); a separator-bearing name
+// must already be an executable regular file.
+std::optional<fs::path> find_on_path(const std::string &name) {
+    if (name.empty()) return std::nullopt;
+    const auto executable_regular = [](const fs::path &candidate) {
+        std::error_code ec;
+        return fs::is_regular_file(candidate, ec) &&
+               ::access(candidate.c_str(), X_OK) == 0;
+    };
+    if (name.find('/') != std::string::npos) {
+        const fs::path candidate(name);
+        return executable_regular(candidate)
+                   ? std::optional<fs::path>(candidate)
+                   : std::nullopt;
+    }
+    // NOLINTNEXTLINE(concurrency-mt-unsafe) PATH is read before any child spawns
+    const char *path_env = std::getenv("PATH");
+    const std::string path_text =
+        path_env != nullptr ? path_env : "/bin:/usr/bin";
+    std::size_t start = 0;
+    while (true) {
+        const std::size_t colon = path_text.find(':', start);
+        std::string directory = path_text.substr(
+            start,
+            colon == std::string::npos ? std::string::npos : colon - start);
+        if (directory.empty()) directory = ".";
+        const fs::path candidate = fs::path(directory) / name;
+        if (executable_regular(candidate)) return candidate;
+        if (colon == std::string::npos) break;
+        start = colon + 1;
+    }
+    return std::nullopt;
+}
+
 // ---- mode: source ---------------------------------------------------------
 
 int audit_source(const fs::path &root, const Value &policy) {
@@ -379,6 +418,24 @@ int audit_package(const fs::path &root, const Value &policy) {
                                 .detail="installed-package metadata directory '" +
                                     name + "' present"});
     }
+    // Dynamic-dependency inspection tools resolved once per image format on
+    // first use: a missing tool fails the audit loudly instead of silently
+    // skipping every binary in the package tree.
+    std::optional<fs::path> macho_tool;
+    std::optional<fs::path> elf_tool;
+    const auto dependency_tool = [&](bool mach_o) -> const fs::path & {
+        std::optional<fs::path> &slot = mach_o ? macho_tool : elf_tool;
+        if (!slot.has_value()) {
+            const std::string name = mach_o ? "otool" : "readelf";
+            slot = find_on_path(name);
+            if (!slot.has_value())
+                throw AuditError(
+                    "required dynamic-dependency inspection tool '" + name +
+                    "' is missing from PATH");
+        }
+        return *slot;
+    };
+
     for (const fs::path &file: walk_files(root)) {
         const std::string relative = relative_to(file, root);
         if (any_glob(exempt, relative)) continue;
@@ -409,31 +466,28 @@ int audit_package(const fs::path &root, const Value &policy) {
             if (flagged) continue;
         }
         if (is_mach_o(head) || is_elf(head)) {
-            // Dynamic-dependency audit via the platform tool: otool on
-            // Mach-O, readelf on ELF. Tool absence fails loudly rather than
-            // skipping the check.
-            const std::vector<std::string> argv =
-                is_mach_o(head)
-                    ? std::vector<std::string>{"otool", "-L", file.string()}
-                    : std::vector<std::string>{"readelf", "-d", file.string()};
-            try {
-                const bike::platform::ProcessResult result =
-                    bike::platform::run(argv, root);
-                if (result.exit_code != 0) continue; // not a loadable image
-                std::istringstream lines(result.out + "\n" + result.err);
-                std::string line;
-                while (std::getline(lines, line)) {
-                    for (const auto &load: forbidden_loads) {
-                        if (line.find(load) != std::string::npos) {
-                            findings.push_back(
-                                {.path=relative, .detail="dynamic dependency edge: " +
-                                               line});
-                            break;
-                        }
+            // Dynamic-dependency audit via the platform tool: otool -L on
+            // Mach-O, readelf -d on ELF. Only a nonzero inspection exit — a
+            // non-loadable image — is tolerated; a missing tool fails above
+            // and a spawn/OS failure propagates out of platform::run.
+            const bool mach_o = is_mach_o(head);
+            const bike::platform::ProcessResult result =
+                bike::platform::run(
+                    {dependency_tool(mach_o).string(),
+                     mach_o ? "-L" : "-d", file.string()},
+                    root);
+            if (result.exit_code != 0) continue; // not a loadable image
+            std::istringstream lines(result.out + "\n" + result.err);
+            std::string line;
+            while (std::getline(lines, line)) {
+                for (const auto &load: forbidden_loads) {
+                    if (line.find(load) != std::string::npos) {
+                        findings.push_back(
+                            {.path=relative, .detail="dynamic dependency edge: " +
+                                           line});
+                        break;
                     }
                 }
-            // NOLINTNEXTLINE(bugprone-empty-catch) a non-loadable binary is not a Mach-O/ELF image; no finding
-            } catch (const std::exception &) {
             }
         }
     }

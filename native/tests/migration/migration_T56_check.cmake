@@ -158,6 +158,95 @@ run_case(t56_tool_missing EXPECT_EXIT FAIL
   COMMAND "${CHECKS_BINARY}" --kind frontends --build "${_fixture}")
 
 # ---------------------------------------------------------------------------
+# Mandatory negative controls: crashed analyzer, malformed diagnostics,
+# failed diagnostic control, stale/wrong contract artifacts and a direct
+# no-interpreter reach check.
+
+# crashed analyzer — a planted tool that dies on every invocation surfaces
+# as tool-health failure, never a silent pass
+set(_crash_tool "${SCRATCH_DIR}/crash-analyzer.sh")
+file(WRITE "${_crash_tool}" "#!/bin/sh\nexit 139\n")
+file(CHMOD "${_crash_tool}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+run_case(t56_analyzer_crash EXPECT_EXIT FAIL
+  EXPECT_STDERR "tool health: failed"
+  COMMAND "${CMAKE_COMMAND}" -E env "ANALYZER_CLANG=${_crash_tool}"
+        "${CHECKS_BINARY}" --kind analyzer --build "${BUILD_DIR}")
+
+# malformed diagnostics — the analysis suppression manifest is the
+# diagnostics-control input; a malformed file must fail closed
+set(_fixture "${SCRATCH_DIR}/diag-malformed")
+file(MAKE_DIRECTORY "${_fixture}")
+file(WRITE "${_fixture}/suppressions.json" "{")
+string(REGEX REPLACE "(\"analysis_suppressions_manifest\":\")[^\"]*"
+  "\\1${_fixture}/suppressions.json" _mutated "${_context_json}")
+file(WRITE "${_fixture}/native_check_context.json" "${_mutated}")
+file(COPY "${_sources}" DESTINATION "${_fixture}")
+file(COPY "${_ccdb}" DESTINATION "${_fixture}")
+run_case(t56_diagnostics_malformed EXPECT_EXIT FAIL
+  EXPECT_STDERR "malformed analysis suppression manifest"
+  COMMAND "${CHECKS_BINARY}" --kind analyzer --build "${_fixture}")
+
+# failed diagnostic control — a silent-exit analyzer passes version health
+# but emits no cplusplus.Move marker, so the alpha control must fail
+set(_silent_tool "${SCRATCH_DIR}/silent-analyzer.sh")
+file(WRITE "${_silent_tool}" "#!/bin/sh\nexit 0\n")
+file(CHMOD "${_silent_tool}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+run_case(t56_diag_control_failed EXPECT_EXIT FAIL
+  EXPECT_STDERR "first_party_use_after_move"
+  COMMAND "${CMAKE_COMMAND}" -E env "ANALYZER_CLANG=${_silent_tool}"
+        "${CHECKS_BINARY}" --kind diagnostic-controls --build "${BUILD_DIR}")
+
+# contracts on the produced build — positive contract control
+run_case(t56_contracts_clean EXPECT_EXIT 0
+  EXPECT_STDERR "native contract checks passed"
+  COMMAND "${CHECKS_BINARY}" --kind contracts --build "${BUILD_DIR}"
+        --repo-root "${REPO_ROOT}")
+
+# stale extension — a bindings-era context (python_executable non-null) on a
+# build with no produced extension must fail closed rather than pass
+set(_fixture "${SCRATCH_DIR}/contracts-stale-extension")
+file(MAKE_DIRECTORY "${_fixture}")
+string(REGEX REPLACE "\"python_executable\":null"
+  "\"python_executable\":\"${CMAKE_COMMAND}\"" _mutated "${_context_json}")
+file(WRITE "${_fixture}/native_check_context.json" "${_mutated}")
+file(COPY "${_sources}" DESTINATION "${_fixture}")
+file(COPY "${_ccdb}" DESTINATION "${_fixture}")
+run_case(t56_contracts_stale_extension EXPECT_EXIT FAIL
+  EXPECT_STDERR "expected exactly one bike_native extension"
+  COMMAND "${CHECKS_BINARY}" --kind contracts --build "${_fixture}"
+        --repo-root "${REPO_ROOT}")
+
+# wrong artifact — a planted bogus extension must not satisfy the produced
+# artifact contract: loader provenance verification fails closed
+set(_fixture "${SCRATCH_DIR}/contracts-wrong-artifact")
+file(MAKE_DIRECTORY "${_fixture}")
+file(WRITE "${_fixture}/bike_native.planted.so" "not a real extension\n")
+file(WRITE "${_fixture}/native_check_context.json" "${_context_json}")
+file(COPY "${_sources}" DESTINATION "${_fixture}")
+file(COPY "${_ccdb}" DESTINATION "${_fixture}")
+run_case(t56_contracts_wrong_artifact EXPECT_EXIT FAIL
+  EXPECT_STDERR "native contract checks failed"
+  COMMAND "${CHECKS_BINARY}" --kind contracts --build "${_fixture}"
+        --repo-root "${REPO_ROOT}")
+
+# no-interpreter reach — the contracts sweep spawns no children on the
+# Python-free graph, so it must complete with no usable PATH and a wheel
+# planted on PYTHONPATH: no interpreter dependency, no silent wheel reach
+set(_wheel_dir "${SCRATCH_DIR}/wheel-bait")
+file(MAKE_DIRECTORY "${_wheel_dir}" "${SCRATCH_DIR}/empty-bin")
+file(WRITE "${_wheel_dir}/planted-1.0-py3-none-any.whl" "planted\n")
+run_case(t56_no_interpreter_reach EXPECT_EXIT 0
+  EXPECT_STDERR "native contract checks passed"
+  COMMAND "${CMAKE_COMMAND}" -E env
+        "PATH=${SCRATCH_DIR}/empty-bin"
+        "PYTHONPATH=${_wheel_dir}"
+        "PYTHONHOME=${SCRATCH_DIR}"
+        "${CHECKS_BINARY}" --kind contracts --build "${BUILD_DIR}"
+        --repo-root "${REPO_ROOT}")
+
+# ---------------------------------------------------------------------------
 # scripts sweep fixtures (real build context, planted tools directories)
 set(_tools_bad "${SCRATCH_DIR}/tools-bad")
 file(MAKE_DIRECTORY "${_tools_bad}")

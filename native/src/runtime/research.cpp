@@ -456,7 +456,10 @@ void NativeResearchRuntime::acknowledge_applied(std::int64_t cursor) {
     if (cursor < e.applied_base || cursor > end)
         throw std::invalid_argument("applied acknowledgement is stale or beyond the committed prefix");
     if (config_.capture_mode == ResearchCaptureMode::verify) {
-        const auto count = static_cast<std::vector<ResearchCommand>::difference_type>(cursor - e.applied_base);
+        // cursor and applied_base are std::int64_t — identical to the
+        // container's difference_type on the supported LP64 toolchains, so
+        // an explicit cast is redundant (GCC -Wuseless-cast fires on it).
+        const auto count = cursor - e.applied_base;
         e.applied_records.erase(e.applied_records.begin(), e.applied_records.begin() + count);
         e.applied_base = cursor;
     }

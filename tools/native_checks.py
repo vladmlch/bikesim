@@ -6,12 +6,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import re
 import resource
 import shlex
 import signal
 import shutil
 import statistics
+import struct
 import subprocess
 import sys
 import tempfile
@@ -154,14 +156,260 @@ def _require_existing_path(
     return path
 
 
+def _reconfigure_hint(build: Path | None = None) -> str:
+    """The actionable reconfigure command attached to stale-context errors."""
+    directory = str(build) if build is not None else "<build>"
+    return (
+        "reconfigure the build with the selected interpreter: "
+        f"cmake -S native -B {directory} "
+        "-DPython_EXECUTABLE=<project python>"
+    )
+
+
+def validate_platform_context(context: dict[str, Any]) -> dict[str, Any]:
+    """Validate the platform/compiler/SDK/sysroot/stdlib records.
+
+    Returns the validated context — the same mapping, with recorded paths
+    canonicalized in place. Schema-1 contexts are Darwin-only records —
+    they cannot express a no-SDK build, so every schema-1 file is validated
+    with Darwin semantics and any schema-1 context on a Linux host fails the
+    SDK existence check.
+    """
+    schema_version = context.get("schema_version")
+    if schema_version not in (1, 2):
+        raise CheckError(
+            f"native check context has an unsupported schema "
+            f"({schema_version!r}); {_reconfigure_hint()}"
+        )
+
+    if schema_version == 2:
+        platform_record = context.get("platform")
+        if not isinstance(platform_record, dict):
+            raise CheckError("native check context has no platform record")
+        system = platform_record.get("system")
+        if system not in {"Darwin", "Linux"}:
+            raise CheckError(
+                f"native check context has an unsupported platform system: {system!r}"
+            )
+        host_system = platform.system()
+        if system != host_system or platform_record.get("host_system") != host_system:
+            raise CheckError(
+                f"native check platform records system={system!r} "
+                f"host_system={platform_record.get('host_system')!r} on a "
+                f"{host_system!r} host"
+            )
+        machine = platform_record.get("machine")
+        if machine != platform.machine():
+            raise CheckError(
+                f"native check platform machine {machine!r} does not match "
+                f"host machine {platform.machine()!r}"
+            )
+        if platform_record.get("pointer_bits") != struct.calcsize("P") * 8:
+            raise CheckError(
+                "native check platform pointer width does not match the host"
+            )
+
+        sysroot_value = context.get("sysroot")
+        if sysroot_value is None:
+            context["sysroot"] = None
+        elif isinstance(sysroot_value, str) and sysroot_value:
+            sysroot_path = _require_existing_path(
+                sysroot_value, "configured sysroot"
+            )
+            if not sysroot_path.is_dir():
+                raise CheckError(
+                    f"configured sysroot is not a directory: {sysroot_path}"
+                )
+            context["sysroot"] = str(sysroot_path)
+        else:
+            raise CheckError(
+                "native check context sysroot must be null or a directory path"
+            )
+    else:
+        system = "Darwin"
+
+    if system == "Darwin":
+        sdk_path = _require_existing_path(context.get("sdk"), "configured SDK")
+        if not sdk_path.is_dir():
+            raise CheckError(f"configured SDK is not a directory: {sdk_path}")
+        context["sdk"] = str(sdk_path)
+        sdk_requested = context.get("sdk_requested")
+        sdk_source = context.get("sdk_source")
+        if not isinstance(sdk_requested, str) or not sdk_requested:
+            raise CheckError("native check context has no requested SDK value")
+        if sdk_source not in {"explicit", "default"}:
+            raise CheckError("native check context has an invalid SDK source")
+        requested_sdk_path = Path(sdk_requested).expanduser()
+        if requested_sdk_path.exists() and requested_sdk_path.resolve() != sdk_path:
+            raise CheckError(
+                f"requested SDK and selected SDK differ: requested={requested_sdk_path.resolve()}, selected={sdk_path}"
+            )
+        if schema_version == 2:
+            # On Darwin the selected sysroot IS the SDK — the writer emits
+            # identical strings and any drift between them is a writer defect.
+            if context.get("sysroot") != context["sdk"]:
+                raise CheckError(
+                    f"Darwin sysroot {context.get('sysroot')!r} does not "
+                    f"equal the selected SDK {context['sdk']!r}"
+                )
+    else:
+        if context.get("sdk") not in (None, ""):
+            raise CheckError(
+                "Linux native check context must not record an Apple SDK"
+            )
+        if context.get("sdk_requested") not in (None, ""):
+            raise CheckError(
+                "Linux native check context must not record a requested SDK"
+            )
+        if context.get("sdk_source") != "not-applicable":
+            raise CheckError(
+                "Linux native check context must record sdk_source "
+                "'not-applicable'"
+            )
+        context["sdk"] = None
+        context["sdk_requested"] = None
+
+    if schema_version == 2:
+        stdlib = context.get("stdlib")
+        if not isinstance(stdlib, dict):
+            raise CheckError("native check context has no stdlib record")
+        stdlib_name = stdlib.get("name")
+        if stdlib_name not in {"libc++", "libstdc++"}:
+            raise CheckError(
+                f"native check context has an unsupported stdlib: {stdlib_name!r}"
+            )
+        if system == "Darwin" and stdlib_name != "libc++":
+            raise CheckError(
+                "the Darwin native build requires the libc++ standard library"
+            )
+        stdlib_version = stdlib.get("version")
+        if not isinstance(stdlib_version, str) or not stdlib_version:
+            raise CheckError("native check context stdlib has no version")
+        stdlib_hardening = stdlib.get("hardening")
+        if not isinstance(stdlib_hardening, dict):
+            raise CheckError("native check context stdlib has no hardening record")
+        expected_modes = {
+            "libc++": {"EXTENSIVE", "FAST"},
+            "libstdc++": {"ASSERTIONS"},
+        }[stdlib_name]
+        if stdlib_hardening.get("mode") not in expected_modes:
+            raise CheckError(
+                f"native check context stdlib hardening mode "
+                f"{stdlib_hardening.get('mode')!r} is invalid for {stdlib_name}"
+            )
+        if stdlib_hardening.get("effective") is not True:
+            raise CheckError(
+                "native check context stdlib hardening must be effective"
+            )
+
+        numerics = context.get("numerics")
+        if not isinstance(numerics, dict):
+            raise CheckError("native check context has no numerics record")
+        if not isinstance(numerics.get("backend"), str) or not numerics["backend"]:
+            raise CheckError("native check context numerics has no backend")
+
+        policy = context.get("policy")
+        if not isinstance(policy, dict):
+            raise CheckError("native check context has no policy record")
+        for field in ("required_flags", "accepted_warnings"):
+            values = policy.get(field)
+            if not isinstance(values, list) or any(
+                not isinstance(value, str) for value in values
+            ):
+                raise CheckError(
+                    f"native check context policy {field!r} must be a string list"
+                )
+        rejected = policy.get("rejected_warnings")
+        if not isinstance(rejected, list) or any(
+            not isinstance(item, dict)
+            or not isinstance(item.get("flag"), str)
+            or not isinstance(item.get("reason"), str)
+            for item in rejected
+        ):
+            raise CheckError(
+                "native check context policy rejected_warnings must be a "
+                "list of flag/reason records"
+            )
+
+        capabilities = context.get("capabilities")
+        if not isinstance(capabilities, dict):
+            raise CheckError("native check context has no capabilities record")
+        for capability in ("asan", "rtsan", "coverage"):
+            record = capabilities.get(capability)
+            if not isinstance(record, dict):
+                raise CheckError(
+                    f"native check context has no {capability} capability record"
+                )
+            for field in ("requested", "supported", "enabled"):
+                if not isinstance(record.get(field), bool):
+                    raise CheckError(
+                        f"native check context capability {capability}.{field} "
+                        "must be boolean"
+                    )
+            if record["enabled"] and not record["supported"]:
+                raise CheckError(
+                    f"native check context capability {capability} is enabled "
+                    "without support evidence"
+                )
+            if not isinstance(record.get("evidence"), str) or not record["evidence"]:
+                raise CheckError(
+                    f"native check context capability {capability} has no "
+                    "evidence record"
+                )
+        frontend_tools = capabilities.get("frontend_tools")
+        if not isinstance(frontend_tools, dict):
+            raise CheckError(
+                "native check context has no frontend_tools capability record"
+            )
+        for tool_name, record in frontend_tools.items():
+            if not isinstance(record, dict) or not isinstance(
+                record.get("configured"), str
+            ):
+                raise CheckError(
+                    f"native check frontend tool {tool_name!r} has no "
+                    "configured spelling"
+                )
+            located = record.get("located")
+            if located is not None:
+                if not isinstance(located, str) or not located:
+                    raise CheckError(
+                        f"native check frontend tool {tool_name!r} located "
+                        "record must be a path or null"
+                    )
+                located_path = _require_existing_path(
+                    located, f"located frontend tool {tool_name}",
+                    executable=True, preserve_symlink=True,
+                )
+                record["located"] = str(located_path)
+    return context
+
+
 def load_context(build: Path) -> dict[str, Any]:
     """Load CMake's toolchain/dependency context and fail on stale paths."""
     build_dir = _canonical(build)
     if not build_dir.is_dir():
         raise CheckError(f"build directory does not exist: {build_dir}")
-    context = _read_json(build_dir / "native_check_context.json", "native check context")
-    if not isinstance(context, dict) or context.get("schema_version") != 1:
-        raise CheckError("native check context has an unsupported schema")
+    context_path = build_dir / "native_check_context.json"
+    if not context_path.is_file():
+        # Multi-config generators cannot share one compile_commands.json;
+        # the writer emits one context per configuration. Select the file
+        # matching the commands this build actually produced.
+        candidates = sorted(
+            (build_dir / "native_check_context").glob("*.json")
+        ) if (build_dir / "native_check_context").is_dir() else []
+        if len(candidates) != 1:
+            raise CheckError(
+                f"native check context selection is ambiguous: {build_dir} "
+                f"has no native_check_context.json and "
+                f"{len(candidates)} per-configuration contexts"
+            )
+        context_path = candidates[0]
+    context = _read_json(context_path, "native check context")
+    if not isinstance(context, dict):
+        raise CheckError(
+            "native check context has an unsupported schema "
+            f"(not an object); {_reconfigure_hint(build_dir)}"
+        )
 
     compiler = context.get("compiler")
     if not isinstance(compiler, dict):
@@ -173,24 +421,14 @@ def load_context(build: Path) -> dict[str, Any]:
     compiler["path"] = str(compiler_path)
 
     python_executable = _require_existing_path(
-        context.get("python_executable"), "configured Python executable", executable=True
+        context.get("python_executable"), "configured Python executable",
+        executable=True,
+        # A venv interpreter is a symlink to its base python; resolving it
+        # would drop the venv site-packages the dependency probe needs.
+        preserve_symlink=True,
     )
     context["python_executable"] = str(python_executable)
-    sdk_path = _require_existing_path(context.get("sdk"), "configured SDK")
-    if not sdk_path.is_dir():
-        raise CheckError(f"configured SDK is not a directory: {sdk_path}")
-    context["sdk"] = str(sdk_path)
-    sdk_requested = context.get("sdk_requested")
-    sdk_source = context.get("sdk_source")
-    if not isinstance(sdk_requested, str) or not sdk_requested:
-        raise CheckError("native check context has no requested SDK value")
-    if sdk_source not in {"explicit", "default"}:
-        raise CheckError("native check context has an invalid SDK source")
-    requested_sdk_path = Path(sdk_requested).expanduser()
-    if requested_sdk_path.exists() and requested_sdk_path.resolve() != sdk_path:
-        raise CheckError(
-            f"requested SDK and selected SDK differ: requested={requested_sdk_path.resolve()}, selected={sdk_path}"
-        )
+    validate_platform_context(context)
 
     hardening = context.get("libcpp_hardening")
     if not isinstance(hardening, dict):
@@ -417,11 +655,29 @@ def _validate_compilation_context(
             position += 1
         else:
             position += 1
-    configured_sdk = Path(context["sdk"]).resolve()
-    if not selected_sysroots or any(path != configured_sdk for path in selected_sysroots):
+    # The configured sysroot is the Apple SDK on Darwin; on Linux it is an
+    # explicit CMAKE_SYSROOT or null. A null configured sysroot admits no
+    # sysroot argument at all — any -isysroot/--sysroot in an entry would be
+    # a selection the build context did not record.
+    configured_sysroot_value = context.get("sysroot") or context.get("sdk")
+    configured_sysroot = (
+        Path(configured_sysroot_value).resolve()
+        if configured_sysroot_value
+        else None
+    )
+    if configured_sysroot is None:
+        if selected_sysroots:
+            raise CheckError(
+                f"compilation database selects a sysroot in entry {index} but "
+                f"the build context configures none: "
+                f"selected={[str(path) for path in selected_sysroots]}"
+            )
+    elif not selected_sysroots or any(
+        path != configured_sysroot for path in selected_sysroots
+    ):
         raise CheckError(
-            f"compilation database sysroot differs from configured SDK in entry {index}: "
-            f"selected={[str(path) for path in selected_sysroots]}, configured={configured_sdk}"
+            f"compilation database sysroot differs from configured sysroot in entry {index}: "
+            f"selected={[str(path) for path in selected_sysroots]}, configured={configured_sysroot}"
         )
 
 
@@ -1364,9 +1620,9 @@ def run_context_checks(build: Path) -> int:
         context = load_context(build_dir)
         manifest = _read_json(build_dir / "native_sources.json", "native source manifest")
         entries = load_entries(build_dir, {_canonical(item["path"]) for item in manifest["sources"]})
-        uv = shutil.which("uv")
-        if uv is None:
-            raise CheckError("required tool is unavailable: uv")
+        cmake = shutil.which("cmake")
+        if cmake is None:
+            raise CheckError("required tool is unavailable: cmake")
         compiler = Path(context["compiler"]["path"])
     except (CheckError, KeyError, TypeError) as error:
         summary["errors"].append(str(error))
@@ -1391,13 +1647,14 @@ def run_context_checks(build: Path) -> int:
     ) -> tuple[dict[str, Any], Path]:
         case_build = work_root / f"cmake-{name}"
         argv = [
-            str(uv),
-            "run",
-            "cmake",
+            str(cmake),
             "-S",
             str(native_root),
             "-B",
             str(case_build),
+            # The child configure re-binds the interpreter this context
+            # recorded — never a PATH/python-env rescue resolution.
+            f"-DPython_EXECUTABLE={context['python_executable']}",
         ]
         if not use_default_compiler:
             argv.append(f"-DCMAKE_CXX_COMPILER={configured_compiler or compiler}")
@@ -1423,290 +1680,451 @@ def run_context_checks(build: Path) -> int:
             raise CheckError(f"configured context selected no translation units: {case_build}")
         return child_context
 
+    context_platform = (
+        context["platform"]["system"]
+        if context.get("schema_version") == 2
+        else "Darwin"
+    )
     sdk_controls: dict[str, str] = {}
     sdk_details: dict[str, Any] = {}
-    sdk_request = context["sdk_requested"]
-
-    explicit_record, explicit_build = configure_case(
-        "sdk-explicit",
-        options=(f"-DCMAKE_OSX_SYSROOT={sdk_request}",),
-    )
-    try:
-        explicit_context = configured_context(explicit_build)
-        explicit_ok = (
-            explicit_record["returncode"] == 0
-            and explicit_context["sdk_source"] == "explicit"
-            and Path(explicit_context["sdk"]).resolve() == Path(context["sdk"]).resolve()
-            and Path(explicit_context["compiler"]["path"]).resolve() == compiler.resolve()
-        )
-        sdk_controls["explicit_sdk"] = "passed" if explicit_ok else "failed"
-        sdk_details["explicit_sdk"] = {
-            "requested": sdk_request,
-            "selected": explicit_context["sdk"],
-            "compiler": explicit_context["compiler"]["path"],
-        }
-    except (CheckError, KeyError, TypeError) as error:
-        sdk_controls["explicit_sdk"] = "failed"
-        sdk_details["explicit_sdk"] = {"error": str(error)}
-
-    missing_sdk = work_root / "missing-explicit-sdk"
-    missing_record, _ = configure_case(
-        "sdk-missing",
-        options=(f"-DCMAKE_OSX_SYSROOT={missing_sdk}",),
-    )
-    missing_output = missing_record["stdout"] + missing_record["stderr"]
-    missing_ok = missing_record["returncode"] != 0 and str(missing_sdk) in missing_output
-    sdk_controls["missing_sdk"] = "rejected" if missing_ok else "failed"
-    sdk_details["missing_sdk"] = {
-        "requested": str(missing_sdk),
-        "returncode": missing_record["returncode"],
-    }
-
-    default_environment = os.environ.copy()
-    default_environment.pop("SDKROOT", None)
-    default_environment.pop("CMAKE_OSX_SYSROOT", None)
-    default_record, default_build = configure_case(
-        "sdk-default",
-        environment=default_environment,
-        use_default_compiler=True,
-    )
-    try:
-        default_context = configured_context(default_build)
-        # This case deliberately omits CMAKE_CXX_COMPILER; an RTSan build may
-        # use LLVM clang++ while the default control selects AppleClang.
-        default_ok = (
-            default_record["returncode"] == 0
-            and default_context["sdk_source"] == "default"
-            and Path(default_context["sdk"]).is_dir()
-        )
-        sdk_controls["default_sdk"] = "passed" if default_ok else "failed"
-        sdk_details["default_sdk"] = {
-            "selected": default_context["sdk"],
-            "compiler": default_context["compiler"]["path"],
-        }
-    except (CheckError, KeyError, TypeError) as error:
-        sdk_controls["default_sdk"] = "failed"
-        sdk_details["default_sdk"] = {"error": str(error)}
-
-    rejected_default_sdk = work_root / "incompatible-default-sdk"
-    rejected_default_sdk.mkdir(parents=True, exist_ok=True)
-    fake_bin = work_root / "fake-tool-bin"
-    fake_bin.mkdir(parents=True, exist_ok=True)
-    fake_xcrun = fake_bin / "xcrun"
-    fake_xcrun.write_text(
-        "#!/bin/sh\n"
-        'if [ "${1:-}" = "--sdk" ] && [ "${2:-}" = "macosx" ] && [ "${3:-}" = "--show-sdk-path" ]; then\n'
-        '  printf "%s\\n" "$BIKE_TEST_BAD_SDK"; exit 0;\n'
-        "fi\n"
-        'exec /usr/bin/xcrun "$@"\n'
-    )
-    fake_xcrun.chmod(0o755)
-    reject_marker = work_root / "link-incompatibility-seen.txt"
-    compiler_wrapper = work_root / "compiler-link-control.sh"
-    compiler_wrapper.write_text(
-        "#!/bin/bash\n"
-        "args=(\"$@\")\n"
-        "selected_sdk=\"\"\n"
-        "syntax_only=0\n"
-        "for ((i=0; i<${#args[@]}; ++i)); do\n"
-        "  if [[ \"${args[i]}\" == \"-isysroot\" && $((i+1)) -lt ${#args[@]} ]]; then selected_sdk=\"${args[i+1]}\"; fi\n"
-        "  if [[ \"${args[i]}\" == \"-fsyntax-only\" ]]; then syntax_only=1; fi\n"
-        "done\n"
-        "if [[ \"$selected_sdk\" == \"$BIKE_TEST_BAD_SDK\" && $syntax_only == 0 ]]; then\n"
-        '  printf "%s\\n" "link-rejected $selected_sdk" >> "$BIKE_TEST_REJECT_MARKER"\n'
-        '  printf "%s\\n" "synthetic linker incompatibility for $selected_sdk" >&2\n'
-        "  exit 1\n"
-        "fi\n"
-        'exec /usr/bin/c++ "${args[@]}"\n'
-    )
-    compiler_wrapper.chmod(0o755)
-    fallback_environment = default_environment.copy()
-    fallback_environment["PATH"] = str(fake_bin) + os.pathsep + fallback_environment.get("PATH", "")
-    fallback_environment["BIKE_TEST_BAD_SDK"] = str(rejected_default_sdk)
-    fallback_environment["BIKE_TEST_REJECT_MARKER"] = str(reject_marker)
-    fallback_record, fallback_build = configure_case(
-        "sdk-default-link-fallback",
-        environment=fallback_environment,
-        configured_compiler=compiler_wrapper,
-    )
-    try:
-        fallback_context = configured_context(fallback_build)
-        fallback_ok = (
-            fallback_record["returncode"] == 0
-            and fallback_context["sdk_source"] == "default"
-            and Path(fallback_context["sdk"]).resolve() != rejected_default_sdk.resolve()
-            and reject_marker.is_file()
-            and "link-rejected" in reject_marker.read_text()
-        )
-        sdk_controls["default_sdk_fallback"] = "passed" if fallback_ok else "failed"
-        sdk_details["default_sdk_fallback"] = {
-            "rejected": str(rejected_default_sdk),
-            "selected": fallback_context["sdk"],
-            "compiler_wrapper": str(compiler_wrapper),
-            "link_rejection_observed": reject_marker.is_file(),
-        }
-    except (CheckError, KeyError, TypeError) as error:
-        sdk_controls["default_sdk_fallback"] = "failed"
-        sdk_details["default_sdk_fallback"] = {"error": str(error)}
-
     hardening_evidence: list[dict[str, Any]] = []
-    hardening_supported = context["libcpp_hardening"]["supported"]
-    if hardening_supported:
-        hardening_source = work_root / "hardening_probe.cpp"
-        hardening_source.write_text(
-            "#include <__config>\n#include <chrono>\n#include <cstdint>\n"
-            "#include <cstdio>\n#include <optional>\n#include <string>\n#include <vector>\n"
-            "#if !defined(__STRICT_ANSI__) || __cplusplus < 202302L\n"
-            "#error Native first-party code must compile as strict C++23\n#endif\n"
-            "#if _LIBCPP_HARDENING_MODE == _LIBCPP_HARDENING_MODE_EXTENSIVE\n"
-            "constexpr int selected_mode = 1;\n"
-            "#elif _LIBCPP_HARDENING_MODE == _LIBCPP_HARDENING_MODE_FAST\n"
-            "constexpr int selected_mode = 2;\n"
-            "#else\n#error Unsupported hardening probe mode\n#endif\n"
-            "[[clang::noinline]] std::uint64_t element(const std::vector<std::uint64_t>& values, std::size_t index) { return values[index]; }\n"
-            "int main(int argc, char**) {\n"
-            "  std::vector<std::uint64_t> values(1024);\n"
-            "  for (std::size_t i = 0; i < values.size(); ++i) values[i] = i * 17u + 3u;\n"
-            "  if (argc > 1) { volatile std::uint64_t invalid = values[values.size()]; return static_cast<int>(invalid); }\n"
-            "  std::uint64_t checksum = 0;\n"
-            "  const auto start = std::chrono::steady_clock::now();\n"
-            "  for (std::uint64_t i = 0; i < 3000000; ++i) checksum += element(values, static_cast<std::size_t>(i & 1023u));\n"
-            "  const auto end = std::chrono::steady_clock::now();\n"
-            "  const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();\n"
-            "  std::printf(\"%d %zu %zu %zu %lld %llu\\n\", selected_mode, sizeof(values), sizeof(std::string), sizeof(std::optional<int>), static_cast<long long>(elapsed), static_cast<unsigned long long>(checksum));\n"
-            "  return 0;\n}\n"
-        )
-        arch_args: list[str] = []
-        configured_entry = entries[0]
-        configured_args = configured_entry["arguments"]
-        position = 0
-        while position < len(configured_args):
-            if configured_args[position] == "-arch" and position + 1 < len(configured_args):
-                arch_args.extend(["-arch", configured_args[position + 1]])
-                position += 2
-            else:
-                position += 1
-        build_type_options = {
-            "Debug": ["-O0", "-g"],
-            "Release": ["-O3", "-DNDEBUG"],
-            "default": [],
-        }
-        control_logs = build_dir / "native_check_logs" / kind / run_id
-        control_work = work_root / "hardening-binaries"
-        control_work.mkdir(parents=True, exist_ok=True)
-        hardening_failed = False
-        for build_type, optimization in build_type_options.items():
-            row: dict[str, Any] = {
-                "build_type": build_type,
-                "sizeof": {},
-                "timings_ns": {},
-                "median_ns": {},
-                "assertion_active": {},
-                "optimization_flags": optimization,
-            }
-            for mode in ("EXTENSIVE", "FAST"):
-                binary = control_work / f"{build_type.lower()}-{mode.lower()}"
-                compile_argv = [
-                    str(compiler),
-                    "-std=c++23",
-                    *arch_args,
-                    "-isysroot",
-                    context["sdk"],
-                    "-stdlib=libc++",
-                    f"-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_{mode}",
-                    *optimization,
-                    str(hardening_source),
-                    "-o",
-                    str(binary),
-                ]
-                compile_record = _run_process(
-                    compile_argv,
-                    cwd=repository,
-                    log_directory=control_logs,
-                    name=f"hardening-{build_type.lower()}-{mode.lower()}-compile",
-                    timeout_seconds=180,
-                )
-                summary["records"].append(compile_record)
-                if compile_record["process_health"] != "ok":
-                    hardening_failed = True
-                    continue
 
-                assertion_record = _run_process(
-                    [str(binary), "invalid-element-control"],
-                    cwd=repository,
-                    log_directory=control_logs,
-                    name=f"hardening-{build_type.lower()}-{mode.lower()}-assertion",
-                    disable_core_dumps=True,
-                    timeout_seconds=30,
-                )
-                assertion_active = (
-                    assertion_record["returncode"] == -int(signal.SIGTRAP)
-                )
-                summary["records"].append(
-                    {
-                        **assertion_record,
-                        "control": f"hardening-{build_type.lower()}-{mode.lower()}-assertion",
-                        "assertion_active": assertion_active,
-                        "assertion_category": "libc++ std::vector element access",
-                    }
-                )
-                row["assertion_active"][mode] = assertion_active
-                signal_number = (
-                    -assertion_record["returncode"]
-                    if isinstance(assertion_record["returncode"], int)
-                    and assertion_record["returncode"] < 0
-                    else None
-                )
-                row.setdefault("assertion_evidence", {})[mode] = {
-                    "returncode": assertion_record["returncode"],
-                    "signal": signal.Signals(signal_number).name if signal_number is not None else None,
-                    "category": "libc++ std::vector element access",
-                    "stderr_log": assertion_record["stderr_log"],
+    def _run_darwin_controls() -> None:
+        """Apple SDK selection + libc++ hardening controls."""
+
+        sdk_request = context["sdk_requested"]
+
+        explicit_record, explicit_build = configure_case(
+            "sdk-explicit",
+            options=(f"-DCMAKE_OSX_SYSROOT={sdk_request}",),
+        )
+        try:
+            explicit_context = configured_context(explicit_build)
+            explicit_ok = (
+                explicit_record["returncode"] == 0
+                and explicit_context["sdk_source"] == "explicit"
+                and Path(explicit_context["sdk"]).resolve() == Path(context["sdk"]).resolve()
+                and Path(explicit_context["compiler"]["path"]).resolve() == compiler.resolve()
+            )
+            sdk_controls["explicit_sdk"] = "passed" if explicit_ok else "failed"
+            sdk_details["explicit_sdk"] = {
+                "requested": sdk_request,
+                "selected": explicit_context["sdk"],
+                "compiler": explicit_context["compiler"]["path"],
+            }
+        except (CheckError, KeyError, TypeError) as error:
+            sdk_controls["explicit_sdk"] = "failed"
+            sdk_details["explicit_sdk"] = {"error": str(error)}
+
+        missing_sdk = work_root / "missing-explicit-sdk"
+        missing_record, _ = configure_case(
+            "sdk-missing",
+            options=(f"-DCMAKE_OSX_SYSROOT={missing_sdk}",),
+        )
+        missing_output = missing_record["stdout"] + missing_record["stderr"]
+        missing_ok = missing_record["returncode"] != 0 and str(missing_sdk) in missing_output
+        sdk_controls["missing_sdk"] = "rejected" if missing_ok else "failed"
+        sdk_details["missing_sdk"] = {
+            "requested": str(missing_sdk),
+            "returncode": missing_record["returncode"],
+        }
+
+        default_environment = os.environ.copy()
+        default_environment.pop("SDKROOT", None)
+        default_environment.pop("CMAKE_OSX_SYSROOT", None)
+        default_record, default_build = configure_case(
+            "sdk-default",
+            environment=default_environment,
+            use_default_compiler=True,
+        )
+        try:
+            default_context = configured_context(default_build)
+            # This case deliberately omits CMAKE_CXX_COMPILER; an RTSan build may
+            # use LLVM clang++ while the default control selects AppleClang.
+            default_ok = (
+                default_record["returncode"] == 0
+                and default_context["sdk_source"] == "default"
+                and Path(default_context["sdk"]).is_dir()
+            )
+            sdk_controls["default_sdk"] = "passed" if default_ok else "failed"
+            sdk_details["default_sdk"] = {
+                "selected": default_context["sdk"],
+                "compiler": default_context["compiler"]["path"],
+            }
+        except (CheckError, KeyError, TypeError) as error:
+            sdk_controls["default_sdk"] = "failed"
+            sdk_details["default_sdk"] = {"error": str(error)}
+
+        rejected_default_sdk = work_root / "incompatible-default-sdk"
+        rejected_default_sdk.mkdir(parents=True, exist_ok=True)
+        fake_bin = work_root / "fake-tool-bin"
+        fake_bin.mkdir(parents=True, exist_ok=True)
+        fake_xcrun = fake_bin / "xcrun"
+        fake_xcrun.write_text(
+            "#!/bin/sh\n"
+            'if [ "${1:-}" = "--sdk" ] && [ "${2:-}" = "macosx" ] && [ "${3:-}" = "--show-sdk-path" ]; then\n'
+            '  printf "%s\\n" "$BIKE_TEST_BAD_SDK"; exit 0;\n'
+            "fi\n"
+            'exec /usr/bin/xcrun "$@"\n'
+        )
+        fake_xcrun.chmod(0o755)
+        reject_marker = work_root / "link-incompatibility-seen.txt"
+        compiler_wrapper = work_root / "compiler-link-control.sh"
+        compiler_wrapper.write_text(
+            "#!/bin/bash\n"
+            "args=(\"$@\")\n"
+            "selected_sdk=\"\"\n"
+            "syntax_only=0\n"
+            "for ((i=0; i<${#args[@]}; ++i)); do\n"
+            "  if [[ \"${args[i]}\" == \"-isysroot\" && $((i+1)) -lt ${#args[@]} ]]; then selected_sdk=\"${args[i+1]}\"; fi\n"
+            "  if [[ \"${args[i]}\" == \"-fsyntax-only\" ]]; then syntax_only=1; fi\n"
+            "done\n"
+            "if [[ \"$selected_sdk\" == \"$BIKE_TEST_BAD_SDK\" && $syntax_only == 0 ]]; then\n"
+            '  printf "%s\\n" "link-rejected $selected_sdk" >> "$BIKE_TEST_REJECT_MARKER"\n'
+            '  printf "%s\\n" "synthetic linker incompatibility for $selected_sdk" >&2\n'
+            "  exit 1\n"
+            "fi\n"
+            'exec /usr/bin/c++ "${args[@]}"\n'
+        )
+        compiler_wrapper.chmod(0o755)
+        fallback_environment = default_environment.copy()
+        fallback_environment["PATH"] = str(fake_bin) + os.pathsep + fallback_environment.get("PATH", "")
+        fallback_environment["BIKE_TEST_BAD_SDK"] = str(rejected_default_sdk)
+        fallback_environment["BIKE_TEST_REJECT_MARKER"] = str(reject_marker)
+        fallback_record, fallback_build = configure_case(
+            "sdk-default-link-fallback",
+            environment=fallback_environment,
+            configured_compiler=compiler_wrapper,
+        )
+        try:
+            fallback_context = configured_context(fallback_build)
+            fallback_ok = (
+                fallback_record["returncode"] == 0
+                and fallback_context["sdk_source"] == "default"
+                and Path(fallback_context["sdk"]).resolve() != rejected_default_sdk.resolve()
+                and reject_marker.is_file()
+                and "link-rejected" in reject_marker.read_text()
+            )
+            sdk_controls["default_sdk_fallback"] = "passed" if fallback_ok else "failed"
+            sdk_details["default_sdk_fallback"] = {
+                "rejected": str(rejected_default_sdk),
+                "selected": fallback_context["sdk"],
+                "compiler_wrapper": str(compiler_wrapper),
+                "link_rejection_observed": reject_marker.is_file(),
+            }
+        except (CheckError, KeyError, TypeError) as error:
+            sdk_controls["default_sdk_fallback"] = "failed"
+            sdk_details["default_sdk_fallback"] = {"error": str(error)}
+
+        hardening_supported = context["libcpp_hardening"]["supported"]
+        if hardening_supported:
+            hardening_source = work_root / "hardening_probe.cpp"
+            hardening_source.write_text(
+                "#include <__config>\n#include <chrono>\n#include <cstdint>\n"
+                "#include <cstdio>\n#include <optional>\n#include <string>\n#include <vector>\n"
+                "#if !defined(__STRICT_ANSI__) || __cplusplus < 202302L\n"
+                "#error Native first-party code must compile as strict C++23\n#endif\n"
+                "#if _LIBCPP_HARDENING_MODE == _LIBCPP_HARDENING_MODE_EXTENSIVE\n"
+                "constexpr int selected_mode = 1;\n"
+                "#elif _LIBCPP_HARDENING_MODE == _LIBCPP_HARDENING_MODE_FAST\n"
+                "constexpr int selected_mode = 2;\n"
+                "#else\n#error Unsupported hardening probe mode\n#endif\n"
+                "[[clang::noinline]] std::uint64_t element(const std::vector<std::uint64_t>& values, std::size_t index) { return values[index]; }\n"
+                "int main(int argc, char**) {\n"
+                "  std::vector<std::uint64_t> values(1024);\n"
+                "  for (std::size_t i = 0; i < values.size(); ++i) values[i] = i * 17u + 3u;\n"
+                "  if (argc > 1) { volatile std::uint64_t invalid = values[values.size()]; return static_cast<int>(invalid); }\n"
+                "  std::uint64_t checksum = 0;\n"
+                "  const auto start = std::chrono::steady_clock::now();\n"
+                "  for (std::uint64_t i = 0; i < 3000000; ++i) checksum += element(values, static_cast<std::size_t>(i & 1023u));\n"
+                "  const auto end = std::chrono::steady_clock::now();\n"
+                "  const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();\n"
+                "  std::printf(\"%d %zu %zu %zu %lld %llu\\n\", selected_mode, sizeof(values), sizeof(std::string), sizeof(std::optional<int>), static_cast<long long>(elapsed), static_cast<unsigned long long>(checksum));\n"
+                "  return 0;\n}\n"
+            )
+            arch_args: list[str] = []
+            configured_entry = entries[0]
+            configured_args = configured_entry["arguments"]
+            position = 0
+            while position < len(configured_args):
+                if configured_args[position] == "-arch" and position + 1 < len(configured_args):
+                    arch_args.extend(["-arch", configured_args[position + 1]])
+                    position += 2
+                else:
+                    position += 1
+            build_type_options = {
+                "Debug": ["-O0", "-g"],
+                "Release": ["-O3", "-DNDEBUG"],
+                "default": [],
+            }
+            control_logs = build_dir / "native_check_logs" / kind / run_id
+            control_work = work_root / "hardening-binaries"
+            control_work.mkdir(parents=True, exist_ok=True)
+            hardening_failed = False
+            for build_type, optimization in build_type_options.items():
+                row: dict[str, Any] = {
+                    "build_type": build_type,
+                    "sizeof": {},
+                    "timings_ns": {},
+                    "median_ns": {},
+                    "assertion_active": {},
+                    "optimization_flags": optimization,
                 }
-                if mode == "EXTENSIVE" and not assertion_active:
-                    hardening_failed = True
-                for run_index in range(6):
-                    timing_record = _run_process(
-                        [str(binary)],
+                for mode in ("EXTENSIVE", "FAST"):
+                    binary = control_work / f"{build_type.lower()}-{mode.lower()}"
+                    compile_argv = [
+                        str(compiler),
+                        "-std=c++23",
+                        *arch_args,
+                        "-isysroot",
+                        context["sdk"],
+                        "-stdlib=libc++",
+                        f"-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_{mode}",
+                        *optimization,
+                        str(hardening_source),
+                        "-o",
+                        str(binary),
+                    ]
+                    compile_record = _run_process(
+                        compile_argv,
                         cwd=repository,
                         log_directory=control_logs,
-                        name=f"hardening-{build_type.lower()}-{mode.lower()}-run-{run_index}",
+                        name=f"hardening-{build_type.lower()}-{mode.lower()}-compile",
+                        timeout_seconds=180,
+                    )
+                    summary["records"].append(compile_record)
+                    if compile_record["process_health"] != "ok":
+                        hardening_failed = True
+                        continue
+
+                    assertion_record = _run_process(
+                        [str(binary), "invalid-element-control"],
+                        cwd=repository,
+                        log_directory=control_logs,
+                        name=f"hardening-{build_type.lower()}-{mode.lower()}-assertion",
+                        disable_core_dumps=True,
                         timeout_seconds=30,
                     )
-                    summary["records"].append(timing_record)
-                    if timing_record["process_health"] != "ok":
-                        hardening_failed = True
-                        continue
-                    fields = timing_record["stdout"].strip().split()
-                    if len(fields) != 6:
-                        hardening_failed = True
-                        continue
-                    selected_mode, size_vector, size_string, size_optional, elapsed_ns, _checksum = map(int, fields)
-                    expected_mode = 1 if mode == "EXTENSIVE" else 2
-                    if selected_mode != expected_mode:
-                        hardening_failed = True
-                    row["sizeof"][mode] = {
-                        "vector_uint64": size_vector,
-                        "string": size_string,
-                        "optional_int": size_optional,
+                    assertion_active = (
+                        assertion_record["returncode"] == -int(signal.SIGTRAP)
+                    )
+                    summary["records"].append(
+                        {
+                            **assertion_record,
+                            "control": f"hardening-{build_type.lower()}-{mode.lower()}-assertion",
+                            "assertion_active": assertion_active,
+                            "assertion_category": "libc++ std::vector element access",
+                        }
+                    )
+                    row["assertion_active"][mode] = assertion_active
+                    signal_number = (
+                        -assertion_record["returncode"]
+                        if isinstance(assertion_record["returncode"], int)
+                        and assertion_record["returncode"] < 0
+                        else None
+                    )
+                    row.setdefault("assertion_evidence", {})[mode] = {
+                        "returncode": assertion_record["returncode"],
+                        "signal": signal.Signals(signal_number).name if signal_number is not None else None,
+                        "category": "libc++ std::vector element access",
+                        "stderr_log": assertion_record["stderr_log"],
                     }
-                    if run_index > 0:
-                        row["timings_ns"].setdefault(mode, []).append(elapsed_ns)
-                samples = row["timings_ns"].get(mode, [])
-                if samples:
-                    row["median_ns"][mode] = int(statistics.median(samples))
-            if row["sizeof"].get("EXTENSIVE") != row["sizeof"].get("FAST"):
-                hardening_failed = True
-            hardening_evidence.append(row)
-        if hardening_failed:
-            sdk_controls["libcpp_hardening"] = "failed"
+                    if mode == "EXTENSIVE" and not assertion_active:
+                        hardening_failed = True
+                    for run_index in range(6):
+                        timing_record = _run_process(
+                            [str(binary)],
+                            cwd=repository,
+                            log_directory=control_logs,
+                            name=f"hardening-{build_type.lower()}-{mode.lower()}-run-{run_index}",
+                            timeout_seconds=30,
+                        )
+                        summary["records"].append(timing_record)
+                        if timing_record["process_health"] != "ok":
+                            hardening_failed = True
+                            continue
+                        fields = timing_record["stdout"].strip().split()
+                        if len(fields) != 6:
+                            hardening_failed = True
+                            continue
+                        selected_mode, size_vector, size_string, size_optional, elapsed_ns, _checksum = map(int, fields)
+                        expected_mode = 1 if mode == "EXTENSIVE" else 2
+                        if selected_mode != expected_mode:
+                            hardening_failed = True
+                        row["sizeof"][mode] = {
+                            "vector_uint64": size_vector,
+                            "string": size_string,
+                            "optional_int": size_optional,
+                        }
+                        if run_index > 0:
+                            row["timings_ns"].setdefault(mode, []).append(elapsed_ns)
+                    samples = row["timings_ns"].get(mode, [])
+                    if samples:
+                        row["median_ns"][mode] = int(statistics.median(samples))
+                if row["sizeof"].get("EXTENSIVE") != row["sizeof"].get("FAST"):
+                    hardening_failed = True
+                hardening_evidence.append(row)
+            if hardening_failed:
+                sdk_controls["libcpp_hardening"] = "failed"
+            else:
+                sdk_controls["libcpp_hardening"] = "passed"
         else:
-            sdk_controls["libcpp_hardening"] = "passed"
-    else:
-        sdk_controls["libcpp_hardening"] = "not-applicable"
-        summary["hardening_limitation"] = (
-            "The selected compiler does not use libc++; native libc++ hardening modes cannot be measured."
+            sdk_controls["libcpp_hardening"] = "not-applicable"
+            summary["hardening_limitation"] = (
+                "The selected compiler does not use libc++; native libc++ hardening modes cannot be measured."
+            )
+
+
+    def _run_linux_controls() -> None:
+        """Linux no-SDK/sysroot and standard-library controls."""
+        # A child configure re-validates the whole chain: load_context proves
+        # the context records no Apple SDK, and load_entries proves no compile
+        # entry smuggles an -isysroot the context did not record.
+        no_sdk_record, no_sdk_build = configure_case("linux-no-sdk")
+        try:
+            child = configured_context(no_sdk_build)
+            no_sdk_ok = (
+                no_sdk_record["returncode"] == 0
+                and child.get("sdk") is None
+                and child.get("sdk_requested") is None
+                and child.get("sdk_source") == "not-applicable"
+                and child.get("sysroot") is None
+                and child.get("platform", {}).get("system") == "Linux"
+            )
+            sdk_controls["no_sdk"] = "passed" if no_sdk_ok else "failed"
+            sdk_details["no_sdk"] = {
+                "sdk": child.get("sdk"),
+                "sysroot": child.get("sysroot"),
+                "compiler": child["compiler"]["path"],
+            }
+        except (CheckError, KeyError, TypeError) as error:
+            sdk_controls["no_sdk"] = "failed"
+            sdk_details["no_sdk"] = {"error": str(error)}
+
+        # A nonexistent CMAKE_SYSROOT must fail configuration — the writer
+        # refuses to record a sysroot that does not exist.
+        missing_sysroot = work_root / "missing-sysroot"
+        bad_record, _bad_build = configure_case(
+            "linux-bad-sysroot",
+            options=(f"-DCMAKE_SYSROOT={missing_sysroot}",),
         )
+        bad_output = bad_record["stdout"] + bad_record["stderr"]
+        bad_ok = bad_record["returncode"] != 0 and str(missing_sysroot) in bad_output
+        sdk_controls["bad_sysroot"] = "rejected" if bad_ok else "failed"
+        sdk_details["bad_sysroot"] = {
+            "requested": str(missing_sysroot),
+            "returncode": bad_record["returncode"],
+        }
+
+        # Standard-library assertion control: compile a probe under the
+        # configured stdlib's hardening mode and prove an out-of-bounds
+        # std::vector element access aborts. libstdc++ __glibcxx_assert_fail
+        # raises SIGABRT; libc++ hardening traps (SIGTRAP on aarch64, SIGILL
+        # on x86_64 via __builtin_trap's ud2).
+        stdlib_name = context["stdlib"]["name"]
+        stdlib_mode = context["stdlib"]["hardening"]["mode"]
+        probe_source = work_root / "stdlib_hardening_probe.cpp"
+        probe_source.write_text(
+            "#include <cstdint>\n#include <vector>\n"
+            "#if !defined(__STRICT_ANSI__) || __cplusplus < 202302L\n"
+            "#error Native first-party code must compile as strict C++23\n#endif\n"
+            "int main(int argc, char**) {\n"
+            "  std::vector<std::uint64_t> values(64);\n"
+            "  if (argc > 1) {\n"
+            "    volatile std::uint64_t invalid = values[values.size() + 64];\n"
+            "    return static_cast<int>(invalid);\n"
+            "  }\n"
+            "  return 0;\n"
+            "}\n"
+        )
+        if stdlib_name == "libc++":
+            define = "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"
+            expected_signals = {int(signal.SIGTRAP), int(signal.SIGILL)}
+            stdlib_args = (
+                ["-stdlib=libc++"]
+                if context["compiler"]["id"] in {"Clang", "AppleClang"}
+                else []
+            )
+        else:
+            define = "-D_GLIBCXX_ASSERTIONS"
+            expected_signals = {int(signal.SIGABRT)}
+            stdlib_args = []
+        binary = work_root / "stdlib-hardening-probe"
+        compile_argv = [
+            str(compiler),
+            "-std=c++23",
+            *stdlib_args,
+            define,
+            "-O0",
+            str(probe_source),
+            "-o",
+            str(binary),
+        ]
+        compile_record = _run_process(
+            compile_argv,
+            cwd=repository,
+            log_directory=log_directory,
+            name="stdlib-hardening-compile",
+            timeout_seconds=180,
+        )
+        summary["records"].append(compile_record)
+        hardening_failed = compile_record["process_health"] != "ok"
+        assertion_active = False
+        if not hardening_failed:
+            assertion_record = _run_process(
+                [str(binary), "invalid-element-control"],
+                cwd=repository,
+                log_directory=log_directory,
+                name="stdlib-hardening-assertion",
+                disable_core_dumps=True,
+                timeout_seconds=30,
+            )
+            signal_number = (
+                -assertion_record["returncode"]
+                if isinstance(assertion_record["returncode"], int)
+                and assertion_record["returncode"] < 0
+                else None
+            )
+            assertion_active = signal_number in expected_signals
+            summary["records"].append(
+                {
+                    **assertion_record,
+                    "control": "stdlib-hardening-assertion",
+                    "assertion_active": assertion_active,
+                    "assertion_category": f"{stdlib_name} std::vector element access",
+                }
+            )
+            benign_record = _run_process(
+                [str(binary)],
+                cwd=repository,
+                log_directory=log_directory,
+                name="stdlib-hardening-benign",
+                timeout_seconds=30,
+            )
+            summary["records"].append(benign_record)
+            if benign_record["returncode"] != 0:
+                hardening_failed = True
+            if not assertion_active:
+                hardening_failed = True
+        hardening_evidence.append(
+            {
+                "build_type": "control",
+                "stdlib": stdlib_name,
+                "mode": stdlib_mode,
+                "assertion_active": {stdlib_mode: assertion_active},
+                "expected_signals": sorted(expected_signals),
+            }
+        )
+        sdk_controls["stdlib_hardening"] = (
+            "failed" if hardening_failed else "passed"
+        )
+
+    if context_platform == "Darwin":
+        _run_darwin_controls()
+    elif context_platform == "Linux":
+        _run_linux_controls()
+    else:
+        raise CheckError(f"unsupported context platform: {context_platform}")
 
     summary["sdk_controls"] = sdk_controls
     summary["sdk_control_details"] = sdk_details

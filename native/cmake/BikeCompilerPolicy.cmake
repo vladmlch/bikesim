@@ -302,6 +302,46 @@ else()
     "no hardening policy exists for it")
 endif()
 
+# Standard-library version — the identity probe above establishes WHICH
+# library is linked; the schema-2 context also records its version. Measured
+# by compiling and running a probe under the same sysroot contract: libc++
+# reports _LIBCPP_VERSION, libstdc++ reports its release/date macros. A
+# failed probe while an identity was already proven is a contradiction —
+# fail closed rather than emit a fabricated version.
+file(WRITE "${_bike_policy_probe_dir}/stdlib_version.cpp"
+  "#include <version>\n#include <cstdio>\n"
+  "int main() {\n"
+  "#if defined(_LIBCPP_VERSION)\n"
+  "  std::printf(\"%d\", static_cast<int>(_LIBCPP_VERSION));\n"
+  "#elif defined(_GLIBCXX_RELEASE)\n"
+  "  std::printf(\"%d.%ld\", static_cast<int>(_GLIBCXX_RELEASE),\n"
+  "             static_cast<long>(__GLIBCXX__));\n"
+  "#elif defined(__GLIBCXX__)\n"
+  "  std::printf(\"%ld\", static_cast<long>(__GLIBCXX__));\n"
+  "#else\n"
+  "  return 1;\n"
+  "#endif\n"
+  "  return 0;\n"
+  "}\n")
+try_run(_bike_stdlib_version_run _bike_stdlib_version_compile
+  "${_bike_policy_probe_dir}/stdlib-version"
+  SOURCES "${_bike_policy_probe_dir}/stdlib_version.cpp"
+  CMAKE_FLAGS
+    ${_bike_policy_sysroot_flags}
+    "-DCMAKE_CXX_STANDARD:STRING=23"
+    "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+  RUN_OUTPUT_VARIABLE _bike_stdlib_version_output
+  COMPILE_OUTPUT_VARIABLE _bike_stdlib_version_compile_log)
+if(NOT _bike_stdlib_version_compile
+   OR NOT _bike_stdlib_version_run EQUAL 0
+   OR _bike_stdlib_version_output STREQUAL "")
+  message(FATAL_ERROR
+    "the ${BIKE_STDLIB_IDENTITY} identity probe succeeded but the version "
+    "probe failed — the toolchain is inconsistent:\n"
+    "${_bike_stdlib_version_compile_log}")
+endif()
+set(BIKE_STDLIB_VERSION "${_bike_stdlib_version_output}")
+
 # --------------------------------------------------------------------------
 # Warning candidates — the Clang list preserves the previous exact set and
 # ordering; GCC gets the equivalent positive spellings (the same hygiene
@@ -628,6 +668,61 @@ if(NATIVE_COVERAGE)
 endif()
 
 # --------------------------------------------------------------------------
+# Capability evidence — compile+link probes for every instrumentation lane,
+# recorded into the schema-2 context's `capabilities` record. Each probe runs
+# the real flag set against the selected toolchain; the record describes
+# measured truth only — a requested-but-unsupported capability still fails
+# the build through the flag paths above, never through this record.
+# --------------------------------------------------------------------------
+
+set(_bike_capability_probe_dir "${_bike_policy_probe_dir}/capabilities")
+file(WRITE "${_bike_capability_probe_dir}/probe.cpp"
+  "int main() { return 0; }\n")
+# _bike_probe_capability(<result-var> <label> <flag-list-var>)
+# Compile AND link a trivial TU with the flag set; the link half proves the
+# runtime is present, not just the driver spelling.
+function(_bike_probe_capability result_var label)
+  set(_cap_flags ${ARGN})
+  try_compile(${result_var}
+    "${_bike_capability_probe_dir}/build-${label}"
+    SOURCES "${_bike_capability_probe_dir}/probe.cpp"
+    CMAKE_FLAGS
+      ${_bike_policy_sysroot_flags}
+      "-DCMAKE_CXX_STANDARD:STRING=23"
+      "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+    COMPILE_DEFINITIONS ${_cap_flags}
+    LINK_OPTIONS ${_cap_flags}
+    OUTPUT_VARIABLE _bike_cap_probe_output)
+  set(${result_var} "${${result_var}}" PARENT_SCOPE)
+  list(JOIN _cap_flags " " _cap_flags_text)
+  if(${result_var})
+    set(${result_var}_EVIDENCE
+      "compile+link probe passed: ${_cap_flags_text}" PARENT_SCOPE)
+  else()
+    set(${result_var}_EVIDENCE
+      "compile+link probe failed: ${_cap_flags_text}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+if(_bike_clang_family)
+  set(_bike_cap_flags_asan
+    -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  set(_bike_cap_flags_coverage -fprofile-instr-generate -fcoverage-mapping)
+else()
+  # The GCC lane's ASan core omits the clang-only -fsanitize spellings.
+  set(_bike_cap_flags_asan
+    -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  set(_bike_cap_flags_coverage -fprofile-arcs -ftest-coverage)
+endif()
+# -fsanitize=realtime has no GCC spelling — the probe itself measures that.
+set(_bike_cap_flags_rtsan -fsanitize=realtime)
+
+_bike_probe_capability(BIKE_CAP_ASAN_SUPPORTED asan ${_bike_cap_flags_asan})
+_bike_probe_capability(BIKE_CAP_RTSAN_SUPPORTED rtsan ${_bike_cap_flags_rtsan})
+_bike_probe_capability(BIKE_CAP_COVERAGE_SUPPORTED coverage
+  ${_bike_cap_flags_coverage})
+
+# --------------------------------------------------------------------------
 # Assemble the effective policy.
 # --------------------------------------------------------------------------
 
@@ -796,13 +891,14 @@ _native_json_quote(_bike_machine_raw_json "${_bike_policy_machine_raw}")
 _native_json_quote(_bike_family_json "${BIKE_COMPILER_FAMILY}")
 _native_json_quote(_bike_compiler_id_json "${CMAKE_CXX_COMPILER_ID}")
 _native_json_quote(_bike_stdlib_json "${BIKE_STDLIB_IDENTITY}")
+_native_json_quote(_bike_stdlib_version_json "${BIKE_STDLIB_VERSION}")
 _native_json_quote(_bike_stdlib_detail_json "${_bike_stdlib_hardening_detail}")
 _native_json_quote(_bike_fortify_mode_json "${_bike_fortify_mode}")
 _native_json_quote(_bike_fortify_detail_json "${_bike_fortify_detail}")
 _native_json_quote(_bike_bp_reason_json "${_bike_branch_protection_reason}")
 
 set(BIKE_POLICY_REPORT_JSON
-  "{\"schema_version\":1,\"system\":${_bike_system_json},\"machine\":${_bike_machine_json},\"machine_raw\":${_bike_machine_raw_json},\"override\":${_bike_policy_override_json},\"compiler_family\":${_bike_family_json},\"compiler_id\":${_bike_compiler_id_json},\"cxx_standard\":23,\"cxx_extensions\":false,\"cxx23_library\":{\"supported\":${_bike_cxx23_json},\"checked\":[\"std::format\",\"std::span\",\"std::bit_cast\"]},\"stdlib\":{\"identity\":${_bike_stdlib_json},\"hardening\":${_bike_stdlib_detail_json},\"libcpp_hardening_supported\":${_bike_libcpp_supported_json}},\"glibc\":${_bike_glibc_json},\"fortify_source\":{\"level\":3,\"mode\":${_bike_fortify_mode_json},\"detail\":${_bike_fortify_detail_json}},\"branch_protection\":{\"applied\":${_bike_bp_applied_json},\"flag\":\"-mbranch-protection=standard\",\"reason\":${_bike_bp_reason_json}},\"required_flags\":${_bike_required_json},\"applied_warnings\":${_bike_warnings_json},\"omitted_warnings\":${_bike_policy_omitted_json},\"compile_options\":${_bike_options_json},\"compile_definitions\":${_bike_definitions_json},\"link_options\":${_bike_link_json}}")
+  "{\"schema_version\":1,\"system\":${_bike_system_json},\"machine\":${_bike_machine_json},\"machine_raw\":${_bike_machine_raw_json},\"override\":${_bike_policy_override_json},\"compiler_family\":${_bike_family_json},\"compiler_id\":${_bike_compiler_id_json},\"cxx_standard\":23,\"cxx_extensions\":false,\"cxx23_library\":{\"supported\":${_bike_cxx23_json},\"checked\":[\"std::format\",\"std::span\",\"std::bit_cast\"]},\"stdlib\":{\"identity\":${_bike_stdlib_json},\"version\":${_bike_stdlib_version_json},\"hardening\":${_bike_stdlib_detail_json},\"libcpp_hardening_supported\":${_bike_libcpp_supported_json}},\"glibc\":${_bike_glibc_json},\"fortify_source\":{\"level\":3,\"mode\":${_bike_fortify_mode_json},\"detail\":${_bike_fortify_detail_json}},\"branch_protection\":{\"applied\":${_bike_bp_applied_json},\"flag\":\"-mbranch-protection=standard\",\"reason\":${_bike_bp_reason_json}},\"required_flags\":${_bike_required_json},\"applied_warnings\":${_bike_warnings_json},\"omitted_warnings\":${_bike_policy_omitted_json},\"compile_options\":${_bike_options_json},\"compile_definitions\":${_bike_definitions_json},\"link_options\":${_bike_link_json}}")
 file(WRITE "${CMAKE_BINARY_DIR}/bike_policy_report.json"
   "${BIKE_POLICY_REPORT_JSON}\n")
 

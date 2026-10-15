@@ -12,6 +12,8 @@ import sys
 
 import pytest
 
+from native_loader import selected_build
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COVERAGE_TOOL = REPO_ROOT / 'tools' / 'native_coverage.py'
@@ -19,12 +21,10 @@ CONTRACT_TOOL = REPO_ROOT / 'tools' / 'check_native_contracts.py'
 
 
 def _run_uv_python(script: Path, arguments: list[str], environment: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    child_environment = environment.copy()
-    child_environment.setdefault('UV_CACHE_DIR', '/private/tmp/cpp-port-v4-uv')
     return subprocess.run(
-        ['uv', 'run', 'python', str(script), *arguments],
+        [sys.executable, str(script), *arguments],
         cwd=REPO_ROOT,
-        env=child_environment,
+        env=environment.copy(),
         text=True,
         capture_output=True,
         check=False,
@@ -267,6 +267,18 @@ def _write_contract_fixture(tmp_path: Path) -> dict[str, Path]:
         )
     )
 
+    # The fixture mirrors the real declared graph: engine consumers name
+    # Bike::MuJoCo, numerics consumers name Bike::Numerics, and the direct
+    # adapter harnesses deliberately carry no engine edge.
+    link_edges = {
+        'bike_native': ['Bike::MuJoCo', 'Bike::Numerics'],
+        'native_contract_tests': ['Bike::MuJoCo', 'Bike::Numerics'],
+        'native_distance_tests': ['Bike::MuJoCo', 'Bike::Numerics'],
+        'native_station_tests': ['Bike::MuJoCo', 'Bike::Numerics'],
+        'native_bench': ['Bike::MuJoCo'],
+        'native_platform_blas_tests': ['Bike::Numerics'],
+        'native_platform_lapack_tests': ['Bike::Numerics'],
+    }
     target_contexts = {
         target: {
             'configuration': 'fixture',
@@ -276,9 +288,9 @@ def _write_contract_fixture(tmp_path: Path) -> dict[str, Path]:
             'compile_definitions': [hardening_definition],
             'compile_options': [],
             'link_directories': [],
-            'link_libraries': [],
+            'link_libraries': link_edges[target],
         }
-        for target in ('bike_native', 'native_contract_tests')
+        for target in link_edges
     }
     context = {
         'schema_version': 1,
@@ -328,9 +340,17 @@ def _write_contract_fixture(tmp_path: Path) -> dict[str, Path]:
         )
     (build / 'compile_commands.json').write_text(json.dumps(compile_entries))
     (build / 'CMakeCache.txt').write_text('NATIVE_COVERAGE:BOOL=OFF\n')
-    (build / 'CTestTestfile.cmake').write_text(
-        'add_test([=[native_contract_tests]=] "native_contract_tests")\n'
-    )
+    ctest_lines = [
+        'add_test([=[native_contract_tests]=] "native_contract_tests")\n',
+        'add_test([=[native_distance_tests]=] "native_distance_tests")\n',
+        'add_test([=[native_station_tests]=] "native_station_tests")\n',
+        'add_test([=[native_platform_blas_tests]=] "native_platform_blas_tests")\n',
+        'add_test([=[native_platform_lapack_tests]=] "native_platform_lapack_tests")\n',
+        'add_test([=[native_bench_bare]=] "native_bench" "bare" "20" "5")\n',
+        'add_test([=[native_bench_glue]=] "native_bench" "glue" "10" "4")\n',
+        'add_test([=[native_bench_heavy]=] "native_bench" "heavy" "6" "3")\n',
+    ]
+    (build / 'CTestTestfile.cmake').write_text(''.join(ctest_lines))
     contract_binary = build / 'native_contract_tests'
     contract_binary.write_text(
         "#!/bin/sh\n"
@@ -417,7 +437,7 @@ def test_contract_checker_requires_manifested_ctest_contract_cases(tmp_path: Pat
     result = _run_contract_checker(fixture)
 
     assert result.returncode != 0
-    assert 'native_contract_tests is not registered with CTest' in result.stderr
+    assert 'CTest registration is incomplete' in result.stderr
 
 
 def test_contract_checker_rejects_empty_native_contract_case_registry(tmp_path: Path) -> None:
@@ -495,7 +515,7 @@ def test_contract_checker_rejects_missing_configured_hardening_definition(tmp_pa
     result = _run_contract_checker(fixture)
 
     assert result.returncode != 0
-    assert 'missing libc++ hardening definition' in result.stderr
+    assert 'missing stdlib hardening definition' in result.stderr
 
 
 def test_contract_checker_rejects_disabled_move_analysis(tmp_path: Path) -> None:
@@ -630,10 +650,15 @@ def test_contract_checker_parses_repository_folded_tidy_policy(tmp_path: Path) -
     assert result.returncode == 0, result.stderr
 
 
+@pytest.mark.skipif(
+    sys.platform != 'darwin',
+    reason='native coverage is supported on the Apple toolchain',
+)
 def test_real_one_file_llvm_coverage_report(tmp_path: Path) -> None:
     """Exercise real clang instrumentation, profile merging, and llvm-cov report output."""
-    assert sys.platform == 'darwin', 'native coverage is supported on the Apple toolchain'
-    context = json.loads((REPO_ROOT / 'native' / 'build' / 'native_check_context.json').read_text())
+    context = json.loads(
+        (selected_build(os.environ) / 'native_check_context.json').read_text()
+    )
     compiler = Path(context['compiler']['path'])
     source = tmp_path / 'coverage_probe.cpp'
     source.write_text(

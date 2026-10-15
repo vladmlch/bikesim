@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import shlex
 import subprocess
@@ -10,8 +11,85 @@ from pathlib import Path
 
 import pytest
 
+from native_loader import selected_build
 import tools.native_checks as native_checks
 from tools.native_checks import load_context, load_entries, run_sweep
+
+
+def configured_build_path() -> Path:
+    """The build directory this test run selected (NATIVE_TEST_BUILD_PATH)."""
+    return selected_build(os.environ)
+
+
+def _schema2_records(
+    tmp_path: Path,
+    *,
+    platform_system: str,
+    stdlib_name: str,
+    sysroot: str | None,
+) -> dict[str, object]:
+    """The records schema 2 adds over schema 1, honest to the arguments."""
+    stdlib_modes = {"libc++": "EXTENSIVE", "libstdc++": "ASSERTIONS"}
+    if platform_system == "Darwin":
+        sdk_fields: dict[str, object] = {
+            "sdk": str(tmp_path.resolve()),
+            "sdk_requested": str(tmp_path.resolve()),
+            "sdk_source": "explicit",
+            "sysroot": str(tmp_path.resolve()),
+        }
+    else:
+        sdk_fields = {
+            "sdk": None,
+            "sdk_requested": None,
+            "sdk_source": "not-applicable",
+            "sysroot": sysroot,
+        }
+    return {
+        "platform": {
+            "system": platform_system,
+            "host_system": platform_system,
+            "machine": platform.machine(),
+            "pointer_bits": 64,
+        },
+        "stdlib": {
+            "name": stdlib_name,
+            "version": "17",
+            "hardening": {
+                "mode": stdlib_modes[stdlib_name],
+                "effective": True,
+            },
+        },
+        "numerics": {"backend": "TEST_PROVIDER"},
+        "policy": {
+            "required_flags": ["-ffp-contract=off"],
+            "accepted_warnings": ["-Wall"],
+            "rejected_warnings": [
+                {"flag": "-Wnot-a-warning", "reason": "probe failed"}
+            ],
+        },
+        "capabilities": {
+            "asan": {
+                "requested": False,
+                "supported": True,
+                "enabled": False,
+                "evidence": "probe",
+            },
+            "rtsan": {
+                "requested": False,
+                "supported": False,
+                "enabled": False,
+                "evidence": "probe failed",
+            },
+            "coverage": {
+                "requested": False,
+                "supported": True,
+                "enabled": False,
+                "evidence": "probe",
+            },
+            "frontend_tools": {},
+        },
+        **sdk_fields,
+    }
 
 
 def write_fixture(
@@ -20,6 +98,10 @@ def write_fixture(
     sources: list[tuple[Path, str, str]] | None = None,
     entries: list[dict[str, object]] | None = None,
     include_paths: list[Path] | None = None,
+    schema_version: int = 1,
+    platform_system: str | None = None,
+    stdlib_name: str = "libc++",
+    sysroot: str | None = None,
 ) -> tuple[Path, set[Path]]:
     source_root = tmp_path / "native" / "src"
     source_root.mkdir(parents=True, exist_ok=True)
@@ -44,18 +126,19 @@ def write_fixture(
     )
     suppression_manifest = source_root / "analysis_suppressions.json"
     suppression_manifest.write_text(json.dumps({"schema_version": 1, "suppressions": []}))
+    libcpp_hardening = (
+        {"supported": True, "mode": "EXTENSIVE", "requested_mode": "EXTENSIVE"}
+        if stdlib_name == "libc++"
+        else {"supported": False, "mode": "NOT_APPLICABLE", "requested_mode": "EXTENSIVE"}
+    )
     context = {
-        "schema_version": 1,
+        "schema_version": schema_version,
         "source_roots": [str(source_root.resolve())],
         "compiler": {"path": sys.executable, "id": "fixture", "version": "1"},
         "sdk": str(tmp_path.resolve()),
         "sdk_requested": str(tmp_path.resolve()),
         "sdk_source": "explicit",
-        "libcpp_hardening": {
-            "supported": True,
-            "mode": "EXTENSIVE",
-            "requested_mode": "EXTENSIVE",
-        },
+        "libcpp_hardening": libcpp_hardening,
         "include_paths": [str(path.resolve()) for path in include_paths or []],
         "library_paths": [],
         "required_files": [],
@@ -79,10 +162,24 @@ def write_fixture(
             for target in {item[1] for item in manifest_sources}
         },
     }
+    if schema_version == 2:
+        context.update(
+            _schema2_records(
+                tmp_path,
+                platform_system=platform_system or platform.system(),
+                stdlib_name=stdlib_name,
+                sysroot=sysroot,
+            )
+        )
     (build / "native_check_context.json").write_text(json.dumps(context))
 
     if entries is None:
-        entries = [compile_entry(source, tmp_path, arguments=True)]
+        linux_no_sysroot = schema_version == 2 and platform_system == "Linux"
+        entries = [
+            compile_entry(
+                source, tmp_path, arguments=True, with_sysroot=not linux_no_sysroot
+            )
+        ]
     (build / "compile_commands.json").write_text(json.dumps(entries))
     return build, expected
 
@@ -95,14 +192,15 @@ def compile_entry(
     relative_file: bool = False,
     extra: list[str] | None = None,
     target: str = "bike_native",
+    with_sysroot: bool = True,
 ) -> dict[str, object]:
     source_arg = os.path.relpath(source, directory) if relative_file else str(source)
     output = f"CMakeFiles/{target}.dir/{source.name}.o"
+    sysroot_args = ["-isysroot", str(directory)] if with_sysroot else []
     argv = [
         sys.executable,
         "-std=c++23",
-        "-isysroot",
-        str(directory),
+        *sysroot_args,
         *(extra or []),
         "-c",
         source_arg,
@@ -306,7 +404,7 @@ def test_compile_database_sysroot_must_match_configured_context(tmp_path: Path) 
     )
     build, expected = write_fixture(tmp_path, entries=[entry])
 
-    with pytest.raises(ValueError, match="sysroot.*configured SDK"):
+    with pytest.raises(ValueError, match="sysroot.*configured sysroot"):
         load_entries(build, expected)
 
 
@@ -521,7 +619,7 @@ def run_header_control(root: Path, *, diagnostic_in_header: bool = True) -> subp
             'int main() { return static_cast<int>(divide(1, 2) + control::value()); }\n'
         )
 
-    configured_build = repository / "native" / "build"
+    configured_build = configured_build_path()
     context = json.loads((configured_build / "native_check_context.json").read_text())
     database = json.loads((configured_build / "compile_commands.json").read_text())
     configured_source = repository / "native" / "src" / "binding.cpp"
@@ -610,9 +708,7 @@ def run_header_control(root: Path, *, diagnostic_in_header: bool = True) -> subp
     )
     return subprocess.run(
         [
-            "uv",
-            "run",
-            "python",
+            sys.executable,
             str(repository / "tools" / "native_checks.py"),
             "--kind",
             "tidy",
@@ -649,13 +745,15 @@ def configure_native(
     repository = Path(__file__).resolve().parents[2]
     build = tmp_path / "native-configure"
     command = [
-        "uv",
-        "run",
         "cmake",
         "-S",
         str(repository / "native"),
         "-B",
         str(build),
+        # Pin the interpreter running the tests — FindPython otherwise picks
+        # up whatever python3 lands first on PATH, which may not carry the
+        # dependencies (threadpoolctl) the numerics probe requires.
+        f"-DPython_EXECUTABLE={sys.executable}",
         *cmake_options,
     ]
     completed = subprocess.run(
@@ -669,10 +767,13 @@ def configure_native(
     return completed, build
 
 
+@pytest.mark.skipif(
+    platform.system() != "Darwin", reason="CMAKE_OSX_SYSROOT is Darwin-only"
+)
 def test_explicit_sdk_alias_is_retained_and_canonicalized(tmp_path: Path) -> None:
     repository = Path(__file__).resolve().parents[2]
     current_context = json.loads(
-        (repository / "native" / "build" / "native_check_context.json").read_text()
+        (configured_build_path() / "native_check_context.json").read_text()
     )
     current_sdk = Path(current_context["sdk"])
     explicit_alias = current_sdk.parent / "MacOSX26.5.sdk"
@@ -706,10 +807,13 @@ def test_explicit_sdk_alias_is_retained_and_canonicalized(tmp_path: Path) -> Non
     assert set(selected_sysroots) == {explicit_alias.resolve()}
 
 
+@pytest.mark.skipif(
+    platform.system() != "Darwin", reason="CMAKE_OSX_SYSROOT is Darwin-only"
+)
 def test_missing_explicit_sdk_fails_without_default_fallback(tmp_path: Path) -> None:
     repository = Path(__file__).resolve().parents[2]
     context = json.loads(
-        (repository / "native" / "build" / "native_check_context.json").read_text()
+        (configured_build_path() / "native_check_context.json").read_text()
     )
     missing_sdk = tmp_path / "missing-explicit-sdk"
 
@@ -723,10 +827,13 @@ def test_missing_explicit_sdk_fails_without_default_fallback(tmp_path: Path) -> 
     assert str(missing_sdk) in configured.stdout + configured.stderr
 
 
+@pytest.mark.skipif(
+    platform.system() != "Darwin", reason="xcrun SDK resolution is Darwin-only"
+)
 def test_default_sdk_is_resolved_from_xcrun(tmp_path: Path) -> None:
     repository = Path(__file__).resolve().parents[2]
     current_context = json.loads(
-        (repository / "native" / "build" / "native_check_context.json").read_text()
+        (configured_build_path() / "native_check_context.json").read_text()
     )
     xcrun = subprocess.run(
         ["xcrun", "--sdk", "macosx", "--show-sdk-path"],
@@ -748,10 +855,13 @@ def test_default_sdk_is_resolved_from_xcrun(tmp_path: Path) -> None:
     ).resolve()
 
 
+@pytest.mark.skipif(
+    platform.system() != "Darwin", reason="libc++ EXTENSIVE default is Darwin-only"
+)
 def test_empty_build_type_defaults_to_extensive_hardening(tmp_path: Path) -> None:
     repository = Path(__file__).resolve().parents[2]
     current_context = json.loads(
-        (repository / "native" / "build" / "native_check_context.json").read_text()
+        (configured_build_path() / "native_check_context.json").read_text()
     )
 
     configured, build = configure_native(
@@ -766,10 +876,13 @@ def test_empty_build_type_defaults_to_extensive_hardening(tmp_path: Path) -> Non
     assert context["libcpp_hardening"]["supported"] is True
 
 
+@pytest.mark.skipif(
+    platform.system() != "Darwin", reason="libc++ FAST comparison is Darwin-only"
+)
 def test_fast_hardening_is_available_as_an_explicit_comparison(tmp_path: Path) -> None:
     repository = Path(__file__).resolve().parents[2]
     current_context = json.loads(
-        (repository / "native" / "build" / "native_check_context.json").read_text()
+        (configured_build_path() / "native_check_context.json").read_text()
     )
 
     configured, build = configure_native(
@@ -799,13 +912,18 @@ def test_fast_hardening_is_available_as_an_explicit_comparison(tmp_path: Path) -
 def test_first_party_compile_commands_use_iso_cpp23(tmp_path: Path) -> None:
     repository = Path(__file__).resolve().parents[2]
     current_context = json.loads(
-        (repository / "native" / "build" / "native_check_context.json").read_text()
+        (configured_build_path() / "native_check_context.json").read_text()
+    )
+    sdk_options = (
+        [f"-DCMAKE_OSX_SYSROOT={current_context['sdk']}"]
+        if platform.system() == "Darwin"
+        else []
     )
 
     configured, build = configure_native(
         tmp_path,
         f"-DCMAKE_CXX_COMPILER={current_context['compiler']['path']}",
-        f"-DCMAKE_OSX_SYSROOT={current_context['sdk']}",
+        *sdk_options,
     )
 
     assert configured.returncode == 0, configured.stdout + configured.stderr
@@ -833,14 +951,12 @@ def run_controller_kind(kind: str, *, timeout: int = 180) -> subprocess.Complete
     repository = Path(__file__).resolve().parents[2]
     return subprocess.run(
         [
-            "uv",
-            "run",
-            "python",
+            sys.executable,
             str(repository / "tools" / "native_checks.py"),
             "--kind",
             kind,
             "--build",
-            str(repository / "native" / "build"),
+            str(configured_build_path()),
         ],
         cwd=repository,
         text=True,
@@ -855,13 +971,7 @@ def test_standalone_header_sweep_compiles_first_party_headers() -> None:
 
     assert result.returncode == 0, result.stdout + result.stderr
     summary = json.loads(
-        (
-            Path(__file__).resolve().parents[2]
-            / "native"
-            / "build"
-            / "native_check_summaries"
-            / "headers.json"
-        ).read_text()
+        (configured_build_path() / "native_check_summaries" / "headers.json").read_text()
     )
     assert summary["tool_health"] == "ok"
     assert summary["finding_status"] == "none"
@@ -874,9 +984,7 @@ def test_diagnostic_controls_cover_warning_families_and_move() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     summary = json.loads(
         (
-            Path(__file__).resolve().parents[2]
-            / "native"
-            / "build"
+            configured_build_path()
             / "native_check_summaries"
             / "diagnostic-controls.json"
         ).read_text()
@@ -902,39 +1010,53 @@ def test_context_control_records_sdk_hardening_and_timing_evidence() -> None:
 
     assert result.returncode == 0, result.stdout + result.stderr
     summary = json.loads(
-        (
-            Path(__file__).resolve().parents[2]
-            / "native"
-            / "build"
-            / "native_check_summaries"
-            / "context.json"
-        ).read_text()
+        (configured_build_path() / "native_check_summaries" / "context.json").read_text()
     )
     assert summary["tool_health"] == "ok"
-    assert summary["sdk_controls"]["explicit_sdk"] == "passed"
-    assert summary["sdk_controls"]["missing_sdk"] == "rejected"
-    assert summary["sdk_controls"]["default_sdk"] == "passed"
-    assert {item["build_type"] for item in summary["hardening_evidence"]} == {
-        "Debug",
-        "Release",
-        "default",
-    }
-    assert all(
-        item["sizeof"]["EXTENSIVE"] == item["sizeof"]["FAST"]
-        for item in summary["hardening_evidence"]
-    )
-    assert all(
-        all(item["timings_ns"][mode] for mode in ("EXTENSIVE", "FAST"))
-        for item in summary["hardening_evidence"]
-    )
-    assert all(item["assertion_active"]["EXTENSIVE"] for item in summary["hardening_evidence"])
-    assert all("FAST" in item["assertion_active"] for item in summary["hardening_evidence"])
-    assert all(
-        item["assertion_evidence"]["EXTENSIVE"]["signal"] == "SIGTRAP"
-        and item["assertion_evidence"]["EXTENSIVE"]["category"]
-        == "libc++ std::vector element access"
-        for item in summary["hardening_evidence"]
-    )
+    if platform.system() == "Darwin":
+        assert summary["sdk_controls"]["explicit_sdk"] == "passed"
+        assert summary["sdk_controls"]["missing_sdk"] == "rejected"
+        assert summary["sdk_controls"]["default_sdk"] == "passed"
+        assert {item["build_type"] for item in summary["hardening_evidence"]} == {
+            "Debug",
+            "Release",
+            "default",
+        }
+        assert all(
+            item["sizeof"]["EXTENSIVE"] == item["sizeof"]["FAST"]
+            for item in summary["hardening_evidence"]
+        )
+        assert all(
+            all(item["timings_ns"][mode] for mode in ("EXTENSIVE", "FAST"))
+            for item in summary["hardening_evidence"]
+        )
+        assert all(
+            item["assertion_active"]["EXTENSIVE"]
+            for item in summary["hardening_evidence"]
+        )
+        assert all(
+            "FAST" in item["assertion_active"]
+            for item in summary["hardening_evidence"]
+        )
+        assert all(
+            item["assertion_evidence"]["EXTENSIVE"]["signal"] == "SIGTRAP"
+            and item["assertion_evidence"]["EXTENSIVE"]["category"]
+            == "libc++ std::vector element access"
+            for item in summary["hardening_evidence"]
+        )
+    else:
+        assert summary["sdk_controls"]["no_sdk"] == "passed"
+        assert summary["sdk_controls"]["bad_sysroot"] == "rejected"
+        assert summary["sdk_controls"]["stdlib_hardening"] == "passed"
+        assert summary["hardening_evidence"], "missing libstdc++ hardening evidence"
+        assert all(
+            item["stdlib"] == "libstdc++" and item["mode"] == "ASSERTIONS"
+            for item in summary["hardening_evidence"]
+        )
+        assert all(
+            item["assertion_active"]["ASSERTIONS"]
+            for item in summary["hardening_evidence"]
+        )
 
 
 def test_analyzer_suppression_manifest_has_complete_records() -> None:
@@ -1045,3 +1167,429 @@ def test_clang_tidy_move_suppression_is_limited_to_nanobind_origin(
     assert summary["suppression_counts"] == {"clang-analyzer-cplusplus.Move": 1}
     assert summary["records"][0]["diagnostics"] == [third_party, first_party]
     assert summary["records"][0]["unsuppressed_diagnostics"] == [first_party]
+
+
+# ---------------------------------------------------------------------------
+# Schema-2 platform-context validation
+# ---------------------------------------------------------------------------
+
+
+def _patch_host(monkeypatch: pytest.MonkeyPatch, system: str) -> None:
+    """A synthetic context only validates against its claimed host."""
+    monkeypatch.setattr(native_checks.platform, "system", lambda: system)
+
+
+def test_schema2_context_loads_on_matching_host(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    context = load_context(build)
+    assert context["platform"]["system"] == platform.system()
+    assert context["stdlib"]["name"] == "libc++" or context["stdlib"]["name"] == "libstdc++"
+    if platform.system() == "Darwin":
+        assert context["sdk"] is not None
+        assert context["sysroot"] == context["sdk"]
+    else:
+        assert context["sdk"] is None
+        assert context["sysroot"] is None
+
+
+def test_schema1_context_remains_supported(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=1)
+    context = load_context(build)
+    # Schema-1 records are Darwin-shaped; the SDK stays a resolved path.
+    assert context["sdk"] is not None
+    assert Path(context["sdk"]).is_dir()
+
+
+def test_schema2_linux_context_loads_and_records_no_sdk(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_host(monkeypatch, "Linux")
+    build, _ = write_fixture(
+        tmp_path,
+        schema_version=2,
+        platform_system="Linux",
+        stdlib_name="libstdc++",
+    )
+    context = load_context(build)
+    assert context["sdk"] is None
+    assert context["sdk_requested"] is None
+    assert context["sdk_source"] == "not-applicable"
+    assert context["sysroot"] is None
+    assert context["stdlib"]["name"] == "libstdc++"
+    assert context["stdlib"]["hardening"]["mode"] == "ASSERTIONS"
+
+
+def test_schema2_linux_entries_without_sysroot_validate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_host(monkeypatch, "Linux")
+    build, expected = write_fixture(
+        tmp_path,
+        schema_version=2,
+        platform_system="Linux",
+        stdlib_name="libstdc++",
+    )
+    entries = load_entries(build, expected)
+    assert len(entries) == 1
+
+
+def test_schema2_linux_sysroot_argument_is_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An -isysroot the context did not record must fail selection."""
+    _patch_host(monkeypatch, "Linux")
+    source = tmp_path / "native" / "src" / "one.cpp"
+    entry = compile_entry(source, tmp_path, arguments=True, with_sysroot=True)
+    build, expected = write_fixture(
+        tmp_path,
+        schema_version=2,
+        platform_system="Linux",
+        stdlib_name="libstdc++",
+        entries=[entry],
+    )
+    with pytest.raises(native_checks.CheckError, match="configures none"):
+        load_entries(build, expected)
+
+
+def test_schema2_explicit_sysroot_directory_is_accepted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_host(monkeypatch, "Linux")
+    sysroot_dir = tmp_path / "sysroot"
+    sysroot_dir.mkdir()
+    source = tmp_path / "native" / "src" / "one.cpp"
+    entry = compile_entry(source, tmp_path, arguments=True, with_sysroot=False)
+    # Re-attach the sysroot argument pointing at the configured sysroot.
+    entry["arguments"] = [
+        entry["arguments"][0],
+        "-std=c++23",
+        "-isysroot",
+        str(sysroot_dir.resolve()),
+        *entry["arguments"][2:],
+    ]
+    build, expected = write_fixture(
+        tmp_path,
+        schema_version=2,
+        platform_system="Linux",
+        stdlib_name="libstdc++",
+        sysroot=str(sysroot_dir.resolve()),
+        entries=[entry],
+    )
+    entries = load_entries(build, expected)
+    assert len(entries) == 1
+
+
+def test_schema2_missing_platform_record_fails(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    del context["platform"]
+    context_path.write_text(json.dumps(context))
+    with pytest.raises(native_checks.CheckError, match="platform"):
+        load_context(build)
+
+
+def test_schema2_platform_host_mismatch_fails(tmp_path: Path) -> None:
+    claimed = "Linux" if platform.system() == "Darwin" else "Darwin"
+    build, _ = write_fixture(
+        tmp_path, schema_version=2, platform_system=claimed
+    )
+    with pytest.raises(native_checks.CheckError, match="host"):
+        load_context(build)
+
+
+def test_schema2_linux_context_must_not_record_sdk(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_host(monkeypatch, "Linux")
+    build, _ = write_fixture(
+        tmp_path, schema_version=2, platform_system="Linux"
+    )
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["sdk"] = str(tmp_path.resolve())
+    context_path.write_text(json.dumps(context))
+    with pytest.raises(native_checks.CheckError, match="Apple SDK"):
+        load_context(build)
+
+
+def test_schema2_linux_wrong_sdk_source_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_host(monkeypatch, "Linux")
+    build, _ = write_fixture(
+        tmp_path, schema_version=2, platform_system="Linux"
+    )
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["sdk_source"] = "explicit"
+    context_path.write_text(json.dumps(context))
+    with pytest.raises(native_checks.CheckError, match="not-applicable"):
+        load_context(build)
+
+
+def test_schema2_linux_missing_sysroot_path_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_host(monkeypatch, "Linux")
+    build, _ = write_fixture(
+        tmp_path,
+        schema_version=2,
+        platform_system="Linux",
+        sysroot=str(tmp_path / "nonexistent-sysroot"),
+    )
+    with pytest.raises(native_checks.CheckError, match="sysroot"):
+        load_context(build)
+
+
+@pytest.mark.skipif(
+    platform.system() != "Darwin", reason="Darwin SDK semantics"
+)
+def test_schema2_darwin_sysroot_drift_fails(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    drifted = tmp_path / "drifted-sdk"
+    drifted.mkdir()
+    context["sysroot"] = str(drifted.resolve())
+    context_path.write_text(json.dumps(context))
+    with pytest.raises(native_checks.CheckError, match="sysroot"):
+        load_context(build)
+
+
+def test_schema2_invalid_stdlib_fails(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["stdlib"]["name"] = "msvc-stl"
+    context_path.write_text(json.dumps(context))
+    with pytest.raises(native_checks.CheckError, match="stdlib"):
+        load_context(build)
+
+
+def test_schema2_stdlib_mode_mismatch_fails(tmp_path: Path) -> None:
+    build, _ = write_fixture(
+        tmp_path, schema_version=2, stdlib_name="libstdc++"
+    )
+    if platform.system() == "Darwin":
+        pytest.skip("Darwin requires libc++ — the stdlib check fails earlier")
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["stdlib"]["hardening"]["mode"] = "FAST"
+    context_path.write_text(json.dumps(context))
+    with pytest.raises(native_checks.CheckError, match="hardening"):
+        load_context(build)
+
+
+def test_schema2_capability_enabled_without_support_fails(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["capabilities"]["rtsan"]["enabled"] = True
+    context_path.write_text(json.dumps(context))
+    with pytest.raises(native_checks.CheckError, match="without support"):
+        load_context(build)
+
+
+def test_schema2_missing_numerics_fails(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    del context["numerics"]
+    context_path.write_text(json.dumps(context))
+    with pytest.raises(native_checks.CheckError, match="numerics"):
+        load_context(build)
+
+
+# ---------------------------------------------------------------------------
+# Schema-2 Linux negative controls — the same fail-closed checks the Darwin
+# fixtures exercise, run through the no-SDK platform record. Every case goes
+# through load_context/load_entries, not a narrower subvalidator.
+# ---------------------------------------------------------------------------
+
+
+def _linux_fixture(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    **kwargs: object,
+) -> tuple[Path, set[Path]]:
+    """A schema-2 Linux build context: no SDK, null sysroot, libstdc++."""
+    _patch_host(monkeypatch, "Linux")
+    return write_fixture(
+        tmp_path,
+        schema_version=2,
+        platform_system="Linux",
+        stdlib_name="libstdc++",
+        **kwargs,
+    )
+
+
+def test_schema2_linux_stale_compiler_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "native" / "src" / "one.cpp"
+    entry = compile_entry(source, tmp_path, arguments=True, with_sysroot=False)
+    entry["arguments"][0] = "/bin/sh"
+    build, expected = _linux_fixture(tmp_path, monkeypatch, entries=[entry])
+
+    with pytest.raises(
+        native_checks.CheckError, match="compiler differs from configured"
+    ):
+        load_entries(build, expected)
+
+
+@pytest.mark.parametrize(
+    "library_entry", ["missing-file", "plain-directory"]
+)
+def test_schema2_linux_invalid_library_path_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, library_entry: str
+) -> None:
+    build, _ = _linux_fixture(tmp_path, monkeypatch)
+    library_path = tmp_path / "libprovider.so"
+    if library_entry == "plain-directory":
+        library_path.mkdir()
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["library_paths"] = [str(library_path)]
+    context_path.write_text(json.dumps(context))
+
+    with pytest.raises(native_checks.CheckError, match="library_paths entry"):
+        load_context(build)
+
+
+def test_schema2_linux_duplicate_translation_unit_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "native" / "src" / "one.cpp"
+    entry = compile_entry(source, tmp_path, arguments=True, with_sysroot=False)
+    build, expected = _linux_fixture(
+        tmp_path, monkeypatch, entries=[entry, entry.copy()]
+    )
+
+    with pytest.raises(
+        native_checks.CheckError, match="duplicate.*translation unit"
+    ):
+        load_entries(build, expected)
+
+
+def test_schema2_linux_missing_translation_unit_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_root = tmp_path / "native" / "src"
+    source_root.mkdir(parents=True)
+    missing_tu = source_root / "two.cpp"
+    missing_tu.write_text("int second_party() { return 0; }\n")
+    source = source_root / "one.cpp"
+    entry = compile_entry(source, tmp_path, arguments=True, with_sysroot=False)
+    build, expected = _linux_fixture(
+        tmp_path,
+        monkeypatch,
+        sources=[
+            (source, "bike_native", "default"),
+            (missing_tu, "bike_native", "default"),
+        ],
+        entries=[entry],
+    )
+
+    with pytest.raises(
+        native_checks.CheckError,
+        match="missing expected translation units.*two.cpp",
+    ):
+        load_entries(build, expected)
+
+
+def test_schema2_linux_wrong_target_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "native" / "src" / "one.cpp"
+    entry = compile_entry(source, tmp_path, arguments=True, with_sysroot=False)
+    entry["output"] = "CMakeFiles/other_target.dir/one.cpp.o"
+    entry["arguments"][-1] = entry["output"]
+    build, expected = _linux_fixture(tmp_path, monkeypatch, entries=[entry])
+
+    with pytest.raises(
+        native_checks.CheckError, match="unexpected target context"
+    ):
+        load_entries(build, expected)
+
+
+@pytest.mark.parametrize(
+    "flag_case", ["extensions-std", "omitted-option"]
+)
+def test_schema2_linux_wrong_selected_flags_fail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, flag_case: str
+) -> None:
+    source = tmp_path / "native" / "src" / "one.cpp"
+    entry = compile_entry(source, tmp_path, arguments=True, with_sysroot=False)
+    if flag_case == "extensions-std":
+        entry["arguments"][1] = "-std=gnu++23"
+        match = r"not strict ISO C\+\+23"
+    else:
+        match = "omits target bike_native compile option"
+    build, expected = _linux_fixture(tmp_path, monkeypatch, entries=[entry])
+    if flag_case == "omitted-option":
+        context_path = build / "native_check_context.json"
+        context = json.loads(context_path.read_text())
+        context["target_contexts"]["bike_native"]["compile_options"] = [
+            "-ffp-contract=off"
+        ]
+        context_path.write_text(json.dumps(context))
+
+    with pytest.raises(native_checks.CheckError, match=match):
+        load_entries(build, expected)
+
+
+def test_schema2_linux_relative_dependency_path_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A relative -I resolves against the entry directory — and must exist."""
+    source = tmp_path / "native" / "src" / "one.cpp"
+    entry = compile_entry(
+        source,
+        tmp_path,
+        arguments=True,
+        with_sysroot=False,
+        extra=["-I", "relative-include"],
+    )
+    build, expected = _linux_fixture(tmp_path, monkeypatch, entries=[entry])
+
+    with pytest.raises(
+        native_checks.CheckError, match="missing dependency path.*relative-include"
+    ):
+        load_entries(build, expected)
+
+
+@pytest.mark.parametrize(
+    "malformed", ["bad-arguments", "bad-command", "no-command"]
+)
+def test_schema2_linux_malformed_command_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, malformed: str
+) -> None:
+    source = tmp_path / "native" / "src" / "one.cpp"
+    entry = compile_entry(source, tmp_path, arguments=True, with_sysroot=False)
+    if malformed == "bad-arguments":
+        entry["arguments"] = "not-a-list"
+        match = "malformed arguments"
+    elif malformed == "bad-command":
+        del entry["arguments"]
+        entry["command"] = f"{sys.executable} 'unterminated"
+        match = "malformed command"
+    else:
+        del entry["arguments"]
+        match = "needs command or arguments"
+    build, expected = _linux_fixture(tmp_path, monkeypatch, entries=[entry])
+
+    with pytest.raises(native_checks.CheckError, match=match):
+        load_entries(build, expected)
+
+
+def test_schema2_linux_absent_compile_database_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    build, expected = _linux_fixture(tmp_path, monkeypatch)
+    (build / "compile_commands.json").unlink()
+
+    with pytest.raises(
+        native_checks.CheckError, match="missing compilation database"
+    ):
+        load_entries(build, expected)

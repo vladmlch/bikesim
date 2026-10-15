@@ -235,8 +235,15 @@ void post_init(TabulatedTireSpec &spec) {
     }
     if (!nonblank(spec.provenance))
         fail("tire curve requires explicit provenance");
-    const double lo = scalar(spec.valid_load_range_n[0], "valid load");
-    const double hi = scalar(spec.valid_load_range_n[1], "valid load");
+    // tire_curve.py wraps both _scalar calls: any TypeError/ValueError
+    // inside re-raises as the range-diagnostic, not 'invalid valid load'.
+    double lo = 0., hi = 0.;
+    try {
+        lo = scalar(spec.valid_load_range_n[0], "valid load");
+        hi = scalar(spec.valid_load_range_n[1], "valid load");
+    } catch (const std::invalid_argument &) {
+        fail("valid load range requires two finite bounds");
+    }
     if (!(0. <= lo && lo < hi && hi <= y.back()))
         fail("valid load range must fit within the supplied force table");
     // The slopes/integral derived sweep is part of construction.

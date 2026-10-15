@@ -694,9 +694,10 @@ double Stepper::kinetic_energy() const {
     require_healthy();
     std::vector<mjtNum> mv(static_cast<std::size_t>(m_->nv));
     engine::mul_m(m_, d_, mv.data(), d_->qvel);
-    // data.qvel @ mv — np.dot dispatches to the pinned CBLAS ABI.
-    return .5 * blas::cblas_ddot(static_cast<int>(m_->nv), d_->qvel, 1,
-                               mv.data(), 1);
+    // data.qvel @ mv — np.dot dispatches to the pinned CBLAS ABI; the
+    // typed wrapper widens to the provider's integer width internally.
+    return .5 * blas::ddot(static_cast<int>(m_->nv), d_->qvel, 1,
+                         mv.data(), 1);
 }
 
 double Stepper::tire_stored_energy() const {

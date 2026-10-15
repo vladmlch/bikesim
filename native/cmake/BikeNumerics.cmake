@@ -24,9 +24,17 @@
 #                                 file(READ) from a captured document
 #
 # Exports consumed by the rest of the native build:
-#   Bike::Numerics                  IMPORTED target — INTERFACE on Darwin
+#   Bike::Numerics                  ALIAS of bike_native_numerics — the
+#                                   typed CBLAS adapter static library
+#                                   (link this; the provider arrives via
+#                                   its PUBLIC usage requirements)
+#   Bike::NumericsProvider          IMPORTED target — INTERFACE on Darwin
 #                                   (-framework Accelerate) or SHARED with
 #                                   IMPORTED_LOCATION on Linux
+#   bike_native_numerics            STATIC target holding exactly one
+#                                   backend TU (src/platform/blas_*.cpp);
+#                                   created only when CXX is enabled —
+#                                   record-only consumers configure fine
 #   BIKE_NUMERICS_BACKEND_RESOLVED  ACCELERATE or NUMPY_OPENBLAS
 #   _native_numerics_blas_bits      qualified BLAS integer width
 #   _native_numerics_lapack_bits    qualified LAPACK integer width
@@ -36,6 +44,7 @@
 #   _native_numerics_symbol_dgelsd  /
 #   _native_numerics_provider       provider path (Linux file or Darwin
 #                                   framework umbrella description)
+#   _native_numerics_symbols_header generated numerics_symbols.hpp path
 
 if(NOT DEFINED BIKE_TARGET_SYSTEM)
   message(FATAL_ERROR
@@ -268,23 +277,95 @@ foreach(_role blas lapack)
 endforeach()
 
 # --------------------------------------------------------------------------
-# The imported target — normal imported-target semantics only: a framework
-# link interface on Darwin, a SHARED import at the qualified path on Linux.
-# Runtime kernels link Bike::Numerics; nothing calls dlsym or mutates
-# provider threading here.
+# The imported provider target — normal imported-target semantics only: a
+# framework link interface on Darwin, a SHARED import at the qualified
+# path on Linux. Runtime kernels never link it directly: the adapter
+# carries it through PUBLIC usage requirements. Nothing calls dlsym or
+# mutates provider threading here.
 # --------------------------------------------------------------------------
 if(_numerics_backend STREQUAL "ACCELERATE")
   set(_numerics_provider "Accelerate.framework (apple-system)")
-  if(NOT TARGET Bike::Numerics)
-    add_library(Bike::Numerics INTERFACE IMPORTED GLOBAL)
-    set_target_properties(Bike::Numerics PROPERTIES
+  if(NOT TARGET Bike::NumericsProvider)
+    add_library(Bike::NumericsProvider INTERFACE IMPORTED GLOBAL)
+    set_target_properties(Bike::NumericsProvider PROPERTIES
       INTERFACE_LINK_LIBRARIES "-framework Accelerate")
   endif()
 else()
-  if(NOT TARGET Bike::Numerics)
-    add_library(Bike::Numerics SHARED IMPORTED GLOBAL)
-    set_target_properties(Bike::Numerics PROPERTIES
+  if(NOT TARGET Bike::NumericsProvider)
+    add_library(Bike::NumericsProvider SHARED IMPORTED GLOBAL)
+    set_target_properties(Bike::NumericsProvider PROPERTIES
       IMPORTED_LOCATION "${_numerics_provider}")
+  endif()
+endif()
+
+# --------------------------------------------------------------------------
+# Generated symbol header — the record's qualified spellings land in
+# numerics_symbols.hpp as asm-label string literals via configure_file.
+# The label prefix is the object format's convention: Mach-O prepends
+# "_" on Darwin; ELF symbols carry no leading underscore — reusing the
+# Mach-O spelling on ELF produces an unresolved symbol, never a subtle
+# redefinition.
+# --------------------------------------------------------------------------
+if(_numerics_backend STREQUAL "ACCELERATE")
+  set(_numerics_asm_prefix "_")
+else()
+  set(_numerics_asm_prefix "")
+endif()
+foreach(_op ddot dgemv dgemm dgelsd)
+  set(_numerics_asm_${_op}
+      "${_numerics_asm_prefix}${_native_numerics_symbol_${_op}}")
+endforeach()
+set(_native_numerics_symbols_dir
+    "${CMAKE_CURRENT_BINARY_DIR}/bike_numerics")
+configure_file(
+  "${CMAKE_CURRENT_LIST_DIR}/../src/platform/numerics_symbols.hpp.in"
+  "${_native_numerics_symbols_dir}/numerics_symbols.hpp"
+  @ONLY)
+set(_native_numerics_symbols_header
+    "${_native_numerics_symbols_dir}/numerics_symbols.hpp")
+
+# --------------------------------------------------------------------------
+# bike_native_numerics — the typed adapter: exactly one backend TU per
+# platform (verified against the generated record width at compile time),
+# strict ISO C++23, PIC so it can join the extension module, and the
+# provider through PUBLIC usage requirements so Python-free harnesses
+# receive the link too. bike_apply_native_policy (BikeCompilerPolicy,
+# T09) is applied when the includer has already defined it. The mujoco
+# include dir comes from the same schema-1 document — the backend TU
+# reaches cblas_abi.hpp's mjtNum assertion through it.
+# --------------------------------------------------------------------------
+if(NOT DEFINED _native_numerics_target_guard)
+  set(_native_numerics_target_guard TRUE)
+  if(CMAKE_CXX_COMPILER_LOADED)
+    if(_numerics_backend STREQUAL "ACCELERATE")
+      set(_numerics_backend_source
+        "${CMAKE_CURRENT_LIST_DIR}/../src/platform/blas_accelerate.cpp")
+    else()
+      set(_numerics_backend_source
+        "${CMAKE_CURRENT_LIST_DIR}/../src/platform/blas_numpy_openblas.cpp")
+    endif()
+    _numerics_field(_numerics_mujoco_include mujoco include_dir)
+    add_library(bike_native_numerics STATIC "${_numerics_backend_source}")
+    set_target_properties(bike_native_numerics PROPERTIES
+      CXX_STANDARD 23
+      CXX_STANDARD_REQUIRED ON
+      CXX_EXTENSIONS OFF
+      POSITION_INDEPENDENT_CODE ON)
+    target_include_directories(bike_native_numerics PRIVATE
+      "${_native_numerics_symbols_dir}"
+      "${_numerics_mujoco_include}")
+    if(COMMAND bike_apply_native_policy)
+      bike_apply_native_policy(bike_native_numerics)
+    endif()
+    target_link_libraries(bike_native_numerics
+      PUBLIC Bike::NumericsProvider)
+    if(NOT TARGET Bike::Numerics)
+      add_library(Bike::Numerics ALIAS bike_native_numerics)
+    endif()
+  else()
+    message(STATUS
+      "bike_native_numerics not created: CXX is not enabled in this "
+      "project (record-only consumption)")
   endif()
 endif()
 

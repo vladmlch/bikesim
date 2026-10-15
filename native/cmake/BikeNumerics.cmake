@@ -360,9 +360,18 @@ if(NOT DEFINED _native_numerics_target_guard)
     target_include_directories(bike_native_numerics PRIVATE
       "${_native_numerics_symbols_dir}"
       "${_numerics_mujoco_include}")
-    if(COMMAND bike_apply_native_policy)
-      bike_apply_native_policy(bike_native_numerics)
+    # Fail closed: a CXX-enabled project that reaches this point is a real
+    # target-build context, so the compiler policy must already be loaded —
+    # BikeCompilerPolicy.cmake is included before BikeNumerics.cmake under
+    # the project's CMakeLists.txt. Silently skipping the policy would emit
+    # a first-party TU without the contract flags.
+    if(NOT COMMAND bike_apply_native_policy)
+      message(FATAL_ERROR
+        "bike_apply_native_policy is undefined while CXX is enabled: "
+        "include cmake/BikeCompilerPolicy.cmake before BikeNumerics.cmake "
+        "under the project")
     endif()
+    bike_apply_native_policy(bike_native_numerics)
     target_link_libraries(bike_native_numerics
       PUBLIC Bike::NumericsProvider)
     if(NOT TARGET Bike::Numerics)

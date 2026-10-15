@@ -404,6 +404,11 @@ set(_bike_gcc_warning_candidates
   # pathological frames, without clang-calibrated false positives. The clang
   # lane keeps the 8192-byte contract; the sanitizer lane's 24576 bump stacks
   # on top of whichever budget the family selected.
+  # NOTE: tools/native_checks.py's _GCC_WARNING_FLAGS still names =8192 for
+  # the GCC frontends sweep — that -fsyntax-only pass never measures codegen
+  # frames, so the two budgets do not collide today; reconciling the sweep's
+  # spelling with this calibrated budget is deferred to T14/T10, which wire
+  # the sweep onto the Linux lane.
   -Wstack-usage=16384 -Wframe-larger-than=16384 -Wstack-protector)
 
 # Required flags — safety/numerics contract, fail closed when unsupported.

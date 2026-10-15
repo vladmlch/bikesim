@@ -23,8 +23,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # BIKE_LIBCPP_HARDENING, probes the real compiler/standard library for every
 # flag it emits (required flags fail configuration), and writes
 # bike_policy_report.json for tests/portability/test_compiler_policy.py.
-# Include before BikeNumerics.cmake so bike_native_numerics' guarded call
-# applies the policy too.
+# Include before BikeNumerics.cmake — bike_native_numerics' required
+# bike_apply_native_policy call fails configuration if this ordering
+# regresses (a CXX-enabled project without the policy module is an error,
+# not a skipped flag list).
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/BikeCompilerPolicy.cmake")
 
 # The compiler identification check above is not enough on Apple hosts:

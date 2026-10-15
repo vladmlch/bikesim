@@ -55,7 +55,7 @@ namespace drivetrain {
 
     double unwrap(double value, double reference) {
         return reference +
-               std::atan2(numeric::np_sin(value - reference), numeric::np_cos(value - reference));
+               std::atan2(numeric::math_sin(value - reference), numeric::math_cos(value - reference));
     }
 
     int resolve(const mjModel *m, mjtObj kind, const char *name) {

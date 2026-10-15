@@ -56,8 +56,10 @@ private:
         std::span<const double> a) noexcept {
     const std::size_t n = a.size();
     if (n < 8) {
-        // np.sum's empty-reduce identity is +0.0; pairwise_sum itself
-        // seeds -0.0 so that summing only -0.0 stays -0.0 upstream.
+        // Upstream pairwise_sum(0) returns the -0.0 seed (loops_utils);
+        // this shortcut returns +0.0 — np.sum's empty-reduce identity.
+        // Intentional: numpy_sum's `0.0 + pairwise_sum(...)` fold yields
+        // +0.0 either way, and this helper is only reached through it.
         if (n == 0) return 0.;
         double result = -0.;
         for (const double value : a) result += value;

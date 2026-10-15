@@ -112,13 +112,16 @@ non-finite input: CPython's `math.sin`/`math.cos` call libm directly,
 so a negative-NaN angle returns `+qNaN` where `np.sin` returns the
 sign-preserving `x - x`. Every same-operand sin/cos call site was
 audited against its Python mirror — `np.*` mirrors
-(`drivetrain/chain.cpp`, `writers/distributed_tire.cpp`,
-`pneumatic/geometry.cpp`, the debug binding) use `np_sin`/`np_cos`;
-`math.*` mirrors (`leg_loop.py`, `rider_envelope.py`, `lean_limit.py`,
-scalar `rider_control.py` wraps, `wheelie.py` — i.e. the
-`rider/spindle_*.cpp` and `runtime/research_metrics.cpp` sites) use
+(`drivetrain/chain.cpp`'s `chain_center_gradient` normal,
+`writers/distributed_tire.cpp`, `pneumatic/geometry.cpp`, the debug
+binding) use `np_sin`/`np_cos`; `math.*` mirrors
+(`drivetrain/chain.cpp`'s `unwrap`, `leg_loop.py`,
+`rider_envelope.py`, `lean_limit.py`, scalar `rider_control.py` wraps,
+`wheelie.py` — i.e. the `rider/spindle_*.cpp` and
+`runtime/research_metrics.cpp` atan2 sites) use
 `math_sin`/`math_cos`. Lone calls with no fusion partner keep bare
-`std::sin`/`std::cos`.
+`std::sin`/`std::cos` (e.g. `research_metrics.cpp`'s lone
+`cos(road_pitch)`).
 
 ### `np.sign`, `np.interp` unit grid, `pyfloat_pow`, `blas::ddot`
 

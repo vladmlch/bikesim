@@ -72,10 +72,10 @@ WheelieTruth research_truth(const PhysicalSampleData &s, const TruthGeometry &g)
     t.time_s = s.time_s;
     t.axle_pitch_rad = std::atan2(number(f[2]) - number(r[2]), dx);
     t.road_pitch_rad = std::atan2(zf - zr, dx);
-    const double normal_z = std::max(std::abs(numeric::cos(t.road_pitch_rad)), 1e-6);
+    const double normal_z = std::max(std::abs(numeric::math_cos(t.road_pitch_rad)), 1e-6);
     const double supported = std::atan2((zf - zr) + (g.front_radius - g.rear_radius) / normal_z, dx);
     const double difference = t.axle_pitch_rad - supported;
-    t.relative_pitch_rad = std::atan2(numeric::sin(difference), numeric::cos(difference));
+    t.relative_pitch_rad = std::atan2(numeric::math_sin(difference), numeric::math_cos(difference));
     // Both supported tire backends always publish penetration_m (the
     // diagnostics block of wire_tire_diagnostics /
     // wire_distributed_tire_diagnostics), so required() cannot throw here.

@@ -36,7 +36,10 @@
 #include "cblas_abi.hpp"
 #include "config.hpp"
 #include "engaged.hpp"
+#include "numeric_norm.hpp"
 #include "numeric_numpy.hpp"
+#include "numeric_sincos.hpp"
+#include "numeric_sum.hpp"
 #include "pneumatic/brush.hpp"
 #include "pneumatic/carcass.hpp"
 #include "pneumatic/geometry.hpp"
@@ -1399,6 +1402,68 @@ NB_MODULE(bike_native, m) {
         "Debug test surface: np.tanh(xs) and np.hypot(xs, ys) "
         "transcendental probes — the two non-trivial lowerings the "
         "carcass kernel uses.")
+    ;
+    m.def("_debug_numeric_contract",
+          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed probe signature
+          [](const std::string &name, nb::handle raw_xs,
+             nb::handle raw_ys) {
+        const auto xs = debug_carcass_row64(raw_xs, "xs");
+        const auto ys = debug_carcass_row64(raw_ys, "ys");
+        const std::size_t nx = xs.shape(0), ny = ys.shape(0);
+        const auto at = [](const auto &row, std::size_t i) {
+            return row(static_cast<std::ptrdiff_t>(i));
+        };
+        if (name == "sum") {
+            // np.sum(xs) — the add-reduce identity over pairwise_sum.
+            // Unary: ys is ignored (pass an empty row).
+            return wire::owned_array<double>(std::vector<double>{
+                    numeric::numpy_sum(debug_carcass_span(xs))});
+        }
+        if (name == "sin" || name == "cos") {
+            // np.sin / np.cos elementwise — the production
+            // numeric::np_sin/np_cos wrappers keep the two libm calls
+            // unfused, exactly as the standalone-call oracle.
+            std::vector<double> out(nx);
+            if (name == "sin")
+                for (std::size_t i = 0; i < nx; ++i)
+                    out[i] = numeric::np_sin(at(xs, i));
+            else
+                for (std::size_t i = 0; i < nx; ++i)
+                    out[i] = numeric::np_cos(at(xs, i));
+            return wire::owned_array<double>(out);
+        }
+        const std::size_t pairs = std::min(nx, ny);
+        std::vector<double> out(pairs);
+        if (name == "python_hypot") {
+            // math.hypot(x, y) pairwise — CPython's vector_norm port,
+            // NOT np.hypot.
+            for (std::size_t i = 0; i < pairs; ++i) {
+                const std::array<double, 2> pair{at(xs, i), at(ys, i)};
+                out[i] = numeric::python_vector_norm(pair);
+            }
+        } else if (name == "minimum") {
+            for (std::size_t i = 0; i < pairs; ++i)
+                out[i] = numeric::np_minimum(at(xs, i), at(ys, i));
+        } else if (name == "maximum") {
+            for (std::size_t i = 0; i < pairs; ++i)
+                out[i] = numeric::np_maximum(at(xs, i), at(ys, i));
+        } else {
+            throw std::invalid_argument(
+                    "_debug_numeric_contract: unknown op '" + name +
+                    "' (expected python_hypot, minimum, maximum, sum, "
+                    "sin or cos)");
+        }
+        return wire::owned_array<double>(out);
+    }, nb::arg("name"), nb::arg("xs"), nb::arg("ys"),
+        "Debug test surface: one platform-sensitive numerical lowering "
+        "per call, invoked through the SAME production helpers the "
+        "ported kernels use — python_hypot -> "
+        "numeric::python_vector_norm (math.hypot oracle), minimum/"
+        "maximum -> numeric::np_minimum/np_maximum (NEON fmin/fmax "
+        "semantics), sum -> numeric::numpy_sum (np.sum reduce "
+        "identity + pairwise order), sin/cos -> numeric::np_sin/"
+        "numeric::np_cos (unfused libm calls + the npy Apple "
+        "workaround).")
     ;
     // Debug-only oracle surfaces for the pneumatic brush kernels —
     // used by tests/reference/test_native_pneumatic_brush.py to compare

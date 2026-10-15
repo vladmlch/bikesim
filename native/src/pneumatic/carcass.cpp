@@ -4,7 +4,8 @@
 // NumPy lowering decisions (each verified against numpy 2.5.2 on this
 // platform; see the task-8 report for the evidence):
 //
-//   np.sum(a)                       -> numeric::numpy_pairwise_sum
+//   np.sum(a)                       -> numeric::numpy_sum (np.sum reduce
+//                                      identity over pairwise order)
 //   np.dot(a, b)                    -> blas::ddot (Accelerate CBLAS;
 //                                    same contract as the other ported
 //                                    kernels — contiguous f64 rows)
@@ -271,7 +272,7 @@ namespace biketyre {
                     std::max(rim_event_peak_load_n_, vertical_load_n);
             rim_event_peak_force_n_ =
                     std::max(rim_event_peak_force_n_,
-                             numeric::numpy_pairwise_sum(rim_force_n));
+                             numeric::numpy_sum(rim_force_n));
             rim_event_energy_j_ =
                     std::max(rim_event_energy_j_, energy_j);
             return std::nullopt;
@@ -508,10 +509,10 @@ namespace biketyre {
         out.force_z_n =
                 -blas::ddot(n_i32, out.total_element_force_n.data(), 1,
                             ring.uz().data(), 1);
-        out.normal_load_n = numeric::numpy_pairwise_sum(
+        out.normal_load_n = numeric::numpy_sum(
                 out.total_element_force_n);
         out.rim_energy_j =
-                0.5 * numeric::numpy_pairwise_sum(rim_energy_term);
+                0.5 * numeric::numpy_sum(rim_energy_term);
 
         // carcass.py:293-296 — contact patches and scaled lengths.
         out.patch_count =

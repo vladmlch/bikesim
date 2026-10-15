@@ -59,10 +59,12 @@ std::span<const int> ibuf(const int *p, mjtSize n) {
     return std::views::counted(p, n);
 }
 
-// numpy pairwise_sum — shared with the mirrored sites outside this TU;
-// numeric::numpy_pairwise_sum documents the exact upstream order.
-double numpy_pairwise_sum(std::span<const double> a) noexcept {
-    return numeric::numpy_pairwise_sum(a);
+// np.sum — shared with the mirrored sites outside this TU;
+// numeric::numpy_sum documents the exact upstream order (the
+// add-reduce 0.0 identity over pairwise_sum, so an all-(-0.0) input
+// folds to +0.0 exactly like np.sum).
+double numpy_sum(std::span<const double> a) noexcept {
+    return numeric::numpy_sum(a);
 }
 
 double dot(std::span<const double> a, std::span<const double> b) noexcept {
@@ -965,7 +967,7 @@ std::array<double, 3> compiled_com(const mjModel *m, const mjData *d) {
     const std::size_t nbody = static_cast<std::size_t>(m->nbody);
     const auto body_mass = buf(m->body_mass, m->nbody);
     const auto xipos = buf(d->xipos, 3 * m->nbody);
-    const double total = numpy_pairwise_sum(body_mass);
+    const double total = numpy_sum(body_mass);
     if (!(total > 0.))
         throw std::invalid_argument("model has no positive physical mass");
     std::array<double, 3> com{};
@@ -984,7 +986,7 @@ std::array<double, 3> compiled_com(const mjModel *m, const mjData *d) {
 // so a com_m column is identical across full and decimated intervals.
 WireObject com_observations(const mjModel *m, const mjData *d) {
     const auto body_mass = buf(m->body_mass, m->nbody);
-    const double total = numpy_pairwise_sum(body_mass);
+    const double total = numpy_sum(body_mass);
     if (!(total > 0.))
         throw std::invalid_argument("model has no physical mass");
     WireObject out;
@@ -2279,7 +2281,7 @@ MassObservations PhysicalStep::mass_observations(mjModel *m, mjData *d) {
     const std::size_t nv = static_cast<std::size_t>(m->nv);
     const auto body_mass = buf(m->body_mass, m->nbody);
     const auto xipos = buf(d->xipos, 3 * m->nbody);
-    const double total = numpy_pairwise_sum(body_mass);
+    const double total = numpy_sum(body_mass);
     if (!(total > 0.))
         throw std::invalid_argument("model has no physical mass");
     const auto com = compiled_com(m, d);
@@ -2295,7 +2297,7 @@ MassObservations PhysicalStep::mass_observations(mjModel *m, mjData *d) {
         for (std::size_t k = 0; k < 3; ++k)
             products[3 * i + k] =
                 body_mass[i] * xipos[3 * i + k] * grav[k];
-    const double gravity = -numpy_pairwise_sum(products);
+    const double gravity = -numpy_sum(products);
     engine::subtree_vel(m, d);
     const auto linvel = buf(d->subtree_linvel, 3);
     const auto angmom = buf(d->subtree_angmom, 3);

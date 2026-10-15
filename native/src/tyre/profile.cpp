@@ -14,13 +14,14 @@
 //                                       (numeric::python_vector_norm)
 //   `np.searchsorted` right/left        → upper_bound/lower_bound
 //   `np.linspace(-s, s, n)`             → i*step + (-s), last element = s
-//   `np.cos/np.radians/np.exp` scalars  → std::cos / x*(pi/180) / std::exp
+//   `np.cos/np.radians/np.exp` scalars  → numeric::np_cos / x*(pi/180) / std::exp
 //   `round()`                           → std::nearbyint (banker's, default FP)
 #include "profile.hpp"
 
 #include "../cblas_abi.hpp"
 #include "../model_access.hpp"
 #include "../numeric_norm.hpp"
+#include "../numeric_sincos.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -345,9 +346,10 @@ namespace biketyre {
             throw std::invalid_argument("invalid multi-support threshold");
         significant_delta_m_ = significant_delta_m;
         significance_fraction_ = significance_fraction;
-        // np.cos(np.deg2rad(angle)) — deg2rad is x*(pi/180), cos is libm cos.
+        // np.cos(np.deg2rad(angle)) — deg2rad is x*(pi/180), cos is
+        // npy_cos (numeric::np_cos; a lone call — nothing to fuse).
         normal_cosine_ =
-                std::cos(normal_angle_deg * (std::numbers::pi / 180.0));
+                numeric::np_cos(normal_angle_deg * (std::numbers::pi / 180.0));
         // Warm-contact scratch: contact() refills this storage every call
         // instead of allocating per query like the Python original. A
         // candidates window never exceeds the segment count, so px_.size()

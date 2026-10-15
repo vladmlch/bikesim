@@ -48,7 +48,9 @@ private:
 // numpy pairwise_sum — contiguous float64: sequential for n < 8, the
 // n <= 128 eight-way block accumulator with the leftover tail folded
 // into the scalar result, and the multiple-of-8 halving recursion for
-// longer inputs.
+// longer inputs. This is the raw ufunc inner loop only — np.sum itself
+// additionally seeds the reduce accumulator with the 0.0 identity, so
+// call sites porting `np.sum(a)` use `numpy_sum` below.
 // NOLINTNEXTLINE(misc-no-recursion) recursion depth mirrors numpy's pairwise halving
 [[nodiscard]] inline double numpy_pairwise_sum(
         std::span<const double> a) noexcept {
@@ -77,6 +79,17 @@ private:
     n2 -= n2 % 8;
     return numpy_pairwise_sum(a.first(n2)) +
            numpy_pairwise_sum(a.subspan(n2));
+}
+
+// np.sum(a) — ufunc add.reduce: the accumulator is seeded with the
+// reduction identity 0.0 and the inner loop folds pairwise_sum into it
+// (loops_arithm_fp.dispatch.c.src: `*src0 += DOUBLE_pairwise_sum(...)`).
+// `0.0 + r` is a no-op for every r except -0.0, where it yields +0.0 —
+// np.sum([-0.0]) is +0.0 while pairwise_sum([-0.0]) is -0.0, a one-bit
+// difference the oracle contract must reproduce.
+[[nodiscard]] inline double numpy_sum(
+        std::span<const double> a) noexcept {
+    return 0.0 + numpy_pairwise_sum(a);
 }
 
 } // namespace numeric

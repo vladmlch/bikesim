@@ -16,11 +16,12 @@
 //   numeric::np_minimum           on __aarch64__ scalar_max_d lowers to
 //                                 the NEON fmax instruction
 //                                 (loops_minmax.dispatch.c.src:65-76):
-//                                 a NaN operand is returned unquieted
-//                                 (first operand wins if both are NaN),
-//                                 and a +0/-0 tie resolves to +0 for
-//                                 max, -0 for min — NOT the
-//                                 `(a >= b || isnan(a)) ? a : b`
+//                                 a signaling NaN is quieted and wins
+//                                 in either operand position, two NaNs
+//                                 of the same class resolve to the
+//                                 first operand, and a +0/-0 tie
+//                                 resolves to +0 for max, -0 for min —
+//                                 NOT the `(a >= b || isnan(a)) ? a : b`
 //                                 textbook expression.
 //   numeric::np_sign          — DOUBLE_sign generic loop
 //                                 (loops.c.src:1433-1442): +1/-1/+0,
@@ -54,31 +55,48 @@
 
 namespace numeric {
 
-    // np.maximum(a, b) — see header comment for the NEON fmaxnm
-    // contract. A NaN operand is returned with its payload intact but
-    // quieted (fmaxnm/fminnm set the quiet bit on a signaling NaN —
-    // verified against np.maximum on 2.5.2: snan 0x7ff0…01 ->
-    // 0x7ff8…01 in either argument position); when both are NaN the
-    // first operand wins.
+    // np.maximum(a, b) — see header comment for the NEON fmax
+    // contract. A signaling NaN is returned with its payload intact
+    // but quieted (fmax/fmin set the quiet bit — verified against
+    // np.maximum on 2.5.2: snan 0x7ff0…01 -> 0x7ff8…01 in either
+    // argument position). NaN-vs-NaN precedence follows the
+    // instruction: a signaling NaN wins over a quiet one regardless of
+    // position (np.minimum(0x7ff8…AA, 0x7ff0…01) -> 0x7ff8…01), while
+    // two NaNs of the same class resolve to the FIRST operand
+    // ((qnan_a, qnan_b) -> qnan_a, (snan_a, snan_b) -> quieted snan_a).
     [[nodiscard]] inline double np_quiet_nan(double x) noexcept {
         return std::bit_cast<double>(std::bit_cast<std::uint64_t>(x) |
                                      0x0008000000000000ull);
     }
 
+    // Signaling NaN: NaN exponent, quiet bit clear, nonzero payload.
+    [[nodiscard]] inline bool np_is_snan(double x) noexcept {
+        const std::uint64_t b = std::bit_cast<std::uint64_t>(x);
+        return (b & 0x7ff0000000000000ull) == 0x7ff0000000000000ull &&
+               (b & 0x0008000000000000ull) == 0 &&
+               (b & 0x0007ffffffffffffull) != 0;
+    }
+
     [[nodiscard]] inline double np_maximum(double a, double b) noexcept {
-        if (std::isnan(a)) return np_quiet_nan(a);
-        if (std::isnan(b)) return np_quiet_nan(b);
+        // sNaN quiets and wins in either operand position; a qNaN wins
+        // only when the other operand is not a sNaN.
+        if (np_is_snan(a)) return np_quiet_nan(a);
+        if (np_is_snan(b)) return np_quiet_nan(b);
+        if (std::isnan(a)) return a;
+        if (std::isnan(b)) return b;
         // Zero tie: max(+0,-0) = +0 either order; -0 only when both -0.
         if (a == 0.0 && b == 0.0)
             return std::signbit(a) && std::signbit(b) ? -0.0 : 0.0;
         return a > b ? a : b;
     }
 
-    // np.minimum(a, b) — the NEON fminnm twin: first NaN wins, -0.0 wins
-    // a zero tie.
+    // np.minimum(a, b) — the NEON fmin twin: same NaN precedence,
+    // -0.0 wins a zero tie.
     [[nodiscard]] inline double np_minimum(double a, double b) noexcept {
-        if (std::isnan(a)) return np_quiet_nan(a);
-        if (std::isnan(b)) return np_quiet_nan(b);
+        if (np_is_snan(a)) return np_quiet_nan(a);
+        if (np_is_snan(b)) return np_quiet_nan(b);
+        if (std::isnan(a)) return a;
+        if (std::isnan(b)) return b;
         if (a == 0.0 && b == 0.0)
             return std::signbit(a) || std::signbit(b) ? -0.0 : 0.0;
         return a < b ? a : b;

@@ -322,31 +322,23 @@ using bike::io::Value;
 }
 
 // ---- checks.py scalar() on decoded wire members -----------------------------
-// The wire form keeps the dynamic typing: bools are Integral/float
-// subclasses (scalar(True) returns 1.0), strings that float() parses are
-// accepted, and everything else raises '{path} must be a finite real
-// scalar'. Bounds/nonfinite failures are 'invalid {path}'.
+// checks.py scalar(): the type gate is isinstance(Real) with an explicit
+// bool/np.bool_ rejection BEFORE float() coercion — JSON booleans and
+// strings are NOT scalars on this wire ('<path> must be a finite real
+// scalar'); only a decoded Number is. Bounds/nonfinite failures are
+// 'invalid {path}'. py_float's str->float() stays on the typed-loader
+// side, which mirrors float() rather than scalar().
 double wire_scalar(const Value &value, const std::string &path,
                    std::optional<double> minimum = std::nullopt,
                    bool positive = false) {
     using io::Value;
-    double result = 0.;
-    if (const auto *number = std::get_if<Number>(&value.data)) {
-        bool ok = false;
-        result = bike::io::detail::float_from_lexeme(number->lexeme, ok);
-        if (!ok) fail(path + " must be a finite real scalar");
-    } else if (const auto *flag = std::get_if<bool>(&value.data)) {
-        result = *flag ? 1. : 0.;
-    } else if (std::holds_alternative<std::string>(value.data)) {
-        // str -> float() — parseable text is a scalar on this wire.
-        try {
-            result = detail::py_float(value);
-        } catch (const std::invalid_argument &) {
-            fail(path + " must be a finite real scalar");
-        }
-    } else {
+    if (!std::holds_alternative<Number>(value.data))
         fail(path + " must be a finite real scalar");
-    }
+    const Number &number = std::get<Number>(value.data);
+    bool ok = false;
+    const double result =
+        bike::io::detail::float_from_lexeme(number.lexeme, ok);
+    if (!ok) fail(path + " must be a finite real scalar");
     if (!std::isfinite(result) || (minimum && result < *minimum) ||
         (positive && result <= 0.))
         fail("invalid " + path);

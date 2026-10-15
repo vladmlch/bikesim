@@ -945,6 +945,24 @@ void test_validation() {
         config.articulated.joint_passive_damping_nms_rad = std::nullopt;
         cfg::validate(config);
     }
+
+    // tire_curve.py wraps both _scalar calls: a non-finite bound re-raises
+    // as 'valid load range requires two finite bounds', not
+    // 'invalid valid load'.
+    {
+        cfg::TabulatedTireSpec tab{
+            .deflection_m = {0., .01, .02},
+            .force_n = {0., 800., 1600.},
+            .radial_c_ns_m = 40.,
+            .pressure_pa_gauge = 70000.,
+            .provenance = "test fixture",
+            .valid_load_range_n = {0., 1600.}};
+        cfg::detail::post_init(tab);  // control: valid construction passes
+        tab.valid_load_range_n = {std::numeric_limits<double>::infinity(),
+                                  1600.};
+        expect_invalid("valid load range requires two finite bounds",
+                       [&] { cfg::detail::post_init(tab); });
+    }
 }
 
 void check_grip_weld_alias() {
@@ -1159,6 +1177,24 @@ void test_wire_validation() {
                "front_teeth", "gearing") = make_number("22.5");
     expect_invalid("config.drive.gearing.front_teeth: expected integer",
                    [&] { cfg::wire::validate_config(mutated); });
+
+    // Scalar members are equally strict: checks.py scalar() rejects bools
+    // (isinstance(value, (bool, np.bool_))) and strings (not Real) BEFORE
+    // any float() coercion — JSON true / "0.0127" are not scalars.
+    mutated = wire;
+    member_mut(member_mut(member_mut(mutated, "drive", "wire"), "gearing",
+                          "drive"),
+               "chain_pitch_m", "gearing") = make_bool(true);
+    expect_invalid(
+        "config.drive.gearing.chain_pitch_m must be a finite real scalar",
+        [&] { cfg::wire::validate_config(mutated); });
+    mutated = wire;
+    member_mut(member_mut(member_mut(mutated, "drive", "wire"), "gearing",
+                          "drive"),
+               "chain_pitch_m", "gearing") = make_text("0.0127");
+    expect_invalid(
+        "config.drive.gearing.chain_pitch_m must be a finite real scalar",
+        [&] { cfg::wire::validate_config(mutated); });
 
     // Missing-versus-null on required members.
     mutated = wire;

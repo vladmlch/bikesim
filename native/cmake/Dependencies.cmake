@@ -250,10 +250,14 @@ endfunction()
 # The dylib's recorded install name (@rpath/mujoco.framework/...) is
 # unresolvable on its own — the wheel ships the dylib flat with no framework
 # directory to anchor the @rpath. Rewrite the recorded name to the acquired
-# absolute path; -headerpad_max_install_names reserves room for the longer
-# name. dylib_path is the lock-verified library actually linked.
+# absolute path. The replacement is longer than the recorded name, so the
+# padding flag is attached here by construction: every binary whose load
+# command is rewritten reserves -headerpad_max_install_names, in both the
+# standalone and legacy graphs. dylib_path is the lock-verified library
+# actually linked.
 function(bike_rewrite_mujoco_load_name target dylib_path)
   if(APPLE)
+    target_link_options(${target} PRIVATE -headerpad_max_install_names)
     add_custom_command(TARGET ${target} POST_BUILD
       COMMAND install_name_tool -change
         "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"

@@ -21,6 +21,19 @@ cmake_minimum_required(VERSION 3.24)
 # objects the standalone tests exercise; that transition mode still needs
 # the native dev group's Python+nanobind by design.
 
+# Modules only declare functions/macros — safe to include pre-project().
+# SDK resolution MUST precede project(): CMake runs its compiler link check
+# inside project(), so an incompatible ambient SDK must be replaced (or an
+# incompatible explicit SDK rejected with the module's precise diagnostic)
+# before that check runs — identical ordering to the legacy native build.
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/CompilerPolicy.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Dependencies.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Provenance.cmake")
+
+if(APPLE)
+  bike_resolve_macos_sdk()
+endif()
+
 project(bike_sim CXX)
 
 option(BIKE_BUILD_PYTHON_BINDINGS "Build the nanobind extension (requires the Python native dev group)" OFF)
@@ -36,14 +49,6 @@ endif()
 
 get_filename_component(BIKE_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 set(BIKE_ROOT_BUILD ON)
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/CompilerPolicy.cmake")
-include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Dependencies.cmake")
-include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Provenance.cmake")
-
-if(APPLE)
-  bike_resolve_macos_sdk()
-endif()
 
 # Acquisition + verification gate: missing/tampered/wrong-version .deps is a
 # configure-time failure before any first-party target can build.

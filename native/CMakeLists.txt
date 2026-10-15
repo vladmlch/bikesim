@@ -179,7 +179,8 @@ target_include_directories(bike_native PRIVATE
 # to the standalone root build's per-target policy.
 bike_target_strict_policy(bike_native)
 target_include_directories(bike_native SYSTEM PRIVATE "${MJ_DIR}/include")
-target_link_options(bike_native PRIVATE -headerpad_max_install_names)
+# -headerpad_max_install_names is attached by bike_rewrite_mujoco_load_name
+# below — every rewritten binary reserves the padding by construction.
 
 # Share Python-free core code with direct native contract tests: the
 # drivetrain/policy TUs plus the owning writer cores (suspension, brake,

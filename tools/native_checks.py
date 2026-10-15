@@ -18,9 +18,15 @@ import subprocess
 import sys
 import tempfile
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+
+try:  # imported as tools.native_checks by the test suite
+    from tools import native_toolchain
+except ImportError:  # invoked as `python tools/native_checks.py`: tools/ is sys.path[0]
+    import native_toolchain
 
 
 class CheckError(ValueError):
@@ -928,19 +934,29 @@ def _resolve_tool(kind: str, context: Mapping[str, Any], environ: Mapping[str, s
     override_name, default_key = configuration[kind]
     overrides = context["tool_overrides"]
     defaults = context["tool_defaults"]
-    requested = environ.get(override_name) or overrides.get(override_name) or defaults.get(default_key)
-    if not requested:
-        raise CheckError(f"no executable configured for {kind}; set {override_name}")
-    if os.sep in requested or (os.altsep and os.altsep in requested):
-        executable = Path(requested).expanduser().resolve()
-        if not executable.is_file() or not os.access(executable, os.X_OK):
-            raise CheckError(f"required tool is missing or not executable: {requested}")
-    else:
-        located = shutil.which(requested)
-        if located is None:
-            raise CheckError(f"required tool is unavailable: {requested} (set {override_name})")
-        executable = Path(located).resolve()
-    return executable, override_name
+    # A live environment override wins over the configure-time recording;
+    # either is an explicit request that must resolve — never a fallthrough.
+    override = environ.get(override_name) or overrides.get(override_name)
+    # Resolution order: valid explicit override; a sibling of the configured
+    # compiler from its own toolchain family; the recorded default spelling
+    # (PATH); the configure-time `located` evidence; then, on Darwin only,
+    # the existing Homebrew/Xcode discovery candidates.
+    candidates = native_toolchain.sibling_candidates(context["compiler"], default_key)
+    default = defaults.get(default_key)
+    if default:
+        candidates.append(default)
+    frontend_tools = context.get("capabilities", {}).get("frontend_tools", {})
+    located = frontend_tools.get(default_key, {}).get("located")
+    if isinstance(located, str) and located:
+        candidates.append(located)
+    platform_system = (context.get("platform") or {}).get("system")
+    if platform_system == "Darwin" or context.get("schema_version") == 1:
+        candidates.extend(native_toolchain.darwin_tool_candidates(default_key))
+    try:
+        tool = native_toolchain.resolve_tool(kind, override, candidates)
+    except ValueError as error:
+        raise CheckError(str(error)) from error
+    return tool, override_name
 
 
 def _run_process(
@@ -1219,8 +1235,16 @@ def _extra_dependency_args(context: Mapping[str, Any]) -> list[str]:
     return args
 
 
-_GCC_WARNING_FLAGS = [
-    "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Wconversion", "-Wsign-conversion",
+# Mandatory diagnostics for the secondary frontend: these are never probed
+# away — a "GCC" that rejects them is not a usable frontend.
+_GCC_REQUIRED_FLAGS = ["-Werror", "-Wpedantic"]
+
+# Optional GCC warning names. Each is probed against the *resolved* frontend
+# once per run (a trivial TU cannot trip a real warning, so a batch rejection
+# means an unsupported spelling — per-flag probing then drops only the
+# offending names, never the whole set).
+_GCC_OPTIONAL_WARNING_FLAGS = [
+    "-Wall", "-Wextra", "-Wconversion", "-Wsign-conversion",
     "-Wdouble-promotion", "-Wshadow", "-Wcast-qual", "-Wformat=2", "-Wundef",
     "-Wimplicit-fallthrough", "-Wnon-virtual-dtor", "-Wold-style-cast",
     "-Woverloaded-virtual", "-Wnull-dereference", "-Wlogical-op", "-Wduplicated-cond",
@@ -1236,15 +1260,78 @@ _GCC_WARNING_FLAGS = [
     "-Wmissing-declarations", "-Wswitch-enum",
 ]
 
+_GCC_WARNING_FLAGS = [*_GCC_REQUIRED_FLAGS, *_GCC_OPTIONAL_WARNING_FLAGS]
+
+# Tokens the secondary frontend keeps from the TU's own compile context:
+# include roots and definitions (paired and joined spellings), the recorded
+# sysroot/SDK, the language version, architecture/ABI, and the FP/PIC/thread
+# and hardening flags both frontends share. Warning spellings (-W*),
+# clang-only spellings (-stdlib=), sanitizer runtimes, optimization levels
+# and output artifacts are rebuilt or dropped — never forwarded verbatim
+# into a different toolchain.
+_FORWARD_PAIRS = {
+    "-I", "-isystem", "-iquote", "-idirafter",
+    "-isysroot", "--sysroot",
+    "-D", "-U", "-include", "-imacros",
+    "-arch",
+}
+_FORWARD_PREFIXES = (
+    "-I", "-D", "-U",
+    "-isystem", "-iquote", "-idirafter", "-imacros",
+    "-isysroot", "--sysroot=",
+)
+_SYSROOT_PAIRS = {"-isysroot", "--sysroot"}
+_SYSROOT_JOINED = ("-isysroot", "--sysroot=")
+_FORWARD_EXACT = {
+    "-pthread", "-fPIC", "-fpic", "-fPIE", "-fpie", "-fno-common",
+    "-fvisibility=hidden", "-fvisibility-inlines-hidden",
+    "-fstack-protector", "-fstack-protector-strong", "-fstack-protector-all",
+    "-fno-omit-frame-pointer",
+}
+_FORWARD_FLAG_PREFIXES = (
+    "-std=", "-ffp-contract=", "-fvisibility=",
+    "-ftrivial-auto-var-init=", "-fstrict-flex-arrays=",
+    "-fcf-protection=", "-fabi-version=",
+    "-march=", "-mcpu=", "-mtune=", "-mabi=", "-mfpu=",
+    "-mfloat-abi=", "-mbranch-protection=",
+)
+
+
+def _compiler_launcher(context: Mapping[str, Any]) -> list[str]:
+    launcher = context.get("compiler", {}).get("launcher") or []
+    if isinstance(launcher, str):
+        launcher = [launcher] if launcher else []
+    return list(launcher)
+
+
+def _check_forwarded_sysroot(
+    value: str, directory: Path, configured_sysroot: Path | None
+) -> None:
+    """A sysroot may be forwarded to the secondary frontend only when the
+    build context recorded exactly that sysroot — anything else is context
+    drift (an Apple SDK must never reach a native Linux GCC)."""
+    selected = _canonical(value, directory)
+    if configured_sysroot is None or selected != configured_sysroot:
+        raise CheckError(
+            "secondary-frontend compile context selects a sysroot the build "
+            f"context did not record: selected={selected}, "
+            f"configured={configured_sysroot}"
+        )
+
 
 def _gcc_context_args(entry: Mapping[str, Any], context: Mapping[str, Any]) -> list[str]:
+    """Rebuild one TU's semantic compile context for the secondary frontend."""
     argv = entry["arguments"]
     directory = entry["directory"]
     source = entry["source"]
+    # Entries were validated to begin with [*launcher, compiler]; both tokens
+    # belong to the configured toolchain, not to the semantic context.
+    position = 1 + len(_compiler_launcher(context))
+    configured_sysroot_value = context.get("sysroot") or context.get("sdk")
+    configured_sysroot = (
+        Path(configured_sysroot_value).resolve() if configured_sysroot_value else None
+    )
     output: list[str] = []
-    position = 1
-    accepted_pairs = {"-I", "-isystem", "-iquote", "-idirafter", "-isysroot", "-D", "-U", "-include"}
-    accepted_prefixes = ("-I", "-D", "-U", "-isystem", "-isysroot", "-iquote", "-idirafter")
     while position < len(argv):
         argument = argv[position]
         if argument in {"-o", "-MF", "-MT", "-MQ"}:
@@ -1260,21 +1347,102 @@ def _gcc_context_args(entry: Mapping[str, Any], context: Mapping[str, Any]) -> l
                     continue
             except (OSError, ValueError):
                 pass
-        if argument in accepted_pairs and position + 1 < len(argv):
+        if argument in _FORWARD_PAIRS and position + 1 < len(argv):
+            if argument in _SYSROOT_PAIRS:
+                _check_forwarded_sysroot(argv[position + 1], directory, configured_sysroot)
             output.extend([argument, argv[position + 1]])
             position += 2
             continue
-        if argument.startswith(accepted_prefixes):
+        joined = next(
+            (
+                prefix
+                for prefix in _FORWARD_PREFIXES
+                if argument.startswith(prefix) and argument != prefix
+            ),
+            None,
+        )
+        if joined is not None:
+            if joined in _SYSROOT_JOINED:
+                _check_forwarded_sysroot(
+                    argument[len(joined) :], directory, configured_sysroot
+                )
             output.append(argument)
             position += 1
             continue
-        if argument in {"-pthread", "-fPIC", "-fpic", "-ffp-contract=off", "-fvisibility=hidden", "-fvisibility-inlines-hidden"}:
+        if argument in _FORWARD_EXACT or argument.startswith(_FORWARD_FLAG_PREFIXES):
             output.append(argument)
         position += 1
     for include in context["include_paths"]:
         if include not in output:
             output.extend(["-isystem", include])
     return output
+
+
+def _probe_frontend_warning_flags(
+    tool: Path,
+    *,
+    work_directory: Path,
+    log_directory: Path,
+) -> tuple[list[str], list[dict[str, Any]]]:
+    """Probe which optional GCC warning names the resolved frontend supports.
+
+    Mandatory flags (strict C++23, -Werror, -Wpedantic) are proven first and
+    are never dropped; optional warning names are batch-probed, then probed
+    individually when the batch fails — one unsupported spelling must not
+    remove the whole warning set, but a frontend accepting none of them is
+    not a usable analysis compiler.
+    """
+    probe_directory = work_directory / "warning-probe"
+    probe_directory.mkdir(parents=True, exist_ok=True)
+    probe_source = probe_directory / "probe.cpp"
+    probe_source.write_text("int main() { return 0; }\n")
+    base = ["-std=c++23", "-fsyntax-only", *_GCC_REQUIRED_FLAGS]
+    required_record = _run_process(
+        [str(tool), *base, str(probe_source)],
+        cwd=probe_directory,
+        log_directory=log_directory,
+        name="frontend-required-flags",
+    )
+    if required_record["process_health"] != "ok":
+        raise CheckError(
+            f"secondary frontend {tool} rejects mandatory flags "
+            f"{_GCC_REQUIRED_FLAGS}: {required_record['diagnostics']}"
+        )
+    batch_record = _run_process(
+        [str(tool), *base, *_GCC_OPTIONAL_WARNING_FLAGS, str(probe_source)],
+        cwd=probe_directory,
+        log_directory=log_directory,
+        name="frontend-warning-batch",
+    )
+    applied: list[str] = []
+    unavailable: list[dict[str, Any]] = []
+    if batch_record["process_health"] == "ok":
+        applied = list(_GCC_OPTIONAL_WARNING_FLAGS)
+    else:
+        for flag in _GCC_OPTIONAL_WARNING_FLAGS:
+            name = "frontend-warning-" + re.sub(r"[^A-Za-z0-9]+", "_", flag).strip("_")
+            record = _run_process(
+                [str(tool), *base, flag, str(probe_source)],
+                cwd=probe_directory,
+                log_directory=log_directory,
+                name=name,
+            )
+            if record["process_health"] == "ok":
+                applied.append(flag)
+            else:
+                unavailable.append(
+                    {
+                        "flag": flag,
+                        "returncode": record["returncode"],
+                        "diagnostics": record["diagnostics"],
+                    }
+                )
+    if not applied:
+        raise CheckError(
+            f"secondary frontend {tool} accepts none of the optional warning "
+            "policy; it is not a usable analysis frontend"
+        )
+    return [*_GCC_REQUIRED_FLAGS, *applied], unavailable
 
 
 def _tool_argv(
@@ -1287,9 +1455,11 @@ def _tool_argv(
     run_id: str,
     index: int,
     pass_name: str,
+    frontend_flags: Sequence[str] | None = None,
 ) -> tuple[list[str], Path]:
     source = entry["source"]
     log_directory = build / "native_check_logs" / kind / run_id
+    launcher = _compiler_launcher(context)
     if kind == "tidy":
         database = _temporary_database(build, kind, run_id, index, entry)
         argv = [str(tool), "-p", str(database), "--extra-arg=-Wno-error", "--quiet"]
@@ -1303,7 +1473,9 @@ def _tool_argv(
         return argv, log_directory
     if kind == "analyzer":
         arguments = list(entry["arguments"])
-        arguments[0] = str(tool)
+        # Entries begin with [*launcher, compiler]: preserve the launcher
+        # spelling and replace the compiler slot with the analyzer driver.
+        arguments[len(launcher)] = str(tool)
         cleaned: list[str] = []
         position = 0
         while position < len(arguments):
@@ -1353,13 +1525,14 @@ def _tool_argv(
         ]
         return argv, log_directory
     gcc_args = _gcc_context_args(entry, context)
+    warnings = list(frontend_flags) if frontend_flags is not None else list(_GCC_WARNING_FLAGS)
     if kind == "frontends":
-        argv = [str(tool), "-std=c++23", "-fsyntax-only", *gcc_args, *_GCC_WARNING_FLAGS, str(source)]
+        argv = [*launcher, str(tool), "-std=c++23", "-fsyntax-only", *gcc_args, *warnings, str(source)]
     elif kind == "odr":
         object_path = build / "native_check_work" / kind / run_id / f"{index:04d}.o"
         object_path.parent.mkdir(parents=True, exist_ok=True)
         argv = [
-            str(tool), "-std=c++23", "-O2", "-flto=auto", "-ffat-lto-objects", "-Wno-psabi",
+            *launcher, str(tool), "-std=c++23", "-O2", "-flto=auto", "-ffat-lto-objects", "-Wno-psabi",
             # Sweep TUs may each define `main` (contract tests, the benchmark);
             # rename it uniquely per TU so the relocatable link of all objects
             # has no duplicate-symbol conflict. -Wodr checks types across TUs
@@ -1372,6 +1545,42 @@ def _tool_argv(
     return argv, log_directory
 
 
+# The toolchain family each resolved sweep tool must identify as; a resolved
+# tool that identifies as something else is a selection error, not a pass.
+_EXPECTED_TOOL_FAMILY = {
+    "tidy": {"clang-tidy"},
+    "analyzer": {"clang"},
+    "cppcheck": {"cppcheck"},
+    "frontends": {"gcc"},
+    "odr": {"gcc"},
+}
+
+
+def _inspect_sweep_tool(kind: str, tool: Path, summary: dict[str, Any]) -> bool:
+    """Record identity/target/resource evidence for the resolved tool.
+
+    Returns True when the tool identifies as the wrong family (e.g. a GNU
+    compiler handed the tidy sweep is a selection error). Tools that cannot
+    identify themselves are recorded — the sweep's own diagnostics remain
+    the qualification gate for the chosen tool/context combination.
+    """
+    try:
+        inspection = native_toolchain.inspect_tool(tool)
+    except ValueError as error:
+        summary["tool_inspection_error"] = str(error)
+        return False
+    summary["tool_inspection"] = inspection
+    summary["tool_resolved"] = inspection["resolved_path"]
+    expected = _EXPECTED_TOOL_FAMILY[kind]
+    if inspection["family"] not in expected:
+        summary["errors"].append(
+            f"resolved {kind} tool {tool} identifies as {inspection['family']!r}; "
+            f"expected one of {sorted(expected)}"
+        )
+        return True
+    return False
+
+
 def _write_summary(build: Path, kind: str, summary: Mapping[str, Any]) -> None:
     directory = build / "native_check_summaries"
     directory.mkdir(parents=True, exist_ok=True)
@@ -1381,6 +1590,80 @@ def _write_summary(build: Path, kind: str, summary: Mapping[str, Any]) -> None:
 
 def _new_run_id() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+
+
+# The standard-library hardening control probe, shared by the context
+# controls and the portability tests. The compile-time guards make the
+# control's intent self-evidencing: a hardened build carries exactly the
+# stdlib's production hardening define and never _GLIBCXX_DEBUG (which
+# substitutes a different container ABI rather than hardening the real one);
+# an unhardened build proves no hardening define leaked into it.
+# GCC reports __cplusplus 202100L for -std=c++23 until GCC 14; 202100L is
+# the floor for a dialect the compiler accepts as strict C++23.
+_STDLIB_HARDENING_PROBE = (
+    "#include <cstdint>\n#include <vector>\n"
+    "#if !defined(__STRICT_ANSI__) || __cplusplus < 202100L\n"
+    "#error Native first-party code must compile as strict C++23\n#endif\n"
+    "#if defined(_GLIBCXX_DEBUG)\n"
+    "#error _GLIBCXX_DEBUG changes container ABI; it is not a production hardening mode\n"
+    "#endif\n"
+    "#if defined(BIKE_HARDENED) && defined(__GLIBCXX__) && !defined(_GLIBCXX_ASSERTIONS)\n"
+    "#error the hardened libstdc++ control requires _GLIBCXX_ASSERTIONS\n"
+    "#endif\n"
+    "#if !defined(BIKE_HARDENED) && defined(_GLIBCXX_ASSERTIONS)\n"
+    "#error _GLIBCXX_ASSERTIONS leaked into the unhardened control\n"
+    "#endif\n"
+    "int main(int argc, char**) {\n"
+    "  std::vector<std::uint64_t> values(64);\n"
+    "  if (argc > 1) {\n"
+    "    volatile std::uint64_t invalid = values[values.size() + 64];\n"
+    "    return static_cast<int>(invalid);\n"
+    "  }\n"
+    "  return 0;\n"
+    "}\n"
+)
+
+
+def _stdlib_probe_spec(context: Mapping[str, Any]) -> dict[str, Any]:
+    """The hardening control parameters for the configured standard library.
+
+    libc++ asserts through its selected hardening mode (SIGTRAP on aarch64,
+    SIGILL on x86_64 via __builtin_trap's ud2); libstdc++ asserts through
+    _GLIBCXX_ASSERTIONS/__glibcxx_assert_fail (SIGABRT). -stdlib= is a clang
+    driver spelling — a GNU frontend never receives it.
+    """
+    stdlib_name = context["stdlib"]["name"]
+    compiler_id = context["compiler"].get("id", "")
+    if stdlib_name == "libc++":
+        return {
+            "stdlib": "libc++",
+            "mode": context["stdlib"]["hardening"]["mode"],
+            "define": (
+                "-D_LIBCPP_HARDENING_MODE="
+                f"_LIBCPP_HARDENING_MODE_{context['stdlib']['hardening']['mode']}"
+            ),
+            "stdlib_args": (
+                ["-stdlib=libc++"] if compiler_id in {"Clang", "AppleClang"} else []
+            ),
+            # The explicit "none" spelling unhardens whatever default the
+            # toolchain's libc++ headers select.
+            "unhardened_args": ["-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE"],
+            "expected_signals": {int(signal.SIGTRAP), int(signal.SIGILL)},
+            "probe": _STDLIB_HARDENING_PROBE,
+        }
+    return {
+        "stdlib": "libstdc++",
+        "mode": context["stdlib"]["hardening"]["mode"],
+        "define": "-D_GLIBCXX_ASSERTIONS",
+        "stdlib_args": [],
+        # libstdc++ may self-enable assertions (driver predefines, or the
+        # "unoptimized builds assert" default in newer GCC): the unhardened
+        # control must undefine the driver macro AND opt out of the header's
+        # own enable — either mechanism alone is not proof of absence.
+        "unhardened_args": ["-U_GLIBCXX_ASSERTIONS", "-D_GLIBCXX_NO_ASSERTIONS"],
+        "expected_signals": {int(signal.SIGABRT)},
+        "probe": _STDLIB_HARDENING_PROBE,
+    }
 
 
 def run_diagnostic_controls(build: Path) -> int:
@@ -1428,6 +1711,21 @@ def run_diagnostic_controls(build: Path) -> int:
         compiler_version["process_health"] != "ok"
         or analyzer_version["process_health"] != "ok"
     )
+    for label, inspected_tool, families in (
+        ("compiler", compiler, {"clang", "gcc"}),
+        ("analyzer", analyzer, {"clang"}),
+    ):
+        try:
+            summary[f"{label}_inspection"] = native_toolchain.inspect_tool(inspected_tool)
+        except ValueError as error:
+            summary[f"{label}_inspection_error"] = str(error)
+        else:
+            if summary[f"{label}_inspection"]["family"] not in families:
+                tool_health_failed = True
+                summary["errors"].append(
+                    f"{label} {inspected_tool} identifies as "
+                    f"{summary[f'{label}_inspection']['family']!r}; expected {sorted(families)}"
+                )
 
     control_root = build_dir / "native_check_work" / kind / run_id
     control_root.mkdir(parents=True, exist_ok=True)
@@ -1499,7 +1797,7 @@ def run_diagnostic_controls(build: Path) -> int:
         "std::string destination{std::move(source)}; (void)source.size(); }\n"
     )
     move_argv = _replace_compile_source(entry, move_source, syntax_only=False)
-    move_argv[0] = str(analyzer)
+    move_argv[len(_compiler_launcher(context))] = str(analyzer)
     move_argv.extend(
         [
             "--analyze",
@@ -1619,7 +1917,8 @@ def run_context_checks(build: Path) -> int:
     try:
         context = load_context(build_dir)
         manifest = _read_json(build_dir / "native_sources.json", "native source manifest")
-        entries = load_entries(build_dir, {_canonical(item["path"]) for item in manifest["sources"]})
+        expected = {_canonical(item["path"]) for item in manifest["sources"]}
+        entries = load_entries(build_dir, expected)
         cmake = shutil.which("cmake")
         if cmake is None:
             raise CheckError("required tool is unavailable: cmake")
@@ -1687,10 +1986,137 @@ def run_context_checks(build: Path) -> int:
     )
     sdk_controls: dict[str, str] = {}
     sdk_details: dict[str, Any] = {}
+    common_controls: dict[str, str] = {}
+    common_details: dict[str, Any] = {}
     hardening_evidence: list[dict[str, Any]] = []
 
+    def _record_explicit_paths(child_context: Mapping[str, Any]) -> None:
+        """Common control: a child configure must re-bind the exact compiler
+        and interpreter this context recorded — never a PATH/python-env
+        rescue. Recorded from the first successfully configured child."""
+        if "explicit_paths" in common_controls:
+            return
+        paths_ok = (
+            Path(child_context["compiler"]["path"]).resolve() == compiler.resolve()
+            and child_context["python_executable"] == context["python_executable"]
+            and (child_context.get("platform") or {}).get("system") == context_platform
+        )
+        common_controls["explicit_paths"] = "passed" if paths_ok else "failed"
+        common_details["explicit_paths"] = {
+            "compiler": child_context["compiler"]["path"],
+            "python": child_context["python_executable"],
+            "platform": (child_context.get("platform") or {}).get("system"),
+        }
+
+    def _selection_case(name: str) -> Path:
+        """A throwaway copy of this build's real selection files for a
+        corruption control — context, manifest and compile database are
+        copied verbatim and mutated in exactly one place."""
+        case_dir = work_root / f"selection-{name}"
+        case_dir.mkdir(parents=True)
+        context_file = build_dir / "native_check_context.json"
+        if context_file.is_file():
+            shutil.copy2(context_file, case_dir / "native_check_context.json")
+        else:
+            nested = sorted((build_dir / "native_check_context").glob("*.json"))
+            destination = case_dir / "native_check_context"
+            destination.mkdir()
+            shutil.copy2(nested[0], destination / nested[0].name)
+        shutil.copy2(build_dir / "native_sources.json", case_dir / "native_sources.json")
+        shutil.copy2(build_dir / "compile_commands.json", case_dir / "compile_commands.json")
+        return case_dir
+
+    def _case_context_file(case_dir: Path) -> Path:
+        direct = case_dir / "native_check_context.json"
+        if direct.is_file():
+            return direct
+        return next((case_dir / "native_check_context").glob("*.json"))
+
+    def _rewrite_json(path: Path, mutate: Callable[[Any], None]) -> None:
+        data = json.loads(path.read_text())
+        mutate(data)
+        path.write_text(json.dumps(data))
+
+    def _expect_rejected(
+        name: str,
+        mutate: Callable[[Path, Path, Path], None],
+        marker: str,
+    ) -> None:
+        """Corrupt one copied selection artifact; load_entries must refuse
+        it with the expected diagnostic — accepting it, or failing on an
+        unrelated check, both fail the control."""
+        case_dir = _selection_case(name)
+        context_path = _case_context_file(case_dir)
+        manifest_path = case_dir / "native_sources.json"
+        database_path = case_dir / "compile_commands.json"
+        mutate(context_path, manifest_path, database_path)
+        try:
+            load_entries(case_dir, expected)
+        except CheckError as error:
+            common_controls[name] = "rejected" if marker in str(error) else "failed"
+            common_details[name] = {"expected_marker": marker, "error": str(error)}
+            return
+        common_controls[name] = "failed"
+        common_details[name] = {
+            "expected_marker": marker,
+            "error": "the corrupted selection was accepted",
+        }
+
+    def _run_common_controls() -> None:
+        """Selection-integrity controls, identical on both platforms: each
+        corrupts a copy of this build's real selection artifacts."""
+        _expect_rejected(
+            "stale_dependency",
+            lambda context_path, _m, _d: _rewrite_json(
+                context_path,
+                lambda data: data["include_paths"].append(
+                    str(work_root / "no-longer-present-include")
+                ),
+            ),
+            "include_paths",
+        )
+        _expect_rejected(
+            "wrong_artifact",
+            lambda context_path, _m, _d: _rewrite_json(
+                context_path,
+                lambda data: data["required_files"].append(str(work_root)),
+            ),
+            "not a file",
+        )
+        _expect_rejected(
+            "source_list_change",
+            lambda _c, manifest_path, _d: _rewrite_json(
+                manifest_path, lambda data: data["sources"].pop()
+            ),
+            "differs",
+        )
+        _expect_rejected(
+            "duplicate_tu",
+            lambda _c, _m, database_path: _rewrite_json(
+                database_path, lambda data: data.append(data[0])
+            ),
+            "duplicate",
+        )
+        drift_targets = list(context["target_contexts"])
+        if drift_targets:
+            _expect_rejected(
+                "target_context_drift",
+                lambda context_path, _m, _d: _rewrite_json(
+                    context_path,
+                    lambda data: data["target_contexts"][drift_targets[0]][
+                        "compile_options"
+                    ].append("-ft14-context-drift"),
+                ),
+                "omits target",
+            )
+        else:
+            common_controls["target_context_drift"] = "not-applicable"
+            common_details["target_context_drift"] = {
+                "error": "context records no target contexts to drift"
+            }
+
     def _run_darwin_controls() -> None:
-        """Apple SDK selection + libc++ hardening controls."""
+        """Apple SDK selection controls (explicit/default/missing/fallback)."""
 
         sdk_request = context["sdk_requested"]
 
@@ -1700,6 +2126,7 @@ def run_context_checks(build: Path) -> int:
         )
         try:
             explicit_context = configured_context(explicit_build)
+            _record_explicit_paths(explicit_context)
             explicit_ok = (
                 explicit_record["returncode"] == 0
                 and explicit_context["sdk_source"] == "explicit"
@@ -1816,6 +2243,9 @@ def run_context_checks(build: Path) -> int:
             sdk_controls["default_sdk_fallback"] = "failed"
             sdk_details["default_sdk_fallback"] = {"error": str(error)}
 
+    def _run_libcpp_hardening_darwin() -> None:
+        """Darwin libc++ controls: EXTENSIVE-vs-FAST assertion, object-size
+        and timing evidence on real binaries (retained unchanged)."""
         hardening_supported = context["libcpp_hardening"]["supported"]
         if hardening_supported:
             hardening_source = work_root / "hardening_probe.cpp"
@@ -1976,13 +2406,14 @@ def run_context_checks(build: Path) -> int:
 
 
     def _run_linux_controls() -> None:
-        """Linux no-SDK/sysroot and standard-library controls."""
+        """Linux toolchain controls: no SDK, no Apple tools, sysroot policy."""
         # A child configure re-validates the whole chain: load_context proves
         # the context records no Apple SDK, and load_entries proves no compile
         # entry smuggles an -isysroot the context did not record.
         no_sdk_record, no_sdk_build = configure_case("linux-no-sdk")
         try:
             child = configured_context(no_sdk_build)
+            _record_explicit_paths(child)
             no_sdk_ok = (
                 no_sdk_record["returncode"] == 0
                 and child.get("sdk") is None
@@ -2001,91 +2432,184 @@ def run_context_checks(build: Path) -> int:
             sdk_controls["no_sdk"] = "failed"
             sdk_details["no_sdk"] = {"error": str(error)}
 
-        # A nonexistent CMAKE_SYSROOT must fail configuration — the writer
-        # refuses to record a sysroot that does not exist.
+        # A nonexistent CMAKE_SYSROOT must fail configuration. Rejection can
+        # surface at either layer — BikeCheckContext's explicit IS_DIRECTORY
+        # refusal, or the compiler-policy compile check once the missing
+        # sysroot has broken header discovery — so the marker is the
+        # configure-level failure itself, contrasted against the adjacent
+        # linux-no-sdk configure which differs only in this option.
         missing_sysroot = work_root / "missing-sysroot"
         bad_record, _bad_build = configure_case(
             "linux-bad-sysroot",
             options=(f"-DCMAKE_SYSROOT={missing_sysroot}",),
         )
         bad_output = bad_record["stdout"] + bad_record["stderr"]
-        bad_ok = bad_record["returncode"] != 0 and str(missing_sysroot) in bad_output
+        bad_ok = bad_record["returncode"] != 0 and (
+            "CMake Error" in bad_output or "Configuring incomplete" in bad_output
+        )
         sdk_controls["bad_sysroot"] = "rejected" if bad_ok else "failed"
         sdk_details["bad_sysroot"] = {
             "requested": str(missing_sysroot),
             "returncode": bad_record["returncode"],
+            "named_in_output": str(missing_sysroot) in bad_output,
         }
 
-        # Standard-library assertion control: compile a probe under the
-        # configured stdlib's hardening mode and prove an out-of-bounds
-        # std::vector element access aborts. libstdc++ __glibcxx_assert_fail
-        # raises SIGABRT; libc++ hardening traps (SIGTRAP on aarch64, SIGILL
-        # on x86_64 via __builtin_trap's ud2).
-        stdlib_name = context["stdlib"]["name"]
-        stdlib_mode = context["stdlib"]["hardening"]["mode"]
-        probe_source = work_root / "stdlib_hardening_probe.cpp"
-        probe_source.write_text(
-            "#include <cstdint>\n#include <vector>\n"
-            "#if !defined(__STRICT_ANSI__) || __cplusplus < 202302L\n"
-            "#error Native first-party code must compile as strict C++23\n#endif\n"
-            "int main(int argc, char**) {\n"
-            "  std::vector<std::uint64_t> values(64);\n"
-            "  if (argc > 1) {\n"
-            "    volatile std::uint64_t invalid = values[values.size() + 64];\n"
-            "    return static_cast<int>(invalid);\n"
-            "  }\n"
-            "  return 0;\n"
-            "}\n"
+        # CMAKE_OSX_SYSROOT is a macOS option; a Linux configure must refuse
+        # it outright (BikePlatform.cmake FATAL_ERROR) rather than adapt it.
+        rejected_record, _rejected_build = configure_case(
+            "linux-reject-osx-sysroot",
+            options=("-DCMAKE_OSX_SYSROOT=/System/Library/Frameworks",),
         )
-        if stdlib_name == "libc++":
-            define = "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"
-            expected_signals = {int(signal.SIGTRAP), int(signal.SIGILL)}
-            stdlib_args = (
-                ["-stdlib=libc++"]
-                if context["compiler"]["id"] in {"Clang", "AppleClang"}
-                else []
+        rejected_output = rejected_record["stdout"] + rejected_record["stderr"]
+        rejected_ok = (
+            rejected_record["returncode"] != 0 and "CMAKE_OSX_SYSROOT" in rejected_output
+        )
+        sdk_controls["rejected_osx_sysroot"] = "rejected" if rejected_ok else "failed"
+        sdk_details["rejected_osx_sysroot"] = {
+            "returncode": rejected_record["returncode"],
+            "matched_option": "CMAKE_OSX_SYSROOT" in rejected_output,
+        }
+
+        # The Linux configure must never invoke Apple-only tools; stubs record
+        # every invocation so a real xcrun/sw_vers call cannot pass silently.
+        fake_bin = work_root / "fake-apple-tool-bin"
+        fake_bin.mkdir(parents=True, exist_ok=True)
+        marker = work_root / "apple-tool-invocations.txt"
+        for tool_name in ("xcrun", "sw_vers", "otool", "install_name_tool"):
+            stub = fake_bin / tool_name
+            stub.write_text(
+                "#!/bin/sh\n"
+                'printf "%s %s\\n" "$0" "$*" >> "$BIKE_T14_APPLE_TOOL_LOG"\n'
+                "exit 1\n"
             )
-        else:
-            define = "-D_GLIBCXX_ASSERTIONS"
-            expected_signals = {int(signal.SIGABRT)}
-            stdlib_args = []
-        binary = work_root / "stdlib-hardening-probe"
-        compile_argv = [
-            str(compiler),
-            "-std=c++23",
-            *stdlib_args,
-            define,
-            "-O0",
-            str(probe_source),
-            "-o",
-            str(binary),
-        ]
+            stub.chmod(0o755)
+        apple_environment = os.environ.copy()
+        apple_environment["BIKE_T14_APPLE_TOOL_LOG"] = str(marker)
+        apple_environment["PATH"] = (
+            str(fake_bin) + os.pathsep + apple_environment.get("PATH", "")
+        )
+        apple_record, _apple_build = configure_case(
+            "linux-no-apple-tools",
+            environment=apple_environment,
+        )
+        no_apple_ok = apple_record["returncode"] == 0 and not marker.exists()
+        sdk_controls["no_apple_tool"] = "passed" if no_apple_ok else "failed"
+        sdk_details["no_apple_tool"] = {
+            "configure_returncode": apple_record["returncode"],
+            "invocations": marker.read_text().splitlines() if marker.exists() else [],
+        }
+
+        # A native Linux sysroot must be recorded and preserved verbatim into
+        # every compile command — never silently dropped, never an Apple SDK.
+        preserved_record, preserved_build = configure_case(
+            "linux-sysroot-preserved",
+            options=("-DCMAKE_SYSROOT=/",),
+        )
+        try:
+            preserved_context = configured_context(preserved_build)
+            preserved_entries = load_entries(preserved_build, expected)
+            sysroot_args_seen = {
+                argument
+                for preserved_entry in preserved_entries
+                for argument in preserved_entry["arguments"]
+                if argument.startswith("--sysroot") or argument.startswith("-isysroot")
+            }
+            preserved_ok = (
+                preserved_record["returncode"] == 0
+                and preserved_context.get("sysroot") == "/"
+                and sysroot_args_seen == {"--sysroot=/"}
+            )
+            sdk_controls["sysroot_preservation"] = (
+                "passed" if preserved_ok else "failed"
+            )
+            sdk_details["sysroot_preservation"] = {
+                "sysroot": preserved_context.get("sysroot"),
+                "sysroot_args": sorted(sysroot_args_seen),
+            }
+        except (CheckError, KeyError, TypeError) as error:
+            sdk_controls["sysroot_preservation"] = "failed"
+            sdk_details["sysroot_preservation"] = {"error": str(error)}
+
+    def _run_stdlib_hardening() -> None:
+        """The configured standard library's production hardening control.
+
+        Darwin libc++ keeps the existing EXTENSIVE-vs-FAST assertion,
+        object-size and timing evidence; every other platform compiles a
+        hardened and an unhardened probe under the stdlib's configured mode
+        and proves the out-of-bounds assertion terminates nonzero. The
+        unhardened run exercises undefined behavior — its outcome is
+        recorded as evidence, never asserted as a guarantee.
+        """
+        if context_platform == "Darwin" and context["stdlib"]["name"] == "libc++":
+            _run_libcpp_hardening_darwin()
+            return
+        spec = _stdlib_probe_spec(context)
+        stdlib_name = spec["stdlib"]
+        stdlib_mode = spec["mode"]
+        probe_source = work_root / "stdlib_hardening_probe.cpp"
+        probe_source.write_text(spec["probe"])
+        sysroot_args: list[str] = []
+        if context.get("sysroot"):
+            sysroot_args = (
+                ["-isysroot", context["sysroot"]]
+                if context_platform == "Darwin"
+                else ["--sysroot", context["sysroot"]]
+            )
+        arch_args: list[str] = []
+        configured_args = entries[0]["arguments"]
+        position = 0
+        while position < len(configured_args):
+            if configured_args[position] == "-arch" and position + 1 < len(configured_args):
+                arch_args.extend(["-arch", configured_args[position + 1]])
+                position += 2
+            else:
+                position += 1
+
+        hardened_binary = work_root / "stdlib-hardening-probe-hardened"
         compile_record = _run_process(
-            compile_argv,
+            [
+                str(compiler),
+                "-std=c++23",
+                *arch_args,
+                *sysroot_args,
+                *spec["stdlib_args"],
+                "-DBIKE_HARDENED=1",
+                spec["define"],
+                "-O0",
+                str(probe_source),
+                "-o",
+                str(hardened_binary),
+            ],
             cwd=repository,
             log_directory=log_directory,
             name="stdlib-hardening-compile",
             timeout_seconds=180,
         )
         summary["records"].append(compile_record)
-        hardening_failed = compile_record["process_health"] != "ok"
+        outcome = "compile-failed" if compile_record["process_health"] != "ok" else None
+        hardening_failed = outcome is not None
         assertion_active = False
+        assertion_returncode: int | None = None
         if not hardening_failed:
             assertion_record = _run_process(
-                [str(binary), "invalid-element-control"],
+                [str(hardened_binary), "invalid-element-control"],
                 cwd=repository,
                 log_directory=log_directory,
                 name="stdlib-hardening-assertion",
                 disable_core_dumps=True,
                 timeout_seconds=30,
             )
+            assertion_returncode = assertion_record["returncode"]
             signal_number = (
-                -assertion_record["returncode"]
-                if isinstance(assertion_record["returncode"], int)
-                and assertion_record["returncode"] < 0
+                -assertion_returncode
+                if isinstance(assertion_returncode, int) and assertion_returncode < 0
                 else None
             )
-            assertion_active = signal_number in expected_signals
+            if assertion_record["launch_error"] is not None or assertion_record["timed_out"]:
+                outcome = "tool-failed"
+            else:
+                assertion_active = signal_number in spec["expected_signals"]
+                outcome = "asserted" if assertion_active else "silent"
             summary["records"].append(
                 {
                     **assertion_record,
@@ -2095,7 +2619,7 @@ def run_context_checks(build: Path) -> int:
                 }
             )
             benign_record = _run_process(
-                [str(binary)],
+                [str(hardened_binary)],
                 cwd=repository,
                 log_directory=log_directory,
                 name="stdlib-hardening-benign",
@@ -2104,30 +2628,85 @@ def run_context_checks(build: Path) -> int:
             summary["records"].append(benign_record)
             if benign_record["returncode"] != 0:
                 hardening_failed = True
-            if not assertion_active:
+            if outcome != "asserted":
                 hardening_failed = True
+
+        # The unhardened control proves the probe itself compiles without a
+        # hardening define (its own #error guards report a leaked define as a
+        # compile failure, distinct from a tool failure); the unhardened run
+        # reads out of bounds — undefined behavior whose outcome is recorded
+        # as evidence only.
+        unhardened_binary = work_root / "stdlib-hardening-probe-unhardened"
+        unhardened_compile = _run_process(
+            [
+                str(compiler),
+                "-std=c++23",
+                *arch_args,
+                *sysroot_args,
+                *spec["stdlib_args"],
+                *spec["unhardened_args"],
+                "-O0",
+                str(probe_source),
+                "-o",
+                str(unhardened_binary),
+            ],
+            cwd=repository,
+            log_directory=log_directory,
+            name="stdlib-unhardened-compile",
+            timeout_seconds=180,
+        )
+        summary["records"].append(unhardened_compile)
+        unhardened_evidence: dict[str, Any] = {
+            "compiled": unhardened_compile["process_health"] == "ok",
+            "returncode": None,
+            "note": (
+                "out-of-bounds access without assertions is undefined "
+                "behavior — recorded as evidence, not a guarantee"
+            ),
+        }
+        if unhardened_evidence["compiled"]:
+            unhardened_run = _run_process(
+                [str(unhardened_binary), "invalid-element-control"],
+                cwd=repository,
+                log_directory=log_directory,
+                name="stdlib-unhardened-run",
+                disable_core_dumps=True,
+                timeout_seconds=30,
+            )
+            summary["records"].append(
+                {**unhardened_run, "control": "stdlib-unhardened-run"}
+            )
+            unhardened_evidence["returncode"] = unhardened_run["returncode"]
+
         hardening_evidence.append(
             {
                 "build_type": "control",
                 "stdlib": stdlib_name,
                 "mode": stdlib_mode,
+                "outcome": outcome,
                 "assertion_active": {stdlib_mode: assertion_active},
-                "expected_signals": sorted(expected_signals),
+                "expected_signals": sorted(spec["expected_signals"]),
+                "assertion_returncode": assertion_returncode,
+                "unhardened": unhardened_evidence,
             }
         )
         sdk_controls["stdlib_hardening"] = (
             "failed" if hardening_failed else "passed"
         )
 
+    _run_common_controls()
     if context_platform == "Darwin":
         _run_darwin_controls()
     elif context_platform == "Linux":
         _run_linux_controls()
     else:
         raise CheckError(f"unsupported context platform: {context_platform}")
+    _run_stdlib_hardening()
 
+    all_controls = {**common_controls, **sdk_controls}
+    summary["common_controls"] = common_controls
     summary["sdk_controls"] = sdk_controls
-    summary["sdk_control_details"] = sdk_details
+    summary["sdk_control_details"] = {**common_details, **sdk_details}
     summary["hardening_evidence"] = hardening_evidence
     summary["tool_health"] = "failed" if any(
         record.get("launch_error") or record.get("timed_out")
@@ -2135,19 +2714,20 @@ def run_context_checks(build: Path) -> int:
     ) else "ok"
     summary["status"] = (
         "passed"
-        if all(value in {"passed", "rejected", "not-applicable"} for value in sdk_controls.values())
+        if all(value in {"passed", "rejected", "not-applicable"} for value in all_controls.values())
         and summary["tool_health"] == "ok"
         else "failed"
     )
     summary["records"].extend(cmake_records)
     summary["log_directory"] = str(log_directory)
     _write_summary(build_dir, kind, summary)
+    print(f"native context common controls: {common_controls}")
     print(f"native context SDK controls: {sdk_controls}")
     print(f"native context tool health: {summary['tool_health']}")
     print(f"native context summary: {build_dir / 'native_check_summaries' / 'context.json'}")
     if summary["status"] != "passed":
         print("native context controls failed; see retained control logs above", file=sys.stderr)
-        for name, status in sdk_controls.items():
+        for name, status in all_controls.items():
             if status not in {"passed", "rejected", "not-applicable"}:
                 print(f"  {name}: {status}", file=sys.stderr)
         return 1
@@ -2242,6 +2822,32 @@ def run_sweep(kind: str, build: Path) -> int:
     blocking_findings = False
     report_only_findings = False
     tool_health_failed = version_record["process_health"] != "ok"
+    # Tool identity/capability evidence: the version banner must name the
+    # expected toolchain family for this kind (wrong-family tools are a
+    # selection error); uninspectable tools are recorded but remain gated by
+    # the sweep's own diagnostics.
+    tool_health_failed = _inspect_sweep_tool(kind, tool, summary) or tool_health_failed
+
+    frontend_flags: Sequence[str] = _GCC_WARNING_FLAGS
+    if kind in {"frontends", "odr"}:
+        try:
+            frontend_flags, unavailable_flags = _probe_frontend_warning_flags(
+                tool,
+                work_directory=build_dir / "native_check_work" / kind / run_id,
+                log_directory=log_directory,
+            )
+        except CheckError as error:
+            summary["errors"].append(str(error))
+            summary["records"] = records
+            summary["tool_health"] = "failed"
+            summary["log_directory"] = str(log_directory)
+            _write_summary(build_dir, kind, summary)
+            print(f"native {kind} failed: {error}", file=sys.stderr)
+            return 1
+        summary["warning_flags"] = {
+            "applied": list(frontend_flags),
+            "unavailable": unavailable_flags,
+        }
     if kind == "odr":
         object_paths = [
             build_dir / "native_check_work" / kind / run_id / f"{index:04d}.o"
@@ -2263,6 +2869,7 @@ def run_sweep(kind: str, build: Path) -> int:
                 run_id=run_id,
                 index=index,
                 pass_name=pass_name,
+                frontend_flags=frontend_flags,
             )
             name = f"{index:04d}-{entry['source'].stem}-{pass_name}"
             record = _run_process(argv, cwd=entry["directory"], log_directory=log_directory, name=name)

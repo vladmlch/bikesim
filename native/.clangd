@@ -1,5 +1,19 @@
-# clangd picks compile_commands.json from native/build automatically; the
-# warning contract and .clang-tidy both flow through. Only -Werror is dropped
-# so editor diagnostics don't double-gate what the sweeps already enforce.
+# clangd resolves the selected compilation database relative to this file:
+# `build/` is the conventional default build directory for native/ (the same
+# build the sweeps consume). Select a different build per editor session
+# with `--compile-commands-dir=<build dir>` — the database, the warning
+# contract and .clang-tidy all flow through it.
+#
+# Compiler locations are deliberately NOT configured here: they differ per
+# machine (Xcode toolchain, Homebrew LLVM, distro /usr/bin/g++-N) and the
+# configured compiler is already recorded in compile_commands.json itself.
+# If your clangd needs help resolving system headers for a non-host
+# toolchain, pass `--query-driver=<your configured compiler>` on the clangd
+# command line — never bake an absolute developer-machine path into this
+# shared configuration.
+#
+# Only -Werror is dropped so editor diagnostics don't double-gate what the
+# sweeps already enforce.
 CompileFlags:
+  CompilationDatabase: build/
   Remove: [-Werror]

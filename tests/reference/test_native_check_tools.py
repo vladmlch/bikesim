@@ -5,6 +5,7 @@ import os
 import platform
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -599,6 +600,133 @@ def test_gxx_context_default_runs_without_environment_override(
     assert run_sweep(kind, build) == 0
 
 
+def _retarget_fixture_compiler(build: Path, compiler: Path, compiler_id: str) -> None:
+    """Point the fixture's context and compile database at a different
+    configured compiler — load_entries re-validates the pairing, so both
+    records must move together."""
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["compiler"]["path"] = str(compiler)
+    context["compiler"]["id"] = compiler_id
+    context_path.write_text(json.dumps(context))
+    database_path = build / "compile_commands.json"
+    database = json.loads(database_path.read_text())
+    for entry in database:
+        argv = (
+            list(entry["arguments"])
+            if "arguments" in entry
+            else shlex.split(entry["command"])
+        )
+        argv[0] = str(compiler)
+        if "arguments" in entry:
+            entry["arguments"] = argv
+        else:
+            entry["command"] = shlex.join(argv)
+    database_path.write_text(json.dumps(database))
+
+
+def test_tidy_prefers_configured_compiler_sibling_over_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A clang-tidy from the configured compiler's own toolchain wins over
+    the recorded default/PATH spelling — the sweep shares the compiler's
+    toolchain view rather than an unrelated installation."""
+    build, _ = write_fixture(tmp_path)
+    toolchain_dir = tmp_path / "llvm-18" / "bin"
+    toolchain_dir.mkdir(parents=True)
+    compiler = toolchain_dir / "clang++-18"
+    sibling = toolchain_dir / "clang-tidy-18"
+    write_fake_tool(compiler)
+    write_fake_tool(sibling)
+    unrelated = tmp_path / "unrelated-clang-tidy"
+    write_fake_tool(unrelated)
+    _retarget_fixture_compiler(build, compiler, "Clang")
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["tool_defaults"]["tidy"] = str(unrelated)
+    context_path.write_text(json.dumps(context))
+    monkeypatch.delenv("CLANG_TIDY", raising=False)
+
+    assert run_sweep("tidy", build) == 0
+    summary = json.loads(
+        (build / "native_check_summaries" / "tidy.json").read_text()
+    )
+    assert summary["tool"] == str(sibling)
+
+
+def test_gxx_prefers_gnu_compiler_sibling_over_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The secondary frontend under a GNU build is the configured compiler's
+    own spelling — not whatever g++ a default points at."""
+    build, _ = write_fixture(tmp_path)
+    toolchain_dir = tmp_path / "gcc-13" / "bin"
+    toolchain_dir.mkdir(parents=True)
+    compiler = toolchain_dir / "g++-13"
+    write_fake_tool(compiler)
+    unrelated = tmp_path / "unrelated-gxx"
+    write_fake_tool(unrelated)
+    _retarget_fixture_compiler(build, compiler, "GNU")
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    context["tool_defaults"]["gxx"] = str(unrelated)
+    context_path.write_text(json.dumps(context))
+    monkeypatch.delenv("GXX", raising=False)
+
+    assert run_sweep("frontends", build) == 0
+    summary = json.loads(
+        (build / "native_check_summaries" / "frontends.json").read_text()
+    )
+    assert summary["tool"] == str(compiler)
+
+
+@pytest.mark.parametrize(
+    ("kind", "env_name"),
+    [
+        ("tidy", "CLANG_TIDY"),
+        ("analyzer", "ANALYZER_CLANG"),
+        ("cppcheck", "CPPCHECK"),
+        ("frontends", "GXX"),
+        ("odr", "GXX"),
+    ],
+)
+def test_broken_required_override_fails_before_sweep(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kind: str, env_name: str
+) -> None:
+    """A deliberately nonexistent required override must fail at resolution —
+    before any empty sweep could be labeled passing."""
+    build, _ = write_fixture(tmp_path)
+    monkeypatch.setenv(env_name, str(tmp_path / f"missing-{env_name.lower()}"))
+
+    assert run_sweep(kind, build) == 1
+    summary = json.loads(
+        (build / "native_check_summaries" / f"{kind}.json").read_text()
+    )
+    assert summary["status"] == "failed"
+    assert any("override" in error for error in summary["errors"])
+    assert summary["translation_unit_count"] == 0
+
+
+def test_wrong_family_tool_is_a_selection_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A real executable that identifies as the wrong toolchain family is a
+    selection error, not a passing sweep."""
+    build, _ = write_fixture(tmp_path)
+    compiler = shutil.which("c++") or shutil.which("g++")
+    if compiler is None:
+        pytest.skip("no host C++ compiler to misuse as the tidy tool")
+    monkeypatch.setenv("CLANG_TIDY", compiler)
+
+    assert run_sweep("tidy", build) == 1
+    summary = json.loads(
+        (build / "native_check_summaries" / "tidy.json").read_text()
+    )
+    assert summary["tool_health"] == "failed"
+    assert any("identifies as" in error for error in summary["errors"])
+    assert summary["tool_inspection"]["family"] in {"clang", "gcc"}
+
+
 def run_header_control(root: Path, *, diagnostic_in_header: bool = True) -> subprocess.CompletedProcess[str]:
     repository = Path(__file__).resolve().parents[2]
     source_dir = root / "native" / "src"
@@ -1013,6 +1141,13 @@ def test_context_control_records_sdk_hardening_and_timing_evidence() -> None:
         (configured_build_path() / "native_check_summaries" / "context.json").read_text()
     )
     assert summary["tool_health"] == "ok"
+    # Common selection-integrity controls run identically on both platforms.
+    assert summary["common_controls"]["stale_dependency"] == "rejected"
+    assert summary["common_controls"]["wrong_artifact"] == "rejected"
+    assert summary["common_controls"]["source_list_change"] == "rejected"
+    assert summary["common_controls"]["duplicate_tu"] == "rejected"
+    assert summary["common_controls"]["target_context_drift"] == "rejected"
+    assert summary["common_controls"]["explicit_paths"] == "passed"
     if platform.system() == "Darwin":
         assert summary["sdk_controls"]["explicit_sdk"] == "passed"
         assert summary["sdk_controls"]["missing_sdk"] == "rejected"
@@ -1047,6 +1182,9 @@ def test_context_control_records_sdk_hardening_and_timing_evidence() -> None:
     else:
         assert summary["sdk_controls"]["no_sdk"] == "passed"
         assert summary["sdk_controls"]["bad_sysroot"] == "rejected"
+        assert summary["sdk_controls"]["rejected_osx_sysroot"] == "rejected"
+        assert summary["sdk_controls"]["no_apple_tool"] == "passed"
+        assert summary["sdk_controls"]["sysroot_preservation"] == "passed"
         assert summary["sdk_controls"]["stdlib_hardening"] == "passed"
         assert summary["hardening_evidence"], "missing libstdc++ hardening evidence"
         assert all(

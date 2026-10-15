@@ -245,8 +245,48 @@ target_include_directories(bike_native_contract_core SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 set(_native_core_lib bike_native_contract_core)
 
+# T05 owned cold-path boundary — the identical io/*.cpp TUs the standalone
+# root build compiles as bike_io, here in the legacy warning/hardening
+# context. This graph does not resolve .deps imported targets, so the pinned
+# RapidJSON include is anchored at BIKE_DEPENDENCY_ROOT directly; a missing
+# tree is a configure-time acquisition failure, never a fallback.
+set(_native_rapidjson_include
+  "${BIKE_DEPENDENCY_ROOT}/rapidjson-24b5e7a/include")
+if(NOT IS_DIRECTORY "${_native_rapidjson_include}")
+  message(FATAL_ERROR
+    "pinned RapidJSON include tree is missing: ${_native_rapidjson_include} — acquire the locked .deps before configure")
+endif()
+add_library(bike_io STATIC src/io/json.cpp src/io/hash.cpp
+  src/io/value.hpp src/io/json.hpp src/io/hash.hpp)
+set_target_properties(bike_io PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(bike_io PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_io PRIVATE ${_native_contract_compile_definitions})
+endif()
+target_include_directories(bike_io SYSTEM PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${_native_rapidjson_include}")
+# The standalone-header sweep compiles every first-party header under
+# native/src in every target context that owns a native/src translation
+# unit, so bike_io's compile context must resolve the shared include
+# surface (MuJoCo/nanobind/Python/robin) even though the io translation
+# units include none of it — include paths widen the probe context, they
+# are not a dependency of the shipped objects.
+if(_native_contract_include_directories)
+  target_include_directories(bike_io SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_io SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+
 # The pinned error interceptor is compiled once and shared by the extension,
-# direct C++ contracts, and the later native benchmark target.
+# direct C++ contracts, and the later native benchmark target. Its
+# engine-image digest uses the shared bike::io::Sha256 — no private copy.
 add_library(bike_native_engine STATIC src/engine_call.cpp)
 set_target_properties(bike_native_engine PROPERTIES
   POSITION_INDEPENDENT_CODE ON
@@ -265,7 +305,7 @@ if(_native_contract_include_directories)
 endif()
 target_include_directories(bike_native_engine SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
-target_link_libraries(bike_native_engine PUBLIC "${MJ_DIR}/libmujoco.3.12.0.dylib")
+target_link_libraries(bike_native_engine PUBLIC "${MJ_DIR}/libmujoco.3.12.0.dylib" bike_io)
 set(_native_engine_lib bike_native_engine)
 
 # allocation_faults.cpp overrides the test binary's throwing allocation

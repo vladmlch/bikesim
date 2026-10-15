@@ -675,8 +675,20 @@ def test_explicit_sdk_alias_is_retained_and_canonicalized(tmp_path: Path) -> Non
         (repository / "native" / "build" / "native_check_context.json").read_text()
     )
     current_sdk = Path(current_context["sdk"])
-    explicit_alias = current_sdk.parent / "MacOSX26.5.sdk"
-    assert explicit_alias.is_dir()
+    # The versioned alias must come from the installed toolchain — Xcode
+    # upgrades rename it (e.g. MacOSX26.5.sdk -> MacOSX27.sdk), so derive it
+    # from the siblings that resolve to the configured SDK rather than
+    # hardcoding one release.
+    versioned_aliases = [
+        candidate
+        for candidate in sorted(current_sdk.parent.glob("MacOSX*.sdk"))
+        if candidate.name != current_sdk.name
+        and candidate.resolve() == current_sdk.resolve()
+    ]
+    assert versioned_aliases, (
+        f"no versioned MacOSX*.sdk sibling resolves to {current_sdk.resolve()}"
+    )
+    explicit_alias = versioned_aliases[-1]
 
     configured, build = configure_native(
         tmp_path,

@@ -123,6 +123,23 @@ target_include_directories(bike_core SYSTEM PRIVATE
   "${BIKE_DEP_rapidjson_ROOT}/include" "${BIKE_DEP_tomlplusplus_ROOT}/include"
   "${BIKE_DEP_eigen_ROOT}" "${BIKE_DEP_duckdb_ROOT}/include")
 
+# bike_io: the T05 cold-path owned boundary — strict lossless JSON
+# parse/serialize plus the recording-tag codec on the pinned RapidJSON
+# headers, and the shared FIPS 180-4 SHA-256. bike_engine links it for the
+# engine-image digest so engine_call.cpp carries no private copy; the
+# migration harness and later config/recording consumers share the same
+# objects.
+add_library(bike_io STATIC
+  "${_bike_native_dir}/src/io/json.cpp"
+  "${_bike_native_dir}/src/io/hash.cpp"
+  "${_bike_native_dir}/src/io/value.hpp"
+  "${_bike_native_dir}/src/io/json.hpp"
+  "${_bike_native_dir}/src/io/hash.hpp")
+set_target_properties(bike_io PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_target_strict_policy(bike_io)
+target_include_directories(bike_io SYSTEM PRIVATE
+  "${_bike_native_dir}/src" "${BIKE_DEP_rapidjson_ROOT}/include")
+
 # bike_engine: the pinned error interceptor shared by contract tests and the
 # extension (identical source/context to the legacy bike_native_engine).
 add_library(bike_engine STATIC "${_bike_native_dir}/src/engine_call.cpp")
@@ -130,7 +147,7 @@ set_target_properties(bike_engine PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_target_strict_policy(bike_engine)
 target_include_directories(bike_engine SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
-target_link_libraries(bike_engine PUBLIC bike::mujoco)
+target_link_libraries(bike_engine PUBLIC bike::mujoco bike_io)
 
 if(BUILD_TESTING)
   # tyre/distance.cpp SignedProfile + tyre/station.cpp scalar station law:

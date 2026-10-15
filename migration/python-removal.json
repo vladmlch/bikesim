@@ -2740,6 +2740,7 @@
       "native/src/io/hash.hpp",
       "native/src/io/hash.cpp",
       "native/tests/migration/test_t05.cpp",
+      "native/tests/support/migration_test.hpp",
       "native/tests/support/migration_test.cpp"
     ],
     "verification_ids": [

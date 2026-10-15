@@ -22670,5 +22670,31 @@
       "NATIVE_TEST_BUILD_PATH=$PWD/native/build uv run --frozen pytest tests/reference/test_native_engine_errors.py -x -q: 31 passed — bindings-side fatal/callback contract unchanged under the provenance split"
     ],
     "note": "T04 owns no Python source rows in python-removal.json and no ported test records in this map — its deliverable is the native boundary itself (migration card: 'owns no individual Python source file in the supplied removal inventory'). This task-scoped entry is its registration evidence. The test_native_engine_errors.py rows stay owned by T53; they were rerun here only as transition-environment source coverage."
+  },
+  "io_boundary_contract": {
+    "task": "T05",
+    "ctest_name": "migration_T05",
+    "build_target": "migration_T05",
+    "kind": "executable",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T05 test_t05.cpp) linked against bike_migration_test + bike_io; bike_io (native/src/io/json.cpp + hash.cpp) is defined in BOTH build graphs — the standalone root graph (CMakeLists.txt) and the legacy binding graph (native/CMakeLists.txt under BIKE_DEPENDENCY_ROOT) compile the identical TUs against the pinned RapidJSON 24b5e7a include tree",
+    "produced_apis": [
+      "bike::io::Value owned cold-path AST — native/src/io/value.hpp; variant monostate/bool/Number/Array/Object/Bytes/Tagged, Number keeps the exact JSON number lexeme, Object is insertion-ordered pairs; find_member/as_object/as_array/number_i64/number_double/tagged_double throw std::invalid_argument naming accessor + $-path",
+      "bike::io::parse_json — RapidJSON SAX + kParseNumbersAsStringsFlag (RawNumber lexeme verbatim); rejects duplicate keys, trailing content, malformed UTF-8, unpaired surrogate escapes, raw NUL, leading BOM, bare NaN/Infinity, positive-exponent lexemes beyond binary64, >512 MiB inputs and depth >512",
+      "bike::io::canonical_json / recording_json / parse_recording_json — deterministic emit (sorted keys, compact separators, verbatim lexemes) and the $bike_recording tag codec matching src/bike_sim/recording/json_codec.py: float64 nan/+inf/-inf sentinels only, strict base64 bytes, CPython Decimal canonicalization (Unicode digits/space, underscores, specials, exact binary64 expansion), CPython 3.14 date/time/datetime fromisoformat+isoformat parity (week dates, 'T24:00' wrap, arbitrary separators, comma fraction, offset spellings), timedelta days/seconds/microseconds normalization with |days|<=999999999, reserved-key object escaping, $[a][0][b] path diagnostics",
+      "bike::io::Sha256 + sha256() — FIPS 180-4 streaming hasher; engine_call.cpp's resolved-libmujoco image hash now runs through it (4096-byte chunks)",
+      "bt::manifest_parse / manifest_verify_files / manifest() / manifest_entry() / verified_fixture — strict oracle-manifest validation through bike::io::parse_json plus per-file byte-count and sha256 checks; failures are hard errors, never skips"
+    ],
+    "mandatory_cases": [
+      "SHA-256 FIPS vectors (empty, 'abc', 448-bit message, 1e6 x 'a') plus chunked streaming equivalence",
+      "lossless lexemes: 9007199254740993, -0.0, 39-digit integer, exponent spellings; duplicate keys, malformed UTF-8/CESU-8, unpaired surrogates, raw NUL, BOM, trailing content, 512-depth accepted / 600 rejected",
+      "recording tags: float64 sentinels + finite reject path, strict base64 (padding, continuity, alphabet), decimal canonicalization incl. Decimal(float) exact expansion and signed zero, date/time/datetime incl. week dates, '24:00' wrap, comma fraction, offset seconds, timedelta normalization/overflow, reserved-key escaping, unknown/malformed tags rejected with path diagnostics",
+      "manifest: schema marker, required sections, oracle/tool/environment identity, fixture-name uniqueness, comparison codes, expected-kind shapes, file containment, lowercase sha256, byte counts, dtype/order/shape consistency, nullable input sha256 — ~30 mutation cases fail closed; real oracle-manifest.json validates all 92 entries and every declared file digest"
+    ],
+    "evidence": [
+      "RED recorded: first 'cmake --build build/native-release --target migration_T05' of the implementation failed compile under -Werror (-Wunsafe-buffer-usage on byte access, -Wsign-conversion in base64/ISO paths); the first clean compile then failed ctest — '1e999' raw lexeme rejected by pinned RapidJSON's unconditional exponent scan (documented boundary limit in io/json.hpp), a short-datetime separator index out-of-bounds (CPython slice-clamp port fixed at json.cpp parse_iso_datetime), and wrong expected offset-seconds spellings in the test (CPython isoformat drops ':00')",
+      "ctest --test-dir build/native-release -R '^migration_T05$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (PASS 86 + PASS 320 + PASS 18 + PASS 28166 checks)",
+      "ctest --test-dir native/build -R '^migration_T05$' --no-tests=error --output-on-failure: 1/1 tests passed, exit 0 (same four blocks)"
+    ],
+    "note": "T05 owns src/bike_sim/recording/json_codec.py in python-removal.json as a ledger row only; the Python codec remains the oracle until the T63 deletion gate. runtime::WireValue/WireObject are untouched — bike::io::Value is the cold-path input/provenance tree only. A float lexeme whose positive exponent exceeds binary64 range is a syntax error at the raw boundary (pinned RapidJSON emits NumberTooBig even with kParseNumbersAsStringsFlag); parse_recording_json rejects such tokens either way, matching json_codec's finite() outcome."
   }
 }

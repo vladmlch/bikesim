@@ -7,6 +7,7 @@
 // onto this seam.
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <span>
@@ -61,5 +62,60 @@ template <class F> void invalid(F &&action) {
     }
     require(rejected, "expected std::invalid_argument");
 }
+
+// ---- strict oracle-manifest/provenance validation (task T05) --------------
+// The manifest layer consumes the owned bike::io JSON boundary: parsing is
+// the lossless tree (duplicate keys, trailing bytes, malformed UTF-8 all
+// rejected) and every structural violation is std::invalid_argument naming
+// the complete member path — the harness never lenient-parses provenance.
+
+// One declared byte artifact inside a manifest "files" entry. shape/dtype/
+// order are present together or not at all; when present the declared
+// element count times the dtype's element size must equal "bytes" exactly.
+struct ManifestFile {
+    std::string path;
+    std::int64_t bytes = 0;
+    std::string sha256;
+    std::vector<std::int64_t> shape;
+    std::string dtype;
+    std::string order;
+};
+
+// One parsed, structurally validated manifest fixture entry.
+struct ManifestFixture {
+    std::string name;
+    std::string group;
+    char comparison = 0; // B | N | P | Q | S
+    std::string kind;    // accepted | invalid | diagnostic | ...
+    std::vector<ManifestFile> files;
+};
+
+// Structural + provenance validation of one manifest document: schema
+// marker, oracle commit/SHA-256 hex identity, tool identity, environment,
+// per-fixture member sets, comparison codes, expected-kind field shapes and
+// file declarations (path containment shape, 64-hex digests, byte/shape
+// consistency). Throws std::invalid_argument naming the offending member.
+// File digests are verified separately by manifest_verify_files().
+[[nodiscard]] std::vector<ManifestFixture>
+manifest_parse(std::string_view source);
+
+// Reads each declared file through fixture() + text() and verifies byte
+// count and lowercase-hex SHA-256 against the declaration. A discrepancy is
+// a fail-closed require() failure naming the file — never a skip.
+void manifest_verify_files(const ManifestFixture &entry);
+
+// The parsed manifest for this build (BIKE_ORACLE_MANIFEST, read through
+// the same bounded text() contract); lazy and cached. Structural
+// violations propagate as std::invalid_argument — strict.
+[[nodiscard]] const std::vector<ManifestFixture> &manifest();
+
+// The one manifest entry named `name`; require() failure when absent — an
+// undeclared fixture is an acquisition failure, not a substitution.
+[[nodiscard]] const ManifestFixture &manifest_entry(std::string_view name);
+
+// T05+: like fixture() but the manifest entry is structurally validated and
+// every declared file digest is verified first; the returned path is still
+// re-checked through the T02 traversal contract.
+[[nodiscard]] std::filesystem::path verified_fixture(std::string_view name);
 
 } // namespace bt

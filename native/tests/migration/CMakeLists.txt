@@ -23,9 +23,23 @@ if(_migration_fixture_root MATCHES "[\"'\\\\]")
     "fixture root must not contain quotes or backslashes: ${_migration_fixture_root}")
 endif()
 
-# Standalone harness: stdlib-only, no MuJoCo/Python/nanobind includes. The
-# support TU owns BIKE_FIXTURE_ROOT privately so test targets and the
-# standalone-header sweep never see it.
+# T05 oracle-manifest path: the harness TU also owns BIKE_ORACLE_MANIFEST —
+# same compile-definition contract as BIKE_FIXTURE_ROOT, verified present at
+# configure time.
+set(_migration_oracle_manifest "${_migration_repo_root}/migration/oracle-manifest.json")
+if(NOT EXISTS "${_migration_oracle_manifest}")
+  message(FATAL_ERROR
+    "oracle manifest is missing: ${_migration_oracle_manifest}")
+endif()
+if(_migration_oracle_manifest MATCHES "[\"'\\\\]")
+  message(FATAL_ERROR
+    "oracle manifest path must not contain quotes or backslashes: ${_migration_oracle_manifest}")
+endif()
+
+# Standalone harness: stdlib-only plus the owned bike::io boundary (strict
+# JSON + SHA-256 for the T05 manifest layer) — no MuJoCo/Python/nanobind
+# includes. The support TU owns BIKE_FIXTURE_ROOT and BIKE_ORACLE_MANIFEST
+# privately so test targets and the standalone-header sweep never see them.
 add_library(bike_migration_test STATIC
   ../support/migration_test.cpp
   ../support/migration_test.hpp)
@@ -40,11 +54,15 @@ if(_native_contract_compile_definitions)
   target_compile_definitions(bike_migration_test PRIVATE ${_native_contract_compile_definitions})
 endif()
 target_compile_definitions(bike_migration_test PRIVATE
-  "BIKE_FIXTURE_ROOT=\"${_migration_fixture_root}\"")
+  "BIKE_FIXTURE_ROOT=\"${_migration_fixture_root}\""
+  "BIKE_ORACLE_MANIFEST=\"${_migration_oracle_manifest}\"")
 get_filename_component(_migration_test_include_root
   "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
 target_include_directories(bike_migration_test PUBLIC
   "${_migration_test_include_root}")
+target_include_directories(bike_migration_test SYSTEM PRIVATE
+  "${_migration_repo_root}/native/src")
+target_link_libraries(bike_migration_test PUBLIC bike_io)
 # In the standalone root build the _native_contract_* context belongs to the
 # legacy binding scope and is unset here — apply the shared policy directly.
 if(BIKE_ROOT_BUILD)
@@ -119,6 +137,37 @@ if(BUILD_TESTING)
   add_test(NAME migration_T04 COMMAND migration_T04)
   set_tests_properties(migration_T04 PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T04>")
+endif()
+
+# T05 io-boundary regression: the strict lossless JSON/Value boundary,
+# recording-tag codec, shared SHA-256 and manifest/provenance validation.
+# Links bike_migration_test (which itself links bike_io) — identical
+# implementation objects in both build graphs.
+add_executable(migration_T05 test_t05.cpp)
+set_target_properties(migration_T05 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T05 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T05 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T05 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T05 PRIVATE bike_migration_test)
+target_include_directories(migration_T05 SYSTEM PRIVATE
+  "${_migration_repo_root}/native/src")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T05)
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T05 COMMAND migration_T05)
+  set_tests_properties(migration_T05 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T05>")
 endif()
 
 # T03 build-contract regression: a CTest script test running the produced

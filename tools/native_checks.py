@@ -357,11 +357,71 @@ def validate_platform_context(context: dict[str, Any]) -> dict[str, Any]:
                     f"native check context capability {capability} is enabled "
                     "without support evidence"
                 )
-            if not isinstance(record.get("evidence"), str) or not record["evidence"]:
+            if record["enabled"] and not record["requested"]:
+                raise CheckError(
+                    f"native check context capability {capability} is enabled "
+                    "without a requested lane"
+                )
+            evidence = record.get("evidence")
+            if isinstance(evidence, str):
+                if not evidence:
+                    raise CheckError(
+                        f"native check context capability {capability} has an "
+                        "empty evidence record"
+                    )
+            elif isinstance(evidence, dict):
+                if not evidence or any(
+                    not isinstance(key, str) or not isinstance(value, str)
+                    for key, value in evidence.items()
+                ):
+                    raise CheckError(
+                        f"native check context capability {capability} "
+                        "evidence must map names to strings"
+                    )
+            else:
                 raise CheckError(
                     f"native check context capability {capability} has no "
                     "evidence record"
                 )
+            if "runtime" not in record:
+                raise CheckError(
+                    f"native check context capability {capability} has no "
+                    "runtime record"
+                )
+            runtime_value = record["runtime"]
+            if runtime_value is not None:
+                runtime_path = _require_existing_path(
+                    runtime_value, f"capability {capability} runtime"
+                )
+                if not runtime_path.is_file():
+                    raise CheckError(
+                        f"capability {capability} runtime is not a file: "
+                        f"{runtime_path}"
+                    )
+                record["runtime"] = str(runtime_path)
+            if capability in {"asan", "rtsan"}:
+                # A preloadable sanitizer runtime is mandatory on an
+                # enabled lane — tools/native_runtime.py refuses to run an
+                # enabled record without one.
+                if record["enabled"] and record["runtime"] is None:
+                    raise CheckError(
+                        f"native check context capability {capability} is "
+                        "enabled without a recorded sanitizer runtime"
+                    )
+                compiler_id = record.get("compiler_id")
+                if not isinstance(compiler_id, str) or not compiler_id:
+                    raise CheckError(
+                        f"native check context capability {capability} has "
+                        "no compiler identity record"
+                    )
+                target = record.get("target")
+                if target is not None and (
+                    not isinstance(target, str) or not target
+                ):
+                    raise CheckError(
+                        f"native check context capability {capability} "
+                        "target must be a triple string or null"
+                    )
         frontend_tools = capabilities.get("frontend_tools")
         if not isinstance(frontend_tools, dict):
             raise CheckError(

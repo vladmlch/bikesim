@@ -357,8 +357,12 @@ if(NOT DEFINED _native_numerics_target_guard)
       CXX_STANDARD_REQUIRED ON
       CXX_EXTENSIONS OFF
       POSITION_INDEPENDENT_CODE ON)
+    # BIKE_MUJOCO_COMPAT_INCLUDE precedes the mujoco include dir only when
+    # the toolchain needs the generated mjsan.h shadow under the ASan lane
+    # (BikeDependencies.cmake); it is empty otherwise.
     target_include_directories(bike_native_numerics PRIVATE
       "${_native_numerics_symbols_dir}"
+      ${BIKE_MUJOCO_COMPAT_INCLUDE}
       "${_numerics_mujoco_include}")
     # Fail closed: a CXX-enabled project that reaches this point is a real
     # target-build context, so the compiler policy must already be loaded —

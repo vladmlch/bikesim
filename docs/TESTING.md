@@ -242,13 +242,23 @@ NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native
 ```
 
 The sanitizer set is `address,undefined,local-bounds,float-cast-overflow`
-with `-fno-sanitize-recover=all`. The launcher reads the compiler from the
-selected build's cache, resolves its ASan runtime, then injects it into CTest
-and the Python process after `uv` starts. It also sets `PYTHONMALLOC=malloc`
-and the documented ASan options in those child processes. Before importing the
-extension, the loader checks the selected runtime's actual dyld image list (or
-`/proc/self/maps` on Linux); an environment variable alone does not count as
-runtime evidence.
+with `-fno-sanitize-recover=all` on clang lanes and the `address,undefined`
+core on GCC. Every instrumented consumer (CTest, the selected-extension
+import, the contract target, pytest) runs through
+`tools/native_runtime.py run --build <build> -- <argv>`: the helper loads
+the build's validated schema-2 context, cross-checks it against the
+CMakeCache selections, and injects the sanitizer runtime the *recorded*
+compiler identity selected — `capabilities.asan.runtime` was resolved by
+the configured driver's own `-print-file-name` at configure time and a
+clean instrumented control already ran under it. The runtime is prepended
+to `DYLD_INSERT_LIBRARIES` (Darwin) or `LD_PRELOAD` (Linux), preserving an
+existing value; ASan lanes also set `PYTHONMALLOC=malloc` and append
+`detect_leaks=0:detect_stack_use_after_return=1` to `ASAN_OPTIONS`. A
+stale context, an ASan+RTSan build, or an unresolvable/wrong-architecture
+runtime fails the runner instead of executing uninstrumented. Before
+importing the extension, the loader checks the selected runtime's actual
+dyld image list (or `/proc/self/maps` on Linux); an environment variable
+alone does not count as runtime evidence.
 
 RTSan (`-fsanitize=realtime`) verifies the marked hot path never allocates or
 locks — the mechanical half of the allocation-free tick requirement. It needs
@@ -1248,15 +1258,15 @@ uv run cmake --build native/build/rtsan -j4
 NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native
 ```
 
-**macOS launcher caveat:** `DYLD_INSERT_LIBRARIES` does not survive the
-`uv run` process chain — the runtime lands in the `uv` launcher, not the
-spawned interpreter — so `load_native()`'s `verify_sanitizer_runtime()`
-correctly rejects the pytest leg of
-`NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native` with
-"selected sanitizer runtime is not loaded in this Python process". The
-contract-binary leg is unaffected (`native_contract_tests` links
-`-fsanitize=realtime` itself). To run the Python suite against the
-instrumented extension, invoke the venv interpreter directly:
+**macOS launcher caveat (resolved):** `DYLD_INSERT_LIBRARIES` does not
+survive a `uv run` process chain if set in the caller's environment — the
+runtime lands in the `uv` launcher, not the spawned interpreter.
+`tools/run_tests.sh` therefore never exports it: every instrumented leg
+runs through `tools/native_runtime.py run --build <build> -- <argv>`,
+which injects the recorded runtime into the child's environment at exec
+time, so the variable reaches the process that actually loads the images
+and `load_native()`'s `verify_sanitizer_runtime()` sees the runtime
+mapped. Invoking the venv interpreter directly still works the same way:
 
 ```bash
 DYLD_INSERT_LIBRARIES=/opt/homebrew/opt/llvm/lib/clang/23/lib/darwin/libclang_rt.rtsan_osx_dynamic.dylib \

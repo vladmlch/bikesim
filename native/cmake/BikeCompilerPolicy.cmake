@@ -53,6 +53,17 @@ option(NATIVE_SANITIZE "ASan+UBSan build" OFF)
 option(NATIVE_RTSAN "RealtimeSanitizer build (brew clang only)" OFF)
 option(NATIVE_COVERAGE "llvm-cov instrumented build" OFF)
 
+# ASan and RTSan are mutually exclusive lanes: their runtimes compete for
+# the process preload slot, and a realtime-allocation finding is meaningless
+# inside an ASan-instrumented image. The runner-side environment helper
+# (tools/native_runtime.py) refuses the same combination; rejecting it at
+# configure time keeps a mixed-request tree from building at all.
+if(NATIVE_SANITIZE AND NATIVE_RTSAN)
+  message(FATAL_ERROR
+    "NATIVE_SANITIZE and NATIVE_RTSAN are mutually exclusive; configure "
+    "separate build trees")
+endif()
+
 set(BIKE_LIBCPP_HARDENING "EXTENSIVE" CACHE STRING "libc++ hardening mode")
 set_property(CACHE BIKE_LIBCPP_HARDENING PROPERTY STRINGS EXTENSIVE FAST)
 if(NOT BIKE_LIBCPP_HARDENING STREQUAL "EXTENSIVE"
@@ -630,11 +641,16 @@ if(NATIVE_SANITIZE)
       -shared-libasan)
   else()
     # GCC has no local-bounds sanitizer and no -shared-libasan spelling;
-    # keep the GCC-compatible core and record the omissions.
+    # keep the GCC-compatible core and record the omissions. The frame
+    # budget scales off GCC's calibrated 16384 baseline by the same 3x
+    # ASan redzone factor clang's 8192 uses — g++-13/aarch64 measures
+    # binding.cpp's module-init frame at ~29.6 KB instrumented, so both
+    # frame spellings (-Wstack-usage and -Wframe-larger-than carry the
+    # family budget) get the last-wins override, not just one.
     list(APPEND _bike_instrument_options
       -fsanitize=address,undefined
       -fno-sanitize-recover=all -fno-omit-frame-pointer
-      -Wframe-larger-than=24576)
+      -Wstack-usage=49152 -Wframe-larger-than=49152)
     list(APPEND _bike_instrument_link_options -fsanitize=address,undefined)
     _bike_record_omission("-fsanitize=local-bounds,float-cast-overflow"
       "no GCC equivalent; the ASan lane keeps the address,undefined core under GCC (T15-T17 finalize)")
@@ -678,11 +694,15 @@ endif()
 set(_bike_capability_probe_dir "${_bike_policy_probe_dir}/capabilities")
 file(WRITE "${_bike_capability_probe_dir}/probe.cpp"
   "int main() { return 0; }\n")
-# _bike_probe_capability(<result-var> <label> <flag-list-var>)
-# Compile AND link a trivial TU with the flag set; the link half proves the
-# runtime is present, not just the driver spelling.
+# _bike_probe_capability(<result-var> <label>
+#                        COMPILE_FLAGS <flags...> [LINK_FLAGS <flags...>])
+# Compile AND link a trivial TU with the flag set the real lane uses; the
+# link half proves the runtime image exists, not just the driver spelling.
 function(_bike_probe_capability result_var label)
-  set(_cap_flags ${ARGN})
+  cmake_parse_arguments(_cap "" "" "COMPILE_FLAGS;LINK_FLAGS" ${ARGN})
+  if(NOT DEFINED _cap_LINK_FLAGS OR _cap_LINK_FLAGS STREQUAL "")
+    set(_cap_LINK_FLAGS ${_cap_COMPILE_FLAGS})
+  endif()
   try_compile(${result_var}
     "${_bike_capability_probe_dir}/build-${label}"
     SOURCES "${_bike_capability_probe_dir}/probe.cpp"
@@ -690,37 +710,253 @@ function(_bike_probe_capability result_var label)
       ${_bike_policy_sysroot_flags}
       "-DCMAKE_CXX_STANDARD:STRING=23"
       "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
-    COMPILE_DEFINITIONS ${_cap_flags}
-    LINK_OPTIONS ${_cap_flags}
+    COMPILE_DEFINITIONS ${_cap_COMPILE_FLAGS}
+    LINK_OPTIONS ${_cap_LINK_FLAGS}
     OUTPUT_VARIABLE _bike_cap_probe_output)
   set(${result_var} "${${result_var}}" PARENT_SCOPE)
-  list(JOIN _cap_flags " " _cap_flags_text)
+  list(JOIN _cap_COMPILE_FLAGS " " _cap_compile_text)
+  list(JOIN _cap_LINK_FLAGS " " _cap_link_text)
   if(${result_var})
     set(${result_var}_EVIDENCE
-      "compile+link probe passed: ${_cap_flags_text}" PARENT_SCOPE)
+      "compile+link probe passed: compile='${_cap_compile_text}' link='${_cap_link_text}'"
+      PARENT_SCOPE)
   else()
     set(${result_var}_EVIDENCE
-      "compile+link probe failed: ${_cap_flags_text}" PARENT_SCOPE)
+      "compile+link probe failed: compile='${_cap_compile_text}' link='${_cap_link_text}'"
+      PARENT_SCOPE)
   endif()
 endfunction()
 
 if(_bike_clang_family)
-  set(_bike_cap_flags_asan
-    -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
-  set(_bike_cap_flags_coverage -fprofile-instr-generate -fcoverage-mapping)
+  # The probe must represent the lane actually enabled by NATIVE_SANITIZE:
+  # the full -fsanitize spelling set and clang's shared runtime link, so a
+  # toolchain missing the shared ASan runtime reports supported=false.
+  set(_bike_cap_compile_asan
+    -fsanitize=address,undefined,local-bounds,float-cast-overflow
+    -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  set(_bike_cap_link_asan ${_bike_cap_compile_asan} -shared-libasan)
+  set(_bike_cap_compile_coverage -fprofile-instr-generate -fcoverage-mapping)
 else()
   # The GCC lane's ASan core omits the clang-only -fsanitize spellings.
-  set(_bike_cap_flags_asan
+  set(_bike_cap_compile_asan
     -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
-  set(_bike_cap_flags_coverage -fprofile-arcs -ftest-coverage)
+  set(_bike_cap_link_asan ${_bike_cap_compile_asan})
+  set(_bike_cap_compile_coverage -fprofile-arcs -ftest-coverage)
 endif()
 # -fsanitize=realtime has no GCC spelling — the probe itself measures that.
-set(_bike_cap_flags_rtsan -fsanitize=realtime)
+set(_bike_cap_compile_rtsan -fsanitize=realtime)
+set(_bike_cap_link_rtsan ${_bike_cap_compile_rtsan})
 
-_bike_probe_capability(BIKE_CAP_ASAN_SUPPORTED asan ${_bike_cap_flags_asan})
-_bike_probe_capability(BIKE_CAP_RTSAN_SUPPORTED rtsan ${_bike_cap_flags_rtsan})
+_bike_probe_capability(BIKE_CAP_ASAN_SUPPORTED asan
+  COMPILE_FLAGS ${_bike_cap_compile_asan} LINK_FLAGS ${_bike_cap_link_asan})
+_bike_probe_capability(BIKE_CAP_RTSAN_SUPPORTED rtsan
+  COMPILE_FLAGS ${_bike_cap_compile_rtsan} LINK_FLAGS ${_bike_cap_link_rtsan})
 _bike_probe_capability(BIKE_CAP_COVERAGE_SUPPORTED coverage
-  ${_bike_cap_flags_coverage})
+  COMPILE_FLAGS ${_bike_cap_compile_coverage})
+
+# --------------------------------------------------------------------------
+# Sanitizer runtime resolution (T15). The recorded compiler *identity*
+# selects the runtime name — libasan.so for GNU, the target-suffixed
+# libclang_rt.<san>-<machine>.so for upstream Clang on Linux, the
+# *_osx_dynamic.dylib spellings on Darwin — and the configured driver
+# resolves it through -print-file-name. The driver basename is never
+# consulted and an unresolved echo is a failed resolution. An enabled lane
+# additionally proves the runtime by compiling and running a clean control
+# under the same preload variable tools/native_runtime.py injects.
+# --------------------------------------------------------------------------
+
+# The driver's own target triple — recorded into every sanitizer capability
+# record so the context carries toolchain evidence, not host guesses.
+execute_process(
+  COMMAND "${CMAKE_CXX_COMPILER}" -dumpmachine
+  RESULT_VARIABLE _bike_target_rc
+  OUTPUT_VARIABLE _bike_target_out
+  ERROR_QUIET
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(_bike_target_rc EQUAL 0 AND NOT _bike_target_out STREQUAL "")
+  set(BIKE_SANITIZER_TARGET "${_bike_target_out}")
+else()
+  set(BIKE_SANITIZER_TARGET "")
+endif()
+
+function(_bike_sanitizer_runtime_name out_var sanitizer)
+  if(_bike_clang_family)
+    if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+      set(${out_var} "libclang_rt.${sanitizer}_osx_dynamic.dylib" PARENT_SCOPE)
+    elseif(BIKE_POLICY_MACHINE STREQUAL "aarch64"
+           OR BIKE_POLICY_MACHINE STREQUAL "x86_64")
+      set(${out_var}
+        "libclang_rt.${sanitizer}-${BIKE_POLICY_MACHINE}.so" PARENT_SCOPE)
+    else()
+      set(${out_var} "" PARENT_SCOPE)
+    endif()
+  elseif(sanitizer STREQUAL "asan")
+    if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+      set(${out_var} "libasan.dylib" PARENT_SCOPE)
+    else()
+      set(${out_var} "libasan.so" PARENT_SCOPE)
+    endif()
+  else()
+    # GCC has no RTSan runtime — the flag probe already rejected the lane.
+    set(${out_var} "" PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Resolve a runtime filename through the SELECTED driver's -print-file-name.
+# An unresolved echo (the driver prints the bare name back), a non-absolute
+# or nonexistent answer is a failed resolution — never a fabricated path.
+function(_bike_driver_file_name out_var query_var name)
+  execute_process(
+    COMMAND "${CMAKE_CXX_COMPILER}" "-print-file-name=${name}"
+    RESULT_VARIABLE _drv_rc
+    OUTPUT_VARIABLE _drv_out
+    ERROR_VARIABLE _drv_err
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_STRIP_TRAILING_WHITESPACE)
+  string(REGEX MATCH "^[^\r\n]*" _drv_first "${_drv_out}")
+  set(${query_var}
+    "${CMAKE_CXX_COMPILER} -print-file-name=${name} -> rc=${_drv_rc} '${_drv_first}'"
+    PARENT_SCOPE)
+  if(_drv_rc EQUAL 0 AND NOT _drv_first STREQUAL ""
+     AND NOT _drv_first STREQUAL "${name}"
+     AND IS_ABSOLUTE "${_drv_first}" AND EXISTS "${_drv_first}"
+     AND NOT IS_DIRECTORY "${_drv_first}")
+    get_filename_component(_drv_resolved "${_drv_first}" ABSOLUTE)
+    set(${out_var} "${_drv_resolved}" PARENT_SCOPE)
+  else()
+    set(${out_var} "" PARENT_SCOPE)
+  endif()
+endfunction()
+
+# _bike_run_sanitizer_control(<sanitizer> <runtime> <rc-var> <detail-var>)
+# Compile the clean control with the lane's real instrumentation and run it
+# under the preload variable the runner injects. Any nonzero exit — a
+# loader failure included — means the selected runtime cannot carry an
+# instrumented process.
+function(_bike_run_sanitizer_control sanitizer runtime rc_var detail_var)
+  set(_control_dir "${_bike_capability_probe_dir}/run-${sanitizer}")
+  file(MAKE_DIRECTORY "${_control_dir}")
+  file(WRITE "${_control_dir}/control.cpp"
+    "#include <cstdlib>\n"
+    "int main() {\n"
+    "  void *block = std::malloc(16);\n"
+    "  std::free(block);\n"
+    "  return block == nullptr ? 1 : 0;\n"
+    "}\n")
+  try_compile(_control_compiled
+    "${_control_dir}/build"
+    SOURCES "${_control_dir}/control.cpp"
+    CMAKE_FLAGS
+      ${_bike_policy_sysroot_flags}
+      "-DCMAKE_CXX_STANDARD:STRING=23"
+      "-DCMAKE_CXX_EXTENSIONS:BOOL=OFF"
+    COMPILE_DEFINITIONS ${_bike_cap_compile_${sanitizer}}
+    LINK_OPTIONS ${_bike_cap_link_${sanitizer}}
+    COPY_FILE "${_control_dir}/control_exe"
+    OUTPUT_VARIABLE _control_build_log)
+  if(NOT _control_compiled OR NOT EXISTS "${_control_dir}/control_exe")
+    set(${rc_var} -1 PARENT_SCOPE)
+    set(${detail_var}
+      "control build failed: ${_control_build_log}" PARENT_SCOPE)
+    return()
+  endif()
+  if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
+    set(_preload_var "DYLD_INSERT_LIBRARIES")
+    set(_existing_preload "$ENV{DYLD_INSERT_LIBRARIES}")
+  else()
+    set(_preload_var "LD_PRELOAD")
+    set(_existing_preload "$ENV{LD_PRELOAD}")
+  endif()
+  if(_existing_preload STREQUAL "")
+    set(_preload_value "${runtime}")
+  else()
+    set(_preload_value "${runtime}:${_existing_preload}")
+  endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E env
+      "${_preload_var}=${_preload_value}"
+      "${_control_dir}/control_exe"
+    RESULT_VARIABLE _control_rc
+    OUTPUT_VARIABLE _control_out
+    ERROR_VARIABLE _control_err
+    TIMEOUT 60)
+  string(STRIP "${_control_out}" _control_out)
+  string(STRIP "${_control_err}" _control_err)
+  set(${rc_var} "${_control_rc}" PARENT_SCOPE)
+  set(${detail_var}
+    "control ran with ${_preload_var}=<selected>: rc=${_control_rc} "
+    "stdout='${_control_out}' stderr='${_control_err}'" PARENT_SCOPE)
+endfunction()
+
+_bike_sanitizer_runtime_name(BIKE_ASAN_RUNTIME_NAME asan)
+_bike_sanitizer_runtime_name(BIKE_RTSAN_RUNTIME_NAME rtsan)
+
+set(BIKE_CAP_ASAN_RUNTIME "")
+set(BIKE_CAP_ASAN_RUNTIME_QUERY "asan runtime not queried")
+set(BIKE_CAP_ASAN_RUN_CONTROL "asan run control not executed")
+set(BIKE_CAP_RTSAN_RUNTIME "")
+set(BIKE_CAP_RTSAN_RUNTIME_QUERY "rtsan runtime not queried")
+set(BIKE_CAP_RTSAN_RUN_CONTROL "rtsan run control not executed")
+set(BIKE_CAP_COVERAGE_RUNTIME "")
+set(BIKE_CAP_COVERAGE_RUNTIME_QUERY "coverage has no preload runtime")
+set(BIKE_CAP_COVERAGE_RUN_CONTROL "coverage has no preload runtime")
+
+if(BIKE_CAP_ASAN_SUPPORTED AND NOT BIKE_ASAN_RUNTIME_NAME STREQUAL "")
+  _bike_driver_file_name(BIKE_CAP_ASAN_RUNTIME BIKE_CAP_ASAN_RUNTIME_QUERY
+    "${BIKE_ASAN_RUNTIME_NAME}")
+endif()
+if(BIKE_CAP_RTSAN_SUPPORTED AND NOT BIKE_RTSAN_RUNTIME_NAME STREQUAL "")
+  _bike_driver_file_name(BIKE_CAP_RTSAN_RUNTIME BIKE_CAP_RTSAN_RUNTIME_QUERY
+    "${BIKE_RTSAN_RUNTIME_NAME}")
+endif()
+
+# A requested-but-unsupported sanitizer fails at configure time — a build
+# that adds the flags anyway would break at the first instrumented TU.
+if(NATIVE_SANITIZE AND NOT BIKE_CAP_ASAN_SUPPORTED)
+  message(FATAL_ERROR
+    "NATIVE_SANITIZE was requested but the selected toolchain failed the "
+    "ASan lane probe: ${BIKE_CAP_ASAN_SUPPORTED_EVIDENCE}")
+endif()
+if(NATIVE_RTSAN AND NOT BIKE_CAP_RTSAN_SUPPORTED)
+  message(FATAL_ERROR
+    "NATIVE_RTSAN was requested but the selected toolchain failed the "
+    "RTSan lane probe: ${BIKE_CAP_RTSAN_SUPPORTED_EVIDENCE}")
+endif()
+
+# Enabled lanes must resolve a compiler-matched runtime AND prove it runs a
+# clean instrumented control under the runner's preload contract.
+if(NATIVE_SANITIZE)
+  if(NOT BIKE_CAP_ASAN_RUNTIME)
+    message(FATAL_ERROR
+      "NATIVE_SANITIZE requires a resolvable ASan runtime; the selected "
+      "compiler could not resolve ${BIKE_ASAN_RUNTIME_NAME}: "
+      "${BIKE_CAP_ASAN_RUNTIME_QUERY}")
+  endif()
+  _bike_run_sanitizer_control(asan "${BIKE_CAP_ASAN_RUNTIME}"
+    _bike_asan_run_rc _bike_asan_run_detail)
+  set(BIKE_CAP_ASAN_RUN_CONTROL "${_bike_asan_run_detail}")
+  if(NOT _bike_asan_run_rc EQUAL 0)
+    message(FATAL_ERROR
+      "the ASan runtime control failed to run cleanly under the selected "
+      "runtime ${BIKE_CAP_ASAN_RUNTIME}: ${_bike_asan_run_detail}")
+  endif()
+endif()
+if(NATIVE_RTSAN)
+  if(NOT BIKE_CAP_RTSAN_RUNTIME)
+    message(FATAL_ERROR
+      "NATIVE_RTSAN requires a resolvable RTSan runtime; the selected "
+      "compiler could not resolve ${BIKE_RTSAN_RUNTIME_NAME}: "
+      "${BIKE_CAP_RTSAN_RUNTIME_QUERY}")
+  endif()
+  _bike_run_sanitizer_control(rtsan "${BIKE_CAP_RTSAN_RUNTIME}"
+    _bike_rtsan_run_rc _bike_rtsan_run_detail)
+  set(BIKE_CAP_RTSAN_RUN_CONTROL "${_bike_rtsan_run_detail}")
+  if(NOT _bike_rtsan_run_rc EQUAL 0)
+    message(FATAL_ERROR
+      "the RTSan runtime control failed to run cleanly under the selected "
+      "runtime ${BIKE_CAP_RTSAN_RUNTIME}: ${_bike_rtsan_run_detail}")
+  endif()
+endif()
 
 # --------------------------------------------------------------------------
 # Assemble the effective policy.

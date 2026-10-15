@@ -73,19 +73,28 @@ def _schema2_records(
                 "requested": False,
                 "supported": True,
                 "enabled": False,
-                "evidence": "probe",
+                "runtime": None,
+                "compiler_id": "fixture",
+                "target": None,
+                "evidence": {"control": "probe"},
             },
             "rtsan": {
                 "requested": False,
                 "supported": False,
                 "enabled": False,
-                "evidence": "probe failed",
+                "runtime": None,
+                "compiler_id": "fixture",
+                "target": None,
+                "evidence": {"control": "probe failed"},
             },
             "coverage": {
                 "requested": False,
                 "supported": True,
                 "enabled": False,
-                "evidence": "probe",
+                "runtime": None,
+                "compiler_id": "fixture",
+                "target": None,
+                "evidence": {"control": "probe"},
             },
             "frontend_tools": {},
         },
@@ -1526,6 +1535,147 @@ def test_schema2_capability_enabled_without_support_fails(tmp_path: Path) -> Non
     context["capabilities"]["rtsan"]["enabled"] = True
     context_path.write_text(json.dumps(context))
     with pytest.raises(native_checks.CheckError, match="without support"):
+        load_context(build)
+
+
+def _mutate_context(build: Path, *path: str, value: object = None) -> Path:
+    """Set ``value`` at ``path`` (or delete the key when value is MISSING)."""
+    context_path = build / "native_check_context.json"
+    context = json.loads(context_path.read_text())
+    node = context
+    for key in path[:-1]:
+        node = node[key]
+    if value is MISSING:
+        del node[path[-1]]
+    else:
+        node[path[-1]] = value
+    context_path.write_text(json.dumps(context))
+    return context_path
+
+
+MISSING = object()
+
+
+def test_schema2_enabled_sanitizer_runtime_must_be_recorded(
+    tmp_path: Path,
+) -> None:
+    """An enabled asan lane without a runtime record is a context the
+    runtime helper could never preload — reject it at load."""
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    _mutate_context(
+        build, "capabilities", "asan", "requested", value=True
+    )
+    _mutate_context(
+        build, "capabilities", "asan", "enabled", value=True
+    )
+    with pytest.raises(native_checks.CheckError, match="runtime"):
+        load_context(build)
+
+
+def test_schema2_sanitizer_runtime_record_required(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    _mutate_context(build, "capabilities", "asan", "runtime", value=MISSING)
+    with pytest.raises(native_checks.CheckError, match="runtime"):
+        load_context(build)
+
+
+def test_schema2_sanitizer_runtime_must_exist(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    _mutate_context(
+        build, "capabilities", "asan", "runtime",
+        value=str(tmp_path / "absent" / "libasan.so"),
+    )
+    with pytest.raises(native_checks.CheckError, match="runtime"):
+        load_context(build)
+
+
+def test_schema2_sanitizer_runtime_must_be_absolute(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    _mutate_context(
+        build, "capabilities", "asan", "runtime", value="libasan.so"
+    )
+    with pytest.raises(native_checks.CheckError, match="runtime"):
+        load_context(build)
+
+
+def test_schema2_sanitizer_runtime_must_be_a_file(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    directory = tmp_path / "libasan.so"
+    directory.mkdir()
+    _mutate_context(
+        build, "capabilities", "asan", "runtime",
+        value=str(directory.resolve()),
+    )
+    with pytest.raises(native_checks.CheckError, match="runtime"):
+        load_context(build)
+
+
+def test_schema2_enabled_sanitizer_records_a_real_runtime(
+    tmp_path: Path,
+) -> None:
+    """The green path: an enabled lane whose runtime file exists loads."""
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    runtime = tmp_path / "libasan.so"
+    runtime.write_bytes(b"runtime image")
+    _mutate_context(
+        build, "capabilities", "asan", "requested", value=True
+    )
+    _mutate_context(
+        build, "capabilities", "asan", "enabled", value=True
+    )
+    _mutate_context(
+        build, "capabilities", "asan", "runtime",
+        value=str(runtime.resolve()),
+    )
+    context = load_context(build)
+    assert context["capabilities"]["asan"]["enabled"] is True
+    assert context["capabilities"]["asan"]["runtime"] == str(runtime.resolve())
+
+
+def test_schema2_enabled_sanitizer_requires_requested(tmp_path: Path) -> None:
+    """enabled without requested is an inconsistent record — fail closed."""
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    runtime = tmp_path / "libasan.so"
+    runtime.write_bytes(b"runtime image")
+    _mutate_context(
+        build, "capabilities", "asan", "enabled", value=True
+    )
+    _mutate_context(
+        build, "capabilities", "asan", "runtime",
+        value=str(runtime.resolve()),
+    )
+    with pytest.raises(native_checks.CheckError, match="requested"):
+        load_context(build)
+
+
+def test_schema2_sanitizer_compiler_identity_required(tmp_path: Path) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    _mutate_context(
+        build, "capabilities", "asan", "compiler_id", value=MISSING
+    )
+    with pytest.raises(native_checks.CheckError, match="compiler"):
+        load_context(build)
+
+
+def test_schema2_sanitizer_target_may_be_null_or_triple(
+    tmp_path: Path,
+) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    _mutate_context(
+        build, "capabilities", "asan", "target", value=42
+    )
+    with pytest.raises(native_checks.CheckError, match="target"):
+        load_context(build)
+
+
+def test_schema2_capability_evidence_rejects_empty_object(
+    tmp_path: Path,
+) -> None:
+    build, _ = write_fixture(tmp_path, schema_version=2)
+    _mutate_context(
+        build, "capabilities", "asan", "evidence", value={}
+    )
+    with pytest.raises(native_checks.CheckError, match="evidence"):
         load_context(build)
 
 

@@ -20,9 +20,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Compiler/architecture/standard-library policy — resolved once here and
 # applied DIRECTLY to every first-party target via bike_apply_native_policy().
 # The module declares NATIVE_SANITIZE/NATIVE_RTSAN/NATIVE_COVERAGE and
-# BIKE_LIBCPP_HARDENING, probes the real compiler/standard library for every
-# flag it emits (required flags fail configuration), and writes
-# bike_policy_report.json for tests/portability/test_compiler_policy.py.
+# BIKE_LIBCPP_HARDENING, rejects the ASan+RTSan combination at configure
+# time, probes the real compiler/standard library for every flag it emits
+# (required flags fail configuration), resolves the compiler-matched
+# sanitizer runtime for enabled lanes and runs a clean instrumented
+# control under the preload variable tools/native_runtime.py injects, and
+# writes bike_policy_report.json for tests/portability/test_compiler_policy.py.
 # Include before BikeNumerics.cmake — bike_native_numerics' required
 # bike_apply_native_policy call fails configuration if this ordering
 # regresses (a CXX-enabled project without the policy module is an error,
@@ -119,7 +122,12 @@ endif()
 target_include_directories(bike_native PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/research_identity/${_research_identity_configuration}")
 bike_apply_native_policy(bike_native)
-target_include_directories(bike_native SYSTEM PRIVATE "${MJ_DIR}/include")
+# BIKE_MUJOCO_COMPAT_INCLUDE (BikeDependencies.cmake) precedes the real
+# mujoco include dir only when the toolchain cannot parse mjsan.h under
+# the sanitizer lane — it carries a generated attribute-compatible
+# shadow header, never a forked copy.
+target_include_directories(bike_native SYSTEM PRIVATE
+  ${BIKE_MUJOCO_COMPAT_INCLUDE} "${MJ_DIR}/include")
 
 # Share Python-free core code with direct native contract tests: the
 # drivetrain/policy TUs plus the owning writer cores (suspension, brake,
@@ -333,6 +341,20 @@ target_link_libraries(native_bench PRIVATE bike_native_engine)
 bike_link_engine(native_bench)
 bike_fix_mujoco_install_name(native_bench)
 
+# native/tests/sanitizer_control.cpp — the T15 runtime control: compiled
+# with the selected lane's real instrumentation through the same policy
+# application as every other first-party target. CTest runs only its
+# clean mode; the use-after-free mode is exercised by
+# tests/portability/test_native_runtime.py in a subprocess, where the
+# fatal ASan report is the expected outcome (a loader error or unrelated
+# crash is not accepted as a sanitizer result).
+add_executable(native_sanitizer_control tests/sanitizer_control.cpp)
+set_target_properties(native_sanitizer_control PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+bike_apply_native_policy(native_sanitizer_control)
+
 include(CTest)
 if(BUILD_TESTING)
   add_test(NAME native_contract_tests COMMAND native_contract_tests)
@@ -340,6 +362,7 @@ if(BUILD_TESTING)
   add_test(NAME native_station_tests COMMAND native_station_tests)
   add_test(NAME native_platform_blas_tests COMMAND native_platform_blas_tests)
   add_test(NAME native_platform_lapack_tests COMMAND native_platform_lapack_tests)
+  add_test(NAME native_sanitizer_control COMMAND native_sanitizer_control)
   add_test(NAME native_bench_bare
     COMMAND native_bench bare 20 5
             --artifacts "${_native_bench_dir}/artifacts")

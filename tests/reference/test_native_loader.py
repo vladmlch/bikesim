@@ -95,14 +95,25 @@ def _copy_selected_extension(destination: Path) -> Path:
 
 def _selected_asan_runtime() -> Path:
     context = json.loads((selected_build(os.environ) / 'native_check_context.json').read_text())
+    # Prefer the runtime the build context records (T15): it was resolved by
+    # the configured driver's own -print-file-name at configure time. The
+    # compiler-id-named driver query below remains as a fallback for
+    # contexts written before the runtime record existed.
+    recorded = context.get('capabilities', {}).get('asan', {}).get('runtime')
+    if isinstance(recorded, str) and Path(recorded).is_file():
+        return Path(recorded).resolve()
     compiler = Path(context['compiler']['path'])
-    runtime_name = (
-        'libclang_rt.asan_osx_dynamic.dylib'
-        if sys.platform == 'darwin'
-        else f'libclang_rt.asan-{os.uname().machine}.so'
-    )
-    if sys.platform.startswith('linux') and 'clang' not in compiler.name:
+    compiler_id = context['compiler']['id']
+    if compiler_id in {'Clang', 'AppleClang'}:
+        runtime_name = (
+            'libclang_rt.asan_osx_dynamic.dylib'
+            if sys.platform == 'darwin'
+            else f'libclang_rt.asan-{os.uname().machine}.so'
+        )
+    elif compiler_id == 'GNU':
         runtime_name = 'libasan.so'
+    else:
+        raise AssertionError(f'unsupported compiler id for asan runtime: {compiler_id}')
     result = subprocess.run(
         [str(compiler), f'-print-file-name={runtime_name}'],
         text=True,

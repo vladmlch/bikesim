@@ -151,10 +151,83 @@ get_filename_component(_native_mujoco_library "${_native_dep_mujoco_library}" RE
 string(REGEX REPLACE "/+$" "" _native_dep_mujoco_include "${_native_dep_mujoco_include}")
 get_filename_component(MJ_DIR "${_native_dep_mujoco_include}" DIRECTORY)
 
+# MuJoCo 3.12's mjsan.h declares its ASan stack-frame helpers with the
+# attribute between the declarator and the body —
+#   static inline void mj_markStack(mjData* d) __attribute__((always_inline)) {
+# — a spelling GCC's C++ frontend rejects ("attributes are not allowed on
+# a function-definition") whenever __SANITIZE_ADDRESS__ is live, so the
+# GNU ASan lane cannot parse any TU that reaches <mujoco/mujoco.h>. Probe
+# the real header under the sanitizer flag; when the frontend rejects it,
+# emit a generated shadow header — identical text except the attribute
+# moves ahead of the return type — into
+# ${CMAKE_BINARY_DIR}/mujoco_compat/mujoco/ and search that directory
+# first. The transform matches the pinned 3.12.0 text exactly, fails the
+# configure on drift, and a re-probe proves the shadow compiles.
+# BIKE_MUJOCO_COMPAT_INCLUDE is empty whenever the real header parses.
+set(BIKE_MUJOCO_COMPAT_INCLUDE "")
+if(NATIVE_SANITIZE)
+  set(_mjsan_probe_dir "${CMAKE_BINARY_DIR}/native_check_work/mujoco-headers")
+  file(MAKE_DIRECTORY "${_mjsan_probe_dir}")
+  # mjsan.h is a fragment header: it needs the mjData declaration that
+  # mujoco.h establishes via mjdata.h, so the probe includes the public
+  # umbrella header — the same path every first-party TU reaches.
+  file(WRITE "${_mjsan_probe_dir}/probe.cpp"
+    "#include <mujoco/mujoco.h>\nint main() { return 0; }\n")
+  execute_process(
+    COMMAND "${CMAKE_CXX_COMPILER}" -std=c++23 -fsanitize=address
+      "-I${_native_dep_mujoco_include}" -fsyntax-only -x c++
+      "${_mjsan_probe_dir}/probe.cpp"
+    RESULT_VARIABLE _mjsan_probe_rc
+    OUTPUT_QUIET ERROR_VARIABLE _mjsan_probe_err)
+  if(NOT _mjsan_probe_rc EQUAL 0)
+    file(READ "${_native_dep_mujoco_include}/mujoco/mjsan.h" _mjsan_text)
+    foreach(_mjsan_fn mj_markStack mj_freeStack)
+      set(_mjsan_broken
+        "static inline void ${_mjsan_fn}(mjData* d) __attribute__((always_inline)) {")
+      set(_mjsan_fixed
+        "static inline __attribute__((always_inline)) void ${_mjsan_fn}(mjData* d) {")
+      string(FIND "${_mjsan_text}" "${_mjsan_broken}" _mjsan_pos)
+      if(_mjsan_pos EQUAL -1)
+        message(FATAL_ERROR
+          "${CMAKE_CXX_COMPILER_ID} rejects mujoco's mjsan.h under ASan "
+          "and the header text drifted from the known GCC-incompatible "
+          "spelling for ${_mjsan_fn} — inspect and fix the compat "
+          "transform:\n${_mjsan_probe_err}")
+      endif()
+      string(REPLACE "${_mjsan_broken}" "${_mjsan_fixed}"
+        _mjsan_text "${_mjsan_text}")
+    endforeach()
+    set(_native_mujoco_compat_dir "${CMAKE_BINARY_DIR}/mujoco_compat")
+    file(MAKE_DIRECTORY "${_native_mujoco_compat_dir}/mujoco")
+    file(WRITE "${_native_mujoco_compat_dir}/mujoco/mjsan.h"
+      "${_mjsan_text}")
+    execute_process(
+      COMMAND "${CMAKE_CXX_COMPILER}" -std=c++23 -fsanitize=address
+        "-I${_native_mujoco_compat_dir}" "-I${_native_dep_mujoco_include}"
+        -fsyntax-only -x c++ "${_mjsan_probe_dir}/probe.cpp"
+      RESULT_VARIABLE _mjsan_shadow_rc
+      OUTPUT_QUIET ERROR_VARIABLE _mjsan_shadow_err)
+    if(NOT _mjsan_shadow_rc EQUAL 0)
+      message(FATAL_ERROR
+        "the generated mjsan.h compat header still fails the ASan probe "
+        "under ${CMAKE_CXX_COMPILER_ID}:\n${_mjsan_shadow_err}")
+    endif()
+    set(BIKE_MUJOCO_COMPAT_INCLUDE "${_native_mujoco_compat_dir}")
+    message(STATUS
+      "mujoco mjsan.h is rejected by ${CMAKE_CXX_COMPILER_ID} under ASan; "
+      "a generated attribute-compatible shadow in "
+      "${_native_mujoco_compat_dir} precedes the real include dir")
+  endif()
+endif()
+
+set(_native_mujoco_interface_includes "${_native_dep_mujoco_include}")
+if(BIKE_MUJOCO_COMPAT_INCLUDE)
+  list(PREPEND _native_mujoco_interface_includes "${BIKE_MUJOCO_COMPAT_INCLUDE}")
+endif()
 add_library(Bike::MuJoCo SHARED IMPORTED GLOBAL)
 set_target_properties(Bike::MuJoCo PROPERTIES
   IMPORTED_LOCATION "${_native_mujoco_library}"
-  INTERFACE_INCLUDE_DIRECTORIES "${_native_dep_mujoco_include}")
+  INTERFACE_INCLUDE_DIRECTORIES "${_native_mujoco_interface_includes}")
 
 list(APPEND CMAKE_PREFIX_PATH "${_native_dep_nb_cmake_dir}")
 find_package(nanobind CONFIG REQUIRED)

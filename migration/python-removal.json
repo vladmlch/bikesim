@@ -1392,6 +1392,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -1445,6 +1447,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -1571,6 +1575,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -1702,6 +1708,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -1871,6 +1879,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -1925,6 +1935,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -2021,6 +2033,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -2175,6 +2189,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -2202,6 +2218,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -2229,6 +2247,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"
@@ -2356,6 +2376,8 @@
       "native/src/configuration/physical_config.hpp",
       "native/src/configuration/rider_spec.hpp",
       "native/src/configuration/suspension_spec.hpp",
+      "native/src/configuration/fields.hpp",
+      "native/src/configuration/wire_decode.hpp",
       "native/src/configuration/validate.cpp",
       "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t12.cpp"

@@ -170,6 +170,55 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T05>")
 endif()
 
+# T06 platform-primitives regression: bounded filesystem, subprocess,
+# deferred-SIGINT shield and build provenance. Links bike_migration_test
+# plus the owned bike_platform boundary — identical implementation objects
+# in both build graphs.
+add_executable(migration_T06 test_t06.cpp)
+set_target_properties(migration_T06 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T06 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T06 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T06 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T06 PRIVATE bike_migration_test bike_platform)
+target_include_directories(migration_T06 SYSTEM PRIVATE
+  "${_migration_repo_root}/native/src")
+# The packaging-axis expectation mirrors the bike_platform identity constants
+# in this graph: the standalone root graph records its own BIKE_BUILD_*
+# options; the standalone legacy graph always builds the transition
+# extension (bindings=true, GUI off unless configured).
+set(_t06_expect_bindings 1)
+set(_t06_expect_gui 0)
+if(BIKE_ROOT_BUILD)
+  set(_t06_expect_bindings 0)
+  if(BIKE_BUILD_PYTHON_BINDINGS)
+    set(_t06_expect_bindings 1)
+  endif()
+endif()
+if(BIKE_BUILD_GUI)
+  set(_t06_expect_gui 1)
+endif()
+target_compile_definitions(migration_T06 PRIVATE
+  "BIKE_T06_EXPECT_BINDINGS=${_t06_expect_bindings}"
+  "BIKE_T06_EXPECT_GUI=${_t06_expect_gui}")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T06)
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T06 COMMAND migration_T06)
+  set_tests_properties(migration_T06 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T06>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

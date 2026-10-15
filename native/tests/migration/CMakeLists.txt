@@ -291,6 +291,39 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T07>")
 endif()
 
+# T12 configuration-boundary regression: the ported dataclass records,
+# __post_init__ domains, dataclass-introspection schema document and the
+# native/schema.py resolved-wire validator + plain() coercion. Links
+# bike_migration_test plus bike_configuration — identical implementation
+# objects in both build graphs.
+add_executable(migration_T12 test_t12.cpp)
+set_target_properties(migration_T12 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T12 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T12 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T12 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T12 PRIVATE bike_migration_test
+  bike_configuration)
+target_include_directories(migration_T12 SYSTEM PRIVATE
+  "${_migration_repo_root}/native/src")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T12)
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T12 COMMAND migration_T12)
+  set_tests_properties(migration_T12 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T12>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

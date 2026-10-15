@@ -140,7 +140,6 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/rider/intent_wire.cpp
   src/rider/rider_contact_binding.cpp
   src/rider/spindle_controller.cpp
-  src/rider/spindle_math.cpp
   src/rider/spindle_wire.cpp
   src/runtime/sensors.cpp
   src/runtime/programs.cpp
@@ -374,6 +373,70 @@ file(GENERATE
 target_include_directories(bike_platform PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/platform_identity/${_native_platform_identity_config}")
 
+# T12 configuration boundary — the identical configuration/*.cpp TUs the
+# standalone root build compiles as bike_configuration, here in the legacy
+# warning/hardening context. The JSON profile loaders read bounded regular
+# files through bike_platform; the schema/wire surfaces only touch bike_io.
+add_library(bike_configuration STATIC
+  src/configuration/schema.cpp src/configuration/validate.cpp
+  src/configuration/fields.hpp src/configuration/model_config.hpp
+  src/configuration/physical_config.hpp src/configuration/rider_spec.hpp
+  src/configuration/suspension_spec.hpp src/configuration/wire_decode.hpp)
+set_target_properties(bike_configuration PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(bike_configuration PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_configuration PRIVATE ${_native_contract_compile_definitions})
+endif()
+target_include_directories(bike_configuration SYSTEM PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${_native_rapidjson_include}")
+# Same sweep widening as bike_io/bike_platform: every first-party header
+# under native/src compiles in each owning target's context.
+if(_native_contract_include_directories)
+  target_include_directories(bike_configuration SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_configuration SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
+  bike_rider_math)
+
+# bike_rider_math: the pure spindle rider-math TU in the legacy
+# warning/hardening context — the same bike_rider_math library the
+# standalone root graph defines. The extension resolves its spindle symbols
+# through this link edge instead of compiling the source on the module, and
+# bike_configuration links the same objects for the rider_envelope /
+# joint_strength helpers rider_spec.hpp re-exports. One library keeps the
+# TU in a single compile-database entry: the ODR sweep relocatable-links
+# every selected TU into one image, so a second compile would collide.
+add_library(bike_rider_math STATIC src/rider/spindle_math.cpp)
+set_target_properties(bike_rider_math PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(bike_rider_math PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_rider_math PRIVATE ${_native_contract_compile_definitions})
+endif()
+target_include_directories(bike_rider_math SYSTEM PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src")
+# Same sweep widening as bike_io/bike_platform: every first-party header
+# under native/src compiles in each owning target's context.
+if(_native_contract_include_directories)
+  target_include_directories(bike_rider_math SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_rider_math SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+
 # The pinned error interceptor is compiled once and shared by the extension,
 # direct C++ contracts, and the later native benchmark target. Its
 # engine-image digest uses the shared bike::io::Sha256 — no private copy.
@@ -519,7 +582,10 @@ endif()
 target_link_libraries(native_bench PRIVATE bike_native_engine)
 bike_rewrite_mujoco_load_name(native_bench "${MJ_DIR}/libmujoco.3.12.0.dylib")
 endif()
-target_link_libraries(bike_native PRIVATE ${_native_core_lib} ${_native_engine_lib})
+# bike_rider_math carries the pure spindle math the extension used to
+# compile on the module — one TU per graph, shared with bike_configuration.
+target_link_libraries(bike_native PRIVATE ${_native_core_lib} ${_native_engine_lib}
+  bike_rider_math)
 
 get_filename_component(_native_bench_dir
   "${CMAKE_CURRENT_SOURCE_DIR}/../tools/proto_native_bench" ABSOLUTE)

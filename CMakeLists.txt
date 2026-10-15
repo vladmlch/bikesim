@@ -234,6 +234,46 @@ file(GENERATE
 target_include_directories(bike_platform PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/platform_identity/${_platform_identity_configuration}")
 
+# bike_rider_math: the pure spindle rider-math TU — the rider_envelope.py /
+# joint_strength.py helpers (anatomical_angle, joint_q_range, soft_edge_*,
+# directional_capacity, envelope/curve validators) that configuration's
+# rider_spec.hpp re-exports, plus the IK/leg-loop/crank-split set the
+# optional extension's spindle controller compiles against. One STATIC
+# library keeps the TU in a single compile-database entry per build graph —
+# the ODR sweep relocatable-links every selected TU into one image, so a
+# second compile of the same file would collide. bike_configuration resolves
+# the re-exported envelope helpers through this edge; the optional
+# transition extension links the same objects instead of listing the source
+# on the module.
+add_library(bike_rider_math STATIC
+  "${_bike_native_dir}/src/rider/spindle_math.cpp")
+set_target_properties(bike_rider_math PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_target_strict_policy(bike_rider_math)
+target_include_directories(bike_rider_math SYSTEM PRIVATE
+  "${_bike_native_dir}/src")
+
+# bike_configuration: the T12 configuration boundary — the ported Python
+# dataclass records with declared defaults, every __post_init__/domain
+# validator, the dataclass-introspection schema document and the
+# native/schema.py resolved-wire validator + plain() coercion. The JSON
+# profile loaders read bounded regular files through the T06 bike_platform
+# edge; the schema/wire surfaces only touch bike_io's Value tree.
+add_library(bike_configuration STATIC
+  "${_bike_native_dir}/src/configuration/schema.cpp"
+  "${_bike_native_dir}/src/configuration/validate.cpp"
+  "${_bike_native_dir}/src/configuration/fields.hpp"
+  "${_bike_native_dir}/src/configuration/model_config.hpp"
+  "${_bike_native_dir}/src/configuration/physical_config.hpp"
+  "${_bike_native_dir}/src/configuration/rider_spec.hpp"
+  "${_bike_native_dir}/src/configuration/suspension_spec.hpp"
+  "${_bike_native_dir}/src/configuration/wire_decode.hpp")
+set_target_properties(bike_configuration PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_target_strict_policy(bike_configuration)
+target_include_directories(bike_configuration SYSTEM PRIVATE
+  "${_bike_native_dir}/src" "${BIKE_DEP_rapidjson_ROOT}/include")
+target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
+  bike_rider_math)
+
 # bike_engine: the pinned error interceptor shared by contract tests and the
 # extension (identical source/context to the legacy bike_native_engine).
 add_library(bike_engine STATIC "${_bike_native_dir}/src/engine_call.cpp")

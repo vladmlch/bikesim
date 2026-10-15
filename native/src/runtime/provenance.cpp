@@ -133,7 +133,7 @@ nanobind::list provider_images() {
 #if defined(__GLIBC__)
 int collect_provider_image(dl_phdr_info *info, size_t, void *out) {
     auto *loaded = static_cast<std::vector<std::filesystem::path> *>(out);
-    if (info->dlpi_name == nullptr || info->dlpi_name[0] == '\0') return 0;
+    if (info->dlpi_name == nullptr || *info->dlpi_name == '\0') return 0;
     std::error_code error;
     const std::filesystem::path resolved =
         std::filesystem::canonical(info->dlpi_name, error);

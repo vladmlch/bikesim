@@ -11,6 +11,7 @@
 #include "../src/cblas_abi.hpp"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <exception>
 #include <iostream>

@@ -9,14 +9,30 @@ from bike_sim.sim.research.replay import (
 )
 
 
-def identity(backend='native'):
+def identity(backend='native', *, versioned=False):
     native = backend == 'native'
-    return dict(backend=backend, runtime_schema=1, python_source_sha256='1'*64,
+    record = dict(backend=backend, runtime_schema=1, python_source_sha256='1'*64,
         native_source_sha256='2'*64 if native else None,
         extension_sha256='3'*64 if native else None, mujoco_version='3.12.0',
         mujoco_library_sha256='4'*64 if native else None,
         build_context=dict(build_type='Release', compiler_id='AppleClang',
             compiler_version='21.0.0', numerical_flags='-O3 -ffp-contract=off') if native else None)
+    if versioned:
+        # A complete identity-schema-2 record: legacy fields plus the measured
+        # platform/numerics context (Linux/glibc + wheel OpenBLAS here).
+        context = dict(platform=dict(system='Linux', machine='aarch64',
+            libc=dict(name='glibc', version='2.39'), os_build='6.8.0-87-generic',
+            python_version='3.13.16', python_soabi='cpython-313-aarch64-linux-gnu'),
+            numerics=dict(backend='NUMPY_OPENBLAS', numpy_version='2.5.2',
+                blas_integer_bits=64, lapack_integer_bits=64,
+                cpu_profile='neoversen1',
+                threading=dict(implementation='openblas-pthreads', num_threads=16),
+                libraries=[dict(role='blas_lapack', identity_kind='file',
+                    sha256='5'*64, build_id=None)]))
+        if native:
+            context.update(record['build_context'])
+        record.update(identity_schema=2, build_context=context)
+    return record
 
 
 def write_json(path, value):
@@ -35,13 +51,13 @@ def reseal(path, name):
 
 @pytest.fixture
 def recording(tmp_path):
-    def create(*, version=2, backend='native', bundles=True):
-        path = tmp_path/f'v{version}-{backend}-{bundles}'
+    def create(*, version=2, backend='native', bundles=True, versioned=False):
+        path = tmp_path/f'v{version}-{backend}-{bundles}-{versioned}'
         path.mkdir()
         files = FILES if version == 1 else SCHEMA2_FILES
         for name in files:
             (path/name).write_bytes(b'opaque data-only reader fixture\n')
-        execution = identity(backend)
+        execution = identity(backend, versioned=versioned)
         articulated = dict(joint_envelope_path=None, joint_strength_path=None)
         resolved = dict(physics=dict(articulated=articulated))
         summary = dict(resolved_config=resolved, research=dict(execution=execution,
@@ -68,11 +84,13 @@ def recording(tmp_path):
     return create
 
 
-@pytest.mark.parametrize('version,backend', [(1, 'python'), (2, 'python'), (2, 'native')])
-def test_fixed_schema_compatibility_without_loading_extension(recording, monkeypatch, version, backend):
+@pytest.mark.parametrize('version,backend,versioned', [
+    (1, 'python', False), (2, 'python', False), (2, 'native', False),
+    (2, 'python', True), (2, 'native', True)])
+def test_fixed_schema_compatibility_without_loading_extension(recording, monkeypatch, version, backend, versioned):
     import bike_sim.native.artifact as artifact
     import importlib
-    path = recording(version=version, backend=backend)
+    path = recording(version=version, backend=backend, versioned=versioned)
     def forbidden(*args, **kwargs):
         raise AssertionError('data-only reader attempted an import')
     monkeypatch.setattr(artifact, 'load_native_extension', forbidden)
@@ -178,6 +196,32 @@ def test_execution_exact_shape_and_nullability(backend):
         bad['build_context']['injected'] = 'untracked'
     else:
         bad['extension_sha256'] = '0'*64
+    with pytest.raises(ValueError):
+        validate_execution(bad)
+
+
+@pytest.mark.parametrize('backend', ['python', 'native'])
+def test_execution_v2_shape_and_nullability(backend):
+    """The versioned identity keeps every legacy rule and adds the
+    platform/numerics context — validate_execution accepts it and preserves
+    the same strictness on every member."""
+    expected = identity(backend, versioned=True)
+    assert set(expected) == EXECUTION_FIELDS | {'identity_schema'}
+    assert validate_execution(deepcopy(expected)) == expected
+    for key in EXECUTION_FIELDS | {'identity_schema'}:
+        bad = deepcopy(expected)
+        del bad[key]
+        with pytest.raises(ValueError):
+            validate_execution(bad)
+    for key, value in [('identity_schema', True), ('identity_schema', 3),
+                       ('runtime_schema', True), ('backend', 'auto'),
+                       ('mujoco_version', '')]:
+        bad = deepcopy(expected)
+        bad[key] = value
+        with pytest.raises(ValueError):
+            validate_execution(bad)
+    bad = deepcopy(expected)
+    bad['build_context']['numerics']['threading']['num_threads'] = 0
     with pytest.raises(ValueError):
         validate_execution(bad)
 

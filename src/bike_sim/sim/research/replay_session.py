@@ -151,9 +151,14 @@ class ReplaySession:
         # A successful replay cannot conceal a source/binary edit during playback.
         _check_runtime(summary)
         if self._manifest['schema_version'] >= 2:
+            # The final-boundary recheck carries the same precise diagnostics:
+            # a drifted runtime names the exact identity field that changed.
             from bike_sim.native.artifact import execution_provenance
-            if execution_provenance(self.backend) != self._manifest['execution']:
-                raise ValueError('replay execution identity changed during playback')
+            from bike_sim.native.execution_identity import (
+                require_execution_compatible,
+            )
+            require_execution_compatible(self._manifest['execution'],
+                                         execution_provenance(self.backend))
         report = dict(passed=True, backend=self.backend,
             episode_id=self._manifest.get('episode_id', 0),
             container_schema_version=self._manifest.get('container_schema_version'),

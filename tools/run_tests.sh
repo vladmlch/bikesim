@@ -199,7 +199,7 @@ preflight_native() {
   local extension_path
   extension_path="$(run_with_native_runtime python -c 'from native_loader import load_native; print(load_native().__file__)')"
   printf 'selected native extension: %s\n' "$extension_path"
-  "$checks_bin" --kind contracts --build "$build_dir" --repo-root "$REPO_ROOT"
+  run_with_native_runtime "$checks_bin" --kind contracts --build "$build_dir" --repo-root "$REPO_ROOT"
 }
 
 if [[ "$profile" == native || "$profile" == full ]]; then

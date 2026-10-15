@@ -1019,7 +1019,11 @@ std::vector<CompileEntry> load_entries(const fs::path &build,
         if (found != actual_by_source.end())
             for (const auto &entry: found->second)
                 if (entry.target.has_value()) selected_targets.push_back(*entry.target);
-        if (have_target_contexts &&
+        // Oracle's two guards combined: target attribution is checked when
+        // the context carries target_contexts OR when any selected entry
+        // still records a target — a stale context with no target_contexts
+        // must not let a mismatched -o attribution pass.
+        if ((have_target_contexts || !selected_targets.empty()) &&
             (selected_targets.size() != actual_count ||
              std::set<std::string>(selected_targets.begin(),
                                    selected_targets.end()) != known_targets)) {

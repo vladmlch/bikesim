@@ -1,10 +1,15 @@
-// Plan executor for the columnar recording encoder. The Python plan
-// compiler (recording/native_encode.py::compile_plan) stays the source of
-// truth for which tables are eligible; this side only validates the plan's
-// declared kind/table and runs the fixed per-kind emitters over retained
-// PhysicalSampleData. Emitted buffers copy retained values verbatim —
-// including NaN payloads, ±inf and -0.0 — so pieces_to_arrow assembles a
-// RecordBatch bitwise-identical to arrow_batch(encode_rows(...)).
+// Plan executor for the columnar recording encoder — the Python-free
+// core (task T11). The Python plan compiler
+// (recording/native_encode.py::compile_plan) stays the source of truth
+// for which tables are eligible; this side validates the staged plan
+// document (bike::io::Value — encode_binding.cpp materializes the Python
+// plan into it; native consumers stage JSON/Value documents directly) and
+// runs the fixed per-kind emitters over retained PhysicalSampleData.
+// Emitted buffers copy retained values verbatim — including NaN payloads,
+// ±inf and -0.0 — so pieces_to_arrow assembles a RecordBatch
+// bitwise-identical to arrow_batch(encode_rows(...)). The held-GIL Piece
+// boxing and the nb-facing adapters live in encode_binding.cpp; this TU
+// reads no Python object.
 #include "encode.hpp"
 
 #include <algorithm>
@@ -21,90 +26,21 @@
 #include <utility>
 #include <variant>
 
-#include "../binding_arrays.hpp"
-#include "../binding_readers.hpp"
-#include "samples_binding.hpp"
+#include "value_readers.hpp"
 
 namespace runtime {
+
+namespace bio = bike::io;
+
 namespace {
 
 // compile_plan emits {'table', 'kind'} plus an optional 'columns' list for
 // physics/forces; a channels plan adds 'roots', 'all_roots', 'columns' (per
 // leaf) and 'masks'. physics/forces columns are fixed emitters; a provided
 // list that does not name exactly the fixed set is rejected rather than
-// silently narrowed.
-struct PlanColumn {
-    std::string name;
-    std::string dtype;
-    std::vector<std::string> path;
-    bool optional = false;
-    std::int64_t shape = -1;              // >= 0 pins the x[] element count
-    std::vector<std::string> except_keys; // members deeper leaves own
-    std::string convert;                  // "" | "verdict"
-    // True when a proper prefix at depth >= 2 is itself a leaf: routing
-    // only enters non-leaf members (the root call still routes claimed
-    // members at a depth-1 leaf before the terminal gets the remainder),
-    // so a leaf nested under a deeper terminal is unreachable and encodes
-    // absent on every row.
-    bool shadowed = false;
-    // Indices of the op=='valid' masks whose paths are this leaf's prefix
-    // chain (path[:1..len-1]; the claim mask itself for depth-1 leaves). A
-    // required leaf encodes NULL iff one of them reads invalid this row —
-    // the encode_rows "ancestor absent-or-null" exemption. Top-level only.
-    std::vector<std::size_t> ancestors;
-    // struct/struct[] member schemas and map<struct> entry members, in
-    // catalog order; each child's path is the single relative member name.
-    // Empty on leaf dtypes — _convert_struct consumes members only through
-    // this list, so unknown members reject there.
-    std::vector<PlanColumn> children;
-    // Name-sorted member-name -> children slot index, compiled at parse
-    // for the struct dtypes: convert_struct dispatches a payload dict's
-    // members through it in one pass. Views the child `name` strings —
-    // built only after leaf_columns stops moving. Empty on leaf dtypes.
-    std::vector<std::pair<std::string_view, std::size_t>> member_lookup;
-};
-
-struct PlanMask {
-    std::string name;
-    std::vector<std::string> path;
-    enum class Op : std::uint8_t { present, valid } op = Op::present;
-};
-
-struct PlanView {
-    std::string table;
-    std::string kind;
-    std::vector<std::string> columns;     // physics/forces fixed-list check
-    bool has_columns = false;
-    // channels payloads
-    std::vector<PlanColumn> leaf_columns;
-    std::vector<PlanMask> masks;
-    std::vector<std::string> roots;       // this table's claimed roots
-    std::set<std::string> all_roots;      // every catalog channel root
-    // Routing indexes mirroring encoding.py::_distribute's lookups: full
-    // leaf paths and each internal prefix's routed member components
-    // (the parse-time shadowed/except_keys checks read these).
-    std::set<std::vector<std::string>> leaf_paths;
-    std::map<std::vector<std::string>, std::set<std::string>> deeper;
-    // Compiled prefix tree over the leaf paths and claimed roots: a node's
-    // edges are the routed members _distribute tracks at that prefix and
-    // `leaf` marks the leaf_columns slot when the prefix is itself a leaf.
-    // Insertion order keeps parents ahead of children, so resolve_paths
-    // resolves a whole row in one forward pass.
-    struct PathNode {
-        std::vector<std::pair<std::string_view, std::size_t>> edges;
-        std::size_t leaf = std::numeric_limits<std::size_t>::max();
-    };
-    static constexpr std::size_t kNoNode =
-        std::numeric_limits<std::size_t>::max();
-    std::vector<PathNode> path_nodes{PathNode{}};   // [0]: channels object
-    std::vector<std::size_t> root_nodes;            // roots[i] -> node
-    std::vector<std::size_t> column_nodes;          // leaf_columns[i] -> node
-    std::vector<std::string> column_labels;         // join_path(path)
-    // deeper set a depth-1 container leaf's remainder strips, nullptr
-    // otherwise — the row loop's erstwhile deeper.find(column.path).
-    std::vector<const std::set<std::string> *> column_owned;
-    std::vector<std::size_t> mask_nodes;            // masks[j] -> node|kNoNode
-};
+// silently narrowed. The parsed node shapes — EncodePlanColumn,
+// EncodePlanMask, EncodePlan, DerivedEventPlan — are declared in
+// encode.hpp with the piece/public record types.
 
 constexpr std::array<std::string_view, 6> kPhysicsColumns{
     "interval_id", "time_s", "interval_end_s", "dt_s", "qpos", "qvel"};
@@ -137,26 +73,26 @@ bool is_container_dtype(std::string_view dtype) {
 // Definition lives with the emitters; the plan index pass joins paths.
 std::string join_path(std::span<const std::string> path);
 
-// The routed-member child under `node`, or PlanView::kNoNode — binary
+// The routed-member child under `node`, or EncodePlan::kNoNode — binary
 // search over the node's name-sorted edges. Struct member_lookup lists
 // share the sorted-pair shape but keep their own equal-run scan.
-std::size_t path_edge(const PlanView::PathNode &node,
+std::size_t path_edge(const EncodePlan::PathNode &node,
                       std::string_view member) {
     const auto at = std::ranges::lower_bound(
         node.edges, member, std::less<>{},
         &std::pair<std::string_view, std::size_t>::first);
     return at != node.edges.end() && at->first == member
-        ? at->second : PlanView::kNoNode;
+        ? at->second : EncodePlan::kNoNode;
 }
 
 // The trie node for `path`, creating any missing node along the way.
 // Edge keys view the path's std::string members — the plan outlives every
 // lookup, and a parent is always created before its children.
-std::size_t path_extend(PlanView &plan, std::span<const std::string> path) {
+std::size_t path_extend(EncodePlan &plan, std::span<const std::string> path) {
     std::size_t node = 0;
     for (const std::string &member : path) {
         const std::size_t child = path_edge(plan.path_nodes[node], member);
-        if (child != PlanView::kNoNode) {
+        if (child != EncodePlan::kNoNode) {
             node = child;
             continue;
         }
@@ -174,18 +110,18 @@ std::size_t path_extend(PlanView &plan, std::span<const std::string> path) {
 }
 
 // The trie node for `path`, or kNoNode when some member never routed.
-std::size_t path_find(const PlanView &plan,
+std::size_t path_find(const EncodePlan &plan,
                       std::span<const std::string> path) {
     std::size_t node = 0;
     for (const std::string &member : path) {
         node = path_edge(plan.path_nodes[node], member);
-        if (node == PlanView::kNoNode) return PlanView::kNoNode;
+        if (node == EncodePlan::kNoNode) return EncodePlan::kNoNode;
     }
     return node;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion) children mirror the finite plan tree
-void index_member_lookup(PlanColumn &node) {
+void index_member_lookup(EncodePlanColumn &node) {
     if (!node.children.empty()) {
         node.member_lookup.reserve(node.children.size());
         for (std::size_t i = 0; i < node.children.size(); ++i)
@@ -194,14 +130,14 @@ void index_member_lookup(PlanColumn &node) {
             node.member_lookup, std::less<>{},
             &std::pair<std::string_view, std::size_t>::first);
     }
-    for (PlanColumn &child : node.children) index_member_lookup(child);
+    for (EncodePlanColumn &child : node.children) index_member_lookup(child);
 }
 
 // Compile the row-loop handles the emitters use: the path trie over leaf
 // paths plus claimed roots, each column's trie node/label/deeper-owned
 // set, each mask's trie node (kNoNode falls back to walk_path — a plan
 // may name a mask path no column claims), and the member lookup tables.
-void index_channels_plan(PlanView &parsed) {
+void index_channels_plan(EncodePlan &parsed) {
     for (const std::string &root : parsed.roots)
         parsed.root_nodes.push_back(
             path_extend(parsed, std::span<const std::string>{&root, 1}));
@@ -209,7 +145,7 @@ void index_channels_plan(PlanView &parsed) {
     parsed.column_labels.reserve(parsed.leaf_columns.size());
     parsed.column_owned.reserve(parsed.leaf_columns.size());
     for (std::size_t c = 0; c < parsed.leaf_columns.size(); ++c) {
-        PlanColumn &column = parsed.leaf_columns[c];
+        EncodePlanColumn &column = parsed.leaf_columns[c];
         const std::size_t node =
             path_extend(parsed, std::span<const std::string>(column.path));
         parsed.path_nodes[node].leaf = c;
@@ -224,55 +160,59 @@ void index_channels_plan(PlanView &parsed) {
         index_member_lookup(column);
     }
     parsed.mask_nodes.reserve(parsed.masks.size());
-    for (const PlanMask &mask : parsed.masks)
+    for (const EncodePlanMask &mask : parsed.masks)
         parsed.mask_nodes.push_back(
             path_find(parsed, std::span<const std::string>(mask.path)));
 }
 
 // NOLINTNEXTLINE(misc-no-recursion) children mirror the finite plan tree
-PlanColumn parse_column(nb::handle item) {
-    const wire::Dict dict{.value = wire::mapping(item, "encode plan.columns[]"),
-                          .path = "encode plan.columns[]"};
-    wire::exact(dict, wire::keys("name", "dtype", "path", "optional"),
-                wire::keys("shape", "except_keys", "convert", "children"));
-    PlanColumn column;
-    column.name = wire::string(wire::field(dict, "name"),
-                               dict.child("name"));
-    column.dtype = wire::string(wire::field(dict, "dtype"),
-                                dict.child("dtype"));
+EncodePlanColumn parse_column(const bio::Value &item) {
+    const vread::Dict dict{
+        .value = &vread::mapping(vread::Node{&item}, "encode plan.columns[]"),
+        .path = "encode plan.columns[]"};
+    vread::exact(dict, vread::keys("name", "dtype", "path", "optional"),
+                 vread::keys("shape", "except_keys", "convert", "children"));
+    EncodePlanColumn column;
+    column.name = vread::string(vread::field(dict, "name"),
+                                dict.child("name"));
+    column.dtype = vread::string(vread::field(dict, "dtype"),
+                                 dict.child("dtype"));
     if (!is_leaf_dtype(column.dtype) && !is_struct_dtype(column.dtype))
         throw std::invalid_argument("encode plan.columns: unsupported "
                                     "channels dtype '" + column.dtype + "'");
-    for (const nb::handle part :
-         wire::sequence(wire::field(dict, "path"), dict.child("path")))
-        column.path.push_back(wire::string(part, dict.child("path")));
+    for (const bio::Value &part :
+         vread::sequence(vread::field(dict, "path"), dict.child("path")))
+        column.path.push_back(
+            vread::string(vread::Node{&part}, dict.child("path")));
     if (column.path.empty())
         throw std::invalid_argument("encode plan.columns: empty path");
-    column.optional = wire::boolean(wire::field(dict, "optional"),
-                                    dict.child("optional"));
-    if (dict.contains("shape") && !dict["shape"].is_none()) {
-        const nb::list dims =
-            wire::sequence(dict["shape"], dict.child("shape"));
+    column.optional = vread::boolean(vread::field(dict, "optional"),
+                                     dict.child("optional"));
+    if (dict.contains("shape") && !vread::is_none(dict["shape"])) {
+        const bio::Value::Array &dims =
+            vread::sequence(dict["shape"], dict.child("shape"));
         if (dims.size() != 1)
             throw std::invalid_argument(
                 "encode plan.columns: shape must name one dimension");
-        for (const nb::handle dim : dims)
-            column.shape = wire::integer(dim, dict.child("shape"));
+        for (const bio::Value &dim : dims)
+            column.shape =
+                vread::integer(vread::Node{&dim}, dict.child("shape"));
     }
     if (dict.contains("except_keys"))
-        for (const nb::handle key : wire::sequence(
+        for (const bio::Value &key : vread::sequence(
                  dict["except_keys"], dict.child("except_keys")))
             column.except_keys.push_back(
-                wire::string(key, dict.child("except_keys")));
-    if (dict.contains("convert") && !dict["convert"].is_none()) {
-        column.convert = wire::string(dict["convert"],
-                                      dict.child("convert"));
+                vread::string(vread::Node{&key},
+                              dict.child("except_keys")));
+    if (dict.contains("convert") && !vread::is_none(dict["convert"])) {
+        column.convert = vread::string(dict["convert"],
+                                       dict.child("convert"));
         if (column.convert != "verdict")
             throw std::invalid_argument("encode plan.columns: unknown "
                                         "convert '" + column.convert + "'");
     }
     if (dict.contains("children"))
-        for (const nb::handle child : wire::sequence(
+        for (const bio::Value &child : vread::sequence(
                  dict["children"], dict.child("children")))
             column.children.push_back(parse_column(child));
     // Member schemas belong to the struct dtypes only; a container node
@@ -283,7 +223,7 @@ PlanColumn parse_column(nb::handle item) {
             "match dtype '" + column.dtype + "'");
     // Child nodes address struct members, not catalog paths: each child's
     // path is exactly its member name.
-    for (const PlanColumn &child : column.children)
+    for (const EncodePlanColumn &child : column.children)
         if (child.path.size() != 1 || child.path.front() != child.name)
             throw std::invalid_argument(
                 "encode plan.columns: '" + column.name +
@@ -291,46 +231,50 @@ PlanColumn parse_column(nb::handle item) {
     return column;
 }
 
-PlanMask parse_mask(nb::handle item) {
-    const wire::Dict dict{.value = wire::mapping(item, "encode plan.masks[]"),
-                          .path = "encode plan.masks[]"};
-    wire::exact(dict, wire::keys("name", "path", "op"));
-    PlanMask mask;
-    mask.name = wire::string(wire::field(dict, "name"),
-                             dict.child("name"));
-    for (const nb::handle part :
-         wire::sequence(wire::field(dict, "path"), dict.child("path")))
-        mask.path.push_back(wire::string(part, dict.child("path")));
+EncodePlanMask parse_mask(const bio::Value &item) {
+    const vread::Dict dict{
+        .value = &vread::mapping(vread::Node{&item}, "encode plan.masks[]"),
+        .path = "encode plan.masks[]"};
+    vread::exact(dict, vread::keys("name", "path", "op"));
+    EncodePlanMask mask;
+    mask.name = vread::string(vread::field(dict, "name"),
+                              dict.child("name"));
+    for (const bio::Value &part :
+         vread::sequence(vread::field(dict, "path"), dict.child("path")))
+        mask.path.push_back(
+            vread::string(vread::Node{&part}, dict.child("path")));
     if (mask.path.empty())
         throw std::invalid_argument("encode plan.masks: empty path");
     const std::string op =
-        wire::string(wire::field(dict, "op"), dict.child("op"));
-    if (op == "present") mask.op = PlanMask::Op::present;
-    else if (op == "valid") mask.op = PlanMask::Op::valid;
+        vread::string(vread::field(dict, "op"), dict.child("op"));
+    if (op == "present") mask.op = EncodePlanMask::Op::present;
+    else if (op == "valid") mask.op = EncodePlanMask::Op::valid;
     else throw std::invalid_argument("encode plan.masks: unknown op '" +
                                      op + "'");
     return mask;
 }
 
-void parse_channels_plan(const wire::Dict &dict, PlanView &parsed) {
-    wire::exact(dict, wire::keys("table", "kind", "roots", "all_roots",
-                                 "columns", "masks"));
-    for (const nb::handle item :
-         wire::sequence(dict["columns"], "encode plan.columns"))
+void parse_channels_plan(const vread::Dict &dict, EncodePlan &parsed) {
+    vread::exact(dict, vread::keys("table", "kind", "roots", "all_roots",
+                                   "columns", "masks"));
+    for (const bio::Value &item :
+         vread::sequence(dict["columns"], "encode plan.columns"))
         parsed.leaf_columns.push_back(parse_column(item));
-    for (const nb::handle item :
-         wire::sequence(dict["masks"], "encode plan.masks"))
+    for (const bio::Value &item :
+         vread::sequence(dict["masks"], "encode plan.masks"))
         parsed.masks.push_back(parse_mask(item));
-    for (const nb::handle item :
-         wire::sequence(dict["roots"], "encode plan.roots"))
-        parsed.roots.push_back(wire::string(item, "encode plan.roots"));
-    for (const nb::handle item :
-         wire::sequence(dict["all_roots"], "encode plan.all_roots"))
-        parsed.all_roots.insert(wire::string(item, "encode plan.all_roots"));
+    for (const bio::Value &item :
+         vread::sequence(dict["roots"], "encode plan.roots"))
+        parsed.roots.push_back(
+            vread::string(vread::Node{&item}, "encode plan.roots"));
+    for (const bio::Value &item :
+         vread::sequence(dict["all_roots"], "encode plan.all_roots"))
+        parsed.all_roots.insert(
+            vread::string(vread::Node{&item}, "encode plan.all_roots"));
     const std::set<std::string> claims(parsed.roots.begin(),
                                        parsed.roots.end());
     for (std::size_t c = 0; c < parsed.leaf_columns.size(); ++c) {
-        const PlanColumn &column = parsed.leaf_columns[c];
+        const EncodePlanColumn &column = parsed.leaf_columns[c];
         if (!claims.contains(column.path.front()))
             throw std::invalid_argument(
                 "encode plan.columns: '" + column.name +
@@ -342,7 +286,7 @@ void parse_channels_plan(const wire::Dict &dict, PlanView &parsed) {
                 column.path.begin() + static_cast<std::ptrdiff_t>(depth))]
                 .insert(column.path[depth]);
     }
-    for (PlanColumn &column : parsed.leaf_columns) {
+    for (EncodePlanColumn &column : parsed.leaf_columns) {
         for (std::size_t depth = 2;
              depth < column.path.size() && !column.shadowed; ++depth)
             column.shadowed = parsed.leaf_paths.contains(
@@ -372,9 +316,9 @@ void parse_channels_plan(const wire::Dict &dict, PlanView &parsed) {
     // slot; the plan must carry every mask the exemption consults.
     std::map<std::vector<std::string>, std::size_t> valid_masks;
     for (std::size_t j = 0; j < parsed.masks.size(); ++j)
-        if (parsed.masks[j].op == PlanMask::Op::valid)
+        if (parsed.masks[j].op == EncodePlanMask::Op::valid)
             valid_masks.emplace(parsed.masks[j].path, j);
-    for (PlanColumn &column : parsed.leaf_columns) {
+    for (EncodePlanColumn &column : parsed.leaf_columns) {
         // A depth-1 leaf's exemption reads the claim mask at its own path;
         // deeper leaves read every proper prefix's mask.
         const std::size_t deepest = column.path.size() > 1
@@ -393,28 +337,35 @@ void parse_channels_plan(const wire::Dict &dict, PlanView &parsed) {
     index_channels_plan(parsed);
 }
 
-PlanView parse_plan(nb::handle plan) {
-    const wire::Dict dict{.value = wire::mapping(plan, "encode plan"),
-                          .path = "encode plan"};
-    PlanView parsed;
-    parsed.table = wire::string(wire::field(dict, "table"), "encode plan.table");
-    parsed.kind = wire::string(wire::field(dict, "kind"), "encode plan.kind");
+} // namespace
+
+EncodePlan parse_encode_plan(const bio::Value &plan) {
+    const vread::Dict dict{
+        .value = &vread::mapping(vread::Node{&plan}, "encode plan"),
+        .path = "encode plan"};
+    EncodePlan parsed;
+    parsed.table =
+        vread::string(vread::field(dict, "table"), "encode plan.table");
+    parsed.kind =
+        vread::string(vread::field(dict, "kind"), "encode plan.kind");
     if (parsed.kind == "channels") {
         parse_channels_plan(dict, parsed);
         return parsed;
     }
-    wire::exact(dict, wire::keys("table", "kind"), wire::keys("columns"));
+    vread::exact(dict, vread::keys("table", "kind"), vread::keys("columns"));
     if (dict.contains("columns")) {
         parsed.has_columns = true;
-        for (const nb::handle item :
-             wire::sequence(dict["columns"], "encode plan.columns"))
+        for (const bio::Value &item :
+             vread::sequence(dict["columns"], "encode plan.columns"))
             parsed.columns.emplace_back(
-                wire::string(item, "encode plan.columns"));
+                vread::string(vread::Node{&item}, "encode plan.columns"));
     }
     return parsed;
 }
 
-void check_columns(const PlanView &plan,
+namespace {
+
+void check_columns(const EncodePlan &plan,
                    std::span<const std::string_view> emitted) {
     if (!plan.has_columns) return;
     if (plan.columns.size() != emitted.size() ||
@@ -619,15 +570,15 @@ const Wire *walk_path(const WireObject &channels,
 }
 
 // NOLINTNEXTLINE(misc-no-recursion) depth mirrors the declared field paths
-void distribute_validate(const PlanView &plan, std::size_t node_id,
+void distribute_validate(const EncodePlan &plan, std::size_t node_id,
                          const Wire &payload, const Label &label) {
-    const PlanView::PathNode &node = plan.path_nodes[node_id];
+    const EncodePlan::PathNode &node = plan.path_nodes[node_id];
     if (sample_wire::is_none(payload)) return;
     const auto *object = std::get_if<WireObject>(&payload.value);
     if (object == nullptr) {
         // A scalar/list payload under a non-leaf prefix mirrors the oracle's
         // "unrouted" rejection; leaf prefixes pass it to the leaf walk.
-        if (node.leaf == PlanView::kNoNode)
+        if (node.leaf == EncodePlan::kNoNode)
             throw std::invalid_argument(
                 label.str() + ": no reviewed field accepts the payload");
         return;
@@ -635,12 +586,12 @@ void distribute_validate(const PlanView &plan, std::size_t node_id,
     std::vector<std::string_view> unrouted;
     for (const auto &[member, value] : *object) {
         const std::size_t child = path_edge(node, member);
-        if (child == PlanView::kNoNode) {
+        if (child == EncodePlan::kNoNode) {
             unrouted.push_back(member);
             continue;
         }
         const bool child_leaf =
-            plan.path_nodes[child].leaf != PlanView::kNoNode;
+            plan.path_nodes[child].leaf != EncodePlan::kNoNode;
         if (!child_leaf && !sample_wire::is_none(value) &&
             !std::holds_alternative<WireObject>(value.value))
             throw std::invalid_argument(
@@ -655,7 +606,7 @@ void distribute_validate(const PlanView &plan, std::size_t node_id,
     // members deeper sibling fields did not claim (the leaf walk reads
     // them back out of the same dict); every other prefix names and
     // rejects the leftover members.
-    if (node.leaf == PlanView::kNoNode ||
+    if (node.leaf == EncodePlan::kNoNode ||
         !is_container_dtype(plan.leaf_columns[node.leaf].dtype))
         throw std::invalid_argument(label.str() +
                                     ": unknown channel members " +
@@ -694,7 +645,7 @@ std::size_t piece_rows(const Piece &piece) {
 // map slot contributes an empty span either way; the entry/element
 // payloads never see it. A 'struct' slot fills every member recursively.
 // NOLINTNEXTLINE(misc-no-recursion) depth mirrors the finite plan tree
-void append_placeholder(const PlanColumn &node, Piece &piece, char valid) {
+void append_placeholder(const EncodePlanColumn &node, Piece &piece, char valid) {
     switch (piece.kind) {
         case Piece::Kind::scalar_d: piece.d.push_back(0.0); break;
         case Piece::Kind::scalar_i: piece.i.push_back(0); break;
@@ -724,7 +675,7 @@ void append_placeholder(const PlanColumn &node, Piece &piece, char valid) {
             }
             if (piece.member_slots.size() == node.children.size()) {
                 for (std::size_t i = 0; i < node.children.size(); ++i) {
-                    const PlanColumn &child = node.children[i];
+                    const EncodePlanColumn &child = node.children[i];
                     append_placeholder(child, *piece.member_slots[i].member,
                                        1);
                     if (child.optional)
@@ -732,7 +683,7 @@ void append_placeholder(const PlanColumn &node, Piece &piece, char valid) {
                 }
                 break;
             }
-            for (const PlanColumn &child : node.children) {
+            for (const EncodePlanColumn &child : node.children) {
                 append_placeholder(child, piece.children[child.name], 1);
                 if (child.optional)
                     piece.children[child.name + "_present"].b.push_back(0);
@@ -742,7 +693,7 @@ void append_placeholder(const PlanColumn &node, Piece &piece, char valid) {
     piece.valid.push_back(valid);
 }
 
-void append_null(const PlanColumn &node, Piece &piece) {
+void append_null(const EncodePlanColumn &node, Piece &piece) {
     append_placeholder(node, piece, 0);
 }
 
@@ -800,7 +751,7 @@ std::size_t utf8_width(char lead, const std::string &text,
 // A map entry's member value converted at the map's member dtype — the
 // encoding.py::_convert recursion inside the map<K> branch. items is the
 // member piece the row loop allocated for this column.
-void append_map_member(const PlanColumn &column, Piece &items,
+void append_map_member(const EncodePlanColumn &column, Piece &items,
                        const Wire &member, const Label &label) {
     switch (items.kind) {
         case Piece::Kind::scalar_d: {
@@ -909,7 +860,7 @@ bool remainder_nonempty(const std::set<std::string> *owned,
 // Mapping check precedes the dtype gates. `owned` carries the member set
 // deeper sibling fields claim at this leaf's path (nullptr nested or when
 // nothing is claimed); container leaves skip owned members.
-void append_leaf(const PlanColumn &column, const Wire &value, Piece &piece,
+void append_leaf(const EncodePlanColumn &column, const Wire &value, Piece &piece,
                  const Label &label,
                  const std::set<std::string> *owned) {
     switch (piece.kind) {
@@ -1034,7 +985,7 @@ void append_leaf(const PlanColumn &column, const Wire &value, Piece &piece,
 }
 
 // NOLINTNEXTLINE(misc-no-recursion) node tree mirrors the finite plan tree
-void append_node(const PlanColumn &node, const Wire &value, Piece &piece,
+void append_node(const EncodePlanColumn &node, const Wire &value, Piece &piece,
                  const Label &label,
                  const std::set<std::string> *owned);
 
@@ -1043,7 +994,7 @@ void append_node(const PlanColumn &node, const Wire &value, Piece &piece,
 // loop: `present` is `child.key in value` — an explicit None reads present
 // with a NULL member — and a required member absent-or-null rejects.
 // NOLINTNEXTLINE(misc-no-recursion) member tree mirrors the plan tree
-void append_member(const PlanColumn &child, const Wire *member,
+void append_member(const EncodePlanColumn &child, const Wire *member,
                    Piece &child_piece, Piece *companion,
                    const Label &label) {
     if (member == nullptr || sample_wire::is_none(*member)) {
@@ -1063,7 +1014,7 @@ void append_member(const PlanColumn &child, const Wire *member,
 // `owned` strips members claimed by deeper sibling leaves (remainder
 // routing); nested calls always pass nullptr — routing ends at the leaf.
 // NOLINTNEXTLINE(misc-no-recursion) member tree mirrors the plan tree
-void convert_struct(const PlanColumn &node, const Wire &value, Piece &piece,
+void convert_struct(const EncodePlanColumn &node, const Wire &value, Piece &piece,
                     const Label &label,
                     const std::set<std::string> *owned) {
     const auto *object = std::get_if<WireObject>(&value.value);
@@ -1103,7 +1054,7 @@ void convert_struct(const PlanColumn &node, const Wire &value, Piece &piece,
     // indexing — the map lookups repeat only for a hand-built piece.
     if (piece.member_slots.size() == node.children.size()) {
         for (std::size_t i = 0; i < node.children.size(); ++i) {
-            const PlanColumn &child = node.children[i];
+            const EncodePlanColumn &child = node.children[i];
             append_member(child, members[i], *piece.member_slots[i].member,
                           piece.member_slots[i].present,
                           member_of(label, child.name));
@@ -1111,7 +1062,7 @@ void convert_struct(const PlanColumn &node, const Wire &value, Piece &piece,
         return;
     }
     for (std::size_t i = 0; i < node.children.size(); ++i) {
-        const PlanColumn &child = node.children[i];
+        const EncodePlanColumn &child = node.children[i];
         Piece *companion = child.optional
             ? &piece.children[child.name + "_present"] : nullptr;
         append_member(child, members[i], piece.children[child.name],
@@ -1123,7 +1074,7 @@ void convert_struct(const PlanColumn &node, const Wire &value, Piece &piece,
 // through _convert_struct into the shared member columns; this piece's
 // offsets close the slot once, like a list leaf.
 // NOLINTNEXTLINE(misc-no-recursion) element tree mirrors the plan tree
-void convert_struct_list(const PlanColumn &node, const Wire &value,
+void convert_struct_list(const EncodePlanColumn &node, const Wire &value,
                          Piece &piece, const Label &label) {
     const auto *items = std::get_if<WireArray>(&value.value);
     if (items == nullptr)
@@ -1140,7 +1091,7 @@ void convert_struct_list(const PlanColumn &node, const Wire &value,
 // (owned members skipped — they are columns, not entries), then each entry
 // converts through the shared `items` struct in authored key order.
 // NOLINTNEXTLINE(misc-no-recursion) entry tree mirrors the plan tree
-void convert_map_struct(const PlanColumn &node, const Wire &value,
+void convert_map_struct(const EncodePlanColumn &node, const Wire &value,
                         Piece &piece, const Label &label,
                         const std::set<std::string> *owned) {
     const auto *object = std::get_if<WireObject>(&value.value);
@@ -1160,7 +1111,7 @@ void convert_map_struct(const PlanColumn &node, const Wire &value,
 }
 
 // NOLINTNEXTLINE(misc-no-recursion) node tree mirrors the finite plan tree
-void append_node(const PlanColumn &node, const Wire &value, Piece &piece,
+void append_node(const EncodePlanColumn &node, const Wire &value, Piece &piece,
                  const Label &label,
                  const std::set<std::string> *owned) {
     if (piece.kind == Piece::Kind::structure) {
@@ -1197,7 +1148,7 @@ Piece::Kind map_member_kind(std::string_view dtype) {
     return Piece::Kind::list_d;  // map<double[]>
 }
 
-Piece node_piece(const PlanColumn &node, std::size_t reserve_rows);
+Piece node_piece(const EncodePlanColumn &node, std::size_t reserve_rows);
 
 // A structure piece seeded from a member list: one member piece per
 // child plus a `_present` scalar_b companion per optional child, in
@@ -1205,13 +1156,13 @@ Piece node_piece(const PlanColumn &node, std::size_t reserve_rows);
 // struct that backs a 'map<struct>' piece's `items` — Arrow's layout
 // uses one shared entries array per map column.
 // NOLINTNEXTLINE(misc-no-recursion) children mirror the finite plan tree
-Piece structure_piece(const std::vector<PlanColumn> &children,
+Piece structure_piece(const std::vector<EncodePlanColumn> &children,
                       std::size_t reserve_rows) {
     Piece piece;
     piece.kind = Piece::Kind::structure;
     piece.valid.reserve(reserve_rows);
     piece.member_slots.reserve(children.size());
-    for (const PlanColumn &child : children) {
+    for (const EncodePlanColumn &child : children) {
         Piece *member = &piece.children
                              .emplace(child.name, node_piece(child, 0))
                              .first->second;
@@ -1236,7 +1187,7 @@ Piece structure_piece(const std::vector<PlanColumn> &children,
 // the piece itself); `map<struct>` is a map piece whose `items` is the
 // shared entry struct.
 // NOLINTNEXTLINE(misc-no-recursion) children mirror the finite plan tree
-Piece node_piece(const PlanColumn &node, std::size_t reserve_rows) {
+Piece node_piece(const EncodePlanColumn &node, std::size_t reserve_rows) {
     Piece piece;
     if (node.dtype == "struct" || node.dtype == "struct[]") {
         piece = structure_piece(node.children, reserve_rows);
@@ -1300,7 +1251,7 @@ struct ResolvedPath {
 // node's routed children — first wire member wins, matching the
 // sample_wire::find scan each leaf walk used to run — replacing a
 // per-leaf rescan of the shared prefixes.
-void resolve_paths(const PlanView &plan, const WireObject &channels,
+void resolve_paths(const EncodePlan &plan, const WireObject &channels,
                    std::vector<ResolvedPath> &resolved) {
     resolved.assign(plan.path_nodes.size(), ResolvedPath{});
     resolved[0].object = &channels;
@@ -1310,7 +1261,7 @@ void resolve_paths(const PlanView &plan, const WireObject &channels,
         if (!node.complete || node.object == nullptr) continue;
         for (const auto &[member, value] : *node.object) {
             const std::size_t child = path_edge(plan.path_nodes[n], member);
-            if (child != PlanView::kNoNode && !resolved[child].complete)
+            if (child != EncodePlan::kNoNode && !resolved[child].complete)
                 resolved[child] = {.wire = &value,
                                    .object =
                                        std::get_if<WireObject>(&value.value),
@@ -1320,7 +1271,7 @@ void resolve_paths(const PlanView &plan, const WireObject &channels,
 }
 
 std::int64_t emit_channels(std::span<const SamplePtr> rows,
-                           const PlanView &plan,
+                           const EncodePlan &plan,
                            std::map<std::string, Piece> &emitted) {
     std::vector<Piece> values(plan.leaf_columns.size());
     std::vector<Piece> presence(plan.leaf_columns.size());
@@ -1373,7 +1324,7 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
         for (std::size_t j = 0; j < plan.masks.size(); ++j) {
             bool complete = false;
             const Wire *node = nullptr;
-            if (plan.mask_nodes[j] != PlanView::kNoNode) {
+            if (plan.mask_nodes[j] != EncodePlan::kNoNode) {
                 const ResolvedPath &hit = resolved[plan.mask_nodes[j]];
                 complete = hit.complete;
                 node = hit.wire;
@@ -1385,11 +1336,11 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
                                !sample_wire::is_none(*node);
             mask_valid[j] = static_cast<char>(valid);
             mask_pieces[j].b.push_back(static_cast<char>(
-                plan.masks[j].op == PlanMask::Op::present ? complete
+                plan.masks[j].op == EncodePlanMask::Op::present ? complete
                                                         : valid));
         }
         for (std::size_t c = 0; c < plan.leaf_columns.size(); ++c) {
-            const PlanColumn &column = plan.leaf_columns[c];
+            const EncodePlanColumn &column = plan.leaf_columns[c];
             Piece &piece = values[c];
             const Label label =
                 member_of(row_label, plan.column_labels[c]);
@@ -1404,7 +1355,7 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
             // The resolved wire is non-null exactly when the path's
             // member chain resolved, matching walk_path's terminal.
             const Wire *leaf = nullptr;
-            if (plan.column_nodes[c] != PlanView::kNoNode) {
+            if (plan.column_nodes[c] != EncodePlan::kNoNode) {
                 leaf = resolved[plan.column_nodes[c]].wire;
             } else {
                 bool complete = false;
@@ -1633,39 +1584,29 @@ bool applied_equal(const AppliedTuple &a, const AppliedTuple &b) {
 // ---------------------------------------------------------------------------
 // derived-transition scan (the channel diff inside iter_derived_events)
 
-// One tracked (kind, path) entry from the plan; `label` mirrors the
-// oracle's changes key — '.'.join(path[1:]) or path[0] — and kind_slot
-// indexes the unique kinds in first-appearance order.
-struct DerivedField {
-    std::string kind;
-    std::vector<std::string> path;
-    std::string label;
-    std::size_t kind_slot = 0;
-};
-
-struct DerivedPlan {
-    std::vector<DerivedField> fields;
-    std::vector<std::string> kinds;
-};
-
-DerivedPlan parse_derived_plan(nb::handle plan) {
-    const wire::Dict dict{.value = wire::mapping(plan, "derived plan"),
-                          .path = "derived plan"};
-    wire::exact(dict, wire::keys("fields"));
-    DerivedPlan parsed;
+// The DerivedEventPlan shape is declared in encode.hpp; the label/kind
+// bookkeeping below mirrors native.py's _DERIVED_FIELDS handling.
+DerivedEventPlan parse_derived_body(const bio::Value &plan) {
+    const vread::Dict dict{
+        .value = &vread::mapping(vread::Node{&plan}, "derived plan"),
+        .path = "derived plan"};
+    vread::exact(dict, vread::keys("fields"));
+    DerivedEventPlan parsed;
     std::map<std::string, std::size_t> slots;
-    for (const nb::handle item : wire::sequence(
-             wire::field(dict, "fields"), dict.child("fields"))) {
-        const wire::Dict entry{
-            .value = wire::mapping(item, "derived plan.fields[]"),
+    for (const bio::Value &item : vread::sequence(
+             vread::field(dict, "fields"), dict.child("fields"))) {
+        const vread::Dict entry{
+            .value = &vread::mapping(vread::Node{&item},
+                                     "derived plan.fields[]"),
             .path = "derived plan.fields[]"};
-        wire::exact(entry, wire::keys("kind", "path"));
-        DerivedField field;
-        field.kind = wire::string(wire::field(entry, "kind"),
-                                  entry.child("kind"));
-        for (const nb::handle part : wire::sequence(
-                 wire::field(entry, "path"), entry.child("path")))
-            field.path.push_back(wire::string(part, entry.child("path")));
+        vread::exact(entry, vread::keys("kind", "path"));
+        DerivedEventPlan::Field field;
+        field.kind = vread::string(vread::field(entry, "kind"),
+                                   entry.child("kind"));
+        for (const bio::Value &part : vread::sequence(
+                 vread::field(entry, "path"), entry.child("path")))
+            field.path.push_back(
+                vread::string(vread::Node{&part}, entry.child("path")));
         if (field.path.empty())
             throw std::invalid_argument(
                 "derived plan.fields: empty path");
@@ -1709,11 +1650,11 @@ const Wire *tracked_find(const KindValues &values, std::string_view label) {
 
 // Resolve every tracked path on one retained row; present terminals fold
 // into their kind's label map. `current` is cleared, never reallocated.
-void resolve_derived(const DerivedPlan &plan,
+void resolve_derived(const DerivedEventPlan &plan,
                      const PhysicalSampleData &sample,
                      std::vector<KindValues> &current) {
     for (KindValues &values : current) values.clear();
-    for (const DerivedField &field : plan.fields) {
+    for (const DerivedEventPlan::Field &field : plan.fields) {
         bool complete = false;
         const Wire *value =
             walk_path(sample.channels, field.path, complete);
@@ -1724,85 +1665,15 @@ void resolve_derived(const DerivedPlan &plan,
     }
 }
 
-// The scalar/list payload vector, boxed as an owned numpy array (numeric),
-// an owned flag array (bool) or a Python string list (varchar/map keys).
-nb::object piece_payload(const Piece &piece) {
-    switch (piece.kind) {
-        case Piece::Kind::scalar_d:
-        case Piece::Kind::list_d:
-            return wire::owned_array<double>(piece.d).cast();
-        case Piece::Kind::scalar_i:
-        case Piece::Kind::list_i:
-            return wire::owned_array<std::int64_t>(piece.i).cast();
-        case Piece::Kind::scalar_b:
-            return wire::owned_flags(piece.b).cast();
-        case Piece::Kind::scalar_s:
-        case Piece::Kind::list_s:
-        case Piece::Kind::map: {
-            nb::list strings;
-            for (const std::string &text : piece.s)
-                strings.append(nb::str(text.c_str(), text.size()));
-            return strings;
-        }
-        case Piece::Kind::structure:
-            break;
-    }
-    throw std::invalid_argument(
-        "encode: structure pieces carry children, not flat data");
-}
-
-// NOLINTNEXTLINE(misc-no-recursion) children/items mirror the finite piece tree
-nb::dict to_python(const Piece &piece) {
-    nb::dict out;
-    switch (piece.kind) {
-        case Piece::Kind::scalar_d:
-        case Piece::Kind::scalar_i:
-        case Piece::Kind::scalar_b:
-        case Piece::Kind::scalar_s:
-            out["kind"] = nb::str("scalar");
-            out["data"] = piece_payload(piece);
-            break;
-        case Piece::Kind::list_d:
-        case Piece::Kind::list_i:
-        case Piece::Kind::list_s:
-            out["kind"] = nb::str("list");
-            out["data"] = piece_payload(piece);
-            out["offsets"] = wire::owned_array<std::int32_t>(piece.offsets);
-            break;
-        case Piece::Kind::structure: {
-            out["kind"] = nb::str("struct");
-            nb::dict children;
-            for (const auto &[name, child] : piece.children)
-                children[nb::str(name.c_str(), name.size())] =
-                    to_python(child);
-            out["children"] = children;
-            // 'struct[]' slots keep their own offsets; a plain 'struct'
-            // piece carries none, and Python tells them apart by the key.
-            if (!piece.offsets.empty())
-                out["offsets"] =
-                    wire::owned_array<std::int32_t>(piece.offsets);
-            break;
-        }
-        case Piece::Kind::map:
-            out["kind"] = nb::str("map");
-            out["keys"] = piece_payload(piece);
-            if (piece.items) out["items"] = to_python(*piece.items);
-            out["offsets"] = wire::owned_array<std::int32_t>(piece.offsets);
-            break;
-    }
-    // An empty validity mask means all-valid; Python sees None, matching
-    // the "no mask" convention pieces_to_arrow reads.
-    if (piece.valid.empty()) out["valid"] = nb::none();
-    else out["valid"] = wire::owned_flags(piece.valid).cast();
-    return out;
-}
-
 } // namespace
 
-std::pair<std::int64_t, nb::dict> encode_table(
-    const OwnedNativeEpisode &episode, nb::handle plan,
-    std::int64_t start, std::int64_t limit) {
-    const PlanView parsed = parse_plan(plan);
+DerivedEventPlan parse_derived_event_plan(const bio::Value &plan) {
+    return parse_derived_body(plan);
+}
+
+EncodedTable encode_table_native(const OwnedNativeEpisode &episode,
+                                 const EncodePlan &parsed,
+                                 std::int64_t start, std::int64_t limit) {
     // Same slice domain as sample_batch: the retained prefix admits
     // start == row_count as the empty suffix; limit must be positive.
     const auto size = static_cast<std::int64_t>(episode.samples.size());
@@ -1817,36 +1688,33 @@ std::pair<std::int64_t, nb::dict> encode_table(
             .subspan(static_cast<std::size_t>(start),
                      static_cast<std::size_t>(last - start));
 
-    std::map<std::string, Piece> emitted;
-    std::int64_t count = 0;
+    EncodedTable table;
     if (parsed.kind == "physics" && parsed.table == "physics") {
         check_columns(parsed, kPhysicsColumns);
         for (const std::string_view name : kPhysicsColumns)
-            emitted.emplace(name, emit_physics_column(rows, name));
-        count = static_cast<std::int64_t>(rows.size());
+            table.columns.emplace(name, emit_physics_column(rows, name));
+        table.rows = static_cast<std::int64_t>(rows.size());
     } else if (parsed.kind == "forces" && parsed.table == "forces") {
         check_columns(parsed, kForcesColumns);
         auto [row_count, pieces] = emit_forces(rows);
-        count = row_count;
-        emitted = std::move(pieces);
+        table.rows = row_count;
+        table.columns = std::move(pieces);
     } else if (parsed.kind == "channels") {
-        count = emit_channels(rows, parsed, emitted);
+        table.rows = emit_channels(rows, parsed, table.columns);
     } else {
         throw std::invalid_argument(
             "encode_table: unsupported plan kind '" + parsed.kind +
             "' for table '" + parsed.table + "'");
     }
-
-    const nb::dict pieces;
-    for (auto &[name, piece] : emitted)
-        pieces[nb::str(name.c_str(), name.size())] = to_python(piece);
-    return {count, pieces};
+    return table;
 }
 
-nb::list applied_command_rows(const OwnedNativeEpisode &episode,
-                              std::int64_t start, std::int64_t limit) {
-    // Same slice domain as encode_table: the retained prefix admits
-    // start == row_count as the empty suffix; limit must be positive.
+std::vector<AppliedCommandRow> applied_command_rows_native(
+    const OwnedNativeEpisode &episode, std::int64_t start,
+    std::int64_t limit) {
+    // Same slice domain as encode_table_native: the retained prefix
+    // admits start == row_count as the empty suffix; limit must be
+    // positive.
     const auto size = static_cast<std::int64_t>(episode.samples.size());
     if (start < 0 || start > size)
         throw std::invalid_argument(
@@ -1860,25 +1728,25 @@ nb::list applied_command_rows(const OwnedNativeEpisode &episode,
     // count — identical to the Python mirror's carried state.
     std::int64_t application_id = 0;
     AppliedTuple previous;
-    nb::list out;
+    std::vector<AppliedCommandRow> out;
     for (std::int64_t i = 0; i < last; ++i) {
         const PhysicalSampleData &sample = *episode.samples[
             static_cast<std::size_t>(i)];
         const AppliedTuple actual = applied_tuple(sample);
         if (previous.engaged && applied_equal(previous, actual)) continue;
         if (i >= start) {
-            static constexpr std::array<const char *, 3> kKeys{
-                "front_brake_demand", "rear_brake_demand",
-                "rollback_brake_demand"};
-            nb::dict row;
-            row["application_id"] = nb::int_(application_id);
-            row["time_s"] = nb::float_(sample.time_s);
-            row["step"] = nb::int_(sample.interval_id);
-            row["control"] = wire_to_python(*actual.control);
-            for (std::size_t k = 0; k < kKeys.size(); ++k)
-                if (actual.demands[k] != nullptr)
-                    row[kKeys[k]] = wire_to_python(*actual.demands[k]);
-            out.append(row);
+            AppliedCommandRow row;
+            row.application_id = application_id;
+            row.time_s = sample.time_s;
+            row.step = sample.interval_id;
+            row.control = *actual.control;
+            if (actual.demands[0] != nullptr)
+                row.front_brake_demand = *actual.demands[0];
+            if (actual.demands[1] != nullptr)
+                row.rear_brake_demand = *actual.demands[1];
+            if (actual.demands[2] != nullptr)
+                row.rollback_brake_demand = *actual.demands[2];
+            out.push_back(std::move(row));
         }
         previous = actual;
         ++application_id;
@@ -1886,12 +1754,11 @@ nb::list applied_command_rows(const OwnedNativeEpisode &episode,
     return out;
 }
 
-nb::list derived_event_rows(const OwnedNativeEpisode &episode,
-                            nb::handle plan, std::int64_t start,
-                            std::int64_t limit) {
-    const DerivedPlan parsed = parse_derived_plan(plan);
-    // Same slice domain as encode_table/applied_rows: the retained prefix
-    // admits start == row_count as the empty suffix; limit must be
+std::vector<DerivedEventRow> derived_event_rows_native(
+    const OwnedNativeEpisode &episode, const DerivedEventPlan &parsed,
+    std::int64_t start, std::int64_t limit) {
+    // Same slice domain as encode_table_native/applied_rows: the retained
+    // prefix admits start == row_count as the empty suffix; limit must be
     // positive.
     const auto size = static_cast<std::int64_t>(episode.samples.size());
     if (start < 0 || start > size)
@@ -1914,35 +1781,28 @@ nb::list derived_event_rows(const OwnedNativeEpisode &episode,
                         previous);
         have_previous = true;
     }
-    nb::list out;
+    std::vector<DerivedEventRow> out;
     for (std::int64_t i = start; i < last; ++i) {
         const PhysicalSampleData &sample =
             *episode.samples[static_cast<std::size_t>(i)];
         resolve_derived(parsed, sample, current);
         if (have_previous)
             for (std::size_t slot = 0; slot < parsed.kinds.size(); ++slot) {
-                nb::dict changes;
-                bool any = false;
+                DerivedEventRow row;
                 for (const auto &[label, value] : current[slot]) {
                     const Wire *before =
                         tracked_find(previous[slot], label);
                     // Python `prev != cur` — an absent previous label
                     // (_MISSING) or a wire difference both record the
-                    // change; boxing happens only for emitted values.
+                    // change.
                     if (before != nullptr && wire_equal(*before, *value))
                         continue;
-                    changes[nb::str(label.data(), label.size())] =
-                        wire_to_python(*value);
-                    any = true;
+                    row.changes.emplace_back(std::string(label), *value);
                 }
-                if (!any) continue;
-                nb::dict row;
-                row["interval_id"] = nb::int_(sample.interval_id);
-                row["kind"] = nb::str("derived_transition");
-                const std::string &kind = parsed.kinds[slot];
-                row["derived_kind"] = nb::str(kind.c_str(), kind.size());
-                row["changes"] = std::move(changes);
-                out.append(std::move(row));
+                if (row.changes.empty()) continue;
+                row.interval_id = sample.interval_id;
+                row.derived_kind = parsed.kinds[slot];
+                out.push_back(std::move(row));
             }
         std::swap(previous, current);
         have_previous = true;

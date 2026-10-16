@@ -140,6 +140,12 @@ set(_native_libcpp_hardening_mode "${BIKE_LIBCPP_HARDENING_EFFECTIVE}")
 # research_metrics,recording,research,research_io}.cpp are pure TUs — the
 # research adapter keeps only research_binding.cpp's nanobind parsing and
 # boxing here.
+# T11 moves the remaining encoder/provenance cores into the shared pure
+# set: runtime/encode.cpp (plan parse + per-kind emitters over retained
+# PhysicalSampleData) and runtime/provenance.cpp (RuntimeIdentity) are
+# pure TUs. The module keeps only encode_binding.cpp — the held-GIL
+# plan materializer, Piece/row boxing and bind_provenance registration —
+# plus samples_binding.cpp's object face.
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp
   src/drivetrain/policy_binding.cpp
@@ -150,9 +156,8 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/rider/rider_contact_binding.cpp
   src/rider/spindle_wire.cpp
   src/runtime/research_binding.cpp
-  src/runtime/provenance.cpp
+  src/runtime/encode_binding.cpp
   src/runtime/samples_binding.cpp
-  src/runtime/encode.cpp
   src/runtime/runtime_binding.cpp
   src/runtime/test_adapter.cpp)
 
@@ -233,6 +238,7 @@ add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/runtime/sensors.cpp src/runtime/programs.cpp
   src/runtime/research_metrics.cpp src/runtime/recording.cpp
   src/runtime/research.cpp src/runtime/research_io.cpp
+  src/runtime/encode.cpp src/runtime/provenance.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
   src/writers/tire_common.cpp src/writers/tire.cpp

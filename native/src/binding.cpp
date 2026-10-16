@@ -55,7 +55,7 @@
 #include "drivetrain/drive_binding.hpp"
 #include "runtime/runtime_binding.hpp"
 #include "runtime/research_binding.hpp"
-#include "runtime/provenance.hpp"
+#include "runtime/encode_binding.hpp"
 #include "runtime/test_adapter.hpp"
 #include "writers/cruise.hpp"
 #include "writers/resistance.hpp"

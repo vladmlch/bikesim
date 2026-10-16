@@ -529,6 +529,55 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T10>")
 endif()
 
+# T11 encoder/provenance separation regression: parse_encode_plan /
+# parse_derived_event_plan over staged bike::io::Value documents, the
+# encode_table_native/applied_command_rows_native/
+# derived_event_rows_native projectors over authored PhysicalSampleData
+# and runtime_identity() — the shared core object set plus the pinned
+# engine interceptor (mujoco resolves for runtime_identity) and
+# bike_rider_math for the core's state_codec link refs. No Python/nanobind
+# include enters this target in either graph: compiling test_t11.cpp
+# against runtime/encode.hpp + runtime/provenance.hpp is the
+# include-closure contract itself.
+add_executable(migration_T11 test_t11.cpp)
+set_target_properties(migration_T11 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T11 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T11 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T11 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T11 PRIVATE bike_migration_test
+  "-framework Accelerate")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T11)
+  target_include_directories(migration_T11 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(migration_T11 PRIVATE bike_core bike_engine
+    bike_rider_math)
+  bike_rewrite_mujoco_load_name(migration_T11
+    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+else()
+  target_include_directories(migration_T11 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
+  target_link_libraries(migration_T11 PRIVATE
+    bike_native_contract_core bike_native_engine bike_rider_math)
+  bike_rewrite_mujoco_load_name(migration_T11
+    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T11 COMMAND migration_T11)
+  set_tests_properties(migration_T11 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T11>")
+endif()
+
 # T19 seeded-random regression: SeedSequence entropy coercion/pool mixing/
 # spawn bookkeeping, the PCG64 raw/uniform/Ziggurat-normal streams incl.
 # the buffered next_uint32 lane, Lemire bounded integers and choice(),

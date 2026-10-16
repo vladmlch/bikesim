@@ -173,12 +173,37 @@ Separate native samples and column pieces from their Python boxers
 
 ```cpp
 namespace runtime {
-struct EncodedTable { std::int64_t rows; std::map<std::string, Piece> columns; };
+struct Piece { /* move-only; member_slots point into the piece's own
+  children map — pieces are moved or emplaced, never copied */ };
+struct EncodePlanColumn { /* recursive leaf/member schema */ };
+struct EncodePlanMask { /* presence/validity mask columns */ };
+struct EncodePlan { /* fixed-table metadata + channel routing indexes */ };
+struct DerivedEventPlan { /* tracked (kind, path) fields + kinds */ };
 EncodePlan parse_encode_plan(const bike::io::Value& plan);
+DerivedEventPlan parse_derived_event_plan(const bike::io::Value& plan);
+struct EncodedTable { std::int64_t rows; std::map<std::string, Piece> columns; };
 EncodedTable encode_table_native(const OwnedNativeEpisode& episode,
   const EncodePlan& plan, std::int64_t start, std::int64_t limit);
-}
-// Piece remains move-only; its member_slots must not alias another Piece's children.
+struct AppliedCommandRow { std::int64_t application_id; double time_s;
+  std::int64_t step; Wire control;
+  std::optional<Wire> front_brake_demand, rear_brake_demand,
+    rollback_brake_demand; };  // absent keys stay absent, not null
+struct DerivedEventRow { std::int64_t interval_id;
+  std::string derived_kind; WireObject changes; };
+std::vector<AppliedCommandRow> applied_command_rows_native(
+  const OwnedNativeEpisode& episode, std::int64_t start, std::int64_t limit);
+std::vector<DerivedEventRow> derived_event_rows_native(
+  const OwnedNativeEpisode& episode, const DerivedEventPlan& plan,
+  std::int64_t start, std::int64_t limit);
+struct RuntimeIdentity { std::string mujoco_version, mujoco_library_path,
+  native_source_sha256, build_context_json; };
+RuntimeIdentity runtime_identity();   // mj_versionString + dladdr +
+}                                     // compiled Track-B identity
+// Headers: runtime/encode.hpp + runtime/provenance.hpp (pure C++ —
+// parse/emit/identity read bike::io::Value and owned records only).
+// The nanobind plan materializer, Piece/row boxing and module
+// registration stay in runtime/encode_binding.{hpp,cpp} on the optional
+// extension; samples_binding.cpp delegates through encode_binding.hpp.
 ```
 
 ## T12

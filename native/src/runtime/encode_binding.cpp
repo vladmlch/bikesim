@@ -27,11 +27,16 @@
 //                      opaque-Bytes lane below, so the leaf readers keep
 //                      producing their own "expected X" diagnostics at
 //                      the same member paths)
-//   bytes/bytearray/other objects -> empty Bytes{}: it names no plan
-//                      lane, so every leaf reader rejects it with the
-//                      same "path: expected ..." the wire:: readers
-//                      produced — acceptance set identical, diagnostics
-//                      carried by the pure readers instead of the handle
+//   bytes              -> the Sequence lane: wire::sequence's own gate
+//                      rejects it ("expected ordered sequence") — the
+//                      same arm that rejected it before the split
+//   bytearray          -> the Sequence lane: materializes to an int
+//                      Array, exactly like wire::sequence's list arm
+//   other objects      -> opaque Bytes{}: it names no plan lane, so
+//                      every leaf reader rejects it with the same
+//                      "path: expected ..." the wire:: readers produced
+//                      — acceptance set identical, diagnostics carried
+//                      by the pure readers instead of the handle
 //                      materializer. Member paths inside a document keep
 //                      the document-root path (the value_from_python
 //                      convention) — only conversion-side errors (string

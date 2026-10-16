@@ -117,6 +117,15 @@ struct EncodePlanMask {
 // member after parse invalidates the compiled indexes, so parsed plans
 // are read-only artifacts for the emitters.
 struct EncodePlan {
+    // Move-only like Piece: path_nodes edges view this plan's own
+    // leaf_columns/roots strings and column_owned points into `deeper`,
+    // so a copy would leave the views aimed at the source.
+    EncodePlan() = default;
+    EncodePlan(const EncodePlan &) = delete;
+    EncodePlan &operator=(const EncodePlan &) = delete;
+    EncodePlan(EncodePlan &&) = default;
+    EncodePlan &operator=(EncodePlan &&) = default;
+
     std::string table;
     std::string kind;
     std::vector<std::string> columns;     // physics/forces fixed-list check

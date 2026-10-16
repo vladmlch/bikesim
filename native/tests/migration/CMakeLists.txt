@@ -414,6 +414,53 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T09>")
 endif()
 
+# T10 owned-research boundary regression: read_research_bootstrap /
+# decode_* (research_io.cpp) and NativeResearchRuntime (research.cpp) —
+# the shared core object set (bike_core / bike_native_contract_core)
+# plus the pinned engine interceptor and bike_rider_math: the core's
+# rider/state_codec.o spindle:: validator refs need the single-compile
+# library at final link. No Python/nanobind include enters this target
+# in either graph: compiling test_t10.cpp against runtime/research.hpp
+# + runtime/research_io.hpp is the include-closure contract itself.
+add_executable(migration_T10 test_t10.cpp)
+set_target_properties(migration_T10 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T10 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T10 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T10 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T10 PRIVATE bike_migration_test
+  "-framework Accelerate")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T10)
+  target_include_directories(migration_T10 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(migration_T10 PRIVATE bike_core bike_engine
+    bike_rider_math)
+  bike_rewrite_mujoco_load_name(migration_T10
+    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+else()
+  target_include_directories(migration_T10 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
+  target_link_libraries(migration_T10 PRIVATE
+    bike_native_contract_core bike_native_engine bike_rider_math)
+  bike_rewrite_mujoco_load_name(migration_T10
+    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T10 COMMAND migration_T10)
+  set_tests_properties(migration_T10 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T10>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

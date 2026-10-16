@@ -22848,5 +22848,36 @@
       "ordering fixes found in review, not tests: compose_bootstrap takes a decoded RuntimeConfig so the config envelope decodes before the artifact read like the old init-list position; advance/probe adapter lambdas check closed() before control decode; reset() lifts the reset-time flush warning into a pending slot that survives the accounting-owner swap"
     ],
     "note": "T09's produced boundary replaces src/bike_sim/native/runtime.py's internals while the module keeps its Python API — replacement_paths on that row list every produced file including value_readers.hpp. The staged-subdocument/runtime-surface decode positions precede the topology-bound rider_contacts decode per the task's ordinal contract (the monolithic decoder interleaved them; the staged Value form makes the split explicit). Python remains the oracle through T63."
+  },
+  "owned_research_bootstrap_contract": {
+    "task": "T10",
+    "ctest_name": "migration_T10",
+    "build_target": "migration_T10",
+    "kind": "native_contract_regression",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt (complete block after migration_T09; links bike_migration_test + bike_core + bike_engine + bike_rider_math, Accelerate on macOS, MuJoCo rpath rewrite; compiled with no nanobind/Python include path as the include-closure contract)",
+    "produced_apis": [
+      "runtime::ResearchBootstrap {ride, config, tape, startup} + read_research_bootstrap(directory) + make_research(bootstrap) — native/src/runtime/research_io.{hpp,cpp} + research.hpp; the owned-record twin of the binding's staged research construction",
+      "runtime::decode_research_config / decode_noise_tape / decode_sensor_state — research_io.cpp; vread-based decoders preserving the nanobind reader acceptance set and 'path: reason' diagnostics",
+      "NativeResearchRuntime::take_pending_warning — research.{hpp,cpp}; the pure warning seam mirroring NativeRideRuntime::take_pending_warning; the adapter drains it under the GIL with PyErr_WarnEx(PyExc_RuntimeWarning) in research_binding.cpp"
+    ],
+    "mandatory_cases": [
+      "read_research_bootstrap loads the delayed_bootstrap capture: research.json external $array payloads (noise tape, dropout tape, geometry vertices) resolve under the capture-root convention with dtype/shape/order/sha256 verification, and the ride bootstrap composes through T09 read_bootstrap",
+      "decoded fields pin the oracle's research configuration (capture_mode, control/delay/sensor/max steps, record_decimation, timestep, track length, start position, sensor latency/sample period, IMU enable, zero dropout probability) and the startup SensorState queue",
+      "make_research constructs a NativeResearchRuntime from owned records only; control windows, transitions, observations, and snapshot match the captured Python oracle transitions fixture within tolerance",
+      "the startup queue's raw observation keeps source-time time_s while SensorPipeline::read() restamps delivery time_s to the sample period boundary — the intentional timing difference is asserted, not flattened",
+      "close() seals the runtime and every subsequent operation fails fast with the same logic_error the binding produced; reset() replays the bootstrap",
+      "negative controls: nonexistent directory and malformed/truncated noise tape reject with the recorded diagnostics",
+      "no nanobind/Python declaration enters research.hpp's transitive include graph (the test target carries no such include path)"
+    ],
+    "evidence": [
+      "RED recorded: migration_T10 target absent until the CMake block landed; first compile surfaced -Wlarge-by-value-copy on vread::fixed<9> (fixed with a vread::vector row read + size check mirroring the binding's N=9 bound), an is_null ADL ambiguity, an int-float conversion warning, and a nodiscard misuse in the test (all fixed)",
+      "first ctest run failed one check — 'queued startup sample equals the oracle's first delivery' — because SensorPipeline::read() restamps time_s to 0.01 while the queued raw sample keeps source-time 0.0; the test now asserts the intentional delta by comparing a restamped copy",
+      "ctest --test-dir build/native-release -R '^migration_T10$' --output-on-failure: 1/1 passed (~1s; six check groups: 247 + 13 + 20 + 31 + 12 + 34 checks)",
+      "uv run cmake -S native -B native/build && cmake --build native/build --target bike_native: extension green in the legacy graph with research.cpp + research_io.cpp compiled inside bike_native_contract_core and research_binding.cpp inside the module",
+      "NATIVE_TEST_BUILD_PATH=$PWD/native/build BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest tests/reference/test_native_research_environment.py test_native_research_capture.py test_native_research_failures.py test_native_research_sensors.py test_native_research_policy.py test_native_research_programs.py -x -q: 69 passed — including RuntimeWarning parity through the new adapter drain seam",
+      "check_tidy findings fixed: bugprone-easily-swappable-parameters on decode_noise_tape (NOLINTNEXTLINE matching the codebase convention) and two bugprone-unchecked-optional-access sites in test_t10.cpp (switched to engaged(), the codebase's checked-unwrap helper)",
+      "gate note: tests/reference/test_native_check_tools.py's header-sweep cap bumped 240->360 — the sweep scales with first-party header count (112->113 headers, 792->799 probe TUs with research_io.hpp) and already ran ~241s at HEAD under gate load (MallocScribble on); measured 260s with T10 under a concurrent gate on the same machine"
+    ],
+    "note": "T10 owns no Python source rows itself; its produced boundaries are appended to the src/bike_sim/native/research.py row's replacement_paths (the module keeps its Python API through T63), matching the T08->T09 convention. The pure research boundary consumes only owned records and bike::io::Value; nanobind/Python stays in research_binding.cpp/.hpp. research.hpp no longer includes runtime_binding.hpp and research.cpp no longer calls emit_reference_warning — the pending-warning slot crosses the boundary as data."
   }
 }

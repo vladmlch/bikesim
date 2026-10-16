@@ -1,0 +1,127 @@
+{
+  "dropout_uniform": {
+    "$array": "research/delayed_bootstrap/research.arrays/a002.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "5276f23661d4fe7346d5c4ca01793fe7474930e71eb3e1121b76a24b5a5de56f",
+    "shape": [
+      21
+    ]
+  },
+  "noise": {
+    "$array": "research/delayed_bootstrap/research.arrays/a001.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "24009b47acd75d377edd4aec1fba6867933b9fd46ecae46570a260026903f7fa",
+    "shape": [
+      21,
+      9
+    ]
+  },
+  "research": {
+    "capture_mode": "legacy",
+    "control_steps": 8,
+    "delay_steps": 8,
+    "demand_program": null,
+    "geometry": {
+      "front_radius": 0.372,
+      "rear_radius": 0.352,
+      "root_pitch_dof": 2,
+      "root_pitch_qpos": 2,
+      "root_x_dof": 0,
+      "root_x_qpos": 0,
+      "vertices": {
+        "$array": "research/delayed_bootstrap/research.arrays/a000.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "d9326d33e13d7c2574a8995baa3408dd625ee378209e0de4f8397db1dbe16928",
+        "shape": [
+          24001,
+          2
+        ]
+      }
+    },
+    "max_steps": 80,
+    "maximum_energy_residual_ratio": 0.05,
+    "record_decimation": 80,
+    "rider_program": null,
+    "sensor_steps": 4,
+    "sensors": {
+      "acceleration_bias_mps2": {
+        "$tuple": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "acceleration_std_mps2": 0.05,
+      "dropout_probability": 0.0,
+      "encoder_std_rad_s": 0.01,
+      "gyro_bias_rad_s": 0.0,
+      "gyro_std_rad_s": 0.002,
+      "imu_enabled": true,
+      "latency_s": 0.01,
+      "maximum_age_s": 0.1,
+      "sample_period_s": 0.005,
+      "torque_std_nm": 0.05
+    },
+    "start_position_m": 2.010643980251582,
+    "startup_control": {
+      "crank_target_rate_rad_s": null,
+      "human_torque_nm": null,
+      "motor_limit_nm": null,
+      "motor_torque_nm": 0.0,
+      "posture": null,
+      "rider_enabled": true
+    },
+    "stop_on_model_violation": false,
+    "timestep_s": 0.00125,
+    "track_length_m": 112.0,
+    "wheelie_persistence_s": 0.02
+  },
+  "sensor_state": {
+    "cursor": 1,
+    "delivery_time": 0.0,
+    "last_time": 0.0,
+    "queue": [
+      {
+        "crank_rad_s": -0.0042743829311977476,
+        "front_wheel_rad_s": -0.0076608782387878075,
+        "human_torque_nm": 4.408854678645065,
+        "motor_torque_nm": -0.006464675719399796,
+        "pitch_rate_up_rad_s": -0.0020254286244773163,
+        "rear_wheel_rad_s": 0.00708975897188535,
+        "source_time_s": 0.0,
+        "specific_force_body_mps2": {
+          "$tuple": [
+            0.051655240085060325,
+            0.005121182798484943,
+            10.020831016099958
+          ]
+        },
+        "time_s": 0.0,
+        "valid": true
+      }
+    ],
+    "samples_attempted": 1,
+    "samples_dropped": 0,
+    "startup": {
+      "crank_rad_s": 0.0,
+      "front_wheel_rad_s": 0.0,
+      "human_torque_nm": 0.0,
+      "motor_torque_nm": 0.0,
+      "pitch_rate_up_rad_s": 0.0,
+      "rear_wheel_rad_s": 0.0,
+      "source_time_s": 0.0,
+      "specific_force_body_mps2": {
+        "$tuple": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "time_s": 0.0,
+      "valid": false
+    }
+  }
+}

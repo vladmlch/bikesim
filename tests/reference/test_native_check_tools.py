@@ -858,7 +858,10 @@ def run_controller_kind(kind: str, *, timeout: int = 180) -> subprocess.Complete
 
 
 def test_standalone_header_sweep_compiles_first_party_headers() -> None:
-    result = run_controller_kind("headers", timeout=240)
+    # The sweep cost scales with the first-party header count (~7 probe TUs
+    # each); the cap is hang detection, not a duration budget. The gate's
+    # MallocScribble environment already pushes a full sweep past 240s.
+    result = run_controller_kind("headers", timeout=360)
 
     assert result.returncode == 0, result.stdout + result.stderr
     summary = json.loads(

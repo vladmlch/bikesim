@@ -1,13 +1,17 @@
 // Owns one physical runtime and all physics-rate research state. No callbacks.
+// Pure C++ (task T10): the nanobind adapter in research_binding.cpp parses
+// and boxes; nothing here reaches Python. The owned bootstrap/composition
+// face lives in research_io.hpp.
 #pragma once
 #include <atomic>
 #include <cstdint>
 #include <deque>
 #include <memory>
+#include <optional>
 #include "programs.hpp"
 #include "recording.hpp"
 #include "research_metrics.hpp"
-#include "runtime_binding.hpp"
+#include "runtime.hpp"
 #include "sensors.hpp"
 
 namespace runtime {
@@ -118,7 +122,10 @@ public:
     void close();
     [[nodiscard]] bool closed() const noexcept { return closed_.load(std::memory_order_acquire); }
     void test_fail_at_step(std::int64_t step);
-    void emit_warning(); // held-GIL boundary only
+    // The pending non-strict reference rejection — the RuntimeWarning the
+    // adapter emits at the held-GIL boundary after advance_control. The
+    // pure layer holds it as state; emission is the adapter's.
+    [[nodiscard]] std::optional<std::string> take_pending_warning();
 private:
     void require_open() const;
     void consume_samples(bool stop_at_outcome = true);

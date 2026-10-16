@@ -268,10 +268,16 @@ namespace rider {
 
         // gufunc residual: abs2 over the solved tail rows [n, m) per
         // column, ascending — then the wrapper keeps it only for an
-        // overdetermined full-rank solve. numpy's binary was compiled
-        // with FP contraction enabled, so its `res += el*el` lowers to
-        // fmadd — a single rounding. std::fma pins that same semantics
-        // even under this port's -ffp-contract=off.
+        // overdetermined full-rank solve. The wheel lowers this
+        // umath_linalg.cpp abs2 loop's `res += el*el` to fmadd — a
+        // single rounding — on BOTH qualified wheels (contraction is a
+        // per-TU wheel-build property: compiled_base.c's np.interp is
+        // contracted on macOS but separate on Linux, while this loop is
+        // fused on both; verified bitwise on 3000 residual-bearing
+        // solves per Linux lane). std::fma pins that same semantics
+        // even under this port's -ffp-contract=off — do NOT route it
+        // through BIKE_NUMPY_INTERP_CONTRACTED, which qualifies a
+        // different TU's lowering.
         if (rank == n && m > n) {
             result.residuals.assign(ek, 0.);
             for (std::size_t j = 0; j < ek; ++j) {

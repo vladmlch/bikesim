@@ -28,7 +28,7 @@ Dependency document, ``schema_version=1``::
       "numerics":  {backend, numpy_version, numpy_package, site_packages,
                     blas_integer_bits, lapack_integer_bits, symbols,
                     numpy_imports, library_paths, threading,
-                    provider_config}
+                    provider_config, interp}
     }
 
 Every filesystem path is absolute and exists; ``mujoco.library_path`` resolves
@@ -43,7 +43,15 @@ corruption, so qualification separates metadata validation
 unsafe symbol invocation: foreign names are regex- and export-table-checked
 before they are ever declared in generated C or looked up through ctypes, and
 the executable ABI check runs in a disposable subprocess whose death is a
-hard provider failure. Qualified profiles today:
+hard provider failure. The ``interp`` record is the wheel's measured
+``np.interp`` contraction contract (``contracted``/``separate``) — the
+port lowers its interpolation mirrors to the same form. The
+``multiply_broadcast`` record is the wheel's measured NaN-precedence
+contract for ``np.multiply(scalar, array)`` (``scalar``/``element``) —
+the broadcast kernel's fmul operand order differs per wheel build, so
+a dual-NaN lane resolves to different operands on the qualified
+wheels.
+Qualified profiles today:
 
 - ``ACCELERATE`` (Darwin): the system framework loaded by NumPy — dyld-cache
   images carry ``identity_kind="apple-system"`` (null sha256, real
@@ -450,6 +458,72 @@ def validate_numerics(value: dict) -> dict:
         raise ValueError(
             "numerics.threading.num_threads must be a positive integer, "
             f"found {num_threads!r}"
+        )
+
+    interp = _require_object(value, "interp")
+    lowering = _require_string(
+        interp, "lowering", "numerics.interp.lowering"
+    )
+    if lowering not in ("contracted", "separate"):
+        raise ValueError(
+            f"numerics.interp.lowering must be 'contracted' or "
+            f"'separate', found {lowering!r} — the probe classifies the "
+            "wheel's np.interp multiply/add contraction and nothing else "
+            "is qualified"
+        )
+    queries = interp.get("queries")
+    distinguishing = interp.get("distinguishing")
+    for label, counter in (("queries", queries),
+                           ("distinguishing", distinguishing)):
+        if (
+            not isinstance(counter, int)
+            or isinstance(counter, bool)
+            or counter < 1
+        ):
+            raise ValueError(
+                f"numerics.interp.{label} must be a positive integer, "
+                f"found {counter!r}"
+            )
+    if distinguishing > queries or distinguishing < 8:
+        raise ValueError(
+            f"numerics.interp evidence is inconsistent: "
+            f"distinguishing={distinguishing} queries={queries} — the "
+            "lowering claim needs at least 8 distinguishing votes and "
+            "cannot outnumber the queries cast"
+        )
+
+    multiply_broadcast = _require_object(value, "multiply_broadcast")
+    nan_winner = _require_string(
+        multiply_broadcast,
+        "nan_winner",
+        "numerics.multiply_broadcast.nan_winner",
+    )
+    if nan_winner not in ("scalar", "element"):
+        raise ValueError(
+            "numerics.multiply_broadcast.nan_winner must be 'scalar' "
+            f"or 'element', found {nan_winner!r} — the probe classifies "
+            "which operand's NaN wins a dual-NaN lane of "
+            "multiply(scalar, array) and nothing else is qualified"
+        )
+    lanes = multiply_broadcast.get("lanes")
+    mb_distinguishing = multiply_broadcast.get("distinguishing")
+    for label, counter in (("lanes", lanes),
+                           ("distinguishing", mb_distinguishing)):
+        if (
+            not isinstance(counter, int)
+            or isinstance(counter, bool)
+            or counter < 1
+        ):
+            raise ValueError(
+                f"numerics.multiply_broadcast.{label} must be a "
+                f"positive integer, found {counter!r}"
+            )
+    if mb_distinguishing > lanes or mb_distinguishing < 8:
+        raise ValueError(
+            "numerics.multiply_broadcast evidence is inconsistent: "
+            f"distinguishing={mb_distinguishing} lanes={lanes} — the "
+            "NaN-precedence claim needs at least 8 distinguishing "
+            "lanes and cannot outnumber the lanes cast"
         )
 
     config = _require_object(value, "provider_config")
@@ -1139,6 +1213,137 @@ def _exercise_numpy(np):
     )
 
 
+def _measure_np_interp_lowering(np) -> dict:
+    """Classify how this wheel lowers np.interp's interior expression.
+
+    ``compiled_base.c`` computes ``slope*(x - dx[j]) + dy[j]`` once per
+    wheel build; whether the multiply and the add round separately or
+    contract into a single fmadd is a property of the wheel's compiler
+    flags, not of this machine — the only trustworthy value is a
+    measurement of the installed ``np.interp`` itself. Deterministic
+    inputs only: every query that distinguishes the two candidate
+    lowerings must vote unanimously, and too few distinguishing queries
+    is a probe failure, never a guess.
+    """
+    import math
+
+    # Strictly increasing knots; queries strictly interior so the C
+    # binary_search always lands on the slope branch — never the knot,
+    # clamp, or NaN-query shortcuts. Bitwise comparison classifies every
+    # query: +0.0/-0.0 counts as distinguishing.
+    knots = np.asarray([0.25, 0.375, 0.5, 0.625, 0.75])
+    values = np.asarray(
+        [0.37500000000000006, -0.12500000000000025, 0.6875000000000001,
+         -0.4374999999999998, 0.24999999999999983]
+    )
+    rng = np.random.default_rng(0x1EE7C0DE)
+    queries = rng.uniform(0.2501, 0.7499, 4096)
+    expected = np.interp(queries, knots, values)
+
+    fused = separate = distinguishing = 0
+    for x, want in zip(queries.tolist(), expected.tolist()):
+        j = int(np.searchsorted(knots, x, side="right")) - 1
+        if not 0 <= j < knots.size - 1 or knots[j] == x:
+            continue
+        slope = (values[j + 1] - values[j]) / (knots[j + 1] - knots[j])
+        f = math.fma(slope, x - knots[j], values[j])
+        s = slope * (x - knots[j]) + values[j]
+        f_bits = np.float64(f).view(np.uint64).item()
+        s_bits = np.float64(s).view(np.uint64).item()
+        if f_bits == s_bits or want != want:
+            continue
+        distinguishing += 1
+        want_bits = np.float64(want).view(np.uint64).item()
+        if want_bits == f_bits:
+            fused += 1
+        elif want_bits == s_bits:
+            separate += 1
+        else:
+            raise ValueError(
+                "np.interp produced a result matching neither the "
+                f"contracted nor the separate lowering: x={x!r} "
+                f"want={want!r} fma={f!r} separate={s!r} — this wheel's "
+                "arr_interp is not either candidate expression"
+            )
+    if distinguishing < 8:
+        raise ValueError(
+            f"np.interp lowering probe produced only {distinguishing} "
+            "distinguishing queries — cannot classify the wheel's "
+            "contraction contract from this little evidence"
+        )
+    if fused == distinguishing:
+        lowering = "contracted"
+    elif separate == distinguishing:
+        lowering = "separate"
+    else:
+        raise ValueError(
+            f"np.interp lowering is inconsistent: {fused} queries "
+            f"contracted vs {separate} separate over {distinguishing} "
+            "distinguishing cases — the wheel mixes both forms"
+        )
+    return {
+        "lowering": lowering,
+        "queries": len(queries),
+        "distinguishing": distinguishing,
+    }
+
+
+def _measure_np_multiply_broadcast_nan(np) -> dict:
+    """Classify which operand wins a dual-NaN lane of multiply(scalar, array).
+
+    ``a * b`` on AArch64 propagates operand 0's NaN (quieted) when both
+    operands carry NaN payloads, and which source operand the ufunc's
+    broadcast kernel loads into fmul operand 0 is a property of the
+    wheel's compiled inner loop, not of this machine: the AppleClang
+    wheel keeps the scalar first while the manylinux wheel's broadcast
+    loop puts the contiguous array there. The only trustworthy verdict
+    is a measurement of the installed ``np.multiply`` — the scalar's
+    NaN wins (``scalar``) or the element's does (``element``); anything
+    else is a probe failure, never a guess.
+    """
+    pos = float("nan")   # +qNaN, 0x7ff8000000000000
+    neg = -float("nan")  # -qNaN, 0xfff8000000000000
+    lane_count = 64
+    arr = np.full(lane_count, neg)
+
+    # Both spellings of the oracle expression must agree: the ufunc
+    # call and the Python `float * ndarray` sugar (which dispatches
+    # through ndarray.__rmul__ to the same multiply).
+    direct = np.multiply(pos, arr).view(np.uint64)
+    sugar = (pos * arr).view(np.uint64)
+    if not (direct == sugar).all():
+        raise ValueError(
+            "np.multiply and `float * ndarray` disagree on the same "
+            "dual-NaN broadcast — the wheel's kernels are inconsistent"
+        )
+    scalar_bits = np.float64(pos).view(np.uint64).item()
+    element_bits = np.float64(neg).view(np.uint64).item()
+    scalar_votes = int((direct == scalar_bits).sum())
+    element_votes = int((direct == element_bits).sum())
+    if scalar_votes + element_votes != lane_count:
+        raise ValueError(
+            "multiply broadcast produced lanes matching neither "
+            f"operand's NaN: {scalar_votes} scalar, {element_votes} "
+            f"element out of {lane_count} — the kernel is not either "
+            "candidate operand order"
+        )
+    if scalar_votes == lane_count:
+        winner = "scalar"
+    elif element_votes == lane_count:
+        winner = "element"
+    else:
+        raise ValueError(
+            f"multiply broadcast NaN precedence is inconsistent: "
+            f"{scalar_votes} lanes scalar-first vs {element_votes} "
+            "element-first — the kernel mixes both orders"
+        )
+    return {
+        "nan_winner": winner,
+        "lanes": lane_count,
+        "distinguishing": lane_count,
+    }
+
+
 def _blas_pool(threadpoolctl) -> list[dict]:
     return [
         entry
@@ -1696,6 +1901,14 @@ def discover_numpy_provider() -> dict:
         ]
     record["provider_config"]["interposition"] = _scipy_interposition_check(
         numpy, system, baseline, provider_paths
+    )
+    # The interpolation contraction contract and the broadcast-multiply
+    # NaN precedence are wheel-build properties independent of the BLAS
+    # provider — measure the installed np.interp/np.multiply on both
+    # backends rather than assuming a platform default.
+    record["interp"] = _measure_np_interp_lowering(numpy)
+    record["multiply_broadcast"] = _measure_np_multiply_broadcast_nan(
+        numpy
     )
     return validate_numerics(record)
 

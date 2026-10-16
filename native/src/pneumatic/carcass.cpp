@@ -15,6 +15,12 @@
 //   np.exp(scalar)                  -> std::exp (DOUBLE_exp lowers to
 //                                    npy_exp -> libm exp on aarch64;
 //                                    the SIMD path is AVX512-only)
+//   float * ndarray (broadcast mul) -> numeric::np_multiply_broadcast —
+//                                    dual-NaN lanes resolve to the
+//                                    wheel-measured fmul operand 0
+//                                    (BIKE_NUMPY_MUL_BROADCAST_ELEMENT_
+//                                    NAN); finite lanes are the plain
+//                                    product
 //   np.hypot(dx, dz)                -> std::hypot (npy_hypot -> libm
 //                                    hypot; NOT biketyre::py_hypot —
 //                                    that is CPython math.hypot's
@@ -192,8 +198,16 @@ namespace biketyre {
         advect_material_into(maxwell_force_n_, omega_radps, dt_s,
                              dtheta_rad, advect_scratch_);
         const double decay = std::exp(-dt_s / relaxation_s);
+        // `float * ndarray` lowers to np.multiply(decay, advected):
+        // the wheel's broadcast kernel picks its own fmul operand 0
+        // (array lane on manylinux, scalar on the AppleClang wheel), so
+        // a dual-NaN lane resolves differently per wheel — the NaN
+        // winner is projected through BIKE_NUMPY_MUL_BROADCAST_ELEMENT_
+        // NAN, measured by the dependency probe, inside
+        // numeric::np_multiply_broadcast.
         for (std::size_t i = 0; i < n_rays_; ++i)
-            maxwell_force_n_[i] = decay * advect_scratch_[i];
+            maxwell_force_n_[i] = numeric::np_multiply_broadcast(
+                    decay, advect_scratch_[i]);
     }
 
     void CarcassState::assign(const CarcassState &source) {

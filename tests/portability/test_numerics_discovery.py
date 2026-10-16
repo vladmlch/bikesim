@@ -97,6 +97,16 @@ def _openblas_record(tmp_path: Path) -> dict:
             }
         ],
         "threading": {"implementation": "pthreads", "num_threads": 8},
+        "interp": {
+            "lowering": "separate",
+            "queries": 4096,
+            "distinguishing": 1470,
+        },
+        "multiply_broadcast": {
+            "nan_winner": "element",
+            "lanes": 64,
+            "distinguishing": 64,
+        },
         "provider_config": {
             "openblas": {
                 "version": "0.3.34.0.0",
@@ -143,6 +153,16 @@ def _accelerate_record(tmp_path: Path) -> dict:
             },
         ],
         "threading": {"implementation": "accelerate", "num_threads": 4},
+        "interp": {
+            "lowering": "contracted",
+            "queries": 4096,
+            "distinguishing": 1511,
+        },
+        "multiply_broadcast": {
+            "nan_winner": "scalar",
+            "lanes": 64,
+            "distinguishing": 64,
+        },
         "provider_config": {
             "macos_build": "26A434",
             "sdk_build": "26A425",
@@ -320,11 +340,71 @@ def test_record_must_be_an_object():
 
 
 def test_missing_record_fields_are_named(tmp_path):
-    for key in ("numpy_version", "library_paths", "symbols", "threading"):
+    for key in ("numpy_version", "library_paths", "symbols", "threading",
+                "interp", "multiply_broadcast"):
         record = _openblas_record(tmp_path / key)
         record.pop(key)
         with pytest.raises(ValueError, match=key.split("_")[0]):
             validate_numerics(record)
+
+
+def test_interp_lowering_spellings(tmp_path):
+    """The record carries exactly two qualified lowerings — the probe
+    measured the wheel's np.interp contraction and only 'contracted' or
+    'separate' is a meaningful verdict."""
+    for lowering in ("contracted", "separate"):
+        record = _openblas_record(tmp_path / lowering)
+        record["interp"]["lowering"] = lowering
+        assert validate_numerics(record) is record
+    for lowering in ("fused", "fma", "", None, 1):
+        record = _openblas_record(tmp_path / str(lowering))
+        record["interp"]["lowering"] = lowering
+        with pytest.raises(ValueError, match="interp"):
+            validate_numerics(record)
+
+
+@pytest.mark.parametrize(
+    "queries,distinguishing",
+    [(4096, 0), (4096, 7), (0, 8), (None, 8), (8, None), (8, True),
+     (64, 4096)],
+)
+def test_interp_evidence_counts_are_checked(tmp_path, queries,
+                                            distinguishing):
+    record = _openblas_record(tmp_path)
+    record["interp"]["queries"] = queries
+    record["interp"]["distinguishing"] = distinguishing
+    with pytest.raises(ValueError, match="interp"):
+        validate_numerics(record)
+
+
+def test_multiply_broadcast_nan_winner_spellings(tmp_path):
+    """The broadcast-multiply record carries exactly two qualified
+    NaN winners — the probe measured which operand the wheel's kernel
+    puts in fmul operand 0 and only 'scalar' or 'element' is a
+    meaningful verdict."""
+    for winner in ("scalar", "element"):
+        record = _openblas_record(tmp_path / winner)
+        record["multiply_broadcast"]["nan_winner"] = winner
+        assert validate_numerics(record) is record
+    for winner in ("first", "operand0", "", None, 1):
+        record = _openblas_record(tmp_path / str(winner))
+        record["multiply_broadcast"]["nan_winner"] = winner
+        with pytest.raises(ValueError, match="multiply_broadcast"):
+            validate_numerics(record)
+
+
+@pytest.mark.parametrize(
+    "lanes,distinguishing",
+    [(64, 0), (64, 7), (0, 8), (None, 8), (8, None), (8, True),
+     (8, 64)],
+)
+def test_multiply_broadcast_evidence_counts_are_checked(
+        tmp_path, lanes, distinguishing):
+    record = _openblas_record(tmp_path)
+    record["multiply_broadcast"]["lanes"] = lanes
+    record["multiply_broadcast"]["distinguishing"] = distinguishing
+    with pytest.raises(ValueError, match="multiply_broadcast"):
+        validate_numerics(record)
 
 
 def test_duplicate_providers_are_rejected(tmp_path):

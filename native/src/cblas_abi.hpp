@@ -8,9 +8,17 @@
 // the typed wrappers declared below; probes verified each call
 // reproduces the numpy expression bitwise (2000 trials each —
 // writers/resistance.cpp keeps the mapping table):
-//   a @ b            == cblas_ddot(n, a, 1, b, 1)
+//   a @ b            == 0. + cblas_ddot(n, a, 1, b, 1)
 //   A(3,nv) @ x      == cblas_dgemv(RowMajor, NoTrans, 3, nv, 1, A, nv, ...)
 //   A.T @ x (F-view) == cblas_dgemv(RowMajor, Trans,    3, nv, 1, A, nv, ...)
+//
+// The literal `0. +` on ddot is part of the oracle: numpy's @name@_dot
+// kernel seeds `double sum = 0.` and accumulates the cblas result into
+// it, so `a @ b` yields +0.0 where the bare provider fold yields -0.0
+// (and quiets a signaling NaN). blas::ddot returns the seeded value —
+// it mirrors numpy's dot kernel, not the raw cblas symbol; every
+// production call site ports a numpy dot expression, so the seed lives
+// in this one wrapper rather than at ~30 call sites.
 //
 // Why no foreign declarations here: the CBLAS integer width is
 // platform-private. macOS links Accelerate's legacy 32-bit cblas_*;

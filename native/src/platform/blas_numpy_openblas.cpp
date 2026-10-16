@@ -102,9 +102,17 @@ namespace blas {
 
     double ddot(int n, const double *x, int incx,
                 const double *y, int incy) noexcept {
-        return backend_ddot(static_cast<blas_int>(n), x,
-                            static_cast<blas_int>(incx), y,
-                            static_cast<blas_int>(incy));
+        // numpy's 1-D dot kernel (arraytypes.c.src @name@_dot) does not
+        // return the raw cblas result — it seeds `double sum = 0.` and
+        // accumulates `sum += cblas_ddot(chunk)`. For every n below
+        // NPY_CBLAS_CHUNK that is exactly `0. + cblas_ddot(n, ...)`.
+        // The literal addend is NOT cosmetic: it canonicalizes a -0.0
+        // fold to +0.0 (and quiets a signaling NaN payload) the same
+        // way the oracle does, so the wrapper below reproduces
+        // `a @ b` bitwise where the bare provider call would not.
+        return 0. + backend_ddot(static_cast<blas_int>(n), x,
+                                 static_cast<blas_int>(incx), y,
+                                 static_cast<blas_int>(incy));
     }
 
     void dgemv(Order order, Transpose trans, int m, int n,

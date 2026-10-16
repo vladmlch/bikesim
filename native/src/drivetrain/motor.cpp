@@ -1,5 +1,6 @@
 #include "motor.hpp"
 
+#include "../numeric_numpy.hpp"
 #include "../writers/pyfloat.hpp"
 #include <algorithm>
 #include <cmath>
@@ -17,14 +18,11 @@ namespace drivetrain {
             if ((*right)[0] == x) return (*right)[1];
             const auto &left = *(right - 1);
             const double slope = ((*right)[1] - left[1]) / ((*right)[0] - left[0]);
-            // This NumPy wheel contracts interpolation multiply/add on arm64.
-            double result = std::fma(slope, x - left[0], left[1]);
-            // NumPy interp retries from the right endpoint after overflow cancellation.
-            if (std::isnan(result)) {
-                result = std::fma(slope, x - (*right)[0], (*right)[1]);
-                if (std::isnan(result) && left[1] == (*right)[1]) result = left[1];
-            }
-            return result;
+            // np.interp's interior eval + right-endpoint retry under the
+            // wheel's measured lowering (BIKE_NUMPY_INTERP_CONTRACTED —
+            // contracted on the macOS wheel, separate on Linux).
+            return numeric::np_interp_segment(slope, x, left[0], left[1],
+                                              (*right)[0], (*right)[1]);
         }
     }
 

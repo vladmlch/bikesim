@@ -138,6 +138,134 @@ def _sum_cases(np):
     return cases
 
 
+def _interp_cases(np):
+    """(label, xs, ys, queries) — general-table np.interp probes.
+
+    Strictly increasing float64 knot tables at production sizes plus
+    constant/non-finite fp lanes; queries cover the interior
+    slope*(x-xp)+fp lowering, exact knots, out-of-range endpoints and
+    the +-inf clamps. NaN queries are out of contract (np.interp returns
+    early; the port documents the same boundary upstream), so they are
+    not part of the corpus.
+    """
+    rng = np.random.default_rng(SEED ^ 0x5EED)
+    cases = []
+    for n in (2, 3, 5, 9, 17):
+        xs = np.cumsum(np.abs(rng.standard_normal(n)) + 0.25)
+        ys = rng.standard_normal(n)
+        interior = rng.uniform(xs[0], xs[-1], 96)
+        span = xs[-1] - xs[0]
+        queries = np.concatenate(
+            [interior, xs,
+             np.asarray([xs[0], xs[-1],
+                         xs[0] - 0.125 * span,
+                         xs[-1] + 0.125 * span,
+                         np.inf, -np.inf])])
+        cases.append((f"n{n}-random", xs, ys, queries))
+    xs4 = np.asarray([0.25, 0.5, 0.75, 1.0])
+    cases.append(("n4-constant", xs4, np.full(4, 3.5),
+                  np.linspace(0.0, 1.25, 21)))
+    cases.append(("n4-inf-y", xs4,
+                  np.asarray([np.inf, -np.inf, 1.0, -1.0]),
+                  np.linspace(0.3, 0.95, 17)))
+    cases.append(("n3-nan-y",
+                  np.asarray([0.25, 0.5, 0.75]),
+                  np.asarray([np.nan, -1.0, 1.0]),
+                  np.linspace(0.2, 0.8, 13)))
+    return cases
+
+
+def _blas_cases(np):
+    """(operation, label, a, b, expected) — platform-BLAS lowering.
+
+    `_debug_platform_blas` accepts only tightly C- or F-contiguous
+    float64 operands; F operands exercise the row-major Trans entry —
+    the same call shape the writers' `A.T @ x` / `A @ B.T` emit.
+    """
+    rng = np.random.default_rng(SEED ^ 0xB1A5)
+    pool = np.asarray(ADVERSARIAL_POOL_UINT64, dtype=np.uint64).view(
+        np.float64)
+    cases = []
+    for n in (0, 1, 2, 3, 5, 16):
+        a = rng.standard_normal(n)
+        b = np.resize(pool, n).copy() if n == 3 else (
+            rng.standard_normal(n))
+        # The oracle is `a @ b` — the matmul ufunc's DOUBLE_dot path
+        # (cblas_ddot). np.dot's 1-D@1-D lowering is a DIFFERENT kernel
+        # (PyArray_InnerProduct's sequential loop) and must not stand in
+        # for it — they legitimately differ (e.g. -0.0 vs +0.0).
+        cases.append(("dot", f"n{n}", a, b, a @ b))
+    for m, n in ((3, 3), (4, 2), (2, 5), (7, 7)):
+        a = rng.standard_normal((m, n))
+        v = rng.standard_normal(n)
+        cases.append(("matvec", f"c{m}x{n}", a, v, a @ v))
+        # The oracle must run on the SAME F-order operand: numpy picks a
+        # different cblas entry for F input and the result legitimately
+        # differs bitwise from the C-order evaluation.
+        af = np.asfortranarray(a)
+        cases.append(("matvec", f"f{m}x{n}", af, v, af @ v))
+    for m, k, n in ((3, 3, 3), (2, 3, 4), (5, 5, 5)):
+        a = rng.standard_normal((m, k))
+        b = rng.standard_normal((k, n))
+        cases.append(("matmul", f"cc{m}x{k}x{n}", a, b, a @ b))
+        af = np.asfortranarray(a)
+        bf = np.asfortranarray(b)
+        cases.append(("matmul", f"fc{m}x{k}x{n}", af, b, af @ b))
+        cases.append(("matmul", f"cf{m}x{k}x{n}", a, bf, a @ bf))
+        cases.append(("matmul", f"ff{m}x{k}x{n}", af, bf, af @ bf))
+    return cases
+
+
+def _rider_linalg_cases(np):
+    """(operation, label, a, b, expected) — spindle-controller mirrors.
+
+    The operations name the production helpers in
+    rider/spindle_linalg.hpp; `expected` is the literal NumPy
+    expression each one ports.
+    """
+    rng = np.random.default_rng(SEED ^ 0x11DE)
+    pool = np.asarray(ADVERSARIAL_POOL_UINT64, dtype=np.uint64).view(
+        np.float64)
+    cases = []
+    ops3 = (("matvec", lambda a, b: a @ b),
+            ("mat_t_vec", lambda a, b: a.T @ b),
+            ("mat_t_vec_xz", lambda a, b: (a.T @ b)[[0, 2]]),
+            ("matmul", lambda a, b: a @ b),
+            ("mat_t_mul", lambda a, b: a.T @ b))
+    for round_ in range(4):
+        a = rng.standard_normal((3, 3))
+        v = rng.standard_normal(3)
+        b = rng.standard_normal((3, 3))
+        for operation, oracle in ops3:
+            operand = b if operation in ("matmul", "mat_t_mul") else v
+            cases.append((operation, f"r{round_}", a, operand,
+                          oracle(a, operand)))
+    a3 = np.resize(pool, 9).reshape(3, 3).copy()
+    v3 = np.resize(pool[::-1], 3).copy()
+    b3 = np.resize(pool[::-1], 9).reshape(3, 3).copy()
+    for operation, oracle in ops3:
+        operand = b3 if operation in ("matmul", "mat_t_mul") else v3
+        cases.append((operation, "adversarial", a3, operand,
+                      oracle(a3, operand)))
+    for round_ in range(4):
+        a = rng.standard_normal((2, 2))
+        v = rng.standard_normal(2)
+        cases.append(("matvec2", f"r{round_}", a, v, a @ v))
+        cases.append(("mat_t_vec2", f"r{round_}", a, v, a.T @ v))
+    a2 = np.resize(pool, 4).reshape(2, 2).copy()
+    v2 = np.resize(pool[::-1], 2).copy()
+    cases.append(("matvec2", "adversarial", a2, v2, a2 @ v2))
+    cases.append(("mat_t_vec2", "adversarial", a2, v2, a2.T @ v2))
+    for n in (1, 2, 3, 5):
+        v = rng.standard_normal(n)
+        cases.append(("norm", f"n{n}", v, np.zeros(0),
+                      np.linalg.norm(v)))
+    cases.append(("norm", "adversarial",
+                  np.resize(pool, 5).copy(), np.zeros(0),
+                  np.linalg.norm(np.resize(pool, 5))))
+    return cases
+
+
 # --------------------------------------------------------------------
 # Environment record — interpreter / provider / CPU, verbatim
 # --------------------------------------------------------------------
@@ -264,6 +392,19 @@ def _operations(np, module):
          lambda xs, ys: contract("maximum", xs, ys),
          lambda xs, ys: np.maximum(xs, ys),
          "pairs"),
+        # np.multiply(float scalar, ndarray element) per lane — the
+        # wheel's broadcast-scalar kernel resolves a dual-NaN lane to
+        # whichever operand it loads into fmul operand 0 (scalar on the
+        # AppleClang wheel, array element on the manylinux wheel); an
+        # sNaN quiets and wins from either position. The oracle runs
+        # the real 64-lane broadcast per pair, never a Python-level
+        # multiply — only the ufunc exposes the kernel's operand order.
+        ("multiply_broadcast",
+         lambda xs, ys: contract("multiply_broadcast", xs, ys),
+         lambda xs, ys: np.array(
+             [np.multiply(float(x), np.full(64, y))[0]
+              for x, y in zip(xs, ys)]),
+         "pairs"),
         ("sin",
          lambda xs, ys: contract("sin", xs, ys),
          lambda xs, ys: np.sin(xs),
@@ -341,6 +482,82 @@ def run(build: Path) -> dict:
             actual = np.asarray(module._debug_numeric_contract(
                 "sum", np.ascontiguousarray(vector),
                 np.zeros(0, dtype=np.float64)))
+        except AttributeError as exc:
+            record["classification"] = "binding-missing"
+            record["error"] = str(exc)
+        except Exception as exc:  # noqa: BLE001
+            record["classification"] = "error"
+            record["error"] = repr(exc)
+        else:
+            record.update(compare_arrays(expected, actual))
+        records.append(record)
+
+    # np.interp — the general-table compiled_base.c np_interp mirror
+    # (biketyre::np_interp through _debug_interp). Interior queries hit
+    # the slope*(x-xp)+fp lowering; knot/endpoint/inf-y lanes cover the
+    # early-out, NaN retry and constant-segment fallback.
+    for label, xs, ys, queries in _interp_cases(np):
+        record = {"operation": "interp", "case": label,
+                  "input_uint64": [
+                      int(v) for v in np.concatenate(
+                          [xs.view(np.uint64), ys.view(np.uint64),
+                           queries.view(np.uint64)])]}
+        try:
+            with np.errstate(all="ignore"):
+                expected = np.interp(queries, xs, ys)
+            actual = np.asarray(
+                [module._debug_interp(float(q), xs, ys)
+                 for q in queries])
+        except AttributeError as exc:
+            record["classification"] = "binding-missing"
+            record["error"] = str(exc)
+        except Exception as exc:  # noqa: BLE001
+            record["classification"] = "error"
+            record["error"] = repr(exc)
+        else:
+            record.update(compare_arrays(expected, actual))
+        records.append(record)
+
+    # Platform BLAS lowering corpus — _debug_platform_blas drives the
+    # same blas::ddot/dgemv/dgemm wrappers the production writers call.
+    for operation, label, a, b, expected in _blas_cases(np):
+        record = {"operation": f"blas-{operation}", "case": label,
+                  "input_uint64": [
+                      int(v) for v in np.concatenate(
+                          [np.ascontiguousarray(a).view(
+                              np.uint64).ravel(),
+                           np.ascontiguousarray(b).view(
+                               np.uint64).ravel()])]}
+        try:
+            with np.errstate(all="ignore"):
+                expected = np.asarray(expected, dtype=np.float64)
+            actual = np.asarray(
+                module._debug_platform_blas(a, b, operation))
+        except AttributeError as exc:
+            record["classification"] = "binding-missing"
+            record["error"] = str(exc)
+        except Exception as exc:  # noqa: BLE001
+            record["classification"] = "error"
+            record["error"] = repr(exc)
+        else:
+            record.update(compare_arrays(expected, actual))
+        records.append(record)
+
+    # Rider spindle linear algebra — _debug_rider_linalg drives the
+    # same rider:: helpers spindle_controller.cpp calls.
+    for operation, label, a, b, expected in _rider_linalg_cases(np):
+        record = {"operation": f"rider-{operation}", "case": label,
+                  "input_uint64": [
+                      int(v) for v in np.concatenate(
+                          [np.ascontiguousarray(a).view(
+                              np.uint64).ravel(),
+                           np.ascontiguousarray(b).view(
+                               np.uint64).ravel()])]}
+        try:
+            with np.errstate(all="ignore"):
+                expected = np.asarray(expected, dtype=np.float64)
+            actual = np.asarray(
+                module._debug_rider_linalg(operation, a, b))
         except AttributeError as exc:
             record["classification"] = "binding-missing"
             record["error"] = str(exc)

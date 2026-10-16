@@ -53,6 +53,8 @@
 #include "rider/attachment_binding.hpp"
 #include "rider/contact_binding.hpp"
 #include "rider/rider_contact_binding.hpp"
+#include "rider/spindle_linalg.hpp"
+#include "tyre/profile.hpp"
 #include "drivetrain/policy_binding.hpp"
 #include "drivetrain/drive_binding.hpp"
 #include "runtime/runtime_binding.hpp"
@@ -1031,6 +1033,85 @@ namespace {
         wire::invalid("operation",
                       "expected 'dot', 'matvec' or 'matmul'");
     }
+
+    // --- _debug_rider_linalg ------------------------------------------
+    // Debug-only oracle surface for the spindle-controller linear
+    // algebra mirrors (rider/spindle_linalg.hpp) — every operation calls
+    // the SAME production helper the controller calls, on tightly
+    // C-contiguous float64 operands whose shapes pin the fixed sizes.
+    nb::object debug_rider_linalg(const std::string &operation,
+                                  nb::handle raw_a, nb::handle raw_b) {
+        const auto a = debug_blas_array(raw_a, "a");
+        const auto b = debug_blas_array(raw_b, "b");
+        const auto require_vec =
+                [](const nb::ndarray<const double> &v, std::size_t n,
+                   std::string_view path) {
+            if (v.ndim() != 1 || v.shape(0) != n ||
+                !debug_blas_row_contiguous(v))
+                wire::invalid(path, "expected a contiguous float64 "
+                                    "vector with the operation's size");
+        };
+        const auto require_mat =
+                [](const nb::ndarray<const double> &m, std::size_t n,
+                   std::string_view path) {
+            if (m.ndim() != 2 || m.shape(0) != n || m.shape(1) != n ||
+                !debug_blas_row_contiguous(m))
+                wire::invalid(path, "expected a contiguous C-order "
+                                    "float64 square matrix");
+        };
+        const auto owned = [](std::span<const double> values) {
+            return nb::cast(wire::owned_array<double>(values));
+        };
+        if (operation == "norm") {
+            if (a.ndim() != 1 || !debug_blas_row_contiguous(a))
+                wire::invalid("a",
+                              "norm requires a contiguous 1-D array");
+            return nb::float_(rider::np_norm(std::views::counted(
+                    a.data(), static_cast<std::ptrdiff_t>(a.shape(0)))));
+        }
+        if (operation == "matvec" || operation == "mat_t_vec" ||
+            operation == "mat_t_vec_xz") {
+            require_mat(a, 3, "a");
+            require_vec(b, 3, "b");
+            rider::Mat3 m{};
+            rider::Vec3 v{};
+            std::copy_n(a.data(), m.size(), m.begin());
+            std::copy_n(b.data(), v.size(), v.begin());
+            if (operation == "matvec")
+                return owned(rider::mat_vec(m, v));
+            if (operation == "mat_t_vec")
+                return owned(rider::mat_t_vec(m, v));
+            return owned(rider::mat_t_vec_xz(m, v));
+        }
+        if (operation == "matmul" || operation == "mat_t_mul") {
+            require_mat(a, 3, "a");
+            require_mat(b, 3, "b");
+            rider::Mat3 lhs{};
+            rider::Mat3 rhs{};
+            std::copy_n(a.data(), lhs.size(), lhs.begin());
+            std::copy_n(b.data(), rhs.size(), rhs.begin());
+            const rider::Mat3 out =
+                    operation == "matmul" ? rider::mat_mul(lhs, rhs)
+                                          : rider::mat_t_mul(lhs, rhs);
+            return nb::cast(debug_blas_owned_matrix(
+                    3, 3, {out.begin(), out.end()}));
+        }
+        if (operation == "matvec2" || operation == "mat_t_vec2") {
+            require_mat(a, 2, "a");
+            require_vec(b, 2, "b");
+            rider::Mat2 m{};
+            rider::Vec2 v{};
+            std::copy_n(a.data(), m.size(), m.begin());
+            std::copy_n(b.data(), v.size(), v.begin());
+            return owned(operation == "matvec2"
+                                 ? rider::mat_vec2(m, v)
+                                 : rider::mat_t_vec2(m, v));
+        }
+        wire::invalid("operation",
+                      "expected 'norm', 'matvec', 'mat_t_vec', "
+                      "'mat_t_vec_xz', 'matmul', 'mat_t_mul', "
+                      "'matvec2' or 'mat_t_vec2'");
+    }
 } // namespace
 
 // Binding glue builds 15-20KB frames of nanobind temporaries at import
@@ -1115,6 +1196,20 @@ NB_MODULE(bike_native, m) {
           "Debug test surface: platform BLAS adapter — 'dot' (1-D@1-D), "
           "'matvec' (2-D@1-D), 'matmul' (2-D@2-D) over C- or "
           "F-contiguous float64 operands, returning owning arrays.")
+    ;
+    // Debug-only oracle surface for the spindle-controller linear
+    // algebra mirrors — used by the portability probe/tests to compare
+    // rider::mat_vec/mat_t_vec/mat_mul/mat_t_mul/np_norm (and the
+    // lean_limit 2-D pair) bitwise against numpy's @ and
+    // np.linalg.norm. The hook invokes the SAME helpers the production
+    // code calls.
+    m.def("_debug_rider_linalg", &debug_rider_linalg,
+          nb::arg("operation"), nb::arg("a"), nb::arg("b"),
+          "Debug test surface: rider/spindle_linalg.hpp mirrors — "
+          "'norm' (1-D), 'matvec'/'mat_t_vec'/'mat_t_vec_xz' "
+          "((3,3)@(3,)), 'matmul'/'mat_t_mul' ((3,3)@(3,3)) and "
+          "'matvec2'/'mat_t_vec2' ((2,2)@(2,)) over contiguous "
+          "C-order float64 operands.")
     ;
     // Debug-only oracle surface for the SignedProfile port — used by
     // tests/reference/test_native_distributed_tire.py to compare
@@ -1447,11 +1542,18 @@ NB_MODULE(bike_native, m) {
         } else if (name == "maximum") {
             for (std::size_t i = 0; i < pairs; ++i)
                 out[i] = numeric::np_maximum(at(xs, i), at(ys, i));
+        } else if (name == "multiply_broadcast") {
+            // np.multiply(float scalar, array element) per lane — the
+            // wheel-measured operand-0 NaN precedence, exercised
+            // through the same helper carcass.cpp calls.
+            for (std::size_t i = 0; i < pairs; ++i)
+                out[i] = numeric::np_multiply_broadcast(at(xs, i),
+                                                      at(ys, i));
         } else {
             throw std::invalid_argument(
                     "_debug_numeric_contract: unknown op '" + name +
-                    "' (expected python_hypot, minimum, maximum, sum, "
-                    "sin or cos)");
+                    "' (expected python_hypot, minimum, maximum, "
+                    "multiply_broadcast, sum, sin or cos)");
         }
         return wire::owned_array<double>(out);
     }, nb::arg("name"), nb::arg("xs"), nb::arg("ys"),
@@ -1460,7 +1562,9 @@ NB_MODULE(bike_native, m) {
         "ported kernels use — python_hypot -> "
         "numeric::python_vector_norm (math.hypot oracle), minimum/"
         "maximum -> numeric::np_minimum/np_maximum (NEON fmin/fmax "
-        "semantics), sum -> numeric::numpy_sum (np.sum reduce "
+        "semantics), multiply_broadcast -> numeric::np_multiply_"
+        "broadcast (wheel-measured scalar-vs-element NaN operand-0 "
+        "precedence), sum -> numeric::numpy_sum (np.sum reduce "
         "identity + pairwise order), sin/cos -> numeric::np_sin/"
         "numeric::np_cos (unfused libm calls + the npy Apple "
         "workaround).")
@@ -1559,6 +1663,19 @@ NB_MODULE(bike_native, m) {
         "Debug test surface: np.interp(x, np.arange(n), values, "
         "left=lval, right=rval) for one query — covers the lenxp == 1 "
         "branch, NaN/+-inf queries and out-of-range sentinels.")
+    ;
+    m.def("_debug_interp",
+          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed probe signature
+          [](double x, nb::handle raw_xs, nb::handle raw_ys) {
+        const auto xs = debug_carcass_row64(raw_xs, "xs");
+        const auto ys = debug_carcass_row64(raw_ys, "ys");
+        return biketyre::np_interp(x, debug_carcass_span(xs),
+                                   debug_carcass_span(ys));
+    }, nb::arg("x"), nb::arg("xs"), nb::arg("ys"),
+        "Debug test surface: biketyre::np_interp — np.interp(x, xs, ys) "
+        "for one scalar query through the production general-table port "
+        "(default left/right endpoint clamp, NaN retry and "
+        "constant-segment fallback included).")
     ;
     bind_pneumatic_model_debug(m);
     stepper_class

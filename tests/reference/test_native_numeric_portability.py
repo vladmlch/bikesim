@@ -16,7 +16,10 @@ production helpers, never a second implementation):
   ``python_hypot`` (``numeric::python_vector_norm`` vs ``math.hypot`` —
   NOT ``np.hypot``), ``minimum``/``maximum``
   (``numeric::np_minimum``/``numeric::np_maximum`` vs the exact
-  production ``np.minimum``/``np.maximum`` call shapes), ``sum``
+  production ``np.minimum``/``np.maximum`` call shapes),
+  ``multiply_broadcast`` (``numeric::np_multiply_broadcast`` vs the
+  wheel's scalar-broadcast ``np.multiply`` — sNaN-either-side and
+  same-class operand-0 NaN precedence), ``sum``
   (``np.sum`` — the reduce identity folded over
   ``numeric::numpy_pairwise_sum`` order), ``sin``/``cos``
   (``numeric::np_sin``/``numeric::np_cos`` vs ``np.sin``/``np.cos`` —
@@ -286,6 +289,50 @@ def test_minmax_scalar_broadcast_shape(name):
     assert_bitwise_equal(got, expected, f"np.{name}(a, 0.0) broadcast")
 
 
+def _multiply_broadcast_oracle(pairs) -> np.ndarray:
+    """np.multiply(float scalar, ndarray element) per pair — run the
+    real 64-lane broadcast kernel per lane so the oracle exposes the
+    wheel's fmul operand order (scalar-first on the AppleClang wheel,
+    element-first on manylinux), never a Python-level product."""
+    return np.array(
+        [np.multiply(float(x), np.full(64, y))[0] for x, y in pairs],
+        dtype=np.float64)
+
+
+def test_multiply_broadcast_matches_scalar_ufunc():
+    """corpus lanes through numeric::np_multiply_broadcast vs the
+    installed wheel's scalar-broadcast multiply."""
+    xs = corpus(256)
+    ys = corpus(256, seed=SEED ^ 6)
+    pairs = np.stack([xs, ys], axis=1)
+    got = _contract("multiply_broadcast", xs, ys)
+    expected = _multiply_broadcast_oracle(pairs)
+    assert_bitwise_equal(got, expected, "np.multiply(scalar, arr)")
+
+
+def test_multiply_broadcast_nan_class_fixture():
+    """Every NaN-class combination in both operand positions: an sNaN
+    quiets and wins either side; a same-class tie resolves to the
+    wheel's measured operand 0."""
+    snan = np.uint64(0x7FF0000000000001).view(np.float64)
+    snan2 = np.uint64(0xFFF4000000000002).view(np.float64)
+    qnan = np.uint64(0x7FF8000000000000).view(np.float64)
+    qnan_neg = np.uint64(0xFFF8000000000000).view(np.float64)
+    pairs = np.array([
+        [qnan, qnan_neg], [qnan_neg, qnan],      # qNaN vs qNaN
+        [snan, qnan], [qnan, snan],              # sNaN vs qNaN
+        [snan, snan2], [snan2, snan],            # sNaN vs sNaN
+        [qnan, 1.0], [1.0, qnan],                # single NaN
+        [snan, 1.0], [1.0, snan],
+        [0.0, np.inf], [np.inf, 0.0],            # fresh invalid NaN
+        [-0.0, 1.0], [2.0, -3.0],
+    ])
+    got = _contract("multiply_broadcast",
+                    pairs[:, 0].copy(), pairs[:, 1].copy())
+    expected = _multiply_broadcast_oracle(pairs)
+    assert_bitwise_equal(got, expected, "multiply broadcast NaN classes")
+
+
 SUM_LENGTHS = [0, 1, 2, 3, 7, 8, 9, 15, 16, 17, 31, 32, 33,
                63, 64, 65, 127, 128, 129, 130, 131, 135, 136,
                255, 256, 257, 511, 512, 513]
@@ -370,3 +417,164 @@ def test_contract_rejects_unknown_name():
     with pytest.raises((ValueError, RuntimeError)):
         bike_native._debug_numeric_contract(
             "definitely_not_an_op", np.zeros(1), np.zeros(1))
+
+
+# --------------------------------------------------------------------
+# _debug_interp — biketyre::np_interp vs np.interp (general table)
+# --------------------------------------------------------------------
+# The oracle is the literal np.interp call: strictly increasing float64
+# knot tables, default left/right clamping, exact-knot hits, interior
+# queries (the slope*(x-xp)+fp lowering), the NaN retry and the
+# constant-segment fallback — including non-finite fp lanes.
+
+def _interp_tables() -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    rng = np.random.default_rng(SEED ^ 0x5EED)
+    tables = {}
+    for n in (2, 3, 5, 9, 17):
+        xs = np.cumsum(np.abs(rng.standard_normal(n)) + 0.25)
+        tables[f"n{n}-random"] = (xs, rng.standard_normal(n))
+    xs4 = np.asarray([0.25, 0.5, 0.75, 1.0])
+    tables["n4-constant"] = (xs4, np.full(4, 3.5))
+    # inf/-inf fp lanes push slope*(x-xp)+fp through the NaN retry.
+    tables["n4-inf-y"] = (
+        xs4, np.asarray([np.inf, -np.inf, 1.0, -1.0]))
+    tables["n3-nan-y"] = (
+        np.asarray([0.25, 0.5, 0.75]),
+        np.asarray([np.nan, -1.0, 1.0]))
+    return tables
+
+
+_INTERP_TABLES = _interp_tables()
+
+
+def _interp_queries(xs: np.ndarray) -> np.ndarray:
+    rng = np.random.default_rng(SEED ^ 0x1E7E)
+    span = xs[-1] - xs[0]
+    interior = rng.uniform(xs[0], xs[-1], 96)
+    edges = np.asarray([xs[0], xs[-1],
+                        xs[0] - 0.125 * span,
+                        xs[-1] + 0.125 * span,
+                        np.inf, -np.inf])
+    return np.concatenate([interior, xs, edges])
+
+
+@pytest.mark.parametrize("label", sorted(_INTERP_TABLES))
+def test_interp_matches_np_interp_general_table(label):
+    xs, ys = _INTERP_TABLES[label]
+    queries = _interp_queries(xs)
+    got = np.asarray(
+        [bike_native._debug_interp(float(q), xs, ys) for q in queries])
+    with np.errstate(all="ignore"):
+        expected = np.interp(queries, xs, ys)
+    assert_bitwise_equal(got, expected, f"np.interp {label}")
+
+
+def test_interp_rejects_mismatched_or_empty_tables():
+    with pytest.raises((ValueError, RuntimeError)):
+        bike_native._debug_interp(0.5, np.zeros(0), np.zeros(0))
+    with pytest.raises((ValueError, RuntimeError)):
+        bike_native._debug_interp(0.5, np.ones(3), np.ones(2))
+
+
+# --------------------------------------------------------------------
+# _debug_rider_linalg — spindle-controller mirrors vs numpy
+# --------------------------------------------------------------------
+# Every operation drives the SAME production helper the controller
+# calls (rider/spindle_linalg.hpp) on tightly C-order float64 operands;
+# the oracle is the literal NumPy expression the port mirrors
+# (a @ v / a.T @ v / a @ b / a.T @ b / np.linalg.norm).
+
+_RIDER_OPS_3D = {
+    "matvec": lambda a, b: a @ b,
+    "mat_t_vec": lambda a, b: a.T @ b,
+    "mat_t_vec_xz": lambda a, b: (a.T @ b)[[0, 2]],
+    "matmul": lambda a, b: a @ b,
+    "mat_t_mul": lambda a, b: a.T @ b,
+}
+_RIDER_OPS_2D = {
+    "matvec2": lambda a, b: a @ b,
+    "mat_t_vec2": lambda a, b: a.T @ b,
+}
+
+
+def _rider_operands(rng, n: int, second_is_matrix: bool,
+                    rounds: int) -> list:
+    cases = []
+    for _ in range(rounds):
+        cases.append((rng.standard_normal((n, n)),
+                      rng.standard_normal((n, n) if second_is_matrix
+                                          else n)))
+    # The checked-in adversarial pool supplies inf/NaN/subnormal lanes.
+    cases.append((np.resize(_bits(ADVERSARIAL_POOL_UINT64), n * n)
+                  .reshape(n, n).copy(),
+                  np.resize(_bits(ADVERSARIAL_POOL_UINT64)[::-1],
+                            n * n if second_is_matrix else n)
+                  .reshape((n, n) if second_is_matrix else n).copy()))
+    return cases
+
+
+@pytest.mark.parametrize("op_name", sorted(_RIDER_OPS_3D))
+def test_rider_linalg_3d_matches_numpy(op_name):
+    oracle = _RIDER_OPS_3D[op_name]
+    rng = np.random.default_rng(SEED ^ 0x2A3D)
+    is_matmul = op_name in ("matmul", "mat_t_mul")
+    for a, b in _rider_operands(rng, 3, is_matmul, 64):
+        got = np.asarray(bike_native._debug_rider_linalg(op_name, a, b))
+        with np.errstate(all="ignore"):
+            expected = oracle(a, b)
+        assert_bitwise_equal(got, np.asarray(expected),
+                             f"rider {op_name} 3-D")
+
+
+@pytest.mark.parametrize("op_name", sorted(_RIDER_OPS_2D))
+def test_rider_linalg_2d_matches_numpy(op_name):
+    oracle = _RIDER_OPS_2D[op_name]
+    rng = np.random.default_rng(SEED ^ 0x2A3E)
+    for a, b in _rider_operands(rng, 2, False, 64):
+        got = np.asarray(bike_native._debug_rider_linalg(op_name, a, b))
+        with np.errstate(all="ignore"):
+            expected = oracle(a, b)
+        assert_bitwise_equal(got, np.asarray(expected),
+                             f"rider {op_name} 2-D")
+
+
+@pytest.mark.parametrize("length", [1, 2, 3, 5, 8])
+def test_rider_linalg_norm_matches_np_linalg_norm(length):
+    """np.linalg.norm on a 1-D float64 vector — the sqrt(v.dot(v))
+    fold, not math.hypot's scaled algorithm."""
+    rng = np.random.default_rng(SEED ^ 0xA11F)
+    vectors = [rng.standard_normal(length) for _ in range(48)]
+    vectors.append(np.resize(_bits(ADVERSARIAL_POOL_UINT64), length))
+    for v in vectors:
+        v = np.ascontiguousarray(v, dtype=np.float64)
+        got = np.float64(
+            bike_native._debug_rider_linalg(
+                "norm", v, np.zeros(0)))
+        with np.errstate(all="ignore"):
+            expected = np.float64(np.linalg.norm(v))
+        assert_bitwise_equal(np.asarray(got), np.asarray(expected),
+                             f"np.linalg.norm len={length}")
+
+
+def test_rider_linalg_rejects_bad_inputs():
+    good3 = np.eye(3)
+    with pytest.raises((ValueError, RuntimeError)):
+        bike_native._debug_rider_linalg(
+            "bogus_op", good3, np.zeros(3))
+    with pytest.raises((ValueError, RuntimeError)):
+        bike_native._debug_rider_linalg(
+            "matvec", np.eye(2), np.zeros(3))
+    with pytest.raises((ValueError, RuntimeError)):
+        bike_native._debug_rider_linalg(
+            "matvec", good3, np.zeros(4))
+    # F-order and strided layouts are rejected — the production helpers
+    # only ever see packed C-order storage.
+    with pytest.raises((ValueError, RuntimeError)):
+        bike_native._debug_rider_linalg(
+            "matvec", np.asfortranarray(good3), np.zeros(3))
+    with pytest.raises((ValueError, RuntimeError)):
+        bike_native._debug_rider_linalg(
+            "matvec", good3, np.zeros(6)[::2])
+    with pytest.raises((ValueError, RuntimeError)):
+        bike_native._debug_rider_linalg(
+            "norm", np.zeros((2, 2)), np.zeros(0))

@@ -4,8 +4,10 @@
 #include "spindle_math.hpp"
 
 #include "../numeric_norm.hpp"
+#include "../numeric_numpy.hpp"
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
+#include "spindle_linalg.hpp"
 
 #include <numbers>
 
@@ -17,19 +19,18 @@ namespace spindle {
             validation::finite(v[1], name);
         }
 
-        // np.linalg.norm on a length-2 float64 vector is sqrt(x0*x0+x1*x1)
-        // evaluated as a plain multiply-add — not std::hypot's scaled
-        // algorithm, which can differ in the last ulp.
+        // np.linalg.norm on a float64 vector — the shared production
+        // 1-D mirror (sqrt(v.dot(v))), not std::hypot's scaled algorithm.
         [[nodiscard]] double norm2(Vec2 v) {
-            return std::sqrt(v[0] * v[0] + v[1] * v[1]);
+            return rider::np_norm(v);
         }
 
         // np.interp over a strictly increasing knot table: clamped at the
-        // ends, slope*(x-xp0)+fp0 inside. The multiply/add must stay a
-        // literal fma — this NumPy wheel contracts np_interp's
-        // slope*(x-dx[j])+dy[j] on arm64 (same compiled_base.c mirror as
-        // tyre/profile.cpp and drivetrain/motor.cpp), so a plain
-        // mul+add lands one ULP off on a fraction of interior queries.
+        // ends, slope*(x-xp0)+fp0 inside. The multiply/add follows the
+        // wheel's measured lowering — contracted on the macOS wheel,
+        // separate on the Linux wheel — through the shared
+        // numeric::np_interp_segment (same compiled_base.c mirror as
+        // tyre/profile.cpp and drivetrain/motor.cpp).
         [[nodiscard]] double interp(std::span<const double> xp,
                                     std::span<const double> fp, double x) {
             if (x <= xp[0])
@@ -42,15 +43,9 @@ namespace spindle {
                 ++hi;
             const double slope =
                 (fp[hi] - fp[hi - 1]) / (xp[hi] - xp[hi - 1]);
-            double result = std::fma(slope, x - xp[hi - 1], fp[hi - 1]);
-            // np_interp retries from the right endpoint after overflow
-            // cancellation, then falls back to a constant-segment value.
-            if (std::isnan(result)) {
-                result = std::fma(slope, x - xp[hi], fp[hi]);
-                if (std::isnan(result) && fp[hi - 1] == fp[hi])
-                    result = fp[hi - 1];
-            }
-            return result;
+            return numeric::np_interp_segment(slope, x, xp[hi - 1],
+                                              fp[hi - 1], xp[hi],
+                                              fp[hi]);
         }
     } // namespace
 

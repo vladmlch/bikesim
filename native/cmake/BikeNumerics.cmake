@@ -48,6 +48,12 @@
 #   _native_numerics_provider       provider path (Linux file or Darwin
 #                                   framework umbrella description)
 #   _native_numerics_symbols_header generated numerics_symbols.hpp path
+#   _native_numerics_interp_contracted  1 when the wheel contracts
+#                                   np.interp's slope*(x-dx)+dy into one
+#                                   fmadd, 0 when it rounds separately —
+#                                   projected as the directory-scope
+#                                   BIKE_NUMPY_INTERP_CONTRACTED compile
+#                                   definition
 
 if(NOT DEFINED BIKE_TARGET_SYSTEM)
   message(FATAL_ERROR
@@ -197,6 +203,69 @@ foreach(_op ddot dgemv dgemm dgelsd)
     endif()
   endif()
 endforeach()
+
+# --------------------------------------------------------------------------
+# np.interp lowering — compiled_base.c's interior expression
+# slope*(x - dx[j]) + dy[j] rounds the multiply and the add separately or
+# contracts them into one fmadd depending on how the *wheel* was
+# compiled, not on this compiler. The dependency probe measured the
+# installed np.interp (numerics.interp.lowering: "contracted" or
+# "separate"); the port must lower its interpolation mirrors the same
+# way. The define is projected at directory scope so every first-party
+# target — the extension, the shared contract core, the harnesses — sees
+# numeric::np_interp_eval with identical semantics (the helper is an
+# inline in numeric_numpy.hpp; an inconsistent define would be an ODR
+# violation and a silent bitwise fork).
+# --------------------------------------------------------------------------
+_numerics_field(_numerics_interp_lowering numerics interp lowering)
+if(_numerics_interp_lowering STREQUAL "contracted")
+  set(_native_numerics_interp_contracted 1)
+elseif(_numerics_interp_lowering STREQUAL "separate")
+  set(_native_numerics_interp_contracted 0)
+else()
+  message(FATAL_ERROR
+    "numerics.interp.lowering must be 'contracted' or 'separate', found "
+    "'${_numerics_interp_lowering}' — re-run tools/native_dependencies.py "
+    "to re-measure the wheel's np.interp lowering")
+endif()
+add_compile_definitions(
+  BIKE_NUMPY_INTERP_CONTRACTED=${_native_numerics_interp_contracted})
+message(STATUS
+  "np.interp lowering: ${_numerics_interp_lowering} "
+  "(BIKE_NUMPY_INTERP_CONTRACTED=${_native_numerics_interp_contracted})")
+
+# --------------------------------------------------------------------------
+# multiply(scalar, array) NaN precedence — an sNaN quiets and wins from
+# either operand position on AArch64, but a same-class dual-NaN lane
+# resolves to fmul operand 0, and which source operand the ufunc
+# broadcast kernel loads there is a *wheel* property: the AppleClang
+# wheel keeps the scalar in operand 0 (its NaN wins the tie), the
+# manylinux wheel's broadcast loop puts the contiguous array there (the
+# element's NaN wins). The dependency probe measured which
+# (numerics.multiply_broadcast.nan_winner: "scalar" or "element"); the
+# port selects the same operand-0 winner through
+# numeric::np_multiply_broadcast. Directory scope like the interp
+# define — an inconsistent inline-helper define is an ODR violation.
+# --------------------------------------------------------------------------
+_numerics_field(_numerics_mul_nan_winner
+  numerics multiply_broadcast nan_winner)
+if(_numerics_mul_nan_winner STREQUAL "element")
+  set(_native_numerics_mul_element_nan 1)
+elseif(_numerics_mul_nan_winner STREQUAL "scalar")
+  set(_native_numerics_mul_element_nan 0)
+else()
+  message(FATAL_ERROR
+    "numerics.multiply_broadcast.nan_winner must be 'scalar' or "
+    "'element', found '${_numerics_mul_nan_winner}' — re-run "
+    "tools/native_dependencies.py to re-measure the wheel's broadcast "
+    "multiply NaN precedence")
+endif()
+add_compile_definitions(
+  BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN=${_native_numerics_mul_element_nan})
+message(STATUS
+  "multiply broadcast NaN winner: ${_numerics_mul_nan_winner} "
+  "(BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN="
+  "${_native_numerics_mul_element_nan})")
 
 # --------------------------------------------------------------------------
 # Provider identity — roles must cover blas+lapack; the Linux file provider

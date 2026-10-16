@@ -1,0 +1,48 @@
+{
+  "body_mass": {
+    "$array": "model/mass_properties.arrays/a000.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "c5370fa7f5e1e9a352aef81d7e72b2353744b9ff9b4b5dfcf6d76e9f6649e42f",
+    "shape": [
+      4
+    ]
+  },
+  "compiled_com": {
+    "$array": "model/mass_properties.arrays/a002.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "8d4c4372514de5f8e81ae7c7fc560b3d94623c2ad4469b6771289b50a9209ddf",
+    "shape": [
+      3
+    ]
+  },
+  "contact_loads": {
+    "$tuple": [
+      126.549,
+      130.47299999999998
+    ]
+  },
+  "front_geom_id": 2,
+  "nbody": 4,
+  "ncon": 2,
+  "no_contact_error": {
+    "error": "ValueError",
+    "message": "both wheel contact points are required for static load"
+  },
+  "rear_geom_id": 1,
+  "swapped_ids_error": {
+    "error": "ValueError",
+    "message": "front contact must be ahead of rear contact"
+  },
+  "xipos": {
+    "$array": "model/mass_properties.arrays/a001.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "c46e30cf63f8bb09b3964dece12c25608a3c101806677899ad2be1bfc5139360",
+    "shape": [
+      4,
+      3
+    ]
+  }
+}

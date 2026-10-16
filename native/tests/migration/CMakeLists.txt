@@ -482,6 +482,56 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T14>")
 endif()
 
+# T15 model-boundary regression: inertia tensors and the synthetic wheel
+# mass profile, MJCF component-mass distribution + registry,
+# BikeMassSpecs budgets, component/system CG and static loads,
+# rider pose/segment mass solvers and the seated apparent-mass path,
+# air-spring/coil/damper calculators and the sag tuning rollup — linked
+# against the bike_model library (one compile per TU per graph) plus the
+# shared core object set for the LeastSquaresWorkspace and the pinned
+# engine interceptor for the compiled-model reads (a real mjModel is
+# built through mj_loadXML in the test). No Python/nanobind include
+# enters this target in either graph: compiling test_t15.cpp against
+# model/*.hpp is the include-closure contract itself.
+add_executable(migration_T15 test_t15.cpp)
+set_target_properties(migration_T15 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T15 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T15 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T15 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T15 PRIVATE bike_migration_test
+  bike_model "-framework Accelerate")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T15)
+  target_include_directories(migration_T15 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(migration_T15 PRIVATE bike_core bike_engine
+    bike_rider_math)
+  bike_rewrite_mujoco_load_name(migration_T15
+    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+else()
+  target_include_directories(migration_T15 SYSTEM PRIVATE
+    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
+  target_link_libraries(migration_T15 PRIVATE
+    bike_native_contract_core bike_native_engine bike_rider_math)
+  bike_rewrite_mujoco_load_name(migration_T15
+    "${MJ_DIR}/libmujoco.3.12.0.dylib")
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T15 COMMAND migration_T15)
+  set_tests_properties(migration_T15 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T15>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

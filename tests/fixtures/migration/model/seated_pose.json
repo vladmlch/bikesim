@@ -1,0 +1,1783 @@
+{
+  "_notes": "full solved SeatedPose for default + 75kg riders, articulated-leg chain variant",
+  "_produced_by": "solve_seated_pose over three RiderSpecs",
+  "default": {
+    "ankle_front": {
+      "$array": "model/seated_pose.arrays/a011.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+      "shape": [
+        3
+      ]
+    },
+    "ankle_rear": {
+      "$array": "model/seated_pose.arrays/a012.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+      "shape": [
+        3
+      ]
+    },
+    "bodies": [
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a015.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "ed407f836c168c2ab61928392d09ebfcdf3c40f5b26338f7df6438c258fc88a3",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a018.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "056932b3c3ca9b652379cd06666b72cc9fd51aa3d2440074fcb7a14c0fbfa2a4",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 2762.0,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 14.108440000000005,
+            "name": "geom_rider_pelvis",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a016.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "49960d6f725452ae63b624ab3394dfd2e3839fb2cd986cc8d2d811895b80157d",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a017.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "089365fefd085a7944b36fe542b0a7abd1674db80be2bde9ee042b0f5292f93f",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.085
+          }
+        ],
+        "interface": "saddle",
+        "joint": "rider_pelvis_z",
+        "mass": 14.108440000000005,
+        "name": "rider_pelvis",
+        "parent": "frame",
+        "preload_deflection_m": 0.004273663366336634,
+        "preload_n": 431.64000000000004,
+        "stiffness_n_m": 101000.0,
+        "supported_mass_kg": 44.0,
+        "unilateral": true
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a019.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "ed407f836c168c2ab61928392d09ebfcdf3c40f5b26338f7df6438c258fc88a3",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a024.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "42b72b0ddcce1581b9858c3754267105910eb6c4e05077b9e46c80aaad062e4a",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 1051.7595793637913,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 23.967319999999994,
+            "name": "geom_rider_torso",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a020.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "a952fe23cf54a37ec2c14be7a08b8992840ce693ea7e65bba5a86e706c5e7d80",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a021.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "d70c8795708df792aa431b9639a930e5760242b8d7668c262992284a090baff2",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.11
+          },
+          {
+            "kind": "sphere",
+            "mass": 5.92424,
+            "name": "geom_rider_head",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a022.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "c200eae5c936aae1cc7126ca4a6240516616440eef2fb95d7bfab876057bd0dd",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a023.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "c200eae5c936aae1cc7126ca4a6240516616440eef2fb95d7bfab876057bd0dd",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.11
+          }
+        ],
+        "interface": "saddle",
+        "joint": "rider_torso_z",
+        "mass": 29.891559999999995,
+        "name": "rider_torso",
+        "parent": "rider_pelvis",
+        "preload_deflection_m": 0.005071228630261906,
+        "preload_n": 293.23620359999995,
+        "stiffness_n_m": 57823.50293775961,
+        "supported_mass_kg": 29.891559999999995,
+        "unilateral": false
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a025.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a030.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "c18ab79cefd603308facb6257e651f097770c041a066e230cb2bd077f0f45c64",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 193.0194526365569,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 5.2663967611336036,
+            "name": "geom_rider_upper_arm",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a026.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "d70c8795708df792aa431b9639a930e5760242b8d7668c262992284a090baff2",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a027.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "f21ec6012cbc0211a609a5a54206c29a318ae4fe77eaf53abe299e3c86287661",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.045
+          },
+          {
+            "kind": "capsule",
+            "mass": 4.333603238866396,
+            "name": "geom_rider_forearm",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a028.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "f21ec6012cbc0211a609a5a54206c29a318ae4fe77eaf53abe299e3c86287661",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a029.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.04
+          }
+        ],
+        "interface": "bar",
+        "joint": "rider_arms_z",
+        "mass": 9.6,
+        "name": "rider_arms",
+        "parent": "frame",
+        "preload_deflection_m": 0.015530637680177088,
+        "preload_n": 94.176,
+        "stiffness_n_m": 6063.884944029302,
+        "supported_mass_kg": 9.6,
+        "unilateral": false
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a031.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a038.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "36d2d224ca897d98d003bfab3af88a18ad61bd83f6c626624e9c5e07cba2a086",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 331.7521842190822,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 8.6628,
+            "name": "geom_rider_thigh_front",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a032.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "ed407f836c168c2ab61928392d09ebfcdf3c40f5b26338f7df6438c258fc88a3",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a033.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6b7cd2ff8e7715f65a9cae05a6b61b8e9f273497ee30ff6170edc0637499cf1a",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.07
+          },
+          {
+            "kind": "capsule",
+            "mass": 4.5371999999999995,
+            "name": "geom_rider_shank_front",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a034.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6b7cd2ff8e7715f65a9cae05a6b61b8e9f273497ee30ff6170edc0637499cf1a",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a035.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.055
+          },
+          {
+            "kind": "capsule",
+            "mass": 0.0,
+            "name": "geom_rider_foot_front",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a036.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a037.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.035
+          }
+        ],
+        "interface": "pedals",
+        "joint": "rider_leg_front_z",
+        "mass": 13.2,
+        "name": "rider_leg_front",
+        "parent": "frame",
+        "preload_deflection_m": 0.009939608115313336,
+        "preload_n": 129.49200000000002,
+        "stiffness_n_m": 13027.877809437954,
+        "supported_mass_kg": 13.200000000000001,
+        "unilateral": true
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a039.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a046.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "d41a59f856f8e647b285cc031683e9f9b6bd2035804857143b63077fa4d2255e",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 331.7521842190822,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 8.6628,
+            "name": "geom_rider_thigh_rear",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a040.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "ed407f836c168c2ab61928392d09ebfcdf3c40f5b26338f7df6438c258fc88a3",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a041.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "e91127bb8795d158a09c49b2e02709d1f65d4201b42a85a606c006e24c0e01cf",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.07
+          },
+          {
+            "kind": "capsule",
+            "mass": 4.5371999999999995,
+            "name": "geom_rider_shank_rear",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a042.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "e91127bb8795d158a09c49b2e02709d1f65d4201b42a85a606c006e24c0e01cf",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a043.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.055
+          },
+          {
+            "kind": "capsule",
+            "mass": 0.0,
+            "name": "geom_rider_foot_rear",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a044.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a045.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.035
+          }
+        ],
+        "interface": "pedals",
+        "joint": "rider_leg_rear_z",
+        "mass": 13.2,
+        "name": "rider_leg_rear",
+        "parent": "frame",
+        "preload_deflection_m": 0.009939608115313336,
+        "preload_n": 129.49200000000002,
+        "stiffness_n_m": 13027.877809437954,
+        "supported_mass_kg": 13.200000000000001,
+        "unilateral": true
+      }
+    ],
+    "elbow": {
+      "$array": "model/seated_pose.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "f21ec6012cbc0211a609a5a54206c29a318ae4fe77eaf53abe299e3c86287661",
+      "shape": [
+        3
+      ]
+    },
+    "grip": {
+      "$array": "model/seated_pose.arrays/a007.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+      "shape": [
+        3
+      ]
+    },
+    "head_center": {
+      "$array": "model/seated_pose.arrays/a008.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "c200eae5c936aae1cc7126ca4a6240516616440eef2fb95d7bfab876057bd0dd",
+      "shape": [
+        3
+      ]
+    },
+    "hip": {
+      "$array": "model/seated_pose.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ed407f836c168c2ab61928392d09ebfcdf3c40f5b26338f7df6438c258fc88a3",
+      "shape": [
+        3
+      ]
+    },
+    "interface_loads_n": [
+      [
+        "saddle",
+        431.64000000000004
+      ],
+      [
+        "pedals",
+        258.98400000000004
+      ],
+      [
+        "bar",
+        94.176
+      ]
+    ],
+    "interface_shares": [
+      [
+        "saddle",
+        0.55
+      ],
+      [
+        "pedals",
+        0.33
+      ],
+      [
+        "bar",
+        0.12
+      ]
+    ],
+    "knee_flexion_bdc_deg": 30.36825475048437,
+    "knee_flexion_front_deg": 63.53173991103736,
+    "knee_flexion_rear_deg": 81.41149947145689,
+    "knee_front": {
+      "$array": "model/seated_pose.arrays/a009.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6b7cd2ff8e7715f65a9cae05a6b61b8e9f273497ee30ff6170edc0637499cf1a",
+      "shape": [
+        3
+      ]
+    },
+    "knee_rear": {
+      "$array": "model/seated_pose.arrays/a010.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e91127bb8795d158a09c49b2e02709d1f65d4201b42a85a606c006e24c0e01cf",
+      "shape": [
+        3
+      ]
+    },
+    "leg_chains": [],
+    "missing_body_error": {
+      "accepted": false,
+      "error": "KeyError",
+      "message": "\"no rider body named 'rider_nothing'\""
+    },
+    "path_masses_kg": [
+      [
+        "torso",
+        29.891559999999995
+      ],
+      [
+        "pelvis",
+        14.108440000000005
+      ],
+      [
+        "arms",
+        9.6
+      ],
+      [
+        "leg",
+        13.200000000000001
+      ]
+    ],
+    "pedal_front": {
+      "$array": "model/seated_pose.arrays/a013.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+      "shape": [
+        3
+      ]
+    },
+    "pedal_rear": {
+      "$array": "model/seated_pose.arrays/a014.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+      "shape": [
+        3
+      ]
+    },
+    "saddle": {
+      "exposed_post_m": 0.21660346644155704,
+      "height_m": 0.747018,
+      "saddle_pos": {
+        "$array": "model/seated_pose.arrays/a001.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "e6a13a7ed9adec0449e2ccb0fdd488ae41617f4c5b7b5d1d0dbec54c8a812566",
+        "shape": [
+          3
+        ]
+      },
+      "seatpost_top": {
+        "$array": "model/seated_pose.arrays/a000.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "11c50ccd4d1c4ed1dac4a4338e015284fbffb4a75850117740fc4e1232db5d52",
+        "shape": [
+          3
+        ]
+      },
+      "top_center": {
+        "$array": "model/seated_pose.arrays/a002.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "fdf9e4a912de2ffc5a60af62bb3392bf5fdefda3ebec00ac28c3e16b9a55a9a9",
+        "shape": [
+          3
+        ]
+      },
+      "top_z_m": 0.7260128780662256
+    },
+    "shoulder": {
+      "$array": "model/seated_pose.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d70c8795708df792aa431b9639a930e5760242b8d7668c262992284a090baff2",
+      "shape": [
+        3
+      ]
+    },
+    "torso_lean_deg": 41.97268375026517,
+    "total_mass_kg": 80.0,
+    "wrist": {
+      "$array": "model/seated_pose.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "25014573e1f898860a2b5506a8ac0d23c75412d7d3c3740e5da4d1e671320a1e",
+      "shape": [
+        3
+      ]
+    }
+  },
+  "legs_articulated": {
+    "ankle_front": {
+      "$array": "model/seated_pose.arrays/a105.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+      "shape": [
+        3
+      ]
+    },
+    "ankle_rear": {
+      "$array": "model/seated_pose.arrays/a106.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+      "shape": [
+        3
+      ]
+    },
+    "bodies": [
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a109.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a112.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "7746b64f61314a169edc29b351864f484ce6744fd2a056e379f0dbc1242de213",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 2762.0,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 13.213940000000004,
+            "name": "geom_rider_pelvis",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a110.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "ccb573c283b8f77586e705513fb81896e2d6e2c1675b45130e9ff71d1a0903bb",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a111.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "f385c30210276d3ffd0e75e75de432c4befa9237e64313c8541480799b70af99",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.085
+          }
+        ],
+        "interface": "saddle",
+        "joint": "rider_pelvis_z",
+        "mass": 13.213940000000004,
+        "name": "rider_pelvis",
+        "parent": "frame",
+        "preload_deflection_m": 0.004006559405940594,
+        "preload_n": 404.6625,
+        "stiffness_n_m": 101000.0,
+        "supported_mass_kg": 41.25,
+        "unilateral": true
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a113.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a118.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "5f58f9496be270526aa39427c489dc8c300f6ffdf750e190df041c5c3a674a7e",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 986.4722574739498,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 22.458819999999996,
+            "name": "geom_rider_torso",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a114.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6af178991e925b7c36c970469570b9e0d538325272fec0d19d4d3826217738ee",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a115.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "22ccd909d9c7bef529307ffec770ed09ea555102a2a50e50bd455b4438666adb",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.11
+          },
+          {
+            "kind": "sphere",
+            "mass": 5.577240000000001,
+            "name": "geom_rider_head",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a116.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6330aee545224e589dc7487c9140d80c519629757de8bf02ddad292521ad7139",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a117.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6330aee545224e589dc7487c9140d80c519629757de8bf02ddad292521ad7139",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.11
+          }
+        ],
+        "interface": "saddle",
+        "joint": "rider_torso_z",
+        "mass": 28.036059999999996,
+        "name": "rider_torso",
+        "parent": "rider_pelvis",
+        "preload_deflection_m": 0.005071228630261906,
+        "preload_n": 275.03374859999997,
+        "stiffness_n_m": 54234.144948380235,
+        "supported_mass_kg": 28.036059999999996,
+        "unilateral": false
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a119.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a124.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "deb23a215e2b840b55ad6ca7b235af296c7b687f384b62514ae1c18b1208ee76",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 180.95573684677208,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 4.937246963562753,
+            "name": "geom_rider_upper_arm",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a120.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "22ccd909d9c7bef529307ffec770ed09ea555102a2a50e50bd455b4438666adb",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a121.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "16dc77890254eb8a0b59efe71955f6df97bd5080f997014730da8161aff43946",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.045
+          },
+          {
+            "kind": "capsule",
+            "mass": 4.062753036437247,
+            "name": "geom_rider_forearm",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a122.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "16dc77890254eb8a0b59efe71955f6df97bd5080f997014730da8161aff43946",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a123.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.04
+          }
+        ],
+        "interface": "bar",
+        "joint": "rider_arms_z",
+        "mass": 9.0,
+        "name": "rider_arms",
+        "parent": "frame",
+        "preload_deflection_m": 0.015530637680177088,
+        "preload_n": 88.29,
+        "stiffness_n_m": 5684.89213502747,
+        "supported_mass_kg": 9.0,
+        "unilateral": false
+      }
+    ],
+    "elbow": {
+      "$array": "model/seated_pose.arrays/a099.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "16dc77890254eb8a0b59efe71955f6df97bd5080f997014730da8161aff43946",
+      "shape": [
+        3
+      ]
+    },
+    "grip": {
+      "$array": "model/seated_pose.arrays/a101.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+      "shape": [
+        3
+      ]
+    },
+    "head_center": {
+      "$array": "model/seated_pose.arrays/a102.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6330aee545224e589dc7487c9140d80c519629757de8bf02ddad292521ad7139",
+      "shape": [
+        3
+      ]
+    },
+    "hip": {
+      "$array": "model/seated_pose.arrays/a097.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+      "shape": [
+        3
+      ]
+    },
+    "interface_loads_n": [
+      [
+        "saddle",
+        404.6625
+      ],
+      [
+        "pedals",
+        0.0
+      ],
+      [
+        "bar",
+        88.29
+      ]
+    ],
+    "interface_shares": [
+      [
+        "saddle",
+        0.55
+      ],
+      [
+        "pedals",
+        0.0
+      ],
+      [
+        "bar",
+        0.12000000000000001
+      ]
+    ],
+    "knee_flexion_bdc_deg": 28.78237771689396,
+    "knee_flexion_front_deg": 63.442115914157995,
+    "knee_flexion_rear_deg": 81.6616798316208,
+    "knee_front": {
+      "$array": "model/seated_pose.arrays/a103.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6a9ef17f652b7da5dc019b2af6d8c2278b416aa91ff768e082dbc6c19c3a031e",
+      "shape": [
+        3
+      ]
+    },
+    "knee_rear": {
+      "$array": "model/seated_pose.arrays/a104.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2796174841e768d03a6f6e64b2a0b4f9fc22b2683503d566578901351935cd3e",
+      "shape": [
+        3
+      ]
+    },
+    "leg_chains": [
+      {
+        "ankle": {
+          "$array": "model/seated_pose.arrays/a127.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+          "shape": [
+            3
+          ]
+        },
+        "crank_len_m": 0.165,
+        "foot_mass_kg": 1.02202,
+        "hip": {
+          "$array": "model/seated_pose.arrays/a125.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+          "shape": [
+            3
+          ]
+        },
+        "knee": {
+          "$array": "model/seated_pose.arrays/a126.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "6a9ef17f652b7da5dc019b2af6d8c2278b416aa91ff768e082dbc6c19c3a031e",
+          "shape": [
+            3
+          ]
+        },
+        "lateral_y_m": -0.115,
+        "pedal": {
+          "$array": "model/seated_pose.arrays/a128.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+          "shape": [
+            3
+          ]
+        },
+        "pitch0_foot_rad": 1.5707963267948966,
+        "pitch0_shank_rad": 1.6414373643558695,
+        "pitch0_thigh_rad": 0.5341635572219203,
+        "shank_len_m": 0.4362435381964388,
+        "shank_mass_kg": 3.2301799999999994,
+        "side": "front",
+        "thigh_len_m": 0.4243825387708214,
+        "thigh_mass_kg": 8.122800000000002
+      },
+      {
+        "ankle": {
+          "$array": "model/seated_pose.arrays/a131.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+          "shape": [
+            3
+          ]
+        },
+        "crank_len_m": -0.165,
+        "foot_mass_kg": 1.02202,
+        "hip": {
+          "$array": "model/seated_pose.arrays/a129.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+          "shape": [
+            3
+          ]
+        },
+        "knee": {
+          "$array": "model/seated_pose.arrays/a130.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "2796174841e768d03a6f6e64b2a0b4f9fc22b2683503d566578901351935cd3e",
+          "shape": [
+            3
+          ]
+        },
+        "lateral_y_m": 0.115,
+        "pedal": {
+          "$array": "model/seated_pose.arrays/a132.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+          "shape": [
+            3
+          ]
+        },
+        "pitch0_foot_rad": 1.5707963267948966,
+        "pitch0_shank_rad": 2.2646521777808557,
+        "pitch0_thigh_rad": 0.8393869920096241,
+        "shank_len_m": 0.4362435381964388,
+        "shank_mass_kg": 3.2301799999999994,
+        "side": "rear",
+        "thigh_len_m": 0.4243825387708214,
+        "thigh_mass_kg": 8.122800000000002
+      }
+    ],
+    "missing_body_error": {
+      "accepted": false,
+      "error": "KeyError",
+      "message": "\"no rider body named 'rider_nothing'\""
+    },
+    "path_masses_kg": [
+      [
+        "torso",
+        28.036059999999996
+      ],
+      [
+        "pelvis",
+        13.213940000000004
+      ],
+      [
+        "arms",
+        9.0
+      ],
+      [
+        "leg",
+        12.375
+      ]
+    ],
+    "pedal_front": {
+      "$array": "model/seated_pose.arrays/a107.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+      "shape": [
+        3
+      ]
+    },
+    "pedal_rear": {
+      "$array": "model/seated_pose.arrays/a108.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+      "shape": [
+        3
+      ]
+    },
+    "saddle": {
+      "exposed_post_m": 0.1957906874890082,
+      "height_m": 0.7262675000000001,
+      "saddle_pos": {
+        "$array": "model/seated_pose.arrays/a095.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "94f08c732daf2cac974cd9e25b00cc0e5c246b2b322a4bc35406d0f92ba6ac4d",
+        "shape": [
+          3
+        ]
+      },
+      "seatpost_top": {
+        "$array": "model/seated_pose.arrays/a094.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "16d4d43d47ed461270b3b21858d3cb2f3b168db2fa54d51485e788b748472d49",
+        "shape": [
+          3
+        ]
+      },
+      "top_center": {
+        "$array": "model/seated_pose.arrays/a096.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "286b9405c917f03198897828d087bec725d227c0ebce0d3d1bf2e3ab2e1378ee",
+        "shape": [
+          3
+        ]
+      },
+      "top_z_m": 0.7062177170606762
+    },
+    "shoulder": {
+      "$array": "model/seated_pose.arrays/a098.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "22ccd909d9c7bef529307ffec770ed09ea555102a2a50e50bd455b4438666adb",
+      "shape": [
+        3
+      ]
+    },
+    "torso_lean_deg": 41.253540626383085,
+    "total_mass_kg": 75.0,
+    "wrist": {
+      "$array": "model/seated_pose.arrays/a100.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "a0f81e500961df8a820bd7165ac0625bc29baa57df14bfaf8ddfedafac7d9ed5",
+      "shape": [
+        3
+      ]
+    }
+  },
+  "rider_75_175": {
+    "ankle_front": {
+      "$array": "model/seated_pose.arrays/a058.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+      "shape": [
+        3
+      ]
+    },
+    "ankle_rear": {
+      "$array": "model/seated_pose.arrays/a059.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+      "shape": [
+        3
+      ]
+    },
+    "bodies": [
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a062.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a065.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "7746b64f61314a169edc29b351864f484ce6744fd2a056e379f0dbc1242de213",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 2762.0,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 13.213940000000004,
+            "name": "geom_rider_pelvis",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a063.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "ccb573c283b8f77586e705513fb81896e2d6e2c1675b45130e9ff71d1a0903bb",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a064.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "f385c30210276d3ffd0e75e75de432c4befa9237e64313c8541480799b70af99",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.085
+          }
+        ],
+        "interface": "saddle",
+        "joint": "rider_pelvis_z",
+        "mass": 13.213940000000004,
+        "name": "rider_pelvis",
+        "parent": "frame",
+        "preload_deflection_m": 0.004006559405940594,
+        "preload_n": 404.6625,
+        "stiffness_n_m": 101000.0,
+        "supported_mass_kg": 41.25,
+        "unilateral": true
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a066.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a071.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "5f58f9496be270526aa39427c489dc8c300f6ffdf750e190df041c5c3a674a7e",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 986.4722574739498,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 22.458819999999996,
+            "name": "geom_rider_torso",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a067.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6af178991e925b7c36c970469570b9e0d538325272fec0d19d4d3826217738ee",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a068.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "22ccd909d9c7bef529307ffec770ed09ea555102a2a50e50bd455b4438666adb",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.11
+          },
+          {
+            "kind": "sphere",
+            "mass": 5.577240000000001,
+            "name": "geom_rider_head",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a069.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6330aee545224e589dc7487c9140d80c519629757de8bf02ddad292521ad7139",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a070.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6330aee545224e589dc7487c9140d80c519629757de8bf02ddad292521ad7139",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.11
+          }
+        ],
+        "interface": "saddle",
+        "joint": "rider_torso_z",
+        "mass": 28.036059999999996,
+        "name": "rider_torso",
+        "parent": "rider_pelvis",
+        "preload_deflection_m": 0.005071228630261906,
+        "preload_n": 275.03374859999997,
+        "stiffness_n_m": 54234.144948380235,
+        "supported_mass_kg": 28.036059999999996,
+        "unilateral": false
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a072.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a077.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "deb23a215e2b840b55ad6ca7b235af296c7b687f384b62514ae1c18b1208ee76",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 180.95573684677208,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 4.937246963562753,
+            "name": "geom_rider_upper_arm",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a073.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "22ccd909d9c7bef529307ffec770ed09ea555102a2a50e50bd455b4438666adb",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a074.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "16dc77890254eb8a0b59efe71955f6df97bd5080f997014730da8161aff43946",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.045
+          },
+          {
+            "kind": "capsule",
+            "mass": 4.062753036437247,
+            "name": "geom_rider_forearm",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a075.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "16dc77890254eb8a0b59efe71955f6df97bd5080f997014730da8161aff43946",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a076.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.04
+          }
+        ],
+        "interface": "bar",
+        "joint": "rider_arms_z",
+        "mass": 9.0,
+        "name": "rider_arms",
+        "parent": "frame",
+        "preload_deflection_m": 0.015530637680177088,
+        "preload_n": 88.29,
+        "stiffness_n_m": 5684.89213502747,
+        "supported_mass_kg": 9.0,
+        "unilateral": false
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a078.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a085.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "dd66b9b0fa3da87ebf8b7041e5aeabc0be2ff4810f06be342b66434748b569e0",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 311.0176727053895,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 8.122800000000002,
+            "name": "geom_rider_thigh_front",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a079.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a080.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6a9ef17f652b7da5dc019b2af6d8c2278b416aa91ff768e082dbc6c19c3a031e",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.07
+          },
+          {
+            "kind": "capsule",
+            "mass": 4.252199999999999,
+            "name": "geom_rider_shank_front",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a081.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "6a9ef17f652b7da5dc019b2af6d8c2278b416aa91ff768e082dbc6c19c3a031e",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a082.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.055
+          },
+          {
+            "kind": "capsule",
+            "mass": 0.0,
+            "name": "geom_rider_foot_front",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a083.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a084.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.035
+          }
+        ],
+        "interface": "pedals",
+        "joint": "rider_leg_front_z",
+        "mass": 12.375,
+        "name": "rider_leg_front",
+        "parent": "frame",
+        "preload_deflection_m": 0.009939608115313336,
+        "preload_n": 121.39875,
+        "stiffness_n_m": 12213.63544634808,
+        "supported_mass_kg": 12.375,
+        "unilateral": true
+      },
+      {
+        "attach": {
+          "$array": "model/seated_pose.arrays/a086.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+          "shape": [
+            3
+          ]
+        },
+        "center_of_mass": {
+          "$array": "model/seated_pose.arrays/a093.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "18c853dc9d1ef9cef86737138133dc0fd79c5f5e45204fe11928c80ec2d5c688",
+          "shape": [
+            3
+          ]
+        },
+        "damping_ns_m": 311.0176727053895,
+        "geoms": [
+          {
+            "kind": "capsule",
+            "mass": 8.122800000000002,
+            "name": "geom_rider_thigh_rear",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a087.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a088.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "2796174841e768d03a6f6e64b2a0b4f9fc22b2683503d566578901351935cd3e",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.07
+          },
+          {
+            "kind": "capsule",
+            "mass": 4.252199999999999,
+            "name": "geom_rider_shank_rear",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a089.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "2796174841e768d03a6f6e64b2a0b4f9fc22b2683503d566578901351935cd3e",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a090.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.055
+          },
+          {
+            "kind": "capsule",
+            "mass": 0.0,
+            "name": "geom_rider_foot_rear",
+            "p1": {
+              "$array": "model/seated_pose.arrays/a091.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+              "shape": [
+                3
+              ]
+            },
+            "p2": {
+              "$array": "model/seated_pose.arrays/a092.f64",
+              "dtype": "<f8",
+              "order": "C",
+              "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+              "shape": [
+                3
+              ]
+            },
+            "radius": 0.035
+          }
+        ],
+        "interface": "pedals",
+        "joint": "rider_leg_rear_z",
+        "mass": 12.375,
+        "name": "rider_leg_rear",
+        "parent": "frame",
+        "preload_deflection_m": 0.009939608115313336,
+        "preload_n": 121.39875,
+        "stiffness_n_m": 12213.63544634808,
+        "supported_mass_kg": 12.375,
+        "unilateral": true
+      }
+    ],
+    "elbow": {
+      "$array": "model/seated_pose.arrays/a052.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "16dc77890254eb8a0b59efe71955f6df97bd5080f997014730da8161aff43946",
+      "shape": [
+        3
+      ]
+    },
+    "grip": {
+      "$array": "model/seated_pose.arrays/a054.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+      "shape": [
+        3
+      ]
+    },
+    "head_center": {
+      "$array": "model/seated_pose.arrays/a055.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6330aee545224e589dc7487c9140d80c519629757de8bf02ddad292521ad7139",
+      "shape": [
+        3
+      ]
+    },
+    "hip": {
+      "$array": "model/seated_pose.arrays/a050.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+      "shape": [
+        3
+      ]
+    },
+    "interface_loads_n": [
+      [
+        "saddle",
+        404.6625
+      ],
+      [
+        "pedals",
+        242.7975
+      ],
+      [
+        "bar",
+        88.29
+      ]
+    ],
+    "interface_shares": [
+      [
+        "saddle",
+        0.55
+      ],
+      [
+        "pedals",
+        0.33
+      ],
+      [
+        "bar",
+        0.12000000000000001
+      ]
+    ],
+    "knee_flexion_bdc_deg": 28.78237771689396,
+    "knee_flexion_front_deg": 63.442115914157995,
+    "knee_flexion_rear_deg": 81.6616798316208,
+    "knee_front": {
+      "$array": "model/seated_pose.arrays/a056.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6a9ef17f652b7da5dc019b2af6d8c2278b416aa91ff768e082dbc6c19c3a031e",
+      "shape": [
+        3
+      ]
+    },
+    "knee_rear": {
+      "$array": "model/seated_pose.arrays/a057.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2796174841e768d03a6f6e64b2a0b4f9fc22b2683503d566578901351935cd3e",
+      "shape": [
+        3
+      ]
+    },
+    "leg_chains": [],
+    "missing_body_error": {
+      "accepted": false,
+      "error": "KeyError",
+      "message": "\"no rider body named 'rider_nothing'\""
+    },
+    "path_masses_kg": [
+      [
+        "torso",
+        28.036059999999996
+      ],
+      [
+        "pelvis",
+        13.213940000000004
+      ],
+      [
+        "arms",
+        9.0
+      ],
+      [
+        "leg",
+        12.375
+      ]
+    ],
+    "pedal_front": {
+      "$array": "model/seated_pose.arrays/a060.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+      "shape": [
+        3
+      ]
+    },
+    "pedal_rear": {
+      "$array": "model/seated_pose.arrays/a061.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+      "shape": [
+        3
+      ]
+    },
+    "saddle": {
+      "exposed_post_m": 0.1957906874890082,
+      "height_m": 0.7262675000000001,
+      "saddle_pos": {
+        "$array": "model/seated_pose.arrays/a048.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "94f08c732daf2cac974cd9e25b00cc0e5c246b2b322a4bc35406d0f92ba6ac4d",
+        "shape": [
+          3
+        ]
+      },
+      "seatpost_top": {
+        "$array": "model/seated_pose.arrays/a047.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "16d4d43d47ed461270b3b21858d3cb2f3b168db2fa54d51485e788b748472d49",
+        "shape": [
+          3
+        ]
+      },
+      "top_center": {
+        "$array": "model/seated_pose.arrays/a049.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "286b9405c917f03198897828d087bec725d227c0ebce0d3d1bf2e3ab2e1378ee",
+        "shape": [
+          3
+        ]
+      },
+      "top_z_m": 0.7062177170606762
+    },
+    "shoulder": {
+      "$array": "model/seated_pose.arrays/a051.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "22ccd909d9c7bef529307ffec770ed09ea555102a2a50e50bd455b4438666adb",
+      "shape": [
+        3
+      ]
+    },
+    "torso_lean_deg": 41.253540626383085,
+    "total_mass_kg": 75.0,
+    "wrist": {
+      "$array": "model/seated_pose.arrays/a053.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "a0f81e500961df8a820bd7165ac0625bc29baa57df14bfaf8ddfedafac7d9ed5",
+      "shape": [
+        3
+      ]
+    }
+  }
+}

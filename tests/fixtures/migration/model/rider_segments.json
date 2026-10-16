@@ -1,0 +1,501 @@
+{
+  "_notes": "de Leva tables, anatomical masses + arm split, segment inertia tensors, articulated geometry pose",
+  "_produced_by": "rider_segments.py tables/helpers/geometry_pose",
+  "arm_lateral_offset_m": 0.1,
+  "articulated_pose": {
+    "ankle_front": {
+      "$array": "model/rider_segments.arrays/a022.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "644c28ac2fc931f978bf44de9f553f434403f9f14abf7b7cdbfb2a3f273c0615",
+      "shape": [
+        3
+      ]
+    },
+    "ankle_rear": {
+      "$array": "model/rider_segments.arrays/a023.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+      "shape": [
+        3
+      ]
+    },
+    "elbow": {
+      "$array": "model/rider_segments.arrays/a017.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "f21ec6012cbc0211a609a5a54206c29a318ae4fe77eaf53abe299e3c86287661",
+      "shape": [
+        3
+      ]
+    },
+    "grip": {
+      "$array": "model/rider_segments.arrays/a018.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+      "shape": [
+        3
+      ]
+    },
+    "head_center": {
+      "$array": "model/rider_segments.arrays/a019.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "c200eae5c936aae1cc7126ca4a6240516616440eef2fb95d7bfab876057bd0dd",
+      "shape": [
+        3
+      ]
+    },
+    "hip": {
+      "$array": "model/rider_segments.arrays/a015.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ed407f836c168c2ab61928392d09ebfcdf3c40f5b26338f7df6438c258fc88a3",
+      "shape": [
+        3
+      ]
+    },
+    "knee_front": {
+      "$array": "model/rider_segments.arrays/a020.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6b7cd2ff8e7715f65a9cae05a6b61b8e9f273497ee30ff6170edc0637499cf1a",
+      "shape": [
+        3
+      ]
+    },
+    "knee_rear": {
+      "$array": "model/rider_segments.arrays/a021.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e91127bb8795d158a09c49b2e02709d1f65d4201b42a85a606c006e24c0e01cf",
+      "shape": [
+        3
+      ]
+    },
+    "pedal_front": {
+      "$array": "model/rider_segments.arrays/a024.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2e2cd4bec9be306696d36fa41c4ccb1c588a204af68919e2027267c38b497bd1",
+      "shape": [
+        3
+      ]
+    },
+    "pedal_rear": {
+      "$array": "model/rider_segments.arrays/a025.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ba2b3f5adf81eb8acbdb81708092dcb128d92866580a4f7b7d3e380f720f676b",
+      "shape": [
+        3
+      ]
+    },
+    "saddle": {
+      "$dataclass": "bike_sim.geometry.cockpit.SaddleGeometry",
+      "fields": {
+        "exposed_post_m": 0.21660346644155704,
+        "height_m": 0.747018,
+        "saddle_pos": {
+          "$array": "model/rider_segments.arrays/a013.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "e6a13a7ed9adec0449e2ccb0fdd488ae41617f4c5b7b5d1d0dbec54c8a812566",
+          "shape": [
+            3
+          ]
+        },
+        "seatpost_top": {
+          "$array": "model/rider_segments.arrays/a012.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "11c50ccd4d1c4ed1dac4a4338e015284fbffb4a75850117740fc4e1232db5d52",
+          "shape": [
+            3
+          ]
+        },
+        "top_center": {
+          "$array": "model/rider_segments.arrays/a014.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "fdf9e4a912de2ffc5a60af62bb3392bf5fdefda3ebec00ac28c3e16b9a55a9a9",
+          "shape": [
+            3
+          ]
+        },
+        "top_z_m": 0.7260128780662256
+      }
+    },
+    "shoulder": {
+      "$array": "model/rider_segments.arrays/a016.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d70c8795708df792aa431b9639a930e5760242b8d7668c262992284a090baff2",
+      "shape": [
+        3
+      ]
+    }
+  },
+  "de_leva_fractions": [
+    [
+      "head",
+      0.0694
+    ],
+    [
+      "trunk_upper",
+      0.1596
+    ],
+    [
+      "trunk_middle",
+      0.1633
+    ],
+    [
+      "trunk_lower",
+      0.1117
+    ],
+    [
+      "upper_arm",
+      0.0271
+    ],
+    [
+      "forearm",
+      0.0162
+    ],
+    [
+      "hand",
+      0.0061
+    ],
+    [
+      "thigh",
+      0.1416
+    ],
+    [
+      "shank",
+      0.0433
+    ],
+    [
+      "foot",
+      0.0137
+    ]
+  ],
+  "inertia_error_cases": [
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid segment mass",
+      "tag": "zero_mass"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "segment length must be positive",
+      "tag": "zero_axis"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid segment radius",
+      "tag": "neg_radius"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid shape or non-finite segment axis",
+      "tag": "nan_axis"
+    }
+  ],
+  "inertia_rows": [
+    {
+      "accepted": true,
+      "axis_vector_m": {
+        "$array": "model/rider_segments.arrays/a000.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "d55eb72d96531d0a2eb72f09d9ac5632da00a4444231412eb126853ff8d14b69",
+        "shape": [
+          3
+        ]
+      },
+      "mass_kg": 5.95,
+      "name": "head",
+      "radius_m": 0.11,
+      "result": {
+        "$array": "model/rider_segments.arrays/a001.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "c2c1da8da81c2d6c2678baea32201170eb2053fae6e81dddfe3f440ac9b85f68",
+        "shape": [
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "axis_vector_m": {
+        "$array": "model/rider_segments.arrays/a002.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "a0321868aa9fc082c928b3a877e94bfab2fff2cc81c231df0bd8396644f85247",
+        "shape": [
+          3
+        ]
+      },
+      "mass_kg": 25.8,
+      "name": "torso",
+      "radius_m": 0.11,
+      "result": {
+        "$array": "model/rider_segments.arrays/a003.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "504c22bbfced4e756e886e36c0c03c8ea4701982000bb65f2dfda46f9415cb20",
+        "shape": [
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "axis_vector_m": {
+        "$array": "model/rider_segments.arrays/a004.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "8c222bfe2bc455d0e7bc82a87fb7313a410238e2a230d43348a146da1bc9e7c6",
+        "shape": [
+          3
+        ]
+      },
+      "mass_kg": 2.0,
+      "name": "upper_arm",
+      "radius_m": 0.045,
+      "result": {
+        "$array": "model/rider_segments.arrays/a005.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "b10e54431ac4ae979d14b74abde0b0253c2fbbab2a1d5c1c39b82e29d66f93b2",
+        "shape": [
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "axis_vector_m": {
+        "$array": "model/rider_segments.arrays/a006.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "8ac2ce39309fafc4a715883717686ade28d8f84e6c904d917b921bb20fbb141b",
+        "shape": [
+          3
+        ]
+      },
+      "mass_kg": 11.3,
+      "name": "thigh",
+      "radius_m": 0.07,
+      "result": {
+        "$array": "model/rider_segments.arrays/a007.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "f2f1a6501f9782fbe7d3001d092377be30173231a2e31e807613ab119838df65",
+        "shape": [
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "axis_vector_m": {
+        "$array": "model/rider_segments.arrays/a008.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "ebf838c4a669dec267ed2816f8df5e666ed9e6fde076ff7154361d2a5a10cdea",
+        "shape": [
+          3
+        ]
+      },
+      "mass_kg": 3.4,
+      "name": "shank",
+      "radius_m": 0.055,
+      "result": {
+        "$array": "model/rider_segments.arrays/a009.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "fe8626381b11717bb4246f4893eac44d30b043fe0991c86a39cf1cba34388968",
+        "shape": [
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "axis_vector_m": {
+        "$array": "model/rider_segments.arrays/a010.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "f19fbe29dd8bc47dc18d9f3a6fae751141c4ace667a811e7e41ded6b66ef6541",
+        "shape": [
+          3
+        ]
+      },
+      "mass_kg": 1.1,
+      "name": "foot",
+      "radius_m": 0.035,
+      "result": {
+        "$array": "model/rider_segments.arrays/a011.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "27c3fbeb07ebf4013824673056bc2b72a81ed356e13444cdc3c7e34f7e62f961",
+        "shape": [
+          3,
+          3
+        ]
+      }
+    }
+  ],
+  "mass_cases": [
+    {
+      "accepted": true,
+      "helmet_kg": 0.4,
+      "result": [
+        [
+          "pelvis",
+          8.891319999999999
+        ],
+        [
+          "torso",
+          25.702839999999995
+        ],
+        [
+          "head",
+          5.92424
+        ],
+        [
+          "upper_arm_pair",
+          4.3143199999999995
+        ],
+        [
+          "forearm_pair",
+          3.55016
+        ],
+        [
+          "thigh_front",
+          11.27136
+        ],
+        [
+          "shank_front",
+          3.4466799999999997
+        ],
+        [
+          "foot_front",
+          1.09052
+        ],
+        [
+          "thigh_rear",
+          11.27136
+        ],
+        [
+          "shank_rear",
+          3.4466799999999997
+        ],
+        [
+          "foot_rear",
+          1.09052
+        ]
+      ],
+      "tag": "default",
+      "total_kg": 80.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "helmet_kg": 50.0,
+      "message": "helmet must be lighter than the rider",
+      "tag": "helmet_eq_mass",
+      "total_kg": 50.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "helmet_kg": 60.0,
+      "message": "helmet must be lighter than the rider",
+      "tag": "helmet_over",
+      "total_kg": 50.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "helmet_kg": 0.0,
+      "message": "invalid rider mass",
+      "tag": "zero_total",
+      "total_kg": 0.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "helmet_kg": -0.5,
+      "message": "invalid helmet mass",
+      "tag": "neg_helmet",
+      "total_kg": 80.0
+    }
+  ],
+  "split_pairs": [
+    [
+      "pelvis",
+      8.332819999999998
+    ],
+    [
+      "torso",
+      24.088339999999995
+    ],
+    [
+      "head",
+      5.577240000000001
+    ],
+    [
+      "thigh_front",
+      10.56336
+    ],
+    [
+      "shank_front",
+      3.23018
+    ],
+    [
+      "foot_front",
+      1.02202
+    ],
+    [
+      "thigh_rear",
+      10.56336
+    ],
+    [
+      "shank_rear",
+      3.23018
+    ],
+    [
+      "foot_rear",
+      1.02202
+    ],
+    [
+      "upper_arm_left",
+      2.02166
+    ],
+    [
+      "upper_arm_right",
+      2.02166
+    ],
+    [
+      "forearm_left",
+      1.6635799999999998
+    ],
+    [
+      "forearm_right",
+      1.6635799999999998
+    ]
+  ]
+}

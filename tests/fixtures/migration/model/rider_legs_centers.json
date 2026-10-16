@@ -1,0 +1,515 @@
+{
+  "_notes": "articulated leg IK/FK/Jacobian/crank share, per-variant rider CoM tables, saddle apparent mass",
+  "_produced_by": "rider.py leg chain ops + compute_rider_centers_of_mass + apparent mass",
+  "apparent_mass": {
+    "$array": "model/rider_legs_centers.arrays/a043.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "517fa03b3a755833b30f47c36c80d24a6c3827963fe79931a82d10df3560853a",
+    "shape": [
+      6
+    ]
+  },
+  "center_variants": {
+    "articulated_planar": {
+      "accepted": true,
+      "result": {
+        "masses": {
+          "$array": "model/rider_legs_centers.arrays/a042.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "56f3bede41940d03bb0c9c9e34cd7dc994b0978dabc7508f63d37c973acec013",
+          "shape": [
+            13
+          ]
+        },
+        "names": [
+          "rider_pelvis",
+          "rider_torso",
+          "rider_head",
+          "rider_upper_arm_left",
+          "rider_forearm_left",
+          "rider_upper_arm_right",
+          "rider_forearm_right",
+          "rider_thigh_front",
+          "rider_shank_front",
+          "rider_foot_front",
+          "rider_thigh_rear",
+          "rider_shank_rear",
+          "rider_foot_rear"
+        ],
+        "positions": {
+          "$array": "model/rider_legs_centers.arrays/a041.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "119a7ccda3c0b78a7ac8ad9d217a205e5ee73f334bff259edc2a11294e675cab",
+          "shape": [
+            13,
+            3
+          ]
+        }
+      }
+    },
+    "lumped": {
+      "accepted": true,
+      "result": {
+        "masses": {
+          "$array": "model/rider_legs_centers.arrays/a036.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "cbacd9afe8fab2eff69113515974c8b92af632f56fa15e45ed13423447de3fa8",
+          "shape": [
+            3
+          ]
+        },
+        "names": [
+          "rider_torso",
+          "rider_legs",
+          "rider_arms"
+        ],
+        "positions": {
+          "$array": "model/rider_legs_centers.arrays/a035.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "b5a09ba6b336364d2d9e3263533912476e03b0ad023af1f5f9569639f8410cdb",
+          "shape": [
+            3,
+            3
+          ]
+        }
+      }
+    },
+    "none": {
+      "accepted": true,
+      "result": {
+        "masses": {
+          "$array": "model/rider_legs_centers.arrays/a034.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "shape": [
+            0
+          ]
+        },
+        "names": [],
+        "positions": {
+          "$array": "model/rider_legs_centers.arrays/a033.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "shape": [
+            0
+          ]
+        }
+      }
+    },
+    "seated": {
+      "accepted": true,
+      "result": {
+        "masses": {
+          "$array": "model/rider_legs_centers.arrays/a038.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "38ef79b320de714e514dc6430be0db0fb12a70548d8ec0ade9388cb46af727e5",
+          "shape": [
+            5
+          ]
+        },
+        "names": [
+          "rider_pelvis",
+          "rider_torso",
+          "rider_arms",
+          "rider_leg_front",
+          "rider_leg_rear"
+        ],
+        "positions": {
+          "$array": "model/rider_legs_centers.arrays/a037.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "f02d66d25692f1cbaaf99268799b166580e2f0bd2c939054fd7bf1350c7ddeba",
+          "shape": [
+            5,
+            3
+          ]
+        }
+      }
+    },
+    "seated_articulated_legs": {
+      "accepted": true,
+      "result": {
+        "masses": {
+          "$array": "model/rider_legs_centers.arrays/a040.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "43679b269116189e870128fa12d7499944ffb8d57a4a40df0aa57f463328a44c",
+          "shape": [
+            9
+          ]
+        },
+        "names": [
+          "rider_pelvis",
+          "rider_torso",
+          "rider_arms",
+          "rider_thigh_front",
+          "rider_shank_front",
+          "rider_foot_front",
+          "rider_thigh_rear",
+          "rider_shank_rear",
+          "rider_foot_rear"
+        ],
+        "positions": {
+          "$array": "model/rider_legs_centers.arrays/a039.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "a205e35be43fe635ec96d164b7ee93610779f6a29362a605647e9f340876ce7b",
+          "shape": [
+            9,
+            3
+          ]
+        }
+      }
+    }
+  },
+  "leg_cases": [
+    {
+      "accepted": true,
+      "phase": 0.0,
+      "result": {
+        "ankle_fk": {
+          "$array": "model/rider_legs_centers.arrays/a004.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "050922af1d490459a5be31679d27ab09591bb829dbd99e0312504f012cd09b97",
+          "shape": [
+            3
+          ]
+        },
+        "ankle_ik": {
+          "$array": "model/rider_legs_centers.arrays/a002.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "cc23bbf79392a61e71b258449fafb002a580b6e1c7c0c8c53185ccbf54f0af33",
+          "shape": [
+            3
+          ]
+        },
+        "crank_torque_share": 1.142477796076938,
+        "jacobian": {
+          "$array": "model/rider_legs_centers.arrays/a006.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "bb1ac38015f4c078a8f2cc1364d634bfaefd989f88dcf1612fe43f1b170ef367",
+          "shape": [
+            3,
+            2
+          ]
+        },
+        "knee_fk": {
+          "$array": "model/rider_legs_centers.arrays/a003.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "194deeced8ed8382401cf7ef026a5dc0a0fc5707d5700c673e9da1d0d42cf1aa",
+          "shape": [
+            3
+          ]
+        },
+        "knee_ik": {
+          "$array": "model/rider_legs_centers.arrays/a001.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "6a9ef17f652b7da5dc019b2af6d8c2278b416aa91ff768e082dbc6c19c3a031e",
+          "shape": [
+            3
+          ]
+        },
+        "pedal_fk": {
+          "$array": "model/rider_legs_centers.arrays/a005.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "b9314813deadf5c8b3d294a65cb51288ad9ef689d09058ccc6dcc4d8ee678616",
+          "shape": [
+            3
+          ]
+        },
+        "pedal_spindle": {
+          "$array": "model/rider_legs_centers.arrays/a007.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "afda0c45a530b6ee9167a332c5a25820c4e9dd8bcc8950b7e89b847392200ea3",
+          "shape": [
+            3
+          ]
+        },
+        "qpos": {
+          "$array": "model/rider_legs_centers.arrays/a000.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        }
+      },
+      "side": "front"
+    },
+    {
+      "accepted": true,
+      "phase": 0.7,
+      "result": {
+        "ankle_fk": {
+          "$array": "model/rider_legs_centers.arrays/a012.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "e19268d9233d248f96bb49e15271b01fedc45a311ffb5fb048d69ce112ac74e8",
+          "shape": [
+            3
+          ]
+        },
+        "ankle_ik": {
+          "$array": "model/rider_legs_centers.arrays/a010.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "6dc450a9f1f9b8da042a0f19cb3208b571bd42915bae9c691da514242915f5d8",
+          "shape": [
+            3
+          ]
+        },
+        "crank_torque_share": 0.9208467790185493,
+        "jacobian": {
+          "$array": "model/rider_legs_centers.arrays/a014.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "723280d52133f8ed898c6e2a99c61ce278433d2c1706e06730ea131741885ed2",
+          "shape": [
+            3,
+            2
+          ]
+        },
+        "knee_fk": {
+          "$array": "model/rider_legs_centers.arrays/a011.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "095f500fd82a27206f904665adb8922a746e4335f19f837a8be65aff47880ac6",
+          "shape": [
+            3
+          ]
+        },
+        "knee_ik": {
+          "$array": "model/rider_legs_centers.arrays/a009.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "5ba1dc78cb0d4baa2be649baf8d0ac0edc9ed0c33fd5a3d1f1465577e7595d88",
+          "shape": [
+            3
+          ]
+        },
+        "pedal_fk": {
+          "$array": "model/rider_legs_centers.arrays/a013.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "889fecf25b0876e833b7762fb73b079fd3bc7f51a5f0827d52ef6824f3b82c40",
+          "shape": [
+            3
+          ]
+        },
+        "pedal_spindle": {
+          "$array": "model/rider_legs_centers.arrays/a015.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "8c1f8e9e3aee22e80a57b687da7178541af5ecbbc1ada811d560646bae5a9a20",
+          "shape": [
+            3
+          ]
+        },
+        "qpos": {
+          "$array": "model/rider_legs_centers.arrays/a008.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "2f2a6623c6dfee37696807945206a3b87064503806a2b35d3a76597b5272c202",
+          "shape": [
+            3
+          ]
+        }
+      },
+      "side": "front"
+    },
+    {
+      "accepted": true,
+      "phase": 1.9,
+      "result": {
+        "ankle_fk": {
+          "$array": "model/rider_legs_centers.arrays/a020.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "4c4e47d61e434b01dd74e003151988a78f592cd30d2347a8da7aa6290a12c01d",
+          "shape": [
+            3
+          ]
+        },
+        "ankle_ik": {
+          "$array": "model/rider_legs_centers.arrays/a018.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "8655b099a1eb888dea3dc90fd176ab2f114cdf05567adee80e6b0ba544241504",
+          "shape": [
+            3
+          ]
+        },
+        "crank_torque_share": 0.2,
+        "jacobian": {
+          "$array": "model/rider_legs_centers.arrays/a022.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "9b2eb7ee00be1a79522794ac9da12842eb1775643c189ce943019ac932a9424b",
+          "shape": [
+            3,
+            2
+          ]
+        },
+        "knee_fk": {
+          "$array": "model/rider_legs_centers.arrays/a019.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "d8542da8f0f9ad5876e42d2a483cdf7339f80b0f4530d5675a804efc76ae2112",
+          "shape": [
+            3
+          ]
+        },
+        "knee_ik": {
+          "$array": "model/rider_legs_centers.arrays/a017.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "aa786bc488f12c88bf7c797ffd13b3394c33827a080fdf4c0d430ab061c5117e",
+          "shape": [
+            3
+          ]
+        },
+        "pedal_fk": {
+          "$array": "model/rider_legs_centers.arrays/a021.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "4fbea351437a588952c07ec0ee97116c9c1f2cf0b24d1605caf9881998a86efd",
+          "shape": [
+            3
+          ]
+        },
+        "pedal_spindle": {
+          "$array": "model/rider_legs_centers.arrays/a023.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "18b8228a22f0e7f025ac72d3baa91b34f120ab0c2381f109708163682fecfca4",
+          "shape": [
+            3
+          ]
+        },
+        "qpos": {
+          "$array": "model/rider_legs_centers.arrays/a016.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "d341458d75290a7a42bc0abb2bb02a181a4557ed59cc2a55ae8722d806cdb669",
+          "shape": [
+            3
+          ]
+        }
+      },
+      "side": "front"
+    },
+    {
+      "accepted": true,
+      "phase": 3.0,
+      "result": {
+        "ankle_fk": {
+          "$array": "model/rider_legs_centers.arrays/a028.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "48c4125d7fda495187ca5c38fcf13294ee587ccee927ab6ab3994f3aaa98a861",
+          "shape": [
+            3
+          ]
+        },
+        "ankle_ik": {
+          "$array": "model/rider_legs_centers.arrays/a026.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "5fe0a9cbeb9115bcb8c5ccda1307a40df3472735eef28d631c3615f60cedde8e",
+          "shape": [
+            3
+          ]
+        },
+        "crank_torque_share": 0.2,
+        "jacobian": {
+          "$array": "model/rider_legs_centers.arrays/a030.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "bb237bf19555132e20965fe567171f19dbc096af08eb576ee0f1b606899ed4a2",
+          "shape": [
+            3,
+            2
+          ]
+        },
+        "knee_fk": {
+          "$array": "model/rider_legs_centers.arrays/a027.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "9eb73452536ffa66dc96ec6ac76b61838cf45fa5e05c4af24462cd82cf2b3c9d",
+          "shape": [
+            3
+          ]
+        },
+        "knee_ik": {
+          "$array": "model/rider_legs_centers.arrays/a025.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "7fee31fb74a60f56f0dcd69abd105e2a3d963c5c45f8422461aff01da52e2b59",
+          "shape": [
+            3
+          ]
+        },
+        "pedal_fk": {
+          "$array": "model/rider_legs_centers.arrays/a029.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "18f35b9eef8c27db1942f0a15e4687673c17fa2deaa6dcd7c72aed41bb9d1000",
+          "shape": [
+            3
+          ]
+        },
+        "pedal_spindle": {
+          "$array": "model/rider_legs_centers.arrays/a031.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "49e02a0489681a6cadaf8f8e84044ce0945bd50d8c816a79d243cc8a7e9a0825",
+          "shape": [
+            3
+          ]
+        },
+        "qpos": {
+          "$array": "model/rider_legs_centers.arrays/a024.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "6749f03f23a7c97812f5bbddb04ea68b297fd61051524ccb4775b110cfc057d7",
+          "shape": [
+            3
+          ]
+        }
+      },
+      "side": "front"
+    },
+    {
+      "accepted": true,
+      "phase": 1.2,
+      "result": {
+        "qpos": {
+          "$array": "model/rider_legs_centers.arrays/a032.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "92b4b5f968aa31c4a29f30a0ba62c0e227475579db3176b62f9a8c1036aef914",
+          "shape": [
+            3
+          ]
+        }
+      },
+      "side": "rear"
+    }
+  ]
+}

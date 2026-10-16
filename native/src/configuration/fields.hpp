@@ -13,6 +13,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
@@ -29,7 +30,7 @@ struct RecordSchema;
 // spellings live in `FieldDecl::type` verbatim; this enum is how the codec
 // reads `base + offset` for defaults, the `asdict` equivalent and the
 // T13 decode surface.
-enum class FieldKind {
+enum class FieldKind : std::uint8_t {
     Real,               // float
     Integer,            // int
     Boolean,            // bool

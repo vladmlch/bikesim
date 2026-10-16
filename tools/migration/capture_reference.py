@@ -2826,6 +2826,896 @@ def _policy_inventory(ctx: Context) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# RCP-02/T15 — model boundary (inertia, component masses, rider geometry,
+# mass properties, air spring, coil shock, dampers, suspension tuning)
+# ---------------------------------------------------------------------------
+
+def _rcp15_model(ctx: Context):
+    out, rec = ctx.out, ctx.rec
+    import xml.etree.ElementTree as ET
+
+    from bike_sim.geometry.specs import BikeSpecs
+    from bike_sim.physics import air_spring as air_mod
+    from bike_sim.physics import coil_shock as coil_mod
+    from bike_sim.physics import component_masses as cm_mod
+    from bike_sim.physics import damper as damper_mod
+    from bike_sim.physics import inertia as inertia_mod
+    from bike_sim.physics import mass as mass_mod
+    from bike_sim.physics import rider as rider_mod
+    from bike_sim.physics import rider_segments as seg_mod
+    from bike_sim.physics import tuning as tuning_mod
+    from bike_sim.sim.ride import mass_properties as mp_mod
+
+    def emit(name, payload, *, comparison="B", produced_by="", notes=""):
+        files = write_canonical(out, f"{name}.json", payload)
+        rec.add(name, recipe="RCP-02", group="model",
+                comparison=comparison, expected={"kind": "accepted"},
+                produced_by=produced_by, files=files, notes=notes)
+
+    def outcome(fn):
+        try:
+            return {"accepted": True, "result": fn()}
+        except Exception as exc:
+            return {"accepted": False, "error": type(exc).__name__,
+                    "message": str(exc)}
+
+    def ordered_pairs(mapping):
+        """Insertion-ordered dict -> [[key, value], ...] (JSON sort_keys
+        would destroy the recorded dict order)."""
+        return [[k, v] for k, v in mapping.items()]
+
+    def vec(v):
+        return np.asarray(v, dtype=float)
+
+    # --- inertia.py -----------------------------------------------------
+    ring_cases = []
+    for tag, args in (
+            ("annular", (0.5, 0.30, 0.36, 0.05)),
+            ("solid_hub", (1.2, 0.0, 0.045, 0.10)),
+            ("thin_ring", (0.1, 0.10, 0.101, 0.02)),
+            ("zero_mass", (0.0, 0.30, 0.36, 0.05)),
+            ("neg_width", (0.5, 0.30, 0.36, -0.01)),
+            ("inner_ge_outer", (0.5, 0.40, 0.30, 0.05)),
+            ("inner_negative", (0.5, -0.10, 0.30, 0.05)),
+            ("nan_mass", (float("nan"), 0.30, 0.36, 0.05)),
+            ("inf_outer", (0.5, 0.30, float("inf"), 0.05))):
+        ring_cases.append(
+            {"tag": tag, "args": list(args),
+             **outcome(lambda a=args: inertia_mod.ring_inertia(*a))})
+    axis_cases = []
+    for tag, mass, offset in (
+            ("origin", 1.5, (0.0, 0.0, 0.0)),
+            ("axial", 0.8, (0.2, 0.0, 0.0)),
+            ("mixed", 2.4, (0.10, -0.05, 0.30)),
+            ("zero_mass", 0.0, (0.1, 0.2, 0.3)),
+            ("neg_mass", -1.0, (0.1, 0.0, 0.0)),
+            ("nan_offset", 1.0, (float("nan"), 0.0, 0.0))):
+        axis_cases.append(
+            {"tag": tag, "mass_kg": mass, "offset_m": vec(offset),
+             **outcome(lambda m=mass, o=offset:
+                       inertia_mod.parallel_axis(m, o))})
+    wheel_cases = []
+    for tag, mass, comps in (
+            ("front", 2.40, inertia_mod.FRONT_WHEEL_PROFILE),
+            ("rear", 2.80, inertia_mod.REAR_WHEEL_PROFILE),
+            ("bad_fraction_sum", 1.0,
+             (inertia_mod.WheelComponent(0.5, 0.0, 0.1, 0.05,
+                                         (0.0, 0.0, 0.0)),
+              inertia_mod.WheelComponent(0.4, 0.0, 0.05, 0.05,
+                                         (0.0, 0.0, 0.0)))),
+            ("empty", 1.0, ()),
+            ("zero_mass", 0.0, inertia_mod.FRONT_WHEEL_PROFILE),
+            ("neg_fraction", 1.0,
+             (inertia_mod.WheelComponent(-0.5, 0.0, 0.1, 0.05,
+                                         (0.0, 0.0, 0.0)),)),
+            ("nan_offset", 1.0,
+             (inertia_mod.WheelComponent(
+                 1.0, 0.0, 0.1, 0.05, (float("nan"), 0.0, 0.0)),))):
+        def wheel(m=mass, c=comps):
+            com, tensor = inertia_mod.wheel_body_inertia(m, c)
+            return {"com": com, "tensor": tensor}
+        wheel_cases.append({"tag": tag, **outcome(wheel)})
+    inertial_cases = []
+    good_tensor = inertia_mod.ring_inertia(0.5, 0.30, 0.36, 0.05)
+    for tag, mass, com, tensor, dup in (
+            ("accepted", 0.5, (0.1, 0.0, 0.2), good_tensor, False),
+            ("duplicate_inertial", 0.5, (0.0, 0.0, 0.0),
+             good_tensor, True),
+            ("zero_mass", 0.0, (0.0, 0.0, 0.0), good_tensor, False),
+            ("nonfinite_com", 0.5, (float("nan"), 0.0, 0.0),
+             good_tensor, False),
+            ("asymmetric", 0.5, (0.0, 0.0, 0.0),
+             np.array([[1.0, 0.5, 0.0], [0.4, 1.0, 0.0],
+                       [0.0, 0.0, 1.0]]), False),
+            ("indefinite", 0.5, (0.0, 0.0, 0.0),
+             np.diag([-1.0, 2.0, 3.0]), False),
+            ("triangle_violation", 0.5, (0.0, 0.0, 0.0),
+             np.diag([1.0, 1.0, 3.0]), False)):
+        def add_inertial(m=mass, c=com, t=tensor, d=dup):
+            body = ET.fromstring("<body/>")
+            if d:
+                ET.SubElement(body, "inertial", {"mass": "1.0"})
+            inertia_mod.add_body_inertial(body, m, c, t)
+            node = body.find("inertial")
+            return {"mass": node.get("mass"), "pos": node.get("pos"),
+                    "fullinertia": node.get("fullinertia")}
+        inertial_cases.append({"tag": tag, **outcome(add_inertial)})
+    emit("model/inertia",
+         {"_notes": "ring/parallel-axis/wheel tensors + add_body_inertial "
+                    "accepted & rejected branches",
+          "_produced_by": "inertia.py calls over authored case tables",
+          "ring_cases": ring_cases, "axis_cases": axis_cases,
+          "wheel_cases": wheel_cases, "inertial_cases": inertial_cases},
+         produced_by="inertia.py ring/parallel_axis/wheel_body_inertia/"
+                     "add_body_inertial over authored cases")
+
+    # --- component_masses.py ---------------------------------------------
+    def make_geoms(*mass_attrs):
+        return [ET.fromstring(
+            "<geom " + (f'mass="{m}"' if m is not None else "") + "/>")
+                for m in mass_attrs]
+    assign_cases = []
+    for tag, total, attrs in (
+            ("two_weights", 3.0, ("1.5", "4.5")),
+            ("missing_attr", 2.0, ("2.0", None, "2.0")),
+            ("zero_and_pos", 1.0, ("0", "5")),
+            ("bad_string", 1.0, ("abc", "2")),
+            ("neg_weight", 1.0, ("-1", "2")),
+            ("empty", 1.0, ()),
+            ("all_zero", 1.0, ("0", "0")),
+            ("zero_total", 0.0, ("1", "2")),
+            ("nan_total", float("nan"), ("1", "2"))):
+        def assign(t=total, a=attrs):
+            geoms = make_geoms(*a)
+            cm_mod.assign_component_mass(geoms, t)
+            return [g.get("mass") for g in geoms]
+        assign_cases.append({"tag": tag, "total_kg": total,
+                             "weights": list(attrs), **outcome(assign)})
+    register_cases = []
+    registry = {}
+    for tag, cid, attrs in (
+            ("accepted", "fork", ("1.0", "0", "0.5")),
+            ("all_zero", "dead", ("0", "0")),
+            ("duplicate", "fork", ("1.0",)),
+            ("missing_attrs", "bare", (None, "2.0")),
+            ("negative_only", "neg", ("-1",)),
+            ("bad_mass_string", "garbage", ("xx",))):
+        def register(c=cid, a=attrs):
+            cm_mod.register_component(registry, c, make_geoms(*a))
+            return {"ids": list(registry.keys()),
+                    "sizes": [len(v) for v in registry.values()]}
+        register_cases.append({"tag": tag, "component_id": cid,
+                               "masses": list(attrs), **outcome(register)})
+    emit("model/component_masses",
+         {"_notes": "geom weight distribution + registry accepted/"
+                    "duplicate/empty/error branches",
+          "_produced_by": "component_masses.py assign/register over "
+                          "authored geom lists",
+          "assign_cases": assign_cases,
+          "register_cases": register_cases},
+         produced_by="component_masses.py assign_component_mass/"
+                     "register_component")
+
+    # --- mass.py — specs surfaces ----------------------------------------
+    ms = mass_mod.BikeMassSpecs()
+    comp = ms.component_masses
+    prov = ms.component_provenance
+    wheel_i_cases = []
+    for tag, wm, outer, hub in (("front", 2.40, 0.372, 0.045),
+                                ("rear", 2.80, 0.352, 0.045),
+                                ("custom_hub", 1.5, 0.30, 0.06)):
+        wheel_i_cases.append(
+            {"tag": tag,
+             "i_yy": ms.compute_wheel_rotational_inertia(wm, outer, hub)})
+    emit("model/mass_specs",
+         {"_notes": "dataclass-field-order component budgets, provenance, "
+                    "builtin-sum total, wheel I_yy approximation",
+          "_produced_by": "BikeMassSpecs() component_masses/provenance/"
+                          "total/wheel inertia",
+          "names": list(comp.keys()),
+          "masses": np.array(list(comp.values())),
+          "provenance": [[k, v["mass"], v["distribution"]]
+                         for k, v in prov.items()],
+          "total_bike_mass": ms.total_bike_mass,
+          "wheel_inertia_cases": wheel_i_cases},
+         produced_by="BikeMassSpecs() views")
+
+    # --- mass.py — component centers + static system CG -------------------
+    def centers_payload(result):
+        return {"names": list(result.keys()),
+                "positions": np.array([p for p, _ in result.values()]),
+                "masses": np.array([m for _, m in result.values()])}
+    default_centers = mass_mod.compute_component_centers_of_mass()
+    rider_default = rider_mod.RiderSpecs()
+    rider_centers = mass_mod.compute_component_centers_of_mass(
+        rider_specs=rider_default)
+    emit("model/component_centers",
+         {"_notes": "15-entry bike table, then rider centers appended for "
+                    "the seated variant",
+          "_produced_by": "compute_component_centers_of_mass default + "
+                          "seated rider",
+          "bike_only": centers_payload(default_centers),
+          "with_seated_rider": centers_payload(rider_centers)},
+         produced_by="compute_component_centers_of_mass")
+    cg_plain = mass_mod.compute_static_system_cg()
+    cg_rider = mass_mod.compute_static_system_cg(rider_specs=rider_default)
+    emit("model/static_system_cg",
+         {"_notes": "sequential-fold system CoM + axle load split, "
+                    "bike-only and with the seated rider",
+          "_produced_by": "compute_static_system_cg default + rider",
+          "bike_only": cg_plain,
+          "with_seated_rider": cg_rider},
+         produced_by="compute_static_system_cg")
+
+    # --- rider.py — resolution + records ----------------------------------
+    resolve_cases = []
+    for tag, rider, include, default in (
+            ("variant_seated", "seated", None, "seated"),
+            ("variant_lumped", "lumped", None, "seated"),
+            ("variant_articulated", "articulated_planar", None, "seated"),
+            ("variant_none", "none", None, "seated"),
+            ("bad_variant", "unicycle", None, "seated"),
+            ("none_default", None, None, "seated"),
+            ("none_include_true", None, True, "seated"),
+            ("none_include_false", None, False, "seated"),
+            ("none_default_lumped", None, None, "lumped"),
+            ("wrong_type", 123, None, "seated")):
+        def resolve(r=rider, i=include, d=default):
+            specs = rider_mod.resolve_rider(r, include_rider=i,
+                                            default_variant=d)
+            return dataclasses.asdict(specs)
+        resolve_cases.append(
+            {"tag": tag, "rider": rider, "include_rider": include,
+             "default_variant": default, **outcome(resolve)})
+    passthrough = rider_mod.RiderSpecs(variant="lumped", mass_kg=70.0)
+    resolve_cases.append(
+        {"tag": "specs_passthrough", "rider": "RiderSpecs(lumped,70kg)",
+         "include_rider": None, "default_variant": "seated",
+         **outcome(lambda: dataclasses.asdict(
+             rider_mod.resolve_rider(passthrough)))})
+    built = rider_mod.rider_from_args("seated", 75.0, 1.75, None)
+    rider_default = rider_mod.RiderSpecs()
+    artic_specs = rider_mod.RiderSpecs(
+        variant="seated", legs="articulated", mass_kg=75.0, height_m=1.75)
+    artic_variant = rider_mod.RiderSpecs(variant="articulated_planar")
+    spec_errors = []
+    for tag, kwargs in (
+            ("bad_legs", {"legs": "spring"}),
+            ("zero_mass", {"mass_kg": 0.0}),
+            ("neg_height", {"height_m": -1.0}),
+            ("inseam_over_height", {"inseam_m": 1.9}),
+            ("shares_not_one", {"saddle_share": 0.5}),
+            ("helmet_ge_mass", {"helmet_mass_kg": 90.0})):
+        spec_errors.append(
+            {"tag": tag, "kwargs": kwargs,
+             **outcome(lambda k=kwargs: rider_mod.RiderSpecs(**k))})
+    emit("model/rider_specs",
+         {"_notes": "resolve_rider dispatches, rider_from_args record, "
+                    "RiderSpecs post_init rejections",
+          "_produced_by": "rider.py resolve_rider/rider_from_args/"
+                          "RiderSpecs",
+          "resolve_cases": resolve_cases,
+          "rider_from_args_75_175": dataclasses.asdict(built),
+          "default_specs": dataclasses.asdict(rider_default),
+          "default_derived": {
+              "present": rider_default.present,
+              "total_rider_mass": rider_default.total_rider_mass,
+              "inseam": rider_default.inseam,
+              "saddle_height_m": rider_default.saddle_height_m,
+              "torso_helmet_mass": rider_default.torso_helmet_mass,
+              "legs_mass": rider_default.legs_mass,
+              "arms_mass": rider_default.arms_mass,
+              "segment_lengths": {
+                  n: rider_default.segment_length(n)
+                  for n in ("trunk", "upper_arm", "forearm", "hand",
+                            "thigh", "shank", "head")}},
+          "spec_errors": spec_errors},
+         produced_by="rider.py resolution layer")
+
+    def body_dict(b):
+        return {"name": b.name, "parent": b.parent, "attach": b.attach,
+                "joint": b.joint,
+                "geoms": [{"name": g.name, "kind": g.kind, "p1": g.p1,
+                           "p2": g.p2, "radius": g.radius,
+                           "mass": g.mass} for g in b.geoms],
+                "stiffness_n_m": b.stiffness_n_m,
+                "damping_ns_m": b.damping_ns_m,
+                "supported_mass_kg": b.supported_mass_kg,
+                "unilateral": b.unilateral, "interface": b.interface,
+                "mass": b.mass, "center_of_mass": b.center_of_mass,
+                "preload_n": b.preload_n,
+                "preload_deflection_m": b.preload_deflection_m}
+
+    def chain_dict(c):
+        return {"side": c.side, "lateral_y_m": c.lateral_y_m,
+                "crank_len_m": c.crank_len_m, "hip": c.hip, "knee": c.knee,
+                "ankle": c.ankle, "pedal": c.pedal,
+                "thigh_len_m": c.thigh_len_m, "shank_len_m": c.shank_len_m,
+                "thigh_mass_kg": c.thigh_mass_kg,
+                "shank_mass_kg": c.shank_mass_kg,
+                "foot_mass_kg": c.foot_mass_kg,
+                "pitch0_thigh_rad": c.pitch0_thigh_rad,
+                "pitch0_shank_rad": c.pitch0_shank_rad,
+                "pitch0_foot_rad": c.pitch0_foot_rad}
+
+    def pose_dict(pose):
+        fields = ("saddle", "hip", "shoulder", "elbow", "wrist", "grip",
+                  "head_center", "knee_front", "knee_rear", "ankle_front",
+                  "ankle_rear", "pedal_front", "pedal_rear")
+        out_dict = {k: getattr(pose, k) for k in fields}
+        out_dict["saddle"] = dataclasses.asdict(pose.saddle)
+        out_dict.update(
+            {"torso_lean_deg": pose.torso_lean_deg,
+             "knee_flexion_front_deg": pose.knee_flexion_front_deg,
+             "knee_flexion_rear_deg": pose.knee_flexion_rear_deg,
+             "knee_flexion_bdc_deg": pose.knee_flexion_bdc_deg,
+             "bodies": [body_dict(b) for b in pose.bodies],
+             "path_masses_kg": ordered_pairs(pose.path_masses_kg),
+             "leg_chains": [chain_dict(c) for c in pose.leg_chains],
+             "total_mass_kg": pose.total_mass_kg,
+             "interface_loads_n": ordered_pairs(pose.interface_loads_n()),
+             "interface_shares": ordered_pairs(pose.interface_shares()),
+             "missing_body_error":
+                 outcome(lambda: pose.body("rider_nothing"))})
+        return out_dict
+
+    specs = BikeSpecs()
+    pose_default = rider_default.seated_pose(specs)
+    pose_75 = built.seated_pose(specs)
+    pose_leg_articulated = artic_specs.seated_pose(specs)
+    emit("model/seated_pose",
+         {"_notes": "full solved SeatedPose for default + 75kg riders, "
+                    "articulated-leg chain variant",
+          "_produced_by": "solve_seated_pose over three RiderSpecs",
+          "default": pose_dict(pose_default),
+          "rider_75_175": pose_dict(pose_75),
+          "legs_articulated": pose_dict(pose_leg_articulated)},
+         produced_by="solve_seated_pose")
+
+    # --- rider.py — helpers -----------------------------------------------
+    ik_cases = []
+    for tag, a, b, la, lb, prefer in (
+            ("reachable_px", (0.1, 0.0, 0.9), (0.2, 0.0, 0.4), 0.45, 0.45,
+             "+x"),
+            ("reachable_mx", (0.1, 0.0, 0.9), (0.2, 0.0, 0.4), 0.45, 0.45,
+             "-x"),
+            ("prefer_pz", (0.0, 0.0, 1.0), (0.4, 0.0, 0.6), 0.3, 0.3,
+             "+z"),
+            ("prefer_mz", (0.0, 0.0, 1.0), (0.4, 0.0, 0.6), 0.3, 0.3,
+             "-z"),
+            ("too_far", (0.0, 0.0, 0.0), (2.0, 0.0, 0.0), 0.4, 0.4,
+             "+x"),
+            ("too_close", (0.0, 0.0, 0.0), (0.05, 0.0, 0.0), 0.4, 0.2,
+             "+x"),
+            ("degenerate_straight", (0.0, 0.0, 0.0), (0.8, 0.0, 0.0),
+             0.4, 0.4, "+x"),
+            ("bad_prefer", (0.0, 0.0, 1.0), (0.4, 0.0, 0.6), 0.3, 0.3,
+             "+y")):
+        ik_cases.append(
+            {"tag": tag, "a": vec(a), "b": vec(b), "len_a": la,
+             "len_b": lb, "prefer": prefer,
+             **outcome(lambda a=a, b=b, la=la, lb=lb, p=prefer:
+                       rider_mod._two_link_ik(vec(a), vec(b), la, lb, p))})
+    flexion_cases = []
+    for tag, prox, joint, distal in (
+            ("straight", (0.0, 0.0, 1.0), (0.0, 0.0, 0.5),
+             (0.0, 0.0, 0.0)),
+            ("right_angle", (0.0, 0.0, 1.0), (0.0, 0.0, 0.5),
+             (0.5, 0.0, 0.5)),
+            ("bent_30ish", (0.1, 0.0, 1.0), (0.2, 0.0, 0.6),
+             (0.25, 0.0, 0.2))):
+        flexion_cases.append(
+            {"tag": tag, "proximal": vec(prox), "joint": vec(joint),
+             "distal": vec(distal),
+             **outcome(lambda p=prox, j=joint, d=distal:
+                       rider_mod._flexion_deg(vec(p), vec(j), vec(d)))})
+    spring_cases = [{"tag": "default",
+                     **outcome(lambda: rider_mod._spring(30.0, 5.0, 0.4))}]
+    path_cases = []
+    for tag, kwargs in (
+            ("default", {}),
+            ("rider_75", {"mass_kg": 75.0, "height_m": 1.75}),
+            # shares sum to 1 so __post_init__ passes and the
+            # seated_path_masses error arms are the ones exercised.
+            ("bar_too_low", {"bar_share": 0.05, "pedal_share": 0.40}),
+            ("pedal_too_low", {"pedal_share": 0.05, "bar_share": 0.40}),
+            ("pedal_too_high", {"pedal_share": 0.80, "saddle_share": 0.10,
+                                "bar_share": 0.10}),
+            # pelvis<=0 is unreachable for valid RiderSpecs (needs
+            # helmet >= mass); exercise a heavy-helmet accepted row.
+            ("helmet_heavy", {"mass_kg": 60.0, "helmet_mass_kg": 5.0,
+                              "saddle_share": 0.40, "pedal_share": 0.30,
+                              "bar_share": 0.30})):
+        def path_m(k=kwargs):
+            r = rider_mod.RiderSpecs(**k)
+            return ordered_pairs(rider_mod.seated_path_masses(r))
+        path_cases.append({"tag": tag, **outcome(path_m)})
+    emit("model/rider_helpers",
+         {"_notes": "two-link IK branches, flexion, spring derivation, "
+                    "seated path mass splits incl. rejection arms",
+          "_produced_by": "rider.py _two_link_ik/_flexion_deg/_spring/"
+                          "seated_path_masses",
+          "ik_cases": ik_cases, "flexion_cases": flexion_cases,
+          "spring_cases": spring_cases, "path_cases": path_cases},
+         produced_by="rider.py helper layer")
+
+    # --- rider.py — leg chains + apparent mass + centers -------------------
+    chain = pose_leg_articulated.leg_chains[0]
+    chain_rear = pose_leg_articulated.leg_chains[1]
+    leg_cases = []
+    for phase in (0.0, 0.7, 1.9, 3.0):
+        def leg_ops(c=chain, p=phase):
+            qpos = rider_mod.solve_leg_qpos(c, p, 0.0)
+            joints = rider_mod.solve_leg_joints(c, p, 0.0)
+            knee, ankle, pedal = rider_mod.fk_leg(c, qpos, 0.0)
+            jac = rider_mod.leg_jacobian(c, qpos, 0.0)
+            return {"qpos": qpos, "knee_ik": joints[0],
+                    "ankle_ik": joints[1], "knee_fk": knee,
+                    "ankle_fk": ankle, "pedal_fk": pedal,
+                    "jacobian": np.asarray(jac),
+                    "crank_torque_share":
+                        rider_mod.crank_torque_share(p, 0.6),
+                    "pedal_spindle": rider_mod.pedal_spindle_pos(
+                        p, c.lateral_y_m, c.crank_len_m)}
+        leg_cases.append({"phase": phase, "side": "front",
+                          **outcome(leg_ops)})
+    leg_cases.append(
+        {"phase": 1.2, "side": "rear",
+         **outcome(lambda: {"qpos": rider_mod.solve_leg_qpos(
+             chain_rear, 1.2, 0.0)})})
+    center_variants = {}
+    for variant, r in (("none", rider_mod.RiderSpecs(variant="none")),
+                       ("lumped", rider_mod.RiderSpecs(variant="lumped")),
+                       ("seated", rider_default),
+                       ("seated_articulated_legs", artic_specs),
+                       ("articulated_planar", artic_variant)):
+        def centers(r=r):
+            result = r.compute_rider_centers_of_mass(specs)
+            return {"names": list(result.keys()),
+                    "positions": np.array([p for p, _ in result.values()])
+                    if result else np.zeros(0),
+                    "masses": np.array([m for _, m in result.values()])
+                    if result else np.zeros(0)}
+        center_variants[variant] = outcome(centers)
+    apparent = rider_mod.saddle_path_apparent_mass(
+        pose_default, np.array([0.5, 1.0, 2.0, 4.8, 8.0, 20.0]))
+    emit("model/rider_legs_centers",
+         {"_notes": "articulated leg IK/FK/Jacobian/crank share, per-"
+                    "variant rider CoM tables, saddle apparent mass",
+          "_produced_by": "rider.py leg chain ops + "
+                          "compute_rider_centers_of_mass + apparent mass",
+          "leg_cases": leg_cases,
+          "center_variants": center_variants,
+          "apparent_mass": apparent},
+         produced_by="rider.py leg/center/apparent surfaces")
+
+    # --- rider_segments.py --------------------------------------------------
+    seg_masses = seg_mod.segment_masses(75.0, 0.4)
+    split = seg_mod.split_paired_arm_masses(seg_masses)
+    inertia_rows = []
+    for tag, mass, axis, radius in (
+            ("head", 5.95, (0.0, 0.0, 0.19), 0.110),
+            ("torso", 25.8, (0.28, 0.0, -0.42), 0.110),
+            ("upper_arm", 2.0, (0.30, 0.0, -0.35), 0.045),
+            ("thigh", 11.3, (0.10, 0.0, -0.42), 0.070),
+            ("shank", 3.4, (0.12, 0.0, -0.40), 0.055),
+            ("foot", 1.1, (0.16, 0.0, -0.04), 0.035)):
+        inertia_rows.append(
+            {"name": tag, "mass_kg": mass, "axis_vector_m": vec(axis),
+             "radius_m": radius,
+             **outcome(lambda m=mass, a=axis, r=radius:
+                       seg_mod.segment_inertia(m, vec(a), r))})
+    seg_cases = []
+    for tag, total, helmet in (("default", 80.0, 0.4),
+                               ("helmet_eq_mass", 50.0, 50.0),
+                               ("helmet_over", 50.0, 60.0),
+                               ("zero_total", 0.0, 0.0),
+                               ("neg_helmet", 80.0, -0.5)):
+        seg_cases.append(
+            {"tag": tag, "total_kg": total, "helmet_kg": helmet,
+             **outcome(lambda t=total, h=helmet:
+                       ordered_pairs(seg_mod.segment_masses(t, h)))})
+    inertia_error_cases = []
+    for tag, m, axis, r in (
+            ("zero_mass", 0.0, (0.3, 0.0, 0.3), 0.05),
+            ("zero_axis", 1.0, (0.0, 0.0, 0.0), 0.05),
+            ("neg_radius", 1.0, (0.3, 0.0, 0.3), -0.05),
+            ("nan_axis", 1.0, (float("nan"), 0.0, 0.0), 0.05)):
+        inertia_error_cases.append(
+            {"tag": tag,
+             **outcome(lambda m=m, a=axis, r=r:
+                       seg_mod.segment_inertia(m, vec(a), r))})
+    artic_pose = seg_mod.geometry_pose(artic_variant, specs)
+    emit("model/rider_segments",
+         {"_notes": "de Leva tables, anatomical masses + arm split, "
+                    "segment inertia tensors, articulated geometry pose",
+          "_produced_by": "rider_segments.py tables/helpers/geometry_pose",
+          "de_leva_fractions":
+              ordered_pairs(seg_mod.DE_LEVA_MASS_FRACTIONS),
+          "arm_lateral_offset_m": seg_mod.ARM_LATERAL_OFFSET_M,
+          "mass_cases": seg_cases,
+          "split_pairs": ordered_pairs(split),
+          "inertia_rows": inertia_rows,
+          "inertia_error_cases": inertia_error_cases,
+          "articulated_pose": {
+              f: getattr(artic_pose, f)
+              for f in artic_pose.__dataclass_fields__}},
+         produced_by="rider_segments.py")
+
+    # --- air_spring.py ------------------------------------------------------
+    air = air_mod.AirSpringSpecs()
+    spring = air_mod.ForkAirSpring()
+    grid = [0.0, 30.0, 54.0, 90.0, 179.0]
+    vol_rows, press_rows, force_rows, stiff_rows = [], [], [], []
+    for x in grid:
+        vol_rows.append({"travel_mm": x,
+                         **outcome(lambda t=x: spring.compute_volumes(t))})
+        press_rows.append(
+            {"travel_mm": x,
+             **outcome(lambda t=x: spring.compute_pressures_pa(t))})
+        force_rows.append(
+            {"travel_mm": x,
+             **outcome(lambda t=x: spring.compute_axial_force(t))})
+        stiff_rows.append(
+            {"travel_mm": x,
+             **outcome(lambda t=x: spring.compute_instantaneous_stiffness(t))})
+    curve = spring.compute_force_curve(n_points=41)
+    cal_spring = air_mod.ForkAirSpring()
+    cal_outcome = outcome(
+        lambda: cal_spring.calibrate_psi_for_sag())
+    air_errors = []
+    for tag, fn in (
+            ("tokens_over_max",
+             lambda: (lambda s: (s.set_tokens(99), s.num_tokens)[1])(
+                 air_mod.ForkAirSpring())),
+            ("neg_psi_ctor",
+             lambda: air_mod.ForkAirSpring(gauge_pressure_psi=-5.0)),
+            ("set_pressure_clamps",
+             lambda: (lambda s: (s.set_pressure_psi(1.0),
+                                 s.gauge_pressure_psi)[1])(
+                 air_mod.ForkAirSpring())),
+            ("bad_travel",
+             lambda: air_mod.ForkAirSpring().compute_volumes(float("nan"))),
+            # travel is clamped to total_travel_mm, so this is accepted.
+            ("overtravel_volumes",
+             lambda: air_mod.ForkAirSpring().compute_volumes(1e6)),
+            # small positive chamber + tokens exhausts before full travel.
+            ("exhausted_volumes",
+             lambda: air_mod.ForkAirSpring(
+                 specs=air_mod.AirSpringSpecs(
+                     pos_chamber_length_mm=60.0)).compute_volumes(180.0)),
+            ("bad_travel_type",
+             lambda: air_mod.ForkAirSpring().compute_volumes("x")),
+            ("lstsq_bad_order",
+             lambda: air_mod.ForkAirSpring().fit_polynomial_mjcf(0)),
+            ("calibrate_bad_sag",
+             lambda: air_mod.ForkAirSpring().calibrate_psi_for_sag(
+                 target_sag_mm=179.9, target_axial_force_n=100.0))):
+        air_errors.append({"tag": tag, **outcome(fn)})
+    emit("model/air_spring",
+         {"_notes": "spec record + properties, chambers/pressures/forces/"
+                    "stiffness over the stroke grid, force curve, psi "
+                    "calibration, polynomial fit, error branches",
+          "_produced_by": "air_spring.py ForkAirSpring over the default "
+                          "spec",
+          "specs": dataclasses.asdict(air),
+          "properties": {"piston_area_m2": air.piston_area_m2,
+                         "token_volume_m3": air.token_volume_m3,
+                         "base_pos_volume_m3": air.base_pos_volume_m3,
+                         "base_neg_volume_m3": air.base_neg_volume_m3},
+          "defaults": {"num_tokens": spring.num_tokens,
+                       "gauge_pressure_psi": spring.gauge_pressure_psi,
+                       "abs_pressure_pa": spring.abs_pressure_pa,
+                       "gauge_pressure_bar": spring.gauge_pressure_bar},
+          "volume_rows": vol_rows, "pressure_rows": press_rows,
+          "force_rows": force_rows, "stiffness_rows": stiff_rows,
+          "force_curve": curve,
+          "fit_order3": spring.fit_polynomial_mjcf(),
+          "calibration": {"outcome": cal_outcome,
+                          "psi_after": cal_spring.gauge_pressure_psi},
+          "error_cases": air_errors},
+         produced_by="ForkAirSpring over AirSpringSpecs()")
+
+    # --- coil_shock.py ------------------------------------------------------
+    coil_specs = coil_mod.CoilShockSpecs()
+    coil = coil_mod.CoilShock()
+    coil_legacy = coil_mod.CoilShock(legacy_behavior=True)
+    coil_pre = coil_mod.CoilShock(
+        coil_mod.CoilShockSpecs(preload_mm=2.0))
+    coil_rows = []
+    for x in (-5.0, 0.0, 20.0, 55.0, 60.0, 65.0, 70.0):
+        coil_rows.append(
+            {"stroke_mm": x,
+             "spring": outcome(lambda t=x: coil.compute_spring_force(t)),
+             "bumper": outcome(lambda t=x: coil.compute_bumper_force(t)),
+             "axial": outcome(lambda t=x: coil.compute_axial_force(t)),
+             "legacy_spring": outcome(
+                 lambda t=x: coil_legacy.compute_spring_force(t)),
+             "preload_spring": outcome(
+                 lambda t=x: coil_pre.compute_spring_force(t))})
+    coil_errors = []
+    for tag, fn in (
+            ("neg_rate", lambda: coil_mod.CoilShock(
+                coil_mod.CoilShockSpecs(rate_n_m=-1.0))),
+            ("zero_stroke", lambda: coil_mod.CoilShock(
+                coil_mod.CoilShockSpecs(stroke_mm=0.0))),
+            ("bumper_over_stroke", lambda: coil_mod.CoilShock(
+                coil_mod.CoilShockSpecs(bumper_length_mm=70.0))),
+            ("neg_preload", lambda: coil_mod.CoilShock(
+                coil_mod.CoilShockSpecs(preload_mm=-1.0))),
+            ("nan_stroke", lambda: coil.compute_spring_force(
+                float("nan")))):
+        coil_errors.append({"tag": tag, **outcome(fn)})
+    emit("model/coil_shock",
+         {"_notes": "linear coil + quadratic bumper, legacy/preload "
+                    "variants, spec and call rejections",
+          "_produced_by": "coil_shock.py CoilShock over stroke grid",
+          "specs": dataclasses.asdict(coil_specs),
+          "bumper_engage_mm": coil_specs.bumper_engage_mm,
+          "rows": coil_rows, "error_cases": coil_errors},
+         produced_by="CoilShock over CoilShockSpecs()")
+
+    # --- damper.py ----------------------------------------------------------
+    preset_table = [{"preset": p.name, "label": p.value,
+                     "has_config": p in damper_mod.DAMPER_PRESETS,
+                     "config": (dataclasses.asdict(
+                         damper_mod.DAMPER_PRESETS[p])
+                         if p in damper_mod.DAMPER_PRESETS else None)}
+                    for p in damper_mod.DamperPreset]
+    fork = damper_mod.Charger3Damper()
+    shock = damper_mod.SuperDeluxeDamper()
+    vel_grid = (-2.5, -0.30, -0.10, -0.03, 0.0, 0.03, 0.10, 0.30, 2.5)
+    fork_rows = []
+    for v in vel_grid:
+        for travel in (20.0, 90.0, 170.0):
+            fork_rows.append(
+                {"velocity_mps": v, "travel_mm": travel,
+                 **outcome(lambda vv=v, t=travel:
+                           fork.compute_damping_force(vv, t))})
+    shock_rows = []
+    for v in vel_grid:
+        for stroke in (10.0, 30.0, 60.0):
+            shock_rows.append(
+                {"velocity_mps": v, "stroke_mm": stroke,
+                 "components": outcome(
+                     lambda vv=v, s=stroke:
+                     ordered_pairs(
+                         shock.compute_damping_components(vv, s))),
+                 "force": outcome(
+                     lambda vv=v, s=stroke:
+                     shock.compute_damping_force(vv, s))})
+    legacy_shock = damper_mod.SuperDeluxeDamper(legacy_behavior=True)
+    locked = damper_mod.SuperDeluxeDamper(lockout_firm=True)
+    lock_rows = []
+    for v in (0.01, 0.04, 0.5, 2.0):
+        lock_rows.append(
+            {"velocity_mps": v,
+             "modern": outcome(
+                 lambda vv=v: locked.compute_damping_force(vv, 20.0)),
+             "legacy": outcome(
+                 lambda vv=v: legacy_shock.compute_damping_force(
+                     vv, 20.0))})
+    def _fork_clicks(d):
+        return [d.hsc_clicks, d.lsc_clicks, d.rebound_clicks]
+
+    def _shock_clicks(d):
+        return [d.hsc_clicks, d.lsc_clicks, d.rebound_clicks,
+                d.hbo_clicks, d.lockout_firm]
+
+    # every mutation uses a fresh damper so `fork`/`shock` stay at ctor
+    # defaults for the coefficient/dyno/ctor records below.
+    click_cases = []
+    for tag, fn in (
+            ("fork_set_within",
+             lambda: (lambda d: (d.set_clicks(hsc=3, lsc=5),
+                                 _fork_clicks(d))[1])(
+                 damper_mod.Charger3Damper())),
+            ("fork_clamps",
+             lambda: (lambda d: (d.set_clicks(hsc=99, lsc=-3, reb=25),
+                                 _fork_clicks(d))[1])(
+                 damper_mod.Charger3Damper())),
+            ("fork_bad_click_type",
+             lambda: damper_mod.Charger3Damper().set_clicks(hsc=1.5)),
+            ("shock_set_all",
+             lambda: (lambda d: (d.set_clicks(
+                 hsc=1, lsc=2, reb=3, hbo=4, lockout=True),
+                 _shock_clicks(d))[1])(damper_mod.SuperDeluxeDamper())),
+            ("toggle_lockout",
+             lambda: (lambda d: (
+                 d.toggle_lockout(), d.toggle_lockout(),
+                 d.lockout_firm))(damper_mod.SuperDeluxeDamper())),
+            ("fork_ctor_clamps",
+             lambda: _fork_clicks(damper_mod.Charger3Damper(
+                 hsc_clicks=99, lsc_clicks=-1, rebound_clicks=99))),
+            ("fork_low_travel",
+             lambda: _fork_clicks(
+                 damper_mod.Charger3Damper(total_travel_mm=10.0))),
+            ("fork_low_travel_legacy",
+             lambda: _fork_clicks(damper_mod.Charger3Damper(
+                 total_travel_mm=10.0, legacy_behavior=True))),
+            ("shock_zero_stroke",
+             lambda: _shock_clicks(
+                 damper_mod.SuperDeluxeDamper(total_stroke_mm=0.0))),
+            ("fork_nan_velocity",
+             lambda: damper_mod.Charger3Damper().compute_damping_force(
+                 float("nan"), 50.0)),
+            ("shock_nan_stroke",
+             lambda: damper_mod.SuperDeluxeDamper().compute_damping_force(
+                 0.5, float("nan")))):
+        click_cases.append({"tag": tag, **outcome(fn)})
+    dyno_fork = damper_mod.Charger3Damper().compute_dyno_curve(
+        v_max=1.5, n_points=41)
+    dyno_shock = damper_mod.SuperDeluxeDamper().compute_dyno_curve(
+        v_max=1.5, n_points=41)
+    system = damper_mod.BikeSuspensionSystem()
+    applied = []
+    for p in damper_mod.DamperPreset:
+        def apply(p=p):
+            s = damper_mod.BikeSuspensionSystem()
+            s.apply_preset(p)
+            return {"preset": s.current_preset.name,
+                    "fork_clicks": [s.fork_damper.hsc_clicks,
+                                    s.fork_damper.lsc_clicks,
+                                    s.fork_damper.rebound_clicks],
+                    "shock_clicks": [s.shock_damper.hsc_clicks,
+                                     s.shock_damper.lsc_clicks,
+                                     s.shock_damper.rebound_clicks,
+                                     s.shock_damper.hbo_clicks],
+                    "lockout": s.shock_damper.lockout_firm,
+                    "config": dataclasses.asdict(s.config)}
+        applied.append({"preset": p.name, **outcome(apply)})
+    cycle = []
+    s = damper_mod.BikeSuspensionSystem()
+    for forward in (True, True, True, True, False, False):
+        cycle.append({"forward": forward,
+                      "preset": s.cycle_preset(forward).name})
+    s.current_preset = damper_mod.DamperPreset.CUSTOM
+    cycle.append({"forward": True,
+                  "preset": s.cycle_preset(True).name})
+    emit("model/dampers",
+         {"_notes": "preset table + click configs, Charger3/SuperDeluxe "
+                    "coeffs, damping forces over the velocity grid, "
+                    "HBO/lockout/legacy branches, dyno curves, system "
+                    "preset apply/cycle",
+          "_produced_by": "damper.py classes over authored grids",
+          "preset_table": preset_table,
+          "click_config_defaults": dataclasses.asdict(
+              damper_mod.DamperClickConfig()),
+          "fork_coefficients":
+              ordered_pairs(fork.get_effective_coefficients()),
+          "shock_coefficients":
+              ordered_pairs(shock.get_effective_coefficients()),
+          "fork_ctor_record": {
+              "hsc_clicks": fork.hsc_clicks, "lsc_clicks": fork.lsc_clicks,
+              "rebound_clicks": fork.rebound_clicks,
+              "hbo_start_mm": fork.hbo_start_mm,
+              "c_hbo_base": fork.c_hbo_base,
+              "legacy_behavior": fork.legacy_behavior},
+          "shock_ctor_record": {
+              "hsc_clicks": shock.hsc_clicks, "lsc_clicks": shock.lsc_clicks,
+              "rebound_clicks": shock.rebound_clicks,
+              "hbo_clicks": shock.hbo_clicks,
+              "hbo_start_mm": shock.hbo_start_mm,
+              "lockout_firm": shock.lockout_firm,
+              "max_hbo": shock.max_hbo,
+              "total_stroke_mm": shock.total_stroke_mm,
+              "c_hbo_min": shock.c_hbo_min, "c_hbo_max": shock.c_hbo_max,
+              "lockout_preload_n": shock.lockout_preload_n,
+              "lockout_stiffness": shock.lockout_stiffness,
+              "legacy_behavior": shock.legacy_behavior},
+          "fork_force_rows": fork_rows,
+          "shock_force_rows": shock_rows,
+          "lockout_rows": lock_rows,
+          "click_cases": click_cases,
+          "dyno_fork": dyno_fork, "dyno_shock": dyno_shock,
+          "apply_presets": applied, "cycle_sequence": cycle},
+         produced_by="damper.py presets/dampers/system")
+
+    # --- tuning.py ----------------------------------------------------------
+    refl_cases = []
+    for tag, m, lr in (("nominal", 3.5, 2.4), ("unit", 1.0, 1.0),
+                       ("zero_mass", 0.0, 2.0), ("neg_lr", 1.0, -1.0),
+                       ("nan_mass", float("nan"), 2.0)):
+        refl_cases.append(
+            {"tag": tag, "mass_kg": m, "leverage_ratio": lr,
+             **outcome(lambda m=m, l=lr:
+                       tuning_mod.reflected_shock_mass(m, l))})
+    tuning_cases = []
+    for tag, kwargs in (
+            ("default", {}),
+            ("rider_90kg", {"rider_mass_kg": 90.0}),
+            ("seated_rider", {"rider_specs": rider_default}),
+            ("front_fraction", {"front_weight_fraction": 0.45}),
+            ("custom_sag", {"target_front_sag_pct": 25.0,
+                            "target_rear_sag_pct": 33.0})):
+        tuning_cases.append(
+            {"tag": tag,
+             **outcome(lambda k=kwargs:
+                       ordered_pairs(
+                           tuning_mod.compute_suspension_tuning_for_sag(
+                               **k)))})
+    emit("model/tuning",
+         {"_notes": "reflected shock mass + compute_suspension_tuning_"
+                    "for_sag outputs incl. explicit rider/fraction "
+                    "variants",
+          "_produced_by": "tuning.py over default BikeSpecs/"
+                          "BikeMassSpecs",
+          "reflected_cases": refl_cases, "tuning_cases": tuning_cases},
+         produced_by="tuning.py")
+
+    # --- sim/ride/mass_properties.py ---------------------------------------
+    import mujoco
+    minimal_xml = (
+        '<mujoco><option timestep="0.001"/>'
+        '<worldbody>'
+        '<geom name="floor" type="plane" pos="0 0 0" size="10 10 0.1"/>'
+        '<body name="rear" pos="-0.45 0 0.098">'
+        '<freejoint/>'
+        '<geom name="rear_wheel" type="sphere" size="0.1" mass="2.8"/>'
+        '</body>'
+        '<body name="front" pos="0.45 0 0.098">'
+        '<freejoint/>'
+        '<geom name="front_wheel" type="sphere" size="0.1" mass="2.4"/>'
+        '</body>'
+        '<body name="frame" pos="0 0 0.62">'
+        '<freejoint/>'
+        '<geom name="frame_box" type="box" size="0.12 0.08 0.05" '
+        'mass="21.0"/>'
+        '</body>'
+        '</worldbody></mujoco>')
+    try:
+        model = mujoco.MjModel.from_xml_string(minimal_xml)
+        data = mujoco.MjData(model)
+        mujoco.mj_forward(model, data)
+        front_gid = mujoco.mj_name2id(
+            model, mujoco.mjtObj.mjOBJ_GEOM, "front_wheel")
+        rear_gid = mujoco.mj_name2id(
+            model, mujoco.mjtObj.mjOBJ_GEOM, "rear_wheel")
+        mjb_path = ctx.tmp / "wheel_contacts.mjb"
+        mujoco.mj_saveModel(model, str(mjb_path))
+        mjb_record = out.copy("model/wheel_contacts.mjb", mjb_path)
+        expected = {
+            "ncon": int(data.ncon),
+            "front_geom_id": int(front_gid),
+            "rear_geom_id": int(rear_gid),
+            "nbody": int(model.nbody),
+            "body_mass": np.asarray(model.body_mass),
+            "xipos": np.asarray(data.xipos),
+            "compiled_com": mp_mod.compiled_center_of_mass(model, data),
+            "contact_loads": mp_mod.static_contact_loads(
+                model, data, front_gid, rear_gid),
+            "no_contact_error": None,
+            "swapped_ids_error": None,
+        }
+        # MjData.ncon cannot be cleared through the binding — a fresh
+        # MjData with no mj_forward call has ncon == 0.
+        try:
+            mp_mod.static_contact_loads(model, mujoco.MjData(model),
+                                        front_gid, rear_gid)
+        except Exception as exc:
+            expected["no_contact_error"] = {
+                "error": type(exc).__name__, "message": str(exc)}
+        try:
+            mp_mod.static_contact_loads(model, data, rear_gid, front_gid)
+        except Exception as exc:
+            expected["swapped_ids_error"] = {
+                "error": type(exc).__name__, "message": str(exc)}
+        files = write_canonical(out, "model/mass_properties.json",
+                                expected)
+        rec.add("model/mass_properties", recipe="RCP-02", group="model",
+                comparison="B", expected={"kind": "accepted"},
+                produced_by="mujoco.MjModel.from_xml_string + mj_forward "
+                            "+ mass_properties.py",
+                files=[mjb_record, *files],
+                inputs=[], notes="compiled CoM + static contact loads on "
+                                 "a three-body resting fixture; error rows "
+                                 "for empty contacts and swapped ids")
+    except Exception as exc:
+        rec.blocker("model/mass_properties", "RCP-02",
+                    "".join(traceback.format_exception(exc))[-2000:])
+
+
 def _jd(o):
     if isinstance(o, np.ndarray):
         return list(o)
@@ -2872,6 +3762,7 @@ def _harness(ctx: Context):
 GROUPS = {
     "harness": _harness,
     "config": _rcp02_config,
+    "model": _rcp15_model,
     "bootstrap": _rcp01_bootstrap,
     "random": _rcp03_random,
     "research": _rcp03_research,

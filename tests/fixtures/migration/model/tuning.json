@@ -1,0 +1,458 @@
+{
+  "_notes": "reflected shock mass + compute_suspension_tuning_for_sag outputs incl. explicit rider/fraction variants",
+  "_produced_by": "tuning.py over default BikeSpecs/BikeMassSpecs",
+  "reflected_cases": [
+    {
+      "accepted": true,
+      "leverage_ratio": 2.4,
+      "mass_kg": 3.5,
+      "result": 20.16,
+      "tag": "nominal"
+    },
+    {
+      "accepted": true,
+      "leverage_ratio": 1.0,
+      "mass_kg": 1.0,
+      "result": 1.0,
+      "tag": "unit"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "leverage_ratio": 2.0,
+      "mass_kg": 0.0,
+      "message": "mass and leverage ratio must be finite and positive",
+      "tag": "zero_mass"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "leverage_ratio": -1.0,
+      "mass_kg": 1.0,
+      "message": "mass and leverage ratio must be finite and positive",
+      "tag": "neg_lr"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "leverage_ratio": 2.0,
+      "mass_kg": {
+        "$nonfinite": "nan"
+      },
+      "message": "mass and leverage ratio must be finite and positive",
+      "tag": "nan_mass"
+    }
+  ],
+  "tuning_cases": [
+    {
+      "accepted": true,
+      "result": [
+        [
+          "total_system_mass_kg",
+          104.4
+        ],
+        [
+          "front_load_fraction",
+          0.4668859913220247
+        ],
+        [
+          "target_front_sag_mm",
+          54.0
+        ],
+        [
+          "fork_stiffness_n_m",
+          7958.785068837463
+        ],
+        [
+          "fork_damping_n_s_m",
+          597.4068822995014
+        ],
+        [
+          "fork_air_tokens",
+          2
+        ],
+        [
+          "fork_calibrated_psi",
+          118.54894571303427
+        ],
+        [
+          "fork_air_force_full_travel_n",
+          2920.118440794752
+        ],
+        [
+          "fork_air_bottom_out_g",
+          6.106890283467232
+        ],
+        [
+          "fork_air_progressivity_pct",
+          349.997044056399
+        ],
+        [
+          "front_spring_force_full_travel_n",
+          1593.892748054434
+        ],
+        [
+          "front_bottom_out_g",
+          3.3333333333333335
+        ],
+        [
+          "target_rear_sag_mm",
+          54.0
+        ],
+        [
+          "shock_stroke_at_sag_mm",
+          17.191963746178885
+        ],
+        [
+          "lr_at_sag",
+          2.9592916334484314
+        ],
+        [
+          "shock_stiffness_n_m",
+          93983.55755948575
+        ],
+        [
+          "shock_damping_n_s_m",
+          8385.870409439913
+        ],
+        [
+          "rear_spring_force_full_travel_n",
+          2532.9752268953744
+        ],
+        [
+          "rear_bottom_out_g",
+          4.639181262007235
+        ]
+      ],
+      "tag": "default"
+    },
+    {
+      "accepted": true,
+      "result": [
+        [
+          "total_system_mass_kg",
+          114.4
+        ],
+        [
+          "front_load_fraction",
+          0.4668986804624303
+        ],
+        [
+          "target_front_sag_mm",
+          54.0
+        ],
+        [
+          "fork_stiffness_n_m",
+          8721.357828131155
+        ],
+        [
+          "fork_damping_n_s_m",
+          657.1319603395125
+        ],
+        [
+          "fork_air_tokens",
+          2
+        ],
+        [
+          "fork_calibrated_psi",
+          131.31583487678085
+        ],
+        [
+          "fork_air_force_full_travel_n",
+          3199.9102378593907
+        ],
+        [
+          "fork_air_bottom_out_g",
+          6.106890283467232
+        ],
+        [
+          "fork_air_progressivity_pct",
+          349.99704405639875
+        ],
+        [
+          "front_spring_force_full_travel_n",
+          1746.6119357682965
+        ],
+        [
+          "front_bottom_out_g",
+          3.3333333333333335
+        ],
+        [
+          "target_rear_sag_mm",
+          54.0
+        ],
+        [
+          "shock_stroke_at_sag_mm",
+          17.191963746178885
+        ],
+        [
+          "lr_at_sag",
+          2.9592916334484314
+        ],
+        [
+          "shock_stiffness_n_m",
+          102983.36276993346
+        ],
+        [
+          "shock_damping_n_s_m",
+          9229.310126758748
+        ],
+        [
+          "rear_spring_force_full_travel_n",
+          2775.5313105009486
+        ],
+        [
+          "rear_bottom_out_g",
+          4.639181262007235
+        ]
+      ],
+      "tag": "rider_90kg"
+    },
+    {
+      "accepted": true,
+      "result": [
+        [
+          "total_system_mass_kg",
+          104.4
+        ],
+        [
+          "front_load_fraction",
+          0.4035594105371718
+        ],
+        [
+          "target_front_sag_mm",
+          54.0
+        ],
+        [
+          "fork_stiffness_n_m",
+          6879.286743809776
+        ],
+        [
+          "fork_damping_n_s_m",
+          512.8412580889321
+        ],
+        [
+          "fork_air_tokens",
+          2
+        ],
+        [
+          "fork_calibrated_psi",
+          100.4761319387217
+        ],
+        [
+          "fork_air_force_full_travel_n",
+          2524.045052902542
+        ],
+        [
+          "fork_air_bottom_out_g",
+          6.106890283467233
+        ],
+        [
+          "fork_air_progressivity_pct",
+          349.9970440564026
+        ],
+        [
+          "front_spring_force_full_travel_n",
+          1377.7034004446402
+        ],
+        [
+          "front_bottom_out_g",
+          3.333333333333333
+        ],
+        [
+          "target_rear_sag_mm",
+          54.0
+        ],
+        [
+          "shock_stroke_at_sag_mm",
+          17.191963746178885
+        ],
+        [
+          "lr_at_sag",
+          2.9592916334484314
+        ],
+        [
+          "shock_stiffness_n_m",
+          105147.50608336276
+        ],
+        [
+          "shock_damping_n_s_m",
+          9432.104771874703
+        ],
+        [
+          "rear_spring_force_full_travel_n",
+          2833.8576980384505
+        ],
+        [
+          "rear_bottom_out_g",
+          4.639181262007234
+        ]
+      ],
+      "tag": "seated_rider"
+    },
+    {
+      "accepted": true,
+      "result": [
+        [
+          "total_system_mass_kg",
+          104.4
+        ],
+        [
+          "front_load_fraction",
+          0.45
+        ],
+        [
+          "target_front_sag_mm",
+          54.0
+        ],
+        [
+          "fork_stiffness_n_m",
+          7670.937546949503
+        ],
+        [
+          "fork_damping_n_s_m",
+          574.8599738393556
+        ],
+        [
+          "fork_air_tokens",
+          2
+        ],
+        [
+          "fork_calibrated_psi",
+          113.72984174791692
+        ],
+        [
+          "fork_air_force_full_travel_n",
+          2814.505731124622
+        ],
+        [
+          "fork_air_bottom_out_g",
+          6.106890283467234
+        ],
+        [
+          "fork_air_progressivity_pct",
+          349.9970440564073
+        ],
+        [
+          "front_spring_force_full_travel_n",
+          1536.2460000000003
+        ],
+        [
+          "front_bottom_out_g",
+          3.333333333333333
+        ],
+        [
+          "target_rear_sag_mm",
+          54.0
+        ],
+        [
+          "shock_stroke_at_sag_mm",
+          17.191963746178885
+        ],
+        [
+          "lr_at_sag",
+          2.9592916334484314
+        ],
+        [
+          "shock_stiffness_n_m",
+          96960.4171271005
+        ],
+        [
+          "shock_damping_n_s_m",
+          8664.873441994552
+        ],
+        [
+          "rear_spring_force_full_travel_n",
+          2613.205340912308
+        ],
+        [
+          "rear_bottom_out_g",
+          4.639181262007234
+        ]
+      ],
+      "tag": "front_fraction"
+    },
+    {
+      "accepted": true,
+      "result": [
+        [
+          "total_system_mass_kg",
+          104.4
+        ],
+        [
+          "front_load_fraction",
+          0.4668859913220247
+        ],
+        [
+          "target_front_sag_mm",
+          45.0
+        ],
+        [
+          "fork_stiffness_n_m",
+          9550.542082604956
+        ],
+        [
+          "fork_damping_n_s_m",
+          654.4264508885414
+        ],
+        [
+          "fork_air_tokens",
+          2
+        ],
+        [
+          "fork_calibrated_psi",
+          139.05050848393066
+        ],
+        [
+          "fork_air_force_full_travel_n",
+          3369.4188942357728
+        ],
+        [
+          "fork_air_bottom_out_g",
+          7.04651948998997
+        ],
+        [
+          "fork_air_progressivity_pct",
+          349.99704405641614
+        ],
+        [
+          "front_spring_force_full_travel_n",
+          1912.6712976653207
+        ],
+        [
+          "front_bottom_out_g",
+          4.0
+        ],
+        [
+          "target_rear_sag_mm",
+          59.400000000000006
+        ],
+        [
+          "shock_stroke_at_sag_mm",
+          19.027103976873093
+        ],
+        [
+          "lr_at_sag",
+          2.9260352315681093
+        ],
+        [
+          "shock_stiffness_n_m",
+          83964.64580217298
+        ],
+        [
+          "shock_damping_n_s_m",
+          7837.223309467851
+        ],
+        [
+          "rear_spring_force_full_travel_n",
+          2262.952938521564
+        ],
+        [
+          "rear_bottom_out_g",
+          4.144631482267192
+        ]
+      ],
+      "tag": "custom_sag"
+    }
+  ]
+}

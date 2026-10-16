@@ -1,0 +1,122 @@
+{
+  "_notes": "dataclass-field-order component budgets, provenance, builtin-sum total, wheel I_yy approximation",
+  "_produced_by": "BikeMassSpecs() component_masses/provenance/total/wheel inertia",
+  "masses": {
+    "$array": "model/mass_specs.arrays/a000.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "fa22a3095949ec167764b69246eccc2d295645d0d2a2942f52380004e681b780",
+    "shape": [
+      15
+    ]
+  },
+  "names": [
+    "motor",
+    "battery",
+    "frame_structure",
+    "saddle_post",
+    "crank_pedals",
+    "steer_assembly",
+    "stanchions",
+    "fork_lowers",
+    "chainstay",
+    "seatstay",
+    "rocker",
+    "shock_yoke",
+    "shock_damper",
+    "front_wheel",
+    "rear_wheel"
+  ],
+  "provenance": [
+    [
+      "motor",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "battery",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "frame_structure",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "saddle_post",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "crank_pedals",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "steer_assembly",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "stanchions",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "fork_lowers",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "chainstay",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "seatstay",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "rocker",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "shock_yoke",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "shock_damper",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "front_wheel",
+      "synthetic",
+      "synthetic"
+    ],
+    [
+      "rear_wheel",
+      "synthetic",
+      "synthetic"
+    ]
+  ],
+  "total_bike_mass": 24.4,
+  "wheel_inertia_cases": [
+    {
+      "i_yy": 0.2496987,
+      "tag": "front"
+    },
+    {
+      "i_yy": 0.2609071499999999,
+      "tag": "rear"
+    },
+    {
+      "i_yy": 0.10192499999999999,
+      "tag": "custom_hub"
+    }
+  ]
+}

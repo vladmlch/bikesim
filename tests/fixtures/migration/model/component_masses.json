@@ -1,0 +1,192 @@
+{
+  "_notes": "geom weight distribution + registry accepted/duplicate/empty/error branches",
+  "_produced_by": "component_masses.py assign/register over authored geom lists",
+  "assign_cases": [
+    {
+      "accepted": true,
+      "result": [
+        "0.75",
+        "2.25"
+      ],
+      "tag": "two_weights",
+      "total_kg": 3.0,
+      "weights": [
+        "1.5",
+        "4.5"
+      ]
+    },
+    {
+      "accepted": true,
+      "result": [
+        "1",
+        "0",
+        "1"
+      ],
+      "tag": "missing_attr",
+      "total_kg": 2.0,
+      "weights": [
+        "2.0",
+        null,
+        "2.0"
+      ]
+    },
+    {
+      "accepted": true,
+      "result": [
+        "0",
+        "1"
+      ],
+      "tag": "zero_and_pos",
+      "total_kg": 1.0,
+      "weights": [
+        "0",
+        "5"
+      ]
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "could not convert string to float: 'abc'",
+      "tag": "bad_string",
+      "total_kg": 1.0,
+      "weights": [
+        "abc",
+        "2"
+      ]
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "component has no valid mass weights",
+      "tag": "neg_weight",
+      "total_kg": 1.0,
+      "weights": [
+        "-1",
+        "2"
+      ]
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "component has no valid mass weights",
+      "tag": "empty",
+      "total_kg": 1.0,
+      "weights": []
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "component has no valid mass weights",
+      "tag": "all_zero",
+      "total_kg": 1.0,
+      "weights": [
+        "0",
+        "0"
+      ]
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "component mass must be finite and positive",
+      "tag": "zero_total",
+      "total_kg": 0.0,
+      "weights": [
+        "1",
+        "2"
+      ]
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "component mass must be finite and positive",
+      "tag": "nan_total",
+      "total_kg": {
+        "$nonfinite": "nan"
+      },
+      "weights": [
+        "1",
+        "2"
+      ]
+    }
+  ],
+  "register_cases": [
+    {
+      "accepted": true,
+      "component_id": "fork",
+      "masses": [
+        "1.0",
+        "0",
+        "0.5"
+      ],
+      "result": {
+        "ids": [
+          "fork"
+        ],
+        "sizes": [
+          2
+        ]
+      },
+      "tag": "accepted"
+    },
+    {
+      "accepted": false,
+      "component_id": "dead",
+      "error": "ValueError",
+      "masses": [
+        "0",
+        "0"
+      ],
+      "message": "component 'dead' has no mass-bearing parts",
+      "tag": "all_zero"
+    },
+    {
+      "accepted": false,
+      "component_id": "fork",
+      "error": "ValueError",
+      "masses": [
+        "1.0"
+      ],
+      "message": "component 'fork' was registered twice",
+      "tag": "duplicate"
+    },
+    {
+      "accepted": true,
+      "component_id": "bare",
+      "masses": [
+        null,
+        "2.0"
+      ],
+      "result": {
+        "ids": [
+          "fork",
+          "bare"
+        ],
+        "sizes": [
+          2,
+          1
+        ]
+      },
+      "tag": "missing_attrs"
+    },
+    {
+      "accepted": false,
+      "component_id": "neg",
+      "error": "ValueError",
+      "masses": [
+        "-1"
+      ],
+      "message": "component 'neg' has no mass-bearing parts",
+      "tag": "negative_only"
+    },
+    {
+      "accepted": false,
+      "component_id": "garbage",
+      "error": "ValueError",
+      "masses": [
+        "xx"
+      ],
+      "message": "could not convert string to float: 'xx'",
+      "tag": "bad_mass_string"
+    }
+  ]
+}

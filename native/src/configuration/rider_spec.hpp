@@ -36,7 +36,7 @@ namespace bike::configuration {
 inline constexpr double kGravityMps2 = 9.81;  // GRAVITY_MPS2
 
 // rider.py RIDER_VARIANTS / DEFAULT_RIDER_VARIANT.
-inline constexpr std::string_view kRiderVariants[] = {
+inline constexpr std::array<std::string_view, 4> kRiderVariants = {
     "none", "lumped", "seated", "articulated_planar"};
 inline constexpr std::string_view kDefaultRiderVariant = "seated";
 
@@ -130,7 +130,7 @@ using ::spindle::soft_edge_scalar;
 
 // rider_envelope.py RIDER_JOINTS — the 11 internal joints of the
 // two-arm reference topology, in reference_joint_names() order.
-inline constexpr std::string_view kRiderJoints[] = {
+inline constexpr std::array<std::string_view, 11> kRiderJoints = {
     "rider_torso_hinge",
     "rider_shoulder_left", "rider_elbow_left",
     "rider_shoulder_right", "rider_elbow_right",
@@ -138,7 +138,7 @@ inline constexpr std::string_view kRiderJoints[] = {
     "rider_hip_rear", "rider_knee_rear", "rider_ankle_rear"};
 
 // rider_envelope.py LEGACY_RIDER_JOINTS — the nine-joint legacy map.
-inline constexpr std::string_view kLegacyRiderJoints[] = {
+inline constexpr std::array<std::string_view, 9> kLegacyRiderJoints = {
     "rider_torso_hinge", "rider_shoulder", "rider_elbow",
     "rider_hip_front", "rider_knee_front", "rider_ankle_front",
     "rider_hip_rear", "rider_knee_rear", "rider_ankle_rear"};
@@ -235,60 +235,108 @@ void post_init(TorqueCurve &);
 // ---------------------------------------------------------------------------
 namespace detail {
 
+// Declared-default singleton; same schema idiom as the sibling
+// configuration headers — a static-init allocation failure is fatal anyway.
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp)
 inline const RiderSpecs kDeclaredRiderSpecs{};
-inline constexpr FieldDecl kRiderSpecsFields[] = {
-    {"variant", "<class 'str'>", FieldKind::Text,
-     offsetof(RiderSpecs, variant), false, "", nullptr, nullptr},
-    {"legs", "<class 'str'>", FieldKind::Text,
-     offsetof(RiderSpecs, legs), false, "", nullptr, nullptr},
-    {"mass_kg", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, mass_kg), false, "", nullptr, nullptr},
-    {"height_m", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, height_m), false, "", nullptr, nullptr},
-    {"inseam_m", "typing.Optional[float]", FieldKind::OptionalReal,
-     offsetof(RiderSpecs, inseam_m), false, "", nullptr, nullptr},
-    {"helmet_mass_kg", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, helmet_mass_kg), false, "", nullptr, nullptr},
-    {"saddle_share", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, saddle_share), false, "", nullptr, nullptr},
-    {"pedal_share", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, pedal_share), false, "", nullptr, nullptr},
-    {"bar_share", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, bar_share), false, "", nullptr, nullptr},
-    {"torso_resonance_hz", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, torso_resonance_hz), false, "", nullptr, nullptr},
-    {"leg_resonance_hz", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, leg_resonance_hz), false, "", nullptr, nullptr},
-    {"arm_resonance_hz", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, arm_resonance_hz), false, "", nullptr, nullptr},
-    {"damping_ratio", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, damping_ratio), false, "", nullptr, nullptr},
-    {"saddle_interface_k_n_m", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, saddle_interface_k_n_m), false, "", nullptr,
-     nullptr},
-    {"saddle_interface_c_ns_m", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderSpecs, saddle_interface_c_ns_m), false, "", nullptr,
-     nullptr},
-};
-inline const RecordSchema kRiderSpecsSchema{
-    "bike_sim.physics.rider.RiderSpecs", kRiderSpecsFields,
-    &kDeclaredRiderSpecs};
+inline constexpr std::array kRiderSpecsFields{
+    FieldDecl{.name = "variant", .type = "<class 'str'>",
+              .kind = FieldKind::Text, .offset = offsetof(RiderSpecs, variant),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "legs", .type = "<class 'str'>",
+              .kind = FieldKind::Text, .offset = offsetof(RiderSpecs, legs),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "mass_kg", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, mass_kg), .required = false,
+              .factory = "", .nested = nullptr, .nested2 = nullptr},
+    FieldDecl{.name = "height_m", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, height_m), .required = false,
+              .factory = "", .nested = nullptr, .nested2 = nullptr},
+    FieldDecl{.name = "inseam_m", .type = "typing.Optional[float]",
+              .kind = FieldKind::OptionalReal,
+              .offset = offsetof(RiderSpecs, inseam_m), .required = false,
+              .factory = "", .nested = nullptr, .nested2 = nullptr},
+    FieldDecl{.name = "helmet_mass_kg", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, helmet_mass_kg),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "saddle_share", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, saddle_share), .required = false,
+              .factory = "", .nested = nullptr, .nested2 = nullptr},
+    FieldDecl{.name = "pedal_share", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, pedal_share), .required = false,
+              .factory = "", .nested = nullptr, .nested2 = nullptr},
+    FieldDecl{.name = "bar_share", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, bar_share), .required = false,
+              .factory = "", .nested = nullptr, .nested2 = nullptr},
+    FieldDecl{.name = "torso_resonance_hz", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, torso_resonance_hz),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "leg_resonance_hz", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, leg_resonance_hz),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "arm_resonance_hz", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, arm_resonance_hz),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "damping_ratio", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, damping_ratio), .required = false,
+              .factory = "", .nested = nullptr, .nested2 = nullptr},
+    FieldDecl{.name = "saddle_interface_k_n_m", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, saddle_interface_k_n_m),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "saddle_interface_c_ns_m", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderSpecs, saddle_interface_c_ns_m),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr}};
+inline constexpr RecordSchema kRiderSpecsSchema{
+    .path = "bike_sim.physics.rider.RiderSpecs",
+    .fields = kRiderSpecsFields,
+    .declared_default = &kDeclaredRiderSpecs};
 
 inline const RiderPosture kDeclaredRiderPosture{};
-inline constexpr FieldDecl kRiderPostureFields[] = {
-    {"torso_lean_rad", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderPosture, torso_lean_rad), false, "", nullptr, nullptr},
-    {"pelvis_pitch_rad", "<class 'float'>", FieldKind::Real,
-     offsetof(RiderPosture, pelvis_pitch_rad), false, "", nullptr, nullptr},
-    {"pelvis_offset_m", "tuple[float, float] | None",
-     FieldKind::OptionalReal2Tuple,
-     offsetof(RiderPosture, pelvis_offset_m), false, "", nullptr, nullptr},
-    {"use_saddle", "<class 'bool'>", FieldKind::Boolean,
-     offsetof(RiderPosture, use_saddle), false, "", nullptr, nullptr},
-};
-inline const RecordSchema kRiderPostureSchema{
-    "bike_sim.physics.rider_posture.RiderPosture", kRiderPostureFields,
-    &kDeclaredRiderPosture};
+inline constexpr std::array kRiderPostureFields{
+    FieldDecl{.name = "torso_lean_rad", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderPosture, torso_lean_rad),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "pelvis_pitch_rad", .type = "<class 'float'>",
+              .kind = FieldKind::Real,
+              .offset = offsetof(RiderPosture, pelvis_pitch_rad),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "pelvis_offset_m",
+              .type = "tuple[float, float] | None",
+              .kind = FieldKind::OptionalReal2Tuple,
+              .offset = offsetof(RiderPosture, pelvis_offset_m),
+              .required = false, .factory = "", .nested = nullptr,
+              .nested2 = nullptr},
+    FieldDecl{.name = "use_saddle", .type = "<class 'bool'>",
+              .kind = FieldKind::Boolean,
+              .offset = offsetof(RiderPosture, use_saddle), .required = false,
+              .factory = "", .nested = nullptr, .nested2 = nullptr}};
+inline constexpr RecordSchema kRiderPostureSchema{
+    .path = "bike_sim.physics.rider_posture.RiderPosture",
+    .fields = kRiderPostureFields,
+    .declared_default = &kDeclaredRiderPosture};
 
 } // namespace detail
 } // namespace bike::configuration

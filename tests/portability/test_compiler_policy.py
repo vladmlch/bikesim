@@ -104,7 +104,7 @@ def _write_policy_probe(source: Path) -> None:
         "}\n"
     )
     (source / "CMakeLists.txt").write_text(
-        "cmake_minimum_required(VERSION 3.24)\n"
+        "cmake_minimum_required(VERSION 3.27)\n"
         # Simulating a non-Apple host must also stop CMake's own Darwin
         # toolchain init from injecting -isysroot, otherwise the simulated
         # dispatch stays invisible in compile_commands.json.

@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Add Linux support; retain macOS support and existing macOS behavior.
-- Keep Python >=3.13, CMake >=3.24, and strict ISO C++23 without compiler language extensions.
+- Keep Python >=3.13, CMake >=3.27, and strict ISO C++23 without compiler language extensions.
 - Keep MuJoCo exactly 3.12.0 for native execution until its private error ABI is deliberately migrated in a separate change.
 - Preserve the macOS Accelerate backend, SDK override/fallback behavior, mjpython launcher, and current application commands.
 - Preserve same-environment native/Python bitwise tests, exception safety, source/artifact identity, and fail-closed verification.
@@ -66,7 +66,7 @@ def test_linux_configure_never_invokes_apple_tools(tmp_path):
     source.mkdir()
     module = root / "native/cmake/BikePlatform.cmake"
     (source / "CMakeLists.txt").write_text(
-        'cmake_minimum_required(VERSION 3.24)\n'
+        'cmake_minimum_required(VERSION 3.27)\n'
         f'include("{module}")\nproject(platform_probe CXX)\n')
     result = subprocess.run(["cmake", "-S", str(source), "-B", str(tmp_path / "build")],
                             env={**os.environ, "PATH": str(fake) + os.pathsep + os.environ["PATH"]},

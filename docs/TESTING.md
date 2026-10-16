@@ -291,19 +291,31 @@ against that absolute build, and writes artifacts under a unique
 nonempty `.profraw` files and reports against the exact extension recorded by
 the loader. `coverage_provenance.json` records the selected build, imported and
 reported object, collected native test count, profile count, LLVM tool versions,
-merged profile, and text/JSON report paths. Logs remain in the run directory
-when configuration, tests, or reporting fails. On macOS the wrapper resolves
-the matching Xcode tools through `xcrun`; set `LLVM_PROFDATA` and `LLVM_COV` to
-executable paths to select another compatible pair.
+the tool-resolution/format-probe evidence (`tool_resolution`), merged profile,
+and text/JSON report paths. Logs remain in the run directory when
+configuration, tests, or reporting fails.
 
-Coverage finalization is also available directly for an existing run:
+The `llvm-profdata`/`llvm-cov` pair is resolved through the shared toolchain
+helper (`tools/native_toolchain.py coverage-tools`) and qualified by a real
+instrumented control — compile with `-fprofile-instr-generate
+-fcoverage-mapping`, run under a fresh `LLVM_PROFILE_FILE`, merge, export —
+against the compiler recorded in the build context. Resolution order is:
+explicit `LLVM_PROFDATA`/`LLVM_COV` overrides (an invalid override is an
+error, not a fallback), a sibling beside the configured compiler, a PATH
+candidate, and — on macOS only — `xcrun --find` for the Xcode toolchain.
+Linux never invokes `xcrun`. A `NATIVE_COVERAGE=ON` configure rejects a
+non-clang compiler, a compiler that fails the instrumentation flag probe,
+and a tool pair that cannot merge/export the control profile; mismatched
+tools fail with the command diagnostics rather than an empty report.
+
+Coverage finalization is also available directly for an existing run (tools
+are resolved the same way; `--llvm-profdata`/`--llvm-cov` pin explicit
+overrides):
 
 ```bash
 uv run python tools/native_coverage.py \
   --build native/build/coverage \
-  --run-dir native/build/coverage/native_coverage_runs/run.ID \
-  --llvm-profdata "$(xcrun --find llvm-profdata)" \
-  --llvm-cov "$(xcrun --find llvm-cov)"
+  --run-dir native/build/coverage/native_coverage_runs/run.ID
 ```
 
 V4 verification snapshot (2026-10-06): the regular native profile passed with

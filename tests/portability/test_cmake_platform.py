@@ -42,7 +42,7 @@ def _write_probe(source: Path) -> None:
     probe_vars.txt (post-project(), after CMake's own platform init)."""
     source.mkdir(parents=True)
     (source / "CMakeLists.txt").write_text(
-        "cmake_minimum_required(VERSION 3.24)\n"
+        "cmake_minimum_required(VERSION 3.27)\n"
         f'include("{PLATFORM_MODULE}")\n'
         "get_property(_sysroot_cache_pre CACHE CMAKE_OSX_SYSROOT PROPERTY VALUE)\n"
         'file(WRITE "${CMAKE_BINARY_DIR}/probe_vars_pre.txt"\n'

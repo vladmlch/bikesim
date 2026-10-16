@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Merge one native test run's LLVM profiles and record artifact provenance."""
+"""Merge one native test run's LLVM profiles and record artifact provenance.
+
+The llvm-profdata/llvm-cov pair is qualified through
+``tools.native_toolchain.resolve_coverage_tools`` — the same resolution
+order (explicit ``LLVM_PROFDATA``/``LLVM_COV`` override, compiler sibling,
+PATH, Darwin-only ``xcrun``) and the same instrumented
+compile/run/merge/export format probe the configure-time policy and the
+coverage wrapper use — so a run can never produce an "empty success" report
+from a mismatched toolchain. The probe evidence lands in
+``coverage_provenance.json`` under ``tool_resolution``.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +21,11 @@ from pathlib import Path
 import subprocess
 import sys
 from typing import Any
+
+try:  # imported as tools.native_coverage by the test suite
+    from tools.native_toolchain import resolve_coverage_tools
+except ImportError:  # invoked as `python tools/native_coverage.py`: tools/ is sys.path[0]
+    from native_toolchain import resolve_coverage_tools
 
 
 class CoverageError(ValueError):
@@ -117,8 +132,27 @@ def _load_test_provenance(run_directory: Path, build: Path, extension: Path) -> 
     return provenance, native_test_count
 
 
+def _context_compiler(build: Path) -> Path:
+    """The compiler the selected build was configured with — the authority
+    the coverage toolchain is qualified against."""
+    context = _read_json(build / 'native_check_context.json', 'native check context')
+    compiler = context.get('compiler') if isinstance(context, dict) else None
+    path = compiler.get('path') if isinstance(compiler, dict) else None
+    if not isinstance(path, str) or not path:
+        raise CoverageError(
+            f'native check context records no compiler path: '
+            f'{build / "native_check_context.json"}'
+        )
+    return Path(path)
+
+
 def finalize_coverage(
-    *, build_value: str, run_directory_value: str, llvm_profdata_value: str, llvm_cov_value: str
+    *,
+    build_value: str,
+    run_directory_value: str,
+    llvm_profdata_value: str | None = None,
+    llvm_cov_value: str | None = None,
+    compiler_value: str | None = None,
 ) -> dict[str, Any]:
     build = Path(build_value).expanduser().resolve()
     run_directory = Path(run_directory_value).expanduser().resolve()
@@ -151,8 +185,33 @@ def finalize_coverage(
     if not profiles:
         raise CoverageError(f'no nonempty profraw files from this run in {profile_directory}')
 
-    llvm_profdata = _executable(llvm_profdata_value, 'llvm-profdata')
-    llvm_cov = _executable(llvm_cov_value, 'llvm-cov')
+    # Toolchain qualification: the build's recorded compiler is the
+    # authority; explicit arguments win over the LLVM_PROFDATA/LLVM_COV
+    # environment overrides, and resolution otherwise follows the shared
+    # sibling/PATH/(Darwin) xcrun order. The pair is qualified by the real
+    # instrumented format probe — a mismatched tool fails here with the
+    # merge/export command's diagnostics, never as an empty report.
+    compiler = (
+        _executable(compiler_value, 'coverage compiler')
+        if compiler_value
+        else _context_compiler(build)
+    )
+    overrides = {
+        name: value
+        for name, value in (
+            ('LLVM_PROFDATA', llvm_profdata_value or os.environ.get('LLVM_PROFDATA')),
+            ('LLVM_COV', llvm_cov_value or os.environ.get('LLVM_COV')),
+        )
+        if value
+    }
+    try:
+        tool_resolution = resolve_coverage_tools(compiler, overrides)
+    except ValueError as error:
+        raise CoverageError(
+            f'coverage toolchain qualification failed: {error}'
+        ) from error
+    llvm_profdata = Path(tool_resolution['llvm_profdata']['path'])
+    llvm_cov = Path(tool_resolution['llvm_cov']['path'])
     tool_versions = {
         'llvm_profdata': _tool_version(
             llvm_profdata, run_directory=run_directory, name='llvm-profdata'
@@ -216,6 +275,7 @@ def finalize_coverage(
         'object_path': str(extension),
         'report_object': str(extension),
         'tool_versions': tool_versions,
+        'tool_resolution': tool_resolution,
         'report_paths': report_paths,
         'test_provenance': str((run_directory / 'test_native_provenance.json').resolve()),
     }
@@ -230,8 +290,21 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--build', required=True)
     parser.add_argument('--run-dir', required=True)
-    parser.add_argument('--llvm-profdata', required=True)
-    parser.add_argument('--llvm-cov', required=True)
+    parser.add_argument(
+        '--compiler',
+        help='compiler the coverage toolchain is qualified against '
+        '(default: the build context\'s recorded compiler)',
+    )
+    parser.add_argument(
+        '--llvm-profdata',
+        help='explicit llvm-profdata override (wins over the '
+        'LLVM_PROFDATA environment variable)',
+    )
+    parser.add_argument(
+        '--llvm-cov',
+        help='explicit llvm-cov override (wins over the LLVM_COV '
+        'environment variable)',
+    )
     arguments = parser.parse_args(argv)
     try:
         result = finalize_coverage(
@@ -239,6 +312,7 @@ def main(argv: list[str] | None = None) -> int:
             run_directory_value=arguments.run_dir,
             llvm_profdata_value=arguments.llvm_profdata,
             llvm_cov_value=arguments.llvm_cov,
+            compiler_value=arguments.compiler,
         )
     except (CoverageError, OSError) as error:
         print(f'native coverage failed: {error}', file=sys.stderr)

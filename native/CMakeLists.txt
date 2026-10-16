@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.27)
 # CMake performs its compiler link check during project(), so platform
 # dispatch — Apple SDK resolution on Darwin, the null SDK contract on Linux —
 # runs before that call. Never replace an SDK or compiler supplied by the

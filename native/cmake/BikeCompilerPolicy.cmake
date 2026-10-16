@@ -672,16 +672,19 @@ if(NATIVE_RTSAN)
 endif()
 if(NATIVE_COVERAGE)
   if(_bike_clang_family)
+    # T17: llvm-cov's source-based instrumentation format is clang-only —
+    # there is no GNU gcov reporting lane, so a non-clang compiler in a
+    # requested coverage build is a configure error, not a flag fallback.
     list(APPEND _bike_instrument_options
       -fprofile-instr-generate -fcoverage-mapping)
     list(APPEND _bike_instrument_link_options -fprofile-instr-generate)
   else()
-    # llvm-cov's source-profile spelling is clang-only; GCC emits the gcov
-    # data format instead. T15-T17 own the coverage toolchain selection.
-    list(APPEND _bike_instrument_options -fprofile-arcs -ftest-coverage)
-    list(APPEND _bike_instrument_link_options -fprofile-arcs)
-    _bike_record_omission("-fprofile-instr-generate -fcoverage-mapping"
-      "llvm-cov instrumentation is clang-only; GCC gets the gcov-format equivalent")
+    message(FATAL_ERROR
+      "NATIVE_COVERAGE requires an LLVM clang-family compiler (llvm-cov "
+      "reads clang's source-based instrumentation format; this project "
+      "reports no gcov data); the selected compiler ${CMAKE_CXX_COMPILER} "
+      "(${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}) cannot "
+      "produce it")
   endif()
 endif()
 
@@ -787,6 +790,87 @@ _bike_probe_capability(BIKE_CAP_RTSAN_SUPPORTED rtsan
   INCLUDE_DIRS "${BIKE_NATIVE_ROOT}/src")
 _bike_probe_capability(BIKE_CAP_COVERAGE_SUPPORTED coverage
   COMPILE_FLAGS ${_bike_cap_compile_coverage})
+
+# Coverage toolchain qualification (T17) — a requested coverage lane is
+# qualified only when BOTH gates pass under this toolchain:
+#   1. the flags probe above (compile+link with -fprofile-instr-generate
+#      -fcoverage-mapping), and
+#   2. tools/native_toolchain.py's coverage-tools resolution against the
+#      selected compiler: explicit LLVM_PROFDATA/LLVM_COV override, then a
+#      compiler sibling, then a PATH candidate, then the Darwin-only xcrun
+#      fallback — followed by the real instrumented format probe (compile,
+#      run under a fresh LLVM_PROFILE_FILE, merge, export). A resolved pair
+#      that cannot merge/export the compiler's own control profile is a
+#      configure-time rejection, not an empty report at finalize time.
+# The capability record stays honest when the lane is unrequested:
+# `supported` describes the flag probe alone, and the tool evidence records
+# that qualification was not run.
+if(NATIVE_COVERAGE AND NOT BIKE_CAP_COVERAGE_SUPPORTED)
+  message(FATAL_ERROR
+    "NATIVE_COVERAGE was requested but the selected toolchain "
+    "${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} "
+    "${CMAKE_CXX_COMPILER_VERSION}) failed the coverage instrumentation "
+    "probe for -fprofile-instr-generate -fcoverage-mapping: "
+    "${BIKE_CAP_COVERAGE_SUPPORTED_EVIDENCE}")
+endif()
+
+set(BIKE_CAP_COVERAGE_TOOLS "coverage tools not qualified (lane unrequested)")
+set(BIKE_CAP_COVERAGE_FORMAT_PROBE
+  "format probe not run (lane unrequested)")
+if(NATIVE_COVERAGE)
+  # The helper is stdlib-only — any python3 can drive it. Prefer the
+  # interpreter the caller pinned for the project (configure tests pass
+  # -DPython_EXECUTABLE); fall back to PATH discovery — this module runs
+  # before find_package(Python) in native/CMakeLists.txt.
+  if(DEFINED Python_EXECUTABLE AND NOT Python_EXECUTABLE STREQUAL "")
+    set(_bike_coverage_python "${Python_EXECUTABLE}")
+  else()
+    # Do not predefine the variable — find_program skips its search unless
+    # the result variable is unset or a literal *-NOTFOUND.
+    find_program(_bike_coverage_python NAMES python3 python)
+  endif()
+  if(NOT _bike_coverage_python)
+    message(FATAL_ERROR
+      "NATIVE_COVERAGE requires a python3 interpreter to qualify the LLVM "
+      "coverage toolchain through tools/native_toolchain.py; none was "
+      "found (pass -DPython_EXECUTABLE=... or put python3 on PATH)")
+  endif()
+  get_filename_component(_bike_repository_root "${BIKE_NATIVE_ROOT}/.." ABSOLUTE)
+  execute_process(
+    COMMAND "${_bike_coverage_python}"
+      "${_bike_repository_root}/tools/native_toolchain.py" coverage-tools
+      --compiler "${CMAKE_CXX_COMPILER}"
+      --json "${_bike_policy_probe_dir}/coverage_tool_resolution.json"
+    RESULT_VARIABLE _bike_coverage_tools_rc
+    OUTPUT_VARIABLE _bike_coverage_tools_out
+    ERROR_VARIABLE _bike_coverage_tools_err
+    TIMEOUT 300)
+  if(NOT _bike_coverage_tools_rc EQUAL 0)
+    message(FATAL_ERROR
+      "NATIVE_COVERAGE was requested but the coverage toolchain failed "
+      "qualification for the selected compiler ${CMAKE_CXX_COMPILER} "
+      "(${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}): "
+      "${_bike_coverage_tools_err}${_bike_coverage_tools_out}")
+  endif()
+  string(JSON _bike_coverage_profdata GET "${_bike_coverage_tools_out}"
+    llvm_profdata path)
+  string(JSON _bike_coverage_cov GET "${_bike_coverage_tools_out}"
+    llvm_cov path)
+  string(JSON _bike_coverage_profdata_version GET "${_bike_coverage_tools_out}"
+    llvm_profdata version)
+  string(JSON _bike_coverage_cov_version GET "${_bike_coverage_tools_out}"
+    llvm_cov version)
+  string(JSON _bike_coverage_export_version GET "${_bike_coverage_tools_out}"
+    format_probe export_version)
+  string(CONCAT BIKE_CAP_COVERAGE_TOOLS
+    "llvm-profdata=${_bike_coverage_profdata} "
+    "(${_bike_coverage_profdata_version}), "
+    "llvm-cov=${_bike_coverage_cov} (${_bike_coverage_cov_version})")
+  string(CONCAT BIKE_CAP_COVERAGE_FORMAT_PROBE
+    "instrumented control compiled, ran, merged and exported through the "
+    "resolved tools; export type llvm.coverage.json.export version "
+    "${_bike_coverage_export_version}")
+endif()
 
 # --------------------------------------------------------------------------
 # Sanitizer runtime resolution (T15). The recorded compiler *identity*
@@ -1039,6 +1123,12 @@ set(BIKE_CAP_COVERAGE_MACRO_CONTROL
   "macro gate not applicable to the coverage lane")
 set(BIKE_CAP_COVERAGE_VIOLATION_CONTROL
   "violation gate not applicable to the coverage lane")
+set(BIKE_CAP_ASAN_TOOLS "coverage-tool evidence is not applicable to the asan lane")
+set(BIKE_CAP_ASAN_FORMAT_PROBE
+  "coverage format probe is not applicable to the asan lane")
+set(BIKE_CAP_RTSAN_TOOLS "coverage-tool evidence is not applicable to the rtsan lane")
+set(BIKE_CAP_RTSAN_FORMAT_PROBE
+  "coverage format probe is not applicable to the rtsan lane")
 
 if(BIKE_CAP_ASAN_SUPPORTED AND NOT BIKE_ASAN_RUNTIME_NAME STREQUAL "")
   _bike_driver_file_name(BIKE_CAP_ASAN_RUNTIME BIKE_CAP_ASAN_RUNTIME_QUERY

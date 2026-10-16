@@ -252,13 +252,21 @@ function(bike_write_check_context)
       "${BIKE_CAP_${_cap_upper}_MACRO_CONTROL}")
     _native_json_quote(_cap_violation_json
       "${BIKE_CAP_${_cap_upper}_VIOLATION_CONTROL}")
+    # T17 coverage qualification evidence: the resolved llvm-profdata/
+    # llvm-cov pair and the compile/run/merge/export format-probe outcome.
+    # Sanitizer lanes record "not applicable" strings so the evidence shape
+    # is uniform across capabilities.
+    _native_json_quote(_cap_tools_json
+      "${BIKE_CAP_${_cap_upper}_TOOLS}")
+    _native_json_quote(_cap_format_probe_json
+      "${BIKE_CAP_${_cap_upper}_FORMAT_PROBE}")
     if(_cap STREQUAL "asan")
       set(_cap_sep "")
     else()
       set(_cap_sep ",")
     endif()
     string(APPEND _ctx_capabilities_json
-      "${_cap_sep}\"${_cap}\":{\"requested\":${_cap_requested},\"supported\":${_cap_supported},\"enabled\":${_cap_enabled},\"runtime\":${_cap_runtime_json},\"compiler_id\":${_ctx_cap_compiler_id_json},\"target\":${_ctx_cap_target_json},\"evidence\":{\"control\":${_cap_control_json},\"runtime_query\":${_cap_runtime_query_json},\"run_control\":${_cap_run_control_json},\"annotation_control\":${_cap_annotation_json},\"macro_control\":${_cap_macro_json},\"violation_control\":${_cap_violation_json}}}")
+      "${_cap_sep}\"${_cap}\":{\"requested\":${_cap_requested},\"supported\":${_cap_supported},\"enabled\":${_cap_enabled},\"runtime\":${_cap_runtime_json},\"compiler_id\":${_ctx_cap_compiler_id_json},\"target\":${_ctx_cap_target_json},\"evidence\":{\"control\":${_cap_control_json},\"runtime_query\":${_cap_runtime_query_json},\"run_control\":${_cap_run_control_json},\"annotation_control\":${_cap_annotation_json},\"macro_control\":${_cap_macro_json},\"violation_control\":${_cap_violation_json},\"tools\":${_cap_tools_json},\"format_probe\":${_cap_format_probe_json}}}")
   endforeach()
   string(APPEND _ctx_capabilities_json
     ",\"frontend_tools\":${_ctx_frontend_tools_json}}")

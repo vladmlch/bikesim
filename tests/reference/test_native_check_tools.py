@@ -14,6 +14,7 @@ import pytest
 
 from native_loader import selected_build
 import tools.native_checks as native_checks
+import tools.native_toolchain as native_toolchain
 from tools.native_checks import load_context, load_entries, run_sweep
 
 
@@ -877,7 +878,7 @@ def test_header_filter_keeps_main_file_diagnostics(tmp_path: Path) -> None:
 
 
 def configure_native(
-    tmp_path: Path, *cmake_options: str
+    tmp_path: Path, *cmake_options: str, environ: dict[str, str] | None = None
 ) -> tuple[subprocess.CompletedProcess[str], Path]:
     repository = Path(__file__).resolve().parents[2]
     build = tmp_path / "native-configure"
@@ -896,6 +897,7 @@ def configure_native(
     completed = subprocess.run(
         command,
         cwd=repository,
+        env=environ,
         text=True,
         capture_output=True,
         check=False,
@@ -1188,18 +1190,20 @@ def _rtsan_lacking_driver(tmp_path: Path) -> Path | None:
     return None
 
 
-def _write_flag_rejecting_driver(tmp_path: Path, real_driver: Path) -> Path:
-    """A compiler-probe fixture: accepts C++23 (forwards to the real driver)
-    but rejects -fsanitize=realtime — a requested RTSan configure must fail
+def _write_flag_rejecting_driver(
+    tmp_path: Path, real_driver: Path, *, rejected_flag: str, label: str
+) -> Path:
+    """A compiler-probe fixture: forwards everything to the real driver but
+    rejects one capability flag — a requested-lane configure must fail
     naming the flag and this selected compiler."""
-    driver = tmp_path / "no-rtsan-c++"
+    driver = tmp_path / f"{label}-c++"
     driver.write_text(
         "#!/bin/sh\n"
         'for arg in "$@"; do\n'
         '  case "$arg" in\n'
-        "    *-fsanitize=realtime*)\n"
-        '      echo "no-rtsan-c++: unsupported argument'
-        ' -fsanitize=realtime" >&2\n'
+        f"    *{rejected_flag}*)\n"
+        f'      echo "{label}-c++: unsupported argument'
+        f' {rejected_flag}" >&2\n'
         "      exit 1 ;;\n"
         "  esac\n"
         "done\n"
@@ -1239,7 +1243,9 @@ def test_requested_rtsan_fails_on_a_flag_rejecting_compiler_fixture(
         if not candidates:
             pytest.skip("no host C++ compiler")
         real = candidates[0]
-    fake = _write_flag_rejecting_driver(tmp_path, real)
+    fake = _write_flag_rejecting_driver(
+        tmp_path, real, rejected_flag="-fsanitize=realtime", label="no-rtsan"
+    )
     configured, _ = configure_native(
         tmp_path, f"-DCMAKE_CXX_COMPILER={fake}", "-DNATIVE_RTSAN=ON"
     )
@@ -1356,6 +1362,197 @@ def test_qualified_rtsan_configure_enables_the_lane(tmp_path: Path) -> None:
     assert violation.returncode != 0
     assert "RealtimeSanitizer" in violation.stderr
     assert "malloc" in violation.stderr
+
+
+def configure_policy_fixture(
+    tmp_path: Path, *cmake_options: str, environ: dict[str, str] | None = None
+) -> tuple[subprocess.CompletedProcess[str], Path]:
+    """A standalone project including only BikeCompilerPolicy.cmake — the
+    coverage/family gates without the BikePlatform SDK layer, which rejects
+    a GNU driver before the policy even runs on Darwin."""
+    repository = Path(__file__).resolve().parents[2]
+    source = tmp_path / "policy-fixture"
+    source.mkdir(parents=True)
+    (source / "main.cpp").write_text("int main() { return 0; }\n")
+    (source / "CMakeLists.txt").write_text(
+        "cmake_minimum_required(VERSION 3.27)\n"
+        "project(policy_fixture CXX)\n"
+        "set(CMAKE_CXX_STANDARD 23)\n"
+        "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
+        "set(CMAKE_CXX_EXTENSIONS OFF)\n"
+        f'include("{repository / "native" / "cmake" / "BikeCompilerPolicy.cmake"}")\n'
+        "add_executable(probe main.cpp)\n"
+        "bike_apply_native_policy(probe)\n"
+    )
+    build = tmp_path / "policy-fixture-build"
+    completed = subprocess.run(
+        ["cmake", "-S", str(source), "-B", str(build), *cmake_options],
+        env=environ,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=120,
+    )
+    return completed, build
+
+
+def _coverage_capable_driver() -> Path | None:
+    """The first real clang-family driver whose coverage toolchain fully
+    qualifies — the same ``resolve_coverage_tools`` the CMake policy runs,
+    so a returned driver configures ``NATIVE_COVERAGE=ON`` cleanly."""
+    for candidate in _compiler_candidates():
+        try:
+            if native_toolchain.inspect_tool(candidate)["family"] != "clang":
+                continue
+            native_toolchain.resolve_coverage_tools(candidate, {})
+        except ValueError:
+            continue
+        return candidate
+    return None
+
+
+def _gnu_family_driver() -> Path | None:
+    """A real GNU-family C++ driver, when the host carries one."""
+    for candidate in _compiler_candidates():
+        try:
+            if native_toolchain.inspect_tool(candidate)["family"] == "gcc":
+                return candidate
+        except ValueError:
+            continue
+    return None
+
+
+def _write_broken_profdata(tmp_path: Path) -> Path:
+    """An llvm-profdata stand-in that identifies and launches but refuses
+    every merge — a resolved-but-incompatible coverage tool."""
+    tool = tmp_path / "broken-llvm-profdata"
+    tool.write_text(
+        "#!/bin/sh\n"
+        'if [ "${1:-}" = "--version" ]; then\n'
+        "  printf 'broken LLVM version 99.0.0\\n'\n"
+        "  exit 0\n"
+        "fi\n"
+        "if [ \"${1:-}\" = \"merge\" ]; then\n"
+        "  printf 'broken-llvm-profdata: incompatible profile format\\n' >&2\n"
+        "  exit 7\n"
+        "fi\n"
+        "exit 5\n"
+    )
+    tool.chmod(0o755)
+    return tool
+
+
+def test_requested_coverage_fails_on_a_flag_rejecting_compiler_fixture(
+    tmp_path: Path,
+) -> None:
+    """The compiler-probe fixture for the coverage lane: C++23 works but
+    -fprofile-instr-generate is rejected. A requested coverage configure
+    must fail naming the flag and the selected compiler — never configure
+    an uninstrumented build."""
+    real = _configured_compiler()
+    if real is None:
+        candidates = _compiler_candidates()
+        if not candidates:
+            pytest.skip("no host C++ compiler")
+        real = candidates[0]
+    fake = _write_flag_rejecting_driver(
+        tmp_path,
+        real,
+        rejected_flag="-fprofile-instr-generate",
+        label="no-coverage",
+    )
+    configured, _ = configure_native(
+        tmp_path, f"-DCMAKE_CXX_COMPILER={fake}", "-DNATIVE_COVERAGE=ON"
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode != 0
+    assert "-fprofile-instr-generate" in output
+    assert str(fake) in output
+
+
+def test_requested_coverage_fails_for_a_non_clang_compiler(tmp_path: Path) -> None:
+    """llvm-cov reads the clang source-based instrumentation format — a GNU
+    C++ compiler in the requested coverage lane must be rejected at
+    configure, not waved through to empty gcov output. The standalone
+    policy fixture exercises the gate directly; the platform layer would
+    reject the same driver earlier on the full project."""
+    driver = _gnu_family_driver()
+    if driver is None:
+        pytest.skip("no GNU-family C++ compiler on this host")
+    configured, _ = configure_policy_fixture(
+        tmp_path, f"-DCMAKE_CXX_COMPILER={driver}", "-DNATIVE_COVERAGE=ON"
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode != 0
+    assert "clang" in output.lower()
+    assert str(driver) in output
+
+
+def test_requested_coverage_fails_on_an_unresolvable_tool_override(
+    tmp_path: Path,
+) -> None:
+    """An explicit LLVM_PROFDATA override that does not resolve is a hard
+    configure failure — never a silent fallthrough to a discoverable tool."""
+    driver = _coverage_capable_driver()
+    if driver is None:
+        pytest.skip("no clang toolchain with qualified coverage tools on this host")
+    missing = tmp_path / "missing-llvm-profdata"
+    configured, _ = configure_native(
+        tmp_path,
+        f"-DCMAKE_CXX_COMPILER={driver}",
+        "-DNATIVE_COVERAGE=ON",
+        environ={**os.environ, "LLVM_PROFDATA": str(missing)},
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode != 0
+    assert "LLVM_PROFDATA" in output
+    assert str(missing) in output
+
+
+def test_requested_coverage_fails_when_the_tool_chain_cannot_merge(
+    tmp_path: Path,
+) -> None:
+    """A resolved llvm-profdata that cannot merge the compiler's instrumented
+    control is a format-incompatibility configure failure naming the merge
+    command — not an empty coverage success."""
+    driver = _coverage_capable_driver()
+    if driver is None:
+        pytest.skip("no clang toolchain with qualified coverage tools on this host")
+    broken = _write_broken_profdata(tmp_path)
+    configured, _ = configure_native(
+        tmp_path,
+        f"-DCMAKE_CXX_COMPILER={driver}",
+        "-DNATIVE_COVERAGE=ON",
+        environ={**os.environ, "LLVM_PROFDATA": str(broken)},
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode != 0
+    assert "merge" in output.lower()
+    assert str(broken) in output
+
+
+def test_qualified_coverage_configure_records_tool_evidence(tmp_path: Path) -> None:
+    """A requested coverage configure on a qualified toolchain records the
+    resolved tools and the compile/run/merge/export probe as capability
+    evidence in the build context."""
+    driver = _coverage_capable_driver()
+    if driver is None:
+        pytest.skip("no clang toolchain with qualified coverage tools on this host")
+    configured, build = configure_native(
+        tmp_path, f"-DCMAKE_CXX_COMPILER={driver}", "-DNATIVE_COVERAGE=ON"
+    )
+    output = configured.stdout + configured.stderr
+    assert configured.returncode == 0, output
+    context = json.loads((build / "native_check_context.json").read_text())
+    coverage = context["capabilities"]["coverage"]
+    assert coverage["requested"] is True
+    assert coverage["supported"] is True
+    assert coverage["enabled"] is True
+    evidence = coverage["evidence"]
+    assert evidence["control"], "missing flag-probe evidence"
+    assert "llvm-profdata" in evidence["tools"]
+    assert "llvm-cov" in evidence["tools"]
+    assert "export" in evidence["format_probe"]
 
 
 def test_rtsan_control_source_reports_the_sanitizer_diagnostic(

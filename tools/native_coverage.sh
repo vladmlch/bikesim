@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # Build and measure one native test run without mixing its LLVM profiles with
 # earlier runs. Logs and profile artifacts stay under the run directory.
+#
+# Toolchain selection is delegated to tools/native_toolchain.py's
+# coverage-tools command — explicit LLVM_PROFDATA/LLVM_COV environment
+# overrides win, then the configured compiler's siblings, qualified PATH
+# candidates, and (Darwin only) the xcrun fallback; the selected pair must
+# pass the real compile/run/merge/export format probe. The same qualification
+# runs inside the NATIVE_COVERAGE=ON configure below and again inside
+# tools/native_coverage.py — one resolution contract, three call sites.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
@@ -31,34 +39,25 @@ run_logged() {
   fi
 }
 
-resolve_tool() {
-  local variable_name="$1"
-  local tool_name="$2"
-  local value="${!variable_name:-}"
-  if [[ -z "$value" ]]; then
-    if command -v xcrun >/dev/null 2>&1; then
-      local resolve_log="$LOG_DIR/xcrun-$tool_name.log"
-      if ! value="$(xcrun --find "$tool_name" 2>"$resolve_log")"; then
-        cat "$resolve_log" >&2
-        printf 'xcrun could not resolve %s; log retained at %s\n' "$tool_name" "$resolve_log" >&2
-        return 1
-      fi
-    else
-      value="$(command -v "$tool_name" || true)"
-    fi
-  fi
-  if [[ -z "$value" || ! -x "$value" ]]; then
-    printf '%s must resolve to an executable file (set %s)\n' "$tool_name" "$variable_name" >&2
-    return 1
-  fi
-  printf '%s\n' "$value"
-}
-
-LLVM_PROFDATA="$(resolve_tool LLVM_PROFDATA llvm-profdata)"
-LLVM_COV="$(resolve_tool LLVM_COV llvm-cov)"
-
 cd "$REPO_ROOT"
 run_logged configure uv run --frozen --group native cmake -S "$REPO_ROOT/native" -B "$BUILD_DIR" -DNATIVE_COVERAGE=ON
+
+# Resolve + qualify the coverage toolchain against the compiler the build
+# actually selected (recorded in native_check_context.json). The resolution
+# record is retained as run evidence; the pinned paths are forwarded to the
+# finalizer so the report is produced by exactly these executables.
+RESOLUTION_JSON="$RUN_DIR/coverage_tool_resolution.json"
+run_logged coverage-tools uv run --frozen --group native python \
+  "$REPO_ROOT/tools/native_toolchain.py" coverage-tools \
+  --context "$BUILD_DIR" --json "$RESOLUTION_JSON"
+
+LLVM_PROFDATA="$(uv run --frozen --group native python -c \
+  'import json, sys; print(json.load(open(sys.argv[1]))["llvm_profdata"]["path"])' \
+  "$RESOLUTION_JSON")"
+LLVM_COV="$(uv run --frozen --group native python -c \
+  'import json, sys; print(json.load(open(sys.argv[1]))["llvm_cov"]["path"])' \
+  "$RESOLUTION_JSON")"
+export LLVM_PROFDATA LLVM_COV
 
 unset NATIVE_TEST_BUILD_DIR
 export NATIVE_TEST_BUILD_PATH="$BUILD_DIR"

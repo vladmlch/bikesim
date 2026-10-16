@@ -806,7 +806,7 @@ def _configure_scratch(
     json_path = tmp_path / "dependencies.json"
     json_path.write_text(json.dumps(doc))
     (scratch / "CMakeLists.txt").write_text(
-        "cmake_minimum_required(VERSION 3.24)\n"
+        "cmake_minimum_required(VERSION 3.27)\n"
         "project(numerics_check NONE)\n"
         f'set(BIKE_TARGET_SYSTEM "{document["platform"]["system"]}")\n'
         f'file(READ "{json_path}" _native_dependencies_json)\n'

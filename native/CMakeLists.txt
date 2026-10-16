@@ -530,6 +530,22 @@ add_library(bike_random STATIC
   src/random/seed_sequence.cpp src/random/distributions.cpp
   src/random/noise_tape.cpp)
 set_target_properties(bike_random PROPERTIES
+
+# T15 model boundary — the identical model/*.cpp TUs the standalone root
+# build compiles as bike_model, here in the legacy warning/hardening
+# context. mass.cpp's compiled-model reads only inspect mjModel/mjData
+# fields (the MuJoCo include edge is compile-only — no libmujoco symbols
+# are called) and suspension_setup.cpp's LeastSquaresWorkspace symbols
+# resolve at the consumer's final link (the migration executable
+# supplies them through bike_native_contract_core), so the archive stays
+# lean. The PUBLIC kinematics/configuration edges carry the solver and
+# rider-spec records the public headers expose plus the transitive
+# Accelerate framework edge.
+add_library(bike_model STATIC
+  src/model/checks.hpp src/model/mass.hpp src/model/mass.cpp
+  src/model/rider_geometry.hpp src/model/rider_geometry.cpp
+  src/model/suspension_setup.hpp src/model/suspension_setup.cpp)
+set_target_properties(bike_model PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
@@ -550,6 +566,22 @@ if(_native_contract_include_directories)
 endif()
 target_include_directories(bike_random SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+
+  target_compile_options(bike_model PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_model PRIVATE ${_native_contract_compile_definitions})
+endif()
+target_include_directories(bike_model SYSTEM PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src")
+if(_native_contract_include_directories)
+  target_include_directories(bike_model SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_model SYSTEM PRIVATE
+  "${MJ_DIR}/include"
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration)
 
 # The pinned error interceptor is compiled once and shared by the extension,
 # direct C++ contracts, and the later native benchmark target. Its

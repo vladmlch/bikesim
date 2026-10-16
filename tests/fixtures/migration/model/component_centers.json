@@ -1,0 +1,85 @@
+{
+  "_notes": "15-entry bike table, then rider centers appended for the seated variant",
+  "_produced_by": "compute_component_centers_of_mass default + seated rider",
+  "bike_only": {
+    "masses": {
+      "$array": "model/component_centers.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "1b3c9362cd4110d39e77fab678e8e92879885525751736704339806be35d4a64",
+      "shape": [
+        15
+      ]
+    },
+    "names": [
+      "motor",
+      "battery",
+      "frame_structure",
+      "saddle_post",
+      "crank_pedals",
+      "steer_assembly",
+      "stanchions",
+      "fork_lowers",
+      "front_wheel",
+      "chainstay",
+      "seatstay",
+      "rocker",
+      "shock_yoke",
+      "shock_damper",
+      "rear_wheel"
+    ],
+    "positions": {
+      "$array": "model/component_centers.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "543625e08576011fdd89e08928fd3bc1d8dd5f998f1524899ca465447f71826c",
+      "shape": [
+        15,
+        3
+      ]
+    }
+  },
+  "with_seated_rider": {
+    "masses": {
+      "$array": "model/component_centers.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "3a25255c9de2b58b3725923a89fdc5a04fae6ee52751a0e5df7b9af97d9a5a76",
+      "shape": [
+        20
+      ]
+    },
+    "names": [
+      "motor",
+      "battery",
+      "frame_structure",
+      "saddle_post",
+      "crank_pedals",
+      "steer_assembly",
+      "stanchions",
+      "fork_lowers",
+      "front_wheel",
+      "chainstay",
+      "seatstay",
+      "rocker",
+      "shock_yoke",
+      "shock_damper",
+      "rear_wheel",
+      "rider_pelvis",
+      "rider_torso",
+      "rider_arms",
+      "rider_leg_front",
+      "rider_leg_rear"
+    ],
+    "positions": {
+      "$array": "model/component_centers.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "482835574e88cf8e9d8621e1796f0db51af71349832e7221320b1ae7ed8bc67e",
+      "shape": [
+        20,
+        3
+      ]
+    }
+  }
+}

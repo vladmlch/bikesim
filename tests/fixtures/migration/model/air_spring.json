@@ -1,0 +1,320 @@
+{
+  "_notes": "spec record + properties, chambers/pressures/forces/stiffness over the stroke grid, force curve, psi calibration, polynomial fit, error branches",
+  "_produced_by": "air_spring.py ForkAirSpring over the default spec",
+  "calibration": {
+    "outcome": {
+      "accepted": true,
+      "result": 85.19717103761685
+    },
+    "psi_after": 85.19717103761685
+  },
+  "defaults": {
+    "abs_pressure_pa": 666695.098039776,
+    "gauge_pressure_bar": 5.65370098039776,
+    "gauge_pressure_psi": 82.0,
+    "num_tokens": 2
+  },
+  "error_cases": [
+    {
+      "accepted": true,
+      "result": 4,
+      "tag": "tokens_over_max"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid ForkAirSpring.gauge_pressure_psi",
+      "tag": "neg_psi_ctor"
+    },
+    {
+      "accepted": true,
+      "result": 10.0,
+      "tag": "set_pressure_clamps"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid ForkAirSpring.travel_mm",
+      "tag": "bad_travel"
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          2.923893421169305e-05,
+          0.00010631149539747859
+        ]
+      },
+      "tag": "overtravel_volumes"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "Pneumatic volume exhausted at travel=180.0 mm with 2 tokens (displaced volume 81.4 cm\u00b3 >= initial chamber volume 11.1 cm\u00b3).",
+      "tag": "exhausted_volumes"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "ForkAirSpring.travel_mm must be a finite real scalar",
+      "tag": "bad_travel_type"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "need at least one array to concatenate",
+      "tag": "lstsq_bad_order"
+    },
+    {
+      "accepted": true,
+      "result": 10.0,
+      "tag": "calibrate_bad_sag"
+    }
+  ],
+  "fit_order3": {
+    "$array": "model/air_spring.arrays/a006.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "3199f053dd58f7a7bdb6a919205c46db27d292d32862920b83741eba55da7b1f",
+    "shape": [
+      3
+    ]
+  },
+  "force_curve": {
+    "axial_force_n": {
+      "$array": "model/air_spring.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "3b2a38b720c589a8f9cf779de6f7461753d3bc61c8cc57d5eb204aa84baa5946",
+      "shape": [
+        41
+      ]
+    },
+    "energy_j": {
+      "$array": "model/air_spring.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "026f53ed6c16e12fd0d02a3ab6fd60a681a0abd07771b117847742c1c17e74ea",
+      "shape": [
+        41
+      ]
+    },
+    "max_energy_j": 111.46408173663987,
+    "max_force_n": 1904.6639225493236,
+    "neg_pressure_psi": {
+      "$array": "model/air_spring.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "09a9f68ae9830fbeff05d25771672730d03cb478c8238c74e5a580c77ff01391",
+      "shape": [
+        41
+      ]
+    },
+    "pos_pressure_psi": {
+      "$array": "model/air_spring.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "20ab873a72bb6ea77c31e1a846d76b9a5ca2e8206b90412d155ce30277b3213e",
+      "shape": [
+        41
+      ]
+    },
+    "progressivity_pct": 349.9970440564074,
+    "stiffness_at_0_n_mm": 9.324635779670793,
+    "stiffness_at_bottom_n_mm": 41.9605853775447,
+    "stiffness_at_sag_n_mm": 4.627491001563669,
+    "stiffness_n_mm": {
+      "$array": "model/air_spring.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d1c02a93525874c6df368bf0ed75a2e067660096f2780d7ee6eb82f34feea40d",
+      "shape": [
+        41
+      ]
+    },
+    "travel_mm": {
+      "$array": "model/air_spring.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "391e2bc523d8a0ba1a73e81007452be5de6b322b84bde6d97249239750249025",
+      "shape": [
+        41
+      ]
+    }
+  },
+  "force_rows": [
+    {
+      "accepted": true,
+      "result": 0.0,
+      "travel_mm": 0.0
+    },
+    {
+      "accepted": true,
+      "result": 198.2625228255131,
+      "travel_mm": 30.0
+    },
+    {
+      "accepted": true,
+      "result": 311.8876931039175,
+      "travel_mm": 54.0
+    },
+    {
+      "accepted": true,
+      "result": 495.61250415599994,
+      "travel_mm": 90.0
+    },
+    {
+      "accepted": true,
+      "result": 1863.083590680478,
+      "travel_mm": 179.0
+    }
+  ],
+  "pressure_rows": [
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          666695.098039776,
+          666695.098039776
+        ]
+      },
+      "travel_mm": 0.0
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          800706.7528305597,
+          362450.3564756967
+        ]
+      },
+      "travel_mm": 30.0
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          945304.1029842183,
+          255880.9356645445
+        ]
+      },
+      "travel_mm": 54.0
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          1267145.1690494884,
+          171601.00384698945
+        ]
+      },
+      "travel_mm": 90.0
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          4206126.674024018,
+          87807.74554908085
+        ]
+      },
+      "travel_mm": 179.0
+    }
+  ],
+  "properties": {
+    "base_neg_volume_m3": 2.4881413816431162e-05,
+    "base_pos_volume_m3": 0.00012666901579274048,
+    "piston_area_m2": 0.0004523893421169302,
+    "token_volume_m3": 8e-06
+  },
+  "specs": {
+    "atm_pressure_pa": 101325.0,
+    "default_tokens": 2,
+    "gamma": 1.4,
+    "max_tokens": 4,
+    "neg_chamber_length_mm": 55.0,
+    "pos_chamber_length_mm": 280.0,
+    "stanchion_inner_diam_mm": 24.0,
+    "token_volume_cm3": 8.0,
+    "total_travel_mm": 180.0
+  },
+  "stiffness_rows": [
+    {
+      "accepted": true,
+      "result": 9.324635779670793,
+      "travel_mm": 0.0
+    },
+    {
+      "accepted": true,
+      "result": 5.063561494510935,
+      "travel_mm": 30.0
+    },
+    {
+      "accepted": true,
+      "result": 4.627491001563669,
+      "travel_mm": 54.0
+    },
+    {
+      "accepted": true,
+      "result": 5.939614062507985,
+      "travel_mm": 90.0
+    },
+    {
+      "accepted": true,
+      "result": 40.82960476913195,
+      "travel_mm": 179.0
+    }
+  ],
+  "volume_rows": [
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          0.00011066901579274048,
+          2.4881413816431162e-05
+        ]
+      },
+      "travel_mm": 0.0
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          9.709733552923258e-05,
+          3.845309407993907e-05
+        ]
+      },
+      "travel_mm": 30.0
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          8.623999131842624e-05,
+          4.931043829074539e-05
+        ]
+      },
+      "travel_mm": 54.0
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          6.995397500221677e-05,
+          6.559645460695488e-05
+        ]
+      },
+      "travel_mm": 90.0
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          2.9691323553809976e-05,
+          0.00010585910605536167
+        ]
+      },
+      "travel_mm": 179.0
+    }
+  ]
+}

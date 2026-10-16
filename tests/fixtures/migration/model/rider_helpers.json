@@ -1,0 +1,513 @@
+{
+  "_notes": "two-link IK branches, flexion, spring derivation, seated path mass splits incl. rejection arms",
+  "_produced_by": "rider.py _two_link_ik/_flexion_deg/_spring/seated_path_masses",
+  "flexion_cases": [
+    {
+      "accepted": true,
+      "distal": {
+        "$array": "model/rider_helpers.arrays/a023.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+        "shape": [
+          3
+        ]
+      },
+      "joint": {
+        "$array": "model/rider_helpers.arrays/a022.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "87bb587c1c9f911944512e9d7320f87c85aaea462c6e6cdee74a4e52634e9966",
+        "shape": [
+          3
+        ]
+      },
+      "proximal": {
+        "$array": "model/rider_helpers.arrays/a021.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "04ae04134c8318578c932394683055fea108f3f586ff5b055613752c5f03e6f5",
+        "shape": [
+          3
+        ]
+      },
+      "result": 0.0,
+      "tag": "straight"
+    },
+    {
+      "accepted": true,
+      "distal": {
+        "$array": "model/rider_helpers.arrays/a026.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "329d1b8878324cd181f2fc9617c4ece3e93d680a2570d5c6477414305853ec8e",
+        "shape": [
+          3
+        ]
+      },
+      "joint": {
+        "$array": "model/rider_helpers.arrays/a025.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "87bb587c1c9f911944512e9d7320f87c85aaea462c6e6cdee74a4e52634e9966",
+        "shape": [
+          3
+        ]
+      },
+      "proximal": {
+        "$array": "model/rider_helpers.arrays/a024.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "04ae04134c8318578c932394683055fea108f3f586ff5b055613752c5f03e6f5",
+        "shape": [
+          3
+        ]
+      },
+      "result": 90.0,
+      "tag": "right_angle"
+    },
+    {
+      "accepted": true,
+      "distal": {
+        "$array": "model/rider_helpers.arrays/a029.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "735a3c200e889bc497b77e235ddde4ecd3cae0f35cc7c716a965f8169d157e9a",
+        "shape": [
+          3
+        ]
+      },
+      "joint": {
+        "$array": "model/rider_helpers.arrays/a028.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "ce107d2a9b4f7cade4de8f0736501a8b017a30770ae344a1e74564356990df58",
+        "shape": [
+          3
+        ]
+      },
+      "proximal": {
+        "$array": "model/rider_helpers.arrays/a027.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "ead3f7cc4cf4b486371ea5b2bef9199d0bf25925d4f1cff3014f2c810e553393",
+        "shape": [
+          3
+        ]
+      },
+      "result": 6.911227119024659,
+      "tag": "bent_30ish"
+    }
+  ],
+  "ik_cases": [
+    {
+      "a": {
+        "$array": "model/rider_helpers.arrays/a000.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "6e50d4cd4213050bc1826047594a608cf0baadb47a9da7aa472592930c326583",
+        "shape": [
+          3
+        ]
+      },
+      "accepted": true,
+      "b": {
+        "$array": "model/rider_helpers.arrays/a001.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "b513c66ffb70114cb3c387a883a9be31b44a1ba711dfa44ef3605de43eae1cc8",
+        "shape": [
+          3
+        ]
+      },
+      "len_a": 0.45,
+      "len_b": 0.45,
+      "prefer": "+x",
+      "result": {
+        "$array": "model/rider_helpers.arrays/a002.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "0a9895f1ca69dd204f52400eefcd4513c6b5658b016732887af7ba0c9a87f9f5",
+        "shape": [
+          3
+        ]
+      },
+      "tag": "reachable_px"
+    },
+    {
+      "a": {
+        "$array": "model/rider_helpers.arrays/a003.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "6e50d4cd4213050bc1826047594a608cf0baadb47a9da7aa472592930c326583",
+        "shape": [
+          3
+        ]
+      },
+      "accepted": true,
+      "b": {
+        "$array": "model/rider_helpers.arrays/a004.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "b513c66ffb70114cb3c387a883a9be31b44a1ba711dfa44ef3605de43eae1cc8",
+        "shape": [
+          3
+        ]
+      },
+      "len_a": 0.45,
+      "len_b": 0.45,
+      "prefer": "-x",
+      "result": {
+        "$array": "model/rider_helpers.arrays/a005.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "25c07da39049d6b2ab9701cf807a81fc01a40d75ff0ec970eb57326eb9a8046b",
+        "shape": [
+          3
+        ]
+      },
+      "tag": "reachable_mx"
+    },
+    {
+      "a": {
+        "$array": "model/rider_helpers.arrays/a006.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "04ae04134c8318578c932394683055fea108f3f586ff5b055613752c5f03e6f5",
+        "shape": [
+          3
+        ]
+      },
+      "accepted": true,
+      "b": {
+        "$array": "model/rider_helpers.arrays/a007.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "e65f1ddd2d3b62a852f06f47ff12734ce955e5a611cee911caf875527a2c78ab",
+        "shape": [
+          3
+        ]
+      },
+      "len_a": 0.3,
+      "len_b": 0.3,
+      "prefer": "+z",
+      "result": {
+        "$array": "model/rider_helpers.arrays/a008.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "b162cda94529b296ba5210fe7d500123cd8668392d52d976794cb08b2cd6fa07",
+        "shape": [
+          3
+        ]
+      },
+      "tag": "prefer_pz"
+    },
+    {
+      "a": {
+        "$array": "model/rider_helpers.arrays/a009.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "04ae04134c8318578c932394683055fea108f3f586ff5b055613752c5f03e6f5",
+        "shape": [
+          3
+        ]
+      },
+      "accepted": true,
+      "b": {
+        "$array": "model/rider_helpers.arrays/a010.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "e65f1ddd2d3b62a852f06f47ff12734ce955e5a611cee911caf875527a2c78ab",
+        "shape": [
+          3
+        ]
+      },
+      "len_a": 0.3,
+      "len_b": 0.3,
+      "prefer": "-z",
+      "result": {
+        "$array": "model/rider_helpers.arrays/a011.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "591c3f63cc4eb986f3c2d566a24def49f100261324f05a4faa01d8344f26aa6c",
+        "shape": [
+          3
+        ]
+      },
+      "tag": "prefer_mz"
+    },
+    {
+      "a": {
+        "$array": "model/rider_helpers.arrays/a012.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+        "shape": [
+          3
+        ]
+      },
+      "accepted": false,
+      "b": {
+        "$array": "model/rider_helpers.arrays/a013.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "8b7c56fea99625837f8515182aaba4584bac228d1cfc14c6c7c032056953c8df",
+        "shape": [
+          3
+        ]
+      },
+      "error": "ValueError",
+      "len_a": 0.4,
+      "len_b": 0.4,
+      "message": "endpoints 2.000 m apart exceed the chain's 0.800 m reach",
+      "prefer": "+x",
+      "tag": "too_far"
+    },
+    {
+      "a": {
+        "$array": "model/rider_helpers.arrays/a014.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+        "shape": [
+          3
+        ]
+      },
+      "accepted": false,
+      "b": {
+        "$array": "model/rider_helpers.arrays/a015.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "2c504ad1b020049b2663d13fc27df9e6bd6c23474059b96a9a40b6441aaf67db",
+        "shape": [
+          3
+        ]
+      },
+      "error": "ValueError",
+      "len_a": 0.4,
+      "len_b": 0.2,
+      "message": "endpoints 0.050 m apart are closer than the chain's 0.200 m minimum",
+      "prefer": "+x",
+      "tag": "too_close"
+    },
+    {
+      "a": {
+        "$array": "model/rider_helpers.arrays/a016.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+        "shape": [
+          3
+        ]
+      },
+      "accepted": true,
+      "b": {
+        "$array": "model/rider_helpers.arrays/a017.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "d98edda6535724f0cb00fa9b4fd4bc1697794d3700fc12693d7de4d1e15f0dc0",
+        "shape": [
+          3
+        ]
+      },
+      "len_a": 0.4,
+      "len_b": 0.4,
+      "prefer": "+x",
+      "result": {
+        "$array": "model/rider_helpers.arrays/a018.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "59bc1feedef5723b5a15e94c6a2ee8a840571ef6d256003663695cd4fd0c2a8d",
+        "shape": [
+          3
+        ]
+      },
+      "tag": "degenerate_straight"
+    },
+    {
+      "a": {
+        "$array": "model/rider_helpers.arrays/a019.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "04ae04134c8318578c932394683055fea108f3f586ff5b055613752c5f03e6f5",
+        "shape": [
+          3
+        ]
+      },
+      "accepted": false,
+      "b": {
+        "$array": "model/rider_helpers.arrays/a020.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "e65f1ddd2d3b62a852f06f47ff12734ce955e5a611cee911caf875527a2c78ab",
+        "shape": [
+          3
+        ]
+      },
+      "error": "KeyError",
+      "len_a": 0.3,
+      "len_b": 0.3,
+      "message": "'+y'",
+      "prefer": "+y",
+      "tag": "bad_prefer"
+    }
+  ],
+  "path_cases": [
+    {
+      "accepted": true,
+      "result": [
+        [
+          "torso",
+          29.891559999999995
+        ],
+        [
+          "pelvis",
+          14.108440000000005
+        ],
+        [
+          "arms",
+          9.6
+        ],
+        [
+          "leg",
+          13.200000000000001
+        ],
+        [
+          "head",
+          5.92424
+        ],
+        [
+          "trunk_to_arms",
+          1.7355200000000002
+        ],
+        [
+          "thigh_to_legs",
+          8.6628
+        ],
+        [
+          "shank_foot",
+          4.5371999999999995
+        ],
+        [
+          "upper_arm_fraction",
+          0.548582995951417
+        ]
+      ],
+      "tag": "default"
+    },
+    {
+      "accepted": true,
+      "result": [
+        [
+          "torso",
+          28.036059999999996
+        ],
+        [
+          "pelvis",
+          13.213940000000004
+        ],
+        [
+          "arms",
+          9.0
+        ],
+        [
+          "leg",
+          12.375
+        ],
+        [
+          "head",
+          5.577240000000001
+        ],
+        [
+          "trunk_to_arms",
+          1.6295200000000003
+        ],
+        [
+          "thigh_to_legs",
+          8.122800000000002
+        ],
+        [
+          "shank_foot",
+          4.252199999999999
+        ],
+        [
+          "upper_arm_fraction",
+          0.548582995951417
+        ]
+      ],
+      "tag": "rider_75"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "bar share 0.05 puts 4.0 kg on the bar, less than the arms' 7.9 kg",
+      "tag": "bar_too_low"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "pedal share 0.05 needs -5.1 kg of thigh on the pedals; the shanks and feet weigh 9.1 kg and the thighs 22.5 kg",
+      "tag": "pedal_too_low"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "pedal share 0.80 needs 54.9 kg of thigh on the pedals; the shanks and feet weigh 9.1 kg and the thighs 22.5 kg",
+      "tag": "pedal_too_high"
+    },
+    {
+      "accepted": true,
+      "result": [
+        [
+          "torso",
+          14.0105
+        ],
+        [
+          "pelvis",
+          9.9895
+        ],
+        [
+          "arms",
+          18.0
+        ],
+        [
+          "leg",
+          9.0
+        ],
+        [
+          "head",
+          8.817
+        ],
+        [
+          "trunk_to_arms",
+          12.565999999999999
+        ],
+        [
+          "thigh_to_legs",
+          5.865
+        ],
+        [
+          "shank_foot",
+          3.135
+        ],
+        [
+          "upper_arm_fraction",
+          0.548582995951417
+        ]
+      ],
+      "tag": "helmet_heavy"
+    }
+  ],
+  "spring_cases": [
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          29608.813203268073,
+          753.9822368615504
+        ]
+      },
+      "tag": "default"
+    }
+  ]
+}

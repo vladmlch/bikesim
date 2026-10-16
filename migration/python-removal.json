@@ -1480,6 +1480,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -1608,6 +1609,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -1635,6 +1637,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -1662,6 +1665,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -1856,6 +1860,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -1912,6 +1917,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -2116,6 +2122,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -2280,6 +2287,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -2307,6 +2315,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -2516,6 +2525,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",
@@ -4667,6 +4677,7 @@
     "owner_task": "T15",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
+      "native/src/model/checks.hpp",
       "native/src/model/mass.hpp",
       "native/src/model/mass.cpp",
       "native/src/model/rider_geometry.hpp",

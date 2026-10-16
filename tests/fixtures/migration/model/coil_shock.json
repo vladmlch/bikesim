@@ -1,0 +1,207 @@
+{
+  "_notes": "linear coil + quadratic bumper, legacy/preload variants, spec and call rejections",
+  "_produced_by": "coil_shock.py CoilShock over stroke grid",
+  "bumper_engage_mm": 55.0,
+  "error_cases": [
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid CoilShockSpecs.rate_n_m",
+      "tag": "neg_rate"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid CoilShockSpecs.stroke_mm",
+      "tag": "zero_stroke"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "CoilShockSpecs.bumper_length_mm: exceeds stroke",
+      "tag": "bumper_over_stroke"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid CoilShockSpecs.preload_mm",
+      "tag": "neg_preload"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid CoilShock.stroke_mm",
+      "tag": "nan_stroke"
+    }
+  ],
+  "rows": [
+    {
+      "axial": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "bumper": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "legacy_spring": {
+        "accepted": true,
+        "result": -573.0
+      },
+      "preload_spring": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "spring": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "stroke_mm": -5.0
+    },
+    {
+      "axial": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "bumper": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "legacy_spring": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "preload_spring": {
+        "accepted": true,
+        "result": 229.2
+      },
+      "spring": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "stroke_mm": 0.0
+    },
+    {
+      "axial": {
+        "accepted": true,
+        "result": 2292.0
+      },
+      "bumper": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "legacy_spring": {
+        "accepted": true,
+        "result": 2292.0
+      },
+      "preload_spring": {
+        "accepted": true,
+        "result": 2521.2
+      },
+      "spring": {
+        "accepted": true,
+        "result": 2292.0
+      },
+      "stroke_mm": 20.0
+    },
+    {
+      "axial": {
+        "accepted": true,
+        "result": 6303.0
+      },
+      "bumper": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "legacy_spring": {
+        "accepted": true,
+        "result": 6303.0
+      },
+      "preload_spring": {
+        "accepted": true,
+        "result": 6532.2
+      },
+      "spring": {
+        "accepted": true,
+        "result": 6303.0
+      },
+      "stroke_mm": 55.0
+    },
+    {
+      "axial": {
+        "accepted": true,
+        "result": 8626.0
+      },
+      "bumper": {
+        "accepted": true,
+        "result": 1750.0
+      },
+      "legacy_spring": {
+        "accepted": true,
+        "result": 6876.0
+      },
+      "preload_spring": {
+        "accepted": true,
+        "result": 7105.2
+      },
+      "spring": {
+        "accepted": true,
+        "result": 6876.0
+      },
+      "stroke_mm": 60.0
+    },
+    {
+      "axial": {
+        "accepted": true,
+        "result": 14449.0
+      },
+      "bumper": {
+        "accepted": true,
+        "result": 7000.0
+      },
+      "legacy_spring": {
+        "accepted": true,
+        "result": 7449.0
+      },
+      "preload_spring": {
+        "accepted": true,
+        "result": 7678.2
+      },
+      "spring": {
+        "accepted": true,
+        "result": 7449.0
+      },
+      "stroke_mm": 65.0
+    },
+    {
+      "axial": {
+        "accepted": true,
+        "result": 23772.0
+      },
+      "bumper": {
+        "accepted": true,
+        "result": 15750.0
+      },
+      "legacy_spring": {
+        "accepted": true,
+        "result": 8022.0
+      },
+      "preload_spring": {
+        "accepted": true,
+        "result": 8251.2
+      },
+      "spring": {
+        "accepted": true,
+        "result": 8022.0
+      },
+      "stroke_mm": 70.0
+    }
+  ],
+  "specs": {
+    "bumper_length_mm": 10.0,
+    "bumper_peak_n": 7000.0,
+    "preload_mm": 0.0,
+    "rate_n_m": 114600.0,
+    "stroke_mm": 65.0
+  }
+}

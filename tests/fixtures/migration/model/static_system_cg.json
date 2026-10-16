@@ -1,0 +1,46 @@
+{
+  "_notes": "sequential-fold system CoM + axle load split, bike-only and with the seated rider",
+  "_produced_by": "compute_static_system_cg default + rider",
+  "bike_only": {
+    "bike_mass_kg": 24.4,
+    "cg_pos_m": {
+      "$array": "model/static_system_cg.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "7c59a65daafe6f05304228881da95c217b0dc1c3c79aaff6a47623a6fa3d0e46",
+      "shape": [
+        3
+      ]
+    },
+    "front_axle_x": 0.8330557543517229,
+    "front_load_n": 111.64177390306011,
+    "front_load_pct": 46.64100445474679,
+    "rear_axle_x": -0.4474942456482771,
+    "rear_load_n": 127.72222609693992,
+    "rear_load_pct": 53.358995545253215,
+    "rider_mass_kg": 0.0,
+    "total_mass_kg": 24.4,
+    "wheelbase_m": 1.2805499999999999
+  },
+  "with_seated_rider": {
+    "bike_mass_kg": 24.4,
+    "cg_pos_m": {
+      "$array": "model/static_system_cg.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2ef79b6534ec7c681bba1cde23e207d3e6c669d7a3a850dc26261a3bfaf69e03",
+      "shape": [
+        3
+      ]
+    },
+    "front_axle_x": 0.8330557543517229,
+    "front_load_n": 413.3110201333921,
+    "front_load_pct": 40.35594105371718,
+    "rear_axle_x": -0.4474942456482771,
+    "rear_load_n": 610.8529798666083,
+    "rear_load_pct": 59.64405894628284,
+    "rider_mass_kg": 80.0,
+    "total_mass_kg": 104.4,
+    "wheelbase_m": 1.2805499999999999
+  }
+}

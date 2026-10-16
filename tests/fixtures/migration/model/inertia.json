@@ -1,0 +1,401 @@
+{
+  "_notes": "ring/parallel-axis/wheel tensors + add_body_inertial accepted & rejected branches",
+  "_produced_by": "inertia.py calls over authored case tables",
+  "axis_cases": [
+    {
+      "accepted": true,
+      "mass_kg": 1.5,
+      "offset_m": {
+        "$array": "model/inertia.arrays/a003.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+        "shape": [
+          3
+        ]
+      },
+      "result": {
+        "$array": "model/inertia.arrays/a004.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "834a709ba2534ebe3ee1397fd4f7bd288b2acc1d20a08d6c862dcd99b6f04400",
+        "shape": [
+          3,
+          3
+        ]
+      },
+      "tag": "origin"
+    },
+    {
+      "accepted": true,
+      "mass_kg": 0.8,
+      "offset_m": {
+        "$array": "model/inertia.arrays/a005.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "7c5180196f538bccd4e531eba5c42a66b054b3fa5c571d7d860ec09ff4a75673",
+        "shape": [
+          3
+        ]
+      },
+      "result": {
+        "$array": "model/inertia.arrays/a006.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "053b446058e5a511d45413f356f24cda430749e9187a83abcce20e456ff5f76b",
+        "shape": [
+          3,
+          3
+        ]
+      },
+      "tag": "axial"
+    },
+    {
+      "accepted": true,
+      "mass_kg": 2.4,
+      "offset_m": {
+        "$array": "model/inertia.arrays/a007.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "afc31d7953766d0eaed4ff51a19f3426a999e400387b19dce95fbd0fb1c38edc",
+        "shape": [
+          3
+        ]
+      },
+      "result": {
+        "$array": "model/inertia.arrays/a008.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "894699d12f40640391094f807f6c3b910e44b2ca53544815860e6c93884185a3",
+        "shape": [
+          3,
+          3
+        ]
+      },
+      "tag": "mixed"
+    },
+    {
+      "accepted": true,
+      "mass_kg": 0.0,
+      "offset_m": {
+        "$array": "model/inertia.arrays/a009.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "b36b8c812d94f7f6aea6f78123586b63d2c75b8591533613873bb1fd75140963",
+        "shape": [
+          3
+        ]
+      },
+      "result": {
+        "$array": "model/inertia.arrays/a010.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "26ef63e2eb314df99bb7e930248ff3907d9326c8b22a24ab1b69b4356d398301",
+        "shape": [
+          3,
+          3
+        ]
+      },
+      "tag": "zero_mass"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "mass_kg": -1.0,
+      "message": "invalid parallel-axis input",
+      "offset_m": {
+        "$array": "model/inertia.arrays/a011.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "a80a1b1b06d9ac93201057c7096d126247d715728663e7afbfdf6d1e7ef63250",
+        "shape": [
+          3
+        ]
+      },
+      "tag": "neg_mass"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "mass_kg": 1.0,
+      "message": "invalid parallel-axis input",
+      "offset_m": {
+        "$array": "model/inertia.arrays/a012.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "7f51b4a498d3829b89894427f6a15055d947f251ba47b716e6917b2b28e269d8",
+        "shape": [
+          3
+        ]
+      },
+      "tag": "nan_offset"
+    }
+  ],
+  "inertial_cases": [
+    {
+      "accepted": true,
+      "result": {
+        "fullinertia": "0.027554166666666661 0.054899999999999997 0.027554166666666661 0 0 0",
+        "mass": "0.5",
+        "pos": "0.10000000000000001 0 0.20000000000000001"
+      },
+      "tag": "accepted"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "body already has an explicit inertial",
+      "tag": "duplicate_inertial"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid body inertial dimensions or mass",
+      "tag": "zero_mass"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "non-finite body inertial",
+      "tag": "nonfinite_com"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "inertia tensor must be symmetric",
+      "tag": "asymmetric"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "inertia violates positivity or triangle inequality",
+      "tag": "indefinite"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "inertia violates positivity or triangle inequality",
+      "tag": "triangle_violation"
+    }
+  ],
+  "ring_cases": [
+    {
+      "accepted": true,
+      "args": [
+        0.5,
+        0.3,
+        0.36,
+        0.05
+      ],
+      "result": {
+        "$array": "model/inertia.arrays/a000.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "34e6c90fcde85e48b1642bef26936aab54505da6e3bf7b75385eda350965f8f8",
+        "shape": [
+          3,
+          3
+        ]
+      },
+      "tag": "annular"
+    },
+    {
+      "accepted": true,
+      "args": [
+        1.2,
+        0.0,
+        0.045,
+        0.1
+      ],
+      "result": {
+        "$array": "model/inertia.arrays/a001.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "8a0a3f2af1b22317d3db9d4dfbd75ba4d3e8d97a68ab209c8eb4cf164be57eb3",
+        "shape": [
+          3,
+          3
+        ]
+      },
+      "tag": "solid_hub"
+    },
+    {
+      "accepted": true,
+      "args": [
+        0.1,
+        0.1,
+        0.101,
+        0.02
+      ],
+      "result": {
+        "$array": "model/inertia.arrays/a002.f64",
+        "dtype": "<f8",
+        "order": "C",
+        "sha256": "13f412befa51f60a604e9bb1dfb36ed0d83bdaad1bdaa7c392c0a312d2933166",
+        "shape": [
+          3,
+          3
+        ]
+      },
+      "tag": "thin_ring"
+    },
+    {
+      "accepted": false,
+      "args": [
+        0.0,
+        0.3,
+        0.36,
+        0.05
+      ],
+      "error": "ValueError",
+      "message": "invalid annular cylinder",
+      "tag": "zero_mass"
+    },
+    {
+      "accepted": false,
+      "args": [
+        0.5,
+        0.3,
+        0.36,
+        -0.01
+      ],
+      "error": "ValueError",
+      "message": "invalid annular cylinder",
+      "tag": "neg_width"
+    },
+    {
+      "accepted": false,
+      "args": [
+        0.5,
+        0.4,
+        0.3,
+        0.05
+      ],
+      "error": "ValueError",
+      "message": "invalid annular cylinder",
+      "tag": "inner_ge_outer"
+    },
+    {
+      "accepted": false,
+      "args": [
+        0.5,
+        -0.1,
+        0.3,
+        0.05
+      ],
+      "error": "ValueError",
+      "message": "invalid annular cylinder",
+      "tag": "inner_negative"
+    },
+    {
+      "accepted": false,
+      "args": [
+        {
+          "$nonfinite": "nan"
+        },
+        0.3,
+        0.36,
+        0.05
+      ],
+      "error": "ValueError",
+      "message": "non-finite inertia input",
+      "tag": "nan_mass"
+    },
+    {
+      "accepted": false,
+      "args": [
+        0.5,
+        0.3,
+        {
+          "$nonfinite": "inf"
+        },
+        0.05
+      ],
+      "error": "ValueError",
+      "message": "non-finite inertia input",
+      "tag": "inf_outer"
+    }
+  ],
+  "wheel_cases": [
+    {
+      "accepted": true,
+      "result": {
+        "com": {
+          "$array": "model/inertia.arrays/a013.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        "tensor": {
+          "$array": "model/inertia.arrays/a014.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "2cb3d15606c0e506ef2faa6cceda782f4c1148ad3b1dc56dfc2be49b7bebeccc",
+          "shape": [
+            3,
+            3
+          ]
+        }
+      },
+      "tag": "front"
+    },
+    {
+      "accepted": true,
+      "result": {
+        "com": {
+          "$array": "model/inertia.arrays/a015.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+          "shape": [
+            3
+          ]
+        },
+        "tensor": {
+          "$array": "model/inertia.arrays/a016.f64",
+          "dtype": "<f8",
+          "order": "C",
+          "sha256": "f1f46e428c1d68219deff6b54b14301fcf8c3f7c3f96f77e3901937b68faf2bd",
+          "shape": [
+            3,
+            3
+          ]
+        }
+      },
+      "tag": "rear"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "wheel mass fractions must sum to one",
+      "tag": "bad_fraction_sum"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid wheel mass or empty profile",
+      "tag": "empty"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid wheel mass or empty profile",
+      "tag": "zero_mass"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid wheel mass fractions",
+      "tag": "neg_fraction"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid wheel component offset",
+      "tag": "nan_offset"
+    }
+  ]
+}

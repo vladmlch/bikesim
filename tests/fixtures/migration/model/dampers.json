@@ -1,0 +1,1273 @@
+{
+  "_notes": "preset table + click configs, Charger3/SuperDeluxe coeffs, damping forces over the velocity grid, HBO/lockout/legacy branches, dyno curves, system preset apply/cycle",
+  "_produced_by": "damper.py classes over authored grids",
+  "apply_presets": [
+    {
+      "accepted": true,
+      "preset": "BASE",
+      "result": {
+        "config": {
+          "fork_hsc": 2,
+          "fork_lsc": 7,
+          "fork_rebound": 9,
+          "preset_name": "Base Tune (Factory Neutral)",
+          "shock_hbo": 2,
+          "shock_hsc": 2,
+          "shock_lockout": false,
+          "shock_lsc": 7,
+          "shock_rebound": 7
+        },
+        "fork_clicks": [
+          2,
+          7,
+          9
+        ],
+        "lockout": false,
+        "preset": "BASE",
+        "shock_clicks": [
+          2,
+          7,
+          7,
+          2
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "preset": "PLUSH",
+      "result": {
+        "config": {
+          "fork_hsc": 0,
+          "fork_lsc": 3,
+          "fork_rebound": 5,
+          "preset_name": "Plush / Wet Traction",
+          "shock_hbo": 1,
+          "shock_hsc": 0,
+          "shock_lockout": false,
+          "shock_lsc": 3,
+          "shock_rebound": 4
+        },
+        "fork_clicks": [
+          0,
+          3,
+          5
+        ],
+        "lockout": false,
+        "preset": "PLUSH",
+        "shock_clicks": [
+          0,
+          3,
+          4,
+          1
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "preset": "ENDURO",
+      "result": {
+        "config": {
+          "fork_hsc": 3,
+          "fork_lsc": 10,
+          "fork_rebound": 11,
+          "preset_name": "Enduro Race (Supportive)",
+          "shock_hbo": 3,
+          "shock_hsc": 3,
+          "shock_lockout": false,
+          "shock_lsc": 10,
+          "shock_rebound": 9
+        },
+        "fork_clicks": [
+          3,
+          10,
+          11
+        ],
+        "lockout": false,
+        "preset": "ENDURO",
+        "shock_clicks": [
+          3,
+          10,
+          9,
+          3
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "preset": "PARK",
+      "result": {
+        "config": {
+          "fork_hsc": 4,
+          "fork_lsc": 13,
+          "fork_rebound": 14,
+          "preset_name": "Bike Park / Jumps (Firm)",
+          "shock_hbo": 4,
+          "shock_hsc": 4,
+          "shock_lockout": false,
+          "shock_lsc": 13,
+          "shock_rebound": 12
+        },
+        "fork_clicks": [
+          4,
+          13,
+          14
+        ],
+        "lockout": false,
+        "preset": "PARK",
+        "shock_clicks": [
+          4,
+          13,
+          12,
+          4
+        ]
+      }
+    },
+    {
+      "accepted": true,
+      "preset": "CUSTOM",
+      "result": {
+        "config": {
+          "fork_hsc": 2,
+          "fork_lsc": 7,
+          "fork_rebound": 9,
+          "preset_name": "Base Tune (Factory Neutral)",
+          "shock_hbo": 2,
+          "shock_hsc": 2,
+          "shock_lockout": false,
+          "shock_lsc": 7,
+          "shock_rebound": 7
+        },
+        "fork_clicks": [
+          2,
+          7,
+          9
+        ],
+        "lockout": false,
+        "preset": "BASE",
+        "shock_clicks": [
+          2,
+          7,
+          7,
+          2
+        ]
+      }
+    }
+  ],
+  "click_cases": [
+    {
+      "accepted": true,
+      "result": [
+        3,
+        5,
+        9
+      ],
+      "tag": "fork_set_within"
+    },
+    {
+      "accepted": true,
+      "result": [
+        4,
+        0,
+        17
+      ],
+      "tag": "fork_clamps"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "set_clicks.hsc: expected integer",
+      "tag": "fork_bad_click_type"
+    },
+    {
+      "accepted": true,
+      "result": [
+        1,
+        2,
+        3,
+        4,
+        true
+      ],
+      "tag": "shock_set_all"
+    },
+    {
+      "accepted": true,
+      "result": {
+        "$tuple": [
+          true,
+          false,
+          false
+        ]
+      },
+      "tag": "toggle_lockout"
+    },
+    {
+      "accepted": true,
+      "result": [
+        4,
+        0,
+        17
+      ],
+      "tag": "fork_ctor_clamps"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "fork travel must contain the 20 mm HBO zone",
+      "tag": "fork_low_travel"
+    },
+    {
+      "accepted": true,
+      "result": [
+        2,
+        7,
+        9
+      ],
+      "tag": "fork_low_travel_legacy"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid SuperDeluxeDamper.total_stroke_mm",
+      "tag": "shock_zero_stroke"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "invalid Charger3Damper.velocity_mps",
+      "tag": "fork_nan_velocity"
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "message": "non-finite shock damper state",
+      "tag": "shock_nan_stroke"
+    }
+  ],
+  "click_config_defaults": {
+    "fork_hsc": 2,
+    "fork_lsc": 7,
+    "fork_rebound": 9,
+    "preset_name": "Base Tune (Factory Neutral)",
+    "shock_hbo": 2,
+    "shock_hsc": 2,
+    "shock_lockout": false,
+    "shock_lsc": 7,
+    "shock_rebound": 7
+  },
+  "cycle_sequence": [
+    {
+      "forward": true,
+      "preset": "PLUSH"
+    },
+    {
+      "forward": true,
+      "preset": "ENDURO"
+    },
+    {
+      "forward": true,
+      "preset": "PARK"
+    },
+    {
+      "forward": true,
+      "preset": "BASE"
+    },
+    {
+      "forward": false,
+      "preset": "PARK"
+    },
+    {
+      "forward": false,
+      "preset": "ENDURO"
+    },
+    {
+      "forward": true,
+      "preset": "PLUSH"
+    }
+  ],
+  "dyno_fork": {
+    "force_n": {
+      "$array": "model/dampers.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "5247f71a6c771ebe23cf5b9766320f72aad970aff962960018a1421554026a11",
+      "shape": [
+        41
+      ]
+    },
+    "hsc_clicks": 2,
+    "lsc_clicks": 7,
+    "rebound_clicks": 9,
+    "velocity_mps": {
+      "$array": "model/dampers.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "76a48d80c4cb8bc243c0df03139f70a6f3be2bde6cfa175c76ef3a7b203a9332",
+      "shape": [
+        41
+      ]
+    }
+  },
+  "dyno_shock": {
+    "force_n": {
+      "$array": "model/dampers.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "0f6c48b83ec86dd82594c7746054bd0e6556561bab86c27ba4b3de191078daba",
+      "shape": [
+        41
+      ]
+    },
+    "hbo_clicks": 2,
+    "hsc_clicks": 2,
+    "lockout": false,
+    "lsc_clicks": 7,
+    "rebound_clicks": 7,
+    "velocity_mps": {
+      "$array": "model/dampers.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "76a48d80c4cb8bc243c0df03139f70a6f3be2bde6cfa175c76ef3a7b203a9332",
+      "shape": [
+        41
+      ]
+    }
+  },
+  "fork_coefficients": [
+    [
+      "c_lsc",
+      634.198904787903
+    ],
+    [
+      "c_hsc",
+      333.21257864384114
+    ],
+    [
+      "c_reb",
+      909.414284430181
+    ],
+    [
+      "frac_lsc",
+      0.5
+    ],
+    [
+      "frac_hsc",
+      0.5
+    ],
+    [
+      "frac_reb",
+      0.5294117647058824
+    ]
+  ],
+  "fork_ctor_record": {
+    "c_hbo_base": 3500.0,
+    "hbo_start_mm": 160.0,
+    "hsc_clicks": 2,
+    "legacy_behavior": false,
+    "lsc_clicks": 7,
+    "rebound_clicks": 9
+  },
+  "fork_force_rows": [
+    {
+      "accepted": true,
+      "result": -988.6015389650539,
+      "travel_mm": 20.0,
+      "velocity_mps": -2.5
+    },
+    {
+      "accepted": true,
+      "result": -988.6015389650539,
+      "travel_mm": 90.0,
+      "velocity_mps": -2.5
+    },
+    {
+      "accepted": true,
+      "result": -988.6015389650539,
+      "travel_mm": 170.0,
+      "velocity_mps": -2.5
+    },
+    {
+      "accepted": true,
+      "result": -286.31302301160713,
+      "travel_mm": 20.0,
+      "velocity_mps": -0.3
+    },
+    {
+      "accepted": true,
+      "result": -286.31302301160713,
+      "travel_mm": 90.0,
+      "velocity_mps": -0.3
+    },
+    {
+      "accepted": true,
+      "result": -286.31302301160713,
+      "travel_mm": 170.0,
+      "velocity_mps": -0.3
+    },
+    {
+      "accepted": true,
+      "result": -101.27568167517927,
+      "travel_mm": 20.0,
+      "velocity_mps": -0.1
+    },
+    {
+      "accepted": true,
+      "result": -101.27568167517927,
+      "travel_mm": 90.0,
+      "velocity_mps": -0.1
+    },
+    {
+      "accepted": true,
+      "result": -101.27568167517927,
+      "travel_mm": 170.0,
+      "velocity_mps": -0.1
+    },
+    {
+      "accepted": true,
+      "result": -28.212511323799937,
+      "travel_mm": 20.0,
+      "velocity_mps": -0.03
+    },
+    {
+      "accepted": true,
+      "result": -28.212511323799937,
+      "travel_mm": 90.0,
+      "velocity_mps": -0.03
+    },
+    {
+      "accepted": true,
+      "result": -28.212511323799937,
+      "travel_mm": 170.0,
+      "velocity_mps": -0.03
+    },
+    {
+      "accepted": true,
+      "result": 0.0,
+      "travel_mm": 20.0,
+      "velocity_mps": 0.0
+    },
+    {
+      "accepted": true,
+      "result": 0.0,
+      "travel_mm": 90.0,
+      "velocity_mps": 0.0
+    },
+    {
+      "accepted": true,
+      "result": 0.0,
+      "travel_mm": 170.0,
+      "velocity_mps": 0.0
+    },
+    {
+      "accepted": true,
+      "result": 20.13581522701592,
+      "travel_mm": 20.0,
+      "velocity_mps": 0.03
+    },
+    {
+      "accepted": true,
+      "result": 20.13581522701592,
+      "travel_mm": 90.0,
+      "velocity_mps": 0.03
+    },
+    {
+      "accepted": true,
+      "result": 46.385815227015925,
+      "travel_mm": 170.0,
+      "velocity_mps": 0.03
+    },
+    {
+      "accepted": true,
+      "result": 75.7515358496662,
+      "travel_mm": 20.0,
+      "velocity_mps": 0.1
+    },
+    {
+      "accepted": true,
+      "result": 75.7515358496662,
+      "travel_mm": 90.0,
+      "velocity_mps": 0.1
+    },
+    {
+      "accepted": true,
+      "result": 163.2515358496662,
+      "travel_mm": 170.0,
+      "velocity_mps": 0.1
+    },
+    {
+      "accepted": true,
+      "result": 196.08947844539992,
+      "travel_mm": 20.0,
+      "velocity_mps": 0.3
+    },
+    {
+      "accepted": true,
+      "result": 196.08947844539992,
+      "travel_mm": 90.0,
+      "velocity_mps": 0.3
+    },
+    {
+      "accepted": true,
+      "result": 458.5894784453999,
+      "travel_mm": 170.0,
+      "velocity_mps": 0.3
+    },
+    {
+      "accepted": true,
+      "result": 722.9416722785952,
+      "travel_mm": 20.0,
+      "velocity_mps": 2.5
+    },
+    {
+      "accepted": true,
+      "result": 722.9416722785952,
+      "travel_mm": 90.0,
+      "velocity_mps": 2.5
+    },
+    {
+      "accepted": true,
+      "result": 2910.4416722785954,
+      "travel_mm": 170.0,
+      "velocity_mps": 2.5
+    }
+  ],
+  "lockout_rows": [
+    {
+      "legacy": {
+        "accepted": true,
+        "result": 16.309211523795636
+      },
+      "modern": {
+        "accepted": true,
+        "result": 150.0
+      },
+      "velocity_mps": 0.01
+    },
+    {
+      "legacy": {
+        "accepted": true,
+        "result": 69.42636832147865
+      },
+      "modern": {
+        "accepted": true,
+        "result": 466.2112541634975
+      },
+      "velocity_mps": 0.04
+    },
+    {
+      "legacy": {
+        "accepted": true,
+        "result": 624.4684145757076
+      },
+      "modern": {
+        "accepted": true,
+        "result": 1211.9289456843812
+      },
+      "velocity_mps": 0.5
+    },
+    {
+      "legacy": {
+        "accepted": true,
+        "result": 1580.9078065877493
+      },
+      "modern": {
+        "accepted": true,
+        "result": 3643.617070209002
+      },
+      "velocity_mps": 2.0
+    }
+  ],
+  "preset_table": [
+    {
+      "config": {
+        "fork_hsc": 2,
+        "fork_lsc": 7,
+        "fork_rebound": 9,
+        "preset_name": "Base Tune (Factory Neutral)",
+        "shock_hbo": 2,
+        "shock_hsc": 2,
+        "shock_lockout": false,
+        "shock_lsc": 7,
+        "shock_rebound": 7
+      },
+      "has_config": true,
+      "label": "Base Tune (Factory Neutral)",
+      "preset": "BASE"
+    },
+    {
+      "config": {
+        "fork_hsc": 0,
+        "fork_lsc": 3,
+        "fork_rebound": 5,
+        "preset_name": "Plush / Wet Traction",
+        "shock_hbo": 1,
+        "shock_hsc": 0,
+        "shock_lockout": false,
+        "shock_lsc": 3,
+        "shock_rebound": 4
+      },
+      "has_config": true,
+      "label": "Plush / Wet Traction",
+      "preset": "PLUSH"
+    },
+    {
+      "config": {
+        "fork_hsc": 3,
+        "fork_lsc": 10,
+        "fork_rebound": 11,
+        "preset_name": "Enduro Race (Supportive)",
+        "shock_hbo": 3,
+        "shock_hsc": 3,
+        "shock_lockout": false,
+        "shock_lsc": 10,
+        "shock_rebound": 9
+      },
+      "has_config": true,
+      "label": "Enduro Race (Supportive)",
+      "preset": "ENDURO"
+    },
+    {
+      "config": {
+        "fork_hsc": 4,
+        "fork_lsc": 13,
+        "fork_rebound": 14,
+        "preset_name": "Bike Park / Jumps (Firm)",
+        "shock_hbo": 4,
+        "shock_hsc": 4,
+        "shock_lockout": false,
+        "shock_lsc": 13,
+        "shock_rebound": 12
+      },
+      "has_config": true,
+      "label": "Bike Park / Jumps (Firm)",
+      "preset": "PARK"
+    },
+    {
+      "config": null,
+      "has_config": false,
+      "label": "Custom Rider Tune",
+      "preset": "CUSTOM"
+    }
+  ],
+  "shock_coefficients": [
+    [
+      "c_lsc",
+      1596.0084671604288
+    ],
+    [
+      "c_hsc",
+      900.6252313054151
+    ],
+    [
+      "c_reb",
+      3990.454499701241
+    ],
+    [
+      "c_hbo",
+      9685.766774493648
+    ],
+    [
+      "frac_lsc",
+      0.5
+    ],
+    [
+      "frac_hsc",
+      0.5
+    ],
+    [
+      "frac_reb",
+      0.5
+    ],
+    [
+      "frac_hbo",
+      0.5
+    ],
+    [
+      "lockout_firm",
+      false
+    ]
+  ],
+  "shock_ctor_record": {
+    "c_hbo_max": 18000.0,
+    "c_hbo_min": 4000.0,
+    "hbo_clicks": 2,
+    "hbo_start_mm": 52.0,
+    "hsc_clicks": 2,
+    "legacy_behavior": false,
+    "lockout_firm": false,
+    "lockout_preload_n": 480.0,
+    "lockout_stiffness": 15000.0,
+    "lsc_clicks": 7,
+    "max_hbo": 4,
+    "rebound_clicks": 7,
+    "total_stroke_mm": 65.0
+  },
+  "shock_force_rows": [
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -4232.752504326566
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -4232.752504326566
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": -2.5
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -4232.752504326566
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -4232.752504326566
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": -2.5
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -4232.752504326566
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -4232.752504326566
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": -2.5
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -1190.0724705560351
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -1190.0724705560351
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": -0.3
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -1190.0724705560351
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -1190.0724705560351
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": -0.3
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -1190.0724705560351
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -1190.0724705560351
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": -0.3
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -448.9261312163896
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -448.9261312163896
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": -0.1
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -448.9261312163896
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -448.9261312163896
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": -0.1
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -448.9261312163896
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -448.9261312163896
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": -0.1
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -124.20289630320113
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -124.20289630320113
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": -0.03
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -124.20289630320113
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -124.20289630320113
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": -0.03
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            -124.20289630320113
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": -124.20289630320113
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": -0.03
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            0.0
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": 0.0
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            0.0
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": 0.0
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            0.0
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 0.0
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": 0.0
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            51.022395684534956
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 51.022395684534956
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": 0.03
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            51.022395684534956
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 51.022395684534956
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": 0.03
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            51.022395684534956
+          ],
+          [
+            "hbo_n",
+            110.03948051495743
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 161.0618761994924
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": 0.03
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            194.51353193517727
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 194.51353193517727
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": 0.1
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            194.51353193517727
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 194.51353193517727
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": 0.1
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            194.51353193517727
+          ],
+          [
+            "hbo_n",
+            366.7982683831915
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 561.3118003183688
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": 0.1
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            472.8620325393309
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 472.8620325393309
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": 0.3
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            472.8620325393309
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 472.8620325393309
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": 0.3
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            472.8620325393309
+          ],
+          [
+            "hbo_n",
+            1100.3948051495743
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 1573.2568376889053
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": 0.3
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            1872.1226211532917
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 1872.1226211532917
+      },
+      "stroke_mm": 10.0,
+      "velocity_mps": 2.5
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            1872.1226211532917
+          ],
+          [
+            "hbo_n",
+            0.0
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 1872.1226211532917
+      },
+      "stroke_mm": 30.0,
+      "velocity_mps": 2.5
+    },
+    {
+      "components": {
+        "accepted": true,
+        "result": [
+          [
+            "base_n",
+            1872.1226211532917
+          ],
+          [
+            "hbo_n",
+            9169.956709579787
+          ]
+        ]
+      },
+      "force": {
+        "accepted": true,
+        "result": 11042.079330733079
+      },
+      "stroke_mm": 60.0,
+      "velocity_mps": 2.5
+    }
+  ]
+}

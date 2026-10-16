@@ -375,6 +375,33 @@ bike_target_strict_policy(bike_random)
 target_include_directories(bike_random SYSTEM PRIVATE
   "${_bike_native_dir}/src")
 
+# bike_model: the T15 model boundary — inertia.py's ring tensors and the
+# synthetic wheel/mudguard mass profile, component_masses.py's MJCF
+# distribution + registry, mass.py's BikeMassSpecs/component centers/
+# static CG, sim/ride/mass_properties.py's compiled-model reads,
+# physics/rider.py + rider_segments.py's pose/segment/apparent-mass
+# solvers and air_spring.py/coil_shock.py/damper.py/tuning.py's
+# suspension calculators. One STATIC library keeps each TU in a single
+# compile-database entry per graph. mass.cpp's compiled-model reads only
+# inspect mjModel/mjData fields (the MuJoCo include edge is compile-only
+# — no libmujoco symbols are called) and suspension_setup.cpp's
+# LeastSquaresWorkspace symbols resolve at the consumer's final link
+# (the migration executable supplies them through the shared core object
+# set), so the archive stays lean.
+add_library(bike_model STATIC
+  "${_bike_native_dir}/src/model/checks.hpp"
+  "${_bike_native_dir}/src/model/mass.hpp"
+  "${_bike_native_dir}/src/model/mass.cpp"
+  "${_bike_native_dir}/src/model/rider_geometry.hpp"
+  "${_bike_native_dir}/src/model/rider_geometry.cpp"
+  "${_bike_native_dir}/src/model/suspension_setup.hpp"
+  "${_bike_native_dir}/src/model/suspension_setup.cpp")
+set_target_properties(bike_model PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_target_strict_policy(bike_model)
+target_include_directories(bike_model SYSTEM PRIVATE
+  "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(bike_model PUBLIC bike_kinematics bike_configuration)
+
 # bike_engine: the pinned error interceptor shared by contract tests and the
 # extension (identical source/context to the legacy bike_native_engine).
 add_library(bike_engine STATIC "${_bike_native_dir}/src/engine_call.cpp")

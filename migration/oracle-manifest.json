@@ -15369,9 +15369,129 @@
       },
       "files": [
         {
+          "bytes": 25815,
+          "path": "research/delayed_bootstrap/config.json",
+          "sha256": "5608d1225169791ecbb9826a60393f2b2ebab9c1f3f3a7bc11d8611738592096"
+        },
+        {
           "bytes": 790,
           "path": "research/delayed_bootstrap/env.json",
           "sha256": "e0f9f54cfc7cb13955838a9b1de8de96dafffe8ea108dc0ab2f84752a165f300"
+        },
+        {
+          "bytes": 5792840,
+          "path": "research/delayed_bootstrap/model.mjb",
+          "sha256": "0b4c501181b77b45de2da527beb1698dac8a4e981ab9ca37a0b8450aa75a7969"
+        },
+        {
+          "bytes": 384016,
+          "path": "research/delayed_bootstrap/research.arrays/a000.f64",
+          "sha256": "d9326d33e13d7c2574a8995baa3408dd625ee378209e0de4f8397db1dbe16928"
+        },
+        {
+          "bytes": 1512,
+          "path": "research/delayed_bootstrap/research.arrays/a001.f64",
+          "sha256": "24009b47acd75d377edd4aec1fba6867933b9fd46ecae46570a260026903f7fa"
+        },
+        {
+          "bytes": 168,
+          "path": "research/delayed_bootstrap/research.arrays/a002.f64",
+          "sha256": "5276f23661d4fe7346d5c4ca01793fe7474930e71eb3e1121b76a24b5a5de56f"
+        },
+        {
+          "bytes": 3203,
+          "path": "research/delayed_bootstrap/research.json",
+          "sha256": "9f5f4237a9bc3abb4b427113d57487247af9d7782568b7559f40c9ba3114f6a4"
+        },
+        {
+          "bytes": 2336,
+          "path": "research/delayed_bootstrap/state.arrays/a000.f64",
+          "sha256": "b09194c01090310a8759a18a958b985220e88d87790ad4cc17ad9206bb260dad"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a001.f64",
+          "sha256": "2493a88a20e20369209e5d516b42a040e212567b23a76d0e7d9db7521d1df503"
+        },
+        {
+          "bytes": 176,
+          "path": "research/delayed_bootstrap/state.arrays/a002.f64",
+          "sha256": "aaa70fd8c2e913405343c728814974c7e8ad43835e2068d2ab151dc9ccc1e570"
+        },
+        {
+          "bytes": 16,
+          "path": "research/delayed_bootstrap/state.arrays/a003.f64",
+          "sha256": "409af86427f0f6e74266fbd14ce311f1bbfb1476822e6f7711dc2d582807de8b"
+        },
+        {
+          "bytes": 8,
+          "path": "research/delayed_bootstrap/state.arrays/a004.f64",
+          "sha256": "c20c0eafaee1306daf1cd4a44da1d051b5cc4d1545218187ee4f5c8b75d56c95"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a005.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a006.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a007.f64",
+          "sha256": "73f0bd6ff8f904c8d226e369bfe060888fb53ad46cfa62d69fc428936657d0e6"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a008.f64",
+          "sha256": "d6a6ba1952d30d2c0e5caed0ccaa2952ca0b703bcc87986ac71d19e650ae5559"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a009.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a010.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a011.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a012.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a013.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 24,
+          "path": "research/delayed_bootstrap/state.arrays/a014.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 72,
+          "path": "research/delayed_bootstrap/state.arrays/a015.f64",
+          "sha256": "c8dea082c4c95bbcf87232b3d5553013ad7f7ef23e22b17058f8a7bf53c36c78"
+        },
+        {
+          "bytes": 72,
+          "path": "research/delayed_bootstrap/state.arrays/a016.f64",
+          "sha256": "c8dea082c4c95bbcf87232b3d5553013ad7f7ef23e22b17058f8a7bf53c36c78"
+        },
+        {
+          "bytes": 35621,
+          "path": "research/delayed_bootstrap/state.json",
+          "sha256": "f6f0b9314b105b903edc57147b171e576cdbd5a5575cd7822b982cbc2399e942"
         },
         {
           "bytes": 6613,
@@ -15387,7 +15507,7 @@
         }
       ],
       "name": "research/delayed_bootstrap",
-      "notes": "research env startup: sensors/noise/delayed queue and first applied transitions",
+      "notes": "research env startup: sensors/noise/delayed queue and first applied transitions; all bootstrap capture files pinned byte-wise (config/state/research docs, model.mjb, externalized array payloads) \u2014 T10 review follow-up",
       "produced_by": "research.make_environment (--actuator-delay 0.01, seed 210, flat track, --diagnostic-model-limits) + 3 env.step calls",
       "recipe": "RCP-03"
     },

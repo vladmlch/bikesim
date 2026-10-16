@@ -22837,7 +22837,7 @@
       "read_bootstrap loads both welded_pinned and native_start_welded captures: external $array payloads resolve under the capture-root convention with dtype/shape/order/sha256 verification, model digest/dims/integration-width pin, and the staged document inventory arrives intact",
       "NativeRideRuntime construction from the read bootstrap, a 4-step advance lands committed step 4 at 0.005s with a target reason (the welded fixture's 0.00125 timestep), snapshot parity, and reset() replaying the bootstrap bitwise with generation increment",
       "each authored fault fixture rejects with std::invalid_argument matching the captured oracle message verbatim (control_period, digest, dims, missing_key, nonfinite, schema, unknown_key, width) — and the malformed_drive mutation keeps its recorded unexpected acceptance",
-      "close() seals the runtime and every subsequent operation fails fast with the same logic_error the binding produced",
+      "close() seals the runtime and every subsequent operation fails fast with the same runtime_error class the binding produced",
       "no nanobind/Python declaration enters runtime.hpp's transitive include graph (the test target carries no such include path)"
     ],
     "evidence": [
@@ -22928,7 +22928,7 @@
       "decoded fields pin the oracle's research configuration (capture_mode, control/delay/sensor/max steps, record_decimation, timestep, track length, start position, sensor latency/sample period, IMU enable, zero dropout probability) and the startup SensorState queue",
       "make_research constructs a NativeResearchRuntime from owned records only; control windows, transitions, observations, and snapshot match the captured Python oracle transitions fixture within tolerance",
       "the startup queue's raw observation keeps source-time time_s while SensorPipeline::read() restamps delivery time_s to the sample period boundary — the intentional timing difference is asserted, not flattened",
-      "close() seals the runtime and every subsequent operation fails fast with the same logic_error the binding produced; reset() replays the bootstrap",
+      "close() seals the runtime and every subsequent operation fails fast with the same runtime_error class the binding produced; reset() replays the bootstrap",
       "negative controls: nonexistent directory and malformed/truncated noise tape reject with the recorded diagnostics",
       "no nanobind/Python declaration enters research.hpp's transitive include graph (the test target carries no such include path)"
     ],
@@ -22939,6 +22939,7 @@
       "uv run cmake -S native -B native/build && cmake --build native/build --target bike_native: extension green in the legacy graph with research.cpp + research_io.cpp compiled inside bike_native_contract_core and research_binding.cpp inside the module",
       "NATIVE_TEST_BUILD_PATH=$PWD/native/build BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest tests/reference/test_native_research_environment.py test_native_research_capture.py test_native_research_failures.py test_native_research_sensors.py test_native_research_policy.py test_native_research_programs.py -x -q: 69 passed — including RuntimeWarning parity through the new adapter drain seam",
       "check_tidy findings fixed: bugprone-easily-swappable-parameters on decode_noise_tape (NOLINTNEXTLINE matching the codebase convention) and two bugprone-unchecked-optional-access sites in test_t10.cpp (switched to engaged(), the codebase's checked-unwrap helper)",
+      "bash tools/run_tests.sh native: exit 0 — all sweeps + contract checks green, ctest 16/16, 2957 passed / 196 warnings pytest in 615.6 s (clean-tree final run; log /tmp/t10-gate3.log)",
       "gate note: tests/reference/test_native_check_tools.py's header-sweep cap bumped 240->360 — the sweep scales with first-party header count (112->113 headers, 792->799 probe TUs with research_io.hpp) and already ran ~241s at HEAD under gate load (MallocScribble on); measured 260s with T10 under a concurrent gate on the same machine"
     ],
     "note": "T10 owns no Python source rows itself; its produced boundaries are appended to the src/bike_sim/native/research.py row's replacement_paths (the module keeps its Python API through T63), matching the T08->T09 convention. The pure research boundary consumes only owned records and bike::io::Value; nanobind/Python stays in research_binding.cpp/.hpp. research.hpp no longer includes runtime_binding.hpp and research.cpp no longer calls emit_reference_warning — the pending-warning slot crosses the boundary as data."

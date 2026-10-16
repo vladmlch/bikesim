@@ -544,9 +544,12 @@ void NativeResearchRuntime::test_fail_at_step(std::int64_t step) {
     if (episode_->window) throw std::runtime_error("arm failure before beginning a research interval");
     runtime_->test_fail_at_step(step);
 }
-void NativeResearchRuntime::emit_warning() {
-    // Held-GIL boundary only: the pending non-strict rejection is pure
-    // runtime state; the RuntimeWarning emission is the adapter's job.
-    const ResearchGuard guard(busy_); require_open(); emit_reference_warning(*runtime_);
+std::optional<std::string> NativeResearchRuntime::take_pending_warning() {
+    // The pending non-strict rejection is pure runtime state; the
+    // RuntimeWarning emission stays the adapter's job at the held-GIL
+    // boundary — identical delegation to NativeRideRuntime.
+    const ResearchGuard guard(busy_);
+    require_open();
+    return runtime_->take_pending_warning();
 }
 } // namespace runtime

@@ -136,6 +136,10 @@ set(_native_libcpp_hardening_mode "${BIKE_LIBCPP_HARDENING_EFFECTIVE}")
 # spindle_controller}.cpp reach the module through the same ${_native_core_lib}
 # link edge as the writers — only adapter TUs (nanobind parsing, boxing,
 # the research wrapper and probes) remain listed here.
+# T10 does the same for the research core: runtime/{sensors,programs,
+# research_metrics,recording,research,research_io}.cpp are pure TUs — the
+# research adapter keeps only research_binding.cpp's nanobind parsing and
+# boxing here.
 nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/binding.cpp
   src/drivetrain/policy_binding.cpp
@@ -145,12 +149,7 @@ nanobind_add_module(bike_native NB_SUPPRESS_WARNINGS PROTECT_STACK
   src/rider/intent_wire.cpp
   src/rider/rider_contact_binding.cpp
   src/rider/spindle_wire.cpp
-  src/runtime/sensors.cpp
-  src/runtime/programs.cpp
-  src/runtime/research_metrics.cpp
-  src/runtime/research.cpp
   src/runtime/research_binding.cpp
-  src/runtime/recording.cpp
   src/runtime/provenance.cpp
   src/runtime/samples_binding.cpp
   src/runtime/encode.cpp
@@ -231,6 +230,9 @@ add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/runtime/static_brake.cpp src/runtime/step.cpp
   src/runtime/bootstrap.cpp src/runtime/bootstrap_io.cpp
   src/runtime/runtime.cpp
+  src/runtime/sensors.cpp src/runtime/programs.cpp
+  src/runtime/research_metrics.cpp src/runtime/recording.cpp
+  src/runtime/research.cpp src/runtime/research_io.cpp
   src/writers/suspension.cpp src/writers/brake.cpp
   src/writers/resistance.cpp src/writers/rider_forces.cpp
   src/writers/tire_common.cpp src/writers/tire.cpp

@@ -1327,7 +1327,14 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/research_io.hpp",
+      "native/src/runtime/research_io.cpp",
+      "native/src/runtime/research_binding.hpp",
+      "native/src/runtime/research_binding.cpp",
+      "native/tests/migration/test_t10.cpp"
     ],
     "verification_ids": [
       "migration_T34",

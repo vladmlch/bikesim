@@ -103,6 +103,11 @@ set(_bike_native_tests_dir "${CMAKE_CURRENT_SOURCE_DIR}/native/tests")
 # rider/spindle_controller.cpp (the typed control/controller cores the
 # step consumes). The nanobind twins — *_wire.cpp, *_binding.cpp,
 # runtime_binding.cpp — stay in the optional extension.
+# T10 adds the owned research core: runtime/{sensors,programs,
+# research_metrics,recording,research,research_io}.cpp — the deterministic
+# sensor pipeline, research programs/truth metrics, the legacy recorder
+# and NativeResearchRuntime plus its capture-directory bootstrap face. The
+# adapter keeps only research_binding.cpp's nanobind parsing and boxing.
 add_library(bike_core OBJECT
   "${_bike_native_dir}/src/stepper.cpp"
   "${_bike_native_dir}/src/writer_config.cpp"
@@ -142,6 +147,12 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/runtime/bootstrap.cpp"
   "${_bike_native_dir}/src/runtime/bootstrap_io.cpp"
   "${_bike_native_dir}/src/runtime/runtime.cpp"
+  "${_bike_native_dir}/src/runtime/sensors.cpp"
+  "${_bike_native_dir}/src/runtime/programs.cpp"
+  "${_bike_native_dir}/src/runtime/research_metrics.cpp"
+  "${_bike_native_dir}/src/runtime/recording.cpp"
+  "${_bike_native_dir}/src/runtime/research.cpp"
+  "${_bike_native_dir}/src/runtime/research_io.cpp"
   "${_bike_native_dir}/src/writers/suspension.cpp"
   "${_bike_native_dir}/src/writers/brake.cpp"
   "${_bike_native_dir}/src/writers/resistance.cpp"

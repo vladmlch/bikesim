@@ -2,6 +2,7 @@
 // scheduler has no Python callback, NumPy import or RNG operation.
 #include "research_binding.hpp"
 #include "research.hpp"
+#include "runtime_binding.hpp"
 #include "samples_binding.hpp"
 #include "../binding_readers.hpp"
 #include "../diag.hpp"
@@ -214,6 +215,16 @@ void bind_sensor_pipeline(const nb::module_ &module) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
 NATIVE_DIAG_POP
 } // namespace
+// Held-GIL emission of the pending non-strict reference rejection — the
+// pure research runtime holds it as state until the adapter surfaces it
+// after advance_control (the twin of emit_reference_warning for the ride
+// runtime).
+void emit_research_warning(NativeResearchRuntime &runtime) {
+    const auto message = runtime.take_pending_warning();
+    if (message.has_value() &&
+        PyErr_WarnEx(PyExc_RuntimeWarning, message->c_str(), 1) < 0)
+        throw nb::python_error();
+}
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void bind_research(nb::module_ &module) {
@@ -270,7 +281,7 @@ void bind_research(nb::module_ &module) {
                 const nb::gil_scoped_release release;
                 result = self.advance_control(budget, target_step);
             }
-            self.emit_warning();
+            emit_research_warning(self);
             return result ? nb::object(wire_object_to_python(result->as_wire())) : nb::none();
         }, nb::arg("wall_budget_s") = nb::none(), nb::arg("target_step") = nb::none())
         .def("acknowledge_control", &NativeResearchRuntime::acknowledge_control)

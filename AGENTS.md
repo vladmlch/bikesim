@@ -35,9 +35,6 @@ native/golden pytest). It is the outer gate, not the inner loop.
 - Compare a gate's failures against the documented baseline list. Reach for
   stash+rerun at HEAD only for a failure the baseline does not explain — proving
   pre-existing red costs a full gate.
-- One native gate per machine at a time. If another worktree is mid-gate, run the
-  targeted sweep instead of starting a second full gate; parallel gates contend for
-  CPU and each runs slower than both would serially.
 
 Numba caveats: the ride-loop kernels in `physics/tire.py`,
 `physics/joint_strength.py` and `sim/ride/support_geometry.py` are

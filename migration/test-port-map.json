@@ -22973,5 +22973,40 @@
       "bash tools/run_tests.sh native: pending — recorded in the task report as the required outer gate for the native profile"
     ],
     "note": "T19 owns 2 python-removal.json rows (src/bike_sim/sim/research/rider_random.py, src/bike_sim/sim/research/sensor_noise.py); their status stays 'planned' until the T63 deletion gate and replacement_paths already listed the six produced files verbatim — no ledger row needed editing. sensors.py's full SensorConfig belongs to T34 (F140), so SensorNoiseConfig intentionally carries only the four scales sensor_noise.py reads; random::NoiseTape mirrors runtime::NoiseTape's layout but keeps __post_init__'s distinct messages/order (the runtime twin conflates the finite and [0,1) legs). random::RiderKeyframe/RiderProgram mirror the source dataclass shape locally to keep this header free of the runtime samples chain. Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
+  },
+  "native_encode_boundary_contract": {
+    "task": "T11",
+    "ctest_name": "migration_T11",
+    "build_target": "migration_T11",
+    "kind": "executable",
+    "cmake_registration": "native/tests/migration/CMakeLists.txt add_executable(migration_T11 test_t11.cpp) linked against bike_migration_test + the Python-free core set (bike_core in the standalone root graph, bike_native_contract_core in the legacy binding graph) + bike_engine + bike_rider_math, Accelerate on macOS and the pinned MuJoCo rpath rewrite (runtime_identity resolves mj_versionString/dladdr). Compiled with no nanobind/Python include path in either graph: compiling test_t11.cpp against runtime/encode.hpp + runtime/provenance.hpp is the include-closure contract itself. T11 moved runtime/encode.cpp and runtime/provenance.cpp into BOTH core source lists and generated the standalone root graph's Track-B research_build_identity.hpp with the same manifest algorithm and context fields as the legacy graph; the optional module keeps only encode_binding.cpp (held-GIL plan materializer, Piece/row boxing, bind_provenance) plus the pre-existing samples_binding.cpp delegation.",
+    "produced_apis": [
+      "runtime::EncodePlan / EncodePlanColumn / EncodePlanMask + runtime::parse_encode_plan(bike::io::Value) — runtime/encode.{hpp,cpp}; the plan parser re-expressed over value_readers.hpp (vread::) instead of nanobind handles, preserving exact-key, type, path, range-domain and channel-routing diagnostics verbatim",
+      "runtime::parse_derived_event_plan — the derived-events plan twin over the same staged Value document",
+      "runtime::encode_table_native(plan, samples, row_range) -> EncodedTable — the fixed physics/forces column emitters plus channels path routing/prefix indexing over retained PhysicalSampleData; Piece stays move-only with member_slots pointing into the piece's own child map",
+      "runtime::applied_command_rows_native / derived_event_rows_native — AppliedCommandRow (std::optional<Wire> preserving absent vs explicit-null brake demands) and DerivedEventRow (interval id, derived kind, insertion-ordered changed labels); chunked scans replay the prefix to seed state",
+      "runtime::RuntimeIdentity + runtime_identity() — provenance.{hpp,cpp} returns a pure record {mujoco_version, mujoco_library_path, native_source_sha256, build_context_json} instead of a nanobind dict; encode_binding.cpp boxes it and registers runtime_identity()"
+    ],
+    "mandatory_cases": [
+      "physical and forces tables bitwise vs the Python oracle: interval_id/time_s/interval_end_s/dt_s/qpos/qvel fixed columns, component/qfrc/power_w forces columns, including NaN payloads, infinities and signed zero",
+      "channels plans: path routing, prefix indexing, struct/map/list member access over authored Wire trees",
+      "optional leaf absent vs explicit null and parent absent vs explicit null presence/mask behavior; required-leaf missing vs null rejections",
+      "list and map dtypes plus except_keys routing; unknown channel roots/members rejected; malformed plans and range domains rejected with the recorded diagnostics",
+      "applied command rows: absent vs explicit-null brake demands and chunked replay sequencing; derived event rows and chunked change detection",
+      "runtime_identity() field parity vs the Python-facing schema and the compiled Track-B build identity",
+      "Piece/member_slots ownership: pieces moved/emplaced (never copied) keep member_slots pointing into the piece's own child map",
+      "no nanobind/Python declaration enters encode.hpp/provenance.hpp's transitive include graph (the test target carries no such include path)"
+    ],
+    "evidence": [
+      "RED recorded: migration_T11 target absent until the CMake block landed; the boundary split itself was the produced artifact (PlanView/PlanColumn/PlanMask/DerivedPlan parsing and wire:: readers moved off nanobind onto bike::io::Value + vread::, boxing/provenance-dict construction moved into encode_binding.cpp)",
+      "ctest --test-dir build/native-release -R '^migration_T11$' --output-on-failure: 1/1 passed (standalone Python-free root graph; seven check groups: 23 + 10 + 23 + 39 + 7 + 5 + 9 checks)",
+      "ctest --test-dir native/build -R '^migration_T11$' --output-on-failure: 1/1 passed (legacy binding graph)",
+      "NATIVE_TEST_BUILD_PATH/BIKE_NATIVE_BUILD_PATH differential pytest: tests/reference/test_native_encode_columns.py suite 40 passed — OwnedNativeEpisode.encode_table/applied_rows/derived_rows and runtime_identity Python API unchanged",
+      "native recording lifecycle/retention suite 49 passed; native replay-recording suite 11 passed",
+      "check_odr: 110 unique sources, no duplicate-definition findings (encode.cpp/provenance.cpp compile once per graph in the shared core set; encode_binding.cpp compiles only in the module)",
+      "check_tidy findings fixed: bugprone-easily-swappable-parameters on the test's (start, end) sample helper (NOLINTNEXTLINE matching the codebase convention) and bugprone-unchecked-optional-access on an applied-row optional (switched to engaged(), the codebase's checked-unwrap helper); the only remaining print is the known nanobind clang-analyzer-cplusplus.Move suppression carried by the configured baseline",
+      "bash tools/run_tests.sh native: pending — recorded in the task report as the required outer gate for the native profile"
+    ],
+    "note": "T11 owns 2 python-removal.json rows (src/bike_sim/sim/ride/period_buffer.py F179, src/bike_sim/sim/ride/physical_samples.py F190); their status stays 'planned' until the T63 deletion gate. The produced encode_binding.hpp was appended to both rows' replacement_paths (the T10 convention — produced boundaries land in the owning row's list); the other seven produced paths were already listed verbatim. encode.hpp is pure C++ (no nanobind/Python in its transitive graph); encode.cpp parses plans through bike::io::Value + value_readers.hpp. nanobind materialization, Piece/row boxing and module registration live only in encode_binding.cpp; samples_binding.cpp delegates through encode_binding.hpp. Python sources remain the behavioral oracle; no status or deletion-gate field was touched."
   }
 }

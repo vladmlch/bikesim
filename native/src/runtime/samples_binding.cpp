@@ -1,6 +1,6 @@
 #include "samples_binding.hpp"
 #include "accounting.hpp"
-#include "encode.hpp"
+#include "encode_binding.hpp"
 #include "../binding_arrays.hpp"
 #include "../binding_readers.hpp"
 #include "../diag.hpp"

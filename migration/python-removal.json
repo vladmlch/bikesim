@@ -4770,6 +4770,7 @@
     "replacement_paths": [
       "native/src/runtime/encode.hpp",
       "native/src/runtime/encode.cpp",
+      "native/src/runtime/encode_binding.hpp",
       "native/src/runtime/encode_binding.cpp",
       "native/src/runtime/samples_binding.cpp",
       "native/src/runtime/provenance.hpp",
@@ -5043,6 +5044,7 @@
     "replacement_paths": [
       "native/src/runtime/encode.hpp",
       "native/src/runtime/encode.cpp",
+      "native/src/runtime/encode_binding.hpp",
       "native/src/runtime/encode_binding.cpp",
       "native/src/runtime/samples_binding.cpp",
       "native/src/runtime/provenance.hpp",

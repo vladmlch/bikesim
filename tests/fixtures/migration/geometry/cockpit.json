@@ -1,0 +1,192 @@
+{
+  "_notes": "metre-domain saddle/seatpost/grip/pedal placement + inverse + mass split",
+  "_produced_by": "cockpit.py calls on BikeSpecs() fixed points",
+  "default": {
+    "saddle_pos": {
+      "$array": "geometry/cockpit.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "3cabf3bf5bffb9e68aa7fec6feb248f85499e8f871180112a68cebada376058f",
+      "shape": [
+        3
+      ]
+    },
+    "scalars": {
+      "$array": "geometry/cockpit.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "b16ac26685bfa91e15ca8e7e7431e2c83e5d96ef26a2786f9930bd8ac8033d62",
+      "shape": [
+        3
+      ]
+    },
+    "seatpost_top": {
+      "$array": "geometry/cockpit.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "9e4ba90aee921aaf2f801fab81f0495a876488f69afff18090346df350821a70",
+      "shape": [
+        3
+      ]
+    },
+    "top_center": {
+      "$array": "geometry/cockpit.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "cb283c8a37fcbf1f01bcef00bf807f4fafa67cde9017028f01d3789d67c6beb6",
+      "shape": [
+        3
+      ]
+    }
+  },
+  "explicit_top_z": {
+    "input_top_z_m": 0.75,
+    "saddle_pos": {
+      "$array": "geometry/cockpit.arrays/a008.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "41654ca2be74e03926fba7f2f2e114b89d6e5c293053fa738a497cad72f4f55d",
+      "shape": [
+        3
+      ]
+    },
+    "scalars": {
+      "$array": "geometry/cockpit.arrays/a010.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "828ad10919b974d39a7e2b54ef953b1cc9ae1b9fd7fd11ffa16a7d1ff84f9772",
+      "shape": [
+        3
+      ]
+    },
+    "seatpost_top": {
+      "$array": "geometry/cockpit.arrays/a007.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "821acbf52f75952fa716e5c4e43ff55a11908c5cb5c2feb9d27199e54bf23129",
+      "shape": [
+        3
+      ]
+    },
+    "top_center": {
+      "$array": "geometry/cockpit.arrays/a009.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e88962ba11d6b5db011e99803e8781c7b5bd064c1f1302c8de682b54673546da",
+      "shape": [
+        3
+      ]
+    }
+  },
+  "handlebar_grip_point": {
+    "$array": "geometry/cockpit.arrays/a014.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53",
+    "shape": [
+      3
+    ]
+  },
+  "height_error": {
+    "error": "ValueError",
+    "input_height_m": 0.01,
+    "message": "no saddle position on the seatpost axis is 0.010 m from the BB"
+  },
+  "inverse": {
+    "input_heights_m": [
+      0.7092698156403298,
+      0.7721672624633269,
+      0.5,
+      0.8
+    ],
+    "outputs": {
+      "$array": "geometry/cockpit.arrays/a011.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "4eacbe19d6cf9cbf212102ad139271d93c3eb376e891cf563912dc2be87e2fb4",
+      "shape": [
+        4
+      ]
+    }
+  },
+  "masses": {
+    "centres": {
+      "$array": "geometry/cockpit.arrays/a013.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "f3c433d9beed5df38602401d70d296cc3807edb8b447952b3e2fb3af5a5a7cc9",
+      "shape": [
+        9
+      ]
+    },
+    "inputs_kg": [
+      0.9,
+      0.45,
+      0.35
+    ],
+    "outputs": {
+      "$array": "geometry/cockpit.arrays/a012.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "f31754f74b42b471223045e83474de268b3a74c5be7d07b0daf7f1bc35d67d4b",
+      "shape": [
+        9
+      ]
+    }
+  },
+  "p10_m": {
+    "$array": "geometry/cockpit.arrays/a002.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "d203c6d300c0455dc0edc1dceb679e182978373b71d7924848ba3830798cb81f",
+    "shape": [
+      3
+    ]
+  },
+  "p9_m": {
+    "$array": "geometry/cockpit.arrays/a001.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "f3a58df2833f3129be815cf2c92903f8d2dcb46bd02cfc052c08e7c970a49a87",
+    "shape": [
+      3
+    ]
+  },
+  "pedal_points": {
+    "crank_length_m": 0.165,
+    "values": {
+      "$array": "geometry/cockpit.arrays/a015.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "c1e0ac206bc065a5a8e126f55025a1d0b2945a7eec3e427d35c32df43b2327a9",
+      "shape": [
+        6
+      ]
+    }
+  },
+  "seatpost_axis": {
+    "$array": "geometry/cockpit.arrays/a000.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "13186a36a8ee28a892be59377d36c17fb7239ccc0e12ce5d1c259f6e6a83c83f",
+    "shape": [
+      3
+    ]
+  },
+  "seatpost_top_cases": {
+    "input_top_z_m": [
+      0.69,
+      0.55,
+      0.9
+    ],
+    "outputs": {
+      "$array": "geometry/cockpit.arrays/a016.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "8f84257c58f3143f5b98e97509f4f685ea68d61be37e54b461b77ef4600fdcce",
+      "shape": [
+        9
+      ]
+    }
+  }
+}

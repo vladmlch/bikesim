@@ -280,6 +280,46 @@ target_include_directories(bike_configuration SYSTEM PRIVATE
 target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
   bike_rider_math)
 
+# bike_geometry: the T14 geometry boundary — the specs.py records with
+# declared defaults, hardpoints.py's headtube/axle/ground/trail/
+# frame-angle calculators, validation.py's domain validator and
+# cockpit.py's metre-domain saddle/seatpost/grip/pedal placement. One
+# STATIC library keeps each TU in a single compile-database entry per
+# build graph (the ODR sweep relocatable-links every selected TU into
+# one image). The Accelerate edge is PUBLIC: specs.hpp's
+# detail::np_dot/np_norm declare the same Accelerate ILP64 CBLAS entry
+# points the oracle's numpy resolves, so every consumer's final link
+# needs the framework.
+add_library(bike_geometry STATIC
+  "${_bike_native_dir}/src/geometry/specs.hpp"
+  "${_bike_native_dir}/src/geometry/hardpoints.cpp"
+  "${_bike_native_dir}/src/geometry/cockpit.cpp"
+  "${_bike_native_dir}/src/geometry/validation.cpp")
+set_target_properties(bike_geometry PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_target_strict_policy(bike_geometry)
+target_include_directories(bike_geometry SYSTEM PRIVATE
+  "${_bike_native_dir}/src")
+target_link_libraries(bike_geometry PUBLIC "-framework Accelerate")
+
+# bike_kinematics: the T14 Horst-link boundary — linkage_math.py's
+# brentq_pure/circle_circle_intersection_2d primitives, solver.py's
+# HorstLinkageSolver (state/trajectory/inverse solves) and curves.py's
+# instant centers. curves.cpp's 2x2 np.linalg.solve reaches the same
+# Accelerate ILP64 dgesv the oracle's linalg imports; the geometry
+# edge supplies the hardpoint/specs declarations and the transitive
+# framework edge.
+add_library(bike_kinematics STATIC
+  "${_bike_native_dir}/src/kinematics/linkage_math.hpp"
+  "${_bike_native_dir}/src/kinematics/linkage_math.cpp"
+  "${_bike_native_dir}/src/kinematics/solver.hpp"
+  "${_bike_native_dir}/src/kinematics/solver.cpp"
+  "${_bike_native_dir}/src/kinematics/curves.cpp")
+set_target_properties(bike_kinematics PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_target_strict_policy(bike_kinematics)
+target_include_directories(bike_kinematics SYSTEM PRIVATE
+  "${_bike_native_dir}/src")
+target_link_libraries(bike_kinematics PUBLIC bike_geometry)
+
 # bike_engine: the pinned error interceptor shared by contract tests and the
 # extension (identical source/context to the legacy bike_native_engine).
 add_library(bike_engine STATIC "${_bike_native_dir}/src/engine_call.cpp")

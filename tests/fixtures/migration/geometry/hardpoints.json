@@ -1,0 +1,117 @@
+{
+  "_notes": "mm-domain hardpoints, trail, fixed pivot set, frame angles",
+  "_produced_by": "hardpoints.py calls on BikeSpecs()",
+  "fixed_frame_points": {
+    "order": [
+      "P0",
+      "P5",
+      "P7",
+      "P8",
+      "P9",
+      "P10",
+      "P11",
+      "P_HT_bot",
+      "BB"
+    ],
+    "values": {
+      "$array": "geometry/hardpoints.arrays/a007.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "19e1b86201bc8d3a9f2829132a62e5cf692800b010b1acacc63166dff1950951",
+      "shape": [
+        27
+      ]
+    }
+  },
+  "frame_angles": {
+    "order": [
+      "angle_x_tube1_deg",
+      "angle_x_tube2_deg",
+      "angle_seat_tube_x_deg",
+      "effective_seat_tube_angle_deg",
+      "angle_1_deg",
+      "head_angle_deg"
+    ],
+    "values": {
+      "$array": "geometry/hardpoints.arrays/a008.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "a61a2456e9496d707eebc109f8acd63133d2388b1656588c3f35d4fe2bc20a41",
+      "shape": [
+        6
+      ]
+    }
+  },
+  "front_axle": {
+    "$array": "geometry/hardpoints.arrays/a002.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "d73ecaf49b0ea381905b22a28df7519e25415acabe3841959412f34a71964308",
+    "shape": [
+      3
+    ]
+  },
+  "ground_z": {
+    "$array": "geometry/hardpoints.arrays/a003.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "21d563d1e9770731d501d0204a1e34f743acbe9d456056165c84911b778fbe48",
+    "shape": [
+      1
+    ]
+  },
+  "p11_top": {
+    "$array": "geometry/hardpoints.arrays/a000.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "679d3d8dad473e24fc5dd3815484dc5c9e25d38b6b5a597872b83c0daf495519",
+    "shape": [
+      3
+    ]
+  },
+  "p_ht_bot": {
+    "$array": "geometry/hardpoints.arrays/a001.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "ef57a9a22d09a80443d5af3ff3ebfc5098a085ff11960b44fa70e41c292cd57f",
+    "shape": [
+      3
+    ]
+  },
+  "rear_axle": {
+    "$array": "geometry/hardpoints.arrays/a004.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "9ee6332f851aa234c8d470be7db2a19876073a569cfdfedecfa3049c08b7dd85",
+    "shape": [
+      3
+    ]
+  },
+  "rear_axle_given_front_axle": {
+    "$array": "geometry/hardpoints.arrays/a005.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "9ee6332f851aa234c8d470be7db2a19876073a569cfdfedecfa3049c08b7dd85",
+    "shape": [
+      3
+    ]
+  },
+  "trail": {
+    "order": [
+      "ground_trail",
+      "mechanical_trail",
+      "axle_to_crown",
+      "steer_ground_intersection_x",
+      "ground_z"
+    ],
+    "values": {
+      "$array": "geometry/hardpoints.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e8ac6fd7b80a52c3c0358fb7b05f988ea07584d00781c5ecf1ce705ca7d48d13",
+      "shape": [
+        5
+      ]
+    }
+  }
+}

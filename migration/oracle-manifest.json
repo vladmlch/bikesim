@@ -17445,6 +17445,490 @@
       "notes": "optional real control member below its lower bound",
       "produced_by": "authored single-defect variant of the accepted state capture",
       "recipe": "RCP-04"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 2754,
+          "path": "geometry/hardpoints.json",
+          "sha256": "9f0769d0b02a86b7ab3266b6959d34e3c58798342404c6466220da44ddef8a2e"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/hardpoints.arrays/a000.f64",
+          "sha256": "679d3d8dad473e24fc5dd3815484dc5c9e25d38b6b5a597872b83c0daf495519"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/hardpoints.arrays/a001.f64",
+          "sha256": "ef57a9a22d09a80443d5af3ff3ebfc5098a085ff11960b44fa70e41c292cd57f"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/hardpoints.arrays/a002.f64",
+          "sha256": "d73ecaf49b0ea381905b22a28df7519e25415acabe3841959412f34a71964308"
+        },
+        {
+          "bytes": 8,
+          "path": "geometry/hardpoints.arrays/a003.f64",
+          "sha256": "21d563d1e9770731d501d0204a1e34f743acbe9d456056165c84911b778fbe48"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/hardpoints.arrays/a004.f64",
+          "sha256": "9ee6332f851aa234c8d470be7db2a19876073a569cfdfedecfa3049c08b7dd85"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/hardpoints.arrays/a005.f64",
+          "sha256": "9ee6332f851aa234c8d470be7db2a19876073a569cfdfedecfa3049c08b7dd85"
+        },
+        {
+          "bytes": 40,
+          "path": "geometry/hardpoints.arrays/a006.f64",
+          "sha256": "e8ac6fd7b80a52c3c0358fb7b05f988ea07584d00781c5ecf1ce705ca7d48d13"
+        },
+        {
+          "bytes": 216,
+          "path": "geometry/hardpoints.arrays/a007.f64",
+          "sha256": "19e1b86201bc8d3a9f2829132a62e5cf692800b010b1acacc63166dff1950951"
+        },
+        {
+          "bytes": 48,
+          "path": "geometry/hardpoints.arrays/a008.f64",
+          "sha256": "a61a2456e9496d707eebc109f8acd63133d2388b1656588c3f35d4fe2bc20a41"
+        }
+      ],
+      "group": "geometry",
+      "inputs": [],
+      "name": "geometry/hardpoints",
+      "notes": "mm-domain hardpoints, trail, fixed pivot set, frame angles",
+      "produced_by": "hardpoints.py calls on BikeSpecs()",
+      "recipe": "RCP-02"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 4730,
+          "path": "geometry/cockpit.json",
+          "sha256": "e35b3c962af3a2f984de6e1912fa47abcde955c79d54bc1c2299616f738c4505"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a000.f64",
+          "sha256": "13186a36a8ee28a892be59377d36c17fb7239ccc0e12ce5d1c259f6e6a83c83f"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a001.f64",
+          "sha256": "f3a58df2833f3129be815cf2c92903f8d2dcb46bd02cfc052c08e7c970a49a87"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a002.f64",
+          "sha256": "d203c6d300c0455dc0edc1dceb679e182978373b71d7924848ba3830798cb81f"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a003.f64",
+          "sha256": "9e4ba90aee921aaf2f801fab81f0495a876488f69afff18090346df350821a70"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a004.f64",
+          "sha256": "3cabf3bf5bffb9e68aa7fec6feb248f85499e8f871180112a68cebada376058f"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a005.f64",
+          "sha256": "cb283c8a37fcbf1f01bcef00bf807f4fafa67cde9017028f01d3789d67c6beb6"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a006.f64",
+          "sha256": "b16ac26685bfa91e15ca8e7e7431e2c83e5d96ef26a2786f9930bd8ac8033d62"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a007.f64",
+          "sha256": "821acbf52f75952fa716e5c4e43ff55a11908c5cb5c2feb9d27199e54bf23129"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a008.f64",
+          "sha256": "41654ca2be74e03926fba7f2f2e114b89d6e5c293053fa738a497cad72f4f55d"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a009.f64",
+          "sha256": "e88962ba11d6b5db011e99803e8781c7b5bd064c1f1302c8de682b54673546da"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a010.f64",
+          "sha256": "828ad10919b974d39a7e2b54ef953b1cc9ae1b9fd7fd11ffa16a7d1ff84f9772"
+        },
+        {
+          "bytes": 32,
+          "path": "geometry/cockpit.arrays/a011.f64",
+          "sha256": "4eacbe19d6cf9cbf212102ad139271d93c3eb376e891cf563912dc2be87e2fb4"
+        },
+        {
+          "bytes": 72,
+          "path": "geometry/cockpit.arrays/a012.f64",
+          "sha256": "f31754f74b42b471223045e83474de268b3a74c5be7d07b0daf7f1bc35d67d4b"
+        },
+        {
+          "bytes": 72,
+          "path": "geometry/cockpit.arrays/a013.f64",
+          "sha256": "f3c433d9beed5df38602401d70d296cc3807edb8b447952b3e2fb3af5a5a7cc9"
+        },
+        {
+          "bytes": 24,
+          "path": "geometry/cockpit.arrays/a014.f64",
+          "sha256": "3831447e28928b933f6ccfb873fd79ede3e66eccf107c2904c0f62c63d2fbe53"
+        },
+        {
+          "bytes": 48,
+          "path": "geometry/cockpit.arrays/a015.f64",
+          "sha256": "c1e0ac206bc065a5a8e126f55025a1d0b2945a7eec3e427d35c32df43b2327a9"
+        },
+        {
+          "bytes": 72,
+          "path": "geometry/cockpit.arrays/a016.f64",
+          "sha256": "8f84257c58f3143f5b98e97509f4f685ea68d61be37e54b461b77ef4600fdcce"
+        }
+      ],
+      "group": "geometry",
+      "inputs": [],
+      "name": "geometry/cockpit",
+      "notes": "metre-domain saddle/seatpost/grip/pedal placement + inverse + mass split",
+      "produced_by": "cockpit.py calls on BikeSpecs() fixed points",
+      "recipe": "RCP-02"
+    },
+    {
+      "comparison": "S",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 2515,
+          "path": "geometry/validation_cases.json",
+          "sha256": "1d957a25fad093e9304be4a175b2bb72ce0cb504dd18b92319116207e20966f2"
+        }
+      ],
+      "group": "geometry",
+      "inputs": [],
+      "name": "geometry/validation_cases",
+      "notes": "error kind + exact messages (repr-formatted head angle)",
+      "produced_by": "validate_geometry over mutated BikeSpecs copies",
+      "recipe": "RCP-02"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 3322,
+          "path": "kinematics/linkage_cases.json",
+          "sha256": "8e93b491e99377d7eecfe9ffb9dba8da2bbdc8c3818ac25294a747867176cf94"
+        },
+        {
+          "bytes": 80,
+          "path": "kinematics/linkage_cases.arrays/a000.f64",
+          "sha256": "c15ef4440075f5ac3bf625815d67b7b000ce1b062c4240767f12d4f05ec5e4b6"
+        },
+        {
+          "bytes": 224,
+          "path": "kinematics/linkage_cases.arrays/a001.f64",
+          "sha256": "e40b5ebc01fb6cef873de6838a93fc2c3f7a3ec5d60eab42781dba8ccca54233"
+        },
+        {
+          "bytes": 480,
+          "path": "kinematics/linkage_cases.arrays/a002.f64",
+          "sha256": "c31b92215b4f664b7eafe1b5251948d6d2c813eecf2dd96472e66a95ff58732d"
+        },
+        {
+          "bytes": 880,
+          "path": "kinematics/linkage_cases.arrays/a003.f64",
+          "sha256": "5ca55b3ba0a3ef4e95e3e738ffdf127409aec07ab8c10c9631ec50dab8d6bcd4"
+        }
+      ],
+      "group": "kinematics",
+      "inputs": [],
+      "name": "kinematics/linkage_cases",
+      "notes": "bracketed/reversed/endpoint/NaN/unbracketed roots + circle branches/errors",
+      "produced_by": "linkage_math.py brentq_pure + circle_circle_intersection_2d",
+      "recipe": "RCP-02"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 10723,
+          "path": "kinematics/stroke_inverse.json",
+          "sha256": "9b01b5bd3db3ddd8f9674d72ef71565708e2731bcd963e74ae3feabc7f3c5432"
+        },
+        {
+          "bytes": 512,
+          "path": "kinematics/stroke_inverse.arrays/a000.f64",
+          "sha256": "2b90b4ff97560d7a10cb3fd2515e18e5a74c09f18b6b5bbcef6a0c8d6d4b415a"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a001.f64",
+          "sha256": "79e5dfdf3d87735ffbb48b5d990307c70519770370e972aaf6d889a01aea3aba"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a002.f64",
+          "sha256": "9f988fcba6690bac86c197c6683e54e2267996afe722a40673067309542f1422"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a003.f64",
+          "sha256": "a642a2211a6a24aaa368da5cd81a77735277b9a903cfdb7e172f53155a3a7a7f"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a004.f64",
+          "sha256": "1759b91fbb25e4e379670d9af2e7b864a19c12eec9fbe624c584ae8f08f05074"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a005.f64",
+          "sha256": "9895b19533bd756454502459c92d977f598ce34f18bdef0eec7ac35189329dde"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a006.f64",
+          "sha256": "ad227d9fbfb866ccde9780e9b54d95b397a03dc7a89eb315b4f4147cad7653f0"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a007.f64",
+          "sha256": "5f699de81e022182c44fa80525093b0e894fb6eb2cf62e0f35f556fbd8d970c3"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a008.f64",
+          "sha256": "511add6454d8e368f1d17703981cb75e41eb5f45cbe8b140ede52b2b53d72a42"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a009.f64",
+          "sha256": "9ef7a60d82b12dc2f249945771bf2ae104a6adf06315b97724a9d60eeb207784"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a010.f64",
+          "sha256": "487456e733a96bb9315b1fed862465acc293fdda693eb9ef98ef084cf1e662b5"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a011.f64",
+          "sha256": "6911da84c612835482db2667d09bbb6be076f021e12df72feb12e9fb7c5de385"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a012.f64",
+          "sha256": "5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5"
+        },
+        {
+          "bytes": 192,
+          "path": "kinematics/stroke_inverse.arrays/a100.f64",
+          "sha256": "c222e95c4ecdca9184cd6ecf1c8d12c83fa1c94174e50d61d6a485c9c5472fa7"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a101.f64",
+          "sha256": "fd0742d419914590ca13958b71cb3cf1443d03f23ce5b972cab3f85f4a5bd750"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a102.f64",
+          "sha256": "6de4f10c7f4cb389c7556b6ae9cf79c4cd52f4c1348a56b516639911ac35a738"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a103.f64",
+          "sha256": "b0971cfa95528a6e2d21a8f602bf3f3e4a48ee04b9082d595581e26b8386279c"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a104.f64",
+          "sha256": "07e30617c7af56dc646d4bdb90c590865c78ccf5a0317678608ad6759644632f"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a105.f64",
+          "sha256": "fcf1c7040b95292054bb1b7df352a87cbfeae47b571e65363b363be4e8e84348"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a106.f64",
+          "sha256": "85a1522b03b8cfe7198affd87fc05c5de27a7a6b8b757e5b1c9e6ecebaa2159f"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a107.f64",
+          "sha256": "078f2618f9d6345e99f2a1a00362728e38db1439d37e49a5bd44b10ed72922aa"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a108.f64",
+          "sha256": "594ff8e9147393965b653301cf2fabb3ccb77f62c35fe93f3a603b87747bc324"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a109.f64",
+          "sha256": "783c9696a5ce033a6b1778f978a6c9b3ae0aef4e149ae6c503d4b768b49d7cff"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a110.f64",
+          "sha256": "ce04c2a07621549b8b15dace634fa00ecd2b623446edaefd27bfc58ea1f61f88"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a111.f64",
+          "sha256": "dda93ceff08fc5bc5769945e7b4d35f0b9dae01480aa74779d2429fe917e2d1b"
+        },
+        {
+          "bytes": 72,
+          "path": "kinematics/stroke_inverse.arrays/a112.f64",
+          "sha256": "834a709ba2534ebe3ee1397fd4f7bd288b2acc1d20a08d6c862dcd99b6f04400"
+        },
+        {
+          "bytes": 64,
+          "path": "kinematics/stroke_inverse.arrays/a200.f64",
+          "sha256": "868e985de4103c107767d7e5932317bc20fe8bd86d8bf005e5c64de4a6214212"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a201.f64",
+          "sha256": "e068fbed763128929ae4696c2df0513e67517a34b42aa2c24ac70ae0bc150e4b"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a202.f64",
+          "sha256": "b04b4382744b7f19ef08eaf5f974806b2fc569f1078a6e76b36154a08457e94d"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a203.f64",
+          "sha256": "36746edd05fc0efaa005e57fb521d757b80ed40e62113da93bf12c4573819efd"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a204.f64",
+          "sha256": "8ef28de60f268974db33e4cd3246632bf2560cf3b88dc4c6bb150a46e4febe1e"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a205.f64",
+          "sha256": "4c1b0d8df00672372ae2ef04f8e175b6cbff109d5b0c6fda11555dfd8d380a53"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a206.f64",
+          "sha256": "3ad0d8d56bbb722c6f43a21466ac53a35f0c014c9225972ceb5668acc1ad1247"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a207.f64",
+          "sha256": "c791dfc72b080ad5e4b094d1028f2441d7da867fd04559cbbd9c02f269cbaeb8"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a208.f64",
+          "sha256": "60b40cf314d06172348e17d981e0afb2c3dd89541ff664235f5e804e2e809e29"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a209.f64",
+          "sha256": "f3d0c4e0857103156e74459c17dd008164a1c7f73bc5e96b96e1ecc0e058405b"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a210.f64",
+          "sha256": "d73ecaf49b0ea381905b22a28df7519e25415acabe3841959412f34a71964308"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a211.f64",
+          "sha256": "679d3d8dad473e24fc5dd3815484dc5c9e25d38b6b5a597872b83c0daf495519"
+        },
+        {
+          "bytes": 24,
+          "path": "kinematics/stroke_inverse.arrays/a212.f64",
+          "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+        },
+        {
+          "bytes": 808,
+          "path": "kinematics/stroke_inverse.arrays/a300.f64",
+          "sha256": "2afc9a723ad19d933aa25d28f1d8ae3c0c39300497f4b5f74bb66fb0288844b4"
+        },
+        {
+          "bytes": 808,
+          "path": "kinematics/stroke_inverse.arrays/a301.f64",
+          "sha256": "900b8234ad294862586905ad98ad6e0baa165b53596e68b9d4d14dd271b7fe6e"
+        }
+      ],
+      "group": "kinematics",
+      "inputs": [],
+      "name": "kinematics/stroke_inverse",
+      "notes": "shock-stroke inverse (clip+interp), wheel-travel and theta solves",
+      "produced_by": "HorstLinkageSolver() inverse/forward solve set",
+      "recipe": "RCP-02"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 851,
+          "path": "kinematics/instant_centers.json",
+          "sha256": "fe7c12d03cb2f0df47831f4fbce2466d80213ddab588b4417135ebc64e4d5698"
+        },
+        {
+          "bytes": 808,
+          "path": "kinematics/instant_centers.arrays/a000.f64",
+          "sha256": "2afc9a723ad19d933aa25d28f1d8ae3c0c39300497f4b5f74bb66fb0288844b4"
+        },
+        {
+          "bytes": 808,
+          "path": "kinematics/instant_centers.arrays/a001.f64",
+          "sha256": "95ceff378ea1211f7620041e2b923260c4d720ee601000b4f745570efeb24b3c"
+        },
+        {
+          "bytes": 808,
+          "path": "kinematics/instant_centers.arrays/a002.f64",
+          "sha256": "a6aaa0a1016ea9788277d4d190bd0f2b55cedc7a212404735d9f4b73ba0e2642"
+        }
+      ],
+      "group": "kinematics",
+      "inputs": [],
+      "name": "kinematics/instant_centers",
+      "notes": "instant-center curve through np.linalg.solve dgesv path",
+      "produced_by": "compute_instant_centers(HorstLinkageSolver(), 101)",
+      "recipe": "RCP-02"
     }
   ],
   "negative_controls": [

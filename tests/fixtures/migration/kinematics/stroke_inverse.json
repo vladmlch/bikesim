@@ -1,0 +1,423 @@
+{
+  "_notes": "shock-stroke inverse (clip+interp), wheel-travel and theta solves",
+  "_produced_by": "HorstLinkageSolver() inverse/forward solve set",
+  "point_order": [
+    "P0",
+    "P1",
+    "P2",
+    "P3",
+    "P4",
+    "P5",
+    "P6",
+    "P7",
+    "P12",
+    "P_FA",
+    "P11",
+    "BB"
+  ],
+  "scalar_order": [
+    "wheel_travel",
+    "shock_stroke",
+    "shock_length",
+    "theta_cs",
+    "theta_cs_deg",
+    "transmission_angle_deg",
+    "leverage_ratio",
+    "max_link_error"
+  ],
+  "stroke_inputs": [
+    0.0,
+    5.0,
+    32.5,
+    50.0,
+    64.999999,
+    65.0,
+    70.0,
+    -5.0
+  ],
+  "stroke_states": {
+    "BB": {
+      "$array": "kinematics/stroke_inverse.arrays/a012.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5",
+      "shape": [
+        24
+      ]
+    },
+    "P0": {
+      "$array": "kinematics/stroke_inverse.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "79e5dfdf3d87735ffbb48b5d990307c70519770370e972aaf6d889a01aea3aba",
+      "shape": [
+        24
+      ]
+    },
+    "P1": {
+      "$array": "kinematics/stroke_inverse.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "9f988fcba6690bac86c197c6683e54e2267996afe722a40673067309542f1422",
+      "shape": [
+        24
+      ]
+    },
+    "P11": {
+      "$array": "kinematics/stroke_inverse.arrays/a011.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6911da84c612835482db2667d09bbb6be076f021e12df72feb12e9fb7c5de385",
+      "shape": [
+        24
+      ]
+    },
+    "P12": {
+      "$array": "kinematics/stroke_inverse.arrays/a009.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "9ef7a60d82b12dc2f249945771bf2ae104a6adf06315b97724a9d60eeb207784",
+      "shape": [
+        24
+      ]
+    },
+    "P2": {
+      "$array": "kinematics/stroke_inverse.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "a642a2211a6a24aaa368da5cd81a77735277b9a903cfdb7e172f53155a3a7a7f",
+      "shape": [
+        24
+      ]
+    },
+    "P3": {
+      "$array": "kinematics/stroke_inverse.arrays/a004.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "1759b91fbb25e4e379670d9af2e7b864a19c12eec9fbe624c584ae8f08f05074",
+      "shape": [
+        24
+      ]
+    },
+    "P4": {
+      "$array": "kinematics/stroke_inverse.arrays/a005.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "9895b19533bd756454502459c92d977f598ce34f18bdef0eec7ac35189329dde",
+      "shape": [
+        24
+      ]
+    },
+    "P5": {
+      "$array": "kinematics/stroke_inverse.arrays/a006.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ad227d9fbfb866ccde9780e9b54d95b397a03dc7a89eb315b4f4147cad7653f0",
+      "shape": [
+        24
+      ]
+    },
+    "P6": {
+      "$array": "kinematics/stroke_inverse.arrays/a007.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "5f699de81e022182c44fa80525093b0e894fb6eb2cf62e0f35f556fbd8d970c3",
+      "shape": [
+        24
+      ]
+    },
+    "P7": {
+      "$array": "kinematics/stroke_inverse.arrays/a008.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "511add6454d8e368f1d17703981cb75e41eb5f45cbe8b140ede52b2b53d72a42",
+      "shape": [
+        24
+      ]
+    },
+    "P_FA": {
+      "$array": "kinematics/stroke_inverse.arrays/a010.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "487456e733a96bb9315b1fed862465acc293fdda693eb9ef98ef084cf1e662b5",
+      "shape": [
+        24
+      ]
+    },
+    "scalars": {
+      "$array": "kinematics/stroke_inverse.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2b90b4ff97560d7a10cb3fd2515e18e5a74c09f18b6b5bbcef6a0c8d6d4b415a",
+      "shape": [
+        8,
+        8
+      ]
+    }
+  },
+  "stroke_table": {
+    "stroke": {
+      "$array": "kinematics/stroke_inverse.arrays/a301.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "900b8234ad294862586905ad98ad6e0baa165b53596e68b9d4d14dd271b7fe6e",
+      "shape": [
+        101
+      ]
+    },
+    "travel": {
+      "$array": "kinematics/stroke_inverse.arrays/a300.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "2afc9a723ad19d933aa25d28f1d8ae3c0c39300497f4b5f74bb66fb0288844b4",
+      "shape": [
+        101
+      ]
+    }
+  },
+  "theta_cs_0_state": {
+    "BB": {
+      "$array": "kinematics/stroke_inverse.arrays/a212.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0",
+      "shape": [
+        3
+      ]
+    },
+    "P0": {
+      "$array": "kinematics/stroke_inverse.arrays/a201.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e068fbed763128929ae4696c2df0513e67517a34b42aa2c24ac70ae0bc150e4b",
+      "shape": [
+        3
+      ]
+    },
+    "P1": {
+      "$array": "kinematics/stroke_inverse.arrays/a202.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "b04b4382744b7f19ef08eaf5f974806b2fc569f1078a6e76b36154a08457e94d",
+      "shape": [
+        3
+      ]
+    },
+    "P11": {
+      "$array": "kinematics/stroke_inverse.arrays/a211.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "679d3d8dad473e24fc5dd3815484dc5c9e25d38b6b5a597872b83c0daf495519",
+      "shape": [
+        3
+      ]
+    },
+    "P12": {
+      "$array": "kinematics/stroke_inverse.arrays/a209.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "f3d0c4e0857103156e74459c17dd008164a1c7f73bc5e96b96e1ecc0e058405b",
+      "shape": [
+        3
+      ]
+    },
+    "P2": {
+      "$array": "kinematics/stroke_inverse.arrays/a203.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "36746edd05fc0efaa005e57fb521d757b80ed40e62113da93bf12c4573819efd",
+      "shape": [
+        3
+      ]
+    },
+    "P3": {
+      "$array": "kinematics/stroke_inverse.arrays/a204.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "8ef28de60f268974db33e4cd3246632bf2560cf3b88dc4c6bb150a46e4febe1e",
+      "shape": [
+        3
+      ]
+    },
+    "P4": {
+      "$array": "kinematics/stroke_inverse.arrays/a205.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "4c1b0d8df00672372ae2ef04f8e175b6cbff109d5b0c6fda11555dfd8d380a53",
+      "shape": [
+        3
+      ]
+    },
+    "P5": {
+      "$array": "kinematics/stroke_inverse.arrays/a206.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "3ad0d8d56bbb722c6f43a21466ac53a35f0c014c9225972ceb5668acc1ad1247",
+      "shape": [
+        3
+      ]
+    },
+    "P6": {
+      "$array": "kinematics/stroke_inverse.arrays/a207.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "c791dfc72b080ad5e4b094d1028f2441d7da867fd04559cbbd9c02f269cbaeb8",
+      "shape": [
+        3
+      ]
+    },
+    "P7": {
+      "$array": "kinematics/stroke_inverse.arrays/a208.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "60b40cf314d06172348e17d981e0afb2c3dd89541ff664235f5e804e2e809e29",
+      "shape": [
+        3
+      ]
+    },
+    "P_FA": {
+      "$array": "kinematics/stroke_inverse.arrays/a210.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "d73ecaf49b0ea381905b22a28df7519e25415acabe3841959412f34a71964308",
+      "shape": [
+        3
+      ]
+    },
+    "scalars": {
+      "$array": "kinematics/stroke_inverse.arrays/a200.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "868e985de4103c107767d7e5932317bc20fe8bd86d8bf005e5c64de4a6214212",
+      "shape": [
+        1,
+        8
+      ]
+    }
+  },
+  "travel_inputs": [
+    0.0,
+    60.0,
+    180.0
+  ],
+  "travel_states": {
+    "BB": {
+      "$array": "kinematics/stroke_inverse.arrays/a112.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "834a709ba2534ebe3ee1397fd4f7bd288b2acc1d20a08d6c862dcd99b6f04400",
+      "shape": [
+        9
+      ]
+    },
+    "P0": {
+      "$array": "kinematics/stroke_inverse.arrays/a101.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "fd0742d419914590ca13958b71cb3cf1443d03f23ce5b972cab3f85f4a5bd750",
+      "shape": [
+        9
+      ]
+    },
+    "P1": {
+      "$array": "kinematics/stroke_inverse.arrays/a102.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "6de4f10c7f4cb389c7556b6ae9cf79c4cd52f4c1348a56b516639911ac35a738",
+      "shape": [
+        9
+      ]
+    },
+    "P11": {
+      "$array": "kinematics/stroke_inverse.arrays/a111.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "dda93ceff08fc5bc5769945e7b4d35f0b9dae01480aa74779d2429fe917e2d1b",
+      "shape": [
+        9
+      ]
+    },
+    "P12": {
+      "$array": "kinematics/stroke_inverse.arrays/a109.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "783c9696a5ce033a6b1778f978a6c9b3ae0aef4e149ae6c503d4b768b49d7cff",
+      "shape": [
+        9
+      ]
+    },
+    "P2": {
+      "$array": "kinematics/stroke_inverse.arrays/a103.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "b0971cfa95528a6e2d21a8f602bf3f3e4a48ee04b9082d595581e26b8386279c",
+      "shape": [
+        9
+      ]
+    },
+    "P3": {
+      "$array": "kinematics/stroke_inverse.arrays/a104.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "07e30617c7af56dc646d4bdb90c590865c78ccf5a0317678608ad6759644632f",
+      "shape": [
+        9
+      ]
+    },
+    "P4": {
+      "$array": "kinematics/stroke_inverse.arrays/a105.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "fcf1c7040b95292054bb1b7df352a87cbfeae47b571e65363b363be4e8e84348",
+      "shape": [
+        9
+      ]
+    },
+    "P5": {
+      "$array": "kinematics/stroke_inverse.arrays/a106.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "85a1522b03b8cfe7198affd87fc05c5de27a7a6b8b757e5b1c9e6ecebaa2159f",
+      "shape": [
+        9
+      ]
+    },
+    "P6": {
+      "$array": "kinematics/stroke_inverse.arrays/a107.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "078f2618f9d6345e99f2a1a00362728e38db1439d37e49a5bd44b10ed72922aa",
+      "shape": [
+        9
+      ]
+    },
+    "P7": {
+      "$array": "kinematics/stroke_inverse.arrays/a108.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "594ff8e9147393965b653301cf2fabb3ccb77f62c35fe93f3a603b87747bc324",
+      "shape": [
+        9
+      ]
+    },
+    "P_FA": {
+      "$array": "kinematics/stroke_inverse.arrays/a110.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "ce04c2a07621549b8b15dace634fa00ecd2b623446edaefd27bfc58ea1f61f88",
+      "shape": [
+        9
+      ]
+    },
+    "scalars": {
+      "$array": "kinematics/stroke_inverse.arrays/a100.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "c222e95c4ecdca9184cd6ecf1c8d12c83fa1c94174e50d61d6a485c9c5472fa7",
+      "shape": [
+        3,
+        8
+      ]
+    }
+  }
+}

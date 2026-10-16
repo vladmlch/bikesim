@@ -482,6 +482,41 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T14>")
 endif()
 
+# T19 seeded-random regression: SeedSequence entropy coercion/pool mixing/
+# spawn bookkeeping, the PCG64 raw/uniform/Ziggurat-normal streams incl.
+# the buffered next_uint32 lane, Lemire bounded integers and choice(),
+# sensor_noise.py's NoiseTape/SensorNoiseSource/build_noise_tape and
+# rider_random.py's RiderRandomSpec/sample_rider — linked against the
+# bike_random library (one compile per TU per graph) plus the shared
+# migration harness for the manifest-pinned bitwise fixtures.
+add_executable(migration_T19 test_t19.cpp)
+set_target_properties(migration_T19 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T19 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T19 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T19 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T19 PRIVATE bike_migration_test
+  bike_random)
+target_include_directories(migration_T19 SYSTEM PRIVATE
+  "${_migration_repo_root}/native/src")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T19)
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T19 COMMAND migration_T19)
+  set_tests_properties(migration_T19 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T19>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

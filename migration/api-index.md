@@ -288,26 +288,82 @@ Reproduce seeded random streams and distribution transforms
 
 ```cpp
 namespace bike::random {
-class NumpyRng {
+class SeedSequence {                    // bit_generator.pyx, pool_size fixed 4
+public:
+  explicit SeedSequence(std::uint64_t entropy);
+  explicit SeedSequence(std::string_view entropy);          // int()/0x grammar
+  SeedSequence(std::string_view entropy,
+               std::span<const std::uint32_t> spawn_key);
+  const std::vector<std::uint32_t>& spawn_key() const noexcept;
+  std::uint32_t n_children_spawned() const noexcept;
+  const std::array<std::uint32_t, 4>& pool() const noexcept;
+  std::vector<std::uint32_t> generate_state_u32(std::size_t n_words) const;
+  std::vector<std::uint64_t> generate_state_u64(std::size_t n_words) const;
+  std::vector<SeedSequence> spawn(std::uint32_t n_children);
+};
+class NumpyRng {                        // Generator(PCG64) seeded by SeedSequence
 public:
   explicit NumpyRng(std::uint64_t seed);
   NumpyRng(std::string_view nonnegative_decimal_entropy,
            std::span<const std::uint32_t> spawn_key);
+  explicit NumpyRng(const SeedSequence& sequence);
   ~NumpyRng();
   NumpyRng(NumpyRng&&) noexcept;
   NumpyRng& operator=(NumpyRng&&) noexcept;
   NumpyRng(const NumpyRng&) = delete;
   NumpyRng& operator=(const NumpyRng&) = delete;
   std::uint64_t raw64();
-  double uniform01();
-  double normal01();
+  std::uint32_t raw32();                // buffered low-half-first lane
+  double uniform01();                   // Generator.random scalar
+  double normal01();                    // Ziggurat standard normal
+  void uniform01(std::span<double> out);
+  void normal01(std::span<double> out);
+  double uniform(double low, double high);
+  void uniform(double low, double high, std::span<double> out);
+  double normal(double loc, double scale);
+  void normal(double loc, double scale, std::span<double> out);
+  std::int64_t integers(std::int64_t low, std::int64_t high,
+                        bool endpoint = false);
+  std::int64_t integers(std::int64_t high);
+  void integers(std::int64_t low, std::int64_t high,
+                std::span<std::int64_t> out, bool endpoint = false);
+  std::int64_t choice(std::int64_t population);
+  std::int64_t choice(std::span<const double> probabilities);
+  void choice(std::span<const double> probabilities,
+              std::span<std::int64_t> out);
 private:
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };
+struct SensorNoiseConfig { double acceleration_std_mps2 = .05,
+  gyro_std_rad_s = .002, encoder_std_rad_s = .01, torque_std_nm = .05;
+  void validate() const; };             // sensor_noise.py's only config reads
+struct NoiseTape { std::vector<std::array<double, 9>> noise;
+  std::vector<double> dropout_uniform; void validate() const; };
+class SensorNoiseSource {               // SeedSequence(seed).spawn(2), one parent
+public:
+  explicit SensorNoiseSource(SensorNoiseConfig config, std::uint64_t seed = 0);
+  std::pair<std::array<double, 9>, double> draw();
+};
+NoiseTape build_noise_tape(const SensorNoiseConfig& config,
+                           std::uint64_t seed, std::int64_t count);
+struct RiderRandomSpec { /* five (low, high) pairs, Python defaults */
+  void validate() const; };
+struct RiderKeyframe { double time_s; rider::RiderPosture posture;
+  std::optional<double> human_torque_nm; };
+struct RiderProgram { std::vector<RiderKeyframe> keyframes;
+  double reaction_delay_s = 0.; };
+struct SampledRider { configuration::RiderSpecs rider; RiderProgram program; };
+SampledRider sample_rider(const RiderRandomSpec& spec, std::uint64_t seed);
+SampledRider sample_rider(const RiderRandomSpec& spec,
+                          const SeedSequence& seed);
 }
-// Additional SeedSequence entropy/spawn-key inputs are required for the source's
-// spawned sensor streams; preserve arbitrary integer seed input at the IO boundary.
+// Header: native/src/random/numpy_compat.hpp; TUs: numpy_compat.cpp (PCG64
+// core incl. the buffered next_uint32 lane), seed_sequence.cpp (entropy
+// coercion + INIT_A/MULT_A mixing + spawn bookkeeping), distributions.cpp
+// (Ziggurat tables + Lemire 32/64 + kahan_sum), noise_tape.cpp
+// (sensor_noise.py + rider_random.py seams). No Python/nanobind/numpy
+// dependency; every draw order and bit pattern pinned by random/* fixtures.
 ```
 
 ## T20

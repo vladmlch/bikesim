@@ -15286,6 +15286,82 @@
     {
       "comparison": "B",
       "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 1096,
+          "path": "random/seed1234-choice.json",
+          "sha256": "f0054682a6ad97bfce8108729b2aa1f12fdad14454fe79bb7b427615a1163c92"
+        }
+      ],
+      "group": "random",
+      "inputs": [],
+      "name": "random/seed1234-choice.json",
+      "notes": "choice draws through the integers() uniform path and the cumsum/searchsorted probability path plus a raw64 tail",
+      "produced_by": "numpy Generator.choice capture (numpy 2.5.2)",
+      "recipe": "RCP-03"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 1901,
+          "path": "random/seed1234-integers.json",
+          "sha256": "2f490469f28cff44921d25f1378a40dcd4558e8406394ed8c68c6830c096fa3a"
+        }
+      ],
+      "group": "random",
+      "inputs": [],
+      "name": "random/seed1234-integers.json",
+      "notes": "scripted bounded-int draws on one generator covering Lemire32, the direct next32 path, Lemire64, the rng==0 no-draw path, negative offsets, endpoint=True and a raw64 position tail",
+      "produced_by": "numpy Generator.integers capture (numpy 2.5.2)",
+      "recipe": "RCP-03"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 1229,
+          "path": "random/seed1234-mixed.json",
+          "sha256": "536e07d35477976f7ac90b9122c29a166e9f5c57251cbcb445793aff8015bf46"
+        }
+      ],
+      "group": "random",
+      "inputs": [],
+      "name": "random/seed1234-mixed.json",
+      "notes": "interleaved integers/random/normal/uniform/choice/raw64 draws locking the buffered-uint32 half-word semantics across next64 calls on one generator",
+      "produced_by": "numpy Generator mixed-draw capture (numpy 2.5.2)",
+      "recipe": "RCP-03"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 5794,
+          "path": "random/stream-words.json",
+          "sha256": "0d9d81cfa85b71313f2334dd948dff7bed75e07f4a1d6ecfc17de4937e47732a"
+        }
+      ],
+      "group": "random",
+      "inputs": [],
+      "name": "random/stream-words.json",
+      "notes": "fresh-generator first-8 raw64/normal01/uniform01 streams for seeds 0,1,1234,2**63+11, a >u64 decimal entropy with spawn key, and sequential/deep spawn() bookkeeping for seed 999",
+      "produced_by": "numpy PCG64/SeedSequence capture (numpy 2.5.2)",
+      "recipe": "RCP-03"
+    },
+    {
+      "comparison": "B",
+      "expected": {
         "diagnostic": "model-limits",
         "kind": "diagnostic",
         "reason": "run captured under --diagnostic-model-limits; validity remains false by contract",

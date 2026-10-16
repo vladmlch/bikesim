@@ -354,6 +354,27 @@ target_include_directories(bike_kinematics SYSTEM PRIVATE
   "${_bike_native_dir}/src")
 target_link_libraries(bike_kinematics PUBLIC bike_geometry)
 
+# bike_random: the T19 seeded-random boundary — SeedSequence's entropy
+# coercion/INIT_A-pool mixing/spawn bookkeeping, the PCG64 XSL-RR core with
+# the buffered next_uint32 lane, the distributions.c Ziggurat normal /
+# uniform / Lemire-integer transforms, _generator.pyx's choice() and
+# _common.pyx's kahan_sum, plus the sensor_noise.py and rider_random.py
+# seams riding them. One STATIC library keeps each TU in a single
+# compile-database entry per build graph (the ODR sweep relocatable-links
+# every selected TU into one image). The boundary carries no third-party
+# or Python dependency — numpy_compat.hpp reuses only first-party record
+# headers (configuration/rider_spec.hpp, rider/rider_posture.hpp).
+add_library(bike_random STATIC
+  "${_bike_native_dir}/src/random/numpy_compat.hpp"
+  "${_bike_native_dir}/src/random/numpy_compat.cpp"
+  "${_bike_native_dir}/src/random/seed_sequence.cpp"
+  "${_bike_native_dir}/src/random/distributions.cpp"
+  "${_bike_native_dir}/src/random/noise_tape.cpp")
+set_target_properties(bike_random PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_target_strict_policy(bike_random)
+target_include_directories(bike_random SYSTEM PRIVATE
+  "${_bike_native_dir}/src")
+
 # bike_engine: the pinned error interceptor shared by contract tests and the
 # extension (identical source/context to the legacy bike_native_engine).
 add_library(bike_engine STATIC "${_bike_native_dir}/src/engine_call.cpp")

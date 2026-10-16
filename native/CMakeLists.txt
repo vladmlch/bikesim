@@ -520,6 +520,37 @@ target_include_directories(bike_kinematics SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 target_link_libraries(bike_kinematics PUBLIC bike_geometry)
 
+# T19 seeded-random boundary — the identical random/*.cpp TUs the
+# standalone root build compiles as bike_random, here in the legacy
+# warning/hardening context. The boundary carries no third-party or
+# Python dependency: numpy_compat.hpp reuses only first-party record
+# headers (configuration/rider_spec.hpp, rider/rider_posture.hpp).
+add_library(bike_random STATIC
+  src/random/numpy_compat.hpp src/random/numpy_compat.cpp
+  src/random/seed_sequence.cpp src/random/distributions.cpp
+  src/random/noise_tape.cpp)
+set_target_properties(bike_random PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(bike_random PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_random PRIVATE ${_native_contract_compile_definitions})
+endif()
+target_include_directories(bike_random SYSTEM PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src")
+# Same sweep widening as bike_io/bike_platform: every first-party header
+# under native/src compiles in each owning target's context.
+if(_native_contract_include_directories)
+  target_include_directories(bike_random SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_random SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+
 # The pinned error interceptor is compiled once and shared by the extension,
 # direct C++ contracts, and the later native benchmark target. Its
 # engine-image digest uses the shared bike::io::Sha256 — no private copy.

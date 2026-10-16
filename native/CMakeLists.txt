@@ -456,6 +456,68 @@ endif()
 target_include_directories(bike_rider_math SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 
+# T14 geometry boundary — the identical geometry/*.cpp TUs the standalone
+# root build compiles as bike_geometry, here in the legacy
+# warning/hardening context. PUBLIC Accelerate: specs.hpp's
+# detail::np_dot/np_norm declare the same Accelerate ILP64 CBLAS entry
+# points the oracle's numpy resolves — every consumer's final link needs
+# the framework.
+add_library(bike_geometry STATIC
+  src/geometry/specs.hpp src/geometry/hardpoints.cpp
+  src/geometry/cockpit.cpp src/geometry/validation.cpp)
+set_target_properties(bike_geometry PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(bike_geometry PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_geometry PRIVATE ${_native_contract_compile_definitions})
+endif()
+target_include_directories(bike_geometry SYSTEM PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src")
+# Same sweep widening as bike_io/bike_platform: every first-party header
+# under native/src compiles in each owning target's context.
+if(_native_contract_include_directories)
+  target_include_directories(bike_geometry SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_geometry SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+target_link_libraries(bike_geometry PUBLIC "-framework Accelerate")
+
+# T14 Horst-link boundary — the identical kinematics/*.cpp TUs the
+# standalone root build compiles as bike_kinematics, here in the legacy
+# warning/hardening context. curves.cpp's 2x2 np.linalg.solve reaches
+# Accelerate's ILP64 dgesv; the bike_geometry edge supplies the
+# hardpoint/specs declarations and the transitive framework edge.
+add_library(bike_kinematics STATIC
+  src/kinematics/linkage_math.hpp src/kinematics/linkage_math.cpp
+  src/kinematics/solver.hpp src/kinematics/solver.cpp
+  src/kinematics/curves.cpp)
+set_target_properties(bike_kinematics PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(bike_kinematics PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(bike_kinematics PRIVATE ${_native_contract_compile_definitions})
+endif()
+target_include_directories(bike_kinematics SYSTEM PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src")
+if(_native_contract_include_directories)
+  target_include_directories(bike_kinematics SYSTEM PRIVATE
+    ${_native_contract_include_directories})
+endif()
+target_include_directories(bike_kinematics SYSTEM PRIVATE
+  "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
+target_link_libraries(bike_kinematics PUBLIC bike_geometry)
+
 # The pinned error interceptor is compiled once and shared by the extension,
 # direct C++ contracts, and the later native benchmark target. Its
 # engine-image digest uses the shared bike::io::Sha256 — no private copy.

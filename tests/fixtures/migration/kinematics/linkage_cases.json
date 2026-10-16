@@ -1,0 +1,141 @@
+{
+  "_notes": "bracketed/reversed/endpoint/NaN/unbracketed roots + circle branches/errors",
+  "_produced_by": "linkage_math.py brentq_pure + circle_circle_intersection_2d",
+  "brentq": {
+    "cases": [
+      {
+        "result": 1.4142135623731364,
+        "tag": "sqrt2"
+      },
+      {
+        "result": 1.4142135623731364,
+        "tag": "sqrt2_xtol"
+      },
+      {
+        "result": 1.4142135623731364,
+        "tag": "sqrt2_rtol_ignored"
+      },
+      {
+        "result": 1.5213797068045676,
+        "tag": "cubic"
+      },
+      {
+        "result": 0.0,
+        "tag": "root_at_a"
+      },
+      {
+        "result": 1.0,
+        "tag": "root_at_b"
+      },
+      {
+        "result": 1.4142135623730951,
+        "tag": "reversed"
+      },
+      {
+        "result": 1.419047619047619,
+        "tag": "maxiter_3"
+      },
+      {
+        "result": 1.9999999999499511,
+        "tag": "nan_endpoint"
+      },
+      {
+        "error": "ValueError",
+        "message": "Root is not bracketed: f(-1.0)=2, f(1.0)=2",
+        "tag": "unbracketed"
+      },
+      {
+        "error": "ValueError",
+        "message": "Root is not bracketed: f(0.5)=-4.25, f(2.5)=-10.25",
+        "tag": "unbracketed_neg"
+      },
+      {
+        "result": 0.7853981633974404,
+        "tag": "tan_solve"
+      }
+    ],
+    "inputs": {
+      "$array": "kinematics/linkage_cases.arrays/a002.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "c31b92215b4f664b7eafe1b5251948d6d2c813eecf2dd96472e66a95ff58732d",
+      "shape": [
+        12,
+        5
+      ]
+    },
+    "results": {
+      "$array": "kinematics/linkage_cases.arrays/a000.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "c15ef4440075f5ac3bf625815d67b7b000ce1b062c4240767f12d4f05ec5e4b6",
+      "shape": [
+        10
+      ]
+    }
+  },
+  "circles": {
+    "cases": [
+      {
+        "tag": "two_sol"
+      },
+      {
+        "tag": "tangent_external"
+      },
+      {
+        "tag": "tangent_internal"
+      },
+      {
+        "tag": "vec3"
+      },
+      {
+        "tag": "vec3_offplane"
+      },
+      {
+        "error": "ValueError",
+        "message": "Circles are concentric; infinite or zero intersections.",
+        "tag": "concentric_2d"
+      },
+      {
+        "error": "ValueError",
+        "message": "Circles are concentric; infinite or zero intersections.",
+        "tag": "concentric_3d"
+      },
+      {
+        "error": "ValueError",
+        "message": "Circles do not intersect: distance 3.0000 outside [0.0000, 2.0000]",
+        "tag": "apart"
+      },
+      {
+        "error": "ValueError",
+        "message": "Circles do not intersect: distance 0.5000 outside [0.8000, 1.2000]",
+        "tag": "contained"
+      },
+      {
+        "tag": "boundary_clamp"
+      },
+      {
+        "tag": "boundary_clamp_inner"
+      }
+    ],
+    "inputs": {
+      "$array": "kinematics/linkage_cases.arrays/a003.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "5ca55b3ba0a3ef4e95e3e738ffdf127409aec07ab8c10c9631ec50dab8d6bcd4",
+      "shape": [
+        11,
+        10
+      ]
+    },
+    "solutions": {
+      "$array": "kinematics/linkage_cases.arrays/a001.f64",
+      "dtype": "<f8",
+      "order": "C",
+      "sha256": "e40b5ebc01fb6cef873de6838a93fc2c3f7a3ec5d60eab42781dba8ccca54233",
+      "shape": [
+        28
+      ]
+    }
+  }
+}

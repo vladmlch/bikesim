@@ -446,6 +446,42 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T13>")
 endif()
 
+# T14 geometry + Horst-link kinematics regression: the owned
+# geometry/specs.hpp records, hardpoint/trail/frame-angle and cockpit
+# placement calculators, the geometry validator, the linkage_math
+# brentq/circle primitives, and the HorstLinkageSolver state/trajectory/
+# inverse solves plus curves' instant centers — linked against the
+# bike_geometry/bike_kinematics libraries (one compile per TU per
+# graph), plus the shared migration harness for the manifest-pinned
+# bitwise fixture comparisons.
+add_executable(migration_T14 test_t14.cpp)
+set_target_properties(migration_T14 PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(_native_contract_compile_options)
+  target_compile_options(migration_T14 PRIVATE ${_native_contract_compile_options})
+endif()
+if(_native_contract_compile_definitions)
+  target_compile_definitions(migration_T14 PRIVATE ${_native_contract_compile_definitions})
+endif()
+if(_native_contract_link_options)
+  target_link_options(migration_T14 PRIVATE ${_native_contract_link_options})
+endif()
+target_link_libraries(migration_T14 PRIVATE bike_migration_test
+  bike_kinematics) # bike_geometry comes transitively (PUBLIC edge).
+target_include_directories(migration_T14 SYSTEM PRIVATE
+  "${_migration_repo_root}/native/src")
+if(BIKE_ROOT_BUILD)
+  bike_target_strict_policy(migration_T14)
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME migration_T14 COMMAND migration_T14)
+  set_tests_properties(migration_T14 PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T14>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

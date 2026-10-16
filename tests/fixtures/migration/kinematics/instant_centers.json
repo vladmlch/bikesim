@@ -1,0 +1,32 @@
+{
+  "_notes": "instant-center curve through np.linalg.solve dgesv path",
+  "_produced_by": "compute_instant_centers(HorstLinkageSolver(), 101)",
+  "ic_x": {
+    "$array": "kinematics/instant_centers.arrays/a001.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "95ceff378ea1211f7620041e2b923260c4d720ee601000b4f745570efeb24b3c",
+    "shape": [
+      101
+    ]
+  },
+  "ic_z": {
+    "$array": "kinematics/instant_centers.arrays/a002.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "a6aaa0a1016ea9788277d4d190bd0f2b55cedc7a212404735d9f4b73ba0e2642",
+    "shape": [
+      101
+    ]
+  },
+  "n_points": 101,
+  "travel": {
+    "$array": "kinematics/instant_centers.arrays/a000.f64",
+    "dtype": "<f8",
+    "order": "C",
+    "sha256": "2afc9a723ad19d933aa25d28f1d8ae3c0c39300497f4b5f74bb66fb0288844b4",
+    "shape": [
+      101
+    ]
+  }
+}

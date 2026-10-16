@@ -1,0 +1,102 @@
+{
+  "_notes": "error kind + exact messages (repr-formatted head angle)",
+  "_produced_by": "validate_geometry over mutated BikeSpecs copies",
+  "cases": [
+    {
+      "accepted": true,
+      "field": null,
+      "tag": "default",
+      "value": null
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "reach",
+      "message": "Reach and Stack must be strictly positive.",
+      "tag": "reach_zero",
+      "value": 0.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "reach",
+      "message": "Reach and Stack must be strictly positive.",
+      "tag": "reach_negative",
+      "value": -1.5
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "stack",
+      "message": "Reach and Stack must be strictly positive.",
+      "tag": "stack_zero",
+      "value": 0.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "head_angle_deg",
+      "message": "Unphysical head angle: 45.0 deg",
+      "tag": "head_angle_low",
+      "value": 45.0
+    },
+    {
+      "accepted": true,
+      "field": "head_angle_deg",
+      "tag": "head_angle_low_boundary_ok",
+      "value": 50.0
+    },
+    {
+      "accepted": true,
+      "field": "head_angle_deg",
+      "tag": "head_angle_high_boundary_ok",
+      "value": 80.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "head_angle_deg",
+      "message": "Unphysical head angle: 80.5 deg",
+      "tag": "head_angle_high",
+      "value": 80.5
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "wheelbase",
+      "message": "Wheelbase must be greater than reach.",
+      "tag": "wheelbase_equal_reach",
+      "value": 480.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "wheelbase",
+      "message": "Wheelbase must be greater than reach.",
+      "tag": "wheelbase_below_reach",
+      "value": 400.0
+    },
+    {
+      "accepted": true,
+      "field": "wheelbase",
+      "tag": "wheelbase_above_ok",
+      "value": 480.0000000000001
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "front_wheel_radius",
+      "message": "Wheel radii must be positive.",
+      "tag": "front_radius_zero",
+      "value": 0.0
+    },
+    {
+      "accepted": false,
+      "error": "ValueError",
+      "field": "rear_wheel_radius",
+      "message": "Wheel radii must be positive.",
+      "tag": "rear_radius_negative",
+      "value": -0.5
+    }
+  ]
+}

@@ -2,12 +2,22 @@
 2. you even can use it like `uv run --with numpy --with matplotlib ...`
 3. Before native changes, mirrored physics changes, or verification-tool changes, read [native engineering rules](docs/agents/native-engineering.md).
 
-# Libraries Source code
+# Libraries source code (optional reference)
 
-Always use this code as a reference:
+Numerical port work sometimes needs the upstream NumPy/MuJoCo source to pin
+exact lowering decisions. These are **optional reference checkouts — never
+required for ordinary runtime import, builds or tests**, and no personal
+developer path is assumed.
 
-- numpy:  /Users/vladislav.molchanov/Desktop/Projects_downloaded/numpy
-- mujoco: /Users/vladislav.molchanov/Desktop/Projects_downloaded/mujoco
+Locate them per machine with either convention:
+
+- `NUMPY_SOURCE_ROOT` / `MUJOCO_SOURCE_ROOT` environment variables naming
+  the checkouts, or
+- `.work/reference-sources/{numpy,mujoco}` inside the checkout (untracked).
+
+Record the fetched version/commit hash and license when sourcing them for
+port work. See docs/development/{linux,macos,troubleshooting}.md for the
+qualified platform workflows.
 
 ## Verification
 

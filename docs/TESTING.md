@@ -27,6 +27,23 @@ changes. Separately exercise macOS windows and measure one warm-up plus three
 runs per backend with `tools/measure_realtime.py`. A fake window is not a GUI
 acceptance check, and a measurement report is not a numerical parity result.
 
+## Platform support
+
+The dated status block above is the 2026-10-10 macOS record. Current
+measured development lanes and per-platform setup are documented in
+[development/linux.md](development/linux.md),
+[development/macos.md](development/macos.md) and
+[development/troubleshooting.md](development/troubleshooting.md): macOS
+arm64 (`native/build`, CPython 3.14.3) and Linux aarch64 in the Ubuntu
+24.04 container (`native/build-linux-clang`, CPython 3.13.16). On Linux the
+environment is a Linux-native venv selected with
+`UV_PROJECT_ENVIRONMENT` — never the copied macOS `.venv` — and
+`CMAKE_OSX_SYSROOT` is rejected as an Apple-only option. Everywhere,
+`NATIVE_TEST_BUILD_PATH` (tests) and `BIKE_NATIVE_BUILD_PATH`
+(applications) name the same absolute selected build directory. The sweep
+and profile semantics below are platform-independent; tool *resolution*
+differs per lane and is described where it matters.
+
 ## Upstream verification commands
 
 Run these commands from the repository root:
@@ -221,8 +238,11 @@ and the empty build type. Read the current compiler, SDK, run ID, and measured
 values in `native/build/native_check_summaries/context.json`; these local
 measurements are evidence for the selected toolchain, not a performance floor.
 
-`check_analyzer` and `check_tidy` use the keg-only brew LLVM
-(`/opt/homebrew/opt/llvm/bin`) — Apple clang lacks several checkers. The
+`check_analyzer` and `check_tidy` need a full LLVM toolchain, not AppleClang:
+on the qualified macOS arm64 host they resolve to the keg-only brew LLVM
+(`/opt/homebrew/opt/llvm/bin`, discovered per machine via `brew --prefix
+llvm`), and on the qualified Linux aarch64 lane to the distro clang-18
+tools. Missing tools are an error, not a skip. The
 analyzer's alpha pass prints findings without failing; they are unstable by
 upstream contract, so review them when they appear instead of gating on them.
 `check_odr` compiles every TU with `-flto` and merges with `-Wodr` — the only
@@ -262,7 +282,11 @@ alone does not count as runtime evidence.
 
 RTSan (`-fsanitize=realtime`) verifies the marked hot path never allocates or
 locks — the mechanical half of the allocation-free tick requirement. It needs
-the brew clang (Apple clang rejects the flag):
+a separately qualified LLVM toolchain: the measured macOS lane uses the brew
+clang (Apple clang rejects the flag), and on Linux the Ubuntu 24.04 default
+clang-18 lacks the realtime runtime too — select an LLVM >= 20 `clang++`
+explicitly, and configure fails closed rather than silently skipping the
+lane:
 
 ```bash
 cmake -S native -B native/build/rtsan \

@@ -2,12 +2,6 @@
 
 ## Status and prerequisites
 
-The 2026-10-17 portability wave adds shared macOS/Linux viewer startup and
-failure handling. See [viewer portability](development/viewer-portability.md)
-for the launch contract and outstanding desktop acceptance. This wave was
-implemented and reviewed statically; the historical results below do not
-verify its changes.
-
 The 2026-10-13 run-recording delivery changes normal physical/research output
 to opt-in, final-only DuckDB recording. See [RECORDING](RECORDING.md) for the
 verification results and the
@@ -15,6 +9,33 @@ verification results and the
 for the requirement map. The visual-runtime results below are historical and
 predate recording; the recording behavior described in this document was
 separately exercised on this branch.
+
+### Platform support — measured 2026-10-17/18
+
+This section is current evidence; the dated sections further down remain
+historical macOS results.
+
+| Lane | Toolchain | Native artifact | Gate evidence |
+|---|---|---|---|
+| macOS arm64 | AppleClang 21.0.0, CPython 3.14.3 (uv `.venv`), Xcode 26.6 `MacOSX.sdk` | `native/build/bike_native.cpython-314-darwin.so` | All static-analysis sweeps + CTest 10/10 green; native+golden pytest ~3,203 items |
+| Linux aarch64 (Ubuntu 24.04 container) | Clang 18.1.3 and GCC 13.3.0, CPython 3.13.16 (`/opt/bike-venv`) | `native/build-linux-clang/bike_native.cpython-313-aarch64-linux-gnu.so` | All sweeps green on both compiler lanes; CTest 10/10; native+golden pytest ~3,221 items |
+
+Setup and per-lane workflows: [linux.md](development/linux.md) and
+[macos.md](development/macos.md); failure diagnosis:
+[troubleshooting.md](development/troubleshooting.md). Machine evidence logs
+(including the retained pytest failures recorded verbatim in each guide's
+limits note) live under `output/portability/`; the consolidated
+[portability matrix](development/portability-test-matrix.md) tracks the
+release-level lane status. Wheel/provider qualification:
+[dependency-matrix.md](development/dependency-matrix.md) and
+[numerical-profiles.md](development/numerical-profiles.md).
+
+Not qualified: Linux x86_64 (the spec's release-blocking lane — no host yet),
+macOS Intel, native Wayland/EGL/OSMesa, cross-compilation. Interactive
+desktop sessions are pending real acceptance per
+[viewer-platform-acceptance.md](development/viewer-platform-acceptance.md);
+the macOS GUI results below are the 2026-10-10 historical record, not a new
+measurement.
 
 ### Historical visual-runtime acceptance: 2026-10-10
 

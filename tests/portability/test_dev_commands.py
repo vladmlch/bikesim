@@ -133,6 +133,14 @@ def test_bootstrap_is_explicit_locked_sync(tmp_path, monkeypatch):
 
 
 def test_bootstrap_python_and_offline_wheelhouse(tmp_path, monkeypatch):
+    """Offline bootstrap is the wheelhouse-safe equivalent of `uv sync`:
+
+    `uv sync --locked` pins registry URLs that are unreachable offline, so
+    the offline path creates the explicit venv, exports (or reuses) the
+    frozen requirements, then `uv pip sync --require-hashes` against
+    --find-links with no index, and finally installs the project editable
+    with --no-deps from the same wheelhouse.
+    """
     (tmp_path / "uv.lock").write_text("version = 1\n")
     wheelhouse = tmp_path / "wheelhouse"
     wheelhouse.mkdir()
@@ -143,16 +151,37 @@ def test_bootstrap_python_and_offline_wheelhouse(tmp_path, monkeypatch):
         "--offline", "--wheelhouse", str(wheelhouse),
     ]
     assert dev.main(argv_in, root=tmp_path) == 0
-    argv = calls[0]["argv"]
-    assert argv[:7] == [
-        "uv", "sync", "--locked", "--group", "native", "--group", "dev",
+    venv = (tmp_path / ".venv").resolve()
+    python = str(venv / "bin" / "python")
+
+    venv_argv = calls[0]["argv"]
+    assert venv_argv[:3] == ["uv", "venv", "--offline"]
+    assert venv_argv[3] == str(venv)
+    assert "--python" in venv_argv and "3.13" in venv_argv
+
+    # No requirements.txt sits beside the project root, so a frozen export
+    # is produced before the sync.
+    export_argv = calls[1]["argv"]
+    assert export_argv[:4] == [
+        "uv", "export", "--frozen", "--offline",
     ]
-    assert "--python" in argv and "3.13" in argv
-    assert "--offline" in argv
+    assert "--no-emit-project" in export_argv
+    assert export_argv[export_argv.index("-o") + 1].endswith(
+        "requirements.txt")
+
     # uv's supported controls restrict resolution to the wheelhouse only.
-    assert "--no-index" in argv
-    index = argv.index("--find-links")
-    assert argv[index + 1] == str(wheelhouse)
+    common = ["--python", python, "--offline", "--no-index",
+              "--find-links", str(wheelhouse)]
+    sync_argv = calls[2]["argv"]
+    assert sync_argv[:4] == ["uv", "pip", "sync", "--require-hashes"]
+    assert sync_argv[4:-1] == common
+    assert sync_argv[-1].endswith("requirements.txt")
+
+    install_argv = calls[3]["argv"]
+    assert install_argv[:4] == ["uv", "pip", "install", "--no-deps"]
+    assert install_argv[4:4 + len(common)] == common
+    assert install_argv[-2:] == ["--editable", str(tmp_path.resolve())]
+    assert len(calls) == 4
 
 
 def test_bootstrap_offline_requires_wheelhouse(tmp_path):

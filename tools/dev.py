@@ -36,6 +36,7 @@ import shlex
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import tomllib
 from pathlib import Path
 
@@ -689,20 +690,55 @@ def _cmd_bootstrap(args, root: Path) -> int:
             file=sys.stderr,
         )
         return 2
-    argv = ["uv", "sync", "--locked", "--group", "native", "--group", "dev"]
-    if args.python is not None:
-        argv += ["--python", args.python]
-    if args.offline:
-        wheelhouse = _cli_path(args.wheelhouse)
-        if not wheelhouse.is_dir():
-            print(
-                f"bootstrap --wheelhouse is not a directory: {wheelhouse}",
-                file=sys.stderr,
-            )
-            return 2
-        # uv's supported controls: no index, only the local wheelhouse.
-        argv += ["--offline", "--no-index", "--find-links", str(wheelhouse)]
-    return _run(argv, cwd=root, env=project_environment(root))
+    environment = project_environment(root)
+    if not args.offline:
+        argv = ["uv", "sync", "--locked", "--group", "native", "--group", "dev"]
+        if args.python is not None:
+            argv += ["--python", args.python]
+        return _run(argv, cwd=root, env=environment)
+    wheelhouse = _cli_path(args.wheelhouse)
+    if not wheelhouse.is_dir():
+        print(
+            f"bootstrap --wheelhouse is not a directory: {wheelhouse}",
+            file=sys.stderr,
+        )
+        return 2
+    # `uv sync --locked` cannot consume a flat wheelhouse: locked wheels pin
+    # their recorded registry URLs, which are unreachable offline. The
+    # offline-equivalent sync is the frozen requirements export installed by
+    # `uv pip` against --find-links with enforced hashes, followed by the
+    # editable project whose PEP 517 backend resolves from the wheelhouse.
+    venv = Path(environment["UV_PROJECT_ENVIRONMENT"])
+    python = venv / "bin" / "python"
+    if not (venv / "pyvenv.cfg").is_file():
+        argv = ["uv", "venv", "--offline", str(venv)]
+        if args.python is not None:
+            argv += ["--python", args.python]
+        status = _run(argv, cwd=root, env=environment)
+        if status != 0:
+            return status
+    requirements = root.parent / "requirements.txt"
+    with tempfile.TemporaryDirectory(prefix="bikesim-bootstrap-") as work:
+        if requirements.is_file():
+            export = requirements
+        else:
+            export = Path(work) / "requirements.txt"
+            status = _run(
+                ["uv", "export", "--frozen", "--offline", "--no-emit-project",
+                 "--group", "native", "--group", "dev", "-o", str(export)],
+                cwd=root, env=environment)
+            if status != 0:
+                return status
+        common = ["--python", str(python), "--offline", "--no-index",
+                  "--find-links", str(wheelhouse)]
+        status = _run(["uv", "pip", "sync", "--require-hashes", *common,
+                       str(export)], cwd=root, env=environment)
+        if status != 0:
+            return status
+        return _run(
+            ["uv", "pip", "install", "--no-deps", *common, "--editable",
+             str(root)],
+            cwd=root, env=environment)
 
 
 def _cmd_configure(args, root: Path) -> int:

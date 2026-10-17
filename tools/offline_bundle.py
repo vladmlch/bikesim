@@ -1,640 +1,966 @@
 #!/usr/bin/env python3
-"""Describe and package supplied sources/wheels without resolving or running them.
+"""Assemble frozen Python or native-source bundles; never qualify an install.
 
-Only Python's standard library is needed. A valid manifest is content evidence;
-it is deliberately not evidence of installation, dependency closure, a native
-build, binary deployment compatibility, or GUI acceptance on its named target.
+The online authoring command is explicit. Importing this module only defines
+data validation helpers: it never downloads, installs, invokes Git, or builds.
+Only the Python-only route builds the project's existing setuptools wheel.
 """
-
 from __future__ import annotations
 
 import argparse
-from configparser import ConfigParser, Error as ConfigError
-from email.parser import BytesParser
-from hashlib import sha256
-from itertools import product
+import email.parser
+import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
 import platform
 import re
 import shutil
 import stat
+import subprocess
 import sys
+import tarfile
 import tempfile
 import tomllib
-import unicodedata
-from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile, ZipInfo
+import urllib.parse
+import urllib.request
+import zipfile
+from pathlib import Path, PurePosixPath
+from typing import Any
+
+from packaging.markers import default_environment
+from packaging.requirements import Requirement
+from packaging.specifiers import SpecifierSet
+from packaging.tags import compatible_tags, cpython_tags, mac_platforms, parse_tag, sys_tags
+from packaging.utils import canonicalize_name, parse_wheel_filename
+from packaging.version import Version
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from tools.offline_manifest import (  # noqa: E402
+    BUILD_MARKERS, SCHEMA_VERSION, TOOL_NAMES, _NATIVE_SOURCES, confined_file, include_source_path,
+    python_minor, safe_relative_path, sha256_file, source_digest, validate_bundle_manifest,
+    validate_target, validate_wheel_row,
+)
 
 
-MANIFEST = "bundle-manifest.json"
-FORMAT = "bike-sim-offline"
-TARGETS = {
-    "ubuntu-24.04-x86_64-cp313": {
-        "system": "linux", "machine": "x86_64", "python": "3.13",
-        "distribution": "ubuntu", "release": "24.04",
-    },
-    "macos-arm64-cp313": {
-        "system": "darwin", "machine": "arm64", "python": "3.13",
-        "distribution": "macos", "release": "unspecified",
-    },
-    "macos-x86_64-cp313": {
-        "system": "darwin", "machine": "x86_64", "python": "3.13",
-        "distribution": "macos", "release": "unspecified",
-    },
-    "macos-arm64-cp314": {
-        "system": "darwin", "machine": "arm64", "python": "3.14",
-        "distribution": "macos", "release": "unspecified",
-    },
-    "macos-x86_64-cp314": {
-        "system": "darwin", "machine": "x86_64", "python": "3.14",
-        "distribution": "macos", "release": "unspecified",
-    },
-}
-QUALIFICATION = {
-    "installation": "not_run", "native_build": "not_run",
-    "gui": "not_run", "binary_compatibility": "not_run",
-}
-_DIGEST = re.compile(r"[0-9a-f]{64}\Z")
-_BINARY = re.compile(r"\.(?:so(?:\..*)?|dylib|dll|pyd|a|lib|o|obj|exe|pyc|pyo|whl)\Z", re.IGNORECASE)
-_PIN = re.compile(r"([A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?)==([A-Za-z0-9][A-Za-z0-9_.+!-]*)\Z")
-_SKIP_DIRS = {
-    ".git", ".hg", ".svn", ".deps", ".venv", "venv", "env", "__pycache__",
-    ".pytest_cache", ".mypy_cache", ".ruff_cache", ".cache", ".tox", ".nox",
-    "build", "dist", "wheelhouse", "node_modules", "CMakeFiles", ".idea", ".vscode",
-    ".agents", ".ai", ".codex", ".junie", ".work", ".worktrees",
-}
-_ROOT_OUTPUTS = {"output", "results", "upload"}
-_ROOT_GENERATED = {"MUJOCO_LOG.TXT", "bike_model.xml", "coordinates.json", MANIFEST}
-_SOURCE_DOTFILES = {
-    ".github", ".gitignore", ".gitattributes", ".gitmodules", ".python-version",
-    ".clangd", ".clang-tidy", ".clang-format", ".editorconfig", ".coveragerc",
-    ".pre-commit-config.yaml", ".ruff.toml", ".cmake-format.yaml", ".cmake-format.json",
-}
-_GENERATED_FILES = {"CMakeCache.txt", "compile_commands.json", "cmake_install.cmake", "build.ninja", "rules.ninja"}
+DEFAULT_SLIM_EXTERNAL = ("numpy", "scipy", "numba", "llvmlite", "pyarrow")
+_HASH_OPTION = re.compile(r"\s+--hash=sha256:([0-9a-f]{64})(?=\s|$)")
+_NATIVE_REQUIRED = _NATIVE_SOURCES
 
 
-class BundleError(ValueError):
-    """A bundle is malformed, stale, unsafe, or contradicts its declaration."""
-
-
-def _keys(value: object, expected: set[str], where: str) -> dict:
-    if not isinstance(value, dict) or set(value) != expected:
-        raise BundleError(f"{where}: expected exactly these fields: {', '.join(sorted(expected))}")
-    return value
-
-
-def _text(value: object, where: str) -> str:
-    if not isinstance(value, str) or not value or any(ord(char) < 32 or ord(char) == 127 for char in value):
-        raise BundleError(f"{where}: expected nonempty single-line text")
-    return value
-
-
-def _strings(value: object, where: str) -> list[str]:
-    if not isinstance(value, list):
-        raise BundleError(f"{where}: expected a list")
-    return [_text(item, f"{where}[{index}]") for index, item in enumerate(value)]
-
-
-def _relative_path(value: object) -> str:
-    name = _text(value, "path")
-    path = PurePosixPath(name)
-    if (path.is_absolute() or "\\" in name or ":" in name or path.as_posix() != name
-            or any(part in ("", ".", "..") for part in name.split("/"))):
-        raise BundleError(f"invalid relative path: {name!r}")
-    return name
-
-
-def _digest(path: Path) -> str:
-    result = sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            result.update(block)
-    return result.hexdigest()
-
-
-def _unique_json(pairs: list[tuple[str, object]]) -> dict:
-    result = {}
+def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
     for key, value in pairs:
         if key in result:
-            raise BundleError(f"duplicate JSON field: {key}")
+            raise ValueError(f"duplicate JSON key: {key}")
         result[key] = value
     return result
 
 
-def _read_manifest(path: Path) -> dict:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_json)
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise BundleError(f"cannot read {MANIFEST}: {exc}") from exc
+def read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_object)
 
 
-def _target(value: object) -> dict:
-    result = _keys(value, {"system", "machine", "python", "distribution", "release"}, "target")
-    if result not in TARGETS.values():
-        raise BundleError("unsupported target; select Ubuntu 24.04 x86_64 CPython 3.13 or a listed macOS CPython target")
-    return result
+def _host_identity() -> tuple[str, str, str]:
+    system = platform.system()
+    machine = {"AMD64": "x86_64", "aarch64": "arm64" if system == "Darwin" else "aarch64"}.get(platform.machine(), platform.machine())
+    return system, machine, f"{sys.version_info.major}.{sys.version_info.minor}"
 
 
-def _skip_part(name: str) -> bool:
-    return (name in _SKIP_DIRS or name.startswith((".venv-", "build-", "build_", "cmake-build-", "bike-sim-offline-"))
-            or name.endswith(".egg-info"))
+def select_target(target_name: str, python_version: str, native: bool) -> dict[str, Any]:
+    """Native uses this interpreter's complete actual supported wheel-tag set."""
+    version = python_minor(python_version)
+    host_system, host_machine, host_python = _host_identity()
+    named = {"linux-x86_64": ("Linux", "x86_64"), "macos-arm64": ("Darwin", "arm64")}
+    if target_name == "host":
+        system, machine = host_system, host_machine
+        if python_version != host_python:
+            raise ValueError(f"--target host requires running under CPython {python_version}; actual interpreter is {host_python}")
+    elif target_name in named:
+        system, machine = named[target_name]
+    else:
+        raise ValueError(f"unsupported target {target_name!r}")
+    host_match = (system, machine, python_version) == (host_system, host_machine, host_python)
+    if native and not host_match:
+        raise ValueError("native target/host mismatch: native source bundles must be assembled on their target OS/architecture/Python")
+    if host_match:
+        if platform.python_implementation() != "CPython":
+            raise ValueError("only standard CPython is qualified for these bundles")
+        tags = [str(tag) for tag in sys_tags()]
+        if system == "Linux":
+            libc, libc_version = platform.libc_ver()
+            if libc != "glibc" or not re.fullmatch(r"2\.[0-9]+", libc_version):
+                raise ValueError("native/source host must use identifiable glibc, not musl")
+            floor: str | None = "glibc>=" + libc_version
+        else:
+            floor = None
+    else:
+        # Availability-only compatibility route. Enumerate all lower platform
+        # spellings: pip/PyPI wheel tags are not a >= comparison.
+        if system == "Linux":
+            platforms = [f"manylinux_2_{minor}_x86_64" for minor in range(28, 4, -1)]
+            platforms += ["manylinux2014_x86_64", "manylinux2010_x86_64", "manylinux1_x86_64"]
+            floor = "glibc>=2.28"
+        else:
+            platforms = list(mac_platforms(version=(14, 0), arch="arm64"))
+            floor = None
+        tags = list(dict.fromkeys(str(tag) for tag in (
+            *cpython_tags(python_version=version, abis=[f"cp{version[0]}{version[1]}"], platforms=platforms),
+            *compatible_tags(python_version=version, interpreter=f"cp{version[0]}{version[1]}", platforms=platforms),
+        )))
+    return validate_target({"system": system, "machine": machine, "python_minor": python_version,
+                            "implementation": "cpython", "accepted_wheel_tags": tags, "libc_floor": floor})
 
 
-def _source_path_allowed(name: str) -> bool:
-    parts = PurePosixPath(name).parts
-    return (not any(_skip_part(part) for part in parts)
-            and parts[0] not in _ROOT_OUTPUTS
-            and not any(part.startswith(".") and part not in _SOURCE_DOTFILES
-                        for part in parts)
-            and parts[-1] not in _GENERATED_FILES
-            and not _BINARY.search(parts[-1])
-            and not (len(parts) == 1 and (parts[-1] in _ROOT_GENERATED
-                                         or parts[-1].startswith("bike_playground"))))
+def marker_environment(target: dict[str, Any]) -> dict[str, str]:
+    validate_target(target)
+    if (target["system"], target["machine"], target["python_minor"]) == _host_identity():
+        return default_environment()
+    return {"implementation_name": "cpython", "implementation_version": target["python_minor"] + ".0",
+            "os_name": "posix", "platform_machine": target["machine"],
+            "platform_python_implementation": "CPython", "platform_release": "",
+            "platform_system": target["system"], "platform_version": "",
+            "python_full_version": target["python_minor"] + ".0", "python_version": target["python_minor"],
+            "sys_platform": "linux" if target["system"] == "Linux" else "darwin"}
 
 
-def _walk_error(error: OSError) -> None:
-    raise BundleError(f"cannot enumerate source/bundle directory: {error}") from error
-
-
-def _regular_files(root: Path) -> list[Path]:
-    if root.is_symlink() or not root.is_dir():
-        raise BundleError(f"bundle/source root must be a regular directory, not a symlink: {root}")
-    result = []
-    for directory, folders, files in os.walk(root, followlinks=False, onerror=_walk_error):
-        for name in folders:
-            if (Path(directory) / name).is_symlink():
-                raise BundleError(f"symlink directory is forbidden: {Path(directory) / name}")
-        for name in files:
-            path = Path(directory) / name
-            if path.is_symlink() or not stat.S_ISREG(path.stat().st_mode):
-                raise BundleError(f"symlink/nonregular file is forbidden: {path}")
-            result.append(path)
-    return sorted(result, key=lambda path: path.relative_to(root).as_posix())
-
-
-def _copy_sources(source: Path, destination: Path) -> None:
-    if source.is_symlink() or not source.is_dir():
-        raise BundleError("source must be a regular directory, not a symlink")
-    for directory, folders, files in os.walk(source, followlinks=False, onerror=_walk_error):
-        relative_dir = Path(directory).relative_to(source)
-        folders[:] = sorted(name for name in folders
-                            if _source_path_allowed((relative_dir / name).as_posix()))
-        for name in folders:
-            if (Path(directory) / name).is_symlink():
-                raise BundleError(f"source symlink directory is forbidden: {Path(directory) / name}")
-        for name in sorted(files):
-            relative = (relative_dir / name).as_posix()
-            if not _source_path_allowed(relative):
-                continue
-            _relative_path(relative)
-            original = Path(directory) / name
-            if original.is_symlink() or not stat.S_ISREG(original.stat().st_mode):
-                raise BundleError(f"source symlink/nonregular file is forbidden: {original}")
-            copied = destination / relative
-            copied.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(original, copied)
-            copied.chmod(0o755 if original.stat().st_mode & 0o111 else 0o644)
-
-
-def _project(root: Path) -> tuple[dict, dict]:
-    try:
-        data = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
-        project = data["project"]
-        name = _text(project["name"], "project.name")
-        version = _text(project["version"], "project.version")
-        requires_python = _text(project["requires-python"], "project.requires-python")
-        if name != "bike-sim" or not _PIN.fullmatch(f"{name}=={version}"):
-            raise BundleError("pyproject.toml must contain a static bike-sim name/version")
-        runtime = _strings(project.get("dependencies", []), "project.dependencies")
-        build = _strings(data.get("build-system", {}).get("requires", []), "build-system.requires")
-        native = _strings(data.get("dependency-groups", {}).get("native", []), "dependency-groups.native")
-        return {"name": name, "version": version, "requires_python": requires_python}, {"runtime": runtime, "build": build + native}
-    except (OSError, UnicodeError, tomllib.TOMLDecodeError, KeyError, TypeError) as exc:
-        raise BundleError(f"invalid project/pyproject.toml: {exc}") from exc
-
-
-def _python_specifiers(requirement: str) -> set[tuple[str, int, int]]:
-    """Support minor-version bounds without guessing a target patch version.
-
-    General PEP 440 resolution belongs to installation. The current source floor
-    and bounded >=3.13,<3.15 declarations are decidable for every patch release of
-    the selected interpreter; patch-specific/other forms fail explicitly.
-    """
-    bounds = set()
-    for clause in _text(requirement, "requires-python").split(","):
-        match = re.fullmatch(r"\s*(>=|<)\s*([0-9]+)\.([0-9]+)(?:\.0)?\s*", clause)
-        if match is None:
-            raise BundleError("unsupported requires-python specifier: use >=major.minor and/or <major.minor bounds; "
-                              "patch-specific/general specifiers require installer target resolution")
-        bounds.add((match[1], int(match[2]), int(match[3])))
-    return bounds
-
-
-def _python_bounds(requirement: str, target: dict) -> None:
-    version = tuple(map(int, target["python"].split(".")))
-    for operator, major, minor in _python_specifiers(requirement):
-        bound = (major, minor)
-        if (operator == ">=" and version < bound) or (operator == "<" and version >= bound):
-            raise BundleError(f"requires-python {requirement!r} excludes target CPython {target['python']}")
-
-
-def _source_entry_points(root: Path) -> dict[str, dict[str, str]]:
-    data = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]
-    declared = data.get("entry-points", {})
-    if not isinstance(declared, dict) or {"console_scripts", "gui_scripts"} & set(declared):
-        raise BundleError("project.entry-points must use project.scripts/gui-scripts for reserved groups")
-    groups = dict(declared)
-    for key, group in (("scripts", "console_scripts"), ("gui-scripts", "gui_scripts")):
-        if key in data:
-            groups[group] = data[key]
-    result = {}
-    for group, entries in groups.items():
-        _text(group, "entry point group")
-        if not isinstance(entries, dict):
-            raise BundleError(f"entry point group {group} must be a table")
-        if entries:
-            result[group] = {_text(name, "entry point name"): _text(value, "entry point value")
-                             for name, value in entries.items()}
-    return result
-
-
-def _wheel_entry_points(archive: ZipFile, members: dict, metadata_root: str) -> dict[str, dict[str, str]]:
-    name = metadata_root + "entry_points.txt"
-    if name not in members:
-        return {}
-    parser = ConfigParser(interpolation=None, delimiters=("=",), strict=True, empty_lines_in_values=False)
-    parser.optionxform = str
-    try:
-        parser.read_string(archive.read(name).decode("utf-8"))
-        if parser.defaults():
-            raise BundleError("project wheel entry points cannot use inherited defaults")
-        return {section: dict(parser.items(section, raw=True)) for section in parser.sections()
-                if parser.items(section, raw=True)}
-    except (UnicodeError, ConfigError) as exc:
-        raise BundleError(f"invalid project wheel entry_points.txt: {exc}") from exc
-
-
-def _normal_name(name: str) -> str:
-    return re.sub(r"[-_.]+", "-", name).lower()
-
-
-def _members(archive: ZipFile) -> dict[str, object]:
-    members = {}
-    identities = set()
-    for info in archive.infolist():
-        name = _relative_path(info.filename[:-1] if info.is_dir() else info.filename)
-        identity = unicodedata.normalize("NFC", name).casefold()
-        if identity in identities:
-            raise BundleError(f"duplicate/colliding wheel path: {name}")
-        identities.add(identity)
-        mode = info.external_attr >> 16
-        if stat.S_ISLNK(mode) or (stat.S_IFMT(mode) not in (0, stat.S_IFREG, stat.S_IFDIR)):
-            raise BundleError(f"symlink/nonregular wheel member: {name}")
-        if not info.is_dir():
-            members[name] = info
-    return members
-
-
-def _platform_tag_matches(tag: str, target: dict) -> bool:
-    if tag == "any":
+def _marker_applies(requirement: Requirement, environment: dict[str, str], extras: set[str]) -> bool:
+    if requirement.marker is None:
         return True
-    if target["system"] == "linux":
-        return bool(re.fullmatch(r"(?:linux|manylinux(?:1|2010|2014|_\d+_\d+))_x86_64", tag))
-    return bool(re.fullmatch(r"macosx_\d+_\d+_(?:" + target["machine"] + r"|universal2)", tag))
+    expression = str(requirement.marker)
+    if not environment["platform_release"] and any(name in expression for name in ("platform_release", "platform_version")):
+        raise ValueError(f"cross-target marker requires an actual target host: {requirement}")
+    values = [dict(environment, extra=extra) for extra in sorted(extras | {""})]
+    result = any(requirement.marker.evaluate(value) for value in values)
+    if not environment["platform_release"] and any(name in expression for name in ("python_full_version", "implementation_version")):
+        upper = [dict(value, python_full_version=environment["python_version"] + ".999", implementation_version=environment["python_version"] + ".999") for value in values]
+        if any(requirement.marker.evaluate(value) for value in upper) != result:
+            raise ValueError(f"cross-target marker varies within Python minor; use actual host: {requirement}")
+    return result
 
 
-def _wheel_tags_match(python_tag: str, abi_tag: str, platform_tag: str, target: dict) -> bool:
-    # This is an exclusion check for known mismatches, not packaging.tags.sys_tags
-    # and not a claim about the target's libc, macOS deployment floor or CPU ISA.
-    version = tuple(map(int, target["python"].split(".")))
-    cpython = "cp" + target["python"].replace(".", "")
-    for interpreter in python_tag.split("."):
-        generic_version = re.fullmatch(r"py(\d)(\d+)", interpreter)
-        cpython_version = re.fullmatch(r"cp(\d)(\d+)", interpreter)
-        for abi in abi_tag.split("."):
-            pure = abi == "none" and (interpreter == "py3" or
-                    (generic_version is not None and (3, 0) <= tuple(map(int, generic_version.groups())) <= version))
-            exact = interpreter == cpython and abi in {cpython, "none", "abi3"}
-            stable = (cpython_version is not None and abi == "abi3"
-                      and (3, 2) <= tuple(map(int, cpython_version.groups())) <= version)
-            if pure or exact or stable:
-                if any(_platform_tag_matches(tag, target) for tag in platform_tag.split(".")):
-                    return True
-    return False
-
-
-def _wheel(path: Path, target: dict) -> dict:
-    if path.is_symlink() or not path.is_file():
-        raise BundleError(f"wheel must be a regular file, not a symlink: {path}")
-    _relative_path(path.name)
-    parts = path.name[:-4].split("-") if path.name.endswith(".whl") else []
-    if len(parts) not in (5, 6):
-        raise BundleError(f"invalid wheel filename: {path.name}")
-    name, version = parts[:2]
-    python_tag, abi_tag, platform_tag = parts[-3:]
-    if (not re.fullmatch(r"[A-Za-z0-9_]+", name)
-            or not _PIN.fullmatch(f"{name}=={version}")
-            or not all(re.fullmatch(r"[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*", tag)
-                       for tag in (python_tag, abi_tag, platform_tag))
-            or (len(parts) == 6 and not re.fullmatch(r"[0-9][A-Za-z0-9_]*", parts[2]))):
-        raise BundleError(f"invalid wheel filename: {path.name}")
-    if not _wheel_tags_match(python_tag, abi_tag, platform_tag, target):
-        raise BundleError(f"wheel filename tags do not match target: {path.name}")
+def _wheel_member_bytes(archive: zipfile.ZipFile, member: str) -> bytes:
     try:
-        with ZipFile(path) as archive:
-            members = _members(archive)
-            metadata_names = [member for member in members
-                              if re.fullmatch(r"[^/]+\.dist-info/METADATA", member)]
-            if len(metadata_names) != 1:
-                raise BundleError(f"wheel needs exactly one METADATA record: {path.name}")
-            metadata = BytesParser().parsebytes(archive.read(metadata_names[0]))
-            if len(metadata.get_all("Name", [])) != 1 or len(metadata.get_all("Version", [])) != 1:
-                raise BundleError(f"wheel has missing/duplicate Name or Version: {path.name}")
-            if _normal_name(metadata["Name"]) != _normal_name(name) or metadata["Version"] != version:
-                raise BundleError(f"wheel filename and METADATA identity disagree: {path.name}")
-            wheel_metadata_name = metadata_names[0].rsplit("/", 1)[0] + "/WHEEL"
-            if wheel_metadata_name not in members:
-                raise BundleError(f"wheel has no WHEEL tag metadata: {path.name}")
-            wheel_metadata = BytesParser().parsebytes(archive.read(wheel_metadata_name))
-            declared_tags = set()
-            for tag in wheel_metadata.get_all("Tag", []):
-                parts = tag.split("-")
-                if len(parts) != 3:
-                    raise BundleError(f"invalid WHEEL Tag: {path.name}")
-                declared_tags.update(product(*(part.split(".") for part in parts)))
-            filename_tags = set(product(python_tag.split("."), abi_tag.split("."), platform_tag.split(".")))
-            if declared_tags != filename_tags:
-                raise BundleError(f"wheel filename and WHEEL tags disagree: {path.name}")
-    except (BadZipFile, OSError, RuntimeError) as exc:
-        raise BundleError(f"cannot read wheel {path.name}: {exc}") from exc
-    return {"path": f"wheelhouse/{path.name}", "distribution": _normal_name(name), "version": version,
-            "python_tag": python_tag, "abi_tag": abi_tag, "platform_tag": platform_tag,
-            "sha256": _digest(path)}
+        return archive.read(member)
+    except (RuntimeError, NotImplementedError, zipfile.BadZipFile) as error:
+        raise ValueError(f"unreadable wheel member {member}: {error}") from error
 
 
-def _project_wheel(root: Path, wheels: list[dict], identity: dict) -> None:
-    selected = [item for item in wheels if item["distribution"] == "bike-sim"]
-    if len(selected) != 1:
-        raise BundleError("wheelhouse must contain exactly one bike_sim project wheel")
-    item = selected[0]
-    if not PurePosixPath(item["path"]).name.startswith(f"bike_sim-{identity['version']}-"):
-        raise BundleError("project wheel filename must use the canonical bike_sim prefix for the legacy installer")
-    if item["version"] != identity["version"]:
-        raise BundleError("project wheel version differs from authoritative source")
-    if item["abi_tag"] != "none" or item["platform_tag"] != "any":
-        raise BundleError("project wheel must be source-only; native artifacts must be rebuilt on target")
-    package_root = root / "project" / "src" / "bike_sim"
-    local = {path.relative_to(package_root.parent).as_posix(): path for path in _regular_files(package_root)}
-    if "bike_sim/__init__.py" not in local:
-        raise BundleError("authoritative source package has no bike_sim/__init__.py")
-    with ZipFile(root / item["path"]) as archive:
-        members = _members(archive)
-        metadata_root = f"bike_sim-{identity['version']}.dist-info/"
-        unexpected = {name for name in members if not name.startswith(("bike_sim/", metadata_root))}
-        if unexpected:
-            raise BundleError(f"project wheel payload is outside authoritative source/metadata: {sorted(unexpected)}")
-        if any(_BINARY.search(name) for name in members):
-            raise BundleError("project wheel contains a native/build artifact; source must remain authoritative")
-        packaged = {name for name in members if name.startswith("bike_sim/")}
-        if packaged != set(local) or any(archive.read(name) != local[name].read_bytes() for name in packaged):
-            raise BundleError("project wheel content differs from authoritative source (code or package resources)")
-        if _wheel_entry_points(archive, members, metadata_root) != _source_entry_points(root / "project"):
-            raise BundleError("project wheel entry points differ from authoritative pyproject.toml")
-        metadata = BytesParser().parsebytes(archive.read(metadata_root + "METADATA"))
-        python_requirements = metadata.get_all("Requires-Python", [])
-        if len(python_requirements) != 1:
-            raise BundleError("project wheel must declare exactly one Requires-Python matching source")
-        # Source and wheel must agree on the supported bound form, regardless of
-        # whitespace, order or redundant .0 spelling. Target eligibility itself
-        # is checked against the actual selected target in create/validate.
-        if _python_specifiers(python_requirements[0]) != _python_specifiers(identity["requires_python"]):
-            raise BundleError("project wheel Requires-Python differs from authoritative source")
+def inspect_wheel(path: Path, target: dict[str, Any]) -> dict[str, Any]:
+    """Check filename, ZIP paths, authoritative metadata, ABI and uv licenses."""
+    name, version, _build, tags = parse_wheel_filename(path.name)
+    row = {"filename": path.name, "distribution": str(name), "version": str(version),
+           "sha256": sha256_file(path), "tags": sorted(str(tag) for tag in tags)}
+    validate_wheel_row(row, target)
+    with zipfile.ZipFile(path) as archive:
+        members: dict[str, zipfile.ZipInfo] = {}
+        folded: set[str] = set()
+        for item in archive.infolist():
+            member = item.filename.rstrip("/")
+            safe_relative_path(member, f"wheel {path.name} member")
+            if member.casefold() in folded:
+                raise ValueError(f"wheel {path.name}: duplicate/case-colliding ZIP member {member}")
+            folded.add(member.casefold())
+            if stat.S_ISLNK(item.external_attr >> 16):
+                raise ValueError(f"wheel {path.name}: symlink member {member}")
+            if item.flag_bits & 1:
+                raise ValueError(f"wheel {path.name}: encrypted ZIP member {member}")
+            if not item.is_dir():
+                members[member] = item
+        # Only top-level .dist-info directories are wheel metadata; packages may
+        # legitimately vendor nested dist-infos (setuptools/_vendor, pip/_vendor).
+        metadata_members = [member for member in members
+                            if member.endswith(".dist-info/METADATA")
+                            and "/" not in member.rsplit("/", 1)[0]]
+        wheel_members = [member for member in members
+                         if member.endswith(".dist-info/WHEEL")
+                         and "/" not in member.rsplit("/", 1)[0]]
+        if len(metadata_members) != 1 or len(wheel_members) != 1 or metadata_members[0].rsplit("/", 1)[0] != wheel_members[0].rsplit("/", 1)[0]:
+            raise ValueError(f"wheel {path.name}: expected one matching top-level .dist-info METADATA/WHEEL pair")
+        dist_info = metadata_members[0].rsplit("/", 1)[0]
+        if "/" in dist_info or "-" not in dist_info:
+            raise ValueError(f"wheel {path.name}: .dist-info must be a matching top-level directory")
+        info_name, info_version = dist_info.removesuffix(".dist-info").rsplit("-", 1)
+        if canonicalize_name(info_name, validate=True) != name or Version(info_version) != version:
+            raise ValueError(f"wheel {path.name}: .dist-info directory disagrees with filename")
+        metadata = email.parser.BytesParser().parsebytes(_wheel_member_bytes(archive, metadata_members[0]))
+        wheel_metadata = email.parser.BytesParser().parsebytes(_wheel_member_bytes(archive, wheel_members[0]))
+        if any(len(metadata.get_all(field, [])) != 1 for field in ("Name", "Version")):
+            raise ValueError(f"wheel {path.name}: METADATA must have one Name and Version")
+        wheel_versions = wheel_metadata.get_all("Wheel-Version", [])
+        if len(wheel_versions) != 1 or re.fullmatch(r"1\.[0-9]+", wheel_versions[0]) is None:
+            raise ValueError(f"wheel {path.name}: missing/unsupported Wheel-Version")
+        purelib = wheel_metadata.get_all("Root-Is-Purelib", [])
+        if len(purelib) != 1 or purelib[0].lower() not in ("true", "false"):
+            raise ValueError(f"wheel {path.name}: invalid Root-Is-Purelib")
+        if canonicalize_name(metadata.get("Name", ""), validate=True) != name or Version(metadata.get("Version", "")) != version:
+            raise ValueError(f"wheel {path.name}: METADATA name/version disagrees with filename")
+        metadata_tags = {str(tag) for value in wheel_metadata.get_all("Tag", []) for tag in parse_tag(value)}
+        if metadata_tags != set(row["tags"]):
+            raise ValueError(f"wheel {path.name}: WHEEL tags disagree with filename")
+        requires_python = metadata.get("Requires-Python", "")
+        environment = marker_environment(target)
+        if requires_python and not SpecifierSet(requires_python).contains(environment["python_full_version"], prereleases=True):
+            raise ValueError(f"wheel {path.name}: Requires-Python excludes target interpreter")
+        requirements = metadata.get_all("Requires-Dist", [])
+        for requirement in requirements:
+            parsed = Requirement(requirement)
+            if parsed.url:
+                raise ValueError(f"wheel {path.name}: direct/source dependency is not an offline registry closure: {requirement}")
+        licenses = []
+        for member in sorted(members):
+            if member.startswith(dist_info + "/") and ("license" in PurePosixPath(member).name.lower() or "/licenses/" in member.lower()):
+                content = _wheel_member_bytes(archive, member)
+                if content.strip():
+                    licenses.append({"path": member, "sha256": hashlib.sha256(content).hexdigest()})
+        if name == "uv" and not licenses:
+            raise ValueError(f"wheel {path.name}: uv license payload is missing")
+        return {"wheel": row, "requires_dist": requirements, "requires_python": requires_python,
+                "provides_extra": sorted(canonicalize_name(extra) for extra in metadata.get_all("Provides-Extra", [])),
+                "licenses": licenses}
 
 
-def _requirements(wheels: list[dict]) -> bytes:
-    return "".join(f'{item["distribution"]}=={item["version"]} --hash=sha256:{item["sha256"]}\n'
-                   for item in sorted(wheels, key=lambda item: item["distribution"])).encode("utf-8")
+def validate_dependency_closure(records: list[dict[str, Any]], roots: list[str], environment: dict[str, str]) -> dict[str, list[str]]:
+    """Follow active metadata edges, including extras, through all exact pins."""
+    by_name: dict[str, dict[str, Any]] = {}
+    for record in records:
+        name = record["wheel"]["distribution"]
+        if name in by_name:
+            raise ValueError(f"dependency closure: duplicate distribution {name}")
+        by_name[name] = record
+    pending = [(Requirement(value), "project/tool roots") for value in roots]
+    requested_extras: dict[str, set[str]] = {}
+    visited: dict[str, frozenset[str]] = {}
+    graph: dict[str, list[str]] = {}
+    while pending:
+        requirement, owner = pending.pop()
+        if not _marker_applies(requirement, environment, set()):
+            continue
+        if requirement.url:
+            raise ValueError(f"dependency closure: direct URL dependency from {owner}: {requirement}")
+        name = canonicalize_name(requirement.name)
+        if name not in by_name:
+            raise ValueError(f"dependency closure: missing {requirement} required by {owner}")
+        record = by_name[name]
+        if not requirement.specifier.contains(record["wheel"]["version"], prereleases=True):
+            raise ValueError(f"dependency closure: {requirement} required by {owner}, bundled {record['wheel']['version']}")
+        extras = requested_extras.setdefault(name, set())
+        extras.update(canonicalize_name(extra) for extra in requirement.extras)
+        if not extras <= set(record["provides_extra"]):
+            raise ValueError(f"dependency closure: {name} does not provide extras {sorted(extras - set(record['provides_extra']))}")
+        current = frozenset(extras)
+        if visited.get(name) == current:
+            continue
+        visited[name] = current
+        edges: set[str] = set(graph.get(name, []))
+        for value in record["requires_dist"]:
+            dependency = Requirement(value)
+            if _marker_applies(dependency, environment, extras):
+                edges.add(canonicalize_name(dependency.name))
+                # Its marker is evaluated in the parent extra context exactly
+                # once. Re-evaluation with extra='' would silently drop edges.
+                dependency.marker = None
+                pending.append((dependency, name))
+        graph[name] = sorted(edges)
+    unused = set(by_name) - visited.keys()
+    if unused:
+        raise ValueError(f"dependency closure: undeclared/unreachable wheels {sorted(unused)}")
+    return graph
 
 
-def _inventory(root: Path) -> list[dict]:
-    return [{"path": path.relative_to(root).as_posix(), "size": path.stat().st_size, "sha256": _digest(path)}
-            for path in _regular_files(root) if path.relative_to(root).as_posix() != MANIFEST]
+def parse_frozen_requirements(text: str, environment: dict[str, str]) -> list[dict[str, Any]]:
+    rows: dict[str, dict[str, Any]] = {}
+    for line in text.replace("\\\n", " ").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        hashes = sorted(set(_HASH_OPTION.findall(line)))
+        requirement = Requirement(_HASH_OPTION.sub("", line).strip())
+        if requirement.url or not hashes:
+            raise ValueError(f"frozen requirements: exact registry pin with SHA256 required: {line}")
+        specifiers = list(requirement.specifier)
+        if len(specifiers) != 1 or specifiers[0].operator != "==" or "*" in specifiers[0].version:
+            raise ValueError(f"frozen requirements: not an exact pin: {requirement}")
+        if not _marker_applies(requirement, environment, set()):
+            continue
+        name = canonicalize_name(requirement.name)
+        if name in rows:
+            raise ValueError(f"frozen requirements: duplicate active distribution {name}")
+        rows[name] = {"name": name, "version": str(Version(specifiers[0].version)), "hashes": hashes,
+                      "requirement": str(requirement)}
+    if not rows:
+        raise ValueError("frozen requirements: empty dependency closure")
+    return [rows[name] for name in sorted(rows)]
 
 
-def _source_digest(files: list[dict]) -> str:
-    payload = "".join(f'{item["path"][8:]}={item["sha256"]}\n'
-                      for item in sorted(files, key=lambda item: item["path"]) if item["path"].startswith("project/"))
-    return sha256(payload.encode("utf-8")).hexdigest()
+def declared_roots(project: dict[str, Any], native: bool) -> list[str]:
+    roots = list(project["project"]["dependencies"])
+    if native:
+        groups = project.get("dependency-groups", {})
+        for name in ("native", "dev"):
+            entries = groups.get(name)
+            if not isinstance(entries, list) or not entries:
+                raise ValueError(f"pyproject: missing required {name} dependency group")
+            for entry in entries:
+                if not isinstance(entry, str):
+                    raise ValueError(f"pyproject: unsupported nested dependency group in {name}; expand the reviewed frozen group explicitly")
+                roots.append(entry)
+    return roots
 
 
-def _preinstalled(values: object, profile: str, wheels: list[dict]) -> list[str]:
-    values = _strings(values, "requirements.preinstalled")
-    if profile == "full" and values:
-        raise BundleError("full bundles cannot declare inherited Python packages")
-    if profile == "slim" and not values:
-        raise BundleError("slim bundles must explicitly declare pinned preinstalled requirements")
-    names = set()
-    local_names = {item["distribution"] for item in wheels}
-    for requirement in values:
-        match = _PIN.fullmatch(requirement)
-        if match is None:
-            raise BundleError("preinstalled requirements must be explicit name==version pins")
-        name = _normal_name(match[1])
-        if name in names or name in local_names:
-            raise BundleError(f"duplicate or both local/preinstalled requirement: {name}")
-        names.add(name)
-    return values
+def load_tool_lock(path: Path, wheelhouse: Path, target: dict[str, Any], project: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    if not path.is_file():
+        raise ValueError(f"missing exact build/tool lock: {path}; use tools/prepare_offline_tools.py with selected qualified tool wheels (do not regenerate uv.lock)")
+    value = read_json(path)
+    if not isinstance(value, dict) or set(value) != {"schema_version", "target", "uv_version", "wheels"} or type(value["schema_version"]) is not int or value["schema_version"] != 1:
+        raise ValueError("tool lock: unsupported schema")
+    locked_target = validate_target(value["target"])
+    for field in ("system", "machine", "python_minor", "implementation"):
+        if locked_target[field] != target[field]:
+            raise ValueError(f"tool lock: target {field} mismatch")
+    if not isinstance(value["wheels"], list) or not value["wheels"]:
+        raise ValueError("tool lock: missing wheel rows")
+    records = []
+    names: set[str] = set()
+    for item in value["wheels"]:
+        row = validate_wheel_row(item, target)
+        if row["distribution"] in names:
+            raise ValueError(f"tool lock: duplicate distribution {row['distribution']}")
+        names.add(row["distribution"])
+        wheel = confined_file(wheelhouse, row["filename"])
+        record = inspect_wheel(wheel, target)
+        if record["wheel"] != row:
+            raise ValueError(f"tool lock: wheel hash/metadata mismatch for {row['filename']}")
+        records.append(record)
+    if not TOOL_NAMES <= names:
+        raise ValueError(f"tool lock: missing required tools {sorted(TOOL_NAMES - names)}")
+    uv = next(record for record in records if record["wheel"]["distribution"] == "uv")
+    if uv["wheel"]["version"] != value["uv_version"]:
+        raise ValueError("tool lock: uv version mismatch")
+    # Top-level selected tools and their actual backend requirements are the
+    # roots. Transitive tools must be reachable, not arbitrary added wheels.
+    validate_dependency_closure(records, _tool_roots(records, project), marker_environment(target))
+    return value, records
 
 
-def validate_bundle(root: Path) -> dict:
-    """Validate an extracted bundle, reading bytes only; return its manifest.
-
-    The exact inventory is checked before installation. Environments or reports
-    added inside the directory afterwards require an untouched bundle copy for
-    this preflight. Qualification is never inferred from this function's return.
-    """
-    root = Path(root)
-    actual_files = _regular_files(root)
-    manifest = _keys(_read_manifest(root / MANIFEST), {
-        "schema_version", "format", "profile", "target", "producer", "project",
-        "requirements", "wheels", "files", "qualification",
-    }, "manifest")
-    if type(manifest["schema_version"]) is not int or manifest["schema_version"] != 1 or manifest["format"] != FORMAT:
-        raise BundleError("unsupported bundle format/schema version")
-    if manifest["profile"] not in ("full", "slim"):
-        raise BundleError("profile must be full or slim")
-    target = _target(manifest["target"])
-    producer = _keys(manifest["producer"], {"system", "machine", "python"}, "producer")
-    for name, value in producer.items():
-        if not re.fullmatch(r"[A-Za-z0-9_.+-]+", _text(value, f"producer.{name}")):
-            raise BundleError(f"producer.{name} must be a portable identity, not a filesystem path")
-    project = _keys(manifest["project"], {"path", "name", "version", "requires_python", "source_sha256", "authority", "native_artifacts"}, "project")
-    if project["path"] != "project" or project["authority"] != "source" or project["native_artifacts"] != "rebuild_on_target":
-        raise BundleError("project must declare source authority and rebuilding native artifacts on target")
-    requirements = _keys(manifest["requirements"], {"runtime", "build", "preinstalled", "closure", "wheel_dependency_metadata"}, "requirements")
-    if requirements["closure"] != "not_verified" or requirements["wheel_dependency_metadata"] != "not_verified":
-        raise BundleError("dependency closure qualification is outside the bundle manifest contract")
-    _keys(manifest["qualification"], set(QUALIFICATION), "qualification")
-    if manifest["qualification"] != QUALIFICATION:
-        raise BundleError("bundle generation must not claim execution qualification")
-    if not isinstance(manifest["files"], list) or not manifest["files"]:
-        raise BundleError("file inventory must be a nonempty list")
-    names = set()
-    identities = set()
-    for entry in manifest["files"]:
-        _keys(entry, {"path", "size", "sha256"}, "file entry")
-        name = _relative_path(entry["path"])
-        canonical = unicodedata.normalize("NFC", name).casefold()
-        if canonical in identities:
-            raise BundleError(f"duplicate/colliding file path: {name}")
-        identities.add(canonical)
-        names.add(name)
-        if (name != "requirements.txt" and not name.startswith(("project/", "wheelhouse/"))) or name == MANIFEST:
-            raise BundleError(f"unsupported bundle file path: {name}")
-        if name.startswith("project/") and not _source_path_allowed(name[8:]):
-            raise BundleError(f"machine-local/generated project path is forbidden: {name}")
-        if name.startswith("wheelhouse/") and (len(PurePosixPath(name).parts) != 2 or not name.endswith(".whl")):
-            raise BundleError(f"wheelhouse contains a non-wheel path: {name}")
-        if type(entry["size"]) is not int or entry["size"] < 0:
-            raise BundleError(f"invalid byte size for {name}")
-        if not isinstance(entry["sha256"], str) or not _DIGEST.fullmatch(entry["sha256"]):
-            raise BundleError(f"invalid SHA-256 digest for {name}")
-    actual_names = {path.relative_to(root).as_posix() for path in actual_files}
-    if not {"project/pyproject.toml", "requirements.txt"} <= names:
-        raise BundleError("file inventory must include project/pyproject.toml and requirements.txt")
-    if actual_names != names | {MANIFEST}:
-        raise BundleError(f"file inventory differs: missing={sorted(names - actual_names)}, "
-                          f"undeclared={sorted(actual_names - names - {MANIFEST})}")
-    for entry in manifest["files"]:
-        path = root / entry["path"]
-        if path.stat().st_size != entry["size"] or _digest(path) != entry["sha256"]:
-            raise BundleError(f"file size/digest mismatch: {entry['path']}")
-    identity, declarations = _project(root / "project")
-    if any(project[key] != identity[key] for key in ("name", "version", "requires_python")):
-        raise BundleError("manifest project identity differs from pyproject.toml")
-    _python_bounds(identity["requires_python"], target)
-    if project["source_sha256"] != _source_digest(manifest["files"]):
-        raise BundleError("project source digest differs from manifest inventory")
-    for key in ("runtime", "build"):
-        if _strings(requirements[key], f"requirements.{key}") != declarations[key]:
-            raise BundleError(f"requirements.{key} differs from authoritative pyproject.toml")
-    if not isinstance(manifest["wheels"], list):
-        raise BundleError("wheels must be a list")
-    wheels = []
-    for entry in manifest["wheels"]:
-        _keys(entry, {"path", "distribution", "version", "python_tag", "abi_tag", "platform_tag", "sha256"}, "wheel entry")
-        if _relative_path(entry["path"]) not in names or not entry["path"].startswith("wheelhouse/"):
-            raise BundleError("wheel path is missing from the file inventory")
-        actual = _wheel(root / entry["path"], target)
-        if actual != entry:
-            raise BundleError(f"wheel metadata/digest mismatch: {entry['path']}")
-        wheels.append(actual)
-    if {entry["path"] for entry in wheels} != {name for name in names if name.startswith("wheelhouse/")}:
-        raise BundleError("wheel list differs from the wheelhouse inventory")
-    if len({entry["distribution"] for entry in wheels}) != len(wheels):
-        raise BundleError("wheelhouse must contain only one wheel per distribution")
-    _preinstalled(requirements["preinstalled"], manifest["profile"], wheels)
-    _project_wheel(root, wheels, identity)
-    if (root / "requirements.txt").read_bytes() != _requirements(wheels):
-        raise BundleError("requirements.txt must contain exactly the local wheel pins and hashes")
-    return manifest
-
-
-def create_bundle(source: Path, wheelhouse: Path, output: Path, *, target: dict,
-                  profile: str, preinstalled: list[str] | tuple[str, ...] = ()) -> dict:
-    """Create a deterministic ZIP from explicit local inputs, never overwriting.
-
-    A fresh sibling staging directory is removed on failure. The output must be
-    outside the source tree; this prevents self-inclusion on repeated packaging.
-    """
-    source, wheelhouse, output = Path(source), Path(wheelhouse), Path(output)
-    _target(target)
-    if profile not in ("full", "slim"):
-        raise BundleError("profile must be full or slim")
-    if output.exists() or output.is_symlink():
-        raise BundleError("output already exists; choose a new .zip path")
-    if output.suffix != ".zip":
-        raise BundleError("output must be a .zip archive")
-    if output.resolve().is_relative_to(source.resolve()):
-        raise BundleError("output must be outside the source tree")
-    if wheelhouse.is_symlink() or not wheelhouse.is_dir():
-        raise BundleError("wheelhouse must be an explicit local directory, not a symlink")
-    input_wheels = sorted(wheelhouse.iterdir())
-    if any(path.is_symlink() or not path.is_file() or path.suffix != ".whl" for path in input_wheels):
-        raise BundleError("wheelhouse must contain only regular local .whl files")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="bike-sim-offline-", dir=output.parent) as temporary:
-        stage = Path(temporary) / "payload"
-        (stage / "project").mkdir(parents=True)
-        (stage / "wheelhouse").mkdir()
-        _copy_sources(source, stage / "project")
-        identity, declarations = _project(stage / "project")
-        _python_bounds(identity["requires_python"], target)
-        wheels = []
-        for original in input_wheels:
-            copied = stage / "wheelhouse" / original.name
-            shutil.copyfile(original, copied)
-            wheels.append(_wheel(copied, target))
-        _project_wheel(stage, wheels, identity)
-        external = _preinstalled(list(preinstalled), profile, wheels)
-        (stage / "requirements.txt").write_bytes(_requirements(wheels))
-        files = _inventory(stage)
-        manifest = {
-            "schema_version": 1, "format": FORMAT, "profile": profile,
-            "target": dict(target),
-            "producer": {"system": sys.platform, "machine": platform.machine(), "python": platform.python_version()},
-            "project": {"path": "project", **identity, "authority": "source",
-                        "native_artifacts": "rebuild_on_target", "source_sha256": _source_digest(files)},
-            "requirements": {**declarations, "preinstalled": external, "closure": "not_verified",
-                             "wheel_dependency_metadata": "not_verified"},
-            "wheels": wheels, "files": files, "qualification": dict(QUALIFICATION),
-        }
-        (stage / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n", encoding="utf-8")
-        validate_bundle(stage)
-        archive_path = Path(temporary) / "archive.zip"
-        with ZipFile(archive_path, "w", compression=ZIP_DEFLATED, compresslevel=6) as archive:
-            for path in _regular_files(stage):
-                info = ZipInfo(path.relative_to(stage).as_posix(), date_time=(1980, 1, 1, 0, 0, 0))
-                info.create_system = 3
-                info.compress_type = ZIP_DEFLATED
-                info.external_attr = (stat.S_IFREG | (0o755 if path.stat().st_mode & 0o111 else 0o644)) << 16
-                with path.open("rb") as source_stream, archive.open(info, "w") as destination:
-                    shutil.copyfileobj(source_stream, destination)
-        # Exclusive creation preserves an existing file even if another producer
-        # published it after the initial path check. Do not rename over it.
+def required_native_assets(root: Path) -> set[str]:
+    """Explicitly approved benchmark inputs; never silently regenerate them."""
+    base = PurePosixPath("tools/proto_native_bench/artifacts")
+    pointer_name = str(base / "current.json")
+    pointer_file = confined_file(root, pointer_name, source=True)
+    pointer = read_json(pointer_file)
+    if not isinstance(pointer, dict) or type(pointer.get("format")) is not int or pointer["format"] != 1:
+        raise ValueError(f"{pointer_name}: invalid required native benchmark pointer")
+    name = safe_relative_path(pointer.get("bundle"), "benchmark bundle")
+    if len(name.parts) != 1:
+        raise ValueError("benchmark bundle must be one directory name")
+    selected = base / name
+    manifest_name = str(selected / "manifest.json")
+    fixture = read_json(confined_file(root, manifest_name, source=True))
+    checksums = fixture.get("checksums") if isinstance(fixture, dict) else None
+    if not isinstance(checksums, dict):
+        raise ValueError(f"{manifest_name}: missing benchmark asset checksums")
+    # The reference tests also load this older shared model directly. It is
+    # independent of current.json and must not be substituted with v3 bytes.
+    flat_model = str(base / "model.mjb")
+    try:
+        confined_file(root, flat_model, source=True)
+    except ValueError as error:
+        raise ValueError(f"missing required native reference asset {flat_model}; restore the original independent model") from error
+    required = {pointer_name, manifest_name, flat_model}
+    for filename, field in (("model.mjb", "model_mjb_sha256"), ("state.bin", "state_bin_sha256"), ("state.npz", "state_npz_sha256")):
+        relative = str(selected / filename)
         try:
-            os.link(archive_path, output)
-        except FileExistsError as exc:
-            raise BundleError("output was created by another producer; it was preserved") from exc
+            asset = confined_file(root, relative, source=True)
+        except ValueError as error:
+            raise ValueError(f"missing required native development asset {relative}; restore the original binary input omitted by the source snapshot") from error
+        if sha256_file(asset) != checksums.get(field):
+            raise ValueError(f"{relative}: required benchmark asset hash mismatch")
+        required.add(relative)
+    return required
+
+
+class CommandLog:
+    def __init__(self) -> None:
+        self.commands: list[dict[str, Any]] = []
+
+    def run(self, argv: list[str], cwd: Path, *, binary: bool = False, env: dict[str, str] | None = None) -> Any:
+        record: dict[str, Any] = {"argv": argv, "cwd": str(cwd), "status": "running", "returncode": None}
+        self.commands.append(record)
+        try:
+            completed = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=not binary, check=False)
+        except OSError as error:
+            record.update(status="failed", error=str(error))
+            raise ValueError(f"command unavailable: {argv[0]}: {error}") from error
+        record.update(returncode=completed.returncode, status="passed" if completed.returncode == 0 else "failed",
+                      stdout=completed.stdout.decode("utf-8", "backslashreplace") if binary else completed.stdout,
+                      stderr=completed.stderr.decode("utf-8", "backslashreplace") if binary else completed.stderr)
+        if completed.returncode != 0:
+            raise ValueError(f"command failed ({completed.returncode}): {argv!r}\n{record['stderr']}")
+        return completed.stdout
+
+
+def collect_source_files(root: Path, log: CommandLog, *, native: bool, assets: list[str]) -> tuple[list[tuple[str, Path, int]], dict[str, Any]]:
+    """Use tracked *current* bytes, not git archive's committed version."""
+    root = root.resolve(strict=True)
+    top = Path(log.run(["git", "rev-parse", "--show-toplevel"], root).strip()).resolve()
+    if top != root:
+        raise ValueError("source root is not the actual Git checkout root; a Repomix snapshot is not a release checkout")
+    commit = log.run(["git", "rev-parse", "HEAD"], root).strip()
+    status_text = log.run(["git", "status", "--porcelain=v1", "--untracked-files=normal"], root)
+    tracked_status = log.run(["git", "status", "--porcelain=v1", "--untracked-files=no"], root)
+    entries = log.run(["git", "ls-files", "--stage", "-z"], root, binary=True)
+    tracked: dict[str, str] = {}
+    for entry in entries.split(b"\0"):
+        if not entry:
+            continue
+        header, raw_path = entry.split(b"\t", 1)
+        mode, _oid, stage = header.decode("ascii").split()
+        if stage != "0":
+            raise ValueError("source checkout contains unresolved Git conflicts")
+        name = raw_path.decode("utf-8")
+        safe_relative_path(name, "tracked source")
+        if mode == "160000":
+            raise ValueError(f"source submodule needs an explicit source inventory: {name}")
+        tracked[name] = mode
+    approved = {str(safe_relative_path(value, "approved asset")) for value in assets}
+    if native:
+        approved.update(required_native_assets(root))
+    selected: list[tuple[str, Path, int]] = []
+    excluded: list[str] = []
+    for name in sorted(set(tracked) | approved):
+        if not include_source_path(PurePosixPath(name)):
+            if name in approved:
+                raise ValueError(f"approved asset is excluded by source policy: {name}")
+            excluded.append(name)
+            continue
+        candidate = root / name
+        if not candidate.exists() and not candidate.is_symlink():
+            if name in approved:
+                raise ValueError(f"missing approved asset {name}")
+            continue  # Preserve an intentional dirty deletion; required paths are checked below.
+        generated = False
+        for parent in candidate.parents:
+            if parent == root:
+                break
+            if any((parent / marker).exists() for marker in BUILD_MARKERS):
+                generated = True
+                break
+        if generated:
+            if name in approved:
+                raise ValueError(f"approved asset is inside a generated build/venv tree: {name}")
+            excluded.append(name)
+            continue
+        source = confined_file(root, name, source=True)
+        selected.append((name, source, stat.S_IMODE(source.stat().st_mode) & 0o777))
+    paths = {name for name, _source, _mode in selected}
+    required = {"pyproject.toml", "uv.lock", "src/bike_sim/__init__.py", "README.md"}
+    if native:
+        required |= _NATIVE_REQUIRED | approved
+        for prefix in ("native/src/", "native/cmake/", "native/tests/"):
+            if not any(name.startswith(prefix) for name in paths):
+                raise ValueError(f"missing required tracked native source directory {prefix}")
+    if required - paths:
+        raise ValueError(f"missing tracked/approved required source files {sorted(required - paths)}; restore omitted source/lock inputs or explicitly approve required assets")
+    return selected, {"git_commit": commit, "dirty": bool(status_text) or bool(tracked_status) or bool(approved - tracked.keys()),
+                      "approved_assets": sorted(approved), "excluded": excluded,
+                      "tracked_status_sha256": hashlib.sha256(tracked_status.encode()).hexdigest(),
+                      "index_sha256": hashlib.sha256(entries).hexdigest(),
+                      "source_modes": {name: mode for name, _source, mode in selected}}
+
+
+def _select_locked_wheel(row: dict[str, Any], lock: dict[str, Any], target: dict[str, Any]) -> dict[str, Any]:
+    packages = [item for item in lock.get("package", []) if canonicalize_name(item.get("name", "")) == row["name"] and str(item.get("version")) == row["version"]]
+    if len(packages) != 1:
+        raise ValueError(f"uv.lock: missing or ambiguous exact registry package {row['name']}=={row['version']}")
+    package = packages[0]
+    if "registry" not in package.get("source", {}):
+        raise ValueError(f"uv.lock: source-only/local dependency cannot be bundled as a locked wheel: {row['name']}")
+    rank = {tag: index for index, tag in enumerate(target["accepted_wheel_tags"])}
+    candidates = []
+    for item in package.get("wheels", []):
+        url = item.get("url", "")
+        parts = urllib.parse.urlsplit(url)
+        if parts.scheme != "https" or parts.username or parts.password:
+            raise ValueError(f"uv.lock: require credential-free HTTPS wheel URL for {row['name']}")
+        filename = urllib.parse.unquote(parts.path.rsplit("/", 1)[-1])
+        safe_relative_path(filename, "locked wheel filename")
+        name, version, _build, tags = parse_wheel_filename(filename)
+        if str(name) != row["name"] or str(version) != row["version"]:
+            raise ValueError(f"uv.lock: wheel identity mismatch for {filename}")
+        digest = item.get("hash", "").removeprefix("sha256:")
+        if digest not in row["hashes"]:
+            continue
+        matches = [rank[str(tag)] for tag in tags if str(tag) in rank]
+        if matches:
+            candidates.append((min(matches), filename, {"url": url, "filename": filename, "sha256": digest}))
+    if not candidates:
+        raise ValueError(f"no hash-locked binary wheel matches target for {row['name']}=={row['version']}; source builds/download fallbacks are forbidden")
+    return min(candidates, key=lambda value: (value[0], value[1]))[2]
+
+
+def _download_wheel(item: dict[str, Any], wheelhouse: Path, downloads: list[dict[str, Any]]) -> Path:
+    destination = wheelhouse / item["filename"]
+    record = dict(item, status="running")
+    downloads.append(record)
+    try:
+        with urllib.request.urlopen(item["url"], timeout=60) as response, destination.open("xb") as output:
+            if urllib.parse.urlsplit(response.geturl()).scheme != "https":
+                raise ValueError("wheel redirect downgraded HTTPS")
+            shutil.copyfileobj(response, output)
+        if sha256_file(destination) != item["sha256"]:
+            raise ValueError(f"downloaded wheel SHA256 mismatch: {destination.name}")
+    except Exception as error:
+        record.update(status="failed", error=str(error))
+        raise
+    record["status"] = "passed"
+    return destination
+
+
+def _tool_roots(records: list[dict[str, Any]], project: dict[str, Any]) -> list[str]:
+    versions = {item["wheel"]["distribution"]: item["wheel"]["version"] for item in records}
+    return [f"{name}=={versions[name]}" for name in sorted(TOOL_NAMES)] + project["build-system"]["requires"]
+
+
+def _host_build_tools(records: list[dict[str, Any]], project: dict[str, Any]) -> list[dict[str, Any]]:
+    """Cross-downloads do not make target uv/tools executable on the author."""
+    selected = [record for record in records if record["wheel"]["distribution"] != "uv"]
+    host_tags = {str(tag) for tag in sys_tags()}
+    environment = default_environment()
+    for record in selected:
+        if not host_tags.intersection(record["wheel"]["tags"]):
+            raise ValueError(f"Python-only cross assembly requires host-compatible build tools: {record['wheel']['filename']}")
+        if record["requires_python"] and not SpecifierSet(record["requires_python"]).contains(environment["python_full_version"], prereleases=True):
+            raise ValueError(f"Python-only cross assembly build tool excludes the host Python: {record['wheel']['filename']}")
+    versions = {record["wheel"]["distribution"]: record["wheel"]["version"] for record in selected}
+    roots = [f"{name}=={versions[name]}" for name in sorted(TOOL_NAMES - {"uv"})] + project["build-system"]["requires"]
+    try:
+        validate_dependency_closure(selected, roots, environment)
+    except ValueError as error:
+        raise ValueError(f"Python-only cross assembly host build-tool closure is incomplete: {error}") from error
+    return selected
+
+
+def _json_write(path: Path, value: object) -> None:
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _archive_name(target: dict[str, Any], mode: str, native: bool, legacy_names: bool) -> str:
+    python_tag = "py" + target["python_minor"].replace(".", "")
+    if legacy_names:
+        if native or (target["system"], target["machine"], target["python_minor"]) != ("Linux", "x86_64", "3.13"):
+            raise ValueError("legacy names apply only to explicitly Python-only Linux x64 CPython 3.13 bundles")
+        suffix = "" if mode == "full" else "-slim"
+        return f"bike-sim-offline-{python_tag}-linux-x64{suffix}"
+    system = "linux" if target["system"] == "Linux" else "macos"
+    capability = "native-source" if native else "python-only"
+    return f"bike-sim-offline-{python_tag}-{system}-{target['machine']}-{mode}-{capability}"
+
+
+def _system_prerequisites(target: dict[str, Any], native: bool) -> list[str]:
+    libraries = ([target["libc_floor"], "Linux desktop GLFW/OpenGL/X11 or XWayland libraries for optional viewers"]
+                 if target["system"] == "Linux" else
+                 ["macOS >=14.0 (or the higher deployment target in accepted wheel tags)", "macOS window server for optional mjpython viewers"])
+    if native:
+        libraries += ["preinstalled CMake >=3.27 and Ninja or Make",
+                      "preinstalled strict ISO C++23 compiler and standard library; local CMake feature probes must pass",
+                      "analysis/sanitizer/coverage tools specified by docs/TESTING.md for the development gate"]
+        libraries.append("Apple SDK and Accelerate" if target["system"] == "Darwin" else "matching NumPy ILP64 OpenBLAS runtime provider from the frozen scientific wheel")
+    return libraries
+
+
+def _assert_source_payload_complete(root: Path, rows: list[dict[str, str]], native: bool) -> None:
+    names = {row["path"] for row in rows}
+    actual: set[str] = set()
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            raise ValueError(f"source payload must contain copied regular files, not symlinks: {path.relative_to(root)}")
+        if path.is_file():
+            actual.add(path.relative_to(root).as_posix())
+        elif not path.is_dir():
+            raise ValueError(f"source payload contains nonregular member {path.relative_to(root)}")
+    if actual != names:
+        raise ValueError(f"source inventory differs from payload: missing={sorted(names - actual)}, undeclared={sorted(actual - names)}")
+    for row in rows:
+        path = confined_file(root, row["path"], source=True)
+        if sha256_file(path) != row["sha256"]:
+            raise ValueError(f"source SHA256 mismatch: {row['path']}")
+    if native:
+        assets = required_native_assets(root)
+        if assets - names:
+            raise ValueError(f"missing required native asset inventory {sorted(assets - names)}")
+        # Concrete, literal source/CMake inputs referenced by the build must be
+        # present too. Generated includes with variables are validated by the
+        # local CMake build in T25, not fabricated here.
+        for build_file in [root / "native/CMakeLists.txt", *(root / "native/cmake").rglob("*.cmake")]:
+            text = build_file.read_text(encoding="utf-8")
+            for relative in re.findall(r"(?<![\w])(?:src|tests|cmake)/[A-Za-z0-9_./-]+\.(?:cpp|hpp|h|in|cmake)(?![A-Za-z0-9_.])", text):
+                name = "native/" + relative
+                if name not in names:
+                    raise ValueError(f"missing native build input {name}, referenced by {build_file.relative_to(root)}")
+            for name in re.findall(r"(?<![\w])tools/[A-Za-z0-9_./-]+\.(?:py|sh|cpp|hpp)(?![A-Za-z0-9_.])", text):
+                if name not in names:
+                    raise ValueError(f"missing native build tool {name}, referenced by {build_file.relative_to(root)}")
+
+
+def _compare_project_wheel(path: Path, source_root: Path) -> None:
+    """The compatibility wheel must contain exactly the staged Python sources."""
+    expected = {item.relative_to(source_root / "src").as_posix(): sha256_file(item)
+                for item in (source_root / "src/bike_sim").rglob("*.py") if item.is_file()}
+    if not expected or "bike_sim/__init__.py" not in expected:
+        raise ValueError("Python wheel/source comparison requires a real src/bike_sim source tree")
+    with zipfile.ZipFile(path) as archive:
+        names = archive.namelist()
+        if len(set(names)) != len(names):
+            raise ValueError("Python project wheel contains duplicate members")
+        for name in names:
+            safe_relative_path(name.rstrip("/"), "Python project wheel member")
+        actual = {name: hashlib.sha256(archive.read(name)).hexdigest()
+                  for name in archive.namelist() if name.startswith("bike_sim/") and name.endswith(".py")}
+        if any(name.endswith((".so", ".dylib", ".dll", ".pyd")) for name in archive.namelist()):
+            raise ValueError("Python-only project wheel contains a native binary")
+    if expected != actual:
+        raise ValueError("Python project wheel does not match bundled source bytes")
+
+
+def check_bundle(bundle: Path, *, require_host: bool = False) -> dict[str, Any]:
+    """Validate extracted assembly data without installing, importing or building."""
+    bundle = bundle.resolve(strict=True)
+    if any(path.is_symlink() for path in bundle.rglob("*")):
+        raise ValueError("bundle must contain regular payloads, not symlinks")
+    manifest = validate_bundle_manifest(read_json(confined_file(bundle, "manifest.json")))
+    target = manifest["target"]
+    native = manifest["capabilities"]["native_source_build"]
+    if require_host:
+        if (target["system"], target["machine"], target["python_minor"]) != _host_identity():
+            raise ValueError("bundle target does not match current OS/architecture/Python")
+        actual_tags = {str(tag) for tag in sys_tags()}
+        if any(not actual_tags.intersection(row["tags"]) for row in manifest["wheels"]):
+            raise ValueError("bundle has wheels incompatible with current host tags")
+    source_root = bundle / "project"
+    _assert_source_payload_complete(source_root, manifest["source_files"], native)
+    requirements_path = confined_file(bundle, "requirements.txt")
+    if sha256_file(requirements_path) != manifest["requirements"]["requirements_sha256"]:
+        raise ValueError("requirements.txt hash mismatch")
+    project = tomllib.loads((source_root / "pyproject.toml").read_text(encoding="utf-8"))
+    if (project["project"]["name"], project["project"]["version"]) != (manifest["project"]["name"], manifest["project"]["version"]):
+        raise ValueError("manifest project identity differs from pyproject.toml")
+    report = read_json(confined_file(bundle, "assembly-report.json"))
+    if (not isinstance(report, dict) or type(report.get("schema_version")) is not int
+            or report["schema_version"] != 1 or report.get("installation_qualification") != "pending-T25"
+            or report.get("status") != "assembled-not-installed" or report.get("native_extension_built") is not False):
+        raise ValueError("assembly report must explicitly leave installation qualification pending T25")
+    for filename, key in (("offline-tools.json", "tool_lock_sha256"), ("dependency-closure.json", "dependency_closure_sha256")):
+        if sha256_file(confined_file(bundle, filename)) != report.get(key):
+            raise ValueError(f"assembly report hash mismatch: {filename}")
+    closure = read_json(confined_file(bundle, "dependency-closure.json"))
+    if (not isinstance(closure, dict) or type(closure.get("schema_version")) is not int
+            or closure["schema_version"] != 1 or closure.get("target") != target):
+        raise ValueError("dependency closure schema/target mismatch")
+    environment = closure.get("marker_environment")
+    if not isinstance(environment, dict) or set(environment) != set(default_environment()) or any(not isinstance(value, str) for value in environment.values()):
+        raise ValueError("dependency closure marker environment is incomplete")
+    for key, expected in (("platform_system", target["system"]), ("platform_machine", target["machine"]),
+                          ("python_version", target["python_minor"]), ("implementation_name", "cpython"),
+                          ("sys_platform", "linux" if target["system"] == "Linux" else "darwin"),
+                          ("os_name", "posix"), ("platform_python_implementation", "CPython")):
+        if environment[key] != expected:
+            raise ValueError(f"dependency closure marker target mismatch: {key}")
+    expected_python = python_minor(target["python_minor"])
+    for key in ("python_full_version", "implementation_version"):
+        if Version(environment[key]).release[:2] != expected_python:
+            raise ValueError(f"dependency closure marker target mismatch: {key}")
+    selected = parse_frozen_requirements(requirements_path.read_text(encoding="utf-8"), environment)
+    lock = tomllib.loads((source_root / "uv.lock").read_text(encoding="utf-8"))
+    expected_app = {row["name"]: _select_locked_wheel(row, lock, target) for row in selected}
+    records = closure.get("wheels")
+    if not isinstance(records, list):
+        raise ValueError("dependency closure is missing wheel metadata")
+    by_name: dict[str, dict[str, Any]] = {}
+    for record in records:
+        if not isinstance(record, dict) or set(record) != {"wheel", "requires_dist", "requires_python", "provides_extra", "licenses"}:
+            raise ValueError("invalid wheel metadata in dependency closure")
+        if (not isinstance(record["requires_python"], str)
+                or any(not isinstance(record[field], list) or any(not isinstance(item, str) for item in record[field])
+                       for field in ("requires_dist", "provides_extra"))
+                or not isinstance(record["licenses"], list)):
+            raise ValueError("invalid wheel metadata field types in dependency closure")
+        row = validate_wheel_row(record["wheel"], target)
+        if row["distribution"] in by_name:
+            raise ValueError("duplicate wheel distribution in dependency closure")
+        by_name[row["distribution"]] = record
+    tool_lock = read_json(confined_file(bundle, "offline-tools.json"))
+    if (not isinstance(tool_lock, dict) or set(tool_lock) != {"schema_version", "target", "uv_version", "wheels"}
+            or type(tool_lock["schema_version"]) is not int or tool_lock["schema_version"] != 1):
+        raise ValueError("invalid supplemental tool lock schema")
+    validate_target(tool_lock["target"])
+    for key in ("system", "machine", "python_minor", "implementation"):
+        if tool_lock["target"][key] != target[key]:
+            raise ValueError("supplemental tool lock target mismatch")
+    tool_rows: dict[str, dict[str, Any]] = {}
+    for value in tool_lock["wheels"]:
+        row = validate_wheel_row(value, target)
+        if row["distribution"] in tool_rows:
+            raise ValueError("duplicate distribution in supplemental tool lock")
+        tool_rows[row["distribution"]] = row
+    expected_names = set(expected_app) | set(tool_rows) | (set() if native else {"bike-sim"})
+    if set(by_name) != expected_names:
+        raise ValueError("dependency closure differs from exact application/tool lock distribution set")
+    for name, expected in expected_app.items():
+        actual = by_name[name]["wheel"]
+        if (actual["filename"], actual["sha256"]) != (expected["filename"], expected["sha256"]):
+            raise ValueError(f"wheel does not match frozen uv.lock/export hash: {name}")
+    for name, expected in tool_rows.items():
+        if by_name[name]["wheel"] != expected:
+            raise ValueError(f"wheel differs from supplemental tool lock: {name}")
+    if tool_lock["uv_version"] != manifest["prerequisites"]["uv_version"]:
+        raise ValueError("supplemental uv version differs from manifest")
+    bundled = {row["distribution"]: row for row in manifest["wheels"]}
+    external = {row["distribution"]: row for row in manifest["slim_external"]}
+    if set(bundled) | set(external) != set(by_name):
+        raise ValueError("bundle/external inventory does not close the dependency graph")
+    wheelhouse = bundle / "wheelhouse"
+    actual_filenames = {path.name for path in wheelhouse.iterdir() if path.is_file()}
+    if actual_filenames != {row["filename"] for row in bundled.values()} or any(not path.is_file() or path.is_symlink() for path in wheelhouse.iterdir()):
+        raise ValueError("wheelhouse has missing, undeclared or nonregular payload")
+    for name, row in bundled.items():
+        record = inspect_wheel(confined_file(wheelhouse, row["filename"]), target)
+        if record != by_name[name] or record["wheel"] != row:
+            raise ValueError(f"wheel hash/metadata mismatch: {row['filename']}")
+    for name, row in external.items():
+        if name in tool_rows:
+            raise ValueError(f"slim bundle cannot omit a build/tool dependency: {name}")
+        if row["version"] != by_name[name]["wheel"]["version"]:
+            raise ValueError(f"slim external exact version mismatch: {name}")
+    roots = declared_roots(project, native) + _tool_roots(records, project)
+    if not native:
+        roots.append(f"bike-sim=={project['project']['version']}")
+    if closure.get("roots") != roots:
+        raise ValueError("dependency closure roots differ from actual project/tool requirements")
+    graph = validate_dependency_closure(records, roots, environment)
+    if closure.get("dependency_edges") != graph:
+        raise ValueError("dependency closure edge evidence mismatch")
+    source_report = report.get("source")
+    modes = source_report.get("source_modes") if isinstance(source_report, dict) else None
+    if not isinstance(modes, dict) or set(modes) != {row["path"] for row in manifest["source_files"]}:
+        raise ValueError("source executable-mode inventory is incomplete")
+    for relative, mode in modes.items():
+        if type(mode) is not int or not 0 <= mode <= 0o777 or stat.S_IMODE((source_root / relative).stat().st_mode) != mode:
+            raise ValueError(f"source file mode mismatch: {relative}")
+    if not native:
+        _compare_project_wheel(wheelhouse / bundled["bike-sim"]["filename"], source_root)
+    fixed_files = {"manifest.json", "requirements.txt", "offline-tools.json", "dependency-closure.json", "assembly-report.json", "README.md"}
+    if {path.name for path in bundle.iterdir()} != fixed_files | {"project", "wheelhouse"}:
+        raise ValueError("bundle root contains undeclared or missing files")
+    for name in fixed_files:
+        confined_file(bundle, name)
     return manifest
+
+
+def assemble(args: argparse.Namespace) -> Path:
+    root = args.project.resolve(strict=True)
+    # Fail before network, build, or output creation when an extraction omitted
+    # source inputs. Restoring the actual lock is the owner's responsibility.
+    if not (root / "uv.lock").is_file():
+        raise ValueError("uv.lock is absent: this source snapshot cannot assemble frozen bundles; restore the actual checkout's committed lock, never regenerate it for this operation")
+    project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    if project["project"]["name"] != "bike-sim":
+        raise ValueError("expected bike-sim project root")
+    target = select_target(args.target, args.python, args.native)
+    environment = marker_environment(target)
+    if not SpecifierSet(project["project"]["requires-python"]).contains(environment["python_full_version"], prereleases=True):
+        raise ValueError("project requires-python excludes requested target")
+    declared_roots(project, args.native)
+    tool_path = args.tool_lock or root / "packaging/offline-tools.json"
+    tool_path = tool_path.resolve()
+    tool_wheelhouse = (args.tool_wheelhouse or tool_path.parent / "offline-tool-wheels").resolve()
+    tool_lock, tool_records = load_tool_lock(tool_path, tool_wheelhouse, target, project)
+    host_build_tools = [] if args.native else _host_build_tools(tool_records, project)
+    name = _archive_name(target, args.mode, args.native, args.legacy_names)
+    output = args.output.resolve()
+    final = output / (name + ".tar.gz")
+    if final.exists():
+        raise ValueError(f"refusing to overwrite existing bundle {final}")
+    log = CommandLog()
+    sources, source_evidence = collect_source_files(root, log, native=args.native, assets=args.asset)
+    source_initial = {name: sha256_file(path) for name, path, _mode in sources}
+    uv = shutil.which("uv")
+    if uv is None:
+        raise ValueError(f"preinstall qualified uv=={tool_lock['uv_version']}; assembler never bootstraps or upgrades its own runner")
+    actual_uv = log.run([uv, "--version"], root).strip().split()
+    if len(actual_uv) < 2 or actual_uv[0] != "uv" or actual_uv[1] != tool_lock["uv_version"]:
+        raise ValueError(f"invoked uv version differs from exact supplemental tool lock {tool_lock['uv_version']}")
+    output.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(prefix=".offline-build-", dir=output))
+    bundle = work / name
+    bundle.mkdir()
+    staged = bundle / "project"
+    staged.mkdir()
+    all_wheels = work / "all-wheels"
+    all_wheels.mkdir()
+    wheelhouse = bundle / "wheelhouse"
+    wheelhouse.mkdir()
+    report: dict[str, Any] = {"schema_version": 1, "status": "assembling", "installation_qualification": "pending-T25",
+                              "commands": log.commands, "downloads": [], "source": source_evidence,
+                              "native_extension_built": False, "tool_lock_sha256": sha256_file(tool_path)}
+    try:
+        rows = []
+        for relative, source, mode in sources:
+            destination = staged / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, destination)
+            destination.chmod(mode)
+            digest = sha256_file(destination)
+            if digest != source_initial[relative]:
+                raise ValueError(f"source changed while staging: {relative}")
+            rows.append({"path": relative, "sha256": digest})
+        _assert_source_payload_complete(staged, rows, args.native)
+        shutil.copyfile(tool_path, bundle / "offline-tools.json")
+        lock_sha = sha256_file(staged / "uv.lock")
+        tool_env = dict(os.environ, UV_PYTHON_DOWNLOADS="never", UV_CACHE_DIR=str(work / "uv-cache"),
+                        UV_PROJECT_ENVIRONMENT=str(work / "tool-environment"), PIP_CONFIG_FILE=os.devnull)
+        # --check proves the current (possibly dirty) pyproject still matches
+        # the lock. --frozen alone would silently accept stale dependency data.
+        log.run([uv, "lock", "--check", "--offline", "--python", sys.executable], staged, env=tool_env)
+        requirements = bundle / "requirements.txt"
+        command = [uv, "export", "--frozen", "--no-emit-project", "--output-file", str(requirements)]
+        command += ["--group", "native", "--group", "dev"] if args.native else ["--no-dev"]
+        log.run(command, staged, env=tool_env)
+        if sha256_file(staged / "uv.lock") != lock_sha:
+            raise ValueError("frozen export unexpectedly changed uv.lock")
+        resolved = parse_frozen_requirements(requirements.read_text(encoding="utf-8"), environment)
+        lock = tomllib.loads((staged / "uv.lock").read_text(encoding="utf-8"))
+        records: dict[str, dict[str, Any]] = {}
+        for requirement in resolved:
+            item = _select_locked_wheel(requirement, lock, target)
+            wheel = _download_wheel(item, all_wheels, report["downloads"])
+            record = inspect_wheel(wheel, target)
+            records[record["wheel"]["distribution"]] = record
+        for record in tool_records:
+            row = record["wheel"]
+            if row["distribution"] in records:
+                if records[row["distribution"]]["wheel"] != row:
+                    raise ValueError(f"tool/application lock conflict for {row['distribution']}; select the same exact locked wheel")
+            else:
+                shutil.copyfile(tool_wheelhouse / row["filename"], all_wheels / row["filename"])
+                records[row["distribution"]] = record
+        if not args.native:
+            build_source = work / "wheel-project"
+            shutil.copytree(staged, build_source)
+            dist = work / "project-wheel"
+            dist.mkdir()
+            command = [uv, "run", "--offline", "--no-project", "--python", sys.executable]
+            for record in host_build_tools:
+                command += ["--with", str(all_wheels / record["wheel"]["filename"])]
+            command += ["python", "-m", "pip", "wheel", "--no-index", "--no-deps", "--no-build-isolation",
+                        "--wheel-dir", str(dist), str(build_source)]
+            log.run(command, work, env=tool_env)
+            built = list(dist.glob("*.whl"))
+            if len(built) != 1:
+                raise ValueError("Python-only project build must produce exactly one wheel")
+            record = inspect_wheel(built[0], target)
+            if record["wheel"]["distribution"] != "bike-sim" or record["wheel"]["tags"] != ["py3-none-any"]:
+                raise ValueError("compatibility route must produce a pure Python bike-sim wheel")
+            _compare_project_wheel(built[0], staged)
+            shutil.copyfile(built[0], all_wheels / built[0].name)
+            records["bike-sim"] = record
+        ordered_records = [records[name] for name in sorted(records)]
+        roots = declared_roots(project, args.native) + _tool_roots(ordered_records, project)
+        if not args.native:
+            roots.append(f"bike-sim=={project['project']['version']}")
+        graph = validate_dependency_closure(ordered_records, roots, environment)
+        omitted = {canonicalize_name(name, validate=True) for name in (args.slim_external or DEFAULT_SLIM_EXTERNAL)} if args.mode == "slim" else set()
+        tool_names = {record["wheel"]["distribution"] for record in tool_records}
+        if omitted - records.keys() or omitted.intersection({"bike-sim", "nanobind", "hypothesis", "threadpoolctl"} | tool_names):
+            raise ValueError(f"invalid slim omissions {sorted(omitted)}; external packages must be active scientific dependencies, not project/build/development tools")
+        if args.mode == "full" and args.slim_external:
+            raise ValueError("--slim-external requires --mode slim")
+        included = []
+        for record in ordered_records:
+            row = record["wheel"]
+            if row["distribution"] not in omitted:
+                shutil.copyfile(all_wheels / row["filename"], wheelhouse / row["filename"])
+                included.append(row)
+        manifest = {"schema_version": SCHEMA_VERSION,
+                    "project": {"name": project["project"]["name"], "version": project["project"]["version"],
+                                "git_commit": source_evidence["git_commit"], "dirty": source_evidence["dirty"],
+                                "python_source_sha256": source_digest(rows, "src/"), "native_source_sha256": source_digest(rows, "native/")},
+                    "target": target, "mode": args.mode,
+                    "capabilities": {"python": True, "native_source_build": args.native, "development": args.native,
+                                     "gui": {"glfw", "pyopengl", "matplotlib"} <= records.keys()},
+                    "requirements": {"lock_sha256": lock_sha, "requirements_sha256": sha256_file(requirements),
+                                     "groups": ["native", "dev"] if args.native else []},
+                    "wheels": included, "source_files": rows,
+                    "prerequisites": {"python": f"CPython {target['python_minor']}.*",
+                                      "compiler_feature_profile": "bike-cxx23-strict-local-probes-required" if args.native else None,
+                                      "cmake_minimum": "3.27" if args.native else None,
+                                      "uv_version": tool_lock["uv_version"], "system_libraries": _system_prerequisites(target, args.native)},
+                    "slim_external": [{"distribution": name, "version": records[name]["wheel"]["version"],
+                                       "qualification_profile": "native-exact-provider-pending-T25" if args.native else "python-exact-import-pending-T25"}
+                                      for name in sorted(omitted)]}
+        validate_bundle_manifest(manifest)
+        _json_write(bundle / "manifest.json", manifest)
+        _json_write(bundle / "dependency-closure.json", {"schema_version": 1, "target": target, "marker_environment": environment,
+                                                        "roots": roots, "wheels": ordered_records, "dependency_edges": graph})
+        report["dependency_closure_sha256"] = sha256_file(bundle / "dependency-closure.json")
+        report["status"] = "assembled-not-installed"
+        _json_write(bundle / "assembly-report.json", report)
+        readme = staged / "packaging" / f"OFFLINE_README_{args.mode}.md"
+        if not readme.is_file():
+            raise ValueError(f"missing tracked offline instructions: {readme.name}")
+        shutil.copyfile(readme, bundle / "README.md")
+        check_bundle(bundle)
+        for relative, source, mode in sources:
+            if sha256_file(source) != source_initial[relative] or stat.S_IMODE(source.stat().st_mode) != mode:
+                raise ValueError(f"source changed during assembly; rerun from stable checkout: {relative}")
+        if log.run(["git", "rev-parse", "HEAD"], root).strip() != source_evidence["git_commit"]:
+            raise ValueError("Git HEAD changed during assembly")
+        final_status = log.run(["git", "status", "--porcelain=v1", "--untracked-files=no"], root)
+        final_index = log.run(["git", "ls-files", "--stage", "-z"], root, binary=True)
+        if (hashlib.sha256(final_status.encode()).hexdigest() != source_evidence["tracked_status_sha256"]
+                or hashlib.sha256(final_index).hexdigest() != source_evidence["index_sha256"]):
+            raise ValueError("Git tracked status/index changed during assembly; retry from a stable checkout")
+        _json_write(bundle / "assembly-report.json", report)
+        # Only this explicitly inventoried directory goes into the archive;
+        # online caches, Python wheel build files and logs outside it stay out.
+        candidate = work / (name + ".tar.gz")
+        with tarfile.open(candidate, "w:gz", format=tarfile.PAX_FORMAT) as archive:
+            for path in sorted(bundle.rglob("*")):
+                if path.is_file():
+                    archive.add(path, arcname=f"{name}/{path.relative_to(bundle).as_posix()}", recursive=False)
+        # Hard-link publication is atomic and refuses an existing destination.
+        # The temporary build root lives on the same filesystem as --output.
+        os.link(candidate, final)
+        shutil.rmtree(work)
+        return final
+    except Exception as error:
+        report.update(status="failed", error=str(error))
+        _json_write(work / "assembly-failure.json", report)
+        raise ValueError(f"offline assembly failed; diagnostics retained at {work / 'assembly-failure.json'}: {error}") from error
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    create = subparsers.add_parser("create", help="package supplied files; no build, resolver or network")
-    create.add_argument("--source", required=True, type=Path)
-    create.add_argument("--wheelhouse", required=True, type=Path)
-    create.add_argument("--output", required=True, type=Path)
-    create.add_argument("--target", choices=tuple(TARGETS), required=True)
-    create.add_argument("--profile", choices=("full", "slim"), required=True)
-    create.add_argument("--preinstalled", action="append", default=[], metavar="NAME==VERSION")
-    check = subparsers.add_parser("check", help="validate an extracted bundle without executing it")
-    check.add_argument("bundle", type=Path)
+    parser.add_argument("--project", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--target", choices=("host", "linux-x86_64", "macos-arm64"), default="host")
+    parser.add_argument("--python", default=f"{sys.version_info.major}.{sys.version_info.minor}")
+    parser.add_argument("--mode", choices=("full", "slim"), default="full")
+    parser.add_argument("--native", action="store_true", help="include frozen native+dev source/build capability; requires target host")
+    parser.add_argument("--output", type=Path, default=Path("output/offline-bundles"))
+    parser.add_argument("--tool-lock", type=Path, help="exact local tool lock; default packaging/offline-tools.json")
+    parser.add_argument("--tool-wheelhouse", type=Path, help="validated tool wheels; default offline-tool-wheels beside tool lock")
+    parser.add_argument("--asset", action="append", default=[], help="explicitly approved required source asset relative to --project")
+    parser.add_argument("--slim-external", action="append", help="explicit exact-provider omission; repeat for each dependency")
+    parser.add_argument("--legacy-names", action="store_true", help="reconstructed Linux cp313 Python-only archive names")
     args = parser.parse_args(argv)
     try:
-        if args.command == "create":
-            manifest = create_bundle(args.source, args.wheelhouse, args.output, target=TARGETS[args.target],
-                                     profile=args.profile, preinstalled=args.preinstalled)
-        else:
-            manifest = validate_bundle(args.bundle)
-        print(json.dumps({"content_valid": True, "profile": manifest["profile"], "target": manifest["target"],
-                          "file_count": len(manifest["files"]), "qualification": manifest["qualification"]}, sort_keys=True))
-        return 0
-    except (BundleError, OSError, BadZipFile) as exc:
-        print(json.dumps({"content_valid": False, "error": str(exc)}, sort_keys=True), file=sys.stderr)
+        result = assemble(args)
+    except (OSError, ValueError, KeyError, TypeError, zipfile.BadZipFile, tomllib.TOMLDecodeError) as error:
+        print(f"offline bundle: {error}", file=sys.stderr)
         return 1
+    print(f"Assembled {result}; installation/native/GUI qualification remains pending T25/T19.")
+    return 0
 
 
 if __name__ == "__main__":

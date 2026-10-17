@@ -1,0 +1,159 @@
+tools/run_tests.sh:102:  if [[ "$system_name" == Darwin ]]; then
+tools/run_tests.sh:103:    preload_name=DYLD_INSERT_LIBRARIES
+tools/run_tests.sh:105:      runtime_name=libclang_rt.asan_osx_dynamic.dylib
+tools/run_tests.sh:107:      runtime_name=libclang_rt.rtsan_osx_dynamic.dylib
+native/src/numeric_numpy.hpp:3:// (aarch64 + Accelerate): SIMD/NEON kernels scalarized element by
+tools/check_native_contracts.py:115:        raise ContractError('native check context has no libc++ hardening record')
+tools/check_native_contracts.py:119:        raise ContractError('native libc++ hardening support must be boolean')
+tools/check_native_contracts.py:123:            raise ContractError(f'unsupported configured libc++ hardening mode: {mode!r}')
+tools/check_native_contracts.py:140:            violations.append(f'{target}: missing libc++ hardening definition {required_definition}')
+tools/check_native_contracts.py:280:        preload_name = 'DYLD_INSERT_LIBRARIES' if sys.platform == 'darwin' else 'LD_PRELOAD'
+tools/native_checks.py:197:        raise CheckError("native check context has no libc++ hardening record")
+tools/native_checks.py:199:        raise CheckError("native check libc++ hardening support must be boolean")
+tools/native_checks.py:201:        raise CheckError("native check context has an invalid libc++ hardening mode")
+tools/native_checks.py:203:        raise CheckError("native check context has an invalid requested libc++ hardening mode")
+tools/native_checks.py:205:        raise CheckError("native check libc++ hardening support and selected mode disagree")
+tools/native_checks.py:207:        raise CheckError("native check libc++ hardening mode differs from its configured request")
+tools/native_checks.py:1295:        "#ifndef _LIBCPP_VERSION\n#error not libc++\n#endif\n"
+tools/native_checks.py:1343:    """Exercise SDK selection and compare libc++ hardening modes on real binaries."""
+tools/native_checks.py:1432:        options=(f"-DCMAKE_OSX_SYSROOT={sdk_request}",),
+tools/native_checks.py:1455:        options=(f"-DCMAKE_OSX_SYSROOT={missing_sdk}",),
+tools/native_checks.py:1467:    default_environment.pop("CMAKE_OSX_SYSROOT", None)
+tools/native_checks.py:1495:    fake_xcrun = fake_bin / "xcrun"
+tools/native_checks.py:1496:    fake_xcrun.write_text(
+tools/native_checks.py:1498:        'if [ "${1:-}" = "--sdk" ] && [ "${2:-}" = "macosx" ] && [ "${3:-}" = "--show-sdk-path" ]; then\n'
+tools/native_checks.py:1501:        'exec /usr/bin/xcrun "$@"\n'
+tools/native_checks.py:1503:    fake_xcrun.chmod(0o755)
+tools/native_checks.py:1615:                    "-stdlib=libc++",
+tools/native_checks.py:1650:                        "assertion_category": "libc++ std::vector element access",
+tools/native_checks.py:1663:                    "category": "libc++ std::vector element access",
+tools/native_checks.py:1708:            "The selected compiler does not use libc++; native libc++ hardening modes cannot be measured."
+native/src/pneumatic/carcass.cpp:8://   np.dot(a, b)                    -> blas::ddot (Accelerate CBLAS;
+native/src/numeric_sum.hpp:16:// `a @ b`/`np.dot` are NOT here on purpose: they dispatch to Accelerate
+native/src/cblas_abi.hpp:6:// Accelerate, whose ddot/dgemv/dgemm use vectorized multi-accumulator
+native/src/cblas_abi.hpp:15:// Why a hand-written declaration: <Accelerate/Accelerate.h> marks these
+native/src/cblas_abi.hpp:29:// these prototypes would silently disagree with the Accelerate ABI.
+native/src/cblas_abi.hpp:32:// The classic CBLAS interface is 32-bit-int — the same width Accelerate
+native/src/cblas_abi.hpp:39:    // the same values Accelerate's vecLib ABI accepts). enum class
+native/src/cblas_abi.hpp:60:    // identical to the Accelerate exports.
+native/src/cblas_abi.hpp:97:    // both the extension and the contract binary link Accelerate, so a
+native/src/pneumatic/model.cpp:15://   np.dot(a, b) / a @ b                    -> blas::ddot — Accelerate's
+src/bike_sim/sim/realtime_measurement.py:195:                       'actual macOS viewer and 1x mean achieved RTF >= 0.95'],
+src/bike_sim/cli/ride.py:812:        from bike_sim.sim.playground import ensure_macos_mjpython
+src/bike_sim/cli/ride.py:813:        ensure_macos_mjpython()
+tools/native_coverage.sh:39:    if command -v xcrun >/dev/null 2>&1; then
+tools/native_coverage.sh:40:      local resolve_log="$LOG_DIR/xcrun-$tool_name.log"
+tools/native_coverage.sh:41:      if ! value="$(xcrun --find "$tool_name" 2>"$resolve_log")"; then
+tools/native_coverage.sh:43:        printf 'xcrun could not resolve %s; log retained at %s\n' "$tool_name" "$resolve_log" >&2
+native/src/rider/spindle_controller.cpp:91:// `R.T @ v` dispatches to Accelerate's transposed dgemv, whose column dot
+native/src/rider/spindle_controller.cpp:110:// r = lhs @ rhs (row-major). numpy's `A @ B` dispatches to Accelerate's
+src/bike_sim/cli/replay.py:49:        from bike_sim.sim.playground import ensure_macos_mjpython
+src/bike_sim/cli/replay.py:50:        ensure_macos_mjpython()
+src/bike_sim/cli/replay.py:57:            from bike_sim.sim.playground import ensure_macos_mjpython
+src/bike_sim/cli/replay.py:58:            ensure_macos_mjpython()
+native/src/drivetrain/transmission.cpp:192:    // one warmup — libc++/MSVC/libstdc++ assign-into-capacity never
+native/src/rider/attachment_wrench.cpp:9://     inputs (verified against the pinned 3.12.0 dylib: out-of-range
+native/src/rider/attachment_wrench.cpp:18://   * Reconstruction/matvec go through Accelerate's legacy CBLAS — the
+native/src/rider/attachment_wrench.cpp:102:        // np.linalg.norm(v) — sqrt(v @ v) through Accelerate's ddot, the
+native/src/rider/attachment_wrench.cpp:230:        // engine zero-fills; verified on the pinned dylib) — without
+native/src/rider/least_squares.cpp:1:// least_squares.cpp — Accelerate ILP64 DGELSD driver.
+native/src/rider/least_squares.cpp:4:// <Accelerate/Accelerate.h>: the SDK header marks the LAPACK surface
+native/src/rider/least_squares.cpp:30://   preserves it, but never fails the call — ambient flags (Accelerate
+native/src/rider/least_squares.cpp:197:        // flags (e.g. left by Accelerate BLAS internals during model
+native/src/rider/least_squares.hpp:1:// least_squares.hpp — reusable Accelerate ILP64 DGELSD workspace.
+native/src/rider/least_squares.hpp:5:// Accelerate $NEWLAPACK$ILP64 ABI on this platform. This workspace
+native/src/rider/least_squares.hpp:41:    // Accelerate's ILP64 Fortran integer (__LAPACK_int == long under
+native/src/rider/attachment_wrench.hpp:14:// overlap, dgemv/ddot through Accelerate's legacy CBLAS (the same entry
+native/src/rider/attachment_wrench.hpp:15:// points numpy's matvec/matmul/norm dispatch to), the Accelerate ILP64
+native/src/rider/equality_reactions.cpp:133:        // slice's x.dot(x) runs through Accelerate's ddot on both sides.
+src/bike_sim/sim/__init__.py:14:    ensure_macos_mjpython,
+src/bike_sim/sim/__init__.py:27:    "ensure_macos_mjpython",
+native/src/tyre/profile.hpp:14://   (c-p) @ n  1-D @ 1-D   — np.dot → Accelerate cblas_ddot; called with
+native/src/writers/distributed_tire.cpp:9:// cblas_dgemm — verified bitwise against Accelerate (0 of 1536 elements
+native/src/writers/rider_contacts.hpp:20:// line; `a @ b`/`A @ x`/`np.linalg.norm` route through the Accelerate CBLAS
+src/bike_sim/sim/ride/async_close.py:198:    mujoco or Objective-C, which is the safe fork pattern on macOS.
+native/src/writers/resistance.cpp:7:// Accelerate, whose ddot/dgemv use a vectorized multi-accumulator order a
+native/src/writers/resistance.cpp:10:// cblas_abi.hpp because <Accelerate/Accelerate.h> marks them deprecated
+native/src/writers/tire.cpp:7:// Accelerate's ddot/dgemv, and this TU invokes the same CBLAS symbols.
+native/src/writers/resistance.hpp:5:// source lowers to an Apple Accelerate CBLAS call by numpy — the writer
+native/CMakeLists.txt:4:if(NOT DEFINED CMAKE_OSX_SYSROOT OR CMAKE_OSX_SYSROOT STREQUAL "")
+native/CMakeLists.txt:6:    COMMAND xcrun --sdk macosx --show-sdk-path
+native/CMakeLists.txt:18:    COMMAND xcode-select -p
+native/CMakeLists.txt:23:    file(GLOB _native_xcode_sdks LIST_DIRECTORIES TRUE
+native/CMakeLists.txt:25:    list(SORT _native_xcode_sdks COMPARE NATURAL ORDER DESCENDING)
+native/CMakeLists.txt:26:    list(APPEND _native_sdk_candidates ${_native_xcode_sdks})
+native/CMakeLists.txt:32:    message(STATUS "xcrun's default macOS SDK was unavailable: ${_native_default_sdk_error}")
+native/CMakeLists.txt:36:  set(_native_sdk_requested "${CMAKE_OSX_SYSROOT}")
+native/CMakeLists.txt:37:  if(IS_DIRECTORY "${CMAKE_OSX_SYSROOT}")
+native/CMakeLists.txt:38:    get_filename_component(_native_explicit_sdk "${CMAKE_OSX_SYSROOT}" REALPATH)
+native/CMakeLists.txt:39:  elseif(CMAKE_OSX_SYSROOT MATCHES "^[A-Za-z0-9_.-]+$")
+native/CMakeLists.txt:41:      COMMAND xcrun --sdk "${CMAKE_OSX_SYSROOT}" --show-sdk-path
+native/CMakeLists.txt:48:        "Explicit CMAKE_OSX_SYSROOT '${CMAKE_OSX_SYSROOT}' is unavailable: ${_native_explicit_sdk_error}")
+native/CMakeLists.txt:52:    message(FATAL_ERROR "Explicit CMAKE_OSX_SYSROOT does not exist: ${CMAKE_OSX_SYSROOT}")
+native/CMakeLists.txt:68:  "#include <Accelerate/Accelerate.h>\n"
+native/CMakeLists.txt:71:foreach(_architecture IN LISTS CMAKE_OSX_ARCHITECTURES)
+native/CMakeLists.txt:95:      -framework Accelerate -o "${_native_sdk_probe_binary}"
+native/CMakeLists.txt:102:      set(CMAKE_OSX_SYSROOT "${_native_sdk_path}" CACHE PATH "macOS SDK for bike_native" FORCE)
+native/CMakeLists.txt:107:      set(CMAKE_OSX_SYSROOT "${_native_sdk_path}")
+native/CMakeLists.txt:117:      "Explicit CMAKE_OSX_SYSROOT '${_native_sdk_requested}' is incompatible with compiler '${_native_sdk_probe_compiler}':${_native_sdk_probe_failures}")
+native/CMakeLists.txt:120:    "No installed macOS SDK is compatible with compiler '${_native_sdk_probe_compiler}':${_native_sdk_probe_failures}")
+native/CMakeLists.txt:129:set(BIKE_LIBCPP_HARDENING "EXTENSIVE" CACHE STRING "libc++ hardening mode")
+native/CMakeLists.txt:142:  "#ifndef __MAC_OS_X_VERSION_MIN_REQUIRED\n#error No compatible macOS SDK selected\n#endif\n"
+native/CMakeLists.txt:149:    "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
+native/CMakeLists.txt:155:    "Configured C++ compiler '${CMAKE_CXX_COMPILER}' is incompatible with SDK '${CMAKE_OSX_SYSROOT}':\n${_native_sdk_probe_output}")
+native/CMakeLists.txt:184:set(CMAKE_REQUIRED_LIBRARIES "${MJ_DIR}/libmujoco.3.12.0.dylib")
+native/CMakeLists.txt:221:  "#ifndef _LIBCPP_VERSION\n#error The configured standard library is not libc++\n#endif\n"
+native/CMakeLists.txt:228:    "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
+native/CMakeLists.txt:239:    "#error libc++ omitted the selected hardening mode macro\n#endif\n"
+native/CMakeLists.txt:240:    "#ifndef _LIBCPP_HARDENING_MODE\n#error libc++ omitted the hardening mode selection\n#endif\n"
+native/CMakeLists.txt:242:    "#error libc++ did not accept the selected hardening mode\n#endif\n"
+native/CMakeLists.txt:250:      "-DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}"
+native/CMakeLists.txt:258:      "Configured libc++ does not support hardening mode ${BIKE_LIBCPP_HARDENING}:\n${_native_libcpp_hardening_output}")
+native/CMakeLists.txt:263:  message(STATUS "libc++ hardening is not applied: configured standard library is not libc++")
+native/CMakeLists.txt:379:  #     -fsanitize=thread (compiles, runtime aborts on arm64-darwin)
+native/CMakeLists.txt:393:# libc++ hardening modes do not change container layout. Keep the selected mode
+native/CMakeLists.txt:436:#     -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DNATIVE_RTSAN=ON
+native/CMakeLists.txt:437:# and run native tests with the rtsan dylib in DYLD_INSERT_LIBRARIES, same
+native/CMakeLists.txt:528:target_link_libraries(bike_native_engine PUBLIC "${MJ_DIR}/libmujoco.3.12.0.dylib")
+native/CMakeLists.txt:557:# chain.cpp's GeometryWorkspace resolves CBLAS through Apple Accelerate, the
+native/CMakeLists.txt:559:target_link_libraries(native_contract_tests PRIVATE "-framework Accelerate")
+native/CMakeLists.txt:562:    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:563:    "${MJ_DIR}/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:590:# tyre/distance.cpp resolves CBLAS through Apple Accelerate, the same BLAS
+native/CMakeLists.txt:592:target_link_libraries(native_distance_tests PRIVATE "-framework Accelerate")
+native/CMakeLists.txt:595:    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:596:    "${MJ_DIR}/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:623:target_link_libraries(native_station_tests PRIVATE "-framework Accelerate")
+native/CMakeLists.txt:626:    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:627:    "${MJ_DIR}/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:666:    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:667:    "${MJ_DIR}/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:693:target_link_libraries(bike_native PRIVATE "${MJ_DIR}/libmujoco.3.12.0.dylib")
+native/CMakeLists.txt:696:# resolve to on this platform (numpy's BLAS is Apple Accelerate — see
+native/CMakeLists.txt:699:target_link_libraries(bike_native PRIVATE "-framework Accelerate")
+native/CMakeLists.txt:701:# The dylib's install name (@rpath/mujoco.framework/...) is unresolvable on
+native/CMakeLists.txt:702:# its own — the wheel ships the dylib flat under mujoco/, with no framework
+native/CMakeLists.txt:708:    "@rpath/mujoco.framework/Versions/A/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:709:    "${MJ_DIR}/libmujoco.3.12.0.dylib"
+native/CMakeLists.txt:779:get_filename_component(_native_mujoco_library "${MJ_DIR}/libmujoco.3.12.0.dylib" REALPATH)
+native/CMakeLists.txt:910:_native_json_array(_native_library_paths_json "${_native_mujoco_library}" "${_native_sdk_path}/System/Library/Frameworks/Accelerate.framework")
+native/CMakeLists.txt:922:set(_native_tool_defaults "{\"tidy\":\"/opt/homebrew/opt/llvm/bin/clang-tidy\",\"analyzer\":\"/opt/homebrew/opt/llvm/bin/clang++\",\"cppcheck\":\"cppcheck\",\"gxx\":\"g++-16\"}")
+src/bike_sim/sim/research/viewer.py:210:        from bike_sim.sim.playground import ensure_macos_mjpython
+src/bike_sim/sim/research/viewer.py:211:        ensure_macos_mjpython()
+src/bike_sim/sim/playground.py:314:def ensure_macos_mjpython() -> None:
+src/bike_sim/sim/playground.py:316:    On macOS, MuJoCo's GLFW interactive viewer requires running under `mjpython`
+src/bike_sim/sim/playground.py:319:    if sys.platform != "darwin":
+src/bike_sim/sim/playground.py:335:            if os.path.exists(os.path.join(lib_dir, f"libpython{version}.dylib")):
+src/bike_sim/sim/playground.py:336:                fallback = os.environ.get("DYLD_FALLBACK_LIBRARY_PATH")
+src/bike_sim/sim/playground.py:337:                os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = (
+src/bike_sim/sim/playground.py:354:    ensure_macos_mjpython()
+native/tests/test_contracts.cpp:1958:    // capacity and every boxed name fits libc++'s short-string buffer, so
+native/tests/test_contracts.cpp:3357:        // Past libc++'s inline string capacity — a heap write would
+native/tests/allocation_faults.hpp:8:// binary's own translation units. Library images (libmujoco, libc++) bind
+src/bike_sim/sim/ride/playback_viewer.py:116:    from bike_sim.sim.playground import ensure_macos_mjpython
+src/bike_sim/sim/ride/playback_viewer.py:118:    # On macOS the GLFW window must run under mjpython on the main OS thread; the
+src/bike_sim/sim/ride/playback_viewer.py:120:    ensure_macos_mjpython()
+src/bike_sim/sim/ride/viewer.py:142:    from bike_sim.sim.playground import ensure_macos_mjpython
+src/bike_sim/sim/ride/viewer.py:144:    ensure_macos_mjpython()
+src/bike_sim/sim/ride/viewer.py:242:    from bike_sim.sim.playground import ensure_macos_mjpython
+src/bike_sim/sim/ride/viewer.py:248:    ensure_macos_mjpython()

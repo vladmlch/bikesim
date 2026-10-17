@@ -1,0 +1,44 @@
+{
+  "archive": "repomix-output2.xml.zip",
+  "archive_sha256": "cd44e1ad291c887e8cf91303b153ccc9c016284b341b6db4efbdb8f059e4fecc",
+  "repomix_file": "repomix-output.xml",
+  "extracted_files": 1072,
+  "unique_paths": 1072,
+  "content_validation": "1072/1072 extracted text bodies match packed text bodies",
+  "counts_by_root": {
+    ".claude": 317,
+    ".devin": 1,
+    ".gitignore": 1,
+    ".mcp.json": 1,
+    ".scratch": 29,
+    "AGENTS.md": 1,
+    "CLAUDE.md": 1,
+    "CONTEXT.md": 1,
+    "G5_MODE_SEARCH_README.md": 1,
+    "README.md": 1,
+    "conftest.py": 1,
+    "docs": 68,
+    "examples": 12,
+    "native": 159,
+    "packaging": 4,
+    "project": 2,
+    "pyproject.toml": 1,
+    "src": 283,
+    "tests": 154,
+    "tools": 34
+  },
+  "not_present_in_snapshot": [
+    "uv.lock",
+    ".python-version",
+    ".github/"
+  ],
+  "source_snapshot_only": true,
+  "platform_probe": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "python": "3.13.5",
+    "command": "cmake -S native -B /mnt/data/audit-linux-build",
+    "exit_code": 1,
+    "error": "No installed macOS SDK is compatible with compiler '/usr/bin/c++'"
+  }
+}

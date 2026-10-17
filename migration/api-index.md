@@ -1014,3 +1014,7 @@ Final deletion transaction:
 4. rebuild, test, package and audit from a new clean native-only worktree.
 The immutable reference tag and frozen data fixtures remain available as history/data.
 ```
+
+## Native startup source delivery — 2026-10-17
+
+The T16–T18/T20–T25 interfaces now have native implementation sources and nine authored migration regressions. Exact produced/helper boundaries are recorded in [native-startup-implementation.json](native-startup-implementation.json); usage is in [docs/native-startup.md](../docs/native-startup.md). Compilation and execution were prohibited for this delivery, so these additions do not close acceptance or deletion gates.

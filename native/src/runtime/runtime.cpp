@@ -382,7 +382,7 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
 // constructor — carries a frame too large for the debug stack budget, so
 // it owns a separate function scope.
 std::unique_ptr<PhysicalStep>
-make_physical_step(Stepper &stepper, const RuntimeConfig &config) {
+build_physical_step(Stepper &stepper, const RuntimeConfig &config) {
     // The compiled terrain cross-section is constant model geometry — the
     // tire writer's own copy was read from this same post-forward data.
     std::vector<std::array<double, 2>> vertices =
@@ -402,6 +402,11 @@ make_physical_step(Stepper &stepper, const RuntimeConfig &config) {
 }
 
 } // namespace
+
+std::unique_ptr<PhysicalStep>
+make_physical_step(Stepper& stepper, const RuntimeConfig& config) {
+    return build_physical_step(stepper, config);
+}
 
 // One-shot bootstrap decode — like bind_drivetrain, its frame is decode
 // temporaries rather than per-step code, so the frame guard is waived.

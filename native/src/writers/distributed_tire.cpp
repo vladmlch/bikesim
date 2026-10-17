@@ -318,6 +318,12 @@ const std::vector<std::string> &DistributedTireWriter::state_names() const {
 
 void DistributedTireWriter::set_state(std::span<const std::string> names,
                                       std::span<const double> row) {
+    prepare_state(names, row);
+    commit_prepared_state();
+}
+
+void DistributedTireWriter::prepare_state(std::span<const std::string> names,
+                                         std::span<const double> row) {
     // :82-106 — the strict canonical-row contract documented in the header:
     // unknown columns first (in first-occurrence order, like the oracle),
     // then the equal-length/shape gate, then canonical coverage, then the
@@ -384,9 +390,13 @@ void DistributedTireWriter::set_state(std::span<const std::string> names,
             states_stage_[s][i] = next;
         }
     }
-    // :105-106 — commit: copy-assign keeps the committed vectors' capacity.
-    states_[0] = states_stage_[0];
-    states_[1] = states_stage_[1];
+}
+
+void DistributedTireWriter::commit_prepared_state() noexcept {
+    // Both banks have identical construction-sized storage; swapping also
+    // makes this cross-owner initialization commit unconditionally no-throw.
+    states_[0].swap(states_stage_[0]);
+    states_[1].swap(states_stage_[1]);
     last_time_s_.reset();
 }
 

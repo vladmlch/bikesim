@@ -96,6 +96,11 @@ public:
     // finite `xi` plus the three stored components for a set tangent.
     void set_state(std::span<const std::string> names,
                    std::span<const double> row);
+    // No writer operation may intervene between initialization preparation
+    // and its allocation-free commit.
+    void prepare_state(std::span<const std::string> names,
+                       std::span<const double> row);
+    void commit_prepared_state() noexcept;
     [[nodiscard]] const std::vector<std::string> &state_names() const;
     [[nodiscard]] std::vector<double> state() const;
 
@@ -189,6 +194,7 @@ public:
     [[nodiscard]] double brush_loss_step_j() const noexcept {
         return brush_loss_step_j_;
     }
+    void clear_settled_loss() noexcept { brush_loss_step_j_ = 0.; }
     [[nodiscard]] double radial_dissipation_power_w() const noexcept {
         return radial_dissipation_power_w_;
     }

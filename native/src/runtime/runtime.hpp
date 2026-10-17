@@ -51,6 +51,11 @@ struct RuntimeBootstrap {
     BootstrapState state;
 };
 
+// Shared construction for fresh SetupOwner and frozen-bootstrap loading.
+// Stepper must outlive this owner; no bootstrap is needed for construction.
+[[nodiscard]] std::unique_ptr<PhysicalStep>
+make_physical_step(Stepper& stepper, const RuntimeConfig& config);
+
 // Loads one capture_bootstrap directory (config.json, state.json,
 // model.mjb) into an owned RuntimeBootstrap — externalized array/nonfinite
 // tags resolve against the capture-root-relative path convention and every

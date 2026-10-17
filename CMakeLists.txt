@@ -478,6 +478,9 @@ target_include_directories(bike_engine SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
 target_link_libraries(bike_engine PUBLIC bike::mujoco bike_io)
 
+include("${_bike_native_dir}/cmake/NativeStartup.cmake")
+bike_add_native_startup("${_bike_native_dir}")
+
 # native_bench: the proto_native_bench prototype TU. The produced manifest
 # declares tools/proto_native_bench a first-party root exactly like the
 # legacy graph, so this target must exist here or the headers sweep has no

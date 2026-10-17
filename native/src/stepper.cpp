@@ -477,6 +477,15 @@ void TireWriterView::set_state(std::span<const std::string> names,
     std::visit([&](auto *w) { w->set_state(names, row); }, writer_);
 }
 
+void TireWriterView::prepare_state(std::span<const std::string> names,
+                                  std::span<const double> row) const {
+    std::visit([&](auto *w) { w->prepare_state(names, row); }, writer_);
+}
+
+void TireWriterView::commit_prepared_state() const noexcept {
+    std::visit([](auto *w) { w->commit_prepared_state(); }, writer_);
+}
+
 std::vector<double> TireWriterView::state() const {
     return std::visit([&](auto *w) { return w->state(); }, writer_);
 }
@@ -493,6 +502,10 @@ void TireWriterView::reset() const {
 
 void TireWriterView::restart_clock() const {
     std::visit([](auto *w) { w->restart_clock(); }, writer_);
+}
+
+void TireWriterView::clear_settled_loss() const {
+    std::visit([](auto *w) { w->clear_settled_loss(); }, writer_);
 }
 
 bool TireWriterView::is_distributed() const noexcept {

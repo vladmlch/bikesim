@@ -340,7 +340,7 @@ namespace writers {
         // Wholesale state restore: the binding stages and validates every
         // field before this noexcept commit — no partial mutation.
         void assign_state(RiderContactsState &&state,
-                          std::optional<RiderContactsProbe> &&probe) {
+                          std::optional<RiderContactsProbe> &&probe) noexcept {
             state_ = std::move(state);
             probe_ = std::move(probe);
         }

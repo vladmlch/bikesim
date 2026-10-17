@@ -1,0 +1,428 @@
+{
+  "schema": 1,
+  "wave": "Native startup",
+  "tasks": [
+    "T16",
+    "T17",
+    "T18",
+    "T20",
+    "T21",
+    "T22",
+    "T23",
+    "T24",
+    "T25"
+  ],
+  "date": "2026-10-17",
+  "input_archive": "repomix-output.xml(6).zip",
+  "source_modules_in_scope": 45,
+  "status": "implemented_unverified",
+  "user_constraint": "No compilation and no project execution. This overrides ordinary executable validation steps for this delivery only.",
+  "execution": {
+    "cmake_configure": "not_run",
+    "build": "not_run",
+    "compiler_or_linker": "not_run",
+    "tests": "not_run",
+    "simulation": "not_run",
+    "project_tools": "not_run",
+    "oracle_regeneration": "not_run"
+  },
+  "evidence": {
+    "review": "migration/native-startup-review.md",
+    "file_only_audit": "migration/native-startup-static-audit.json",
+    "reconstruction": "migration/native-startup-reconstruction.json",
+    "usage": "docs/native-startup.md"
+  },
+  "build_registration": {
+    "module": "native/cmake/NativeStartup.cmake",
+    "graphs": [
+      "standalone root bindings-OFF",
+      "transition native bindings-ON"
+    ],
+    "libraries": [
+      "bike_terrain",
+      "bike_numpy_io",
+      "bike_initialization",
+      "bike_app"
+    ],
+    "runtime_reuse": "bike_startup_runtime carries the existing core objects once",
+    "executable": "bike-native-ride"
+  },
+  "task_records": [
+    {
+      "task": "T16",
+      "title": "Generate and compile physical MJCF entirely in C++",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/mujoco/_xml_format.py",
+        "src/bike_sim/mujoco/actuators.py",
+        "src/bike_sim/mujoco/articulated_rider.py",
+        "src/bike_sim/mujoco/drivetrain.py",
+        "src/bike_sim/mujoco/linkage.py",
+        "src/bike_sim/mujoco/physical_topology.py",
+        "src/bike_sim/mujoco/rear_linkage.py",
+        "src/bike_sim/mujoco/steering_fork.py",
+        "src/bike_sim/mujoco/terrain.py"
+      ],
+      "native_paths": [
+        "native/src/model/builder.hpp",
+        "native/src/model/builder.cpp",
+        "native/src/model/builder_internal.hpp",
+        "native/src/model/xml_writer.hpp",
+        "native/src/model/xml_writer.cpp",
+        "native/src/model/physical_topology.cpp",
+        "native/src/model/articulated_rider.cpp",
+        "native/src/model/drivetrain.cpp",
+        "native/src/model/linkage.cpp",
+        "native/src/model/terrain.cpp",
+        "native/tests/migration/test_t16.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::model::BuildRequest",
+        "bike::model::generate_mjcf",
+        "bike::model::compile_mjcf",
+        "bike::model::ModelOwner"
+      ],
+      "build_target": "migration_T16",
+      "ctest_name": "migration_T16",
+      "regressions_authored": [
+        "Captured welded model arrays; physical profile/topology branches; ownership and invalid-input controls"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    },
+    {
+      "task": "T17",
+      "title": "Port standard, stand, playground and legacy MJCF exports",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/mujoco/__init__.py",
+        "src/bike_sim/mujoco/assets.py",
+        "src/bike_sim/mujoco/builder.py",
+        "src/bike_sim/mujoco/environment.py",
+        "src/bike_sim/mujoco/exporter.py",
+        "src/bike_sim/mujoco/frame.py",
+        "src/bike_sim/mujoco/reference_rider.py",
+        "src/bike_sim/mujoco/rider.py",
+        "src/bike_sim/mujoco/sensors.py"
+      ],
+      "native_paths": [
+        "native/src/model/builder.hpp",
+        "native/src/model/builder.cpp",
+        "native/src/model/legacy_topology.cpp",
+        "native/src/model/export.hpp",
+        "native/src/model/export.cpp",
+        "native/src/model/assets.cpp",
+        "native/src/model/environment.cpp",
+        "native/src/model/sensors.cpp",
+        "native/tests/migration/test_t17.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::model::export_model",
+        "bike::model::export_playground_models",
+        "bike::model::bike_specs_value",
+        "bike::model::mass_specs_value"
+      ],
+      "build_target": "migration_T17",
+      "ctest_name": "migration_T17",
+      "regressions_authored": [
+        "Mode and rider variants; JSON/XML schema and exports; exported file names"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    },
+    {
+      "task": "T18",
+      "title": "Resolve model names into typed native writer/runtime configuration",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/native/config.py",
+        "src/bike_sim/sim/ride/physical_mapping.py"
+      ],
+      "native_paths": [
+        "native/src/model/mapping.hpp",
+        "native/src/model/mapping.cpp",
+        "native/src/runtime/project_config.hpp",
+        "native/src/runtime/project_config.cpp",
+        "native/src/runtime/setup_values.hpp",
+        "native/tests/migration/test_t18.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::model::required_id",
+        "bike::model::joint_address",
+        "runtime::project_runtime",
+        "runtime::validate_native_supported"
+      ],
+      "build_target": "migration_T18",
+      "ctest_name": "migration_T18",
+      "regressions_authored": [
+        "Independent captured runtime projection; full foreign model/heightfield rejection; backend projection; analytic Jacobian/virtual-work and qpos/dof-address controls"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    },
+    {
+      "task": "T20",
+      "title": "Port terrain primitives, profiles, surfaces and heightfields",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/terrain/contact_profile.py",
+        "src/bike_sim/terrain/contact_safety.py",
+        "src/bike_sim/terrain/grade.py",
+        "src/bike_sim/terrain/heightfield.py",
+        "src/bike_sim/terrain/profile.py",
+        "src/bike_sim/terrain/profile_distance.py",
+        "src/bike_sim/terrain/road.py",
+        "src/bike_sim/terrain/surface.py",
+        "src/bike_sim/terrain/wheelpath.py"
+      ],
+      "native_paths": [
+        "native/src/terrain/types.hpp",
+        "native/src/terrain/profile.hpp",
+        "native/src/terrain/profile.cpp",
+        "native/src/terrain/obstacles.cpp",
+        "native/src/terrain/surface.cpp",
+        "native/src/terrain/heightfield.cpp",
+        "native/src/terrain/contact_safety.cpp",
+        "native/src/terrain/wheelpath.cpp",
+        "native/src/terrain/detail.hpp",
+        "native/src/terrain/road.cpp",
+        "native/src/terrain/generators.hpp",
+        "native/tests/migration/test_t20.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::terrain::TrackSpec",
+        "bike::terrain::HeightFieldSpec",
+        "bike::terrain::build_profile",
+        "bike::terrain::profile_extent"
+      ],
+      "build_target": "migration_T20",
+      "ctest_name": "migration_T20",
+      "regressions_authored": [
+        "Profile/grade/obstacle boundaries and composition; heightfield envelopes; surfaces, wheel bridging and immutable preset profile fixtures"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    },
+    {
+      "task": "T21",
+      "title": "Port all track generators, presets and track-file round trips",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/terrain/__init__.py",
+        "src/bike_sim/terrain/alpine.py",
+        "src/bike_sim/terrain/generator.py",
+        "src/bike_sim/terrain/obstacles.py",
+        "src/bike_sim/terrain/placement.py",
+        "src/bike_sim/terrain/presets.py",
+        "src/bike_sim/terrain/research.py",
+        "src/bike_sim/terrain/trackfile.py"
+      ],
+      "native_paths": [
+        "native/src/terrain/generators.hpp",
+        "native/src/terrain/generator.cpp",
+        "native/src/terrain/road.cpp",
+        "native/src/terrain/alpine.cpp",
+        "native/src/terrain/placement.cpp",
+        "native/src/terrain/trackfile.hpp",
+        "native/src/terrain/trackfile.cpp",
+        "native/src/terrain/presets.cpp",
+        "native/src/terrain/spec_io.hpp",
+        "native/src/terrain/detail.hpp",
+        "native/src/terrain/types.hpp",
+        "native/src/terrain/obstacles.cpp",
+        "native/tests/migration/test_t21.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::terrain::load_track",
+        "bike::terrain::track_to_dict",
+        "bike::terrain::identity_value",
+        "bike::initialization::load_track_for_setup"
+      ],
+      "build_target": "migration_T21",
+      "ctest_name": "migration_T21",
+      "regressions_authored": [
+        "Generator schemas and source fixed-seed hashes; aliases/units; carving/placement; presets/research scenarios; arbitrary-precision TOML seed and semantic round trips"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    },
+    {
+      "task": "T22",
+      "title": "Port physical settling without a reference RideSimulation",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/sim/ride/physical_equilibrium.py"
+      ],
+      "native_paths": [
+        "native/src/initialization/context.hpp",
+        "native/src/initialization/equilibrium.hpp",
+        "native/src/initialization/equilibrium.cpp",
+        "native/src/initialization/initial_pose.cpp",
+        "native/src/initialization/settle_contacts.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/src/initialization/finalize.hpp",
+        "native/src/initialization/finalize.cpp",
+        "native/tests/migration/test_t22.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::initialization::SetupOwner",
+        "bike::initialization::SetupContext",
+        "bike::initialization::settle",
+        "bike::initialization::EquilibriumFailure"
+      ],
+      "build_target": "migration_T22",
+      "ctest_name": "migration_T22",
+      "regressions_authored": [
+        "Timestep-scaled budgets and invalid inputs; actual convergence and insufficient-budget diagnostics; slope/brake/crank initialization; one-shot sealing/settling"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    },
+    {
+      "task": "T23",
+      "title": "Port bounded least squares, equilibrium refinement and sag fitting",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/sim/equilibrium.py",
+        "src/bike_sim/sim/ride/equilibrium_refine.py",
+        "src/bike_sim/sim/ride/sag_fit.py"
+      ],
+      "native_paths": [
+        "native/src/numerics/least_squares.hpp",
+        "native/src/numerics/least_squares.cpp",
+        "native/src/initialization/refine.cpp",
+        "native/src/initialization/sag_fit.hpp",
+        "native/src/initialization/sag_fit.cpp",
+        "native/src/initialization/sag_evaluator.cpp",
+        "native/src/initialization/legacy_equilibrium.hpp",
+        "native/src/initialization/legacy_equilibrium.cpp",
+        "native/tests/migration/test_t23.cpp",
+        "native/src/numerics/SCIPY-LICENSE.txt"
+      ],
+      "public_entrypoints": [
+        "bike::numerics::bounded_least_squares",
+        "bike::initialization::refine_equilibrium",
+        "bike::initialization::fit_sag",
+        "bike::initialization::build_equilibrium_evaluator",
+        "bike::initialization::solve_static_equilibrium"
+      ],
+      "build_target": "migration_T23",
+      "ctest_name": "migration_T23",
+      "regressions_authored": [
+        "Two/three-point differences; analytic bounded and singular-Jacobian controls; budget, malformed residual and failed evaluation; sag success/unreachable target",
+        "Two insufficient physical refinements replay only selected coordinates/xi on an independent owner and compare complete material/controller state; rejected probes must not leak state"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    },
+    {
+      "task": "T24",
+      "title": "Replace Python equilibrium cache/state files and retain old readers",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/native/artifact.py",
+        "src/bike_sim/sim/ride/equilibrium_cache.py",
+        "src/bike_sim/sim/ride/initial_state.py"
+      ],
+      "native_paths": [
+        "native/src/initialization/state_file.hpp",
+        "native/src/initialization/state_file.cpp",
+        "native/src/initialization/artifact_identity.hpp",
+        "native/src/initialization/artifact_identity.cpp",
+        "native/src/initialization/equilibrium_cache.cpp",
+        "native/src/initialization/initial_state.cpp",
+        "native/src/io/npy.hpp",
+        "native/src/io/npy.cpp",
+        "native/src/io/npz.cpp",
+        "native/src/rider/spindle_controller.hpp",
+        "native/src/rider/spindle_controller.cpp",
+        "native/src/writers/tire.hpp",
+        "native/src/writers/tire.cpp",
+        "native/src/writers/distributed_tire.hpp",
+        "native/src/writers/distributed_tire.cpp",
+        "native/src/writers/pneumatic_tire.hpp",
+        "native/src/writers/pneumatic_tire.cpp",
+        "native/src/writers/rider_contacts.hpp",
+        "native/src/stepper.hpp",
+        "native/src/stepper.cpp",
+        "native/tests/migration/test_t24.cpp",
+        "native/src/initialization/source_json.hpp"
+      ],
+      "public_entrypoints": [
+        "bike::initialization::StateFile",
+        "bike::initialization::PhysicalInitialState",
+        "bike::initialization::legacy_equilibrium_fingerprint",
+        "bike::initialization::validate_recorded_execution",
+        "bike::io::parse_npy",
+        "bike::io::parse_npz"
+      ],
+      "build_target": "migration_T24",
+      "ctest_name": "migration_T24",
+      "regressions_authored": [
+        "Stored/DEFLATE/ZIP64-local NPZ and numeric/bool/string NPY; endian/order/shape/CRC/path controls; durable native file publication; recorded schema-2 identity; cache miss/hit/explicit file; timestep transfer and incompatibility"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    },
+    {
+      "task": "T25",
+      "title": "Construct standalone native rides from user configuration",
+      "status": "implemented_unverified",
+      "source_modules": [
+        "src/bike_sim/native/setup.py"
+      ],
+      "native_paths": [
+        "native/src/app/setup.hpp",
+        "native/src/app/prepare.hpp",
+        "native/src/app/prepare.cpp",
+        "native/src/app/physical_session.hpp",
+        "native/src/app/physical_session.cpp",
+        "native/src/app/native_ride_main.cpp",
+        "native/src/initialization/request.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/src/initialization/capture.hpp",
+        "native/src/initialization/capture.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/step.hpp",
+        "CMakeLists.txt",
+        "native/CMakeLists.txt",
+        "native/cmake/NativeStartup.cmake",
+        "native/tests/migration/CMakeLists.txt",
+        "native/tests/migration/test_t25.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::app::prepare",
+        "bike::app::make_ride",
+        "bike::initialization::read_setup_request",
+        "bike::initialization::SetupOwner::seal_bootstrap",
+        "bike-native-ride"
+      ],
+      "build_target": "migration_T25",
+      "ctest_name": "migration_T25",
+      "regressions_authored": [
+        "Relative request/assets/overrides and strict keys; fresh bypass of missing/broken saved state; all three shipped tire profiles; sealed step-zero bootstrap, reset/advance and independent owners; retained native-start fixture"
+      ],
+      "regressions_executed": false,
+      "qualification": "pending_build_strict_warnings_oracles_and_required_runtime_cases"
+    }
+  ],
+  "acceptance_gaps": [
+    "Strict compilation/linking and all executable regressions are unrun.",
+    "Immutable binary oracle payloads were omitted from the supplied text archive.",
+    "Owned dense TRF / one-sided Jacobi SVD has no established same-provider bit identity with SciPy/LAPACK.",
+    "Physical startup/reset/first-step, legacy NPZ provenance and standalone process/library tracing still require qualification.",
+    "Historical preset profile capture has limited longitudinal coverage; retained fixtures were not regenerated.",
+    "Exact historical NPZ identity requires matching original source bytes and resolved asset paths; arbitrary relocated snapshots are not relabeled as the old identity.",
+    "Dynamic-DEFLATE/large ZIP64 corpus and allocation-fault/fatal-engine state replay remain unqualified."
+  ],
+  "out_of_scope": [
+    "T26–T37 physical/legacy runtime expansion",
+    "T38–T51 recording/application/viewer",
+    "T52–T60 delivery and tooling including Linux qualification",
+    "T61–T63 acceptance and Python deletion",
+    "T11/T14/T56 executable follow-up gates"
+  ]
+}

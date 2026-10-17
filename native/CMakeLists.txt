@@ -536,6 +536,10 @@ add_library(bike_random STATIC
   src/random/seed_sequence.cpp src/random/distributions.cpp
   src/random/noise_tape.cpp)
 set_target_properties(bike_random PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
 
 # T15 model boundary — the identical model/*.cpp TUs the standalone root
 # build compiles as bike_model, here in the legacy warning/hardening
@@ -573,6 +577,7 @@ endif()
 target_include_directories(bike_random SYSTEM PRIVATE
   "${_native_python_include}" "${_native_nb_include}" "${_native_robin_include}")
 
+if(_native_contract_compile_options)
   target_compile_options(bike_model PRIVATE ${_native_contract_compile_options})
 endif()
 if(_native_contract_compile_definitions)
@@ -772,6 +777,8 @@ endif()
 # the parent already registered the harness (same subdir, same names), so it
 # is only added in the standalone legacy configure.
 if(NOT BIKE_ROOT_BUILD)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/NativeStartup.cmake")
+  bike_add_native_startup("${CMAKE_CURRENT_SOURCE_DIR}")
   add_subdirectory(tests/migration)
 endif()
 

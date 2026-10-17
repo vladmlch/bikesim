@@ -76,6 +76,12 @@ public:
     // oracle's `last_time_s = None`).
     void set_state(std::span<const std::string> names,
                    std::span<const double> row);
+    // Initialization transaction: stage through the same canonical decoder,
+    // then commit immediately after the other owners have staged. No writer
+    // operation may intervene between prepare and commit.
+    void prepare_state(std::span<const std::string> names,
+                       std::span<const double> row);
+    void commit_prepared_state() noexcept;
 
     // Canonical 22-name schema this writer emits (tangent/point/center
     // component columns only — leaf None-columns decode but do not emit).
@@ -169,6 +175,7 @@ public:
     [[nodiscard]] double brush_loss_step_j() const {
         return brush_loss_step_j_;
     }
+    void clear_settled_loss() noexcept { brush_loss_step_j_ = 0.; }
 
     [[nodiscard]] double radial_dissipation_power_w() const {
         return radial_dissipation_power_w_;
@@ -221,6 +228,7 @@ private:
     // "empty until the first advancing compute" state the accessors
     // project into the optional view.
     std::array<BrushState, 2> states_;
+    std::array<BrushState, 2> prepared_states_;
     std::array<TireSnapshot, 2> snapshots_{};
     std::array<TireDiagnostics, 2> diagnostics_{};
     bool committed_ = false;

@@ -101,6 +101,11 @@ public:
     // the oracle's ValueError message texts preserved.
     void set_state(std::span<const std::string> names,
                    std::span<const double> row);
+    // Initialization transaction; all wire validation precedes the commit.
+    // No writer operation may intervene after prepare_state succeeds.
+    void prepare_state(std::span<const std::string> names,
+                       std::span<const double> row);
+    void commit_prepared_state() noexcept;
     [[nodiscard]] const std::vector<std::string> &state_names() const;
     [[nodiscard]] std::vector<double> state() const;
 
@@ -207,6 +212,7 @@ public:
     [[nodiscard]] double brush_loss_step_j() const noexcept {
         return brush_loss_step_j_;
     }
+    void clear_settled_loss() noexcept { brush_loss_step_j_ = 0.; }
     [[nodiscard]] double radial_dissipation_power_w() const noexcept {
         return radial_dissipation_power_w_;
     }
@@ -290,6 +296,11 @@ private:
             dec_maxwell_, dec_bristle_;
     std::array<std::vector<char>, 2> dec_covered_;
     std::array<std::vector<biketyre::PatchBrushState>, 2> patch_stage_;
+    struct PreparedScalars {
+        bool initialized = false, rim_active = false;
+        std::size_t patch_count = 0;
+    };
+    std::array<PreparedScalars, 2> prepared_scalars_{};
 
     // Tick scratch — construction-sized; the mutable rows also serve the
     // const stored_energy path.

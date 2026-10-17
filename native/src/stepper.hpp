@@ -90,10 +90,17 @@ public:
     [[nodiscard]] double radial_dissipation_power_w() const;
     void set_state(std::span<const std::string> names,
                    std::span<const double> row) const;
+    // Initialization-only two-phase material restore. The same decoder is
+    // used by set_state; commit follows successful preparation immediately.
+    void prepare_state(std::span<const std::string> names,
+                       std::span<const double> row) const;
+    void commit_prepared_state() const noexcept;
     [[nodiscard]] std::vector<double> state() const;
     [[nodiscard]] const std::vector<std::string> &state_names() const;
     void reset() const;
     void restart_clock() const;
+    // Initialization only: discard the canonical t=0 material loss tick.
+    void clear_settled_loss() const;
     // True when the engaged backend is the distributed reference — the
     // binding emits its extended diagnostics dict for it.
     [[nodiscard]] bool is_distributed() const noexcept;

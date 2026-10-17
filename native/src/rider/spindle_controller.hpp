@@ -264,6 +264,12 @@ public:
         return support_diagnostics_;
     }
     void restore(const State &state);
+    // Initialization can stage a full State beside other material owners.
+    // commit_state requires a state accepted by validate_state, and moves
+    // already allocated containers without exposing a partially restored
+    // controller if allocation fails.
+    void validate_state(const State &state) const;
+    void commit_state(State &&state) noexcept;
 
     [[nodiscard]] const std::vector<JointEntry> &joints() const {
         return joints_;

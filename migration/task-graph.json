@@ -384,7 +384,9 @@
         "native/src/model/drivetrain.cpp",
         "native/src/model/linkage.cpp",
         "native/src/model/terrain.cpp",
-        "native/tests/migration/test_t16.cpp"
+        "native/tests/migration/test_t16.cpp",
+        "native/src/model/builder_internal.hpp",
+        "native/src/model/xml_writer.hpp"
       ],
       "owned_sources": [
         "src/bike_sim/mujoco/_xml_format.py",
@@ -397,7 +399,19 @@
         "src/bike_sim/mujoco/steering_fork.py",
         "src/bike_sim/mujoco/terrain.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t16.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T17",
@@ -413,7 +427,9 @@
         "native/src/model/assets.cpp",
         "native/src/model/environment.cpp",
         "native/src/model/sensors.cpp",
-        "native/tests/migration/test_t17.cpp"
+        "native/tests/migration/test_t17.cpp",
+        "native/src/model/builder.hpp",
+        "native/src/model/builder.cpp"
       ],
       "owned_sources": [
         "src/bike_sim/mujoco/__init__.py",
@@ -426,7 +442,19 @@
         "src/bike_sim/mujoco/rider.py",
         "src/bike_sim/mujoco/sensors.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t17.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T18",
@@ -443,13 +471,26 @@
         "native/src/model/mapping.cpp",
         "native/src/runtime/project_config.hpp",
         "native/src/runtime/project_config.cpp",
-        "native/tests/migration/test_t18.cpp"
+        "native/tests/migration/test_t18.cpp",
+        "native/src/runtime/setup_values.hpp"
       ],
       "owned_sources": [
         "src/bike_sim/native/config.py",
         "src/bike_sim/sim/ride/physical_mapping.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t18.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T19",
@@ -490,7 +531,10 @@
         "native/src/terrain/contact_safety.cpp",
         "native/src/terrain/wheelpath.cpp",
         "native/src/terrain/profile.hpp",
-        "native/tests/migration/test_t20.cpp"
+        "native/tests/migration/test_t20.cpp",
+        "native/src/terrain/detail.hpp",
+        "native/src/terrain/road.cpp",
+        "native/src/terrain/generators.hpp"
       ],
       "owned_sources": [
         "src/bike_sim/terrain/contact_profile.py",
@@ -503,7 +547,19 @@
         "src/bike_sim/terrain/surface.py",
         "src/bike_sim/terrain/wheelpath.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t20.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T21",
@@ -521,7 +577,12 @@
         "native/src/terrain/trackfile.hpp",
         "native/src/terrain/trackfile.cpp",
         "native/src/terrain/presets.cpp",
-        "native/tests/migration/test_t21.cpp"
+        "native/tests/migration/test_t21.cpp",
+        "native/src/terrain/generators.hpp",
+        "native/src/terrain/spec_io.hpp",
+        "native/src/terrain/detail.hpp",
+        "native/src/terrain/types.hpp",
+        "native/src/terrain/obstacles.cpp"
       ],
       "owned_sources": [
         "src/bike_sim/terrain/__init__.py",
@@ -533,7 +594,19 @@
         "src/bike_sim/terrain/research.py",
         "src/bike_sim/terrain/trackfile.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t21.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T22",
@@ -551,12 +624,27 @@
         "native/src/initialization/settle_contacts.cpp",
         "native/src/initialization/setup_owner.hpp",
         "native/src/initialization/setup_owner.cpp",
-        "native/tests/migration/test_t22.cpp"
+        "native/tests/migration/test_t22.cpp",
+        "native/src/initialization/context.hpp",
+        "native/src/initialization/finalize.hpp",
+        "native/src/initialization/finalize.cpp"
       ],
       "owned_sources": [
         "src/bike_sim/sim/ride/physical_equilibrium.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t22.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T23",
@@ -571,14 +659,31 @@
         "native/src/numerics/least_squares.cpp",
         "native/src/initialization/refine.cpp",
         "native/src/initialization/sag_fit.cpp",
-        "native/tests/migration/test_t23.cpp"
+        "native/tests/migration/test_t23.cpp",
+        "native/src/initialization/sag_fit.hpp",
+        "native/src/initialization/sag_evaluator.cpp",
+        "native/src/initialization/legacy_equilibrium.hpp",
+        "native/src/initialization/legacy_equilibrium.cpp",
+        "native/src/numerics/SCIPY-LICENSE.txt"
       ],
       "owned_sources": [
         "src/bike_sim/sim/equilibrium.py",
         "src/bike_sim/sim/ride/equilibrium_refine.py",
         "src/bike_sim/sim/ride/sag_fit.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t23.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T24",
@@ -596,14 +701,41 @@
         "native/src/io/npy.hpp",
         "native/src/io/npy.cpp",
         "native/src/io/npz.cpp",
-        "native/tests/migration/test_t24.cpp"
+        "native/tests/migration/test_t24.cpp",
+        "native/src/initialization/artifact_identity.hpp",
+        "native/src/initialization/artifact_identity.cpp",
+        "native/src/initialization/initial_state.cpp",
+        "native/src/rider/spindle_controller.hpp",
+        "native/src/rider/spindle_controller.cpp",
+        "native/src/writers/tire.hpp",
+        "native/src/writers/tire.cpp",
+        "native/src/writers/distributed_tire.hpp",
+        "native/src/writers/distributed_tire.cpp",
+        "native/src/writers/pneumatic_tire.hpp",
+        "native/src/writers/pneumatic_tire.cpp",
+        "native/src/writers/rider_contacts.hpp",
+        "native/src/stepper.hpp",
+        "native/src/stepper.cpp",
+        "native/src/initialization/source_json.hpp"
       ],
       "owned_sources": [
         "src/bike_sim/native/artifact.py",
         "src/bike_sim/sim/ride/equilibrium_cache.py",
         "src/bike_sim/sim/ride/initial_state.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t24.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T25",
@@ -622,12 +754,37 @@
         "native/src/app/physical_session.hpp",
         "native/src/app/physical_session.cpp",
         "native/src/app/setup.hpp",
-        "native/tests/migration/test_t25.cpp"
+        "native/tests/migration/test_t25.cpp",
+        "native/src/app/native_ride_main.cpp",
+        "native/src/initialization/request.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/src/initialization/capture.hpp",
+        "native/src/initialization/capture.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/step.hpp",
+        "CMakeLists.txt",
+        "native/CMakeLists.txt",
+        "native/cmake/NativeStartup.cmake",
+        "native/tests/migration/CMakeLists.txt"
       ],
       "owned_sources": [
         "src/bike_sim/native/setup.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "implementation": {
+        "status": "implemented_unverified",
+        "date": "2026-10-17",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md",
+          "migration/native-startup-static-audit.json"
+        ],
+        "test_source": "native/tests/migration/test_t25.cpp",
+        "execution": "not_run_user_prohibited_compilation_and_execution",
+        "acceptance": "not_closed"
+      }
     },
     {
       "id": "T26",

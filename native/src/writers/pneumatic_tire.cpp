@@ -478,6 +478,12 @@ std::vector<double> PneumaticTireWriter::state() const {
 
 void PneumaticTireWriter::set_state(
         std::span<const std::string> names, std::span<const double> row) {
+    prepare_state(names, row);
+    commit_prepared_state();
+}
+
+void PneumaticTireWriter::prepare_state(
+        std::span<const std::string> names, std::span<const double> row) {
     // :179-293 — the strict canonical-row contract documented in the
     // header: unknown columns first (first-occurrence order), then the
     // equal-length gate, canonical coverage, the two-phase decode, then
@@ -509,12 +515,6 @@ void PneumaticTireWriter::set_state(
     const std::size_t n = static_cast<std::size_t>(n_rays_);
     const std::size_t width = max_patches_;
     const std::size_t side_cols = 4 * n + 8 + 3 * width;
-    // Per-side scalar fields staged beside the decoded rows.
-    struct DecodedScalars {
-        bool initialized = false, rim_active = false;
-        std::size_t patch_count = 0;
-    };
-    std::array<DecodedScalars, 2> decoded;
     for (std::size_t s = 0; s < 2; ++s) {
         const std::size_t base = s * side_cols;
         for (std::size_t i = 0; i < n; ++i) {
@@ -657,12 +657,19 @@ void PneumaticTireWriter::set_state(
                             " bristle cells must be NaN on the lumped "
                             "tier");
         }
-        decoded[s] = {.initialized = initialized == 1.0,
-                      .rim_active = rim_active == 1.0,
-                      .patch_count = count};
+        prepared_scalars_[s] = {.initialized = initialized == 1.0,
+                               .rim_active = rim_active == 1.0,
+                               .patch_count = count};
     }
+}
+
+void PneumaticTireWriter::commit_prepared_state() noexcept {
+    const std::size_t n = static_cast<std::size_t>(n_rays_);
+    const std::size_t side_cols = 4 * n + 8 + 3 * max_patches_;
     // :267-292 — commit, side-sequential like the oracle: the decode is
     // fully validated above so restore_patch_states cannot reject here.
+    // PneumaticTyreModel pre-reserves each pool bristle row to ring.n(),
+    // and prepare_state enforces that bound before this no-throw commit.
     for (std::size_t s = 0; s < 2; ++s) {
         biketyre::PneumaticTyreModel &tyre = *tyres_[s];
         const std::size_t base = s * side_cols;
@@ -675,18 +682,18 @@ void PneumaticTireWriter::set_state(
                           carcass.elastic_prev_n().begin());
         std::ranges::copy(dec_maxwell_[s],
                           carcass.maxwell_force_n().begin());
-        if (decoded[s].rim_active)
+        if (prepared_scalars_[s].rim_active)
             carcass.restore_fields(
-                    decoded[s].initialized, true,
+                    prepared_scalars_[s].initialized, true,
                     wire_cols_[rim + 1], wire_cols_[rim + 2],
                     wire_cols_[rim + 3], wire_cols_[rim + 4],
                     wire_cols_[rim + 5]);
         else
-            carcass.restore_fields(decoded[s].initialized, false, 0.0,
+            carcass.restore_fields(prepared_scalars_[s].initialized, false, 0.0,
                                    0.0, 0.0, 0.0, 0.0);
         tyre.restore_patch_states(std::span<const biketyre::PatchBrushState>(
                                           patch_stage_[s])
-                                          .first(decoded[s].patch_count));
+                                          .first(prepared_scalars_[s].patch_count));
     }
     last_time_s_.reset();
 }

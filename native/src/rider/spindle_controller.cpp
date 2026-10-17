@@ -1412,26 +1412,33 @@ SpindleController::State SpindleController::state() const {
 }
 
 void SpindleController::restore(const State &state) {
+    validate_state(state);
+    State staged = state;
+    commit_state(std::move(staged));
+}
+
+void SpindleController::validate_state(const State &state) const {
     if (state.active_state.size() != joints_.size())
         throw std::invalid_argument(
             "rider_controller.active_state: incorrect sequence width");
+}
+
+void SpindleController::commit_state(State &&state) noexcept {
     enabled_ = state.enabled;
     command_enabled_ = state.command_enabled;
-    active_state_ = state.active_state;
+    active_state_ = std::move(state.active_state);
     activation_time_s_ = state.activation_time_s;
-    last_terms_.clear();
-    for (const auto &[name, terms] : state.last_terms)
-        last_terms_.emplace_back(name, terms);
-    saturated_ik_ = state.saturated_ik;
-    ik_reach_limited_ = state.ik_reach_limited;
-    joint_torques_nm_ = state.joint_torques_nm;
-    joint_capacity_nm_ = state.joint_capacity_nm;
+    last_terms_ = std::move(state.last_terms);
+    saturated_ik_ = std::move(state.saturated_ik);
+    ik_reach_limited_ = std::move(state.ik_reach_limited);
+    joint_torques_nm_ = std::move(state.joint_torques_nm);
+    joint_capacity_nm_ = std::move(state.joint_capacity_nm);
     lean_limit_rad_ = state.lean_limit_rad;
-    pedal_recovery_ = state.pedal_recovery;
-    effort_diagnostics_ = state.effort_diagnostics;
-    allocation_diagnostics_ = state.allocation_diagnostics;
-    support_diagnostics_ = state.support_diagnostics;
-    sole_goal_diagnostics_ = state.sole_goal_diagnostics;
+    pedal_recovery_ = std::move(state.pedal_recovery);
+    effort_diagnostics_ = std::move(state.effort_diagnostics);
+    allocation_diagnostics_ = std::move(state.allocation_diagnostics);
+    support_diagnostics_ = std::move(state.support_diagnostics);
+    sole_goal_diagnostics_ = std::move(state.sole_goal_diagnostics);
 }
 
 } // namespace rider

@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "../engaged.hpp"
+#include "../initialization/finalize.hpp"
 #include "../rider/attachment_wrench.hpp"
 #include "../rider/intent.hpp"
 #include "../rider/spindle_controller.hpp"
@@ -147,6 +148,9 @@ struct MassObservations {
 };
 
 class PhysicalStep {
+    friend class bike::initialization::PhysicalInitialState;
+    friend void bike::initialization::finalize_initial_state(
+        bike::initialization::SetupContext&, const RuntimeConfig&);
 public:
     // The caller resolves every named id BEFORE construction (the binding
     // validates the bootstrap geometry against the live model); `vertices`

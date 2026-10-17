@@ -394,6 +394,12 @@ const std::vector<std::string> &TireWriter::state_names() {
 
 void TireWriter::set_state(std::span<const std::string> names,
                            std::span<const double> row) {
+    prepare_state(names, row);
+    commit_prepared_state();
+}
+
+void TireWriter::prepare_state(std::span<const std::string> names,
+                              std::span<const double> row) {
     if (names.size() != row.size())
         throw std::invalid_argument(
             "set_tire_state: names and row must have equal length");
@@ -538,7 +544,11 @@ void TireWriter::set_state(std::span<const std::string> names,
             throw std::invalid_argument(message);
         }
     }
-    states_ = next;
+    prepared_states_ = next;
+}
+
+void TireWriter::commit_prepared_state() noexcept {
+    states_ = prepared_states_;
     // A restored state has not advanced under any interval yet — mirrors
     // `applier.last_time_s = None` in the Python restore path.
     last_time_s_ = std::nullopt;

@@ -689,7 +689,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -701,7 +703,18 @@
     "snapshot_sha256": "2c8097187f6fcf9c660915883be96ad47a70f29cd80db44d00633f83014be4da",
     "snapshot_line_count": 39,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "218716a025248a93a33b70ade23c2409e8ad268cac145c8cf799141d5dacb891",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/_xml_format.py",
@@ -718,7 +731,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -730,7 +745,18 @@
     "snapshot_sha256": "b80c7016253f34a2c9ed15bdf1effbe06e113a1f787da5098cf0488828918a12",
     "snapshot_line_count": 167,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "3da577e6e0ea3c8f6fb1fa36271e7cff8d939cc30f5488c45b3ddec362bb7033",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/actuators.py",
@@ -747,7 +773,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -759,7 +787,18 @@
     "snapshot_sha256": "c428e9d809ff7d67ab926b6fcf5740624d9d49b10fa5712d82b2845ee8d3af32",
     "snapshot_line_count": 155,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "850d0c5eacb229c38582b8ac664c0257db6d9abae5052815929922ded22b3042",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/articulated_rider.py",
@@ -776,7 +815,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -788,7 +829,18 @@
     "snapshot_sha256": "5dc3edcf4752b1cbcbdcec38835a4a0eb422ac221d5e3129634f194531e5956d",
     "snapshot_line_count": 91,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "d78e0aeeaf11b97b3b03c797c324e32ff0166243aafab85f8f36ade181026253",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/assets.py",
@@ -803,7 +855,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -815,7 +869,18 @@
     "snapshot_sha256": "d5bed077f0ef68b171a1d516c487e007ab9f9cd8594573a1c7cc0ecbcd372baa",
     "snapshot_line_count": 74,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6c3d1c67544c6b6f324d0a49d39ccc9bf7a8b6e38d67ea28d0532fcf8e75e549",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/builder.py",
@@ -830,7 +895,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -842,7 +909,18 @@
     "snapshot_sha256": "8735a7b0904e07e415785b63dbc91a1d8ca3e9be8b2db66a887128dac3b21ae9",
     "snapshot_line_count": 412,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "c0b9c04b0fcb8c924758d0c0899736494d496af45ee4566152035980ceb53f3f",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/drivetrain.py",
@@ -859,7 +937,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -871,7 +951,18 @@
     "snapshot_sha256": "f71ff3d1ebdc889f90d50767c973a0ae2d71744eca919efe8ad52c66af3c0de3",
     "snapshot_line_count": 326,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "086a9bdb5d89c6fbd21abc8092cb9bc69442d3740dbbc9abbba5d6ddf12ca851",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/environment.py",
@@ -886,7 +977,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -898,7 +991,18 @@
     "snapshot_sha256": "195be00ba5c34ea9924ac8d0e7ee16ebb1314b6806dfeea4224fd6d0fbefb31d",
     "snapshot_line_count": 137,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "08208e926714f53699fcdec54692083e25f1c4a02dac4179505062ea2b6912a1",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/exporter.py",
@@ -913,7 +1017,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -925,7 +1031,18 @@
     "snapshot_sha256": "ce197916029621612b78f1aa72418610a048cd0ba4580b6c4175e402ceedf8d5",
     "snapshot_line_count": 285,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "3c0d569c32661a5cc7731def5ca6ee63d66787dedac2f55ea4d5a719d0d5e745",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/frame.py",
@@ -940,7 +1057,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -952,7 +1071,18 @@
     "snapshot_sha256": "bedb7e2cf52c44afb928838e962ca3199b7421df3d843ab1cabaa889ed514f55",
     "snapshot_line_count": 311,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "cab0bfc6d99cfd0758d043f15c878383314e836352ca62a3b830bcf8e4ab74e4",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/linkage.py",
@@ -969,7 +1099,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -981,7 +1113,18 @@
     "snapshot_sha256": "55d8627f8ad60d75a5fb7364e3f3f1e8b244c7d30696bc56e548e231991b3088",
     "snapshot_line_count": 23,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "389397a7271212f93ecd5d5e2cdf47c0dd6e84a4fec0b9bc24013f615265a3b2",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/physical_topology.py",
@@ -998,7 +1141,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -1010,7 +1155,18 @@
     "snapshot_sha256": "708f6159b334212bbda5feeda6c623327dcaa58d9b1b95765937eeee3aa1d962",
     "snapshot_line_count": 246,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "556eaa7203edfc01eee224beff85deb4d5eb31633b9268274d145c72fb76ce09",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/rear_linkage.py",
@@ -1027,7 +1183,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -1039,7 +1197,18 @@
     "snapshot_sha256": "08f61b074727c88c291d64aece3f718058ea0e9922416457361a5e44b39a5954",
     "snapshot_line_count": 397,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "5078f19233cd71633a09de03b40144279fbe3c2545b9a62c6b4aab0e3ceaad87",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/reference_rider.py",
@@ -1054,7 +1223,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -1066,7 +1237,18 @@
     "snapshot_sha256": "7881ea16bf0f921eed87b4bda48df6565f1d06ff09fe412c60f2b78dedb5bafc",
     "snapshot_line_count": 40,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "cfca61907062738fcf095e49b388b272f0350fdd4837acdfd4471fe240ed8836",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/rider.py",
@@ -1081,7 +1263,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -1093,7 +1277,18 @@
     "snapshot_sha256": "537e310cd06b5abfcd46b15334f37e91e393d7cf9d6b1863847fc62d2feb9506",
     "snapshot_line_count": 232,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "2f4cda571eef041ef4426ca9b89685c458a56f221d4c64ae954f27af47b2cec1",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/sensors.py",
@@ -1108,7 +1303,9 @@
       "native/src/model/assets.cpp",
       "native/src/model/environment.cpp",
       "native/src/model/sensors.cpp",
-      "native/tests/migration/test_t17.cpp"
+      "native/tests/migration/test_t17.cpp",
+      "native/src/model/builder.hpp",
+      "native/src/model/builder.cpp"
     ],
     "verification_ids": [
       "migration_T17",
@@ -1120,7 +1317,18 @@
     "snapshot_sha256": "b50a449727ac772e43292144571341b6491d95412cd6d0d47fe11e161fa350fc",
     "snapshot_line_count": 56,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "5f8e6c2cc528a93820249169b7956993a24e87009f8f97eda38bd62ca859761d",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/steering_fork.py",
@@ -1137,7 +1345,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -1149,7 +1359,18 @@
     "snapshot_sha256": "01a62a31f93740d6bf9213ba8efbb581e9c966f874706999d892d2949910c4e4",
     "snapshot_line_count": 201,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "21e462e9df9a4b737fccda2da23169af6d58bd821b1de0c53409f04b23730c21",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/mujoco/terrain.py",
@@ -1166,7 +1387,9 @@
       "native/src/model/drivetrain.cpp",
       "native/src/model/linkage.cpp",
       "native/src/model/terrain.cpp",
-      "native/tests/migration/test_t16.cpp"
+      "native/tests/migration/test_t16.cpp",
+      "native/src/model/builder_internal.hpp",
+      "native/src/model/xml_writer.hpp"
     ],
     "verification_ids": [
       "migration_T16",
@@ -1178,7 +1401,18 @@
     "snapshot_sha256": "0e2dbcdb94585852ff9f059810b75d554e90d4ed6f1325c9c392c3d053f5d7a4",
     "snapshot_line_count": 54,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "eb8293ce8b9bb100d764679a3397dbe745a599af9dc4f596a18eb25d81e5dd71",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/native/__init__.py",
@@ -1220,7 +1454,22 @@
       "native/src/io/npy.hpp",
       "native/src/io/npy.cpp",
       "native/src/io/npz.cpp",
-      "native/tests/migration/test_t24.cpp"
+      "native/tests/migration/test_t24.cpp",
+      "native/src/initialization/artifact_identity.hpp",
+      "native/src/initialization/artifact_identity.cpp",
+      "native/src/initialization/initial_state.cpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/writers/tire.hpp",
+      "native/src/writers/tire.cpp",
+      "native/src/writers/distributed_tire.hpp",
+      "native/src/writers/distributed_tire.cpp",
+      "native/src/writers/pneumatic_tire.hpp",
+      "native/src/writers/pneumatic_tire.cpp",
+      "native/src/writers/rider_contacts.hpp",
+      "native/src/stepper.hpp",
+      "native/src/stepper.cpp",
+      "native/src/initialization/source_json.hpp"
     ],
     "verification_ids": [
       "migration_T24",
@@ -1232,7 +1481,18 @@
     "snapshot_sha256": "2e8157a3b6a5b1cd79db3ccedae49efebeb9d7fb12371863ea6f0dbe32bfb2e0",
     "snapshot_line_count": 248,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "7a95aec72a1a14dd68acded0a0490ac7e591b205f719107651586d0393132706",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/native/config.py",
@@ -1245,7 +1505,8 @@
       "native/src/model/mapping.cpp",
       "native/src/runtime/project_config.hpp",
       "native/src/runtime/project_config.cpp",
-      "native/tests/migration/test_t18.cpp"
+      "native/tests/migration/test_t18.cpp",
+      "native/src/runtime/setup_values.hpp"
     ],
     "verification_ids": [
       "migration_T18",
@@ -1257,7 +1518,18 @@
     "snapshot_sha256": "170ce31158a86840243365a382224ea1d2eef1e5ca00b6db81207de08e5932f3",
     "snapshot_line_count": 468,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6aac7edf1792f5c704228c0b5f683fa2e2a17d6d61c138eb65aea9f6530aa793",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/native/contracts.py",
@@ -1430,7 +1702,20 @@
       "native/src/app/physical_session.hpp",
       "native/src/app/physical_session.cpp",
       "native/src/app/setup.hpp",
-      "native/tests/migration/test_t25.cpp"
+      "native/tests/migration/test_t25.cpp",
+      "native/src/app/native_ride_main.cpp",
+      "native/src/initialization/request.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/capture.hpp",
+      "native/src/initialization/capture.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/step.hpp",
+      "CMakeLists.txt",
+      "native/CMakeLists.txt",
+      "native/cmake/NativeStartup.cmake",
+      "native/tests/migration/CMakeLists.txt"
     ],
     "verification_ids": [
       "migration_T25",
@@ -1442,7 +1727,18 @@
     "snapshot_sha256": "a778aa58690850805aead9019da059d402ca97f6f9f08f7482e521dee17bc943",
     "snapshot_line_count": 419,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "a5f26fc28cc56b5e5848389fbf07cd09bb3e579965e96ff0021228887158839a",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/physics/__init__.py",
@@ -3137,7 +3433,12 @@
       "native/src/numerics/least_squares.cpp",
       "native/src/initialization/refine.cpp",
       "native/src/initialization/sag_fit.cpp",
-      "native/tests/migration/test_t23.cpp"
+      "native/tests/migration/test_t23.cpp",
+      "native/src/initialization/sag_fit.hpp",
+      "native/src/initialization/sag_evaluator.cpp",
+      "native/src/initialization/legacy_equilibrium.hpp",
+      "native/src/initialization/legacy_equilibrium.cpp",
+      "native/src/numerics/SCIPY-LICENSE.txt"
     ],
     "verification_ids": [
       "migration_T23",
@@ -3149,7 +3450,18 @@
     "snapshot_sha256": "3ab5ee52b336ea3bb8c39f558c3c1787bc53d0b48ace3a66ac699f16de5da74f",
     "snapshot_line_count": 205,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "781e1dc8f1136d4f016f08efb0db7a6ebd3a34231a92f93fc837c06bef233e57",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/hud.py",
@@ -4341,7 +4653,22 @@
       "native/src/io/npy.hpp",
       "native/src/io/npy.cpp",
       "native/src/io/npz.cpp",
-      "native/tests/migration/test_t24.cpp"
+      "native/tests/migration/test_t24.cpp",
+      "native/src/initialization/artifact_identity.hpp",
+      "native/src/initialization/artifact_identity.cpp",
+      "native/src/initialization/initial_state.cpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/writers/tire.hpp",
+      "native/src/writers/tire.cpp",
+      "native/src/writers/distributed_tire.hpp",
+      "native/src/writers/distributed_tire.cpp",
+      "native/src/writers/pneumatic_tire.hpp",
+      "native/src/writers/pneumatic_tire.cpp",
+      "native/src/writers/rider_contacts.hpp",
+      "native/src/stepper.hpp",
+      "native/src/stepper.cpp",
+      "native/src/initialization/source_json.hpp"
     ],
     "verification_ids": [
       "migration_T24",
@@ -4353,7 +4680,18 @@
     "snapshot_sha256": "4fbb142af3819150799f83bbd4cf8e1a014d025ca46a998c0b7792e110c8604f",
     "snapshot_line_count": 391,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "dbeb9e24c93a3720f7e4df3543f30b43a3483b8ded04a69980e63b1d94e128fd",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/equilibrium_refine.py",
@@ -4366,7 +4704,12 @@
       "native/src/numerics/least_squares.cpp",
       "native/src/initialization/refine.cpp",
       "native/src/initialization/sag_fit.cpp",
-      "native/tests/migration/test_t23.cpp"
+      "native/tests/migration/test_t23.cpp",
+      "native/src/initialization/sag_fit.hpp",
+      "native/src/initialization/sag_evaluator.cpp",
+      "native/src/initialization/legacy_equilibrium.hpp",
+      "native/src/initialization/legacy_equilibrium.cpp",
+      "native/src/numerics/SCIPY-LICENSE.txt"
     ],
     "verification_ids": [
       "migration_T23",
@@ -4378,7 +4721,18 @@
     "snapshot_sha256": "21d9a130ca45680ee68a7aa1af9c0b8add5a378e468310576a7c8d0b52a52090",
     "snapshot_line_count": 96,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "dfec4c0575eeee6b73463698d581d96a688aef73911d0a599ddae0bc41bbae8f",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/force_accumulator.py",
@@ -4519,7 +4873,22 @@
       "native/src/io/npy.hpp",
       "native/src/io/npy.cpp",
       "native/src/io/npz.cpp",
-      "native/tests/migration/test_t24.cpp"
+      "native/tests/migration/test_t24.cpp",
+      "native/src/initialization/artifact_identity.hpp",
+      "native/src/initialization/artifact_identity.cpp",
+      "native/src/initialization/initial_state.cpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/writers/tire.hpp",
+      "native/src/writers/tire.cpp",
+      "native/src/writers/distributed_tire.hpp",
+      "native/src/writers/distributed_tire.cpp",
+      "native/src/writers/pneumatic_tire.hpp",
+      "native/src/writers/pneumatic_tire.cpp",
+      "native/src/writers/rider_contacts.hpp",
+      "native/src/stepper.hpp",
+      "native/src/stepper.cpp",
+      "native/src/initialization/source_json.hpp"
     ],
     "verification_ids": [
       "migration_T24",
@@ -4531,7 +4900,18 @@
     "snapshot_sha256": "4690a31090fd4aacd4e6315b267d8fb13154f2ae8365f3baaf0655de85537e10",
     "snapshot_line_count": 213,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "611851a0a9addc237231462850ce125c58b0df1e36285af74de835920b530e86",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/input.py",
@@ -4882,7 +5262,10 @@
       "native/src/initialization/settle_contacts.cpp",
       "native/src/initialization/setup_owner.hpp",
       "native/src/initialization/setup_owner.cpp",
-      "native/tests/migration/test_t22.cpp"
+      "native/tests/migration/test_t22.cpp",
+      "native/src/initialization/context.hpp",
+      "native/src/initialization/finalize.hpp",
+      "native/src/initialization/finalize.cpp"
     ],
     "verification_ids": [
       "migration_T22",
@@ -4894,7 +5277,18 @@
     "snapshot_sha256": "8b3a8089d54fcddfa556008fb8dac3016a7ba127628cf86b8617639ffe96ab37",
     "snapshot_line_count": 153,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6232e5abfda865309141f312c459ddd99c25fe49a4cd11decb5c21d1a84abebe",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/physical_frontend.py",
@@ -4937,7 +5331,8 @@
       "native/src/model/mapping.cpp",
       "native/src/runtime/project_config.hpp",
       "native/src/runtime/project_config.cpp",
-      "native/tests/migration/test_t18.cpp"
+      "native/tests/migration/test_t18.cpp",
+      "native/src/runtime/setup_values.hpp"
     ],
     "verification_ids": [
       "migration_T18",
@@ -4949,7 +5344,18 @@
     "snapshot_sha256": "8f5c6560c3c0d9678a78ca98b4b40ba8bd430f6b8a15186e0dff4d013240ae47",
     "snapshot_line_count": 81,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "f395a5270bf2cb22738609e510599cbf14176005993a31b35c845bdf6161465e",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/physical_observations.py",
@@ -5588,7 +5994,12 @@
       "native/src/numerics/least_squares.cpp",
       "native/src/initialization/refine.cpp",
       "native/src/initialization/sag_fit.cpp",
-      "native/tests/migration/test_t23.cpp"
+      "native/tests/migration/test_t23.cpp",
+      "native/src/initialization/sag_fit.hpp",
+      "native/src/initialization/sag_evaluator.cpp",
+      "native/src/initialization/legacy_equilibrium.hpp",
+      "native/src/initialization/legacy_equilibrium.cpp",
+      "native/src/numerics/SCIPY-LICENSE.txt"
     ],
     "verification_ids": [
       "migration_T23",
@@ -5600,7 +6011,18 @@
     "snapshot_sha256": "02a326615014f60a8d46ef70fa3d7cb2acdb7f992262859a696c6323ecf28103",
     "snapshot_line_count": 101,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "43ebce58c58579d3532ee0dcea1c44821b9bc80bb029406ec3fc1f46f99b5643",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/session.py",
@@ -6142,7 +6564,12 @@
       "native/src/terrain/trackfile.hpp",
       "native/src/terrain/trackfile.cpp",
       "native/src/terrain/presets.cpp",
-      "native/tests/migration/test_t21.cpp"
+      "native/tests/migration/test_t21.cpp",
+      "native/src/terrain/generators.hpp",
+      "native/src/terrain/spec_io.hpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/types.hpp",
+      "native/src/terrain/obstacles.cpp"
     ],
     "verification_ids": [
       "migration_T21",
@@ -6154,7 +6581,18 @@
     "snapshot_sha256": "8e104299932550e7f17c1d80a4f3aeb864dbf40b1f8a088a96e23d14f1816fe7",
     "snapshot_line_count": 140,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "2dafa4dab1b8f1d7abfe708d2e573707afacaf3de553c2e8c9158b72bc2afc0a",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/alpine.py",
@@ -6170,7 +6608,12 @@
       "native/src/terrain/trackfile.hpp",
       "native/src/terrain/trackfile.cpp",
       "native/src/terrain/presets.cpp",
-      "native/tests/migration/test_t21.cpp"
+      "native/tests/migration/test_t21.cpp",
+      "native/src/terrain/generators.hpp",
+      "native/src/terrain/spec_io.hpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/types.hpp",
+      "native/src/terrain/obstacles.cpp"
     ],
     "verification_ids": [
       "migration_T21",
@@ -6182,7 +6625,18 @@
     "snapshot_sha256": "0ab743903a9b58da9150df731792836fd8bd486ecac3a91d04be213a5890d1ac",
     "snapshot_line_count": 336,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "dca398ed14d2d9f297a6d6051c72f4a5069360451554888ee462c0709841cdcf",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/contact_profile.py",
@@ -6199,7 +6653,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6211,7 +6668,18 @@
     "snapshot_sha256": "c1f3e13351d5c2441bcd3b40858fc5464c7cffe586cdb3db1378ec6ca32ada1a",
     "snapshot_line_count": 178,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "9ea84ff7f513338d94e708d54b8c87073a2bfef885237fbed911dbf1533a44d7",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/contact_safety.py",
@@ -6228,7 +6696,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6240,7 +6711,18 @@
     "snapshot_sha256": "cb63321db4cef9c0f91e730930b9a81afffbf38671c8bfedef0b57637d6c729a",
     "snapshot_line_count": 96,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "efbfa9f8052c181c4a7dab5c248ac8986b273b69ee05061644e3cd572db1f8f4",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/generator.py",
@@ -6256,7 +6738,12 @@
       "native/src/terrain/trackfile.hpp",
       "native/src/terrain/trackfile.cpp",
       "native/src/terrain/presets.cpp",
-      "native/tests/migration/test_t21.cpp"
+      "native/tests/migration/test_t21.cpp",
+      "native/src/terrain/generators.hpp",
+      "native/src/terrain/spec_io.hpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/types.hpp",
+      "native/src/terrain/obstacles.cpp"
     ],
     "verification_ids": [
       "migration_T21",
@@ -6268,7 +6755,18 @@
     "snapshot_sha256": "5eb2cf08b605aed7408aaabdf5d83c439bedcd1152fcf2c898256de06a8eb7b2",
     "snapshot_line_count": 194,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "955a01cd4f264b1906a26d5ae00bafadf76cfa6939cad4e3c553b78ff18419ec",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/grade.py",
@@ -6285,7 +6783,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6297,7 +6798,18 @@
     "snapshot_sha256": "40cc487a54743637ed45c41cf1e00b3c9b4c5069686d211424f4a140af6e29c6",
     "snapshot_line_count": 55,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "893ca24da86f0e7ff6b7f6a977dcac60a5d0b427c275f386102eac6c1ea5813b",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/heightfield.py",
@@ -6314,7 +6826,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6326,7 +6841,18 @@
     "snapshot_sha256": "619de27c4e45d43635762292410fece07c3f1ba311fdd99e3e4d55725b6e6ae3",
     "snapshot_line_count": 285,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "60d2a484ce61179761a8005e8b554c537680c08e02416db1a290543bb67eea56",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/obstacles.py",
@@ -6342,7 +6868,12 @@
       "native/src/terrain/trackfile.hpp",
       "native/src/terrain/trackfile.cpp",
       "native/src/terrain/presets.cpp",
-      "native/tests/migration/test_t21.cpp"
+      "native/tests/migration/test_t21.cpp",
+      "native/src/terrain/generators.hpp",
+      "native/src/terrain/spec_io.hpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/types.hpp",
+      "native/src/terrain/obstacles.cpp"
     ],
     "verification_ids": [
       "migration_T21",
@@ -6354,7 +6885,18 @@
     "snapshot_sha256": "07ce00cbea077e3f99d5ee4a27a5ac07ee0c80700c068f70685ca12fa6a6c1b1",
     "snapshot_line_count": 555,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "ae5dd644720fa067176757cf9bfe0f48daba113db63f4aa6b7bd7e7ec71d0427",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/placement.py",
@@ -6370,7 +6912,12 @@
       "native/src/terrain/trackfile.hpp",
       "native/src/terrain/trackfile.cpp",
       "native/src/terrain/presets.cpp",
-      "native/tests/migration/test_t21.cpp"
+      "native/tests/migration/test_t21.cpp",
+      "native/src/terrain/generators.hpp",
+      "native/src/terrain/spec_io.hpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/types.hpp",
+      "native/src/terrain/obstacles.cpp"
     ],
     "verification_ids": [
       "migration_T21",
@@ -6382,7 +6929,18 @@
     "snapshot_sha256": "9f9aa4429e2d53f7b28b94f17a9cf7a9c3d265d178a7c87ac9a27d4de89a7adb",
     "snapshot_line_count": 77,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "a4d8892549651ce0231417707f746046176fc8a861c295f0fd0b2a6fd2e8a40c",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/presets.py",
@@ -6398,7 +6956,12 @@
       "native/src/terrain/trackfile.hpp",
       "native/src/terrain/trackfile.cpp",
       "native/src/terrain/presets.cpp",
-      "native/tests/migration/test_t21.cpp"
+      "native/tests/migration/test_t21.cpp",
+      "native/src/terrain/generators.hpp",
+      "native/src/terrain/spec_io.hpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/types.hpp",
+      "native/src/terrain/obstacles.cpp"
     ],
     "verification_ids": [
       "migration_T21",
@@ -6410,7 +6973,18 @@
     "snapshot_sha256": "bebbe16620a3cdab255684f21789587b2f3ef04191bf242090fb02ee04970b16",
     "snapshot_line_count": 243,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "90e3760e7287b3f4be33d3374c4f09365b2744e74c25a81af7f143edccb302d0",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/profile.py",
@@ -6427,7 +7001,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6439,7 +7016,18 @@
     "snapshot_sha256": "ebc47964e07171b5a309bb02ab4ce978893b4b52647c2e1f8a0b519e41fdc34d",
     "snapshot_line_count": 159,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "1015578b50a44d5ffb9275137b1fa2511436d4b74c043074e476fb9ae95b05c4",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/profile_distance.py",
@@ -6456,7 +7044,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6468,7 +7059,18 @@
     "snapshot_sha256": "bf371d7ce5aec652c93f0acab3565331a4c4807f55f15ebb77958460ce8d4cbd",
     "snapshot_line_count": 80,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "93aaa5b13bad9259befbabd62339db246002854d866fbfe1fc6a7510d245460e",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/research.py",
@@ -6484,7 +7086,12 @@
       "native/src/terrain/trackfile.hpp",
       "native/src/terrain/trackfile.cpp",
       "native/src/terrain/presets.cpp",
-      "native/tests/migration/test_t21.cpp"
+      "native/tests/migration/test_t21.cpp",
+      "native/src/terrain/generators.hpp",
+      "native/src/terrain/spec_io.hpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/types.hpp",
+      "native/src/terrain/obstacles.cpp"
     ],
     "verification_ids": [
       "migration_T21",
@@ -6496,7 +7103,18 @@
     "snapshot_sha256": "1498391d54baf25d47e3156a0f7b40374c72c2f0d6cbf06e6c5e6ce11a78d626",
     "snapshot_line_count": 46,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "f38bdde6a24796dc2cc99a530cc6a3d94b28f384301ddf3277f9d49db603e930",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/road.py",
@@ -6513,7 +7131,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6525,7 +7146,18 @@
     "snapshot_sha256": "1223a89b6ae03104ca06dd1d43cf34c3eeba97c10e531626aa937ae809eb3d22",
     "snapshot_line_count": 384,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "644b9f01035724deb2fb572f85fa3b166207394d39b8df77387cc9c89122ce3c",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/surface.py",
@@ -6542,7 +7174,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6554,7 +7189,18 @@
     "snapshot_sha256": "9636b26126a6913b454bf5869444ac904e1b4293cae976f26af8948d54cf33c9",
     "snapshot_line_count": 266,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "68f85718b3c5497b0c9785890bc51e832c7c77e5dc59b6c05735b7b8f228db22",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/trackfile.py",
@@ -6570,7 +7216,12 @@
       "native/src/terrain/trackfile.hpp",
       "native/src/terrain/trackfile.cpp",
       "native/src/terrain/presets.cpp",
-      "native/tests/migration/test_t21.cpp"
+      "native/tests/migration/test_t21.cpp",
+      "native/src/terrain/generators.hpp",
+      "native/src/terrain/spec_io.hpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/types.hpp",
+      "native/src/terrain/obstacles.cpp"
     ],
     "verification_ids": [
       "migration_T21",
@@ -6582,7 +7233,18 @@
     "snapshot_sha256": "85d34c609beadb2ec4e01886f1e1f37625634614b88b021540aeeb7aaf5f898b",
     "snapshot_line_count": 527,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "1bb2d19eca9bec92b4b3cda98643e64cd9c775867006c1f5fef61891ebf7c261",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/terrain/wheelpath.py",
@@ -6599,7 +7261,10 @@
       "native/src/terrain/contact_safety.cpp",
       "native/src/terrain/wheelpath.cpp",
       "native/src/terrain/profile.hpp",
-      "native/tests/migration/test_t20.cpp"
+      "native/tests/migration/test_t20.cpp",
+      "native/src/terrain/detail.hpp",
+      "native/src/terrain/road.cpp",
+      "native/src/terrain/generators.hpp"
     ],
     "verification_ids": [
       "migration_T20",
@@ -6611,7 +7276,18 @@
     "snapshot_sha256": "cf99ce244f574efd921257d95a80b550f9dd4077d7928fd7d3225c51980c5f08",
     "snapshot_line_count": 141,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "1ff166278360c385647f8c28db67386ef6e643b38c9092b6eea38949fa858c97",
+      "evidence": [
+        "migration/native-startup-implementation.json",
+        "migration/native-startup-review.md"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/validation/__init__.py",

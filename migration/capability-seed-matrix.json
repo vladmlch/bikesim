@@ -40,11 +40,39 @@
         "native/src/app/physical_session.hpp",
         "native/src/app/physical_session.cpp",
         "native/src/app/setup.hpp",
-        "native/tests/migration/test_t25.cpp"
+        "native/tests/migration/test_t25.cpp",
+        "native/src/runtime/setup_values.hpp",
+        "native/src/initialization/context.hpp",
+        "native/src/initialization/finalize.hpp",
+        "native/src/initialization/finalize.cpp",
+        "native/src/app/native_ride_main.cpp",
+        "native/src/initialization/request.cpp",
+        "native/src/initialization/capture.hpp",
+        "native/src/initialization/capture.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/step.hpp",
+        "CMakeLists.txt",
+        "native/CMakeLists.txt",
+        "native/cmake/NativeStartup.cmake",
+        "native/tests/migration/CMakeLists.txt"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "native_startup_implementation": {
+        "tasks": [
+          "T18",
+          "T22",
+          "T25"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md"
+        ],
+        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+      }
     },
     {
       "id": "reusable_native_core",
@@ -162,11 +190,41 @@
         "native/tests/migration/test_t25.cpp",
         "native/tests/migration/kernel_parity.cpp",
         "native/tests/migration/kernel_properties.cpp",
-        "migration/kernel-reuse-map.json"
+        "migration/kernel-reuse-map.json",
+        "native/src/terrain/generators.hpp",
+        "native/src/terrain/spec_io.hpp",
+        "native/src/terrain/detail.hpp",
+        "native/src/terrain/types.hpp",
+        "native/src/terrain/obstacles.cpp",
+        "native/src/app/native_ride_main.cpp",
+        "native/src/initialization/request.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/src/initialization/capture.hpp",
+        "native/src/initialization/capture.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/step.hpp",
+        "CMakeLists.txt",
+        "native/CMakeLists.txt",
+        "native/cmake/NativeStartup.cmake",
+        "native/tests/migration/CMakeLists.txt"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "native_startup_implementation": {
+        "tasks": [
+          "T21",
+          "T25"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md"
+        ],
+        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+      }
     },
     {
       "id": "distributed_2d_reference",
@@ -198,11 +256,41 @@
         "native/tests/migration/test_t25.cpp",
         "native/tests/migration/kernel_parity.cpp",
         "native/tests/migration/kernel_properties.cpp",
-        "migration/kernel-reuse-map.json"
+        "migration/kernel-reuse-map.json",
+        "native/src/terrain/generators.hpp",
+        "native/src/terrain/spec_io.hpp",
+        "native/src/terrain/detail.hpp",
+        "native/src/terrain/types.hpp",
+        "native/src/terrain/obstacles.cpp",
+        "native/src/app/native_ride_main.cpp",
+        "native/src/initialization/request.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/src/initialization/capture.hpp",
+        "native/src/initialization/capture.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/step.hpp",
+        "CMakeLists.txt",
+        "native/CMakeLists.txt",
+        "native/cmake/NativeStartup.cmake",
+        "native/tests/migration/CMakeLists.txt"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "native_startup_implementation": {
+        "tasks": [
+          "T21",
+          "T25"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md"
+        ],
+        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+      }
     },
     {
       "id": "pneumatic",
@@ -234,11 +322,41 @@
         "native/tests/migration/test_t25.cpp",
         "native/tests/migration/kernel_parity.cpp",
         "native/tests/migration/kernel_properties.cpp",
-        "migration/kernel-reuse-map.json"
+        "migration/kernel-reuse-map.json",
+        "native/src/terrain/generators.hpp",
+        "native/src/terrain/spec_io.hpp",
+        "native/src/terrain/detail.hpp",
+        "native/src/terrain/types.hpp",
+        "native/src/terrain/obstacles.cpp",
+        "native/src/app/native_ride_main.cpp",
+        "native/src/initialization/request.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/src/initialization/capture.hpp",
+        "native/src/initialization/capture.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/step.hpp",
+        "CMakeLists.txt",
+        "native/CMakeLists.txt",
+        "native/cmake/NativeStartup.cmake",
+        "native/tests/migration/CMakeLists.txt"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "native_startup_implementation": {
+        "tasks": [
+          "T21",
+          "T25"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md"
+        ],
+        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+      }
     },
     {
       "id": "drive_variants",
@@ -374,11 +492,24 @@
         "native/src/legacy/suspension_controller.cpp",
         "native/src/legacy/static_equilibrium.cpp",
         "native/src/legacy/telemetry.cpp",
-        "native/tests/migration/test_t33.cpp"
+        "native/tests/migration/test_t33.cpp",
+        "native/src/model/builder.hpp",
+        "native/src/model/builder.cpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "native_startup_implementation": {
+        "tasks": [
+          "T17"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md"
+        ],
+        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+      }
     },
     {
       "id": "geometry_model_export",
@@ -433,11 +564,27 @@
         "native/src/model/mapping.cpp",
         "native/src/runtime/project_config.hpp",
         "native/src/runtime/project_config.cpp",
-        "native/tests/migration/test_t18.cpp"
+        "native/tests/migration/test_t18.cpp",
+        "native/src/model/builder_internal.hpp",
+        "native/src/model/xml_writer.hpp",
+        "native/src/runtime/setup_values.hpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "native_startup_implementation": {
+        "tasks": [
+          "T16",
+          "T17",
+          "T18"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md"
+        ],
+        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+      }
     },
     {
       "id": "equilibrium_and_state",
@@ -471,11 +618,45 @@
         "native/src/io/npy.hpp",
         "native/src/io/npy.cpp",
         "native/src/io/npz.cpp",
-        "native/tests/migration/test_t24.cpp"
+        "native/tests/migration/test_t24.cpp",
+        "native/src/initialization/context.hpp",
+        "native/src/initialization/finalize.hpp",
+        "native/src/initialization/finalize.cpp",
+        "native/src/initialization/sag_fit.hpp",
+        "native/src/initialization/sag_evaluator.cpp",
+        "native/src/initialization/legacy_equilibrium.hpp",
+        "native/src/initialization/legacy_equilibrium.cpp",
+        "native/src/initialization/artifact_identity.hpp",
+        "native/src/initialization/artifact_identity.cpp",
+        "native/src/initialization/initial_state.cpp",
+        "native/src/rider/spindle_controller.hpp",
+        "native/src/rider/spindle_controller.cpp",
+        "native/src/writers/tire.hpp",
+        "native/src/writers/tire.cpp",
+        "native/src/writers/distributed_tire.hpp",
+        "native/src/writers/distributed_tire.cpp",
+        "native/src/writers/pneumatic_tire.hpp",
+        "native/src/writers/pneumatic_tire.cpp",
+        "native/src/writers/rider_contacts.hpp",
+        "native/src/stepper.hpp",
+        "native/src/stepper.cpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "native_startup_implementation": {
+        "tasks": [
+          "T22",
+          "T23",
+          "T24"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md"
+        ],
+        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+      }
     },
     {
       "id": "rng_and_terrain",
@@ -513,11 +694,26 @@
         "native/src/terrain/trackfile.hpp",
         "native/src/terrain/trackfile.cpp",
         "native/src/terrain/presets.cpp",
-        "native/tests/migration/test_t21.cpp"
+        "native/tests/migration/test_t21.cpp",
+        "native/src/terrain/detail.hpp",
+        "native/src/terrain/generators.hpp",
+        "native/src/terrain/spec_io.hpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "native_startup_implementation": {
+        "tasks": [
+          "T20",
+          "T21"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/native-startup-implementation.json",
+          "migration/native-startup-review.md"
+        ],
+        "qualification": "not_run; only the startup/export/terrain/state portion of this capability is included"
+      }
     },
     {
       "id": "built_in_and_external_policy",

@@ -663,6 +663,26 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T15>")
 endif()
 
+# Native startup: the same app/library graph is exercised by all nine
+# migration executables. Registration never invokes the executable.
+foreach(_startup_task IN ITEMS 16 17 18 20 21 22 23 24 25)
+  set(_startup_test "migration_T${_startup_task}")
+  add_executable(${_startup_test} "test_t${_startup_task}.cpp")
+  bike_startup_target_policy(${_startup_test} "${_migration_repo_root}/native")
+  target_link_libraries(${_startup_test} PRIVATE bike_migration_test bike_app)
+  if(BIKE_ROOT_BUILD)
+    bike_rewrite_mujoco_load_name(${_startup_test}
+      "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+  else()
+    bike_rewrite_mujoco_load_name(${_startup_test} "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  endif()
+  if(BUILD_TESTING)
+    add_test(NAME ${_startup_test} COMMAND ${_startup_test})
+    set_tests_properties(${_startup_test} PROPERTIES
+      WORKING_DIRECTORY "$<TARGET_FILE_DIR:${_startup_test}>")
+  endif()
+endforeach()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

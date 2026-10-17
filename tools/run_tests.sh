@@ -30,6 +30,11 @@ if (($# > 0)); then
 fi
 
 pytest_args=(-q --durations=10)
+# output/ is gitignored scratch space (probe fixtures, extracted bundles,
+# vendored trees). It can contain whole copied test suites that collide
+# with the real tests by module name; run artifacts are never suite
+# members, so every profile ignores that directory during collection.
+pytest_args+=(--ignore "$REPO_ROOT/output")
 # Python dev mode: DeprecationWarning/ResourceWarning surface + extra
 # runtime checks — free on every profile.
 export PYTHONDEVMODE=1
@@ -37,7 +42,12 @@ case "$profile" in
   quick)
     pytest_args+=(-m 'not slow')
     # malloc debugging on the fast profile only — `full` measures realtime.
-    export MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1
+    # These are Darwin allocator variables; they must never be exported on
+    # Linux, where invented allocator settings would perturb numerical and
+    # performance baselines instead of debugging them.
+    if [[ "$(uname -s)" == Darwin ]]; then
+      export MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1
+    fi
     # Direct native tests require the selected, built extension. Keep the
     # tool-controller unit tests in quick; the native profile owns the rest.
     for native_file in "$REPO_ROOT"/tests/reference/test_native_*.py; do
@@ -49,7 +59,10 @@ case "$profile" in
     ;;
   native)
     # The full native verification chain is shared with `full` below.
-    export MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1
+    # Darwin allocator debugging only — never exported on Linux.
+    if [[ "$(uname -s)" == Darwin ]]; then
+      export MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1
+    fi
     native_files=(tests/reference/test_native_*.py tests/reference/test_golden_episode*.py)
     pytest_args+=("${native_files[@]}")
     ;;

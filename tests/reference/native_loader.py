@@ -9,6 +9,7 @@ import importlib.machinery
 import json
 import os
 from pathlib import Path
+import platform
 import sys
 from types import ModuleType
 
@@ -146,6 +147,16 @@ def record_native_provenance(*, native_test_count: int | None = None) -> Path | 
         'schema_version': 1,
         'selected_build': str(build),
         'imported_extension': str(expected),
+        # Host identity at record time: lets consumers prove the artifact
+        # was imported on the platform that claims the result instead of
+        # trusting a bare path record.
+        'platform': {
+            'system': platform.system(),
+            'machine': platform.machine(),
+        },
+        'python': {
+            'version': platform.python_version(),
+        },
     }
     if native_test_count is not None:
         if isinstance(native_test_count, bool) or not isinstance(native_test_count, int) or native_test_count < 0:

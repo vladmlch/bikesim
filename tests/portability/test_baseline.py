@@ -90,7 +90,9 @@ def test_real_checkout_baseline(tmp_path):
     assert declared["numpy"]["version"] == "2.5.2"
     # Genuinely absent inputs are named, not silently dropped.
     assert ".python-version" in report["missing_inputs"]
-    assert ".github" in report["missing_inputs"]
+    # T28 adds .github/workflows/portability.yml, so .github is no longer
+    # an absent input; the remaining entries below are still missing.
+    assert ".github" not in report["missing_inputs"]
     assert (
         "docs/superpowers/specs/2026-10-06-native-safety.md"
         in report["missing_inputs"]

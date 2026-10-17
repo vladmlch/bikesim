@@ -968,6 +968,12 @@ void validate_mapping(const Value &value, const std::string &name,
     if (!schema_entry(name, required, optional))
         fail(path + ": no schema for " + name);
     const Value::Object &object = wire_object(value, path);
+    if (schema_name(name) == "tire.side.material" &&
+        (bike::io::find_member(object, "deflection_m") != nullptr ||
+         bike::io::find_member(object, "force_n") != nullptr)) {
+        required = "deflection_m force_n radial_c_ns_m pressure_pa_gauge provenance valid_load_range_n";
+        optional = "";
+    }
     exact_keys(object, required, optional, path);
     for (const auto &[key, item] : object) {
         std::string child = path;
@@ -1008,9 +1014,11 @@ void validate_mapping(const Value &value, const std::string &name,
             for (std::size_t index = 0; index < values.size(); ++index)
                 wire_integer(values[index],
                              child + "." + std::to_string(index));
-        } else if (in_words(key, kRealSequences) &&
+        } else if (((key == "deflection_m" || key == "force_n") &&
+                    schema_name(name) == "tire.side.material") ||
+                   (in_words(key, kRealSequences) &&
                    (schema_name(name) == "tire.distributed.density" ||
-                    schema_name(name) == "tire.pneumatic.profile")) {
+                    schema_name(name) == "tire.pneumatic.profile"))) {
             const auto &values = wire_sequence(item, child);
             for (std::size_t index = 0; index < values.size(); ++index)
                 wire_scalar(values[index],

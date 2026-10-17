@@ -1,5 +1,6 @@
 // T18: source-equivalent native/config.py and native/setup.py projection.
 #include "project_config.hpp"
+#include "capabilities.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -29,17 +30,6 @@ namespace mdl = bike::model;
 namespace trn = bike::terrain;
 namespace bio = bike::io;
 using namespace setupvalue;
-
-[[noreturn]] void unsupported(std::string_view path, std::string actual,
-                             std::string supported) {
-    throw std::invalid_argument("unsupported native configuration: " +
-        std::string(path) + "=" + actual + " (supported: " + supported + ")");
-}
-void require_string(std::string_view path, const std::string& actual,
-                    std::string_view supported) {
-    if (actual != supported)
-        unsupported(path, "'" + actual + "'", "'" + std::string(supported) + "'");
-}
 
 cfg::SimulationPhysicsConfig physics(const mdl::BuildRequest& request) {
     auto out = request.physics.value_or(cfg::default_physics());
@@ -209,10 +199,6 @@ Value tire(const mdl::BuildRequest& request,
         auto params = select(field(input, side),
             {"tangent_k_n_m", "mu", "relaxation_length_m"});
         if (tires.backend == "compliant_2d") {
-            const auto& material = std::string_view(side) == "front" ?
-                tires.front.material : tires.rear.material;
-            if (!std::holds_alternative<cfg::TireSpec>(material))
-                throw std::invalid_argument("native tire port requires TireSpec material, got TabulatedTireSpec");
             // Preserve source order: material precedes the tangential fields.
             auto with_material = Value{Object{{"material", field(field(input, side), "material")}}};
             for (const auto& entry : bio::as_object(params, "tire parameters"))
@@ -308,33 +294,7 @@ Value envelopes(const cfg::JointEnvelopeMap& entries) {
 
 void validate_native_supported(const cfg::SimulationPhysicsConfig& config,
                                const cfg::RiderSpecs& rider_spec) {
-    cfg::validate(config);
-    require_string("physics_mode", config.physics_mode, "physical");
-    require_string("drive_mode", config.drive_mode.value_or("None"), "articulated_effort");
-    if (config.pitch_assist.value_or(true)) unsupported("pitch_assist", "True", "False");
-    require_string("rider.variant", rider_spec.variant, "articulated_planar");
-    require_string("articulated.pedal_attachment", config.articulated.pedal_attachment, "spindle");
-    require_string("articulated.saddle_attachment", config.articulated.saddle_attachment, "pin");
-    require_string("articulated.grip_attachment", config.articulated.grip_attachment, "connect");
-    const auto& t = config.tires;
-    if (t.backend != "compliant_2d" && t.backend != "distributed_2d_reference" && t.backend != "pneumatic")
-        unsupported("tires.backend", "'" + t.backend + "'", "('compliant_2d', 'distributed_2d_reference', 'pneumatic')");
-    require_string("drive.transmission_model", config.drive.transmission_model, "ideal_mid_drive");
-    if (config.drive.motor_clutch) unsupported("drive.motor_clutch", "True", "False");
-    if (config.drive.rotor_inertia_kgm2 != 0.)
-        unsupported("drive.rotor_inertia_kgm2", cfg::detail::repr_double(config.drive.rotor_inertia_kgm2), "0.0");
-    if (t.backend == "pneumatic") {
-        if (t.surface_mode != "track" && t.surface_mode != "configured")
-            unsupported("tires.surface_mode", "'" + t.surface_mode + "'", "('track', 'configured')");
-        if (t.surface_mode == "configured" && !t.pneumatic.surface)
-            unsupported("tires.pneumatic.surface", "None", "'a named surface under configured surface_mode'");
-    } else require_string("tires.surface_mode", t.surface_mode, "track");
-    if (t.backend == "compliant_2d") {
-        if (!std::holds_alternative<cfg::TireSpec>(t.front.material))
-            unsupported("tires.front.material", "'TabulatedTireSpec'", "'analytic TireSpec'");
-        if (!std::holds_alternative<cfg::TireSpec>(t.rear.material))
-            unsupported("tires.rear.material", "'TabulatedTireSpec'", "'analytic TireSpec'");
-    }
+    validate_physical_capabilities(config, rider_spec);
 }
 
 bio::Value project_articulated_pose(const mdl::ArticulatedPose& p) {
@@ -459,8 +419,10 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
     const int period_steps = static_cast<int>(std::nearbyint(periods));
     if (std::abs(static_cast<double>(period_steps) * config.timestep_s - config.control_period_s) > 1e-9)
         throw std::invalid_argument("control_period_s must be an integer multiple of timestep_s");
-    for (auto name : {"frame", "front_wheel", "rear_wheel", "rider_pelvis"})
+    for (auto name : {"frame", "front_wheel", "rear_wheel"})
         (void)mdl::required_id(model, mjOBJ_BODY, name);
+    const bool articulated = resolved_rider.variant == "articulated_planar";
+    if (articulated) (void)mdl::required_id(model, mjOBJ_BODY, "rider_pelvis");
     Value wheels{Object{}};
     for (auto side : {"front", "rear"}) {
         const std::string joint = std::string(side) + "_wheel_spin";
@@ -469,7 +431,9 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
             throw std::invalid_argument("brake wheel joint must be a hinge: " + joint);
         set(wheels, side, Value{Object{{"joint", text(joint)}, {"dof_index", integer(0)}}});
     }
-    const auto pose = mdl::geometry_pose(resolved_rider, request.bike);
+    const Value pose = articulated
+        ? project_articulated_pose(mdl::geometry_pose(resolved_rider, request.bike))
+        : Value{};
     const int com = mj_name2id(&model, mjOBJ_SITE, "site_CG");
     const auto physics_document = cfg::detail::plain_document(cfg::to_value(config));
     Value envelope{Object{
@@ -489,7 +453,7 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
             {"brake_dofs", std::move(wheels)}, {"wheel_bodies", Value{Object{
                 {"front", text("front_wheel")}, {"rear", text("rear_wheel")}}}},
             {"com_marker_site", com < 0 ? Value{} : text("site_CG")},
-            {"pose", project_articulated_pose(pose)}}}}}};
+            {"pose", pose}}}}}};
     return decode_runtime_config(envelope);
 }
 

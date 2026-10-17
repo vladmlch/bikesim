@@ -8,6 +8,14 @@
 #include <variant>
 
 namespace drivetrain {
+    // Source transmission_constraint.py helpers. These owned cold-path
+    // results are also useful to independently inspect the live linearizer.
+    [[nodiscard]] std::pair<std::vector<double>, double> linearized_upper_bound(
+        double phi, std::span<const double> jacobian,
+        std::span<const double> q, double boundary);
+    [[nodiscard]] std::vector<double> constraint_reaction(
+        double tension, std::span<const double> jacobian);
+
     // DiagnosticValue/Diagnostics now live with the telemetry types in
     // writers/writer_types.hpp (identical aliases); they stay the FFI-edge
     // representation — core state uses DriveTelemetry lanes instead.

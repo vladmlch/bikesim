@@ -29,14 +29,26 @@ double load(const WireObject &wheel) {
     }
     return result.total();
 }
-std::string_view classify(const WheelieTruth &t) {
-    const bool front = t.front_load_n > 5., rear = t.rear_load_n > 5.;
-    if (front && rear) return "two_wheels";
-    if (!front && !rear) return std::min(t.front_clearance_m, t.rear_clearance_m) > .01 ? "flight" : "unsupported";
-    if (!rear) return t.rear_clearance_m > .01 ? "rear_lift" : "rear_unloaded";
-    if (t.front_clearance_m <= .01) return "front_unloaded";
-    return t.relative_pitch_rad > .035 ? "wheelie_candidate" : "front_lift";
 }
+std::string_view classify_contact(double front_load,double rear_load,double front_clearance,
+        double rear_clearance,double relative_pitch,double load_threshold,double clearance_threshold,double pitch_threshold) {
+    for(double value:{front_load,rear_load,front_clearance,rear_clearance,load_threshold,clearance_threshold,pitch_threshold})
+        if(!std::isfinite(value)||value<0.)throw std::invalid_argument("contact classification inputs must be finite and nonnegative");
+    if(!std::isfinite(relative_pitch))throw std::invalid_argument("road-relative pitch must be finite");
+    const bool front = front_load > load_threshold, rear = rear_load > load_threshold;
+    if (front && rear) return "two_wheels";
+    if (!front && !rear) return std::min(front_clearance,rear_clearance) > clearance_threshold ? "flight" : "unsupported";
+    if (!rear) return rear_clearance > clearance_threshold ? "rear_lift" : "rear_unloaded";
+    if (front_clearance <= clearance_threshold) return "front_unloaded";
+    return relative_pitch > pitch_threshold ? "wheelie_candidate" : "front_lift";
+}
+double quasistatic_front_load(double mass,double wheelbase,double forward,double height,double road_pitch,double acceleration,double gravity) {
+    for(double value:{mass,wheelbase,gravity})if(!std::isfinite(value)||value<=0.)throw std::invalid_argument("quasistatic mass, wheelbase and gravity must be positive");
+    if(!std::isfinite(height)||height<0.)throw std::invalid_argument("quasistatic CoM height must be nonnegative");
+    for(double value:{forward,road_pitch,acceleration})if(!std::isfinite(value))throw std::invalid_argument("quasistatic input must be finite");
+    // Observation only. A negative estimate remains signed; it never enters
+    // applied forces or controller observations.
+    return mass*(gravity*numeric::cos(road_pitch)*forward-height*(acceleration+gravity*numeric::sin(road_pitch)))/wheelbase;
 }
 void TruthGeometry::validate(std::size_t nq, std::size_t nv) const {
     if (x.size() < 2 || x.size() != z.size()) throw std::invalid_argument("research terrain requires equal x/z arrays");
@@ -57,7 +69,16 @@ WireObject WheelieTruth::as_wire() const {
         {"front_slip_mps", front_slip_mps}, {"rear_slip_mps", rear_slip_mps},
         {"com_x_m", com_x_m}, {"com_z_m", com_z_m}};
 }
+void WheelieTruth::validate()const {
+    for(double value:{time_s,front_load_n,rear_load_n,front_clearance_m,rear_clearance_m,relative_pitch_rad,position_m,speed_mps,
+        pitch_up_rad,pitch_rate_up_rad_s,axle_pitch_rad,road_pitch_rad,front_slip_mps,rear_slip_mps,com_x_m,com_z_m})
+        if(!std::isfinite(value))throw std::invalid_argument("nonfinite research truth");
+    for(double value:{time_s,front_load_n,rear_load_n,front_clearance_m,rear_clearance_m})
+        if(value<0.)throw std::invalid_argument("negative truth time, contact load or clearance");
+}
+std::string_view WheelieTruth::contact_state()const {return classify_contact(front_load_n,rear_load_n,front_clearance_m,rear_clearance_m,relative_pitch_rad);}
 WheelieTruth research_truth(const PhysicalSampleData &s, const TruthGeometry &g) {
+    g.validate(s.qpos.size(),s.qvel.size());
     const auto &tires = o(s.channels, "tires");
     const auto &front = o(tires, "front"), &rear = o(tires, "rear");
     const auto &f = array(required(front, "wheel_axis_m"));
@@ -76,11 +97,15 @@ WheelieTruth research_truth(const PhysicalSampleData &s, const TruthGeometry &g)
     const double supported = std::atan2((zf - zr) + (g.front_radius - g.rear_radius) / normal_z, dx);
     const double difference = t.axle_pitch_rad - supported;
     t.relative_pitch_rad = std::atan2(numeric::sin(difference), numeric::cos(difference));
-    // Both supported tire backends always publish penetration_m (the
-    // diagnostics block of wire_tire_diagnostics /
-    // wire_distributed_tire_diagnostics), so required() cannot throw here.
-    t.front_clearance_m = std::max(0., -n(front, "penetration_m"));
-    t.rear_clearance_m = std::max(0., -n(rear, "penetration_m"));
+    std::optional<biketyre::ProfileQuery> profile;
+    const auto clearance=[&](const WireObject& wheel,const WireArray& center,double radius){
+        const auto* penetration=find(wheel,"penetration_m");
+        if(penetration&&!is_none(*penetration))return std::max(0.,-number(*penetration));
+        if(!profile)profile.emplace(g.x,g.z,.0001,.05,20.);
+        return std::max(0.,-profile->contact({number(center[0]),number(center[2])},radius,std::nullopt).delta);
+    };
+    t.front_clearance_m = clearance(front,f,g.front_radius);
+    t.rear_clearance_m = clearance(rear,r,g.rear_radius);
     t.front_load_n = load(front);
     t.rear_load_n = load(rear);
     t.position_m = s.qpos.at(g.root_x_qpos);
@@ -91,13 +116,7 @@ WheelieTruth research_truth(const PhysicalSampleData &s, const TruthGeometry &g)
     t.rear_slip_mps = n(rear, "slip_mps");
     t.com_x_m = number(com[0]);
     t.com_z_m = number(com[2]);
-    for (const double value : {t.time_s, t.front_load_n, t.rear_load_n, t.front_clearance_m,
-             t.rear_clearance_m, t.relative_pitch_rad, t.position_m, t.speed_mps, t.pitch_up_rad,
-             t.pitch_rate_up_rad_s, t.axle_pitch_rad, t.road_pitch_rad, t.front_slip_mps,
-             t.rear_slip_mps, t.com_x_m, t.com_z_m})
-        if (!std::isfinite(value)) throw std::invalid_argument("nonfinite research truth");
-    if (t.time_s < 0. || t.front_load_n < 0. || t.rear_load_n < 0.)
-        throw std::invalid_argument("negative truth time or contact load");
+    t.validate();
     return t;
 }
 WireObject WheelieEpisode::as_wire() const {
@@ -105,20 +124,34 @@ WireObject WheelieEpisode::as_wire() const {
         {"max_relative_pitch_rad", max_relative_pitch_rad}, {"max_front_clearance_m", max_front_clearance_m},
         {"min_front_load_n", min_front_load_n}, {"onset", onset}};
 }
-WheelieTracker::WheelieTracker(double persistence_s) : persistence_(persistence_s) {
+WheelieTracker::WheelieTracker(double persistence_s,double load_threshold,double clearance_threshold,double pitch_threshold)
+    : persistence_(persistence_s),load_threshold_(load_threshold),clearance_threshold_(clearance_threshold),pitch_threshold_(pitch_threshold) {
     if (!std::isfinite(persistence_) || persistence_ < 0.)
         throw std::invalid_argument("wheelie persistence must be finite and nonnegative");
+    for(double value:{load_threshold_,clearance_threshold_,pitch_threshold_})
+        if(!std::isfinite(value)||value<=0.)throw std::invalid_argument("wheelie thresholds must be positive and finite");
+}
+void WheelieTracker::reset() {
+    last_end_.reset();candidate_s_=0.;active_=false;state_="uninitialized";state_times_.clear();episode_.reset();episodes_.clear();
+    duration_=0.;candidate_time_=0.;wheelie_time_=0.;wheelie_episodes_=0;fraction_count_=0;front_unloaded_=0.;front_lift_=0.;flight_=0.;
+    max_clearance_=0.;max_pitch_=0.;rear_slip_=0.;min_front_load_.reset();min_fraction_.reset();fraction_sum_=0.;max_pitch_rate_=0.;
 }
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) argument order mirrors WheelieTracker.update
 void WheelieTracker::update(const WheelieTruth &t, double dt, double delivered, std::optional<double> applied) {
+    update(t,dt,WireObject{{"delivered_motor_nm",delivered},{"applied_motor_nm",opt(applied)},
+        {"road_pitch_rad",t.road_pitch_rad},{"pitch_rate_up_rad_s",t.pitch_rate_up_rad_s},{"speed_mps",t.speed_mps}});
+}
+void WheelieTracker::update(const WheelieTruth &t,double dt,WireObject context) {
+    t.validate();
     if (!std::isfinite(dt) || dt <= 0.) throw std::invalid_argument("metric interval must be positive");
     if (last_end_ && std::abs(t.time_s - *last_end_) > 1e-9)
         throw std::invalid_argument("metric intervals must be contiguous and unrepeated");
     const bool hysteresis = candidate_s_ > 0.;
-    const auto raw = classify(t);
-    const bool candidate = t.rear_load_n > 5. && t.front_load_n <= 5. * (hysteresis ? 2. : 1.) &&
-        t.front_clearance_m > .01 * (hysteresis ? .5 : 1.) &&
-        t.relative_pitch_rad > .035 * (hysteresis ? .5 : 1.);
+    const auto raw = classify_contact(t.front_load_n,t.rear_load_n,t.front_clearance_m,t.rear_clearance_m,t.relative_pitch_rad,
+        load_threshold_,clearance_threshold_,pitch_threshold_);
+    const bool candidate = t.rear_load_n > load_threshold_ && t.front_load_n <= load_threshold_ * (hysteresis ? 2. : 1.) &&
+        t.front_clearance_m > clearance_threshold_ * (hysteresis ? .5 : 1.) &&
+        t.relative_pitch_rad > pitch_threshold_ * (hysteresis ? .5 : 1.);
     const bool onset = candidate && candidate_s_ == 0.;
     candidate_s_ = candidate ? candidate_s_ + dt : 0.;
     const bool active = candidate && candidate_s_ + 1e-12 >= persistence_;
@@ -126,9 +159,7 @@ void WheelieTracker::update(const WheelieTruth &t, double dt, double delivered, 
         episode_ = WheelieEpisode{.start_s = t.time_s, .end_s = t.time_s, .confirmed = false,
             .max_relative_pitch_rad = t.relative_pitch_rad, .max_front_clearance_m = t.front_clearance_m,
             .min_front_load_n = t.front_load_n,
-            .onset = {{"delivered_motor_nm", delivered}, {"applied_motor_nm", opt(applied)},
-            {"road_pitch_rad", t.road_pitch_rad}, {"pitch_rate_up_rad_s", t.pitch_rate_up_rad_s},
-            {"speed_mps", t.speed_mps}}};
+            .onset = std::move(context)};
     }
     if (candidate) {
         if (!episode_) throw std::logic_error("missing wheelie candidate episode");
@@ -148,14 +179,14 @@ void WheelieTracker::update(const WheelieTruth &t, double dt, double delivered, 
     duration_ += dt;
     candidate_time_ += candidate ? dt : 0.;
     wheelie_time_ += active ? dt : 0.;
-    front_unloaded_ += t.front_load_n <= 5. ? dt : 0.;
+    front_unloaded_ += t.front_load_n <= load_threshold_ ? dt : 0.;
     front_lift_ += raw == "front_lift" || raw == "wheelie_candidate" ? dt : 0.;
     flight_ += raw == "flight" ? dt : 0.;
     max_clearance_ = std::max(max_clearance_, t.front_clearance_m);
     max_pitch_ = std::max(max_pitch_, t.relative_pitch_rad);
-    if (t.rear_load_n > 5.) rear_slip_ += std::abs(t.rear_slip_mps) * dt;
+    if (t.rear_load_n > load_threshold_) rear_slip_ += std::abs(t.rear_slip_mps) * dt;
     min_front_load_ = min_front_load_ ? std::min(*min_front_load_, t.front_load_n) : t.front_load_n;
-    if (t.rear_load_n > 5.) {
+    if (t.rear_load_n > load_threshold_) {
         const double fraction = t.front_load_n / (t.front_load_n + t.rear_load_n);
         min_fraction_ = min_fraction_ ? std::min(*min_fraction_, fraction) : fraction;
         fraction_sum_ += fraction;
@@ -183,6 +214,8 @@ WireObject WheelieTracker::metrics() const {
         {"wheelie_episode_records", std::move(records)}, {"contact_state_time_s", std::move(states)}};
 }
 ResearchQuality research_quality(const WireObject &energy, double maximum_ratio) {
+    if (!std::isfinite(maximum_ratio) || maximum_ratio <= 0.)
+        throw std::invalid_argument("maximum energy residual ratio must be positive and finite");
     double scale = optional_number(energy, "energy_scale_j", 1.);
     if (scale < 0.) throw std::invalid_argument("initial energy scale must be nonnegative");
     scale += std::abs(optional_number(energy, "external_work_j", 0.));

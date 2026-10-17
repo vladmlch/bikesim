@@ -87,16 +87,24 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
     context.equilibrium->total_vertical_force_n=0.;
     for(std::size_t side=0;side<2;++side){
         if(!physical.snapshots_[side])throw std::invalid_argument("settled model lacks a wheel contact snapshot");
-        numeric::PythonSum normal,vertical;for(const auto& p:physical.snapshots_[side]->patches){normal.add(p.normal_load_n);vertical.add(p.normal_load_n*p.normal[2]-p.tangent_force_n*p.normal[0]);}
+        numeric::PythonSum normal,vertical;for(const auto& p:physical.snapshots_[side]->patches){normal.add(p.normal_load_n);vertical.add(p.native_world_force_n ? (*p.native_world_force_n)[2] : p.normal_load_n*p.normal[2]-p.tangent_force_n*p.normal[0]);}
         if(side==0)context.equilibrium->static_front_load_n=normal.total();
         else context.equilibrium->static_rear_load_n=normal.total();
         context.equilibrium->total_vertical_force_n+=vertical.total();
     }
     if(physical.rider_present()){
-        auto controller=physical.rider_control().state();controller.active_state.clear();
-        for(const auto& joint:physical.rider_control().joints()){
-            const auto it=std::ranges::find(controller.effort_diagnostics.active_request_nm,joint.name,&std::pair<std::string,double>::first);
-            controller.active_state.push_back(it==controller.effort_diagnostics.active_request_nm.end()?0.:it->second);
+        auto controller=physical.rider_control().state();
+        if(controller.allocation_diagnostics.legacy && !controller.allocation_diagnostics.legacy->disabled) {
+            // The allocator records pre-clamp latent activation separately
+            // from excitation and delivered torque. Preserve that state at
+            // the equilibrium-to-ride transition together with its warm start.
+            controller.active_state=controller.allocation_diagnostics.legacy->activation_state;
+        } else {
+            controller.active_state.clear();
+            for(const auto& joint:physical.rider_control().joints()){
+                const auto it=std::ranges::find(controller.effort_diagnostics.active_request_nm,joint.name,&std::pair<std::string,double>::first);
+                controller.active_state.push_back(it==controller.effort_diagnostics.active_request_nm.end()?0.:it->second);
+            }
         }
         controller.activation_time_s.reset();physical.rider_control().restore(controller);
     }

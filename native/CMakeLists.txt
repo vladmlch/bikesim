@@ -216,6 +216,7 @@ else()
 add_library(bike_native_contract_core OBJECT src/stepper.cpp
   src/writer_config.cpp src/drivetrain/pedaling.cpp
   src/drivetrain/chain.cpp src/drivetrain/transmission.cpp
+  src/drivetrain/elastic_chain.cpp src/drivetrain/motor_clutch.cpp
   src/drivetrain/shifting.cpp src/drivetrain/motor.cpp
   src/drivetrain/freehub.cpp src/drivetrain/state_codec.cpp
   src/writers/drivetrain.cpp

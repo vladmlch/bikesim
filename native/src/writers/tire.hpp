@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "../config_types.hpp"
+#include "../contact/tabulated_radial.hpp"
 #include "../rtsan.hpp"
 #include "../tyre/profile.hpp"
 #include "tire_common.hpp"
@@ -184,6 +185,7 @@ public:
 private:
     const mjModel *m_ = nullptr; // non-owning; the Stepper outlives it
     nativecfg::TireConfig cfg_;
+    std::array<std::optional<contactlaw::TabulatedRadial>, 2> radial_tables_;
     int nv_ = 0;
     // optional so the ctor can honor __init__'s validation order: the
     // surface_map gate (tire_forces.py:68-70) precedes the profile build.

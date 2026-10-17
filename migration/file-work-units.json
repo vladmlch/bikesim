@@ -3670,10 +3670,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "9706223d92c3e02cd36460e9e67a0ca13a5cf8273623915985b5a661e3a64da4",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F048",
@@ -4437,10 +4460,27 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/attachment_wrench.hpp",
+      "native/src/runtime/period_buffer.cpp",
+      "native/src/runtime/period_buffer.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "fe20bf07de07b77bcffc722903a773cdb93b8128066cf92b746c98c471b18338",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F054",
@@ -4520,10 +4560,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/drivetrain/motor.cpp",
+      "native/src/drivetrain/motor.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "28b805302bc32187fcf7dcb052cebfbce782d46fdfdf9a12d2d6b14b68f36dbf",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F055",
@@ -4616,10 +4672,26 @@
       "native/src/drivetrain/transmission.cpp",
       "native/src/writers/drivetrain.cpp",
       "native/src/runtime/project_config.cpp",
-      "native/tests/migration/test_t27.cpp"
+      "native/tests/migration/test_t27.cpp",
+      "native/src/drivetrain/chain.hpp",
+      "native/src/drivetrain/capabilities.hpp",
+      "native/src/drivetrain/transmission.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "f68f98cd3e8e84c4a717a167b43fe62a7d11b6bb623c9f1d797c5d69b491dae1",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F056",
@@ -5192,10 +5264,29 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/config_types.hpp",
+      "native/src/config_validation.hpp",
+      "native/src/numerics/density_fit.hpp",
+      "native/src/tyre/station.hpp",
+      "native/src/writers/distributed_tire.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "445bb3ac6bc013a30b73e53f087c5c715343fc683b49521cb8d1e8e3cc237a80",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F061",
@@ -5365,10 +5456,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/controls.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "3f9e4255d1599c4ceb0c71a5a5bbfea11466ba28060d4deb7b0e56e75a421451",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F063",
@@ -5412,10 +5519,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/accounting.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "43a7a635d7d7b0488392272746d88080b33620c657ef8dffec46082fda01d511",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F064",
@@ -5469,10 +5592,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/writers/resistance.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "b9b9977918caff986be956569d380621b78f2cd1f7ddeff95074391761cefdfb",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F065",
@@ -5529,10 +5667,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/drivetrain/freehub.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "f6c0d44c05e880d84a2d736fc6977a2d712270b32191d5775b1150fecc014c89",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F066",
@@ -5562,10 +5715,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/contact_math.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "adb15436c65b3d42e332c1288cca7eedbfabeeb1e2abd918c34effe5c28ae6eb",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F067",
@@ -5984,10 +6152,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/drivetrain/motor.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "64211ed280119a82445b25ffb69993af2e7052594f40df025d3b13c20ef5aefe",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F072",
@@ -6058,10 +6241,28 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/config_types.hpp",
+      "native/src/config_validation.hpp",
+      "native/src/drivetrain/motor.cpp",
+      "native/src/drivetrain/motor.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "5d19c8fbebf9c782540e19a5865327a7917c14da1140cff732f9549fc33f4b2e",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F073",
@@ -6142,10 +6343,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/drivetrain/pedaling.cpp",
+      "native/src/drivetrain/pedaling.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "3aed4fd92ee3e34f1ca9aa3db7fa6c42033108fd21f4a3cdf2a0541973bca090",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F074",
@@ -6914,10 +7131,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/spindle_math.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "f80b46ce05964bf8e1eb0a23cac35d45adbfdd5c3a3a4a387578c17305955210",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F079",
@@ -7002,10 +7234,30 @@
       "native/src/numerics/nnls.cpp",
       "native/src/rider/allocation.hpp",
       "native/src/rider/allocation.cpp",
-      "native/tests/migration/test_t28.cpp"
+      "native/tests/migration/test_t28.cpp",
+      "native/src/numerics/dense.hpp",
+      "native/src/numerics/nnls.hpp",
+      "native/src/numerics/brent.hpp",
+      "native/src/numerics/brent.cpp",
+      "native/src/numerics/density_fit.hpp",
+      "native/src/numerics/density_fit.cpp",
+      "native/src/rider/allocation_json.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "951c8a3c420cb2d86be5723b62a1d90d52b2c45b9d51b7c759be4f91a893e180",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F080",
@@ -7532,10 +7784,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/drivetrain/shifting.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "ef5fb6c6768ecc5ffc86878c256fd3afbe5cabbc202339aaa3252993b94adf6d",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F086",
@@ -7567,10 +7834,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/writers/suspension.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "c2e50650544f6e1b6bee59f8ca772a170f943b30eca2dcf5611df63f8c6f3efe",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F087",
@@ -7748,10 +8030,30 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/config_types.hpp",
+      "native/src/config_validation.hpp",
+      "native/src/contact/laws.hpp",
+      "native/src/contact/tabulated_radial.cpp",
+      "native/src/validation.hpp",
+      "native/src/writers/tire.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "4e0504120e744458201639966e0dd22cad7e3544505cac9983fdbb948437d3d8",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F089",
@@ -7939,10 +8241,26 @@
       "native/src/drivetrain/transmission.cpp",
       "native/src/writers/drivetrain.cpp",
       "native/src/runtime/project_config.cpp",
-      "native/tests/migration/test_t27.cpp"
+      "native/tests/migration/test_t27.cpp",
+      "native/src/drivetrain/chain.hpp",
+      "native/src/drivetrain/capabilities.hpp",
+      "native/src/drivetrain/transmission.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "920a832ecd36448b81ed74a8397e4ffe2d6555f056fc68bb75f9c5d2ab98bc11",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F092",
@@ -8147,10 +8465,30 @@
       "native/src/legacy/ride.cpp",
       "native/src/legacy/force_accumulator.cpp",
       "native/src/legacy/recorder.cpp",
-      "native/tests/migration/test_t31.cpp"
+      "native/tests/migration/test_t31.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/legs.hpp",
+      "native/src/legacy/legs.cpp",
+      "native/src/legacy/rider.hpp",
+      "native/src/legacy/rider.cpp",
+      "native/src/app/native_ride_main.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "742a18772f5ea4cec002ddd08c64feb0c60686d40a3186823e2fa54ae25efe75",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F094",
@@ -10594,7 +10932,20 @@
       "native/tests/migration/test_t33.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "7e5eb1e5b57d06f485f933bae27c846f385ecbf4cf94ee975e633b8302100ac7",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F115",
@@ -11124,7 +11475,20 @@
       "native/tests/migration/test_t33.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6b7e09e05dadd99c72063d961beecc0ce5c59e0897f29d165da930b060d4eda4",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F120",
@@ -11240,10 +11604,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "48488026505e3a60153e4c417b893f96027fe7ea364f57ba640f0a87010ded19",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F122",
@@ -11389,10 +11776,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "d5f534491c5983c57737830d66809a674a19bbd49f3aa547487fa225414d4a03",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F123",
@@ -11444,10 +11854,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "36e66abc5418ed7d4fd79030288ce35645fd5f6d53ffea1c9d6a4240facdb4a6",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F124",
@@ -11527,10 +11960,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "ad5a66158c12b3a88535e4b4e44a761bf978398715d5a67ac6dce55112283b30",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F125",
@@ -11770,10 +12226,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "7526b2fff8c31633756825ddba460f207a19b285e7ad7e0cad03ecccb182702f",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F126",
@@ -11802,10 +12281,28 @@
       "native/src/research/metrics.cpp",
       "native/src/research/quality.cpp",
       "native/src/research/evidence.cpp",
-      "native/src/research/metadata.cpp"
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/research/preview_csv.cpp",
+      "native/tests/migration/test_t37.cpp",
+      "native/src/runtime/status.hpp",
+      "native/src/runtime/status.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "1fce39824a37c3a15c222ec23f6f04c049d5c2fb093264054cd79d089aa4e529",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F127",
@@ -11838,10 +12335,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "30ecd27ab31763807bc300c8c1f9750b54a5446cc13441caae84f1a0bad77f5a",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F128",
@@ -12083,10 +12603,24 @@
       "native/src/research/plugin_policy.cpp",
       "examples/policies/traction_control.cpp",
       "docs/NATIVE_POLICIES.md",
-      "native/tests/migration/test_t35.cpp"
+      "native/tests/migration/test_t35.cpp",
+      "native/tests/migration/policy_fixture.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "32798d13a41a0e744bc5e5eb6e711b09f0783967e802ca4feaaaa13a2007a9fe",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F130",
@@ -12289,10 +12823,25 @@
       "native/src/research/policy_session.hpp",
       "native/src/research/policy_session.cpp",
       "native/src/research/lifecycle.cpp",
-      "native/src/research/exit_codes.cpp"
+      "native/src/research/exit_codes.cpp",
+      "native/src/research/rider_behavior.cpp",
+      "native/tests/migration/test_t36.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "2eb50dfa7b8af59ac119687d5eaa5c0795726b4cd31cafc003d47afa9556d957",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F131",
@@ -12329,10 +12878,28 @@
       "native/src/research/metrics.cpp",
       "native/src/research/quality.cpp",
       "native/src/research/evidence.cpp",
-      "native/src/research/metadata.cpp"
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/research/preview_csv.cpp",
+      "native/tests/migration/test_t37.cpp",
+      "native/src/runtime/status.hpp",
+      "native/src/runtime/status.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "5ac75a08c06f5e8cf574ab4b47be5a5a629f875c9293086dfc93cef24e69bd49",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F132",
@@ -12443,10 +13010,25 @@
       "native/src/research/policy_session.hpp",
       "native/src/research/policy_session.cpp",
       "native/src/research/lifecycle.cpp",
-      "native/src/research/exit_codes.cpp"
+      "native/src/research/exit_codes.cpp",
+      "native/src/research/rider_behavior.cpp",
+      "native/tests/migration/test_t36.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "83169e268ed40d3e2f5c615935a0d074bc61e58652f1579c75ba24aff7f1319a",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F133",
@@ -12941,10 +13523,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "b18b5ec10f113ce03a8253c50758a5d340a79f164db9c13b6dfe6f46fe7e0d1b",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F137",
@@ -13063,10 +13668,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "2bc6d51262adf4f27f5822964a45dcd6045bd0ba43237754710a3f3ff68e398f",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F138",
@@ -13327,10 +13955,33 @@
       "native/src/research/configuration.cpp",
       "native/src/research/program_loader.cpp",
       "native/src/research/rider_random.cpp",
-      "native/tests/migration/test_t34.cpp"
+      "native/tests/migration/test_t34.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/programs.hpp",
+      "native/src/runtime/programs.cpp",
+      "native/src/runtime/sensors.hpp",
+      "native/src/runtime/sensors.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "8ff6635ca9b1413dd8a29efdff1492cc0c8c49fe4d2264dbc9de1db1c90b049d",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F141",
@@ -13365,10 +14016,28 @@
       "native/src/research/metrics.cpp",
       "native/src/research/quality.cpp",
       "native/src/research/evidence.cpp",
-      "native/src/research/metadata.cpp"
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/research/preview_csv.cpp",
+      "native/tests/migration/test_t37.cpp",
+      "native/src/runtime/status.hpp",
+      "native/src/runtime/status.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6daf86b6cba61776e3eb40ed5de9da0b09b01624a7a2d914c12666762f044e3c",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F142",
@@ -13498,10 +14167,30 @@
       "native/src/legacy/ride.cpp",
       "native/src/legacy/force_accumulator.cpp",
       "native/src/legacy/recorder.cpp",
-      "native/tests/migration/test_t31.cpp"
+      "native/tests/migration/test_t31.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/legs.hpp",
+      "native/src/legacy/legs.cpp",
+      "native/src/legacy/rider.hpp",
+      "native/src/legacy/rider.cpp",
+      "native/src/app/native_ride_main.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "4f1441e2ee8aa44290cd33463499d14b4858ddcb5e08fb5da36635f8f8cb622e",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F144",
@@ -13560,10 +14249,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/step.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "af0b71d2f552b3e641feb03da7b63b308df3e698bea717b6b023d875fa99d4bb",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F145",
@@ -13878,10 +14582,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/attachment_wrench.hpp",
+      "native/src/rider/equality_reactions.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "40daa31bebecb92682d10a0cd541a5a250a4686eb9c3c4eba185ba6ed4f8aeb2",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F147",
@@ -13955,10 +14675,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/control.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "b06a240b2aaa0a4a6d1822becfa55d3a17918b34f12d136674c733a83a6d94ce",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F148",
@@ -14025,10 +14760,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/writers/brake.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6e46509ae0ab6c470b1daf400f6244ac85a323c963187e6b256cd93a07a8f62e",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F149",
@@ -14171,10 +14921,27 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/step.cpp",
+      "native/src/runtime/step.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "f137dddb1604f41680fc5a51cedded30b8d5859c971b0a2ca2883c3bf6bac44c",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F151",
@@ -14230,10 +14997,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/control.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "24fffd176ee79ca5d3bf2a743e1697cdaeeff82676941fa88e82d4e251b69bad",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F152",
@@ -14403,10 +15185,27 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/native_contacts.cpp",
+      "native/src/runtime/step.cpp",
+      "native/src/writers/tire_common.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "af88c04cbb4879dd222323fb22a1427b5d95256f086e8571104a2d7f7f055197",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F153",
@@ -14589,10 +15388,29 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/model_access.hpp",
+      "native/src/runtime/control.hpp",
+      "native/src/runtime/native_contacts.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "224c5fd840977f4f8c768eb39a972b00eb13eedc0587b3047e65b055ed717001",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F154",
@@ -14690,10 +15508,35 @@
       "native/src/rider/weld_settle.cpp",
       "native/src/rider/grip_springs.cpp",
       "native/src/runtime/capabilities.hpp",
-      "native/src/runtime/capabilities.cpp"
+      "native/src/runtime/capabilities.cpp",
+      "native/src/rider/support_dispatch.hpp",
+      "native/src/runtime/control.hpp",
+      "native/src/runtime/control.cpp",
+      "native/src/runtime/native_contacts.cpp",
+      "native/src/runtime/step.hpp",
+      "native/src/runtime/step.cpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/tests/migration/test_native_contacts.cpp",
+      "native/tests/migration/test_t30.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "e21185d4ab906956501a06dcfb93aeda8e47bf5ad20af9cd49c7e6e68d7d2e7a",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F155",
@@ -14768,10 +15611,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/control.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "c8f0923ee0108983c483366f21ce7aa58df2d7f5d6a9b575274537f269baf634",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F156",
@@ -14839,10 +15697,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/spindle_math.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "a1c836d3d01dd2923fe162547c033073ddcf66c687fae7141b8f91f26875d1a8",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F157",
@@ -14936,10 +15809,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/controls.cpp",
+      "native/src/writers/cruise.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "cd1df804e5a64237fd094a57e731f79ceac70b7132549f0c0b922ec2cf9d8e38",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F158",
@@ -15052,10 +15941,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/writers/distributed_tire.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "86c8800edfecb6a97b0e2900b045d4055a7da369046133e6413a8368088f8bc0",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F159",
@@ -15244,10 +16148,26 @@
       "native/src/drivetrain/transmission.cpp",
       "native/src/writers/drivetrain.cpp",
       "native/src/runtime/project_config.cpp",
-      "native/tests/migration/test_t27.cpp"
+      "native/tests/migration/test_t27.cpp",
+      "native/src/drivetrain/chain.hpp",
+      "native/src/drivetrain/capabilities.hpp",
+      "native/src/drivetrain/transmission.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "7a4472a1559ddff79d3c48bb6ac0aae37e98c48572f61f05ed1715378bcf1c71",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F160",
@@ -15414,10 +16334,27 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/drivetrain/chain.hpp",
+      "native/src/drivetrain/elastic_chain.cpp",
+      "native/src/writers/drivetrain.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "626d94dc99d6698c15c821339f632f623acd3b71e25fbb46ce5b72e515373a96",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F161",
@@ -15482,10 +16419,26 @@
       "native/src/legacy/metrics.cpp",
       "native/src/numerics/filter.hpp",
       "native/src/numerics/filter.cpp",
-      "native/tests/migration/test_t32.cpp"
+      "native/tests/migration/test_t32.cpp",
+      "native/src/legacy/metrics.hpp",
+      "native/src/runtime/research_metrics.hpp",
+      "native/src/runtime/research_metrics.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6e4f5fe0b7eece58b38d69c75c78e83147521e5a4cbde65da7de860eee5f67dd",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F162",
@@ -15744,10 +16697,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/force_accumulator.cpp",
+      "native/src/runtime/control.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "614b01995b96851cc2e9f0ca753f24f3256600200d31e3fc077b95fb9d532590",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F165",
@@ -15847,10 +16816,30 @@
       "native/src/legacy/ride.cpp",
       "native/src/legacy/force_accumulator.cpp",
       "native/src/legacy/recorder.cpp",
-      "native/tests/migration/test_t31.cpp"
+      "native/tests/migration/test_t31.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/legs.hpp",
+      "native/src/legacy/legs.cpp",
+      "native/src/legacy/rider.hpp",
+      "native/src/legacy/rider.cpp",
+      "native/src/app/native_ride_main.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "8cd2734d57e6b5a5d08253b9a57eb2c8026db837e4266ecaab10e83c7d15ddcc",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F166",
@@ -15970,10 +16959,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/drivetrain/transmission.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "8bd27a22fc592fb79d293b95e56f7173dfed12cb181a8f4ca20bdbd1ee235f00",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F167",
@@ -16236,10 +17240,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/drivetrain/transmission.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "64b4edb7f97b505163c32bdc8faeb200d4bfc01b45a040185c1df4bf8aca6088",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F169",
@@ -16590,10 +17609,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/spindle_controller.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "7c0fe3e39695fb2788d2760e65d98f2f4df47c67d694e8d833fa2eb2027ddb97",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F172",
@@ -16677,10 +17711,26 @@
       "native/src/legacy/metrics.cpp",
       "native/src/numerics/filter.hpp",
       "native/src/numerics/filter.cpp",
-      "native/tests/migration/test_t32.cpp"
+      "native/tests/migration/test_t32.cpp",
+      "native/src/legacy/metrics.hpp",
+      "native/src/runtime/research_metrics.hpp",
+      "native/src/runtime/research_metrics.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "0a3a00b3b01a1b0678ce7888a062f86da8339d7b1017182c0b642c627eb72d1b",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F173",
@@ -16767,10 +17817,26 @@
       "native/src/legacy/metrics.cpp",
       "native/src/numerics/filter.hpp",
       "native/src/numerics/filter.cpp",
-      "native/tests/migration/test_t32.cpp"
+      "native/tests/migration/test_t32.cpp",
+      "native/src/legacy/metrics.hpp",
+      "native/src/runtime/research_metrics.hpp",
+      "native/src/runtime/research_metrics.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "601a4afe685622c72cce12df4bd85294b8305aa8070be3ac1399087ed6e382e1",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F174",
@@ -17082,10 +18148,26 @@
       "native/src/legacy/metrics.cpp",
       "native/src/numerics/filter.hpp",
       "native/src/numerics/filter.cpp",
-      "native/tests/migration/test_t32.cpp"
+      "native/tests/migration/test_t32.cpp",
+      "native/src/legacy/metrics.hpp",
+      "native/src/runtime/research_metrics.hpp",
+      "native/src/runtime/research_metrics.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6003e394156ba480086b689e4d1034d915e55171dd33e261f34a39a136c15360",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F177",
@@ -17140,10 +18222,28 @@
       "native/src/research/metrics.cpp",
       "native/src/research/quality.cpp",
       "native/src/research/evidence.cpp",
-      "native/src/research/metadata.cpp"
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/research/preview_csv.cpp",
+      "native/tests/migration/test_t37.cpp",
+      "native/src/runtime/status.hpp",
+      "native/src/runtime/status.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "3f16ea41c9018688e20497530ac9e07363474982ea43774a503604414f5fd3ff",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F178",
@@ -17207,10 +18307,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/legacy_controller.cpp",
+      "native/src/rider/spindle_controller.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "b5d8ddf337431dbda8bd38d550dd115412d5cd991e994ca3c655a5789ea9221f",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F179",
@@ -17371,10 +18487,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/control.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "9c4eb3c8390769789e8aac404d3c23a75ed0e98403d9ce6c2852fe844a950a5e",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F181",
@@ -17608,10 +18739,30 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/app/physical_session.cpp",
+      "native/src/app/prepare.hpp",
+      "native/src/model/export.hpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/samples.hpp",
+      "native/src/runtime/step.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "d7e15698766876d2f27bdaa0296e25d2d057ee837ccd827f3bbc1eb72956766d",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F182",
@@ -17680,10 +18831,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/step.cpp",
+      "native/src/writers/suspension.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "39d36a444c4e5080b90b12e642178112b1a65cae972affe5088c9abd8f23dda3",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F183",
@@ -18038,10 +19205,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/step.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "32999da0d6ec3b2ae6f6f2eeb227cf9bf5e88b07ac1e1994d370d31498ad3633",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F187",
@@ -18243,10 +19426,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/writers/resistance.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "97b1775da2928fec04e940727c898d01ea8c8a1f94e5520110d179f1321e4817",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F189",
@@ -18549,10 +19747,29 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/initialization/finalize.cpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/period_buffer.cpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/step.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "3185a78dcdd3cb09a2258900c72c4af017fe47d2c9577d31c8d56cb9b0f1e55f",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F190",
@@ -18817,10 +20034,25 @@
       "native/src/research/policy_session.hpp",
       "native/src/research/policy_session.cpp",
       "native/src/research/lifecycle.cpp",
-      "native/src/research/exit_codes.cpp"
+      "native/src/research/exit_codes.cpp",
+      "native/src/research/rider_behavior.cpp",
+      "native/tests/migration/test_t36.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "a2942ad63d9ec63bae764d64ee1819fa05a911f76d91ff29ccad07884b5823ac",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F192",
@@ -19155,10 +20387,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/writers/pneumatic_tire.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "39a295a1a171bb67e8fda550aa302e976f8bd3b1fee9ace050f1fb2424fef09b",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F195",
@@ -19449,10 +20696,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/status.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "456d347ae3d0b0de538c289d454823c8d1e369cda0820c8f4461f774f0e5d864",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F198",
@@ -19515,10 +20777,30 @@
       "native/src/legacy/ride.cpp",
       "native/src/legacy/force_accumulator.cpp",
       "native/src/legacy/recorder.cpp",
-      "native/tests/migration/test_t31.cpp"
+      "native/tests/migration/test_t31.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/legs.hpp",
+      "native/src/legacy/legs.cpp",
+      "native/src/legacy/rider.hpp",
+      "native/src/legacy/rider.cpp",
+      "native/src/app/native_ride_main.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "04083744dd7467ce15e7b30acca4099ceb8b5cc9c4d29b07172f96fc30396d4e",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F199",
@@ -19607,10 +20889,38 @@
       "native/src/rider/response_allocation.cpp",
       "native/src/rider/activation_allocation.cpp",
       "native/src/rider/mode_search.cpp",
-      "native/src/rider/legacy_controller.cpp"
+      "native/src/rider/legacy_controller.cpp",
+      "native/src/rider/activation_allocation.hpp",
+      "native/src/rider/response_allocation.hpp",
+      "native/src/rider/legacy_allocation.cpp",
+      "native/src/rider/legacy_controller.hpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/rider/spindle_wire.cpp",
+      "native/src/rider/state_codec.cpp",
+      "native/src/rider/legacy_diagnostics.hpp",
+      "native/src/rider/response_codec.hpp",
+      "native/src/rider/response_codec.cpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/step.cpp",
+      "native/src/initialization/finalize.cpp",
+      "native/tests/migration/test_t29.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "a4a9141e7ad40007e3c48c2cf904eb26d3c67bb533f58dd9657aa74609c7d89d",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F200",
@@ -19640,10 +20950,38 @@
       "native/src/rider/response_allocation.cpp",
       "native/src/rider/activation_allocation.cpp",
       "native/src/rider/mode_search.cpp",
-      "native/src/rider/legacy_controller.cpp"
+      "native/src/rider/legacy_controller.cpp",
+      "native/src/rider/activation_allocation.hpp",
+      "native/src/rider/response_allocation.hpp",
+      "native/src/rider/legacy_allocation.cpp",
+      "native/src/rider/legacy_controller.hpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/rider/spindle_wire.cpp",
+      "native/src/rider/state_codec.cpp",
+      "native/src/rider/legacy_diagnostics.hpp",
+      "native/src/rider/response_codec.hpp",
+      "native/src/rider/response_codec.cpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/step.cpp",
+      "native/src/initialization/finalize.cpp",
+      "native/tests/migration/test_t29.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6b4eef2741eca765f1456b0d265c7d4fc5c7dc6de40cc9735b20efa67965da8d",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F201",
@@ -19834,10 +21172,27 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/contact_math.hpp",
+      "native/src/writers/rider_contacts.cpp",
+      "native/src/writers/rider_contacts.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "bbf839a47fe3445d1d89c1fdc67971c94ce0f9f447352bfc062f47cac2e260cd",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F202",
@@ -20173,10 +21528,38 @@
       "native/src/rider/response_allocation.cpp",
       "native/src/rider/activation_allocation.cpp",
       "native/src/rider/mode_search.cpp",
-      "native/src/rider/legacy_controller.cpp"
+      "native/src/rider/legacy_controller.cpp",
+      "native/src/rider/activation_allocation.hpp",
+      "native/src/rider/response_allocation.hpp",
+      "native/src/rider/legacy_allocation.cpp",
+      "native/src/rider/legacy_controller.hpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/rider/spindle_wire.cpp",
+      "native/src/rider/state_codec.cpp",
+      "native/src/rider/legacy_diagnostics.hpp",
+      "native/src/rider/response_codec.hpp",
+      "native/src/rider/response_codec.cpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/step.cpp",
+      "native/src/initialization/finalize.cpp",
+      "native/tests/migration/test_t29.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "9c07916f912a12639b7bb344666eec368a13a0c00d1e85f6f24c1cce2689279f",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F203",
@@ -20260,10 +21643,38 @@
       "native/src/rider/response_allocation.cpp",
       "native/src/rider/activation_allocation.cpp",
       "native/src/rider/mode_search.cpp",
-      "native/src/rider/legacy_controller.cpp"
+      "native/src/rider/legacy_controller.cpp",
+      "native/src/rider/activation_allocation.hpp",
+      "native/src/rider/response_allocation.hpp",
+      "native/src/rider/legacy_allocation.cpp",
+      "native/src/rider/legacy_controller.hpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/rider/spindle_wire.cpp",
+      "native/src/rider/state_codec.cpp",
+      "native/src/rider/legacy_diagnostics.hpp",
+      "native/src/rider/response_codec.hpp",
+      "native/src/rider/response_codec.cpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/step.cpp",
+      "native/src/initialization/finalize.cpp",
+      "native/tests/migration/test_t29.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "4108551126f088c99ca9cccef7ec09c2f4e74eca4d9276c554aa158d4f815d69",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F204",
@@ -20321,10 +21732,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/spindle_controller.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "93e9d2bc908318c0f3cf1500d88883856c634f3b65ac64e276fdb9b75e3fede4",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F205",
@@ -20472,10 +21898,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/rider.cpp",
+      "native/src/writers/rider_forces.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "1ef0f5973d6e31fd374542ae529c18e69f3727bc71e514fe8b5815255435d303",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F206",
@@ -20558,10 +22000,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/rider/intent.hpp",
+      "native/src/runtime/step.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "0aa8f875fb2c6d4e483c4042f1f82881a526dbab7e143e718829394ad66a6751",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F207",
@@ -20650,10 +22108,38 @@
       "native/src/rider/response_allocation.cpp",
       "native/src/rider/activation_allocation.cpp",
       "native/src/rider/mode_search.cpp",
-      "native/src/rider/legacy_controller.cpp"
+      "native/src/rider/legacy_controller.cpp",
+      "native/src/rider/activation_allocation.hpp",
+      "native/src/rider/response_allocation.hpp",
+      "native/src/rider/legacy_allocation.cpp",
+      "native/src/rider/legacy_controller.hpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/rider/spindle_wire.cpp",
+      "native/src/rider/state_codec.cpp",
+      "native/src/rider/legacy_diagnostics.hpp",
+      "native/src/rider/response_codec.hpp",
+      "native/src/rider/response_codec.cpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/step.cpp",
+      "native/src/initialization/finalize.cpp",
+      "native/tests/migration/test_t29.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "8cab1ee6ffe959a0cb5b61783cfe628de1d1df58c93205f7b7397c7661a99ed0",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F208",
@@ -20751,10 +22237,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/control.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "eba5937a6df1df3c679636c80e6e69842717dad086c06f73387eb4167b39d911",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F209",
@@ -20791,10 +22292,35 @@
       "native/src/rider/weld_settle.cpp",
       "native/src/rider/grip_springs.cpp",
       "native/src/runtime/capabilities.hpp",
-      "native/src/runtime/capabilities.cpp"
+      "native/src/runtime/capabilities.cpp",
+      "native/src/rider/support_dispatch.hpp",
+      "native/src/runtime/control.hpp",
+      "native/src/runtime/control.cpp",
+      "native/src/runtime/native_contacts.cpp",
+      "native/src/runtime/step.hpp",
+      "native/src/runtime/step.cpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/tests/migration/test_native_contacts.cpp",
+      "native/tests/migration/test_t30.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "96052eb772231e0a1e3547ac032633a8d1a357cfba7a4564229c98a88586fa84",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F210",
@@ -20821,10 +22347,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/metrics.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "e6cdfbbb71e59d3e3dca6838718cef3d62c7b3d40d7cdaa315f623dd46b8b33e",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F211",
@@ -21109,10 +22650,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/runtime/static_brake.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "8583ff516227c8e004828d5afe20b55d3664709d2b316598b866482680244476",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F214",
@@ -21263,10 +22819,35 @@
       "native/src/rider/weld_settle.cpp",
       "native/src/rider/grip_springs.cpp",
       "native/src/runtime/capabilities.hpp",
-      "native/src/runtime/capabilities.cpp"
+      "native/src/runtime/capabilities.cpp",
+      "native/src/rider/support_dispatch.hpp",
+      "native/src/runtime/control.hpp",
+      "native/src/runtime/control.cpp",
+      "native/src/runtime/native_contacts.cpp",
+      "native/src/runtime/step.hpp",
+      "native/src/runtime/step.cpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/tests/migration/test_native_contacts.cpp",
+      "native/tests/migration/test_t30.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "8e058b01110bf2016badf91e3c034cf28f8161898566f051fa8ced80d812dabb",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F215",
@@ -21449,10 +23030,28 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/research/lifecycle.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "527d15e56658d06d6d58ef652b6d726952160cf652d4d0ee452ea8ca1a754ab5",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F217",
@@ -21587,10 +23186,30 @@
       "native/src/legacy/ride.cpp",
       "native/src/legacy/force_accumulator.cpp",
       "native/src/legacy/recorder.cpp",
-      "native/tests/migration/test_t31.cpp"
+      "native/tests/migration/test_t31.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/legs.hpp",
+      "native/src/legacy/legs.cpp",
+      "native/src/legacy/rider.hpp",
+      "native/src/legacy/rider.cpp",
+      "native/src/app/native_ride_main.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "2aef637403a6e5fcce0e2dde24c01614b2d8352684bb316d129d0b7c8bfd3258",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F218",
@@ -21606,10 +23225,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/tyre.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "78c7b75252ba8b0c1b68f503c4549e3694427a566388cd599e0517be0f58380f",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F219",
@@ -21695,10 +23329,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/tyre.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "729feddc9fafe43ae22cecb1393ad4f28a138f2cd620ef7e691776e118041f34",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F220",
@@ -21790,10 +23439,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/pneumatic/brush.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "03b9ccc9c0c848f8508514a1de846015996df75308504cd55833a78073460462",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F221",
@@ -21904,10 +23568,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/pneumatic/carcass.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "4cd81aef2921d58a21ba15dc6e936f318fc4293e28762e73601abc69a5ccce37",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F222",
@@ -22051,10 +23730,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/pneumatic/geometry.hpp",
+      "native/src/pneumatic/profile.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "dbed7fed25e2e2649b059d1e6163149b9d809a4026ddeda7d406d7c67b0ce495",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F223",
@@ -22178,10 +23873,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/pneumatic/model.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "056859a1ab718909377ba853eae27d593653cb529a487bafdc77165ca1c8e755",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F224",
@@ -22213,10 +23923,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/tyre.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "a3acd93ebda5cbaa40d5754dc2b3a9e12724104b4ee5c8762e6e7e96992307c3",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F225",
@@ -22422,10 +24147,26 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/legacy/controls.cpp",
+      "native/src/runtime/control.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "b63fd072af5b4d84400130e9dced24d41fd2e29dddee284adbde7ef18b8f6a75",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F227",
@@ -22609,10 +24350,35 @@
       "native/src/rider/weld_settle.cpp",
       "native/src/rider/grip_springs.cpp",
       "native/src/runtime/capabilities.hpp",
-      "native/src/runtime/capabilities.cpp"
+      "native/src/runtime/capabilities.cpp",
+      "native/src/rider/support_dispatch.hpp",
+      "native/src/runtime/control.hpp",
+      "native/src/runtime/control.cpp",
+      "native/src/runtime/native_contacts.cpp",
+      "native/src/runtime/step.hpp",
+      "native/src/runtime/step.cpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/tests/migration/test_native_contacts.cpp",
+      "native/tests/migration/test_t30.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "f977d080d3e9177a7bc35ff7280d63a91b3e74853400122fcb87f5c55e0bd0a5",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F228",
@@ -22646,10 +24412,25 @@
     "replacement_paths": [
       "native/tests/migration/kernel_parity.cpp",
       "native/tests/migration/kernel_properties.cpp",
-      "migration/kernel-reuse-map.json"
+      "migration/kernel-reuse-map.json",
+      "native/src/model/mapping.hpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "source_mapped_unqualified",
+      "date": "2026-10-17",
+      "source_text_sha256": "d3fbea7cb20ca65f095f506f93249c786fbc213597d29a18afa572050969c9c6",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json",
+        "migration/kernel-reuse-map.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F229",
@@ -22776,10 +24557,26 @@
       "native/src/legacy/metrics.cpp",
       "native/src/numerics/filter.hpp",
       "native/src/numerics/filter.cpp",
-      "native/tests/migration/test_t32.cpp"
+      "native/tests/migration/test_t32.cpp",
+      "native/src/legacy/metrics.hpp",
+      "native/src/runtime/research_metrics.hpp",
+      "native/src/runtime/research_metrics.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "6a35fa27828c5a9c7f1012feb9e8ed88585cbc2bd46d70ed77f83cd16476de1e",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F230",
@@ -22859,10 +24656,30 @@
       "native/src/legacy/ride.cpp",
       "native/src/legacy/force_accumulator.cpp",
       "native/src/legacy/recorder.cpp",
-      "native/tests/migration/test_t31.cpp"
+      "native/tests/migration/test_t31.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/legs.hpp",
+      "native/src/legacy/legs.cpp",
+      "native/src/legacy/rider.hpp",
+      "native/src/legacy/rider.cpp",
+      "native/src/app/native_ride_main.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "2fe9cea87bd501753fd68390aab4bc1bc158ac87a5ab2a9980c28e1158646873",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F231",
@@ -23143,10 +24960,30 @@
       "native/src/legacy/ride.cpp",
       "native/src/legacy/force_accumulator.cpp",
       "native/src/legacy/recorder.cpp",
-      "native/tests/migration/test_t31.cpp"
+      "native/tests/migration/test_t31.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/legs.hpp",
+      "native/src/legacy/legs.cpp",
+      "native/src/legacy/rider.hpp",
+      "native/src/legacy/rider.cpp",
+      "native/src/app/native_ride_main.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "bf98f9aaf298364e959b0bc156b9e96c2c80d925eaffb336a61849ba568230c1",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F232",
@@ -23241,10 +25078,26 @@
       "native/src/legacy/metrics.cpp",
       "native/src/numerics/filter.hpp",
       "native/src/numerics/filter.cpp",
-      "native/tests/migration/test_t32.cpp"
+      "native/tests/migration/test_t32.cpp",
+      "native/src/legacy/metrics.hpp",
+      "native/src/runtime/research_metrics.hpp",
+      "native/src/runtime/research_metrics.cpp"
     ],
     "deletion_task": "T63",
-    "status": "planned"
+    "status": "planned",
+    "implementation": {
+      "status": "implemented_unverified",
+      "date": "2026-10-17",
+      "source_text_sha256": "80479ac32b2554cddb28f5ec6892502aab911af24c0aad4cb196c3703d6fc7df",
+      "evidence": [
+        "migration/physics-research-implementation.json",
+        "migration/physics-research-review.md",
+        "migration/physics-research-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F233",

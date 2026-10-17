@@ -54,6 +54,7 @@ struct ModelStatus {
     // is suppressed.
     void observe(std::int64_t interval_id, double time_s, const WireObject &channels,
                  bool include_energy = true);
+    void reset();
     [[nodiscard]] WireObject as_wire() const;
     [[nodiscard]] static ModelStatus from_wire(const WireObject &value);
 };

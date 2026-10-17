@@ -124,6 +124,8 @@ function(bike_add_native_startup native_dir)
   add_executable(bike-native-ride "${native_dir}/src/app/native_ride_main.cpp")
   bike_startup_target_policy(bike-native-ride "${native_dir}")
   target_link_libraries(bike-native-ride PRIVATE bike_app)
+  include("${native_dir}/cmake/NativePhysicsResearch.cmake")
+  bike_add_physics_research("${native_dir}" "${_startup_core}")
   bike_rewrite_mujoco_load_name(bike-native-ride "${_startup_mujoco}")
   install(TARGETS bike-native-ride RUNTIME DESTINATION bin)
   install(FILES "${native_dir}/src/numerics/SCIPY-LICENSE.txt"

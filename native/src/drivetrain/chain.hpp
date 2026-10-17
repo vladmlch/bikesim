@@ -2,6 +2,7 @@
 #include "../model_access.hpp"
 #include "policy_config.hpp"
 #include <array>
+#include <functional>
 #include <mujoco/mujoco.h>
 #include <optional>
 #include <span>
@@ -22,6 +23,17 @@ namespace drivetrain {
     Vec2 chain_center_gradient(Vec2 front, Vec2 rear, double rf, double rr,
                                Vec2 up = {0., 1.},
                                std::optional<double> reference = std::nullopt);
+
+    // Cold diagnostic/calibration faces of physics/chain.py. The live writer
+    // retains its existing analytic GeometryWorkspace and fixed stage banks.
+    double chain_extension(Vec2 front, Vec2 rear, double rf, double rr,
+                           double theta_f, double theta_r, double reference,
+                           Vec2 up = {0., 1.},
+                           std::optional<double> psi_reference = std::nullopt);
+    std::vector<double> chain_jacobian(
+        std::span<const double> q,
+        const std::function<double(std::span<const double>)>& evaluate,
+        double epsilon = 1e-7);
 
     std::pair<double, double> chain_tension(double extension, double rate, double k,
                                             double c);

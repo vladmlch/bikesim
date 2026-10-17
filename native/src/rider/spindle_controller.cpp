@@ -1,16 +1,15 @@
 // rider/spindle_controller.cpp — ArticulatedRiderController's spindle
-// branch, ported expression-for-expression from rider_control.py. Only the
-// supported welded path exists here; see the header for scope.
+// spindle branch, with the non-spindle delegate in legacy_controller.cpp.
 //
 // Deviations the plan records on purpose:
-//  * kinematic_state (a write-only mirror for the legacy allocator path)
-//    and the legacy-only fields (pd_split, allocator warm starts,
-//    _active_recovery, PedalRecovery.observe/goal) are not carried — the
-//    capability gate rejects configurations that would reach them.
+//  * kinematic_state is an observational mirror, not an allocator input.
+//    PD components, warm starts, activation and recovery are owned state;
+//    non-spindle numerical work declares its own numeric identity.
 //  * Python's ArithmeticError for a violated effort bound is
 //    std::runtime_error here; KeyError for missing last_terms rows is
 //    std::out_of_range.
 #include "spindle_controller.hpp"
+#include "legacy_controller.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -475,6 +474,8 @@ SpindleController::SpindleController(const mjModel *model,
     }
     reset_activation();
     resolve_model_layout(qpos_adrs, dof_adrs);
+    if (config_.legacy && config_.legacy->pedal_attachment != "spindle")
+        legacy_ = std::make_unique<bike::rider::LegacyController>(*this);
 }
 
 void SpindleController::resolve_model_layout(
@@ -563,9 +564,19 @@ void SpindleController::resolve_model_layout(
         const int eq = mj_name2id(
             model, mjOBJ_EQUALITY,
             ("connect_grip_" + std::string(side)).c_str());
-        if (eq < 0)
+        if (eq < 0 && (!config_.legacy || config_.legacy->grip_attachment == "connect"))
             throw std::invalid_argument(
                 "missing compiled grip connect equality");
+        if (eq < 0) {
+            const auto s = side_index(side);
+            const auto origin = body_pos(model, target_data_.get(), steer_body_);
+            const auto rotation = body_mat(model, target_data_.get(), steer_body_);
+            const auto point = site_pos(model, target_data_.get(), grip_sites_[s]);
+            const auto delta = vec_sub(point, origin);
+            for (std::size_t j = 0; j < 3; ++j)
+                weld_grip_offset_[s][j] = rotation[j]*delta[0]+rotation[3+j]*delta[1]+rotation[6+j]*delta[2];
+            continue;
+        }
         const auto base = static_cast<std::size_t>(eq) * mjNEQDATA;
         const auto eq_data = model_access::readonly_buffer(
             model->eq_data, model->neq * mjNEQDATA, "eq_data");
@@ -613,9 +624,10 @@ void SpindleController::resolve_model_layout(
                 ? first
                 : second;
         neutral_torso_saturated_ = neutral.saturated;
-        neutral_torso_q_ = 0.;
+        neutral_torso_q_ = config_.legacy && config_.legacy->pedal_attachment != "spindle"
+            ? std::atan2(trunk[2],trunk[0])-neutral.angles[0] : 0.;
     }
-    if (!config_.envelopes.empty())
+    if (!config_.envelopes.empty() && (!config_.legacy || config_.legacy->pedal_attachment == "spindle"))
         lean_limit_rad_ =
             rider::lean_limit_rad(pose_, config_.envelopes,
                                   crank_length_m_, -std::numbers::pi / 2.);
@@ -638,6 +650,7 @@ void SpindleController::resolve_model_layout(
 SpindleController::~SpindleController() = default;
 
 void SpindleController::reset_activation() {
+    allocation_memory_ = {};
     active_state_.assign(joints_.size(), 0.);
     activation_time_s_ = std::nullopt;
     effort_diagnostics_ = {};
@@ -685,8 +698,12 @@ SpindleController::upper_targets(const mjData *data,
     std::array<Vec3, 2> grips{};
     for (const auto side : kArmSides) {
         const auto s = side_index(side);
-        grips[s] =
-            vec_add(steer_pos, mat_vec(steer_r, weld_grip_offset_[s]));
+        if (config_.legacy && config_.legacy->grip_attachment == "spring") {
+            Vec3 local = pose_.grip;
+            local[1] += s == 0 ? -.10 : .10; // rider_segments.ARM_LATERAL_OFFSET_M
+            grips[s] = vec_add(body_pos(model_,data,frame_body_),mat_vec(frame_r,local));
+        } else grips[s] =
+                vec_add(steer_pos, mat_vec(steer_r, weld_grip_offset_[s]));
     }
     double torso_q = neutral_torso_q_ +
                      (posture == nullptr ? 0. : posture->torso_lean_rad);
@@ -706,6 +723,7 @@ SpindleController::upper_targets(const mjData *data,
                                       "qpos")[static_cast<std::size_t>(
             joints_[joint_index("rider_torso_hinge")].qpos_adr)];
     delta = std::atan2(numeric::sin(delta), numeric::cos(delta));
+    if (config_.legacy && config_.legacy->grip_attachment == "spring") delta = 0.;
     const double cd = numeric::cos(delta), sd = numeric::sin(delta);
     const std::array<double, 9> rot{cd, 0., sd, 0., 1., 0., -sd, 0., cd};
     const Vec3 hinge = joint_anchor(model_, data, torso_joint_);
@@ -785,6 +803,7 @@ void SpindleController::predict_target_state(const mjData *data,
 }
 
 void SpindleController::initialize_velocity(mjData *data) {
+    if (legacy_) { legacy_->initialize_velocity(*data); return; }
     predict_target_state(data, target_data_.get(), false);
     predict_target_state(data, previous_target_data_.get(), true);
     for (const auto side : kSides) {
@@ -810,6 +829,7 @@ void SpindleController::initialize_velocity(mjData *data) {
 }
 
 void SpindleController::initialize(mjData *data) {
+    if (legacy_) { legacy_->initialize(*data); return; }
     engine::forward(model_, data);
     reset_activation();
     const auto qpos = model_access::mutable_buffer(
@@ -1112,7 +1132,20 @@ SpindleController::finalize_effort(mjData *data,
 NamedEntries<double>
 SpindleController::compute(mjData *data, const RiderCommand &command,
                            bool advance, std::optional<double> dt_s,
-                           bool steady_state) {
+                           bool steady_state,
+                           std::optional<std::array<bool,4>> support_available,
+                           bool pedal_recovery) {
+    if (legacy_) {
+        auto previous = state();
+        try {
+            return legacy_->compute(*data, command, advance,
+                dt_s.value_or(model_->opt.timestep), steady_state,
+                support_available.value_or(std::array<bool,4>{}), pedal_recovery);
+        } catch (...) {
+            commit_state(std::move(previous));
+            throw;
+        }
+    }
     const double dt = dt_s.value_or(model_->opt.timestep);
     const std::size_t n = joints_.size();
     command_enabled_ = command.enabled && enabled_;
@@ -1380,6 +1413,8 @@ EffortDiagnostics SpindleController::solved_effort(
     effort_diagnostics_.positive_work_step_j = positive * dt_s;
     effort_diagnostics_.passive_work_step_j = passive_power * dt_s;
     effort_diagnostics_.strength_violations = violations;
+    effort_diagnostics_.budget_present = true;
+    effort_diagnostics_.observation_present = true;
     effort_diagnostics_.budget_exceeded =
         config_.active_positive_power_limit_w.has_value() &&
         positive > *config_.active_positive_power_limit_w + 1e-9;
@@ -1394,6 +1429,7 @@ SpindleController::State SpindleController::state() const {
     out.command_enabled = command_enabled_;
     out.active_state = active_state_;
     out.activation_time_s = activation_time_s_;
+    out.pd_split = pd_split_;
     for (const auto &joint : joints_)
         if (const auto *found = named_find(last_terms_, joint.name);
             found != nullptr)
@@ -1408,6 +1444,7 @@ SpindleController::State SpindleController::state() const {
     out.allocation_diagnostics = allocation_diagnostics_;
     out.support_diagnostics = support_diagnostics_;
     out.sole_goal_diagnostics = sole_goal_diagnostics_;
+    if (legacy_) out.allocation_memory = allocation_memory_;
     return out;
 }
 
@@ -1421,6 +1458,20 @@ void SpindleController::validate_state(const State &state) const {
     if (state.active_state.size() != joints_.size())
         throw std::invalid_argument(
             "rider_controller.active_state: incorrect sequence width");
+    if (state.allocation_memory && !legacy_)
+        throw std::invalid_argument("spindle controller cannot restore legacy allocation state");
+    if (!legacy_ && !state.pd_split.empty())
+        throw std::invalid_argument("spindle controller carries no PD warm split");
+    for (double x : state.active_state)
+        if (!std::isfinite(x)) throw std::invalid_argument("rider activation state must be finite");
+    for (const auto& [name, split] : state.pd_split) {
+        (void)joint_index(name);
+        if (!std::isfinite(split[0]) || !std::isfinite(split[1]))
+            throw std::invalid_argument("rider PD split must be finite");
+    }
+    if (state.allocation_memory && state.allocation_memory->solution)
+        for (double x : *state.allocation_memory->solution)
+            if (!std::isfinite(x)) throw std::invalid_argument("rider_controller allocation warm start must be finite");
 }
 
 void SpindleController::commit_state(State &&state) noexcept {
@@ -1429,6 +1480,7 @@ void SpindleController::commit_state(State &&state) noexcept {
     active_state_ = std::move(state.active_state);
     activation_time_s_ = state.activation_time_s;
     last_terms_ = std::move(state.last_terms);
+    pd_split_ = std::move(state.pd_split);
     saturated_ik_ = std::move(state.saturated_ik);
     ik_reach_limited_ = std::move(state.ik_reach_limited);
     joint_torques_nm_ = std::move(state.joint_torques_nm);
@@ -1439,6 +1491,7 @@ void SpindleController::commit_state(State &&state) noexcept {
     allocation_diagnostics_ = std::move(state.allocation_diagnostics);
     support_diagnostics_ = std::move(state.support_diagnostics);
     sole_goal_diagnostics_ = std::move(state.sole_goal_diagnostics);
+    allocation_memory_ = state.allocation_memory ? std::move(*state.allocation_memory) : bike::rider::AllocationMemory{};
 }
 
 } // namespace rider

@@ -109,6 +109,7 @@ void request_contract() {
     input = bike::initialization::read_setup_request(request_file);
     bt::require(input.model.physics->initial_front_brake == .25, "request override precedence");
     input.model.physics->drive.motor_clutch = true;
+    input.model.physics->drive.rotor_inertia_kgm2 = .02;
     bt::invalid([&] { (void)bike::app::prepare(input); });
     bt::require(!std::filesystem::exists(directory.path / "runs") &&
         !std::filesystem::exists(directory.path / "manifest.json"),

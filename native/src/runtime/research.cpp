@@ -66,7 +66,7 @@ ResearchEpisode::ResearchEpisode(const ResearchConfig &c, NoiseTape tape, Sensor
       recorder(c.record_decimation, ColumnLayout{.root_x_qpos = c.geometry.root_x_qpos,
           .root_x_dof = c.geometry.root_x_dof, .root_pitch_qpos = c.geometry.root_pitch_qpos}),
       next_sensor_step(c.sensor_steps), applied(c.startup_control), motor_applied(c.startup_control) {
-    // Python setup already pushed and delivered row zero. Never noise it twice.
+    // Setup already pushed and delivered row zero. Never noise it twice.
     if (startup.cursor != 1 || startup.samples_attempted != 1 || !startup.last_time || *startup.last_time != 0. ||
         !startup.delivery_time || *startup.delivery_time != 0. || !startup.startup || startup.startup->time_s != 0.)
         throw std::invalid_argument("research bootstrap requires the delivered startup row at t=0");
@@ -81,7 +81,7 @@ ResearchEpisode::ResearchEpisode(const ResearchConfig &c, NoiseTape tape, Sensor
 }
 NativeResearchRuntime::NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> runtime,
     ResearchConfig config, NoiseTape tape, SensorState startup)
-    : runtime_(std::move(runtime)), config_(std::move(config)) {
+    : runtime_(std::move(runtime)), config_(std::move(config)), reset_tape_(tape), reset_startup_(startup) {
     if (!runtime_ || runtime_->closed() || runtime_->committed_step_ != 0 || runtime_->committed_time_s_ != 0.)
         throw std::invalid_argument("native research requires a fresh owned physical runtime");
     const auto &c = config_;
@@ -122,10 +122,22 @@ NativeResearchRuntime::NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> 
         std::cmp_not_equal(dofs[static_cast<std::size_t>(pitch_joint)], c.geometry.root_pitch_dof))
         throw std::invalid_argument("research radii/pitch address differ from physical bootstrap");
     c.programs.validate();
-    control_validate_for(c.startup_control, runtime_->physical_->rider_present());
+    control_validate_for(c.startup_control, runtime_->physical_->rider_present(), runtime_->physical_->drive_mode());
+    if (c.seed_decimal.empty() || !std::ranges::all_of(c.seed_decimal,
+            [](char ch) { return ch >= '0' && ch <= '9'; }))
+        throw std::invalid_argument("research seed must be a nonnegative decimal integer");
+    for (const double scale : c.noise_std)
+        if (!std::isfinite(scale) || scale < 0.)
+            throw std::invalid_argument("sensor noise scales must be finite and nonnegative");
+    if (c.raw_initial) {
+        c.raw_initial->validate();
+        if (c.raw_initial->time_s != 0. || c.raw_initial->source_time_s != 0.)
+            throw std::invalid_argument("research raw startup observation must belong to time zero");
+    }
     const auto required_rows = static_cast<std::size_t>(1 + c.max_steps / c.sensor_steps);
     if (tape.noise.size() != required_rows)
         throw std::invalid_argument("research tape must contain 1 + floor(max_steps / sensor_steps) rows");
+    initial_integration_state_ = runtime_->snapshot().integration_state;
     episode_ = std::make_unique<ResearchEpisode>(c, std::move(tape), std::move(startup));
 }
 NativeResearchRuntime::~NativeResearchRuntime() = default;
@@ -144,7 +156,7 @@ void NativeResearchRuntime::begin_control(const RideControl &control, double fro
     validate_brake(front);
     validate_brake(rear);
     config_.programs.validate_control(control);
-    control_validate_for(control, runtime_->physical_->rider_present());
+    control_validate_for(control, runtime_->physical_->rider_present(), runtime_->physical_->drive_mode());
     const auto start = runtime_->committed_step_;
     if (start >= config_.max_steps) throw std::runtime_error("research duration already reached");
     const auto count = std::min(config_.control_steps, config_.max_steps - start);
@@ -356,6 +368,9 @@ RuntimeSnapshot NativeResearchRuntime::snapshot() const {
 WireObject NativeResearchRuntime::status() const {
     const ResearchGuard guard(busy_);
     require_open();
+    return status_unlocked();
+}
+WireObject NativeResearchRuntime::status_unlocked() const {
     const auto &e = *episode_;
     const auto &balance = runtime_->committed_balance_;
     const auto &crash = runtime_->committed_crash_;
@@ -383,6 +398,30 @@ WireObject NativeResearchRuntime::status() const {
     result.emplace_back("crash", crash ? Wire(WireObject{{"time_s", crash->time_s}, {"position_m", crash->position_m},
         {"pitch_rad", crash->pitch_rad}, {"cause", crash->cause}}) : Wire(nullptr));
     return result;
+}
+ResearchConfig NativeResearchRuntime::configuration() const {
+    const ResearchGuard guard(busy_); require_open();
+    return config_;
+}
+OwnedResearchEpisode NativeResearchRuntime::evidence_unlocked(OwnedNativeEpisode physical) const {
+    const auto& e = *episode_;
+    return OwnedResearchEpisode{.physical = std::move(physical),
+        .requested = e.requested, .applied = e.applied_records,
+        .observations = e.observations, .transitions = e.transitions,
+        .evaluation = status_unlocked(), .final_snapshot = runtime_->snapshot(),
+        .configuration = config_, .initial_integration_state = initial_integration_state_,
+        .run_metadata = bike::io::Value{bike::io::Value::Object{}}};
+}
+OwnedResearchEpisode NativeResearchRuntime::evidence_snapshot() const {
+    const ResearchGuard guard(busy_); require_open();
+    OwnedNativeEpisode physical;
+    physical.generation = runtime_->physical_->generation();
+    physical.columns = runtime_->accounting_config_.columns;
+    if (config_.capture_mode == ResearchCaptureMode::full)
+        physical = runtime_->accounting_->seal_episode();
+    else if (config_.capture_mode == ResearchCaptureMode::legacy)
+        physical = episode_->recorder.seal();
+    return evidence_unlocked(std::move(physical));
 }
 std::size_t OwnedResearchEpisode::row_count(std::string_view stream) const {
     if (stream == "commands_requested") return requested.size();
@@ -415,10 +454,7 @@ OwnedResearchEpisode NativeResearchRuntime::seal_episode() {
     // Sealing never integrates or completes an external window. Frontends
     // drain a requested stop at the existing control boundary first.
     if (runtime_->accounting_->has_raws()) runtime_->flush_accounting();
-    const auto &e = *episode_;
-    return OwnedResearchEpisode{.physical = runtime_->accounting_->seal_episode(),
-        .requested = e.requested, .applied = e.applied_records,
-        .observations = e.observations, .transitions = e.transitions};
+    return evidence_unlocked(runtime_->accounting_->seal_episode());
 }
 OwnedResearchEpisode NativeResearchRuntime::legacy_snapshot() const {
     const ResearchGuard guard(busy_); require_open();
@@ -427,11 +463,8 @@ OwnedResearchEpisode NativeResearchRuntime::legacy_snapshot() const {
     const auto &e = *episode_;
     if (e.window || e.delivery_pending)
         throw std::runtime_error("finish the external control interval before exporting");
-    return OwnedResearchEpisode{
-        .physical = config_.capture_mode == ResearchCaptureMode::full
-            ? runtime_->accounting_->seal_episode() : e.recorder.seal(),
-        .requested = e.requested, .applied = e.applied_records,
-        .observations = e.observations, .transitions = e.transitions};
+    return evidence_unlocked(config_.capture_mode == ResearchCaptureMode::full
+        ? runtime_->accounting_->seal_episode() : e.recorder.seal());
 }
 Wire NativeResearchRuntime::last_requested() const {
     const ResearchGuard guard(busy_); require_open();
@@ -500,16 +533,38 @@ WireArray NativeResearchRuntime::recorded_intervals() const {
     }
     return episode_->recorder.intervals();
 }
-void NativeResearchRuntime::reset(NoiseTape tape, SensorState startup) {
+void NativeResearchRuntime::reset(NoiseTape tape, SensorState startup,
+                                  std::optional<std::string> seed_decimal,
+                                  std::optional<bike::io::Value> metadata, ResearchAssets assets) {
     const ResearchGuard guard(busy_); require_open();
+    reset_unlocked(std::move(tape), std::move(startup), std::move(seed_decimal), std::move(metadata), std::move(assets));
+}
+void NativeResearchRuntime::reset_unlocked(NoiseTape tape, SensorState startup,
+    std::optional<std::string> seed_decimal, std::optional<bike::io::Value> metadata, ResearchAssets assets) {
     if (episode_->window || episode_->delivery_pending)
         throw std::runtime_error("finish the active external interval before reset");
     if (tape.noise.size() != static_cast<std::size_t>(1 + config_.max_steps / config_.sensor_steps))
         throw std::invalid_argument("reset noise tape has the wrong number of rows");
-    auto next = std::make_unique<ResearchEpisode>(config_, std::move(tape), std::move(startup));
+    if (seed_decimal && (seed_decimal->empty() || !std::ranges::all_of(*seed_decimal,
+            [](char c) { return c >= '0' && c <= '9'; })))
+        throw std::invalid_argument("reset seed must be a nonnegative decimal integer");
+    auto next_tape = tape;
+    auto next_startup = startup;
+    auto next_config = config_;
+    if (seed_decimal) next_config.seed_decimal = std::move(*seed_decimal);
+    if (metadata) next_config.metadata = std::move(*metadata);
+    if (assets) next_config.assets = std::move(assets);
+    auto next = std::make_unique<ResearchEpisode>(next_config, std::move(tape), std::move(startup));
     // Physical reset owns its generation and poisoned-context recovery.
     runtime_->reset();
     episode_ = std::move(next);
+    reset_tape_ = std::move(next_tape);
+    reset_startup_ = std::move(next_startup);
+    config_ = std::move(next_config);
+}
+void NativeResearchRuntime::reset() {
+    const ResearchGuard guard(busy_); require_open();
+    reset_unlocked(reset_tape_, reset_startup_, std::nullopt, std::nullopt, {});
 }
 void NativeResearchRuntime::stop() {
     const ResearchGuard guard(busy_); require_open();

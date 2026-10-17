@@ -121,15 +121,15 @@ void PhysicalInitialState::restore(SetupContext& context)const{
     for(auto entry:{std::pair{"ideal_boundary",&drive.ideal_hub},std::pair{"clutch_boundary",&drive.clutch}}){const auto boundary=optional_real(field(p,entry.first),entry.first);if(boundary.has_value()!=entry.second->has_value())throw std::invalid_argument("initial transmission topology differs");if(boundary){(*entry.second)->boundary=*boundary;(*entry.second)->range[1]=*boundary;}}
     if(drive.hub){const auto& hub=bio::as_object(field(p,"hub"),"hub");drive.hub->boundary=optional_real(field(hub,"boundary"),"hub.boundary");drive.hub->energy_j=bio::as_double(field(hub,"energy_j"),"hub.energy_j");drive.hub->torque_nm=bio::as_double(field(hub,"torque_nm"),"hub.torque_nm");}
     put_array(material,"state_native_drive",bio::string_array(std::array<std::string,1>{bio::recording_json(drivetrain::encode_drive_snapshot(drive))},{}));
-    std::optional<rider::SpindleController::State> controller;
+    std::optional<::rider::SpindleController::State> controller;
     if(context.physical.rider_present()){
         controller=context.physical.rider_control().state();const auto active=vector(field(p,"active_state"),"active_state",controller->active_state.size());controller->active_state=active;controller->activation_time_s.reset();
-        put_array(material,"state_native_rider_controller",bio::string_array(std::array<std::string,1>{bio::recording_json(rider::encode_spindle_state(*controller))},{}));
+        put_array(material,"state_native_rider_controller",bio::string_array(std::array<std::string,1>{bio::recording_json(::rider::encode_spindle_state(*controller))},{}));
     }
-    std::optional<std::array<std::optional<rider::Vec3>,2>> anchors;
+    std::optional<std::array<std::optional<::rider::Vec3>,2>> anchors;
     if(context.stepper.has_rider_contacts()&&!context.stepper.rider_contacts().welded_grip()){
         anchors.emplace();const auto& root=bio::as_object(field(p,"grip_anchor_local"),"grip_anchor_local");
-        for(std::size_t side=0;side<2;++side){const auto& item=field(root,writers::kSideNames[side]);if(!bio::is_null(item)){const auto a=vector(item,"grip anchor",3);(*anchors)[side]=rider::Vec3{a[0],a[1],a[2]};}}
+        for(std::size_t side=0;side<2;++side){const auto& item=field(root,writers::kSideNames[side]);if(!bio::is_null(item)){const auto a=vector(item,"grip anchor",3);(*anchors)[side]=::rider::Vec3{a[0],a[1],a[2]};}}
     }
     if(anchors) {
         // Stage anchors into the same complete rider record as all other

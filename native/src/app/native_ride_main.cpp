@@ -16,6 +16,7 @@
 #include <string_view>
 #include "../configuration/load.hpp"
 #include "../io/json.hpp"
+#include "../legacy/ride.hpp"
 #include "../model/rider_geometry.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
@@ -23,7 +24,7 @@
 namespace {
 struct Options {
     std::optional<std::filesystem::path> request, physics, track_file, legacy_source, cache_directory;
-    std::optional<std::string> track, rider, seed;
+    std::optional<std::string> track, rider, seed, legacy_drive, legacy_tyre, legacy_tier, assist_mode;
     std::optional<double> speed_kph, duration_s;
     std::optional<std::int64_t> steps, equilibrium_steps;
     bool fresh = false, strict = true, help = false;
@@ -54,6 +55,10 @@ Options parse(std::span<char*> arguments) {
         else if (key == "--track") result.track = value();
         else if (key == "--rider") result.rider = value();
         else if (key == "--seed") result.seed = value();
+        else if (key == "--legacy-drive") result.legacy_drive = value();
+        else if (key == "--legacy-tyre") result.legacy_tyre = value();
+        else if (key == "--legacy-tyre-tier") result.legacy_tier = value();
+        else if (key == "--assist-mode") result.assist_mode = value();
         else if (key == "--initial-speed-kph") result.speed_kph = number<double>(value(), key);
         else if (key == "--duration") result.duration_s = number<double>(value(), key);
         else if (key == "--steps") result.steps = number<std::int64_t>(value(), key);
@@ -96,7 +101,8 @@ bike::app::SetupRequest request(const Options& options) {
         result.asset_root = std::filesystem::absolute(*options.physics).parent_path();
         result.model.physics = bike::configuration::load_physics(*options.physics);
         result.model.mode = "ride";
-        result.model.rider = bike::model::rider_from_args(options.rider.value_or("articulated_planar"));
+        result.model.rider = bike::model::rider_from_args(options.rider.value_or(
+            result.model.physics->physics_mode == "legacy" ? "seated" : "articulated_planar"));
         result.model.crank_joint = true;
         result.seed_decimal = options.seed.value_or("0");
         result.track = options.track_file
@@ -122,11 +128,13 @@ void usage() {
     std::cout <<
         "Native bike ride preparation and bounded execution\n"
         "  bike-native-ride --physics-config FILE [--track-config FILE | --track PRESET]\n"
-        "                   [--rider articulated_planar] [--seed DECIMAL]\n"
+        "                   [--rider VARIANT] [--seed DECIMAL]\n"
         "  bike-native-ride --request FILE\n"
         "  Common: [--steps N | --duration SECONDS] [--initial-speed-kph VALUE]\n"
         "          [--fresh] [--max-equilibrium-steps N] [--no-strict]\n"
         "          [--legacy-source-root DIR] [--cache-dir DIR]\n"
+        "  Legacy mode: [--legacy-drive motor|pedal|pedelec] [--assist-mode MODE]\n"
+        "               [--legacy-tyre sphere|pneumatic] [--legacy-tyre-tier TIER]\n"
         "Default duration: 1 second. --steps 0 prepares t=0 only.\n"
         "--fresh requests a new equilibrium, overriding saved state and cache reuse.\n";
 }
@@ -137,6 +145,36 @@ int main(int argc, char** argv) {
         const auto options = parse(std::span<char*>{argv, static_cast<std::size_t>(argc)});
         if (options.help) { usage(); return 0; }
         auto setup_request = request(options);
+        if (setup_request.model.physics->physics_mode == "legacy") {
+            bike::legacy::RideOptions legacy_options;
+            legacy_options.drive_mode = options.legacy_drive.value_or("motor");
+            legacy_options.assist_mode = options.assist_mode.value_or("tour");
+            legacy_options.tyre.model = options.legacy_tyre.value_or("sphere");
+            legacy_options.tyre.tier = options.legacy_tier.value_or("fast");
+            legacy_options.setup = std::move(setup_request);
+            auto ride = bike::legacy::make_ride(std::move(legacy_options));
+            std::int64_t steps = options.steps.value_or(0);
+            if (!options.steps) {
+                const double count = std::ceil(options.duration_s.value_or(1.) / ride->timestep_s());
+                if (!std::isfinite(count) || count >= 0x1p63)
+                    throw std::invalid_argument("duration exceeds the native step-count domain");
+                steps = static_cast<std::int64_t>(count);
+            }
+            auto limits = ride->default_limits();
+            limits.max_steps = steps;
+            const auto outcome = steps == 0
+                ? bike::legacy::RunOutcome{"target", 0, ride->time_s(), 0., ride->position_m(), std::nullopt}
+                : ride->run(limits);
+            using namespace runtime::setupvalue;
+            const Value result{Object{{"schema", integer(1)}, {"physics_mode", text("legacy")},
+                {"step", integer(outcome.steps)}, {"time_s", real(outcome.sim_time_s)},
+                {"position_m", real(outcome.position_m)}, {"reason", text(outcome.reason)},
+                {"outcome", outcome.crash ? text(outcome.crash->cause) : Value{}}}};
+            std::cout << bike::io::canonical_json(result) << '\n';
+            return outcome.crash ? 3 : 0;
+        }
+        if (options.legacy_drive || options.legacy_tyre || options.legacy_tier || options.assist_mode)
+            throw std::invalid_argument("legacy drive/tyre/assist options require physics_mode='legacy'");
         const double dt = setup_request.model.physics->timestep_s;
         const double finish_m = setup_request.track.length_m;
         const std::string track = setup_request.track.name;

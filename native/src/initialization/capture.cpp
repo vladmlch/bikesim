@@ -93,9 +93,9 @@ Value runtime_state(const runtime::StepState& s, const runtime::RuntimeConfig& c
     if (s.held_rider_terms) {
         // Reuse the canonical T08 term codec, including optional diagnostic
         // fields, rather than maintaining a second JointTerms field list.
-        rider::SpindleController::State state;
+        ::rider::SpindleController::State state;
         state.last_terms = *s.held_rider_terms;
-        const auto encoded = rider::encode_spindle_state(state);
+        const auto encoded = ::rider::encode_spindle_state(state);
         terms = field(encoded, "last_terms");
     }
     Value crash;
@@ -106,7 +106,7 @@ Value runtime_state(const runtime::StepState& s, const runtime::RuntimeConfig& c
     monitor.strict = config.strict;
     return Value{Object{{"step", integer(s.step)}, {"generation", integer(s.generation)},
         {"measurement_decimation", integer(s.measurement_decimation)},
-        {"applied_control", rider::encode_intent_control(s.applied_control)},
+        {"applied_control", ::rider::encode_intent_control(s.applied_control)},
         {"held_control", std::move(held)}, {"held_rider_terms", std::move(terms)},
         {"rollback_hold", Value{s.rollback_hold}},
         {"research_accounting_valid", Value{s.research_accounting_valid}},
@@ -181,7 +181,7 @@ runtime::RuntimeBootstrap capture_initialized(Stepper& stepper,
     Array tire_names;
     for (const auto& name : stepper.tire_state_names()) tire_names.push_back(text(name));
     Value contacts_state;
-    if (stepper.has_rider_contacts()) contacts_state = rider::encode_rider_contacts_state(
+    if (stepper.has_rider_contacts()) contacts_state = ::rider::encode_rider_contacts_state(
         stepper.rider_contacts().state(), stepper.rider_contacts().probe());
     Value document{Object{{"schema", integer(runtime::kRuntimeSchema)},
         {"model_digest", text(image.sha256)}, {"model_dims", std::move(dims)},
@@ -191,9 +191,9 @@ runtime::RuntimeBootstrap capture_initialized(Stepper& stepper,
         {"tire", Value{Object{{"names", Value{std::move(tire_names)}}, {"row", reals(stepper.tire_state())}}}},
         {"drive", drivetrain::encode_drive_snapshot(stepper.drive().state())},
         {"rider_contacts", std::move(contacts_state)},
-        {"rider_controller", state.rider_controller ? rider::encode_spindle_state(*state.rider_controller) : Value{}},
-        {"rider_intent", rider::encode_intent_state(state.rider_intent)},
-        {"signals", rider::encode_intent_signals(state.signals)}, {"runtime", runtime_state(state, config)}}};
+        {"rider_controller", state.rider_controller ? ::rider::encode_spindle_state(*state.rider_controller) : Value{}},
+        {"rider_intent", ::rider::encode_intent_state(state.rider_intent)},
+        {"signals", ::rider::encode_intent_signals(state.signals)}, {"runtime", runtime_state(state, config)}}};
     // Decode into the exact same owned state used by the captured-file path.
     return runtime::compose_bootstrap(config, std::move(image), document);
 }

@@ -47,14 +47,19 @@ WireObject attachment_wire(const AttachmentSamples &samples) {
 WireObject terms_wire(const rider::NamedEntries<rider::JointTerms> &terms) {
     WireObject result;
     for (const auto &[name, t] : terms) {
-        WireObject fields{{"requested_nm", Wire(t.requested_nm)},
-                          {"command_nm", Wire(t.command_nm)},
+        WireObject fields;
+        if (t.requested_present)
+            fields.emplace_back("requested_nm", Wire(t.requested_nm));
+        fields.insert(fields.end(), {{"command_nm", Wire(t.command_nm)},
                           {"posture_nm", Wire(t.posture_nm)},
                           {"pedaling_nm", Wire(t.pedaling_nm)},
-                          {"saturated", Wire(t.saturated)}};
+                          {"saturated", Wire(t.saturated)}});
         const auto optional = [&](const char *key, const std::optional<double> &value) {
             if (value.has_value()) fields.emplace_back(key, Wire(*value));
         };
+        optional("support_nm", t.support_nm);
+        optional("tracking_nm", t.tracking_nm);
+        optional("hip_posture_nm", t.hip_posture_nm);
         optional("active_request_nm", t.active_request_nm);
         optional("active_delivered_nm", t.active_delivered_nm);
         optional("passive_damping_nm", t.passive_damping_nm);
@@ -318,6 +323,8 @@ EffortObservation observe_effort(const RawStep &raw,
     d.budget_exceeded = config.active_positive_power_limit_w.has_value() &&
                        d.positive_power_w > *config.active_positive_power_limit_w + 1e-9;
     d.observation = "solved_actuator_force_at_incoming_interval";
+    d.budget_present = true;
+    d.observation_present = true;
     set(result.channels, "rider_active_delivered_nm", Wire(named_reals(delivered)));
     set(result.channels, "rider_joint_positive_power_w", Wire(named_reals(joint_positive)));
     set(result.channels, "rider_joint_power_violations", strings(power_errors));

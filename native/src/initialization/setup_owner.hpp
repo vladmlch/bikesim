@@ -8,6 +8,7 @@
 #include "equilibrium.hpp"
 #include "sag_fit.hpp"
 #include "state_file.hpp"
+#include "research_startup.hpp"
 #include "../model/builder.hpp"
 #include "../runtime/project_config.hpp"
 #include "../runtime/runtime.hpp"
@@ -28,6 +29,9 @@ struct SetupRequest {
     std::optional<std::filesystem::path> legacy_source_root;
     std::optional<PhysicalInitialState> initial_state;
     std::string origin;
+    // Research replaces equilibrium holding inputs with the source's safe
+    // zero-torque probe before the t=0 bootstrap is captured.
+    bool research_startup = false;
 };
 
 // Strict request_schema=1 assembly document; referenced files and nested
@@ -51,6 +55,7 @@ public:
     SetupOwner& operator=(SetupOwner&&) = delete;
     [[nodiscard]] runtime::RuntimeBootstrap seal_bootstrap();
     [[nodiscard]] io::Value metadata() const;
+    [[nodiscard]] ResearchStartup research_initial_state() const;
     [[nodiscard]] PhysicalInitialState capture_initial_state() const;
     [[nodiscard]] PhysicalInitialState project_initial_stations(int station_count) const;
 private:

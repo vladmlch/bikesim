@@ -1,0 +1,657 @@
+{
+  "schema": 1,
+  "wave": "Physics and research",
+  "tasks": [
+    "T26",
+    "T27",
+    "T28",
+    "T29",
+    "T30",
+    "T31",
+    "T32",
+    "T33",
+    "T34",
+    "T35",
+    "T36",
+    "T37"
+  ],
+  "date": "2026-10-17",
+  "input_archive": "repomix-output.xml(20261017-192145).zip",
+  "source_modules_in_scope": 104,
+  "source_declarations_in_scope": 1044,
+  "status": "implemented_unverified",
+  "packages_closed": [],
+  "user_constraint": "Do not compile or execute the project. All evidence in this delivery is source inspection, authored code/tests or filesystem-only packaging.",
+  "execution": {
+    "cmake_configure": "not_run",
+    "build": "not_run",
+    "compiler_or_linker": "not_run",
+    "tests": "not_run",
+    "simulation": "not_run",
+    "native_solvers": "not_run",
+    "native_plugins": "not_run",
+    "project_python": "not_run",
+    "project_tools": "not_run",
+    "oracle_regeneration": "not_run"
+  },
+  "numerical_identity": {
+    "allocation": "bike-dense-sqp-bfgs-v1;ftol=1e-12;maxiter=500;restarts=4",
+    "scipy_slsqp_equivalence": "not_claimed",
+    "provider_bitwise_parity": "not_qualified",
+    "new_solver_policy": "Retain explicit identity and measured residual gates; do not substitute optimizer success for feasibility."
+  },
+  "build_registration": {
+    "module": "native/cmake/NativePhysicsResearch.cmake",
+    "graphs": [
+      "standalone root",
+      "transition native"
+    ],
+    "new_libraries": [
+      "bike_legacy",
+      "bike_playground"
+    ],
+    "expanded_libraries": [
+      "bike_core or bike_native_contract_core",
+      "bike_initialization",
+      "bike_app"
+    ],
+    "policy_example_option": "BIKE_BUILD_POLICY_EXAMPLES",
+    "test_registration": "native/tests/migration/CMakeLists.txt"
+  },
+  "shared_integration_paths": [
+    "CMakeLists.txt",
+    "native/CMakeLists.txt",
+    "native/cmake/NativePhysicsResearch.cmake",
+    "native/cmake/NativeStartup.cmake",
+    "native/src/initialization/capture.cpp",
+    "native/src/initialization/equilibrium_cache.cpp",
+    "native/src/initialization/context.hpp",
+    "native/src/initialization/setup_owner.cpp",
+    "native/src/initialization/initial_state.cpp",
+    "native/src/model/suspension_setup.cpp"
+  ],
+  "evidence": {
+    "review": "migration/physics-research-review.md",
+    "file_only_audit": "migration/physics-research-static-audit.json",
+    "rider_review": "migration/physics-rider-static-review.md",
+    "legacy_review": "migration/physics-legacy-static-review.md",
+    "research_review": "migration/physics-research-policies-static-review.md",
+    "policy_contract": "docs/NATIVE_POLICIES.md",
+    "kernel_reuse_map": "migration/kernel-reuse-map.json",
+    "usage": "docs/physics-research-wave.md"
+  },
+  "remaining_acceptance": [
+    "No package is closed: compilation and all executable gates are still required.",
+    "T26 has 58 modules/508 declarations mapped; full branch/domain oracle acquisition and parity are pending.",
+    "T28 dense SQP/BFGS and NNLS require explicit numerical qualification; historical SciPy SLSQP equivalence is not established.",
+    "async_telemetry=true is explicitly rejected before setup: native asynchronous publication is owned by T42 (async_close.py); no silent synchronous fallback is allowed.",
+    "Upstream T11/T14/T16–T25/T56 evidence is not requalified by this delivery.",
+    "Full application recording/replay/CLI/viewer work remains in T38–T51; Linux/delivery gates remain in T52–T60.",
+    "All original Python source and immutable reference fixtures are retained; deletion remains T63."
+  ],
+  "task_records": [
+    {
+      "task": "T26",
+      "title": "Map reused kernels and implement residual contact/material helpers",
+      "implementation_status": "source_mapped_unqualified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/physics/attachment_budget.py",
+        "src/bike_sim/physics/battery.py",
+        "src/bike_sim/physics/distributed_tire.py",
+        "src/bike_sim/physics/drivetrain.py",
+        "src/bike_sim/physics/energy_ledger.py",
+        "src/bike_sim/physics/external_resistance.py",
+        "src/bike_sim/physics/freehub.py",
+        "src/bike_sim/physics/grip_release.py",
+        "src/bike_sim/physics/motor.py",
+        "src/bike_sim/physics/motor_profile.py",
+        "src/bike_sim/physics/pedaling.py",
+        "src/bike_sim/physics/rider_activation.py",
+        "src/bike_sim/physics/shifting.py",
+        "src/bike_sim/physics/stops.py",
+        "src/bike_sim/physics/tire.py",
+        "src/bike_sim/sim/ride/_step_oracle.py",
+        "src/bike_sim/sim/ride/attachment_wrench.py",
+        "src/bike_sim/sim/ride/balance_monitor.py",
+        "src/bike_sim/sim/ride/braking.py",
+        "src/bike_sim/sim/ride/constraint_forces.py",
+        "src/bike_sim/sim/ride/contact_filter.py",
+        "src/bike_sim/sim/ride/contact_state.py",
+        "src/bike_sim/sim/ride/contacts.py",
+        "src/bike_sim/sim/ride/control_clock.py",
+        "src/bike_sim/sim/ride/crank_split.py",
+        "src/bike_sim/sim/ride/cruise.py",
+        "src/bike_sim/sim/ride/distributed_tire_forces.py",
+        "src/bike_sim/sim/ride/drivetrain_forces.py",
+        "src/bike_sim/sim/ride/force_accumulator.py",
+        "src/bike_sim/sim/ride/geometric_freehub.py",
+        "src/bike_sim/sim/ride/ideal_freehub.py",
+        "src/bike_sim/sim/ride/lean_limit.py",
+        "src/bike_sim/sim/ride/pedal_recovery.py",
+        "src/bike_sim/sim/ride/physical_crash.py",
+        "src/bike_sim/sim/ride/physical_driver.py",
+        "src/bike_sim/sim/ride/physical_energy.py",
+        "src/bike_sim/sim/ride/physical_observations.py",
+        "src/bike_sim/sim/ride/physical_resistance.py",
+        "src/bike_sim/sim/ride/physical_runtime.py",
+        "src/bike_sim/sim/ride/pneumatic_tire_forces.py",
+        "src/bike_sim/sim/ride/reference_monitor.py",
+        "src/bike_sim/sim/ride/rider_contacts.py",
+        "src/bike_sim/sim/ride/rider_effort.py",
+        "src/bike_sim/sim/ride/rider_forces.py",
+        "src/bike_sim/sim/ride/rider_intent.py",
+        "src/bike_sim/sim/ride/rider_state.py",
+        "src/bike_sim/sim/ride/rim_events.py",
+        "src/bike_sim/sim/ride/static_braking.py",
+        "src/bike_sim/sim/ride/termination.py",
+        "src/bike_sim/sim/ride/tyre/__init__.py",
+        "src/bike_sim/sim/ride/tyre/applier.py",
+        "src/bike_sim/sim/ride/tyre/brush.py",
+        "src/bike_sim/sim/ride/tyre/carcass.py",
+        "src/bike_sim/sim/ride/tyre/geometry.py",
+        "src/bike_sim/sim/ride/tyre/model.py",
+        "src/bike_sim/sim/ride/tyre/profile.py",
+        "src/bike_sim/sim/ride/virtual_rider.py",
+        "src/bike_sim/sim/ride/wheel_kinematics.py"
+      ],
+      "source_declarations": 508,
+      "native_paths": [
+        "native/tests/migration/kernel_parity.cpp",
+        "native/tests/migration/kernel_properties.cpp",
+        "native/tests/migration/kernel_test_support.hpp",
+        "migration/kernel-reuse-map.json",
+        "native/src/contact/tabulated_radial.hpp",
+        "native/src/contact/tabulated_radial.cpp",
+        "native/src/runtime/native_contacts.cpp",
+        "native/src/config_types.hpp",
+        "native/src/config_validation.hpp",
+        "native/src/configuration/schema.cpp",
+        "native/src/writer_config.hpp",
+        "native/src/writers/tire.hpp",
+        "native/src/writers/tire.cpp",
+        "native/src/writers/tire_common.hpp"
+      ],
+      "public_entrypoints": [
+        "runtime::RuntimeContactQuery::query",
+        "contactlaw::TabulatedRadial",
+        "migration/kernel-reuse-map.json"
+      ],
+      "ctest_targets": [
+        "migration_T26"
+      ],
+      "regressions_authored": [
+        "dyadic chain/freehub/battery arithmetic",
+        "immutable drive-state codec fixture",
+        "unilateral/friction/energy bounds",
+        "tabulated material interpolation, energy, range and invalid-table cases"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted.",
+      "downstream_boundary": "Exports and async-close helpers remain with their application owners; async publication is T42. See per-symbol kernel map."
+    },
+    {
+      "task": "T27",
+      "title": "Remaining drivetrain topology and geometry",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/physics/chain.py",
+        "src/bike_sim/physics/transmission_constraint.py",
+        "src/bike_sim/sim/ride/drivetrain.py"
+      ],
+      "source_declarations": 36,
+      "native_paths": [
+        "native/src/drivetrain/chain.hpp",
+        "native/src/drivetrain/elastic_chain.cpp",
+        "native/src/drivetrain/capabilities.hpp",
+        "native/src/drivetrain/motor_clutch.cpp",
+        "native/src/drivetrain/transmission.hpp",
+        "native/src/drivetrain/transmission.cpp",
+        "native/src/writers/drivetrain.cpp",
+        "native/src/runtime/project_config.cpp",
+        "native/tests/migration/test_t27.cpp"
+      ],
+      "public_entrypoints": [
+        "drivetrain::chain_extension",
+        "drivetrain::chain_jacobian",
+        "drivetrain::motor_topology",
+        "drivetrain::linearized_upper_bound",
+        "drivetrain::constraint_reaction"
+      ],
+      "ctest_targets": [
+        "migration_T27"
+      ],
+      "regressions_authored": [
+        "finite-difference chain geometry and virtual work",
+        "elastic/ideal/geometric/clutch/rotor topology",
+        "writer staging, state and battery atomicity"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T28",
+      "title": "Native allocation, conservative feasibility and calibration numerics",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/physics/rider_allocation.py"
+      ],
+      "source_declarations": 8,
+      "native_paths": [
+        "native/src/numerics/slsqp.hpp",
+        "native/src/numerics/slsqp.cpp",
+        "native/src/numerics/dense.hpp",
+        "native/src/numerics/linear_feasibility.cpp",
+        "native/src/numerics/nnls.hpp",
+        "native/src/numerics/nnls.cpp",
+        "native/src/numerics/brent.hpp",
+        "native/src/numerics/brent.cpp",
+        "native/src/numerics/density_fit.hpp",
+        "native/src/numerics/density_fit.cpp",
+        "native/src/rider/allocation.hpp",
+        "native/src/rider/allocation.cpp",
+        "native/src/rider/allocation_json.cpp",
+        "native/tests/migration/test_t28.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::rider::allocate",
+        "bike::rider::allocation_numeric_identity"
+      ],
+      "ctest_targets": [
+        "migration_T28"
+      ],
+      "regressions_authored": [
+        "projection and measured residuals",
+        "conservative linear feasibility",
+        "NNLS and bracketed root controls"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T29",
+      "title": "Constraint dynamics, activation/response allocation and legacy rider controller",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/sim/ride/rider_activation_allocation.py",
+        "src/bike_sim/sim/ride/rider_balance.py",
+        "src/bike_sim/sim/ride/rider_control.py",
+        "src/bike_sim/sim/ride/rider_dynamics.py",
+        "src/bike_sim/sim/ride/rider_response_allocation.py"
+      ],
+      "source_declarations": 65,
+      "native_paths": [
+        "native/src/rider/constraint_dynamics.hpp",
+        "native/src/rider/constraint_dynamics.cpp",
+        "native/src/rider/mode_search.cpp",
+        "native/src/rider/activation_allocation.hpp",
+        "native/src/rider/activation_allocation.cpp",
+        "native/src/rider/response_allocation.hpp",
+        "native/src/rider/response_allocation.cpp",
+        "native/src/rider/legacy_allocation.cpp",
+        "native/src/rider/legacy_controller.hpp",
+        "native/src/rider/legacy_controller.cpp",
+        "native/src/rider/spindle_controller.hpp",
+        "native/src/rider/spindle_controller.cpp",
+        "native/src/rider/spindle_wire.cpp",
+        "native/src/rider/state_codec.cpp",
+        "native/src/rider/legacy_diagnostics.hpp",
+        "native/src/rider/response_codec.hpp",
+        "native/src/rider/response_codec.cpp",
+        "native/src/runtime/accounting.cpp",
+        "native/src/runtime/step.cpp",
+        "native/src/initialization/finalize.cpp",
+        "native/tests/migration/test_t29.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::rider::LegacyController",
+        "rider::SpindleController::compute",
+        "bike::rider::encode_response_allocation",
+        "bike::rider::encode_support_diagnostics"
+      ],
+      "ctest_targets": [
+        "migration_T29"
+      ],
+      "regressions_authored": [
+        "affine modes and latent/delivered activation",
+        "constraint force response",
+        "controller/config/state ownership"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T30",
+      "title": "Alternative support dispatch and native-reference contact snapshots",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/sim/ride/control.py",
+        "src/bike_sim/sim/ride/rider_support.py",
+        "src/bike_sim/sim/ride/support_geometry.py",
+        "src/bike_sim/sim/ride/weld_pedals.py"
+      ],
+      "source_declarations": 44,
+      "native_paths": [
+        "native/src/rider/support_dispatch.hpp",
+        "native/src/rider/support_dispatch.cpp",
+        "native/src/rider/flat_contacts.cpp",
+        "native/src/rider/weld_settle.cpp",
+        "native/src/rider/grip_springs.cpp",
+        "native/src/runtime/capabilities.hpp",
+        "native/src/runtime/capabilities.cpp",
+        "native/src/runtime/control.hpp",
+        "native/src/runtime/control.cpp",
+        "native/src/runtime/native_contacts.cpp",
+        "native/src/runtime/step.hpp",
+        "native/src/runtime/step.cpp",
+        "native/src/runtime/bootstrap.cpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/project_config.cpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/tests/migration/test_native_contacts.cpp",
+        "native/tests/migration/test_t30.cpp"
+      ],
+      "public_entrypoints": [
+        "runtime::implemented_capabilities",
+        "runtime::validate_physical_capabilities",
+        "bike::rider::support_dispatch",
+        "bike::rider::make_support_writer",
+        "runtime::RuntimeContactQuery::query"
+      ],
+      "ctest_targets": [
+        "migration_T30",
+        "migration_T30_native_contacts"
+      ],
+      "regressions_authored": [
+        "support force/moment targets",
+        "attachment topology and legacy controller",
+        "diagnostic roundtrip",
+        "native contact wrench, slip, load bridge and transactional invalid input"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T31",
+      "title": "Standalone legacy ride, controllers, tyres and recording",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/physics/tyre.py",
+        "src/bike_sim/sim/ride/__init__.py",
+        "src/bike_sim/sim/ride/forces.py",
+        "src/bike_sim/sim/ride/resistance.py",
+        "src/bike_sim/sim/ride/tire_forces.py",
+        "src/bike_sim/sim/ride/wheels.py",
+        "src/bike_sim/sim/ride_sim.py"
+      ],
+      "source_declarations": 75,
+      "native_paths": [
+        "native/src/legacy/ride.hpp",
+        "native/src/legacy/ride.cpp",
+        "native/src/legacy/controls.hpp",
+        "native/src/legacy/controls.cpp",
+        "native/src/legacy/force_accumulator.cpp",
+        "native/src/legacy/legs.hpp",
+        "native/src/legacy/legs.cpp",
+        "native/src/legacy/rider.hpp",
+        "native/src/legacy/rider.cpp",
+        "native/src/legacy/tyre.hpp",
+        "native/src/legacy/tyre.cpp",
+        "native/src/legacy/recorder.cpp",
+        "native/src/app/native_ride_main.cpp",
+        "native/tests/migration/test_t31.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::legacy::make_ride",
+        "bike::legacy::RideSimulation",
+        "bike::legacy::RideRecorder"
+      ],
+      "ctest_targets": [
+        "migration_T31"
+      ],
+      "regressions_authored": [
+        "legacy motor/torque/cadence/cruise modes",
+        "sphere/pneumatic contact adapters",
+        "reset/step/termination",
+        "CSV byte controls"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T32",
+      "title": "Legacy filters, ride metrics and wheelie analysis",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/sim/ride/energy.py",
+        "src/bike_sim/sim/ride/leg_drive.py",
+        "src/bike_sim/sim/ride/leg_loop.py",
+        "src/bike_sim/sim/ride/metrics.py",
+        "src/bike_sim/sim/ride/wheelie.py",
+        "src/bike_sim/sim/telemetry.py"
+      ],
+      "source_declarations": 67,
+      "native_paths": [
+        "native/src/numerics/filter.hpp",
+        "native/src/numerics/filter.cpp",
+        "native/src/legacy/metrics.hpp",
+        "native/src/legacy/metrics.cpp",
+        "native/src/runtime/research_metrics.hpp",
+        "native/src/runtime/research_metrics.cpp",
+        "native/tests/migration/test_t32.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::numerics::legacy_ride_filter",
+        "bike::legacy::summarize_ride",
+        "bike::legacy::count_completed_impact_episodes"
+      ],
+      "ctest_targets": [
+        "migration_T32"
+      ],
+      "regressions_authored": [
+        "filter coefficients/padding/short input and captured filter fixture",
+        "event/travel/acceleration/pedal metrics",
+        "wheelie classification and parameter errors"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T33",
+      "title": "Headless playground and suspension stands",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/sim/controllers.py",
+        "src/bike_sim/sim/playground.py"
+      ],
+      "source_declarations": 23,
+      "native_paths": [
+        "native/src/legacy/playground.hpp",
+        "native/src/legacy/playground.cpp",
+        "native/src/legacy/suspension_controller.cpp",
+        "native/src/legacy/static_equilibrium.cpp",
+        "native/src/legacy/telemetry.cpp",
+        "native/tests/migration/test_t33.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::legacy::make_playground",
+        "bike::legacy::Playground"
+      ],
+      "ctest_targets": [
+        "migration_T33"
+      ],
+      "regressions_authored": [
+        "suspension control operations",
+        "stand/playground lifecycle, reset, travel and sweep"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T34",
+      "title": "Native research environment, clocks, programs and seeded inputs",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/native/research.py",
+        "src/bike_sim/sim/research/__init__.py",
+        "src/bike_sim/sim/research/backend.py",
+        "src/bike_sim/sim/research/configuration.py",
+        "src/bike_sim/sim/research/demand.py",
+        "src/bike_sim/sim/research/environment.py",
+        "src/bike_sim/sim/research/observations.py",
+        "src/bike_sim/sim/research/rider_behavior.py",
+        "src/bike_sim/sim/research/rider_program.py",
+        "src/bike_sim/sim/research/sensors.py"
+      ],
+      "source_declarations": 140,
+      "native_paths": [
+        "native/src/research/environment.hpp",
+        "native/src/research/environment.cpp",
+        "native/src/research/configuration.cpp",
+        "native/src/research/program_loader.cpp",
+        "native/src/research/rider_random.cpp",
+        "native/src/initialization/research_startup.hpp",
+        "native/src/initialization/research_startup.cpp",
+        "native/src/initialization/setup_owner.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/src/runtime/research.hpp",
+        "native/src/runtime/research.cpp",
+        "native/src/runtime/programs.hpp",
+        "native/src/runtime/programs.cpp",
+        "native/src/runtime/sensors.hpp",
+        "native/src/runtime/sensors.cpp",
+        "native/tests/migration/test_t34.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::research::prepare_environment",
+        "bike::research::make_environment"
+      ],
+      "ctest_targets": [
+        "migration_T34"
+      ],
+      "regressions_authored": [
+        "command clocks and programs",
+        "seeded sensor/rider inputs",
+        "native request/startup/reset"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted.",
+      "downstream_boundary": "Synchronous research is implemented in source; async_telemetry=true is explicitly rejected before setup until T42."
+    },
+    {
+      "task": "T35",
+      "title": "Built-in policies and native plugin ABI",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/sim/research/policies.py"
+      ],
+      "source_declarations": 20,
+      "native_paths": [
+        "native/include/bike/policy_v1.h",
+        "native/src/research/policy.hpp",
+        "native/src/research/policy.cpp",
+        "native/src/research/builtin_policies.cpp",
+        "native/src/research/plugin_policy.cpp",
+        "examples/policies/traction_control.cpp",
+        "native/tests/migration/policy_fixture.cpp",
+        "native/tests/migration/test_t35.cpp"
+      ],
+      "public_entrypoints": [
+        "bike_policy_v1",
+        "bike::research::load_policy",
+        "bike::research::validate_policy_abi"
+      ],
+      "ctest_targets": [
+        "migration_T35"
+      ],
+      "regressions_authored": [
+        "built-in policy traces",
+        "descriptor versions and optional fields",
+        "real shared-module callback failures"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T36",
+      "title": "Policy session, rider behavior and episode lifecycle",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/sim/research/policy_session.py",
+        "src/bike_sim/sim/research/recording_lifecycle.py",
+        "src/bike_sim/sim/ride/physical_session.py"
+      ],
+      "source_declarations": 49,
+      "native_paths": [
+        "native/src/research/policy_session.hpp",
+        "native/src/research/policy_session.cpp",
+        "native/src/research/rider_behavior.cpp",
+        "native/src/research/lifecycle.cpp",
+        "native/src/research/exit_codes.cpp",
+        "native/tests/migration/test_t36.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::research::PolicySession"
+      ],
+      "ctest_targets": [
+        "migration_T36"
+      ],
+      "regressions_authored": [
+        "policy session lifecycle and causal schedules",
+        "rider-program ownership",
+        "first terminal/error semantics"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    },
+    {
+      "task": "T37",
+      "title": "Owned research evidence, metrics, metadata and preview exports",
+      "implementation_status": "implemented_unverified",
+      "package_complete": false,
+      "source_modules": [
+        "src/bike_sim/sim/research/metrics.py",
+        "src/bike_sim/sim/research/quality.py",
+        "src/bike_sim/sim/research/validity.py",
+        "src/bike_sim/sim/ride/model_status.py"
+      ],
+      "source_declarations": 9,
+      "native_paths": [
+        "native/src/research/evidence.hpp",
+        "native/src/research/evidence.cpp",
+        "native/src/research/metrics.cpp",
+        "native/src/research/quality.cpp",
+        "native/src/research/metadata.cpp",
+        "native/src/research/preview_csv.cpp",
+        "native/src/runtime/status.hpp",
+        "native/src/runtime/status.cpp",
+        "native/tests/migration/test_t37.cpp"
+      ],
+      "public_entrypoints": [
+        "bike::research::summarize",
+        "bike::research::recording_batch",
+        "bike::research::snapshot_research_assets"
+      ],
+      "ctest_targets": [
+        "migration_T37"
+      ],
+      "regressions_authored": [
+        "owned episode evidence",
+        "logical recording IDs and pagination",
+        "metadata/asset hashes and summaries"
+      ],
+      "regressions_executed": false,
+      "qualification": "Build, strict warnings, oracle/provider comparisons, negative cases and physical acceptance remain unexecuted."
+    }
+  ]
+}

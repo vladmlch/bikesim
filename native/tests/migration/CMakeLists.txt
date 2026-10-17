@@ -683,6 +683,67 @@ foreach(_startup_task IN ITEMS 16 17 18 20 21 22 23 24 25)
   endif()
 endforeach()
 
+# Physics/research contracts are real native executables. Declaring them
+# does not run them; this wave's evidence records all execution as pending.
+foreach(_physics_task RANGE 26 37)
+  set(_physics_test "migration_T${_physics_task}")
+  if(_physics_task EQUAL 26)
+    add_executable(${_physics_test} kernel_parity.cpp kernel_properties.cpp)
+  else()
+    add_executable(${_physics_test} "test_t${_physics_task}.cpp")
+  endif()
+  bike_startup_target_policy(${_physics_test} "${_migration_repo_root}/native")
+  target_link_libraries(${_physics_test} PRIVATE bike_migration_test bike_app)
+  if(_physics_task EQUAL 31 OR _physics_task EQUAL 32)
+    target_link_libraries(${_physics_test} PRIVATE bike_legacy)
+  elseif(_physics_task EQUAL 33)
+    target_link_libraries(${_physics_test} PRIVATE bike_playground)
+  endif()
+  if(BIKE_ROOT_BUILD)
+    bike_rewrite_mujoco_load_name(${_physics_test}
+      "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+  else()
+    bike_rewrite_mujoco_load_name(${_physics_test} "${MJ_DIR}/libmujoco.3.12.0.dylib")
+  endif()
+  if(BUILD_TESTING)
+    if(_physics_task EQUAL 35)
+      add_test(NAME ${_physics_test} COMMAND ${_physics_test}
+        "$<TARGET_FILE:migration_policy_fixture>"
+        "$<TARGET_FILE:migration_policy_missing_symbol>")
+    else()
+      add_test(NAME ${_physics_test} COMMAND ${_physics_test})
+    endif()
+    set_tests_properties(${_physics_test} PROPERTIES
+      WORKING_DIRECTORY "$<TARGET_FILE_DIR:${_physics_test}>")
+  endif()
+endforeach()
+
+# Actual shared-module failure controls for T35. Registration/build graph
+# changes do not execute or load these deliberately invalid callbacks.
+foreach(_policy_fixture IN ITEMS migration_policy_fixture migration_policy_missing_symbol)
+  add_library(${_policy_fixture} MODULE policy_fixture.cpp)
+  bike_startup_target_policy(${_policy_fixture} "${_migration_repo_root}/native")
+  target_include_directories(${_policy_fixture} PRIVATE "${_migration_repo_root}/native/include")
+  set_target_properties(${_policy_fixture} PROPERTIES PREFIX "")
+endforeach()
+target_compile_definitions(migration_policy_missing_symbol PRIVATE BIKE_POLICY_FIXTURE_MISSING_SYMBOL=1)
+add_dependencies(migration_T35 migration_policy_fixture migration_policy_missing_symbol)
+
+add_executable(migration_T30_native_contacts test_native_contacts.cpp)
+bike_startup_target_policy(migration_T30_native_contacts "${_migration_repo_root}/native")
+target_link_libraries(migration_T30_native_contacts PRIVATE bike_migration_test bike_app)
+if(BIKE_ROOT_BUILD)
+  bike_rewrite_mujoco_load_name(migration_T30_native_contacts
+    "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+else()
+  bike_rewrite_mujoco_load_name(migration_T30_native_contacts "${MJ_DIR}/libmujoco.3.12.0.dylib")
+endif()
+if(BUILD_TESTING)
+  add_test(NAME migration_T30_native_contacts COMMAND migration_T30_native_contacts)
+  set_tests_properties(migration_T30_native_contacts PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T30_native_contacts>")
+endif()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

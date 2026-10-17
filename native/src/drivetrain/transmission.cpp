@@ -9,6 +9,33 @@
 #include <ranges>
 
 namespace drivetrain {
+    std::pair<std::vector<double>, double> linearized_upper_bound(
+        double phi, std::span<const double> jacobian,
+        std::span<const double> q, double boundary) {
+        if (jacobian.size() != q.size())
+            throw std::invalid_argument("transmission Jacobian requires scalar planar coordinates");
+        finite(phi, "transmission phi");
+        finite(boundary, "transmission boundary");
+        for (double value : jacobian) finite(value, "transmission Jacobian");
+        for (double value : q) finite(value, "transmission coordinates");
+        const double upper = validation::derived(boundary - phi + dot(jacobian, q),
+                                                   "transmission.upper_bound");
+        return {std::vector<double>(jacobian.begin(), jacobian.end()), upper};
+    }
+
+    std::vector<double> constraint_reaction(double tension,
+                                           std::span<const double> jacobian) {
+        nonnegative(tension, "transmission tension");
+        std::vector<double> result;
+        result.reserve(jacobian.size());
+        for (double value : jacobian) {
+            finite(value, "transmission Jacobian");
+            result.push_back(validation::derived(-tension * value,
+                                                 "transmission.reaction"));
+        }
+        return result;
+    }
+
     namespace {
         struct CloneModelContext {
             const mjModel *source;

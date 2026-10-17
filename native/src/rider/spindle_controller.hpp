@@ -1,17 +1,17 @@
-// rider/spindle_controller.hpp — the spindle-branch port of
-// ArticulatedRiderController (rider_control.py) for the supported welded
-// configuration (pedal_attachment='spindle', grip_attachment='connect',
-// saddle_attachment='pin').
+// rider/spindle_controller.hpp — model-owned ArticulatedRiderController
+// facade. The original spindle computation remains in this translation
+// unit; non-spindle targets and constrained effort use LegacyController.
 //
-// Only the spindle code path is implemented: two-leg waveform -> closed
+// Spindle code path: two-leg waveform -> closed
 // leg-loop Jacobians -> directional crank split -> upper-body PD and bias
 // compensation -> directional/speed/power/strength limits -> activation ->
-// finalize_effort bookkeeping. The legacy QP allocator (_compute_legacy)
-// does not exist in the supported configuration and is not ported; the
-// runtime rejects configurations that would reach it.
+// finalize_effort bookkeeping. Flat/welded pedal variants use owned
+// activation, soft-constraint responses and the declared allocation
+// numeric identity; their runtime/numerical qualification remains pending.
 //
-// Every method mirrors the Python statements it names; the Python ordering
-// fixes the FP contract. The class is mjModel/mjData-facing only — no
+// Original spindle methods retain the Python statement ordering that fixes
+// their FP contract. The delegate preserves the physical equations while
+// declaring its numerical solver separately. This class is model-facing — no
 // nanobind types enter this header; dict decoding lives in the binding
 // translation units.
 #pragma once
@@ -28,13 +28,16 @@
 
 #include "rider_posture.hpp"
 #include "spindle_math.hpp"
+#include "response_allocation.hpp"
+#include "legacy_diagnostics.hpp"
+
+namespace bike::rider { class LegacyController; }
 
 namespace rider {
 
 // pedal_recovery.py PedalRecovery — state fields only. The observe/goal
-// state machine is reached only by the unsupported flat-pedal path; the
-// spindle controller carries these fields because reset_activation and the
-// bootstrap wire do.
+// state machine is reached by the flat-pedal delegate; the common owner
+// snapshots it together with activation and allocator warm starts.
 struct PedalRecoveryState {
     std::string stage = "none";
     double direction = 1.;
@@ -51,6 +54,8 @@ struct SpindlePose {
     std::array<double, 3> knee_rear{};
     std::array<double, 3> pedal_front{};
     std::array<double, 3> pedal_rear{};
+    std::array<double, 3> ankle_front{};
+    std::array<double, 3> ankle_rear{};
 };
 
 struct DirectionalStrength {
@@ -83,6 +88,9 @@ struct SpindleConfig {
     std::map<std::string, DirectionalStrength> strength;
     std::map<std::string, spindle::JointEnvelope> strength_coordinates;
     std::map<std::string, spindle::JointEnvelope> envelopes;
+    // Present only when additional physical attachment/controller behavior
+    // is requested. The original spindle/pin/connect arithmetic is unchanged.
+    std::optional<bike::configuration::ArticulatedConfig> legacy;
 
     [[nodiscard]] double passive_damping_nms_rad() const {
         return joint_passive_damping_nms_rad.value_or(joint_kd_nms_rad);
@@ -118,6 +126,10 @@ struct JointTerms {
     std::optional<double> solved_force_nm;
     std::optional<double> solved_active_nm;
     std::optional<double> solved_passive_nm;
+    std::optional<double> support_nm;
+    std::optional<double> tracking_nm;
+    std::optional<double> hip_posture_nm;
+    bool requested_present = true;
 };
 
 // effort_diagnostics — the finalize_effort key set plus the solved_effort
@@ -139,6 +151,9 @@ struct EffortDiagnostics {
     std::optional<double> positive_work_step_j;
     std::optional<double> passive_work_step_j;
     std::optional<std::vector<std::string>> strength_violations;
+    bool budget_present = true;
+    bool power_limit_present = true;
+    bool observation_present = true;
 };
 
 struct AllocationDiagnostics {
@@ -147,18 +162,23 @@ struct AllocationDiagnostics {
     double crank_task_nm = 0.;
     double crank_task_shortfall_nm = 0.;
     std::vector<double> solution_excitation_nm;
+    std::optional<bike::rider::ResponseAllocation> legacy;
 };
 
 struct SupportDiagnostics {
     bool present = false;
     bool stance_front = false;
     bool stance_rear = false;
+    std::optional<bike::rider::LegacySupportDiagnostics> legacy;
 };
 
 struct SoleGoalDiagnostics {
     bool spindle = true;
     bool saturated = false;
     std::vector<std::string> limiting_reasons;
+    std::optional<SoleGoalDiagnostic> geometry;
+    bool weld = false;
+    bool recovery = false;
 };
 
 // lean_limit.py: forward-lean ceiling over pose + anatomical envelopes.
@@ -196,7 +216,9 @@ public:
     [[nodiscard]] NamedEntries<double>
     compute(mjData *data, const RiderCommand &command, bool advance = true,
             std::optional<double> dt_s = std::nullopt,
-            bool steady_state = false);
+            bool steady_state = false,
+            std::optional<std::array<bool,4>> support_available = std::nullopt,
+            bool pedal_recovery = false);
 
     // initialize()/initialize_velocity() — static-equilibrium-time pose
     // matching only; never inside the running step.
@@ -242,6 +264,7 @@ public:
         std::vector<double> active_state;
         std::optional<double> activation_time_s;
         NamedEntries<JointTerms> last_terms;
+        NamedEntries<std::array<double,2>> pd_split;
         NamedEntries<bool> saturated_ik;
         NamedEntries<bool> ik_reach_limited;
         NamedEntries<double> joint_torques_nm;
@@ -252,6 +275,7 @@ public:
         AllocationDiagnostics allocation_diagnostics;
         SupportDiagnostics support_diagnostics;
         NamedEntries<SoleGoalDiagnostics> sole_goal_diagnostics;
+        std::optional<bike::rider::AllocationMemory> allocation_memory;
     };
     [[nodiscard]] State state() const;
     [[nodiscard]] const NamedEntries<JointTerms> &presentation_terms() const noexcept {
@@ -282,14 +306,17 @@ public:
         effort_diagnostics_ = std::move(diagnostics);
         last_terms_ = std::move(terms);
     }
-    [[nodiscard]] bool spindle() const { return true; }
-    [[nodiscard]] bool welded() const { return false; }
+    [[nodiscard]] bool spindle() const { return !legacy_; }
+    [[nodiscard]] bool welded() const {
+        return config_.legacy && config_.legacy->pedal_attachment == "weld";
+    }
     [[nodiscard]] bool command_enabled() const { return command_enabled_; }
     [[nodiscard]] std::optional<double> lean_limit_rad() const {
         return lean_limit_rad_;
     }
 
 private:
+    friend class bike::rider::LegacyController;
     // The constructor's id/geometry resolution half — split out so the
     // debug stack-frame budget holds on unoptimized builds.
     void resolve_model_layout(std::span<const int> qpos_adrs,
@@ -381,6 +408,7 @@ private:
     std::vector<double> active_state_;
     std::optional<double> activation_time_s_;
     NamedEntries<JointTerms> last_terms_;
+    NamedEntries<std::array<double,2>> pd_split_;
     NamedEntries<bool> saturated_ik_{{"front", false}, {"rear", false}};
     NamedEntries<bool> ik_reach_limited_{{"front", false}, {"rear", false}};
     NamedEntries<double> joint_torques_nm_;
@@ -392,6 +420,8 @@ private:
     NamedEntries<SoleGoalDiagnostics> sole_goal_diagnostics_;
     NamedEntries<std::array<double, 3>> sole_targets_;
     double target_difference_s_ = 1e-4;
+    bike::rider::AllocationMemory allocation_memory_;
+    std::unique_ptr<bike::rider::LegacyController> legacy_;
 
     std::unique_ptr<mjData, decltype(&mj_deleteData)> target_data_;
     std::unique_ptr<mjData, decltype(&mj_deleteData)> previous_target_data_;

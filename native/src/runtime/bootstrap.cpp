@@ -269,8 +269,10 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
     if (vread::string(vread::field(root, "physics_mode"),
                       root.child("physics_mode")) != "physical")
         vread::invalid(root.child("physics_mode"), "unsupported physics mode");
-    if (vread::string(vread::field(root, "drive_mode"),
-                      root.child("drive_mode")) != "articulated_effort")
+    const auto& drive_mode = vread::string(vread::field(root, "drive_mode"),
+                                          root.child("drive_mode"));
+    if (drive_mode != "articulated_effort" && drive_mode != "crank_effort" &&
+        drive_mode != "coast" && drive_mode != "ideal_speed_control")
         vread::invalid(root.child("drive_mode"), "unsupported drive mode");
     out.strict =
         vread::boolean(vread::field(root, "strict"), root.child("strict"));
@@ -288,6 +290,10 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
     }
 
     out.writer_config = owned_mapping(root, "writer_config");
+    const auto writer = vread::section(root, "writer_config");
+    const auto drive = vread::section(writer, "drive");
+    if (vread::string(vread::field(drive, "drive_mode"), drive.child("drive_mode")) != drive_mode)
+        vread::invalid(root.child("drive_mode"), "differs from writer_config.drive.drive_mode");
     out.rider_controller = owned_mapping(root, "rider_controller");
     out.rider_intent = owned_mapping(root, "rider_intent");
 

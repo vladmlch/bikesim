@@ -1,8 +1,11 @@
 // rider/spindle_wire.cpp — wire decoders/emitters for the spindle
 // controller. See the header for the shape contract.
 #include "spindle_wire.hpp"
+#include "state_codec.hpp"
+#include "response_codec.hpp"
 
 #include <array>
+#include <charconv>
 #include <map>
 #include <set>
 #include <string>
@@ -16,6 +19,34 @@ namespace rider {
 namespace {
 
 using wire::keys;
+
+// Binding-only lowering for the newly reached cold records. The owned core
+// codec remains the single legacy diagnostic/config schema authority.
+bike::io::Value owned_value(nb::handle value,std::string_view path,std::size_t depth=0) {
+    using V=bike::io::Value;
+    if(depth>64)wire::invalid(path,"document nesting exceeds 64");
+    if(value.is_none())return V{};
+    if(value.ptr()==Py_True)return V{true};if(value.ptr()==Py_False)return V{false};
+    if(nb::isinstance<nb::str>(value))return V{wire::string(value,path)};
+    if(nb::isinstance<nb::dict>(value)){V::Object out;for(const auto item:nb::borrow<nb::dict>(value))out.emplace_back(wire::string(item.first,path),owned_value(item.second,path,depth+1));return V{std::move(out)};}
+    const auto numbers=nb::module_::import_("numbers");
+    if(nb::isinstance(value,numbers.attr("Integral"))&&!wire::numeric_boolean(value))return V{bike::io::Number{std::to_string(wire::integer(value,path))}};
+    if(nb::isinstance(value,numbers.attr("Real"))&&!wire::numeric_boolean(value)){
+        const double real=wire::real(value,path);if(!std::isfinite(real))return V{bike::io::Tagged{"float64",{{"value",std::isnan(real)?"nan":real>0.?"+inf":"-inf"}}}};std::array<char,32>b{};auto written=std::to_chars(b.data(),b.data()+b.size(),real);if(written.ec!=std::errc())throw std::runtime_error("rider float encode");std::string text(b.data(),written.ptr);if(text.find_first_of(".eE")==std::string::npos)text+=".0";return V{bike::io::Number{std::move(text)}};
+    }
+    V::Array out;for(nb::handle item:wire::sequence(value,path))out.push_back(owned_value(item,path,depth+1));return V{std::move(out)};
+}
+nb::object python_value(const bike::io::Value& value) {
+    using V=bike::io::Value;
+    if(bike::io::is_null(value))return nb::none();
+    if(const auto*b=std::get_if<bool>(&value.data))return nb::bool_(*b);
+    if(const auto*s=std::get_if<std::string>(&value.data))return nb::str(s->c_str());
+    if(const auto*n=std::get_if<bike::io::Number>(&value.data))return bike::io::is_integer_lexeme(n->lexeme)?nb::object(nb::int_(bike::io::as_int64(value,"rider number"))):nb::object(nb::float_(bike::io::as_double(value,"rider number")));
+    if(const auto*a=std::get_if<V::Array>(&value.data)){nb::list out;for(const auto&item:*a)out.append(python_value(item));return out;}
+    if(const auto*o=std::get_if<V::Object>(&value.data)){nb::dict out;for(const auto&[key,item]:*o)out[key.c_str()]=python_value(item);return out;}
+    if(std::holds_alternative<bike::io::Tagged>(value.data))return nb::float_(bike::io::tagged_double(value,"rider diagnostic"));
+    throw std::invalid_argument("rider diagnostic cannot contain binary data");
+}
 
 [[nodiscard]] nb::dict child_dict(const nb::dict &parent, const char *key,
                                   std::string_view path) {
@@ -144,11 +175,9 @@ parse_pedal_recovery(nb::handle value, std::string_view path) {
 constexpr auto kEffortRequiredKeys = keys(
     "rider_active_request_nm", "rider_active_delivered_nm",
     "rider_positive_power_w", "rider_passive_power_w",
-    "rider_activation_saturated", "rider_strength_limited",
-    "rider_effort_budget_exceeded",
-    "rider_active_positive_power_limit_w",
-    "rider_effort_observation");
+    "rider_activation_saturated", "rider_strength_limited");
 constexpr auto kEffortOptionalKeys = keys(
+    "rider_effort_budget_exceeded", "rider_active_positive_power_limit_w", "rider_effort_observation",
     "rider_joint_positive_power_w", "rider_joint_power_violations",
     "rider_joint_speed_violations", "rider_positive_work_step_j",
     "rider_passive_work_step_j", "rider_strength_violations");
@@ -198,12 +227,12 @@ parse_effort_diagnostics(nb::handle value, std::string_view path) {
         wire::boolean(d["rider_activation_saturated"], path);
     out.strength_limited =
         parse_name_list(d["rider_strength_limited"], path);
-    out.budget_exceeded =
-        wire::boolean(d["rider_effort_budget_exceeded"], path);
-    out.positive_power_limit_w = parse_optional_real(
-        d["rider_active_positive_power_limit_w"], path);
-    out.observation =
-        wire::string(d["rider_effort_observation"], path);
+    out.budget_present = d.contains("rider_effort_budget_exceeded");
+    out.power_limit_present = d.contains("rider_active_positive_power_limit_w");
+    out.observation_present = d.contains("rider_effort_observation");
+    if (out.budget_present) out.budget_exceeded = wire::boolean(d["rider_effort_budget_exceeded"], path);
+    if (out.power_limit_present) out.positive_power_limit_w = parse_optional_real(d["rider_active_positive_power_limit_w"], path);
+    if (out.observation_present) out.observation = wire::string(d["rider_effort_observation"], path);
     parse_effort_solved_fields(d, path, out);
     return out;
 }
@@ -214,6 +243,13 @@ parse_allocation_diagnostics(nb::handle value, std::string_view path) {
     if (d.size() == 0)
         return {};
     AllocationDiagnostics out;
+    if(d.contains("feasible")) {
+        out.legacy=bike::rider::decode_response_allocation(owned_value(value,path),path);
+        out.present=true;out.invalid_controller=!out.legacy->allocation.feasible;
+        out.crank_task_nm=out.legacy->crank_torque_target_nm.value_or(0.);
+        out.crank_task_shortfall_nm=std::max(0.,out.crank_task_nm-out.legacy->predicted_crank_torque_nm.value_or(0.));
+        out.solution_excitation_nm=out.legacy->excitation;return out;
+    }
     wire::exact_keys(d,
                      keys("invalid_controller", "crank_task_nm",
                           "crank_task_shortfall_nm",
@@ -235,6 +271,7 @@ parse_support_diagnostics(nb::handle value, std::string_view path) {
     if (d.size() == 0)
         return {};
     SupportDiagnostics out;
+    if(d.contains("requested_vertical_forces_n")) {out.legacy=bike::rider::decode_support_diagnostics(owned_value(value,path),path);out.present=true;out.stance_front=out.legacy->stance[0];out.stance_rear=out.legacy->stance[1];return out;}
     wire::exact_keys(d, keys("stance"), {}, path);
     const auto stance = child_dict(d, "stance", path);
     wire::exact_keys(stance, keys("front", "rear"), {},
@@ -257,17 +294,7 @@ parse_sole_goal_diagnostics(nb::handle value, std::string_view path) {
         if (name != "front" && name != "rear")
             wire::invalid(std::string(path) + "." + name, "unknown key");
         const auto sub = std::string(path) + "." + name;
-        const auto entry = wire::mapping(item.second, sub);
-        wire::exact_keys(entry,
-                         keys("spindle", "saturated", "limiting_reasons"),
-                         {}, sub);
-        SoleGoalDiagnostics goal;
-        goal.spindle = wire::boolean(entry["spindle"], sub);
-        goal.saturated = wire::boolean(entry["saturated"], sub);
-        for (const nb::handle reason :
-             wire::sequence(entry["limiting_reasons"], sub))
-            goal.limiting_reasons.push_back(wire::string(reason, sub));
-        out.emplace_back(name, std::move(goal));
+        out.emplace_back(name, decode_sole_goal(owned_value(item.second, sub), sub));
     }
     return out;
 }
@@ -360,34 +387,32 @@ void parse_optional_path(const nb::dict &d, const char *key,
         (void)wire::string(v, path);
 }
 
-// Consumed-but-unmodeled fields are still type-validated; the values
+// Other full-config fields are type-validated before branch-specific decode; the values
 // belong to surfaces the spindle path does not reach.
 void validate_unmodeled_scalars(const nb::dict &d,
                                 std::string_view path) {
     for (const char *key : kUnmodeledScalarKeys)
         (void)wire::finite_real(d[key], path);
     (void)wire::optional_real(d["grip_pair_force_limit_n"], path);
-    if (wire::boolean(d["coupled_task_control"], path))
-        wire::invalid(std::string(path) + ".coupled_task_control",
-                      "coupled task control is a legacy allocator path");
+    (void)wire::boolean(d["coupled_task_control"], path);
 }
 
 // The class implements exactly the supported spindle plant; other
 // attachments route through paths that do not exist natively.
 void validate_attachments(const nb::dict &d, std::string_view path) {
     const auto pedal_attachment = wire::string(d["pedal_attachment"], path);
-    if (pedal_attachment != "spindle")
+    if (pedal_attachment != "spindle" && pedal_attachment != "flat" && pedal_attachment != "weld")
         wire::invalid(std::string(path) + ".pedal_attachment",
-                      "supported: 'spindle'");
+                      "supported: 'flat', 'weld', 'spindle'");
     const auto saddle_attachment =
         wire::string(d["saddle_attachment"], path);
-    if (saddle_attachment != "pin")
+    if (saddle_attachment != "pin" && saddle_attachment != "flat" && saddle_attachment != "weld")
         wire::invalid(std::string(path) + ".saddle_attachment",
-                      "supported: 'pin'");
+                      "supported: 'flat', 'weld', 'pin'");
     const auto grip_attachment = wire::string(d["grip_attachment"], path);
-    if (grip_attachment != "connect")
+    if (grip_attachment != "connect" && grip_attachment != "spring" && grip_attachment != "weld")
         wire::invalid(std::string(path) + ".grip_attachment",
-                      "supported: 'connect'");
+                      "supported: 'spring', 'connect' (alias 'weld')");
 }
 
 // The modeled scalar decodes sit in their own frames for the same reason
@@ -480,14 +505,15 @@ JointTerms parse_joint_terms(nb::handle value, std::string_view path) {
     const auto d = wire::mapping(value, path);
     wire::exact_keys(
         d,
-        keys("requested_nm", "command_nm", "posture_nm", "pedaling_nm",
+        keys("command_nm", "posture_nm", "pedaling_nm",
              "saturated"),
-        keys("active_request_nm", "active_delivered_nm",
+        keys("requested_nm", "active_request_nm", "active_delivered_nm",
              "passive_damping_nm", "solved_force_nm", "solved_active_nm",
-             "solved_passive_nm"),
+             "solved_passive_nm", "support_nm", "tracking_nm", "hip_posture_nm"),
         path);
     JointTerms out;
-    out.requested_nm = wire::finite_real(d["requested_nm"], path);
+    out.requested_present = d.contains("requested_nm");
+    if (out.requested_present) out.requested_nm = wire::finite_real(d["requested_nm"], path);
     out.command_nm = wire::finite_real(d["command_nm"], path);
     out.posture_nm = wire::finite_real(d["posture_nm"], path);
     out.pedaling_nm = wire::finite_real(d["pedaling_nm"], path);
@@ -504,6 +530,9 @@ JointTerms parse_joint_terms(nb::handle value, std::string_view path) {
     out.solved_force_nm = optional("solved_force_nm");
     out.solved_active_nm = optional("solved_active_nm");
     out.solved_passive_nm = optional("solved_passive_nm");
+    out.support_nm = optional("support_nm");
+    out.tracking_nm = optional("tracking_nm");
+    out.hip_posture_nm = optional("hip_posture_nm");
     return out;
 }
 
@@ -522,6 +551,8 @@ SpindlePose parse_spindle_pose(nb::handle value, std::string_view path) {
     pose.grip = point3(d["grip"], path);
     pose.knee_front = point3(d["knee_front"], path);
     pose.knee_rear = point3(d["knee_rear"], path);
+    pose.ankle_front = point3(d["ankle_front"], path);
+    pose.ankle_rear = point3(d["ankle_rear"], path);
     pose.pedal_front = point3(d["pedal_front"], path);
     pose.pedal_rear = point3(d["pedal_rear"], path);
     // saddle/head_center/ankle_* are validated present by exact_keys but
@@ -544,6 +575,11 @@ SpindleConfig parse_spindle_config(nb::handle value,
     parse_optional_path(d, "joint_strength_path", path);
     parse_optional_path(d, "joint_envelope_path", path);
     parse_strength_tables(d, path, config);
+    if(wire::string(d["pedal_attachment"],path)!="spindle" || wire::string(d["saddle_attachment"],path)!="pin" || wire::string(d["grip_attachment"],path)!="connect" || wire::boolean(d["coupled_task_control"],path)) {
+        bike::io::Value::Object plain;
+        for(const auto item:d){const auto key=wire::string(item.first,path);if(key!="strength"&&key!="strength_coordinates"&&key!="envelopes")plain.emplace_back(key,owned_value(item.second,path));}
+        config.legacy=decode_articulated_config(bike::io::Value{std::move(plain)});
+    }
     return config;
 }
 
@@ -627,9 +663,7 @@ void parse_state_terms(const nb::dict &d, std::string_view path,
                                                         sub));
     }
     const auto split = wire::mapping(d["pd_split"], path);
-    if (split.size() != 0)
-        wire::invalid(std::string(path) + ".pd_split",
-                      "spindle controller carries no PD warm split");
+    for(const auto item:split)state.pd_split.emplace_back(wire::string(item.first,path),wire::fixed<2>(item.second,path));
 }
 
 void parse_state_ik(const nb::dict &d, std::string_view path,
@@ -644,12 +678,11 @@ void parse_state_ik(const nb::dict &d, std::string_view path,
         parse_named_reals(d["joint_capacity_nm"], path);
     state.lean_limit_rad =
         wire::optional_real(d["lean_limit_rad"], path);
-    if (!d["last_branch"].is_none())
-        wire::invalid(std::string(path) + ".last_branch",
-                      "spindle controller carries no allocator branch");
-    if (!d["last_solution"].is_none())
-        wire::invalid(std::string(path) + ".last_solution",
-                      "spindle controller carries no allocator warm start");
+    if(!d["last_branch"].is_none()||!d["last_solution"].is_none()) {
+        state.allocation_memory.emplace();
+        if(!d["last_branch"].is_none()) {const auto b=wire::sequence(d["last_branch"],path);if(b.size()!=2)wire::invalid(path,"allocator branch requires two booleans");state.allocation_memory->branch=std::array<bool,2>{wire::boolean(b[0],path),wire::boolean(b[1],path)};}
+        if(!d["last_solution"].is_none())state.allocation_memory->solution=wire::vector(d["last_solution"],path);
+    }
 }
 
 void parse_state_recovery(const nb::dict &d, std::string_view path,
@@ -710,10 +743,10 @@ effort_diagnostics_dict(const EffortDiagnostics &diagnostics) {
     out["rider_activation_saturated"] = diagnostics.activation_saturated;
     out["rider_strength_limited"] =
         names_list(diagnostics.strength_limited);
-    out["rider_effort_budget_exceeded"] = diagnostics.budget_exceeded;
-    set_or_none(out, "rider_active_positive_power_limit_w",
+    if (diagnostics.budget_present) out["rider_effort_budget_exceeded"] = diagnostics.budget_exceeded;
+    if (diagnostics.power_limit_present) set_or_none(out, "rider_active_positive_power_limit_w",
                 diagnostics.positive_power_limit_w);
-    out["rider_effort_observation"] = diagnostics.observation;
+    if (diagnostics.observation_present) out["rider_effort_observation"] = diagnostics.observation;
     if (diagnostics.joint_positive_power_w.has_value())
         out["rider_joint_positive_power_w"] =
             named_reals_dict(*diagnostics.joint_positive_power_w);
@@ -737,6 +770,7 @@ effort_diagnostics_dict(const EffortDiagnostics &diagnostics) {
 
 nb::dict
 allocation_diagnostics_dict(const AllocationDiagnostics &diagnostics) {
+    if(diagnostics.legacy)return nb::cast<nb::dict>(python_value(bike::rider::encode_response_allocation(*diagnostics.legacy)));
     nb::dict out;
     if (!diagnostics.present)
         return out;
@@ -750,6 +784,7 @@ allocation_diagnostics_dict(const AllocationDiagnostics &diagnostics) {
 
 nb::dict
 support_diagnostics_dict(const SupportDiagnostics &diagnostics) {
+    if(diagnostics.legacy)return nb::cast<nb::dict>(python_value(bike::rider::encode_support_diagnostics(*diagnostics.legacy)));
     nb::dict out;
     if (!diagnostics.present)
         return out;
@@ -764,11 +799,7 @@ nb::dict sole_goal_diagnostics_dict(
     const NamedEntries<SoleGoalDiagnostics> &diagnostics) {
     nb::dict out;
     for (const auto &[name, goal] : diagnostics) {
-        nb::dict entry;
-        entry["spindle"] = goal.spindle;
-        entry["saturated"] = goal.saturated;
-        entry["limiting_reasons"] = names_list(goal.limiting_reasons);
-        out[name.c_str()] = entry;
+        out[name.c_str()] = python_value(encode_sole_goal(goal));
     }
     return out;
 }
@@ -779,7 +810,7 @@ nb::dict last_terms_dict(const NamedEntries<JointTerms> &terms) {
         nb::dict entry;
         // Python dict-literal order: requested, command, posture,
         // pedaling, saturated; update() keys append afterwards.
-        entry["requested_nm"] = term.requested_nm;
+        if (term.requested_present) entry["requested_nm"] = term.requested_nm;
         entry["command_nm"] = term.command_nm;
         entry["posture_nm"] = term.posture_nm;
         entry["pedaling_nm"] = term.pedaling_nm;
@@ -796,6 +827,9 @@ nb::dict last_terms_dict(const NamedEntries<JointTerms> &terms) {
             entry["solved_active_nm"] = *term.solved_active_nm;
         if (term.solved_passive_nm.has_value())
             entry["solved_passive_nm"] = *term.solved_passive_nm;
+        if(term.support_nm)entry["support_nm"]=*term.support_nm;
+        if(term.tracking_nm)entry["tracking_nm"]=*term.tracking_nm;
+        if(term.hip_posture_nm)entry["hip_posture_nm"]=*term.hip_posture_nm;
         out[name.c_str()] = entry;
     }
     return out;
@@ -809,14 +843,14 @@ nb::dict spindle_state_dict(const SpindleController::State &state) {
         wire::owned_array<double>(state.active_state);
     set_or_none(out, "activation_time_s", state.activation_time_s);
     out["last_terms"] = last_terms_dict(state.last_terms);
-    out["pd_split"] = nb::dict();
+    nb::dict split;for(const auto&[name,pair]:state.pd_split)split[name.c_str()]=nb::make_tuple(pair[0],pair[1]);out["pd_split"] = split;
     out["saturated_ik"] = named_bools_dict(state.saturated_ik);
     out["ik_reach_limited"] = named_bools_dict(state.ik_reach_limited);
     out["joint_torques_nm"] = named_reals_dict(state.joint_torques_nm);
     out["joint_capacity_nm"] = named_reals_dict(state.joint_capacity_nm);
     set_or_none(out, "lean_limit_rad", state.lean_limit_rad);
-    out["last_branch"] = nb::none();
-    out["last_solution"] = nb::none();
+    if(state.allocation_memory&&state.allocation_memory->branch){const auto b=*state.allocation_memory->branch;out["last_branch"]=nb::make_tuple(b[0],b[1]);}else out["last_branch"]=nb::none();
+    if(state.allocation_memory&&state.allocation_memory->solution)out["last_solution"]=wire::owned_array<double>(*state.allocation_memory->solution);else out["last_solution"]=nb::none();
     nb::dict recovery;
     for (const auto &[name, pedal] : state.pedal_recovery) {
         nb::dict entry;

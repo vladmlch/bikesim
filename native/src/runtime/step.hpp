@@ -151,6 +151,8 @@ class PhysicalStep {
     friend class bike::initialization::PhysicalInitialState;
     friend void bike::initialization::finalize_initial_state(
         bike::initialization::SetupContext&, const RuntimeConfig&);
+    friend bike::initialization::ResearchStartup bike::initialization::prepare_research_startup(
+        bike::initialization::SetupContext&);
 public:
     // The caller resolves every named id BEFORE construction (the binding
     // validates the bootstrap geometry against the live model); `vertices`
@@ -253,6 +255,7 @@ public:
     [[nodiscard]] bool rider_present() const noexcept {
         return rider_control_.has_value();
     }
+    [[nodiscard]] std::string_view drive_mode() const;
     [[nodiscard]] rider::SpindleController &rider_control() {
         return engaged(rider_control_);
     }
@@ -297,7 +300,7 @@ private:
     // capacity, not a by-value materialization.
     [[nodiscard]] RuntimeContacts
     refresh_contacts(bool final, std::optional<double> time_s,
-                     bool update_grounded);
+                     bool update_grounded, std::span<const double> qvel = {});
 
     // _rollback_brake_demand — the hill-hold reflex. `control` nullopt
     // means the apply_forces default (no explicit control).

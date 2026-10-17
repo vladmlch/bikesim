@@ -15,6 +15,7 @@
 #include "../model/export.hpp"
 #include "../model/mapping.hpp"
 #include "../platform/provenance.hpp"
+#include "../rider/allocation.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/provenance.hpp"
 #include "../runtime/setup_values.hpp"
@@ -139,6 +140,7 @@ struct SetupOwner::Impl {
     std::unique_ptr<SetupContext> context;
     std::optional<EquilibriumResult> result;
     std::optional<std::string> sealed_model_sha256;
+    std::optional<ResearchStartup> research_startup;
     bool sealed = false;
 };
 
@@ -177,7 +179,8 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     context.frame_body_id = model::required_id(*compiled, mjOBJ_BODY, "frame");
     context.front_geom_id = model::required_id(*compiled, mjOBJ_GEOM, "geom_front_contact");
     context.rear_geom_id = model::required_id(*compiled, mjOBJ_GEOM, "geom_rear_contact");
-    context.rider_pose = rider::decode_spindle_pose(impl->config.geometry.pose, "setup.geometry.pose");
+    if (impl->physical->rider_present())
+        context.rider_pose = ::rider::decode_spindle_pose(impl->config.geometry.pose, "setup.geometry.pose");
     auto solver = impl->request.model.solver
         ? std::make_shared<kinematics::HorstLinkageSolver>(*impl->request.model.solver)
         : std::make_shared<kinematics::HorstLinkageSolver>(impl->request.model.bike);
@@ -218,6 +221,8 @@ EquilibriumResult settle(SetupOwner& owner, const EquilibriumOptions& options) {
     else
         state.context->equilibrium = settle_context(*state.context, options);
     finalize_initial_state(*state.context, state.config);
+    if (state.request.research_startup)
+        state.research_startup = prepare_research_startup(*state.context);
     state.context->initializing = false;
     state.context->completed = true;
     state.result = state.context->equilibrium;
@@ -248,7 +253,7 @@ runtime::RuntimeBootstrap SetupOwner::seal_bootstrap() {
 
 io::Value SetupOwner::metadata() const {
     const auto& context = *impl_->context;
-    return Value{Object{{"request_schema", integer(1)}, {"origin", text(impl_->request.origin)},
+    Object fields{{"request_schema", integer(1)}, {"origin", text(impl_->request.origin)},
         {"seed_decimal", text(impl_->request.seed_decimal)}, {"model_mode", text(impl_->request.model.mode)},
         {"source_identity", text(context.source_identity)},
         {"legacy_source_identity", context.legacy_source_identity
@@ -257,7 +262,22 @@ io::Value SetupOwner::metadata() const {
         {"model_sha256", text(impl_->sealed_model_sha256.value_or(context.model_sha256))},
         {"physics", configuration::to_value(context.physics)}, {"inputs", context.identity},
         {"equilibrium", impl_->result ? equilibrium_value(*impl_->result) : Value{}},
-        {"sealed", Value{impl_->sealed}}}};
+        {"sealed", Value{impl_->sealed}}};
+    if (context.physics.physics_mode == "physical" &&
+        impl_->request.model.rider &&
+        impl_->request.model.rider->variant == "articulated_planar" &&
+        context.physics.articulated.pedal_attachment != "spindle") {
+        fields.emplace_back("allocation_solver",
+            text(std::string(bike::rider::allocation_numeric_identity)));
+        fields.emplace_back("allocation_solver_qualification", text("pending"));
+    }
+    return Value{std::move(fields)};
+}
+
+ResearchStartup SetupOwner::research_initial_state() const {
+    if (!impl_->research_startup)
+        throw std::invalid_argument("research startup requires completed research setup");
+    return *impl_->research_startup;
 }
 
 } // namespace bike::initialization

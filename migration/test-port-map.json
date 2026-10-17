@@ -23088,5 +23088,66 @@
     ],
     "numerical_parity": "not_qualified; same-provider oracle and full physical acceptance remain required",
     "source_deletion": "Existing status/deletion gates retained; original Python files remain until T63."
+  },
+  "physics_research_wave_contract": {
+    "tasks": [
+      "T26",
+      "T27",
+      "T28",
+      "T29",
+      "T30",
+      "T31",
+      "T32",
+      "T33",
+      "T34",
+      "T35",
+      "T36",
+      "T37"
+    ],
+    "implementation_status": "implemented_unverified",
+    "registration": "native/cmake/NativePhysicsResearch.cmake; native/tests/migration/CMakeLists.txt",
+    "executables": [
+      "migration_T26",
+      "migration_T27",
+      "migration_T28",
+      "migration_T29",
+      "migration_T30",
+      "migration_T31",
+      "migration_T32",
+      "migration_T33",
+      "migration_T34",
+      "migration_T35",
+      "migration_T36",
+      "migration_T37",
+      "migration_T30_native_contacts"
+    ],
+    "test_sources": [
+      "native/tests/migration/kernel_parity.cpp",
+      "native/tests/migration/kernel_properties.cpp",
+      "native/tests/migration/test_t27.cpp",
+      "native/tests/migration/test_t28.cpp",
+      "native/tests/migration/test_t29.cpp",
+      "native/tests/migration/test_t30.cpp",
+      "native/tests/migration/test_t31.cpp",
+      "native/tests/migration/test_t32.cpp",
+      "native/tests/migration/test_t33.cpp",
+      "native/tests/migration/test_t34.cpp",
+      "native/tests/migration/test_t35.cpp",
+      "native/tests/migration/test_t36.cpp",
+      "native/tests/migration/test_t37.cpp",
+      "native/tests/migration/test_native_contacts.cpp",
+      "native/tests/migration/policy_fixture.cpp"
+    ],
+    "execution": "not_run; user prohibited configuration, compilation and project execution",
+    "evidence": [
+      "migration/physics-research-implementation.json",
+      "migration/physics-research-review.md",
+      "migration/physics-research-static-audit.json",
+      "migration/kernel-reuse-map.json"
+    ],
+    "existing_records_preserved": true,
+    "coverage": "Authored focused regressions are not a completed migration of every source assertion. T26 lexical branch inventory remains unqualified.",
+    "numerical_parity": "not_qualified",
+    "source_deletion": "not_authorized; T63 gates unchanged"
   }
 }

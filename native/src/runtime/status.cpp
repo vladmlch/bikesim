@@ -193,8 +193,8 @@ void ModelStatus::observe(std::int64_t interval_id, double time_s,
     if (!reasons.empty() && !next_first.has_value())
         next_first = WireObject{{"interval_id", Wire(interval_id)}, {"time_s", Wire(time_s)},
                                 {"reasons", sample_wire::strings(reasons)}};
-    if (const Wire *energy = include_energy ? find(channels, "energy")
-                                            : nullptr) {
+    if (const Wire *energy = include_energy ? find(channels, "energy") : nullptr;
+        energy != nullptr && !object(*energy).empty()) {
         const bool was_false = std::holds_alternative<bool>(numerically_valid.value) &&
                                !boolean(numerically_valid);
         next_numerical = Wire(energy_quality_ok(object(*energy)) && !was_false);
@@ -203,6 +203,14 @@ void ModelStatus::observe(std::int64_t interval_id, double time_s,
     first = std::move(next_first);
     numerically_valid = std::move(next_numerical);
     last_interval = interval_id;
+}
+
+void ModelStatus::reset() {
+    // Stage the sentinel before changing counters, preserving a retryable
+    // object if constructing the wire string cannot allocate.
+    Wire pending("not_evaluated");
+    counts.clear(); first.reset(); last_interval = -1;
+    numerically_valid = std::move(pending);
 }
 
 WireObject ModelStatus::as_wire() const {

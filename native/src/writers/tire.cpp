@@ -211,7 +211,7 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
             !std::isfinite(mat.pressure_pa_gauge))
             throw std::invalid_argument(
                 "tire material scalars must be finite");
-        if (mat.radial_k_n_m <= 0.0)
+        if (!mat.table && mat.radial_k_n_m <= 0.0)
             throw std::invalid_argument("radial_k_n_m must be positive");
         if (mat.radial_c_ns_m < 0.0 || mat.pressure_pa_gauge < 0.0)
             throw std::invalid_argument(
@@ -225,6 +225,7 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
             !(0.0 <= lo && lo < hi))
             throw std::invalid_argument(
                 "valid load bounds must satisfy 0 <= minimum < maximum");
+        if (mat.table) radial_tables_[p == &cfg_.front ? 0 : 1].emplace(*mat.table);
         // TireParameters.__post_init__ (physical_config.py:29-34).
         if (!std::isfinite(p->tangent_k_n_m) || p->tangent_k_n_m <= 0.0)
             throw std::invalid_argument("invalid tangent_k_n_m");
@@ -696,9 +697,12 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         const nativecfg::TireMaterial &mat = s == 0 ? front_mat : rear_mat;
         const double rk = mat.radial_k_n_m;
         const double rc = mat.radial_c_ns_m;
-        const auto [normal, radial_energy] =
-                normal_contact(contact.delta, delta_dot, rk, rc);
-        const double elastic_force = rk * std::max(contact.delta, 0.0);
+        const auto [normal, radial_energy] = radial_tables_[s]
+            ? radial_tables_[s]->normal_contact(contact.delta, delta_dot, rc)
+            : normal_contact(contact.delta, delta_dot, rk, rc);
+        const double elastic_force = radial_tables_[s]
+            ? radial_tables_[s]->elastic_response(contact.delta).first
+            : rk * std::max(contact.delta, 0.0);
         double xi = state.xi;
         double release_loss = 0.0;
         if (state.tangent.has_value()) {
@@ -814,8 +818,7 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         diag.brush_loss_j = brush_loss;
         diag.radial_energy_j = radial_energy;
         diag.shear_energy_j = 0.5 * tk * xi_new * xi_new;
-        diag.outside_material_load_range = !(mat.valid_load_range_n[0] <= normal &&
-                                             normal <= mat.valid_load_range_n[1]);
+        diag.outside_material_load_range = !nativecfg::is_load_in_valid_range(mat, normal);
         new_states[s] = {.xi = xi_new, .tangent = tangent, .point = p, .segment = contact.segment_id, .center = center};
     }
     // Commit persistent state only after both wheels evaluate successfully
@@ -872,10 +875,11 @@ double TireWriter::stored_energy(const mjData *d) const {
         if (!std::isfinite(contact.delta))
             throw std::invalid_argument("tire deflection must be finite");
         const double penetration = std::max(0.0, contact.delta);
-        const double force = mat.radial_k_n_m * penetration;
-        const double elastic =
-                0.5 * mat.radial_k_n_m *
-                pyfloat::pow(penetration, 2.0);
+        const auto table_response = radial_tables_[s]
+            ? radial_tables_[s]->elastic_response(contact.delta) : std::pair<double, double>{};
+        const double force = radial_tables_[s] ? table_response.first : mat.radial_k_n_m * penetration;
+        const double elastic = radial_tables_[s] ? table_response.second :
+            0.5 * mat.radial_k_n_m * pyfloat::pow(penetration, 2.0);
         validation::derived(force, "TireSpec.elastic_response");
         validation::derived(elastic, "TireSpec.elastic_response");
         energy += elastic;

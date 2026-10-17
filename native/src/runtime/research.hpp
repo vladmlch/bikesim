@@ -16,6 +16,11 @@
 
 namespace runtime {
 enum class ResearchCaptureMode : std::uint8_t { off, full, legacy, verify };
+struct ResearchAsset {
+    std::string name, media_type, sha256;
+    std::vector<std::byte> content;
+};
+using ResearchAssets = std::shared_ptr<const std::vector<ResearchAsset>>;
 struct ResearchConfig {
     double timestep_s = 0., track_length_m = 0., start_position_m = 0.;
     double maximum_energy_residual_ratio = .05, wheelie_persistence_s = .02;
@@ -27,6 +32,13 @@ struct ResearchConfig {
     TruthGeometry geometry;
     ResearchPrograms programs;
     RideControl startup_control;
+    // Cold construction/reset provenance. Frozen T10 captures omit these
+    // optional additions and retain their original supplied tape/state.
+    std::string seed_decimal = "0";
+    std::array<double, 4> noise_std{.05, .002, .01, .05};
+    std::optional<SensorObservation> raw_initial;
+    bike::io::Value metadata;
+    ResearchAssets assets;
 };
 struct ResearchCommand {
     double time_s = 0.;
@@ -43,6 +55,9 @@ struct ResearchTransition {
     std::optional<std::string> reason;
     std::int64_t physics_steps = 0;
     std::optional<double> demand_nm;
+    [[nodiscard]] bool valid_for_learning() const noexcept {
+        return numerically_valid && model_valid && reason != "simulation_error" && reason != "policy_error";
+    }
     [[nodiscard]] WireObject as_wire() const;
 };
 struct ResearchWindow {
@@ -84,6 +99,11 @@ struct OwnedResearchEpisode {
     std::vector<ResearchCommand> requested, applied;
     std::vector<SensorObservation> observations;
     std::vector<ResearchTransition> transitions;
+    WireObject evaluation;
+    RuntimeSnapshot final_snapshot;
+    ResearchConfig configuration;
+    std::vector<double> initial_integration_state;
+    bike::io::Value run_metadata;
     [[nodiscard]] std::size_t row_count(std::string_view stream) const;
     [[nodiscard]] WireArray batch(std::string_view stream, std::int64_t start,
                                   std::int64_t limit) const;
@@ -104,6 +124,9 @@ public:
     void acknowledge_control();
     [[nodiscard]] RuntimeSnapshot snapshot() const;
     [[nodiscard]] WireObject status() const;
+    [[nodiscard]] ResearchConfig configuration() const;
+    // No optional trajectory retention is required to freeze live metrics.
+    [[nodiscard]] OwnedResearchEpisode evidence_snapshot() const;
     [[nodiscard]] OwnedResearchEpisode seal_episode();
     [[nodiscard]] OwnedResearchEpisode legacy_snapshot() const;
     [[nodiscard]] WireObject prepare_applied_since(std::int64_t cursor) const;
@@ -115,7 +138,11 @@ public:
     [[nodiscard]] WireArray transitions() const;
     [[nodiscard]] SampleColumns recorded_columns() const;
     [[nodiscard]] WireArray recorded_intervals() const;
-    void reset(NoiseTape tape, SensorState startup);
+    void reset(NoiseTape tape, SensorState startup,
+               std::optional<std::string> seed_decimal = std::nullopt,
+               std::optional<bike::io::Value> metadata = std::nullopt,
+               ResearchAssets assets = {});
+    void reset();
     void stop();
     void fail_policy(std::string message);
     void set_error_text(std::string message);
@@ -133,8 +160,16 @@ private:
     void finish_window();
     void handle_failure(const std::exception &failure);
     [[nodiscard]] bool model_valid() const;
+    [[nodiscard]] WireObject status_unlocked() const;
+    [[nodiscard]] OwnedResearchEpisode evidence_unlocked(OwnedNativeEpisode physical) const;
+    void reset_unlocked(NoiseTape tape, SensorState startup,
+                        std::optional<std::string> seed_decimal,
+                        std::optional<bike::io::Value> metadata, ResearchAssets assets);
     std::unique_ptr<NativeRideRuntime> runtime_;
     ResearchConfig config_;
+    NoiseTape reset_tape_;
+    SensorState reset_startup_;
+    std::vector<double> initial_integration_state_;
     std::unique_ptr<ResearchEpisode> episode_;
     mutable std::atomic<bool> busy_{false};
     std::atomic<bool> closed_{false};

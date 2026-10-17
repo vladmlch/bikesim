@@ -1,0 +1,1674 @@
+{
+  "schema": 1,
+  "kind": "filesystem_and_source_text_only",
+  "date": "2026-10-17",
+  "not_a_compiler_or_test_result": true,
+  "input_restored_files": 1621,
+  "source_tree_files_excluding_this_audit": 1738,
+  "changes_excluding_this_audit": {
+    "count": 178,
+    "added": 117,
+    "modified": 61,
+    "deleted": 0
+  },
+  "execution": {
+    "configure": "not_run",
+    "compile": "not_run",
+    "link": "not_run",
+    "tests": "not_run",
+    "project_runtime": "not_run",
+    "oracle_capture": "not_run"
+  },
+  "json_parse_errors": [],
+  "required_native_paths_missing": [],
+  "production_local_include_closure": {
+    "roots": [
+      "native/src/app/native_ride_main.cpp",
+      "native/src/config_types.hpp",
+      "native/src/config_validation.hpp",
+      "native/src/configuration/schema.cpp",
+      "native/src/contact/tabulated_radial.cpp",
+      "native/src/contact/tabulated_radial.hpp",
+      "native/src/drivetrain/capabilities.hpp",
+      "native/src/drivetrain/chain.hpp",
+      "native/src/drivetrain/elastic_chain.cpp",
+      "native/src/drivetrain/motor_clutch.cpp",
+      "native/src/drivetrain/transmission.cpp",
+      "native/src/drivetrain/transmission.hpp",
+      "native/src/initialization/capture.cpp",
+      "native/src/initialization/context.hpp",
+      "native/src/initialization/equilibrium_cache.cpp",
+      "native/src/initialization/finalize.cpp",
+      "native/src/initialization/finalize.hpp",
+      "native/src/initialization/initial_state.cpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/src/legacy/controls.cpp",
+      "native/src/legacy/controls.hpp",
+      "native/src/legacy/force_accumulator.cpp",
+      "native/src/legacy/legs.cpp",
+      "native/src/legacy/legs.hpp",
+      "native/src/legacy/metrics.cpp",
+      "native/src/legacy/metrics.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/rider.cpp",
+      "native/src/legacy/rider.hpp",
+      "native/src/legacy/static_equilibrium.cpp",
+      "native/src/legacy/suspension_controller.cpp",
+      "native/src/legacy/telemetry.cpp",
+      "native/src/legacy/tyre.cpp",
+      "native/src/legacy/tyre.hpp",
+      "native/src/model/suspension_setup.cpp",
+      "native/src/numerics/brent.cpp",
+      "native/src/numerics/brent.hpp",
+      "native/src/numerics/dense.hpp",
+      "native/src/numerics/density_fit.cpp",
+      "native/src/numerics/density_fit.hpp",
+      "native/src/numerics/filter.cpp",
+      "native/src/numerics/filter.hpp",
+      "native/src/numerics/linear_feasibility.cpp",
+      "native/src/numerics/linear_feasibility.hpp",
+      "native/src/numerics/nnls.cpp",
+      "native/src/numerics/nnls.hpp",
+      "native/src/numerics/slsqp.cpp",
+      "native/src/numerics/slsqp.hpp",
+      "native/src/research/builtin_policies.cpp",
+      "native/src/research/configuration.cpp",
+      "native/src/research/environment.cpp",
+      "native/src/research/environment.hpp",
+      "native/src/research/evidence.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/research/exit_codes.cpp",
+      "native/src/research/lifecycle.cpp",
+      "native/src/research/lifecycle.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/metrics.cpp",
+      "native/src/research/plugin_policy.cpp",
+      "native/src/research/policy.cpp",
+      "native/src/research/policy.hpp",
+      "native/src/research/policy_session.cpp",
+      "native/src/research/policy_session.hpp",
+      "native/src/research/preview_csv.cpp",
+      "native/src/research/preview_csv.hpp",
+      "native/src/research/program_loader.cpp",
+      "native/src/research/quality.cpp",
+      "native/src/research/rider_behavior.cpp",
+      "native/src/research/rider_random.cpp",
+      "native/src/rider/activation_allocation.cpp",
+      "native/src/rider/activation_allocation.hpp",
+      "native/src/rider/allocation.cpp",
+      "native/src/rider/allocation.hpp",
+      "native/src/rider/allocation_json.cpp",
+      "native/src/rider/constraint_dynamics.cpp",
+      "native/src/rider/constraint_dynamics.hpp",
+      "native/src/rider/flat_contacts.cpp",
+      "native/src/rider/force_requests.hpp",
+      "native/src/rider/grip_springs.cpp",
+      "native/src/rider/legacy_allocation.cpp",
+      "native/src/rider/legacy_controller.cpp",
+      "native/src/rider/legacy_controller.hpp",
+      "native/src/rider/legacy_diagnostics.hpp",
+      "native/src/rider/mode_search.cpp",
+      "native/src/rider/response_allocation.cpp",
+      "native/src/rider/response_allocation.hpp",
+      "native/src/rider/response_codec.cpp",
+      "native/src/rider/response_codec.hpp",
+      "native/src/rider/spindle_controller.cpp",
+      "native/src/rider/spindle_controller.hpp",
+      "native/src/rider/state_codec.cpp",
+      "native/src/rider/state_codec.hpp",
+      "native/src/rider/support_dispatch.cpp",
+      "native/src/rider/support_dispatch.hpp",
+      "native/src/rider/weld_settle.cpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/capabilities.cpp",
+      "native/src/runtime/capabilities.hpp",
+      "native/src/runtime/control.cpp",
+      "native/src/runtime/control.hpp",
+      "native/src/runtime/native_contacts.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/research.hpp",
+      "native/src/runtime/research_metrics.cpp",
+      "native/src/runtime/research_metrics.hpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/status.cpp",
+      "native/src/runtime/status.hpp",
+      "native/src/runtime/step.cpp",
+      "native/src/runtime/step.hpp",
+      "native/src/writer_config.hpp",
+      "native/src/writers/drivetrain.cpp",
+      "native/src/writers/tire.cpp",
+      "native/src/writers/tire.hpp",
+      "native/src/writers/tire_common.hpp"
+    ],
+    "visited_files": 226,
+    "python_binding_include_edges": [],
+    "unresolved_includes": [],
+    "limitation": "Textual quoted-include traversal; external libraries, macros, templates, overloads and linker resolution are not verified."
+  },
+  "new_cpp_registration": {
+    "count": 69,
+    "unregistered": [],
+    "method": "Literal source names in both shared build files, plus the explicit 26..37 regression foreach."
+  },
+  "source_python": {
+    "count": 469,
+    "changed_or_removed": [],
+    "preserved": true
+  },
+  "immutable_fixture_files": {
+    "count": 263,
+    "changed_or_removed": [],
+    "preserved": true
+  },
+  "removal_gate_changes": [],
+  "existing_test_port_records_preserved": true,
+  "kernel_inventory": {
+    "source_modules": 58,
+    "declarations": 508,
+    "all_declaration_ids_mapped": true,
+    "unknown_native_symbol_tokens": [],
+    "all_deletion_ineligible": true,
+    "limitation": "Native tokens and owners are source mappings, not semantic branch or executed coverage."
+  },
+  "authored_test_literal_fixtures": [
+    {
+      "test_source": "native/tests/migration/kernel_parity.cpp",
+      "fixture": "tests/fixtures/migration/state/drive.json",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/kernel_parity.cpp",
+      "fixture": "tests/fixtures/migration/state/drive.canonical.json",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t25.cpp",
+      "fixture": "tests/fixtures/migration/config/",
+      "present": true,
+      "path_kind": "directory_prefix"
+    },
+    {
+      "test_source": "native/tests/migration/test_t25.cpp",
+      "fixture": "tests/fixtures/migration/tracks/flat.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t25.cpp",
+      "fixture": "tests/fixtures/migration/requests/welded_flat.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t25.cpp",
+      "fixture": "tests/fixtures/migration/bootstrap/native_start_welded/integration.f64",
+      "present": false,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t25.cpp",
+      "fixture": "tests/fixtures/migration/requests/",
+      "present": true,
+      "path_kind": "directory_prefix"
+    },
+    {
+      "test_source": "native/tests/migration/test_t27.cpp",
+      "fixture": "tests/fixtures/migration/tracks/flat.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t27.cpp",
+      "fixture": "tests/fixtures/migration/config/viewer_physics_welded.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t31.cpp",
+      "fixture": "tests/fixtures/migration/requests/legacy_flat.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t31.cpp",
+      "fixture": "tests/fixtures/migration/bootstrap/legacy_flat/integration.f64",
+      "present": false,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t31.cpp",
+      "fixture": "tests/fixtures/migration/bootstrap/legacy_flat/step1.f64",
+      "present": false,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t31.cpp",
+      "fixture": "tests/fixtures/migration/requests/legacy_flat.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t31.cpp",
+      "fixture": "tests/fixtures/migration/requests/legacy_flat.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t32.cpp",
+      "fixture": "tests/fixtures/migration/metrics/filter_input.f64",
+      "present": false,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t32.cpp",
+      "fixture": "tests/fixtures/migration/metrics/filter_expected.f64",
+      "present": false,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t32.cpp",
+      "fixture": "tests/fixtures/migration/metrics/filter_input_short.f64",
+      "present": false,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t32.cpp",
+      "fixture": "tests/fixtures/migration/metrics/filter_short.f64",
+      "present": false,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t34.cpp",
+      "fixture": "tests/fixtures/migration/requests/research_delay.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t34.cpp",
+      "fixture": "tests/fixtures/migration/tracks/flat.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t36.cpp",
+      "fixture": "tests/fixtures/migration/requests/research_delay.toml",
+      "present": true,
+      "path_kind": "file"
+    },
+    {
+      "test_source": "native/tests/migration/test_t37.cpp",
+      "fixture": "tests/fixtures/migration/requests/research_delay.toml",
+      "present": true,
+      "path_kind": "file"
+    }
+  ],
+  "known_indirect_fixture_references": [
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/research.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/research.arrays/a002.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/research.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/research.arrays/a001.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/research.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/research.arrays/a000.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a004.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a003.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a000.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a001.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a010.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a011.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a009.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a007.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a008.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a005.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a006.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a013.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a014.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a012.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a015.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a016.f64",
+      "present": false
+    },
+    {
+      "source": "tests/fixtures/migration/research/delayed_bootstrap/state.json",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/state.arrays/a002.f64",
+      "present": false
+    },
+    {
+      "source": "research bootstrap model contract",
+      "fixture": "tests/fixtures/migration/research/delayed_bootstrap/model.mjb",
+      "present": false
+    }
+  ],
+  "missing_source_documents": [
+    "docs/superpowers/specs/2026-10-06-native-safety.md"
+  ],
+  "files": [
+    {
+      "path": "CMakeLists.txt",
+      "action": "modify",
+      "before_sha256": "e3f223fb621c6191900313cda2a3c1da2b654be1f8da5820eaf5c7c57b8504d1",
+      "after_sha256": "be79dd439444f15cbdd33a54e94d7170bf6ce147cf6940b04056aea2fa0da615",
+      "after_bytes": 31292
+    },
+    {
+      "path": "docs/NATIVE_POLICIES.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "0b78bac993613ab98dd34fb9f1b4c682676b7a194ea90af0b5102158bfd7124e",
+      "after_bytes": 17069
+    },
+    {
+      "path": "docs/physics-research-wave.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "76c7f46563814374270b1b9764ad6022d58779416eee53752cc4dc5218fc6171",
+      "after_bytes": 7227
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-17-physics-legacy.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "5b1a48b182d01a3b82eb25cd9e5ef628a2d94775e2ffd7be81d11350001c2161",
+      "after_bytes": 6429
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-17-physics-research-policies.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "c5736b92fc1b292131459a0e5a0f48b7538edaaf003f3ad20584abea26031e11",
+      "after_bytes": 7836
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-17-physics-research-wave.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "986a74c5a7ec6f4c3e65c7f5ab0d03c4a5c194f8633e6f7cdb100565cc0c8d60",
+      "after_bytes": 6106
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-17-physics-rider.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "dc24617d61d44e881aca3b8b6ac538c1946dff1e797843d8fef5c67b422aa942",
+      "after_bytes": 8068
+    },
+    {
+      "path": "examples/policies/traction_control.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "242a69df459d2618940b176dab782407bc133cfac510eb0db47141c5ed555244",
+      "after_bytes": 5503
+    },
+    {
+      "path": "migration/capability-seed-matrix.json",
+      "action": "modify",
+      "before_sha256": "496a1d7a1cfd05e27b6a5851bf5edde52cafdf47ae9bd7c403db89de40373ed5",
+      "after_sha256": "6d15724e8ffea4f5a65e8c1e9917fdf066d3e1c95cb442bad9c60631c18fc0a7",
+      "after_bytes": 59645
+    },
+    {
+      "path": "migration/cards/T26.md",
+      "action": "modify",
+      "before_sha256": "26e35b50e8b446fdd12cec61878565292749f21c29a7085bac56b0a4d4c54f0e",
+      "after_sha256": "8b6e676897da2cdec0208b1d522130b894ebfb5b42a13061db23584398e77bdb",
+      "after_bytes": 167045
+    },
+    {
+      "path": "migration/cards/T27.md",
+      "action": "modify",
+      "before_sha256": "725ef3a740f1754f76a53cc5159043c878423e1e3c54c279f403b241d3822cc3",
+      "after_sha256": "46e90c5135a202ef12285cac94a589c2212bace0e876f84a7866c939184ae811",
+      "after_bytes": 9782
+    },
+    {
+      "path": "migration/cards/T28.md",
+      "action": "modify",
+      "before_sha256": "0ec83d474e477f7d4e5463ec6acc9c374d8164c7ab782bd305a6678e10d414ea",
+      "after_sha256": "9f04eaca030cef65d2a0ce0ad92b56655d0097c0b1a0052a0687b329eb470f88",
+      "after_bytes": 3942
+    },
+    {
+      "path": "migration/cards/T29.md",
+      "action": "modify",
+      "before_sha256": "dd9e7c34224393a8b986672307b5c34dc0b44b66efd85744421384f14f6fce6d",
+      "after_sha256": "4eff4404f3cfa43768f2739c2a8dc0c292d900cd3bf33481e98ba2678ea864ea",
+      "after_bytes": 16324
+    },
+    {
+      "path": "migration/cards/T30.md",
+      "action": "modify",
+      "before_sha256": "4ddc2e458b640a52736f5e2ce26b9db33cf0cb032416e47dee66f41c7bbec3c5",
+      "after_sha256": "282c0b1351c4e7d20fd90b1db27ed659f849bd5627e602d653cd05f1e12a75db",
+      "after_bytes": 14637
+    },
+    {
+      "path": "migration/cards/T31.md",
+      "action": "modify",
+      "before_sha256": "833637793b9ed36131c2b55a787feb30a05acc190709d72c34d162ccf628b071",
+      "after_sha256": "5d4331536db15a30f1f835c39f3076cada67aca5589cb1392f214b6708b21ff4",
+      "after_bytes": 26496
+    },
+    {
+      "path": "migration/cards/T32.md",
+      "action": "modify",
+      "before_sha256": "820d053ada56a2887354dee18319ee2b6b5c62bd310fbedc97d713b97b369d9f",
+      "after_sha256": "8f8597d883f8d83f26af9ec07fabc62ca1c27c7bb73ea38243768a4afe36e374",
+      "after_bytes": 17570
+    },
+    {
+      "path": "migration/cards/T33.md",
+      "action": "modify",
+      "before_sha256": "f6884d69c13afbedd4548268b7e5074b7bfe314607d7e2817733797c6836282f",
+      "after_sha256": "fdff584cbc04878defc2a1bdc73be355a6ee0aac0ad69a55b168e3d82e437ea0",
+      "after_bytes": 6805
+    },
+    {
+      "path": "migration/cards/T34.md",
+      "action": "modify",
+      "before_sha256": "99434162317c7dd5c226b83fc9f2bdcc4c3d801f68f60121481a8cd03dd56724",
+      "after_sha256": "86bbc055d41e12e588d89257c085ee7df45d1f7d767eb92ce1b1c9ebdd4b5ea6",
+      "after_bytes": 30460
+    },
+    {
+      "path": "migration/cards/T35.md",
+      "action": "modify",
+      "before_sha256": "0f0c2c214746e9b403d044d793c9b2b75af6397975623f9b4540f3bf4e0c7aef",
+      "after_sha256": "f7f4e4174f69468868fbbdca1b22d97fc42db147375e3b21ffe86629e5a9f1e9",
+      "after_bytes": 3904
+    },
+    {
+      "path": "migration/cards/T36.md",
+      "action": "modify",
+      "before_sha256": "e8af5da66fce3c412d1f4d7b7fec041628ec92700221135416314d425735b619",
+      "after_sha256": "9ae2d1e9f78b6ff68a7af08bdb1748e92b77cd73c176104f5cf7f7ead5e0eb90",
+      "after_bytes": 10103
+    },
+    {
+      "path": "migration/cards/T37.md",
+      "action": "modify",
+      "before_sha256": "585dbf16a27e2a7ee8d5d104d20b40d09c4131e910bd5b8b44740b63cefac3b2",
+      "after_sha256": "e16e64db8709f039b76a2b9c976a865df89b35d092f58b3f2ad996c2f7d65b3b",
+      "after_bytes": 9370
+    },
+    {
+      "path": "migration/file-work-units.json",
+      "action": "modify",
+      "before_sha256": "90ee4c021d7925c6dfa07a9a238968980653e193ff381d8ce077702f8162c5a6",
+      "after_sha256": "ce938fbba235b98b405aebcb8c443d063465129f5b1f1d51547abdc32c316de1",
+      "after_bytes": 1796533
+    },
+    {
+      "path": "migration/kernel-reuse-map.json",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "59f3affc6acd34da91018a67d80a0a66f61289c914b306730bf3ceb343c1fd06",
+      "after_bytes": 1148229
+    },
+    {
+      "path": "migration/physics-legacy-static-review.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "45257b8cc28fe7a1b2401d71aa40629f46ebab99ca57fe98e5a64ef3fad5e3bc",
+      "after_bytes": 19559
+    },
+    {
+      "path": "migration/physics-research-implementation.json",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "c7556d4e99f0670e309bf02cab22ba54681827ae612bedbc2df9055de655fd60",
+      "after_bytes": 26309
+    },
+    {
+      "path": "migration/physics-research-policies-static-review.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "d371a0fad63ef2272a15d5b60e8679e71283b8e49ae7a23073a9f4efe918f3ff",
+      "after_bytes": 13541
+    },
+    {
+      "path": "migration/physics-research-review.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "71894c59b5d8c97a75118b08332b4bb93778fe4b4615deebf855e824e75b00fa",
+      "after_bytes": 6977
+    },
+    {
+      "path": "migration/physics-rider-static-review.md",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "c3a4281156390fb76c5b3a07d5e999386f9265ac4950a514aa63760b415a2139",
+      "after_bytes": 14387
+    },
+    {
+      "path": "migration/python-removal.json",
+      "action": "modify",
+      "before_sha256": "be5719a281efa80f98525c77aa892264885d24133002daab7558d21997bb4e07",
+      "after_sha256": "cc4e988e6e842889f5dc976e4bc4984ab38381dc1fdfaab48aa956dad1cb7cf7",
+      "after_bytes": 538680
+    },
+    {
+      "path": "migration/test-port-map.json",
+      "action": "modify",
+      "before_sha256": "2a3ccb5a12ed0f4719360a67725b38fe53115ab2e89c5b7e4188d966136dc1e6",
+      "after_sha256": "9cad0fcb3cd1bc915a09fdc712a71c3b12889aca5cfa7692ecb93b54678dd130",
+      "after_bytes": 1220801
+    },
+    {
+      "path": "native/CMakeLists.txt",
+      "action": "modify",
+      "before_sha256": "79e5e3ad41bc00840706853a5658f39c993ed2b1a201b8ea94f775e079755dd5",
+      "after_sha256": "59b6c564d04ad4cb5ff5ceded056190ac21885c9bf06228aead171dc6ac0dcb2",
+      "after_bytes": 56770
+    },
+    {
+      "path": "native/cmake/NativePhysicsResearch.cmake",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "cbb34a27a249f5d9997da938b0987fde22c6617c394e9dceabbf77b5d7bee12a",
+      "after_bytes": 4307
+    },
+    {
+      "path": "native/cmake/NativeStartup.cmake",
+      "action": "modify",
+      "before_sha256": "fd34d76d847e31a07fa4efdf63279bf3ef6b6b57d8c327f86698cd52eadedc0a",
+      "after_sha256": "62d9bd7df814687472471159bbd9750e94f477c9c3347cc8cddda51e2f276c98",
+      "after_bytes": 6691
+    },
+    {
+      "path": "native/include/bike/policy_v1.h",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "0e71ec98797afecfe4cfd62e323f25b6822f400e9573a5794c12dcd72039eeac",
+      "after_bytes": 2452
+    },
+    {
+      "path": "native/src/app/native_ride_main.cpp",
+      "action": "modify",
+      "before_sha256": "1bafc0d82a5b8f258b0cbbd41204fcf14e64ecb6d0234e5335ac6dc093533a1d",
+      "after_sha256": "88a9aacc6731ee2550ac140a21ee5110988b5fe7e64f0f029d53b68592fbcc1b",
+      "after_bytes": 11316
+    },
+    {
+      "path": "native/src/config_types.hpp",
+      "action": "modify",
+      "before_sha256": "efb0c3c3819b0b70edeeadafb01b6bf66afafe4eb7f8fa4b75dc9a491811b6cb",
+      "after_sha256": "945ea2c9f94f1288271e058f059da907d61ada55eb51c388540aacb796eba745",
+      "after_bytes": 13589
+    },
+    {
+      "path": "native/src/config_validation.hpp",
+      "action": "modify",
+      "before_sha256": "9a13e101aa350c434b4bf2056258fe7ea9b747612c1fb9ad59d16d2ac751cbc6",
+      "after_sha256": "9b80902ab7eaa06ea388eb7a789a28da0bd0ecf0accf68562870bc9b0ca3ba70",
+      "after_bytes": 30910
+    },
+    {
+      "path": "native/src/configuration/schema.cpp",
+      "action": "modify",
+      "before_sha256": "b0a900e1f07808cf77558d369df0ddbe028a9510d0fefb2f4f3d4a794e714132",
+      "after_sha256": "6cbed684a9b7c022b12629ce2b3f58651d65a71fb13ff8e2a835146103f36615",
+      "after_bytes": 62475
+    },
+    {
+      "path": "native/src/contact/tabulated_radial.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "870d73b0d87c743a7a207e46fb65f3a1592e8d1585b31e82f58f513a23ad657c",
+      "after_bytes": 2175
+    },
+    {
+      "path": "native/src/contact/tabulated_radial.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "cca4d5da2c8ccba927ed4c5c609ba957f421003b6e193e126e9f43b1ce679d3e",
+      "after_bytes": 824
+    },
+    {
+      "path": "native/src/drivetrain/capabilities.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "e7fb45026bf668991daad94e8191526ab9a28bb41b6293818afe9881a6dd6ee4",
+      "after_bytes": 828
+    },
+    {
+      "path": "native/src/drivetrain/chain.hpp",
+      "action": "modify",
+      "before_sha256": "05b18597ccd57868202ccf23fd3f370615b1a967b00fe09158676792c2e3b6f8",
+      "after_sha256": "266c877e77f8571fdfc9a4ed80feee25a7e328f00c6294f23bf8e2371a4d208d",
+      "after_bytes": 2873
+    },
+    {
+      "path": "native/src/drivetrain/elastic_chain.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "1b309b473ddc59990103885c0b3eeafa703e9e75aee904f5792c877cfcbfad23",
+      "after_bytes": 2022
+    },
+    {
+      "path": "native/src/drivetrain/motor_clutch.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "890c6cd0f58c9d919fc2a5a6694fafc3461b908bb90e3e1bcce3f5cc887d181e",
+      "after_bytes": 699
+    },
+    {
+      "path": "native/src/drivetrain/transmission.cpp",
+      "action": "modify",
+      "before_sha256": "e09b24cc91fbd6e79defd59f86f5b30b6d4abfa91d37431f2baf3a03da08fce1",
+      "after_sha256": "360bf4100e687c19b931b4bcfd415ab2ad04b4502dcd0dccc2502c5ba14d4b07",
+      "after_bytes": 32248
+    },
+    {
+      "path": "native/src/drivetrain/transmission.hpp",
+      "action": "modify",
+      "before_sha256": "8dfdf5813d16a519968faae03d6832731c49dfd477f9b7c82c9bc260f82c3df2",
+      "after_sha256": "55498a910016a19c85f3f9b62a38f630205a5b41a73b551c81413b2d7996ffe3",
+      "after_bytes": 13391
+    },
+    {
+      "path": "native/src/initialization/capture.cpp",
+      "action": "modify",
+      "before_sha256": "92e6b2b59b062f4463536620d3a0b2ca2618804a17465eec24f79b035c0e82dc",
+      "after_sha256": "4fcc737d9415ee488616f4a34e4e8e9224b949c9399fbebff6c833cc3bf4b30b",
+      "after_bytes": 11146
+    },
+    {
+      "path": "native/src/initialization/context.hpp",
+      "action": "modify",
+      "before_sha256": "c7463593e40d72cae4de48b4400e75277e271cae2c846937c0946f912ac900a0",
+      "after_sha256": "b5b7683a33766eacce046d3faf8d48181491935ea681aa6871fe9ab80acec03b",
+      "after_bytes": 2297
+    },
+    {
+      "path": "native/src/initialization/equilibrium_cache.cpp",
+      "action": "modify",
+      "before_sha256": "00137798a1eebeff5b623a359b1a81590450256f235ada1cd69e041adb2801a5",
+      "after_sha256": "a90ed21843c05372f5273b9875ff69c94597133bf3d4e9326ae8d23ffae196c9",
+      "after_bytes": 24962
+    },
+    {
+      "path": "native/src/initialization/finalize.cpp",
+      "action": "modify",
+      "before_sha256": "331cca8d033407439c2cc6c0496c922f00c432000626052ba656e22bf74aec5f",
+      "after_sha256": "d62f70b8251980dbc092b01a84b3f45cc2c667ed1950a8870eb765f47e4a4655",
+      "after_bytes": 9319
+    },
+    {
+      "path": "native/src/initialization/finalize.hpp",
+      "action": "modify",
+      "before_sha256": "ec215586e83934e0f58a1a35604d89d1a27949391f84941536a6f9c5ee34d86e",
+      "after_sha256": "f4c826c3636bbc154d013266d35af1ddf279e827cd2cc4cc8c12125ac2352b3b",
+      "after_bytes": 346
+    },
+    {
+      "path": "native/src/initialization/initial_state.cpp",
+      "action": "modify",
+      "before_sha256": "898387b7dc8576c99ce3634f1a6abbd0645627be1ad40bc4c30fc45ee7cebd29",
+      "after_sha256": "e4f5487d03d9df3494916de623eba8b30e7608cd28ed2dd3a5955653bc538e67",
+      "after_bytes": 27680
+    },
+    {
+      "path": "native/src/initialization/research_startup.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "e0de57cb321d73ab757157e0f5a3a4931d8cfc19bff447f048d55aac31211297",
+      "after_bytes": 5237
+    },
+    {
+      "path": "native/src/initialization/research_startup.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "36110a840b9be7cd069397afad92c93507df331e619bbf4b6320d3000c6f4759",
+      "after_bytes": 449
+    },
+    {
+      "path": "native/src/initialization/setup_owner.cpp",
+      "action": "modify",
+      "before_sha256": "99cb2835e2bd2e4364151e5ecc7a8b142edf9d9f956f441cf585344c9b9e2817",
+      "after_sha256": "f3e1936e1f9d0bc72a32d68996b61d6231071cbe01189e94b6996ce72276c0c3",
+      "after_bytes": 14760
+    },
+    {
+      "path": "native/src/initialization/setup_owner.hpp",
+      "action": "modify",
+      "before_sha256": "d1a829914bd5a7904662303adf89bb17f83d50058d6efdd48010c0c04ffa5d3f",
+      "after_sha256": "2a12fb24535c591ffeaa4e0b17fc0bc736855b515b659e9d009bb73a138b8798",
+      "after_bytes": 3152
+    },
+    {
+      "path": "native/src/legacy/controls.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "da8853042551dcc30fce1683f4639da30d9e1cc915fe45f02ec1cf5b8584ef1a",
+      "after_bytes": 20801
+    },
+    {
+      "path": "native/src/legacy/controls.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "2fb3d54bc69ab278d59e323fc3ebdac18823e35f189b2fa14a67b6ad784b0adb",
+      "after_bytes": 7020
+    },
+    {
+      "path": "native/src/legacy/force_accumulator.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "a89be6be6f59ca7f7b206c317f1a382e7e5e86c93abb4c30509a68a25132a4ef",
+      "after_bytes": 1254
+    },
+    {
+      "path": "native/src/legacy/legs.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "b259dfe7b91709c858d74461434421f5d7f1e8f3591eba0bfce38330798f7726",
+      "after_bytes": 5210
+    },
+    {
+      "path": "native/src/legacy/legs.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "c63b9d016d214be333035106ca9376f4f3a7822b74fdce251ac59a1467a5a0e5",
+      "after_bytes": 1437
+    },
+    {
+      "path": "native/src/legacy/metrics.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "e69ccfcd7be305faf24c2cb3dfa3063774dbe1fca8507f09811b8d912d9e7479",
+      "after_bytes": 27164
+    },
+    {
+      "path": "native/src/legacy/metrics.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "cca37515ffba78da9c2fa5d74bacea3f8b00b715eafb7adccb7797649e67a665",
+      "after_bytes": 4441
+    },
+    {
+      "path": "native/src/legacy/playground.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "2402c52c140ebc4d04164b9acb75fb5883cabd2558d46f58034f4d31f285e5ae",
+      "after_bytes": 14289
+    },
+    {
+      "path": "native/src/legacy/playground.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "b7c6fe95a11044269c10222c2254af5003fe92c737d1cf25a6eaf641a240d9b2",
+      "after_bytes": 4737
+    },
+    {
+      "path": "native/src/legacy/recorder.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "ca910670ae2f0c60e02a6db5c625d2155d2f76b23fe0f0bb1d8a8d09a9a7b0ed",
+      "after_bytes": 3426
+    },
+    {
+      "path": "native/src/legacy/ride.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "1e25c37200f6c0a2ef51ad75dea8673baba5f1cbb8f96740c71fd5478ef16836",
+      "after_bytes": 25927
+    },
+    {
+      "path": "native/src/legacy/ride.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "890fc6083e413819db1e4b631dff682027711c670eeb47758b809730afa4657d",
+      "after_bytes": 6004
+    },
+    {
+      "path": "native/src/legacy/rider.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "9eeaad078c78bcbff347cedf2f0bbee7ab9348a9240eb10b3b05493bd6d98320",
+      "after_bytes": 8754
+    },
+    {
+      "path": "native/src/legacy/rider.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "32956f96bdc9e026173a97de287853c0b4e3bbe73e0a8087c1e75de57a96272c",
+      "after_bytes": 1494
+    },
+    {
+      "path": "native/src/legacy/static_equilibrium.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "b8121f9e16306e5414ae35d14961819545489e5a2f83a3f9d32836d99e668449",
+      "after_bytes": 1516
+    },
+    {
+      "path": "native/src/legacy/suspension_controller.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "b241c64dc71b9c6f20cfbddaeb045a6319d69258ede476e75cde60015818410c",
+      "after_bytes": 1048
+    },
+    {
+      "path": "native/src/legacy/telemetry.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "366cb40f99d8711fa665ffea48d8ba9c86e5dcf7c0386cc9f0aba6351792b77b",
+      "after_bytes": 5444
+    },
+    {
+      "path": "native/src/legacy/tyre.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "0a3dedb9898579fe7ffe1347e8c028a426c555c060732f335b0a720865d08a76",
+      "after_bytes": 11215
+    },
+    {
+      "path": "native/src/legacy/tyre.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "791c720b551f68653afe8d49647833cb01529a22c12db4eb052ff536df8e8aab",
+      "after_bytes": 4340
+    },
+    {
+      "path": "native/src/model/suspension_setup.cpp",
+      "action": "modify",
+      "before_sha256": "7e81c2a2972acabf2d86ddf94ea70fa5afc3496c9e350f582e0bf4db87221318",
+      "after_sha256": "e805de33fdcdfa118c172757be7b566480e4fd57dfb0f934c5138285dbfd050f",
+      "after_bytes": 52605
+    },
+    {
+      "path": "native/src/numerics/brent.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "28090d8e232ef658e14e703e67ee7b8c31e1c82682df76aae4381472dbd94cfd",
+      "after_bytes": 2549
+    },
+    {
+      "path": "native/src/numerics/brent.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "67c99382695679c3ec881ad38a68bccb2cd0b03b811cfad15abde16ec4241206",
+      "after_bytes": 408
+    },
+    {
+      "path": "native/src/numerics/dense.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "93440086a104b03b264fbb51d9362523fc46653ad8f60f9b422a339e027894a3",
+      "after_bytes": 6607
+    },
+    {
+      "path": "native/src/numerics/density_fit.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "a61c9481134d7a8f24880a828bf914d145258328bae2830225f463cd19ea9dd8",
+      "after_bytes": 7119
+    },
+    {
+      "path": "native/src/numerics/density_fit.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "6b9bc84070674d5d20517b632a4dacee793887e53f7367367d2747f70c2d815e",
+      "after_bytes": 1371
+    },
+    {
+      "path": "native/src/numerics/filter.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "b57973d7eba9c3847a361e10bca10e69fbdd1626ad387a4e4ad4dfbd8fc9d4d2",
+      "after_bytes": 5359
+    },
+    {
+      "path": "native/src/numerics/filter.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "d51fd3544205795f8801e2597ff0d586e69f0b69a3d5535b7a8a477b5ba95d75",
+      "after_bytes": 517
+    },
+    {
+      "path": "native/src/numerics/linear_feasibility.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "9683751a45a20009e3111ec1aaeac4c51c3a0de56e0f6a8d8c62df40d70c7c88",
+      "after_bytes": 5299
+    },
+    {
+      "path": "native/src/numerics/linear_feasibility.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "11606243df03c8b5c41229e052ed7984cc9775707fd70784573405e32fad0b1f",
+      "after_bytes": 1049
+    },
+    {
+      "path": "native/src/numerics/nnls.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "6c8e41f8ce503eb68c7a9e6f369e5abf8b5c2e6c86e72acd777de31807e8e718",
+      "after_bytes": 2467
+    },
+    {
+      "path": "native/src/numerics/nnls.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "1739c061509e6a9298f7837f3b44e93312720b12801de56bc166b6616b01714a",
+      "after_bytes": 492
+    },
+    {
+      "path": "native/src/numerics/slsqp.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "a00fa5f218965ecfd58c07fea946b14f148b2e8c1f60b362585b5e26cfdd03cd",
+      "after_bytes": 11461
+    },
+    {
+      "path": "native/src/numerics/slsqp.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "79ccae91542201d93d38648a66b02f6922562e8bc3a66d8051abc80ba4ee5e6a",
+      "after_bytes": 718
+    },
+    {
+      "path": "native/src/research/builtin_policies.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "7e07fc36a85108dd6a7b32ddacf74309cef7be960f6c309d3f154626906188c2",
+      "after_bytes": 8286
+    },
+    {
+      "path": "native/src/research/configuration.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "a04f3a18bb1e8339ea551fe124fe90506d3db67e65363c77e882b7c1a66887e1",
+      "after_bytes": 21774
+    },
+    {
+      "path": "native/src/research/environment.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "25f95ac731234017d12fd84124d2e9fda03fbc181493838faa96891f93ad598e",
+      "after_bytes": 4963
+    },
+    {
+      "path": "native/src/research/environment.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "3c534e98dd5d4af85f9216710404f12065b46579f72d1755c28680cf30d3f4a0",
+      "after_bytes": 4143
+    },
+    {
+      "path": "native/src/research/evidence.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "eadd9d31715223c6e4508be616d4b773bda62e9482587f1dd940dfd51307c41d",
+      "after_bytes": 10415
+    },
+    {
+      "path": "native/src/research/evidence.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "d7540a08005aafda162315f47500ac2229baff967b0ff9a7a03f65048025c56b",
+      "after_bytes": 2205
+    },
+    {
+      "path": "native/src/research/exit_codes.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "7f1faa8540430ea4ed88f88677aedda3053fbda742a82edfc6df0697bb3655a8",
+      "after_bytes": 365
+    },
+    {
+      "path": "native/src/research/lifecycle.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "56e377ac49e9ee0786ad01f8f83a80307670a90360ac21126d9da943ba0a6bb6",
+      "after_bytes": 14892
+    },
+    {
+      "path": "native/src/research/lifecycle.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "59493ca977215ab766a373fe2520d4806baa7bfddb17959771ccbf388aeb3a74",
+      "after_bytes": 3458
+    },
+    {
+      "path": "native/src/research/metadata.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "903a69274747710146581907e2af80c9272392e842817940b23a8c163fcf03ea",
+      "after_bytes": 18833
+    },
+    {
+      "path": "native/src/research/metrics.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "29b6e67239ca97d11c8cde50c4c04f215d13083544fec330cf61de7460ed507e",
+      "after_bytes": 2399
+    },
+    {
+      "path": "native/src/research/plugin_policy.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "7e1587c23d4f14c7401557829aaffe3ec734941433eae743c05d169ecea3e9d7",
+      "after_bytes": 6769
+    },
+    {
+      "path": "native/src/research/policy.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "50ff7b46065acbed66e44e223ef6fd5b32f63fe48f682def6ac3878dd467a4a6",
+      "after_bytes": 5037
+    },
+    {
+      "path": "native/src/research/policy.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "71bdb7c9877addc594085134419e0d1e28eca5e1539b0393744ff07901812f16",
+      "after_bytes": 2623
+    },
+    {
+      "path": "native/src/research/policy_session.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "b600325a2e0e9ebd2bea555cc6acb88062c3cbaa1f81eed82b691d3524dbfd98",
+      "after_bytes": 16089
+    },
+    {
+      "path": "native/src/research/policy_session.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "c3837ad36eafcde8a070ab8afcf85ce9abe42b445118d342bcbad5622165da12",
+      "after_bytes": 2959
+    },
+    {
+      "path": "native/src/research/preview_csv.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "3c47e7d4e6b8367639aed1956890cc5621fd7606d6111986007d62da05812c4a",
+      "after_bytes": 6263
+    },
+    {
+      "path": "native/src/research/preview_csv.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "8e6b7fae38f5156b2548e1fe32c73810afb53225f48481061d61141ea5d94e68",
+      "after_bytes": 1705
+    },
+    {
+      "path": "native/src/research/program_loader.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "e4934660344006c2844467cc141b7df434d7dc0b8d80d38be819e82a5d639600",
+      "after_bytes": 5482
+    },
+    {
+      "path": "native/src/research/quality.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "04681375ad67bafc8c2823047e1bede844ebdd06eae04ce4a652d981566066a4",
+      "after_bytes": 927
+    },
+    {
+      "path": "native/src/research/rider_behavior.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "5cb9d2de57c889d60fcbeec73fb36b9445138ed59b0597c3fed48417fd769f23",
+      "after_bytes": 1769
+    },
+    {
+      "path": "native/src/research/rider_random.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "9a573bf17a992c61c6cc6926cd1d8caf8f14fc9aa281fa21936569952a5c19d5",
+      "after_bytes": 2389
+    },
+    {
+      "path": "native/src/rider/activation_allocation.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "a64bb0610be7bfe1912aa5f123833a385572556598bc52de7b119bdcc791c832",
+      "after_bytes": 5148
+    },
+    {
+      "path": "native/src/rider/activation_allocation.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "ff617b458be228096eea36a19f5970c4beeb0bfb68dfdef61196351ab6046617",
+      "after_bytes": 1175
+    },
+    {
+      "path": "native/src/rider/allocation.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "932179dcbdc1fef6e42c0976ff58546d0238755e34e128bf8c9d8f0ca7b07158",
+      "after_bytes": 8200
+    },
+    {
+      "path": "native/src/rider/allocation.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "8d1d025044d4191ac52f3da655f8bbcbd283b475f95bf363062c0cc7fb9d3e09",
+      "after_bytes": 2482
+    },
+    {
+      "path": "native/src/rider/allocation_json.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "b305619283039137641141367a798258436bd061ccedb950b8b1a0114eea6d93",
+      "after_bytes": 3576
+    },
+    {
+      "path": "native/src/rider/constraint_dynamics.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "5f71c388c90ec918e8fae398947f697cec24194e4e0ed81f6e9bd0d68bd997ba",
+      "after_bytes": 13617
+    },
+    {
+      "path": "native/src/rider/constraint_dynamics.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "da3f84e40696553937ede8b98ebd1d6c03749fc2f1a46199d1c3c11f07d74c2b",
+      "after_bytes": 2270
+    },
+    {
+      "path": "native/src/rider/flat_contacts.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "bd4098b6eb678cb2c8f05178128114e98a8c5432ce8b3b367613b67bca35e705",
+      "after_bytes": 5305
+    },
+    {
+      "path": "native/src/rider/force_requests.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "9e8bbfa4b592c9d1557ef4b4dce6191b6fcfd0c250ef40fc2a535584cd17abd9",
+      "after_bytes": 785
+    },
+    {
+      "path": "native/src/rider/grip_springs.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "265a331494fdd13642827dff17bce125094ad81826ab2f58ff80b3cc91e35f0a",
+      "after_bytes": 401
+    },
+    {
+      "path": "native/src/rider/legacy_allocation.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "ec22cbdd8f49cc92baa39fe32fe76c82596e597590831886096f2003f61c628f",
+      "after_bytes": 12635
+    },
+    {
+      "path": "native/src/rider/legacy_controller.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "6438749670b93f57100f8235314f9e9a295e4c36e3a8a42dd481b9aa2e8dcbb7",
+      "after_bytes": 38883
+    },
+    {
+      "path": "native/src/rider/legacy_controller.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "4ded57ea3a54b9e05c14e9108775e44e80e3dee6a1c541bf13f96f5d9a076992",
+      "after_bytes": 1805
+    },
+    {
+      "path": "native/src/rider/legacy_diagnostics.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "5dc782ec5f63773618b8824cd9c0f2b11bc4cd93a1be9842fca7d35eb1cc6ec1",
+      "after_bytes": 1046
+    },
+    {
+      "path": "native/src/rider/mode_search.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "41e852ab1cd40794e9d6ee6b40c13aaf155de5aea25fe39b90a476e68397e206",
+      "after_bytes": 1900
+    },
+    {
+      "path": "native/src/rider/response_allocation.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "ebe453ccecf42e48a209e35f4e29b822b5457c0337a09be0c481d674aec34917",
+      "after_bytes": 18205
+    },
+    {
+      "path": "native/src/rider/response_allocation.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "7ccc01278a5a98e80986ebbd6ba9f1c0136784d24cd9083ca91f7655619bce11",
+      "after_bytes": 2797
+    },
+    {
+      "path": "native/src/rider/response_codec.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "dbac72f46d897566b6be53254ce56366cb3e0bca8e87faaaf22be23cdb84854b",
+      "after_bytes": 17911
+    },
+    {
+      "path": "native/src/rider/response_codec.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "e2f44ddb9c8b1ad5eeb937b5f47414b449c241a2880ac90d301bb3b967d172bc",
+      "after_bytes": 307
+    },
+    {
+      "path": "native/src/rider/spindle_controller.cpp",
+      "action": "modify",
+      "before_sha256": "c63208537a9d488ed232c0ca127a903ae4e72f3bb2b08d665a9cd7b4ac191f72",
+      "after_sha256": "155ebc9098ce70155f2eab3014e89aa2b13c9a371ae712ad4320fc7833b64bd7",
+      "after_bytes": 68800
+    },
+    {
+      "path": "native/src/rider/spindle_controller.hpp",
+      "action": "modify",
+      "before_sha256": "75754dee8726f2bc69a66afd0e490e4ac4a0be14f2b10d3a6f7a4e82f6406a8f",
+      "after_sha256": "ad457011dfde065bc7c2b784afc8e3f14222b69c5374a8deba1b913140e575ee",
+      "after_bytes": 18404
+    },
+    {
+      "path": "native/src/rider/spindle_wire.cpp",
+      "action": "modify",
+      "before_sha256": "231122beb3706cc553bee2e39ad04f6a92bcfbd8cc5815b9f94a37856ec3c401",
+      "after_sha256": "404714057572a18f0fb0d5d6baa86d9ddcb9a74a144cdee79664da330bc6487d",
+      "after_bytes": 41468
+    },
+    {
+      "path": "native/src/rider/state_codec.cpp",
+      "action": "modify",
+      "before_sha256": "f91a64f4b5c9e25cd4345f714d7366cd232edc4dbbced38f5fdc435f1e9ba30b",
+      "after_sha256": "77f9d72db40beac60cd58a1c351aa7fe6cd7a7339043ec7041843c106917b64c",
+      "after_bytes": 123408
+    },
+    {
+      "path": "native/src/rider/state_codec.hpp",
+      "action": "modify",
+      "before_sha256": "c71b6ff9670eaed537cc12ae6d295073c59a0883c08321688841612a1a3d1cd0",
+      "after_sha256": "9229c8a39e6702da178d271d4db82e2385e546d034872763f36dec0b2ea83c10",
+      "after_bytes": 7048
+    },
+    {
+      "path": "native/src/rider/support_dispatch.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "ea4b5f8798af21912620bdf4968b5783ef73ba7f3a19798a0511aadfe7699a04",
+      "after_bytes": 1853
+    },
+    {
+      "path": "native/src/rider/support_dispatch.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "32355068e8f1c7f5a3870695bc15a55831f98e155d0bfc3e0e3811c83446c949",
+      "after_bytes": 2532
+    },
+    {
+      "path": "native/src/rider/weld_settle.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "de958527a98f8aba88ee5051d1310ebc66249eb61d7493d6ec1e0ff7676816e0",
+      "after_bytes": 602
+    },
+    {
+      "path": "native/src/runtime/accounting.cpp",
+      "action": "modify",
+      "before_sha256": "53760c47a8a64156c47f810e2cc8a5a18ff4c87ee11116df9d3a829dd4012d92",
+      "after_sha256": "efe72b56adba6aac67453b14b096c02244708dd1ef7dca2ce0595db4e474c143",
+      "after_bytes": 34303
+    },
+    {
+      "path": "native/src/runtime/bootstrap.cpp",
+      "action": "modify",
+      "before_sha256": "3a20ea07c49b9a91e9f871286118a5bb6162cd408162d7d7936b1f7c1ead8e2c",
+      "after_sha256": "1463b755e5b003b30b6b09c8688b7c9901e051a7b867294c176bbf9c7069bced",
+      "after_bytes": 19062
+    },
+    {
+      "path": "native/src/runtime/capabilities.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "8697bebd913075b7c07ac3e6b49672ff063d3083320c4990b215d3974cb9b5f0",
+      "after_bytes": 4202
+    },
+    {
+      "path": "native/src/runtime/capabilities.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "7095bc1d535e96d2f7ec71e3e2b40fe6566210ff06462a1f3030d55483e0d254",
+      "after_bytes": 1066
+    },
+    {
+      "path": "native/src/runtime/control.cpp",
+      "action": "modify",
+      "before_sha256": "add812bca852ae79cdff2420ea98c30ae9a3c474f9a2c4764ae0bf124a139432",
+      "after_sha256": "fc00f75534c1882b252a20b53ed89c61127de4b889a5c0e271ede5bcc8ad45dd",
+      "after_bytes": 21180
+    },
+    {
+      "path": "native/src/runtime/control.hpp",
+      "action": "modify",
+      "before_sha256": "09deef1608399868d1af0d3ef23b94c3e0be260f3b1439494192198bdce26783",
+      "after_sha256": "e3f5a31d83b57f944578c18e1677c0ce06d2f5c3c111796f30aa5e16302c461e",
+      "after_bytes": 19438
+    },
+    {
+      "path": "native/src/runtime/native_contacts.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "c4f08b0f2ec43c49ac952803411782f1d4f4753221aae9a9c5733d7f9a3f835d",
+      "after_bytes": 10619
+    },
+    {
+      "path": "native/src/runtime/project_config.cpp",
+      "action": "modify",
+      "before_sha256": "cc86a9e288abc87f3649ae60390803915e5623f679fd8d78bf2714817b56aa3f",
+      "after_sha256": "2a8e27fd5be331d9954c47719347e50684f4b3aee9e6f3b2d7bb4851501713f2",
+      "after_bytes": 26005
+    },
+    {
+      "path": "native/src/runtime/research.cpp",
+      "action": "modify",
+      "before_sha256": "ec2721fd345a7b02b0e19d00a5452ca002fbf95f8e3053b70f995101acffe12f",
+      "after_sha256": "a04e5240bdc32a7c5a9d43d8c56495871045d0ae27afd09becb5e28cc84056a7",
+      "after_bytes": 34103
+    },
+    {
+      "path": "native/src/runtime/research.hpp",
+      "action": "modify",
+      "before_sha256": "ca31ef93b27d26c64363346236da90464a5523879ce39278f4c2d677b8290f64",
+      "after_sha256": "cd97fa45e6ca5c9c89f0e3e6689288667d10ceac3ae4f8e31683665357dc787c",
+      "after_bytes": 8259
+    },
+    {
+      "path": "native/src/runtime/research_metrics.cpp",
+      "action": "modify",
+      "before_sha256": "f111349ae3680b503bba2a93aa584bacb6433eb63d104ee3cff17414dfe28d49",
+      "after_sha256": "c446c78dd7bb641db63811a9ef87db0e3025d564bbfcab566013c6080355d4a2",
+      "after_bytes": 14784
+    },
+    {
+      "path": "native/src/runtime/research_metrics.hpp",
+      "action": "modify",
+      "before_sha256": "b1321c6818cdeb343c4947fdcd314561f05b6bb3a36ff9594bf6ae70dc32a6f1",
+      "after_sha256": "da93f1e0aed9237bd2226193edaa262a0d91fa64e02f25bc91ef8eafc4717349",
+      "after_bytes": 3212
+    },
+    {
+      "path": "native/src/runtime/runtime.cpp",
+      "action": "modify",
+      "before_sha256": "65af914f735ed6613550013b22569671436476b70e6e9d51779fee77b8866726",
+      "after_sha256": "416d42f321ae92734f5692d65dc9622610096deebc14c473c9954a8de9447751",
+      "after_bytes": 40987
+    },
+    {
+      "path": "native/src/runtime/status.cpp",
+      "action": "modify",
+      "before_sha256": "273dd2f3330c0635bf9a3664e01ba4485b1b2f27499d787d4cdee4484cb22eb2",
+      "after_sha256": "853170be299aff31ed5406931e0dab093d109e7583a9a5a3fcc959ad259e0b1f",
+      "after_bytes": 12590
+    },
+    {
+      "path": "native/src/runtime/status.hpp",
+      "action": "modify",
+      "before_sha256": "76d5d282d54ee8b27d3c3c77171716a22b3d9066c0ba0e14201ad53b8c8a72d9",
+      "after_sha256": "f9fd744c3355abc73f7e0c1459c6e2abc08c08834b0dac182782e381d0d40957",
+      "after_bytes": 2449
+    },
+    {
+      "path": "native/src/runtime/step.cpp",
+      "action": "modify",
+      "before_sha256": "96bcd403b0c60cedd5eaf956f1c471583b19b6afda5d0a00d0e0e9c8140a7dfc",
+      "after_sha256": "35faa71eb311e99f329bb4856bbb3b4b3c2de441404f891be5de55e2e44dac32",
+      "after_bytes": 122799
+    },
+    {
+      "path": "native/src/runtime/step.hpp",
+      "action": "modify",
+      "before_sha256": "75310efaf0866713fc070424bc0255d6c79f16dbf603171ebb7eb11b2239123c",
+      "after_sha256": "759a48e6b678f92d77c2c046023ad12fc6967657543c62e7c4737c095edd5014",
+      "after_bytes": 22705
+    },
+    {
+      "path": "native/src/writer_config.hpp",
+      "action": "modify",
+      "before_sha256": "e3103ff2d2188bcec5e88cfcae60b42636bfbbe424a7d3778f5b94b1f292aa38",
+      "after_sha256": "dbd48803804f930e9b372086889f4ac286a13f7876fc802bbb806065c0fb20d6",
+      "after_bytes": 62477
+    },
+    {
+      "path": "native/src/writers/drivetrain.cpp",
+      "action": "modify",
+      "before_sha256": "927e1f70146f3385961551d386bf84e712e515603bb580265169ed25ca57f6e2",
+      "after_sha256": "7b813a6e16d086100a1bdce5cbecae1e9922c6ddceeaa7878facc758c823df3e",
+      "after_bytes": 75125
+    },
+    {
+      "path": "native/src/writers/tire.cpp",
+      "action": "modify",
+      "before_sha256": "b3cfbbea34950cb5f7ad65fe72cf6525ab5825b3ec2468379b7601d20ce08b58",
+      "after_sha256": "bf11373667a15f4d50967460437858c5ce1901c223eb736ec1951acd6254d8a0",
+      "after_bytes": 44154
+    },
+    {
+      "path": "native/src/writers/tire.hpp",
+      "action": "modify",
+      "before_sha256": "506900b4d2c2c4462bdf2b3991b9932d2267de4a2bb6a1ecfd2496b9cb4987d6",
+      "after_sha256": "7ddd86fcb48198c605120aa032c4d2ff4ce8c50eee107eef0efbe1d8a60eadf8",
+      "after_bytes": 11810
+    },
+    {
+      "path": "native/src/writers/tire_common.hpp",
+      "action": "modify",
+      "before_sha256": "d8e27c3fddb2bc3421638afa05e931723069403411ee786bcb8f3bf5e81dd26e",
+      "after_sha256": "10821820b155fc4952499b2acda6518544f615cb0d555fa9709639bc74d7f150",
+      "after_bytes": 6394
+    },
+    {
+      "path": "native/tests/migration/CMakeLists.txt",
+      "action": "modify",
+      "before_sha256": "59d6ef4f22565746451162c9c714152c1ff0921dee983a92d1bb82a3e6f34c10",
+      "after_sha256": "71abba2c7ee6ff5a452bc5922888f2268afadd82d6ded23ba22d0c5d40b2f457",
+      "after_bytes": 33233
+    },
+    {
+      "path": "native/tests/migration/kernel_parity.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "777149989742d653a37c18dcd250acfe14e83dcca07d777e8a287345c63c7556",
+      "after_bytes": 2538
+    },
+    {
+      "path": "native/tests/migration/kernel_properties.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "fb02635711e815734455673884acf8abb730e1ed6a12f010bd2dbec88b7fd39b",
+      "after_bytes": 4379
+    },
+    {
+      "path": "native/tests/migration/kernel_test_support.hpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "a2129bd19997ce63d33c73c0f56c67e14a7a68ddb18fa188b216e6f30216604a",
+      "after_bytes": 115
+    },
+    {
+      "path": "native/tests/migration/policy_fixture.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "ae7f269de34bd8030b67456f9af6b3ceb7289493b5c76ccb79a81cc9d22aa6e2",
+      "after_bytes": 3184
+    },
+    {
+      "path": "native/tests/migration/test_native_contacts.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "d974295bc804c60026bba97e37b26dac91c9166a599a746c07718497b8962e8d",
+      "after_bytes": 4668
+    },
+    {
+      "path": "native/tests/migration/test_t25.cpp",
+      "action": "modify",
+      "before_sha256": "d53f17257e085c6fd665afd8015804b9ad5e9645509cea4a1ccb0af4cc112d79",
+      "after_sha256": "b9e68924810976cfaa3d72affa7b4779a441e16020413142e20138ee9c406a8a",
+      "after_bytes": 9164
+    },
+    {
+      "path": "native/tests/migration/test_t27.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "9411f9d84b98a6eb69eac490203d80233f0eed240255c613b0175e67c9d462ac",
+      "after_bytes": 8196
+    },
+    {
+      "path": "native/tests/migration/test_t28.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "5d09ba1c44444b0be928e4b9f845a85b7276be76bd8496b6f97bc233b895b749",
+      "after_bytes": 5611
+    },
+    {
+      "path": "native/tests/migration/test_t29.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "169a9b9f8c4a822c59a23eefbe6771fb54d5671ef530bf55a0ea74acddb4a163",
+      "after_bytes": 8948
+    },
+    {
+      "path": "native/tests/migration/test_t30.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "d65459c1647d7a0c97c2afbfc69b974d7c4556225116618e467849b1906b1e73",
+      "after_bytes": 7284
+    },
+    {
+      "path": "native/tests/migration/test_t31.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "fd12d5278c0cdcc20d62a43ef6e392b0d2d746035a41de3de3b13b62a721af24",
+      "after_bytes": 6323
+    },
+    {
+      "path": "native/tests/migration/test_t32.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "2511ff388284e7fc91ef6af2d6306576419effd9d3d93512cb607cf16128c52f",
+      "after_bytes": 7761
+    },
+    {
+      "path": "native/tests/migration/test_t33.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "c8c2a3bb6a8345d3b6d136ea5b28e6be66fe35f8a7e401c39fe196cb33b65127",
+      "after_bytes": 4027
+    },
+    {
+      "path": "native/tests/migration/test_t34.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "34ca6ba64988ad3d4ebaec59f744b27be526eab68750d9a79e37bdf65bd9e8b5",
+      "after_bytes": 10201
+    },
+    {
+      "path": "native/tests/migration/test_t35.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "a2dc7e2cfaa33847e92d096e889d8a7f62a66234e717d159c85653f9f77d9e31",
+      "after_bytes": 8770
+    },
+    {
+      "path": "native/tests/migration/test_t36.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "1ade564f49262d5d3e6026bd61d1ea62d3ebac9f7c313b7fd488e8a984789e30",
+      "after_bytes": 13857
+    },
+    {
+      "path": "native/tests/migration/test_t37.cpp",
+      "action": "add",
+      "before_sha256": null,
+      "after_sha256": "6ea51218731d26d78035f56e8410eac6c1daad86e72b62d964f07a3f830915e4",
+      "after_bytes": 13883
+    }
+  ]
+}

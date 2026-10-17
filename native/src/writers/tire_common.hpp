@@ -16,6 +16,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -24,8 +25,9 @@
 #include "../config_types.hpp"
 #include "../contact/laws.hpp"
 
-// ContactPatch (contact_state.py:19-76) — tire patches always carry
-// source 'terrain' (working_surface=true), no couple, no native force.
+// ContactPatch (contact_state.py:19-76). Applied tire writers use the
+// planar force reconstruction; native_reference retains the complete
+// engine wrench, including its contact couple and out-of-plane force.
 struct TirePatch {
     std::array<double, 3> point_m;
     std::array<double, 3> normal;
@@ -33,6 +35,8 @@ struct TirePatch {
     double tangent_force_n;
     double slip_mps;
     bool working_surface;
+    std::optional<std::array<double, 3>> native_world_force_n;
+    std::array<double, 3> couple_world_nm{};
 };
 
 // WheelContactSnapshot (contact_state.py:79-190) for one side, plus the

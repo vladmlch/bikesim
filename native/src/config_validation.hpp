@@ -235,8 +235,29 @@ namespace nativecfg {
         for (const double value: s.point_body_m) validation::finite(value, "config.resistance.point_body_m");
         if (s.wind_world_mps[1] != 0. || s.point_body_m[1] != 0.) throw std::invalid_argument("config.resistance: vectors must be planar");
     }
+    inline void validate(const TireTable &s, std::string_view path = "config.tire.material.table") {
+        const std::string p(path);
+        if (s.deflection_m.size() < 2 || s.deflection_m.size() != s.force_n.size())
+            throw std::invalid_argument(p + ": requires at least two paired samples");
+        if (s.deflection_m.front() != 0. || s.force_n.front() != 0.)
+            throw std::invalid_argument(p + ": curve must start at zero");
+        double integral = 0.;
+        for (std::size_t i = 0; i < s.deflection_m.size(); ++i) {
+            validation::finite(s.deflection_m[i], p + ".deflection_m");
+            validation::finite(s.force_n[i], p + ".force_n");
+            if (i == 0) continue;
+            if (s.deflection_m[i] <= s.deflection_m[i - 1] || s.force_n[i] < s.force_n[i - 1])
+                throw std::invalid_argument(p + ": deflections must increase and forces must not decrease");
+            const double dx = s.deflection_m[i] - s.deflection_m[i - 1];
+            validation::derived((s.force_n[i] - s.force_n[i - 1]) / dx, "tabulated tire slope");
+            integral += .5 * (s.force_n[i - 1] + s.force_n[i]) * dx;
+            validation::derived(integral, "tabulated tire integral");
+        }
+        validation::positive(s.force_n.back(), p + ".force_n.back");
+    }
     inline void validate(const TireMaterial &s, std::string_view path = "config.tire.material") {
-        validation::positive(s.radial_k_n_m, std::string(path) + ".radial_k_n_m");
+        if (s.table) validate(*s.table, path);
+        else validation::positive(s.radial_k_n_m, std::string(path) + ".radial_k_n_m");
         validation::nonnegative(s.radial_c_ns_m, std::string(path) + ".radial_c_ns_m");
         validation::nonnegative(s.pressure_pa_gauge, std::string(path) + ".pressure_pa_gauge");
         validation::nonnegative(s.valid_load_range_n[0], std::string(path) + ".valid_load_range_n");
@@ -244,6 +265,14 @@ namespace nativecfg {
         if (s.valid_load_range_n[0] >= s.valid_load_range_n[1])
             throw std::invalid_argument(std::string(path) + ".valid_load_range_n");
         if (!nonblank(s.provenance)) throw std::invalid_argument(std::string(path) + ".provenance");
+        if (s.table && s.valid_load_range_n[1] > s.table->force_n.back())
+            throw std::invalid_argument(std::string(path) + ": valid load range exceeds table");
+    }
+    // TireSpec/TabulatedTireSpec applicability declaration. The material
+    // is validated at construction; this does not clip or rescale a force.
+    [[nodiscard]] inline bool is_load_in_valid_range(const TireMaterial &s, double load_n) {
+        validation::finite(load_n, "normal load");
+        return s.valid_load_range_n[0] <= load_n && load_n <= s.valid_load_range_n[1];
     }
     inline void validate(const TireParams &s, std::string_view path = "config.tire") {
         // material is backend-conditional: validate(TireConfig) enforces the

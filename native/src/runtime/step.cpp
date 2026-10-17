@@ -21,6 +21,8 @@
 #include "../engine_call.hpp"
 #include "../numeric_sum.hpp"
 #include "../rider/rider_posture.hpp"
+#include "../rider/response_codec.hpp"
+#include "value_readers.hpp"
 #include "../stepper.hpp"
 #include "../writers/cruise.hpp"
 #include "../writers/drivetrain.hpp"
@@ -174,6 +176,7 @@ double patch_tangent_component(const TirePatch &p, int axis) {
 }
 
 std::array<double, 3> patch_world_force(const TirePatch &p) {
+    if (p.native_world_force_n) return *p.native_world_force_n;
     return {p.normal_load_n * p.normal[0] + p.tangent_force_n * p.normal[2],
             0.,
             p.normal_load_n * p.normal[2] - p.tangent_force_n * p.normal[0]};
@@ -216,8 +219,11 @@ double snapshot_axis_moment(const TireSnapshot &s) {
         const auto f = patch_world_force(p);
         const double rx = p.point_m[0] - s.wheel_axis_m[0];
         const double rz = p.point_m[2] - s.wheel_axis_m[2];
-        // cross(point-axis, force)[1] + couple[1]; couple is always 0.
-        acc.add(rz * f[0] - rx * f[2]);
+        // Applied tire writers retain the original arithmetic. Engine
+        // contacts additionally carry their solved torsional couple.
+        const double moment = rz * f[0] - rx * f[2];
+        acc.add(p.native_world_force_n || p.couple_world_nm[1] != 0.
+            ? moment + p.couple_world_nm[1] : moment);
     }
     return acc.total();
 }
@@ -878,6 +884,11 @@ WireObject
 wire_allocation(const rider::AllocationDiagnostics &d) {
     if (!d.present)
         return {};
+    if (d.legacy) {
+        auto value = bike::rider::encode_response_allocation(*d.legacy);
+        auto wire = vread::wire_from_value(value, "channels.rider_allocation");
+        return std::get<WireObject>(std::move(wire.value));
+    }
     return {{"invalid_controller", Wire(d.invalid_controller)},
             {"crank_task_nm", Wire(d.crank_task_nm)},
             {"crank_task_shortfall_nm",
@@ -891,6 +902,11 @@ wire_allocation(const rider::AllocationDiagnostics &d) {
 WireObject wire_support_targets(const rider::SupportDiagnostics &d) {
     if (!d.present)
         return {};
+    if (d.legacy) {
+        auto value = bike::rider::encode_support_diagnostics(*d.legacy);
+        auto wire = vread::wire_from_value(value, "channels.rider_support_targets");
+        return std::get<WireObject>(std::move(wire.value));
+    }
     return {{"stance",
              Wire(WireObject{{"front", Wire(d.stance_front)},
                              {"rear", Wire(d.stance_rear)}})}};
@@ -914,12 +930,15 @@ WireObject wire_effort(const rider::EffortDiagnostics &d) {
                      Wire(d.activation_saturated));
     out.emplace_back("rider_strength_limited",
                      Wire(wire_names(d.strength_limited)));
-    out.emplace_back("rider_effort_budget_exceeded",
-                     Wire(d.budget_exceeded));
-    out.emplace_back("rider_active_positive_power_limit_w",
-                     wire_opt(d.positive_power_limit_w));
-    out.emplace_back("rider_effort_observation",
-                     Wire(d.observation));
+    if (d.budget_present)
+        out.emplace_back("rider_effort_budget_exceeded",
+                         Wire(d.budget_exceeded));
+    if (d.power_limit_present)
+        out.emplace_back("rider_active_positive_power_limit_w",
+                         wire_opt(d.positive_power_limit_w));
+    if (d.observation_present)
+        out.emplace_back("rider_effort_observation",
+                         Wire(d.observation));
     if (d.joint_positive_power_w.has_value())
         out.emplace_back(
             "rider_joint_positive_power_w",
@@ -1044,11 +1063,8 @@ PhysicalStep::PhysicalStep(
     accel_sensor_adr_ = sensor_adr(m, "sensor_frame_accel");
     gyro_sensor_adr_ = sensor_adr(m, "sensor_frame_gyro");
     crash_geoms_ = crash_geom_ids(m);
-    // Either tyre backend qualifies — the writer view dispatches on
-    // tire.backend; the gate is presence, not a specific backend.
-    if (!stepper_->has_tire())
-        throw std::invalid_argument(
-            "physical step requires a configured tire writer");
+    // native_reference has no applied tire writer: its solved contact
+    // rows are read by RuntimeContactQuery after the engine solve.
     // Per-wheel staging bound: the writer reserves its published patch
     // capacity at construction (station_count distributed, one contact
     // patch compliant — snapshot_storage() exposes the committed slots
@@ -1063,16 +1079,17 @@ PhysicalStep::PhysicalStep(
     // The committed storage outlives the borrowed view (it lives on
     // the writer) — the named view is also what GCC's
     // -Wdangling-reference needs to see.
-    const TireWriterView tire_view = stepper_->tire_writer();
-    const std::array<TireSnapshot, 2> &tire_storage =
-            tire_view.snapshot_storage();
-    for (std::size_t i = 0; i < 2; ++i) {
-        const std::size_t bound = tire_storage[i].patches.capacity();
-        patch_loads_[i].reserve(bound);
-        if (bound > patch_working_capacity_[i]) {
-            // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) contiguous bool buffer — vector<bool> is a bitset
-            patch_working_[i] = std::make_unique<bool[]>(bound);
-            patch_working_capacity_[i] = bound;
+    if (stepper_->has_tire()) {
+        const TireWriterView tire_view = stepper_->tire_writer();
+        const std::array<TireSnapshot, 2> &tire_storage = tire_view.snapshot_storage();
+        for (std::size_t i = 0; i < 2; ++i) {
+            const std::size_t bound = tire_storage[i].patches.capacity();
+            patch_loads_[i].reserve(bound);
+            if (bound > patch_working_capacity_[i]) {
+                // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) contiguous bool buffer — vector<bool> is a bitset
+                patch_working_[i] = std::make_unique<bool[]>(bound);
+                patch_working_capacity_[i] = bound;
+            }
         }
     }
     const std::size_t nv = static_cast<std::size_t>(m->nv);
@@ -1086,6 +1103,10 @@ PhysicalStep::PhysicalStep(
 // the Stepper flag is ANDed with the drivetrain's live-model write bit so a
 // transmission commit (wrap_prm / tendon_range / mj_setConst) made since
 // the last check still reaches the guard even when no caller flagged it.
+
+std::string_view PhysicalStep::drive_mode() const {
+    return stepper_->drive().config().drive_mode;
+}
 
 bool PhysicalStep::posvel_fresh() {
     if (stepper_->has_drive() &&
@@ -1185,7 +1206,7 @@ PhysicalStep::apply_forces_body(
     {
         mjModel *m = stepper_->model();
         mjData *d = stepper_->data();
-        control_validate_for(caller_control, rider_control_.has_value());
+        control_validate_for(caller_control, rider_control_.has_value(), drive_mode());
         const double dt = config_.timestep_s;
         const bool control_tick =
             !advance || initializing_ || control_clock_.is_tick(step_);
@@ -1264,13 +1285,16 @@ PhysicalStep::apply_forces_body(
             accumulator_.add("external", *external);
         // tires: the probe path detaches brush state inside the writer —
         // compute or probe, never both (tire_forces.py:108-113).
-        if (advance)
-            stepper_->tire_writer().compute_into(d, dt, component_out_);
-        else
-            stepper_->tire_writer().probe_compute_into(d, dt,
-                                                       component_out_);
-        accumulator_.add("tires", component_out_);
-        if (active) {
+        if (stepper_->has_tire()) {
+            if (advance)
+                stepper_->tire_writer().compute_into(d, dt, component_out_);
+            else
+                stepper_->tire_writer().probe_compute_into(d, dt, component_out_);
+            accumulator_.add("tires", component_out_);
+        }
+        // Source physical_runtime couples applied-tire resistance only
+        // to a tire writer. native_reference remains engine-contact-only.
+        if (active && stepper_->has_tire()) {
             // The resistance input reads the POST-compute committed
             // state — snapshots_committed() is the same publication gate
             // snapshots() projects into its optional pair, so the
@@ -1395,7 +1419,8 @@ PhysicalStep::apply_forces_body(
                 torques = engaged(rider_control_).compute(
                     d, command, advance,
                     advance && !initializing_ ? control_clock_.period_s : dt,
-                    !active);
+                    !active, stepper_->rider_contacts().state().enabled,
+                    active && !initializing_);
                 if (advance) {
                     control_clock_.hold(torques);
                     if (!initializing_)
@@ -1455,7 +1480,7 @@ RawStep PhysicalStep::advance_body(
         if (!research_accounting_valid_)
             throw std::runtime_error(
                 "reset is required before physical accounting");
-        control_validate_for(control, rider_control_.has_value());
+        control_validate_for(control, rider_control_.has_value(), drive_mode());
         scalar_field(front, "front brake demand");
         scalar_field(rear, "rear brake demand");
         mjModel *m = stepper_->model();
@@ -1649,7 +1674,7 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         snap.components.emplace_back("rear_static_brake",
                                      brake_components.second);
         last_constraint_snapshot_ = std::move(snap);
-        contacts_ = refresh_contacts(true, t, true);
+        contacts_ = refresh_contacts(true, t, true, v);
         in.tires = tire_channels(snapshots_, v);
         if (config_.intent.enabled) {
             WireObject signals_in = in.sensors;
@@ -1956,11 +1981,25 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
 
 RuntimeContacts
 PhysicalStep::refresh_contacts(bool final, std::optional<double> time_s,
-                               bool update_grounded) {
+                               bool update_grounded, std::span<const double> qvel) {
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
-    const RuntimeContactQuery &query =
+    RuntimeContactQuery &query =
         final ? contact_query_ : probe_query_;
+    if (!stepper_->has_tire()) {
+        auto result = query.query(m, d, time_s, qvel);
+        const double t = time_s.value_or(d->time);
+        const bool filtered = final || update_grounded;
+        const bool front_loaded = working_load(result.snapshots[0]) > 1.;
+        const bool rear_loaded = working_load(result.snapshots[1]) > 1.;
+        result.contacts.front_controller_grounded =
+            filtered ? filters_[0].update(front_loaded, t) : front_loaded;
+        result.contacts.rear_controller_grounded =
+            filtered ? filters_[1].update(rear_loaded, t) : rear_loaded;
+        for (std::size_t i = 0; i < snapshots_.size(); ++i)
+            snapshots_[i] = std::move(result.snapshots[i]);
+        return result.contacts;
+    }
     const double handlebar = query.handlebar_load(m, d);
     const TireWriterView tires = stepper_->tire_writer();
     const bool committed = tires.snapshots_committed();
@@ -2088,11 +2127,20 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
     const std::size_t nv = static_cast<std::size_t>(m->nv);
-    const TireWriterView view = stepper_->tire_writer();
-    const auto diags = view.diagnostics();
-    const auto &radii = view.radii();
-    const bool distributed = view.is_distributed();
-    const bool pneumatic = view.is_pneumatic();
+    std::array<std::optional<TireDiagnostics>, 2> diags;
+    std::array<double, 2> radii{};
+    bool distributed = false, pneumatic = false;
+    if (stepper_->has_tire()) {
+        const TireWriterView view = stepper_->tire_writer();
+        diags = view.diagnostics();
+        radii = view.radii();
+        distributed = view.is_distributed();
+        pneumatic = view.is_pneumatic();
+    } else {
+        const auto sizes = buf(m->geom_size, m->ngeom * 3);
+        radii = {sizes[static_cast<std::size_t>(contact_query_.front_id) * 3],
+                 sizes[static_cast<std::size_t>(contact_query_.rear_id) * 3]};
+    }
     constexpr std::array<const char *, 2> sides = {"front", "rear"};
     const std::array<std::optional<bool>, 2> grounded = {
         contacts_.front_controller_grounded,
@@ -2132,11 +2180,8 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
             row.emplace_back("slip_mps", Wire(p.slip_mps));
             row.emplace_back("world_force_n",
                              wire_vec3(patch_world_force(p)));
-            // The supported tire backends never carry a contact couple or
-            // a non-terrain source geom (contact_state.py defaults — the
-            // distributed writer's make_patch sets working_surface too).
             row.emplace_back("couple_world_nm",
-                             wire_vec3({0., 0., 0.}));
+                             wire_vec3(p.couple_world_nm));
             row.emplace_back(
                 "source_geom",
                 Wire(std::string(p.working_surface ? "terrain"
@@ -2524,7 +2569,7 @@ PhysicalStep::probe_step_inputs(const RideControl &control,
                                 double front_demand,
                                 double rear_demand) {
     return stepper_->mutate([&]() -> ProbeResult {
-        control_validate_for(control, rider_control_.has_value());
+        control_validate_for(control, rider_control_.has_value(), drive_mode());
         scalar_field(front_demand, "front brake demand");
         scalar_field(rear_demand, "rear brake demand");
         const mjModel *m = stepper_->model();

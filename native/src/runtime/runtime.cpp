@@ -699,7 +699,7 @@ NativeRideRuntime::advance(std::int64_t target_step, const RideControl &command,
     if (target_step < committed_step_)
         throw std::invalid_argument(
             "target_step is behind the committed step");
-    control_validate_for(command, physical_->rider_present());
+    control_validate_for(command, physical_->rider_present(), physical_->drive_mode());
     std::string reason;
     stepper_->refresh_time_callback_policy();
     const auto start_time = std::chrono::steady_clock::now();

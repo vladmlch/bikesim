@@ -113,6 +113,8 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/writer_config.cpp"
   "${_bike_native_dir}/src/drivetrain/pedaling.cpp"
   "${_bike_native_dir}/src/drivetrain/chain.cpp"
+  "${_bike_native_dir}/src/drivetrain/elastic_chain.cpp"
+  "${_bike_native_dir}/src/drivetrain/motor_clutch.cpp"
   "${_bike_native_dir}/src/drivetrain/transmission.cpp"
   "${_bike_native_dir}/src/drivetrain/shifting.cpp"
   "${_bike_native_dir}/src/drivetrain/motor.cpp"

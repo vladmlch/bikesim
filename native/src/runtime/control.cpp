@@ -11,16 +11,19 @@
 #include <stdexcept>
 
 #include "../model_access.hpp"
+#include "../engine_call.hpp"
 #include "../tyre/profile.hpp"
 #include "../validation.hpp"
 
 namespace runtime {
 
 void control_validate_for(const RideControl &control,
-                          bool articulated_planar) {
-    // control.py:36-37 — physics_mode is pinned to 'physical' by the
-    // runtime envelope; the effort-mode gate is discharged the same way
-    // (drive_mode='articulated_effort' only).
+                          bool articulated_planar, std::string_view drive_mode) {
+    // control.py:36-41: a physical plant admits effort commands only
+    // in either effort drive mode; coast/speed commands remain empty.
+    if ((control.motor_torque_nm || control.motor_limit_nm || control.human_torque_nm) &&
+        drive_mode != "articulated_effort" && drive_mode != "crank_effort")
+        throw std::invalid_argument("torque commands require a physical effort drive mode");
     if ((control.posture.has_value() || !control.rider_enabled ||
          control.crank_target_rate_rad_s.has_value()) &&
         !articulated_planar)
@@ -116,7 +119,9 @@ void BridgedLoad::reset() noexcept {
 // ---- RuntimeContactQuery -----------------------------------------------
 RuntimeContactQuery::RuntimeContactQuery(const mjModel *model,
                                          int dropout_steps)
-    : front_load(dropout_steps), rear_load(dropout_steps) {
+    : front_load(dropout_steps), rear_load(dropout_steps), model_(model) {
+    if (model == nullptr)
+        throw std::invalid_argument("contact query requires a model");
     if (dropout_steps < 0)
         throw std::invalid_argument("dropout_steps must be non-negative, got " +
                                     std::to_string(dropout_steps));
@@ -135,6 +140,10 @@ double RuntimeContactQuery::handlebar_load(const mjModel *model,
                                            const mjData *data) const {
     // contacts.py:289-300 — single pass over data.contact, mj_contactForce
     // normal magnitude per handlebar-terrain row.
+    if(model!=model_||data==nullptr)
+        throw std::invalid_argument("handlebar query model/data owner mismatch");
+    if(data->ncon<0||data->ncon>std::numeric_limits<int>::max())
+        throw std::invalid_argument("handlebar contact row count exceeds MuJoCo index range");
     double load_n = 0.;
     const auto contacts = std::views::counted(data->contact, data->ncon);
     for (int i = 0; i < data->ncon; ++i) {
@@ -147,10 +156,14 @@ double RuntimeContactQuery::handlebar_load(const mjModel *model,
         if (!((geom1 == handlebar_id && g2_terrain) ||
               (geom2 == handlebar_id && g1_terrain)))
             continue;
-        mj_contactForce(model, data, i, force_.data());
+        struct Call{const mjModel* model;const mjData* data;int row;double* result;} call{model,data,i,force_.data()};
+        engine::ErrorBuffer error;
+        if(!engine::invoke([](void* raw)noexcept{auto& c=*static_cast<Call*>(raw);mj_contactForce(c.model,c.data,c.row,c.result);},&call,error))
+            engine::throw_failure(error);
+        validation::derived(force_[0],"native handlebar contact load");
         load_n += std::abs(force_[0]);
     }
-    return load_n;
+    return validation::derived(load_n,"native handlebar summed contact load");
 }
 
 void RuntimeContactQuery::reset() noexcept {

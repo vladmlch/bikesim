@@ -60,7 +60,7 @@ std::vector<std::string> rider_keys(){std::vector<std::string> keys;for(auto nam
 struct Material {
     drivetrain::DriveSnapshot drive;
     std::optional<std::pair<writers::RiderContactsState,std::optional<writers::RiderContactsProbe>>> rider;
-    std::optional<rider::SpindleController::State> controller;
+    std::optional<::rider::SpindleController::State> controller;
     std::vector<std::string> tire_names;
     std::vector<double> tire_row;
 };
@@ -80,13 +80,13 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
         (*pair.second)->boundary=value;(*pair.second)->range[1]=value;
     }
     if(context.stepper.has_rider_contacts()){
-        if(find(state,"state_native_rider_contacts"))next.rider=rider::decode_rider_contacts_state(io::parse_recording_json(text(state,"state_native_rider_contacts")),context.stepper.rider_contacts());
+        if(find(state,"state_native_rider_contacts"))next.rider=::rider::decode_rider_contacts_state(io::parse_recording_json(text(state,"state_native_rider_contacts")),context.stepper.rider_contacts());
         else{
             const auto keys=rider_keys();const auto& names=state_array(state,"state_rider_keys");shape(names,{keys.size()},"state_rider_keys");if(names.strings()!=keys)throw std::invalid_argument("equilibrium rider material keys differ");
             const auto xi=doubles(state,"state_rider_xi",{keys.size()}),tangent=doubles(state,"state_rider_tangent",{keys.size(),3},true),grip=doubles(state,"state_rider_grip_xi",{2,3});
             const auto valid=bools(state,"state_rider_tangent_valid",{keys.size()}),enabled=bools(state,"state_rider_enabled",{writers::kContactCount});
             auto& r=next.rider->first;
-            for(std::size_t i=0;i<keys.size();++i){r.supports[i].xi=xi[i];r.supports[i].tangent.reset();if(valid[i]){rider::Vec3 v{};for(std::size_t j=0;j<3;++j){v[j]=tangent[3*i+j];if(!std::isfinite(v[j]))throw std::invalid_argument("nonfinite active rider tangent");}r.supports[i].tangent=v;}}
+            for(std::size_t i=0;i<keys.size();++i){r.supports[i].xi=xi[i];r.supports[i].tangent.reset();if(valid[i]){::rider::Vec3 v{};for(std::size_t j=0;j<3;++j){v[j]=tangent[3*i+j];if(!std::isfinite(v[j]))throw std::invalid_argument("nonfinite active rider tangent");}r.supports[i].tangent=v;}}
             for(std::size_t i=0;i<writers::kContactCount;++i)r.enabled[i]=enabled[i];
             for(std::size_t i=0;i<2;++i)for(std::size_t j=0;j<3;++j)r.grip_xi_local[i][j]=grip[3*i+j];
             r.pending_release_loss_j=doubles(state,"state_rider_pending_release_loss",{1}).front();
@@ -94,12 +94,12 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
         if(find(state,"state_native_grip_anchors")||find(state,"state_native_grip_anchors_valid")) {
             const auto anchors=doubles(state,"state_native_grip_anchors",{2,3});
             const auto present=bools(state,"state_native_grip_anchors_valid",{2});
-            for(std::size_t side=0;side<2;++side){auto& anchor=next.rider->first.grip_anchor_local[side];anchor.reset();if(present[side])anchor=rider::Vec3{anchors[3*side],anchors[3*side+1],anchors[3*side+2]};}
+            for(std::size_t side=0;side<2;++side){auto& anchor=next.rider->first.grip_anchor_local[side];anchor.reset();if(present[side])anchor=::rider::Vec3{anchors[3*side],anchors[3*side+1],anchors[3*side+2]};}
         }
     }else for(const auto& [name,array]:state.arrays){(void)array;if(name.starts_with("state_rider_")||name=="state_native_rider_contacts")throw std::invalid_argument("unexpected rider material state");}
     if(find(state,"state_native_rider_controller")){
         if(!context.physical.rider_present())throw std::invalid_argument("unexpected rider controller state");
-        next.controller=rider::decode_spindle_state(io::parse_recording_json(text(state,"state_native_rider_controller")),"state.rider_controller");
+        next.controller=::rider::decode_spindle_state(io::parse_recording_json(text(state,"state_native_rider_controller")),"state.rider_controller");
     }
     if(context.stepper.has_tire()){
         if(find(state,"state_tire_wire_names")){
@@ -178,14 +178,14 @@ StateFile capture_state(const SetupContext& context,std::int64_t steps,double re
     const auto storage=current_material(context);const auto& material=*storage;put_text(out,"state_native_drive",io::recording_json(drivetrain::encode_drive_snapshot(material.drive)));
     for(auto pair:{std::pair{"ideal_hub",&material.drive.ideal_hub},std::pair{"clutch",&material.drive.clutch}})if(*pair.second){if(!(*pair.second)->boundary)throw std::invalid_argument("unprepared drive boundary");out.arrays.emplace_back("state_drive_"+std::string(pair.first)+"_boundary",io::double_array(std::array<double,1>{*(*pair.second)->boundary},{1}));}
     if(material.rider){
-        const auto& r=material.rider->first;put_text(out,"state_native_rider_contacts",io::recording_json(rider::encode_rider_contacts_state(r,material.rider->second)));
+        const auto& r=material.rider->first;put_text(out,"state_native_rider_contacts",io::recording_json(::rider::encode_rider_contacts_state(r,material.rider->second)));
         const auto keys=rider_keys();std::vector<double> xi,tangent,grip;std::vector<bool> valid,enabled;
         for(const auto& support:r.supports){xi.push_back(support.xi);valid.push_back(support.tangent.has_value());for(std::size_t j=0;j<3;++j)tangent.push_back(support.tangent?(*support.tangent)[j]:0.);}
         for(const auto& hand:r.grip_xi_local)for(double value:hand)grip.push_back(value);
         for(bool value:r.enabled)enabled.push_back(value);
         out.arrays.emplace_back("state_rider_keys",io::string_array(keys,{keys.size()}));out.arrays.emplace_back("state_rider_xi",io::double_array(xi,{xi.size()}));out.arrays.emplace_back("state_rider_tangent",io::double_array(tangent,{keys.size(),3}));out.arrays.emplace_back("state_rider_tangent_valid",io::bool_array(valid,{valid.size()}));out.arrays.emplace_back("state_rider_grip_xi",io::double_array(grip,{2,3}));out.arrays.emplace_back("state_rider_enabled",io::bool_array(enabled,{enabled.size()}));out.arrays.emplace_back("state_rider_pending_release_loss",io::double_array(std::array<double,1>{r.pending_release_loss_j},{1}));
     }
-    if(material.controller)put_text(out,"state_native_rider_controller",io::recording_json(rider::encode_spindle_state(*material.controller)));
+    if(material.controller)put_text(out,"state_native_rider_controller",io::recording_json(::rider::encode_spindle_state(*material.controller)));
     if(context.stepper.has_tire()){out.arrays.emplace_back("state_tire_wire_names",io::string_array(material.tire_names,{material.tire_names.size()}));out.arrays.emplace_back("state_tire_wire_row",io::double_array(material.tire_row,{material.tire_row.size()}));}
     const mjModel* m=context.stepper.model();const mjData* d=context.stepper.data();
     std::vector<double> integration(static_cast<std::size_t>(engine::state_size(m,mjSTATE_INTEGRATION)));engine::get_state(m,d,integration.data(),mjSTATE_INTEGRATION);out.arrays.emplace_back("integration_state",io::double_array(integration,{integration.size()}));

@@ -404,9 +404,13 @@ namespace nativecfg {
                 return;
             }
             if (name == "tire.front.material" || name == "tire.rear.material") {
-                constexpr auto required = keys("radial_k_n_m", "radial_c_ns_m", "pressure_pa_gauge", "provenance", "valid_load_range_n");
-                constexpr auto optional = keys();
-                exact_at(d, required, optional, d.path);
+                if (d.contains("deflection_m") || d.contains("force_n")) {
+                    constexpr auto required = keys("deflection_m", "force_n", "radial_c_ns_m", "pressure_pa_gauge", "provenance", "valid_load_range_n");
+                    exact_at(d, required, keys(), d.path);
+                } else {
+                    constexpr auto required = keys("radial_k_n_m", "radial_c_ns_m", "pressure_pa_gauge", "provenance", "valid_load_range_n");
+                    exact_at(d, required, keys(), d.path);
+                }
                 return;
             }
             if (name == "tire.distributed") {
@@ -652,12 +656,15 @@ namespace nativecfg {
             if (d.contains("material")) {
                 const Dict<N> m = req_dict(d, "material");
                 p.material = TireMaterial{
-                    .radial_k_n_m = req_f64(m, "radial_k_n_m"),
+                    .radial_k_n_m = m.contains("deflection_m") ? 0. : req_f64(m, "radial_k_n_m"),
                     .radial_c_ns_m = req_f64(m, "radial_c_ns_m"),
                     .pressure_pa_gauge = req_f64(m, "pressure_pa_gauge"),
                     .provenance = req_str(m, "provenance"),
                     .valid_load_range_n = req_vec2(m, "valid_load_range_n"),
                 };
+                if (m.contains("deflection_m")) p.material->table = TireTable{
+                    .deflection_m = vector(req(m, "deflection_m"), m.child("deflection_m")),
+                    .force_n = vector(req(m, "force_n"), m.child("force_n"))};
             }
             p.tangent_k_n_m = req_f64(d, "tangent_k_n_m");
             p.mu = req_f64(d, "mu");

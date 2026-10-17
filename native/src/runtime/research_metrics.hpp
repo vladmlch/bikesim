@@ -1,6 +1,7 @@
 // Physics-rate research truth and evaluation, never policy inputs or forces.
 #pragma once
 #include <map>
+#include <string_view>
 #include "samples.hpp"
 namespace runtime {
 struct TruthGeometry {
@@ -15,8 +16,15 @@ struct WheelieTruth {
     double position_m = 0., speed_mps = 0., pitch_up_rad = 0., pitch_rate_up_rad_s = 0.;
     double axle_pitch_rad = 0., road_pitch_rad = 0., front_slip_mps = 0., rear_slip_mps = 0.;
     double com_x_m = 0., com_z_m = 0.;
+    void validate() const;
+    [[nodiscard]] std::string_view contact_state() const;
     [[nodiscard]] WireObject as_wire() const;
 };
+[[nodiscard]] std::string_view classify_contact(double front_load_n,double rear_load_n,
+    double front_clearance_m,double rear_clearance_m,double relative_pitch_rad,
+    double load_threshold_n=5.,double clearance_threshold_m=.01,double pitch_threshold_rad=.035);
+[[nodiscard]] double quasistatic_front_load(double mass_kg,double wheelbase_m,double com_forward_m,
+    double com_height_m,double road_pitch_rad,double acceleration_mps2,double gravity_mps2=9.81);
 [[nodiscard]] WheelieTruth research_truth(const PhysicalSampleData &sample, const TruthGeometry &geometry);
 struct WheelieEpisode {
     double start_s = 0., end_s = 0.;
@@ -27,12 +35,15 @@ struct WheelieEpisode {
 };
 class WheelieTracker {
 public:
-    explicit WheelieTracker(double persistence_s);
+    explicit WheelieTracker(double persistence_s=.02,double load_threshold_n=5.,
+        double clearance_threshold_m=.01,double pitch_threshold_rad=.035);
+    void reset();
+    void update(const WheelieTruth&,double dt,WireObject context={});
     void update(const WheelieTruth &truth, double dt, double delivered, std::optional<double> applied);
     [[nodiscard]] const std::string &state() const noexcept { return state_; }
     [[nodiscard]] WireObject metrics() const;
 private:
-    double persistence_;
+    double persistence_,load_threshold_,clearance_threshold_,pitch_threshold_;
     std::optional<double> last_end_;
     double candidate_s_ = 0.;
     bool active_ = false;

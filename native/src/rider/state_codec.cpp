@@ -51,6 +51,8 @@
 #include "../validation.hpp"
 #include "../writer_config.hpp"
 #include "spindle_math.hpp"
+#include "../configuration/load.hpp"
+#include "response_codec.hpp"
 
 namespace rider {
 namespace {
@@ -278,13 +280,14 @@ namespace {
         const VNode &v, std::string_view path) {
         const Dict d = mapping(v, path);
         ncd::exact(d,
-                   keys("requested_nm", "command_nm", "posture_nm",
+                   keys("command_nm", "posture_nm",
                         "pedaling_nm", "saturated"),
-                   keys("active_request_nm", "active_delivered_nm",
+                   keys("requested_nm", "active_request_nm", "active_delivered_nm",
                         "passive_damping_nm", "solved_force_nm",
-                        "solved_active_nm", "solved_passive_nm"));
+                        "solved_active_nm", "solved_passive_nm", "support_nm", "tracking_nm", "hip_posture_nm"));
         JointTerms out;
-        out.requested_nm = d["requested_nm"].finite_real(path);
+        out.requested_present = d.contains("requested_nm");
+        if (out.requested_present) out.requested_nm = d["requested_nm"].finite_real(path);
         out.command_nm = d["command_nm"].finite_real(path);
         out.posture_nm = d["posture_nm"].finite_real(path);
         out.pedaling_nm = d["pedaling_nm"].finite_real(path);
@@ -300,6 +303,9 @@ namespace {
         out.solved_force_nm = optional("solved_force_nm");
         out.solved_active_nm = optional("solved_active_nm");
         out.solved_passive_nm = optional("solved_passive_nm");
+        out.support_nm = optional("support_nm");
+        out.tracking_nm = optional("tracking_nm");
+        out.hip_posture_nm = optional("hip_posture_nm");
         return out;
     }
 
@@ -483,11 +489,9 @@ namespace {
     constexpr auto kEffortRequiredKeys = keys(
         "rider_active_request_nm", "rider_active_delivered_nm",
         "rider_positive_power_w", "rider_passive_power_w",
-        "rider_activation_saturated", "rider_strength_limited",
-        "rider_effort_budget_exceeded",
-        "rider_active_positive_power_limit_w",
-        "rider_effort_observation");
+        "rider_activation_saturated", "rider_strength_limited");
     constexpr auto kEffortOptionalKeys = keys(
+        "rider_effort_budget_exceeded", "rider_active_positive_power_limit_w", "rider_effort_observation",
         "rider_joint_positive_power_w", "rider_joint_power_violations",
         "rider_joint_speed_violations", "rider_positive_work_step_j",
         "rider_passive_work_step_j", "rider_strength_violations");
@@ -532,11 +536,12 @@ namespace {
             d["rider_activation_saturated"].boolean(path);
         out.strength_limited =
             decode_name_list(d["rider_strength_limited"], path);
-        out.budget_exceeded =
-            d["rider_effort_budget_exceeded"].boolean(path);
-        out.positive_power_limit_w =
-            d["rider_active_positive_power_limit_w"].optional_real(path);
-        out.observation = d["rider_effort_observation"].string(path);
+        out.budget_present = d.contains("rider_effort_budget_exceeded");
+        out.power_limit_present = d.contains("rider_active_positive_power_limit_w");
+        out.observation_present = d.contains("rider_effort_observation");
+        if (out.budget_present) out.budget_exceeded = d["rider_effort_budget_exceeded"].boolean(path);
+        if (out.power_limit_present) out.positive_power_limit_w = d["rider_active_positive_power_limit_w"].optional_real(path);
+        if (out.observation_present) out.observation = d["rider_effort_observation"].string(path);
         decode_effort_solved_fields(d, path, out);
         return out;
     }
@@ -547,6 +552,15 @@ namespace {
         const Dict d = mapping(v, path);
         if (vnode::object(*d.value.value).empty()) return {};
         AllocationDiagnostics out;
+        if (d.contains("feasible")) {
+            out.legacy = bike::rider::decode_response_allocation(*v.value,path);
+            out.present = true;
+            out.invalid_controller = !out.legacy->allocation.feasible;
+            out.crank_task_nm = out.legacy->crank_torque_target_nm.value_or(0.);
+            out.crank_task_shortfall_nm = std::max(0.,out.crank_task_nm-out.legacy->predicted_crank_torque_nm.value_or(0.));
+            out.solution_excitation_nm = out.legacy->excitation;
+            return out;
+        }
         ncd::exact(d,
                       keys("invalid_controller", "crank_task_nm",
                            "crank_task_shortfall_nm",
@@ -567,6 +581,10 @@ namespace {
         const Dict d = mapping(v, path);
         if (vnode::object(*d.value.value).empty()) return {};
         SupportDiagnostics out;
+        if(d.contains("requested_vertical_forces_n")) {
+            out.legacy=bike::rider::decode_support_diagnostics(*v.value,path);out.present=true;
+            out.stance_front=out.legacy->stance[0];out.stance_rear=out.legacy->stance[1];return out;
+        }
         ncd::exact(d, keys("stance"));
         const VNode stance_node = d["stance"];
         const std::string stance_path = std::string(path) + ".stance";
@@ -589,16 +607,7 @@ namespace {
                 invalid(std::string(path) + "." + std::string(name),
                         "unknown key");
             const auto sub = std::string(path) + "." + std::string(name);
-            const Dict entry = mapping(item, sub);
-            ncd::exact(entry, keys("spindle", "saturated",
-                                      "limiting_reasons"));
-            SoleGoalDiagnostics goal;
-            goal.spindle = entry["spindle"].boolean(sub);
-            goal.saturated = entry["saturated"].boolean(sub);
-            const auto reasons = entry["limiting_reasons"].sequence(sub);
-            for (std::size_t i = 0; i < reasons.size(); ++i)
-                goal.limiting_reasons.push_back(reasons.at(i).string(sub));
-            out.emplace_back(std::string(name), std::move(goal));
+            out.emplace_back(std::string(name), decode_sole_goal(*item.value, sub));
         });
         return out;
     }
@@ -622,11 +631,11 @@ namespace {
                          bio::Value{diagnostics.activation_saturated});
         out.emplace_back("rider_strength_limited",
                          names_value(diagnostics.strength_limited));
-        out.emplace_back("rider_effort_budget_exceeded",
+        if (diagnostics.budget_present) out.emplace_back("rider_effort_budget_exceeded",
                          bio::Value{diagnostics.budget_exceeded});
-        set_or_none(out, "rider_active_positive_power_limit_w",
+        if (diagnostics.power_limit_present) set_or_none(out, "rider_active_positive_power_limit_w",
                     diagnostics.positive_power_limit_w);
-        out.emplace_back("rider_effort_observation",
+        if (diagnostics.observation_present) out.emplace_back("rider_effort_observation",
                          bio::Value{diagnostics.observation});
         if (diagnostics.joint_positive_power_w.has_value())
             out.emplace_back("rider_joint_positive_power_w",
@@ -654,6 +663,7 @@ namespace {
 
     [[nodiscard]] bio::Value allocation_diagnostics_value(
         const AllocationDiagnostics &diagnostics) {
+        if (diagnostics.legacy) return bike::rider::encode_response_allocation(*diagnostics.legacy);
         bio::Value::Object out;
         if (!diagnostics.present) return bio::Value{std::move(out)};
         out.emplace_back("invalid_controller",
@@ -669,6 +679,7 @@ namespace {
 
     [[nodiscard]] bio::Value support_diagnostics_value(
         const SupportDiagnostics &diagnostics) {
+        if(diagnostics.legacy)return bike::rider::encode_support_diagnostics(*diagnostics.legacy);
         bio::Value::Object out;
         if (!diagnostics.present) return bio::Value{std::move(out)};
         bio::Value::Object stance;
@@ -683,12 +694,7 @@ namespace {
         const NamedEntries<SoleGoalDiagnostics> &diagnostics) {
         bio::Value::Object out;
         for (const auto &[name, goal]: diagnostics) {
-            bio::Value::Object entry;
-            entry.emplace_back("spindle", bio::Value{goal.spindle});
-            entry.emplace_back("saturated", bio::Value{goal.saturated});
-            entry.emplace_back("limiting_reasons",
-                               names_value(goal.limiting_reasons));
-            out.emplace_back(name, bio::Value{std::move(entry)});
+            out.emplace_back(name, encode_sole_goal(goal));
         }
         return bio::Value{std::move(out)};
     }
@@ -700,7 +706,7 @@ namespace {
             bio::Value::Object entry;
             // Python dict-literal order: requested, command, posture,
             // pedaling, saturated; update() keys append afterwards.
-            entry.emplace_back("requested_nm",
+            if (term.requested_present) entry.emplace_back("requested_nm",
                                real_value(term.requested_nm));
             entry.emplace_back("command_nm", real_value(term.command_nm));
             entry.emplace_back("posture_nm", real_value(term.posture_nm));
@@ -725,6 +731,9 @@ namespace {
             if (term.solved_passive_nm.has_value())
                 entry.emplace_back("solved_passive_nm",
                                    real_value(*term.solved_passive_nm));
+            if (term.support_nm) entry.emplace_back("support_nm",real_value(*term.support_nm));
+            if (term.tracking_nm) entry.emplace_back("tracking_nm",real_value(*term.tracking_nm));
+            if (term.hip_posture_nm) entry.emplace_back("hip_posture_nm",real_value(*term.hip_posture_nm));
             out.emplace_back(name, bio::Value{std::move(entry)});
         }
         return bio::Value{std::move(out)};
@@ -784,32 +793,30 @@ namespace {
         if (!v.is_none()) (void)v.string(path);
     }
 
-    // Consumed-but-unmodeled fields are still type-validated; the values
+    // Other full-config fields are type-validated before branch-specific decode; the values
     // belong to surfaces the spindle path does not reach.
     void validate_unmodeled_scalars(const Dict &d, std::string_view path) {
         for (const char *key: kUnmodeledScalarKeys)
             (void)d[key].finite_real(path);
         (void)d["grip_pair_force_limit_n"].optional_real(path);
-        if (d["coupled_task_control"].boolean(path))
-            invalid(std::string(path) + ".coupled_task_control",
-                    "coupled task control is a legacy allocator path");
+        (void)d["coupled_task_control"].boolean(path);
     }
 
     // The class implements exactly the supported spindle plant; other
     // attachments route through paths that do not exist natively.
     void validate_attachments(const Dict &d, std::string_view path) {
         const auto pedal_attachment = d["pedal_attachment"].string(path);
-        if (pedal_attachment != "spindle")
+        if (pedal_attachment != "spindle" && pedal_attachment != "flat" && pedal_attachment != "weld")
             invalid(std::string(path) + ".pedal_attachment",
-                    "supported: 'spindle'");
+                    "supported: 'flat', 'weld', 'spindle'");
         const auto saddle_attachment = d["saddle_attachment"].string(path);
-        if (saddle_attachment != "pin")
+        if (saddle_attachment != "pin" && saddle_attachment != "flat" && saddle_attachment != "weld")
             invalid(std::string(path) + ".saddle_attachment",
-                    "supported: 'pin'");
+                    "supported: 'flat', 'weld', 'pin'");
         const auto grip_attachment = d["grip_attachment"].string(path);
-        if (grip_attachment != "connect")
+        if (grip_attachment != "connect" && grip_attachment != "spring" && grip_attachment != "weld")
             invalid(std::string(path) + ".grip_attachment",
-                    "supported: 'connect'");
+                    "supported: 'spring', 'connect' (alias 'weld')");
     }
 
     void decode_actuation_scalars(const Dict &d, std::string_view path,
@@ -901,9 +908,9 @@ namespace {
                             std::string(name)));
             });
         const Dict split = mapping(d["pd_split"], path);
-        if (!vnode::object(*split.value.value).empty())
-            invalid(std::string(path) + ".pd_split",
-                    "spindle controller carries no PD warm split");
+        split.value.each_member([&](std::string_view name,const VNode& item){
+            state.pd_split.emplace_back(std::string(name),fixed<2>(item,path));
+        });
     }
 
     void decode_state_ik(const Dict &d, std::string_view path,
@@ -917,12 +924,15 @@ namespace {
         state.joint_capacity_nm =
             decode_named_reals_node(d["joint_capacity_nm"], path);
         state.lean_limit_rad = d["lean_limit_rad"].optional_real(path);
-        if (!d["last_branch"].is_none())
-            invalid(std::string(path) + ".last_branch",
-                    "spindle controller carries no allocator branch");
-        if (!d["last_solution"].is_none())
-            invalid(std::string(path) + ".last_solution",
-                    "spindle controller carries no allocator warm start");
+        if (!d["last_branch"].is_none() || !d["last_solution"].is_none()) {
+            state.allocation_memory.emplace();
+            if (!d["last_branch"].is_none()) {
+                const auto b=d["last_branch"].sequence(path);
+                if(b.size()!=2)invalid(path,"allocator branch requires two booleans");
+                state.allocation_memory->branch=std::array<bool,2>{b.at(0).boolean(path),b.at(1).boolean(path)};
+            }
+            if (!d["last_solution"].is_none()) state.allocation_memory->solution=vector(d["last_solution"],path);
+        }
     }
 
     void decode_state_recovery(const Dict &d, std::string_view path,
@@ -1866,6 +1876,62 @@ namespace {
 
 // ---- produced boundary -----------------------------------------------------
 
+SoleGoalDiagnostics decode_sole_goal(const bio::Value &value, std::string_view path) {
+    const Dict entry = mapping(VNode{&value}, path);
+    SoleGoalDiagnostics out;
+    out.spindle = false;
+    if (entry.contains("spindle")) {
+        ncd::exact(entry, keys("spindle", "saturated", "limiting_reasons"));
+        out.spindle = entry["spindle"].boolean(path);
+    } else if (entry.contains("weld") || entry.contains("recovery")) {
+        const char *tag = entry.contains("weld") ? "weld" : "recovery";
+        if (entry.contains("weld"))
+            ncd::exact(entry, keys("weld", "saturated", "limiting_reasons"));
+        else ncd::exact(entry, keys("recovery", "saturated", "limiting_reasons"));
+        if (!entry[tag].boolean(path)) invalid(path, "goal topology tag must be true");
+        out.weld = entry.contains("weld");
+        out.recovery = entry.contains("recovery");
+    } else {
+        ncd::exact(entry, keys("requested_compression_m", "applied_compression_m",
+            "requested_shear_m", "applied_shear_m", "saturated", "limiting_reasons"));
+        out.geometry = SoleGoalDiagnostic{
+            entry["requested_compression_m"].finite_real(path),
+            entry["applied_compression_m"].finite_real(path),
+            entry["requested_shear_m"].finite_real(path),
+            entry["applied_shear_m"].finite_real(path), false, {}};
+    }
+    out.saturated = entry["saturated"].boolean(path);
+    const auto reasons = entry["limiting_reasons"].sequence(path);
+    for (std::size_t i = 0; i < reasons.size(); ++i)
+        out.limiting_reasons.push_back(reasons.at(i).string(path));
+    if (out.geometry) {
+        out.geometry->saturated = out.saturated;
+        out.geometry->limiting_reasons = out.limiting_reasons;
+    } else if ((out.weld || out.recovery) && (out.saturated || !out.limiting_reasons.empty()))
+        invalid(path, "linked/recovery goals cannot have a geometry projection limit");
+    return out;
+}
+
+bio::Value encode_sole_goal(const SoleGoalDiagnostics &goal) {
+    bio::Value::Object entry;
+    const auto count = static_cast<unsigned>(goal.weld) + static_cast<unsigned>(goal.recovery)
+        + static_cast<unsigned>(goal.geometry.has_value());
+    if (count > 1 || (count != 0 && goal.spindle)) throw std::invalid_argument("sole goal must select one topology");
+    if (count == 0) entry.emplace_back("spindle", bio::Value{goal.spindle});
+    if (goal.geometry) {
+        const auto &g = *goal.geometry;
+        entry.emplace_back("requested_compression_m", real_value(g.requested_compression_m));
+        entry.emplace_back("applied_compression_m", real_value(g.applied_compression_m));
+        entry.emplace_back("requested_shear_m", real_value(g.requested_shear_m));
+        entry.emplace_back("applied_shear_m", real_value(g.applied_shear_m));
+    }
+    entry.emplace_back("saturated", bio::Value{goal.saturated});
+    entry.emplace_back("limiting_reasons", names_value(goal.limiting_reasons));
+    if (goal.weld) entry.emplace_back("weld", bio::Value{true});
+    if (goal.recovery) entry.emplace_back("recovery", bio::Value{true});
+    return bio::Value{std::move(entry)};
+}
+
 SpindleConfig decode_spindle_config(const bio::Value &value) {
     const std::string path = "config.rider_controller";
     const Dict d = mapping(VNode{&value}, path);
@@ -1878,7 +1944,22 @@ SpindleConfig decode_spindle_config(const bio::Value &value) {
     decode_optional_path(d, "joint_strength_path", path);
     decode_optional_path(d, "joint_envelope_path", path);
     decode_strength_tables(d, path, config);
+    if (d["pedal_attachment"].string(path) != "spindle" ||
+        d["saddle_attachment"].string(path) != "pin" ||
+        d["grip_attachment"].string(path) != "connect" ||
+        d["coupled_task_control"].boolean(path)) {
+        bio::Value::Object members;
+        for (const auto& [key, member] : std::get<bio::Value::Object>(value.data))
+            if (key != "strength" && key != "strength_coordinates" && key != "envelopes")
+                members.emplace_back(key,member);
+        config.legacy = decode_articulated_config(bio::Value{std::move(members)});
+    }
     return config;
+}
+
+bike::configuration::ArticulatedConfig decode_articulated_config(const bio::Value& value) {
+    return bike::configuration::detail::construct_config(
+        bio::Value{bio::Value::Object{{"articulated",value}}}).articulated;
 }
 
 // ---- spindle controller -----------------------------------------------------
@@ -1898,6 +1979,8 @@ SpindlePose decode_spindle_pose(const bio::Value &value,
     pose.grip = point3(d["grip"], path);
     pose.knee_front = point3(d["knee_front"], path);
     pose.knee_rear = point3(d["knee_rear"], path);
+    pose.ankle_front = point3(d["ankle_front"], path);
+    pose.ankle_rear = point3(d["ankle_rear"], path);
     pose.pedal_front = point3(d["pedal_front"], path);
     pose.pedal_rear = point3(d["pedal_rear"], path);
     // saddle/head_center/ankle_* are validated present by the key gate but
@@ -2004,7 +2087,9 @@ bio::Value encode_spindle_state(const SpindleController::State &state) {
     out.emplace_back("active_state", vector_value(state.active_state));
     set_or_none(out, "activation_time_s", state.activation_time_s);
     out.emplace_back("last_terms", last_terms_value(state.last_terms));
-    out.emplace_back("pd_split", bio::Value{bio::Value::Object{}});
+    bio::Value::Object split;
+    for(const auto&[name,pair]:state.pd_split)split.emplace_back(name,vector_value(pair));
+    out.emplace_back("pd_split", bio::Value{std::move(split)});
     out.emplace_back("saturated_ik", named_bools_value(state.saturated_ik));
     out.emplace_back("ik_reach_limited",
                      named_bools_value(state.ik_reach_limited));
@@ -2013,8 +2098,11 @@ bio::Value encode_spindle_state(const SpindleController::State &state) {
     out.emplace_back("joint_capacity_nm",
                      named_reals_value(state.joint_capacity_nm));
     set_or_none(out, "lean_limit_rad", state.lean_limit_rad);
-    out.emplace_back("last_branch", bio::Value{});
-    out.emplace_back("last_solution", bio::Value{});
+    if(state.allocation_memory && state.allocation_memory->branch) {
+        const auto b=*state.allocation_memory->branch;
+        out.emplace_back("last_branch",bio::Value{bio::Value::Array{bio::Value{b[0]},bio::Value{b[1]}}});
+    } else out.emplace_back("last_branch", bio::Value{});
+    out.emplace_back("last_solution",state.allocation_memory && state.allocation_memory->solution ? vector_value(*state.allocation_memory->solution) : bio::Value{});
     bio::Value::Object recovery;
     for (const auto &[name, pedal]: state.pedal_recovery) {
         bio::Value::Object entry;

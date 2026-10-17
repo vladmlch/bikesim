@@ -7,7 +7,7 @@
 // opaque libm pow). np.linspace goes through
 // geometry::detail::np_linspace; np.diff/np.cumsum are sequential by
 // construction; np.linalg.lstsq(rcond=None) resolves the cutoff to
-// eps * max(m, n) and drives rider::LeastSquaresWorkspace's DGELSD call
+// eps * max(m, n) and drives ::rider::LeastSquaresWorkspace's DGELSD call
 // — the same Accelerate ILP64 entry numpy's gufunc uses.
 #include "suspension_setup.hpp"
 
@@ -528,16 +528,16 @@ std::vector<double> ForkAirSpring::fit_polynomial_mjcf(
     // np.linalg.lstsq(A, force_n, rcond=None): rcond=None resolves to
     // eps * max(m, n) inside the gufunc — the resolved value is passed
     // to DGELSD here.
-    rider::LeastSquaresWorkspace ws(
-            static_cast<rider::lapack_int>(m),
-            static_cast<rider::lapack_int>(order), 1);
+    ::rider::LeastSquaresWorkspace ws(
+            static_cast<::rider::lapack_int>(m),
+            static_cast<::rider::lapack_int>(order), 1);
     const double rcond =
             std::numeric_limits<double>::epsilon() *
             static_cast<double>(std::max(m,
                                          static_cast<std::size_t>(order)));
-    const rider::LeastSquaresResult result = ws.solve(
-            a, static_cast<rider::lapack_int>(m),
-            static_cast<rider::lapack_int>(order), curve.axial_force_n, 1,
+    const ::rider::LeastSquaresResult result = ws.solve(
+            a, static_cast<::rider::lapack_int>(m),
+            static_cast<::rider::lapack_int>(order), curve.axial_force_n, 1,
             rcond);
     return result.solution;
 }

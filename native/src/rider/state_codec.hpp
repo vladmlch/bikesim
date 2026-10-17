@@ -50,12 +50,15 @@ namespace rider {
 
     // `config.rider_controller` -> SpindleConfig. Runs the wire's exact
     // key gate, every scalar's finite-real/boolean/string check, the
-    // unmodeled-key type validation, the attachment-mode gates
-    // ('spindle'/'pin'/'connect') and the torque-curve/joint-envelope
+    // unmodeled-key type validation, physical attachment-mode gates,
+    // and the torque-curve/joint-envelope
     // domain validators — the same acceptance set as the binding's
     // parse_spindle_config.
     [[nodiscard]] SpindleConfig
     decode_spindle_config(const bike::io::Value &value);
+    // Plain ArticulatedConfig members (without strength/envelope tables).
+    [[nodiscard]] bike::configuration::ArticulatedConfig
+    decode_articulated_config(const bike::io::Value &value);
 
     // ---- spindle controller state wire ------------------------------------
 
@@ -71,6 +74,10 @@ namespace rider {
     decode_named_reals(const bike::io::Value &value, std::string_view path);
     [[nodiscard]] JointTerms
     decode_joint_terms(const bike::io::Value &value, std::string_view path);
+    [[nodiscard]] SoleGoalDiagnostics
+    decode_sole_goal(const bike::io::Value &value, std::string_view path);
+    [[nodiscard]] bike::io::Value
+    encode_sole_goal(const SoleGoalDiagnostics &goal);
     // The exact ArticulatedRiderController.state_dict() document.
     [[nodiscard]] SpindleController::State
     decode_spindle_state(const bike::io::Value &value, std::string_view path);

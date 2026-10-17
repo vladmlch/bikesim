@@ -1,5 +1,6 @@
 #include "drivetrain.hpp"
 #include "../engaged.hpp"
+#include "../drivetrain/capabilities.hpp"
 #include "../engine_call.hpp"
 #include "../model_topology.hpp"
 #include "pyfloat.hpp"
@@ -138,11 +139,10 @@ namespace drivetrain {
             throw std::invalid_argument("physical effort needs a mid_drive actuator");
         if (human_actuator_ >= 0)
             topology::actuator(m, human_actuator_, "human_crank", resolve(m, mjOBJ_JOINT, "crank_spin"));
-        if (motor_actuator_ >= 0) {
-            const char *target = config_.rotor_inertia_kgm2 > 0. ? "rotor_spin" :
-                                 config_.motor_clutch ? "drive_shaft_spin" : "crank_spin";
-            topology::actuator(m, motor_actuator_, "mid_drive", resolve(m, mjOBJ_JOINT, target));
-        }
+        const auto motor = motor_topology(config_);
+        if (motor_actuator_ >= 0)
+            topology::actuator(m, motor_actuator_, "mid_drive",
+                               resolve(m, mjOBJ_JOINT, motor.actuator_joint));
         if (!simplified_) {
             cassette_ = resolve(m, mjOBJ_BODY, "cassette");
             const auto parents = buffer(m->body_parentid, m->nbody);
@@ -159,8 +159,7 @@ namespace drivetrain {
             ideal_hub_ = std::make_unique<Transmission>(
                 m, config_.policies.gearing, geometric,
                 geometric ? "geometric_mid_drive_freehub" : "ideal_mid_drive_freehub",
-                config_.motor_clutch ? "drive_shaft_spin" : "crank_spin", "rear_wheel_spin",
-                config_.motor_clutch ? "drive_shaft" : "crank");
+                motor.reduction_driver, "rear_wheel_spin", motor.reduction_body);
             if (config_.motor_clutch)
                 clutch_ = std::make_unique<Transmission>(
                     m, GearingConfig{.front_teeth = 3, .rear_teeth = 3, .chain_pitch_m = .0127},

@@ -3,7 +3,7 @@ Main CLI Orchestrator for Bicycle Kinematics, Analysis, and Simulation.
 """
 
 import argparse
-import sys
+import os
 from pathlib import Path
 
 from bike_sim.geometry.specs import BikeSpecs
@@ -19,7 +19,7 @@ from bike_sim.viz.plots import (
 from bike_sim.viz.tables import print_tables
 
 
-def parse_args(argv=None) -> argparse.Namespace:
+def parse_args() -> argparse.Namespace:
     """
     Configures and parses CLI arguments.
     """
@@ -72,7 +72,7 @@ def parse_args(argv=None) -> argparse.Namespace:
         help="Execute all operations: print tables, generate plots, export JSON, and export MuJoCo models.",
     )
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
 
     if not (args.print_table or args.plot or args.plot_damper or args.export_json or args.export_mujoco or args.playground or args.all):
         args.print_table = True
@@ -81,17 +81,9 @@ def parse_args(argv=None) -> argparse.Namespace:
     return args
 
 
-def main(argv=None) -> int:
+def main() -> None:
     """Main execution function for the CLI runner."""
-    args = parse_args(argv)
-    from bike_sim.viewer_runtime import ViewerUnavailableError, prepare_viewer
-    if args.playground:
-        try:
-            # A GUI relaunch must precede directories, plots and exported files.
-            prepare_viewer(argv=argv, module='bike_sim.cli.main')
-        except ViewerUnavailableError as error:
-            print(f'PLAYGROUND ERROR: {error}', file=sys.stderr)
-            return 2
+    args = parse_args()
 
     specs = BikeSpecs()
     solver = HorstLinkageSolver(specs)
@@ -126,13 +118,8 @@ def main(argv=None) -> int:
 
     if args.playground:
         print("\n--- Launching MuJoCo 2D Suspension Test Stand ---")
-        try:
-            run_interactive_playground()
-        except ViewerUnavailableError as error:
-            print(f'PLAYGROUND ERROR: {error}', file=sys.stderr)
-            return 2
-    return 0
+        run_interactive_playground()
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

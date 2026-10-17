@@ -6,7 +6,9 @@ engine with comprehensive RockShox damper and air spring controls, kinematic swe
 and real-time telemetry.
 """
 
+import os
 import queue
+import sys
 import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -310,9 +312,54 @@ class SuspensionPlayground:
 
 
 def ensure_macos_mjpython() -> None:
-    """Compatibility entry point for preparation before creating a session."""
-    from bike_sim.viewer_runtime import ensure_macos_mjpython as prepare_macos
-    prepare_macos()
+    """
+    On macOS, MuJoCo's GLFW interactive viewer requires running under `mjpython`
+    on the main OS thread to handle the Cocoa NSApplication event loop.
+    """
+    if sys.platform != "darwin":
+        return
+    if getattr(sys, "_mjpython_checked", False):
+        return
+    sys._mjpython_checked = True
+
+    is_mjpython = "mjpython" in sys.executable or os.environ.get("MUJOCO_MJPYTHON") == "1"
+    if not is_mjpython:
+        import shutil
+        previous_marker = os.environ.get("MUJOCO_MJPYTHON")
+        previous_fallback = os.environ.get("DYLD_FALLBACK_LIBRARY_PATH")
+        try:
+            mjpython_path = shutil.which("mjpython")
+            if not mjpython_path:
+                raise RuntimeError(
+                    "The macOS interactive viewer requires mjpython on PATH from "
+                    "the same Python environment as MuJoCo. Activate that environment "
+                    "or use its uv run entry point, then retry the viewer command.")
+            # mjpython dlopens the interpreter by @rpath; venvs (uv, pyenv) keep
+            # libpython in base_prefix/lib which is not on the default fallback
+            # path, so the re-exec dies with 'Library not loaded' otherwise.
+            lib_dir = os.path.join(sys.base_prefix, "lib")
+            version = f"{sys.version_info.major}.{sys.version_info.minor}"
+            if os.path.exists(os.path.join(lib_dir, f"libpython{version}.dylib")):
+                fallback = os.environ.get("DYLD_FALLBACK_LIBRARY_PATH")
+                os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = (
+                    lib_dir if not fallback else f"{lib_dir}:{fallback}")
+            cmd = [mjpython_path] + sys.argv
+            print(f"[MuJoCo Stand] Re-launching under mjpython: {' '.join(cmd)}", flush=True)
+            os.environ["MUJOCO_MJPYTHON"] = "1"
+            os.execv(mjpython_path, cmd)
+        except BaseException:
+            # execv normally never returns. If lookup or re-exec fails, a caller
+            # may catch the error and retry: it must not appear to be mjpython.
+            sys._mjpython_checked = False
+            for name, previous in (
+                ("MUJOCO_MJPYTHON", previous_marker),
+                ("DYLD_FALLBACK_LIBRARY_PATH", previous_fallback),
+            ):
+                if previous is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = previous
+            raise
 
 
 def run_interactive_playground(
@@ -322,9 +369,9 @@ def run_interactive_playground(
     """
     Launches the live interactive MuJoCo suspension test stand viewer.
     """
-    from bike_sim.viewer_runtime import load_viewer, passive_viewer, prepare_viewer
-    prepare_viewer()
-    viewer_api = load_viewer()
+    ensure_macos_mjpython()
+
+    import mujoco.viewer
 
     pg = SuspensionPlayground(
         specs=specs,
@@ -336,7 +383,7 @@ def run_interactive_playground(
     print("=" * 80)
     pg.print_help()
 
-    with passive_viewer(viewer_api,
+    with mujoco.viewer.launch_passive(
         pg.model,
         pg.data,
         key_callback=pg.handle_key,

@@ -34,35 +34,34 @@ def main(argv=None):
         parser.error('--time-scale requires --viewer')
     if args.viewer and args.view:
         parser.error('--viewer and --view are mutually exclusive')
-    if args.view and args.fps <= 0.0:
-        parser.error(f'--fps must be positive, got {args.fps}')
-    if args.viewer or (args.view and not args.dry_run):
-        from bike_sim.viewer_runtime import ViewerUnavailableError, prepare_viewer
-        try:
-            # The recording may create a simulation owner while loading.
-            # Resolve macOS relaunch and Linux display availability first.
-            prepare_viewer(argv=argv, module='bike_sim.cli.replay')
-        except ViewerUnavailableError as exc:
-            print(f'REPLAY ERROR: {exc}', file=sys.stderr)
-            return 1
     if args.view:
+        if args.fps <= 0.0:
+            parser.error(f'--fps must be positive, got {args.fps}')
         try:
             from bike_sim.sim.research.playback import load_playback
-            playback = load_playback(args.recording)
-            if args.dry_run:
-                from bike_sim.sim.ride.playback_viewer import run_playback_dry_run
-                return run_playback_dry_run(playback, fps=args.fps)
-            from bike_sim.sim.ride.playback_viewer import run_playback_viewer
-            return run_playback_viewer(
-                playback, speed=args.speed, loop=args.loop, fps=args.fps
-            )
-        except (ValueError, OSError, RuntimeError, ImportError) as exc:
+            playback = load_playback(args.recording, episode_id=args.episode)
+        except (ValueError, RuntimeError, OSError, KeyError, TypeError, ImportError) as exc:
             print(f'REPLAY ERROR: {exc}', file=sys.stderr)
             for note in getattr(exc, '__notes__', ()):
                 print(f'  {note}', file=sys.stderr)
             return 1
+        # Recorded-state playback is portable inspection, not verification:
+        # it never claims the episode was physically replayed.
+        print('unverified recorded playback; use default or --viewer for checked replay',
+              file=sys.stderr)
+        if args.dry_run:
+            from bike_sim.sim.ride.playback_viewer import run_playback_dry_run
+            return run_playback_dry_run(playback, fps=args.fps)
+        from bike_sim.sim.playground import ensure_macos_mjpython
+        ensure_macos_mjpython()
+        from bike_sim.sim.ride.playback_viewer import run_playback_viewer
+        return run_playback_viewer(
+            playback, speed=args.speed, loop=args.loop, fps=args.fps
+        )
     try:
         if args.viewer:
+            from bike_sim.sim.playground import ensure_macos_mjpython
+            ensure_macos_mjpython()
             from bike_sim.sim.research.replay_session import ReplaySession
             from bike_sim.sim.research.replay_viewer import run_replay_viewer
             return run_replay_viewer(ReplaySession(args.recording, episode_id=args.episode),

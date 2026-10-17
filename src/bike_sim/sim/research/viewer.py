@@ -92,9 +92,6 @@ def run_research_viewer(session, output_dir, *, time_scale=1, record=None, captu
     env = session.env
     enabled = getattr(env, 'capture_mode', 'legacy') == 'full' if record is None else bool(record)
     launch = getattr(env, 'recording_run', None)
-    if launch is None:
-        launch = ResearchRun(env, output_dir, enabled=enabled, mode='research_viewer', capture=capture)
-        launch.attach(session)
     keys = SimpleQueue()
     primary = None
     saved = False
@@ -109,8 +106,10 @@ def run_research_viewer(session, output_dir, *, time_scale=1, record=None, captu
             saved = True
 
     try:
-        from bike_sim.viewer_runtime import load_viewer, passive_viewer
-        viewer_api = load_viewer()
+        if launch is None:
+            launch = ResearchRun(env, output_dir, enabled=enabled, mode='research_viewer', capture=capture)
+            launch.attach(session)
+        import mujoco.viewer
         from bike_sim.sim.playback import PlaybackClock, COMPUTE_SLICE_S, RENDER_INTERVAL_S, speed_key
         from bike_sim.sim.ride.physical_view import environment_snapshot, present_view
         from bike_sim.sim.ride.presentation import AchievedRate, FramePresenter
@@ -121,7 +120,7 @@ def run_research_viewer(session, output_dir, *, time_scale=1, record=None, captu
         presenter.replica.apply(environment_snapshot(env))
         print('[bike-ride research] Space pause | R close/reset | B brakes | C/1/2 camera | '
               'T telemetry | G markers | Q stop | F6/F7/F8 speed', flush=True)
-        with passive_viewer(viewer_api, model, presenter.replica.data, key_callback=lambda key: keys.put((key, time.monotonic())),
+        with mujoco.viewer.launch_passive(model, presenter.replica.data, key_callback=lambda key: keys.put((key, time.monotonic())),
                 show_left_ui=False, show_right_ui=False) as viewer:
             now = last_sync = last_hud = time.monotonic()
             clock.rebase(now, step=env.sim.steps)
@@ -200,8 +199,12 @@ def run_research_viewer(session, output_dir, *, time_scale=1, record=None, captu
         return episode_exit_code(env)
     except BaseException as error:
         primary = error
-        if not launch.finalization_attempted:
-            launch.finish(primary=error, stop=True)
+        if launch is not None and not launch.finalization_attempted:
+            try:
+                launch.finish(primary=error, stop=True)
+            except BaseException as cleanup:
+                if cleanup is not error:
+                    error.add_note(f'research finalization failed: {type(cleanup).__name__}: {cleanup}')
         raise
     finally:
         close_environment(env, primary)
@@ -209,8 +212,8 @@ def run_research_viewer(session, output_dir, *, time_scale=1, record=None, captu
 
 def run_ride_research(track, args, rider):
     if not args.headless:
-        from bike_sim.viewer_runtime import prepare_viewer
-        prepare_viewer()
+        from bike_sim.sim.playground import ensure_macos_mjpython
+        ensure_macos_mjpython()
     from bike_sim.sim.research.recording_lifecycle import close_environment
     session = make_ride_session(track, args, rider,
                                 capture_mode='full' if getattr(args, 'record', False) else 'off')
@@ -230,7 +233,11 @@ def run_ride_research(track, args, rider):
     except BaseException as error:
         primary = error
         if not launch.finalization_attempted:
-            launch.finish(primary=error, stop=True)
+            try:
+                launch.finish(primary=error, stop=True)
+            except BaseException as cleanup:
+                if cleanup is not error:
+                    error.add_note(f'research finalization failed: {type(cleanup).__name__}: {cleanup}')
         raise
     finally:
         close_environment(session.env, primary)

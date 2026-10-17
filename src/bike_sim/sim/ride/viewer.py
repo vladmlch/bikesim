@@ -137,9 +137,11 @@ def run_interactive_ride(
     Raises:
         RuntimeError: If the starting equilibrium does not converge.
     """
-    from bike_sim.viewer_runtime import load_viewer, passive_viewer, prepare_viewer
-    prepare_viewer()
-    viewer_api = load_viewer()
+    from bike_sim.sim.playground import ensure_macos_mjpython
+
+    ensure_macos_mjpython()
+
+    import mujoco.viewer
 
     sim = RideSimulation(
         track=track,
@@ -166,7 +168,7 @@ def run_interactive_ride(
     pacer = RealTimePacer(float(sim.model.opt.timestep))
     site_bb = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_SITE, "site_BB")
 
-    with passive_viewer(viewer_api,
+    with mujoco.viewer.launch_passive(
         sim.model,
         sim.data,
         key_callback=session.handle_key,
@@ -230,19 +232,20 @@ def run_physical_viewer(sim, out_root="output/ride", *, time_scale=1,
     driver frontend, whose playback clock and render replica implement the
     scale contract; that path requires the full simulation surface.
     """
+    from bike_sim.sim.playground import ensure_macos_mjpython
+    # Every viewer path on Darwin must re-exec under mjpython before any driver
+    # construction or mujoco.viewer import — including the delegated scaled run.
+    ensure_macos_mjpython()
     if time_scale != 1:
         from bike_sim.sim.ride.physical_driver import PhysicalRideDriver
         from bike_sim.sim.ride.physical_frontend import run_viewer
         return run_viewer(PhysicalRideDriver(sim), out_root=out_root, time_scale=time_scale)
-    from bike_sim.viewer_runtime import load_viewer, passive_viewer
     from bike_sim.sim.ride.physical_session import (
         PhysicalLiveCsv,
         configuration_metadata,
         physical_run_dir_name,
     )
-    # The caller already owns this simulation. Validation must never re-exec
-    # and abandon it; the caller retains ownership if preparation fails.
-    viewer_api = load_viewer()
+    import mujoco.viewer
     sim.physical.set_strict(False)
     if async_telemetry:
         sim.physical.set_async_close(True)
@@ -257,7 +260,7 @@ def run_physical_viewer(sim, out_root="output/ride", *, time_scale=1,
     info(f"[bike-ride] physical live csv: {csv_path}")
     try:
         with PhysicalLiveCsv(csv_path) as preview_log:
-            with passive_viewer(viewer_api,sim.model,sim.data,key_callback=session.handle_key,
+            with mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
                                               show_left_ui=False,show_right_ui=False) as viewer:
                 session.viewer=viewer
                 session.camera.reset_preset()

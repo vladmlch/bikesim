@@ -403,12 +403,12 @@ class ResearchEnvironment:
                 self._consume_completed_samples()
                 if self.done:
                     break
-            # End of the external policy window can leave a partial period.
-            if self.sim.physical._buffer._raws:
+            # End of the external policy window can leave a partial period,
+            # and an async close can still hold submitted-but-unapplied work.
+            if self.sim.physical.has_pending_close():
                 self.sim.physical.flush()
                 self._consume_completed_samples()
         except Exception as exc:
-            from bike_sim.sim.ride.reference_monitor import InvalidReferenceRun
             self.terminated = True
             primary_reason = ('invalid_controller' if isinstance(exc, InvalidReferenceRun)
                               else 'simulation_error')
@@ -417,7 +417,7 @@ class ResearchEnvironment:
             # Account a partial physical period even when integration or a
             # caller fails, without replacing the originating exception.
             try:
-                if self.sim.physical._buffer._raws:
+                if self.sim.physical.has_pending_close():
                     self.sim.physical.flush()
             except Exception as tail_error:
                 exc.add_note(f'trailing interval check: {tail_error}')
@@ -474,7 +474,7 @@ class ResearchEnvironment:
             if self._sealed_episode.episode_id != episode_id:
                 raise ValueError('an episode cannot be sealed under two identities')
             return self._sealed_episode
-        if self.sim.physical._buffer._raws:
+        if self.sim.physical.has_pending_close():
             try:
                 self.sim.physical.flush()
             except InvalidReferenceRun as error:

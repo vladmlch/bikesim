@@ -18,8 +18,7 @@ def replay_exit_code(session):
 def run_replay_viewer(session, *, time_scale=1):
     primary = None
     try:
-        from bike_sim.viewer_runtime import load_viewer, passive_viewer
-        viewer_api = load_viewer()
+        import mujoco.viewer
         keys = SimpleQueue()
         clock = PlaybackClock(session.timestep_s, scale=time_scale)
         paused = stop = reported = False
@@ -27,7 +26,7 @@ def run_replay_viewer(session, *, time_scale=1):
         presenter.replica.apply(session.snapshot())
         print(f'[bike-replay {session.backend}] Space pause | R restart | C/1/2 camera | '
               'T telemetry | G markers | Q/Escape exit | F6/F7/F8 speed', flush=True)
-        with passive_viewer(viewer_api, presenter.replica.model, presenter.replica.data,
+        with mujoco.viewer.launch_passive(presenter.replica.model, presenter.replica.data,
                 key_callback=keys.put, show_left_ui=False, show_right_ui=False) as viewer:
             now = last_sync = last_hud = time.monotonic()
             rate = AchievedRate(now, session.time_s)
@@ -107,4 +106,4 @@ def run_replay_viewer(session, *, time_scale=1):
         except BaseException as cleanup:
             if primary is None:
                 raise
-            primary.add_note(f'replay viewer close failed: {type(cleanup).__name__}: {cleanup}')
+            primary.add_note(f'replay close failed: {type(cleanup).__name__}: {cleanup}')

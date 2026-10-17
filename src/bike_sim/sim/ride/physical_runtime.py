@@ -785,6 +785,10 @@ class PhysicalRuntime:
             raise ValueError('recording retention must be off, full or legacy')
         self.recording_retention = mode
 
+    def has_pending_close(self):
+        """flush() still owes work: unpublished raws or a live async close."""
+        return bool(self._buffer._raws) or self._async_close is not None
+
     def flush(self):
         """Evaluate the trailing partial period before termination or reset."""
         if self._buffer._raws:

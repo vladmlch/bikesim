@@ -64,13 +64,13 @@ HELP_LINE = (
 class _PlaybackState:
     """Mutable playback cursor shared between the GLFW key callback and the render loop."""
 
-    __slots__ = ("t_s", "speed", "paused", "stop_requested")
+    __slots__ = ("t_s", "speed", "paused", "stop")
 
     def __init__(self, speed: float) -> None:
         self.t_s = 0.0
         self.speed = float(speed)
         self.paused = False
-        self.stop_requested = False
+        self.stop = False
 
 
 def _shift_held() -> bool:
@@ -114,10 +114,13 @@ def run_playback_viewer(
     if fps <= 0.0:
         raise ValueError(f"fps must be positive, got {fps}")
 
-    from bike_sim.viewer_runtime import load_viewer, passive_viewer
-    # The caller has already rebuilt the recording. CLI preparation happens
-    # before that rebuild; a direct caller must prepare its own launch first.
-    viewer_api = load_viewer()
+    from bike_sim.sim.playground import ensure_macos_mjpython
+
+    # On macOS the GLFW window must run under mjpython on the main OS thread; the
+    # helper re-execs the process, so it runs before `mujoco.viewer` is touched.
+    ensure_macos_mjpython()
+
+    import mujoco.viewer
 
     sim = playback.sim
     model, data = sim.model, sim.data
@@ -141,14 +144,14 @@ def run_playback_viewer(
         elif keycode in _KEYS_R:
             state.t_s = 0.0
         elif keycode in _KEYS_Q or keycode == _KEY_ESC:
-            # The callback may arrive before launch_passive returns a handle.
-            # Let the owning loop/context close it once on the Python thread.
-            state.stop_requested = True
+            # A callback can arrive before launch_passive returns its handle.
+            # Let the render owner leave the context and close its own window.
+            state.stop = True
 
     print(HELP_LINE, file=sys.stderr)
 
     sync_interval_s = 1.0 / float(fps)
-    with passive_viewer(viewer_api,
+    with mujoco.viewer.launch_passive(
         model,
         data,
         key_callback=handle_key,
@@ -159,7 +162,7 @@ def run_playback_viewer(
         last_frame = time.monotonic()
         last_sync = last_frame
 
-        while viewer.is_running() and not state.stop_requested:
+        while viewer.is_running() and not state.stop:
             now = time.monotonic()
             elapsed, last_frame = now - last_frame, now
 

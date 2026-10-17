@@ -4,6 +4,7 @@
 // killpg+waitpid cleanup on deadline or overflow.
 #include "platform/process.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cerrno>
 #include <chrono>
@@ -11,6 +12,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <filesystem>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -134,8 +136,7 @@ char **process_environment() {
     // accessor always returns the real environment block.
     return *_NSGetEnviron();
 #else
-    extern char **environ; // NOLINT(readability-redundant-declaration)
-    return environ;
+    return ::environ;
 #endif
 }
 
@@ -166,6 +167,8 @@ void validate_run_inputs(const std::vector<std::string> &argv,
     if (options.max_output_bytes == 0)
         throw std::invalid_argument(
             "platform::run: max_output_bytes must be nonzero");
+    if (!std::isfinite(options.cancellation_grace_s) || options.cancellation_grace_s < 0.)
+        throw std::invalid_argument("platform::run: cancellation_grace_s must be finite and nonnegative");
 }
 
 } // namespace
@@ -182,6 +185,13 @@ ProcessResult run(const std::vector<std::string> &argv,
                   const ProcessOptions &options) {
     const std::string &cwd_text = cwd.native();
     validate_run_inputs(argv, cwd_text, cwd, options);
+    if (options.cancellation.stop_requested()) return {130, {}, {}};
+
+    // On platforms without an atomic pipe(O_CLOEXEC), another concurrent
+    // platform::run must not spawn between pipe() and fcntl(). Such a child
+    // could retain a sibling's pipe and prevent EOF after that sibling exits.
+    static std::mutex spawn_mutex;
+    std::unique_lock spawn_guard(spawn_mutex);
 
     ScopedFd out_read, out_write, err_read, err_write;
     make_pipe(out_read, out_write);
@@ -232,12 +242,25 @@ ProcessResult run(const std::vector<std::string> &argv,
         if (error != 0)
             fail_errno("platform::run: posix_spawnp " + argv.front(), error);
     }
+    // Any allocation, read, poll or callback failure after spawn still reaps
+    // the owned process tree. A destructor never lets an exception escape.
+    struct ChildOwner {
+        pid_t id;
+        bool released = false;
+        ~ChildOwner() {
+            if (released) return;
+            (void)::killpg(id, SIGKILL);
+            int ignored = 0;
+            while (::waitpid(id, &ignored, 0) < 0 && errno == EINTR) {}
+        }
+    } child{pid};
     // The child's copies are dup'd; the parent must drop its write ends so
     // EOF can arrive on the read ends.
     (void) ::close(out_write.fd);
     out_write.fd = -1;
     (void) ::close(err_write.fd);
     err_write.fd = -1;
+    spawn_guard.unlock();
 
     Clock::time_point deadline = Clock::time_point::max();
     if (options.timeout_s.has_value())
@@ -247,21 +270,29 @@ ProcessResult run(const std::vector<std::string> &argv,
 
     struct DrainEnd {
         int fd;
+        ScopedFd* owner;
         std::string *sink;
     };
     ProcessResult result;
     std::array<DrainEnd, 2> drains {
-        {DrainEnd{.fd = out_read.fd, .sink = &result.out},
-         DrainEnd{.fd = err_read.fd, .sink = &result.err}}};
+        {DrainEnd{.fd = out_read.fd, .owner = &out_read, .sink = &result.out},
+         DrainEnd{.fd = err_read.fd, .owner = &err_read, .sink = &result.err}}};
 
     int status = 0;
     int open_fds = 2;
     bool reaped = false;
     bool killed = false;
     bool overflowed = false;
+    bool cancellation_sent = false;
     std::array<char, 4096> chunk {};
 
     while (open_fds > 0 || !reaped) {
+        if (!cancellation_sent && options.cancellation.stop_requested()) {
+            (void)::killpg(pid, SIGINT);
+            cancellation_sent = true;
+            deadline = std::min(deadline, Clock::now() +
+                std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(options.cancellation_grace_s)));
+        }
         // The deadline covers the whole run: a grandchild holding a pipe
         // open cannot outlive the budget either.
         if (!killed && Clock::now() >= deadline) {
@@ -339,12 +370,14 @@ ProcessResult run(const std::vector<std::string> &argv,
                 (static_cast<unsigned>(poll_fds[k].revents) &
                  static_cast<unsigned>(POLLNVAL)) != 0U) {
                 (void) ::close(end.fd);
+                end.owner->fd = -1;
                 end.fd = -1;
                 --open_fds;
             }
         }
     }
 
+    child.released = true;
     if (overflowed)
         throw std::runtime_error(
             "platform::run: child output exceeded the max_output_bytes bound (" +

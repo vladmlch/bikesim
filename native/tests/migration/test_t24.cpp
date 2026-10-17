@@ -2,6 +2,7 @@
 // cache reuse, strict explicit files and t=0 transfer. No test or compiler was
 // executed while these sources were implemented.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "initialization/artifact_identity.hpp"
 #include "initialization/setup_owner.hpp"
 #include "initialization/state_file.hpp"
@@ -91,7 +92,10 @@ std::vector<std::byte> archive(std::string_view name,std::span<const std::byte> 
 }
 bool same_bits(double a,double b){return std::bit_cast<std::uint64_t>(a)==std::bit_cast<std::uint64_t>(b);}
 
-void numpy_and_zip() {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
+[[gnu::noinline]] void numpy_and_zip() {
     const std::array<double,4> expected{1.,-0.,-2.5,std::numeric_limits<double>::quiet_NaN()};
     const auto array=io::double_array(expected,{2,2});
     const auto encoded=io::encode_npy(array);const auto decoded=io::parse_npy(encoded).doubles(true);
@@ -119,7 +123,7 @@ void numpy_and_zip() {
     auto truncated=archive("qpos.npy",encoded,true);truncated.resize(truncated.size()-3);bt::invalid([&]{(void)io::parse_npz(truncated);});
 }
 
-void durable_file() {
+[[gnu::noinline]] void durable_file() {
     Directory temporary;
     init::StateFile state;state.metadata=io::Value{io::Value::Object{}};
     state.arrays.emplace_back("qpos",io::double_array(std::array{1.,-0.},{2}));
@@ -138,7 +142,7 @@ void durable_file() {
     bt::invalid([&]{(void)init::PhysicalInitialState("{\"schema_version\":2}");});
 }
 
-void recorded_identity() {
+[[gnu::noinline]] void recorded_identity() {
     bt::require(init::detail::source_json(io::parse_json(R"({"s":"é𝄞"})"))==R"({"s":"\u00e9\ud834\udd1e"})",
                 "historical JSON identity preserves Python ensure_ascii surrogate escaping");
     io::Value native=io::parse_json("{\"backend\":\"native\",\"runtime_schema\":1,\"python_source_sha256\":\""+std::string(64,'a')+"\",\"native_source_sha256\":\""+std::string(64,'b')+"\",\"extension_sha256\":\""+std::string(64,'c')+"\",\"mujoco_library_sha256\":\""+std::string(64,'d')+"\",\"mujoco_version\":\"3.12.0\",\"build_context\":{\"build_type\":\"Release\",\"compiler_id\":\"Clang\",\"compiler_version\":\"21\",\"numerical_flags\":\"-ffp-contract=off\"}}");
@@ -156,7 +160,7 @@ void recorded_identity() {
     bt::require(true,"historical Python execution record needs no Python import");
 }
 
-void cache_and_transfer() {
+[[gnu::noinline]] void cache_and_transfer() {
     Directory temporary;
     auto request=init::read_setup_request(bt::fixture("requests/welded_flat.toml"));
     request.model.physics->equilibrium_cache_enabled=true;
@@ -192,3 +196,4 @@ void cache_and_transfer() {
 } // namespace
 
 int main(){return bt::run([]{numpy_and_zip();durable_file();recorded_identity();cache_and_transfer();});}
+NATIVE_DIAG_POP

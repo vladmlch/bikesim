@@ -2,6 +2,7 @@
 // SIGINT probes run in separate native child processes only when this test is
 // explicitly executed later. Nothing was compiled or run during authoring.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "research/lifecycle.hpp"
 #include "research/evidence.hpp"
 #include "research/preview_csv.hpp"
@@ -33,8 +34,8 @@ CountingPolicy::~CountingPolicy() = default;
 class ResetFailurePolicy final : public Policy {
 public:
     ~ResetFailurePolicy() override;
-    void reset(std::string_view) override { throw std::runtime_error("injected initial policy reset failure"); }
-    runtime::RideControl act(const runtime::SensorObservation&, std::optional<double>) override {
+    [[noreturn]] void reset(std::string_view) override { throw std::runtime_error("injected initial policy reset failure"); }
+    [[noreturn]] runtime::RideControl act(const runtime::SensorObservation&, std::optional<double>) override {
         throw std::runtime_error("act must not run after reset failure");
     }
 };
@@ -60,7 +61,10 @@ template<class F> void runtime_failure(F&& call, std::string_view contains) {
     catch (const std::runtime_error& error) { matched = std::string(error.what()).find(contains) != std::string::npos; }
     bt::require(matched, std::string("expected failure: ") + std::string(contains));
 }
-std::unique_ptr<PreparedEnvironment> prepared() {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
+[[gnu::noinline]] std::unique_ptr<PreparedEnvironment> prepared() {
     auto request = std::make_unique<ResearchRequest>(read_research_request(bt::fixture("requests/research_delay.toml")));
     request->capture_mode = runtime::ResearchCaptureMode::full;
     request->experiment.control_period_s = .06; // exceeds the 50 ms pacing debt cap
@@ -231,3 +235,4 @@ int main(int argc, char** argv) {
         }
     });
 }
+NATIVE_DIAG_POP

@@ -1,10 +1,14 @@
 #include "builder_internal.hpp"
+#include "../diag.hpp"
 #include <stdexcept>
 
 namespace bike::model::detail {
 namespace {
 void add_tensor(Mat3& target,const Mat3& value) { for(std::size_t i=0;i<target.size();++i) target[i]+=value[i]; }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
 Mat3 diagonal(double x,double y,double z) { return {x,0.,0.,0.,y,0.,0.,0.,z}; }
+NATIVE_DIAG_POP
 Element& fixed_tendon(Element& root,std::string name,double closure) {
     return block(root,"tendon").add("fixed",{{"name",std::move(name)},{"limited","true"},{"range","-1e12 0"},{"margin","0"},{"solreflimit",g(closure)+" 1"}});
 }
@@ -13,6 +17,8 @@ void tendon_joint(Element& tendon,std::string name,double coefficient) {
 }
 } // namespace
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void finish_physical_topology(Element& root,const BuildContext& c) {
     if(!c.physical()) throw std::invalid_argument("physical topology cannot modify the legacy model");
     const auto& cfg=*c.physics;const auto& drive=cfg.drive;
@@ -132,6 +138,7 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
     }
     if(cfg.drive_mode=="crank_effort") actuators.add("motor",{{"name","human_crank"},{"joint","crank_spin"},{"gear","1"}});
 }
+NATIVE_DIAG_POP
 void finalize_geometric_transmission(Element& root,const configuration::SimulationPhysicsConfig& cfg) {
     if(cfg.drive.transmission_model!="geometric_ideal_mid_drive" || (cfg.drive_mode!="crank_effort" && cfg.drive_mode!="articulated_effort")) return;
     auto& tendons=block(root,"tendon");

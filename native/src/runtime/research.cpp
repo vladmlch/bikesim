@@ -365,6 +365,18 @@ RuntimeSnapshot NativeResearchRuntime::snapshot() const {
     require_open();
     return runtime_->snapshot();
 }
+RenderFrame NativeResearchRuntime::render_frame() const {
+    const ResearchGuard guard(busy_);
+    require_open();
+    auto frame = runtime_->render_frame();
+    if (episode_->reason) frame.state.outcome = episode_->reason;
+    return frame;
+}
+ModelImage NativeResearchRuntime::model_image() const {
+    const ResearchGuard guard(busy_);
+    require_open();
+    return runtime_->model_image();
+}
 WireObject NativeResearchRuntime::status() const {
     const ResearchGuard guard(busy_);
     require_open();

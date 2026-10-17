@@ -32,7 +32,7 @@ bike::io::Value owned_value(nb::handle value,std::string_view path,std::size_t d
     const auto numbers=nb::module_::import_("numbers");
     if(nb::isinstance(value,numbers.attr("Integral"))&&!wire::numeric_boolean(value))return V{bike::io::Number{std::to_string(wire::integer(value,path))}};
     if(nb::isinstance(value,numbers.attr("Real"))&&!wire::numeric_boolean(value)){
-        const double real=wire::real(value,path);if(!std::isfinite(real))return V{bike::io::Tagged{"float64",{{"value",std::isnan(real)?"nan":real>0.?"+inf":"-inf"}}}};std::array<char,32>b{};auto written=std::to_chars(b.data(),b.data()+b.size(),real);if(written.ec!=std::errc())throw std::runtime_error("rider float encode");std::string text(b.data(),written.ptr);if(text.find_first_of(".eE")==std::string::npos)text+=".0";return V{bike::io::Number{std::move(text)}};
+        const double real=wire::real(value,path);if(!std::isfinite(real))return V{bike::io::Tagged{"float64",{{"value",std::isnan(real)?"nan":real>0.?"+inf":"-inf"}}}};std::array<char,32>b{};auto written=std::to_chars(b.data(),std::to_address(b.end()),real);if(written.ec!=std::errc())throw std::runtime_error("rider float encode");std::string text(b.data(),written.ptr);if(text.find_first_of(".eE")==std::string::npos)text+=".0";return V{bike::io::Number{std::move(text)}};
     }
     V::Array out;for(nb::handle item:wire::sequence(value,path))out.push_back(owned_value(item,path,depth+1));return V{std::move(out)};
 }

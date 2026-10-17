@@ -53,10 +53,13 @@ struct PlaygroundOptions {
 };
 struct PlaygroundSnapshot {
     double time_s=0.,target_rear_travel_mm=0.,target_fork_travel_mm=0.;
+    double timestep_s=0.;
     bool include_rider=false,auto_sweep=false,debug_markers=false,show_telemetry=true;
     std::uint64_t generation=0;
     std::string model_mode,camera_mode;
     std::vector<double> qpos,qvel,ctrl;
+    std::vector<double> integration_state;
+    std::array<std::vector<double>, 6> model_fields;
     io::Value telemetry;
 };
 // The controller owns its model/data and serializes queued inputs with each

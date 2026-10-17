@@ -250,7 +250,7 @@ void invalid_and_budget() {
     int calls=0;
     bt::invalid([&]{(void)num::bounded_least_squares([&](std::span<const double>){return ++calls==1?std::vector<double>{1.,2.}:std::vector<double>{1.};},x,lower,upper,80);});
     bool original=false;
-    try {(void)num::bounded_least_squares([](std::span<const double>)->std::vector<double>{throw std::runtime_error("physical residual failed");},x,lower,upper,80);}
+    try {(void)num::bounded_least_squares([][[noreturn]](std::span<const double>)->std::vector<double>{throw std::runtime_error("physical residual failed");},x,lower,upper,80);}
     catch(const std::runtime_error& error){original=std::string(error.what())=="physical residual failed";}
     bt::require(original,"residual failures propagate with their physical diagnostic");
 }

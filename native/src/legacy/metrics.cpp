@@ -109,10 +109,15 @@ std::optional<PedalBobStats> pedal_bob_stats(const Channels& w,double dt,int swi
     out.freewheel_fraction=fraction(coast);out.cutoff_fraction=fraction(channel(w,"assist_cutoff_active"));out.traction_limited_fraction=fraction(channel(w,"drive_traction_limited"));out.assist_switches=switches;return out;
 }
 std::vector<PotholeReport> pothole_reports(const terrain::TrackSpec& track){
-    std::vector<PotholeReport> out;for(const auto& obstacle:track.sorted_obstacles())if(obstacle.is_pothole()){
-        const double depth=std::visit([](const auto& shape){if constexpr(requires{shape.depth_m;})return shape.depth_m;else return 0.;},obstacle.shape);
-        out.push_back({obstacle.label(),std::string(obstacle.kind()),obstacle.start_m(),obstacle.length_m(),depth*1000.,
-            terrain::effective_drop_m(obstacle,terrain::FRONT_WHEEL_RADIUS_M)*1000.,terrain::effective_drop_m(obstacle,terrain::REAR_WHEEL_RADIUS_M)*1000.});}return out;
+    std::vector<PotholeReport> out;
+    for(const auto& obstacle:track.sorted_obstacles()){
+        if(obstacle.is_pothole()){
+            const double depth=std::visit([](const auto& shape){if constexpr(requires{shape.depth_m;})return shape.depth_m;else return 0.;},obstacle.shape);
+            out.push_back({obstacle.label(),std::string(obstacle.kind()),obstacle.start_m(),obstacle.length_m(),depth*1000.,
+                terrain::effective_drop_m(obstacle,terrain::FRONT_WHEEL_RADIUS_M)*1000.,terrain::effective_drop_m(obstacle,terrain::REAR_WHEEL_RADIUS_M)*1000.});
+        }
+    }
+    return out;
 }
 std::array<std::size_t,3> count_kinds(std::span<const terrain::Obstacle> obstacles){std::array<std::size_t,3> out{};for(const auto& o:obstacles){out[0]+=o.is_pothole();out[1]+=o.is_bump();out[2]+=o.annotate();}return out;}
 std::size_t count_completed_impact_episodes(std::span<const RimStrikeStats> events,double gap,double distance){

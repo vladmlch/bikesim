@@ -2,6 +2,7 @@
 #include "../io/value.hpp"
 #include "../runtime/research_metrics.hpp"
 #include "../runtime/sensors.hpp"
+#include <mujoco/mujoco.h>
 
 namespace bike::initialization {
 struct SetupContext;
@@ -12,4 +13,7 @@ struct ResearchStartup {
     double position_m = 0.;
 };
 [[nodiscard]] ResearchStartup prepare_research_startup(SetupContext&);
+// Read-only compiled solver/contact facts shared by ordinary and research
+// recording. No force evaluation, integration or controller is constructed.
+[[nodiscard]] io::Value compiled_physical_metadata(const mjModel&);
 } // namespace bike::initialization

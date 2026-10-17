@@ -123,6 +123,8 @@ public:
         std::optional<double> wall_budget_s, std::optional<std::int64_t> target_step = std::nullopt);
     void acknowledge_control();
     [[nodiscard]] RuntimeSnapshot snapshot() const;
+    [[nodiscard]] RenderFrame render_frame() const;
+    [[nodiscard]] ModelImage model_image() const;
     [[nodiscard]] WireObject status() const;
     [[nodiscard]] ResearchConfig configuration() const;
     // No optional trajectory retention is required to freeze live metrics.

@@ -53,16 +53,26 @@
     "owner_task": "T47",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
       "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
       "native/src/cli/ride.cpp",
       "native/src/cli/research.cpp",
       "native/src/cli/settle.cpp",
       "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -75,15 +85,8 @@
     "snapshot_sha256": "1f0db45db723df983d6bcbe6453b23261d4a07bb1738cba6dc14fe636c5ddb39",
     "snapshot_line_count": 75,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/cli/__init__.py",
-    "sha256": "20e2ca4f1648ab0e60706ea808057e7da1ee9b8e63b8f3a871da27cf04083c42",
-    "line_count": 13,
-    "owner_task": "T47",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -94,6 +97,49 @@
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/cli/__init__.py",
+    "sha256": "20e2ca4f1648ab0e60706ea808057e7da1ee9b8e63b8f3a871da27cf04083c42",
+    "line_count": 13,
+    "owner_task": "T47",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -106,7 +152,33 @@
     "snapshot_sha256": "1c057749049918acd4e3364ef8bbbc1295283219ee4fadebbdfe73d674c53682",
     "snapshot_line_count": 13,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/application.cpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/cli/batch.py",
@@ -115,12 +187,20 @@
     "owner_task": "T51",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/batch/plan.hpp",
+      "native/src/batch/integer_detail.hpp",
+      "native/src/batch/log.hpp",
       "native/src/batch/plan.cpp",
-      "native/src/batch/executor.cpp",
+      "native/src/batch/plan.hpp",
+      "native/src/batch/process_pool.cpp",
+      "native/src/batch/spec.cpp",
       "native/src/batch/summary.cpp",
+      "native/src/batch/sweep.cpp",
       "native/src/cli/batch.cpp",
+      "native/src/platform/process.cpp",
+      "native/src/platform/process.hpp",
+      "native/src/platform/argv.hpp",
       "native/src/tools/research_sweep_main.cpp",
+      "native/src/tools/test_child_main.cpp",
       "native/tests/migration/test_t51.cpp"
     ],
     "verification_ids": [
@@ -133,7 +213,29 @@
     "snapshot_sha256": "be64b67d25e1c91f7dec2ac2e16f29d80692dc6cd27c2517b9258e1230b29219",
     "snapshot_line_count": 300,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/batch/plan.hpp",
+      "native/src/batch/plan.cpp",
+      "native/src/batch/executor.cpp",
+      "native/src/batch/summary.cpp",
+      "native/src/cli/batch.cpp",
+      "native/src/tools/research_sweep_main.cpp",
+      "native/tests/migration/test_t51.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/cli/export.py",
@@ -142,16 +244,26 @@
     "owner_task": "T47",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
       "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
       "native/src/cli/ride.cpp",
       "native/src/cli/research.cpp",
       "native/src/cli/settle.cpp",
       "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -164,15 +276,8 @@
     "snapshot_sha256": "d264697b55d8bf9b09676f9e391a98a9081c204011147dfeada417c7a8c5fae4",
     "snapshot_line_count": 49,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/cli/main.py",
-    "sha256": "c7b0833c30495fe51e358f8cdd2c29fb3c646d2bff1298f8bf933e4c29550452",
-    "line_count": 125,
-    "owner_task": "T47",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -183,6 +288,49 @@
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/cli/main.py",
+    "sha256": "c7b0833c30495fe51e358f8cdd2c29fb3c646d2bff1298f8bf933e4c29550452",
+    "line_count": 125,
+    "owner_task": "T47",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -195,15 +343,8 @@
     "snapshot_sha256": "66cb3ce764a1b053b60713e62fc28abdd553eb6cff1af535e81c03b753a39b45",
     "snapshot_line_count": 125,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/cli/playground.py",
-    "sha256": "10367653fb32c52c278ccca0c5e31d302f9740a39d407324643ee62185d9d679",
-    "line_count": 17,
-    "owner_task": "T47",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -214,6 +355,49 @@
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/cli/playground.py",
+    "sha256": "10367653fb32c52c278ccca0c5e31d302f9740a39d407324643ee62185d9d679",
+    "line_count": 17,
+    "owner_task": "T47",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -226,7 +410,33 @@
     "snapshot_sha256": "190f533873742b15dc730f47fdac53bd9848a2126284bb78c59af624cdd31fb5",
     "snapshot_line_count": 17,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/application.cpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/cli/recording.py",
@@ -236,8 +446,9 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/cli/recording.cpp",
+      "native/src/cli/recording.hpp",
       "native/src/cli/recording_main.cpp",
-      "native/tests/cli/recording.cmake"
+      "native/tests/migration/test_t46.cpp"
     ],
     "verification_ids": [
       "migration_T46",
@@ -249,7 +460,25 @@
     "snapshot_sha256": "5267803c96eb773964780f38448324d0224f03370a7755a50ac8062fc3720b63",
     "snapshot_line_count": 132,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/cli/recording.cpp",
+      "native/src/cli/recording_main.cpp",
+      "native/tests/cli/recording.cmake"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/cli/replay.py",
@@ -258,16 +487,26 @@
     "owner_task": "T47",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
       "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
       "native/src/cli/ride.cpp",
       "native/src/cli/research.cpp",
       "native/src/cli/settle.cpp",
       "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -280,15 +519,8 @@
     "snapshot_sha256": "db61a0fe1b6f538466843670db02230b4e1a430deec45b60b3e8c0ac964a16d1",
     "snapshot_line_count": 71,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/cli/research.py",
-    "sha256": "8daa8cead8f41a43f7ea70cef58dc8ff2d610389030af79baeed3904a49dda97",
-    "line_count": 281,
-    "owner_task": "T47",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -299,6 +531,49 @@
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/cli/research.py",
+    "sha256": "8daa8cead8f41a43f7ea70cef58dc8ff2d610389030af79baeed3904a49dda97",
+    "line_count": 281,
+    "owner_task": "T47",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -311,15 +586,8 @@
     "snapshot_sha256": "ea2b6ec4c2245bf360e6216897dd3d5fdb11522cbf0fe3b051b6d852b75c4ff0",
     "snapshot_line_count": 281,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/cli/ride.py",
-    "sha256": "50f45dc4c773337014f30a96bd91611a800815a14ae472c41a8e023c2b7bf537",
-    "line_count": 924,
-    "owner_task": "T47",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -330,6 +598,49 @@
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/cli/ride.py",
+    "sha256": "50f45dc4c773337014f30a96bd91611a800815a14ae472c41a8e023c2b7bf537",
+    "line_count": 924,
+    "owner_task": "T47",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -342,15 +653,8 @@
     "snapshot_sha256": "9ea0ebf054c16aaad01904e8a45ea0059a55832e48af31d42213dd053db4f4ac",
     "snapshot_line_count": 924,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/cli/settle.py",
-    "sha256": "eb9dd8c8b29caf224d5174d4584ae1e48147366efac2372149ed9b09b050dd00",
-    "line_count": 188,
-    "owner_task": "T47",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -361,6 +665,49 @@
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/cli/settle.py",
+    "sha256": "eb9dd8c8b29caf224d5174d4584ae1e48147366efac2372149ed9b09b050dd00",
+    "line_count": 188,
+    "owner_task": "T47",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -373,15 +720,8 @@
     "snapshot_sha256": "713440ec970d39ad385c991bc6ba8e5e2f3fa7394e66ea7cdc8db7b12e57c9e9",
     "snapshot_line_count": 188,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/config.py",
-    "sha256": "de570746c46d69c56a488d6a9a478e05664b8cdbbb093863bfe6ac5871c3cc8c",
-    "line_count": 31,
-    "owner_task": "T47",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -394,6 +734,49 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/config.py",
+    "sha256": "de570746c46d69c56a488d6a9a478e05664b8cdbbb093863bfe6ac5871c3cc8c",
+    "line_count": 31,
+    "owner_task": "T47",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
     "verification_ids": [
       "migration_T47",
       "source_assertion_map",
@@ -404,7 +787,33 @@
     "snapshot_sha256": "48c60373ee045f2260e54f1e85aa9df9fd08ac5cd66e7cb7121b4157ae3b3735",
     "snapshot_line_count": 31,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/application.cpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/geometry/__init__.py",
@@ -1568,10 +1977,12 @@
     "owner_task": "T45",
     "action": "replace_python_adapter_with_owned_native_boundary",
     "replacement_paths": [
-      "native/src/recording/report.hpp",
       "native/src/recording/report.cpp",
-      "native/src/recording/export.hpp",
+      "native/src/recording/report.hpp",
       "native/src/recording/export.cpp",
+      "native/src/recording/export.hpp",
+      "native/src/replay/export.cpp",
+      "native/src/replay/export.hpp",
       "native/resources/reports/summary.md.in",
       "native/tests/migration/test_t45.cpp"
     ],
@@ -1585,7 +1996,28 @@
     "snapshot_sha256": "e9de2161d8dacdeb77083a736e8d31e3494cbdee37043c0029f1bbe012152c4d",
     "snapshot_line_count": 229,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/report.hpp",
+      "native/src/recording/report.cpp",
+      "native/src/recording/export.hpp",
+      "native/src/recording/export.cpp",
+      "native/resources/reports/summary.md.in",
+      "native/tests/migration/test_t45.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/native/research.py",
@@ -3212,10 +3644,13 @@
     "owner_task": "T43",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/reader.hpp",
       "native/src/recording/reader.cpp",
+      "native/src/recording/reader.hpp",
       "native/src/recording/analysis.cpp",
+      "native/src/recording/analysis_detail.hpp",
       "native/src/recording/query.cpp",
+      "native/src/io/float_format.hpp",
+      "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t43.cpp"
     ],
     "verification_ids": [
@@ -3228,7 +3663,27 @@
     "snapshot_sha256": "3eb9750eefe2f41e8193e39dc2f747f9af72f6ff8e26607441f7be76031c5410",
     "snapshot_line_count": 12,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/reader.hpp",
+      "native/src/recording/reader.cpp",
+      "native/src/recording/analysis.cpp",
+      "native/src/recording/query.cpp",
+      "native/tests/migration/test_t43.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/analysis.py",
@@ -3237,10 +3692,13 @@
     "owner_task": "T43",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/reader.hpp",
       "native/src/recording/reader.cpp",
+      "native/src/recording/reader.hpp",
       "native/src/recording/analysis.cpp",
+      "native/src/recording/analysis_detail.hpp",
       "native/src/recording/query.cpp",
+      "native/src/io/float_format.hpp",
+      "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t43.cpp"
     ],
     "verification_ids": [
@@ -3253,7 +3711,27 @@
     "snapshot_sha256": "7bc2c8df13a7022e2b19ccbebcaa8df25d3a01a3aaa53ba1c19e35ad99bea15f",
     "snapshot_line_count": 378,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/reader.hpp",
+      "native/src/recording/reader.cpp",
+      "native/src/recording/analysis.cpp",
+      "native/src/recording/query.cpp",
+      "native/tests/migration/test_t43.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/assets.py",
@@ -3263,11 +3741,22 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
-      "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
-      "native/src/recording/events.cpp"
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
     ],
     "verification_ids": [
       "migration_T40",
@@ -3279,7 +3768,28 @@
     "snapshot_sha256": "06f52e1a8718dd19fba2d5b81383b4dd469cb0c21811a7727e749a028487064e",
     "snapshot_line_count": 89,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/events.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/capture.py",
@@ -3289,11 +3799,22 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
-      "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
-      "native/src/recording/events.cpp"
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
     ],
     "verification_ids": [
       "migration_T40",
@@ -3305,7 +3826,28 @@
     "snapshot_sha256": "94d5facfa05bf20867fff89de147273fffe759e428300a1ce761b43e965bf36d",
     "snapshot_line_count": 221,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/events.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/catalog.py",
@@ -3315,10 +3857,14 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/resources/recording/catalog-v1.json",
-      "native/src/recording/catalog.hpp",
       "native/src/recording/catalog.cpp",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog_data.inc",
+      "native/src/recording/catalog_model.cpp",
       "native/src/recording/coordinates.cpp",
       "native/src/recording/schema.cpp",
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/value_util.hpp",
       "native/tests/migration/test_t38.cpp"
     ],
     "verification_ids": [
@@ -3331,7 +3877,28 @@
     "snapshot_sha256": "a6e403356de92096240996ffc32f68c3ae98056e31bcf58379c6bd98408cd1dd",
     "snapshot_line_count": 1699,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/resources/recording/catalog-v1.json",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog.cpp",
+      "native/src/recording/coordinates.cpp",
+      "native/src/recording/schema.cpp",
+      "native/tests/migration/test_t38.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/contracts.py",
@@ -3341,10 +3908,14 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/resources/recording/catalog-v1.json",
-      "native/src/recording/catalog.hpp",
       "native/src/recording/catalog.cpp",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog_data.inc",
+      "native/src/recording/catalog_model.cpp",
       "native/src/recording/coordinates.cpp",
       "native/src/recording/schema.cpp",
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/value_util.hpp",
       "native/tests/migration/test_t38.cpp"
     ],
     "verification_ids": [
@@ -3357,7 +3928,28 @@
     "snapshot_sha256": "df95adf004f88f0f8ec2bff7e273abbaa7f85e6e25dd1711fb666e19629da61c",
     "snapshot_line_count": 253,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/resources/recording/catalog-v1.json",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog.cpp",
+      "native/src/recording/coordinates.cpp",
+      "native/src/recording/schema.cpp",
+      "native/tests/migration/test_t38.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/encoding.py",
@@ -3366,10 +3958,13 @@
     "owner_task": "T39",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/encoding.hpp",
       "native/src/recording/encoding.cpp",
+      "native/src/recording/encoding.hpp",
       "native/src/recording/plan.cpp",
-      "native/src/recording/duckdb_chunks.cpp"
+      "native/src/recording/duckdb_chunks.cpp",
+      "native/src/runtime/encoding_values.hpp",
+      "native/src/runtime/encode.hpp",
+      "native/tests/migration/test_t39.cpp"
     ],
     "verification_ids": [
       "migration_T39",
@@ -3381,7 +3976,26 @@
     "snapshot_sha256": "766db8904bdc5e6fc46530e21b9e64886ed6329b3181e626a463bd848bca1685",
     "snapshot_line_count": 425,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/encoding.hpp",
+      "native/src/recording/encoding.cpp",
+      "native/src/recording/plan.cpp",
+      "native/src/recording/duckdb_chunks.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/interrupt.py",
@@ -3390,10 +4004,28 @@
     "owner_task": "T42",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/publish.hpp",
       "native/src/recording/publish.cpp",
+      "native/src/recording/publish.hpp",
       "native/src/recording/finalize.cpp",
-      "native/src/recording/interrupt.cpp"
+      "native/src/recording/interrupt.cpp",
+      "native/src/runtime/async_close.cpp",
+      "native/src/runtime/async_close.hpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/accounting.hpp",
+      "native/src/runtime/period_buffer.cpp",
+      "native/src/runtime/period_buffer.hpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/config.hpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/runtime/project_config.hpp",
+      "native/src/research/configuration.cpp",
+      "native/src/research/environment.cpp",
+      "native/src/platform/signals.cpp",
+      "native/src/platform/signals.hpp",
+      "native/tests/migration/async_close_contract.hpp",
+      "native/tests/migration/test_t42.cpp"
     ],
     "verification_ids": [
       "migration_T42",
@@ -3405,7 +4037,26 @@
     "snapshot_sha256": "17ab7536f457aa3599c18902a6fefb0bc2124fd73c1fe394b5ce614875e5301c",
     "snapshot_line_count": 64,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/publish.hpp",
+      "native/src/recording/publish.cpp",
+      "native/src/recording/finalize.cpp",
+      "native/src/recording/interrupt.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/json_codec.py",
@@ -3443,11 +4094,22 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
-      "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
-      "native/src/recording/events.cpp"
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
     ],
     "verification_ids": [
       "migration_T40",
@@ -3459,7 +4121,28 @@
     "snapshot_sha256": "27def9d2e5e8a380b729c54e902cd30e9adfbe6990dc3b260ef7ca0d636eff51",
     "snapshot_line_count": 370,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/events.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/native_encode.py",
@@ -3468,10 +4151,13 @@
     "owner_task": "T39",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/encoding.hpp",
       "native/src/recording/encoding.cpp",
+      "native/src/recording/encoding.hpp",
       "native/src/recording/plan.cpp",
-      "native/src/recording/duckdb_chunks.cpp"
+      "native/src/recording/duckdb_chunks.cpp",
+      "native/src/runtime/encoding_values.hpp",
+      "native/src/runtime/encode.hpp",
+      "native/tests/migration/test_t39.cpp"
     ],
     "verification_ids": [
       "migration_T39",
@@ -3483,7 +4169,26 @@
     "snapshot_sha256": "7f1fa5251611d422978555c0901c39df92fa18ccd3d1f87564ae7d9a90114ada",
     "snapshot_line_count": 286,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/encoding.hpp",
+      "native/src/recording/encoding.cpp",
+      "native/src/recording/plan.cpp",
+      "native/src/recording/duckdb_chunks.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/reader.py",
@@ -3492,10 +4197,13 @@
     "owner_task": "T43",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/reader.hpp",
       "native/src/recording/reader.cpp",
+      "native/src/recording/reader.hpp",
       "native/src/recording/analysis.cpp",
+      "native/src/recording/analysis_detail.hpp",
       "native/src/recording/query.cpp",
+      "native/src/io/float_format.hpp",
+      "native/src/configuration/schema.cpp",
       "native/tests/migration/test_t43.cpp"
     ],
     "verification_ids": [
@@ -3508,7 +4216,27 @@
     "snapshot_sha256": "d83acf9517a017071c438de8915a9bcce090e93ccc7ca209d746b91d0af91f36",
     "snapshot_line_count": 170,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/reader.hpp",
+      "native/src/recording/reader.cpp",
+      "native/src/recording/analysis.cpp",
+      "native/src/recording/query.cpp",
+      "native/tests/migration/test_t43.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/replay_input.py",
@@ -3517,12 +4245,16 @@
     "owner_task": "T44",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
-      "native/src/replay/session.hpp",
-      "native/src/replay/session.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
       "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
       "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
       "native/tests/migration/test_t44.cpp"
     ],
     "verification_ids": [
@@ -3535,7 +4267,29 @@
     "snapshot_sha256": "24cbcd0b48a988b8bf561e21fc835125b5ae0f326918e45b7b3ecaf296a680fa",
     "snapshot_line_count": 231,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/replay/input.hpp",
+      "native/src/replay/input.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/playback.cpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/report.py",
@@ -3544,10 +4298,12 @@
     "owner_task": "T45",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/report.hpp",
       "native/src/recording/report.cpp",
-      "native/src/recording/export.hpp",
+      "native/src/recording/report.hpp",
       "native/src/recording/export.cpp",
+      "native/src/recording/export.hpp",
+      "native/src/replay/export.cpp",
+      "native/src/replay/export.hpp",
       "native/resources/reports/summary.md.in",
       "native/tests/migration/test_t45.cpp"
     ],
@@ -3561,7 +4317,28 @@
     "snapshot_sha256": "0db4f57585086d83a6a642e5364cd389036c5aad6aa8c4eb2531f6c07dddd128",
     "snapshot_line_count": 155,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/report.hpp",
+      "native/src/recording/report.cpp",
+      "native/src/recording/export.hpp",
+      "native/src/recording/export.cpp",
+      "native/resources/reports/summary.md.in",
+      "native/tests/migration/test_t45.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/research.py",
@@ -3571,11 +4348,22 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
-      "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
-      "native/src/recording/events.cpp"
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
     ],
     "verification_ids": [
       "migration_T40",
@@ -3587,7 +4375,28 @@
     "snapshot_sha256": "4e3bedf0b6500ef5d871c971da508793c91db3578005d65f46b143b8607b0368",
     "snapshot_line_count": 191,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/events.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/schema.py",
@@ -3597,10 +4406,14 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/resources/recording/catalog-v1.json",
-      "native/src/recording/catalog.hpp",
       "native/src/recording/catalog.cpp",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog_data.inc",
+      "native/src/recording/catalog_model.cpp",
       "native/src/recording/coordinates.cpp",
       "native/src/recording/schema.cpp",
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/value_util.hpp",
       "native/tests/migration/test_t38.cpp"
     ],
     "verification_ids": [
@@ -3613,7 +4426,28 @@
     "snapshot_sha256": "4e0e199a1ebcbc7c73a85006e106696ab2bd3fcc9868c58b52d7327cafc0e7b0",
     "snapshot_line_count": 214,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/resources/recording/catalog-v1.json",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog.cpp",
+      "native/src/recording/coordinates.cpp",
+      "native/src/recording/schema.cpp",
+      "native/tests/migration/test_t38.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/recording/storage.py",
@@ -3622,10 +4456,11 @@
     "owner_task": "T41",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/database.hpp",
       "native/src/recording/database.cpp",
+      "native/src/recording/database.hpp",
       "native/src/recording/database_validate.cpp",
-      "native/src/recording/assets.cpp",
+      "native/src/recording/duckdb.cpp",
+      "native/src/recording/duckdb.hpp",
       "native/tests/migration/test_t41.cpp"
     ],
     "verification_ids": [
@@ -3638,7 +4473,27 @@
     "snapshot_sha256": "637825f1a37e2213aaf317fb7d9aa9b40797e52e7cb9b63dabcb9b26ad39c2d3",
     "snapshot_line_count": 448,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/database.hpp",
+      "native/src/recording/database.cpp",
+      "native/src/recording/database_validate.cpp",
+      "native/src/recording/assets.cpp",
+      "native/tests/migration/test_t41.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/__init__.py",
@@ -3647,16 +4502,26 @@
     "owner_task": "T47",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
       "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
       "native/src/cli/ride.cpp",
       "native/src/cli/research.cpp",
       "native/src/cli/settle.cpp",
       "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
       "native/src/cli/playground.cpp",
       "native/src/cli/replay.cpp",
       "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
       "native/tests/migration/test_t47.cpp"
     ],
     "verification_ids": [
@@ -3669,15 +4534,8 @@
     "snapshot_sha256": "55f4370260cce7c350f4b0e9dc0fbf4b17915b1fff125004c18f0a256dcc8492",
     "snapshot_line_count": 29,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/sim/backend.py",
-    "sha256": "b230c6109c541141a9c9e22f734f890c1142bf4877eb1cb4ced1dd3d6307c430",
-    "line_count": 16,
-    "owner_task": "T47",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -3690,6 +4548,49 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/sim/backend.py",
+    "sha256": "b230c6109c541141a9c9e22f734f890c1142bf4877eb1cb4ced1dd3d6307c430",
+    "line_count": 16,
+    "owner_task": "T47",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
     "verification_ids": [
       "migration_T47",
       "source_assertion_map",
@@ -3700,7 +4601,33 @@
     "snapshot_sha256": "b5a2fa8a8c2cc980ce9de4177f72eacb0fe0b1dd874098367e4bb829eaf22ff4",
     "snapshot_line_count": 16,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/application.cpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/camera.py",
@@ -3709,15 +4636,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -3730,7 +4663,32 @@
     "snapshot_sha256": "c922c7248049e2befc453e6a4bf3ecc75e823d33e4b28305e3135370a44f17a4",
     "snapshot_line_count": 99,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/controllers.py",
@@ -3819,15 +4777,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -3840,15 +4804,8 @@
     "snapshot_sha256": "502280c5edcf99067377931b738e24616a05d5cdd872661a81e11ff86e3514e0",
     "snapshot_line_count": 77,
     "tracked": true,
-    "presence": "tracked"
-  },
-  {
-    "path": "src/bike_sim/sim/input_handler.py",
-    "sha256": "81dabdc26c474e9b747495ccabd4ac2b1ce92cbfa0097d3885ae31e132f7e132",
-    "line_count": 152,
-    "owner_task": "T49",
-    "action": "port_remaining_behavior_to_native",
-    "replacement_paths": [
+    "presence": "tracked",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -3858,6 +4815,44 @@
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
+  },
+  {
+    "path": "src/bike_sim/sim/input_handler.py",
+    "sha256": "81dabdc26c474e9b747495ccabd4ac2b1ce92cbfa0097d3885ae31e132f7e132",
+    "line_count": 152,
+    "owner_task": "T49",
+    "action": "port_remaining_behavior_to_native",
+    "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -3870,7 +4865,32 @@
     "snapshot_sha256": "13bf320c5da0a774ff3fd1846bc6448839722d2db0fa78fae25a18605ca898cc",
     "snapshot_line_count": 152,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/playback.py",
@@ -3879,12 +4899,16 @@
     "owner_task": "T44",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
-      "native/src/replay/session.hpp",
-      "native/src/replay/session.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
       "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
       "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
       "native/tests/migration/test_t44.cpp"
     ],
     "verification_ids": [
@@ -3897,7 +4921,29 @@
     "snapshot_sha256": "54e6837fa13db7183b92280d78d2d82b78d35629c06a1deb19017b54e324fc33",
     "snapshot_line_count": 94,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/replay/input.hpp",
+      "native/src/replay/input.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/playback.cpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/playground.py",
@@ -4311,12 +5357,16 @@
     "owner_task": "T44",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
-      "native/src/replay/session.hpp",
-      "native/src/replay/session.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
       "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
       "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
       "native/tests/migration/test_t44.cpp"
     ],
     "verification_ids": [
@@ -4329,7 +5379,29 @@
     "snapshot_sha256": "00e2170dac26067cccaae9011e0803de0617d89dc81c5b9762dc2b8344a8123d",
     "snapshot_line_count": 112,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/replay/input.hpp",
+      "native/src/replay/input.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/playback.cpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/research/policies.py",
@@ -4500,12 +5572,16 @@
     "owner_task": "T44",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
-      "native/src/replay/session.hpp",
-      "native/src/replay/session.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
       "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
       "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
       "native/tests/migration/test_t44.cpp"
     ],
     "verification_ids": [
@@ -4518,7 +5594,29 @@
     "snapshot_sha256": "c0d6fa15ccd7db34d0863edebcafcd359b7b0beb0a186ac5dfa5362f4ec8974e",
     "snapshot_line_count": 319,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/replay/input.hpp",
+      "native/src/replay/input.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/playback.cpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/research/replay_session.py",
@@ -4527,12 +5625,16 @@
     "owner_task": "T44",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
-      "native/src/replay/session.hpp",
-      "native/src/replay/session.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
       "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
       "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
       "native/tests/migration/test_t44.cpp"
     ],
     "verification_ids": [
@@ -4545,7 +5647,29 @@
     "snapshot_sha256": "1665097d6bf407c8a0f717304c20ded5aac8b28eea096f3a75ea66dea07fd22f",
     "snapshot_line_count": 250,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/replay/input.hpp",
+      "native/src/replay/input.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/playback.cpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/research/replay_viewer.py",
@@ -4554,15 +5678,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -4575,7 +5705,32 @@
     "snapshot_sha256": "0ad1b59ec03e7655558b85ebe0f9ccf63f39996fa17a3ac8788f4fb5cb1da4a9",
     "snapshot_line_count": 100,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/research/rider_behavior.py",
@@ -4825,15 +5980,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -4846,7 +6007,32 @@
     "snapshot_sha256": "58311067f72dd1df179cdf87d6c235b3ea94a9a24fa21e4fd640c19883a24268",
     "snapshot_line_count": 234,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/__init__.py",
@@ -4940,10 +6126,28 @@
     "owner_task": "T42",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/recording/publish.hpp",
       "native/src/recording/publish.cpp",
+      "native/src/recording/publish.hpp",
       "native/src/recording/finalize.cpp",
-      "native/src/recording/interrupt.cpp"
+      "native/src/recording/interrupt.cpp",
+      "native/src/runtime/async_close.cpp",
+      "native/src/runtime/async_close.hpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/accounting.hpp",
+      "native/src/runtime/period_buffer.cpp",
+      "native/src/runtime/period_buffer.hpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/config.hpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/runtime/project_config.hpp",
+      "native/src/research/configuration.cpp",
+      "native/src/research/environment.cpp",
+      "native/src/platform/signals.cpp",
+      "native/src/platform/signals.hpp",
+      "native/tests/migration/async_close_contract.hpp",
+      "native/tests/migration/test_t42.cpp"
     ],
     "verification_ids": [
       "migration_T42",
@@ -4955,7 +6159,26 @@
     "snapshot_sha256": "5d00e508a62c5ebc4fa23f1553bfb5dc89ba8a4b0dc9d9e8505ef974ec570f0c",
     "snapshot_line_count": 289,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/publish.hpp",
+      "native/src/recording/publish.cpp",
+      "native/src/recording/finalize.cpp",
+      "native/src/recording/interrupt.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/attachment_wrench.py",
@@ -5079,15 +6302,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -5100,7 +6329,32 @@
     "snapshot_sha256": "47fcf1f5fc8c38b83b7a0e2a7b9bf5f59f0539b6f6688d58bd63ee8865ef6e35",
     "snapshot_line_count": 73,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/constraint_forces.py",
@@ -5816,15 +7070,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -5837,7 +7097,32 @@
     "snapshot_sha256": "6bff7cae721f2f161327b1077e3a50ff3f1db9411cd2ae01d84c6eadd74dda2d",
     "snapshot_line_count": 676,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/ideal_freehub.py",
@@ -5937,15 +7222,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -5958,7 +7249,32 @@
     "snapshot_sha256": "8b55c9e56f05d59f21af32da89b993fea49855d540389ef83d82dc47c613ed97",
     "snapshot_line_count": 324,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/lean_limit.py",
@@ -6091,15 +7407,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -6112,7 +7434,32 @@
     "snapshot_sha256": "320cf1b9fdbea34dc6d8472cd78a87a6ec77d92e0d96149ba1b46661b07f6edc",
     "snapshot_line_count": 111,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/mass_properties.py",
@@ -6462,15 +7809,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -6483,7 +7836,32 @@
     "snapshot_sha256": "929ec4014ea8d3a4dc7da45557a960aabc94589512b276945f524148c8f81564",
     "snapshot_line_count": 545,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/physical_mapping.py",
@@ -6569,11 +7947,22 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
-      "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
-      "native/src/recording/events.cpp"
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
     ],
     "verification_ids": [
       "migration_T40",
@@ -6585,7 +7974,28 @@
     "snapshot_sha256": "ea844e4ffbbda9ae78aa75d087a0764957843832b900d010f02d92472edd5efd",
     "snapshot_line_count": 166,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/events.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/physical_resistance.py",
@@ -6741,13 +8151,16 @@
     "owner_task": "T48",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/render_owner.hpp",
       "native/src/viewer/render_owner.cpp",
-      "native/src/viewer/glfw_context.hpp",
+      "native/src/viewer/render_owner.hpp",
       "native/src/viewer/glfw_context.cpp",
+      "native/src/viewer/glfw_context.hpp",
+      "native/src/viewer/render_fields.hpp",
       "native/src/viewer/snapshot.cpp",
-      "native/src/runtime/runtime.hpp",
       "native/src/runtime/runtime.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/research.hpp",
       "native/tests/migration/test_t48.cpp"
     ],
     "verification_ids": [
@@ -6760,7 +8173,30 @@
     "snapshot_sha256": "b46938ea88d4a9f1210988b6fcbcea96bf7c83b263761e9862d5d4d1f719bf55",
     "snapshot_line_count": 191,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/render_owner.hpp",
+      "native/src/viewer/render_owner.cpp",
+      "native/src/viewer/glfw_context.hpp",
+      "native/src/viewer/glfw_context.cpp",
+      "native/src/viewer/snapshot.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/runtime.cpp",
+      "native/tests/migration/test_t48.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/playback_viewer.py",
@@ -6769,15 +8205,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -6790,7 +8232,32 @@
     "snapshot_sha256": "8efa05d3bacef76c457776a4dc1f7984d98be61efac2b3f1d9a3541356229e25",
     "snapshot_line_count": 233,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/pneumatic_tire_forces.py",
@@ -6837,13 +8304,16 @@
     "owner_task": "T48",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/render_owner.hpp",
       "native/src/viewer/render_owner.cpp",
-      "native/src/viewer/glfw_context.hpp",
+      "native/src/viewer/render_owner.hpp",
       "native/src/viewer/glfw_context.cpp",
+      "native/src/viewer/glfw_context.hpp",
+      "native/src/viewer/render_fields.hpp",
       "native/src/viewer/snapshot.cpp",
-      "native/src/runtime/runtime.hpp",
       "native/src/runtime/runtime.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/research.hpp",
       "native/tests/migration/test_t48.cpp"
     ],
     "verification_ids": [
@@ -6856,7 +8326,30 @@
     "snapshot_sha256": "a3a52a3bf64cee304232ccdbfb7aa9c175b631255ae4596e78abd8cf3fa1516b",
     "snapshot_line_count": 80,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/render_owner.hpp",
+      "native/src/viewer/render_owner.cpp",
+      "native/src/viewer/glfw_context.hpp",
+      "native/src/viewer/glfw_context.cpp",
+      "native/src/viewer/snapshot.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/runtime.cpp",
+      "native/tests/migration/test_t48.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/recorder.py",
@@ -6866,11 +8359,22 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
-      "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
-      "native/src/recording/events.cpp"
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
     ],
     "verification_ids": [
       "migration_T40",
@@ -6882,7 +8386,28 @@
     "snapshot_sha256": "d3ec77a2179167833b06e162c703f3ce2f9ce2fc62d425d016bc1a50f15c291b",
     "snapshot_line_count": 505,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/events.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/reference_monitor.py",
@@ -7570,15 +9095,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -7591,7 +9122,32 @@
     "snapshot_sha256": "594ee2dff07bff678f7829d181b4f9bfadb5cc56ebf72b621aed85d90a3d350e",
     "snapshot_line_count": 304,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/static_braking.py",
@@ -7690,10 +9246,14 @@
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
       "native/resources/recording/catalog-v1.json",
-      "native/src/recording/catalog.hpp",
       "native/src/recording/catalog.cpp",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog_data.inc",
+      "native/src/recording/catalog_model.cpp",
       "native/src/recording/coordinates.cpp",
       "native/src/recording/schema.cpp",
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/value_util.hpp",
       "native/tests/migration/test_t38.cpp"
     ],
     "verification_ids": [
@@ -7706,7 +9266,28 @@
     "snapshot_sha256": "d1c8a63ed377fa17e7d020b0ebd9701d24421dfb4d8c0d4b9cc328ae031179c1",
     "snapshot_line_count": 73,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/resources/recording/catalog-v1.json",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog.cpp",
+      "native/src/recording/coordinates.cpp",
+      "native/src/recording/schema.cpp",
+      "native/tests/migration/test_t38.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/termination.py",
@@ -8070,15 +9651,21 @@
     "owner_task": "T49",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
-      "native/src/viewer/hud.cpp",
-      "native/src/viewer/camera.cpp",
-      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
       "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
       "native/src/viewer/ride.cpp",
       "native/src/viewer/research.cpp",
       "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
       "native/tests/migration/test_t49.cpp"
     ],
     "verification_ids": [
@@ -8091,7 +9678,32 @@
     "snapshot_sha256": "8a5b6c4b6e5a4d8322d73ac7a89d1b80290a14fade605c921dd6b7b63df87a49",
     "snapshot_line_count": 321,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/sim/ride/virtual_rider.py",
@@ -9959,13 +11571,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -9978,7 +11593,30 @@
     "snapshot_sha256": "bcae62267977cbb7ab6eea6da18257d28d8a6122bd07dd2747385c8eabbb4dd0",
     "snapshot_line_count": 25,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/viz/comparison_plot.py",
@@ -9987,13 +11625,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -10006,7 +11647,30 @@
     "snapshot_sha256": "d89260b6aa5dfd7d71e383cef37aca9b06532a47a1e8e2b93d093fff08f43de8",
     "snapshot_line_count": 243,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/viz/dyno_plot.py",
@@ -10015,13 +11679,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -10034,7 +11701,30 @@
     "snapshot_sha256": "9f69083118cd26b68e7929b30cd33c46b11318e699971c68a83cbe0291e1bd7f",
     "snapshot_line_count": 176,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/viz/geometry_plot.py",
@@ -10043,13 +11733,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -10062,7 +11755,30 @@
     "snapshot_sha256": "6c0734111e68a44c4bf4a1e6b17753cc182dfdb42a59d4f29486ebaf5a644ae5",
     "snapshot_line_count": 321,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/viz/leverage_plot.py",
@@ -10071,13 +11787,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -10090,7 +11809,30 @@
     "snapshot_sha256": "f23d6628bf30ddc7a4d7b2ff712cb0ee48ac1aee20183f6928fb3e6aaca4decc",
     "snapshot_line_count": 110,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/viz/plots.py",
@@ -10099,13 +11841,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -10118,7 +11863,30 @@
     "snapshot_sha256": "e0ae55466faa2eb5b439dac24ef4f536fbdda5f0aaacf843c256a1c0a9f652e4",
     "snapshot_line_count": 21,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/viz/ride_plots.py",
@@ -10127,13 +11895,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -10146,7 +11917,30 @@
     "snapshot_sha256": "4b36e1d1ded5cbe6d337c7a546f0aaecfde38581b62f6f8c4d396d86fe67cca1",
     "snapshot_line_count": 616,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/viz/tables.py",
@@ -10155,13 +11949,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -10174,7 +11971,30 @@
     "snapshot_sha256": "5ff277ad38f633f5eb1353ff6d7ac45899fd23dfba5fee4c88146e20fa8b17cf",
     "snapshot_line_count": 169,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "src/bike_sim/viz/theme.py",
@@ -10183,13 +12003,16 @@
     "owner_task": "T50",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/viz/plot.hpp",
-      "native/src/viz/plot.cpp",
-      "native/src/viz/svg.cpp",
-      "native/src/viz/png.cpp",
+      "native/src/viz/geometry.cpp",
       "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
       "native/src/viz/tables.cpp",
-      "native/resources/plotly/",
+      "native/resources/plotly/README.md",
       "native/tests/migration/test_t50.cpp"
     ],
     "verification_ids": [
@@ -10202,7 +12025,30 @@
     "snapshot_sha256": "804af2562f908d74eab6f9cb85ff8c5015d74fb7201ad3eb283d36f37f94fde3",
     "snapshot_line_count": 44,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "tests/reference/_bits.py",
@@ -14420,12 +16266,20 @@
     "owner_task": "T51",
     "action": "port_remaining_behavior_to_native",
     "replacement_paths": [
-      "native/src/batch/plan.hpp",
+      "native/src/batch/integer_detail.hpp",
+      "native/src/batch/log.hpp",
       "native/src/batch/plan.cpp",
-      "native/src/batch/executor.cpp",
+      "native/src/batch/plan.hpp",
+      "native/src/batch/process_pool.cpp",
+      "native/src/batch/spec.cpp",
       "native/src/batch/summary.cpp",
+      "native/src/batch/sweep.cpp",
       "native/src/cli/batch.cpp",
+      "native/src/platform/process.cpp",
+      "native/src/platform/process.hpp",
+      "native/src/platform/argv.hpp",
       "native/src/tools/research_sweep_main.cpp",
+      "native/src/tools/test_child_main.cpp",
       "native/tests/migration/test_t51.cpp"
     ],
     "verification_ids": [
@@ -14438,7 +16292,29 @@
     "snapshot_sha256": "178c87ba0bc892a013fdd17442decd8884abb5e7428d1b987cb55ec968602308",
     "snapshot_line_count": 77,
     "tracked": true,
-    "presence": "tracked"
+    "presence": "tracked",
+    "planned_replacement_paths": [
+      "native/src/batch/plan.hpp",
+      "native/src/batch/plan.cpp",
+      "native/src/batch/executor.cpp",
+      "native/src/batch/summary.cpp",
+      "native/src/cli/batch.cpp",
+      "native/src/tools/research_sweep_main.cpp",
+      "native/tests/migration/test_t51.cpp"
+    ],
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "path": "tools/step_profile.py",

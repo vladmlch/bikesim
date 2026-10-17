@@ -178,10 +178,8 @@ NativeContactResult RuntimeContactQuery::query(
     out.contacts.front_support_n = std::max(0., verticals[0]);
     out.contacts.rear_support_n = std::max(0., verticals[1]);
     out.contacts.handlebar_load_n = magnitudes[2];
-    out.contacts.front_slip_mps = slip(out.snapshots[0]);
-    out.contacts.rear_slip_mps = slip(out.snapshots[1]);
-    validation::derived(out.contacts.front_slip_mps,"native contact aggregate front slip");
-    validation::derived(out.contacts.rear_slip_mps,"native contact aggregate rear slip");
+    out.contacts.front_slip_mps = validation::derived(slip(out.snapshots[0]), "native contact aggregate front slip");
+    out.contacts.rear_slip_mps = validation::derived(slip(out.snapshots[1]), "native contact aggregate rear slip");
     out.contacts.front_controller_grounded = next_front_filter.update(road_loaded(out.snapshots[0]), sample_time);
     out.contacts.rear_controller_grounded = next_rear_filter.update(road_loaded(out.snapshots[1]), sample_time);
     front_load = next_front_load; rear_load = next_rear_load;

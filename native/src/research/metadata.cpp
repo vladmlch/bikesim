@@ -1,4 +1,5 @@
 #include "evidence.hpp"
+#include "../diag.hpp"
 #include "../configuration/load.hpp"
 #include "../configuration/suspension_spec.hpp"
 #include "../engine_identity.hpp"
@@ -106,16 +107,21 @@ io::Value wire_value(const runtime::Wire& wire) {
     }, wire.value);
 }
 
-io::Value configuration_metadata(const ResearchRequest& request, const initialization::ResearchStartup& startup,
-    const runtime::RuntimeBootstrap& bootstrap, const io::Value& setup_metadata) {
-    const auto& physics = *request.setup.model.physics;
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+io::Value physical_configuration_metadata(const initialization::SetupRequest& request,
+    const initialization::ResearchStartup& startup, const runtime::RuntimeBootstrap& bootstrap,
+    const io::Value& setup_metadata, const std::optional<std::string>& seed_decimal) {
+    if (!request.model.physics) throw std::invalid_argument("physical metadata requires resolved physics");
+    const auto& physics = *request.model.physics;
     const auto& inputs = field(setup_metadata, "inputs");
     const auto hash = terrain_digest(startup.geometry);
-    const auto seed = Value{io::Number{validate_seed(request.experiment.seed_decimal)}};
+    const auto seed = seed_decimal ? Value{io::Number{validate_seed(*seed_decimal)}} : Value{};
     Value resolved{Object{{"physics", configuration::detail::plain_document(configuration::to_value(physics))},
         {"geometry_and_suspension", field(inputs, "specs")}, {"mass_budget", field(inputs, "mass_specs")},
-        {"rider", field(inputs, "rider")}, {"target_speed_kmh", Value{}}, {"terrain_sha256", text(hash)}, {"seed", seed},
-        {"track", terrain::track_to_dict(request.setup.track)}, {"active_suspension", active_suspension(request.setup.model.bike)}}};
+        {"rider", field(inputs, "rider")}, {"target_speed_kmh", physics.drive_mode == "ideal_speed_control" ? real(request.runtime.speed_kph) : Value{}},
+        {"terrain_sha256", text(hash)}, {"seed", seed},
+        {"track", terrain::track_to_dict(request.track)}, {"active_suspension", active_suspension(request.model.bike)}}};
     for (const auto& [name, value] : io::as_object(startup.compiled_metadata, "compiled metadata")) set(resolved, name, value);
     set(resolved, "allocation_numerical_guards", Value{Object{{"support_force_n", real(1e-5)},
         {"support_moment_nm", real(1e-6)}, {"grip_radius_fraction", real(1e-6)}}});
@@ -129,7 +135,7 @@ io::Value configuration_metadata(const ResearchRequest& request, const initializ
     const auto engine_identity = engine::identity();
     const auto build = platform::build_identity();
     Object provenance;
-    for (const auto& [name, ignored] : request.setup.model.masses.component_masses()) {
+    for (const auto& [name, ignored] : request.model.masses.component_masses()) {
         (void)ignored; provenance.emplace_back(name, text("synthetic"));
     }
     const auto limitation = physics.tires.backend == "distributed_2d_reference"
@@ -152,17 +158,27 @@ io::Value configuration_metadata(const ResearchRequest& request, const initializ
         {"resolved_config", std::move(resolved)}, {"seed", seed}, {"timestep_s", real(bootstrap.config.timestep_s)},
         {"controller_interval_s", real(bootstrap.config.control_period_s)}, {"tire_backend", text(physics.tires.backend)},
         {"drive_mode", text(physics.drive_mode.value())}, {"rider_model", field(field(inputs, "rider"), "variant")},
-        {"external_speed_controller", Value{false}}, {"calibration_status", text("parameterized_unvalidated")},
+        {"external_speed_controller", Value{physics.drive_mode == "ideal_speed_control"}}, {"calibration_status", text("parameterized_unvalidated")},
         {"environment_contract", Value{Object{{"scope", text("native executable, provider and dependency-lock identity")},
             {"dependency_lock_sha256", text(build.dependency_lock_sha256)}, {"build_type", text(build.build_type)},
             {"platform", text(build.platform)}, {"locked_environment_verified", Value{}}}}},
         {"component_provenance", Value{std::move(provenance)}},
         {"limitations", Value{Array{text("planar X-Z dynamics"), text("synthetic material and drive parameters"),
             text(limitation), text("native contact work is a solver diagnostic, not material tire hysteresis")}}},
-        {"execution", std::move(execution)}, {"setup", setup_metadata}, {"experiment", experiment_value(request.experiment)},
-        {"sensor_config", sensor_config_value(request.sensors)}, {"rider_program", rider_program_value(request.programs)},
-        {"demand_program", demand_program_value(request.programs)}, {"model_sha256", text(bootstrap.model.sha256)}}};
+        {"execution", std::move(execution)}, {"setup", setup_metadata}, {"model_sha256", text(bootstrap.model.sha256)}}};
 }
+
+io::Value configuration_metadata(const ResearchRequest& request, const initialization::ResearchStartup& startup,
+    const runtime::RuntimeBootstrap& bootstrap, const io::Value& setup_metadata) {
+    auto metadata = physical_configuration_metadata(request.setup, startup, bootstrap, setup_metadata,
+        request.experiment.seed_decimal);
+    set(metadata, "experiment", experiment_value(request.experiment));
+    set(metadata, "sensor_config", sensor_config_value(request.sensors));
+    set(metadata, "rider_program", rider_program_value(request.programs));
+    set(metadata, "demand_program", demand_program_value(request.programs));
+    return metadata;
+}
+NATIVE_DIAG_POP
 
 io::Value reseed_metadata(const io::Value& original, std::string_view seed_decimal) {
     if (io::is_null(original)) return original; // legacy captured bootstrap

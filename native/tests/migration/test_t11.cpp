@@ -13,6 +13,7 @@
 // set and slice/change-detection domains run against hand-authored
 // samples so every assertion names the exact wire tree and plan document.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "runtime/encode.hpp"
 #include "runtime/provenance.hpp"
 #include "runtime/samples.hpp"
@@ -401,6 +402,8 @@ constexpr std::string_view kChannelsPlan = R"({
     return out;
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void checks_channels() {
     // EncodePlan moves by steal: path-trie edge views into leaf column
     // path strings stay valid — encode through the moved plan to prove it.
@@ -605,6 +608,7 @@ void checks_channels() {
     bt::invalid([&] { static_cast<void>(runtime::encode_table_native(
         ep_shape, live, 0, 1)); });
 }
+NATIVE_DIAG_POP
 
 // ---- applied-command rows ----------------------------------------------------
 

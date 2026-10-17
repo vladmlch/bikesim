@@ -7,6 +7,7 @@
 #include "../validation.hpp"
 
 namespace contactlaw {
+MaterialRangeError::~MaterialRangeError() = default;
 TabulatedRadial::TabulatedRadial(const nativecfg::TireTable &table) {
     nativecfg::validate(table);
     deflection_m_ = table.deflection_m;

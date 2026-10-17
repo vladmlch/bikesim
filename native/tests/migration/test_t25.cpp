@@ -2,6 +2,7 @@
 // -> sole ride owner. These tests are authored here, not executed in the
 // no-build/no-run implementation session.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "app/physical_session.hpp"
 #include "configuration/load.hpp"
 #include "initialization/setup_owner.hpp"
@@ -51,7 +52,10 @@ void same(std::span<const double> a, std::span<const double> b, std::string_view
             std::string(message) + " at integration index " + std::to_string(i));
 }
 
-void request_contract() {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
+[[gnu::noinline]] void request_contract() {
     Directory directory;
     std::filesystem::create_directory(directory.path / "case");
     std::filesystem::create_directory(directory.path / "config");
@@ -116,7 +120,7 @@ void request_contract() {
         "failed setup publishes no recording or successful manifest");
 }
 
-void ownership_and_reset() {
+[[gnu::noinline]] void ownership_and_reset() {
     auto request = bike::initialization::read_setup_request(bt::fixture("requests/welded_flat.toml"));
     auto early = bike::initialization::make_setup(request);
     bt::invalid([&] { (void)early->seal_bootstrap(); });
@@ -147,7 +151,7 @@ void ownership_and_reset() {
     bt::golden_f64("bootstrap/native_start_welded/integration.f64", initial.integration_state);
 }
 
-void shipped_backends() {
+[[gnu::noinline]] void shipped_backends() {
     for (std::string_view profile : {"welded", "distributed", "pneumatic"}) {
         auto request = bike::initialization::read_setup_request(
             bt::fixture("requests/" + std::string(profile) + "_flat.toml"));
@@ -171,3 +175,4 @@ int main() {
         ownership_and_reset();
     });
 }
+NATIVE_DIAG_POP

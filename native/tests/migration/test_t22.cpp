@@ -1,6 +1,7 @@
 // T22 authored regressions. Execution and oracle qualification are separate
 // gates; none was run in the user's no-build/no-run implementation session.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "initialization/equilibrium.hpp"
 #include "initialization/setup_owner.hpp"
 
@@ -8,10 +9,13 @@
 #include <limits>
 #include <string>
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
 namespace {
 namespace init=bike::initialization;
 
-void budgets() {
+[[gnu::noinline]] void budgets() {
     const init::EquilibriumOptions defaults;
     bt::require(init::equilibrium_step_budget(.0005,defaults)==160000,
                 "physical equilibrium budgets eighty seconds");
@@ -39,7 +43,7 @@ void budgets() {
     }
 }
 
-void convergence_and_failure() {
+[[gnu::noinline]] void convergence_and_failure() {
     auto request=init::read_setup_request(bt::fixture("requests/welded_flat.toml"));
     request.model.physics->equilibrium_cache_enabled=false;
     request.model.physics->equilibrium_state_file.reset();
@@ -74,7 +78,7 @@ void convergence_and_failure() {
     bt::invalid([&]{(void)init::settle(*owner);});
 }
 
-void slope_brake_and_crank() {
+[[gnu::noinline]] void slope_brake_and_crank() {
     auto request=init::read_setup_request(bt::fixture("requests/welded_flat.toml"));
     request.model.physics->equilibrium_cache_enabled=false;
     request.model.physics->equilibrium_state_file.reset();
@@ -95,3 +99,4 @@ void slope_brake_and_crank() {
 } // namespace
 
 int main(){return bt::run([]{budgets();convergence_and_failure();slope_brake_and_crank();});}
+NATIVE_DIAG_POP

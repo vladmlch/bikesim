@@ -54,7 +54,7 @@ struct RideOptions {
     std::optional<std::string> legs;
 };
 struct RideSnapshot {
-    double time_s = 0., position_m = 0., speed_mps = 0., pitch_rad = 0.;
+    double time_s = 0., position_m = 0., speed_mps = 0., pitch_rad = 0., z_m = 0.;
     std::int64_t steps = 0;
     std::uint64_t generation = 0;
     TerrainContacts contacts;
@@ -62,6 +62,7 @@ struct RideSnapshot {
     TelemetryRow telemetry{};
     std::vector<double> qpos,qvel,ctrl,qfrc_applied,xfrc_applied,eq_data,integration_state;
     std::vector<unsigned char> eq_active;
+    std::array<std::vector<double>, 6> model_fields;
 };
 class RideSimulation {
 public:
@@ -75,12 +76,17 @@ public:
     void set_target_speed_kph(double);
     void set_assist_mode(std::string_view);
     void set_tyre_pressures(double front_bar,double rear_bar);
+    // Applies a legacy UI tuning key between physics intervals. The returned
+    // message describes the actual accepted value; nullopt means unbound.
+    [[nodiscard]] std::optional<std::string> handle_tuning_key(int keycode);
     [[nodiscard]] RideSnapshot snapshot() const;
     [[nodiscard]] TelemetryRow telemetry() const;
     [[nodiscard]] double time_s() const;
     [[nodiscard]] double position_m() const;
     [[nodiscard]] double timestep_s() const;
     [[nodiscard]] double start_x_m() const;
+    [[nodiscard]] double shock_bumper_engage_mm() const;
+    [[nodiscard]] std::optional<CrashEvent> crash_event() const;
     [[nodiscard]] std::optional<std::array<biketyre::WheelOutputs,2>> tyre_outputs() const;
     [[nodiscard]] std::int64_t steps() const;
     [[nodiscard]] RunLimits default_limits(double max_wall_clock_s = 300.) const;

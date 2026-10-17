@@ -1,6 +1,7 @@
 // T27 authored regressions. No build or execution was performed while
 // implementing this wave; these are future acceptance cases, not pass evidence.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "configuration/load.hpp"
 #include "drivetrain/capabilities.hpp"
 #include "drivetrain/chain.hpp"
@@ -65,6 +66,8 @@ void chain_geometry_and_virtual_work() {
     });
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void native_topologies() {
     const auto available = drivetrain::implemented_capabilities();
     bt::require(available.elastic_chain && available.motor_clutch && available.reflected_rotor,
@@ -97,8 +100,7 @@ void native_topologies() {
         const auto topology = drivetrain::motor_topology(*config.drive);
         const int actuator = bike::model::required_id(*model, mjOBJ_ACTUATOR, "mid_drive");
         const int target = bike::model::required_id(*model, mjOBJ_JOINT, topology.actuator_joint);
-        bt::require(std::span<const int>(model->actuator_trnid,
-            static_cast<std::size_t>(2 * model->nu))[static_cast<std::size_t>(2 * actuator)] == target,
+        bt::require(std::views::counted(model->actuator_trnid, 2 * model->nu)[static_cast<std::size_t>(2 * actuator)] == target,
             "motor actuator targets the selected crank, shaft or rotor joint");
 
         drivetrain::OwnedData data(engine::make_data(model.get()));
@@ -150,3 +152,4 @@ void native_topologies() {
 int main() {
     return bt::run([] { chain_geometry_and_virtual_work(); native_topologies(); });
 }
+NATIVE_DIAG_POP

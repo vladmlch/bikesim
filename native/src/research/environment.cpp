@@ -1,9 +1,18 @@
 #include "environment.hpp"
 #include "evidence.hpp"
+#include <memory>
 #include <stdexcept>
 
 namespace bike::research {
-PreparedEnvironment prepare_environment(ResearchRequest request) {
+namespace {
+std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const initialization::SetupRequest& setup) {
+    auto copy = std::make_unique<initialization::SetupRequest>(setup);
+    const auto options = copy->equilibrium;
+    auto owner = initialization::make_setup(std::move(*copy));
+    (void)initialization::settle(*owner, options);
+    return owner;
+}
+[[gnu::noinline]] void prepare_environment_into(ResearchRequest& request, PreparedEnvironment& out) {
     request.experiment.validate(); request.sensors.validate(); request.programs.validate();
     if (!request.setup.model.physics) throw std::invalid_argument("research requires physical configuration");
     auto& physics = *request.setup.model.physics;
@@ -19,10 +28,11 @@ PreparedEnvironment prepare_environment(ResearchRequest request) {
     request.setup.research_startup = true;
     request.setup.model.field = research_field(request.setup.track, request.road_resolution_m);
     request.setup.runtime.strict = request.experiment.stop_on_model_violation;
+    request.setup.runtime.async_telemetry = request.experiment.async_telemetry;
     request.setup.runtime.measurement_decimation = request.experiment.record_decimation;
     request.setup.runtime.record_retention = request.capture_mode == runtime::ResearchCaptureMode::full ? runtime::RetentionMode::full :
         request.capture_mode == runtime::ResearchCaptureMode::legacy ? runtime::RetentionMode::legacy : runtime::RetentionMode::off;
-    runtime::ResearchConfig config;
+    auto& config = out.bootstrap.config;
     config.timestep_s = physics.timestep_s;
     config.control_steps = integer_steps(request.experiment.control_period_s, config.timestep_s, "control period");
     config.delay_steps = integer_steps(request.experiment.actuator_delay_s, config.timestep_s, "actuator delay");
@@ -44,26 +54,38 @@ PreparedEnvironment prepare_environment(ResearchRequest request) {
     config.noise_std = {request.sensors.noise.acceleration_std_mps2, request.sensors.noise.gyro_std_rad_s,
         request.sensors.noise.encoder_std_rad_s, request.sensors.noise.torque_std_nm};
     // All declarative checks and large tape allocation precede engine setup.
-    auto tape = make_sensor_tape(request.sensors, config.seed_decimal, 1 + config.max_steps / config.sensor_steps);
-    auto owner = initialization::make_setup(request.setup);
-    (void)initialization::settle(*owner, request.setup.equilibrium);
-    const auto startup = owner->research_initial_state();
-    config.geometry = startup.geometry;
-    config.start_position_m = startup.position_m;
-    config.raw_initial = startup.observation;
-    auto state = startup_sensor_state(request.sensors, tape, startup.observation);
-    auto ride = owner->seal_bootstrap();
-    auto metadata = configuration_metadata(request, startup, ride, owner->metadata());
-    config.metadata = metadata;
+    out.bootstrap.tape = make_sensor_tape(request.sensors, config.seed_decimal, 1 + config.max_steps / config.sensor_steps);
+    auto owner = make_settled_research_owner(request.setup);
+    const auto startup = std::make_unique<initialization::ResearchStartup>(owner->research_initial_state());
+    config.geometry = startup->geometry;
+    config.start_position_m = startup->position_m;
+    config.raw_initial = startup->observation;
+    out.bootstrap.startup = startup_sensor_state(request.sensors, out.bootstrap.tape, startup->observation);
+    out.bootstrap.ride = owner->seal_bootstrap();
+    out.metadata = configuration_metadata(request, *startup, out.bootstrap.ride, owner->metadata());
+    config.metadata = out.metadata;
     if (request.capture_mode == runtime::ResearchCaptureMode::full || request.capture_mode == runtime::ResearchCaptureMode::legacy)
-        config.assets = snapshot_research_assets(request, startup, metadata);
-    return {{std::move(ride), std::move(config), std::move(tape), std::move(state)}, std::move(metadata)};
+        config.assets = snapshot_research_assets(request, *startup, out.metadata);
 }
-std::unique_ptr<runtime::NativeResearchRuntime> make_environment(ResearchRequest request) {
-    auto prepared = prepare_environment(std::move(request));
-    return runtime::make_research(std::move(prepared.bootstrap));
+[[gnu::noinline]] std::unique_ptr<ResearchRequest> load_research_request_ptr(const std::filesystem::path& file) {
+    return std::make_unique<ResearchRequest>(read_research_request(file));
+}
+} // namespace
+
+PreparedEnvironment prepare_environment(ResearchRequest request) {
+    PreparedEnvironment out;
+    prepare_environment_into(request, out);
+    return out;
+}
+[[gnu::noinline]] std::unique_ptr<runtime::NativeResearchRuntime> make_environment(ResearchRequest request) {
+    auto prepared = std::make_unique<PreparedEnvironment>();
+    prepare_environment_into(request, *prepared);
+    return runtime::make_research(std::move(prepared->bootstrap));
 }
 std::unique_ptr<runtime::NativeResearchRuntime> make_environment(const std::filesystem::path& file) {
-    return make_environment(read_research_request(file));
+    auto req = load_research_request_ptr(file);
+    auto prepared = std::make_unique<PreparedEnvironment>();
+    prepare_environment_into(*req, *prepared);
+    return runtime::make_research(std::move(prepared->bootstrap));
 }
 } // namespace bike::research

@@ -4,15 +4,15 @@
 #include "../runtime/setup_values.hpp"
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
+#include "../writers/drivetrain.hpp"
 #include <algorithm>
 #include <ranges>
 #include <stdexcept>
 
 namespace bike::initialization {
-namespace {
 using namespace runtime::setupvalue;
 
-Value compiled_metadata(const mjModel& model) {
+Value compiled_physical_metadata(const mjModel& model) {
     Object contacts;
     const auto solref = std::views::counted(model.geom_solref, model.ngeom * mjNREF);
     const auto solimp = std::views::counted(model.geom_solimp, model.ngeom * mjNIMP);
@@ -47,8 +47,6 @@ Value compiled_metadata(const mjModel& model) {
         {"compiled_equality_solimp", Value{std::move(eq_imp)}},
         {"pedal_support_half_length_m", Value{std::move(pedals)}}}};
 }
-} // namespace
-
 ResearchStartup prepare_research_startup(SetupContext& context) {
     if (!context.completed || !context.equilibrium || context.stepper.time() != 0.)
         throw std::invalid_argument("research startup requires completed t=0 equilibrium");
@@ -89,7 +87,7 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
     result.geometry.root_pitch_qpos = static_cast<std::size_t>(pitch.qpos);
     result.geometry.root_pitch_dof = static_cast<std::size_t>(pitch.dof);
     result.position_m = std::views::counted(data->qpos, model->nq)[result.geometry.root_x_qpos];
-    result.compiled_metadata = compiled_metadata(*model);
+    result.compiled_metadata = compiled_physical_metadata(*model);
     return result;
 }
 } // namespace bike::initialization

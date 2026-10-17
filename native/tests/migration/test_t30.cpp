@@ -1,6 +1,7 @@
 // T30 attachment topology, support wrench and energy contracts.
 // Test bodies contain future engine calls; none were invoked while editing.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "rider/support_dispatch.hpp"
 #include "rider/legacy_diagnostics.hpp"
 #include "rider/state_codec.hpp"
@@ -27,7 +28,10 @@ cfg::SimulationPhysicsConfig physical() {
 ::rider::RiderContactsConfig contacts(const cfg::ArticulatedConfig& a) {
     ::rider::RiderContactsConfig c;c.arm_reach_m=.7;c.saddle_patch_half_length_m=a.saddle_patch_half_length_m;c.pedal_patch_half_length_m=a.pedal_patch_half_length_m;c.support_pad_radius_m=a.support_pad_radius_m;c.support_k_n_m=a.support_k_n_m;c.support_c_ns_m=a.support_c_ns_m;c.pedal_c_ns_m=a.pedal_c_ns_m;c.support_tangent_k_n_m=a.support_tangent_k_n_m;c.support_mu=a.support_mu;c.support_length_m=a.support_length_m;c.grip_k_n_m=a.grip_k_n_m;c.grip_c_ns_m=a.grip_c_ns_m;c.grip_release_distance_m=a.grip_release_distance_m;c.grip_pair_force_limit_n=a.grip_pair_force_limit_n;c.grip_capture_distance_m=a.grip_capture_distance_m;c.grip_capture_speed_mps=a.grip_capture_speed_mps;c.pedal_attachment=*::rider::pedal_attachment(a.pedal_attachment);c.saddle_attachment=*::rider::saddle_attachment(a.saddle_attachment);c.grip_attachment=*::rider::grip_attachment(a.grip_attachment);return c;
 }
-void support_wrench() {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
+[[gnu::noinline]] void support_wrench() {
     const std::array<double,4> x{0.,-.2,.2,.6};const std::array<bool,4> enabled{true,true,true,true};
     const auto loads=r::gravity_support_targets(800.,.1,x,0.,.33,.12,enabled);
     double total=0.,moment=0.,crank=0.;for(std::size_t i=0;i<4;++i){total+=loads.forces[i];moment+=(x[i]-.1)*loads.forces[i];if(i==1||i==2)crank+=x[i]*loads.forces[i];}
@@ -44,7 +48,7 @@ void support_wrench() {
     const auto release=::rider::release_if_overloaded({100.,0.,0.},3.,50.);
     bt::require(release.overloaded&&release.force==::rider::Vec3{}&&release.loss_j==3.,"overload release accounts stored spring energy exactly once");
 }
-void topology_and_controller() {
+[[gnu::noinline]] void topology_and_controller() {
     mdl::BuildRequest request;request.mode="ride";request.rider=cfg::RiderSpecs{};request.rider->variant="articulated_planar";request.physics=physical();
     for(const auto*pedal:{"flat","weld","spindle"})for(const auto*saddle:{"flat","weld","pin"})for(const auto*grip:{"spring","connect"}) {
         auto&a=request.physics->articulated;a.pedal_attachment=pedal;a.saddle_attachment=saddle;a.grip_attachment=grip;
@@ -66,10 +70,11 @@ void topology_and_controller() {
     bt::require(!runtime::implemented_capabilities(*request.physics,wrong).implemented,"nonflat attachment model requires articulated rider");
     auto assisted=*request.physics;assisted.pitch_assist=true;bt::invalid([&]{(void)runtime::implemented_capabilities(assisted,*request.rider);});
 }
-void diagnostics_roundtrip() {
+[[gnu::noinline]] void diagnostics_roundtrip() {
     r::LegacySupportDiagnostics d;d.target.vertical_forces_n={400.,150.,150.,100.};d.target.feasible=true;d.stance={true,false};d.posture.pelvis_offset_m=std::array<double,2>{.01,.02};d.target_phase_rad=0.;d.phase_error_rad=.1;d.feet[0].weld=true;d.feet[1].recovery=true;d.feet[1].recovery_stage="escape";
     const auto encoded=r::encode_support_diagnostics(d);const auto restored=r::decode_support_diagnostics(encoded,"support");
     bt::require(bike::io::canonical_json(r::encode_support_diagnostics(restored))==bike::io::canonical_json(encoded),"force targets, optional phase and foot recovery roundtrip");
 }
 }
 int main(){return bt::run([]{support_wrench();topology_and_controller();diagnostics_roundtrip();});}
+NATIVE_DIAG_POP

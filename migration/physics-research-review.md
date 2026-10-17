@@ -2,6 +2,18 @@
 
 Date: 2026-10-17.
 
+## Follow-up review of commits 9c940c96 and 9d9e49c0
+
+**Changes required:** five open source-supported findings are detailed in
+[the commit review](native-waves-commit-review.md): native-reference
+bootstrap failure (P1), zero-torque ideal speed control (P1), missing
+native-reference resistance (P2), incomplete policy ABI numeric validation
+(P2), and pedal recovery ignoring its configuration switch (P2).
+The review checks the integrated Git tree and does not claim runtime
+reproduction. No tests, build, simulation or policy execution was performed.
+The implementation and acceptance statements below must be read with these
+open findings; task and deletion gates remain open.
+
 ## Result and evidence boundary
 
 The Physics and research group has implementation changes, shared build

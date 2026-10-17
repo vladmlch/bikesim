@@ -34,9 +34,12 @@ bike::io::Value TerrainGenSpec::to_dict()const{
 #define WRITE_FIELD(name) out.emplace_back(#name,detail::field_value(name));
     BIKE_TERRAIN_SPEC_FIELDS(WRITE_FIELD)
 #undef WRITE_FIELD
-    for(auto& [key,value]:out)if(std::ranges::find(integer_scalar_fields,key)!=integer_scalar_fields.end()){
-        const double v=bike::io::as_double(value,key);if(std::trunc(v)==v)value={bike::io::Number{detail::gd::py_fixed(v,0)}};
-    }return {std::move(out)};
+    for(auto& [key,value]:out){
+        if(std::ranges::find(integer_scalar_fields,key)!=integer_scalar_fields.end()){
+            const double v=bike::io::as_double(value,key);if(std::trunc(v)==v)value={bike::io::Number{detail::gd::py_fixed(v,0)}};
+        }
+    }
+    return {std::move(out)};
 }
 std::string TerrainGenSpec::sha256()const{validate();return detail::source_spec_hash(to_dict());}
 namespace {

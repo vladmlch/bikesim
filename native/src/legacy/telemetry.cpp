@@ -1,4 +1,5 @@
 #include "playground.hpp"
+#include "../diag.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../numeric_sum.hpp"
 #include <algorithm>
@@ -13,6 +14,8 @@ SimModelHandles SimModelHandles::from_model(const mjModel& m){
 }
 TelemetryProvider::TelemetryProvider(const geometry::BikeSpecs& specs,const kinematics::HorstLinkageSolver& solver,const model::ForkAirSpring& air,const model::BikeSuspensionSystem& suspension)
     :specs_(specs),solver_(solver),air_(air),suspension_(suspension){}
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 io::Value TelemetryProvider::compute(const mjModel& m,const mjData& d,double target,bool rider,const SimModelHandles& h,std::string_view camera)const {
     using namespace runtime::setupvalue;
     for(int id:{h.main_pivot,h.shock,h.fork})if(id>=m.njnt)throw std::invalid_argument("telemetry joint outside model");
@@ -45,4 +48,5 @@ io::Value TelemetryProvider::compute(const mjModel& m,const mjData& d,double tar
         {"damper_preset",text(presets.at(static_cast<std::size_t>(suspension_.current_preset)))},{"p3_residual_mm",real(residual)},{"total_mass_kg",real(mass.total())},{"cg_x_mm",real((com[0]-bb[0])*1000.)},{"cg_z_mm",real((com[2]-bb[2])*1000.)},
         {"front_load_pct",real(front_pct)},{"rear_load_pct",real(rear_pct)},{"front_load_n",real(weight*(front_pct/100.))},{"rear_load_n",real(weight*(rear_pct/100.))}}};
 }
+NATIVE_DIAG_POP
 } // namespace bike::legacy

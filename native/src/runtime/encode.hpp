@@ -24,44 +24,10 @@
 #include <vector>
 
 #include "../io/value.hpp"
+#include "encoding_values.hpp"
 #include "samples.hpp"
 
 namespace runtime {
-
-// One emitted Arrow column's raw payload; kind picks which members are live.
-struct Piece {
-    enum class Kind : std::uint8_t { scalar_d, scalar_i, scalar_b, scalar_s,
-                      list_d, list_i, list_s, structure, map }
-        kind = Kind::scalar_d;
-    std::vector<double> d;
-    std::vector<std::int64_t> i;
-    std::vector<char> b;                    // bool payload
-    std::vector<std::string> s;             // varchar payload / map keys
-    std::vector<std::int32_t> offsets;      // list/struct[]/map member spans
-    std::vector<char> valid;                // empty => all-valid
-    std::map<std::string, Piece> children;  // struct members incl *_present
-    // Struct member dispatch cache, parallel to the declaring plan node's
-    // children order: slot i addresses children[child.name] and, for an
-    // optional member, its *_present companion (nullptr when required).
-    // structure_piece fills it once — the pointed-to children are std::map
-    // nodes, so their addresses survive every move of this piece — and the
-    // per-row converters index it instead of repeating the tree lookups.
-    struct MemberSlot {
-        Piece *member = nullptr;
-        Piece *present = nullptr;
-    };
-    std::vector<MemberSlot> member_slots;
-    std::unique_ptr<Piece> items;           // map values / struct[] elements
-
-    Piece() = default;
-    // Copying a structure piece would leave member_slots pointing at the
-    // source's children; pieces are moved or emplaced, never copied.
-    Piece(const Piece &) = delete;
-    Piece &operator=(const Piece &) = delete;
-    Piece(Piece &&) = default;
-    Piece &operator=(Piece &&) = default;
-    ~Piece() = default;
-};
 
 // ---- parsed encode plans ---------------------------------------------------
 
@@ -187,14 +153,6 @@ struct DerivedEventPlan {
 parse_derived_event_plan(const bike::io::Value &plan);
 
 // ---- emission ---------------------------------------------------------------
-
-// One encoded table window: the emitted row count plus the piece map the
-// assembler (Python pieces_to_arrow today, a native ingestion later)
-// reads. Piece stays move-only — EncodedTable moves as a unit.
-struct EncodedTable {
-    std::int64_t rows = 0;
-    std::map<std::string, Piece> columns;
-};
 
 // Runs the declared per-kind emitter over the retained slice [start,
 // start+limit): physics/forces fixed columns or the channels

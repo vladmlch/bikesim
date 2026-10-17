@@ -251,7 +251,7 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
         "control_period_steps", "physics_mode", "drive_mode", "strict",
         "measurement_decimation", "record_retention", "writer_config",
         "rider_controller", "rider_intent", "monitors", "geometry");
-    vread::exact(root, required);
+    vread::exact(root, required, vread::keys("async_telemetry"));
     if (vread::integer32(vread::field(root, "runtime_schema"),
                          root.child("runtime_schema")) != kRuntimeSchema)
         vread::invalid(root.child("runtime_schema"),
@@ -276,6 +276,8 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
         vread::invalid(root.child("drive_mode"), "unsupported drive mode");
     out.strict =
         vread::boolean(vread::field(root, "strict"), root.child("strict"));
+    if (root.contains("async_telemetry"))
+        out.async_telemetry = vread::boolean(vread::field(root, "async_telemetry"), root.child("async_telemetry"));
     out.measurement_decimation =
         positive_int_field(root, "measurement_decimation");
     {

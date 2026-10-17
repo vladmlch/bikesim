@@ -3,6 +3,7 @@
 #include "constraint_dynamics.hpp"
 #include "../numerics/dense.hpp"
 #include "../engine_call.hpp"
+#include "../model_access.hpp"
 #include "least_squares.hpp"
 
 #include <algorithm>
@@ -29,19 +30,28 @@ ConstraintSystem snapshot(const mjModel& model,const mjData& data,std::span<cons
         }
         basis[j]=0.;
     }
+    const auto qfrc_applied = model_access::readonly_buffer(data.qfrc_applied, model.nv, "qfrc_applied");
+    const auto qfrc_passive = model_access::readonly_buffer(data.qfrc_passive, model.nv, "qfrc_passive");
+    const auto qfrc_actuator = model_access::readonly_buffer(data.qfrc_actuator, model.nv, "qfrc_actuator");
+    const auto qfrc_bias = model_access::readonly_buffer(data.qfrc_bias, model.nv, "qfrc_bias");
     s.known_force.resize(nv);
     for(std::size_t i=0;i<nv;++i)
-        s.known_force[i]=data.qfrc_applied[i]+data.qfrc_passive[i]+data.qfrc_actuator[i]-data.qfrc_bias[i];
+        s.known_force[i]=qfrc_applied[i]+qfrc_passive[i]+qfrc_actuator[i]-qfrc_bias[i];
     std::vector<bool> seen(nv,false);
     for(std::size_t j=0;j<dofs.size();++j) {
         if(dofs[j]<0 || static_cast<std::size_t>(dofs[j])>=nv || seen[static_cast<std::size_t>(dofs[j])])
             throw std::invalid_argument("constraint dynamics: invalid/duplicate actuator dof");
         const auto i=static_cast<std::size_t>(dofs[j]);seen[i]=true;
-        s.known_force[i]-=data.qfrc_actuator[i];s.actuation.values[i*dofs.size()+j]=1.;
+        s.known_force[i]-=qfrc_actuator[i];s.actuation.values[i*dofs.size()+j]=1.;
     }
+    const auto efc_type = model_access::readonly_buffer(data.efc_type, data.nefc, "efc_type");
+    const auto efc_id = model_access::readonly_buffer(data.efc_id, data.nefc, "efc_id");
+    const auto efc_r = model_access::readonly_buffer(data.efc_R, data.nefc, "efc_R");
+    const auto efc_aref = model_access::readonly_buffer(data.efc_aref, data.nefc, "efc_aref");
+    const auto efc_frictionloss = model_access::readonly_buffer(data.efc_frictionloss, data.nefc, "efc_frictionloss");
     for(std::size_t i=0;i<n;++i) {
-        s.types.push_back(data.efc_type[i]);s.ids.push_back(data.efc_id[i]);
-        s.resistance.push_back(data.efc_R[i]);s.reference_acceleration.push_back(data.efc_aref[i]);s.frictionloss.push_back(data.efc_frictionloss[i]);
+        s.types.push_back(efc_type[i]);s.ids.push_back(efc_id[i]);
+        s.resistance.push_back(efc_r[i]);s.reference_acceleration.push_back(efc_aref[i]);s.frictionloss.push_back(efc_frictionloss[i]);
     }
     return s;
 }
@@ -199,7 +209,7 @@ Matrix attachment_force_map(const mjModel& model,const mjData& data,const Constr
         throw std::invalid_argument("attachment force map: incompatible constraint snapshot");
     auto spatial=d::zeros(6,nv);
     struct Context {const mjModel* m;const mjData* data;double* p;double* r;const double* point;int body;};
-    Context context{&model,&data,spatial.values.data(),spatial.values.data()+3*nv,point.data(),body};
+    Context context{&model,&data,spatial.values.data(),std::span{spatial.values}.subspan(3*nv).data(),point.data(),body};
     engine::ErrorBuffer error;
     if(!engine::invoke([](void* raw) noexcept {auto& c=*static_cast<Context*>(raw);mj_jac(c.m,c.data,c.p,c.r,c.point,c.body);},&context,error))engine::throw_failure(error);
     std::vector<std::size_t> columns;

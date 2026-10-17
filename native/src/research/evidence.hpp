@@ -11,6 +11,11 @@ struct EnergyQuality {
 [[nodiscard]] std::vector<std::string> model_violations(const runtime::PhysicalSampleData&,
     double maximum_compression_fraction = .15, double maximum_linkage_error_m = .002);
 [[nodiscard]] io::Value wire_value(const runtime::Wire&);
+// The physical identity is common to an ordinary ride and a research
+// episode. An omitted seed remains null; a present seed keeps all digits.
+[[nodiscard]] io::Value physical_configuration_metadata(const initialization::SetupRequest&,
+    const initialization::ResearchStartup&, const runtime::RuntimeBootstrap&, const io::Value& setup_metadata,
+    const std::optional<std::string>& seed_decimal = std::nullopt);
 [[nodiscard]] io::Value configuration_metadata(const ResearchRequest&,
     const initialization::ResearchStartup&, const runtime::RuntimeBootstrap&, const io::Value& setup_metadata);
 // Reset changes sensor/policy entropy; it does not regenerate terrain or rider.

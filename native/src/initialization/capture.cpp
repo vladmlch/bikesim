@@ -1,4 +1,5 @@
 #include "capture.hpp"
+#include "../diag.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -133,8 +134,8 @@ runtime::ModelImage capture_model_image(const mjModel& model) {
         throw std::invalid_argument("compiled model image exceeds the 512 MiB setup limit");
     runtime::ModelImage out;
     out.mjb.resize(static_cast<std::size_t>(size.bytes));
-    struct SaveCall { const mjModel* model; void* buffer; mjtSize bytes; }
-        save{&model, out.mjb.data(), size.bytes};
+    struct SaveCall { const mjModel* model; void* buffer; int bytes; }
+        save{&model, out.mjb.data(), static_cast<int>(size.bytes)};
     if (!engine::invoke([](void* raw) noexcept {
         auto& call = *static_cast<SaveCall*>(raw);
         mj_saveModel(call.model, nullptr, call.buffer, call.bytes);
@@ -143,9 +144,12 @@ runtime::ModelImage capture_model_image(const mjModel& model) {
     return out;
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 runtime::RuntimeBootstrap capture_initialized(Stepper& stepper,
     runtime::PhysicalStep& physical, const runtime::RuntimeConfig& config) {
-    const auto state = physical.state();
+    const auto state_ptr = std::unique_ptr<runtime::StepState>{new runtime::StepState(physical.state())};
+    const auto& state = *state_ptr;
     if (state.step != 0 || stepper.time() != 0.)
         throw std::invalid_argument("bootstrap capture requires t=0");
     if (state.initializing || !state.research_accounting_valid || !state.energy.initial_energy_j)
@@ -183,19 +187,24 @@ runtime::RuntimeBootstrap capture_initialized(Stepper& stepper,
     Value contacts_state;
     if (stepper.has_rider_contacts()) contacts_state = ::rider::encode_rider_contacts_state(
         stepper.rider_contacts().state(), stepper.rider_contacts().probe());
-    Value document{Object{{"schema", integer(runtime::kRuntimeSchema)},
-        {"model_digest", text(image.sha256)}, {"model_dims", std::move(dims)},
-        {"integration_state", reals(integration)},
-        {"model_mutable", Value{Object{{"dof_frictionloss", Value{std::move(friction)}},
-            {"site_pos", Value{std::move(sites)}}}}},
-        {"tire", Value{Object{{"names", Value{std::move(tire_names)}}, {"row", reals(stepper.tire_state())}}}},
-        {"drive", drivetrain::encode_drive_snapshot(stepper.drive().state())},
-        {"rider_contacts", std::move(contacts_state)},
-        {"rider_controller", state.rider_controller ? ::rider::encode_spindle_state(*state.rider_controller) : Value{}},
-        {"rider_intent", ::rider::encode_intent_state(state.rider_intent)},
-        {"signals", ::rider::encode_intent_signals(state.signals)}, {"runtime", runtime_state(state, config)}}};
+    Object doc_obj;
+    doc_obj.emplace_back("schema", integer(runtime::kRuntimeSchema));
+    doc_obj.emplace_back("model_digest", text(image.sha256));
+    doc_obj.emplace_back("model_dims", std::move(dims));
+    doc_obj.emplace_back("integration_state", reals(integration));
+    doc_obj.emplace_back("model_mutable", Value{Object{{"dof_frictionloss", Value{std::move(friction)}},
+        {"site_pos", Value{std::move(sites)}}}});
+    doc_obj.emplace_back("tire", Value{Object{{"names", Value{std::move(tire_names)}}, {"row", reals(stepper.tire_state())}}});
+    doc_obj.emplace_back("drive", drivetrain::encode_drive_snapshot(stepper.drive().state()));
+    doc_obj.emplace_back("rider_contacts", std::move(contacts_state));
+    doc_obj.emplace_back("rider_controller", state.rider_controller ? ::rider::encode_spindle_state(*state.rider_controller) : Value{});
+    doc_obj.emplace_back("rider_intent", ::rider::encode_intent_state(state.rider_intent));
+    doc_obj.emplace_back("signals", ::rider::encode_intent_signals(state.signals));
+    doc_obj.emplace_back("runtime", runtime_state(state, config));
+    Value document{std::move(doc_obj)};
     // Decode into the exact same owned state used by the captured-file path.
     return runtime::compose_bootstrap(config, std::move(image), document);
 }
+NATIVE_DIAG_POP
 
 } // namespace bike::initialization

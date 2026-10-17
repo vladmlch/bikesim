@@ -37,7 +37,7 @@ endif()
 project(bike_sim CXX)
 
 option(BIKE_BUILD_PYTHON_BINDINGS "Build the nanobind extension (requires the Python native dev group)" OFF)
-option(BIKE_BUILD_GUI "Build GLFW/Cairo GUI targets (not wired yet; OFF = no-op)" OFF)
+option(BIKE_BUILD_GUI "Enable the native GLFW viewer; headless recording/plots remain available when OFF" OFF)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

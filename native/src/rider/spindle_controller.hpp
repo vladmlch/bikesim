@@ -169,7 +169,7 @@ struct SupportDiagnostics {
     bool present = false;
     bool stance_front = false;
     bool stance_rear = false;
-    std::optional<bike::rider::LegacySupportDiagnostics> legacy;
+    std::optional<bike::rider::LegacySupportDiagnostics> legacy{};
 };
 
 struct SoleGoalDiagnostics {

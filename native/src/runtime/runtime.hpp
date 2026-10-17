@@ -89,6 +89,14 @@ struct RuntimeSnapshot {
     std::optional<ReferenceFailure> first_failure;
 };
 
+// An owned presentation boundary. The digest identifies the compiled model,
+// not merely its dimensions; no live model/data pointers cross into the UI.
+struct RenderFrame {
+    RuntimeSnapshot state;
+    PresentationState presentation;
+    std::string model_sha256;
+};
+
 // The committed prefix of one advance() call (design section 3.2).
 struct AdvanceResult {
     std::int64_t step = 0;
@@ -130,6 +138,8 @@ public:
     probe_step_inputs(const RideControl &control, double front_brake_demand,
                       double rear_brake_demand);
     [[nodiscard]] RuntimeSnapshot snapshot() const;
+    [[nodiscard]] RenderFrame render_frame() const;
+    [[nodiscard]] ModelImage model_image() const;
     void flush();
     [[nodiscard]] RuntimeSampleBatch prepare_samples() const;
     void acknowledge_samples(const RuntimeSampleBatch &batch);

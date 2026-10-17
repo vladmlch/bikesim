@@ -4,7 +4,9 @@
 #include "legacy_controller.hpp"
 #include "activation_allocation.hpp"
 #include "support_geometry.hpp"
+#include "../diag.hpp"
 #include "../engine_call.hpp"
+#include "../model_access.hpp"
 #include "../numerics/dense.hpp"
 #include <algorithm>
 #include <cmath>
@@ -17,8 +19,20 @@ namespace d=bike::numerics::dense;
 using Vector=std::vector<double>;
 using Vec=std::array<double,3>;
 constexpr double inf=std::numeric_limits<double>::infinity();
-Vec row3(const double* p,int i){return {p[3*i],p[3*i+1],p[3*i+2]};}
-std::array<double,9> rotation(const double*p,int i){std::array<double,9> r{};std::copy_n(p+9*i,9,r.begin());return r;}
+Vec row3(const double* p,mjtSize count,int i){
+    const auto span=model_access::readonly_buffer(p,count*3,"legacy_allocation row3");
+    model_access::require_id(i,count,"legacy_allocation row3");
+    const auto sub=span.subspan(static_cast<std::size_t>(i)*3,3);
+    return {sub[0],sub[1],sub[2]};
+}
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
+std::array<double,9> rotation(const double*p,mjtSize count,int i){
+    const auto span=model_access::readonly_buffer(p,count*9,"legacy_allocation rotation");
+    model_access::require_id(i,count,"legacy_allocation rotation");
+    std::array<double,9> r{};std::ranges::copy(span.subspan(static_cast<std::size_t>(i)*9,9),r.begin());return r;
+}
+NATIVE_DIAG_POP
 struct Frame {Matrix linear,angular,linear_rate,angular_rate;};
 Frame frame(const mjModel& m,const mjData& data,const Vec& point,int body,bool rate) {
     Frame f{d::zeros(3,static_cast<std::size_t>(m.nv)),d::zeros(3,static_cast<std::size_t>(m.nv)),
@@ -43,17 +57,20 @@ ResponseAllocation LegacyController::allocate_uncoupled(const mjData& data,
     for(std::size_t j=0;j<nv;++j){std::fill(unit.begin(),unit.end(),0.);unit[j]=1.;engine::mul_m(&m,&data,column.data(),unit.data());for(std::size_t i=0;i<nv;++i)mass.values[i*nv+j]=column[i];}
     auto mr=d::zeros(nr,nr),act=d::zeros(nr,nt),jac=d::zeros(nf,nr);
     Vector bias(nr),known(nr),speed(nt),qbase(bike_dofs_.size());
-    for(std::size_t j=0;j<bike_dofs_.size();++j)qbase[j]=data.qacc[bike_dofs_[j]];
+    const auto qacc=model_access::readonly_buffer(data.qacc,m.nv,"qacc");
+    const auto qvel=model_access::readonly_buffer(data.qvel,m.nv,"qvel");
+    const auto qfrc_bias=model_access::readonly_buffer(data.qfrc_bias,m.nv,"qfrc_bias");
+    for(std::size_t j=0;j<bike_dofs_.size();++j)qbase[j]=qacc[static_cast<std::size_t>(bike_dofs_[j])];
     auto passive=c_.envelope_forces(&data).first;
-    for(const auto& joint:c_.joints_)passive[static_cast<std::size_t>(joint.dof_adr)]-=cfg.passive_damping_nms_rad()*data.qvel[joint.dof_adr];
-    for(std::size_t i=0;i<nr;++i){const auto dof=static_cast<std::size_t>(rider_dofs_[i]);bias[i]=data.qfrc_bias[dof];known[i]=passive[dof];for(std::size_t j=0;j<nr;++j)mr.values[i*nr+j]=mass.values[dof*nv+static_cast<std::size_t>(rider_dofs_[j])];for(std::size_t j=0;j<bike_dofs_.size();++j)bias[i]+=mass.values[dof*nv+static_cast<std::size_t>(bike_dofs_[j])]*qbase[j];}
-    for(std::size_t i=0;i<nt;++i){const int dof=c_.joints_[i].dof_adr;const auto found=std::ranges::find(rider_dofs_,dof);if(found==rider_dofs_.end())throw std::invalid_argument("rider actuator outside rider DOFs");act.values[static_cast<std::size_t>(found-rider_dofs_.begin())*nt+i]=1.;speed[i]=data.qvel[dof];if(request.lower_torque_nm[i]>request.upper_torque_nm[i])throw std::invalid_argument("empty rider actuator bounds");}
+    for(const auto& joint:c_.joints_)passive[static_cast<std::size_t>(joint.dof_adr)]-=cfg.passive_damping_nms_rad()*qvel[static_cast<std::size_t>(joint.dof_adr)];
+    for(std::size_t i=0;i<nr;++i){const auto dof=static_cast<std::size_t>(rider_dofs_[i]);bias[i]=qfrc_bias[dof];known[i]=passive[dof];for(std::size_t j=0;j<nr;++j)mr.values[i*nr+j]=mass.values[dof*nv+static_cast<std::size_t>(rider_dofs_[j])];for(std::size_t j=0;j<bike_dofs_.size();++j)bias[i]+=mass.values[dof*nv+static_cast<std::size_t>(bike_dofs_[j])]*qbase[j];}
+    for(std::size_t i=0;i<nt;++i){const int dof=c_.joints_[i].dof_adr;const auto found=std::ranges::find(rider_dofs_,dof);if(found==rider_dofs_.end())throw std::invalid_argument("rider actuator outside rider DOFs");act.values[static_cast<std::size_t>(found-rider_dofs_.begin())*nt+i]=1.;speed[i]=qvel[static_cast<std::size_t>(dof)];if(request.lower_torque_nm[i]>request.upper_torque_nm[i])throw std::invalid_argument("empty rider actuator bounds");}
     auto inequalities=d::zeros(0,nz);Vector rhs;
     const auto append=[&](const Vector& row,double bound){d::append_row(inequalities,row);rhs.push_back(bound);};
     for(std::size_t k=0;k<attachments_.size();++k) {
         const auto& a=attachments_[k];Vec point;
-        if(a.equality_id<0)point=row3(data.site_xpos,a.site_id);
-        else point=::rider::add(row3(data.xpos,a.rider_body),::rider::matvec(rotation(data.xmat,a.rider_body),a.anchor_local));
+        if(a.equality_id<0)point=row3(data.site_xpos,m.nsite,a.site_id);
+        else point=::rider::add(row3(data.xpos,m.nbody,a.rider_body),::rider::matvec(rotation(data.xmat,m.nbody,a.rider_body),a.anchor_local));
         const auto one=frame(m,data,point,a.rider_body,a.equality_id>=0);
         for(std::size_t row=0;row<2;++row)for(std::size_t j=0;j<nr;++j)jac.values[(2*k+row)*nr+j]=one.linear.values[(row?2:0)*nv+static_cast<std::size_t>(rider_dofs_[j])];
         if(a.equality_id<0)continue;
@@ -63,7 +80,7 @@ ResponseAllocation LegacyController::allocate_uncoupled(const mjData& data,
             const auto jdot=d::add(kind?one.angular_rate:one.linear_rate,kind?two.angular_rate:two.linear_rate,-1.);
             for(std::size_t row=0;row<3;++row) {
                 double b=0.;for(std::size_t j=0;j<bike_dofs_.size();++j)b-=jrel.values[row*nv+static_cast<std::size_t>(bike_dofs_[j])]*qbase[j];
-                for(std::size_t j=0;j<nv;++j)b-=jdot.values[row*nv+j]*data.qvel[j];
+                for(std::size_t j=0;j<nv;++j)b-=jdot.values[row*nv+j]*qvel[j];
                 const double tolerance=50.+.5*std::abs(b);Vector g(nz);
                 for(std::size_t j=0;j<nr;++j)g[j]=jrel.values[row*nv+static_cast<std::size_t>(rider_dofs_[j])];append(g,b+tolerance);for(double&v:g)v=-v;append(g,tolerance-b);
             }
@@ -76,7 +93,7 @@ ResponseAllocation LegacyController::allocate_uncoupled(const mjData& data,
         std::array<double,2> normal{0.,1.};double predicted=0.;bool recovering=false;
         if(a.name=="front"||a.name=="rear") {
             const std::size_t side=a.name=="front"?0:1;const auto g=c_.pedal_geoms_[side];
-            const auto face=::rider::upper_box_face(row3(data.geom_xpos,g),rotation(data.geom_xmat,g),row3(m.geom_size,g));normal={face.normal[0],face.normal[2]};predicted=estimates[side][0];
+            const auto face=::rider::upper_box_face(row3(data.geom_xpos,m.ngeom,g),rotation(data.geom_xmat,m.ngeom,g),row3(m.geom_size,m.ngeom,g));normal={face.normal[0],face.normal[2]};predicted=estimates[side][0];
             for(const auto&[name,state]:c_.pedal_recovery_)if(name==a.name)recovering=state.stage!="none";
         }
         const std::array<double,2> tangent{-normal[1],normal[0]};const double mu=a.name=="saddle"?cfg.saddle_mu:cfg.foot_mu;const auto f=iforce+2*k;
@@ -109,7 +126,7 @@ ResponseAllocation LegacyController::allocate_uncoupled(const mjData& data,
         if(activation)candidate.extra.push_back(activation->constraint(torque_indices,excitation_indices,scales));
         for(std::size_t k=0;k<attachments_.size();++k)if(attachments_[k].name.starts_with("grip")) {
             const auto& a=attachments_[k];const std::size_t side=a.name=="grip_left"?0:1;
-            const auto origin=allocation_support_point(m,data,a),pelvis=row3(data.xpos,c_.pelvis_body_);std::array<double,2> direction{pelvis[0]-origin[0],pelvis[2]-origin[2]};const double length=std::max(d::norm(direction),1e-9);for(double&v:direction)v/=length;
+            const auto origin=allocation_support_point(m,data,a),pelvis=row3(data.xpos,m.nbody,c_.pelvis_body_);std::array<double,2> direction{pelvis[0]-origin[0],pelvis[2]-origin[2]};const double length=std::max(d::norm(direction),1e-9);for(double&v:direction)v/=length;
             auto force=d::zeros(2,nz);force.values[iforce+2*k]=300.;force.values[nz+iforce+2*k+1]=300.;auto extras=allocation_grip_constraints(force,direction,branch[side],cfg.grip_pull_per_hand_n);candidate.extra.insert(candidate.extra.end(),extras.begin(),extras.end());
         }
         auto result=allocate(candidate);if(activation){result.solution=activation->project(result.solution,torque_indices,excitation_indices,scales);result.violation=allocation_residual(candidate,result.solution);result.feasible=result.violation<=1e-7;}return result;

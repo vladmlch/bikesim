@@ -1,4 +1,5 @@
 #include "policy.hpp"
+#include "../diag.hpp"
 #include "../io/json.hpp"
 #include "../runtime/setup_values.hpp"
 #include <algorithm>
@@ -69,6 +70,8 @@ runtime::RideControl policy_control_from_abi(const BikeControlV1& value) {
     catch (const std::invalid_argument& error) { throw PolicyFailure("policy returned an invalid control: " + std::string(error.what())); }
     return out;
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
 BikeObservationV1 policy_observation_to_abi(const runtime::SensorObservation& value) {
     value.validate();
     BikeObservationV1 out{};
@@ -80,4 +83,5 @@ BikeObservationV1 policy_observation_to_abi(const runtime::SensorObservation& va
     std::ranges::copy(value.values, std::begin(out.values));
     return out;
 }
+NATIVE_DIAG_POP
 } // namespace bike::research

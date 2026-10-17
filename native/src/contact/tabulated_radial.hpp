@@ -10,6 +10,7 @@ namespace contactlaw {
 class MaterialRangeError : public std::invalid_argument {
 public:
     using std::invalid_argument::invalid_argument;
+    ~MaterialRangeError() override;
 };
 // tire_curve.py TabulatedTireSpec: immutable input and prefix-integral
 // caches built before stepping. Pressure is metadata, never a multiplier.

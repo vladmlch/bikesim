@@ -744,6 +744,65 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T30_native_contacts>")
 endif()
 
+# Recording/application regression sources. These declarations do not run
+# a test, simulate a ride or generate a recording during configuration.
+# The supplied snapshot is implementation evidence; execution is pending.
+foreach(_recording_task RANGE 38 51)
+  set(_recording_test "migration_T${_recording_task}")
+  add_executable(${_recording_test} "test_t${_recording_task}.cpp")
+  bike_startup_target_policy(${_recording_test} "${_migration_repo_root}/native")
+  target_link_libraries(${_recording_test} PRIVATE bike_migration_test)
+  if(_recording_task EQUAL 38)
+    target_link_libraries(${_recording_test} PRIVATE bike_recording_reader)
+  elseif(_recording_task LESS 47)
+    target_link_libraries(${_recording_test} PRIVATE bike_recording)
+    if(_recording_task EQUAL 44 OR _recording_task EQUAL 45)
+      target_link_libraries(${_recording_test} PRIVATE bike_replay)
+    elseif(_recording_task EQUAL 46)
+      target_link_libraries(${_recording_test} PRIVATE bike_recording_cli)
+      add_dependencies(${_recording_test} bike-recording)
+    endif()
+  elseif(_recording_task EQUAL 47)
+    target_link_libraries(${_recording_test} PRIVATE bike_cli)
+    add_dependencies(${_recording_test} bike-sim bike-playground bike-export
+      bike-ride bike-settle bike-research bike-recording bike-replay bike-batch)
+  elseif(_recording_task EQUAL 48 OR _recording_task EQUAL 49)
+    target_link_libraries(${_recording_test} PRIVATE bike_viewer)
+  elseif(_recording_task LESS 51)
+    target_link_libraries(${_recording_test} PRIVATE bike_viz)
+  else()
+    target_link_libraries(${_recording_test} PRIVATE bike_batch)
+    if(BUILD_TESTING)
+      add_dependencies(${_recording_test} bike-test-child)
+    endif()
+  endif()
+  if(NOT _recording_task EQUAL 38 AND NOT _recording_task EQUAL 51)
+    if(BIKE_ROOT_BUILD)
+      bike_rewrite_mujoco_load_name(${_recording_test}
+        "${BIKE_DEP_mujoco_ROOT}/lib/libmujoco.3.12.0.dylib")
+    else()
+      bike_rewrite_mujoco_load_name(${_recording_test}
+        "${MJ_DIR}/libmujoco.3.12.0.dylib")
+    endif()
+  endif()
+  if(BUILD_TESTING)
+    if(_recording_task EQUAL 46)
+      add_test(NAME ${_recording_test} COMMAND ${_recording_test}
+        "$<TARGET_FILE:bike-recording>")
+    elseif(_recording_task EQUAL 47)
+      add_test(NAME ${_recording_test} COMMAND ${_recording_test}
+        "$<TARGET_FILE_DIR:bike-research>")
+    elseif(_recording_task EQUAL 51)
+      add_test(NAME ${_recording_test} COMMAND ${_recording_test}
+        "$<TARGET_FILE:bike-test-child>")
+    else()
+      add_test(NAME ${_recording_test} COMMAND ${_recording_test})
+    endif()
+    set_tests_properties(${_recording_test} PROPERTIES
+      WORKING_DIRECTORY "$<TARGET_FILE_DIR:${_recording_test}>")
+  endif()
+endforeach()
+
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its

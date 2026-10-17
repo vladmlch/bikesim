@@ -57,7 +57,7 @@ Concrete artifact notes:
 | duckdb | 1.5.6 | `github.com/duckdb/duckdb/releases/download/v1.5.6/libduckdb-osx-universal.zip` | `libduckdb.dylib` → `lib/`; `duckdb.h`, `duckdb.hpp` → `include/`; `LICENSE` |
 | tomlplusplus | 3.4.0 | `github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz` | keep `include/` + `LICENSE` |
 | rapidjson | 24b5e7a8…7102f | `github.com/Tencent/rapidjson/archive/24b5e7a8b27f42fa16b96fc70aade9106cf7102f.tar.gz` | keep `include/` + `LICENSE` |
-| glfw | 3.4 | `github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip` | keep `include/` + `LICENSE.md` |
+| glfw | 3.4 | `github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip` | preserve the complete source tree, including `CMakeLists.txt`, `CMake/`, `src/`, `include/` and `LICENSE.md`, for `BIKE_BUILD_GUI=ON` |
 | cairo | 1.18.4 | `cairographics.org/releases/cairo-1.18.4.tar.xz` | keep `src/` + `COPYING*` — headers/provenance only (see below) |
 | eigen | 3.4.0 | `gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz` | keep `Eigen/`, `unsupported/` + `COPYING.MPL2` |
 
@@ -74,6 +74,28 @@ Concrete artifact notes:
   qualified Python-free workflow consumes a verified binary SDK rather than
   an upstream source build; this task locks the source archive for
   provenance and header access only (binary SDK lands at T50/T59).
+
+### Recording and application options (T38–T51)
+
+The recording/analyst targets consume the locked DuckDB C SDK directly.
+`BIKE_BUILD_GUI=OFF` keeps the GLFW window code disabled and does not initialize
+a display. Enabling it requires the full, pre-extracted GLFW source archive;
+the earlier headers-only tree is insufficient. There is no download or
+dependency extraction in CMake. The archive/header checks retain the locked
+3.4 identity; full platform/installer qualification remains T58/T59.
+
+Native PNG generation is available without another SDK. To select Cairo's
+Unicode text renderer, explicitly provide `BIKE_CAIRO_LIBRARY`,
+`BIKE_CAIRO_INCLUDE_DIR` and `BIKE_CAIRO_LIBRARY_SHA256`. The library fingerprint
+and the locked 1.18.4 public header are checked; this optional SDK was neither
+acquired nor executed in the source-only T38–T51 delivery. Its transitive
+runtime libraries and redistribution licenses must be qualified at T59.
+
+Offline HTML uses the native interactive renderer when a genuine local Plotly
+bundle has not been supplied. `bike::viz::set_plotly_resource()` can select a
+real local bundle; no CDN request, Python runtime or pretend Plotly bundle is
+used. The renderer identity is explicit in the resulting HTML. This fallback
+does not establish Plotly output parity; the plotting review records that gate.
 
 ## Why a document rather than an acquisition script
 

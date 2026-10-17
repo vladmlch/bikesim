@@ -28,24 +28,24 @@ struct SetupContext {
     int frame_body_id = -1;
     int front_geom_id = -1;
     int rear_geom_id = -1;
-    std::optional<::rider::SpindlePose> rider_pose;
-    std::function<double(double)> rear_travel_from_shock_mm;
+    std::optional<::rider::SpindlePose> rider_pose{};
+    std::function<double(double)> rear_travel_from_shock_mm{};
     // Complete source documents: specs, mass_specs, rider and track. The
     // cache adds normalized physics, start position, compiled arrays,
     // schema and engine/provider/source identity. Reuse knobs are excluded.
-    io::Value identity;
-    std::string source_identity;
-    std::string provider_identity;
-    std::string model_sha256;
+    io::Value identity{};
+    std::string source_identity{};
+    std::string provider_identity{};
+    std::string model_sha256{};
     // Historical fingerprint inputs are distinct from native identity. They
     // are populated only from explicitly supplied source bytes and the old
     // track_to_dict wire; no legacy digest overrides native cache identity.
-    std::optional<std::string> legacy_source_identity;
-    std::optional<io::Value> legacy_track_identity;
-    std::optional<std::filesystem::path> cache_directory;
+    std::optional<std::string> legacy_source_identity{};
+    std::optional<io::Value> legacy_track_identity{};
+    std::optional<std::filesystem::path> cache_directory{};
     bool initializing = true;
     bool completed = false;
-    std::optional<EquilibriumResult> equilibrium;
+    std::optional<EquilibriumResult> equilibrium{};
     const PhysicalInitialState* initial_state = nullptr;
 };
 

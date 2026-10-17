@@ -368,3 +368,28 @@ Each payload includes a relative path, actual SHA-256, byte count and optional d
 All resource owners have deterministic cleanup on constructor failure and normal destruction. Database appender/connection, model/data, render context/window and plugin instance/library each have one owner. Do not throw from destructors. Finalization errors are surfaced through explicit close/finalize results, preserving the primary execution error. A poisoned runtime never resumes stepping.
 
 Public config/domain errors map to `std::invalid_argument` or a documented derived domain type and stable CLI nonzero exits. Engine errors retain the source fatal/poisoned distinction. IO errors remain distinguishable from invalid physical reference outcomes. No task catches all failures and turns them into a zero-filled result or a physically valid run.
+
+## 11. Implemented recording/application seams — 2026-10-17
+
+T38–T51 now have source implementations. The declarations in their owning headers
+are authoritative for current signatures; earlier skeletons in this document
+remain design context. The implementation has not been configured, compiled,
+linked or executed. Its status is `implemented_unverified`.
+
+| Boundary | Owning header / implementation contract |
+|---|---|
+| Typed column values | `runtime/encoding_values.hpp` owns move-only `Piece` and `EncodedTable`, with standard-library dependencies only. `runtime/encode.hpp` owns the projector's complete `EncodePlan`. The analyst never includes that engine-dependent projector header. |
+| Catalog and storage | `recording/catalog.hpp`, `encoding.hpp`, `database.hpp`, `reader.hpp` own the schema, typed piece validation, writer and immutable reader. `bike_recording_reader` links only IO, platform and DuckDB; runtime-dependent plan construction stays in `bike_recording`. |
+| Capture and publication | `recording/capture.hpp`, `contracts.hpp`, `publish.hpp` own capture, episode evidence and the explicit `finalize` operation. Sealing an episode does not publish it. Finalization keeps captured asset bytes separate from input-file identity observed at publication. |
+| Async telemetry | `runtime/async_close.hpp` owns the data-only close worker. The runtime owner observes completions in order and retains the only acknowledgment authority. Worker or publication failures are explicit; a lost worker cannot silently produce a successful recording. |
+| Replay | `replay/session.hpp` owns `ReplaySession`; `playback.hpp` owns stored-state inspection. `report()` requires completed checked verification; partial or failed progress uses `diagnostics()`. Native checked replay verifies native execution identities and does not forge historical extension identities. |
+| Physical metadata | `research/evidence.hpp` exposes the shared compiled-configuration metadata builder, implemented in `research/metadata.cpp`. `cli/physical_capture.hpp` combines it with prepared startup state, captured model/profile bytes and initial-state assets. Recorded profile identity is based on the compiled terrain sample payload. |
+| Rendering | `viewer/render_owner.hpp` owns independent model/data. `viewer/render_fields.hpp` centralizes the six mutable model arrays. `viewer/session.hpp` supplies lifecycle, presentation and HUD callbacks; applying a frame never advances the physical runtime. |
+| CLI | `cli/arguments.hpp` owns parser contracts; `cli/application.hpp` owns typed request assembly and dispatch. `platform/argv.hpp` is the single checked process-entry argument boundary. `bike-recording` retains its independent analyst target. |
+| Batch | `batch/plan.hpp` declares ordered `parse_spec_toml` / `expand_spec`, owned jobs/results and bounded execution. Integer lexemes retain their full signed decimal domain before jobs reach the CLI parser. `platform/process.hpp` owns each child process, its streams and cancellation/reaping. |
+| Plotting | `viz/plot.hpp` owns series and report values. PNG has a native raster writer and optional explicit Cairo. Autonomous HTML reports declare `native-html-v1` unless an actual local Plotly resource is supplied. |
+
+Exact file and public-symbol mappings, authored regression sources, compatibility
+decisions and outstanding acceptance gates are recorded in
+`recording-application-implementation.json` and
+`recording-application-review.md`. No source-deletion authorization is implied.

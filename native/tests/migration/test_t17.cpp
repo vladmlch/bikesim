@@ -1,4 +1,5 @@
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "model/export.hpp"
 #include "io/json.hpp"
 #include <mujoco/mujoco.h>
@@ -23,6 +24,8 @@ struct Directory {
     Directory() {bt::require(std::filesystem::create_directory(path),"exclusive temporary export directory");}
     ~Directory() {std::error_code ignored;std::filesystem::remove_all(path,ignored);}
 };
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void mode_and_rider_cases() {
     for(const char* mode:{"standard","stand","playground","ride"}) {
         mdl::BuildRequest request;request.mode=mode;request.debug_markers=true;
@@ -107,3 +110,4 @@ void exports_and_schema() {
 }
 } // namespace
 int main() {return bt::run([]{mode_and_rider_cases();exports_and_schema();});}
+NATIVE_DIAG_POP

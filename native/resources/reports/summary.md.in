@@ -1,0 +1,20 @@
+# Run recording
+
+Run UUID: `@RUN_ID@`
+
+## Invocation and provenance
+
+@INVOCATION_AND_PROVENANCE@
+
+## Interpretation and limits
+
+Saved numerical evidence does not certify physical calibration. Publication is
+final-only; retained RAM has no crash-recovery guarantee. NULL, absence and
+nonfinite values remain distinct. See each episode's outcome and first failure.
+
+@EPISODES@
+
+## Field and coordinate coverage
+
+Use field_catalog and coordinate_catalog for recorded source identities,
+measurements, phases, units, validity and optional presence semantics.

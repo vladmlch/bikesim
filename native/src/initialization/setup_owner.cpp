@@ -1,4 +1,5 @@
 #include "setup_owner.hpp"
+#include "../diag.hpp"
 
 #include <algorithm>
 #include <array>
@@ -106,7 +107,7 @@ std::string legacy_source_fingerprint(const std::filesystem::path& root) {
         if (!input) throw std::runtime_error(file.string() + ": cannot read source fingerprint input");
         const auto name = relative.generic_string();
         length(digest, name.size());
-        digest.update(std::as_bytes(std::span{name.data(), name.size()}));
+        digest.update(std::as_bytes(std::span{name}));
         length(digest, size);
         std::vector<char> buffer(65536);
         std::uintmax_t consumed = 0;
@@ -115,7 +116,7 @@ std::string legacy_source_fingerprint(const std::filesystem::path& root) {
             const auto count = input.gcount();
             if (count > 0) {
                 consumed += static_cast<std::uintmax_t>(count);
-                digest.update(std::as_bytes(std::span{buffer.data(), static_cast<std::size_t>(count)}));
+                digest.update(std::as_bytes(std::span{buffer}.first(static_cast<std::size_t>(count))));
             }
         }
         if (!input.eof() || consumed != size)
@@ -147,6 +148,8 @@ struct SetupOwner::Impl {
 SetupOwner::SetupOwner(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 SetupOwner::~SetupOwner() = default;
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     if (!request.model.physics)
         throw std::invalid_argument("native setup requires an explicit physical configuration");
@@ -191,7 +194,7 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
         {"specs", model::bike_specs_value(impl->request.model.bike)},
         {"mass_specs", model::mass_specs_value(impl->request.model.masses)},
         {"rider", configuration::detail::plain_document(
-            configuration::detail::as_object(configuration::kRiderSpecsSchema, &resolved_rider))},
+            configuration::detail::as_object(configuration::detail::kRiderSpecsSchema, &resolved_rider))},
         {"track", terrain::identity_value(impl->request.track)}}};
     context.source_identity = runtime::runtime_identity().native_source_sha256;
     if (impl->request.legacy_source_root) {
@@ -201,12 +204,13 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     const auto engine_id = engine::identity();
     const auto provider = engine_id.mujoco_version + "|" + engine_id.library_sha256 + "|" +
         engine_id.numeric_provider + "|" + platform::execution_identity();
-    context.provider_identity = io::sha256(std::as_bytes(std::span{provider.data(), provider.size()}));
+    context.provider_identity = io::sha256(std::as_bytes(std::span{provider}));
     context.model_sha256 = image.sha256;
     context.cache_directory = impl->request.cache_directory;
     context.initial_state = impl->request.initial_state ? &*impl->request.initial_state : nullptr;
     return std::unique_ptr<SetupOwner>(new SetupOwner(std::move(impl)));
 }
+NATIVE_DIAG_POP
 
 std::unique_ptr<SetupOwner> make_setup(const std::filesystem::path& request) {
     return make_setup(read_setup_request(request));
@@ -233,6 +237,12 @@ PhysicalInitialState SetupOwner::capture_initial_state() const {
     if (!impl_->result || !impl_->context->completed)
         throw std::invalid_argument("initial-state capture requires a completed native setup");
     return PhysicalInitialState::capture(*impl_->context);
+}
+
+StateFile SetupOwner::capture_state_file() const {
+    if (!impl_->result || !impl_->context->completed)
+        throw std::invalid_argument("state-file capture requires a completed native setup");
+    return capture_state(*impl_->context, impl_->result->steps, impl_->result->residual_qacc);
 }
 
 PhysicalInitialState SetupOwner::project_initial_stations(int count) const {

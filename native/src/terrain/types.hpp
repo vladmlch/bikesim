@@ -27,12 +27,12 @@ inline constexpr std::string_view TRAIL_SURFACE = "hardpack";
 inline constexpr double DEFAULT_STRIBECK_SPEED_MPS = 4.5;
 
 struct SurfaceSpec {
-    std::string name;
+    std::string name{};
     double mu_peak = 0.;
     double mu_slide = 0.;
     double slip_stiffness_per_load = 0.;
     double stribeck_speed_mps = DEFAULT_STRIBECK_SPEED_MPS;
-    std::string description;
+    std::string description{};
     void validate() const;
     [[nodiscard]] double mu(double sliding_speed_mps) const;
     [[nodiscard]] std::vector<double> mu(std::span<const double> speeds) const;

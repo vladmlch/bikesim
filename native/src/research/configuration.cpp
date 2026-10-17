@@ -1,4 +1,5 @@
 #include "environment.hpp"
+#include "../diag.hpp"
 #include "../configuration/load.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
@@ -117,8 +118,6 @@ std::string validate_seed(std::string_view seed) {
     return first == std::string_view::npos ? "0" : std::string(seed.substr(first));
 }
 void ExperimentConfig::validate() const {
-    if (async_telemetry)
-        throw std::invalid_argument("async_telemetry=true requires native asynchronous publication (T42)");
     nonnegative(control_period_s, "control_period_s", true);
     nonnegative(duration_s, "duration_s", true);
     nonnegative(maximum_energy_residual_ratio, "maximum_energy_residual_ratio", true);
@@ -215,6 +214,8 @@ configuration::SimulationPhysicsConfig resolve_research_physics(
     return configuration::detail::construct_config(configuration::detail::merge_values(base, overrides));
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 ResearchRequest read_research_request(const std::filesystem::path& file) {
     try {
         const auto document = configuration::detail::parse_toml_file(file);
@@ -321,6 +322,7 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
         throw std::invalid_argument(file.string() + ": " + error.what());
     }
 }
+NATIVE_DIAG_POP
 
 io::Value experiment_value(const ExperimentConfig& c) {
     return Value{Object{{"control_period_s", real(c.control_period_s)}, {"actuator_delay_s", real(c.actuator_delay_s)},

@@ -1,6 +1,7 @@
 // T29 analytic soft-constraint response and transactional state contracts.
 // These regressions are authored only; runtime/bitwise gates remain pending.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "rider/constraint_dynamics.hpp"
 #include "rider/activation_allocation.hpp"
 #include "rider/force_requests.hpp"
@@ -20,7 +21,10 @@ namespace d=bike::numerics::dense;
 r::ConstraintSystem scalar_constraint(int type,double known=-2.,double friction=0.) {
     return {{1,1,{1.}},{1,1,{1.}},{1,1,{1.}},{known},{1.},{0.},{friction},{type},{0}};
 }
-void affine_modes() {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
+[[gnu::noinline]] void affine_modes() {
     r::ConstraintDynamics dynamics(scalar_constraint(mjCNSTR_LIMIT_JOINT));
     const auto free=dynamics.linearize(std::array<double,1>{0.});
     bt::require(free.mode.empty()&&free.force_offset[0]==1.&&free.force_matrix.values[0]==-.5,"interior soft-constraint law");
@@ -41,7 +45,7 @@ void affine_modes() {
     const auto across=r::search_constraint_modes(dynamics,std::array<double,1>{0.},[](const r::ConstraintResponse& response){return r::ModeCandidate{response.mode.empty()?r::Allocation{{0.},false,1.}:r::Allocation{{4.},true,0.},1};});
     bt::require(across.allocation.feasible&&across.modes_tried==2&&across.response.mode==released.mode,"search crosses the wish's infeasible local mode");
 }
-void activation_and_forces() {
+[[gnu::noinline]] void activation_and_forces() {
     r::ActivationLaw law({0.,0.},{1.,2.},{-100.,-100.},{100.,100.},std::log(2.),1.,60.);
     const std::array<double,2> excitation{80.,80.};const auto latent=law.latent(excitation),delivered=law.delivered(excitation);
     bt::require(std::abs(latent[0]-40.)<1e-12&&std::abs(delivered[0]-20.)<1e-12&&std::abs(delivered[1]-20.)<1e-12,"latent activation is distinct from whole-body power-limited delivery");
@@ -56,7 +60,7 @@ void activation_and_forces() {
     bt::require(std::abs(-.2*requests.force[0][2]+.2*requests.force[1][2]-20.)<1e-10,"two-foot request accounts for net shaft moment");
     bt::invalid([]{(void)r::feasible_pedal_force_request({0.,1.,0.},{0.,0.,1.},1.,1.);});
 }
-void state_and_config() {
+[[gnu::noinline]] void state_and_config() {
     ::rider::SpindleController::State state;state.active_state={4.,5.};state.pd_split={{"rider_hip_front",{1.,2.}}};state.pedal_recovery={{"front",{}},{"rear",{}}};
     state.allocation_memory=r::AllocationMemory{std::array<bool,2>{false,true},std::vector<double>{.1,.2}};
     state.sole_goal_diagnostics={{"front",::rider::decode_sole_goal(bike::io::parse_json(R"({"requested_compression_m":0.02,"applied_compression_m":0.01,"requested_shear_m":0.0,"applied_shear_m":0.0,"saturated":true,"limiting_reasons":["compression"]})"),"goal")},{"rear",::rider::decode_sole_goal(bike::io::parse_json(R"({"saturated":false,"limiting_reasons":[],"recovery":true})"),"goal")}};
@@ -78,3 +82,4 @@ void state_and_config() {
 }
 }
 int main(){return bt::run([]{affine_modes();activation_and_forces();state_and_config();});}
+NATIVE_DIAG_POP

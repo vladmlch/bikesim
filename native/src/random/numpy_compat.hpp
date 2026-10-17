@@ -277,7 +277,7 @@ struct RiderRandomSpec {
 // mujoco-dependent runtime samples chain).
 struct RiderKeyframe {
     double time_s = 0.;
-    rider::RiderPosture posture;
+    ::rider::RiderPosture posture;
     std::optional<double> human_torque_nm;
 };
 

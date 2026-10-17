@@ -58,6 +58,9 @@ struct RuntimeConfig {
     double control_period_s = 0.;
     int control_period_steps = 0;
     bool strict = false;
+    // Owned raw periods are evaluated on a data-only worker. Publication is
+    // applied at the following main-thread boundary; explicit flush drains it.
+    bool async_telemetry = false;
     // The expensive energy/momentum measurement cadence — historically the
     // `record_decimation` wire/argument value, now named for what it gates.
     int measurement_decimation = 0;

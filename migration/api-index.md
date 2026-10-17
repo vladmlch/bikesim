@@ -1018,3 +1018,20 @@ The immutable reference tag and frozen data fixtures remain available as history
 ## Native startup source delivery — 2026-10-17
 
 The T16–T18/T20–T25 interfaces now have native implementation sources and nine authored migration regressions. Exact produced/helper boundaries are recorded in [native-startup-implementation.json](native-startup-implementation.json); usage is in [docs/native-startup.md](../docs/native-startup.md). Compilation and execution were prohibited for this delivery, so these additions do not close acceptance or deletion gates.
+
+## Recording and application source delivery — 2026-10-17
+
+The T38–T51 interfaces now have native implementation sources and fourteen
+authored migration regressions. The earlier task examples remain planning
+references; use the actual owning headers and
+[recording-application-implementation.json](recording-application-implementation.json)
+for current signatures and file mappings. User-facing command and recording
+lifecycle notes are in
+[recording-application-wave.md](../docs/recording-application-wave.md).
+
+The shared build module declares eight application commands, the independently
+linked `bike-recording` analyst, and `bike-research-sweep`. The process-test helper
+is restricted to `BUILD_TESTING` and is not installed. No build configuration,
+compiler, test, program, database round-trip, replay or GUI was executed for this
+delivery. Implementation status is `implemented_unverified`; acceptance,
+cross-platform packaging and source-deletion gates remain open.

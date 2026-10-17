@@ -1,5 +1,6 @@
 // Authored against T31 source; execution is deferred by user instruction.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "legacy/ride.hpp"
 #include "legacy/metrics.hpp"
 #include "terrain/profile.hpp"
@@ -18,7 +19,10 @@ namespace {
 void same(std::span<const double> a,std::span<const double> b,std::string_view why){
     bt::require(a.size()==b.size(),why);for(std::size_t i=0;i<a.size();++i)bt::require(std::bit_cast<std::uint64_t>(a[i])==std::bit_cast<std::uint64_t>(b[i]),std::string(why)+" at "+std::to_string(i));
 }
-void tyre_contracts(){
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
+[[gnu::noinline]] void tyre_contracts(){
     namespace l=bike::legacy;
     l::TyreConfig config;config.validate();bt::require(!config.pneumatic(),"sphere remains the legacy default");
     const auto authored=l::make_tyre_specs("test",372.,320.,57.,1.5,.011);
@@ -39,7 +43,7 @@ void tyre_contracts(){
         tyre.reset();const auto& reset=tyre.last_outputs();bt::require(reset.support_n==0.&&reset.airborne,"tyre reset clears contact/material history");
     }
 }
-void ride_contracts(){
+[[gnu::noinline]] void ride_contracts(){
     namespace l=bike::legacy;
     auto sim=l::make_ride(bt::fixture("requests/legacy_flat.toml"));const auto before=sim->snapshot();
     bt::require(before.time_s==0.&&before.steps==0,"legacy setup ends at the reset time");
@@ -58,7 +62,7 @@ void ride_contracts(){
     bt::golden_f64("bootstrap/legacy_flat/integration.f64",before.integration_state);
     sim->step();bt::golden_f64("bootstrap/legacy_flat/step1.f64",sim->snapshot().integration_state);
 }
-void mode_contracts(){
+[[gnu::noinline]] void mode_contracts(){
     for(std::string_view mode:{"pedal","pedelec"}){
         bike::legacy::RideOptions options;options.setup=bike::initialization::read_setup_request(bt::fixture("requests/legacy_flat.toml"));
         options.setup.model.rider->variant="seated";options.drive_mode=mode;options.legs="articulated";options.drivetrain.crank_phase_deg=25.;
@@ -68,7 +72,7 @@ void mode_contracts(){
     bike::legacy::RideOptions options;options.setup=bike::initialization::read_setup_request(bt::fixture("requests/legacy_flat.toml"));options.setup.runtime.record_retention=runtime::RetentionMode::full;
     bt::invalid([&]{(void)bike::legacy::make_ride(options);});
 }
-void csv_bytes(){
+[[gnu::noinline]] void csv_bytes(){
     bike::legacy::RideRecorder recorder(.001,2);bike::legacy::TelemetryRow row{};
     row[0]=1.234567890123;row[1]=-0.;row[2]=std::numeric_limits<double>::quiet_NaN();recorder.record(row);
     row[0]=99.;recorder.record(row);
@@ -79,3 +83,4 @@ void csv_bytes(){
 }
 }
 int main(){return bt::run([]{csv_bytes();tyre_contracts();mode_contracts();ride_contracts();});}
+NATIVE_DIAG_POP

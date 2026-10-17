@@ -1,6 +1,7 @@
 // T18: source-equivalent native/config.py and native/setup.py projection.
 #include "project_config.hpp"
 #include "capabilities.hpp"
+#include "../diag.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -51,8 +52,8 @@ std::vector<std::byte> immutable_model_image(const mjModel& model) {
     if (size.bytes <= 0 || std::cmp_greater(size.bytes, 512U * 1024U * 1024U))
         throw std::invalid_argument("project_runtime: compiled model image exceeds 512 MiB");
     std::vector<std::byte> image(static_cast<std::size_t>(size.bytes));
-    struct SaveCall { const mjModel* model; void* bytes; mjtSize size; }
-        save{&model, image.data(), size.bytes};
+    struct SaveCall { const mjModel* model; void* bytes; int size; }
+        save{&model, image.data(), static_cast<int>(size.bytes)};
     if (!engine::invoke([](void* raw) noexcept {
         auto& call = *static_cast<SaveCall*>(raw);
         mj_saveModel(call.model, nullptr, call.bytes, call.size);
@@ -341,9 +342,20 @@ bio::Value project_rider_controller(const cfg::SimulationPhysicsConfig& config,
     return out;
 }
 
+namespace {
+bio::Value finalize_writer_config(const Value& out) {
+    cfg::wire::validate_config(out);
+    (void)nativecfg::decode(out);
+    return cfg::wire::plain(out);
+}
+} // namespace
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel& model,
                                 const trn::TrackSpec& track, const ProjectionOptions& options) {
-    const auto config = physics(request);
+    const auto config_ptr = std::make_unique<cfg::SimulationPhysicsConfig>(physics(request));
+    const auto& config = *config_ptr;
     track.validate();
     const auto document = cfg::detail::plain_document(cfg::to_value(config));
     auto res = field(document, "resistance");
@@ -400,9 +412,7 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
     set(out, "cruise", Value{Object{{"target_speed_kmh", real(options.speed_kph)},
         {"kp_nm_per_mps", real(180.)}, {"ki_nm_per_mps_s", real(150.)},
         {"torque_ceiling_nm", real(150.)}}});
-    cfg::wire::validate_config(out);
-    (void)nativecfg::decode(out);
-    return cfg::wire::plain(out);
+    return finalize_writer_config(out);
 }
 
 RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& model,
@@ -441,6 +451,7 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
         {"control_period_s", real(config.control_period_s)}, {"control_period_steps", integer(period_steps)},
         {"physics_mode", text(config.physics_mode)}, {"drive_mode", text(*config.drive_mode)},
         {"strict", Value{options.strict}}, {"measurement_decimation", integer(options.measurement_decimation)},
+        {"async_telemetry", Value{options.async_telemetry}},
         {"record_retention", text(options.record_retention == RetentionMode::off ? "off" :
             options.record_retention == RetentionMode::full ? "full" : "legacy")},
         {"writer_config", project_writer_config(request, model, track, options)},
@@ -456,6 +467,7 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
             {"pose", pose}}}}}};
     return decode_runtime_config(envelope);
 }
+NATIVE_DIAG_POP
 
 RuntimeConfig project_runtime(const cfg::SimulationPhysicsConfig& config, const mjModel& model) {
     mdl::BuildRequest request;

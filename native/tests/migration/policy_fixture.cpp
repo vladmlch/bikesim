@@ -2,8 +2,8 @@
 // callbacks must never be installed as production policies.
 #include <bike/policy_v1.h>
 #include <algorithm>
-#include <cstring>
 #include <limits>
+#include <ranges>
 #include <stdexcept>
 #include <string_view>
 
@@ -18,7 +18,8 @@ enum class Case { good, create_fail, reset_throw, act_throw, bad_number, bad_siz
 struct State { Case scenario; };
 int reject(BikeErrorV1* error, std::string_view text) {
     error->written = std::min(error->capacity, text.size());
-    std::memcpy(error->data, text.data(), error->written);
+    auto dest = std::views::counted(error->data, static_cast<std::ptrdiff_t>(error->written));
+    std::ranges::copy(text.substr(0, error->written), dest.begin());
     return 17;
 }
 int create(const char* data, std::size_t count, void** out, BikeErrorV1* error) {

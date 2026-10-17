@@ -57,6 +57,8 @@ public:
     [[nodiscard]] io::Value metadata() const;
     [[nodiscard]] ResearchStartup research_initial_state() const;
     [[nodiscard]] PhysicalInitialState capture_initial_state() const;
+    // Full settled material state for bike-settle; capture is observational.
+    [[nodiscard]] StateFile capture_state_file() const;
     [[nodiscard]] PhysicalInitialState project_initial_stations(int station_count) const;
 private:
     struct Impl;

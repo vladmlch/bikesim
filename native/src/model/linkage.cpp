@@ -1,4 +1,5 @@
 #include "builder_internal.hpp"
+#include "../diag.hpp"
 
 namespace bike::model::detail {
 namespace {
@@ -103,6 +104,8 @@ void build_steering_and_fork(Element& frame,BuildContext& c) {
     }
 }
 
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void build_rear_linkage(Element& frame,BuildContext& c) {
     const auto p0=div(c.fixed.P0,1000.),p5=div(c.fixed.P5,1000.),p7=div(c.fixed.P7,1000.);
     const auto p1=div(c.state.P1,1000.),p2=div(c.state.P2,1000.),p3=div(c.state.P3,1000.),p4=div(c.state.P4,1000.),p6=div(c.state.P6,1000.),p12=div(c.state.P12,1000.);
@@ -166,6 +169,7 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     register_component(c.mass_registry(),"shock_yoke",yoke.direct("geom"));
     shock_assembly(yoke,d64,d76,c);
 }
+NATIVE_DIAG_POP
 void build_equality_constraints(Element& root,std::string_view mode) {
     auto& equality=root.add("equality");
     equality.add("connect",{{"name","seatstay_rocker_joint"},{"site1","site_P3_ss"},{"site2","site_P3_rocker"},{"solref","0.0005 1"},{"solimp","0.99 0.999 0.0001 0.5 2"}});

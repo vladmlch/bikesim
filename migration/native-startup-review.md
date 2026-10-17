@@ -2,6 +2,18 @@
 
 Date: 2026-10-17
 
+## Follow-up review of the committed integration
+
+The combined tree at `9d9e49c0`, including startup commit `9c940c96`, has
+open correctness findings recorded in
+[the commit review](native-waves-commit-review.md). In particular, the
+subsequent physics wave admits native-reference tires without handling the
+absent applied tire writer in bootstrap capture and restoration (F1).
+The new speed-control route also retains a zero-torque placeholder (F2).
+These findings limit the earlier source-completeness statement; startup
+and physics/research acceptance remain pending. This follow-up inspected
+source only and ran no tests or builds.
+
 Scope: **T16–T18 and T20–T25**. The implementation was made in the repository reconstructed from the supplied `repomix-output.xml(6).zip` attachment. The other four management groups remain outside this delivery.
 
 ## Result and acceptance status

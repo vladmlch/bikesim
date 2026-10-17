@@ -161,6 +161,31 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -173,8 +198,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F004",
@@ -192,6 +228,31 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -204,8 +265,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F005",
@@ -343,6 +415,25 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/batch/integer_detail.hpp",
+      "native/src/batch/log.hpp",
+      "native/src/batch/plan.cpp",
+      "native/src/batch/plan.hpp",
+      "native/src/batch/process_pool.cpp",
+      "native/src/batch/spec.cpp",
+      "native/src/batch/summary.cpp",
+      "native/src/batch/sweep.cpp",
+      "native/src/cli/batch.cpp",
+      "native/src/platform/process.cpp",
+      "native/src/platform/process.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/tools/research_sweep_main.cpp",
+      "native/src/tools/test_child_main.cpp",
+      "native/tests/migration/test_t51.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/batch/plan.hpp",
       "native/src/batch/plan.cpp",
       "native/src/batch/executor.cpp",
@@ -351,8 +442,19 @@
       "native/src/tools/research_sweep_main.cpp",
       "native/tests/migration/test_t51.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F006",
@@ -380,6 +482,31 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -392,8 +519,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F007",
@@ -433,6 +571,31 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -445,8 +608,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F008",
@@ -471,6 +645,31 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -483,8 +682,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F009",
@@ -535,11 +745,30 @@
     "native_counterpart_candidates": [],
     "replacement_paths": [
       "native/src/cli/recording.cpp",
+      "native/src/cli/recording.hpp",
+      "native/src/cli/recording_main.cpp",
+      "native/tests/migration/test_t46.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/src/cli/recording.cpp",
       "native/src/cli/recording_main.cpp",
       "native/tests/cli/recording.cmake"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F010",
@@ -575,6 +804,31 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -587,8 +841,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F011",
@@ -717,6 +982,31 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -729,8 +1019,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F012",
@@ -946,6 +1247,31 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -958,8 +1284,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F013",
@@ -1001,6 +1338,31 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -1013,8 +1375,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F014",
@@ -1054,6 +1427,31 @@
       "native/src/drivetrain/policy_binding.cpp"
     ],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -1066,8 +1464,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F015",
@@ -3217,6 +3626,18 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/recording/report.cpp",
+      "native/src/recording/report.hpp",
+      "native/src/recording/export.cpp",
+      "native/src/recording/export.hpp",
+      "native/src/replay/export.cpp",
+      "native/src/replay/export.hpp",
+      "native/resources/reports/summary.md.in",
+      "native/tests/migration/test_t45.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/report.hpp",
       "native/src/recording/report.cpp",
       "native/src/recording/export.hpp",
@@ -3224,8 +3645,19 @@
       "native/resources/reports/summary.md.in",
       "native/tests/migration/test_t45.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F047",
@@ -8504,14 +8936,37 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/recording/reader.cpp",
+      "native/src/recording/reader.hpp",
+      "native/src/recording/analysis.cpp",
+      "native/src/recording/analysis_detail.hpp",
+      "native/src/recording/query.cpp",
+      "native/src/io/float_format.hpp",
+      "native/src/configuration/schema.cpp",
+      "native/tests/migration/test_t43.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/reader.hpp",
       "native/src/recording/reader.cpp",
       "native/src/recording/analysis.cpp",
       "native/src/recording/query.cpp",
       "native/tests/migration/test_t43.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F095",
@@ -8632,14 +9087,37 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/recording/reader.cpp",
+      "native/src/recording/reader.hpp",
+      "native/src/recording/analysis.cpp",
+      "native/src/recording/analysis_detail.hpp",
+      "native/src/recording/query.cpp",
+      "native/src/io/float_format.hpp",
+      "native/src/configuration/schema.cpp",
+      "native/tests/migration/test_t43.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/reader.hpp",
       "native/src/recording/reader.cpp",
       "native/src/recording/analysis.cpp",
       "native/src/recording/query.cpp",
       "native/tests/migration/test_t43.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F096",
@@ -8703,14 +9181,46 @@
     "native_counterpart_candidates": [],
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
       "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
       "native/src/recording/events.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F097",
@@ -8849,14 +9359,46 @@
     "native_counterpart_candidates": [],
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
       "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
       "native/src/recording/events.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F098",
@@ -9157,14 +9699,39 @@
     "native_counterpart_candidates": [],
     "replacement_paths": [
       "native/resources/recording/catalog-v1.json",
+      "native/src/recording/catalog.cpp",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog_data.inc",
+      "native/src/recording/catalog_model.cpp",
+      "native/src/recording/coordinates.cpp",
+      "native/src/recording/schema.cpp",
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/value_util.hpp",
+      "native/tests/migration/test_t38.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/resources/recording/catalog-v1.json",
       "native/src/recording/catalog.hpp",
       "native/src/recording/catalog.cpp",
       "native/src/recording/coordinates.cpp",
       "native/src/recording/schema.cpp",
       "native/tests/migration/test_t38.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F099",
@@ -9357,14 +9924,39 @@
     "native_counterpart_candidates": [],
     "replacement_paths": [
       "native/resources/recording/catalog-v1.json",
+      "native/src/recording/catalog.cpp",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog_data.inc",
+      "native/src/recording/catalog_model.cpp",
+      "native/src/recording/coordinates.cpp",
+      "native/src/recording/schema.cpp",
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/value_util.hpp",
+      "native/tests/migration/test_t38.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/resources/recording/catalog-v1.json",
       "native/src/recording/catalog.hpp",
       "native/src/recording/catalog.cpp",
       "native/src/recording/coordinates.cpp",
       "native/src/recording/schema.cpp",
       "native/tests/migration/test_t38.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F100",
@@ -9527,13 +10119,35 @@
       "native/src/runtime/encode.cpp"
     ],
     "replacement_paths": [
+      "native/src/recording/encoding.cpp",
+      "native/src/recording/encoding.hpp",
+      "native/src/recording/plan.cpp",
+      "native/src/recording/duckdb_chunks.cpp",
+      "native/src/runtime/encoding_values.hpp",
+      "native/src/runtime/encode.hpp",
+      "native/tests/migration/test_t39.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/encoding.hpp",
       "native/src/recording/encoding.cpp",
       "native/src/recording/plan.cpp",
       "native/src/recording/duckdb_chunks.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F101",
@@ -9590,13 +10204,50 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/recording/publish.cpp",
+      "native/src/recording/publish.hpp",
+      "native/src/recording/finalize.cpp",
+      "native/src/recording/interrupt.cpp",
+      "native/src/runtime/async_close.cpp",
+      "native/src/runtime/async_close.hpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/accounting.hpp",
+      "native/src/runtime/period_buffer.cpp",
+      "native/src/runtime/period_buffer.hpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/config.hpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/runtime/project_config.hpp",
+      "native/src/research/configuration.cpp",
+      "native/src/research/environment.cpp",
+      "native/src/platform/signals.cpp",
+      "native/src/platform/signals.hpp",
+      "native/tests/migration/async_close_contract.hpp",
+      "native/tests/migration/test_t42.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/publish.hpp",
       "native/src/recording/publish.cpp",
       "native/src/recording/finalize.cpp",
       "native/src/recording/interrupt.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F102",
@@ -9835,14 +10486,46 @@
     ],
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
       "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
       "native/src/recording/events.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F104",
@@ -9931,13 +10614,35 @@
       "native/src/runtime/encode.hpp"
     ],
     "replacement_paths": [
+      "native/src/recording/encoding.cpp",
+      "native/src/recording/encoding.hpp",
+      "native/src/recording/plan.cpp",
+      "native/src/recording/duckdb_chunks.cpp",
+      "native/src/runtime/encoding_values.hpp",
+      "native/src/runtime/encode.hpp",
+      "native/tests/migration/test_t39.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/encoding.hpp",
       "native/src/recording/encoding.cpp",
       "native/src/recording/plan.cpp",
       "native/src/recording/duckdb_chunks.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F105",
@@ -10085,14 +10790,37 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/recording/reader.cpp",
+      "native/src/recording/reader.hpp",
+      "native/src/recording/analysis.cpp",
+      "native/src/recording/analysis_detail.hpp",
+      "native/src/recording/query.cpp",
+      "native/src/io/float_format.hpp",
+      "native/src/configuration/schema.cpp",
+      "native/tests/migration/test_t43.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/reader.hpp",
       "native/src/recording/reader.cpp",
       "native/src/recording/analysis.cpp",
       "native/src/recording/query.cpp",
       "native/tests/migration/test_t43.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F106",
@@ -10216,6 +10944,21 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/replay/input.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
       "native/src/replay/session.hpp",
@@ -10224,8 +10967,19 @@
       "native/src/replay/playback.cpp",
       "native/tests/migration/test_t44.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F107",
@@ -10290,6 +11044,18 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/recording/report.cpp",
+      "native/src/recording/report.hpp",
+      "native/src/recording/export.cpp",
+      "native/src/recording/export.hpp",
+      "native/src/replay/export.cpp",
+      "native/src/replay/export.hpp",
+      "native/resources/reports/summary.md.in",
+      "native/tests/migration/test_t45.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/report.hpp",
       "native/src/recording/report.cpp",
       "native/src/recording/export.hpp",
@@ -10297,8 +11063,19 @@
       "native/resources/reports/summary.md.in",
       "native/tests/migration/test_t45.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F108",
@@ -10441,14 +11218,46 @@
     "native_counterpart_candidates": [],
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
       "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
       "native/src/recording/events.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F109",
@@ -10561,14 +11370,39 @@
     "native_counterpart_candidates": [],
     "replacement_paths": [
       "native/resources/recording/catalog-v1.json",
+      "native/src/recording/catalog.cpp",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog_data.inc",
+      "native/src/recording/catalog_model.cpp",
+      "native/src/recording/coordinates.cpp",
+      "native/src/recording/schema.cpp",
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/value_util.hpp",
+      "native/tests/migration/test_t38.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/resources/recording/catalog-v1.json",
       "native/src/recording/catalog.hpp",
       "native/src/recording/catalog.cpp",
       "native/src/recording/coordinates.cpp",
       "native/src/recording/schema.cpp",
       "native/tests/migration/test_t38.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F110",
@@ -10708,14 +11542,35 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/recording/database.cpp",
+      "native/src/recording/database.hpp",
+      "native/src/recording/database_validate.cpp",
+      "native/src/recording/duckdb.cpp",
+      "native/src/recording/duckdb.hpp",
+      "native/tests/migration/test_t41.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/database.hpp",
       "native/src/recording/database.cpp",
       "native/src/recording/database_validate.cpp",
       "native/src/recording/assets.cpp",
       "native/tests/migration/test_t41.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F111",
@@ -10738,6 +11593,31 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -10750,8 +11630,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F112",
@@ -10779,6 +11670,31 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/cli/arguments.cpp",
+      "native/src/cli/arguments.hpp",
+      "native/src/cli/argument_contracts.inc",
+      "native/src/cli/application.cpp",
+      "native/src/cli/application.hpp",
+      "native/src/cli/configuration.cpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/cli/ride.cpp",
+      "native/src/cli/research.cpp",
+      "native/src/cli/settle.cpp",
+      "native/src/cli/export.cpp",
+      "native/src/cli/simulation.cpp",
+      "native/src/cli/playground.cpp",
+      "native/src/cli/replay.cpp",
+      "native/src/cli/main.cpp",
+      "native/src/app/config.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/initialization/setup_owner.cpp",
+      "native/src/initialization/setup_owner.hpp",
+      "native/tests/migration/test_t47.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/cli/arguments.hpp",
       "native/src/cli/arguments.cpp",
       "native/src/cli/application.cpp",
@@ -10791,8 +11707,19 @@
       "native/src/cli/main.cpp",
       "native/tests/migration/test_t47.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F113",
@@ -10860,6 +11787,26 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -10871,8 +11818,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F114",
@@ -11043,6 +12001,26 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -11054,8 +12032,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F117",
@@ -11185,6 +12174,26 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -11196,8 +12205,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F118",
@@ -11288,6 +12308,21 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/replay/input.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
       "native/src/replay/session.hpp",
@@ -11296,8 +12331,19 @@
       "native/src/replay/playback.cpp",
       "native/tests/migration/test_t44.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F119",
@@ -12426,6 +13472,21 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/replay/input.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
       "native/src/replay/session.hpp",
@@ -12434,8 +13495,19 @@
       "native/src/replay/playback.cpp",
       "native/tests/migration/test_t44.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F129",
@@ -13206,6 +14278,21 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/replay/input.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
       "native/src/replay/session.hpp",
@@ -13214,8 +14301,19 @@
       "native/src/replay/playback.cpp",
       "native/tests/migration/test_t44.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F134",
@@ -13401,6 +14499,21 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/replay/input.cpp",
+      "native/src/replay/input.hpp",
+      "native/src/replay/input_detail.hpp",
+      "native/src/replay/legacy.cpp",
+      "native/src/replay/rebuild.cpp",
+      "native/src/replay/rebuild.hpp",
+      "native/src/replay/session.cpp",
+      "native/src/replay/session.hpp",
+      "native/src/replay/playback.cpp",
+      "native/src/replay/playback.hpp",
+      "native/tests/migration/test_t44.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/replay/input.hpp",
       "native/src/replay/input.cpp",
       "native/src/replay/session.hpp",
@@ -13409,8 +14522,19 @@
       "native/src/replay/playback.cpp",
       "native/tests/migration/test_t44.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F135",
@@ -13452,6 +14576,26 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -13463,8 +14607,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F136",
@@ -14122,6 +15277,26 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -14133,8 +15308,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F143",
@@ -14436,13 +15622,50 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/recording/publish.cpp",
+      "native/src/recording/publish.hpp",
+      "native/src/recording/finalize.cpp",
+      "native/src/recording/interrupt.cpp",
+      "native/src/runtime/async_close.cpp",
+      "native/src/runtime/async_close.hpp",
+      "native/src/runtime/accounting.cpp",
+      "native/src/runtime/accounting.hpp",
+      "native/src/runtime/period_buffer.cpp",
+      "native/src/runtime/period_buffer.hpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/config.hpp",
+      "native/src/runtime/bootstrap.cpp",
+      "native/src/runtime/project_config.cpp",
+      "native/src/runtime/project_config.hpp",
+      "native/src/research/configuration.cpp",
+      "native/src/research/environment.cpp",
+      "native/src/platform/signals.cpp",
+      "native/src/platform/signals.hpp",
+      "native/tests/migration/async_close_contract.hpp",
+      "native/tests/migration/test_t42.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/recording/publish.hpp",
       "native/src/recording/publish.cpp",
       "native/src/recording/finalize.cpp",
       "native/src/recording/interrupt.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F146",
@@ -14840,6 +16063,26 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -14851,8 +16094,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F150",
@@ -17136,6 +18390,26 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -17147,8 +18421,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F168",
@@ -17547,6 +18832,26 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -17558,8 +18863,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F171",
@@ -17899,6 +19215,26 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -17910,8 +19246,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F175",
@@ -19017,6 +20364,26 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -19028,8 +20395,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F185",
@@ -19372,14 +20750,46 @@
     ],
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
       "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
       "native/src/recording/events.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F188",
@@ -20163,6 +21573,21 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/render_owner.cpp",
+      "native/src/viewer/render_owner.hpp",
+      "native/src/viewer/glfw_context.cpp",
+      "native/src/viewer/glfw_context.hpp",
+      "native/src/viewer/render_fields.hpp",
+      "native/src/viewer/snapshot.cpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/research.hpp",
+      "native/tests/migration/test_t48.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/render_owner.hpp",
       "native/src/viewer/render_owner.cpp",
       "native/src/viewer/glfw_context.hpp",
@@ -20172,8 +21597,19 @@
       "native/src/runtime/runtime.cpp",
       "native/tests/migration/test_t48.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F193",
@@ -20241,6 +21677,26 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -20252,8 +21708,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F194",
@@ -20490,6 +21957,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/render_owner.cpp",
+      "native/src/viewer/render_owner.hpp",
+      "native/src/viewer/glfw_context.cpp",
+      "native/src/viewer/glfw_context.hpp",
+      "native/src/viewer/render_fields.hpp",
+      "native/src/viewer/snapshot.cpp",
+      "native/src/runtime/runtime.cpp",
+      "native/src/runtime/runtime.hpp",
+      "native/src/runtime/research.cpp",
+      "native/src/runtime/research.hpp",
+      "native/tests/migration/test_t48.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/render_owner.hpp",
       "native/src/viewer/render_owner.cpp",
       "native/src/viewer/glfw_context.hpp",
@@ -20499,8 +21981,19 @@
       "native/src/runtime/runtime.cpp",
       "native/tests/migration/test_t48.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F196",
@@ -20640,14 +22133,46 @@
     ],
     "replacement_paths": [
       "native/src/recording/contracts.hpp",
+      "native/src/recording/capture.cpp",
+      "native/src/recording/capture.hpp",
+      "native/src/recording/assets.cpp",
+      "native/src/recording/events.cpp",
+      "native/src/recording/physical_source.cpp",
+      "native/src/recording/research_source.cpp",
+      "native/src/recording/research_publication.cpp",
+      "native/src/recording/research_publication.hpp",
+      "native/src/cli/physical_capture.cpp",
+      "native/src/cli/physical_capture.hpp",
+      "native/src/research/metadata.cpp",
+      "native/src/research/evidence.hpp",
+      "native/src/initialization/research_startup.cpp",
+      "native/src/initialization/research_startup.hpp",
+      "native/src/legacy/recorder.cpp",
+      "native/tests/migration/test_t40.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/src/recording/contracts.hpp",
       "native/src/recording/capture.hpp",
       "native/src/recording/capture.cpp",
       "native/src/recording/physical_source.cpp",
       "native/src/recording/research_source.cpp",
       "native/src/recording/events.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F197",
@@ -22584,6 +24109,26 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -22595,8 +24140,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F213",
@@ -22915,14 +24471,39 @@
     ],
     "replacement_paths": [
       "native/resources/recording/catalog-v1.json",
+      "native/src/recording/catalog.cpp",
+      "native/src/recording/catalog.hpp",
+      "native/src/recording/catalog_data.inc",
+      "native/src/recording/catalog_model.cpp",
+      "native/src/recording/coordinates.cpp",
+      "native/src/recording/schema.cpp",
+      "native/src/recording/contracts.hpp",
+      "native/src/recording/value_util.hpp",
+      "native/tests/migration/test_t38.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
+      "native/resources/recording/catalog-v1.json",
       "native/src/recording/catalog.hpp",
       "native/src/recording/catalog.cpp",
       "native/src/recording/coordinates.cpp",
       "native/src/recording/schema.cpp",
       "native/tests/migration/test_t38.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F216",
@@ -24019,6 +25600,26 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viewer/input.cpp",
+      "native/src/viewer/input.hpp",
+      "native/src/viewer/session.hpp",
+      "native/src/viewer/pacer.cpp",
+      "native/src/viewer/pacer.hpp",
+      "native/src/viewer/hud.cpp",
+      "native/src/viewer/hud.hpp",
+      "native/src/viewer/camera.cpp",
+      "native/src/viewer/ride.cpp",
+      "native/src/viewer/research.cpp",
+      "native/src/viewer/replay.cpp",
+      "native/src/legacy/ride.cpp",
+      "native/src/legacy/ride.hpp",
+      "native/src/legacy/playground.cpp",
+      "native/src/legacy/playground.hpp",
+      "native/tests/migration/test_t49.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viewer/input.hpp",
       "native/src/viewer/input.cpp",
       "native/src/viewer/hud.cpp",
@@ -24030,8 +25631,19 @@
       "native/src/viewer/replay.cpp",
       "native/tests/migration/test_t49.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F226",
@@ -29071,6 +30683,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29080,8 +30707,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F279",
@@ -29161,6 +30799,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29170,8 +30823,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F280",
@@ -29248,6 +30912,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29257,8 +30936,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F281",
@@ -29331,6 +31021,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29340,8 +31045,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F282",
@@ -29391,6 +31107,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29400,8 +31131,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F283",
@@ -29420,6 +31162,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29429,8 +31186,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F284",
@@ -29651,6 +31419,21 @@
     ],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29660,8 +31443,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F285",
@@ -29696,6 +31490,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29705,8 +31514,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F286",
@@ -29734,6 +31554,21 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/viz/geometry.cpp",
+      "native/src/viz/html.cpp",
+      "native/src/viz/plot.cpp",
+      "native/src/viz/plot.hpp",
+      "native/src/viz/plot_internal.hpp",
+      "native/src/viz/png.cpp",
+      "native/src/viz/ride.cpp",
+      "native/src/viz/svg.cpp",
+      "native/src/viz/tables.cpp",
+      "native/resources/plotly/README.md",
+      "native/tests/migration/test_t50.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/viz/plot.hpp",
       "native/src/viz/plot.cpp",
       "native/src/viz/svg.cpp",
@@ -29743,8 +31578,19 @@
       "native/resources/plotly/",
       "native/tests/migration/test_t50.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F287",
@@ -53111,6 +54957,25 @@
     "direct_test_imports": [],
     "native_counterpart_candidates": [],
     "replacement_paths": [
+      "native/src/batch/integer_detail.hpp",
+      "native/src/batch/log.hpp",
+      "native/src/batch/plan.cpp",
+      "native/src/batch/plan.hpp",
+      "native/src/batch/process_pool.cpp",
+      "native/src/batch/spec.cpp",
+      "native/src/batch/summary.cpp",
+      "native/src/batch/sweep.cpp",
+      "native/src/cli/batch.cpp",
+      "native/src/platform/process.cpp",
+      "native/src/platform/process.hpp",
+      "native/src/platform/argv.hpp",
+      "native/src/tools/research_sweep_main.cpp",
+      "native/src/tools/test_child_main.cpp",
+      "native/tests/migration/test_t51.cpp"
+    ],
+    "deletion_task": "T63",
+    "status": "planned",
+    "planned_replacement_paths": [
       "native/src/batch/plan.hpp",
       "native/src/batch/plan.cpp",
       "native/src/batch/executor.cpp",
@@ -53119,8 +54984,19 @@
       "native/src/tools/research_sweep_main.cpp",
       "native/tests/migration/test_t51.cpp"
     ],
-    "deletion_task": "T63",
-    "status": "planned"
+    "implementation": {
+      "date": "2026-10-17",
+      "status": "implemented_unverified",
+      "wave": "recording_application",
+      "evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "execution": "not_run_user_prohibited_compilation_and_execution",
+      "package_complete": false,
+      "deletion_authorized": false
+    }
   },
   {
     "id": "F459",

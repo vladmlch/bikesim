@@ -5,7 +5,7 @@
 #include "../platform/files.hpp"
 #include "../runtime/setup_values.hpp"
 #include <array>
-#include <cstring>
+#include <bit>
 #include <dlfcn.h>
 #include <filesystem>
 #include <system_error>
@@ -32,8 +32,7 @@ public:
         if (error || !symbol) throw PolicyFailure("native policy is missing bike_policy_v1");
         using Entry = const BikePolicyV1* (*)(void);
         static_assert(sizeof(Entry) == sizeof(symbol));
-        Entry entry = nullptr;
-        std::memcpy(&entry, &symbol, sizeof(entry));
+        const Entry entry = std::bit_cast<Entry>(symbol);
         try { return entry(); }
         catch (const std::exception& cause) { throw PolicyFailure("policy entrypoint threw: " + std::string(cause.what())); }
         catch (...) { throw PolicyFailure("policy entrypoint threw a non-standard exception"); }
@@ -76,7 +75,7 @@ public:
     PluginPolicy(std::filesystem::path path, const Value& config)
         : path_(std::move(path)), digest_(platform::file_sha256(path_)),
           config_(io::canonical_json(config)), library_(path_) {
-        config_digest_ = io::sha256(std::as_bytes(std::span{config_.data(), config_.size()}));
+        config_digest_ = io::sha256(std::as_bytes(std::span{config_}));
         instance_.api = library_.descriptor();
         validate_policy_abi(instance_.api);
         invoke("create", [&](BikeErrorV1* error) {

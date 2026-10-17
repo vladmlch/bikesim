@@ -1,5 +1,6 @@
 #include "export.hpp"
 #include "builder_internal.hpp"
+#include "../diag.hpp"
 #include "../io/json.hpp"
 #include <charconv>
 #include <fstream>
@@ -98,6 +99,8 @@ io::Value mass_specs_value(const BikeMassSpecs& x) {
         {"wheel_hub_core_fraction",n(x.wheel_hub_core_fraction)},
     }};
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 io::Value geometry_value(const BuildRequest& request) {
     const auto& specs=request.bike;
     std::optional<kinematics::HorstLinkageSolver> default_solver;
@@ -162,6 +165,7 @@ io::Value geometry_value(const BuildRequest& request) {
         {"link_lengths_mm",links},{"geometry_summary",summary},{"damper_specifications",damper},
     }};
 }
+NATIVE_DIAG_POP
 void export_mjcf(const BuildRequest& request,const std::filesystem::path& file) {write_export(file,generate_mjcf(request));}
 void export_geometry_json(const BuildRequest& request,const std::filesystem::path& file) {
     std::string json;pretty_value(geometry_value(request),json,0);write_export(file,json);

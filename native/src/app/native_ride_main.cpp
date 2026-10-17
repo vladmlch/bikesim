@@ -92,35 +92,35 @@ Options parse(std::span<char*> arguments) {
     return result;
 }
 
-bike::app::SetupRequest request(const Options& options) {
-    bike::app::SetupRequest result;
+[[gnu::noinline]] std::unique_ptr<bike::app::SetupRequest> request_ptr(const Options& options) {
+    auto result = std::make_unique<bike::app::SetupRequest>();
     if (options.request)
-        result = bike::initialization::read_setup_request(*options.request, options.fresh);
+        *result = bike::initialization::read_setup_request(*options.request, options.fresh);
     else {
-        result.origin = std::filesystem::absolute(*options.physics).string();
-        result.asset_root = std::filesystem::absolute(*options.physics).parent_path();
-        result.model.physics = bike::configuration::load_physics(*options.physics);
-        result.model.mode = "ride";
-        result.model.rider = bike::model::rider_from_args(options.rider.value_or(
-            result.model.physics->physics_mode == "legacy" ? "seated" : "articulated_planar"));
-        result.model.crank_joint = true;
-        result.seed_decimal = options.seed.value_or("0");
-        result.track = options.track_file
-            ? bike::initialization::load_track_for_setup(*options.track_file, result.seed_decimal)
+        result->origin = std::filesystem::absolute(*options.physics).string();
+        result->asset_root = std::filesystem::absolute(*options.physics).parent_path();
+        result->model.physics = bike::configuration::load_physics(*options.physics);
+        result->model.mode = "ride";
+        result->model.rider = bike::model::rider_from_args(options.rider.value_or(
+            result->model.physics->physics_mode == "legacy" ? "seated" : "articulated_planar"));
+        result->model.crank_joint = true;
+        result->seed_decimal = options.seed.value_or("0");
+        result->track = options.track_file
+            ? bike::initialization::load_track_for_setup(*options.track_file, result->seed_decimal)
             : bike::terrain::get_preset(options.track.value_or("flat"));
-        result.model.field = bike::terrain::HeightFieldSpec::for_track(result.track);
+        result->model.field = bike::terrain::HeightFieldSpec::for_track(result->track);
     }
-    result.runtime.strict = options.strict;
-    result.legacy_source_root = options.legacy_source;
-    result.cache_directory = options.cache_directory;
-    result.equilibrium.max_steps = options.equilibrium_steps;
-    if (options.speed_kph) result.model.physics->initial_speed_mps = *options.speed_kph / 3.6;
+    result->runtime.strict = options.strict;
+    result->legacy_source_root = options.legacy_source;
+    result->cache_directory = options.cache_directory;
+    result->equilibrium.max_steps = options.equilibrium_steps;
+    if (options.speed_kph) result->model.physics->initial_speed_mps = *options.speed_kph / 3.6;
     if (options.fresh) {
-        result.model.physics->equilibrium_cache_enabled = false;
-        result.model.physics->equilibrium_state_file.reset();
-        result.initial_state.reset();
+        result->model.physics->equilibrium_cache_enabled = false;
+        result->model.physics->equilibrium_state_file.reset();
+        result->initial_state.reset();
     }
-    bike::configuration::post_init(*result.model.physics);
+    bike::configuration::post_init(*result->model.physics);
     return result;
 }
 
@@ -138,67 +138,84 @@ void usage() {
         "Default duration: 1 second. --steps 0 prepares t=0 only.\n"
         "--fresh requests a new equilibrium, overriding saved state and cache reuse.\n";
 }
+
+[[gnu::noinline]] int run_legacy(const Options& options, std::unique_ptr<bike::app::SetupRequest> setup_request) {
+    auto legacy_options = std::make_unique<bike::legacy::RideOptions>();
+    legacy_options->drive_mode = options.legacy_drive.value_or("motor");
+    legacy_options->assist_mode = options.assist_mode.value_or("tour");
+    legacy_options->tyre.model = options.legacy_tyre.value_or("sphere");
+    legacy_options->tyre.tier = options.legacy_tier.value_or("fast");
+    legacy_options->setup = std::move(*setup_request);
+    auto ride = bike::legacy::make_ride(std::move(*legacy_options));
+    std::int64_t steps = options.steps.value_or(0);
+    if (!options.steps) {
+        const double count = std::ceil(options.duration_s.value_or(1.) / ride->timestep_s());
+        if (!std::isfinite(count) || count >= 0x1p63)
+            throw std::invalid_argument("duration exceeds the native step-count domain");
+        steps = static_cast<std::int64_t>(count);
+    }
+    auto limits = ride->default_limits();
+    limits.max_steps = steps;
+    const auto outcome = steps == 0
+        ? bike::legacy::RunOutcome{"target", 0, ride->time_s(), 0., ride->position_m(), std::nullopt}
+        : ride->run(limits);
+    using namespace runtime::setupvalue;
+    const Value result{Object{{"schema", integer(1)}, {"physics_mode", text("legacy")},
+        {"step", integer(outcome.steps)}, {"time_s", real(outcome.sim_time_s)},
+        {"position_m", real(outcome.position_m)}, {"reason", text(outcome.reason)},
+        {"outcome", outcome.crash ? text(outcome.crash->cause) : Value{}}}};
+    std::cout << bike::io::canonical_json(result) << '\n';
+    return outcome.crash ? 3 : 0;
+}
+
+[[gnu::noinline]] std::unique_ptr<bike::app::PreparedSimulation> prepare_physical_ptr(
+    std::unique_ptr<bike::app::SetupRequest> setup_request) {
+    return std::unique_ptr<bike::app::PreparedSimulation>{
+        new bike::app::PreparedSimulation(bike::app::prepare(std::move(*setup_request)))};
+}
+
+[[gnu::noinline]] std::unique_ptr<runtime::NativeRideRuntime> make_physical_ride(
+    std::unique_ptr<bike::app::PreparedSimulation> prepared) {
+    return bike::app::make_ride(std::move(*prepared));
+}
+
+[[gnu::noinline]] int run_physical(const Options& options, std::unique_ptr<bike::app::SetupRequest> setup_request) {
+    if (options.legacy_drive || options.legacy_tyre || options.legacy_tier || options.assist_mode)
+        throw std::invalid_argument("legacy drive/tyre/assist options require physics_mode='legacy'");
+    const double dt = setup_request->model.physics->timestep_s;
+    const double finish_m = setup_request->track.length_m;
+    const std::string track = setup_request->track.name;
+    std::int64_t steps = options.steps.value_or(0);
+    if (!options.steps) {
+        const double count = std::ceil(options.duration_s.value_or(1.) / dt);
+        if (!std::isfinite(count) || count >= static_cast<double>(std::numeric_limits<std::int64_t>::max()))
+            throw std::invalid_argument("duration exceeds the native step-count domain");
+        steps = static_cast<std::int64_t>(count);
+    }
+    auto prepared = prepare_physical_ptr(std::move(setup_request));
+    const auto residual = runtime::setupvalue::field(runtime::setupvalue::field(prepared->metadata, "equilibrium"), "residual_qacc");
+    auto ride = make_physical_ride(std::move(prepared));
+    ride->set_finish_position(finish_m);
+    const auto advanced = ride->advance(steps, runtime::RideControl{}, 0., 0., std::nullopt);
+    using namespace runtime::setupvalue;
+    const Value result{Object{{"schema", integer(1)}, {"track", text(track)},
+        {"step", integer(advanced.step)}, {"time_s", real(advanced.time_s)},
+        {"reason", text(advanced.reason)}, {"equilibrium_residual_qacc", residual},
+        {"outcome", advanced.outcome ? text(*advanced.outcome) : Value{}}}};
+    std::cout << bike::io::canonical_json(result) << '\n';
+    ride->close();
+    return advanced.outcome && advanced.outcome->starts_with("crash:") ? 3 : 0;
+}
 } // namespace
 
 int main(int argc, char** argv) {
     try {
-        const auto options = parse(std::span<char*>{argv, static_cast<std::size_t>(argc)});
-        if (options.help) { usage(); return 0; }
-        auto setup_request = request(options);
-        if (setup_request.model.physics->physics_mode == "legacy") {
-            bike::legacy::RideOptions legacy_options;
-            legacy_options.drive_mode = options.legacy_drive.value_or("motor");
-            legacy_options.assist_mode = options.assist_mode.value_or("tour");
-            legacy_options.tyre.model = options.legacy_tyre.value_or("sphere");
-            legacy_options.tyre.tier = options.legacy_tier.value_or("fast");
-            legacy_options.setup = std::move(setup_request);
-            auto ride = bike::legacy::make_ride(std::move(legacy_options));
-            std::int64_t steps = options.steps.value_or(0);
-            if (!options.steps) {
-                const double count = std::ceil(options.duration_s.value_or(1.) / ride->timestep_s());
-                if (!std::isfinite(count) || count >= 0x1p63)
-                    throw std::invalid_argument("duration exceeds the native step-count domain");
-                steps = static_cast<std::int64_t>(count);
-            }
-            auto limits = ride->default_limits();
-            limits.max_steps = steps;
-            const auto outcome = steps == 0
-                ? bike::legacy::RunOutcome{"target", 0, ride->time_s(), 0., ride->position_m(), std::nullopt}
-                : ride->run(limits);
-            using namespace runtime::setupvalue;
-            const Value result{Object{{"schema", integer(1)}, {"physics_mode", text("legacy")},
-                {"step", integer(outcome.steps)}, {"time_s", real(outcome.sim_time_s)},
-                {"position_m", real(outcome.position_m)}, {"reason", text(outcome.reason)},
-                {"outcome", outcome.crash ? text(outcome.crash->cause) : Value{}}}};
-            std::cout << bike::io::canonical_json(result) << '\n';
-            return outcome.crash ? 3 : 0;
-        }
-        if (options.legacy_drive || options.legacy_tyre || options.legacy_tier || options.assist_mode)
-            throw std::invalid_argument("legacy drive/tyre/assist options require physics_mode='legacy'");
-        const double dt = setup_request.model.physics->timestep_s;
-        const double finish_m = setup_request.track.length_m;
-        const std::string track = setup_request.track.name;
-        std::int64_t steps = options.steps.value_or(0);
-        if (!options.steps) {
-            const double count = std::ceil(options.duration_s.value_or(1.) / dt);
-            if (!std::isfinite(count) || count >= static_cast<double>(std::numeric_limits<std::int64_t>::max()))
-                throw std::invalid_argument("duration exceeds the native step-count domain");
-            steps = static_cast<std::int64_t>(count);
-        }
-        auto prepared = bike::app::prepare(std::move(setup_request));
-        const auto& equilibrium = runtime::setupvalue::field(prepared.metadata, "equilibrium");
-        const auto residual = runtime::setupvalue::field(equilibrium, "residual_qacc");
-        auto ride = bike::app::make_ride(std::move(prepared));
-        ride->set_finish_position(finish_m);
-        const auto advanced = ride->advance(steps, runtime::RideControl{}, 0., 0., std::nullopt);
-        using namespace runtime::setupvalue;
-        const Value result{Object{{"schema", integer(1)}, {"track", text(track)},
-            {"step", integer(advanced.step)}, {"time_s", real(advanced.time_s)},
-            {"reason", text(advanced.reason)}, {"equilibrium_residual_qacc", residual},
-            {"outcome", advanced.outcome ? text(*advanced.outcome) : Value{}}}};
-        std::cout << bike::io::canonical_json(result) << '\n';
-        ride->close();
-        return advanced.outcome && advanced.outcome->starts_with("crash:") ? 3 : 0;
+        const auto options = std::make_unique<Options>(parse(std::views::counted(argv, argc)));
+        if (options->help) { usage(); return 0; }
+        auto setup_request = request_ptr(*options);
+        if (setup_request->model.physics->physics_mode == "legacy")
+            return run_legacy(*options, std::move(setup_request));
+        return run_physical(*options, std::move(setup_request));
     } catch (const std::exception& error) {
         std::cerr << "bike-native-ride: " << error.what() << '\n';
         return 2;

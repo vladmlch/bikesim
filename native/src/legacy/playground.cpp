@@ -145,7 +145,14 @@ io::Value Playground::telemetry()const{const auto& p=*impl_;std::lock_guard lock
 PlaygroundSnapshot Playground::snapshot()const{
     const auto& p=*impl_;std::lock_guard lock(p.mutex);p.live();const auto& m=*p.state->model;const auto& d=*p.state->data;
     PlaygroundSnapshot out;out.time_s=d.time;out.target_rear_travel_mm=p.rear_mm;out.target_fork_travel_mm=p.fork_mm;out.include_rider=p.options.include_rider;out.auto_sweep=p.auto_sweep;out.debug_markers=p.debug_markers;out.show_telemetry=p.show_telemetry;out.generation=p.generation;out.model_mode=p.options.model_mode;out.camera_mode=p.camera_mode;
-    const auto copy=[](auto span){return std::vector<double>(span.begin(),span.end());};out.qpos=copy(std::views::counted(d.qpos,m.nq));out.qvel=copy(std::views::counted(d.qvel,m.nv));out.ctrl=copy(std::views::counted(d.ctrl,m.nu));out.telemetry=telemetry();return out;
+    const auto copy=[](auto span){return std::vector<double>(span.begin(),span.end());};out.qpos=copy(std::views::counted(d.qpos,m.nq));out.qvel=copy(std::views::counted(d.qvel,m.nv));out.ctrl=copy(std::views::counted(d.ctrl,m.nu));
+    out.timestep_s=m.opt.timestep;
+    out.integration_state.resize(static_cast<std::size_t>(engine::state_size(&m,mjSTATE_INTEGRATION)));
+    engine::get_state(&m,&d,out.integration_state.data(),mjSTATE_INTEGRATION);
+    out.model_fields={copy(std::views::counted(m.dof_frictionloss,m.nv)),copy(std::views::counted(m.site_pos,3*m.nsite)),
+        copy(std::views::counted(m.tendon_stiffness,m.ntendon)),copy(std::views::counted(m.tendon_damping,m.ntendon)),
+        copy(std::views::counted(m.tendon_lengthspring,2*m.ntendon)),copy(std::views::counted(m.tendon_range,2*m.ntendon))};
+    out.telemetry=telemetry();return out;
 }
 runtime::ModelImage Playground::model_image()const{const auto& p=*impl_;std::lock_guard lock(p.mutex);p.live();return initialization::capture_model_image(*p.state->model);}
 void step(Playground& playground){playground.step();}

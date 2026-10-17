@@ -161,7 +161,7 @@ SampledRider sample_rider(const RiderRandomSpec &spec,
         rng.uniform(spec.mass_kg.at(0), spec.mass_kg.at(1));
     sampled.rider.height_m =
         rng.uniform(spec.height_m.at(0), spec.height_m.at(1));
-    rider::RiderPosture posture;
+    ::rider::RiderPosture posture;
     posture.torso_lean_rad =
         rng.uniform(spec.torso_lean_rad.at(0), spec.torso_lean_rad.at(1));
     posture.pelvis_pitch_rad =

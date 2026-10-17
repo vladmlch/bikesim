@@ -570,9 +570,11 @@ void NativeRideRuntime::initialize_accounting() {
     accounting_config_.period_steps = static_cast<std::size_t>(config_.control_period_steps);
     accounting_config_.measurement_decimation = config_.measurement_decimation;
     accounting_config_.retention = config_.record_retention;
+    accounting_config_.async_telemetry = config_.async_telemetry;
     accounting_config_.battery_enabled = stepper_->drive().config().policies.battery.enabled;
     const mjModel *const model = stepper_->model();
     accounting_config_.max_dofs = static_cast<std::size_t>(model->nv);
+    accounting_config_.max_qpos = static_cast<std::size_t>(model->nq);
     const int root_x = mj_name2id(model, mjOBJ_JOINT, "root_x");
     const int root_pitch = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
     if (root_x < 0 || root_pitch < 0)
@@ -634,6 +636,14 @@ void NativeRideRuntime::cache_research_boundary() {
 }
 
 void NativeRideRuntime::advance_interval(const RideControl &command, double front, double rear) {
+    // Async closes become visible only at a main-thread step boundary. The
+    // worker never changes presentation or the live controller/contact state.
+    try { accounting_->collect(false); }
+    catch (const InvalidReferenceRun&) {
+        physical_->capture_accounted_presentation(committed_presentation_);
+        throw;
+    }
+    physical_->capture_accounted_presentation(committed_presentation_);
     test_failure_boundary();
     RawStep raw = physical_->advance_physics(front, rear, std::nullopt, command);
     accounting_->push(std::move(raw));
@@ -649,7 +659,15 @@ void NativeRideRuntime::advance_interval(const RideControl &command, double fron
     if (!committed_outcome_ && finish_position_m_ &&
         committed_position_m_ >= *finish_position_m_)
         committed_outcome_ = "end_of_track";
-    if (accounting_->full() || committed_outcome_) flush_accounting();
+    if (committed_outcome_) flush_accounting();
+    else if (accounting_->full()) {
+        try { accounting_->close_period(); }
+        catch (const InvalidReferenceRun&) {
+            physical_->capture_accounted_presentation(committed_presentation_);
+            throw;
+        }
+        physical_->capture_accounted_presentation(committed_presentation_);
+    }
 }
 
 void NativeRideRuntime::flush_accounting() {
@@ -755,6 +773,26 @@ RuntimeSnapshot NativeRideRuntime::snapshot() const {
             .view = committed_presentation_.as_wire(),
             .model_status = accounting_->state().model_status.as_wire(),
             .first_failure = accounting_->state().monitor.first_failure};
+}
+
+RenderFrame NativeRideRuntime::render_frame() const {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    // Copy the committed cache under ONE guard: a reset cannot split the
+    // integration vector, presentation and generation across two calls.
+    RuntimeSnapshot state{.generation = physical_->generation(), .step = committed_step_,
+        .time_s = committed_time_s_, .integration_state = committed_integration_state_,
+        .outcome = outcome_reason(), .latest_sample = accounting_->latest_sample(),
+        .view = committed_presentation_.as_wire(),
+        .model_status = accounting_->state().model_status.as_wire(),
+        .first_failure = accounting_->state().monitor.first_failure};
+    return {std::move(state), committed_presentation_, model_image_.sha256};
+}
+
+ModelImage NativeRideRuntime::model_image() const {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    return model_image_;
 }
 
 void NativeRideRuntime::flush() {

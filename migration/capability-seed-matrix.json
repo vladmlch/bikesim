@@ -910,11 +910,42 @@
         "native/src/recording/capture.cpp",
         "native/src/recording/physical_source.cpp",
         "native/src/recording/research_source.cpp",
-        "native/src/recording/events.cpp"
+        "native/src/recording/events.cpp",
+        "native/src/recording/catalog_data.inc",
+        "native/src/recording/catalog_model.cpp",
+        "native/src/recording/value_util.hpp",
+        "native/src/runtime/encoding_values.hpp",
+        "native/src/runtime/encode.hpp",
+        "native/tests/migration/test_t39.cpp",
+        "native/src/recording/assets.cpp",
+        "native/src/recording/research_publication.cpp",
+        "native/src/recording/research_publication.hpp",
+        "native/src/cli/physical_capture.cpp",
+        "native/src/cli/physical_capture.hpp",
+        "native/src/research/metadata.cpp",
+        "native/src/legacy/recorder.cpp",
+        "native/tests/migration/test_t40.cpp",
+        "native/src/research/evidence.hpp",
+        "native/src/initialization/research_startup.cpp",
+        "native/src/initialization/research_startup.hpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "recording_application_implementation": {
+        "tasks": [
+          "T38",
+          "T39",
+          "T40"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/recording-application-implementation.json",
+          "migration/recording-application-review.md",
+          "migration/recording-application-static-audit.json"
+        ],
+        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+      }
     },
     {
       "id": "recording_publication",
@@ -937,11 +968,44 @@
         "native/src/recording/publish.hpp",
         "native/src/recording/publish.cpp",
         "native/src/recording/finalize.cpp",
-        "native/src/recording/interrupt.cpp"
+        "native/src/recording/interrupt.cpp",
+        "native/src/recording/duckdb.cpp",
+        "native/src/recording/duckdb.hpp",
+        "native/src/runtime/async_close.cpp",
+        "native/src/runtime/async_close.hpp",
+        "native/src/runtime/accounting.cpp",
+        "native/src/runtime/accounting.hpp",
+        "native/src/runtime/period_buffer.cpp",
+        "native/src/runtime/period_buffer.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/config.hpp",
+        "native/src/runtime/bootstrap.cpp",
+        "native/src/runtime/project_config.cpp",
+        "native/src/runtime/project_config.hpp",
+        "native/src/platform/signals.cpp",
+        "native/src/platform/signals.hpp",
+        "native/tests/migration/async_close_contract.hpp",
+        "native/tests/migration/test_t42.cpp",
+        "native/src/research/configuration.cpp",
+        "native/src/research/environment.cpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "recording_application_implementation": {
+        "tasks": [
+          "T41",
+          "T42"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/recording-application-implementation.json",
+          "migration/recording-application-review.md",
+          "migration/recording-application-static-audit.json"
+        ],
+        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+      }
     },
     {
       "id": "recording_analysis_exports",
@@ -970,11 +1034,32 @@
         "native/tests/migration/test_t45.cpp",
         "native/src/cli/recording.cpp",
         "native/src/cli/recording_main.cpp",
-        "native/tests/cli/recording.cmake"
+        "native/tests/cli/recording.cmake",
+        "native/src/recording/analysis_detail.hpp",
+        "native/src/replay/export.cpp",
+        "native/src/replay/export.hpp",
+        "native/src/cli/recording.hpp",
+        "native/tests/migration/test_t46.cpp",
+        "native/src/io/float_format.hpp",
+        "native/src/configuration/schema.cpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "recording_application_implementation": {
+        "tasks": [
+          "T43",
+          "T45",
+          "T46"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/recording-application-implementation.json",
+          "migration/recording-application-review.md",
+          "migration/recording-application-static-audit.json"
+        ],
+        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+      }
     },
     {
       "id": "historical_replay",
@@ -994,11 +1079,27 @@
         "native/src/replay/session.cpp",
         "native/src/replay/legacy.cpp",
         "native/src/replay/playback.cpp",
-        "native/tests/migration/test_t44.cpp"
+        "native/tests/migration/test_t44.cpp",
+        "native/src/replay/input_detail.hpp",
+        "native/src/replay/rebuild.cpp",
+        "native/src/replay/rebuild.hpp",
+        "native/src/replay/playback.hpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "recording_application_implementation": {
+        "tasks": [
+          "T44"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/recording-application-implementation.json",
+          "migration/recording-application-review.md",
+          "migration/recording-application-static-audit.json"
+        ],
+        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+      }
     },
     {
       "id": "native_viewer",
@@ -1030,11 +1131,33 @@
         "native/src/viewer/ride.cpp",
         "native/src/viewer/research.cpp",
         "native/src/viewer/replay.cpp",
-        "native/tests/migration/test_t49.cpp"
+        "native/tests/migration/test_t49.cpp",
+        "native/src/viewer/render_fields.hpp",
+        "native/src/viewer/session.hpp",
+        "native/src/viewer/hud.hpp",
+        "native/src/legacy/ride.cpp",
+        "native/src/legacy/ride.hpp",
+        "native/src/runtime/research.cpp",
+        "native/src/runtime/research.hpp",
+        "native/src/legacy/playground.cpp",
+        "native/src/legacy/playground.hpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "recording_application_implementation": {
+        "tasks": [
+          "T48",
+          "T49"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/recording-application-implementation.json",
+          "migration/recording-application-review.md",
+          "migration/recording-application-static-audit.json"
+        ],
+        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+      }
     },
     {
       "id": "plots_reports",
@@ -1055,11 +1178,27 @@
         "native/src/viz/html.cpp",
         "native/src/viz/tables.cpp",
         "native/resources/plotly/",
-        "native/tests/migration/test_t50.cpp"
+        "native/tests/migration/test_t50.cpp",
+        "native/src/viz/geometry.cpp",
+        "native/src/viz/plot_internal.hpp",
+        "native/src/viz/ride.cpp",
+        "native/resources/plotly/README.md"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "recording_application_implementation": {
+        "tasks": [
+          "T50"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/recording-application-implementation.json",
+          "migration/recording-application-review.md",
+          "migration/recording-application-static-audit.json"
+        ],
+        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+      }
     },
     {
       "id": "batch_seed_sweeps",
@@ -1079,11 +1218,32 @@
         "native/src/batch/summary.cpp",
         "native/src/cli/batch.cpp",
         "native/src/tools/research_sweep_main.cpp",
-        "native/tests/migration/test_t51.cpp"
+        "native/tests/migration/test_t51.cpp",
+        "native/src/batch/log.hpp",
+        "native/src/batch/process_pool.cpp",
+        "native/src/batch/sweep.cpp",
+        "native/src/platform/process.cpp",
+        "native/src/platform/process.hpp",
+        "native/src/platform/argv.hpp",
+        "native/src/tools/test_child_main.cpp",
+        "native/src/batch/integer_detail.hpp",
+        "native/src/batch/spec.cpp"
       ],
       "platform_scope": "macOS qualified baseline; Linux headless qualification; GUI only on explicitly supported targets",
       "status": "planned",
-      "evidence": []
+      "evidence": [],
+      "recording_application_implementation": {
+        "tasks": [
+          "T51"
+        ],
+        "status": "implemented_unverified",
+        "evidence": [
+          "migration/recording-application-implementation.json",
+          "migration/recording-application-review.md",
+          "migration/recording-application-static-audit.json"
+        ],
+        "qualification": "not_run; original capability acceptance/deletion status unchanged"
+      }
     },
     {
       "id": "all_assertions",

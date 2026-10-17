@@ -1,6 +1,7 @@
 // T37 source-derived quality, status, immutable-summary and retention checks.
 // Authored without compilation or execution; this is not oracle evidence.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "research/evidence.hpp"
 #include "research/policy_session.hpp"
 #include "io/hash.hpp"
@@ -28,7 +29,10 @@ runtime::WireObject valid_channels() {
         {"suspension", runtime::WireObject{{"linkage_closure_max_m", 0.}}},
         {"energy", runtime::WireObject{{"energy_scale_j", 100.}, {"residual_j", 0.}}}};
 }
-void energy_contract() {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
+[[gnu::noinline]] void energy_contract() {
     runtime::WireObject energy{{"energy_scale_j", 50.}, {"external_work_j", -25.},
         {"source_positive_work_j", 25.}, {"active_work_j", 1e30}, {"residual_j", -4.},
         {"material_loss_j", 1e30}, {"constraint_work_j", 1e30},
@@ -54,7 +58,7 @@ void energy_contract() {
     catch (const std::runtime_error&) { zero_rejected = true; }
     bt::require(zero_rejected && energy_quality({}).acceptable, "explicit zero scale is not silently floored");
 }
-void status_contract() {
+[[gnu::noinline]] void status_contract() {
     auto channels = valid_channels();
     const runtime::WireObject front{{"unloaded_radius_m", .35}, {"normal_load_n", 100.}, {"penetration_m", .1},
         {"multi_support", true}, {"outside_material_load_range", true}, {"outside_material_deflection_range", true},
@@ -105,7 +109,7 @@ void status_contract() {
             }
         }
 }
-void rider_sensor_boundary() {
+[[gnu::noinline]] void rider_sensor_boundary() {
     const auto sample = std::make_shared<runtime::PhysicalSampleData>();
     sample->channels = {{"sensors", runtime::WireObject{
         {"frame_specific_force_body_mps2", runtime::WireArray{1., 2., 3.}},
@@ -122,7 +126,7 @@ void rider_sensor_boundary() {
     auto observation = runtime::SensorObservation{}.as_wire(); wire::set(observation, "truth", runtime::WireObject{});
     bt::invalid([&] { (void)runtime::SensorObservation::from_wire(observation); });
 }
-void owned_evidence() {
+[[gnu::noinline]] void owned_evidence() {
     auto request = std::make_unique<ResearchRequest>(read_research_request(bt::fixture("requests/research_delay.toml")));
     request->capture_mode = runtime::ResearchCaptureMode::full;
     request->experiment.duration_s = .02;
@@ -185,3 +189,4 @@ void owned_evidence() {
 }
 } // namespace
 int main() { return bt::run([] { energy_contract(); status_contract(); rider_sensor_boundary(); owned_evidence(); }); }
+NATIVE_DIAG_POP

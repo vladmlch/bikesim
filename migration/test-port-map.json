@@ -23149,5 +23149,73 @@
     "coverage": "Authored focused regressions are not a completed migration of every source assertion. T26 lexical branch inventory remains unqualified.",
     "numerical_parity": "not_qualified",
     "source_deletion": "not_authorized; T63 gates unchanged"
+  },
+  "recording_application_wave_contract": {
+    "tasks": [
+      "T38",
+      "T39",
+      "T40",
+      "T41",
+      "T42",
+      "T43",
+      "T44",
+      "T45",
+      "T46",
+      "T47",
+      "T48",
+      "T49",
+      "T50",
+      "T51"
+    ],
+    "implementation_status": "implemented_unverified",
+    "registration": "native/cmake/RecordingApplication.cmake; native/tests/migration/CMakeLists.txt",
+    "executables": [
+      "migration_T38",
+      "migration_T39",
+      "migration_T40",
+      "migration_T41",
+      "migration_T42",
+      "migration_T43",
+      "migration_T44",
+      "migration_T45",
+      "migration_T46",
+      "migration_T47",
+      "migration_T48",
+      "migration_T49",
+      "migration_T50",
+      "migration_T51"
+    ],
+    "test_sources": [
+      "native/tests/migration/test_t38.cpp",
+      "native/tests/migration/test_t39.cpp",
+      "native/tests/migration/test_t40.cpp",
+      "native/tests/migration/test_t41.cpp",
+      "native/tests/migration/test_t42.cpp",
+      "native/tests/migration/test_t43.cpp",
+      "native/tests/migration/test_t44.cpp",
+      "native/tests/migration/test_t45.cpp",
+      "native/tests/migration/test_t46.cpp",
+      "native/tests/migration/test_t47.cpp",
+      "native/tests/migration/test_t48.cpp",
+      "native/tests/migration/test_t49.cpp",
+      "native/tests/migration/test_t50.cpp",
+      "native/tests/migration/test_t51.cpp"
+    ],
+    "test_support": [
+      "native/tests/migration/recording_fixture.hpp",
+      "native/tests/migration/recording_reader_test_support.hpp",
+      "native/tests/migration/async_close_contract.hpp",
+      "native/src/tools/test_child_main.cpp"
+    ],
+    "execution": "not_run; no configure, compiler, tests, viewer, database, replay or process helper was executed",
+    "evidence": [
+      "migration/recording-application-implementation.json",
+      "migration/recording-application-review.md",
+      "migration/recording-application-static-audit.json"
+    ],
+    "existing_records_preserved": true,
+    "coverage": "Focused regression sources are authored. Full source assertion migration remains T52/T53; no node or passing assertion is invented.",
+    "numerical_parity": "not_qualified",
+    "source_deletion": "not_authorized; T63 gates unchanged"
   }
 }

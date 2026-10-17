@@ -59,10 +59,15 @@ std::vector<Obstacle> generate_road(const RoadGeneratorSpec& spec,double length,
         Obstacle o=d.pothole?make_pothole(d.shape,start,d.height,d.length,spec.pothole_edge_m):make_bump(d.shape,start,d.height,d.length,spec.bump_ramp_fraction);
         occupied.emplace_back(o.start_m(),o.end_m());obstacles.push_back(std::move(o));
     }
-    if(spec.roughness_m>0.)for(const auto& [a,b]:free_intervals(span,occupied,0.))if(b-a>=4.*spec.roughness_correlation_m){
-        double size=rounded(b-a,6);while(a+size>b)size=rounded(size-1e-6,6);
-        const auto seed=std::to_string(rng.integers(0,2147483647));obstacles.push_back({RoadRoughness{a,size,spec.roughness_m,spec.roughness_correlation_m,seed}});
-    }return obstacles;
+    if(spec.roughness_m>0.){
+        for(const auto& [a,b]:free_intervals(span,occupied,0.)){
+            if(b-a>=4.*spec.roughness_correlation_m){
+                double size=rounded(b-a,6);while(a+size>b)size=rounded(size-1e-6,6);
+                const auto seed=std::to_string(rng.integers(0,2147483647));obstacles.push_back({RoadRoughness{a,size,spec.roughness_m,spec.roughness_correlation_m,seed}});
+            }
+        }
+    }
+    return obstacles;
 }
 TrackSpec build_road(std::string name,const RoadGeneratorSpec& spec,double length,std::span<const Obstacle> hand,std::string description,std::string surface){
     std::vector<Interval> reserved;for(const auto&o:hand)reserved.emplace_back(o.start_m(),o.end_m());

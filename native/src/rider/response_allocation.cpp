@@ -4,6 +4,8 @@
 #include "activation_allocation.hpp"
 #include "support_geometry.hpp"
 #include "spindle_math.hpp"
+#include "../diag.hpp"
+#include "../model_access.hpp"
 #include "../numerics/dense.hpp"
 #include "../numerics/linear_feasibility.hpp"
 
@@ -20,12 +22,18 @@ constexpr double inf=std::numeric_limits<double>::infinity();
 using Vector=std::vector<double>;
 std::array<double,3> row3(const double* values,int id,int maximum) {
     if(id<0 || id>=maximum)throw std::invalid_argument("allocation model row id");
-    return {values[3*id],values[3*id+1],values[3*id+2]};
+    const auto span=model_access::readonly_buffer(values,static_cast<mjtSize>(maximum)*3,"allocation row3");
+    const auto sub=span.subspan(static_cast<std::size_t>(id)*3,3);
+    return {sub[0],sub[1],sub[2]};
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
 std::array<double,9> row9(const double* values,int id,int maximum) {
     if(id<0 || id>=maximum)throw std::invalid_argument("allocation model rotation id");
-    std::array<double,9> out{};std::copy_n(values+9*id,9,out.begin());return out;
+    const auto span=model_access::readonly_buffer(values,static_cast<mjtSize>(maximum)*9,"allocation row9");
+    std::array<double,9> out{};std::ranges::copy(span.subspan(static_cast<std::size_t>(id)*9,9),out.begin());return out;
 }
+NATIVE_DIAG_POP
 std::array<double,3> rotated(const std::array<double,9>& r,const std::array<double,3>& x) {
     return {r[0]*x[0]+r[1]*x[1]+r[2]*x[2],r[3]*x[0]+r[4]*x[1]+r[5]*x[2],r[6]*x[0]+r[7]*x[1]+r[8]*x[2]};
 }
@@ -58,8 +66,9 @@ std::array<double,3> allocation_support_point(const mjModel& model,const mjData&
         if(a.equality_id<0 || a.equality_id>=model.neq)throw std::invalid_argument("allocation grip equality id");
         auto point=row3(data.xpos,a.other_body,static_cast<int>(model.nbody));
         const auto rotation=row9(data.xmat,a.other_body,static_cast<int>(model.nbody));
+        const auto eq_data=model_access::readonly_buffer(model.eq_data,model.neq*mjNEQDATA,"eq_data");
         const auto base=static_cast<std::size_t>(a.equality_id)*mjNEQDATA+3;
-        const auto offset=rotated(rotation,{model.eq_data[base],model.eq_data[base+1],model.eq_data[base+2]});
+        const auto offset=rotated(rotation,{eq_data[base],eq_data[base+1],eq_data[base+2]});
         for(std::size_t j=0;j<3;++j)point[j]+=offset[j];return point;
     }
     return row3(data.site_xpos,a.site_id,static_cast<int>(model.nsite));
@@ -101,10 +110,11 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
     const auto constant=2*nt,base=constant+1;
     std::size_t nz=base+(activated?nt:0);std::optional<std::size_t> task;
     if(request.crank_torque_nm){task=nz;++nz;}
+    const auto qvel=model_access::readonly_buffer(data.qvel,model.nv,"qvel");
     Vector speed(nt),lower(nz,-inf),upper(nz,inf),target(nz,0.),scales(nz,1.);
     for(std::size_t i=0;i<nt;++i) {
         const auto dof=request.actuator_dofs[i];if(dof<0 || dof>=model.nv)throw std::invalid_argument("response allocation actuator dof");
-        speed[i]=data.qvel[dof];lower[i]=request.lower_torque_nm[i]/50.;upper[i]=request.upper_torque_nm[i]/50.;
+        speed[i]=qvel[static_cast<std::size_t>(dof)];lower[i]=request.lower_torque_nm[i]/50.;upper[i]=request.upper_torque_nm[i]/50.;
         lower[nt+i]=0.;upper[nt+i]=cfg.active_positive_power_limit_w?*cfg.active_positive_power_limit_w/450.:inf;
         target[i]=request.torque_intent[i]/50.;scales[i]=50.;
     }
@@ -154,8 +164,9 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
         projected.push_back(attachment_force_map(model,data,kernel,a.equality_id,a.rider_body,point));
         std::array<double,2> normal{};double half=0.;
         if(!a.name.starts_with("grip")) {
-            const auto face=::rider::upper_box_face(row3(data.geom_xpos,a.geom_id,static_cast<int>(model.ngeom)),row9(data.geom_xmat,a.geom_id,static_cast<int>(model.ngeom)),row3(model.geom_size,a.geom_id,static_cast<int>(model.ngeom)));
-            normal={face.normal[0],face.normal[2]};half=a.name=="saddle"?cfg.saddle_patch_half_length_m:model.geom_size[3*a.geom_id];
+            const auto geom_size=row3(model.geom_size,a.geom_id,static_cast<int>(model.ngeom));
+            const auto face=::rider::upper_box_face(row3(data.geom_xpos,a.geom_id,static_cast<int>(model.ngeom)),row9(data.geom_xmat,a.geom_id,static_cast<int>(model.ngeom)),geom_size);
+            normal={face.normal[0],face.normal[2]};half=a.name=="saddle"?cfg.saddle_patch_half_length_m:geom_size[0];
         }
         normals.push_back(normal);half_lengths.push_back(half);
     }

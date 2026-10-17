@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <optional>
+#include <stop_token>
 #include <string>
 #include <vector>
 
@@ -32,6 +33,10 @@ struct ProcessResult {
 };
 
 struct ProcessOptions {
+    // Cooperative cancellation: signal only this owned process group, allow
+    // final-only recording publication, then kill/reap after the grace period.
+    std::stop_token cancellation;
+    double cancellation_grace_s = 5.;
     // Wall-clock-free deadline on the monotonic axis: when it expires the
     // whole process group receives SIGKILL and is reaped; the result keeps
     // the signal-encoded exit_code and the streams captured so far.

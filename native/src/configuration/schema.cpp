@@ -21,6 +21,7 @@
 #include "configuration/wire_decode.hpp"
 #include "config_validation.hpp"
 #include "io/json.hpp"
+#include "io/float_format.hpp"
 #include "io/value.hpp"
 
 #include <algorithm>
@@ -47,63 +48,7 @@ namespace detail {
 // otherwise; integral values always spell with a trailing '.0').
 // ===========================================================================
 std::string repr_double(double value) {
-    if (std::isnan(value)) return "nan";
-    if (std::isinf(value))
-        return value < 0. ? "-inf" : "inf";
-    std::array<char, 64> buf{};
-    const auto out =
-        std::to_chars(buf.begin(), buf.end(), value,
-                      std::chars_format::general);
-    std::string token(buf.begin(), out.ptr);
-    const std::size_t e_pos = token.find_first_of("eE");
-    if (e_pos == std::string::npos) {
-        // Fixed already; Python spells integral floats with a trailing '.0'.
-        if (token.find('.') == std::string::npos) token += ".0";
-        return token;
-    }
-    // Scientific: same digits as repr but the exponent decides the spelling —
-    // Python keeps fixed notation for -4 <= exp < 16.
-    std::string mantissa = token.substr(0, e_pos);
-    int exponent = 0;
-    // std::to_chars spells positive exponents "e+16"; std::from_chars does
-    // not accept a leading '+', so it is skipped explicitly.
-    auto exp_begin =
-        token.cbegin() + static_cast<std::ptrdiff_t>(e_pos) + 1;
-    const auto exp_end = token.cend();
-    if (exp_begin < exp_end && *exp_begin == '+') ++exp_begin;
-    std::from_chars(std::to_address(exp_begin), std::to_address(exp_end),
-                    exponent);
-    if (exponent >= -4 && exponent < 16) {
-        const bool negative = mantissa.front() == '-';
-        if (negative) mantissa.erase(0, 1);
-        std::string digits;
-        for (const char ch : mantissa)
-            if (ch != '.') digits.push_back(ch);
-        // `mantissa` is d.ddd — one leading digit, so the fixed form places
-        // the point exponent+1 digits in from the left.
-        const int point = exponent + 1;
-        std::string result = negative ? "-" : "";
-        if (point <= 0) {
-            result += "0.";
-            result.append(static_cast<std::size_t>(-point), '0');
-            result += digits;
-        } else if (static_cast<std::size_t>(point) >= digits.size()) {
-            result += digits;
-            result.append(static_cast<std::size_t>(point) -
-                              digits.size(),
-                          '0');
-            result += ".0";
-        } else {
-            result += digits.substr(0, static_cast<std::size_t>(point));
-            result += '.';
-            result += digits.substr(static_cast<std::size_t>(point));
-        }
-        return result;
-    }
-    // Keep scientific: mantissa unchanged, exponent spelled e±NN — std::to_chars
-    // already emits the minimum two digits Python uses.
-    token[e_pos] = 'e';
-    return token;
+    return io::repr_binary64(value);
 }
 
 namespace {

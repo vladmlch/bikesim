@@ -1,5 +1,6 @@
 #include "ride.hpp"
 #include "legs.hpp"
+#include "../diag.hpp"
 #include "../writer_config.hpp"
 #include "../runtime/project_config.hpp"
 #include "../configuration/model_config.hpp"
@@ -7,6 +8,7 @@
 #include "../initialization/legacy_equilibrium.hpp"
 #include "../io/value.hpp"
 #include "../model/mapping.hpp"
+#include "../model/suspension_setup.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../stepper.hpp"
 #include "../terrain/profile.hpp"
@@ -80,6 +82,7 @@ struct RideSimulation::Impl {
     std::int64_t steps=0;
     std::uint64_t generation=0;
     bool brake_source=false,traction_limited=false;
+    model::DamperPreset viewer_preset=model::DamperPreset::base;
 
     explicit Impl(RideOptions o):options(std::move(o)),solver(options.setup.model.solver
         ?*options.setup.model.solver:kinematics::HorstLinkageSolver(options.setup.model.bike)) {}
@@ -121,13 +124,31 @@ struct RideSimulation::Impl {
 };
 RideSimulation::RideSimulation(std::unique_ptr<Impl> p):impl_(std::move(p)){}
 RideSimulation::~RideSimulation()=default;
-std::unique_ptr<RideSimulation> make_ride(const std::filesystem::path& request) {
-    RideOptions options;
-    options.setup=initialization::read_setup_request(request);
-    if(options.setup.model.physics)options.setup.runtime.speed_kph=options.setup.model.physics->initial_speed_mps*3.6;
-    return make_ride(std::move(options));
+namespace {
+[[gnu::noinline]] std::unique_ptr<Stepper> make_legacy_stepper(const model::BuildRequest& build, const mjModel& compiled,
+                                             const terrain::TrackSpec& track, const runtime::ProjectionOptions& runtime_opts) {
+    auto projection = std::make_unique<model::BuildRequest>(build);
+    projection->physics->tires.backend = "native_reference";
+    auto writers = std::make_unique<nativecfg::WriterConfig>(
+        nativecfg::decode(runtime::project_writer_config(*projection, compiled, track, runtime_opts)));
+    writers->tire.reset();
+    writers->resistance.reset();
+    writers->rider_forces.reset();
+    const auto image = initialization::capture_model_image(compiled);
+    return std::make_unique<Stepper>(image.mjb, *writers);
 }
-std::unique_ptr<RideSimulation> make_ride(RideOptions options) {
+[[gnu::noinline]] std::unique_ptr<RideOptions> load_legacy_options(const std::filesystem::path& request) {
+    auto options = std::make_unique<RideOptions>();
+    options->setup=initialization::read_setup_request(request);
+    if(options->setup.model.physics)options->setup.runtime.speed_kph=options->setup.model.physics->initial_speed_mps*3.6;
+    return options;
+}
+} // namespace
+std::unique_ptr<RideSimulation> make_ride(const std::filesystem::path& request) {
+    auto options = load_legacy_options(request);
+    return make_ride(std::move(*options));
+}
+[[gnu::noinline]] std::unique_ptr<RideSimulation> make_ride(RideOptions options) {
     options.tyre.validate();options.drivetrain.validate();
     if(options.drive_mode!="motor"&&options.drive_mode!="pedal"&&options.drive_mode!="pedelec")throw std::invalid_argument("unknown legacy drive mode");
     auto& request=options.setup.model;
@@ -149,14 +170,7 @@ std::unique_ptr<RideSimulation> make_ride(RideOptions options) {
     if(resolved.variant=="seated")p->pose=model::seated_pose(resolved,build.bike);
     auto compiled=model::compile_mjcf(model::generate_mjcf(build),p->options.setup.asset_root);
     populate_road(*compiled,build,p->options.setup.track);
-    // In the source legacy path the physics.tires section is unused. Only
-    // the separate TyreConfig opts into the legacy pneumatic force writer.
-    auto projection=build;
-    projection.physics->tires.backend="native_reference";
-    auto writers=nativecfg::decode(runtime::project_writer_config(projection,*compiled,p->options.setup.track,p->options.setup.runtime));
-    writers.tire.reset();writers.resistance.reset();writers.rider_forces.reset();
-    const auto image=initialization::capture_model_image(*compiled);
-    p->stepper=std::make_unique<Stepper>(image.mjb,writers);
+    p->stepper=make_legacy_stepper(build,*compiled,p->options.setup.track,p->options.setup.runtime);
     auto& m=*p->stepper->model();
     if(p->options.tyre.pneumatic())p->tyre=std::make_unique<TyreForceApplier>(m,p->options.tyre,
         build_road_profile(p->options.setup.track,build.field,build.bike),p->options.setup.track.surface_map());
@@ -263,8 +277,69 @@ void RideSimulation::step(double front_brake,double rear_brake) {
 void RideSimulation::set_target_speed_kph(double speed){impl_->stepper->cruise_set_target_speed(speed);}
 void RideSimulation::set_assist_mode(std::string_view mode){if(!impl_->drive)throw std::invalid_argument("assist requires legacy pedal drivetrain");impl_->drive->set_assist_mode(mode);}
 void RideSimulation::set_tyre_pressures(double front,double rear){if(!impl_->tyre)throw std::invalid_argument("pressure controls require legacy pneumatic tyre");impl_->tyre->set_pressures(front,rear);}
+std::optional<std::string> RideSimulation::handle_tuning_key(int key) {
+    auto& p=*impl_;
+    if(key>='a'&&key<='z')key-='a'-'A';
+    if(key=='W'||key=='S'){
+        if(!p.stepper->has_cruise())return "W/S requires a cruise controller.";
+        const double target=std::clamp(p.stepper->cruise_state().target_speed_mps*3.6+(key=='W'?1.:-1.),15.,45.);
+        set_target_speed_kph(target);return "Cruise target: "+configuration::detail::repr_double(target)+" km/h";
+    }
+    if(key=='E')return p.drive?"Assist: "+p.drive->cycle_assist_mode():"No mid-drive on this run (--drive-mode pedelec adds one).";
+    if(key=='N'||key=='M'||key==';'||key=='\''){
+        if(!p.tyre)return "Tyre pressure keys require --tyre-model pneumatic.";
+        const bool front=key=='N'||key=='M';const double delta=(key=='N'||key==';')?-PRESSURE_STEP_BAR:PRESSURE_STEP_BAR;
+        double front_bar=p.tyre->config().front.pressure_bar,rear_bar=p.tyre->config().rear.pressure_bar;
+        if(front)front_bar=std::clamp(front_bar+delta,PRESSURE_MIN_BAR,PRESSURE_MAX_BAR);
+        else rear_bar=std::clamp(rear_bar+delta,PRESSURE_MIN_BAR,PRESSURE_MAX_BAR);
+        set_tyre_pressures(front_bar,rear_bar);
+        return std::string(front?"Front":"Rear")+" tyre: "+configuration::detail::repr_double(front?front_bar:rear_bar)+" bar";
+    }
+    auto config=p.stepper->suspension().config();
+    if(config.physics_mode!="legacy")throw std::logic_error("legacy tuning requires the legacy suspension owner");
+    auto& fork=config.fork_damper.core;auto& shock=config.shock_damper.core;
+    const auto adjust=[](int& value,int delta,int maximum){value=std::clamp(value+delta,0,maximum);};
+    std::string message;
+    auto next_preset=p.viewer_preset;
+    switch(key){
+        case 'L':adjust(fork.lsc_clicks,1,fork.max_lsc);break;case 'K':adjust(fork.lsc_clicks,-1,fork.max_lsc);break;
+        case 'J':adjust(fork.hsc_clicks,1,fork.max_hsc);break;case 'H':adjust(fork.hsc_clicks,-1,fork.max_hsc);break;
+        case 'U':adjust(fork.rebound_clicks,1,fork.max_reb);break;case 'Y':adjust(fork.rebound_clicks,-1,fork.max_reb);break;
+        case '0':adjust(shock.lsc_clicks,1,shock.max_lsc);break;case '9':adjust(shock.lsc_clicks,-1,shock.max_lsc);break;
+        case '8':adjust(shock.hsc_clicks,1,shock.max_hsc);break;case '7':adjust(shock.hsc_clicks,-1,shock.max_hsc);break;
+        case '6':adjust(shock.rebound_clicks,1,shock.max_reb);break;case '5':adjust(shock.rebound_clicks,-1,shock.max_reb);break;
+        case '4':adjust(config.shock_damper.hbo_clicks,1,config.shock_damper.max_hbo);break;
+        case '3':adjust(config.shock_damper.hbo_clicks,-1,config.shock_damper.max_hbo);break;
+        case 'X':config.shock_damper.lockout_firm=!config.shock_damper.lockout_firm;break;
+        case '[':adjust(config.air_spring.num_tokens,-1,config.air_spring.specs.max_tokens);break;
+        case ']':adjust(config.air_spring.num_tokens,1,config.air_spring.specs.max_tokens);break;
+        case '-':config.air_spring.gauge_pressure_psi=std::clamp(config.air_spring.gauge_pressure_psi-2.,10.,200.);break;
+        case '=':config.air_spring.gauge_pressure_psi=std::clamp(config.air_spring.gauge_pressure_psi+2.,10.,200.);break;
+        case 'P':{
+            constexpr std::array presets{model::DamperPreset::base,model::DamperPreset::plush,model::DamperPreset::enduro,model::DamperPreset::park};
+            const auto found=std::find(presets.begin(),presets.end(),p.viewer_preset);
+            next_preset=found==presets.end()||found+1==presets.end()?presets.front():*(found+1);
+            const auto clicks=model::damper_preset_config(next_preset);
+            fork.hsc_clicks=clicks.fork_hsc;fork.lsc_clicks=clicks.fork_lsc;fork.rebound_clicks=clicks.fork_rebound;
+            shock.hsc_clicks=clicks.shock_hsc;shock.lsc_clicks=clicks.shock_lsc;shock.rebound_clicks=clicks.shock_rebound;
+            config.shock_damper.hbo_clicks=clicks.shock_hbo;config.shock_damper.lockout_firm=clicks.shock_lockout;
+            message=std::string(model::damper_preset_label(next_preset))+" | ";break;
+        }
+        default:return {};
+    }
+    message+="Fork H"+std::to_string(fork.hsc_clicks)+" L"+std::to_string(fork.lsc_clicks)+" R"+std::to_string(fork.rebound_clicks)+
+        " | Shock H"+std::to_string(shock.hsc_clicks)+" L"+std::to_string(shock.lsc_clicks)+" R"+std::to_string(shock.rebound_clicks)+" B"+std::to_string(config.shock_damper.hbo_clicks)+
+        (config.shock_damper.lockout_firm?" FIRM":" OPEN")+" | Air "+configuration::detail::repr_double(config.air_spring.gauge_pressure_psi)+" PSI, "+std::to_string(config.air_spring.num_tokens)+" tokens";
+    // Constructor validation is performed before replacing the active writer.
+    // This changes no model/data and never performs a simulation step.
+    SuspensionWriter replacement(p.stepper->model(),std::move(config));
+    p.stepper->suspension()=std::move(replacement);p.viewer_preset=next_preset;
+    return message;
+}
 double RideSimulation::time_s()const{return impl_->stepper->time();}
 double RideSimulation::start_x_m()const{return impl_->options.setup.start_x_m;}
+double RideSimulation::shock_bumper_engage_mm()const{return impl_->stepper->suspension().config().coil.bumper_engage_mm();}
+std::optional<CrashEvent> RideSimulation::crash_event()const{return impl_->crash;}
 std::optional<std::array<biketyre::WheelOutputs,2>> RideSimulation::tyre_outputs()const {
     if(!impl_->tyre)return std::nullopt;
     return std::array{impl_->tyre->front_outputs(),impl_->tyre->rear_outputs()};
@@ -272,6 +347,8 @@ std::optional<std::array<biketyre::WheelOutputs,2>> RideSimulation::tyre_outputs
 double RideSimulation::position_m()const{return impl_->stepper->qpos()[impl_->x_q];}
 double RideSimulation::timestep_s()const{return impl_->stepper->model()->opt.timestep;}
 std::int64_t RideSimulation::steps()const{return impl_->steps;}
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
 TelemetryRow RideSimulation::telemetry()const {
     const auto& p=*impl_;const auto& m=*p.stepper->model();const auto& d=*p.stepper->data();
     const auto q=p.stepper->qpos(),v=p.stepper->qvel();const auto& s=p.stepper->suspension();
@@ -314,8 +391,8 @@ TelemetryRow RideSimulation::telemetry()const {
     set("pedal_load_front_n",p.legs->active()?legs[0]:loads.front_pedal_n);set("pedal_load_rear_n",p.legs->active()?legs[1]:loads.rear_pedal_n);
     const auto tyre_start=static_cast<std::size_t>(std::ranges::find(kLegacyChannels,"front_tyre_fz_n")-kLegacyChannels.begin());
     const auto drive_start=static_cast<std::size_t>(std::ranges::find(kLegacyChannels,"crank_phase_rad")-kLegacyChannels.begin());
-    std::fill(row.begin()+static_cast<std::ptrdiff_t>(tyre_start),row.begin()+static_cast<std::ptrdiff_t>(drive_start),0.);
-    std::fill(row.begin()+static_cast<std::ptrdiff_t>(drive_start),row.end(),std::numeric_limits<double>::quiet_NaN());
+    std::ranges::fill(std::span{row}.subspan(tyre_start,drive_start-tyre_start),0.);
+    std::ranges::fill(std::span{row}.subspan(drive_start),std::numeric_limits<double>::quiet_NaN());
     if(p.tyre) for(std::size_t i=0;i<2;++i) {
         const auto& t=i==0?p.tyre->front_outputs():p.tyre->rear_outputs();const std::string side=i==0?"front":"rear";
         set(side+"_tyre_fz_n",t.support_n);set(side+"_tyre_fx_n",t.force_world_n[0]);set(side+"_tyre_deflection_mm",t.mean_deflection_m*1000.);
@@ -326,10 +403,11 @@ TelemetryRow RideSimulation::telemetry()const {
         const auto& c=p.drive->command();
         const std::array values{c.phase_rad,c.cadence_rpm,c.rider_torque_nm,c.assist_torque_nm,c.motor_power_w,c.support_factor,
             c.freewheel?1.:0.,c.cutoff_active?1.:0.,p.brake_source?1.:0.,p.traction_limited?1.:0.,static_cast<double>(c.gear_teeth)};
-        std::ranges::copy(values,row.begin()+static_cast<std::ptrdiff_t>(drive_start));
+        std::ranges::copy(values,std::span{row}.subspan(drive_start).begin());
     }
     return row;
 }
+NATIVE_DIAG_POP
 RideSnapshot RideSimulation::snapshot()const {
     const auto& p=*impl_;const auto& m=*p.stepper->model();const auto& d=*p.stepper->data();
     RideSnapshot result;result.time_s=d.time;result.position_m=position_m();result.speed_mps=p.stepper->qvel()[p.x_v];result.pitch_rad=p.stepper->qpos()[p.pitch_q];
@@ -339,6 +417,11 @@ RideSnapshot RideSimulation::snapshot()const {
     result.xfrc_applied=copy(std::views::counted(d.xfrc_applied,6*m.nbody));result.eq_data=copy(std::views::counted(m.eq_data,mjNEQDATA*m.neq));
     result.integration_state.resize(static_cast<std::size_t>(engine::state_size(&m,mjSTATE_INTEGRATION)));
     engine::get_state(&m,&d,result.integration_state.data(),mjSTATE_INTEGRATION);
+    const int frame_id=mj_name2id(&m,mjOBJ_BODY,"frame");
+    if(frame_id>=0)result.z_m=std::views::counted(d.xpos,3*m.nbody)[static_cast<std::size_t>(3*frame_id+2)];
+    result.model_fields={copy(std::views::counted(m.dof_frictionloss,m.nv)),copy(std::views::counted(m.site_pos,3*m.nsite)),
+        copy(std::views::counted(m.tendon_stiffness,m.ntendon)),copy(std::views::counted(m.tendon_damping,m.ntendon)),
+        copy(std::views::counted(m.tendon_lengthspring,2*m.ntendon)),copy(std::views::counted(m.tendon_range,2*m.ntendon))};
     const auto eq=std::views::counted(d.eq_active,m.neq);result.eq_active.assign(eq.begin(),eq.end());return result;
 }
 RunLimits RideSimulation::default_limits(double wall)const{return RunLimits::for_track(impl_->options.setup.track.length_m,impl_->options.setup.start_x_m,timestep_s(),wall);}

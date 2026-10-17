@@ -1,4 +1,5 @@
 #include "context.hpp"
+#include "../diag.hpp"
 #include "state_file.hpp"
 #include "source_json.hpp"
 #include "../drivetrain/state_codec.hpp"
@@ -71,6 +72,8 @@ std::unique_ptr<Material> current_material(const SetupContext& context){
     if(context.physical.rider_present())value->controller=context.physical.rider_control().state();
     return value;
 }
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<Material> decode_material(const SetupContext& context,const StateFile& state){
     auto storage=current_material(context);auto& next=*storage;
     if(const auto* encoded=find(state,"state_native_drive")){(void)encoded;next.drive=drivetrain::decode_drive_snapshot(io::parse_recording_json(text(state,"state_native_drive")));}
@@ -128,6 +131,7 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
     }else for(const auto& [name,array]:state.arrays){(void)array;if(name.starts_with("state_tire_"))throw std::invalid_argument("unexpected tire material state");}
     return storage;
 }
+NATIVE_DIAG_POP
 void install_material(SetupContext& context,Material& state){
     // These stages leave every live material owner unchanged. The drive's
     // existing restore completes its own validation/allocation before it

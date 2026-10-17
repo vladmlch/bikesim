@@ -26,14 +26,14 @@ struct StaticEquilibriumOptions {
 struct StaticEquilibriumContext {
     Stepper& stepper;
     bool initializing = true;
-    std::function<void()> suspension_forces;
-    std::function<double(double)> rear_travel_from_shock_mm;
-    std::function<void()> before_forces, tire_forces, tire_reset;
-    std::function<void()> rider_forces, leg_zero_torque_forces;
-    std::function<void()> drive_initialize;
-    std::function<void(double)> leg_initialize;
-    std::function<std::array<double,3>()> rider_loads_n;
-    std::optional<double> rider_mass_kg;
+    std::function<void()> suspension_forces{};
+    std::function<double(double)> rear_travel_from_shock_mm{};
+    std::function<void()> before_forces{}, tire_forces{}, tire_reset{};
+    std::function<void()> rider_forces{}, leg_zero_torque_forces{};
+    std::function<void()> drive_initialize{};
+    std::function<void(double)> leg_initialize{};
+    std::function<std::array<double,3>()> rider_loads_n{};
+    std::optional<double> rider_mass_kg{};
 };
 
 struct StaticEquilibriumResult {

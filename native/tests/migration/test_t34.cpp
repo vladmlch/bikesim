@@ -1,6 +1,7 @@
 // Authored static regressions for T34. No build or execution was performed
 // during the no-run implementation session; oracle qualification is separate.
 #include "support/migration_test.hpp"
+#include "diag.hpp"
 #include "research/environment.hpp"
 #include "research/evidence.hpp"
 #include "io/json.hpp"
@@ -19,7 +20,10 @@ void same(std::span<const double> a, std::span<const double> b, std::string_view
     for (std::size_t i = 0; i < a.size(); ++i)
         bt::require(std::bit_cast<std::uint64_t>(a[i]) == std::bit_cast<std::uint64_t>(b[i]), message);
 }
-void clocks_and_programs() {
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+
+[[gnu::noinline]] void clocks_and_programs() {
     bt::require(integer_steps(.01, .00125, "control") == 8, "integral control clock");
     bt::require(integer_steps(0., .00125, "delay") == 0, "zero delay");
     bt::invalid([] { (void)integer_steps(.001, .00125, "sensor"); });
@@ -68,7 +72,7 @@ void clocks_and_programs() {
     bt::invalid([] { (void)constant_demand(-1.); });
     bt::require(constant_demand(0.).demand_at(999.) == 0., "explicit zero demand remains present");
 }
-void seeded_inputs() {
+[[gnu::noinline]] void seeded_inputs() {
     const std::string seed = "184467440737095516160012345";
     bt::require(validate_seed("000" + seed) == seed && validate_seed("000") == "0", "seed has arbitrary decimal precision");
     bt::invalid([] { (void)validate_seed("-1"); });
@@ -114,7 +118,7 @@ void seeded_inputs() {
     auto invalid = bike::random::RiderRandomSpec{}; invalid.mass_kg = {90., 80.};
     bt::invalid([&] { invalid.validate(); });
 }
-void native_construction() {
+[[gnu::noinline]] void native_construction() {
     auto request = read_research_request(bt::fixture("requests/research_delay.toml"));
     bt::require(request.sensors.sample_period_s == .005 && request.experiment.record_decimation == 80,
         "request assembly preserves source CLI defaults distinct from dataclass defaults");
@@ -150,3 +154,4 @@ void native_construction() {
 }
 } // namespace
 int main() { return bt::run([] { clocks_and_programs(); seeded_inputs(); native_construction(); }); }
+NATIVE_DIAG_POP

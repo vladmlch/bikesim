@@ -1140,10 +1140,14 @@
       ],
       "targets": [
         "native/resources/recording/catalog-v1.json",
-        "native/src/recording/catalog.hpp",
         "native/src/recording/catalog.cpp",
+        "native/src/recording/catalog.hpp",
+        "native/src/recording/catalog_data.inc",
+        "native/src/recording/catalog_model.cpp",
         "native/src/recording/coordinates.cpp",
         "native/src/recording/schema.cpp",
+        "native/src/recording/contracts.hpp",
+        "native/src/recording/value_util.hpp",
         "native/tests/migration/test_t38.cpp"
       ],
       "owned_sources": [
@@ -1152,7 +1156,22 @@
         "src/bike_sim/recording/schema.py",
         "src/bike_sim/sim/ride/telemetry_v2.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/resources/recording/catalog-v1.json",
+        "native/src/recording/catalog.hpp",
+        "native/src/recording/catalog.cpp",
+        "native/src/recording/coordinates.cpp",
+        "native/src/recording/schema.cpp",
+        "native/tests/migration/test_t38.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T39",
@@ -1163,16 +1182,32 @@
         "T11"
       ],
       "targets": [
-        "native/src/recording/encoding.hpp",
         "native/src/recording/encoding.cpp",
+        "native/src/recording/encoding.hpp",
         "native/src/recording/plan.cpp",
-        "native/src/recording/duckdb_chunks.cpp"
+        "native/src/recording/duckdb_chunks.cpp",
+        "native/src/runtime/encoding_values.hpp",
+        "native/src/runtime/encode.hpp",
+        "native/tests/migration/test_t39.cpp"
       ],
       "owned_sources": [
         "src/bike_sim/recording/encoding.py",
         "src/bike_sim/recording/native_encode.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/recording/encoding.hpp",
+        "native/src/recording/encoding.cpp",
+        "native/src/recording/plan.cpp",
+        "native/src/recording/duckdb_chunks.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T40",
@@ -1184,11 +1219,22 @@
       ],
       "targets": [
         "native/src/recording/contracts.hpp",
-        "native/src/recording/capture.hpp",
         "native/src/recording/capture.cpp",
+        "native/src/recording/capture.hpp",
+        "native/src/recording/assets.cpp",
+        "native/src/recording/events.cpp",
         "native/src/recording/physical_source.cpp",
         "native/src/recording/research_source.cpp",
-        "native/src/recording/events.cpp"
+        "native/src/recording/research_publication.cpp",
+        "native/src/recording/research_publication.hpp",
+        "native/src/cli/physical_capture.cpp",
+        "native/src/cli/physical_capture.hpp",
+        "native/src/research/metadata.cpp",
+        "native/src/research/evidence.hpp",
+        "native/src/initialization/research_startup.cpp",
+        "native/src/initialization/research_startup.hpp",
+        "native/src/legacy/recorder.cpp",
+        "native/tests/migration/test_t40.cpp"
       ],
       "owned_sources": [
         "src/bike_sim/recording/assets.py",
@@ -1198,7 +1244,22 @@
         "src/bike_sim/sim/ride/physical_recorder.py",
         "src/bike_sim/sim/ride/recorder.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/recording/contracts.hpp",
+        "native/src/recording/capture.hpp",
+        "native/src/recording/capture.cpp",
+        "native/src/recording/physical_source.cpp",
+        "native/src/recording/research_source.cpp",
+        "native/src/recording/events.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T41",
@@ -1209,16 +1270,31 @@
         "T06"
       ],
       "targets": [
+        "native/src/recording/database.cpp",
+        "native/src/recording/database.hpp",
+        "native/src/recording/database_validate.cpp",
+        "native/src/recording/duckdb.cpp",
+        "native/src/recording/duckdb.hpp",
+        "native/tests/migration/test_t41.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/recording/storage.py"
+      ],
+      "status": "planned",
+      "planned_targets": [
         "native/src/recording/database.hpp",
         "native/src/recording/database.cpp",
         "native/src/recording/database_validate.cpp",
         "native/src/recording/assets.cpp",
         "native/tests/migration/test_t41.cpp"
       ],
-      "owned_sources": [
-        "src/bike_sim/recording/storage.py"
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
       ],
-      "status": "planned"
+      "package_complete": false
     },
     {
       "id": "T42",
@@ -1229,16 +1305,47 @@
         "T06"
       ],
       "targets": [
-        "native/src/recording/publish.hpp",
         "native/src/recording/publish.cpp",
+        "native/src/recording/publish.hpp",
         "native/src/recording/finalize.cpp",
-        "native/src/recording/interrupt.cpp"
+        "native/src/recording/interrupt.cpp",
+        "native/src/runtime/async_close.cpp",
+        "native/src/runtime/async_close.hpp",
+        "native/src/runtime/accounting.cpp",
+        "native/src/runtime/accounting.hpp",
+        "native/src/runtime/period_buffer.cpp",
+        "native/src/runtime/period_buffer.hpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/config.hpp",
+        "native/src/runtime/bootstrap.cpp",
+        "native/src/runtime/project_config.cpp",
+        "native/src/runtime/project_config.hpp",
+        "native/src/research/configuration.cpp",
+        "native/src/research/environment.cpp",
+        "native/src/platform/signals.cpp",
+        "native/src/platform/signals.hpp",
+        "native/tests/migration/async_close_contract.hpp",
+        "native/tests/migration/test_t42.cpp"
       ],
       "owned_sources": [
         "src/bike_sim/recording/interrupt.py",
         "src/bike_sim/sim/ride/async_close.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/recording/publish.hpp",
+        "native/src/recording/publish.cpp",
+        "native/src/recording/finalize.cpp",
+        "native/src/recording/interrupt.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T43",
@@ -1249,10 +1356,13 @@
         "T42"
       ],
       "targets": [
-        "native/src/recording/reader.hpp",
         "native/src/recording/reader.cpp",
+        "native/src/recording/reader.hpp",
         "native/src/recording/analysis.cpp",
+        "native/src/recording/analysis_detail.hpp",
         "native/src/recording/query.cpp",
+        "native/src/io/float_format.hpp",
+        "native/src/configuration/schema.cpp",
         "native/tests/migration/test_t43.cpp"
       ],
       "owned_sources": [
@@ -1260,7 +1370,21 @@
         "src/bike_sim/recording/analysis.py",
         "src/bike_sim/recording/reader.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/recording/reader.hpp",
+        "native/src/recording/reader.cpp",
+        "native/src/recording/analysis.cpp",
+        "native/src/recording/query.cpp",
+        "native/tests/migration/test_t43.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T44",
@@ -1273,12 +1397,16 @@
         "T24"
       ],
       "targets": [
-        "native/src/replay/input.hpp",
         "native/src/replay/input.cpp",
-        "native/src/replay/session.hpp",
-        "native/src/replay/session.cpp",
+        "native/src/replay/input.hpp",
+        "native/src/replay/input_detail.hpp",
         "native/src/replay/legacy.cpp",
+        "native/src/replay/rebuild.cpp",
+        "native/src/replay/rebuild.hpp",
+        "native/src/replay/session.cpp",
+        "native/src/replay/session.hpp",
         "native/src/replay/playback.cpp",
+        "native/src/replay/playback.hpp",
         "native/tests/migration/test_t44.cpp"
       ],
       "owned_sources": [
@@ -1288,7 +1416,23 @@
         "src/bike_sim/sim/research/replay.py",
         "src/bike_sim/sim/research/replay_session.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/replay/input.hpp",
+        "native/src/replay/input.cpp",
+        "native/src/replay/session.hpp",
+        "native/src/replay/session.cpp",
+        "native/src/replay/legacy.cpp",
+        "native/src/replay/playback.cpp",
+        "native/tests/migration/test_t44.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T45",
@@ -1299,10 +1443,12 @@
         "T11"
       ],
       "targets": [
-        "native/src/recording/report.hpp",
         "native/src/recording/report.cpp",
-        "native/src/recording/export.hpp",
+        "native/src/recording/report.hpp",
         "native/src/recording/export.cpp",
+        "native/src/recording/export.hpp",
+        "native/src/replay/export.cpp",
+        "native/src/replay/export.hpp",
         "native/resources/reports/summary.md.in",
         "native/tests/migration/test_t45.cpp"
       ],
@@ -1310,7 +1456,22 @@
         "src/bike_sim/native/recording.py",
         "src/bike_sim/recording/report.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/recording/report.hpp",
+        "native/src/recording/report.cpp",
+        "native/src/recording/export.hpp",
+        "native/src/recording/export.cpp",
+        "native/resources/reports/summary.md.in",
+        "native/tests/migration/test_t45.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T46",
@@ -1321,13 +1482,26 @@
       ],
       "targets": [
         "native/src/cli/recording.cpp",
+        "native/src/cli/recording.hpp",
         "native/src/cli/recording_main.cpp",
-        "native/tests/cli/recording.cmake"
+        "native/tests/migration/test_t46.cpp"
       ],
       "owned_sources": [
         "src/bike_sim/cli/recording.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/cli/recording.cpp",
+        "native/src/cli/recording_main.cpp",
+        "native/tests/cli/recording.cmake"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T47",
@@ -1341,16 +1515,26 @@
         "T46"
       ],
       "targets": [
-        "native/src/cli/arguments.hpp",
         "native/src/cli/arguments.cpp",
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/argument_contracts.inc",
         "native/src/cli/application.cpp",
+        "native/src/cli/application.hpp",
+        "native/src/cli/configuration.cpp",
+        "native/src/cli/physical_capture.cpp",
+        "native/src/cli/physical_capture.hpp",
         "native/src/cli/ride.cpp",
         "native/src/cli/research.cpp",
         "native/src/cli/settle.cpp",
         "native/src/cli/export.cpp",
+        "native/src/cli/simulation.cpp",
         "native/src/cli/playground.cpp",
         "native/src/cli/replay.cpp",
         "native/src/cli/main.cpp",
+        "native/src/app/config.hpp",
+        "native/src/platform/argv.hpp",
+        "native/src/initialization/setup_owner.cpp",
+        "native/src/initialization/setup_owner.hpp",
         "native/tests/migration/test_t47.cpp"
       ],
       "owned_sources": [
@@ -1367,7 +1551,27 @@
         "src/bike_sim/sim/__init__.py",
         "src/bike_sim/sim/backend.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/cli/arguments.hpp",
+        "native/src/cli/arguments.cpp",
+        "native/src/cli/application.cpp",
+        "native/src/cli/ride.cpp",
+        "native/src/cli/research.cpp",
+        "native/src/cli/settle.cpp",
+        "native/src/cli/export.cpp",
+        "native/src/cli/playground.cpp",
+        "native/src/cli/replay.cpp",
+        "native/src/cli/main.cpp",
+        "native/tests/migration/test_t47.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T48",
@@ -1379,6 +1583,24 @@
         "T03"
       ],
       "targets": [
+        "native/src/viewer/render_owner.cpp",
+        "native/src/viewer/render_owner.hpp",
+        "native/src/viewer/glfw_context.cpp",
+        "native/src/viewer/glfw_context.hpp",
+        "native/src/viewer/render_fields.hpp",
+        "native/src/viewer/snapshot.cpp",
+        "native/src/runtime/runtime.cpp",
+        "native/src/runtime/runtime.hpp",
+        "native/src/runtime/research.cpp",
+        "native/src/runtime/research.hpp",
+        "native/tests/migration/test_t48.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/sim/ride/physical_view.py",
+        "src/bike_sim/sim/ride/presentation.py"
+      ],
+      "status": "planned",
+      "planned_targets": [
         "native/src/viewer/render_owner.hpp",
         "native/src/viewer/render_owner.cpp",
         "native/src/viewer/glfw_context.hpp",
@@ -1388,11 +1610,13 @@
         "native/src/runtime/runtime.cpp",
         "native/tests/migration/test_t48.cpp"
       ],
-      "owned_sources": [
-        "src/bike_sim/sim/ride/physical_view.py",
-        "src/bike_sim/sim/ride/presentation.py"
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
       ],
-      "status": "planned"
+      "package_complete": false
     },
     {
       "id": "T49",
@@ -1405,15 +1629,21 @@
         "T47"
       ],
       "targets": [
-        "native/src/viewer/input.hpp",
         "native/src/viewer/input.cpp",
-        "native/src/viewer/hud.cpp",
-        "native/src/viewer/camera.cpp",
-        "native/src/viewer/pacer.hpp",
+        "native/src/viewer/input.hpp",
+        "native/src/viewer/session.hpp",
         "native/src/viewer/pacer.cpp",
+        "native/src/viewer/pacer.hpp",
+        "native/src/viewer/hud.cpp",
+        "native/src/viewer/hud.hpp",
+        "native/src/viewer/camera.cpp",
         "native/src/viewer/ride.cpp",
         "native/src/viewer/research.cpp",
         "native/src/viewer/replay.cpp",
+        "native/src/legacy/ride.cpp",
+        "native/src/legacy/ride.hpp",
+        "native/src/legacy/playground.cpp",
+        "native/src/legacy/playground.hpp",
         "native/tests/migration/test_t49.cpp"
       ],
       "owned_sources": [
@@ -1431,7 +1661,26 @@
         "src/bike_sim/sim/ride/session.py",
         "src/bike_sim/sim/ride/viewer.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/viewer/input.hpp",
+        "native/src/viewer/input.cpp",
+        "native/src/viewer/hud.cpp",
+        "native/src/viewer/camera.cpp",
+        "native/src/viewer/pacer.hpp",
+        "native/src/viewer/pacer.cpp",
+        "native/src/viewer/ride.cpp",
+        "native/src/viewer/research.cpp",
+        "native/src/viewer/replay.cpp",
+        "native/tests/migration/test_t49.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T50",
@@ -1446,13 +1695,16 @@
         "T06"
       ],
       "targets": [
-        "native/src/viz/plot.hpp",
-        "native/src/viz/plot.cpp",
-        "native/src/viz/svg.cpp",
-        "native/src/viz/png.cpp",
+        "native/src/viz/geometry.cpp",
         "native/src/viz/html.cpp",
+        "native/src/viz/plot.cpp",
+        "native/src/viz/plot.hpp",
+        "native/src/viz/plot_internal.hpp",
+        "native/src/viz/png.cpp",
+        "native/src/viz/ride.cpp",
+        "native/src/viz/svg.cpp",
         "native/src/viz/tables.cpp",
-        "native/resources/plotly/",
+        "native/resources/plotly/README.md",
         "native/tests/migration/test_t50.cpp"
       ],
       "owned_sources": [
@@ -1466,7 +1718,24 @@
         "src/bike_sim/viz/tables.py",
         "src/bike_sim/viz/theme.py"
       ],
-      "status": "planned"
+      "status": "planned",
+      "planned_targets": [
+        "native/src/viz/plot.hpp",
+        "native/src/viz/plot.cpp",
+        "native/src/viz/svg.cpp",
+        "native/src/viz/png.cpp",
+        "native/src/viz/html.cpp",
+        "native/src/viz/tables.cpp",
+        "native/resources/plotly/",
+        "native/tests/migration/test_t50.cpp"
+      ],
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
+      ],
+      "package_complete": false
     },
     {
       "id": "T51",
@@ -1479,6 +1748,28 @@
         "T06"
       ],
       "targets": [
+        "native/src/batch/integer_detail.hpp",
+        "native/src/batch/log.hpp",
+        "native/src/batch/plan.cpp",
+        "native/src/batch/plan.hpp",
+        "native/src/batch/process_pool.cpp",
+        "native/src/batch/spec.cpp",
+        "native/src/batch/summary.cpp",
+        "native/src/batch/sweep.cpp",
+        "native/src/cli/batch.cpp",
+        "native/src/platform/process.cpp",
+        "native/src/platform/process.hpp",
+        "native/src/platform/argv.hpp",
+        "native/src/tools/research_sweep_main.cpp",
+        "native/src/tools/test_child_main.cpp",
+        "native/tests/migration/test_t51.cpp"
+      ],
+      "owned_sources": [
+        "src/bike_sim/cli/batch.py",
+        "tools/research_sweep.py"
+      ],
+      "status": "planned",
+      "planned_targets": [
         "native/src/batch/plan.hpp",
         "native/src/batch/plan.cpp",
         "native/src/batch/executor.cpp",
@@ -1487,11 +1778,13 @@
         "native/src/tools/research_sweep_main.cpp",
         "native/tests/migration/test_t51.cpp"
       ],
-      "owned_sources": [
-        "src/bike_sim/cli/batch.py",
-        "tools/research_sweep.py"
+      "implementation_status": "implemented_unverified",
+      "implementation_evidence": [
+        "migration/recording-application-implementation.json",
+        "migration/recording-application-review.md",
+        "migration/recording-application-static-audit.json"
       ],
-      "status": "planned"
+      "package_complete": false
     },
     {
       "id": "T52",

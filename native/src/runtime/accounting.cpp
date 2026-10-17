@@ -1,4 +1,5 @@
 #include "accounting.hpp"
+#include "async_close.hpp"
 
 #include <algorithm>
 #include <array>
@@ -270,8 +271,10 @@ bool constraint_work_ok(double absolute_j, double source_positive_j, double roun
     return absolute_j <= std::max(roundoff_j, .01 * source_positive_j);
 }
 
-EffortObservation observe_effort(const RawStep &raw,
-                                  const rider::SpindleController &controller,
+namespace {
+template<class Controller>
+EffortObservation observe_effort_impl(const RawStep &raw,
+                                  const Controller &controller,
                                   double dt_s) {
     finite(dt_s, "effort timestep");
     if (dt_s <= 0.) throw std::invalid_argument("effort timestep must be positive");
@@ -343,6 +346,53 @@ EffortObservation observe_effort(const RawStep &raw,
     if (raw.invalid_controller) result.violations.emplace_back("rider_controller.infeasible");
     return result;
 }
+} // namespace
+
+EffortObservation observe_effort(const RawStep& raw,
+    const rider::SpindleController& controller, double dt_s) {
+    return observe_effort_impl(raw, controller, dt_s);
+}
+
+EffortContext::EffortContext(const rider::SpindleController& controller,
+    std::size_t nq, std::size_t nv)
+    : config_(controller.config()), joints_(controller.joints()), nq_(nq), nv_(nv) {
+    for (const auto& joint : joints_)
+        if (joint.qpos_adr < 0 || joint.dof_adr < 0 || joint.actuator_id < 0 ||
+            static_cast<std::size_t>(joint.qpos_adr) >= nq_ ||
+            static_cast<std::size_t>(joint.dof_adr) >= nv_)
+            throw std::invalid_argument("async effort context has invalid joint addresses");
+}
+
+std::vector<std::string> EffortContext::strength_violations(
+    const rider::NamedEntries<double>& active, std::span<const double> qpos,
+    std::span<const double> qvel) const {
+    if (!config_.has_strength) return {};
+    if (qpos.size() != nq_ || qvel.size() != nv_)
+        throw std::invalid_argument("strength state width mismatch");
+    std::vector<std::string> result;
+    for (const auto& joint : joints_) {
+        const auto found = std::ranges::find_if(active, [&](const auto& item) { return item.first == joint.name; });
+        const double torque = found == active.end() ? 0. : found->second;
+        // Same statements/order as SpindleController's three pure strength
+        // methods; only model dimensions have become owned numeric values.
+        const auto coordinate = config_.strength_coordinates.find(joint.name);
+        if (coordinate == config_.strength_coordinates.end()) throw std::out_of_range(joint.name);
+        const double anatomical = spindle::anatomical_angle(coordinate->second,
+            qpos[static_cast<std::size_t>(joint.qpos_adr)]);
+        double capacity = std::numeric_limits<double>::infinity();
+        if (torque != 0.) {
+            const int direction = torque > 0. ? 1 : -1;
+            const auto strength = config_.strength.find(joint.name);
+            if (strength == config_.strength.end()) throw std::out_of_range(joint.name);
+            const auto& curve = direction > 0 ? strength->second.positive : strength->second.negative;
+            const double angle = std::min(std::max(anatomical, curve.angles_rad.front()), curve.angles_rad.back());
+            capacity = spindle::directional_capacity(curve, angle,
+                qvel[static_cast<std::size_t>(joint.dof_adr)], direction);
+        }
+        if (std::abs(torque) > capacity * (1. + 1e-6) + 1e-9) result.push_back(joint.name);
+    }
+    return result;
+}
 
 PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState initial,
                                      int generation, rider::SpindleController *controller,
@@ -361,11 +411,145 @@ PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState init
             {"elastic_energy_j", Wire(state_.energy.elastic_energy_j)},
             {"residual_j", Wire(state_.energy.residual_j)},
             {"energy_scale_j", Wire(state_.energy.energy_scale_j)}};
+    if (config_.async_telemetry) {
+        if (controller_) effort_context_.emplace(*controller_, config_.max_qpos, config_.max_dofs);
+        async_ = std::make_unique<AsyncCloseRunner>(config_, state_, generation_, effort_context_);
+    }
 }
+
+PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState state,
+    int generation, std::optional<EffortContext> effort)
+    : PeriodAccounting(std::move(config), std::move(state), generation, nullptr, nullptr) {
+    effort_context_ = std::move(effort);
+}
+PeriodAccounting::~PeriodAccounting() = default;
 
 void PeriodAccounting::push(RawStep raw) { buffer_.push(std::move(raw)); }
 
+bool PeriodAccounting::has_raws() const {
+    return !buffer_.empty() || detached_at_ < detached_.size() ||
+        (async_ && async_->pending() != 0);
+}
+
+void PeriodAccounting::apply_diagnostics(AccountingDiagnostics diagnostics) noexcept {
+    if (contacts_) contacts_->publish_accounted_attachments(
+        std::move(diagnostics.contacts), std::move(diagnostics.attachment_errors));
+    if (controller_) controller_->publish_accounted_effort(
+        std::move(diagnostics.effort), std::move(diagnostics.terms));
+}
+
+AccountingPublication PeriodAccounting::take_publication() {
+    if (pending_.empty()) throw std::logic_error("closed period produced no samples");
+    AccountingPublication result;
+    result.state = state_; // Stage the only throwing copy before moving evidence.
+    result.samples = std::move(pending_);
+    result.diagnostics = std::move(last_diagnostics_);
+    // A warning is transported once. The main owner merges its unconsumed
+    // warning with later publications, independently of worker scheduling.
+    state_.monitor.warning_pending = false;
+    return result;
+}
+
+void PeriodAccounting::apply_publication(const AccountingPublication& publication) {
+    if (publication.samples.empty() ||
+        publication.samples.front()->interval_id != next_interval(state_.history) ||
+        publication.state.history.last_id != publication.samples.back()->interval_id)
+        throw std::invalid_argument("async publication is not the next accounting prefix");
+    AccountingState staged = publication.state;
+    staged.monitor.warning_pending = staged.monitor.warning_pending || state_.monitor.warning_pending;
+    AccountingDiagnostics diagnostics = publication.diagnostics;
+    std::vector<SamplePtr> retained;
+    retained.reserve(config_.retention == RetentionMode::off ? 0 : publication.samples.size());
+    for (const auto& sample : publication.samples)
+        if (config_.retention == RetentionMode::full ||
+            (config_.retention == RetentionMode::legacy &&
+             sample->interval_id % config_.measurement_decimation == 0))
+            retained.push_back(sample);
+    pending_.reserve(pending_.size() + publication.samples.size());
+    retained_.reserve(retained_.size() + retained.size());
+    // Everything below is nonthrowing: acknowledge only after this commit.
+    state_ = std::move(staged);
+    latest_ = publication.samples.back();
+    pending_.insert(pending_.end(), publication.samples.begin(), publication.samples.end());
+    retained_.insert(retained_.end(), retained.begin(), retained.end());
+    apply_diagnostics(std::move(diagnostics));
+}
+
+void PeriodAccounting::detach_async() {
+    if (async_) {
+        if (detached_at_ != detached_.size()) throw std::logic_error("two detached accounting queues");
+        detached_ = async_->detach_pending();
+        detached_at_ = 0;
+        async_.reset();
+        config_.async_telemetry = false;
+    }
+    while (detached_at_ < detached_.size()) {
+        AccountingConfig config = config_;
+        config.async_telemetry = false;
+        config.retention = RetentionMode::off;
+        PeriodAccounting evaluator(config, state_, generation_, effort_context_);
+        for (const auto& raw : *detached_[detached_at_]) evaluator.push(raw);
+        std::optional<std::string> strict_error;
+        try { evaluator.flush_local(); }
+        catch (const InvalidReferenceRun& error) { strict_error = error.what(); }
+        auto result = evaluator.take_publication();
+        apply_publication(result);
+        detached_[detached_at_++].reset();
+        if (strict_error) throw InvalidReferenceRun(*strict_error);
+    }
+    detached_.clear();
+    detached_at_ = 0;
+}
+
+void PeriodAccounting::collect(bool block) {
+    if (detached_at_ < detached_.size()) detach_async();
+    if (!async_) return;
+    try {
+        while (const auto result = async_->peek(block)) {
+            apply_publication(result->publication);
+            async_->acknowledge(result->sequence);
+            if (result->publication.strict_error)
+                throw InvalidReferenceRun(*result->publication.strict_error);
+        }
+    } catch (const AsyncWorkerLost&) {
+        detach_async();
+    }
+}
+
+void PeriodAccounting::submit_period() {
+    if (buffer_.empty()) return;
+    if (!async_) { flush_local(); return; }
+    // Bound the off-path transport independently of recording retention. A
+    // slow worker cannot turn an unrecorded ride into growing raw history.
+    if (async_->pending() >= 2) collect(true);
+    if (!async_) { flush_local(); return; }
+    auto originals = std::make_shared<const std::vector<RawStep>>(
+        buffer_.raws().begin(), buffer_.raws().end());
+    try { async_->submit(std::move(originals)); }
+    catch (const AsyncWorkerLost&) {
+        // A normal worker publication error remains an error; only lost
+        // transport falls back to synchronous replay.
+        collect(false);
+        if (async_) detach_async();
+        flush_local();
+        return;
+    }
+    buffer_.clear(); // Originals are owned by the acknowledged queue now.
+}
+
+void PeriodAccounting::close_period() {
+    if (buffer_.empty()) return;
+    if (!buffer_.full()) throw std::invalid_argument("automatic close requires a complete period");
+    submit_period();
+}
+
 void PeriodAccounting::flush() {
+    if (detached_at_ < detached_.size()) detach_async();
+    submit_period();
+    collect(true);
+}
+
+void PeriodAccounting::flush_local() {
     if (buffer_.empty()) return;
     // No public state changes until all rows, validation and allocations succeed.
     AccountingState staged = state_;
@@ -459,8 +643,8 @@ void PeriodAccounting::flush() {
                 !std::ranges::equal(constraints.qvel_start, raw.qvel))
                 throw std::invalid_argument("constraint snapshot does not match the physical interval");
             auto attachments = evaluate_attachments(raw, workspace_);
-            auto effort = controller_ == nullptr ? EffortObservation{} :
-                                                   observe_effort(raw, *controller_, config_.timestep_s);
+            auto effort = effort_context_ ? observe_effort_impl(raw, *effort_context_, config_.timestep_s)
+                : controller_ ? observe_effort(raw, *controller_, config_.timestep_s) : EffortObservation{};
             auto violations = interval_violations(raw, attachments, config_.attachment_budget, effort);
             // Oracle (physical_runtime.py:783-789): a measured raw
             // reports its own energy; an unmeasured one publishes the
@@ -580,12 +764,10 @@ void PeriodAccounting::flush() {
     for (auto &row : published) pending_.push_back(std::move(row.sample));
     retained_.insert(retained_.end(), std::make_move_iterator(selected.begin()),
                      std::make_move_iterator(selected.end()));
-    if (contacts_ != nullptr)
-        contacts_->publish_accounted_attachments(std::move(contact_samples),
-                                                 std::move(final_attachment_errors));
-    if (controller_ != nullptr)
-        controller_->publish_accounted_effort(std::move(final_effort.diagnostics),
-                                               std::move(final_effort.terms));
+    last_diagnostics_ = {.contacts = std::move(contact_samples),
+        .attachment_errors = std::move(final_attachment_errors),
+        .effort = std::move(final_effort.diagnostics), .terms = std::move(final_effort.terms)};
+    if (controller_ || contacts_) apply_diagnostics(std::move(last_diagnostics_));
     buffer_.clear();
     // In strict mode the entire period and its original first-failure time
     // are already available to snapshot()/prepare_samples().
@@ -611,13 +793,16 @@ WireObject PeriodAccounting::state_wire() const {
     WireArray violations;
     violations.reserve(state_.period_violations.size());
     for (const auto &failure : state_.period_violations) violations.push_back(failure.as_wire());
+    std::size_t buffered = buffer_.raws().size();
+    if (async_) buffered += async_->pending_intervals();
+    for (std::size_t i = detached_at_; i < detached_.size(); ++i) buffered += detached_[i]->size();
     return {{"history", Wire(state_.history.as_wire())},
             {"energy", Wire(state_.energy_channels)},
             {"model_status", Wire(state_.model_status.as_wire())},
             {"monitor", Wire(state_.monitor.as_wire())},
             {"period_violations", Wire(std::move(violations))},
             {"pending_intervals", Wire(static_cast<std::int64_t>(pending_.size()))},
-            {"buffered_intervals", Wire(static_cast<std::int64_t>(buffer_.raws().size()))}};
+            {"buffered_intervals", Wire(static_cast<std::int64_t>(buffered))}};
 }
 
 SampleColumns PeriodAccounting::recorded_columns() const {

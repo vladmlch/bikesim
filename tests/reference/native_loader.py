@@ -12,6 +12,8 @@ from pathlib import Path
 import sys
 from types import ModuleType
 
+from bike_sim.native.artifact import native_load_diagnostic
+
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _BUILD_ROOT = _REPO_ROOT / 'native' / 'build'
@@ -204,7 +206,8 @@ def _check_imported_module(module: ModuleType, expected: Path, build: Path) -> M
     if actual != expected:
         raise RuntimeError(
             'native artifact mismatch: '
-            f'selected={build}, expected={expected}, imported={actual}'
+            f'selected={build}, expected={expected}, imported={actual}; '
+            f'{native_load_diagnostic(build, expected)}'
         )
     return module
 
@@ -216,7 +219,8 @@ def load_native() -> ModuleType:
     artifacts = _extension_artifacts(build)
     if len(artifacts) != 1:
         raise RuntimeError(
-            f'expected exactly one bike_native extension in {build}, found {len(artifacts)}'
+            f'expected exactly one bike_native extension in {build}, found {len(artifacts)}; '
+            f'{native_load_diagnostic(build)}'
         )
     expected = artifacts[0].resolve()
 
@@ -226,7 +230,9 @@ def load_native() -> ModuleType:
         if actual != expected:
             raise RuntimeError(
                 'pre-imported bike_native module does not match selected build: '
-                f'selected={build}, expected={expected}, imported={actual}'
+                f'selected={build}, expected={expected}, imported={actual}; '
+                'start a fresh Python process; '
+                f'{native_load_diagnostic(build, expected)}'
             )
         _record_native_import_provenance_once(expected, build)
         return imported
@@ -238,7 +244,13 @@ def load_native() -> ModuleType:
         if not entry or Path(entry).resolve() != build
     ]
     sys.path.insert(0, build_text)
-    module = importlib.import_module('bike_native')
+    try:
+        module = importlib.import_module('bike_native')
+    except (ImportError, OSError) as error:
+        raise RuntimeError(
+            f'native load failed: {native_load_diagnostic(build, expected)}; '
+            f'loader error: {error}'
+        ) from error
     module = _check_imported_module(module, expected, build)
     _record_native_import_provenance_once(expected, build)
     return module

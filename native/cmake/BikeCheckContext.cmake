@@ -18,6 +18,10 @@
 #   numerics      the dependency probe's validated numerics record, verbatim
 #   policy        {required_flags, accepted_warnings, rejected_warnings[]}
 #   capabilities  {asan, rtsan, coverage, frontend_tools} measured records
+#   python        the selected dependency probe's executable/version/SOABI
+#                 and include directory (additive installation diagnostics)
+#   source_directory, build_directory
+#                 original absolute CMake roots, to diagnose copied caches
 #   plus the retained schema-1 fields: compiler, compiler_policy,
 #   libcpp_hardening, analysis_suppressions_manifest, include_paths,
 #   library_paths, required_files, source_roots, python_executable,
@@ -421,6 +425,17 @@ function(bike_write_check_context)
   _native_json_quote(_native_suppressions_manifest_json
     "${CMAKE_CURRENT_SOURCE_DIR}/analysis_suppressions.json")
   _native_json_quote(_native_python_json "${Python_EXECUTABLE}")
+  # Retain python_executable for all existing readers. The richer record is
+  # additive within schema 2; doctor can request reconfiguration when an old
+  # context lacks it, without making old contexts invalid for sweep readers.
+  string(JSON _ctx_python_json ERROR_VARIABLE _ctx_python_error
+    GET "${_native_dependencies_json}" python)
+  if(_ctx_python_error)
+    message(FATAL_ERROR
+      "Cannot record the configured Python identity: ${_ctx_python_error}")
+  endif()
+  _native_json_quote(_ctx_source_directory_json "${CMAKE_CURRENT_SOURCE_DIR}")
+  _native_json_quote(_ctx_build_directory_json "${CMAKE_BINARY_DIR}")
   _native_json_array(_native_include_paths_json ${_native_required_includes})
   _native_json_array(_native_library_paths_json ${_native_library_path_entries})
   _native_json_array(_native_required_files_json ${_native_required_files})
@@ -457,7 +472,7 @@ function(bike_write_check_context)
     "{\"schema_version\":1,\"first_party_roots\":${_native_source_roots_json},\"sources\":${_native_source_entries}}\n")
 
   set(_ctx_content
-    "{\"schema_version\":2,\"platform\":${_ctx_platform_json},\"sysroot\":${_ctx_sysroot_json},\"stdlib\":${_ctx_stdlib_json},\"numerics\":${_ctx_numerics_json},\"policy\":${_ctx_policy_json},\"capabilities\":${_ctx_capabilities_json},\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"compiler_policy\":${BIKE_POLICY_REPORT_JSON},\"sdk\":${_ctx_sdk_json},\"sdk_requested\":${_ctx_sdk_requested_json},\"sdk_source\":${_ctx_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
+    "{\"schema_version\":2,\"platform\":${_ctx_platform_json},\"sysroot\":${_ctx_sysroot_json},\"stdlib\":${_ctx_stdlib_json},\"numerics\":${_ctx_numerics_json},\"policy\":${_ctx_policy_json},\"capabilities\":${_ctx_capabilities_json},\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"compiler_policy\":${BIKE_POLICY_REPORT_JSON},\"sdk\":${_ctx_sdk_json},\"sdk_requested\":${_ctx_sdk_requested_json},\"sdk_source\":${_ctx_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"python\":${_ctx_python_json},\"source_directory\":${_ctx_source_directory_json},\"build_directory\":${_ctx_build_directory_json},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
 
   if(CMAKE_CONFIGURATION_TYPES)
     # Multi-config generators cannot share one compile_commands.json; emit

@@ -2,6 +2,12 @@
 
 ## Status and prerequisites
 
+The 2026-10-17 portability wave adds shared macOS/Linux viewer startup and
+failure handling. See [viewer portability](development/viewer-portability.md)
+for the launch contract and outstanding desktop acceptance. This wave was
+implemented and reviewed statically; the historical results below do not
+verify its changes.
+
 The 2026-10-13 run-recording delivery changes normal physical/research output
 to opt-in, final-only DuckDB recording. See [RECORDING](RECORDING.md) for the
 verification results and the

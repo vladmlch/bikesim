@@ -3,8 +3,7 @@
 These tests never import the native extension and never spawn real builds:
 every subprocess goes through ``tools.dev._run``, which tests stub out. The
 quick profile must be able to run them on a host where no native artifact
-exists — including Linux, where native configure currently fails before
-dependency discovery.
+exists. Runtime qualification is separate from command orchestration.
 """
 from __future__ import annotations
 
@@ -20,6 +19,11 @@ from tools import dev
 from tools.dev import build_commands
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture(autouse=True)
+def _default_project_environment(monkeypatch):
+    monkeypatch.delenv("UV_PROJECT_ENVIRONMENT", raising=False)
 
 
 class _Completed:
@@ -98,6 +102,8 @@ def test_cli_resolves_relative_build_against_checkout(tmp_path):
 def test_subprocess_failure_exit_code_propagates(tmp_path, monkeypatch):
     calls = []
     monkeypatch.setattr(dev, "_run", _record_run(calls, returncode=23))
+    monkeypatch.setattr(dev, "_require_project_interpreter", lambda root: "/selected/python")
+    monkeypatch.setattr(dev, "_check_build_cache", lambda root, build: None)
     rc = dev.main(["build", "--build", "native/build/release"], root=tmp_path)
     assert rc == 23
     assert len(calls) == 1
@@ -123,8 +129,7 @@ def test_bootstrap_is_explicit_locked_sync(tmp_path, monkeypatch):
         "uv", "sync", "--locked", "--group", "native", "--group", "dev",
     ]
     assert calls[0]["cwd"] == tmp_path.resolve()
-    # No environment rewriting: the caller's env is inherited unchanged.
-    assert calls[0]["env"] is None
+    assert calls[0]["env"]["UV_PROJECT_ENVIRONMENT"] == str(tmp_path / ".venv")
 
 
 def test_bootstrap_python_and_offline_wheelhouse(tmp_path, monkeypatch):
@@ -163,6 +168,7 @@ def test_test_profile_sets_absolute_selectors(tmp_path, monkeypatch):
     delegates the profile logic to tools/run_tests.sh unchanged."""
     calls = []
     monkeypatch.setattr(dev, "_run", _record_run(calls, returncode=5))
+    monkeypatch.setattr(dev, "_require_project_interpreter", lambda root: "/selected/python")
     monkeypatch.setenv("ASAN_OPTIONS", "detect_leaks=0")
     rc = dev.main(
         ["test", "--build", "native/build/release", "--profile", "quick"],

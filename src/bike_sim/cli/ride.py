@@ -190,7 +190,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--duration", type=float, default=None, metavar="S", help="physical run duration; permits stationary rigs")
     parser.add_argument('--research', action='store_true', help='accounted policy loop in viewer or headless mode')
     parser.add_argument('--async-telemetry', action='store_true',
-                        help='publish period telemetry from a spawned worker process; the viewer '
+                        help='publish period telemetry from a separate worker process; the viewer '
                              'step path then pays only serialization. Policy loops that read '
                              'physical.sample between steps may see one-period-older data')
     parser.add_argument('--policy', help='motor policy factory, module:factory')
@@ -809,8 +809,6 @@ def _headless(
 
 def _interactive(track: TrackSpec, args: argparse.Namespace, rider: RiderSpecs, tyre: TyreConfig) -> int:
     if args.physics == "physical":
-        from bike_sim.sim.playground import ensure_macos_mjpython
-        ensure_macos_mjpython()
         from bike_sim.sim.ride.physical_driver import build_physical_driver
         from bike_sim.sim.ride.physical_frontend import run_viewer
         return run_viewer(build_physical_driver(track, args, rider, seed=args.seed,
@@ -859,6 +857,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print(f"{PREFIX} --speed must be within {MIN_TARGET_SPEED_KMH:.0f}-{MAX_TARGET_SPEED_KMH:.0f} km/h",
               file=sys.stderr)
         return 2
+    from bike_sim.viewer_runtime import ViewerUnavailableError, prepare_viewer
+    if not args.headless and not args.preview:
+        try:
+            # Re-exec before native selection, track setup, workers or recording
+            # owners exist. Explicit main(argv) keeps its own arguments too.
+            prepare_viewer(argv=argv, module='bike_sim.cli.ride')
+        except ViewerUnavailableError as exc:
+            print(f'{PREFIX} {exc}', file=sys.stderr)
+            return 2
     try:
         rider = resolve_rider(args)
         if args.physics == 'physical' and not args.preview:
@@ -907,7 +914,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f'{PREFIX} research error: {type(error).__name__}: {error}', file=sys.stderr)
             for note in getattr(error, '__notes__', ()):
                 print(f'  {note}', file=sys.stderr)
-            return 2 if isinstance(error, (ValueError, OSError)) else 3
+            return 2 if isinstance(error, (ValueError, OSError, ViewerUnavailableError)) else 3
     try:
         tyre = _tyre_config(args)
     except ValueError as exc:
@@ -917,7 +924,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return _preview(track, Path(args.out), seed)
     if args.headless:
         return _headless(track, args, seed, rider, tyre)
-    return _interactive(track, args, rider, tyre)
+    try:
+        return _interactive(track, args, rider, tyre)
+    except ViewerUnavailableError as exc:
+        print(f'{PREFIX} {exc}', file=sys.stderr)
+        for note in getattr(exc, '__notes__', ()):
+            print(f'  {note}', file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

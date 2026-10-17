@@ -53,7 +53,8 @@ DEPENDENCY_PROBE = Path("tools") / "native_dependencies.py"
 
 
 def build_commands(
-    root: Path, build: Path, config: str, compiler: str | None
+    root: Path, build: Path, config: str, compiler: str | None,
+    *, python_executable: str | None = None,
 ) -> list[list[str]]:
     """Argv arrays for configure + compile; token boundaries preserved."""
     if config not in {"Debug", "Release"}:
@@ -68,6 +69,8 @@ def build_commands(
     ]
     if compiler is not None:
         configure.append(f"-DCMAKE_CXX_COMPILER={compiler}")
+    if python_executable is not None:
+        configure.append(f"-DPython_EXECUTABLE={python_executable}")
     return [configure, _compile_command(build)]
 
 
@@ -90,6 +93,167 @@ def _cli_path(value: str) -> Path:
     return candidate if candidate.is_absolute() else (Path.cwd() / candidate).resolve()
 
 
+def project_environment(root: Path) -> dict[str, str]:
+    """One explicit uv environment for all commands, including child probes.
+
+    Installer-selected environments must be absolute. An inherited active
+    venv is not a selector: with no override, the source tree's .venv owns
+    the build. Keep offline/tool/sanitizer controls from the caller intact.
+    """
+    environment = dict(os.environ)
+    raw = environment.get("UV_PROJECT_ENVIRONMENT")
+    selected = Path(raw) if raw is not None else root / ".venv"
+    if not selected.is_absolute():
+        raise ValueError(
+            "UV_PROJECT_ENVIRONMENT must be an absolute venv path, "
+            f"got {raw!r}"
+        )
+    environment["UV_PROJECT_ENVIRONMENT"] = str(selected.resolve())
+    return environment
+
+
+def _same_interpreter(left: str, right: str) -> bool:
+    """Allow executable aliases within one venv, never two venvs of one CPython."""
+    first, second = Path(left), Path(right)
+    return (
+        first.is_absolute() and second.is_absolute()
+        and first.parent.resolve() == second.parent.resolve()
+        and first.resolve() == second.resolve()
+    )
+
+
+def _require_project_interpreter(root: Path) -> str:
+    environment = project_environment(root)
+    venv = Path(environment["UV_PROJECT_ENVIRONMENT"])
+    python = venv / "bin" / "python"
+    if (not python.is_file() or Path(sys.prefix).resolve() != venv
+            or not _same_interpreter(sys.executable, str(python))):
+        raise ValueError(
+            f"selected uv environment is {venv}, but dev.py is running "
+            f"with python={sys.executable}, prefix={sys.prefix}; run "
+            "tools/dev.py through `uv run --frozen --group native --no-sync "
+            "python` from the source tree with the same absolute "
+            "UV_PROJECT_ENVIRONMENT (bootstrap first if it is absent)"
+        )
+    # Do not resolve the executable symlink: its venv directory determines
+    # site-packages even when several venvs use the same base interpreter.
+    return str(Path(sys.executable).absolute())
+
+
+def _read_build_context(build: Path) -> dict:
+    context_path = build / "native_check_context.json"
+    if not context_path.is_file():
+        candidates = sorted((build / "native_check_context").glob("*.json"))
+        if len(candidates) != 1:
+            raise ValueError(
+                f"native build context is unavailable or ambiguous in {build}; "
+                "explicitly configure this selected build first"
+            )
+        context_path = candidates[0]
+    try:
+        context = json.loads(context_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"cannot read {context_path}: {error}") from error
+    if not isinstance(context, dict) or context.get("schema_version") not in (1, 2):
+        raise ValueError(f"unsupported native build context in {context_path}")
+    return context
+
+
+def _check_build_cache(root: Path, build: Path, *, optional: bool = False) -> None:
+    """Reject copied roots/venvs before allowing CMake to configure or build."""
+    cache_file = build / "CMakeCache.txt"
+    if not cache_file.is_file():
+        if optional:
+            return
+        raise ValueError(
+            f"no CMakeCache.txt in selected build {build}; run "
+            "tools/dev.py configure --build <dir> --config Release first"
+        )
+    cache = {}
+    for line in cache_file.read_text(encoding="utf-8").splitlines():
+        if line.startswith(("#", "//")) or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        cache[name.split(":", 1)[0]] = value
+    for field, expected in (("CMAKE_HOME_DIRECTORY", root / "native"),
+                            ("CMAKE_CACHEFILE_DIR", build)):
+        raw = cache.get(field)
+        if not raw or not Path(raw).is_absolute() or Path(raw).resolve() != expected.resolve():
+            raise ValueError(
+                f"stale or relocated build cache {cache_file}: {field}="
+                f"{raw!r}, expected {expected}; configure a fresh build "
+                "directory in the target source environment"
+            )
+    python = cache.get("Python_EXECUTABLE") or cache.get("_Python_EXECUTABLE")
+    if not python or not _same_interpreter(python, sys.executable):
+        raise ValueError(
+            f"configured Python executable {python!r} differs from the "
+            f"selected interpreter {sys.executable!r}; configure a fresh "
+            f"build directory (selected={build}) in the correct uv environment"
+        )
+
+
+def _validate_install_context(root: Path, build: Path, context: dict) -> None:
+    """Read-only install checks; old contexts need an explicit reconfigure."""
+    _check_build_cache(root, build)
+    python = context.get("python")
+    if not isinstance(python, dict) or not python.get("soabi"):
+        raise ValueError(
+            "native build context has no recorded Python SOABI/install "
+            "identity; reconfigure this build to refresh its diagnostic "
+            "fields (older schema-2 contexts remain valid for existing readers)"
+        )
+    for field, expected in (("source_directory", root / "native"),
+                            ("build_directory", build)):
+        raw = context.get(field)
+        if not isinstance(raw, str) or not Path(raw).is_absolute():
+            raise ValueError(f"build context lacks absolute {field}; reconfigure")
+        if Path(raw).resolve() != expected.resolve():
+            raise ValueError(
+                f"stale build context {field}={raw!r}, expected {expected}; "
+                "rebuild relocated source in a fresh build directory"
+            )
+    for selected in (context.get("python_executable"), python.get("executable")):
+        if not isinstance(selected, str) or not _same_interpreter(selected, sys.executable):
+            raise ValueError(
+                f"configured Python executable {selected!r} differs from "
+                f"the selected interpreter {sys.executable!r}"
+            )
+    if python["soabi"] != sysconfig.get_config_var("SOABI"):
+        raise ValueError(
+            f"configured Python SOABI={python['soabi']!r} differs from "
+            f"the selected interpreter SOABI={sysconfig.get_config_var('SOABI')!r}"
+        )
+    if python.get("version") != platform.python_version():
+        raise ValueError(
+            f"configured Python version={python.get('version')!r} differs "
+            f"from selected {platform.python_version()!r}; reconfigure/build"
+        )
+    recorded_platform = context.get("platform")
+    if not isinstance(recorded_platform, dict):
+        raise ValueError("build context has no platform record; reconfigure")
+    aliases = {"arm64": "aarch64", "amd64": "x86_64"}
+    recorded_machine = str(recorded_platform.get("machine", "")).lower()
+    actual_machine = platform.machine().lower()
+    if (recorded_platform.get("system") != platform.system()
+            or aliases.get(recorded_machine, recorded_machine)
+            != aliases.get(actual_machine, actual_machine)):
+        raise ValueError(
+            f"configured platform {recorded_platform!r} differs from "
+            f"{platform.system()}/{platform.machine()}; rebuild on this host"
+        )
+    for field in ("library_paths", "required_files"):
+        paths = context.get(field)
+        if not isinstance(paths, list) or not paths:
+            raise ValueError(f"build context has no {field} dependency record")
+        for raw in paths:
+            if not isinstance(raw, str) or not Path(raw).is_absolute() or not Path(raw).exists():
+                raise ValueError(
+                    f"recorded {field} dependency is missing or not absolute: "
+                    f"{raw!r}; restore the selected environment and rebuild"
+                )
+
+
 def _run(argv: list[str], *, cwd: Path, env: dict | None = None) -> int:
     """The single spawn point: argument array, explicit cwd, status out."""
     print(f"+ {shlex.join([str(token) for token in argv])}", file=sys.stderr)
@@ -99,12 +263,14 @@ def _run(argv: list[str], *, cwd: Path, env: dict | None = None) -> int:
     return completed.returncode
 
 
-def _capture(argv: list[str], *, cwd: Path, timeout: int = 30) -> dict:
+def _capture(argv: list[str], *, cwd: Path, timeout: int = 30,
+             env: dict[str, str] | None = None) -> dict:
     """Read-only probe for doctor; failures are evidence, not exceptions."""
     try:
         completed = subprocess.run(
             [str(token) for token in argv],
             cwd=cwd,
+            env=project_environment(cwd) if env is None else env,
             text=True,
             capture_output=True,
             timeout=timeout,
@@ -171,6 +337,11 @@ def _doctor_interpreter(root: Path) -> dict:
             f"pyproject requires-python is >={floor[0]}.{floor[1]}; "
             "select a conforming interpreter via bootstrap --python",
         )
+    try:
+        _require_project_interpreter(root)
+    except ValueError as error:
+        return _check("interpreter", "fail", f"{evidence}; {error}",
+                      "use the source project's selected editable uv environment")
     return _check("interpreter", "pass", evidence, None)
 
 
@@ -247,28 +418,116 @@ def _doctor_compilers(root: Path) -> dict:
     return _check("compilers", "pass", evidence, None)
 
 
-def _doctor_dependency_probe(root: Path) -> tuple[dict, dict | None]:
-    """The T05 probe of the selected interpreter; a named failure until it
-    exists, then live JSON evidence. Never a passing stub."""
+_DOCTOR_DEPENDENCY_CODE = r'''
+import ctypes
+import json
+import platform
+from pathlib import Path
+import sys
+import sysconfig
+from bike_sim.native import artifact
+from tools.native_dependencies import select_mujoco_library
+
+root = Path(sys.argv[1])
+if artifact.native_source_root() != root:
+    raise ValueError(f"imported Python source belongs to {artifact.native_source_root()}, expected {root}")
+artifact.check_dependencies()
+import mujoco
+if mujoco.mj_versionString() != '3.12.0':
+    raise ValueError(f"loaded MuJoCo must be 3.12.0, got {mujoco.mj_versionString()}")
+library = select_mujoco_library(Path(mujoco.__file__).resolve().parent,
+                                platform.system(), '3.12.0')
+handle = ctypes.CDLL(str(library))
+private_symbols = ['_mjPRIVATE_setTlsLogHandler', '_mjPRIVATE_getGlobalLogHandler', 'mj_makeRawData']
+for symbol in private_symbols:
+    if getattr(handle, symbol, None) is None:
+        raise ValueError(f"MuJoCo private ABI symbol {symbol} missing from {library}")
+document = {'schema_version': 1,
+            'python': {'executable': sys.executable, 'version': platform.python_version(),
+                       'soabi': sysconfig.get_config_var('SOABI')},
+            'mujoco': {'version': mujoco.mj_versionString(), 'library_path': str(library),
+                       'private_symbols': private_symbols}}
+if sys.argv[2]:
+    selected = Path(sys.argv[2])
+    module = artifact.load_native_extension(selected)
+    identity = module.runtime_identity()
+    native_library = Path(identity['mujoco_library_path']).resolve(strict=True)
+    if native_library != library.resolve(strict=True):
+        raise ValueError(f"native MuJoCo image {native_library} differs from Python image {library}")
+    execution = artifact.execution_provenance('native', artifact=module)
+    document['numerics'] = execution['build_context']['numerics']
+    document['native'] = {'artifact': str(Path(module.__file__).resolve()),
+                          'source_root': str(root),
+                          'compiled_source_sha256': identity['native_source_sha256'],
+                          'source_sha256': execution['native_source_sha256'],
+                          'extension_sha256': execution['extension_sha256']}
+else:
+    # Runtime provider introspection has no compiler/linker subprocess.
+    # The full ABI compile/link qualification belongs to configure.
+    document['numerics'], _ = artifact._numerics_evidence()
+print(json.dumps(document, sort_keys=True))
+'''
+
+
+def _doctor_probe_environment(root: Path, build: Path | None) -> dict[str, str]:
+    """Apply the existing sanitizer policy before importing a selected binary."""
+    environment = project_environment(root)
+    if build is not None:
+        try:
+            from tools import native_runtime
+        except ModuleNotFoundError:  # direct `python tools/dev.py` invocation
+            import native_runtime
+        context = _read_build_context(build)
+        native_runtime._cross_check_build_cache(build, context)
+        environment = native_runtime.runtime_environment(context, environment)
+    # dyld removes DYLD_INSERT_LIBRARIES after loading the parent runtime.
+    # Preserve the selected-runtime evidence and reinject it for this direct
+    # Python child, including --numerics without a selected build.
+    selected = environment.get("NATIVE_TEST_SANITIZER_RUNTIME")
+    if selected is not None:
+        runtime = Path(selected)
+        if not runtime.is_absolute() or not runtime.is_file():
+            raise ValueError(f"selected sanitizer runtime is not an absolute file: {selected!r}")
+        variable = "DYLD_INSERT_LIBRARIES" if sys.platform == "darwin" else "LD_PRELOAD"
+        previous = environment.get(variable, "")
+        if selected not in previous.split(os.pathsep):
+            environment[variable] = selected if not previous else f"{selected}{os.pathsep}{previous}"
+    return environment
+
+
+def _doctor_dependency_probe(root: Path, build: Path | None = None) -> tuple[dict, dict | None]:
+    """Measure the live runtime in a fresh interpreter, without compiling.
+
+    T05's full probe performs compile/link/run ABI controls, so doctor must
+    not invoke that CLI or discover_numpy_provider(). It uses the already
+    compiled identity and runtime provider introspection instead.
+    """
     script = root / DEPENDENCY_PROBE
     if not script.is_file():
         return _check(
             "dependency_probe", "fail",
-            f"unavailable: {DEPENDENCY_PROBE.as_posix()} is not implemented "
-            "yet (T05 scope)",
-            "defer native-build doctor checks until T05 lands",
+            f"unavailable: {DEPENDENCY_PROBE.as_posix()} source is missing",
+            "restore the complete source tree before native doctor checks",
+        ), None
+    try:
+        environment = _doctor_probe_environment(root, build)
+    except (OSError, ValueError) as error:
+        return _check(
+            "dependency_probe", "fail", f"native runtime preflight failed: {error}",
+            "restore the selected build's recorded sanitizer runtime and context",
         ), None
     probe = _capture(
-        [sys.executable, str(script), "--python", sys.executable],
-        cwd=root, timeout=180,
+        [sys.executable, "-c", _DOCTOR_DEPENDENCY_CODE, str(root),
+         str(build) if build is not None else ""],
+        cwd=root, timeout=180, env=environment,
     )
     if probe.get("returncode") != 0:
-        detail = _first_line(probe.get("stderr") or "") \
+        detail = (probe.get("stderr") or "").strip() \
             or probe.get("error") or f"exit {probe.get('returncode')}"
         return _check(
             "dependency_probe", "fail", f"probe failed: {detail}",
-            "run tools/native_dependencies.py --python <interpreter> "
-            "directly for the full diagnostic",
+            "restore the pinned environment, then explicitly configure/build "
+            "in that source environment; doctor never starts compilation",
         ), None
     try:
         document = json.loads(probe["stdout"])
@@ -276,21 +535,57 @@ def _doctor_dependency_probe(root: Path) -> tuple[dict, dict | None]:
         return _check(
             "dependency_probe", "fail",
             f"probe did not emit schema JSON on stdout: {exc}",
-            "fix tools/native_dependencies.py to write schema-1 JSON",
+            "inspect the read-only runtime probe's full diagnostic",
         ), None
-    if document.get("schema_version") != SCHEMA_VERSION:
+    if not isinstance(document, dict) or document.get("schema_version") != SCHEMA_VERSION:
         return _check(
             "dependency_probe", "fail",
-            f"unsupported dependency schema "
-            f"{document.get('schema_version')!r}",
+            "unsupported runtime dependency probe schema",
             "expected schema_version=1",
         ), None
-    mujoco = document.get("mujoco", {})
-    return _check(
+    mujoco = document.get("mujoco")
+    python = document.get("python")
+    numerics = document.get("numerics")
+    if (not isinstance(mujoco, dict) or mujoco.get("version") != "3.12.0"
+            or not isinstance(mujoco.get("library_path"), str)
+            or mujoco.get("private_symbols") != ["_mjPRIVATE_setTlsLogHandler",
+                                                 "_mjPRIVATE_getGlobalLogHandler", "mj_makeRawData"]
+            or not isinstance(python, dict)
+            or not isinstance(python.get("executable"), str)
+            or not _same_interpreter(python["executable"], sys.executable)
+            or python.get("soabi") != sysconfig.get_config_var("SOABI")
+            or not isinstance(numerics, dict)
+            or numerics.get("backend") not in {"ACCELERATE", "NUMPY_OPENBLAS"}):
+        return _check(
+            "dependency_probe", "fail", "runtime probe returned incomplete or mismatched evidence",
+            "inspect the read-only runtime probe's full diagnostic",
+        ), None
+    check = _check(
         "dependency_probe", "pass",
-        f"mujoco {mujoco.get('version')} at {mujoco.get('library_path')}",
+        f"mujoco {mujoco.get('version')} at {mujoco.get('library_path')}; "
+        "private ABI symbols resolved in the selected interpreter",
         None,
-    ), document
+    )
+    check["details"] = document
+    return check, document
+
+
+def _doctor_build_context(root: Path, build: Path) -> dict:
+    try:
+        context = _read_build_context(build)
+        _validate_install_context(root, build, context)
+    except (OSError, ValueError) as error:
+        return _check(
+            "build_context", "fail", str(error),
+            "configure/build from the selected source environment; use a "
+            "fresh build directory after relocation or environment changes",
+        )
+    return _check(
+        "build_context", "pass",
+        f"source={context['source_directory']}, build={context['build_directory']}, "
+        f"python={context['python']['executable']}, soabi={context['python']['soabi']}; "
+        "recorded dependency files exist",
+    )
 
 
 def _doctor_selected_artifact(build: Path) -> dict:
@@ -319,14 +614,13 @@ def _doctor_selected_artifact(build: Path) -> dict:
 
 
 def _doctor_numerical_profile(probe_document: dict | None) -> dict:
-    """T06 numerics record from the dependency probe; named failure until
-    the probe exists and reports a qualified provider."""
+    """Live runtime provider evidence; configure owns compile/link controls."""
     if probe_document is None:
         return _check(
             "numerical_profile", "fail",
-            "unavailable: the numerical profile is produced by the "
-            "dependency probe (T05/T06 scope)",
-            "defer --numerics until the dependency probe lands",
+            "unavailable: the read-only runtime dependency probe did not "
+            "establish the numerical profile",
+            "resolve the dependency_probe failure and rerun doctor",
         )
     numerics = probe_document.get("numerics")
     if not isinstance(numerics, dict) or not numerics.get("backend"):
@@ -358,12 +652,24 @@ def doctor_report(
         _doctor_compilers(root),
     ]
     probe_document = None
-    if build is not None or numerics:
-        probe_check, probe_document = _doctor_dependency_probe(root)
-        checks.append(probe_check)
+    native_ready = checks[0]["status"] == "pass"
     if build is not None:
-        checks.append(_doctor_selected_artifact(Path(build)))
-    if numerics:
+        build = Path(build)
+        artifact_check = _doctor_selected_artifact(build)
+        context_check = _doctor_build_context(root, build)
+        checks.extend((artifact_check, context_check))
+        native_ready = native_ready and artifact_check["status"] == context_check["status"] == "pass"
+    if build is not None or numerics:
+        if native_ready:
+            probe_check, probe_document = _doctor_dependency_probe(root, build)
+        else:
+            probe_check = _check(
+                "dependency_probe", "fail",
+                "unavailable: selected interpreter/artifact/build context failed preflight; no import attempted",
+                "resolve the interpreter/selected_artifact/build_context failures and rerun doctor",
+            )
+        checks.append(probe_check)
+    if build is not None or numerics:
         checks.append(_doctor_numerical_profile(probe_document))
     status = "pass" if all(c["status"] == "pass" for c in checks) else "fail"
     return {
@@ -396,18 +702,24 @@ def _cmd_bootstrap(args, root: Path) -> int:
             return 2
         # uv's supported controls: no index, only the local wheelhouse.
         argv += ["--offline", "--no-index", "--find-links", str(wheelhouse)]
-    return _run(argv, cwd=root)
+    return _run(argv, cwd=root, env=project_environment(root))
 
 
 def _cmd_configure(args, root: Path) -> int:
     build = resolve_build_path(root, args.build)
-    configure = build_commands(root, build, args.config, args.compiler)[0]
-    return _run(configure, cwd=root)
+    python = _require_project_interpreter(root)
+    _check_build_cache(root, build, optional=True)
+    configure = build_commands(
+        root, build, args.config, args.compiler, python_executable=python,
+    )[0]
+    return _run(configure, cwd=root, env=project_environment(root))
 
 
 def _cmd_build(args, root: Path) -> int:
     build = resolve_build_path(root, args.build)
-    return _run(_compile_command(build), cwd=root)
+    _require_project_interpreter(root)
+    _check_build_cache(root, build)
+    return _run(_compile_command(build), cwd=root, env=project_environment(root))
 
 
 def _cmd_doctor(args, root: Path) -> int:
@@ -427,7 +739,13 @@ def _cmd_doctor(args, root: Path) -> int:
 
 def _cmd_test(args, root: Path) -> int:
     build = resolve_build_path(root, args.build)
-    env = dict(os.environ)
+    _require_project_interpreter(root)
+    # native/full preflight configures a missing build itself; existing
+    # caches must still belong to the selected source/interpreter. quick
+    # retains its Python-only meaning and needs no native cache.
+    if args.profile != "quick":
+        _check_build_cache(root, build, optional=True)
+    env = project_environment(root)
     env["BIKE_NATIVE_BUILD_PATH"] = str(build)
     env["NATIVE_TEST_BUILD_PATH"] = str(build)
     return _run(
@@ -530,7 +848,14 @@ def main(argv: list[str] | None = None, *, root: Path | None = None) -> int:
         "doctor": _cmd_doctor,
         "test": _cmd_test,
     }
-    return handlers[args.command](args, root)
+    try:
+        # Reject an ambiguous relative installer selection before a probe or
+        # mutating subprocess can choose a different environment.
+        project_environment(root)
+        return handlers[args.command](args, root)
+    except (OSError, ValueError) as error:
+        print(f"dev.py: {error}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

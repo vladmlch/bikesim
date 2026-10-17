@@ -79,8 +79,11 @@ def test_missing_artifact_names_directory_commands_and_code(tmp_path, monkeypatc
                  '--out', str(tmp_path/'out')]) == 2
     error = capsys.readouterr().err
     assert str(missing.resolve()) in error
-    assert 'cmake -S native -B native/build/release -DCMAKE_BUILD_TYPE=Release' in error
-    assert 'cmake --build native/build/release' in error
+    assert 'tools/dev.py doctor --build' in error
+    assert 'tools/dev.py configure --build' in error
+    assert '--config Release' in error
+    assert 'tools/dev.py build --build' in error
+    assert 'python=' in error and 'soabi=' in error
 
 
 def test_python_command_never_loads_the_extension(tmp_path, monkeypatch):
@@ -99,7 +102,7 @@ def test_python_command_never_loads_the_extension(tmp_path, monkeypatch):
 
 def test_cli_dispatches_every_live_and_headless_route(tmp_path, monkeypatch):
     import bike_sim.sim.backend as backend
-    import bike_sim.sim.playground as playground
+    import bike_sim.viewer_runtime as viewer_runtime
     import bike_sim.sim.ride.physical_driver as physical_driver
     import bike_sim.sim.ride.physical_frontend as physical_frontend
     import bike_sim.sim.ride.physical_session as physical_session
@@ -108,7 +111,7 @@ def test_cli_dispatches_every_live_and_headless_route(tmp_path, monkeypatch):
     from bike_sim.cli.ride import main
     monkeypatch.setattr(backend, 'require_backend',
                         lambda *args: SimpleNamespace(name='selected-extension'))
-    monkeypatch.setattr(playground, 'ensure_macos_mjpython', lambda: None)
+    monkeypatch.setattr(viewer_runtime, 'prepare_viewer', lambda **kwargs: None)
     calls = []
     driver = SimpleNamespace(backend='native')
     monkeypatch.setattr(physical_driver, 'build_physical_driver',

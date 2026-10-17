@@ -138,7 +138,11 @@ class ResearchEnvironment:
         if sim.steps != 0 or sim.time_s != 0.:
             raise ValueError('construct research environment from a freshly reset simulation')
         self.seed = self.config.seed
-        self._begin_episode()
+        try:
+            self._begin_episode()
+        except BaseException as error:
+            self.sim.physical._close_async_worker(primary=error)
+            raise
 
     def _begin_episode(self):
         self._generation += 1
@@ -518,7 +522,20 @@ class ResearchEnvironment:
             raise RuntimeError("finish the active interval before closing the environment")
         self._window = None
         self._closed = True
-        owner = getattr(self, "_replay_assets_owner", None)
-        if owner is not None:
-            owner.cleanup()
-            self._replay_assets_owner = None
+        primary = None
+        try:
+            self.sim.physical._close_async_worker()
+        except BaseException as error:
+            primary = error
+            raise
+        finally:
+            owner = getattr(self, "_replay_assets_owner", None)
+            if owner is not None:
+                try:
+                    owner.cleanup()
+                except BaseException as error:
+                    if primary is None:
+                        raise
+                    primary.add_note(f'replay assets cleanup failed: {type(error).__name__}: {error}')
+                else:
+                    self._replay_assets_owner = None

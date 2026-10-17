@@ -1,7 +1,7 @@
 """Application-side native artifact selection and verified import.
 
 ``BIKE_NATIVE_BUILD_PATH`` (absolute directory) selects the artifact when
-set; otherwise the checkout's ``native/build/release`` is the default. The
+set; otherwise the source checkout's ``native/build/release`` is the default. The
 import verifies the loaded module file is the selected artifact and rejects
 a pre-imported ``bike_native`` module that came from anywhere else
 (design section 7). Pinned runtime dependencies are checked before the
@@ -13,7 +13,10 @@ import importlib.machinery
 import importlib.metadata
 import os
 from pathlib import Path
+import platform
+import shlex
 import sys
+import sysconfig
 import tomllib
 from types import ModuleType
 
@@ -28,11 +31,49 @@ _DEFAULT_BUILD = _REPO_ROOT / 'native' / 'build' / 'release'
 _FALLBACK_DEPENDENCIES = {'mujoco': '3.12.0', 'numpy': '2.5.2'}
 
 
+def native_source_root() -> Path:
+    """Require the source tree belonging to this imported Python package.
+
+    A wheel's site-packages parents are not a source checkout. Never search
+    cwd or unrelated parent directories for another project's native build.
+    """
+    if ((_REPO_ROOT / 'pyproject.toml').is_file()
+            and (_REPO_ROOT / 'native' / 'CMakeLists.txt').is_file()):
+        return _REPO_ROOT
+    raise RuntimeError(
+        'native execution requires the real source tree and its editable uv '
+        'environment; this Python-only installation has no native source '
+        f'checkout at {_REPO_ROOT}. A py3-none-any wheel does not contain '
+        'bike_native. From the source tree run `uv sync --frozen --group '
+        'native`, then explicitly configure/build with tools/dev.py; see '
+        'docs/development/install-modes.md. Setting BIKE_NATIVE_BUILD_PATH '
+        'alone does not convert a Python-only wheel into a native installation.')
+
+
+def native_load_diagnostic(build: Path, expected: Path | None = None) -> str:
+    """Shared application/test loader context; constructing it runs no tools."""
+    prefix = ['uv', 'run', '--frozen', '--group', 'native', '--no-sync',
+              'python', 'tools/dev.py']
+    doctor = shlex.join([*prefix, 'doctor', '--build', str(build), '--numerics'])
+    configure = shlex.join([*prefix, 'configure', '--build', str(build),
+                           '--config', 'Release'])
+    compile_command = shlex.join([*prefix, 'build', '--build', str(build)])
+    return (
+        f'selected={build}, artifact={expected}, python={sys.executable}, '
+        f'soabi={sysconfig.get_config_var("SOABI")}, '
+        f'platform={platform.system()}/{platform.machine()}; '
+        f'from the source tree in the same editable uv environment run '
+        f'`{doctor}`; explicitly configure/build with `{configure}`, then '
+        f'`{compile_command}`. Rebuild relocated source in a fresh build '
+        'directory; a copied build cache or virtualenv is not portable')
+
+
 def selected_build_dir(environ: Mapping[str, str] | None = None) -> Path:
     """Absolute artifact directory from the application selector or default."""
     env = os.environ if environ is None else environ
     raw = env.get(SELECTOR_ENV)
     if raw is None:
+        native_source_root()
         return _DEFAULT_BUILD
     candidate = Path(raw)
     if not candidate.is_absolute():
@@ -109,21 +150,26 @@ def load_native_extension(build_dir: Path | None = None) -> ModuleType:
             raise ValueError(
                 f'build_dir must be an absolute path, got {build_dir!r}')
         build = build.resolve()
+    try:
+        native_source_root()
+    except RuntimeError as error:
+        raise RuntimeError(f'{error} {native_load_diagnostic(build)}') from error
     artifacts = extension_artifacts(build)
     if len(artifacts) != 1:
         if not artifacts:
             raise RuntimeError(
                 f'no {EXTENSION_MODULE} extension in the selected build '
-                f'directory {build}; build the Release artifact with: '
-                'uv run --frozen --group native cmake -S native -B '
-                'native/build/release -DCMAKE_BUILD_TYPE=Release && '
-                'uv run --frozen --group native cmake --build '
-                'native/build/release -j4')
+                f'directory {build}; {native_load_diagnostic(build)}')
         raise RuntimeError(
             f'expected exactly one {EXTENSION_MODULE} extension in {build}, '
-            f'found {len(artifacts)}')
+            f'found {len(artifacts)}: {artifacts}; '
+            f'{native_load_diagnostic(build)}')
     expected = artifacts[0].resolve()
-    check_dependencies()
+    try:
+        check_dependencies()
+    except ValueError as error:
+        raise ValueError(
+            f'{error}; {native_load_diagnostic(build, expected)}') from error
 
     imported = sys.modules.get(EXTENSION_MODULE)
     if imported is not None:
@@ -132,7 +178,9 @@ def load_native_extension(build_dir: Path | None = None) -> ModuleType:
             raise RuntimeError(
                 f'pre-imported {EXTENSION_MODULE} module does not match '
                 f'selected build: selected={build}, expected={expected}, '
-                f'imported={actual}')
+                f'imported={actual}; start a fresh Python process; '
+                f'{native_load_diagnostic(build, expected)}')
+        _verify_compiled_source(imported, build, expected)
         return imported
 
     sys.path[:] = [
@@ -141,13 +189,47 @@ def load_native_extension(build_dir: Path | None = None) -> ModuleType:
         if not entry or Path(entry).resolve() != build
     ]
     sys.path.insert(0, str(build))
-    module = importlib.import_module(EXTENSION_MODULE)
+    try:
+        module = importlib.import_module(EXTENSION_MODULE)
+    except (ImportError, OSError) as error:
+        raise RuntimeError(
+            f'native load failed: {native_load_diagnostic(build, expected)}; '
+            f'loader error: {error}') from error
     actual = _module_path(module)
     if actual != expected:
         raise RuntimeError(
             f'native artifact mismatch: selected={build}, '
-            f'expected={expected}, imported={actual}')
+            f'expected={expected}, imported={actual}; '
+            f'{native_load_diagnostic(build, expected)}')
+    _verify_compiled_source(module, build, expected)
     return module
+
+
+def _verify_compiled_source(module: ModuleType, build: Path, expected: Path) -> None:
+    """Bind an explicit import to compiled source evidence, including cache hits."""
+    identity_function = getattr(module, 'runtime_identity', None)
+    if not callable(identity_function):
+        raise ValueError(
+            'selected extension has no compiled runtime identity; '
+            f'{native_load_diagnostic(build, expected)}')
+    try:
+        identity = identity_function()
+    except (ImportError, OSError, RuntimeError) as error:
+        raise RuntimeError(
+            f'cannot verify compiled native identity: {error}; '
+            f'{native_load_diagnostic(build, expected)}') from error
+    compiled = identity.get('native_source_sha256') if isinstance(identity, Mapping) else None
+    try:
+        current = native_source_fingerprint()
+    except OSError as error:
+        raise ValueError(
+            f'cannot verify native source identity: {error}; '
+            f'{native_load_diagnostic(build, expected)}') from error
+    if compiled != current:
+        raise ValueError(
+            'selected extension was not built from the current native source: '
+            f'compiled={compiled}, current={current}; '
+            f'{native_load_diagnostic(build, expected)}')
 
 
 EXECUTION_FIELDS = frozenset({

@@ -6,9 +6,7 @@ engine with comprehensive RockShox damper and air spring controls, kinematic swe
 and real-time telemetry.
 """
 
-import os
 import queue
-import sys
 import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple
@@ -312,34 +310,9 @@ class SuspensionPlayground:
 
 
 def ensure_macos_mjpython() -> None:
-    """
-    On macOS, MuJoCo's GLFW interactive viewer requires running under `mjpython`
-    on the main OS thread to handle the Cocoa NSApplication event loop.
-    """
-    if sys.platform != "darwin":
-        return
-    if getattr(sys, "_mjpython_checked", False):
-        return
-    sys._mjpython_checked = True
-
-    is_mjpython = "mjpython" in sys.executable or os.environ.get("MUJOCO_MJPYTHON") == "1"
-    if not is_mjpython:
-        import shutil
-        mjpython_path = shutil.which("mjpython")
-        if mjpython_path:
-            # mjpython dlopens the interpreter by @rpath; venvs (uv, pyenv) keep
-            # libpython in base_prefix/lib which is not on the default fallback
-            # path, so the re-exec dies with 'Library not loaded' otherwise.
-            lib_dir = os.path.join(sys.base_prefix, "lib")
-            version = f"{sys.version_info.major}.{sys.version_info.minor}"
-            if os.path.exists(os.path.join(lib_dir, f"libpython{version}.dylib")):
-                fallback = os.environ.get("DYLD_FALLBACK_LIBRARY_PATH")
-                os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = (
-                    lib_dir if not fallback else f"{lib_dir}:{fallback}")
-            cmd = [mjpython_path] + sys.argv
-            print(f"[MuJoCo Stand] Re-launching under mjpython: {' '.join(cmd)}", flush=True)
-            os.environ["MUJOCO_MJPYTHON"] = "1"
-            os.execv(mjpython_path, cmd)
+    """Compatibility entry point for preparation before creating a session."""
+    from bike_sim.viewer_runtime import ensure_macos_mjpython as prepare_macos
+    prepare_macos()
 
 
 def run_interactive_playground(
@@ -349,9 +322,9 @@ def run_interactive_playground(
     """
     Launches the live interactive MuJoCo suspension test stand viewer.
     """
-    import mujoco.viewer
-
-    ensure_macos_mjpython()
+    from bike_sim.viewer_runtime import load_viewer, passive_viewer, prepare_viewer
+    prepare_viewer()
+    viewer_api = load_viewer()
 
     pg = SuspensionPlayground(
         specs=specs,
@@ -363,7 +336,7 @@ def run_interactive_playground(
     print("=" * 80)
     pg.print_help()
 
-    with mujoco.viewer.launch_passive(
+    with passive_viewer(viewer_api,
         pg.model,
         pg.data,
         key_callback=pg.handle_key,

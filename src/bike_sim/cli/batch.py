@@ -171,14 +171,15 @@ def _run_job(task):
 
 
 def _performance_cores():
-    """P-core count on Apple Silicon; fall back to all logical CPUs elsewhere."""
-    try:
-        out = subprocess.run(['sysctl', '-n', 'hw.perflevel0.physicalcpu'],
-                             capture_output=True, text=True, timeout=5)
-        if out.returncode == 0:
-            return max(1, int(out.stdout.strip()))
-    except (OSError, ValueError, subprocess.TimeoutExpired):
-        pass
+    """Apple performance cores, otherwise CPUs available to this process."""
+    if sys.platform == 'darwin':
+        try:
+            out = subprocess.run(['sysctl', '-n', 'hw.perflevel0.physicalcpu'],
+                                 capture_output=True, text=True, timeout=5)
+            if out.returncode == 0:
+                return max(1, int(out.stdout.strip()))
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            pass
     return os.process_cpu_count() or os.cpu_count() or 1
 
 
@@ -187,8 +188,8 @@ def parser():
     p.add_argument('--spec', type=Path, required=True, help='TOML spec: [base] + [grid] and/or [[job]]')
     p.add_argument('--out', type=Path, required=True, help='batch directory; one job-NNNN subdir per job')
     p.add_argument('--jobs', '-j', type=int, default=None,
-                   help='worker processes (default: performance-core count via '
-                        'sysctl hw.perflevel0.physicalcpu)')
+                   help='worker processes (default: Apple performance cores on macOS, '
+                        'process-available CPUs elsewhere)')
     p.add_argument('--serial', action='store_true', help='run jobs in-process, one after another (debugging)')
     p.add_argument('--dry-run', action='store_true', help='print the expanded job list and exit')
     p.add_argument('--overwrite', action='store_true')
@@ -207,7 +208,10 @@ def _emit(record, done, total, fh):
 
 
 def main(argv=None):
-    args = parser().parse_args(argv)
+    argument_parser = parser()
+    args = argument_parser.parse_args(argv)
+    if args.jobs is not None and args.jobs < 1:
+        argument_parser.error('--jobs must be a positive integer')
     spec = tomllib.loads(args.spec.read_text())
     jobs = expand_spec(spec)
     from bike_sim.cli import research
@@ -218,6 +222,14 @@ def main(argv=None):
             print(f'{job.name}: bike-research {" ".join(job.argv)}')
         print(f'{len(jobs)} job(s)')
         return 0
+
+    workers = 1 if args.serial else (args.jobs if args.jobs is not None else _performance_cores())
+    thread_policy = {name: os.environ.get(name, 'library default') for name in (
+        'OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS',
+        'VECLIB_MAXIMUM_THREADS', 'NUMEXPR_NUM_THREADS')}
+    print(f'[bike-batch] workers={workers}; '
+          f'start_method={"in-process" if args.serial or args.jobs == 1 else "spawn"}; '
+          f'thread_policy={json.dumps(thread_policy, sort_keys=True)}')
 
     if args.out.exists() and any(args.out.iterdir()) and not args.overwrite:
         print(f'ERROR: output exists; choose another --out or pass --overwrite: {args.out}',
@@ -248,7 +260,7 @@ def main(argv=None):
             for task in tasks:
                 consume(_run_job(task))
         else:
-            pool = ProcessPoolExecutor(max_workers=args.jobs or _performance_cores(),
+            pool = ProcessPoolExecutor(max_workers=workers,
                                        mp_context=mp.get_context('spawn'))
             live = {}
             try:
@@ -287,7 +299,8 @@ def main(argv=None):
         exits[r['exit']] = exits.get(r['exit'], 0) + 1
     wall_sum = sum(r['wall_s'] for r in records)
     sim_sum = sum(float(by_index[r['index']].params.get('duration', 3.)) for r in records)
-    summary = {'jobs': len(records), 'exit_codes': exits,
+    summary = {'jobs': len(records), 'workers': workers, 'thread_policy': thread_policy,
+               'exit_codes': exits,
                'elapsed_s': round(elapsed, 2), 'worker_wall_s': round(wall_sum, 2),
                'requested_sim_seconds': round(float(sim_sum), 3),
                'throughput_x': round(wall_sum / elapsed, 2) if elapsed else None,

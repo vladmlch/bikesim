@@ -1,0 +1,46 @@
+{
+  "purpose": "Human-readable producer examples; not complete manifests or release qualification",
+  "manifest_file": "bundle-manifest.json",
+  "targets": [
+    {
+      "argument": "ubuntu-24.04-x86_64-cp313",
+      "target": {"system": "linux", "machine": "x86_64", "python": "3.13", "distribution": "ubuntu", "release": "24.04"},
+      "profiles": ["full", "slim"],
+      "qualification": "not_run",
+      "runtime_prerequisites": ["Ubuntu 24.04 x86_64", "CPython 3.13", "compatible OS shared libraries", "C++23 compiler and CMake for native source builds"],
+      "limits": ["No glibc, CPU or shared-library probe has run", "The existing installer only recognizes the slim legacy contract"]
+    },
+    {
+      "argument": "macos-arm64-cp313",
+      "target": {"system": "darwin", "machine": "arm64", "python": "3.13", "distribution": "macos", "release": "unspecified"},
+      "profiles": ["full", "slim"],
+      "qualification": "not_run",
+      "runtime_prerequisites": ["macOS arm64", "CPython 3.13", "Xcode command-line tools/SDK and C++23 compiler for native source builds"],
+      "limits": ["Minimum macOS deployment version has not been qualified", "The existing installer rejects this target; T25 is required"]
+    },
+    {
+      "argument": "macos-x86_64-cp313",
+      "target": {"system": "darwin", "machine": "x86_64", "python": "3.13", "distribution": "macos", "release": "unspecified"},
+      "profiles": ["full", "slim"],
+      "qualification": "not_run",
+      "runtime_prerequisites": ["macOS x86_64", "CPython 3.13", "compatible SDK and C++23 compiler for native source builds"],
+      "limits": ["macOS Intel remains unqualified", "The existing installer rejects this target; T25 is required"]
+    },
+    {
+      "argument": "macos-arm64-cp314",
+      "target": {"system": "darwin", "machine": "arm64", "python": "3.14", "distribution": "macos", "release": "unspecified"},
+      "profiles": ["full", "slim"],
+      "qualification": "not_run",
+      "runtime_prerequisites": ["macOS arm64", "CPython 3.14", "Xcode command-line tools/SDK and C++23 compiler for native source builds"],
+      "limits": ["Minimum macOS deployment version has not been qualified", "The existing installer rejects this target; T25 is required"]
+    },
+    {
+      "argument": "macos-x86_64-cp314",
+      "target": {"system": "darwin", "machine": "x86_64", "python": "3.14", "distribution": "macos", "release": "unspecified"},
+      "profiles": ["full", "slim"],
+      "qualification": "not_run",
+      "runtime_prerequisites": ["macOS x86_64", "CPython 3.14", "compatible SDK and C++23 compiler for native source builds"],
+      "limits": ["macOS Intel remains unqualified", "The existing installer rejects this target; T25 is required"]
+    }
+  ]
+}

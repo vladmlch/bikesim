@@ -78,7 +78,7 @@ def _fake_viewer_run(monkeypatch, tmp_path, *, fail=False, cleanup_fail=False):
     import itertools
     from contextlib import nullcontext
     import mujoco.viewer
-    from bike_sim.sim import playground
+    import bike_sim.viewer_runtime as viewer_runtime
     from bike_sim.sim.ride import physical_session
     from bike_sim.viz import ride_plots
     state=SimpleNamespace(open=False,pending=0,flushes=0,events=[])
@@ -134,7 +134,7 @@ def _fake_viewer_run(monkeypatch, tmp_path, *, fail=False, cleanup_fail=False):
     session.step=step
     monkeypatch.setattr(viewer,'RideSession',lambda sim:session)
     monkeypatch.setattr(viewer,'RealTimePacer',lambda dt:SimpleNamespace(steps_for=lambda delta:1,reset=lambda:None))
-    monkeypatch.setattr(playground,'ensure_macos_mjpython',lambda:None)
+    monkeypatch.setattr(viewer_runtime,'load_viewer',lambda:mujoco.viewer)
     monkeypatch.setattr(physical_session,'configuration_metadata',lambda sim:{})
     monkeypatch.setattr(physical_session,'physical_run_dir_name',lambda *a:'fake')
     monkeypatch.setattr(physical_session,'PhysicalLiveCsv',Log)

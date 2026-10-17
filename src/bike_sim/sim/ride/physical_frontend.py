@@ -296,6 +296,7 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
     summary = None
     journal = None
     preview = None
+    primary = None
 
     def seal_episode(reason):
         nonlocal summary
@@ -329,7 +330,8 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
                 'run recording requires the native backend; the ordinary '
                 'physical Python backend has no recording adapter')
         recording = capture.enabled
-        import mujoco.viewer
+        from bike_sim.viewer_runtime import load_viewer, passive_viewer
+        viewer_api = load_viewer()
         from bike_sim.sim.ride.console import info, outcome, print_help
         clock = PlaybackClock(driver.dt_s, scale=time_scale)
         presenter = FramePresenter(driver.make_render_model())
@@ -346,7 +348,7 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
         else:
             info(f'[bike-ride] backend={driver.backend}; recording off (no files)')
         try:
-            with mujoco.viewer.launch_passive(presenter.replica.model, presenter.replica.data,
+            with passive_viewer(viewer_api, presenter.replica.model, presenter.replica.data,
                     key_callback=lambda key: keys.put((key, time.monotonic())),
                     show_left_ui=False, show_right_ui=False) as viewer:
                 now = last_sync = last_hud = time.monotonic()
@@ -514,6 +516,7 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
                      "use `uv run --with plotly`)")
         return physical_exit_code(summary['outcome']['reason'], summary)
     except BaseException as error:
+        primary = error
         # Ctrl-C is an operator action, not a simulation failure — it
         # seals under the same reason the headless path uses, and it is
         # not recorded as a driver failure.
@@ -542,4 +545,9 @@ def run_viewer(driver, *, out_root='output/ride', time_scale=1, record=False,
             error.add_note('operator interrupt deferred during recording cleanup')
         raise
     finally:
-        driver.close()
+        try:
+            driver.close()
+        except BaseException as cleanup:
+            if primary is None:
+                raise
+            primary.add_note(f'physical viewer close failed: {type(cleanup).__name__}: {cleanup}')

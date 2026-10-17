@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Add Linux support; retain macOS support and existing macOS behavior.
-- Keep Python >=3.13, CMake >=3.27, and strict ISO C++23 without compiler language extensions.
+- Keep Python >=3.13, CMake >=3.24, and strict ISO C++23 without compiler language extensions.
 - Keep MuJoCo exactly 3.12.0 for native execution until its private error ABI is deliberately migrated in a separate change.
 - Preserve the macOS Accelerate backend, SDK override/fallback behavior, mjpython launcher, and current application commands.
 - Preserve same-environment native/Python bitwise tests, exception safety, source/artifact identity, and fail-closed verification.

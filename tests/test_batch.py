@@ -1,6 +1,9 @@
-"""bike-batch spec expansion and serial plumbing; pool execution is exercised by hand."""
+"""bike-batch spec expansion, CPU policy and actual serial/pool equivalence."""
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -94,3 +97,75 @@ seed = [0, 1]
     assert all(r['exit'] in (0, 2, 3) for r in records)  # plumbing, not physics
     assert all((out / r['name']).is_dir() for r in records)
     assert code == (0 if all(r['exit'] == 0 for r in records) else 1)
+
+
+@pytest.mark.parametrize('jobs', ['0', '-2'])
+def test_nonpositive_worker_count_is_rejected_before_output(tmp_path, jobs):
+    out = tmp_path / 'out'
+    with pytest.raises(SystemExit) as error:
+        batch.main(['--spec', str(tmp_path / 'absent.toml'), '--out', str(out), '--jobs', jobs])
+    assert error.value.code == 2
+    assert not out.exists()
+
+
+def test_explicit_serial_job_count_avoids_discovery_and_reports_threads(tmp_path, monkeypatch, capsys):
+    spec = tmp_path / 'spec.toml'
+    spec.write_text('[base]\nseed = 9\n')
+
+    def forbidden():
+        raise AssertionError('explicit --jobs performed CPU discovery')
+
+    def job(task):
+        index, name, argv, out = task
+        return dict(index=index, name=name, exit=0, wall_s=0., out=out)
+
+    monkeypatch.setattr(batch, '_performance_cores', forbidden)
+    monkeypatch.setattr(batch, '_run_job', job)
+    monkeypatch.setenv('OPENBLAS_NUM_THREADS', '2')
+    out = tmp_path / 'batch'
+    assert batch.main(['--spec', str(spec), '--out', str(out), '--jobs', '1']) == 0
+    text = capsys.readouterr().out
+    assert 'workers=1' in text and 'start_method=in-process' in text
+    report = batch._tail_json(text.strip())
+    assert report['workers'] == 1
+    assert report['thread_policy']['OPENBLAS_NUM_THREADS'] == '2'
+    assert os.environ['OPENBLAS_NUM_THREADS'] == '2'
+
+
+@pytest.mark.slow
+def test_actual_two_worker_batch_matches_serial_jobs(tmp_path):
+    spec = tmp_path / 'spec.toml'
+    spec.write_text(f'''[base]
+physics-config = "{WELDED}"
+track-file = "{_track(tmp_path)}"
+duration = 0.01
+check-policy = "diagnostic"
+motor-torque = 0
+human-torque = 0
+
+[grid]
+seed = [0, 1]
+''')
+    environment = dict(os.environ)
+    for name in ('DISPLAY', 'WAYLAND_DISPLAY', 'MUJOCO_GL'):
+        environment.pop(name, None)
+    records = []
+    for mode in (['--serial'], ['--jobs', '2']):
+        out = tmp_path / ('serial' if mode[0] == '--serial' else 'pool')
+        result = subprocess.run(
+            [sys.executable, '-m', 'bike_sim.cli.batch', '--spec', str(spec),
+             '--out', str(out), *mode], cwd=ROOT, env=environment,
+            capture_output=True, text=True, timeout=180, check=False,
+        )
+        diagnostic = result.stdout + result.stderr
+        assert result.returncode in (0, 1), diagnostic
+        assert 'resource_tracker:' not in result.stderr
+        rows = [json.loads(line) for line in (out / 'batch_results.jsonl').read_text().splitlines()]
+        assert len(rows) == 2, diagnostic
+        assert all(row['exit'] in (0, 2) and row.get('outcome') == 'duration_reached'
+                   and 'error' not in row for row in rows), diagnostic
+        records.append({row['index']: {key: row[key] for key in (
+            'name', 'exit', 'outcome', 'metrics', 'params', 'argv')} for row in rows})
+        assert {Path(row['out']).parent for row in rows} == {out}
+        assert len({row['out'] for row in rows}) == 2
+    assert records[0] == records[1]

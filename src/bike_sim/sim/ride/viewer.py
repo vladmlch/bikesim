@@ -137,11 +137,9 @@ def run_interactive_ride(
     Raises:
         RuntimeError: If the starting equilibrium does not converge.
     """
-    import mujoco.viewer
-
-    from bike_sim.sim.playground import ensure_macos_mjpython
-
-    ensure_macos_mjpython()
+    from bike_sim.viewer_runtime import load_viewer, passive_viewer, prepare_viewer
+    prepare_viewer()
+    viewer_api = load_viewer()
 
     sim = RideSimulation(
         track=track,
@@ -168,7 +166,7 @@ def run_interactive_ride(
     pacer = RealTimePacer(float(sim.model.opt.timestep))
     site_bb = mujoco.mj_name2id(sim.model, mujoco.mjtObj.mjOBJ_SITE, "site_BB")
 
-    with mujoco.viewer.launch_passive(
+    with passive_viewer(viewer_api,
         sim.model,
         sim.data,
         key_callback=session.handle_key,
@@ -236,16 +234,15 @@ def run_physical_viewer(sim, out_root="output/ride", *, time_scale=1,
         from bike_sim.sim.ride.physical_driver import PhysicalRideDriver
         from bike_sim.sim.ride.physical_frontend import run_viewer
         return run_viewer(PhysicalRideDriver(sim), out_root=out_root, time_scale=time_scale)
-    if async_telemetry:
-        sim.physical.set_async_close(True)
-    import mujoco.viewer
-    from bike_sim.sim.playground import ensure_macos_mjpython
+    from bike_sim.viewer_runtime import load_viewer, passive_viewer
     from bike_sim.sim.ride.physical_session import (
         PhysicalLiveCsv,
         configuration_metadata,
         physical_run_dir_name,
     )
-    ensure_macos_mjpython()
+    # The caller already owns this simulation. Validation must never re-exec
+    # and abandon it; the caller retains ownership if preparation fails.
+    viewer_api = load_viewer()
     sim.physical.set_strict(False)
     if async_telemetry:
         sim.physical.set_async_close(True)
@@ -260,7 +257,7 @@ def run_physical_viewer(sim, out_root="output/ride", *, time_scale=1,
     info(f"[bike-ride] physical live csv: {csv_path}")
     try:
         with PhysicalLiveCsv(csv_path) as preview_log:
-            with mujoco.viewer.launch_passive(sim.model,sim.data,key_callback=session.handle_key,
+            with passive_viewer(viewer_api,sim.model,sim.data,key_callback=session.handle_key,
                                               show_left_ui=False,show_right_ui=False) as viewer:
                 session.viewer=viewer
                 session.camera.reset_preset()

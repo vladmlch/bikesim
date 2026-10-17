@@ -94,7 +94,7 @@ def parser():
     p.add_argument('--front-teeth', type=int, default=34, action=ExplicitPhysicsValue)
     p.add_argument('--rear-teeth', type=int, default=51, action=ExplicitPhysicsValue)
     p.add_argument('--fast-telemetry', action='store_true',
-                   help='evaluate period telemetry in a spawned worker process; samples and '
+                   help='evaluate period telemetry in a separate worker process; samples and '
                         'model_status surface one step later, and channels snapshotted from '
                         'rider effort diagnostics in that window can differ from a synchronous '
                         'run -- episodes are not guaranteed bitwise-identical to --serial runs')

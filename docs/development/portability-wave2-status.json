@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "scope": "portability-wave-2",
+  "status": "implemented_not_execution_verified",
+  "input": {
+    "archive": "repomix-output.xml(10).zip",
+    "format": "repomix-xml",
+    "extracted_file_count": 1602,
+    "git_commit": null,
+    "original_portability_briefs_present": false,
+    "original_portability_task_index_present": false,
+    "unrelated_cpp_migration_task_ledgers_changed": false
+  },
+  "execution": {
+    "user_authorized_project_execution": false,
+    "project_imports": "not_run",
+    "syntax_compilation": "not_run",
+    "tests": "not_run",
+    "native_build": "not_run",
+    "application": "not_run",
+    "bundle_producer": "not_run",
+    "offline_install": "not_run",
+    "dependency_installation": "not_run"
+  },
+  "tasks": {
+    "T19": {
+      "meaning": "mjpython and Linux interactive viewers",
+      "implementation": "complete_for_reconstructed_scope",
+      "static_review": "approved",
+      "execution_verification": "not_run",
+      "prerequisite": "T18",
+      "prerequisite_evidence": "not_in_supplied_snapshot",
+      "passive_launch_sites_routed": 7,
+      "files": [
+        "src/bike_sim/viewer_runtime.py",
+        "src/bike_sim/cli/main.py",
+        "src/bike_sim/cli/playground.py",
+        "src/bike_sim/cli/replay.py",
+        "src/bike_sim/cli/ride.py",
+        "src/bike_sim/sim/playground.py",
+        "src/bike_sim/sim/ride/viewer.py",
+        "src/bike_sim/sim/ride/playback_viewer.py",
+        "src/bike_sim/sim/ride/physical_frontend.py",
+        "src/bike_sim/sim/research/viewer.py",
+        "src/bike_sim/sim/research/replay_viewer.py",
+        "tests/test_viewer_runtime.py",
+        "tests/reference/test_viewer_cli_portability.py",
+        "tests/reference/test_frontend_windows.py",
+        "tests/reference/test_runtime_single_path.py",
+        "tests/reference/test_ride_backend_cli.py"
+      ],
+      "limits": [
+        "Real macOS and Linux desktop acceptance has not run",
+        "Async window/context/render failures after successful GLFW initialization remain unqualified",
+        "Complete headless import isolation belongs to T18",
+        "Preview CSV publication and recording finalization remain T21"
+      ]
+    },
+    "T24": {
+      "meaning": "offline bundle manifests and source integrity",
+      "implementation": "complete_for_reconstructed_scope",
+      "static_review": "approved",
+      "execution_verification": "not_run",
+      "prerequisite": "T23",
+      "prerequisite_evidence": "not_in_supplied_snapshot",
+      "manifest_filename": "bundle-manifest.json",
+      "manifest_schema_version": 1,
+      "profiles": ["full", "slim"],
+      "target_arguments": [
+        "ubuntu-24.04-x86_64-cp313",
+        "macos-arm64-cp313",
+        "macos-x86_64-cp313",
+        "macos-arm64-cp314",
+        "macos-x86_64-cp314"
+      ],
+      "files": [
+        "tools/offline_bundle.py",
+        "tools/make_offline_bundle.sh",
+        "tools/check_offline_sources.py",
+        "tools/install_offline.py",
+        "packaging/offline-bundle.schema.json",
+        "packaging/offline-targets.json",
+        "packaging/README.md",
+        "tests/test_offline_bundle.py"
+      ],
+      "limits": [
+        "New producer/packaging files are newly implemented, not recovered untracked originals",
+        "Dependency closure and Requires-Dist semantic comparison are not_verified",
+        "General or patch-specific Requires-Python specifiers require later target resolution",
+        "Filename tag checks do not qualify binary deployment compatibility",
+        "Existing installer remains slim Ubuntu x86_64 CPython 3.13 only",
+        "Source-first and cross-platform full/slim installation remain T25",
+        "No real offline release bundle was generated"
+      ]
+    }
+  },
+  "documentation_files": [
+    "docs/RIDE.md",
+    "docs/development/viewer-portability.md",
+    "docs/development/portability-wave2-handoff.md",
+    "docs/development/portability-wave2-status.json",
+    "docs/superpowers/plans/2026-10-17-portability-wave2.md"
+  ],
+  "delivery_file_checks": {
+    "kind": "file_operations_only_not_project_execution",
+    "changed_files": 29,
+    "modified_existing_files": 16,
+    "added_files": 13,
+    "delivered_source_files": 1615,
+    "changed_existing_baseline_historical_hash_matches": 16,
+    "patch_applies_to_reconstructed_baseline": true,
+    "patch_result_matches_delivered_bytes": true,
+    "archive_inventories_match_expected_paths": true
+  },
+  "acceptance": {
+    "macos_desktop_gui": "not_run",
+    "linux_desktop_gui": "not_run",
+    "ubuntu_24_04_x86_64": "not_run",
+    "offline_full_installation": "not_run",
+    "offline_slim_installation": "not_run",
+    "binary_compatibility": "not_run",
+    "performance": "not_run",
+    "release_gate": "not_evaluated"
+  }
+}

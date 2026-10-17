@@ -140,10 +140,6 @@ class Driver:
 
 def patch_window(monkeypatch, module, clock, keys):
     import mujoco.viewer
-    import bike_sim.viewer_runtime as viewer_runtime
-    # This fixture replaces the desktop at the application boundary. Platform
-    # preparation and GLFW init have independent tests with fake modules.
-    monkeypatch.setattr(viewer_runtime, 'load_viewer', lambda: mujoco.viewer)
     holder = []
     def presenter(model):
         result = Presenter(model, clock)
@@ -280,8 +276,6 @@ def test_replay_window_close_is_incomplete_not_success(monkeypatch):
 
 def test_viewer_import_failure_still_closes_physical_and_replay_owners(tmp_path, monkeypatch):
     import builtins
-    import bike_sim.viewer_runtime as viewer_runtime
-    monkeypatch.setattr(viewer_runtime, 'prepare_viewer', lambda **kwargs: None)
     original_import = builtins.__import__
     def fail_viewer(name, *args, **kwargs):
         if name == 'mujoco.viewer':
@@ -289,37 +283,9 @@ def test_viewer_import_failure_still_closes_physical_and_replay_owners(tmp_path,
         return original_import(name, *args, **kwargs)
     monkeypatch.setattr(builtins, '__import__', fail_viewer)
     driver, replay = Driver(Clock()), Replay()
-    with pytest.raises(viewer_runtime.ViewerUnavailableError, match='viewer unavailable'):
+    with pytest.raises(ImportError, match='viewer unavailable'):
         run_viewer(driver, out_root=tmp_path)
     assert driver.closed and driver.events == [('flush', 1), ('summary', 1)]
-    with pytest.raises(viewer_runtime.ViewerUnavailableError, match='viewer unavailable'):
+    with pytest.raises(ImportError, match='viewer unavailable'):
         run_replay_viewer(replay)
     assert replay.closed and replay.report_calls == 0
-
-
-@pytest.mark.parametrize('failure_type', [RuntimeError, KeyboardInterrupt])
-@pytest.mark.parametrize('kind', ['physical', 'replay'])
-def test_preparation_failure_and_close_failure_preserve_original_owner_error(
-        tmp_path, monkeypatch, failure_type, kind):
-    import bike_sim.viewer_runtime as viewer_runtime
-    primary = failure_type('viewer preparation failed')
-    def fail_prepare(**kwargs):
-        assert kwargs['allow_reexec'] is False
-        raise primary
-    monkeypatch.setattr(viewer_runtime, 'prepare_viewer', fail_prepare)
-    owner = Driver(Clock()) if kind == 'physical' else Replay()
-    def fail_close():
-        owner.closed = True
-        raise OSError('owner close failed')
-    owner.close = fail_close
-    with pytest.raises(failure_type) as failure:
-        if kind == 'physical':
-            run_viewer(owner, out_root=tmp_path)
-        else:
-            run_replay_viewer(owner)
-    assert failure.value is primary and owner.closed
-    assert any('owner close failed' in note for note in primary.__notes__)
-    if kind == 'physical':
-        assert owner.events == [('flush', 1), ('summary', 1)]
-    else:
-        assert owner.report_calls == 0

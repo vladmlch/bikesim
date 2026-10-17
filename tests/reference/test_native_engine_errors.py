@@ -41,6 +41,11 @@ def invalid_solver_model(tmp_path: Path) -> Path:
 
 def run_child(script: str, *arguments: str) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
+    # The child must select the gate's artifact explicitly: without an
+    # application selector it falls back to the native/build/release default.
+    selected = environment.get('NATIVE_TEST_BUILD_PATH')
+    if selected is not None:
+        environment.setdefault('BIKE_NATIVE_BUILD_PATH', selected)
     environment['PYTHONPATH'] = os.pathsep.join(
         [str(REFERENCE_ROOT), environment.get('PYTHONPATH', '')]
     )

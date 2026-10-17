@@ -76,7 +76,14 @@ expected = build / ('bike_native' + artifact.importlib.machinery.EXTENSION_SUFFI
 module = types.ModuleType('bike_native')
 module.__file__ = str(expected)
 module.runtime_identity = lambda: {'native_source_sha256': artifact.native_source_fingerprint()}
-artifact.importlib.import_module = lambda name: module
+# Only the extension import is intercepted: the loader's diagnostic path still
+# needs real lazy imports (sysconfig's _sysconfigdata) to work.
+_real_import_module = artifact.importlib.import_module
+def _import_module(name, package=None):
+    if name == 'bike_native':
+        return module
+    return _real_import_module(name, package)
+artifact.importlib.import_module = _import_module
 """
 
 
@@ -162,7 +169,11 @@ def test_wrong_cached_module_is_not_unloaded_or_replaced(source_tree, tmp_path):
     result = _artifact_result(source_tree, tmp_path, """
 module.__file__ = str(build.parent / 'other build' / expected.name)
 sys.modules['bike_native'] = module
-artifact.importlib.import_module = forbidden
+def _no_import(name, package=None):
+    if name == 'bike_native':
+        forbidden()
+    return _real_import_module(name, package)
+artifact.importlib.import_module = _no_import
 """)
     assert result["type"] == "RuntimeError"
     assert "pre-imported" in result["message"]
@@ -183,7 +194,11 @@ def test_stale_compiled_source_stamp_is_rejected(source_tree, tmp_path, cached):
 def test_wrong_mujoco_fails_before_import(source_tree, tmp_path):
     result = _artifact_result(source_tree, tmp_path, """
 artifact.importlib.metadata.version = lambda name: '3.11.0' if name == 'mujoco' else '2.5.2'
-artifact.importlib.import_module = forbidden
+def _no_import(name, package=None):
+    if name == 'bike_native':
+        forbidden()
+    return _real_import_module(name, package)
+artifact.importlib.import_module = _no_import
 """)
     assert result["type"] == "ValueError"
     assert "mujoco" in result["message"]
@@ -194,8 +209,10 @@ artifact.importlib.import_module = forbidden
 @pytest.mark.parametrize("error_type", ["ImportError", "OSError"])
 def test_dynamic_loader_diagnostic_keeps_original_cause(source_tree, tmp_path, error_type):
     result = _artifact_result(source_tree, tmp_path, f"""
-def fail_import(name):
-    raise {error_type}('libprovider.so: undefined symbol: scipy_dgelsd_64_')
+def fail_import(name, package=None):
+    if name == 'bike_native':
+        raise {error_type}('libprovider.so: undefined symbol: scipy_dgelsd_64_')
+    return _real_import_module(name, package)
 artifact.importlib.import_module = fail_import
 """)
     assert result["type"] == "RuntimeError"
@@ -254,6 +271,9 @@ def wheel_layout(tmp_path):
 def test_wheel_python_reference_backend_does_not_request_native(wheel_layout, tmp_path):
     result = _child(wheel_layout, """
         import subprocess
+        # mujoco's package init probes Rosetta translation via sysctl on macOS;
+        # that is runtime setup, not a build — import it before the tripwire.
+        import mujoco
         def forbidden(*args, **kwargs):
             raise AssertionError('reference route launched a build')
         subprocess.run = forbidden
@@ -322,8 +342,11 @@ def test_reference_loader_adds_context_without_replacing_import_error(source_tre
         import native_loader
         os.environ['NATIVE_TEST_BUILD_PATH'] = sys.argv[1]
         native_loader.verify_sanitizer_runtime = lambda: None
-        def fail(name):
-            raise ImportError('missing native-linked library')
+        real_import = native_loader.importlib.import_module
+        def fail(name, package=None):
+            if name == 'bike_native':
+                raise ImportError('missing native-linked library')
+            return real_import(name, package)
         native_loader.importlib.import_module = fail
         try:
             native_loader.load_native()

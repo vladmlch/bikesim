@@ -112,8 +112,15 @@ def test_mjpython_worker_probe():
     import shutil
     launcher = shutil.which('mjpython')
     assert launcher is not None, 'the macOS native environment must provide mjpython'
-    result = subprocess.run([launcher, str(PROBE)], cwd=ROOT, capture_output=True,
-                            text=True, timeout=60, check=False)
+    environment = dict(os.environ)
+    lib_dir = os.path.join(sys.base_prefix, 'lib')
+    version = f'{sys.version_info.major}.{sys.version_info.minor}'
+    if os.path.exists(os.path.join(lib_dir, f'libpython{version}.dylib')):
+        fallback = environment.get('DYLD_FALLBACK_LIBRARY_PATH')
+        environment['DYLD_FALLBACK_LIBRARY_PATH'] = (
+            lib_dir if not fallback else f'{lib_dir}:{fallback}')
+    result = subprocess.run([launcher, str(PROBE)], cwd=ROOT, env=environment,
+                            capture_output=True, text=True, timeout=60, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
     assert 'resource_tracker:' not in result.stderr
     report = json.loads(result.stdout.strip().splitlines()[-1])
@@ -191,17 +198,17 @@ def test_real_cli_async_entry_points(tmp_path, application, entry):
                                 capture_output=True, text=True, timeout=120, check=False)
         diagnostic = result.stdout + result.stderr
         assert result.returncode in (0, 2), diagnostic
-        assert 'duration_reached' in result.stdout, diagnostic
         assert 'async close disabled' not in diagnostic
         assert 'async close worker lost' not in diagnostic
         assert 'resource_tracker:' not in result.stderr
         if application == 'research':
             report = batch._tail_json(result.stdout.strip())
             assert report is not None, diagnostic
-            assert report['outcome'] == 'duration_reached'
+            assert report['outcome'] == 'duration'
             assert report['recording'] == 'off' and report['output'] is None
         else:
-            assert '0.010s' in result.stdout and 'recording off' in result.stdout, diagnostic
+            assert 'duration: 0.010s' in result.stdout, diagnostic
+            assert 'recording off' in result.stdout, diagnostic
         assert not out.exists(), diagnostic
         results.append(result.returncode)
     assert results[0] == results[1], results

@@ -162,7 +162,7 @@ seed = [0, 1]
         assert 'resource_tracker:' not in result.stderr
         rows = [json.loads(line) for line in (out / 'batch_results.jsonl').read_text().splitlines()]
         assert len(rows) == 2, diagnostic
-        assert all(row['exit'] in (0, 2) and row.get('outcome') == 'duration_reached'
+        assert all(row['exit'] in (0, 2) and row.get('outcome') == 'duration'
                    and 'error' not in row for row in rows), diagnostic
         records.append({row['index']: {key: row[key] for key in (
             'name', 'exit', 'outcome', 'metrics', 'params', 'argv')} for row in rows})

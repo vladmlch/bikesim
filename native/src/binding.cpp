@@ -13,6 +13,7 @@
 // (writeable; frozen at access time — see the prop for the policy).
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
@@ -205,12 +206,35 @@ namespace {
 
     nb::ndarray<const double, nb::shape<-1>, nb::c_contig>
     debug_carcass_row64(nb::handle value, std::string_view path) {
+        nb::ndarray<const double, nb::shape<-1>, nb::c_contig> row;
         try {
-            return nb::cast<nb::ndarray<const double, nb::shape<-1>,
-                                        nb::c_contig>>(value);
+            row = nb::cast<nb::ndarray<const double, nb::shape<-1>,
+                                     nb::c_contig>>(value);
         } catch (const nb::cast_error &) {
             wire::invalid(path, "expected a contiguous float64 array");
         }
+        // The caster checks dtype/contiguity but not alignment: a
+        // byte-offset view can arrive with a misaligned data pointer, and
+        // binding a double& to it (ndarray::operator()) is UB caught by
+        // -fsanitize=alignment. Realign by copy in that case.
+        // NOLINTNEXTLINE(bugprone-bitwise-pointer-cast) byte view of the row for the alignment probe
+        const auto *bytes = std::bit_cast<const std::byte *>(row.data());
+        if (std::bit_cast<std::uintptr_t>(bytes) % alignof(double) == 0)
+            return row;
+        const std::size_t n = row.shape(0);
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) ndarray requires runtime-sized contiguous primitive storage
+        auto storage = std::make_unique<double[]>(n);
+        std::ranges::copy(
+                std::views::counted(
+                        bytes, static_cast<std::ptrdiff_t>(n * sizeof(double))),
+                // NOLINTNEXTLINE(bugprone-bitwise-pointer-cast) byte view of the owned buffer
+                std::bit_cast<std::byte *>(storage.get()));
+        auto [data, owner] = wire::detail::release_with_owner(
+                std::move(storage), [](double *buffer) {
+                    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) capsule owns the released unique_ptr array
+                    return nb::capsule(buffer, [](void *p) noexcept { delete[] static_cast<double *>(p); });
+                });
+        return {data, {n}, owner};
     }
 
     std::span<const double> debug_carcass_span(

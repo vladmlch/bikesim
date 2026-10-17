@@ -102,7 +102,7 @@ def test_python_command_never_loads_the_extension(tmp_path, monkeypatch):
 
 def test_cli_dispatches_every_live_and_headless_route(tmp_path, monkeypatch):
     import bike_sim.sim.backend as backend
-    import bike_sim.viewer_runtime as viewer_runtime
+    import bike_sim.sim.playground as playground
     import bike_sim.sim.ride.physical_driver as physical_driver
     import bike_sim.sim.ride.physical_frontend as physical_frontend
     import bike_sim.sim.ride.physical_session as physical_session
@@ -111,7 +111,7 @@ def test_cli_dispatches_every_live_and_headless_route(tmp_path, monkeypatch):
     from bike_sim.cli.ride import main
     monkeypatch.setattr(backend, 'require_backend',
                         lambda *args: SimpleNamespace(name='selected-extension'))
-    monkeypatch.setattr(viewer_runtime, 'prepare_viewer', lambda **kwargs: None)
+    monkeypatch.setattr(playground, 'ensure_macos_mjpython', lambda: None)
     calls = []
     driver = SimpleNamespace(backend='native')
     monkeypatch.setattr(physical_driver, 'build_physical_driver',

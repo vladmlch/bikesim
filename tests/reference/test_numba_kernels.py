@@ -53,10 +53,13 @@ def _torque_curves(draw):
 @settings(max_examples=1000, deadline=None)
 def test_directional_capacity_matches_python(curve, angle, velocity, direction):
     angle = min(max(angle, curve.angles_rad[0]), curve.angles_rad[-1])
+    # nan_ok=True is still an equality oracle: degenerate curves legitimately
+    # produce NaN in both paths, and only mutual NaN is accepted — a finite
+    # oracle against a NaN kernel still fails.
     assert directional_capacity(curve, angle, velocity, direction) == \
         pytest.approx(
             _directional_capacity_py(curve, angle, velocity, direction),
-            rel=RTOL, abs=ATOL)
+            rel=RTOL, abs=ATOL, nan_ok=True)
 
 
 def test_directional_capacity_error_paths_match():
@@ -89,7 +92,7 @@ def test_brush_step_matches_python(xi, u, v_roll, Fn, k, mu, length, dt):
     actual = _brush_step(xi, u, v_roll, Fn, k, mu, length, dt)
     assert len(actual) == len(expected) == 3
     for got, want in zip(actual, expected):
-        assert got == pytest.approx(want, rel=RTOL, abs=ATOL)
+        assert got == pytest.approx(want, rel=RTOL, abs=ATOL, nan_ok=True)
 
 
 def test_brush_step_error_paths_match():
@@ -117,7 +120,7 @@ def test_normal_contact_matches_python(delta, delta_dot, k, c):
     actual = _normal_contact(delta, delta_dot, k, c)
     assert len(actual) == len(expected) == 2
     for got, want in zip(actual, expected):
-        assert got == pytest.approx(want, rel=RTOL, abs=ATOL)
+        assert got == pytest.approx(want, rel=RTOL, abs=ATOL, nan_ok=True)
 
 
 def test_normal_contact_error_paths_match():
@@ -144,7 +147,7 @@ def _planar_rotations(draw):
 def _assert_contact_close(got, want):
     np.testing.assert_allclose(got.point_m, want.point_m, rtol=RTOL, atol=ATOL)
     np.testing.assert_allclose(got.normal, want.normal, rtol=RTOL, atol=ATOL)
-    assert got.gap_m == pytest.approx(want.gap_m, rel=RTOL, abs=ATOL)
+    assert got.gap_m == pytest.approx(want.gap_m, rel=RTOL, abs=ATOL, nan_ok=True)
     assert got.within_width == want.within_width
     assert got.within_footprint == want.within_footprint
 

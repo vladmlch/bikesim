@@ -194,3 +194,46 @@ def build_report(warmups, runs):
         pending_gates=['same-prefix Python/native comparison', 'full correctness and sanitizer gates',
                        'actual macOS viewer and 1x mean achieved RTF >= 0.95'],
         scope='Measured headless runtime only; warm-ups excluded from median; no GUI or calibration claim.')
+
+
+def steady_state_evidence(run: dict, minimum_simulated_time_s: float) -> dict:
+    """Classify one measure_run result as a steady-state claim or diagnostic.
+
+    This is an additional claim-classification field, not a replacement for
+    ``measured_ok``, ``valid_prefix`` or ``compare_runs``: an ``eligible``
+    status establishes only that this measured prefix covers a complete,
+    valid, identity-stable window of at least ``minimum_simulated_time_s``
+    simulated seconds on the recording hardware. It does not prove GUI
+    acceptance, physical calibration or a universal realtime guarantee, and
+    comparisons remain same-hardware before/after; cross-machine differences
+    stay descriptive. A ``diagnostic`` run retains its throughput sample but
+    cannot support a completed-window steady-state claim.
+    """
+    if (isinstance(minimum_simulated_time_s, bool)
+            or not math.isfinite(minimum_simulated_time_s)
+            or minimum_simulated_time_s <= 0):
+        raise ValueError("minimum_simulated_time_s must be finite and positive")
+    prefix = run["prefix"]
+    reasons = []
+    if run["measured_ok"] is not True or run["errors"]:
+        reasons.append("measurement_failed")
+    if (run["valid_prefix"] is not True or prefix["model_valid"] is not True
+            or prefix["numerically_valid"] is not True):
+        reasons.append("invalid_prefix")
+    if run["identity_unchanged"] is not True:
+        reasons.append("identity_changed")
+    if (prefix["requested_steps"] <= 0
+            or prefix["steps"] != prefix["requested_steps"]
+            or run["physics_steps"] != prefix["steps"]):
+        reasons.append("incomplete_requested_prefix")
+    if prefix["reason"] != "duration_reached":
+        reasons.append("non_duration_terminal")
+    actual = run["simulated_time_s"]
+    if (not math.isfinite(actual) or actual <= 0
+            or (actual < minimum_simulated_time_s
+                and not math.isclose(actual, minimum_simulated_time_s,
+                                     rel_tol=1e-9, abs_tol=1e-9))):
+        reasons.append("insufficient_simulated_window")
+    if not math.isfinite(run["wall_clock_s"]) or run["wall_clock_s"] <= 0:
+        reasons.append("invalid_wall_clock")
+    return {"status": "diagnostic" if reasons else "eligible", "reasons": reasons}

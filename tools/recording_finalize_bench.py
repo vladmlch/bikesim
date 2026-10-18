@@ -33,6 +33,7 @@ The default native dispatch itself — every physical stream through
         uv run --frozen --group native python tools/recording_finalize_bench.py --oracle
 """
 import argparse
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -194,6 +195,16 @@ def main(argv=None):
     print(f'stages: encode={encode_s:.3f}s arrow={arrow_s:.3f}s '
           f'duckdb={duckdb_s:.3f}s '
           f'total={encode_s + arrow_s + duckdb_s:.3f}s db={database}')
+    # Platform/provider provenance is part of the report: a native-vs-oracle
+    # number without the recorded platform, numerical provider and extension
+    # identity is not comparable evidence. A provenance failure is reported,
+    # never hidden behind a timing line.
+    try:
+        from bike_sim.native.artifact import execution_provenance
+        provenance = execution_provenance('native')
+    except Exception as error:
+        provenance = {'error': f'{type(error).__name__}: {error}'}
+    print('provenance: ' + json.dumps(provenance, sort_keys=True))
     return 0
 
 

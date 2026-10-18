@@ -263,7 +263,8 @@ def annotate_report(report, args, effective_dt_s):
     report['invocation'] = dict(physics_config=str(args.physics_config.resolve()),
         track=args.track, duration_s=args.duration, dt_override=args.dt,
         effective_dt_s=effective_dt_s, record_decimation=args.decimation,
-        monitor_strict=monitor_strict(args), benchmark_mode=bool(args.benchmark))
+        monitor_strict=monitor_strict(args), benchmark_mode=bool(args.benchmark),
+        steady_state_minimum_simulated_time_s=args.duration)
     report['benchmark_mode'] = bool(args.benchmark)
     if args.benchmark:
         report['limitations'] = ['Benchmark mode: the reference monitor was non-strict; the '
@@ -302,7 +303,8 @@ def main(argv=None):
         from bike_sim.cli.ride import resolve_rider, resolve_track, track_seed
         from bike_sim.sim.backend import require_backend
         from bike_sim.sim.ride.physical_driver import build_physical_driver
-        from bike_sim.sim.realtime_measurement import measure_run, build_report, compare_runs
+        from bike_sim.sim.realtime_measurement import (
+            measure_run, build_report, compare_runs, steady_state_evidence)
         rider = resolve_rider(ride)
         require_backend(args.backend, ride.resolved_physics, rider)
         track = resolve_track(ride.track, seed=ride.seed, length_m=ride.length)
@@ -313,13 +315,23 @@ def main(argv=None):
         for phase, count, result in (('warmup', args.warmup, warmups), ('run', args.runs, runs)):
             for index in range(count):
                 run = measure_run(factory, args.out/f'{phase}-{index:02d}')
+                # Steady-state claim classification is per measured run against
+                # the explicit requested duration; warm-ups stay unclassified —
+                # they are excluded from every claim by the sampling protocol.
+                if phase == 'run':
+                    run['steady_state'] = steady_state_evidence(run, args.duration)
                 result.append(run)
                 args.out.mkdir(parents=True, exist_ok=True)
                 (args.out/f'{phase}-{index:02d}.json').write_text(
                     json.dumps(run, indent=2, sort_keys=True, allow_nan=False)+'\n', encoding='utf-8')
-                print(f'{phase} {index+1}/{count}: backend={args.backend}; '
-                      f'steps={run["physics_steps"]}; RTF={run["real_time_factor"]}; '
-                      f'outcome={run["prefix"]["reason"]}; valid={run["valid_prefix"]}', flush=True)
+                line = (f'{phase} {index+1}/{count}: backend={args.backend}; '
+                        f'steps={run["physics_steps"]}; RTF={run["real_time_factor"]}; '
+                        f'outcome={run["prefix"]["reason"]}; valid={run["valid_prefix"]}')
+                if phase == 'run':
+                    line += f'; steady_state={run["steady_state"]["status"]}'
+                    if run['steady_state']['reasons']:
+                        line += f' ({",".join(run["steady_state"]["reasons"])})'
+                print(line, flush=True)
         report = annotate_report(build_report(warmups, runs), args, ride.resolved_physics.timestep_s)
         if previous is not None:
             if previous.get('schema_version') != 1 or not previous.get('runs'):
